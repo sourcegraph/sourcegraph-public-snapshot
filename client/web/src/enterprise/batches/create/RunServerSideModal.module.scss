@@ -51,11 +51,16 @@
 }
 
 .right-bottom {
-    background-color: var(--body-bg);
-    border: 1px solid var(--border-color);
-    padding: 0.8rem;
+    background: var(--marketing-gradient);
+    border-radius: var(--border-radius);
 }
 
 ul {
     padding-left: 1.5rem;
+}
+
+.blank {
+    background-color: var(--body-bg);
+    padding: 0.8rem;
+    margin: 0.2rem;
 }

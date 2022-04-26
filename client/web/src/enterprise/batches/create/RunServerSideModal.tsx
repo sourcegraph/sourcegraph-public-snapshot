@@ -8,16 +8,10 @@ import { Button, Link, Modal } from '@sourcegraph/wildcard'
 import styles from './RunServerSideModal.module.scss'
 
 export interface RunServerSideModalProps {
-    name: string
-    originalInput: string
-    isLightTheme: boolean
     setIsRunServerSideModalOpen: (condition: boolean) => void
 }
 
 export const RunServerSideModal: React.FunctionComponent<RunServerSideModalProps> = ({
-    name,
-    originalInput,
-    isLightTheme,
     setIsRunServerSideModalOpen,
 }) => (
     <Modal
@@ -65,17 +59,12 @@ export const RunServerSideModal: React.FunctionComponent<RunServerSideModalProps
                 </div>
 
                 <div className={styles.rightBottom}>
-                    <h4>Request a demo</h4>
-                    <p>Learn more about this free feature of batch changes.</p>
+                    <div className={styles.blank}>
+                        <h4>Request a demo</h4>
+                        <p>Learn more about this free feature of batch changes.</p>
 
-                    <Button
-                        outline={true}
-                        variant="primary"
-                        // onClick={() => {
-                        // }}
-                    >
-                        Request Demo
-                    </Button>
+                        <Button variant="primary">Request Demo</Button>
+                    </div>
                 </div>
             </div>
         </div>
