@@ -30,7 +30,7 @@ When [configured to export JSON logs](#log-format), Sourcegraph services that ha
 
 ```json
 {
-  "Timestamp": "string",
+  "Timestamp": 1651000257893614000,
   "InstrumentationScope": "string",
   "SeverityText": "string (DEBUG, INFO, ...)",
   "Body": "string",
