@@ -55,5 +55,5 @@ body:
       label: Assigning labels
       options:
       - label: Please give this issue an estimate by applying a label like `estimate/Xd`, where X is the estimated number of days it will take to complete.
-      - label: If this issue is specific to a specific Sourcegraph product, e.g. Code Intel, Batch Changes, etc., please assign the appropriate team label to this issue.
+      - label: If this issue is specific to a specific Sourcegraph product, please assign the appropriate team label to this issue.
       - label: If this issue will require input from designers in order to complete, please assign the label `needs-design`.

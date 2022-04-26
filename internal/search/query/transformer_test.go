@@ -8,6 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/regexp"
 	"github.com/hexops/autogold"
+	"github.com/stretchr/testify/require"
 )
 
 func toJSON(node Node) interface{} {
@@ -376,6 +377,72 @@ func TestConvertEmptyGroupsToLiteral(t *testing.T) {
 				t.Error(diff)
 			}
 			if diff := cmp.Diff(c.wantLabels, got.Annotation.Labels); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
+
+func TestPipeline(t *testing.T) {
+	cases := []struct {
+		input string
+		want  string
+	}{{
+		input: `a or b`,
+		want:  `(or "a" "b")`,
+	}, {
+		input: `a and b AND c OR d`,
+		want:  `(or (and "a" "b" "c") "d")`,
+	}, {
+		input: `(repo:a (file:b or file:c))`,
+		want:  `(or (and "repo:a" "file:b") (and "repo:a" "file:c"))`,
+	}, {
+		input: `(repo:a (file:b or file:c) (file:d or file:e))`,
+		want:  `(or (and "repo:a" "file:b" "file:d") (and "repo:a" "file:c" "file:d") (and "repo:a" "file:b" "file:e") (and "repo:a" "file:c" "file:e"))`,
+	}, {
+		input: `(repo:a (file:b or file:c) (a b) (x z))`,
+		want:  `(or (and "repo:a" "file:b" "(a b) (x z)") (and "repo:a" "file:c" "(a b) (x z)"))`,
+	}, {
+		input: `a and b AND c or d and (e OR f) and g h i or j`,
+		want:  `(or (and "a" "b" "c") (and "d" (or "e" "f") "g h i") "j")`,
+	}, {
+		input: `(a or b) and c`,
+		want:  `(and (or "a" "b") "c")`,
+	}, {
+		input: `(repo:a (file:b (file:c or file:d) (file:e or file:f)))`,
+		want:  `(or (and "repo:a" "file:b" "file:c" "file:e") (and "repo:a" "file:b" "file:d" "file:e") (and "repo:a" "file:b" "file:c" "file:f") (and "repo:a" "file:b" "file:d" "file:f"))`,
+	}, {
+		input: `(repo:a (file:b (file:c or file:d) file:q (file:e or file:f)))`,
+		want:  `(or (and "repo:a" "file:b" "file:c" "file:q" "file:e") (and "repo:a" "file:b" "file:d" "file:q" "file:e") (and "repo:a" "file:b" "file:c" "file:q" "file:f") (and "repo:a" "file:b" "file:d" "file:q" "file:f"))`,
+	}, {
+		input: `(repo:a b) or (repo:c d)`,
+		want:  `(or (and "repo:a" "b") (and "repo:c" "d"))`,
+		// Bug. See: https://github.com/sourcegraph/sourcegraph/issues/34018
+		// }, {
+		// 	input: `repo:a b or repo:c d`,
+		// 	want:  `(or (and "repo:a" "b") (and "repo:c" "d"))`,
+	}, {
+		input: `(repo:a b) and (repo:c d)`,
+		want:  `(and "repo:a" "repo:c" "b" "d")`,
+	}, {
+		input: `(repo:a or repo:b) (c or d)`,
+		want:  `(or (and "repo:a" (or "c" "d")) (and "repo:b" (or "c" "d")))`,
+	}, {
+		input: `(repo:a (b or c)) or (repo:d e f)`,
+		want:  `(or (and "repo:a" (or "b" "c")) (and "repo:d" "e f"))`,
+	}, {
+		input: `((repo:a b) or c) or (repo:d e f)`,
+		want:  `(or (and "repo:a" "b") "c" (and "repo:d" "e f"))`,
+	}, {
+		input: `(repo:a or repo:b) (c and (d or e))`,
+		want:  `(or (and "repo:a" "c" (or "d" "e")) (and "repo:b" "c" (or "d" "e")))`,
+	}}
+	for _, c := range cases {
+		t.Run("Map query", func(t *testing.T) {
+			plan, err := Pipeline(Init(c.input, SearchTypeLiteral))
+			require.NoError(t, err)
+			got := plan.ToParseTree().String()
+			if diff := cmp.Diff(c.want, got); diff != "" {
 				t.Fatal(diff)
 			}
 		})

@@ -4,8 +4,9 @@ import classNames from 'classnames'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { Button, LoadingSpinner, Modal, Link } from '@sourcegraph/wildcard'
+import { Button, Modal, Link } from '@sourcegraph/wildcard'
 
+import { LoaderButton } from '../../../components/LoaderButton'
 import { ExternalServiceKind, Scalars } from '../../../graphql-operations'
 
 import { useCreateBatchChangesCredential } from './backend'
@@ -226,15 +227,15 @@ export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps
                                 >
                                     Cancel
                                 </Button>
-                                <Button
+                                <LoaderButton
                                     type="submit"
                                     disabled={loading || credential.length === 0}
                                     className="test-add-credential-modal-submit"
                                     variant="primary"
-                                >
-                                    {loading && <LoadingSpinner />}
-                                    {requiresSSH ? 'Next' : 'Add credential'}
-                                </Button>
+                                    loading={loading}
+                                    alwaysShowLabel={true}
+                                    label={requiresSSH ? 'Next' : 'Add credential'}
+                                />
                             </div>
                         </Form>
                     </>

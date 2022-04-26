@@ -46,7 +46,6 @@ import {
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
 import { CodeIntelligenceProps } from '../codeintel'
-import { RepositoryMenu as CodeIntelRepositoryMenu } from '../codeintel/RepositoryMenu'
 import { BreadcrumbSetters, BreadcrumbsProps } from '../components/Breadcrumbs'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
@@ -440,14 +439,13 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                     {...repoHeaderContributionsLifecycleProps}
                 >
                     {({ actionType }) =>
-                        actionType === 'nav' ? (
-                            <CodeIntelRepositoryMenu
+                        props.codeIntelligenceRepositoryMenu && actionType === 'nav' ? (
+                            <props.codeIntelligenceRepositoryMenu
                                 key="code-intelligence-status"
-                                settingsCascade={props.settingsCascade}
                                 repoName={repoName}
                                 revision={rawRevision || 'HEAD'}
                                 filePath={filePath || ''}
-                                content={props.repositoryMenuContent}
+                                settingsCascade={props.settingsCascade}
                             />
                         ) : (
                             <></>

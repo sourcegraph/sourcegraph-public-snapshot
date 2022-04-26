@@ -135,12 +135,13 @@ type Step struct {
 }
 
 type RetryOptions struct {
-	Automatic *AutomaticRetryOptions `json:"automatic,omitempty"`
-	Manual    *ManualRetryOptions    `json:"manual,omitempty"`
+	Automatic []AutomaticRetryOptions `json:"automatic,omitempty"`
+	Manual    *ManualRetryOptions     `json:"manual,omitempty"`
 }
 
 type AutomaticRetryOptions struct {
-	Limit int `json:"limit,omitempty"`
+	Limit      int         `json:"limit,omitempty"`
+	ExitStatus interface{} `json:"exit_status,omitempty"`
 }
 
 type ManualRetryOptions struct {
@@ -447,11 +448,36 @@ func SoftFail(exitCodes ...int) StepOpt {
 // Docs: https://buildkite.com/docs/pipelines/command-step#automatic-retry-attributes
 func AutomaticRetry(limit int) StepOpt {
 	return func(step *Step) {
-		step.Retry = &RetryOptions{
-			Automatic: &AutomaticRetryOptions{
-				Limit: limit,
-			},
+		if step.Retry == nil {
+			step.Retry = &RetryOptions{}
 		}
+		if step.Retry.Automatic == nil {
+			step.Retry.Automatic = []AutomaticRetryOptions{}
+		}
+		step.Retry.Automatic = append(step.Retry.Automatic, AutomaticRetryOptions{
+			Limit:      limit,
+			ExitStatus: "*",
+		})
+	}
+}
+
+// AutomaticRetryStatus enables automatic retry for the step with the number of times this job can be retried
+// when the given exitStatus is encountered.
+//
+// The maximum value this can be set to is 10.
+// Docs: https://buildkite.com/docs/pipelines/command-step#automatic-retry-attributes
+func AutomaticRetryStatus(limit int, exitStatus int) StepOpt {
+	return func(step *Step) {
+		if step.Retry == nil {
+			step.Retry = &RetryOptions{}
+		}
+		if step.Retry.Automatic == nil {
+			step.Retry.Automatic = []AutomaticRetryOptions{}
+		}
+		step.Retry.Automatic = append(step.Retry.Automatic, AutomaticRetryOptions{
+			Limit:      limit,
+			ExitStatus: strconv.Itoa(exitStatus),
+		})
 	}
 }
 

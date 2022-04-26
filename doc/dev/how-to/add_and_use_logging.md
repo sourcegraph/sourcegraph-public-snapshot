@@ -37,6 +37,7 @@ import (
   "github.com/sourcegraph/sourcegraph/lib/log"
   "github.com/sourcegraph/sourcegraph/internal/env"
   "github.com/sourcegraph/sourcegraph/internal/version"
+  "github.com/sourcegraph/sourcegraph/internal/hostname"
 )
 
 func main() {
@@ -45,10 +46,10 @@ func main() {
   // you should make sure to call before application exit (namely via `defer`)
   //
   // Repeated calls to `log.Init` will panic. Make sure to call this exactly once in `main`!
-  syncLogs := log.Init(log.Resource{
-    Name: env.MyName,
-    /* ... optional fields */
-    Version: version.Version(),
+  syncLogs := sglog.Init(sglog.Resource{
+    Name:       env.MyName,
+    Version:    version.Version(),
+    InstanceID: hostname.Get(),
   })
   defer syncLogs()
 

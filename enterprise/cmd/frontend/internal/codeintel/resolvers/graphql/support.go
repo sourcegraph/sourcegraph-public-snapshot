@@ -1,10 +1,14 @@
 package graphql
 
 import (
+	"context"
 	"path"
 	"strings"
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type searchBasedCodeIntelSupportType string
@@ -76,4 +80,32 @@ func (r *preciseCodeIntelSupportResolver) Indexers() *[]gql.CodeIntelIndexerReso
 		return nil
 	}
 	return &r.indexers
+}
+
+func (r *Resolver) RequestLanguageSupport(ctx context.Context, args *gql.RequestLanguageSupportArgs) (_ *gql.EmptyResponse, err error) {
+	ctx, endObservation := r.observationContext.requestLanguageSupport.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	userID := int(actor.FromContext(ctx).UID)
+	if userID == 0 {
+		return nil, errors.Newf("language support requests only logged for authenticated users")
+	}
+
+	if err := r.resolver.RequestLanguageSupport(ctx, userID, args.Language); err != nil {
+		return nil, err
+	}
+
+	return &gql.EmptyResponse{}, nil
+}
+
+func (r *Resolver) RequestedLanguageSupport(ctx context.Context) (_ []string, err error) {
+	ctx, endObservation := r.observationContext.requestedLanguageSupport.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	userID := int(actor.FromContext(ctx).UID)
+	if userID == 0 {
+		return nil, errors.Newf("language support requests only logged for authenticated users")
+	}
+
+	return r.resolver.RequestedLanguageSupport(ctx, userID)
 }

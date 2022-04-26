@@ -649,6 +649,18 @@ Webhook actions configured on code monitors
 
 **url**: The webhook URL we send the code monitor event to
 
+# Table "public.codeintel_langugage_support_requests"
+```
+   Column    |  Type   | Collation | Nullable |                             Default                              
+-------------+---------+-----------+----------+------------------------------------------------------------------
+ id          | integer |           | not null | nextval('codeintel_langugage_support_requests_id_seq'::regclass)
+ user_id     | integer |           | not null | 
+ language_id | text    |           | not null | 
+Indexes:
+    "codeintel_langugage_support_requests_user_id_language" UNIQUE, btree (user_id, language_id)
+
+```
+
 # Table "public.critical_and_site_config"
 ```
    Column   |           Type           | Collation | Nullable |                       Default                        

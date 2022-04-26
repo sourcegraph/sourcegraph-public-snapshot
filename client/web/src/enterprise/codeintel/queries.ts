@@ -106,3 +106,17 @@ export const codeIntelStatusQuery = gql`
     ${lsifUploadFieldsFragment}
     ${lsifIndexFieldsFragment}
 `
+
+export const requestedLanguageSupportQuery = gql`
+    query RequestedLanguageSupport {
+        requestedLanguageSupport
+    }
+`
+
+export const requestLanguageSupportQuery = gql`
+    mutation RequestLanguageSupport($language: String!) {
+        requestLanguageSupport(language: $language) {
+            alwaysNil
+        }
+    }
+`

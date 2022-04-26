@@ -8,8 +8,10 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/go-diff/diff"
 
+	bbcs "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -394,6 +396,22 @@ func (c *Changeset) SetMetadata(meta interface{}) error {
 		c.ExternalBranch = git.EnsureRefPrefix(pr.SourceBranch)
 		c.ExternalUpdatedAt = pr.UpdatedAt.Time
 		c.ExternalForkNamespace = pr.SourceProjectNamespace
+	case *bbcs.AnnotatedPullRequest:
+		c.Metadata = pr
+		c.ExternalID = strconv.FormatInt(pr.ID, 10)
+		c.ExternalServiceType = extsvc.TypeBitbucketCloud
+		c.ExternalBranch = git.EnsureRefPrefix(pr.Source.Branch.Name)
+		c.ExternalUpdatedAt = pr.UpdatedOn
+
+		if pr.Source.Repo.UUID != pr.Destination.Repo.UUID {
+			namespace, err := pr.Source.Repo.Namespace()
+			if err != nil {
+				return errors.Wrap(err, "determining fork namespace")
+			}
+			c.ExternalForkNamespace = namespace
+		} else {
+			c.ExternalForkNamespace = ""
+		}
 	default:
 		return errors.New("unknown changeset type")
 	}
@@ -419,6 +437,8 @@ func (c *Changeset) Title() (string, error) {
 		return m.Title, nil
 	case *gitlab.MergeRequest:
 		return m.Title, nil
+	case *bbcs.AnnotatedPullRequest:
+		return m.Title, nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -435,6 +455,8 @@ func (c *Changeset) AuthorName() (string, error) {
 		}
 		return m.Author.User.Name, nil
 	case *gitlab.MergeRequest:
+		return m.Author.Username, nil
+	case *bbcs.AnnotatedPullRequest:
 		return m.Author.Username, nil
 	default:
 		return "", errors.New("unknown changeset type")
@@ -459,6 +481,10 @@ func (c *Changeset) AuthorEmail() (string, error) {
 		return m.Author.User.EmailAddress, nil
 	case *gitlab.MergeRequest:
 		return m.Author.Email, nil
+	case *bbcs.AnnotatedPullRequest:
+		// Bitbucket Cloud does not provide the e-mail of the author under any
+		// circumstances.
+		return "", nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -475,6 +501,8 @@ func (c *Changeset) ExternalCreatedAt() time.Time {
 		return unixMilliToTime(int64(m.CreatedDate))
 	case *gitlab.MergeRequest:
 		return m.CreatedAt.Time
+	case *bbcs.AnnotatedPullRequest:
+		return m.CreatedOn
 	default:
 		return time.Time{}
 	}
@@ -489,6 +517,8 @@ func (c *Changeset) Body() (string, error) {
 		return m.Description, nil
 	case *gitlab.MergeRequest:
 		return m.Description, nil
+	case *bbcs.AnnotatedPullRequest:
+		return m.Rendered.Description.Raw, nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -526,6 +556,14 @@ func (c *Changeset) URL() (s string, err error) {
 		return selfLink.Href, nil
 	case *gitlab.MergeRequest:
 		return m.WebURL, nil
+	case *bbcs.AnnotatedPullRequest:
+		if link, ok := m.Links["html"]; ok {
+			return link.Href, nil
+		}
+		// We could probably synthesise the URL based on the repo URL and the
+		// pull request ID, but since the link _should_ be there, we'll error
+		// instead.
+		return "", errors.New("Bitbucket Cloud pull request does not have a html link")
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -658,6 +696,46 @@ func (c *Changeset) Events() (events []*ChangesetEvent, err error) {
 				Metadata:    pipeline,
 			})
 		}
+
+	case *bbcs.AnnotatedPullRequest:
+		// There are two types of event that we create from an annotated pull
+		// request: review events, based on the participants within the pull
+		// request, and check events, based on the commit statuses.
+		//
+		// Unlike some other code host types, we don't need to handle general
+		// comments, as we can access the historical data required through more
+		// specialised APIs.
+
+		var kind ChangesetEventKind
+
+		for _, participant := range m.Participants {
+			if kind, err = ChangesetEventKindFor(&participant); err != nil {
+				return
+			}
+			appendEvent(&ChangesetEvent{
+				ChangesetID: c.ID,
+				// There's no unique ID within the participant structure itself,
+				// but the combination of the user UUID, the repo UUID, and the
+				// PR ID should be unique. We can't implement this as a Keyer on
+				// the participant because it requires knowledge of things
+				// outside the struct.
+				Key:      m.Destination.Repo.UUID + ":" + strconv.FormatInt(m.ID, 10) + ":" + participant.User.UUID,
+				Kind:     kind,
+				Metadata: participant,
+			})
+		}
+
+		for _, status := range m.Statuses {
+			if kind, err = ChangesetEventKindFor(status); err != nil {
+				return
+			}
+			appendEvent(&ChangesetEvent{
+				ChangesetID: c.ID,
+				Key:         status.UUID,
+				Kind:        kind,
+				Metadata:    status,
+			})
+		}
 	}
 	return events, nil
 }
@@ -673,6 +751,8 @@ func (c *Changeset) HeadRefOid() (string, error) {
 		return "", nil
 	case *gitlab.MergeRequest:
 		return m.DiffRefs.HeadSHA, nil
+	case *bbcs.AnnotatedPullRequest:
+		return m.Source.Commit.Hash, nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -688,6 +768,8 @@ func (c *Changeset) HeadRef() (string, error) {
 		return m.FromRef.ID, nil
 	case *gitlab.MergeRequest:
 		return "refs/heads/" + m.SourceBranch, nil
+	case *bbcs.AnnotatedPullRequest:
+		return "refs/heads/" + m.Source.Branch.Name, nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -704,6 +786,8 @@ func (c *Changeset) BaseRefOid() (string, error) {
 		return "", nil
 	case *gitlab.MergeRequest:
 		return m.DiffRefs.BaseSHA, nil
+	case *bbcs.AnnotatedPullRequest:
+		return m.Destination.Commit.Hash, nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -719,6 +803,8 @@ func (c *Changeset) BaseRef() (string, error) {
 		return m.ToRef.ID, nil
 	case *gitlab.MergeRequest:
 		return "refs/heads/" + m.TargetBranch, nil
+	case *bbcs.AnnotatedPullRequest:
+		return "refs/heads/" + m.Destination.Branch.Name, nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -996,6 +1082,18 @@ func ChangesetEventKindFor(e interface{}) (ChangesetEventKind, error) {
 		return ChangesetEventKindGitLabReopened, nil
 	case *gitlab.MergeRequestMergedEvent:
 		return ChangesetEventKindGitLabMerged, nil
+
+	case *bitbucketcloud.Participant:
+		switch e.State {
+		case bitbucketcloud.ParticipantStateApproved:
+			return ChangesetEventKindBitbucketCloudApproved, nil
+		case bitbucketcloud.ParticipantStateChangesRequested:
+			return ChangesetEventKindBitbucketCloudChangesRequested, nil
+		default:
+			return ChangesetEventKindBitbucketCloudReviewed, nil
+		}
+	case *bitbucketcloud.PullRequestStatus:
+		return ChangesetEventKindBitbucketCloudCommitStatus, nil
 	}
 
 	return ChangesetEventKindInvalid, errors.Errorf("unknown changeset event kind for %T", e)
@@ -1005,6 +1103,15 @@ func ChangesetEventKindFor(e interface{}) (ChangesetEventKind, error) {
 // ChangesetEventKind.
 func NewChangesetEventMetadata(k ChangesetEventKind) (interface{}, error) {
 	switch {
+	case strings.HasPrefix(string(k), "bitbucketcloud"):
+		switch k {
+		case ChangesetEventKindBitbucketCloudApproved,
+			ChangesetEventKindBitbucketCloudChangesRequested,
+			ChangesetEventKindBitbucketCloudReviewed:
+			return new(bitbucketcloud.Participant), nil
+		case ChangesetEventKindBitbucketCloudCommitStatus:
+			return new(bitbucketcloud.PullRequestStatus), nil
+		}
 	case strings.HasPrefix(string(k), "bitbucketserver"):
 		switch k {
 		case ChangesetEventKindBitbucketServerCommitStatus:

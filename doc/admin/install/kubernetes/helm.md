@@ -15,6 +15,11 @@
 <a class="btn" href="#upgrading-sourcegraph">Upgrading</a>
 </div>
 
+## Why use Helm
+
+Our Helm chart has a lot of sensible defaults baked into the values.yaml. Not only does this make customizations much easier (than either using Kustomize or manually editing Sourcegraph's manifest files) it also means that, when an override file is used to make the changes, you _never_ have to deal with merge conflicts during upgrades (see more about customizations in the [configuration](#configuration) section). 
+
+
 ## High-level overview of how to use Helm with Sourcegraph
 
 1. Prepare any required customizations
