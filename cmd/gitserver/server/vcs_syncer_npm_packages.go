@@ -42,7 +42,7 @@ func NewNpmPackagesSyncer(
 		placeholder: placeholder,
 		svc:         svc,
 		configDeps:  connection.Dependencies,
-		syncer:      &npmPackagesSyncer{client: client},
+		source:      &npmPackagesSyncer{client: client},
 	}
 }
 

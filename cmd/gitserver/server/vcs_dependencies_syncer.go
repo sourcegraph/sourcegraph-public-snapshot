@@ -28,25 +28,31 @@ type vcsDependenciesSyncer struct {
 	// so it can have any random value.
 	placeholder reposource.PackageDependency
 	configDeps  []string
-	syncer      dependenciesSyncer
-	svc         *dependencies.Service
+	source      dependenciesSource
+	svc         dependenciesService
 }
 
 var _ VCSSyncer = &vcsDependenciesSyncer{}
 
-// dependenciesSyncer encapsulates the methods required to implement a syncer of
+// dependenciesSource encapsulates the methods required to implement a source of
 // package dependencies e.g. npm, go modules, jvm, python.
-type dependenciesSyncer interface {
+type dependenciesSource interface {
 	// Get verifies that a dependency at a specific version exists in the package
 	// host and returns it if so. Otherwise it returns an error that passes
 	// errcode.IsNotFound() test.
 	Get(ctx context.Context, name, version string) (reposource.PackageDependency, error)
+	// Download the given dependency's archive and unpack it into dir.
 	Download(ctx context.Context, dir string, dep reposource.PackageDependency) error
-
 	// ParseDependency parses a package-version string from the external service
 	// configuration. The format of the string varies between external services.
 	ParseDependency(dep string) (reposource.PackageDependency, error)
 	ParseDependencyFromRepoName(repoName string) (reposource.PackageDependency, error)
+}
+
+// dependenciesService captures the methods we use of the codeintel/dependencies.Service,
+// used to make testing easier.
+type dependenciesService interface {
+	ListDependencyRepos(context.Context, dependencies.ListDependencyReposOpts) ([]dependencies.Repo, error)
 }
 
 func (s *vcsDependenciesSyncer) IsCloneable(ctx context.Context, repoUrl *vcs.URL) error {
@@ -83,7 +89,7 @@ func (s *vcsDependenciesSyncer) CloneCommand(ctx context.Context, remoteURL *vcs
 
 func (s *vcsDependenciesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir GitDir) (err error) {
 	var dep reposource.PackageDependency
-	dep, err = s.syncer.ParseDependencyFromRepoName(remoteURL.Path)
+	dep, err = s.source.ParseDependencyFromRepoName(remoteURL.Path)
 	if err != nil {
 		return err
 	}
@@ -99,7 +105,7 @@ func (s *vcsDependenciesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, d
 	var errs errors.MultiError
 	cloneable := make([]reposource.PackageDependency, 0, len(versions))
 	for _, version := range versions {
-		if d, err := s.syncer.Get(ctx, depName, version); err != nil {
+		if d, err := s.source.Get(ctx, depName, version); err != nil {
 			if errcode.IsNotFound(err) {
 				log15.Warn("skipping missing dependency", "dep", depName, "version", version, "type", s.typ)
 			} else {
@@ -110,12 +116,6 @@ func (s *vcsDependenciesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, d
 		}
 	}
 
-	// If there are no cloneable versions, early return with any aggregated errors.
-	if len(cloneable) == 0 {
-		return errs
-	}
-
-	// Otherwise, proceed to clone cloneable versions but return aggregated errors at the end.
 	defer func() {
 		err = errors.Append(errs, err)
 	}()
@@ -131,6 +131,7 @@ func (s *vcsDependenciesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, d
 	if err != nil {
 		return err
 	}
+
 	tags := map[string]struct{}{}
 	for _, line := range strings.Split(out, "\n") {
 		if len(line) == 0 {
@@ -139,16 +140,29 @@ func (s *vcsDependenciesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, d
 		tags[line] = struct{}{}
 	}
 
-	for i, dependency := range cloneable {
+	for _, dependency := range cloneable {
 		if _, tagExists := tags[dependency.GitTagFromVersion()]; tagExists {
 			continue
 		}
-		if err := s.gitPushDependencyTag(ctx, string(dir), dependency, i == 0); err != nil {
+		if err := s.gitPushDependencyTag(ctx, string(dir), dependency); err != nil {
 			return errors.Wrapf(err, "error pushing dependency %q", dependency.PackageManagerSyntax())
 		}
 	}
 
-	// Delete tags for versions we no longer track.
+	// Set the latest version as the default branch.
+	if len(cloneable) > 0 {
+		latest := cloneable[0]
+		cmd := exec.CommandContext(ctx, "git", "branch", "--force", "latest", latest.GitTagFromVersion())
+		if _, err := runCommandInDirectory(ctx, cmd, string(dir), latest); err != nil {
+			return err
+		}
+	}
+
+	// Delete tags for versions we no longer track if there were no errors so far.
+	if errs != nil {
+		return errs
+	}
+
 	dependencyTags := make(map[string]struct{}, len(cloneable))
 	for _, dependency := range cloneable {
 		dependencyTags[dependency.GitTagFromVersion()] = struct{}{}
@@ -164,24 +178,30 @@ func (s *vcsDependenciesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, d
 		}
 	}
 
+	if len(cloneable) == 0 {
+		cmd := exec.CommandContext(ctx, "git", "branch", "--force", "-D", "latest")
+		if _, err := runCommandInDirectory(ctx, cmd, string(dir), s.placeholder); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
 // gitPushDependencyTag downloads the dependency dep and updates
 // bareGitDirectory. If successful, bareGitDirectory will contain a new tag based
-// on dep. If isLatestVersion==true, the default branch will be updated to point
-// to the new tag.
+// on dep.
 //
 // gitPushDependencyTag is responsible for cleaning up temporary directories
 // created in the process.
-func (s *vcsDependenciesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDirectory string, dep reposource.PackageDependency, isLatestVersion bool) error {
+func (s *vcsDependenciesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDirectory string, dep reposource.PackageDependency) error {
 	workDir, err := os.MkdirTemp("", s.Type())
 	if err != nil {
 		return err
 	}
 	defer os.RemoveAll(workDir)
 
-	err = s.syncer.Download(ctx, workDir, dep)
+	err = s.source.Download(ctx, workDir, dep)
 	if err != nil {
 		return err
 	}
@@ -220,25 +240,13 @@ func (s *vcsDependenciesSyncer) gitPushDependencyTag(ctx context.Context, bareGi
 		return err
 	}
 
-	if isLatestVersion {
-		defaultBranch, err := runCommandInDirectory(ctx, exec.CommandContext(ctx, "git", "rev-parse", "--abbrev-ref", "HEAD"), workDir, dep)
-		if err != nil {
-			return err
-		}
-		// Use --no-verify for security reasons. See https://github.com/sourcegraph/sourcegraph/pull/23399
-		cmd = exec.CommandContext(ctx, "git", "push", "--no-verify", "--force", "origin", strings.TrimSpace(defaultBranch)+":latest", dep.GitTagFromVersion())
-		if _, err := runCommandInDirectory(ctx, cmd, workDir, dep); err != nil {
-			return err
-		}
-	}
-
 	return nil
 }
 
 func (s *vcsDependenciesSyncer) versions(ctx context.Context, packageName string) ([]string, error) {
 	var versions []string
 	for _, d := range s.configDeps {
-		dep, err := s.syncer.ParseDependency(d)
+		dep, err := s.source.ParseDependency(d)
 		if err != nil {
 			log15.Warn("skipping malformed dependency", "dep", d, "error", err)
 			continue

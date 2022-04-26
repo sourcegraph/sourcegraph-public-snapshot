@@ -35,7 +35,7 @@ func NewGoModulesSyncer(
 		placeholder: placeholder,
 		svc:         svc,
 		configDeps:  connection.Dependencies,
-		syncer:      &goModulesSyncer{client: client},
+		source:      &goModulesSyncer{client: client},
 	}
 }
 

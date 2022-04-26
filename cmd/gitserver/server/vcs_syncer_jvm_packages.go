@@ -48,7 +48,7 @@ func NewJVMPackagesSyncer(connection *schema.JVMPackagesConnection, svc *depende
 		placeholder: placeholder,
 		svc:         svc,
 		configDeps:  configDeps,
-		syncer:      &jvmPackagesSyncer{config: connection, fetch: coursier.FetchSources},
+		source:      &jvmPackagesSyncer{config: connection, fetch: coursier.FetchSources},
 	}
 }
 
