@@ -265,6 +265,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		AfterEveryStepOpts: []bk.StepOpt{
 			withDefaultTimeout,
 			withAgentQueueDefaults,
+			withAgentLostRetries,
 		},
 	}
 	// Toggle profiling of each step
@@ -337,4 +338,23 @@ func withProfiling(s *bk.Step) {
 		prefixed = append(prefixed, fmt.Sprintf("env time -v %s", cmd))
 	}
 	s.Command = prefixed
+}
+
+// withAgentLostRetries insert automatic retries when the job has failed because it lost its agent.
+//
+// If the step has been marked as not retryable, the retry will be skipped.
+func withAgentLostRetries(s *bk.Step) {
+	if s.Retry != nil && s.Retry.Manual != nil && !s.Retry.Manual.Allowed {
+		return
+	}
+	if s.Retry == nil {
+		s.Retry = &bk.RetryOptions{}
+	}
+	if s.Retry.Automatic == nil {
+		s.Retry.Automatic = []bk.AutomaticRetryOptions{}
+	}
+	s.Retry.Automatic = append(s.Retry.Automatic, bk.AutomaticRetryOptions{
+		Limit:      1,
+		ExitStatus: -1,
+	})
 }
