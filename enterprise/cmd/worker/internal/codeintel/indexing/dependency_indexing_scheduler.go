@@ -101,11 +101,12 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, logger 
 				return errors.Wrap(err, "store.Requeue")
 			}
 
-			entries := []log.Field{log.Namespace("outdated_services")}
+			entries := make([]log.Field, 0, len(outdatedServices))
 			for id, d := range outdatedServices {
 				entries = append(entries, log.Duration(fmt.Sprintf("%d", id), d))
 			}
-			logger.Warn("Requeued dependency indexing job (external services not yet updated)", entries...)
+			logger.Warn("Requeued dependency indexing job (external services not yet updated)",
+				log.Object("outdated_services", entries...))
 			return nil
 		}
 	}
