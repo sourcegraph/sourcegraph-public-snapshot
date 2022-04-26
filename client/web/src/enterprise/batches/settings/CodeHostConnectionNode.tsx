@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 import CheckboxBlankCircleOutlineIcon from 'mdi-react/CheckboxBlankCircleOutlineIcon'
@@ -31,6 +31,8 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
     const ExternalServiceIcon = defaultExternalServices[node.externalServiceKind].icon
     const codeHostDisplayName = defaultExternalServices[node.externalServiceKind].defaultDisplayName
 
+    const buttonReference = useRef<HTMLButtonElement | null>(null)
+
     const [openModal, setOpenModal] = useState<OpenModal | undefined>()
     const onClickAdd = useCallback(() => {
         setOpenModal('add')
@@ -48,8 +50,9 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
     }, [])
     const afterAction = useCallback(() => {
         setOpenModal(undefined)
+        buttonReference.current?.focus()
         refetchAll()
-    }, [refetchAll])
+    }, [refetchAll, buttonReference])
 
     const isEnabled = node.credential !== null && (userID === null || !node.credential.isSiteCredential)
 
@@ -107,13 +110,14 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
                         )}
                     </h3>
                     <div className="mb-0 d-flex justify-content-end flex-grow-1">
-                        {isEnabled && (
+                        {isEnabled ? (
                             <>
                                 <Button
                                     className="text-danger text-nowrap test-code-host-connection-node-btn-remove"
                                     onClick={onClickRemove}
                                     variant="link"
                                     aria-label={`Remove credentials for ${codeHostDisplayName}`}
+                                    ref={buttonReference}
                                 >
                                     Remove
                                 </Button>
@@ -123,8 +127,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
                                     </Button>
                                 )}
                             </>
-                        )}
-                        {!isEnabled && (
+                        ) : (
                             /*
                                 a11y-ignore
                                 Rule: "color-contrast" (Elements must have sufficient color contrast)
@@ -135,6 +138,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
                                 onClick={onClickAdd}
                                 aria-label={`Add credentials for ${codeHostDisplayName}`}
                                 variant="success"
+                                ref={buttonReference}
                             >
                                 Add credentials
                             </Button>
