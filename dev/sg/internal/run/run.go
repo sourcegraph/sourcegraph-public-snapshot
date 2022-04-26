@@ -129,29 +129,30 @@ func addToMacosFirewall(cmds []Command) func() error {
 				continue
 			}
 
-			binary := args[0]
-			if strings.HasPrefix(binary, ".bin/") || strings.HasPrefix(binary, "./.bin/") {
-				addException := script.Exec(shell.Join([]string{"sudo", firewallCmdPath, "--add", filepath.Join(root, binary)}))
-				msg, err := addException.String()
-				if err != nil {
-					stdout.Out.WriteLine(output.Linef(output.EmojiFailure, output.StyleBold, "%s: %s", binary, err.Error()))
-					continue
-				}
+			for _, binary := range args {
+				if strings.HasPrefix(binary, ".bin/") || strings.HasPrefix(binary, "./.bin/") {
+					addException := script.Exec(shell.Join([]string{"sudo", firewallCmdPath, "--add", filepath.Join(root, binary)}))
+					msg, err := addException.String()
+					if err != nil {
+						stdout.Out.WriteLine(output.Linef(output.EmojiFailure, output.StyleBold, "%s: %s", binary, err.Error()))
+						continue
+					}
 
-				// socketfilterfw helpfully always returns status 0, so we need to check
-				// the output to determine whether things worked or not. In all cases we
-				// don't error out becasue we want other commands to go through the firewall
-				// updates regardless.
-				switch {
-				case strings.Contains(msg, "does not exist"):
-					stdout.Out.WriteLine(output.Linef(output.EmojiFailure, output.StyleWarning, "%s: %s", binary, strings.TrimSpace(msg)))
+					// socketfilterfw helpfully always returns status 0, so we need to check
+					// the output to determine whether things worked or not. In all cases we
+					// don't error out becasue we want other commands to go through the firewall
+					// updates regardless.
+					switch {
+					case strings.Contains(msg, "does not exist"):
+						stdout.Out.WriteLine(output.Linef(output.EmojiFailure, output.StyleWarning, "%s: %s", binary, strings.TrimSpace(msg)))
 
-				case strings.Contains(msg, "added to firewall"):
-					stdout.Out.WriteLine(output.Linef(output.EmojiFailure, output.StyleSuccess, "%s: added to firewall", binary))
-					needsFirewallRestart = true
+					case strings.Contains(msg, "added to firewall"):
+						stdout.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "%s: added to firewall", binary))
+						needsFirewallRestart = true
 
-				default:
-					stdout.Out.WriteLine(output.Linef("", output.StyleSuggestion, "%s: %s", binary, strings.TrimSpace(msg)))
+					default:
+						stdout.Out.WriteLine(output.Linef("", output.StyleSuggestion, "%s: %s", binary, strings.TrimSpace(msg)))
+					}
 				}
 			}
 		}
