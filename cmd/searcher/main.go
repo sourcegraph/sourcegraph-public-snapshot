@@ -15,7 +15,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"golang.org/x/sync/errgroup"
 
@@ -38,6 +37,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	sglog "github.com/sourcegraph/sourcegraph/lib/log"
 )
 
