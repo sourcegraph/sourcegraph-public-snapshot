@@ -187,11 +187,12 @@ func main() {
 	stdlog.SetFlags(0)
 	conf.Init()
 	logging.Init()
-	defer log.Init(log.Resource{
+	syncLogs := log.Init(log.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
-	})()
+	})
+	defer syncLogs()
 	tracer.Init(conf.DefaultClient())
 	sentry.Init(conf.DefaultClient())
 	trace.Init()
