@@ -88,9 +88,6 @@
 	{{.Injected.BodyTop}}
 	<div id="root">
         {{ if .Context.SourcegraphDotComMode }}
-            <div id="please-upgrade-browser" class="d-none">
-                It looks like your current browser does not support Sourcegraph, Please upgrade to a modern browser such as <a href="https://www.google.com/chrome/downloads">Chrome</a> or <a href="https://www.mozilla.org/en-US/firefox/new/">Firefox</a>
-            </div>
             <script>
                 function canRunSourceGraph() {
                     "use strict";
@@ -104,8 +101,8 @@
                     return true;
                 }
                 if (!canRunSourceGraph()) {
-                    var element = document.getElementById("please-upgrade-browser");
-                    element.classList.remove("d-none");
+                    var element = document.getElementById("root");
+                    element.innerHTML="It looks like your current browser does not support Sourcegraph, Please upgrade to a modern browser such as <a href=\"https://www.google.com/chrome/downloads\">Chrome</a> or <a href=\"https://www.mozilla.org/en-US/firefox/new/\">Firefox</a>"
                 }
             </script>
         {{ end }}
