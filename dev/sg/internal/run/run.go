@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -80,7 +79,7 @@ func Commands(ctx context.Context, globalEnv map[string]string, addToMacOSFirewa
 	}
 
 	postInstall := func() error { return nil }
-	if addToMacOSFirewall || runtime.GOOS == "darwin" {
+	if addToMacOSFirewall {
 		postInstall = addToMacosFirewall(cmds)
 	}
 	err = waitForInstallation(cmdNames, installed, failures, okayToStart, postInstall)
