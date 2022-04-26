@@ -1,8 +1,9 @@
 import React, { useCallback } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, LoadingSpinner, Modal } from '@sourcegraph/wildcard'
+import { Button, Modal } from '@sourcegraph/wildcard'
 
+import { LoaderButton } from '../../../components/LoaderButton'
 import { BatchChangesCodeHostFields, BatchChangesCredentialFields } from '../../../graphql-operations'
 
 import { useDeleteBatchChangesCredential } from './backend'
@@ -61,15 +62,15 @@ export const RemoveCredentialModal: React.FunctionComponent<RemoveCredentialModa
                     <Button disabled={loading} className="mr-2" onClick={onCancel} outline={true} variant="secondary">
                         Cancel
                     </Button>
-                    <Button
+                    <LoaderButton
                         disabled={loading}
                         className="test-remove-credential-modal-submit"
                         onClick={onDelete}
                         variant="danger"
-                    >
-                        {loading && <LoadingSpinner />}
-                        Remove credentials
-                    </Button>
+                        loading={loading}
+                        alwaysShowLabel={true}
+                        label="Remove credentials"
+                    />
                 </div>
             </div>
         </Modal>

@@ -2,8 +2,9 @@ import React, { useCallback, useState } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Button, LoadingSpinner, Modal } from '@sourcegraph/wildcard'
+import { Button, Modal } from '@sourcegraph/wildcard'
 
+import { LoaderButton } from '../../../../components/LoaderButton'
 import { Scalars } from '../../../../graphql-operations'
 import { reenqueueChangesets as _reenqueueChangesets } from '../backend'
 
@@ -51,10 +52,14 @@ export const ReenqueueChangesetsModal: React.FunctionComponent<ReenqueueChangese
                 >
                     Cancel
                 </Button>
-                <Button onClick={onSubmit} disabled={isLoading === true} variant="primary">
-                    {isLoading === true && <LoadingSpinner />}
-                    Re-enqueue
-                </Button>
+                <LoaderButton
+                    onClick={onSubmit}
+                    disabled={isLoading === true}
+                    variant="primary"
+                    loading={isLoading === true}
+                    alwaysShowLabel={true}
+                    label="Re-enqueue"
+                />
             </div>
         </Modal>
     )
