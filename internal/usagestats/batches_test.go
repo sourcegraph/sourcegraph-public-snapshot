@@ -123,6 +123,12 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	changesetIDOne := 1
+	changesetIDTwo := 2
+	changesetIDFour := 4
+	changesetIDFive := 5
+	changesetIDSix := 6
+
 	// Create 6 changesets.
 	// 2 tracked: one OPEN, one MERGED.
 	// 4 created by a batch change: 2 open (one with diffstat, one without), 2 merged (one with diffstat, one without)
@@ -132,12 +138,12 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 			(id, repo_id, external_service_type, owned_by_batch_change_id, batch_change_ids, external_state, publication_state, diff_stat_added, diff_stat_changed, diff_stat_deleted)
 		VALUES
 		    -- tracked
-			(1, $1, 'github', NULL, '{"1": {"detached": false}}', 'OPEN',   'PUBLISHED', 9, 7, 5),
-			(2, $1, 'github', NULL, '{"2": {"detached": false}}', 'MERGED', 'PUBLISHED', 7, 9, 5),
+			($2, $1, 'github', NULL, '{"1": {"detached": false}}', 'OPEN',   'PUBLISHED', 9, 7, 5),
+			($3, $1, 'github', NULL, '{"2": {"detached": false}}', 'MERGED', 'PUBLISHED', 7, 9, 5),
 			-- created by batch change
-			(4,  $1, 'github', 1, '{"1": {"detached": false}}', 'OPEN',   'PUBLISHED', 5, 7, 9),
-			(5,  $1, 'github', 1, '{"1": {"detached": false}}', 'OPEN',   'PUBLISHED', NULL, NULL, NULL),
-			(6,  $1, 'github', 1, '{"1": {"detached": false}}', 'DRAFT',  'PUBLISHED', NULL, NULL, NULL),
+			($4,  $1, 'github', 1, '{"1": {"detached": false}}', 'OPEN',   'PUBLISHED', 5, 7, 9),
+			($5,  $1, 'github', 1, '{"1": {"detached": false}}', 'OPEN',   'PUBLISHED', NULL, NULL, NULL),
+			($6,  $1, 'github', 1, '{"1": {"detached": false}}', 'DRAFT',  'PUBLISHED', NULL, NULL, NULL),
 			(7,  $1, 'github', 2, '{"2": {"detached": false}}',  NULL,    'UNPUBLISHED', 9, 7, 5),
 			(8,  $1, 'github', 2, '{"2": {"detached": false}}', 'MERGED', 'PUBLISHED', 9, 7, 5),
 			(9,  $1, 'github', 2, '{"2": {"detached": false}}', 'MERGED', 'PUBLISHED', NULL, NULL, NULL),
@@ -145,17 +151,17 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 			(11, $1, 'github', 2, '{"2": {"detached": false}}', 'CLOSED', 'PUBLISHED', NULL, NULL, NULL),
 			(12, $1, 'github', 3, '{"3": {"detached": false}}', 'OPEN',   'PUBLISHED', 5, 7, 9),
 			(13, $1, 'github', 3, '{"3": {"detached": false}}', 'OPEN',   'PUBLISHED', NULL, NULL, NULL)
-	`, repo.ID)
+	`, repo.ID, changesetIDOne, changesetIDTwo, changesetIDFour, changesetIDFive, changesetIDSix)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// inactive executor last seen timestamp
+	// inactive executors last seen timestamp
 	executorHeartbeatDate1 := now.Add(-16 * time.Second) // 16 seconds ago
 	executorHeartbeatDate2 := now.Add(-1 * time.Hour)    // 1 hour ago
 	executorHeartbeatDate3 := now.Add(-24 * time.Hour)   // 1 day ago
 
-	// active executor last seen timestamp
+	// active executors last seen timestamp
 	executorHeartbeatDate4 := now.Add(12 * time.Second) // 12 seconds ago
 	executorHeartbeatDate5 := now.Add(3 * time.Second)  // 3 seconds ago
 
@@ -165,15 +171,47 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 		INSERT INTO executor_heartbeats
 			(id, hostname, queue_name,os,architecture,docker_version,executor_version,git_version,ignite_version,src_cli_version,first_seen_at,last_seen_at)
 		VALUES
-			-- inactive
+			-- inactive executors
 			(83505,'test-hostname-1.0','batches','darwin','arm64','20.10.12','0.0.0+dev','2.35.1','','dev','2022-04-20 17:09:18.010637+02',$1::timestamp),
 			(83595,'test-hostname-2.0','batches','darwin','arm64','20.10.12','0.0.0+dev','2.35.1','','dev','2022-04-20 17:16:51.252115+02',$2::timestamp),
 			(83603,'test-hostname-3.0','batches','darwin','arm64','20.10.12','0.0.0+dev','2.35.1','','dev','2022-04-20 17:18:08.288158+02', $3::timestamp),
 
-			-- active
+			-- active executors
 			(8450, 'test-hostname-1.1', 'batches', 'darwin', 'arm64', '20.10.12', '0.0.0+dev','2.35.1','','dev','2022-04-20 17:09:18.010637+02', $4::timestamp),
 			(8451, 'test-hostname-4.0', 'batches', 'darwin', 'arm64', '20.10.12', '0.0.0+dev','2.35.1','','dev','2022-04-20 17:09:18.010637+02', $5::timestamp)
 	`, executorHeartbeatDate1, executorHeartbeatDate2, executorHeartbeatDate3, executorHeartbeatDate4, executorHeartbeatDate5)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	batchChangeID := 1
+
+	// Create different changeset jobs, consisting of the following job types
+	// 2 published, 2 comment, 1 closed, 1 merged, 1 detached, 1 reenqueued
+	_, err = db.ExecContext(context.Background(), `
+		INSERT INTO changeset_jobs
+			(id, bulk_group, user_id, batch_change_id, changeset_id, job_type, payload, state, failure_message, started_at, finished_at, process_after, num_resets, num_failures, execution_logs, created_at, updated_at, worker_hostname, last_heartbeat_at, queued_at)
+		VALUES
+			-- publish jobs
+			(1, '2dT7VN2BN6U', $1, $2, $3, 'publish', '{"draft":true}', 'completed', NULL, '2022-03-06 02:24:46.000697+01', '2022-03-22 03:44:20.56881+01', NULL, 0, 0, NULL, '2022-03-22 03:44:17.022395+01', '2022-03-22 03:44:17.022395+01', 'test-hostname-1.0', NULL, NULL),
+			(2, '2dT7VN2BN7U', $1, $2, $4, 'publish', '{"draft":true}', 'completed', NULL, '2022-03-06 02:24:46.000697+01', '2022-03-22 03:44:20.56881+01', NULL, 0, 0, NULL, '2022-03-22 03:44:17.022395+01', '2022-03-22 03:44:17.022395+01', 'test-hostname-1.0', NULL, NULL),
+
+			-- comment jobs
+			(3, '2dT7VN2BN8U', $1, $2, $5, 'commentatore', '{"message":"hold"}', 'completed', NULL, '2022-03-06 02:24:46.000697+01', '2022-03-22 03:44:20.56881+01', NULL, 0, 0, NULL, '2022-03-22 03:44:17.022395+01', '2022-03-22 03:44:17.022395+01', 'test-hostname-1.0', NULL, NULL),
+			(4, '2dT7VN2BN9U', $1, $2, $6, 'commentatore', '{"message":"hold"}', 'completed', NULL, '2022-03-06 02:24:46.000697+01', '2022-03-22 03:44:20.56881+01', NULL, 0, 0, NULL, '2022-03-22 03:44:17.022395+01', '2022-03-22 03:44:17.022395+01', 'test-hostname-1.0', NULL, NULL),
+
+			-- close jobs
+			(5, '3dT7VN2BN6U', $1, $2, $7, 'close', '{"draft":true}', 'completed', NULL, '2022-03-06 02:24:46.000697+01', '2022-03-22 03:44:20.56881+01', NULL, 0, 0, NULL, '2022-03-22 03:44:17.022395+01', '2022-03-22 03:44:17.022395+01', 'test-hostname-1.0', NULL, NULL),
+
+			-- merge jobs
+			(6, '3dT7VN2BN7U', $1, $2, $3, 'merge', '{"draft":true}', 'completed', NULL, '2022-03-06 02:24:46.000697+01', '2022-03-22 03:44:20.56881+01', NULL, 0, 0, NULL, '2022-03-22 03:44:17.022395+01', '2022-03-22 03:44:17.022395+01', 'test-hostname-1.0', NULL, NULL),
+
+			-- detached jobs
+			(7, '3dT7VN2BN8U', $1, $2, $5, 'detach', '{"draft":true}', 'completed', NULL, '2022-03-06 02:24:46.000697+01', '2022-03-22 03:44:20.56881+01', NULL, 0, 0, NULL, '2022-03-22 03:44:17.022395+01', '2022-03-22 03:44:17.022395+01', 'test-hostname-1.0', NULL, NULL),
+
+			-- reenqueued jobs
+			(8, '3dT7VN2BN3U', $1, $2, $6, 'reenqueue', '{"draft":true}', 'completed', NULL, '2022-03-06 02:24:46.000697+01', '2022-03-22 03:44:20.56881+01', NULL, 0, 0, NULL, '2022-03-22 03:44:17.022395+01', '2022-03-22 03:44:17.022395+01', 'test-hostname-1.0', NULL, NULL)
+	`, user.ID, batchChangeID, changesetIDOne, changesetIDTwo, changesetIDFour, changesetIDFive, changesetIDSix)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -225,6 +263,14 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 			// batch change 3 should be ignored because it's too old
 		},
 		ActiveExectutorsCount: 2,
+		BulkOperationsCount: map[string]int32{
+			"commentatore": 2,
+			"close":        1,
+			"publish":      2,
+			"merge":        1,
+			"detach":       1,
+			"reenqueue":    1,
+		},
 	}
 	if diff := cmp.Diff(want, have); diff != "" {
 		t.Fatal(diff)

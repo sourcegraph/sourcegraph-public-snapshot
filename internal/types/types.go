@@ -849,6 +849,9 @@ type BatchChangesUsageStatistics struct {
 	// ActiveExecutorsCount is the count of executors that have had a heartbeat in the last
 	// 15 seconds.
 	ActiveExectutorsCount int16
+
+	// BulkOperationsCount is the count of bulk operations used to manage changesets
+	BulkOperationsCount map[string]int32
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change

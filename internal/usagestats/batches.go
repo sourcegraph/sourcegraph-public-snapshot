@@ -87,6 +87,26 @@ WHERE name IN ('BatchSpecCreated', 'ViewBatchChangeApplyPage', 'ViewBatchChangeD
 		return nil, err
 	}
 
+	const bulkOperationsCountQuery = `SELECT job_type, count(id) FROM changeset_jobs GROUP BY job_type;`
+
+	rows, err := db.QueryContext(ctx, bulkOperationsCountQuery)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	stats.BulkOperationsCount = make(map[string]int32)
+
+	for rows.Next() {
+		var jobType string
+		var count int32
+		if err = rows.Scan(&jobType, &count); err != nil {
+			return nil, err
+		}
+
+		stats.BulkOperationsCount[jobType] = count
+	}
+
 	queryUniqueEventLogUsersCurrentMonth := func(events []*sqlf.Query) *sql.Row {
 		q := sqlf.Sprintf(
 			`SELECT COUNT(DISTINCT user_id) FROM event_logs WHERE name IN (%s) AND timestamp >= date_trunc('month', CURRENT_DATE);`,
@@ -176,7 +196,7 @@ ORDER BY batch_change_counts.creation_week ASC
 `
 
 	stats.BatchChangesCohorts = []*types.BatchChangesCohort{}
-	rows, err := db.QueryContext(ctx, batchChangesCohortQuery)
+	rows, err = db.QueryContext(ctx, batchChangesCohortQuery)
 	if err != nil {
 		return nil, err
 	}
