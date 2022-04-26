@@ -41,8 +41,8 @@ import (
 func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 	maxResults := b.MaxResults(searchInputs.DefaultLimit())
 	types, _ := b.IncludeExcludeValues(query.FieldType)
-	resultTypes := search.ComputeResultTypes(types, b, searchInputs.PatternType)
-	patternInfo := search.ToTextPatternInfo(b, resultTypes, searchInputs.Protocol)
+	resultTypes := computeResultTypes(types, b, searchInputs.PatternType)
+	patternInfo := toTextPatternInfo(b, resultTypes, searchInputs.Protocol)
 
 	// searcher to use full deadline if timeout: set or we are streaming.
 	useFullDeadline := b.GetTimeout() != nil || b.Count() != nil || searchInputs.Protocol == search.Streaming
@@ -312,6 +312,105 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 	}
 
 	return job, nil
+}
+
+func mapSlice(values []string, f func(string) string) []string {
+	result := make([]string, len(values))
+	for i, v := range values {
+		result[i] = f(v)
+	}
+	return result
+}
+
+func count(q query.Basic, p search.Protocol) int {
+	if count := q.Count(); count != nil {
+		return *count
+	}
+
+	if q.IsStructural() {
+		return limits.DefaultMaxSearchResults
+	}
+
+	switch p {
+	case search.Batch:
+		return limits.DefaultMaxSearchResults
+	case search.Streaming:
+		return limits.DefaultMaxSearchResultsStreaming
+	}
+	panic("unreachable")
+}
+
+// toTextPatternInfo converts a an atomic query to internal values that drive
+// text search. An atomic query is a Basic query where the Pattern is either
+// nil, or comprises only one Pattern node (hence, an atom, and not an
+// expression). See TextPatternInfo for the values it computes and populates.
+func toTextPatternInfo(q query.Basic, resultTypes result.Types, p search.Protocol) *search.TextPatternInfo {
+	// Handle file: and -file: filters.
+	filesInclude, filesExclude := q.IncludeExcludeValues(query.FieldFile)
+	// Handle lang: and -lang: filters.
+	langInclude, langExclude := q.IncludeExcludeValues(query.FieldLang)
+	filesInclude = append(filesInclude, mapSlice(langInclude, search.LangToFileRegexp)...)
+	filesExclude = append(filesExclude, mapSlice(langExclude, search.LangToFileRegexp)...)
+	filesReposMustInclude, filesReposMustExclude := q.IncludeExcludeValues(query.FieldRepoHasFile)
+	selector, _ := filter.SelectPathFromString(q.FindValue(query.FieldSelect)) // Invariant: select is validated
+	count := count(q, p)
+
+	// Ugly assumption: for a literal search, the IsRegexp member of
+	// TextPatternInfo must be set true. The logic assumes that a literal
+	// pattern is an escaped regular expression.
+	isRegexp := q.IsLiteral() || q.IsRegexp()
+
+	if q.Pattern == nil {
+		// For compatibility: A nil pattern implies isRegexp is set to
+		// true. This has no effect on search logic.
+		isRegexp = true
+	}
+
+	negated := false
+	if p, ok := q.Pattern.(query.Pattern); ok {
+		negated = p.Negated
+	}
+
+	return &search.TextPatternInfo{
+		// Values dependent on pattern atom.
+		IsRegExp:        isRegexp,
+		IsStructuralPat: q.IsStructural(),
+		IsCaseSensitive: q.IsCaseSensitive(),
+		FileMatchLimit:  int32(count),
+		Pattern:         q.PatternString(),
+		IsNegated:       negated,
+
+		// Values dependent on parameters.
+		IncludePatterns:              filesInclude,
+		ExcludePattern:               search.UnionRegExps(filesExclude),
+		FilePatternsReposMustInclude: filesReposMustInclude,
+		FilePatternsReposMustExclude: filesReposMustExclude,
+		PatternMatchesPath:           resultTypes.Has(result.TypePath),
+		PatternMatchesContent:        resultTypes.Has(result.TypeFile),
+		Languages:                    langInclude,
+		PathPatternsAreCaseSensitive: q.IsCaseSensitive(),
+		CombyRule:                    q.FindValue(query.FieldCombyRule),
+		Index:                        q.Index(),
+		Select:                       selector,
+	}
+}
+
+// computeResultTypes returns result types based three inputs: `type:...` in the query,
+// the `pattern`, and top-level `searchType` (coming from a GQL value).
+func computeResultTypes(types []string, b query.Basic, searchType query.SearchType) result.Types {
+	var rts result.Types
+	if searchType == query.SearchTypeStructural && !b.IsEmptyPattern() {
+		rts = result.TypeStructural
+	} else {
+		if len(types) == 0 {
+			rts = result.TypeFile | result.TypePath | result.TypeRepo
+		} else {
+			for _, t := range types {
+				rts = rts.With(result.TypeFromString[t])
+			}
+		}
+	}
+	return rts
 }
 
 func toRepoOptions(b query.Basic, userSettings *schema.Settings) search.RepoOptions {
