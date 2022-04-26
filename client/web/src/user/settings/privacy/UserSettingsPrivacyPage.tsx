@@ -5,7 +5,7 @@ import { debounce } from 'lodash'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { Button, Checkbox, Container, Link, PageHeader } from '@sourcegraph/wildcard'
+import { Button, Checkbox, Container, Link, PageHeader, screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 import { refreshAuthenticatedUser } from '../../../auth'
 import { PageTitle } from '../../../components/PageTitle'
@@ -48,6 +48,7 @@ export const UserSettingsPrivacyPage: React.FunctionComponent<Props> = ({ authen
                     isSearchable: !disableSearchable,
                 },
             })
+            screenReaderAnnounce('Saved')
             // The edited user is the current user, immediately reflect the changes in the UI.
             // TODO: Migrate this to use the Apollo cache
             await refreshAuthenticatedUser().toPromise()
