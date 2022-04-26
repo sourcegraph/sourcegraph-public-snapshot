@@ -19,6 +19,7 @@ type Services struct {
 	GitHubWebhook                 webhooks.Registerer
 	GitLabWebhook                 http.Handler
 	BitbucketServerWebhook        http.Handler
+	BitbucketCloudWebhook         http.Handler
 	NewCodeIntelUploadHandler     NewCodeIntelUploadHandler
 	NewExecutorProxyHandler       NewExecutorProxyHandler
 	NewGitHubAppCloudSetupHandler NewGitHubAppCloudSetupHandler
@@ -58,6 +59,7 @@ func DefaultServices() Services {
 		GitHubWebhook:                 registerFunc(func(webhook *webhooks.GitHubWebhook) {}),
 		GitLabWebhook:                 makeNotFoundHandler("gitlab webhook"),
 		BitbucketServerWebhook:        makeNotFoundHandler("bitbucket server webhook"),
+		BitbucketCloudWebhook:         makeNotFoundHandler("bitbucket cloud webhook"),
 		NewCodeIntelUploadHandler:     func(_ bool) http.Handler { return makeNotFoundHandler("code intel upload") },
 		NewExecutorProxyHandler:       func() http.Handler { return makeNotFoundHandler("executor proxy") },
 		NewGitHubAppCloudSetupHandler: func() http.Handler { return makeNotFoundHandler("Sourcegraph Cloud GitHub App setup") },

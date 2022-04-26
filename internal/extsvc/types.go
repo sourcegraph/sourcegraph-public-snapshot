@@ -356,6 +356,8 @@ func WebhookURL(kind string, externalServiceID int64, externalURL string) string
 		path = "bitbucket-server-webhooks"
 	case KindGitLab:
 		path = "gitlab-webhooks"
+	case KindBitbucketCloud:
+		path="bitbucket-cloud-webhooks"
 	default:
 		return ""
 	}
