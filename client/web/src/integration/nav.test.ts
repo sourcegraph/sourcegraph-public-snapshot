@@ -124,8 +124,8 @@ describe('GlobalNavbar', () => {
             expect(active).toEqual('true')
         })
 
-        test('is not highlighted on /notebooks page', async () => {
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks')
+        test('is not highlighted on batch changes page', async () => {
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/batch-changes')
 
             const active = await driver.page.evaluate(() =>
                 document.querySelector('[data-test-id="/search"]')?.getAttribute('data-test-active')
