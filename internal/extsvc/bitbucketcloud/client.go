@@ -29,8 +29,29 @@ import (
 // The metric generated here will be named as "src_bitbucket_cloud_requests_total".
 var requestCounter = metrics.NewRequestMeter("bitbucket_cloud", "Total number of requests sent to the Bitbucket Cloud API.")
 
-// Client access a Bitbucket Cloud via the REST API 2.0.
-type Client struct {
+type Client interface {
+	Authenticator() auth.Authenticator
+	WithAuthenticator(a auth.Authenticator) Client
+
+	Ping(ctx context.Context) error
+
+	CreatePullRequest(ctx context.Context, repo *Repo, input PullRequestInput) (*PullRequest, error)
+	DeclinePullRequest(ctx context.Context, repo *Repo, id int64) (*PullRequest, error)
+	GetPullRequest(ctx context.Context, repo *Repo, id int64) (*PullRequest, error)
+	GetPullRequestStatuses(repo *Repo, id int64) (*PaginatedResultSet, error)
+	UpdatePullRequest(ctx context.Context, repo *Repo, id int64, input PullRequestInput) (*PullRequest, error)
+	CreatePullRequestComment(ctx context.Context, repo *Repo, id int64, input CommentInput) (*Comment, error)
+	MergePullRequest(ctx context.Context, repo *Repo, id int64, opts MergePullRequestOpts) (*PullRequest, error)
+
+	Repo(ctx context.Context, namespace, slug string) (*Repo, error)
+	Repos(ctx context.Context, pageToken *PageToken, accountName string) ([]*Repo, *PageToken, error)
+	ForkRepository(ctx context.Context, upstream *Repo, input ForkInput) (*Repo, error)
+
+	CurrentUser(ctx context.Context) (*User, error)
+}
+
+// client access a Bitbucket Cloud via the REST API 2.0.
+type client struct {
 	// HTTP Client used to communicate with the API
 	httpClient httpcli.Doer
 
@@ -49,7 +70,11 @@ type Client struct {
 // NewClient creates a new Bitbucket Cloud API client from the given external
 // service configuration. If a nil httpClient is provided, http.DefaultClient
 // will be used.
-func NewClient(urn string, config *schema.BitbucketCloudConnection, httpClient httpcli.Doer) (*Client, error) {
+func NewClient(urn string, config *schema.BitbucketCloudConnection, httpClient httpcli.Doer) (Client, error) {
+	return newClient(urn, config, httpClient)
+}
+
+func newClient(urn string, config *schema.BitbucketCloudConnection, httpClient httpcli.Doer) (*client, error) {
 	if httpClient == nil {
 		httpClient = httpcli.ExternalDoer
 	}
@@ -69,7 +94,7 @@ func NewClient(urn string, config *schema.BitbucketCloudConnection, httpClient h
 		return nil, err
 	}
 
-	return &Client{
+	return &client{
 		httpClient: httpClient,
 		URL:        extsvc.NormalizeBaseURL(apiURL),
 		Auth: &auth.BasicAuth{
@@ -81,6 +106,10 @@ func NewClient(urn string, config *schema.BitbucketCloudConnection, httpClient h
 	}, nil
 }
 
+func (c *client) Authenticator() auth.Authenticator {
+	return c.Auth
+}
+
 // WithAuthenticator returns a new Client that uses the same configuration,
 // HTTPClient, and RateLimiter as the current Client, except authenticated with
 // the given authenticator instance.
@@ -88,8 +117,8 @@ func NewClient(urn string, config *schema.BitbucketCloudConnection, httpClient h
 // Note that using an unsupported Authenticator implementation may result in
 // unexpected behaviour, or (more likely) errors. At present, only BasicAuth is
 // supported.
-func (c *Client) WithAuthenticator(a auth.Authenticator) *Client {
-	return &Client{
+func (c *client) WithAuthenticator(a auth.Authenticator) Client {
+	return &client{
 		httpClient: c.httpClient,
 		URL:        c.URL,
 		Auth:       a,
@@ -99,7 +128,7 @@ func (c *Client) WithAuthenticator(a auth.Authenticator) *Client {
 
 // Ping makes a request to the API root, thereby validating that the current
 // authenticator is valid.
-func (c *Client) Ping(ctx context.Context) error {
+func (c *client) Ping(ctx context.Context) error {
 	// This relies on an implementation detail: Bitbucket Cloud doesn't have an
 	// API endpoint at /2.0/, but does the authentication check before returning
 	// the 404, so we can distinguish based on the response code.
@@ -118,7 +147,7 @@ func (c *Client) Ping(ctx context.Context) error {
 	return nil
 }
 
-func (c *Client) page(ctx context.Context, path string, qry url.Values, token *PageToken, results interface{}) (*PageToken, error) {
+func (c *client) page(ctx context.Context, path string, qry url.Values, token *PageToken, results interface{}) (*PageToken, error) {
 	if qry == nil {
 		qry = make(url.Values)
 	}
@@ -136,7 +165,7 @@ func (c *Client) page(ctx context.Context, path string, qry url.Values, token *P
 // API 2.0 pagination renders the full link of next page in the response.
 // See more at https://developer.atlassian.com/bitbucket/api/2/reference/meta/pagination
 // However, for the very first request, use method page instead.
-func (c *Client) reqPage(ctx context.Context, url string, results interface{}) (*PageToken, error) {
+func (c *client) reqPage(ctx context.Context, url string, results interface{}) (*PageToken, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
@@ -158,7 +187,7 @@ func (c *Client) reqPage(ctx context.Context, url string, results interface{}) (
 	return &next, nil
 }
 
-func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) error {
+func (c *client) do(ctx context.Context, req *http.Request, result interface{}) error {
 	req.URL = c.URL.ResolveReference(req.URL)
 
 	// If the request doesn't expect a body, then including a content-type can

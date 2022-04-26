@@ -13,6 +13,8 @@ import (
 	"sync"
 	"time"
 
+	"bitbucket.org/creachadair/shell"
+	"github.com/bitfield/script"
 	"github.com/grafana/regexp"
 	"github.com/rjeczalik/notify"
 
@@ -77,7 +79,10 @@ func Commands(ctx context.Context, globalEnv map[string]string, addToMacOSFirewa
 		}(cmd, chs[i])
 	}
 
-	postInstall := newPostInstall(ctx, cmds, addToMacOSFirewall)
+	postInstall := func() error { return nil }
+	if addToMacOSFirewall || runtime.GOOS == "darwin" {
+		postInstall = addToMacosFirewall(cmds)
+	}
 	err = waitForInstallation(cmdNames, installed, failures, okayToStart, postInstall)
 	if err != nil {
 		return err
@@ -94,38 +99,70 @@ func Commands(ctx context.Context, globalEnv map[string]string, addToMacOSFirewa
 	}
 }
 
-func newPostInstall(ctx context.Context, cmds []Command, addToMacOSFirewall bool) func() error {
-	if !addToMacOSFirewall || runtime.GOOS != "darwin" {
-		return func() error { return nil }
-	}
-
+// addToMacosFirewall returns a callback that is used to add binaries used by the given
+// commands to the MacOS firewall.
+func addToMacosFirewall(cmds []Command) func() error {
 	return func() error {
 		root, err := root.RepositoryRoot()
 		if err != nil {
 			return err
 		}
 
-		fwCmdPath := "/usr/libexec/ApplicationFirewall/socketfilterfw"
 		stdout.Out.WriteLine(output.Linef(output.EmojiWarningSign, output.StyleWarning, "You may be prompted to enter your password to add exceptions to the firewall."))
-		fcmd := exec.CommandContext(ctx, "sudo", fwCmdPath, "--setglobalstate", "off")
-		err = fcmd.Run()
-		if err != nil {
-			return err
-		}
+
+		// http://www.manpagez.com/man/8/socketfilterfw/
+		firewallCmdPath := "/usr/libexec/ApplicationFirewall/socketfilterfw"
+		var needsFirewallRestart bool
+
+		// Add binaries in '.bin' to firewall
 		for _, cmd := range cmds {
-			if strings.HasPrefix(cmd.Cmd, ".bin/") {
-				fcmd = exec.CommandContext(ctx, "sudo", fwCmdPath, "--add", filepath.Join(root, cmd.Cmd))
-				err = fcmd.Run()
+			// Some commands use env variables that may be from command env or global env,
+			// so do substitutions and get the binary we want to work with.
+			args, ok := shell.Split(os.Expand(cmd.Cmd, func(key string) string {
+				if v, exists := cmd.Env[key]; exists {
+					return v
+				}
+				return os.Getenv(key)
+			}))
+			if !ok || len(args) == 0 {
+				stdout.Out.WriteLine(output.Linef(output.EmojiFailure, output.StyleSuggestion, "%s: invalid command", cmd.Cmd))
+				continue
+			}
+
+			binary := args[0]
+			if strings.HasPrefix(binary, ".bin/") || strings.HasPrefix(binary, "./.bin/") {
+				addException := script.Exec(shell.Join([]string{"sudo", firewallCmdPath, "--add", filepath.Join(root, binary)}))
+				msg, err := addException.String()
 				if err != nil {
-					return err
+					stdout.Out.WriteLine(output.Linef(output.EmojiFailure, output.StyleBold, "%s: %s", binary, err.Error()))
+					continue
+				}
+
+				// socketfilterfw helpfully always returns status 0, so we need to check
+				// the output to determine whether things worked or not. In all cases we
+				// don't error out becasue we want other commands to go through the firewall
+				// updates regardless.
+				switch {
+				case strings.Contains(msg, "does not exist"):
+					stdout.Out.WriteLine(output.Linef(output.EmojiFailure, output.StyleWarning, "%s: %s", binary, strings.TrimSpace(msg)))
+
+				case strings.Contains(msg, "added to firewall"):
+					stdout.Out.WriteLine(output.Linef(output.EmojiFailure, output.StyleSuccess, "%s: added to firewall", binary))
+					needsFirewallRestart = true
+
+				default:
+					stdout.Out.WriteLine(output.Linef("", output.StyleSuggestion, "%s: %s", binary, strings.TrimSpace(msg)))
 				}
 			}
 		}
-		fcmd = exec.CommandContext(ctx, "sudo", fwCmdPath, "--setglobalstate", "on")
-		err = fcmd.Run()
-		if err != nil {
-			return err
+
+		if needsFirewallRestart {
+			restartFirewall := script.
+				Exec(shell.Join([]string{"sudo", firewallCmdPath, "--setglobalstate", "off"})).
+				Exec(shell.Join([]string{"sudo", firewallCmdPath, "--setglobalstate", "on"}))
+			return restartFirewall.Error()
 		}
+
 		return nil
 	}
 }
@@ -172,13 +209,15 @@ func waitForInstallation(cmdNames map[string]struct{}, installed chan string, fa
 			// Everything installed!
 			if len(cmdNames) == 0 {
 				progress.Complete()
-				stdout.Out.Write("")
-				stdout.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Everything installed! Booting up the system!"))
-				stdout.Out.Write("")
 				err := postInstallCallback()
 				if err != nil {
 					return err
 				}
+
+				stdout.Out.Write("")
+				stdout.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Everything installed! Booting up the system!"))
+				stdout.Out.Write("")
+
 				close(okayToStart)
 				return nil
 			}
