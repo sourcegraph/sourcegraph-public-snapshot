@@ -4,8 +4,9 @@ import * as H from 'history'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isErrorLike, asError, pluralize } from '@sourcegraph/common'
-import { Button, AlertLink, LoadingSpinner, CardBody, Card, Alert } from '@sourcegraph/wildcard'
+import { Button, AlertLink, CardBody, Card, Alert } from '@sourcegraph/wildcard'
 
+import { LoaderButton } from '../../../components/LoaderButton'
 import { Scalars } from '../../../graphql-operations'
 
 import { closeBatchChange as _closeBatchChange } from './backend'
@@ -103,14 +104,15 @@ export const BatchChangeCloseAlert: React.FunctionComponent<BatchChangeCloseAler
                         >
                             Cancel
                         </Button>
-                        <Button
+                        <LoaderButton
                             className="test-batches-confirm-close-btn"
                             onClick={onClose}
                             disabled={isClosing === true || !viewerCanAdminister}
                             variant="danger"
-                        >
-                            {isClosing === true && <LoadingSpinner />} Close batch change
-                        </Button>
+                            loading={isClosing === true}
+                            label="Close batch change"
+                            alwaysShowLabel={true}
+                        />
                     </div>
                 </CardBody>
             </Card>
