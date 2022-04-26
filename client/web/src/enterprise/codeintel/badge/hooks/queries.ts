@@ -1,7 +1,7 @@
 import { gql } from '@sourcegraph/http-client'
 
-import { lsifIndexFieldsFragment } from './indexes/hooks/types'
-import { lsifUploadFieldsFragment } from './uploads/hooks/types'
+import { lsifIndexFieldsFragment } from '../../indexes/hooks/types'
+import { lsifUploadFieldsFragment } from '../../uploads/hooks/types'
 
 export const codeIntelStatusQuery = gql`
     query CodeIntelStatus($repository: String!, $commit: String!, $path: String!) {
