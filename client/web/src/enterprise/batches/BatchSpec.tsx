@@ -88,6 +88,7 @@ export const BatchSpecDownloadLink: React.FunctionComponent<BatchSpecDownloadLin
     }
 )
 
+// TODO: Consider merging this component with BatchSpecDownloadLink
 export const BatchSpecDownloadButton: React.FunctionComponent<
     BatchSpecProps & Pick<BatchChangeFields, 'name'>
 > = React.memo(function BatchSpecDownloadButton(props) {
