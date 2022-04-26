@@ -640,7 +640,7 @@ changesetTemplate:
 
 export function getTemplateFn(kind: string | null): ((name: string) => string) | undefined {
     if (!kind) {
-        return goCheckerS1039Template
+        return undefined
     }
 
     switch (kind) {
@@ -684,7 +684,7 @@ export function getTemplateFn(kind: string | null): ((name: string) => string) |
             return goCheckerS1038Template
         case 'goCheckerS1039':
             return goCheckerS1039Template
+        default:
+            return undefined
     }
-
-    return goCheckerS1039Template
 }
