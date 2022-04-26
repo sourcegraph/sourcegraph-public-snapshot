@@ -90,12 +90,20 @@ To enabled self-serve account unlock through emails, add the following lines to 
 {
   // Validity expressed in minutes of the unlock account token
   "auth.unlockAccountLinkExpiry": 30,
-  // Base64 encoded HMAC Signing key to sign a JWT token, which is attached to each invitation URL
+  // Base64-encoded HMAC signing key to sign the JWT token for account unlock URLs
   "auth.unlockAccountLinkSigningKey": "your-signing-key",
 }
 ```
 
-To generate the signing key, TODO
+The `ssh-keygen` command can be used to generate and encode the signing key, for example:
+
+```bash
+$ ssh-keygen -t ed25519 -a 128 -f auth.unlockAccountLinkSigningKey
+$ base64 auth.unlockAccountLinkSigningKey | tr -d '\n'
+LS0tLS1CRUdJTiBPUEVOU1NIIFBSSVZBVEUgS0VZLS0tLS0KYjNCbGJu...
+```
+
+Copy the result of the `base64` command as the value of the `"auth.unlockAccountLinkSigningKey"`.
 
 ## GitHub
 
