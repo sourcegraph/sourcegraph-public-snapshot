@@ -316,19 +316,19 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
                                 extensionsController={extensionsController}
                                 outlineContainerElement={outlineContainerElement.current}
                             />
-                            <div className={styles.spacer}>
-                                {showNotepadCTA && (
-                                    <NotepadCTA
-                                        onEnable={() => {
-                                            telemetryService.log(NOTEPAD_ENABLED_EVENT)
-                                            setNotepadCTASeen(true)
-                                            setNotepadEnabled(true)
-                                        }}
-                                        onClose={() => setNotepadCTASeen(true)}
-                                    />
-                                )}
-                            </div>
                         </>
+                    )}
+                </div>
+                <div className={styles.spacer}>
+                    {showNotepadCTA && (
+                        <NotepadCTA
+                            onEnable={() => {
+                                telemetryService.log(NOTEPAD_ENABLED_EVENT)
+                                setNotepadCTASeen(true)
+                                setNotepadEnabled(true)
+                            }}
+                            onClose={() => setNotepadCTASeen(true)}
+                        />
                     )}
                 </div>
             </div>

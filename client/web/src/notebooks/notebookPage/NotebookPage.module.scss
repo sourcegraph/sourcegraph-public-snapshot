@@ -6,14 +6,6 @@
     display: flex;
 }
 
-.spacer {
-    // Allows scrolling past last blocks in the notebook
-    // for easier editing.
-    height: 40vh;
-    display: flex;
-    align-items: flex-end;
-}
-
 .auto-save-indicator {
     font-size: 1rem !important;
     width: 1rem !important;
@@ -35,14 +27,32 @@
     flex: 3;
     overflow: hidden auto;
     min-width: #{$viewport-lg};
+    display: flex;
+    flex-direction: column;
+
+    @media (--lg-breakpoint-down) {
+        min-width: 0;
+    }
 
     .content {
         max-width: #{$viewport-xl};
         padding: 0 1rem;
+        // Content should never shrink, but the spacer should take up the
+        // remaining space on the page.
+        flex: none;
     }
 
-    @media (--lg-breakpoint-down) {
-        min-width: 0;
+    .spacer {
+        // Allows scrolling past last blocks in the notebook
+        // for easier editing.
+        min-height: 20vh;
+        // Spacer should never shrink. This makes sure that (1) there is always
+        // space between the bottom of the notebookpage and the screen and (2) the
+        // notepad CTA doesn't overlap with notebook content.
+        flex: 1 0 auto;
+        display: flex;
+        // Aligns notepad CTA at the bottom of the page
+        align-items: flex-end;
     }
 }
 
@@ -51,6 +61,7 @@
     bottom: 0;
     max-width: #{$viewport-md};
     margin: auto;
+    margin-top: 8rem;
     margin-bottom: 1rem;
 
     &--close-button {
