@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 
 import classNames from 'classnames'
 import AlertIcon from 'mdi-react/AlertIcon'
@@ -90,31 +90,47 @@ export const RepositoryMenu: React.FunctionComponent<RepositoryMenuProps> = ({
     // TODO - need to inline UserFacingRepositoryMenuContent here
     const needsAttention = false
 
+    const [isNew, setIsNew] = useState<boolean | undefined>(undefined)
     const [badgeUsed, setBadgeUsed] = useTemporarySetting('codeintel.badge.used', false)
-    const [isNew, setNew] = useState<boolean | undefined>(showBadgeCta)
+    const [menuClosed, setMenuClosed] = useState(false)
+    const onContentClose = useCallback(() => setMenuClosed(true), [setMenuClosed])
 
     useEffect(() => {
-        setNew(oldValue =>
-            // Don't update if old value is already set (either way)
-            // or if the temporary settings has not yet been loaded.
-            badgeUsed === undefined || oldValue !== undefined ? oldValue : !badgeUsed
-        )
-    }, [setNew, badgeUsed])
+        if (badgeUsed !== undefined) {
+            setIsNew(oldValue => {
+                if (oldValue !== undefined) {
+                    return oldValue
+                }
 
-    const forNerds =
-        !isErrorLike(props.settingsCascade.final) &&
-        props.settingsCascade.final?.experimentalFeatures?.codeIntelRepositoryBadge?.forNerds
+                // Set initial value of isNew
+                return !badgeUsed
+            })
+        }
+    }, [setIsNew, badgeUsed])
+
+    useEffect(() => {
+        if (menuClosed === true) {
+            // Remove new status when the menu closes
+            setIsNew(false)
+        }
+    }, [setIsNew, menuClosed])
 
     const showDotError = hasUploadErrors || hasIndexErrors
     const showDotAttention = needsAttention || isNew
     const dotStyle = showDotError ? styles.braindotError : showDotAttention ? styles.braindotAttention : ''
+
+    const forNerds =
+        !isErrorLike(props.settingsCascade.final) &&
+        props.settingsCascade.final?.experimentalFeatures?.codeIntelRepositoryBadge?.forNerds
 
     return (
         <Menu className="btn-icon">
             <>
                 <MenuButton
                     className={classNames('text-decoration-none', styles.braindot, dotStyle)}
-                    onClick={() => setBadgeUsed(true)}
+                    onClick={() => {
+                        setBadgeUsed(true)
+                    }}
                 >
                     <Icon as={BrainIcon} />
                 </MenuButton>
@@ -145,7 +161,7 @@ export const RepositoryMenu: React.FunctionComponent<RepositoryMenuProps> = ({
                                 repoName={props.repoName}
                                 data={data}
                                 now={now}
-                                onClose={() => setNew(false)}
+                                onClose={onContentClose}
                                 useRequestedLanguageSupportQuery={useRequestedLanguageSupportQuery}
                                 useRequestLanguageSupportQuery={useRequestLanguageSupportQuery}
                             />
@@ -185,7 +201,7 @@ const UserFacingRepositoryMenuContent: React.FunctionComponent<{
     useRequestLanguageSupportQuery: typeof defaultUseRequestLanguageSupportQuery
 }> = ({ repoName, data, onClose, now, useRequestedLanguageSupportQuery, useRequestLanguageSupportQuery }) => {
     // Call onClose when this component unmounts
-    useEffect(() => () => onClose?.())
+    useEffect(() => onClose, [onClose])
 
     const allUploads = data.recentUploads.flatMap(uploads => uploads.uploads)
     const uploadsByIndexerName = groupBy(allUploads, getIndexerName)
