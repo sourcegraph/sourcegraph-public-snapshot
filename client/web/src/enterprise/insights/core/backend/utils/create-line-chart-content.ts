@@ -85,7 +85,7 @@ export function getDataPoints(input: GetDataPointsInput): BackendInsightDatum[] 
         }
     }
 
-    return [...dataByXValue.values()]
+    return [...dataByXValue.values()].sort((a, b) => b.dateTime - a.dateTime)
 }
 
 interface GenerateLinkInput {
