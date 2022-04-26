@@ -17,9 +17,9 @@
 // Sample usage:
 //
 //     observationContext := observation.Context{
-//         Logger: log.Scoped("my-scope", "a simple description"),
-//         &trace.Tracer{Tracer: opentracing.GlobalTracer()},
-//         prometheus.DefaultRegisterer,
+//         Logger:     log.Scoped("my-scope", "a simple description"),
+//         Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+//         Registerer: prometheus.DefaultRegisterer,
 //     }
 //
 //     metrics := metrics.NewREDMetrics(
