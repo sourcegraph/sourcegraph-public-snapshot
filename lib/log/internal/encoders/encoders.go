@@ -8,11 +8,6 @@ import (
 
 type ResourceEncoder struct {
 	otfields.Resource
-
-	// InstanceID is a UUID generated on initialization, as part of the OpenTelemetry log
-	// spec:
-	// https://opentelemetry.io/docs/reference/specification/resource/semantic_conventions/#service
-	InstanceID string
 }
 
 var _ zapcore.ObjectMarshaler = &ResourceEncoder{}
