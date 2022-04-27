@@ -401,7 +401,7 @@ mutation {
 
 ### Pending permissions
 
-Pending permissions are created and stored when the repo permissions fetched from the code host contain users which are not yet users of Sourcegraph. This information is stored for the purpose of immediate repo access for such users after joining Sourcegraph. During the process of user creation `user_pending_permissions` is queried and if there are any permissions for the user being created, then these permissions are added to `user_permissions` table and this user is ready to go in no time. Without pending permissions, user would have waited for user permissions sync to happen.
+Pending permissions are created and stored when the repo permissions fetched from the code host contain users which are not yet users of Sourcegraph. This information is stored for the purpose of immediate repo access for such users after joining Sourcegraph. During the process of user creation `user_pending_permissions` is queried and if there are any permissions for the user being created, then these permissions are added to `user_permissions` table and this user is ready to go in no time. Without pending permissions, user would have waited for user a permissions sync to happen.
 
 As soon as new user is created (to be more precise -- during the creation process itself), pending permissions are used to populate "ordinary" permissions (`repo_permissions` and `user_permissions` tables), after that `user_permissions_table` is cleared (however, `repo_pending_permissions` [is not](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.39.1/-/blob/enterprise/internal/database/perms_store.go?L979-981)).
 
