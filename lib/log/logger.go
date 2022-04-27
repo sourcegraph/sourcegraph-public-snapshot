@@ -87,6 +87,8 @@ type zapAdapter struct {
 	// Attributes namespace.
 	attributes []Field
 
+	// callerSkip tracks the total caller skips added so far so that we can rebuild
+	// loggers from root.
 	callerSkip int
 
 	// additionalCore tracks an additional Core to write to - only to be used by logtest.
@@ -109,6 +111,7 @@ func (z *zapAdapter) Scoped(scope string, description string) Logger {
 		Logger:         z.Logger.Named(scope), // name -> scope in OT
 		scope:          newScope,
 		attributes:     z.attributes,
+		callerSkip:     z.callerSkip,
 		additionalCore: z.additionalCore,
 	}
 	if len(description) > 0 {
@@ -151,6 +154,7 @@ func (z *zapAdapter) WithTrace(trace TraceContext) Logger {
 		Logger:         newLogger,
 		scope:          z.scope,
 		attributes:     z.attributes,
+		callerSkip:     z.callerSkip,
 		additionalCore: z.additionalCore,
 	}
 }
@@ -160,7 +164,7 @@ func (z *zapAdapter) AddCallerSkip(skip int) Logger {
 		Logger:         z.Logger.WithOptions(zap.AddCallerSkip(skip)),
 		scope:          z.scope,
 		attributes:     z.attributes,
-		callerSkip:     skip,
+		callerSkip:     skip + z.callerSkip, // increase
 		additionalCore: z.additionalCore,
 	}
 }
