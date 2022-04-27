@@ -6,6 +6,10 @@ import (
 	"sort"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
+	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
+
 	"github.com/grafana/regexp"
 	"github.com/inconshreveable/log15"
 
@@ -83,6 +87,23 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 			if err != nil {
 				return nil, errors.Wrapf(err, "failed to execute capture group search for repository:%s commit:%s", repository, execution.Revision)
 			}
+
+			err = streaming.ComputeMatchContext(ctx, modifiedQuery, struct {
+				OnResult  func(match *compute.MatchContext)
+				OnAlert   func(*streamhttp.EventAlert)
+				OnError   func(*streamhttp.EventError)
+				OnUnknown func(event []byte, data []byte)
+			}{OnResult: func(match *compute.MatchContext) {
+				log15.Info("result", "match", match)
+			}, OnAlert: func(alert *streamhttp.EventAlert) {
+				log15.Info("alert", "alert", alert)
+
+			}, OnError: func(eventError *streamhttp.EventError) {
+				log15.Info("error", "error", eventError)
+
+			}, OnUnknown: func(event []byte, data []byte) {
+				log15.Info("unknown")
+			}})
 
 			grouped := GroupByCaptureMatch(results)
 			sort.Slice(grouped, func(i, j int) bool {
