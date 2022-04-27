@@ -1,3 +1,7 @@
+import { isErrorLike } from '@sourcegraph/common'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+
 import { InsightType } from '../../../../../core/types'
 import { CaptureInsightUrlValues } from '../../../../insights/creation/capture-group'
 import { DATA_SERIES_COLORS, SearchInsightURLValues } from '../../../../insights/creation/search-insight'
@@ -1259,87 +1263,101 @@ const GO_STATIC_CHECK_S1039: Template = {
     },
 }
 
-export const TEMPLATE_SECTIONS: TemplateSection[] = [
-    {
-        title: 'Popular',
-        templates: [
-            TERRAFORM_VERSIONS,
-            CSS_MODULES_MIGRATION,
-            LOG4J_FIXED_VERSIONS,
-            YARN_ADOPTION,
-            JAVA_VERSIONS,
-            LINTER_OVERRIDE_RULES,
-            TS_JS_USAGE,
-        ],
-    },
-    {
-        title: 'Migration',
-        templates: [
-            CONFIG_OR_DOC_FILE,
-            ALLOW_DENY_LIST_TRACKING,
-            CSS_MODULES_MIGRATION,
-            PYTHON_2_3,
-            REACT_FUNCTION_CLASS,
-        ],
-    },
-    {
-        title: 'Adoption',
-        templates: [
-            NEW_API_USAGE,
-            YARN_ADOPTION,
-            FREQUENTLY_USED_DATABASE,
-            LARGE_PACKAGE_USAGE,
-            REACT_COMPONENT_LIB_USAGE,
-            CI_TOOLING,
-        ],
-    },
-    {
-        title: 'Deprecation',
-        templates: [
-            CSS_CLASS,
-            ICON_OR_IMAGE,
-            STRUCTURAL_CODE_PATTERN,
-            TOOLING_MIGRATION,
-            VAR_KEYWORDS,
-            TESTING_LIBRARIES,
-        ],
-    },
-    {
-        title: 'Versions and patterns',
-        templates: [
-            JAVA_VERSIONS,
-            LICENSE_TYPES,
-            ALL_LOG4J_VERSIONS,
-            PYTHON_VERSIONS,
-            NODEJS_VERSIONS,
-            CSS_COLORS,
-            CHECKOV_SKIP_TYPES,
-        ],
-    },
-    {
-        title: 'Code health',
-        templates: [
-            TODOS,
-            LINTER_OVERRIDE_RULES,
-            REVERT_COMMITS,
-            DEPRECATED_CALLS,
-            STORYBOOK_TESTS,
-            REPOS_WITH_README,
-            OWNERSHIP_TRACKING,
-            CI_TOOLING,
-        ],
-    },
-    {
-        title: 'Security',
-        templates: [
-            VULNERABLE_OPEN_SOURCE,
-            API_KEYS_DETECTION,
-            LOG4J_FIXED_VERSIONS,
-            SKIPPED_TESTS,
-            TEST_AMOUNT_AND_TYPES,
-        ],
-    },
-    {
+export const getTemplateSections = (props: SettingsCascadeProps<Settings>): TemplateSection[] => {
+    const allButGoChecker: TemplateSection[] = [
+        {
+            title: 'Popular',
+            templates: [
+                TERRAFORM_VERSIONS,
+                CSS_MODULES_MIGRATION,
+                LOG4J_FIXED_VERSIONS,
+                YARN_ADOPTION,
+                JAVA_VERSIONS,
+                LINTER_OVERRIDE_RULES,
+                TS_JS_USAGE,
+            ],
+        },
+        {
+            title: 'Migration',
+            templates: [
+                CONFIG_OR_DOC_FILE,
+                ALLOW_DENY_LIST_TRACKING,
+                CSS_MODULES_MIGRATION,
+                PYTHON_2_3,
+                REACT_FUNCTION_CLASS,
+            ],
+        },
+        {
+            title: 'Adoption',
+            templates: [
+                NEW_API_USAGE,
+                YARN_ADOPTION,
+                FREQUENTLY_USED_DATABASE,
+                LARGE_PACKAGE_USAGE,
+                REACT_COMPONENT_LIB_USAGE,
+                CI_TOOLING,
+            ],
+        },
+        {
+            title: 'Deprecation',
+            templates: [
+                CSS_CLASS,
+                ICON_OR_IMAGE,
+                STRUCTURAL_CODE_PATTERN,
+                TOOLING_MIGRATION,
+                VAR_KEYWORDS,
+                TESTING_LIBRARIES,
+            ],
+        },
+        {
+            title: 'Versions and patterns',
+            templates: [
+                JAVA_VERSIONS,
+                LICENSE_TYPES,
+                ALL_LOG4J_VERSIONS,
+                PYTHON_VERSIONS,
+                NODEJS_VERSIONS,
+                CSS_COLORS,
+                CHECKOV_SKIP_TYPES,
+            ],
+        },
+        {
+            title: 'Code health',
+            templates: [
+                TODOS,
+                LINTER_OVERRIDE_RULES,
+                REVERT_COMMITS,
+                DEPRECATED_CALLS,
+                STORYBOOK_TESTS,
+                REPOS_WITH_README,
+                OWNERSHIP_TRACKING,
+                CI_TOOLING,
+            ],
+        },
+        {
+            title: 'Security',
+            templates: [
+                VULNERABLE_OPEN_SOURCE,
+                API_KEYS_DETECTION,
+                LOG4J_FIXED_VERSIONS,
+                SKIPPED_TESTS,
+                TEST_AMOUNT_AND_TYPES,
+            ],
+        },
+        {
+            title: 'Other',
+            templates: [TS_VS_GO, IOS_APP_SCREENS, ADOPTING_NEW_API, PROBLEMATIC_API_BY_TEAM, DATA_FETCHING_GQL],
+        },
+    ]
+    if (
+        props.settingsCascade.final !== null &&
+        !isErrorLike(props.settingsCascade.final) &&
+        !props.settingsCascade.final.experimentalFeatures?.goCodeCheckerTemplates
+    ) {
+        return allButGoChecker
+    }
+    const all = [...allButGoChecker]
+    all.splice(-1, 0, {
         title: 'Go code checker',
         experimental: true,
         templates: [
@@ -1364,9 +1382,6 @@ export const TEMPLATE_SECTIONS: TemplateSection[] = [
             GO_STATIC_CHECK_S1038,
             GO_STATIC_CHECK_S1039,
         ],
-    },
-    {
-        title: 'Other',
-        templates: [TS_VS_GO, IOS_APP_SCREENS, ADOPTING_NEW_API, PROBLEMATIC_API_BY_TEAM, DATA_FETCHING_GQL],
-    },
-]
+    })
+    return all
+}
