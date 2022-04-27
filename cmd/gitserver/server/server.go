@@ -598,7 +598,7 @@ func (s *Server) syncRepoState(gitServerAddrs gitserver.GitServerAddresses, batc
 	}
 
 	options := database.IterateRepoGitserverStatusOptions{
-		// We also want to include deleted repos as they ay still be cloned on disk
+		// We also want to include deleted repos as they may still be cloned on disk
 		IncludeDeleted: true,
 	}
 	if !fullSync {
