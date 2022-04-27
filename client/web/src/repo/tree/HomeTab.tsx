@@ -10,8 +10,11 @@ import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, pluralize, encodeURIPathComponent } from '@sourcegraph/common'
 import { gql, useQuery } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { Button, Link, Badge, useEventObservable, Alert, LoadingSpinner } from '@sourcegraph/wildcard'
 
+import { BatchChangesProps } from '../../batches'
+import { CodeIntelligenceProps } from '../../codeintel'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import {
     GetRepoBatchChangesSummaryResult,
@@ -28,13 +31,11 @@ import { fetchTreeCommits } from './TreePageContent'
 
 import styles from './HomeTab.module.scss'
 
-interface Props {
+interface Props extends SettingsCascadeProps, CodeIntelligenceProps, BatchChangesProps {
     repo: TreePageRepositoryFields
     filePath: string
     commitID: string
     revision: string
-    codeIntelligenceEnabled: boolean
-    batchChangesEnabled: boolean
     location: H.Location
     history?: H.History
     globbing?: boolean
