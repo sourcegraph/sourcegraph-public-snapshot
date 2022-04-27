@@ -409,7 +409,7 @@ As soon as new user is created (to be more precise -- during the creation proces
 
 `user_pending_permissions` table has a `bind_id` column which is an ID of the user of external code host: a username for Bitbucket Server, a GraphID for GitHub or a user ID for GitLab. 
 
-User pending permission is a composite entity containing of:
+User pending permission is a composite entity comprising of:
 - `service_type` (e.g. `github.com`, `gitlab`, `bitbucketServer`);
 - `service_id` (ID of the code host, e.g. `https://github.com/`, `https://gitlab.com/`);
 - `permission` (bitmask for a set of permissions);
