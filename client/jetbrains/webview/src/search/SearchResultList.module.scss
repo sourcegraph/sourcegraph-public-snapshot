@@ -1,0 +1,15 @@
+.list {
+    height:auto;
+    overflow-y: auto;
+}
+
+.list-item {
+    width: 100%;
+    overflow-x: hidden;
+    cursor: pointer;
+    user-select: none;
+}
+
+.list-item-active {
+    background-color: lightcoral;
+}

@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from 'react'
 
+import classNames from 'classnames'
 import { EMPTY, NEVER, of } from 'rxjs'
 
 import { SearchPatternType, QueryState } from '@sourcegraph/search'
@@ -9,20 +10,31 @@ import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/setting
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { WildcardThemeContext } from '@sourcegraph/wildcard'
 
+import { SearchResultList } from './SearchResultList'
+
 import styles from './App.module.scss'
 
 export const App: React.FunctionComponent = () => {
-    // Toggling case sensitivity or pattern type does NOT trigger a new search on home view.
     const [caseSensitive, setCaseSensitivity] = useState(false)
     const [patternType, setPatternType] = useState(SearchPatternType.literal)
     const [results, setResults] = useState<SearchMatch[]>([])
+    const [lastSearchedQuery, setLastSearchedQuery] = useState<null | string>(null)
 
     const [userQueryState, setUserQueryState] = useState<QueryState>({
         query: '',
     })
 
     const onSubmit = useCallback(() => {
-        aggregateStreamingSearch(of(userQueryState.query), {
+        const query = userQueryState.query
+
+        // When we submit a search that is already the last search, do nothing. This prevents the
+        // search results from being reloaded and reapplied in a different order when a user
+        // accidently hits enter thinking that this would open the file
+        if (query === lastSearchedQuery) {
+            return
+        }
+
+        aggregateStreamingSearch(of(query), {
             version: LATEST_VERSION,
             patternType,
             caseSensitive,
@@ -33,74 +45,64 @@ export const App: React.FunctionComponent = () => {
         }).subscribe(searchResults => {
             setResults(searchResults.results)
         })
-
-        console.log('onSubmit')
-    }, [caseSensitive, patternType, userQueryState])
+        setResults([])
+        setLastSearchedQuery(query)
+    }, [caseSensitive, lastSearchedQuery, patternType, userQueryState.query])
 
     const setSelectedSearchContextSpec = useCallback(() => console.log('setSelectedSearchContextSpec'), [])
 
     return (
         <WildcardThemeContext.Provider value={{ isBranded: true }}>
-            <div className={styles.searchBoxContainer}>
-                {/* eslint-disable-next-line react/forbid-elements */}
-                <form
-                    className="d-flex my-2"
-                    onSubmit={event => {
-                        event.preventDefault()
-                        onSubmit()
-                    }}
-                >
-                    <SearchBox
-                        caseSensitive={caseSensitive}
-                        setCaseSensitivity={setCaseSensitivity}
-                        patternType={patternType}
-                        setPatternType={setPatternType}
-                        isSourcegraphDotCom={true}
-                        hasUserAddedExternalServices={false}
-                        hasUserAddedRepositories={true}
-                        structuralSearchDisabled={false}
-                        queryState={userQueryState}
-                        onChange={setUserQueryState}
-                        onSubmit={onSubmit}
-                        authenticatedUser={null}
-                        searchContextsEnabled={true}
-                        showSearchContext={true}
-                        showSearchContextManagement={false}
-                        defaultSearchContextSpec="global"
-                        setSelectedSearchContextSpec={setSelectedSearchContextSpec}
-                        selectedSearchContextSpec={undefined}
-                        fetchSearchContexts={() => {
-                            throw new Error('fetchSearchContexts')
+            <div className={classNames('theme-dark', styles.root)}>
+                <div className={styles.searchBoxContainer}>
+                    {/* eslint-disable-next-line react/forbid-elements */}
+                    <form
+                        className="d-flex my-2"
+                        onSubmit={event => {
+                            event.preventDefault()
+                            onSubmit()
                         }}
-                        fetchAutoDefinedSearchContexts={() => NEVER}
-                        getUserSearchContextNamespaces={() => []}
-                        fetchStreamSuggestions={() => NEVER}
-                        settingsCascade={EMPTY_SETTINGS_CASCADE}
-                        globbing={false}
-                        isLightTheme={false}
-                        telemetryService={NOOP_TELEMETRY_SERVICE}
-                        platformContext={{
-                            requestGraphQL: () => EMPTY,
-                        }}
-                        className=""
-                        containerClassName=""
-                        autoFocus={true}
-                        editorComponent="monaco"
-                    />
-                </form>
-            </div>
-            <div>
-                <ul>
-                    {results.map((match: SearchMatch) =>
-                        match.type === 'content'
-                            ? match.lineMatches.map(line => (
-                                  <li key={`${match.path}-${line.lineNumber}-${JSON.stringify(line.offsetAndLengths)}`}>
-                                      {line.line} <small>{match.path}</small>
-                                  </li>
-                              ))
-                            : null
-                    )}
-                </ul>
+                    >
+                        <SearchBox
+                            caseSensitive={caseSensitive}
+                            setCaseSensitivity={setCaseSensitivity}
+                            patternType={patternType}
+                            setPatternType={setPatternType}
+                            isSourcegraphDotCom={true}
+                            hasUserAddedExternalServices={false}
+                            hasUserAddedRepositories={true}
+                            structuralSearchDisabled={false}
+                            queryState={userQueryState}
+                            onChange={setUserQueryState}
+                            onSubmit={onSubmit}
+                            authenticatedUser={null}
+                            searchContextsEnabled={false}
+                            showSearchContext={true}
+                            showSearchContextManagement={false}
+                            defaultSearchContextSpec="global"
+                            setSelectedSearchContextSpec={setSelectedSearchContextSpec}
+                            selectedSearchContextSpec={undefined}
+                            fetchSearchContexts={() => {
+                                throw new Error('fetchSearchContexts')
+                            }}
+                            fetchAutoDefinedSearchContexts={() => NEVER}
+                            getUserSearchContextNamespaces={() => []}
+                            fetchStreamSuggestions={() => NEVER}
+                            settingsCascade={EMPTY_SETTINGS_CASCADE}
+                            globbing={false}
+                            isLightTheme={false}
+                            telemetryService={NOOP_TELEMETRY_SERVICE}
+                            platformContext={{ requestGraphQL: () => EMPTY }}
+                            className=""
+                            containerClassName=""
+                            autoFocus={true}
+                            editorComponent="monaco"
+                            hideHelpButton={true}
+                        />
+                    </form>
+                </div>
+                {/* We reset the search result list whenever a new search is started using key={lastSearchedQuery} */}
+                <SearchResultList results={results} key={lastSearchedQuery} />
             </div>
         </WildcardThemeContext.Provider>
     )
