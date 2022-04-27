@@ -15,12 +15,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
+	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 func TestMain(m *testing.M) {
 	flag.Parse()
 	if !testing.Verbose() {
 		log15.Root().SetHandler(log15.DiscardHandler())
+		logtest.InitWithLevel(m, log.LevelNone)
 	}
 	os.Exit(m.Run())
 }
@@ -41,7 +44,7 @@ func TestGetAndStoreVersions(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		src := &fakeVersionSource{version: "1.2.3.4", err: nil, es: es}
 
-		got, err := loadVersions(context.Background(), externalServices, newFakeSourcer(src))
+		got, err := loadVersions(context.Background(), logtest.Scoped(t), externalServices, newFakeSourcer(src))
 		require.NoError(t, err)
 		assert.Len(t, got, 6)
 	})
@@ -50,7 +53,7 @@ func TestGetAndStoreVersions(t *testing.T) {
 		testErr := errors.Errorf("what is up")
 		src := &fakeVersionSource{version: "1.2.3.4", err: testErr, es: es}
 
-		_, err := loadVersions(context.Background(), externalServices, newFakeSourcer(src))
+		_, err := loadVersions(context.Background(), logtest.Scoped(t), externalServices, newFakeSourcer(src))
 		require.NoError(t, err)
 	})
 
@@ -62,7 +65,7 @@ func TestGetAndStoreVersions(t *testing.T) {
 
 		src := &fakeVersionSource{version: "1.2.3.4", err: nil, es: invalidEs}
 
-		_, err := loadVersions(context.Background(), externalServices, newFakeSourcer(src))
+		_, err := loadVersions(context.Background(), logtest.Scoped(t), externalServices, newFakeSourcer(src))
 		require.Error(t, err)
 	})
 }

@@ -3,14 +3,12 @@ package shared
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"sort"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/codeintel"
@@ -31,12 +29,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 const addr = ":3189"
 
-// Start runs the worker. This method does not return.
-func Start(additionalJobs map[string]job.Job, registerEnterpriseMigrations func(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error) {
+// Start runs the worker.
+func Start(logger log.Logger, additionalJobs map[string]job.Job, registerEnterpriseMigrations func(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error) error {
 	registerMigrations := composeRegisterMigrations(migrators.RegisterOSSMigrations, registerEnterpriseMigrations)
 
 	builtins := map[string]job.Job{
@@ -72,7 +72,7 @@ func Start(additionalJobs map[string]job.Job, registerEnterpriseMigrations func(
 	profiler.Init()
 
 	if err := keyring.Init(context.Background()); err != nil {
-		log.Fatalf("Failed to intialise keyring: %v", err)
+		return errors.Wrap(err, "Failed to intialise keyring")
 	}
 
 	// Start debug server
@@ -80,7 +80,9 @@ func Start(additionalJobs map[string]job.Job, registerEnterpriseMigrations func(
 	go debugserver.NewServerRoutine(ready).Start()
 
 	// Validate environment variables
-	mustValidateConfigs(jobs)
+	if err := validateConfigs(jobs); err != nil {
+		return err
+	}
 
 	// Emit metrics to help site admins detect instances that accidentally
 	// omit a job from from the instance's deployment configuration.
@@ -89,7 +91,10 @@ func Start(additionalJobs map[string]job.Job, registerEnterpriseMigrations func(
 	// Create the background routines that the worker will monitor for its
 	// lifetime. There may be a non-trivial startup time on this step as we
 	// connect to external databases, wait for migrations, etc.
-	allRoutines := mustCreateBackgroundRoutines(jobs)
+	allRoutines, err := createBackgroundRoutines(logger, jobs)
+	if err != nil {
+		return err
+	}
 
 	// Initialize health server
 	server := httpserver.NewFromAddr(addr, &http.Server{
@@ -103,7 +108,10 @@ func Start(additionalJobs map[string]job.Job, registerEnterpriseMigrations func(
 	// Respond positively to ready checks
 	close(ready)
 
+	// This method blocks while the app is live - the following return is only to appease
+	// the type checker.
 	goroutine.MonitorBackgroundRoutines(context.Background(), allRoutines...)
+	return nil
 }
 
 // loadConfigs calls Load on the configs of each of the jobs registered in this binary.
@@ -122,13 +130,13 @@ func loadConfigs(jobs map[string]job.Job) {
 	}
 }
 
-// mustValidateConfigs calls Validate on the configs of each of the jobs that will be run
-// by this instance of the worker. If any config has a validation error, a fatal log message
-// will be emitted.
-func mustValidateConfigs(jobs map[string]job.Job) {
+// validateConfigs calls Validate on the configs of each of the jobs that will be run
+// by this instance of the worker. If any config has a validation error, an error is
+// returned.
+func validateConfigs(jobs map[string]job.Job) error {
 	validationErrors := map[string][]error{}
 	if err := config.Validate(); err != nil {
-		log.Fatalf("Failed to load configuration: %s", err)
+		return errors.Wrap(err, "Failed to load configuration")
 	}
 
 	if len(validationErrors) == 0 {
@@ -157,8 +165,10 @@ func mustValidateConfigs(jobs map[string]job.Job) {
 		}
 		sort.Strings(descriptions)
 
-		log.Fatalf("Failed to load configuration:\n%s", strings.Join(descriptions, "\n"))
+		return errors.Newf("Failed to load configuration:\n%s", strings.Join(descriptions, "\n"))
 	}
+
+	return nil
 }
 
 // emitJobCountMetrics registers and emits an initial value for gauges referencing each of
@@ -182,16 +192,16 @@ func emitJobCountMetrics(jobs map[string]job.Job) {
 	}
 }
 
-// mustCreateBackgroundRoutines runs the Routines function of each of the given jobs concurrently.
+// createBackgroundRoutines runs the Routines function of each of the given jobs concurrently.
 // If an error occurs from any of them, a fatal log message will be emitted. Otherwise, the set
 // of background routines from each job will be returned.
-func mustCreateBackgroundRoutines(jobs map[string]job.Job) []goroutine.BackgroundRoutine {
+func createBackgroundRoutines(logger log.Logger, jobs map[string]job.Job) ([]goroutine.BackgroundRoutine, error) {
 	var (
 		allRoutines  []goroutine.BackgroundRoutine
 		descriptions []string
 	)
 
-	for result := range runRoutinesConcurrently(jobs) {
+	for result := range runRoutinesConcurrently(logger, jobs) {
 		if result.err == nil {
 			allRoutines = append(allRoutines, result.routines...)
 		} else {
@@ -201,10 +211,10 @@ func mustCreateBackgroundRoutines(jobs map[string]job.Job) []goroutine.Backgroun
 	sort.Strings(descriptions)
 
 	if len(descriptions) != 0 {
-		log.Fatalf("Failed to initialize worker:\n%s", strings.Join(descriptions, "\n"))
+		return nil, errors.Newf("Failed to initialize worker:\n%s", strings.Join(descriptions, "\n"))
 	}
 
-	return allRoutines
+	return allRoutines, nil
 }
 
 type routinesResult struct {
@@ -216,7 +226,7 @@ type routinesResult struct {
 // runRoutinesConcurrently returns a channel that will be populated with the return value of
 // the Routines function from each given job. Each function is called concurrently. If an
 // error occurs in one function, the context passed to all its siblings will be canceled.
-func runRoutinesConcurrently(jobs map[string]job.Job) chan routinesResult {
+func runRoutinesConcurrently(logger log.Logger, jobs map[string]job.Job) chan routinesResult {
 	results := make(chan routinesResult, len(jobs))
 	defer close(results)
 
@@ -225,7 +235,7 @@ func runRoutinesConcurrently(jobs map[string]job.Job) chan routinesResult {
 	defer cancel()
 
 	for _, name := range jobNames(jobs) {
-		jobLogger := log15.New("name", name)
+		jobLogger := logger.Scoped(name, jobs[name].Description())
 
 		if !shouldRunJob(name) {
 			jobLogger.Info("Skipping job")
@@ -238,7 +248,7 @@ func runRoutinesConcurrently(jobs map[string]job.Job) chan routinesResult {
 		go func(name string) {
 			defer wg.Done()
 
-			routines, err := jobs[name].Routines(ctx)
+			routines, err := jobs[name].Routines(ctx, jobLogger)
 			results <- routinesResult{name, routines, err}
 
 			if err == nil {

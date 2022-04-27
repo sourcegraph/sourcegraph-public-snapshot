@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/pings"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 
@@ -40,7 +41,7 @@ func GetBackgroundJobs(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.D
 
 	// Create basic metrics for recording information about background jobs.
 	observationContext := &observation.Context{
-		Logger:     log15.Root(),
+		Logger:     log.Scoped("background", "insights background jobs"),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
@@ -95,7 +96,7 @@ func GetBackgroundQueryRunnerJob(ctx context.Context, mainAppDB *sql.DB, insight
 
 	// Create basic metrics for recording information about background jobs.
 	observationContext := &observation.Context{
-		Logger:     log15.Root(),
+		Logger:     log.Scoped("background.query", "background query runner job"),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}

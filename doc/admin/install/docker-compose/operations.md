@@ -58,7 +58,7 @@ We **strongly** recommend that you create and run Sourcegraph from your own fork
 
   ```bash
   # Specify the version you want to install
-  export SOURCEGRAPH_VERSION="v3.39.0"
+  export SOURCEGRAPH_VERSION="v3.39.1"
   # Check out the selected version for use, in a new branch called "release"
   git checkout $SOURCEGRAPH_VERSION -b release
   ```
