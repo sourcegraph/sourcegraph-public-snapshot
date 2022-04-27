@@ -167,6 +167,9 @@ WHERE gr.last_error != '' AND repo.deleted_at is NULL AND es.cloud_default IS Tr
 type IterateRepoGitserverStatusOptions struct {
 	// If set, will only iterate over repos that have not been assigned to a shard
 	OnlyWithoutShard bool
+	// If true, also include deleted repos. Note that their repo name will start with
+	// 'DELETED-'
+	IncludeDeleted bool
 }
 
 // IterateRepoGitserverStatus iterates over the status of all repos by joining
