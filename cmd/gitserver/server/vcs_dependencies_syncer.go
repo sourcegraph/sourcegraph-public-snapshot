@@ -4,7 +4,6 @@ import (
 	"context"
 	"os"
 	"os/exec"
-	"path"
 	"sort"
 	"strings"
 
@@ -290,36 +289,4 @@ func runCommandInDirectory(ctx context.Context, cmd *exec.Cmd, workingDirectory 
 		return "", errors.Wrapf(err, "command %s failed with output %s", cmd.Args, string(output))
 	}
 	return string(output), nil
-}
-
-func isPotentiallyMaliciousFilepathInArchive(filepath, destinationDir string) (outputPath string, _ bool) {
-	if strings.HasSuffix(filepath, "/") {
-		// Skip directory entries. Directory entries must end
-		// with a forward slash (even on Windows) according to
-		// `file.Name` docstring.
-		return "", true
-	}
-
-	if strings.HasPrefix(filepath, "/") {
-		// Skip absolute paths. While they are extracted relative to `destination`,
-		// they should be unimportant. Related issue https://github.com/golang/go/issues/48085#issuecomment-912659635
-		return "", true
-	}
-
-	for _, dirEntry := range strings.Split(filepath, string(os.PathSeparator)) {
-		if dirEntry == ".git" {
-			// For security reasons, don't unzip files under any `.git/`
-			// directory. See https://github.com/sourcegraph/security-issues/issues/163
-			return "", true
-		}
-	}
-
-	cleanedOutputPath := path.Join(destinationDir, filepath)
-	if !strings.HasPrefix(cleanedOutputPath, destinationDir) {
-		// For security reasons, skip file if it's not a child
-		// of the target directory. See "Zip Slip Vulnerability".
-		return "", true
-	}
-
-	return cleanedOutputPath, false
 }
