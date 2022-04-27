@@ -177,7 +177,7 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 
 		if resultTypes.Has(result.TypeStructural) {
 			typ := search.TextRequest
-			zoektQuery, err := search.QueryToZoektQuery(b, resultTypes, &features, typ)
+			zoektQuery, err := zoektutil.QueryToZoektQuery(b, resultTypes, &features, typ)
 			if err != nil {
 				return nil, err
 			}
@@ -488,7 +488,7 @@ type jobBuilder struct {
 }
 
 func (b *jobBuilder) newZoektGlobalSearch(typ search.IndexedRequestType) (job.Job, error) {
-	zoektQuery, err := search.QueryToZoektQuery(b.query, b.resultTypes, b.features, typ)
+	zoektQuery, err := zoektutil.QueryToZoektQuery(b.query, b.resultTypes, b.features, typ)
 	if err != nil {
 		return nil, err
 	}
@@ -531,7 +531,7 @@ func (b *jobBuilder) newZoektGlobalSearch(typ search.IndexedRequestType) (job.Jo
 }
 
 func (b *jobBuilder) newZoektSearch(typ search.IndexedRequestType) (job.Job, error) {
-	zoektQuery, err := search.QueryToZoektQuery(b.query, b.resultTypes, b.features, typ)
+	zoektQuery, err := zoektutil.QueryToZoektQuery(b.query, b.resultTypes, b.features, typ)
 	if err != nil {
 		return nil, err
 	}

@@ -78,7 +78,7 @@ func (s *RepoSearch) reposContainingPath(ctx context.Context, clients job.Runtim
 				resultTypes = resultTypes.With(result.TypeFromString[t])
 			}
 		}
-		zoektQuery, err := search.QueryToZoektQuery(b, resultTypes, &s.Features, typ)
+		zoektQuery, err := zoektutil.QueryToZoektQuery(b, resultTypes, &s.Features, typ)
 		if err != nil {
 			return nil, err
 		}
