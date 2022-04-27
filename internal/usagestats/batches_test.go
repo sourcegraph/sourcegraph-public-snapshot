@@ -61,11 +61,11 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 	// Create batch specs 1, 2.
 	_, err = db.ExecContext(context.Background(), `
 		INSERT INTO batch_specs
-			(id, rand_id, raw_spec, namespace_user_id)
+			(id, rand_id, raw_spec, namespace_user_id, created_from_raw)
 		VALUES
-			(1, '123', '{}', $1),
-			(2, '456', '{}', $1),
-			(3, '789', '{}', $1)
+			(1, '123', '{}', $1, FALSE),
+			(2, '456', '{}', $1, FALSE),
+			(3, '789', '{}', $1, TRUE)
 	`, user.ID)
 	if err != nil {
 		t.Fatal(err)
@@ -263,13 +263,17 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 			// batch change 3 should be ignored because it's too old
 		},
 		ActiveExectutorsCount: 2,
-		BulkOperationsCount: map[string]int32{
+		BulkOperationsCount: map[string]int{
 			"commentatore": 2,
 			"close":        1,
 			"publish":      2,
 			"merge":        1,
 			"detach":       1,
 			"reenqueue":    1,
+		},
+		SSBCBatchChangeDistribution: []*types.SSBCBatchChangeDistribution{
+			{Source: "local", Range: "0-9 changesets", Count: 2},
+			{Source: "executor", Range: "0-9 changesets", Count: 1},
 		},
 	}
 	if diff := cmp.Diff(want, have); diff != "" {

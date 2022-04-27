@@ -851,7 +851,21 @@ type BatchChangesUsageStatistics struct {
 	ActiveExectutorsCount int16
 
 	// BulkOperationsCount is the count of bulk operations used to manage changesets
-	BulkOperationsCount map[string]int32
+	BulkOperationsCount map[string]int
+
+	SSBCBatchChangeDistribution []*SSBCBatchChangeDistribution
+}
+
+type SSBCBatchChangeDistribution struct {
+	// the source of the changesets belonging to the batch changes
+	// indicating whether the changeset was created via an executor or locally
+	Source string
+
+	// range of changeset distribution per batch_change
+	Range string
+
+	// the number of changesets belonging to a range of result
+	Count int
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change

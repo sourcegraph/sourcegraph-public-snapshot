@@ -95,16 +95,61 @@ WHERE name IN ('BatchSpecCreated', 'ViewBatchChangeApplyPage', 'ViewBatchChangeD
 	}
 	defer rows.Close()
 
-	stats.BulkOperationsCount = make(map[string]int32)
+	stats.BulkOperationsCount = make(map[string]int)
 
 	for rows.Next() {
 		var jobType string
-		var count int32
+		var count int
 		if err = rows.Scan(&jobType, &count); err != nil {
 			return nil, err
 		}
 
 		stats.BulkOperationsCount[jobType] = count
+	}
+
+	ssbcDistributionQuery := `SELECT
+	COUNT(*),
+	batch_changes_range.range,
+	CASE
+		WHEN batch_changes_range.source = TRUE THEN 'executor'
+		ELSE 'local'
+	END AS source
+	FROM (
+		SELECT
+			CASE
+				WHEN COUNT(changesets.id) BETWEEN 0 AND 9 THEN '0-9 changesets'
+				WHEN COUNT(changesets.id) BETWEEN 10 AND 49 THEN '10-49 changesets'
+				WHEN COUNT(changesets.id) BETWEEN 50 AND 99 THEN '50-99 changesets'
+				WHEN COUNT(changesets.id) BETWEEN 100 AND 199 THEN '100-199 changesets'
+				WHEN COUNT(changesets.id) BETWEEN 200 AND 999 THEN '200-999 changesets'
+				ELSE '1000+ changesets'
+			END AS range,
+			batch_specs.created_from_raw AS source
+		FROM batch_changes
+		LEFT JOIN batch_specs AS batch_specs ON batch_changes.batch_spec_id = batch_specs.id
+		LEFT JOIN changesets ON changesets.owned_by_batch_change_id = batch_changes.id
+		GROUP BY batch_changes.id, batch_specs.created_from_raw
+	) AS batch_changes_range
+	GROUP BY batch_changes_range.range, batch_changes_range.source;
+`
+	rows, err = db.QueryContext(ctx, ssbcDistributionQuery)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var count int
+		var changesetRange, source string
+		if err = rows.Scan(&count, &changesetRange, &source); err != nil {
+			return nil, err
+		}
+
+		stats.SSBCBatchChangeDistribution = append(stats.SSBCBatchChangeDistribution, &types.SSBCBatchChangeDistribution{
+			Range:  changesetRange,
+			Count:  count,
+			Source: source,
+		})
 	}
 
 	queryUniqueEventLogUsersCurrentMonth := func(events []*sqlf.Query) *sql.Row {
