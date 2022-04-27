@@ -424,6 +424,155 @@ OPTIMIZED:
               ComputeExcludedRepos)))))))
 `).Equal(t, test("repo:derp foo and bar not baz type:symbol"))
 
+	autogold.Want("commit with and", `
+BASE:
+
+(ALERT
+  (TIMEOUT
+    20s
+    (LIMIT
+      500
+      (AND
+        (LIMIT
+          40000
+          (PARALLEL
+            Commit
+            ComputeExcludedRepos))
+        (LIMIT
+          40000
+          (PARALLEL
+            Commit
+            ComputeExcludedRepos))))))
+
+OPTIMIZED:
+
+(ALERT
+  (TIMEOUT
+    20s
+    (LIMIT
+      500
+      (PARALLEL
+        Commit
+        (AND
+          (LIMIT
+            40000
+            (PARALLEL
+              NoopJob
+              ComputeExcludedRepos))
+          (LIMIT
+            40000
+            (PARALLEL
+              NoopJob
+              ComputeExcludedRepos)))))))
+`).Equal(t, test("type:commit a and b"))
+	autogold.Want("commit with or", `
+BASE:
+
+(ALERT
+  (TIMEOUT
+    20s
+    (LIMIT
+      500
+      (OR
+        (PARALLEL
+          Commit
+          ComputeExcludedRepos)
+        (PARALLEL
+          Commit
+          ComputeExcludedRepos)))))
+
+OPTIMIZED:
+
+(ALERT
+  (TIMEOUT
+    20s
+    (LIMIT
+      500
+      (PARALLEL
+        Commit
+        (OR
+          (PARALLEL
+            NoopJob
+            ComputeExcludedRepos)
+          (PARALLEL
+            NoopJob
+            ComputeExcludedRepos))))))
+`).Equal(t, test("type:commit a or b"))
+	autogold.Want("diff with and", `
+BASE:
+
+(ALERT
+  (TIMEOUT
+    20s
+    (LIMIT
+      500
+      (AND
+        (LIMIT
+          40000
+          (PARALLEL
+            Diff
+            ComputeExcludedRepos))
+        (LIMIT
+          40000
+          (PARALLEL
+            Diff
+            ComputeExcludedRepos))))))
+
+OPTIMIZED:
+
+(ALERT
+  (TIMEOUT
+    20s
+    (LIMIT
+      500
+      (PARALLEL
+        Diff
+        (AND
+          (LIMIT
+            40000
+            (PARALLEL
+              NoopJob
+              ComputeExcludedRepos))
+          (LIMIT
+            40000
+            (PARALLEL
+              NoopJob
+              ComputeExcludedRepos)))))))
+`).Equal(t, test("type:diff a and b"))
+
+	autogold.Want("diff with or", `
+BASE:
+
+(ALERT
+  (TIMEOUT
+    20s
+    (LIMIT
+      500
+      (OR
+        (PARALLEL
+          Diff
+          ComputeExcludedRepos)
+        (PARALLEL
+          Diff
+          ComputeExcludedRepos)))))
+
+OPTIMIZED:
+
+(ALERT
+  (TIMEOUT
+    20s
+    (LIMIT
+      500
+      (PARALLEL
+        Diff
+        (OR
+          (PARALLEL
+            NoopJob
+            ComputeExcludedRepos)
+          (PARALLEL
+            NoopJob
+            ComputeExcludedRepos))))))
+`).Equal(t, test("type:diff a or b"))
 }
 
 func TestToTextPatternInfo(t *testing.T) {
