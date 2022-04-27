@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 	"io/fs"
-	"net/url"
 	"os"
 	"os/exec"
 	"path"
@@ -21,12 +20,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
-	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm/npmtest"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -46,27 +43,15 @@ const (
 )
 
 func TestNoMaliciousFilesNpm(t *testing.T) {
-	dir, err := os.MkdirTemp("", "")
-	assert.Nil(t, err)
-	defer os.RemoveAll(dir)
+	dir := t.TempDir()
 
 	extractPath := path.Join(dir, "extracted")
 	assert.Nil(t, os.Mkdir(extractPath, os.ModePerm))
 
 	tgz := bytes.NewReader(createMaliciousTgz(t))
 
-	s := NewNpmPackagesSyncer(
-		schema.NpmPackagesConnection{Dependencies: []string{}},
-		live.TestService(database.NewDB(dbtest.NewDB(t)), nil),
-		nil,
-		"urn",
-	)
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel() // cancel now  to prevent any network IO
-
-	dep := &reposource.NpmDependency{NpmPackage: &reposource.NpmPackage{}}
-	err = s.commitTgz(ctx, dep, extractPath, tgz)
-	require.NotNil(t, err, "malicious tarball should not be committed successfully")
+	err := decompressTgz(tgz, extractPath)
+	assert.Nil(t, err) // Malicious files are skipped
 
 	dirEntries, err := os.ReadDir(extractPath)
 	baseline := []string{"harmless.java"}
@@ -91,12 +76,7 @@ func createMaliciousTgz(t *testing.T) []byte {
 }
 
 func TestNpmCloneCommand(t *testing.T) {
-	dir, err := os.MkdirTemp("", "")
-	require.NoError(t, err)
-
-	t.Cleanup(func() {
-		require.NoError(t, os.RemoveAll(dir))
-	})
+	dir := t.TempDir()
 
 	tgz1 := createTgz(t, []fileInfo{{exampleJSFilepath, []byte(exampleJSFileContents)}})
 	tgz2 := createTgz(t, []fileInfo{{exampleTSFilepath, []byte(exampleTSFileContents)}})
@@ -127,9 +107,10 @@ func TestNpmCloneCommand(t *testing.T) {
 		depsSvc,
 		&client,
 		"urn",
-	)
+	).(*vcsDependenciesSyncer)
+
 	bareGitDirectory := path.Join(dir, "git")
-	s.runCloneCommand(t, bareGitDirectory, []string{exampleNpmVersionedPackage})
+	s.runCloneCommand(t, exampleNpmPackageURL, bareGitDirectory, []string{exampleNpmVersionedPackage})
 	checkSingleTag := func() {
 		assertCommandOutput(t,
 			exec.Command("git", "tag", "--list"),
@@ -143,7 +124,7 @@ func TestNpmCloneCommand(t *testing.T) {
 	}
 	checkSingleTag()
 
-	s.runCloneCommand(t, bareGitDirectory, []string{exampleNpmVersionedPackage, exampleNpmVersionedPackage2})
+	s.runCloneCommand(t, exampleNpmPackageURL, bareGitDirectory, []string{exampleNpmVersionedPackage, exampleNpmVersionedPackage2})
 	checkTagAdded := func() {
 		assertCommandOutput(t,
 			exec.Command("git", "tag", "--list"),
@@ -163,7 +144,7 @@ func TestNpmCloneCommand(t *testing.T) {
 	}
 	checkTagAdded()
 
-	s.runCloneCommand(t, bareGitDirectory, []string{exampleNpmVersionedPackage})
+	s.runCloneCommand(t, exampleNpmPackageURL, bareGitDirectory, []string{exampleNpmVersionedPackage})
 	checkTagRemoved := func() {
 		assertCommandOutput(t,
 			exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleNpmVersion, exampleJSFilepath)),
@@ -179,7 +160,6 @@ func TestNpmCloneCommand(t *testing.T) {
 	checkTagRemoved()
 
 	// Now run the same tests with the database output instead.
-
 	if _, err := depsSvc.UpsertDependencyRepos(context.Background(), []dependencies.Repo{
 		{
 			ID:      1,
@@ -190,7 +170,7 @@ func TestNpmCloneCommand(t *testing.T) {
 	}); err != nil {
 		t.Fatalf(err.Error())
 	}
-	s.runCloneCommand(t, bareGitDirectory, []string{})
+	s.runCloneCommand(t, exampleNpmPackageURL, bareGitDirectory, []string{})
 	checkSingleTag()
 
 	if _, err := depsSvc.UpsertDependencyRepos(context.Background(), []dependencies.Repo{
@@ -203,23 +183,14 @@ func TestNpmCloneCommand(t *testing.T) {
 	}); err != nil {
 		t.Fatalf(err.Error())
 	}
-	s.runCloneCommand(t, bareGitDirectory, []string{})
+	s.runCloneCommand(t, exampleNpmPackageURL, bareGitDirectory, []string{})
 	checkTagAdded()
 
 	if err := depsSvc.DeleteDependencyReposByID(context.Background(), 2); err != nil {
 		t.Fatalf(err.Error())
 	}
-	s.runCloneCommand(t, bareGitDirectory, []string{})
+	s.runCloneCommand(t, exampleNpmPackageURL, bareGitDirectory, []string{})
 	checkTagRemoved()
-}
-
-func (s NpmPackagesSyncer) runCloneCommand(t *testing.T, bareGitDirectory string, dependencies []string) {
-	t.Helper()
-	packageURL := vcs.URL{URL: url.URL{Path: exampleNpmPackageURL}}
-	s.connection.Dependencies = dependencies
-	cmd, err := s.CloneCommand(context.Background(), &packageURL, bareGitDirectory)
-	require.NoError(t, err)
-	require.NoError(t, cmd.Run())
 }
 
 func createTgz(t *testing.T, fileInfos []fileInfo) []byte {
@@ -282,9 +253,7 @@ func TestDecompressTgz(t *testing.T) {
 
 	for i, testData := range table {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			dir, err := os.MkdirTemp("", "")
-			require.NoError(t, err)
-			t.Cleanup(func() { require.NoError(t, os.RemoveAll(dir)) })
+			dir := t.TempDir()
 
 			var fileInfos []fileInfo
 			for _, path := range testData.paths {
@@ -342,9 +311,7 @@ func testDecompressTgzNoOOBImpl(t *testing.T, entries []tar.Header) {
 
 	reader := bytes.NewReader(buffer.Bytes())
 
-	outDir, err := os.MkdirTemp("", "decompress-oobfix-")
-	require.Nil(t, err)
-	defer os.RemoveAll(outDir)
+	outDir := t.TempDir()
 
 	require.NotPanics(t, func() {
 		decompressTgz(reader, outDir)

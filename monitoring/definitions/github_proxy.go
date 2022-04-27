@@ -25,7 +25,7 @@ func GitHubProxy() *monitoring.Container {
 							Query:       `max(github_proxy_waiting_requests)`,
 							Warning:     monitoring.Alert().GreaterOrEqual(100).For(5 * time.Minute),
 							Panel:       monitoring.Panel().LegendFormat("requests waiting"),
-							Owner:       monitoring.ObservableOwnerCoreApplication,
+							Owner:       monitoring.ObservableOwnerRepoManagement,
 							PossibleSolutions: `
 								- **Check github-proxy logs for network connection issues.
 								- **Check github status.`,
@@ -34,10 +34,10 @@ func GitHubProxy() *monitoring.Container {
 				},
 			},
 
-			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
-			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
-			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
-			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
+			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerRepoManagement, nil),
+			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerRepoManagement, nil),
+			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerRepoManagement, nil),
+			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerRepoManagement, nil),
 		},
 	}
 }

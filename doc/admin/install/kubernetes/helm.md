@@ -46,7 +46,7 @@ Our Helm chart has a lot of sensible defaults baked into the values.yaml. Not on
 1. Install the Sourcegraph chart using default values:
 
     ```
-    helm install --version 3.39.0 sourcegraph sourcegraph/sourcegraph
+    helm install --version 3.39.1 sourcegraph sourcegraph/sourcegraph
     ```
 
     > NOTE: The default values assume a deployment to GKE running an nginx Ingress controller. The [Cloud Provider Guides](#cloud-providers-guides) demonstrate how to configure Sourcegraph for other environment configurations.
@@ -87,7 +87,7 @@ Example overrides can be found in the [examples](https://github.com/sourcegraph/
 
 Providing the override file to Helm is done with the inclusion of the values flag and the name of the file:
 ```sh
-helm upgrade --install --values ./override.yaml --version 3.39.0 sourcegraph sourcegraph/sourcegraph
+helm upgrade --install --values ./override.yaml --version 3.39.1 sourcegraph sourcegraph/sourcegraph
 ```
 When making configuration changes, it's recommended to review the changes that will be applied - see [Reviewing Changes](#reviewing-changes).
 
@@ -422,7 +422,7 @@ The override file includes a [BackendConfig] CRD. This is necessary to instruct 
 **2** – Install the chart
 
 ```sh
-helm upgrade --install --values ./override.yaml --version 3.39.0 sourcegraph sourcegraph/sourcegraph
+helm upgrade --install --values ./override.yaml --version 3.39.1 sourcegraph sourcegraph/sourcegraph
 ```
 
 It will take around 10 minutes for the load balancer to be fully ready, you may check on the status and obtain the load balancer IP using the following command:
@@ -535,7 +535,7 @@ storageClass:
 **2** – Install the chart
 
 ```sh
-helm upgrade --install --values ./override.yaml --version 3.39.0 sourcegraph sourcegraph/sourcegraph
+helm upgrade --install --values ./override.yaml --version 3.39.1 sourcegraph sourcegraph/sourcegraph
 ```
 
 It will take some time for the load balancer to be fully ready, use the following to check on the status and obtain the load balancer address (once available):
@@ -620,7 +620,7 @@ storageClass:
 **2** – Install the chart
 
 ```sh
-helm upgrade --install --values ./override.yaml --version 3.39.0 sourcegraph sourcegraph/sourcegraph
+helm upgrade --install --values ./override.yaml --version 3.39.1 sourcegraph sourcegraph/sourcegraph
 ```
 
 It will take some time for the load balancer to be fully ready, you can check on the status and obtain the load balancer address (when ready) using:
@@ -706,7 +706,7 @@ storageClass:
 **2** – Install the chart
 
 ```sh
-helm upgrade --install --values ./override.yaml --version 3.39.0 sourcegraph sourcegraph/sourcegraph
+helm upgrade --install --values ./override.yaml --version 3.39.1 sourcegraph sourcegraph/sourcegraph
 ```
 
 It may take some time before your ingress is up and ready to proceed. Depending on how your Ingress Controller works, you may be able to check on its status and obtain the public address of your Ingress using:
@@ -804,7 +804,7 @@ A new version of Sourcegraph is released every month (with patch releases in bet
 1.  Install the new version:
 
    ```bash
-      helm upgrade --install -f override.yaml --version 3.39.0 sourcegraph sourcegraph/sourcegraph
+      helm upgrade --install -f override.yaml --version 3.39.1 sourcegraph sourcegraph/sourcegraph
    ```
 
 1.  Verify the installation has started:

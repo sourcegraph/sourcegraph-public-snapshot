@@ -32,6 +32,14 @@ All notable changes to Sourcegraph are documented in this file.
 
 -
 
+## 3.39.1
+
+### Fixed
+
+- Code Insights: Fixed bug that caused line rendering issues when series data is returned out of order by date.
+- Code Insights: Fixed bug that caused before and after parameters to be switched when clicking in to the diff view from an insight.
+- Fixed an issue with notebooks that caused the cursor to behave erratically in markdown blocks. [#34227](https://github.com/sourcegraph/sourcegraph/pull/34227)
+
 ## 3.39.0
 
 ### Added

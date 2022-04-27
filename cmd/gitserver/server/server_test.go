@@ -296,11 +296,7 @@ func TestServer_handleP4Exec(t *testing.T) {
 }
 
 func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_packed_refs(b *testing.B) {
-	tmp, err := os.MkdirTemp("", "gitserver_test")
-	if err != nil {
-		b.Fatal(err)
-	}
-	defer os.RemoveAll(tmp)
+	tmp := b.TempDir()
 
 	dir := filepath.Join(tmp, ".git")
 	gitDir := GitDir(dir)
@@ -312,7 +308,7 @@ func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_packed_refs(b *testing.B) {
 	// This simulates the most amount of work quickRevParseHead has to do, and
 	// is also the most common in prod. That is where the final rev is in
 	// packed-refs.
-	err = os.WriteFile(filepath.Join(dir, "HEAD"), []byte(fmt.Sprintf("ref: %s\n", masterRef)), 0600)
+	err := os.WriteFile(filepath.Join(dir, "HEAD"), []byte(fmt.Sprintf("ref: %s\n", masterRef)), 0600)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -374,11 +370,7 @@ func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_packed_refs(b *testing.B) {
 }
 
 func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_unpacked_refs(b *testing.B) {
-	tmp, err := os.MkdirTemp("", "gitserver_test")
-	if err != nil {
-		b.Fatal(err)
-	}
-	defer os.RemoveAll(tmp)
+	tmp := b.TempDir()
 
 	dir := filepath.Join(tmp, ".git")
 	gitDir := GitDir(dir)

@@ -265,6 +265,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		AfterEveryStepOpts: []bk.StepOpt{
 			withDefaultTimeout,
 			withAgentQueueDefaults,
+			withAgentLostRetries,
 		},
 	}
 	// Toggle profiling of each step
@@ -328,12 +329,6 @@ func withAgentQueueDefaults(s *bk.Step) {
 	if len(s.Agents) == 0 || s.Agents["queue"] == "" {
 		s.Agents["queue"] = bk.AgentQueueStateless
 	}
-
-	if s.Agents["queue"] != bk.AgentQueueBaremetal {
-		// Use athens proxy for go modules downloads, falling back to direct
-		// https://github.com/sourcegraph/infrastructure/blob/main/buildkite/kubernetes/athens-proxy/athens-athens-proxy.Deployment.yaml
-		s.Env["GOPROXY"] = "http://athens-athens-proxy,direct"
-	}
 }
 
 // withProfiling wraps "time -v" around each command for CPU/RAM utilization information
@@ -343,4 +338,23 @@ func withProfiling(s *bk.Step) {
 		prefixed = append(prefixed, fmt.Sprintf("env time -v %s", cmd))
 	}
 	s.Command = prefixed
+}
+
+// withAgentLostRetries insert automatic retries when the job has failed because it lost its agent.
+//
+// If the step has been marked as not retryable, the retry will be skipped.
+func withAgentLostRetries(s *bk.Step) {
+	if s.Retry != nil && s.Retry.Manual != nil && !s.Retry.Manual.Allowed {
+		return
+	}
+	if s.Retry == nil {
+		s.Retry = &bk.RetryOptions{}
+	}
+	if s.Retry.Automatic == nil {
+		s.Retry.Automatic = []bk.AutomaticRetryOptions{}
+	}
+	s.Retry.Automatic = append(s.Retry.Automatic, bk.AutomaticRetryOptions{
+		Limit:      1,
+		ExitStatus: -1,
+	})
 }

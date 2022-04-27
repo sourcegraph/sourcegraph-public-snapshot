@@ -34,6 +34,7 @@ export interface TemporarySettingsSchema {
     'cta.ideExtensionAlertDismissed': boolean
     'batches.defaultListFilters': MultiSelectState<BatchChangeState>
     'batches.downloadSpecModalDismissed': boolean
+    'codeintel.badge.used': boolean
 }
 
 /**

@@ -1,7 +1,6 @@
 import { storiesOf } from '@storybook/react'
 
-import { RepositoryMenu } from '../../codeintel/RepositoryMenu'
-import { WebStory } from '../../components/WebStory'
+import { WebStory } from '../../../../components/WebStory'
 import {
     ExecutionLogEntryFields,
     LsifIndexFields,
@@ -9,10 +8,11 @@ import {
     LsifUploadFields,
     LSIFUploadState,
     PreciseSupportLevel,
-} from '../../graphql-operations'
+    SearchBasedSupportLevel,
+} from '../../../../graphql-operations'
+import { UseCodeIntelStatusPayload, UseRequestLanguageSupportParameters } from '../hooks/useCodeIntelStatus'
 
-import { RepositoryMenuContent } from './RepositoryMenu'
-import { UseCodeIntelStatusPayload } from './useCodeIntelStatus'
+import { CodeIntelligenceBadge, CodeIntelligenceBadgeProps } from './CodeIntelligenceBadge'
 
 const uploadPrototype: Omit<LsifUploadFields, 'id' | 'state' | 'uploadedAt'> = {
     __typename: 'LSIFUpload',
@@ -204,12 +204,12 @@ const multiplePreciseSupport = [
     },
 ]
 
-// const searchBasedSupport = [
-//     {
-//         language: 'Perl',
-//         supportLevel: SearchBasedSupportLevel.BASIC,
-//     },
-// ]
+const searchBasedSupport = [
+    {
+        language: 'Perl',
+        supportLevel: SearchBasedSupportLevel.BASIC,
+    },
+]
 
 const emptyPayload: UseCodeIntelStatusPayload = {
     activeUploads: [],
@@ -221,16 +221,32 @@ const emptyPayload: UseCodeIntelStatusPayload = {
 
 const now = () => new Date('2020-06-15T15:25:00+00:00')
 
-const defaultProps = {
-    isOpen: true,
+const defaultProps: CodeIntelligenceBadgeProps = {
     repoName: 'repoName',
     revision: 'commitID',
     filePath: 'foo/bar/baz.bonk',
     settingsCascade: { subjects: null, final: null },
-    useCodeIntelStatus: () => ({ data: emptyPayload, loading: false }),
+    isOpen: true,
     now,
+    showBadgeCta: false,
+    useCodeIntelStatus: () => ({ data: emptyPayload, loading: false }),
+    useRequestedLanguageSupportQuery: () => ({
+        data: { languages: ['ocaml'] },
+        loading: false,
+        error: undefined,
+    }),
+    useRequestLanguageSupportQuery: ({ onCompleted }: UseRequestLanguageSupportParameters) => [
+        () =>
+            Promise.resolve({ data: {}, loading: false }).then(value => {
+                if (onCompleted) {
+                    onCompleted()
+                }
+                return value
+            }),
+        { loading: false },
+    ],
 }
-const { add } = storiesOf('web/codeintel/enterprise/RepositoryMenu', module).addDecorator(story => (
+const { add } = storiesOf('web/codeintel/enterprise/CodeIntelligenceBadge', module).addDecorator(story => (
     <WebStory>{() => story()}</WebStory>
 ))
 
@@ -239,44 +255,26 @@ const withPayload = (payload: Partial<UseCodeIntelStatusPayload>): typeof defaul
     useCodeIntelStatus: () => ({ data: { ...emptyPayload, ...payload }, loading: false }),
 })
 
-add('Unavailable', () => <RepositoryMenu {...defaultProps} content={RepositoryMenuContent} />)
+add('Unsupported', () => <CodeIntelligenceBadge {...defaultProps} />)
 
-add('Multiple projects', () => (
-    <RepositoryMenu
-        {...defaultProps}
-        content={RepositoryMenuContent}
-        {...withPayload({ preciseSupport: multiplePreciseSupport })}
-    />
-))
+add('Unavailable', () => <CodeIntelligenceBadge {...withPayload({ searchBasedSupport })} />)
+
+add('Multiple projects', () => <CodeIntelligenceBadge {...withPayload({ preciseSupport: multiplePreciseSupport })} />)
 
 add('Multiple projects, one enabled', () => (
-    <RepositoryMenu
-        {...defaultProps}
-        content={RepositoryMenuContent}
-        {...withPayload({ recentUploads: [completedUpload], preciseSupport })}
-    />
+    <CodeIntelligenceBadge {...withPayload({ recentUploads: [completedUpload], preciseSupport })} />
 ))
 
 add('Processing error', () => (
-    <RepositoryMenu
-        {...defaultProps}
-        content={RepositoryMenuContent}
-        {...withPayload({ recentUploads: [completedUpload, failingUpload] })}
-    />
+    <CodeIntelligenceBadge {...withPayload({ recentUploads: [completedUpload, failingUpload] })} />
 ))
 
 add('Indexing error', () => (
-    <RepositoryMenu
-        {...defaultProps}
-        content={RepositoryMenuContent}
-        {...withPayload({ recentUploads: [completedUpload], recentIndexes: [failingIndex] })}
-    />
+    <CodeIntelligenceBadge {...withPayload({ recentUploads: [completedUpload], recentIndexes: [failingIndex] })} />
 ))
 
 add('Multiple errors', () => (
-    <RepositoryMenu
-        {...defaultProps}
-        content={RepositoryMenuContent}
+    <CodeIntelligenceBadge
         {...withPayload({ recentUploads: [completedUpload, failingUpload], recentIndexes: [failingIndex] })}
     />
 ))

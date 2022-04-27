@@ -25,7 +25,7 @@ type GetChangesetEventOpts struct {
 
 // GetChangesetEvent gets a changeset matching the given options.
 func (s *Store) GetChangesetEvent(ctx context.Context, opts GetChangesetEventOpts) (ev *btypes.ChangesetEvent, err error) {
-	ctx, endObservation := s.operations.getChangesetEvent.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.getChangesetEvent.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("ID", int(opts.ID)),
 		log.Int("changesetID", int(opts.ChangesetID)),
 	}})
@@ -95,7 +95,7 @@ type ListChangesetEventsOpts struct {
 
 // ListChangesetEvents lists ChangesetEvents with the given filters.
 func (s *Store) ListChangesetEvents(ctx context.Context, opts ListChangesetEventsOpts) (cs []*btypes.ChangesetEvent, next int64, err error) {
-	ctx, endObservation := s.operations.listChangesetEvents.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.listChangesetEvents.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	q := listChangesetEventsQuery(&opts)
@@ -161,7 +161,7 @@ type CountChangesetEventsOpts struct {
 
 // CountChangesetEvents returns the number of changeset events in the database.
 func (s *Store) CountChangesetEvents(ctx context.Context, opts CountChangesetEventsOpts) (count int, err error) {
-	ctx, endObservation := s.operations.countChangesetEvents.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.countChangesetEvents.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("changesetID", int(opts.ChangesetID)),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -191,7 +191,7 @@ func countChangesetEventsQuery(opts *CountChangesetEventsOpts) *sqlf.Query {
 
 // UpsertChangesetEvents creates or updates the given ChangesetEvents.
 func (s *Store) UpsertChangesetEvents(ctx context.Context, cs ...*btypes.ChangesetEvent) (err error) {
-	ctx, endObservation := s.operations.upsertChangesetEvents.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.upsertChangesetEvents.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("count", len(cs)),
 	}})
 	defer endObservation(1, observation.Args{})
