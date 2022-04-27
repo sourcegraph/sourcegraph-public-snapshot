@@ -4,14 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/inconshreveable/log15"
-
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/store"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type handler struct {
@@ -48,7 +47,7 @@ var ErrUnknownJob = errors.New("unknown job")
 // dequeue selects a job record from the database and stashes metadata including
 // the job record and the locking transaction. If no job is available for processing,
 // a false-valued flag is returned.
-func (h *handler) dequeue(ctx context.Context, executorName string) (_ apiclient.Job, dequeued bool, _ error) {
+func (h *handler) dequeue(ctx context.Context, logger log.Logger, executorName string) (_ apiclient.Job, dequeued bool, _ error) {
 	// executorName is supposed to be unique.
 	record, dequeued, err := h.Store.Dequeue(ctx, executorName, nil)
 	if err != nil {
@@ -61,7 +60,9 @@ func (h *handler) dequeue(ctx context.Context, executorName string) (_ apiclient
 	job, err := h.RecordTransformer(ctx, record)
 	if err != nil {
 		if _, err := h.Store.MarkFailed(ctx, record.RecordID(), fmt.Sprintf("failed to transform record: %s", err), store.MarkFinalOptions{}); err != nil {
-			log15.Error("Failed to mark record as failed", "recordID", record.RecordID(), "error", err)
+			logger.Error("Failed to mark record as failed",
+				log.Int("recordID", record.RecordID()),
+				log.Error(err))
 		}
 
 		return apiclient.Job{}, false, errors.Wrap(err, "RecordTransformer")
@@ -157,7 +158,7 @@ func (h *handler) markFailed(ctx context.Context, executorName string, jobID int
 func (h *handler) heartbeat(ctx context.Context, executor types.Executor, ids []int) (knownIDs []int, err error) {
 	// Write this heartbeat to the database so that we can populate the UI with recent executor activity.
 	if err := h.executorStore.UpsertHeartbeat(ctx, executor); err != nil {
-		log15.Error("Failed to upsert executor heartbeat", "err", err)
+		log.NamedError("Failed to upsert executor heartbeat", err)
 	}
 
 	knownIDs, err = h.Store.Heartbeat(ctx, ids, store.HeartbeatOptions{
