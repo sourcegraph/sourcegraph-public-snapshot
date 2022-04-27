@@ -85,7 +85,7 @@ public class SourcegraphWindow implements Disposable {
         this.jcefWindow.focus();
     }
 
-    public JBPopup createPopup() {
+    private JBPopup createPopup() {
         return JBPopupFactory.getInstance().createComponentPopupBuilder(panel, panel)
             .setTitle("Sourcegraph")
             .setCancelOnClickOutside(false)
