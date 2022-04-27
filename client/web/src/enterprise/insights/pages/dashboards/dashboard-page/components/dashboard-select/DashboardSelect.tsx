@@ -96,6 +96,7 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
                                 key={dashboard.id}
                                 value={dashboard.id}
                                 label={dashboard.title}
+                                filter={filter}
                                 className={styles.option}
                             />
                         ))}
@@ -110,6 +111,7 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
                                     <SelectDashboardOption
                                         key={dashboard.id}
                                         dashboard={dashboard}
+                                        filter={filter}
                                         className={styles.option}
                                     />
                                 ))}
@@ -126,6 +128,7 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
                                     <SelectDashboardOption
                                         key={dashboard.id}
                                         dashboard={dashboard}
+                                        filter={filter}
                                         className={styles.option}
                                     />
                                 ))}
@@ -142,6 +145,7 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
                                     <SelectDashboardOption
                                         key={dashboard.id}
                                         dashboard={dashboard}
+                                        filter={filter}
                                         className={styles.option}
                                     />
                                 ))}

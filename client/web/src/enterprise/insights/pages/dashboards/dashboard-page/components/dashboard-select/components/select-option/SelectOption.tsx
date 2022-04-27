@@ -21,18 +21,28 @@ export interface SelectOptionProps {
     badge?: string
 
     className?: string
+
+    filter?: string
 }
 
 /**
  * Displays simple text (label) list select (list-box) option.
  */
 export const SelectOption: React.FunctionComponent<SelectOptionProps> = props => {
-    const { value, label, badge, className } = props
+    const { value, label, badge, className, filter = '' } = props
+    const matcher = new RegExp(`(${filter})`, 'ig')
+    const splitLabel = label.split(matcher)
+    const parsedLabel =
+        filter.length > 0
+            ? splitLabel.map((chunk, index) =>
+                  matcher.test(chunk) ? <b key={index}>{chunk}</b> : <span key={index}>{chunk}</span>
+              )
+            : label
 
     return (
         <ListboxOption className={classNames(styles.option, className)} value={value}>
             <TruncatedText title={label} className={styles.text}>
-                {label}
+                {parsedLabel}
             </TruncatedText>
             {badge && <InsightsBadge value={badge} className={styles.badge} />}
         </ListboxOption>
@@ -42,19 +52,21 @@ export const SelectOption: React.FunctionComponent<SelectOptionProps> = props =>
 interface SelectDashboardOptionProps {
     dashboard: CustomInsightDashboard
     className?: string
+    filter?: string
 }
 
 /**
  * Displays select dashboard list-box options.
  */
 export const SelectDashboardOption: React.FunctionComponent<SelectDashboardOptionProps> = props => {
-    const { dashboard, className } = props
+    const { dashboard, className, filter = '' } = props
 
     return (
         <SelectOption
             value={dashboard.id}
             label={getDashboardTitle(dashboard)}
             badge={getDashboardOwnerName(dashboard)}
+            filter={filter}
             className={className}
         />
     )
