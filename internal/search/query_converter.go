@@ -10,7 +10,6 @@ import (
 	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -76,85 +75,12 @@ func mapSlice(values []string, f func(string) string) []string {
 	return result
 }
 
-func count(q query.Basic, p Protocol) int {
-	if count := q.Count(); count != nil {
-		return *count
-	}
-
-	if q.IsStructural() {
-		return limits.DefaultMaxSearchResults
-	}
-
-	switch p {
-	case Batch:
-		return limits.DefaultMaxSearchResults
-	case Streaming:
-		return limits.DefaultMaxSearchResultsStreaming
-	}
-	panic("unreachable")
-}
-
 type Protocol int
 
 const (
 	Streaming Protocol = iota
 	Batch
 )
-
-// ToTextPatternInfo converts a an atomic query to internal values that drive
-// text search. An atomic query is a Basic query where the Pattern is either
-// nil, or comprises only one Pattern node (hence, an atom, and not an
-// expression). See TextPatternInfo for the values it computes and populates.
-func ToTextPatternInfo(q query.Basic, resultTypes result.Types, p Protocol) *TextPatternInfo {
-	// Handle file: and -file: filters.
-	filesInclude, filesExclude := q.IncludeExcludeValues(query.FieldFile)
-	// Handle lang: and -lang: filters.
-	langInclude, langExclude := q.IncludeExcludeValues(query.FieldLang)
-	filesInclude = append(filesInclude, mapSlice(langInclude, LangToFileRegexp)...)
-	filesExclude = append(filesExclude, mapSlice(langExclude, LangToFileRegexp)...)
-	filesReposMustInclude, filesReposMustExclude := q.IncludeExcludeValues(query.FieldRepoHasFile)
-	selector, _ := filter.SelectPathFromString(q.FindValue(query.FieldSelect)) // Invariant: select is validated
-	count := count(q, p)
-
-	// Ugly assumption: for a literal search, the IsRegexp member of
-	// TextPatternInfo must be set true. The logic assumes that a literal
-	// pattern is an escaped regular expression.
-	isRegexp := q.IsLiteral() || q.IsRegexp()
-
-	if q.Pattern == nil {
-		// For compatibility: A nil pattern implies isRegexp is set to
-		// true. This has no effect on search logic.
-		isRegexp = true
-	}
-
-	negated := false
-	if p, ok := q.Pattern.(query.Pattern); ok {
-		negated = p.Negated
-	}
-
-	return &TextPatternInfo{
-		// Values dependent on pattern atom.
-		IsRegExp:        isRegexp,
-		IsStructuralPat: q.IsStructural(),
-		IsCaseSensitive: q.IsCaseSensitive(),
-		FileMatchLimit:  int32(count),
-		Pattern:         q.PatternString(),
-		IsNegated:       negated,
-
-		// Values dependent on parameters.
-		IncludePatterns:              filesInclude,
-		ExcludePattern:               UnionRegExps(filesExclude),
-		FilePatternsReposMustInclude: filesReposMustInclude,
-		FilePatternsReposMustExclude: filesReposMustExclude,
-		PatternMatchesPath:           resultTypes.Has(result.TypePath),
-		PatternMatchesContent:        resultTypes.Has(result.TypeFile),
-		Languages:                    langInclude,
-		PathPatternsAreCaseSensitive: q.IsCaseSensitive(),
-		CombyRule:                    q.FindValue(query.FieldCombyRule),
-		Index:                        q.Index(),
-		Select:                       selector,
-	}
-}
 
 func TimeoutDuration(b query.Basic) time.Duration {
 	d := limits.DefaultTimeout
@@ -357,22 +283,4 @@ func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *Features, 
 	}
 
 	return zoekt.Simplify(zoekt.NewAnd(and...)), nil
-}
-
-// ComputeResultTypes returns result types based three inputs: `type:...` in the query,
-// the `pattern`, and top-level `searchType` (coming from a GQL value).
-func ComputeResultTypes(types []string, b query.Basic, searchType query.SearchType) result.Types {
-	var rts result.Types
-	if searchType == query.SearchTypeStructural && !b.IsEmptyPattern() {
-		rts = result.TypeStructural
-	} else {
-		if len(types) == 0 {
-			rts = result.TypeFile | result.TypePath | result.TypeRepo
-		} else {
-			for _, t := range types {
-				rts = rts.With(result.TypeFromString[t])
-			}
-		}
-	}
-	return rts
 }
