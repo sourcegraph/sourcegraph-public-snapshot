@@ -722,9 +722,9 @@ func optimizeJobs(baseJob job.Job, inputs *run.SearchInputs, q query.Basic) (job
 // Pass represents an optimization pass over an incoming job. It exposes the
 // search inputs and basic query associated with the incoming job. After a pass
 // runs over the incoming job, it returns a (possibly modified) job.
-type Pass = func(job.Job, *run.SearchInputs, query.Basic) (job.Job, error)
+type Pass func(job.Job, *run.SearchInputs, query.Basic) (job.Job, error)
 
-var IdentityPass = func(j job.Job, _ *run.SearchInputs, _ query.Basic) (job.Job, error) {
+func IdentityPass(j job.Job, _ *run.SearchInputs, _ query.Basic) (job.Job, error) {
 	return j, nil
 }
 
