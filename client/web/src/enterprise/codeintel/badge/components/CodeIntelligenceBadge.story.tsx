@@ -12,7 +12,7 @@ import {
 } from '../../../../graphql-operations'
 import { UseCodeIntelStatusPayload, UseRequestLanguageSupportParameters } from '../hooks/useCodeIntelStatus'
 
-import { CodeIntelBadge, CodeIntelBadgeProps } from './CodeIntelBadge'
+import { CodeIntelligenceBadge, CodeIntelligenceBadgeProps } from './CodeIntelligenceBadge'
 
 const uploadPrototype: Omit<LsifUploadFields, 'id' | 'state' | 'uploadedAt'> = {
     __typename: 'LSIFUpload',
@@ -221,7 +221,7 @@ const emptyPayload: UseCodeIntelStatusPayload = {
 
 const now = () => new Date('2020-06-15T15:25:00+00:00')
 
-const defaultProps: CodeIntelBadgeProps = {
+const defaultProps: CodeIntelligenceBadgeProps = {
     repoName: 'repoName',
     revision: 'commitID',
     filePath: 'foo/bar/baz.bonk',
@@ -246,7 +246,7 @@ const defaultProps: CodeIntelBadgeProps = {
         { loading: false },
     ],
 }
-const { add } = storiesOf('web/codeintel/enterprise/CodeIntelBadge', module).addDecorator(story => (
+const { add } = storiesOf('web/codeintel/enterprise/CodeIntelligenceBadge', module).addDecorator(story => (
     <WebStory>{() => story()}</WebStory>
 ))
 
@@ -255,24 +255,26 @@ const withPayload = (payload: Partial<UseCodeIntelStatusPayload>): typeof defaul
     useCodeIntelStatus: () => ({ data: { ...emptyPayload, ...payload }, loading: false }),
 })
 
-add('Unsupported', () => <CodeIntelBadge {...defaultProps} />)
+add('Unsupported', () => <CodeIntelligenceBadge {...defaultProps} />)
 
-add('Unavailable', () => <CodeIntelBadge {...withPayload({ searchBasedSupport })} />)
+add('Unavailable', () => <CodeIntelligenceBadge {...withPayload({ searchBasedSupport })} />)
 
-add('Multiple projects', () => <CodeIntelBadge {...withPayload({ preciseSupport: multiplePreciseSupport })} />)
+add('Multiple projects', () => <CodeIntelligenceBadge {...withPayload({ preciseSupport: multiplePreciseSupport })} />)
 
 add('Multiple projects, one enabled', () => (
-    <CodeIntelBadge {...withPayload({ recentUploads: [completedUpload], preciseSupport })} />
+    <CodeIntelligenceBadge {...withPayload({ recentUploads: [completedUpload], preciseSupport })} />
 ))
 
-add('Processing error', () => <CodeIntelBadge {...withPayload({ recentUploads: [completedUpload, failingUpload] })} />)
+add('Processing error', () => (
+    <CodeIntelligenceBadge {...withPayload({ recentUploads: [completedUpload, failingUpload] })} />
+))
 
 add('Indexing error', () => (
-    <CodeIntelBadge {...withPayload({ recentUploads: [completedUpload], recentIndexes: [failingIndex] })} />
+    <CodeIntelligenceBadge {...withPayload({ recentUploads: [completedUpload], recentIndexes: [failingIndex] })} />
 ))
 
 add('Multiple errors', () => (
-    <CodeIntelBadge
+    <CodeIntelligenceBadge
         {...withPayload({ recentUploads: [completedUpload, failingUpload], recentIndexes: [failingIndex] })}
     />
 ))

@@ -1,9 +1,9 @@
-import { CodeIntelBadge } from './CodeIntelBadge'
+import { CodeIntelligenceBadge } from './CodeIntelligenceBadge'
 
 /**
  * Common props for components needing to decide whether to show Code intelligence
  */
 export interface CodeIntelligenceProps {
     codeIntelligenceEnabled: boolean
-    codeIntelBadge?: typeof CodeIntelBadge
+    codeIntelligenceBadge?: typeof CodeIntelligenceBadge
 }

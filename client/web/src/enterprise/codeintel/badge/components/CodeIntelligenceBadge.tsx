@@ -18,7 +18,7 @@ import {
     Position,
 } from '@sourcegraph/wildcard'
 
-import { CodeIntelBadgeProps as DefaultRepositoryMenuProps } from '../../../../codeintel/CodeIntelBadge'
+import { CodeIntelligenceBadgeProps as DefaultRepositoryMenuProps } from '../../../../codeintel/CodeIntelligenceBadge'
 import {
     LsifIndexFields,
     LsifUploadFields,
@@ -38,9 +38,9 @@ import { IndexerSummary } from './IndexerSummary'
 import { InternalBadgeContent } from './InternalBadgeContent'
 import { Unsupported } from './Unsupported'
 
-import styles from './CodeIntelBadge.module.scss'
+import styles from './CodeIntelligenceBadge.module.scss'
 
-export type CodeIntelBadgeProps = DefaultRepositoryMenuProps & {
+export type CodeIntelligenceBadgeProps = DefaultRepositoryMenuProps & {
     isOpen?: boolean
     now?: () => Date
     showBadgeCta?: boolean
@@ -49,7 +49,7 @@ export type CodeIntelBadgeProps = DefaultRepositoryMenuProps & {
     useRequestLanguageSupportQuery?: typeof defaultUseRequestLanguageSupportQuery
 }
 
-export const CodeIntelBadge: React.FunctionComponent<CodeIntelBadgeProps> = ({
+export const CodeIntelligenceBadge: React.FunctionComponent<CodeIntelligenceBadgeProps> = ({
     isOpen,
     now,
     showBadgeCta,
