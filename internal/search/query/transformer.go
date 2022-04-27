@@ -378,14 +378,14 @@ func partition(nodes []Node, fn func(node Node) bool) (left, right []Node) {
 // the current set of prefixes to prepend to each term in an or-expression.
 // Importantly, unlike a full DNF, this function does not distribute `or`
 // expressions in the pattern.
-func basicDistribute(prefixes []Basic, nodes []Node) []Basic {
+func distribute(prefixes []Basic, nodes []Node) []Basic {
 	for _, node := range nodes {
 		switch v := node.(type) {
 		case Operator:
 			// If the node is all pattern expressions,
 			// we can add it to the existing patterns as-is.
 			if isPatternExpression(v.Operands) {
-				prefixes = basicProduct(prefixes, Basic{Pattern: v})
+				prefixes = product(prefixes, Basic{Pattern: v})
 				continue
 			}
 
@@ -393,41 +393,41 @@ func basicDistribute(prefixes []Basic, nodes []Node) []Basic {
 			case Or:
 				result := make([]Basic, 0, len(prefixes)*len(v.Operands))
 				for _, o := range v.Operands {
-					newBasics := basicDistribute([]Basic{}, []Node{o})
+					newBasics := distribute([]Basic{}, []Node{o})
 					for _, newBasic := range newBasics {
-						result = append(result, basicProduct(prefixes, newBasic)...)
+						result = append(result, product(prefixes, newBasic)...)
 					}
 				}
 				prefixes = result
 			case And, Concat:
-				prefixes = basicDistribute(prefixes, v.Operands)
+				prefixes = distribute(prefixes, v.Operands)
 			}
 		case Parameter:
-			prefixes = basicProduct(prefixes, Basic{Parameters: []Parameter{v}})
+			prefixes = product(prefixes, Basic{Parameters: []Parameter{v}})
 		case Pattern:
-			prefixes = basicProduct(prefixes, Basic{Pattern: v})
+			prefixes = product(prefixes, Basic{Pattern: v})
 		}
 	}
 	return prefixes
 }
 
-// basicProduct computes a conjunction between toMerge and each of the
+// product computes a conjunction between toMerge and each of the
 // input Basic queries.
-func basicProduct(basics []Basic, toMerge Basic) []Basic {
+func product(basics []Basic, toMerge Basic) []Basic {
 	if len(basics) == 0 {
 		return []Basic{toMerge}
 	}
 	result := make([]Basic, len(basics))
 	for i, basic := range basics {
-		result[i] = basicConjunction(basic, toMerge)
+		result[i] = conjunction(basic, toMerge)
 	}
 	return result
 }
 
-// basicConjunction returns a new Basic query that is equivalent to the
+// conjunction returns a new Basic query that is equivalent to the
 // conjunction of the two inputs. The equivalent of combining
 // `(repo:a b) and (repo:c d)` into `repo:a repo:c b and d`
-func basicConjunction(left, right Basic) Basic {
+func conjunction(left, right Basic) Basic {
 	var pattern Node
 	if left.Pattern == nil {
 		pattern = right.Pattern
@@ -456,7 +456,7 @@ func basicConjunction(left, right Basic) Basic {
 // is transformed to
 //   (repo:a (b OR c)) OR (repo:b (b OR c))
 func BuildPlan(query []Node) Plan {
-	return basicDistribute([]Basic{}, query)
+	return distribute([]Basic{}, query)
 }
 
 func substituteOrForRegexp(nodes []Node) []Node {
