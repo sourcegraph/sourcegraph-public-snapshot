@@ -990,7 +990,7 @@ func TestExternalServicesStore_DeleteExtServiceWithManyRepos(t *testing.T) {
 		c <- 0
 	}
 
-	ready := make(chan int)
+	ready := make(chan int, 5)
 	defer close(ready)
 	offsets := []int{0, reposNumber, reposNumber * 2, reposNumber * 3, reposNumber * 4}
 
@@ -1004,7 +1004,7 @@ func TestExternalServicesStore_DeleteExtServiceWithManyRepos(t *testing.T) {
 		}
 	}
 
-	ready2 := make(chan int)
+	ready2 := make(chan int, 5)
 	defer close(ready2)
 
 	extSvcId := extSvc.ID
@@ -1045,10 +1045,12 @@ func TestExternalServicesStore_DeleteExtServiceWithManyRepos(t *testing.T) {
 	}
 
 	// Delete this external service
+	start := time.Now()
 	err = servicesStore.Delete(ctx, extSvcId)
 	if err != nil {
 		t.Fatal(err)
 	}
+	t.Logf("Deleting of an external service with %d repos took %s", reposNumber*5, time.Since(start))
 
 	count, err := servicesStore.RepoCount(ctx, extSvcId)
 	if err != nil {
