@@ -24,9 +24,7 @@ func NewMatchContextRequest(baseURL string, query string) (*stdhttp.Request, err
 }
 
 type ComputeMatchContextStreamDecoder struct {
-	OnResult  func(ctx *compute.MatchContext)
-	OnAlert   func(*http.EventAlert)
-	OnError   func(*http.EventError)
+	OnResult  func(ctx []compute.MatchContext)
 	OnUnknown func(event, data []byte)
 }
 
@@ -41,11 +39,11 @@ func (rr ComputeMatchContextStreamDecoder) ReadAll(r io.Reader) error {
 			if rr.OnResult == nil {
 				continue
 			}
-			var d compute.MatchContext
+			var d []compute.MatchContext
 			if err := json.Unmarshal(data, &d); err != nil {
 				return errors.Errorf("failed to decode compute match context payload: %w", err)
 			}
-			rr.OnResult(&d)
+			rr.OnResult(d)
 		} else if bytes.Equal(event, []byte("done")) {
 			// Always the last event
 			break
