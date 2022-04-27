@@ -1,9 +1,7 @@
 import React, { useEffect } from 'react'
 
-import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
-
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Container, PageHeader, ButtonLink, Icon } from '@sourcegraph/wildcard'
+import { PageHeader } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../components/PageTitle'
 import { SelfHostedCta } from '../../../components/SelfHostedCta'
