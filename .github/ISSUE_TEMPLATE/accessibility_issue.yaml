@@ -57,3 +57,4 @@ body:
       - label: Please give this issue an estimate by applying a label like `estimate/Xd`, where X is the estimated number of days it will take to complete.
       - label: If this issue is specific to a specific Sourcegraph product, please assign the appropriate team label to this issue.
       - label: If this issue will require input from designers in order to complete, please assign the label `needs-design`.
+      - label: If you are confident that this issue should be worked on by GitStart, please assign the label `gitstart` and add the assignee 'gitstart-sourcegraph'
