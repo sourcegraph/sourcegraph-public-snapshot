@@ -597,12 +597,21 @@ func (s *Server) syncRepoState(gitServerAddrs gitserver.GitServerAddresses, batc
 		repoStateUpsertCounter.WithLabelValues("true").Add(float64(len(batch)))
 	}
 
-	options := database.IterateRepoGitserverStatusOptions{}
+	options := database.IterateRepoGitserverStatusOptions{
+		// We also want to include deleted repos as they ay still be cloned on disk
+		IncludeDeleted: true,
+	}
 	if !fullSync {
 		options.OnlyWithoutShard = true
 	}
 	err := store.IterateRepoGitserverStatus(ctx, options, func(repo types.RepoGitserverStatus) error {
 		repoSyncStateCounter.WithLabelValues("check").Inc()
+
+		// We may have a deleted repo, we need to extract the original name both to
+		// ensure that the shard check is correct and also so that we can find the
+		// directory.
+		repo.Name = api.UndeleteRepoName(repo.Name)
+
 		// Ensure we're only dealing with repos we are responsible for
 		addr := addrForKey(repo.Name, gitServerAddrs.Addresses)
 		if !s.hostnameMatch(addr) {

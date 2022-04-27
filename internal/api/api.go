@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/opentracing/opentracing-go/log"
+
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
 // RepoID is the unique identifier for a repository.
@@ -24,6 +26,14 @@ type RepoHashedName string
 
 func (r RepoName) Equal(o RepoName) bool {
 	return strings.EqualFold(string(r), string(o))
+}
+
+var deletedRegex = lazyregexp.New("DELETED-[0-9]+\\.[0-9]+-")
+
+// UndeleteRepoName will "undeleted" a repo name. When we soft-delete a repo we
+// change its name in the database, this function extract the original repo name.
+func UndeleteRepoName(name RepoName) RepoName {
+	return RepoName(deletedRegex.ReplaceAllString(string(name), ""))
 }
 
 // CommitID is the 40-character SHA-1 hash for a Git commit.
