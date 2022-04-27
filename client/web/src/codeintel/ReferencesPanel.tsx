@@ -705,12 +705,12 @@ const CollapsibleRepoLocationGroup: React.FunctionComponent<
 
     return (
         <Collapse isOpen={open} onOpenChange={isOpen => handleOpenChange(repoLocationGroup.repoName, isOpen)}>
-            <>
+            <div className={styles.repoLocationGroup}>
                 <CollapseHeader
                     as={Button}
                     aria-expanded={open}
                     type="button"
-                    className={classNames('d-flex justify-content-start w-100', styles.repoLocationGroup)}
+                    className={classNames('d-flex justify-content-start w-100', styles.repoLocationGroupHeader)}
                 >
                     {open ? (
                         <Icon aria-label="Close" as={ChevronDownIcon} />
@@ -744,7 +744,7 @@ const CollapsibleRepoLocationGroup: React.FunctionComponent<
                         />
                     ))}
                 </CollapsePanel>
-            </>
+            </div>
         </Collapse>
     )
 }
@@ -765,14 +765,14 @@ const CollapsibleLocationGroup: React.FunctionComponent<
 
     return (
         <Collapse isOpen={open} onOpenChange={isOpen => handleOpenChange(group.path, isOpen)}>
-            <>
+            <div className={styles.locationGroup}>
                 <CollapseHeader
                     as={Button}
                     aria-expanded={open}
                     type="button"
                     className={classNames(
                         'bg-transparent border-top-0 border-left-0 border-right-0 d-flex justify-content-start w-100',
-                        styles.locationGroup
+                        styles.locationGroupHeader
                     )}
                 >
                     {open ? (
@@ -829,7 +829,7 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                         })}
                     </ul>
                 </CollapsePanel>
-            </>
+            </div>
         </Collapse>
     )
 }
