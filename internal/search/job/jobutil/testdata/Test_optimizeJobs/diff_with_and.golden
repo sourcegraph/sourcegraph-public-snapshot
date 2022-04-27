@@ -1,0 +1,43 @@
+INPUT:
+
+type:diff a and b
+
+BASE:
+
+(ALERT
+  (TIMEOUT
+    20s
+    (LIMIT
+      500
+      (AND
+        (LIMIT
+          40000
+          (PARALLEL
+            Diff
+            ComputeExcludedRepos))
+        (LIMIT
+          40000
+          (PARALLEL
+            Diff
+            ComputeExcludedRepos))))))
+
+OPTIMIZED:
+
+(ALERT
+  (TIMEOUT
+    20s
+    (LIMIT
+      500
+      (PARALLEL
+        Diff
+        (AND
+          (LIMIT
+            40000
+            (PARALLEL
+              NoopJob
+              ComputeExcludedRepos))
+          (LIMIT
+            40000
+            (PARALLEL
+              NoopJob
+              ComputeExcludedRepos)))))))

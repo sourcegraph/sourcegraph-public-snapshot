@@ -215,364 +215,43 @@ func Test_optimizeJobs(t *testing.T) {
 
 		baseJob, _ := NewJob(inputs, plan, IdentityPass)
 		optimizedJob, _ := NewJob(inputs, plan, OptimizationPass)
-		return "\nBASE:\n\n" + PrettySexp(baseJob) + "\n\nOPTIMIZED:\n\n" + PrettySexp(optimizedJob) + "\n"
+		return "INPUT:\n\n" + input + "\n\nBASE:\n\n" + PrettySexp(baseJob) + "\n\nOPTIMIZED:\n\n" + PrettySexp(optimizedJob) + "\n"
 	}
 
-	autogold.Want("optimize basic expression (Zoekt Text Global)", `
-BASE:
+	cases := []struct {
+		name  string
+		query string
+	}{{
+		name:  "optimize basic expression Zoekt Text Global",
+		query: "foo and bar and not baz",
+	}, {
+		name:  "optimize repo-qualified expression Zoekt Text over repos",
+		query: "repo:derp foo and bar not baz",
+	}, {
+		name:  "optimize repo-qualified expression Zoekt Text over repos",
+		query: "repo:derp foo and bar not baz",
+	}, {
+		name:  "optimize qualified repo with type:symbol expression Zoekt Symbol over repos",
+		query: "repo:derp foo and bar not baz type:symbol",
+	}, {
+		name:  "commit with and",
+		query: "type:commit a and b",
+	}, {
+		name:  "commit with or",
+		query: "type:commit a or b",
+	}, {
+		name:  "diff with and",
+		query: "type:diff a and b",
+	}, {
+		name:  "diff with or",
+		query: "type:diff a or b",
+	}}
 
-(ALERT
-  (TIMEOUT
-    20s
-    (LIMIT
-      500
-      (AND
-        (LIMIT
-          40000
-          (PARALLEL
-            ZoektGlobalSearch
-            RepoSearch
-            ComputeExcludedRepos))
-        (LIMIT
-          40000
-          (PARALLEL
-            ZoektGlobalSearch
-            RepoSearch
-            ComputeExcludedRepos))
-        (LIMIT
-          40000
-          (PARALLEL
-            ZoektGlobalSearch
-            RepoSearch
-            ComputeExcludedRepos))))))
-
-OPTIMIZED:
-
-(ALERT
-  (TIMEOUT
-    20s
-    (LIMIT
-      500
-      (PARALLEL
-        ZoektGlobalSearch
-        (AND
-          (LIMIT
-            40000
-            (PARALLEL
-              NoopJob
-              RepoSearch
-              ComputeExcludedRepos))
-          (LIMIT
-            40000
-            (PARALLEL
-              NoopJob
-              RepoSearch
-              ComputeExcludedRepos))
-          (LIMIT
-            40000
-            (PARALLEL
-              NoopJob
-              RepoSearch
-              ComputeExcludedRepos)))))))
-`).Equal(t, test("foo and bar and not baz"))
-
-	autogold.Want("optimize repo-qualified expression (Zoekt Text over repos)", `
-BASE:
-
-(ALERT
-  (TIMEOUT
-    20s
-    (LIMIT
-      500
-      (AND
-        (LIMIT
-          40000
-          (PARALLEL
-            REPOPAGER
-              (PARALLEL
-                ZoektRepoSubset
-                Searcher))
-            RepoSearch
-            ComputeExcludedRepos))
-        (LIMIT
-          40000
-          (PARALLEL
-            REPOPAGER
-              (PARALLEL
-                ZoektRepoSubset
-                Searcher))
-            RepoSearch
-            ComputeExcludedRepos))
-        (LIMIT
-          40000
-          (PARALLEL
-            REPOPAGER
-              (PARALLEL
-                ZoektRepoSubset
-                Searcher))
-            RepoSearch
-            ComputeExcludedRepos))))))
-
-OPTIMIZED:
-
-(ALERT
-  (TIMEOUT
-    20s
-    (LIMIT
-      500
-      (PARALLEL
-        REPOPAGER
-          ZoektRepoSubset)
-        (AND
-          (LIMIT
-            40000
-            (PARALLEL
-              REPOPAGER
-                (PARALLEL
-                  NoopJob
-                  Searcher))
-              RepoSearch
-              ComputeExcludedRepos))
-          (LIMIT
-            40000
-            (PARALLEL
-              REPOPAGER
-                (PARALLEL
-                  NoopJob
-                  Searcher))
-              RepoSearch
-              ComputeExcludedRepos))
-          (LIMIT
-            40000
-            (PARALLEL
-              REPOPAGER
-                (PARALLEL
-                  NoopJob
-                  Searcher))
-              RepoSearch
-              ComputeExcludedRepos)))))))
-`).Equal(t, test("repo:derp foo and bar not baz"))
-
-	autogold.Want("optimize qualified repo with type:symbol expression (Zoekt Symbol over repos)", `
-BASE:
-
-(ALERT
-  (TIMEOUT
-    20s
-    (LIMIT
-      500
-      (AND
-        (LIMIT
-          40000
-          (PARALLEL
-            REPOPAGER
-              (PARALLEL
-                ZoektSymbolSearch
-                SymbolSearcher))
-            ComputeExcludedRepos))
-        (LIMIT
-          40000
-          (PARALLEL
-            REPOPAGER
-              (PARALLEL
-                ZoektSymbolSearch
-                SymbolSearcher))
-            ComputeExcludedRepos))
-        (LIMIT
-          40000
-          (PARALLEL
-            REPOPAGER
-              (PARALLEL
-                ZoektSymbolSearch
-                SymbolSearcher))
-            ComputeExcludedRepos))))))
-
-OPTIMIZED:
-
-(ALERT
-  (TIMEOUT
-    20s
-    (LIMIT
-      500
-      (PARALLEL
-        REPOPAGER
-          ZoektSymbolSearch)
-        (AND
-          (LIMIT
-            40000
-            (PARALLEL
-              REPOPAGER
-                (PARALLEL
-                  NoopJob
-                  SymbolSearcher))
-              ComputeExcludedRepos))
-          (LIMIT
-            40000
-            (PARALLEL
-              REPOPAGER
-                (PARALLEL
-                  NoopJob
-                  SymbolSearcher))
-              ComputeExcludedRepos))
-          (LIMIT
-            40000
-            (PARALLEL
-              REPOPAGER
-                (PARALLEL
-                  NoopJob
-                  SymbolSearcher))
-              ComputeExcludedRepos)))))))
-`).Equal(t, test("repo:derp foo and bar not baz type:symbol"))
-
-	autogold.Want("commit with and", `
-BASE:
-
-(ALERT
-  (TIMEOUT
-    20s
-    (LIMIT
-      500
-      (AND
-        (LIMIT
-          40000
-          (PARALLEL
-            Commit
-            ComputeExcludedRepos))
-        (LIMIT
-          40000
-          (PARALLEL
-            Commit
-            ComputeExcludedRepos))))))
-
-OPTIMIZED:
-
-(ALERT
-  (TIMEOUT
-    20s
-    (LIMIT
-      500
-      (PARALLEL
-        Commit
-        (AND
-          (LIMIT
-            40000
-            (PARALLEL
-              NoopJob
-              ComputeExcludedRepos))
-          (LIMIT
-            40000
-            (PARALLEL
-              NoopJob
-              ComputeExcludedRepos)))))))
-`).Equal(t, test("type:commit a and b"))
-	autogold.Want("commit with or", `
-BASE:
-
-(ALERT
-  (TIMEOUT
-    20s
-    (LIMIT
-      500
-      (OR
-        (PARALLEL
-          Commit
-          ComputeExcludedRepos)
-        (PARALLEL
-          Commit
-          ComputeExcludedRepos)))))
-
-OPTIMIZED:
-
-(ALERT
-  (TIMEOUT
-    20s
-    (LIMIT
-      500
-      (PARALLEL
-        Commit
-        (OR
-          (PARALLEL
-            NoopJob
-            ComputeExcludedRepos)
-          (PARALLEL
-            NoopJob
-            ComputeExcludedRepos))))))
-`).Equal(t, test("type:commit a or b"))
-	autogold.Want("diff with and", `
-BASE:
-
-(ALERT
-  (TIMEOUT
-    20s
-    (LIMIT
-      500
-      (AND
-        (LIMIT
-          40000
-          (PARALLEL
-            Diff
-            ComputeExcludedRepos))
-        (LIMIT
-          40000
-          (PARALLEL
-            Diff
-            ComputeExcludedRepos))))))
-
-OPTIMIZED:
-
-(ALERT
-  (TIMEOUT
-    20s
-    (LIMIT
-      500
-      (PARALLEL
-        Diff
-        (AND
-          (LIMIT
-            40000
-            (PARALLEL
-              NoopJob
-              ComputeExcludedRepos))
-          (LIMIT
-            40000
-            (PARALLEL
-              NoopJob
-              ComputeExcludedRepos)))))))
-`).Equal(t, test("type:diff a and b"))
-
-	autogold.Want("diff with or", `
-BASE:
-
-(ALERT
-  (TIMEOUT
-    20s
-    (LIMIT
-      500
-      (OR
-        (PARALLEL
-          Diff
-          ComputeExcludedRepos)
-        (PARALLEL
-          Diff
-          ComputeExcludedRepos)))))
-
-OPTIMIZED:
-
-(ALERT
-  (TIMEOUT
-    20s
-    (LIMIT
-      500
-      (PARALLEL
-        Diff
-        (OR
-          (PARALLEL
-            NoopJob
-            ComputeExcludedRepos)
-          (PARALLEL
-            NoopJob
-            ComputeExcludedRepos))))))
-`).Equal(t, test("type:diff a or b"))
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			autogold.Equal(t, autogold.Raw(test(tc.query)))
+		})
+	}
 }
 
 func TestToTextPatternInfo(t *testing.T) {
