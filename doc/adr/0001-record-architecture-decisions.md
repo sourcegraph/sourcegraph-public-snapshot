@@ -11,9 +11,8 @@ We have identified a need to capture architecturally significant decisions that 
 
 ## Decision
 
-- We will use Architecture Decision Records (ADRs) to log architecturally significant decisions.
+- We will use Architecture Decision Records (ADRs) only for logging decisions that have notable architectural impact on our codebase.
 - ADRs are not meant to replace our current RFC process but to complement it by capturing decisions made in RFCs.
-- As a rule of thumb, we recommend creating ADRs only for those decisions that have a notable architectural impact on our codebase.
 
 ## Consequences
 
