@@ -116,14 +116,6 @@ type store struct {
 	txctx   context.Context
 }
 
-// todo
-type ReposMocks struct {
-	ListExternalServiceUserIDsByRepoID func(ctx context.Context, repoID api.RepoID) ([]int32, error)
-	ListExternalServiceRepoIDsByUserID func(ctx context.Context, userID int32) ([]api.RepoID, error)
-}
-
-var Mocks ReposMocks // todo
-
 // NewStore instantiates and returns a new Store with given database handle.
 func NewStore(db database.DB, txOpts sql.TxOptions) Store {
 	s := basestore.NewWithDB(db, txOpts)
@@ -371,10 +363,6 @@ WHERE repo_id = %s AND user_id IS NOT NULL
 `
 
 func (s *store) ListExternalServiceUserIDsByRepoID(ctx context.Context, repoID api.RepoID) (userIDs []int32, err error) {
-	if Mocks.ListExternalServiceUserIDsByRepoID != nil {
-		return Mocks.ListExternalServiceUserIDsByRepoID(ctx, repoID)
-	}
-
 	tr, ctx := s.trace(ctx, "Store.ListExternalServiceUserIDsByRepoID")
 	tr.LogFields(
 		otlog.Int32("repo_id", int32(repoID)),
@@ -404,10 +392,6 @@ AND repo.private
 `
 
 func (s *store) ListExternalServicePrivateRepoIDsByUserID(ctx context.Context, userID int32) (repoIDs []api.RepoID, err error) {
-	if Mocks.ListExternalServiceRepoIDsByUserID != nil {
-		return Mocks.ListExternalServiceRepoIDsByUserID(ctx, userID)
-	}
-
 	tr, ctx := s.trace(ctx, "Store.ListExternalServicePrivateRepoIDsByUserID")
 	tr.LogFields(
 		otlog.Int32("user_id", userID),
