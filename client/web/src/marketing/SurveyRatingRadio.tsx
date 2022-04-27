@@ -2,7 +2,6 @@ import React, { useState } from 'react'
 
 import classNames from 'classnames'
 import { range } from 'lodash'
-import { useHistory } from 'react-router'
 
 import { Button } from '@sourcegraph/wildcard'
 
@@ -18,7 +17,6 @@ interface SurveyRatingRadio {
 }
 
 export const SurveyRatingRadio: React.FunctionComponent<SurveyRatingRadio> = props => {
-    const history = useHistory()
     const [focusedIndex, setFocusedIndex] = useState<number | null>(null)
 
     const handleFocus = (index: number): void => {
@@ -31,7 +29,6 @@ export const SurveyRatingRadio: React.FunctionComponent<SurveyRatingRadio> = pro
 
     const handleChange = (score: number): void => {
         eventLogger.log('SurveyButtonClicked', { score }, { score })
-        history.push(`/survey/${score}`)
 
         if (props.onChange) {
             props.onChange(score)

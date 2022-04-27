@@ -12,7 +12,12 @@
 .header {
     display: flex;
     align-items: center;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.25rem;
+
+    h2 {
+        font-weight: 600;
+        font-size: 1rem;
+    }
 }
 
 .contents {
@@ -24,7 +29,7 @@
 }
 
 .contents-cta {
-    margin-top: 1.5rem;
+    margin-top: 1rem;
 }
 
 .close-button {
@@ -35,6 +40,6 @@
 
 .footer {
     width: 100%;
-    padding: 1rem;
+    padding: 0.75rem;
     border-top: 1px solid var(--border-color);
 }

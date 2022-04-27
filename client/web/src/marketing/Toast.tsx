@@ -8,18 +8,19 @@ import { Button, CardTitle, CardBody, Card, Icon } from '@sourcegraph/wildcard'
 import styles from './Toast.module.scss'
 
 interface ToastProps {
-    title: React.ReactNode
+    title?: React.ReactNode
     subtitle?: React.ReactNode
     cta?: JSX.Element
     footer?: JSX.Element
     onDismiss: () => void
+    className?: string
 }
 
 export const Toast: React.FunctionComponent<ToastProps> = props => (
-    <Card className={styles.toast}>
+    <Card className={classNames(styles.toast, props.className)}>
         <CardBody>
             <CardTitle as="header" className={classNames(styles.header)}>
-                <h2 className="mb-0">{props.title}</h2>
+                {props.title && <h2 className="mb-0">{props.title}</h2>}
                 <Button
                     onClick={props.onDismiss}
                     variant="icon"

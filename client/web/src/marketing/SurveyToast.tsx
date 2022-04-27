@@ -1,18 +1,31 @@
 import React, { useEffect, useState } from 'react'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import { Checkbox } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../tracking/eventLogger'
 
-import { SurveyRatingRadio } from './SurveyRatingRadio'
-import { Toast } from './Toast'
+import { ThankYou } from './ThankYou'
+import { UseCaseForm } from './UseCaseForm'
+import { UserRatingForm } from './UserRatingForm'
 
 interface SurveyToastProps {
     /**
      * For Storybook only
      */
     forceVisible?: boolean
+}
+
+export interface userFeedbackProps {
+    score: number | string
+    useCases: string[]
+    moreSharedInfo: string
+    otherUseCase: string
+}
+
+enum ToastSteps {
+    rate = 1,
+    useCase = 2,
+    thankYou = 3,
 }
 
 export const SurveyToast: React.FunctionComponent<SurveyToastProps> = ({ forceVisible }) => {
@@ -29,6 +42,24 @@ export const SurveyToast: React.FunctionComponent<SurveyToastProps> = ({ forceVi
 
     const loadingTemporarySettings =
         temporarilyDismissed === undefined || permanentlyDismissed === undefined || daysActiveCount === undefined
+
+    const [toggleErrorMessage, setToggleErrorMessage] = useState<boolean>(false)
+    const [activeStep, setActiveStep] = useState(ToastSteps.rate)
+    const [userFeedback, setUserFeedback] = useState<userFeedbackProps>({
+        score: '',
+        useCases: [],
+        otherUseCase: '',
+        moreSharedInfo: '',
+    })
+
+    const handleContinue = (): void => {
+        if (userFeedback.score !== '') {
+            setActiveStep(current => current + 1)
+        } else {
+            setToggleErrorMessage(true)
+        }
+    }
+    const toggleShouldPermanentlyDismiss = (value: boolean): void => setShouldPermanentlyDismiss(value)
 
     /**
      * We show a toast notification if:
@@ -55,6 +86,11 @@ export const SurveyToast: React.FunctionComponent<SurveyToastProps> = ({ forceVi
     }, [loadingTemporarySettings, daysActiveCount, setTemporarilyDismissed])
 
     const handleDismiss = (): void => {
+        if (activeStep === ToastSteps.useCase) {
+            // TODO: Send userFeedback to backend.
+            handleSubmit()
+        }
+
         if (shouldPermanentlyDismiss) {
             setPermanentlyDismissed(shouldPermanentlyDismiss)
         } else {
@@ -62,32 +98,45 @@ export const SurveyToast: React.FunctionComponent<SurveyToastProps> = ({ forceVi
         }
     }
 
+    const handleSubmit = (): void => {
+        // TODO: Send userFeedback to backend
+        handleDismiss()
+    }
+
     if (!visible) {
         return null
     }
 
-    return (
-        <Toast
-            title="Tell us what you think"
-            subtitle={
-                <span id="survey-toast-scores">How likely is it that you would recommend Sourcegraph to a friend?</span>
-            }
-            cta={
-                <SurveyRatingRadio
-                    onChange={handleDismiss}
-                    openSurveyInNewTab={true}
-                    ariaLabelledby="survey-toast-scores"
+    switch (activeStep) {
+        case ToastSteps.useCase:
+            return (
+                <UseCaseForm
+                    handleDone={props => {
+                        setUserFeedback(current => ({ ...current, ...props }))
+                        handleContinue()
+                    }}
+                    handleDismiss={handleDismiss}
                 />
-            }
-            footer={
-                <Checkbox
-                    id="survey-toast-refuse"
-                    label="Don't show this again"
-                    checked={shouldPermanentlyDismiss}
-                    onChange={event => setShouldPermanentlyDismiss(event.target.checked)}
+            )
+        case ToastSteps.thankYou:
+            return (
+                <ThankYou
+                    handleSubmit={() => {
+                        handleSubmit()
+                    }}
                 />
-            }
-            onDismiss={handleDismiss}
-        />
-    )
+            )
+        case ToastSteps.rate:
+        default:
+            return (
+                <UserRatingForm
+                    onChange={score => setUserFeedback(current => ({ ...current, score }))}
+                    handleDismiss={handleDismiss}
+                    handleContinue={handleContinue}
+                    toggleShouldPermanentlyDismiss={toggleShouldPermanentlyDismiss}
+                    shouldPermanentlyDismiss={shouldPermanentlyDismiss}
+                    toggleErrorMessage={toggleErrorMessage}
+                />
+            )
+    }
 }

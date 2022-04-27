@@ -1,6 +1,6 @@
 import { gql } from '@apollo/client'
 import { createMockClient } from '@apollo/client/testing'
-import { cleanup, within, fireEvent } from '@testing-library/react'
+import { cleanup, fireEvent } from '@testing-library/react'
 import { take } from 'rxjs/operators'
 
 import { TemporarySettings } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
@@ -12,6 +12,7 @@ import {
 import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/shared/src/testing'
 
 import { SurveyToast } from './SurveyToast'
+import { OPTIONS } from './UseCaseForm'
 
 describe('SurveyToast', () => {
     let renderResult: RenderWithBrandedContextResult
@@ -87,31 +88,18 @@ describe('SurveyToast', () => {
                 expect(await getTemporarySetting('npsSurvey.hasPermanentlyDismissed')).toBe(true)
             })
 
-            it('correctly submits and dismisses the toast temporarily', async () => {
-                const recommendRadioGroup = renderResult.getByLabelText(
+            it('correctly proceed to use case form', () => {
+                const recommendRadioGroup = renderResult.getByText(
                     'How likely is it that you would recommend Sourcegraph to a friend?'
                 )
                 expect(recommendRadioGroup).toBeVisible()
-                const score10 = within(recommendRadioGroup).getByLabelText(mockScore)
-                fireEvent.click(score10)
-                expect(renderResult.history.location.pathname).toBe(`/survey/${mockScore}`)
-                expect(await getTemporarySetting('npsSurvey.hasTemporarilyDismissed')).toBe(true)
-            })
-
-            it('correctly submits and permanently dismisses the toast if selected', async () => {
-                const dontShowAgain = renderResult.getByLabelText("Don't show this again")
-                expect(dontShowAgain).toBeVisible()
-                fireEvent.click(dontShowAgain)
-
-                const recommendRadioGroup = renderResult.getByLabelText(
-                    'How likely is it that you would recommend Sourcegraph to a friend?'
-                )
-                expect(recommendRadioGroup).toBeVisible()
-                const score10 = within(recommendRadioGroup).getByLabelText(mockScore)
+                const score10 = renderResult.getByText(mockScore)
                 fireEvent.click(score10)
 
-                expect(renderResult.history.location.pathname).toBe(`/survey/${mockScore}`)
-                expect(await getTemporarySetting('npsSurvey.hasPermanentlyDismissed')).toBe(true)
+                const continueButton = renderResult.getByRole('button', { name: 'Continue' })
+                expect(continueButton).toBeVisible()
+                fireEvent.click(continueButton)
+                expect(renderResult.getByText('You are using sourcegraph to...')).toBeVisible()
             })
         })
 
@@ -191,6 +179,54 @@ describe('SurveyToast', () => {
             it('the user is still not surveyed', () => {
                 expect(renderResult.container).toBeEmptyDOMElement()
             })
+        })
+    })
+
+    describe('user has submitted rating score', () => {
+        const moveToUseCaseForm = () => {
+            const mockScore = 10
+            renderResult = renderwithTemporarySettings({ 'user.daysActiveCount': 3 })
+            const score10 = renderResult.getByText(mockScore)
+            fireEvent.click(score10)
+
+            const continueButton = renderResult.getByRole('button', { name: 'Continue' })
+            fireEvent.click(continueButton)
+            expect(renderResult.getByText('You are using sourcegraph to...')).toBeVisible()
+        }
+
+        beforeEach(() => moveToUseCaseForm())
+
+        it('Should render use case form correctly', () => {
+            {
+                OPTIONS.map(({ labelValue }) => {
+                    expect(renderResult.getByLabelText(labelValue)).toBeVisible()
+                    expect(renderResult.getByRole('checkbox', { name: labelValue })).toBeVisible()
+                })
+            }
+            expect(renderResult.getByLabelText('Anything else you would like to share with us?')).toBeVisible()
+        })
+        it('Should be able to provide use cases', () => {
+            {
+                OPTIONS.map(({ labelValue }) => {
+                    const labelElement = renderResult.getByLabelText(labelValue)
+                    fireEvent.click(labelElement)
+                })
+            }
+            expect(renderResult.getAllByRole('checkbox', { checked: true })).toHaveLength(6)
+        })
+        it('Should allow user to provide arbitrary use case', () => {
+            const otherUseCaseElement = renderResult.getByRole('checkbox', { name: 'Other' })
+            fireEvent.click(otherUseCaseElement)
+
+            expect(renderResult.getByLabelText('What else are you using sourcegraph to do?')).toBeVisible()
+        })
+
+        it('Should show some gratitude after usecase submission', () => {
+            const doneButton = renderResult.getByRole('button', { name: 'Done' })
+            expect(doneButton).toBeVisible()
+            fireEvent.click(doneButton)
+
+            expect(renderResult.getByText('Thank you for your feedback')).toBeVisible()
         })
     })
 })
