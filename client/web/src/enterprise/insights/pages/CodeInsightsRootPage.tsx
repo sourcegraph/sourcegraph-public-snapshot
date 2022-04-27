@@ -103,7 +103,11 @@ export const CodeInsightsRootPage: React.FunctionComponent<CodeInsightsRootPageP
                 </TabList>
                 <TabPanels className="mt-3">
                     <TabPanel>
-                        <DashboardsContentPage telemetryService={telemetryService} dashboardID={params?.dashboardId} />
+                        <DashboardsContentPage
+                            settingsCascade={props.settingsCascade}
+                            telemetryService={telemetryService}
+                            dashboardID={params?.dashboardId}
+                        />
                     </TabPanel>
                     <TabPanel>
                         <LazyCodeInsightsGettingStartedPage
