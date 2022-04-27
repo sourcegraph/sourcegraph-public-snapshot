@@ -23,7 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/structural"
 	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
-	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
+	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -177,7 +177,7 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 
 		if resultTypes.Has(result.TypeStructural) {
 			typ := search.TextRequest
-			zoektQuery, err := zoektutil.QueryToZoektQuery(b, resultTypes, &features, typ)
+			zoektQuery, err := zoekt.QueryToZoektQuery(b, resultTypes, &features, typ)
 			if err != nil {
 				return nil, err
 			}
@@ -488,18 +488,18 @@ type jobBuilder struct {
 }
 
 func (b *jobBuilder) newZoektGlobalSearch(typ search.IndexedRequestType) (job.Job, error) {
-	zoektQuery, err := zoektutil.QueryToZoektQuery(b.query, b.resultTypes, b.features, typ)
+	zoektQuery, err := zoekt.QueryToZoektQuery(b.query, b.resultTypes, b.features, typ)
 	if err != nil {
 		return nil, err
 	}
 
-	defaultScope, err := zoektutil.DefaultGlobalQueryScope(b.repoOptions)
+	defaultScope, err := zoekt.DefaultGlobalQueryScope(b.repoOptions)
 	if err != nil {
 		return nil, err
 	}
 
 	includePrivate := b.repoOptions.Visibility == query.Private || b.repoOptions.Visibility == query.Any
-	globalZoektQuery := zoektutil.NewGlobalZoektQuery(zoektQuery, defaultScope, includePrivate)
+	globalZoektQuery := zoekt.NewGlobalZoektQuery(zoektQuery, defaultScope, includePrivate)
 
 	zoektArgs := &search.ZoektParameters{
 		// TODO(rvantonder): the Query value is set when the global zoekt query is
@@ -521,7 +521,7 @@ func (b *jobBuilder) newZoektGlobalSearch(typ search.IndexedRequestType) (job.Jo
 			RepoOptions:      b.repoOptions,
 		}, nil
 	case search.TextRequest:
-		return &zoektutil.GlobalSearch{
+		return &zoekt.GlobalSearch{
 			GlobalZoektQuery: globalZoektQuery,
 			ZoektArgs:        zoektArgs,
 			RepoOptions:      b.repoOptions,
@@ -531,20 +531,20 @@ func (b *jobBuilder) newZoektGlobalSearch(typ search.IndexedRequestType) (job.Jo
 }
 
 func (b *jobBuilder) newZoektSearch(typ search.IndexedRequestType) (job.Job, error) {
-	zoektQuery, err := zoektutil.QueryToZoektQuery(b.query, b.resultTypes, b.features, typ)
+	zoektQuery, err := zoekt.QueryToZoektQuery(b.query, b.resultTypes, b.features, typ)
 	if err != nil {
 		return nil, err
 	}
 
 	switch typ {
 	case search.SymbolRequest:
-		return &zoektutil.ZoektSymbolSearch{
+		return &zoekt.ZoektSymbolSearch{
 			Query:          zoektQuery,
 			FileMatchLimit: b.fileMatchLimit,
 			Select:         b.selector,
 		}, nil
 	case search.TextRequest:
-		return &zoektutil.ZoektRepoSubsetSearch{
+		return &zoekt.ZoektRepoSubsetSearch{
 			Query:          zoektQuery,
 			Typ:            typ,
 			FileMatchLimit: b.fileMatchLimit,
@@ -729,10 +729,10 @@ func optimizeJobs(baseJob job.Job, inputs *run.SearchInputs, q query.Basic) (job
 		MapJob: func(currentJob job.Job) job.Job {
 			switch currentJob.(type) {
 			case
-				*zoektutil.GlobalSearch,
+				*zoekt.GlobalSearch,
 				*symbol.RepoUniverseSymbolSearch,
-				*zoektutil.ZoektRepoSubsetSearch,
-				*zoektutil.ZoektSymbolSearch:
+				*zoekt.ZoektRepoSubsetSearch,
+				*zoekt.ZoektSymbolSearch:
 				optimizedJobs = append(optimizedJobs, currentJob)
 				return currentJob
 			default:
@@ -760,19 +760,19 @@ func optimizeJobs(baseJob job.Job, inputs *run.SearchInputs, q query.Basic) (job
 	trimmer := Mapper{
 		MapJob: func(currentJob job.Job) job.Job {
 			switch currentJob.(type) {
-			case *zoektutil.GlobalSearch:
+			case *zoekt.GlobalSearch:
 				if exists("ZoektGlobalSearch") {
 					return &noopJob{}
 				}
 				return currentJob
 
-			case *zoektutil.ZoektRepoSubsetSearch:
+			case *zoekt.ZoektRepoSubsetSearch:
 				if exists("ZoektRepoSubset") {
 					return &noopJob{}
 				}
 				return currentJob
 
-			case *zoektutil.ZoektSymbolSearch:
+			case *zoekt.ZoektSymbolSearch:
 				if exists("ZoektSymbolSearch") {
 					return &noopJob{}
 				}
@@ -796,8 +796,8 @@ func optimizeJobs(baseJob job.Job, inputs *run.SearchInputs, q query.Basic) (job
 	for i, job := range optimizedJobs {
 		switch job.(type) {
 		case
-			*zoektutil.ZoektRepoSubsetSearch,
-			*zoektutil.ZoektSymbolSearch:
+			*zoekt.ZoektRepoSubsetSearch,
+			*zoekt.ZoektSymbolSearch:
 			optimizedJobs[i] = &repoPagerJob{
 				child:            job,
 				repoOptions:      toRepoOptions(q, inputs.UserSettings),
