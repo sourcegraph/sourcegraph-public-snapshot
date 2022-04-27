@@ -1,4 +1,4 @@
-package search
+package zoekt
 
 import (
 	"sort"
@@ -6,6 +6,7 @@ import (
 
 	"github.com/hexops/autogold"
 
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 
@@ -15,88 +16,88 @@ import (
 func TestQueryToZoektQuery(t *testing.T) {
 	cases := []struct {
 		Name     string
-		Type     IndexedRequestType
+		Type     search.IndexedRequestType
 		Pattern  string
-		Features Features
+		Features search.Features
 		Query    string
 	}{
 		{
 			Name:    "substr",
-			Type:    TextRequest,
+			Type:    search.TextRequest,
 			Pattern: `foo patterntype:regexp`,
 			Query:   "foo case:no",
 		},
 		{
 			Name:    "symbol substr",
-			Type:    SymbolRequest,
+			Type:    search.SymbolRequest,
 			Pattern: `foo patterntype:regexp type:symbol`,
 			Query:   "sym:foo case:no",
 		},
 		{
 			Name:    "regex",
-			Type:    TextRequest,
+			Type:    search.TextRequest,
 			Pattern: `(foo).*?(bar) patterntype:regexp`,
 			Query:   "(foo).*?(bar) case:no",
 		},
 		{
 			Name:    "path",
-			Type:    TextRequest,
+			Type:    search.TextRequest,
 			Pattern: `foo file:\.go$ file:\.yaml$ -file:\bvendor\b patterntype:regexp`,
 			Query:   `foo case:no f:\.go$ f:\.yaml$ -f:\bvendor\b`,
 		},
 		{
 			Name:    "case",
-			Type:    TextRequest,
+			Type:    search.TextRequest,
 			Pattern: `foo case:yes patterntype:regexp file:\.go$ file:yaml`,
 			Query:   `foo case:yes f:\.go$ f:yaml`,
 		},
 		{
 			Name:    "casepath",
-			Type:    TextRequest,
+			Type:    search.TextRequest,
 			Pattern: `foo case:yes file:\.go$ file:\.yaml$ -file:\bvendor\b patterntype:regexp`,
 			Query:   `foo case:yes f:\.go$ f:\.yaml$ -f:\bvendor\b`,
 		},
 		{
 			Name:    "path matches only",
-			Type:    TextRequest,
+			Type:    search.TextRequest,
 			Pattern: `test type:path`,
 			Query:   `f:test`,
 		},
 		{
 			Name:    "content matches only",
-			Type:    TextRequest,
+			Type:    search.TextRequest,
 			Pattern: `test type:file patterntype:literal`,
 			Query:   `c:test`,
 		},
 		{
 			Name:    "content and path matches",
-			Type:    TextRequest,
+			Type:    search.TextRequest,
 			Pattern: `test`,
 			Query:   `test`,
 		},
 		{
 			Name:    "repos must include",
-			Type:    TextRequest,
+			Type:    search.TextRequest,
 			Pattern: `foo repohasfile:\.go$ repohasfile:\.yaml$ -repohasfile:\.java$ -repohasfile:\.xml$ patterntype:regexp`,
 			Query:   `foo (type:repo file:\.go$) (type:repo file:\.yaml$) -(type:repo file:\.java$) -(type:repo file:\.xml$)`,
 		},
 		{
 			Name:    "Just file",
-			Type:    TextRequest,
+			Type:    search.TextRequest,
 			Pattern: `file:\.go$`,
 			Query:   `file:"\\.go(?m:$)"`,
 		},
 		{
 			Name:    "Languages is ignored",
-			Type:    TextRequest,
+			Type:    search.TextRequest,
 			Pattern: `file:\.go$ lang:go`,
 			Query:   `file:"\\.go(?m:$)" file:"\\.go(?m:$)"`,
 		},
 		{
 			Name:    "language gets passed as both file include and lang: predicate",
-			Type:    TextRequest,
+			Type:    search.TextRequest,
 			Pattern: `file:\.go$ lang:go`,
-			Features: Features{
+			Features: search.Features{
 				ContentBasedLangFilters: true,
 			},
 			Query: `file:"\\.go(?m:$)" file:"\\.go(?m:$)" lang:Go`,
@@ -124,6 +125,36 @@ func TestQueryToZoektQuery(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_toZoektPattern(t *testing.T) {
+	test := func(input string, searchType query.SearchType) string {
+		p, err := query.Pipeline(query.Init(input, searchType))
+		if err != nil {
+			return err.Error()
+		}
+		zoektQuery, err := toZoektPattern(p[0].Pattern, false, false, false)
+		if err != nil {
+			return err.Error()
+		}
+		return zoektQuery.String()
+	}
+
+	autogold.Want("basic string",
+		`substr:"a"`).
+		Equal(t, test(`a`, query.SearchTypeLiteral))
+
+	autogold.Want("basic and-expression",
+		`(or (and substr:"a" substr:"b" (not substr:"c")) substr:"d")`).
+		Equal(t, test(`a and b and not c or d`, query.SearchTypeLiteral))
+
+	autogold.Want("quoted string in literal escapes quotes (regexp meta and string escaping)",
+		`substr:"\"func main() {\\n\""`).
+		Equal(t, test(`"func main() {\n"`, query.SearchTypeLiteral))
+
+	autogold.Want("quoted string in regexp interpreted as string (regexp meta escaped)",
+		`substr:"func main() {\n"`).
+		Equal(t, test(`"func main() {\n"`, query.SearchTypeRegex))
 }
 
 func queryEqual(a, b zoekt.Q) bool {
@@ -157,34 +188,4 @@ func computeResultTypes(types []string, b query.Basic, searchType query.SearchTy
 		}
 	}
 	return rts
-}
-
-func Test_toZoektPattern(t *testing.T) {
-	test := func(input string, searchType query.SearchType) string {
-		p, err := query.Pipeline(query.Init(input, searchType))
-		if err != nil {
-			return err.Error()
-		}
-		zoektQuery, err := toZoektPattern(p[0].Pattern, false, false, false)
-		if err != nil {
-			return err.Error()
-		}
-		return zoektQuery.String()
-	}
-
-	autogold.Want("basic string",
-		`substr:"a"`).
-		Equal(t, test(`a`, query.SearchTypeLiteral))
-
-	autogold.Want("basic and-expression",
-		`(or (and substr:"a" substr:"b" (not substr:"c")) substr:"d")`).
-		Equal(t, test(`a and b and not c or d`, query.SearchTypeLiteral))
-
-	autogold.Want("quoted string in literal escapes quotes (regexp meta and string escaping)",
-		`substr:"\"func main() {\\n\""`).
-		Equal(t, test(`"func main() {\n"`, query.SearchTypeLiteral))
-
-	autogold.Want("quoted string in regexp interpreted as string (regexp meta escaped)",
-		`substr:"func main() {\n"`).
-		Equal(t, test(`"func main() {\n"`, query.SearchTypeRegex))
 }
