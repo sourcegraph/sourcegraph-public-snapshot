@@ -205,7 +205,7 @@ SELECT sub.series_id, sub.interval_time, SUM(sub.value) as value, sub.metadata, 
 	ORDER BY sp.series_id, interval_time, sp.repo_name_id
 ) sub
 GROUP BY sub.series_id, sub.interval_time, sub.metadata, sub.capture
-ORDER BY sub.series_id, sub.interval_time DESC
+ORDER BY sub.series_id, sub.interval_time ASC
 `
 
 // Note that the series_points table may contain duplicate points, or points recorded at irregular

@@ -65,7 +65,7 @@ func (e ErrResolutionJobAlreadyExists) Error() string {
 
 // CreateBatchSpecResolutionJob creates the given batch spec resolutionjob jobs.
 func (s *Store) CreateBatchSpecResolutionJob(ctx context.Context, wj *btypes.BatchSpecResolutionJob) (err error) {
-	ctx, endObservation := s.operations.createBatchSpecResolutionJob.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	ctx, _, endObservation := s.operations.createBatchSpecResolutionJob.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
 	defer endObservation(1, observation.Args{})
 
 	q := s.createBatchSpecResolutionJobQuery(wj)
@@ -120,7 +120,7 @@ type GetBatchSpecResolutionJobOpts struct {
 
 // GetBatchSpecResolutionJob gets a BatchSpecResolutionJob matching the given options.
 func (s *Store) GetBatchSpecResolutionJob(ctx context.Context, opts GetBatchSpecResolutionJobOpts) (job *btypes.BatchSpecResolutionJob, err error) {
-	ctx, endObservation := s.operations.getBatchSpecResolutionJob.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.getBatchSpecResolutionJob.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("ID", int(opts.ID)),
 		log.Int("BatchSpecID", int(opts.BatchSpecID)),
 	}})
@@ -176,7 +176,7 @@ type ListBatchSpecResolutionJobsOpts struct {
 
 // ListBatchSpecResolutionJobs lists batch changes with the given filters.
 func (s *Store) ListBatchSpecResolutionJobs(ctx context.Context, opts ListBatchSpecResolutionJobsOpts) (cs []*btypes.BatchSpecResolutionJob, err error) {
-	ctx, endObservation := s.operations.listBatchSpecResolutionJobs.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.listBatchSpecResolutionJobs.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	q := listBatchSpecResolutionJobsQuery(opts)

@@ -15,7 +15,7 @@ import {
     RequestLanguageSupportResult,
     RequestLanguageSupportVariables,
     SearchBasedCodeIntelSupportFields,
-} from '../../graphql-operations'
+} from '../../../../graphql-operations'
 
 import { codeIntelStatusQuery, requestedLanguageSupportQuery, requestLanguageSupportQuery } from './queries'
 

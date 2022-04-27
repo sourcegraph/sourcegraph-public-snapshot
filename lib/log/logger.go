@@ -56,6 +56,11 @@ type Logger interface {
 	// Fatal logs a fatal error message, including any fields accumulated on the Logger.
 	// The logger then calls os.Exit(1), flushing the logger before doing so. Use sparingly.
 	Fatal(string, ...Field)
+
+	// AddCallerSkip increases the number of callers skipped by caller annotation. When
+	// building wrappers around the Logger, supplying this Option prevents the Logger from
+	// always reporting the wrapper code as the caller.
+	AddCallerSkip(int) Logger
 }
 
 // Scoped returns the global logger and sets it up with the given scope and OpenTelemetry
@@ -82,6 +87,10 @@ type zapAdapter struct {
 	// Attributes namespace.
 	attributes []Field
 
+	// callerSkip tracks the total caller skips added so far so that we can rebuild
+	// loggers from root.
+	callerSkip int
+
 	// additionalCore tracks an additional Core to write to - only to be used by logtest.
 	additionalCore zapcore.Core
 }
@@ -102,6 +111,7 @@ func (z *zapAdapter) Scoped(scope string, description string) Logger {
 		Logger:         z.Logger.Named(scope), // name -> scope in OT
 		scope:          newScope,
 		attributes:     z.attributes,
+		callerSkip:     z.callerSkip,
 		additionalCore: z.additionalCore,
 	}
 	if len(description) > 0 {
@@ -131,17 +141,30 @@ func (z *zapAdapter) WithTrace(trace TraceContext) Logger {
 		}))
 	}
 
+	// apply options after adding core
 	newLogger = newLogger.
 		Named(z.scope).
+		WithOptions(zap.AddCallerSkip(z.callerSkip)).
 		// insert trace before attributes
 		With(zap.Inline(&encoders.TraceContextEncoder{TraceContext: trace})).
-		// add attributes
+		// add attributes back
 		With(z.attributes...)
 
 	return &zapAdapter{
 		Logger:         newLogger,
 		scope:          z.scope,
 		attributes:     z.attributes,
+		callerSkip:     z.callerSkip,
+		additionalCore: z.additionalCore,
+	}
+}
+
+func (z *zapAdapter) AddCallerSkip(skip int) Logger {
+	return &zapAdapter{
+		Logger:         z.Logger.WithOptions(zap.AddCallerSkip(skip)),
+		scope:          z.scope,
+		attributes:     z.attributes,
+		callerSkip:     skip + z.callerSkip, // increase
 		additionalCore: z.additionalCore,
 	}
 }
@@ -152,9 +175,10 @@ func (z *zapAdapter) WithTrace(trace TraceContext) Logger {
 // It must implement logtest.configurableAdapter
 func (z *zapAdapter) WithAdditionalCore(core zapcore.Core) Logger {
 	newLogger := globallogger.Get(development).
-		WithOptions(zap.WrapCore(func(c zapcore.Core) zapcore.Core {
-			return zapcore.NewTee(core, c)
-		})).
+		WithOptions(
+			zap.WrapCore(func(c zapcore.Core) zapcore.Core { return zapcore.NewTee(core, c) }),
+			zap.AddCallerSkip(z.callerSkip),
+		).
 		// add fields back
 		Named(z.scope).
 		With(z.attributes...)
@@ -163,6 +187,7 @@ func (z *zapAdapter) WithAdditionalCore(core zapcore.Core) Logger {
 		Logger:         newLogger,
 		scope:          z.scope,
 		attributes:     z.attributes,
+		callerSkip:     z.callerSkip,
 		additionalCore: core,
 	}
 }
