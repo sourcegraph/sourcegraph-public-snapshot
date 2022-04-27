@@ -32,6 +32,8 @@ type Store interface {
 	// ExternalServiceStore returns a database.ExternalServiceStore using the same
 	// database handle.
 	ExternalServiceStore() database.ExternalServiceStore
+	// SetMetrics sets the given metrics for the store.
+	SetMetrics(m StoreMetrics)
 
 	basestore.ShareableStore
 	With(other basestore.ShareableStore) Store
@@ -140,6 +142,10 @@ func (s *store) GitserverReposStore() database.GitserverRepoStore {
 
 func (s *store) ExternalServiceStore() database.ExternalServiceStore {
 	return s.externalServiceStore
+}
+
+func (s *store) SetMetrics(m StoreMetrics) {
+	s.Metrics = m
 }
 
 func (s *store) With(other basestore.ShareableStore) Store {
