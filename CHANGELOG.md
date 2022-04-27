@@ -27,6 +27,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Code Insights: Fixed line chart data series hover effect. Now the active line will be rendered on top of the others.
 - Unverified primary emails no longer breaks the Emails-page for users and Users-page for Site Admin. [#34312](https://github.com/sourcegraph/sourcegraph/pull/34312)
+- Button to download raw file in blob page is now working correctly. [#34558](https://github.com/sourcegraph/sourcegraph/pull/34558)
 
 ### Removed
 
