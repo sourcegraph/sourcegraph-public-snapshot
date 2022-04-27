@@ -1,7 +1,7 @@
 /**
  * This file contains utility functions for the search onboarding tour.
  */
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
@@ -11,7 +11,7 @@ import Tour from 'shepherd.js/src/types/tour'
 
 import { isMacPlatform } from '@sourcegraph/common'
 import { QueryState } from '@sourcegraph/search'
-import { MonacoQueryInputProps } from '@sourcegraph/search-ui/src/input/MonacoQueryInput'
+import { MonacoQueryInputProps } from '@sourcegraph/search-ui'
 import { ALL_LANGUAGES } from '@sourcegraph/shared/src/search/query/languageFilter'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Token } from '@sourcegraph/shared/src/search/query/token'

@@ -337,6 +337,8 @@ func Frontend() *monitoring.Container {
 			shared.CodeIntelligence.NewDependencyServiceGroup(containerName),
 			shared.CodeIntelligence.NewLockfilesGroup(containerName),
 
+			shared.GitServer.NewClientGroup(containerName),
+
 			shared.Batches.NewDBStoreGroup(containerName),
 			shared.Batches.NewServiceGroup(containerName),
 
@@ -562,6 +564,26 @@ func Frontend() *monitoring.Container {
 							Interpretation: `Percentage of sign-out requests grouped by http code`,
 						},
 					},
+					{
+						{
+							Name:           "account_failed_sign_in_attempts",
+							Description:    "rate of failed sign-in attempts",
+							Query:          `sum(rate(src_frontend_account_failed_sign_in_attempts_total[1m]))`,
+							NoAlert:        true,
+							Panel:          monitoring.Panel().Unit(monitoring.Number),
+							Owner:          monitoring.ObservableOwnerCloudSaaS,
+							Interpretation: `Failed sign-in attempts per minute`,
+						},
+						{
+							Name:           "account_lockouts",
+							Description:    "rate of account lockouts",
+							Query:          `sum(rate(src_frontend_account_lockouts_total[1m]))`,
+							NoAlert:        true,
+							Panel:          monitoring.Panel().Unit(monitoring.Number),
+							Owner:          monitoring.ObservableOwnerCloudSaaS,
+							Interpretation: `Account lockouts per minute`,
+						},
+					},
 				}},
 			{
 				Title:  "Organisation GraphQL API requests",
@@ -677,11 +699,11 @@ func Frontend() *monitoring.Container {
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:        "mean_successful_sentinel_duration_over_1h30m",
-							Description: "mean successful sentinel search duration over 1h30m",
+							Name:        "mean_successful_sentinel_duration_over_2h",
+							Description: "mean successful sentinel search duration over 2h",
 							// WARNING: if you change this, ensure that it will not trigger alerts on a customer instance
 							// since these panels relate to metrics that don't exist on a customer instance.
-							Query:          "sum(rate(src_search_response_latency_seconds_sum{source=~`searchblitz.*`, status=`success`}[1h30m])) / sum(rate(src_search_response_latency_seconds_count{source=~`searchblitz.*`, status=`success`}[1h30m]))",
+							Query:          "sum(rate(src_search_response_latency_seconds_sum{source=~`searchblitz.*`, status=`success`}[2h])) / sum(rate(src_search_response_latency_seconds_count{source=~`searchblitz.*`, status=`success`}[2h]))",
 							Warning:        monitoring.Alert().GreaterOrEqual(5).For(15 * time.Minute),
 							Critical:       monitoring.Alert().GreaterOrEqual(8).For(30 * time.Minute),
 							Panel:          monitoring.Panel().LegendFormat("duration").Unit(monitoring.Seconds).With(monitoring.PanelOptions.NoLegend()),
@@ -694,11 +716,11 @@ func Frontend() *monitoring.Container {
 							`,
 						},
 						{
-							Name:        "mean_sentinel_stream_latency_over_1h30m",
-							Description: "mean successful sentinel stream latency over 1h30m",
+							Name:        "mean_sentinel_stream_latency_over_2h",
+							Description: "mean successful sentinel stream latency over 2h",
 							// WARNING: if you change this, ensure that it will not trigger alerts on a customer instance
 							// since these panels relate to metrics that don't exist on a customer instance.
-							Query:    `sum(rate(src_search_streaming_latency_seconds_sum{source=~"searchblitz.*"}[1h30m])) / sum(rate(src_search_streaming_latency_seconds_count{source=~"searchblitz.*"}[1h30m]))`,
+							Query:    `sum(rate(src_search_streaming_latency_seconds_sum{source=~"searchblitz.*"}[2h])) / sum(rate(src_search_streaming_latency_seconds_count{source=~"searchblitz.*"}[2h]))`,
 							Warning:  monitoring.Alert().GreaterOrEqual(2).For(15 * time.Minute),
 							Critical: monitoring.Alert().GreaterOrEqual(3).For(30 * time.Minute),
 							Panel: monitoring.Panel().LegendFormat("latency").Unit(monitoring.Seconds).With(
@@ -716,13 +738,13 @@ func Frontend() *monitoring.Container {
 					},
 					{
 						{
-							Name:        "90th_percentile_successful_sentinel_duration_over_1h30m",
-							Description: "90th percentile successful sentinel search duration over 1h30m",
+							Name:        "90th_percentile_successful_sentinel_duration_over_2h",
+							Description: "90th percentile successful sentinel search duration over 2h",
 							// WARNING: if you change this, ensure that it will not trigger alerts on a customer instance
 							// since these panels relate to metrics that don't exist on a customer instance.
-							Query:          `histogram_quantile(0.90, sum by (le)(label_replace(rate(src_search_response_latency_seconds_bucket{source=~"searchblitz.*", status="success"}[1h30m]), "source", "$1", "source", "searchblitz_(.*)")))`,
+							Query:          `histogram_quantile(0.90, sum by (le)(label_replace(rate(src_search_response_latency_seconds_bucket{source=~"searchblitz.*", status="success"}[2h]), "source", "$1", "source", "searchblitz_(.*)")))`,
 							Warning:        monitoring.Alert().GreaterOrEqual(5).For(15 * time.Minute),
-							Critical:       monitoring.Alert().GreaterOrEqual(10).For(30 * time.Minute),
+							Critical:       monitoring.Alert().GreaterOrEqual(10).For(210 * time.Minute),
 							Panel:          monitoring.Panel().LegendFormat("duration").Unit(monitoring.Seconds).With(monitoring.PanelOptions.NoLegend()),
 							Owner:          monitoring.ObservableOwnerSearch,
 							Interpretation: `90th percentile search duration for all successful sentinel queries`,
@@ -733,13 +755,13 @@ func Frontend() *monitoring.Container {
 							`,
 						},
 						{
-							Name:        "90th_percentile_sentinel_stream_latency_over_1h30m",
-							Description: "90th percentile successful sentinel stream latency over 1h30m",
+							Name:        "90th_percentile_sentinel_stream_latency_over_2h",
+							Description: "90th percentile successful sentinel stream latency over 2h",
 							// WARNING: if you change this, ensure that it will not trigger alerts on a customer instance
 							// since these panels relate to metrics that don't exist on a customer instance.
-							Query:    `histogram_quantile(0.90, sum by (le)(label_replace(rate(src_search_streaming_latency_seconds_bucket{source=~"searchblitz.*"}[1h30m]), "source", "$1", "source", "searchblitz_(.*)")))`,
+							Query:    `histogram_quantile(0.90, sum by (le)(label_replace(rate(src_search_streaming_latency_seconds_bucket{source=~"searchblitz.*"}[2h]), "source", "$1", "source", "searchblitz_(.*)")))`,
 							Warning:  monitoring.Alert().GreaterOrEqual(4).For(15 * time.Minute),
-							Critical: monitoring.Alert().GreaterOrEqual(6).For(30 * time.Minute),
+							Critical: monitoring.Alert().GreaterOrEqual(6).For(210 * time.Minute),
 							Panel: monitoring.Panel().LegendFormat("latency").Unit(monitoring.Seconds).With(
 								monitoring.PanelOptions.NoLegend(),
 								monitoring.PanelOptions.ColorOverride("latency", "#8AB8FF"),

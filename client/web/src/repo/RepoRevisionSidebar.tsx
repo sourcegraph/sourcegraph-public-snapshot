@@ -24,21 +24,24 @@ import {
 } from '@sourcegraph/wildcard'
 
 import settingsSchemaJSON from '../../../../schema/settings.schema.json'
-import { GettingStartedTour } from '../gettingStartedTour/GettingStartedTour'
+import { AuthenticatedUser } from '../auth'
+import { FeatureFlagProps } from '../featureFlags/featureFlags'
+import { GettingStartedTour } from '../tour/GettingStartedTour'
 import { Tree } from '../tree/Tree'
 
 import { RepoRevisionSidebarSymbols } from './RepoRevisionSidebarSymbols'
 
 import styles from './RepoRevisionSidebar.module.scss'
 
-interface Props extends AbsoluteRepoFile, ExtensionsControllerProps, ThemeProps, TelemetryProps {
+interface Props extends AbsoluteRepoFile, ExtensionsControllerProps, ThemeProps, TelemetryProps, FeatureFlagProps {
     repoID: Scalars['ID']
     isDir: boolean
     defaultBranch: string
     className: string
     history: H.History
     location: H.Location
-    showGettingStartedTour?: boolean
+    authenticatedUser: AuthenticatedUser | null
+    isSourcegraphDotCom: boolean
 }
 
 const SIZE_STORAGE_KEY = 'repo-revision-sidebar'
@@ -88,11 +91,15 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
     return (
         <Panel defaultSize={256} position="left" storageKey={SIZE_STORAGE_KEY}>
             <div className="d-flex flex-column h-100 w-100">
-                {props.showGettingStartedTour && (
-                    <GettingStartedTour className="mb-1 mr-3" telemetryService={props.telemetryService} />
-                )}
+                <GettingStartedTour
+                    className="mr-3"
+                    telemetryService={props.telemetryService}
+                    isAuthenticated={!!props.authenticatedUser}
+                    featureFlags={props.featureFlags}
+                    isSourcegraphDotCom={props.isSourcegraphDotCom}
+                />
                 <Tabs
-                    className="w-100 h-100 test-repo-revision-sidebar pr-3"
+                    className="w-100 test-repo-revision-sidebar pr-3 h-25 flex-grow-1"
                     defaultIndex={persistedTabIndex}
                     onChange={setPersistedTabIndex}
                     lazy={true}
@@ -117,11 +124,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
                             <span className="tablist-wrapper--tab-label">Symbols</span>
                         </Tab>
                     </TabList>
-                    <div
-                        aria-hidden={true}
-                        className={classNames('flex w-100 overflow-auto explorer', styles.tabpanels)}
-                        tabIndex={-1}
-                    >
+                    <div className={classNames('flex w-100 overflow-auto explorer', styles.tabpanels)} tabIndex={-1}>
                         <TabPanels>
                             <TabPanel>
                                 <Tree

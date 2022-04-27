@@ -16,7 +16,7 @@ import (
 )
 
 // https://buildkite.com/sourcegraph
-const buildkiteOrg = "sourcegraph"
+const BuildkiteOrg = "sourcegraph"
 
 type buildkiteSecrets struct {
 	Token string `json:"token"`
@@ -29,9 +29,12 @@ func retrieveToken(ctx context.Context, out *output.Output) (string, error) {
 		return tok, nil
 	}
 
-	sec := secrets.FromContext(ctx)
+	sec, err := secrets.FromContext(ctx)
+	if err != nil {
+		return "", err
+	}
 	bkSecrets := buildkiteSecrets{}
-	err := sec.Get("buildkite", &bkSecrets)
+	err = sec.Get("buildkite", &bkSecrets)
 	if errors.Is(err, secrets.ErrSecretNotFound) {
 		str, err := getTokenFromUser(out)
 		if err != nil {
@@ -60,7 +63,7 @@ func getTokenFromUser(out *output.Output) (string, error) {
 - (optional) write_builds
 
 To use functionality that manipulates builds, you must also have the 'write_builds' scope.
-`, buildkiteOrg))
+`, BuildkiteOrg))
 	return open.Prompt("Paste your token here:")
 }
 
@@ -86,7 +89,7 @@ func NewClient(ctx context.Context, out *output.Output) (*Client, error) {
 // GetMostRecentBuild returns a list of most recent builds for the given pipeline and branch.
 // If no builds are found, an error will be returned.
 func (c *Client) GetMostRecentBuild(ctx context.Context, pipeline, branch string) (*buildkite.Build, error) {
-	builds, _, err := c.bk.Builds.ListByPipeline(buildkiteOrg, pipeline, &buildkite.BuildsListOptions{
+	builds, _, err := c.bk.Builds.ListByPipeline(BuildkiteOrg, pipeline, &buildkite.BuildsListOptions{
 		Branch: branch,
 	})
 	if err != nil {
@@ -106,7 +109,7 @@ func (c *Client) GetMostRecentBuild(ctx context.Context, pipeline, branch string
 // GetBuildByNumber returns a single build from a given pipeline and a given build number.
 // If no build is found, an error will be returned.
 func (c *Client) GetBuildByNumber(ctx context.Context, pipeline string, number string) (*buildkite.Build, error) {
-	b, _, err := c.bk.Builds.Get(buildkiteOrg, pipeline, number, nil)
+	b, _, err := c.bk.Builds.Get(BuildkiteOrg, pipeline, number, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +124,7 @@ func (c *Client) GetBuildByNumber(ctx context.Context, pipeline string, number s
 
 // TriggerBuild request a build on Buildkite API and returns that build.
 func (c *Client) TriggerBuild(ctx context.Context, pipeline, branch, commit string) (*buildkite.Build, error) {
-	build, _, err := c.bk.Builds.Create(buildkiteOrg, pipeline, &buildkite.CreateBuild{
+	build, _, err := c.bk.Builds.Create(BuildkiteOrg, pipeline, &buildkite.CreateBuild{
 		Commit: commit,
 		Branch: branch,
 	})
@@ -192,7 +195,7 @@ func hasState(job *buildkite.Job, state string) bool {
 
 func (c *Client) ExportLogs(ctx context.Context, pipeline string, build int, opts ExportLogsOpts) ([]*JobLogs, error) {
 	buildID := strconv.Itoa(build)
-	buildDetails, _, err := c.bk.Builds.Get(buildkiteOrg, pipeline, buildID, nil)
+	buildDetails, _, err := c.bk.Builds.Get(BuildkiteOrg, pipeline, buildID, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -214,7 +217,7 @@ func (c *Client) ExportLogs(ctx context.Context, pipeline string, build int, opt
 			return []*JobLogs{}, nil
 		}
 
-		l, _, err := c.bk.Jobs.GetJobLog(buildkiteOrg, pipeline, buildID, *job.ID)
+		l, _, err := c.bk.Jobs.GetJobLog(BuildkiteOrg, pipeline, buildID, *job.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -236,7 +239,7 @@ func (c *Client) ExportLogs(ctx context.Context, pipeline string, build int, opt
 			continue
 		}
 
-		l, _, err := c.bk.Jobs.GetJobLog(buildkiteOrg, pipeline, buildID, *job.ID)
+		l, _, err := c.bk.Jobs.GetJobLog(BuildkiteOrg, pipeline, buildID, *job.ID)
 		if err != nil {
 			return nil, err
 		}

@@ -97,22 +97,16 @@ func (b Basic) MapParameters(parameters []Parameter) Basic {
 	return Basic{Parameters: parameters, Pattern: b.Pattern}
 }
 
-// AddCount adds a count parameter to a basic query. Behavior of AddCount on a
-// query that already has a count parameter is undefined.
-func (b Basic) AddCount(count int) Basic {
-	return b.MapParameters(append(b.Parameters, Parameter{
-		Field: "count",
-		Value: strconv.FormatInt(int64(count), 10),
-	}))
-}
-
-// GetCount returns the string value of the "count:" field. Returns empty string if none.
-func (b Basic) GetCount() string {
-	var countStr string
-	VisitField(ToNodes(b.Parameters), "count", func(value string, _ bool, _ Annotation) {
-		countStr = value
+// Count returns the string value of the "count:" field. Returns empty string if none.
+func (b Basic) Count() (count *int) {
+	VisitField(ToNodes(b.Parameters), FieldCount, func(value string, _ bool, _ Annotation) {
+		c, err := strconv.Atoi(value)
+		if err != nil {
+			panic(fmt.Sprintf("Value %q for count cannot be parsed as an int", value))
+		}
+		count = &c
 	})
-	return countStr
+	return count
 }
 
 // GetTimeout returns the time.Duration value from the `timeout:` field.
@@ -212,6 +206,23 @@ func (b Basic) Index() YesNoOnly {
 	return *v
 }
 
+func (b Basic) Fork() *YesNoOnly {
+	return Q(ToNodes(b.Parameters)).yesNoOnlyValue(FieldFork)
+}
+
+func (b Basic) Archived() *YesNoOnly {
+	return Q(ToNodes(b.Parameters)).yesNoOnlyValue(FieldArchived)
+}
+
+func (b Basic) Repositories() (repos, excludeRepos []string) {
+	return Q(ToNodes(b.Parameters)).Repositories()
+}
+
+func (b Basic) Visibility() RepoVisibility {
+	visibilityStr := b.FindValue(FieldVisibility)
+	return ParseVisibility(visibilityStr)
+}
+
 // PatternString returns the simple string pattern of a basic query. It assumes
 // there is only on pattern atom.
 func (b Basic) PatternString() string {
@@ -224,6 +235,16 @@ func (b Basic) PatternString() string {
 		}
 	}
 	return ""
+}
+
+func (b Basic) IsEmptyPattern() bool {
+	if b.Pattern == nil {
+		return true
+	}
+	if p, ok := b.Pattern.(Pattern); ok {
+		return p.Value == ""
+	}
+	return false
 }
 
 // IncludeExcludeValues partitions multiple values of a field into positive
@@ -246,6 +267,27 @@ func (b Basic) Exists(field string) bool {
 		found = true
 	})
 	return found
+}
+
+func (b Basic) Dependencies() (dependencies []string) {
+	VisitPredicate(b.ToParseTree(), func(field, name, value string) {
+		if field == FieldRepo && (name == "dependencies" || name == "deps") {
+			dependencies = append(dependencies, value)
+		}
+	})
+	return dependencies
+}
+
+func (b Basic) MaxResults(defaultLimit int) int {
+	if count := b.Count(); count != nil {
+		return *count
+	}
+
+	if defaultLimit != 0 {
+		return defaultLimit
+	}
+
+	return limits.DefaultMaxSearchResults
 }
 
 // A query is a tree of Nodes. We choose the type name Q so that external uses like query.Q do not stutter.
@@ -288,29 +330,20 @@ func (q Q) StringValue(field string) (value, negatedValue string) {
 	return value, negatedValue
 }
 
-func (q Q) Values(field string) []*Value {
-	var values []*Value
-	if field == "" {
-		VisitPattern(q, func(value string, _ bool, annotation Annotation) {
-			values = append(values, q.valueToTypedValue(field, value, annotation.Labels)...)
-		})
-	} else {
-		VisitField(q, field, func(value string, _ bool, _ Annotation) {
-			values = append(values, q.valueToTypedValue(field, value, None)...)
-		})
+func (q Q) Index() YesNoOnly {
+	v := q.yesNoOnlyValue(FieldIndex)
+	if v == nil {
+		return Yes
 	}
-	return values
+	return *v
 }
 
-func (q Q) Fields() map[string][]*Value {
-	fields := make(map[string][]*Value)
-	VisitPattern(q, func(_ string, _ bool, _ Annotation) {
-		fields[""] = q.Values("")
+func (q Q) Exists(field string) bool {
+	found := false
+	VisitField(q, field, func(_ string, _ bool, _ Annotation) {
+		found = true
 	})
-	VisitParameter(q, func(field, _ string, _ bool, _ Annotation) {
-		fields[field] = q.Values(field)
-	})
-	return fields
+	return found
 }
 
 func (q Q) BoolValue(field string) bool {
@@ -407,84 +440,4 @@ func (q Q) MaxResults(defaultLimit int) int {
 	}
 
 	return limits.DefaultMaxSearchResults
-}
-
-func parseRegexpOrPanic(field, value string) *regexp.Regexp {
-	r, err := regexp.Compile(value)
-	if err != nil {
-		panic(fmt.Sprintf("Value %s for field %s invalid regex: %s", field, value, err.Error()))
-	}
-	return r
-}
-
-// valueToTypedValue approximately preserves the field validation of our
-// previous query processing. It does not check the validity of field negation
-// or if the same field is specified more than once. This role is now performed
-// by validate.go.
-func (q Q) valueToTypedValue(field, value string, label labels) []*Value {
-	switch field {
-	case
-		FieldDefault:
-		if label.IsSet(Literal) {
-			return []*Value{{String: &value}}
-		}
-		if label.IsSet(Regexp) {
-			regexp, err := regexp.Compile(value)
-			if err != nil {
-				panic(fmt.Sprintf("Invariant broken: value must have been checked to be valid regexp. Error: %s", err))
-			}
-			return []*Value{{Regexp: regexp}}
-		}
-		// All patterns should have a label after parsing, but if not, treat the pattern as a string literal.
-		return []*Value{{String: &value}}
-
-	case
-		FieldCase:
-		b, _ := parseBool(value)
-		return []*Value{{Bool: &b}}
-
-	case
-		FieldRepo, "r":
-		return []*Value{{Regexp: parseRegexpOrPanic(field, value)}}
-
-	case
-		FieldContext:
-		return []*Value{{String: &value}}
-
-	case
-		FieldFile, "f":
-		return []*Value{{Regexp: parseRegexpOrPanic(field, value)}}
-
-	case
-		FieldFork,
-		FieldArchived,
-		FieldLang, "l", "language",
-		FieldType,
-		FieldPatternType,
-		FieldContent:
-		return []*Value{{String: &value}}
-
-	case FieldRepoHasFile:
-		return []*Value{{Regexp: parseRegexpOrPanic(field, value)}}
-
-	case
-		FieldRepoHasCommitAfter,
-		FieldBefore, "until",
-		FieldAfter, "since":
-		return []*Value{{String: &value}}
-
-	case
-		FieldAuthor,
-		FieldCommitter,
-		FieldMessage, "m", "msg":
-		return []*Value{{Regexp: parseRegexpOrPanic(field, value)}}
-
-	case
-		FieldIndex,
-		FieldCount,
-		FieldTimeout,
-		FieldCombyRule:
-		return []*Value{{String: &value}}
-	}
-	return []*Value{{String: &value}}
 }

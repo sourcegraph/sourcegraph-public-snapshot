@@ -1,9 +1,7 @@
-import React from 'react'
-
 import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
 
-import { WebStory } from '@sourcegraph/web/src/components/WebStory'
+import { WebStory } from '../../../../components/WebStory'
 
 import { mockWorkspace } from './WorkspacesPreview.mock'
 import { WorkspacesPreviewListItem } from './WorkspacesPreviewListItem'

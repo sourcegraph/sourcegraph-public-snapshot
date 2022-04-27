@@ -14,7 +14,7 @@ const config = {
       jsx: true,
     },
     EXPERIMENTAL_useSourceOfProjectReferenceRedirect: true,
-    project: __dirname + '/tsconfig.json',
+    project: __dirname + '/tsconfig.eslint.json',
   },
   settings: {
     react: {
@@ -79,6 +79,16 @@ const config = {
 
 See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-source for more information.`,
           },
+          {
+            group: [
+              '@sourcegraph/*/src/*',
+              '!@sourcegraph/branded/src/*',
+              '!@sourcegraph/shared/src/*',
+              '!@sourcegraph/web/src/SourcegraphWebApp.scss',
+            ],
+            message:
+              'Imports from package internals are banned. Add relevant export to the entry point of the package to import it from the outside world.',
+          },
         ],
       },
     ],
@@ -122,6 +132,17 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
       },
     ],
     'react/jsx-no-target-blank': ['error', { allowReferrer: true }],
+    'no-restricted-syntax': [
+      'warn',
+      {
+        selector: 'CallExpression[callee.name="useLocalStorage"]',
+        message:
+          'Consider using useTemporarySetting instead of useLocalStorage so settings are synced when users log in elsewhere. More info at https://docs.sourcegraph.com/dev/background-information/web/temporary_settings',
+      },
+    ],
+    // https://reactjs.org/blog/2020/09/22/introducing-the-new-jsx-transform.html#eslint
+    'react/jsx-uses-react': 'off',
+    'react/react-in-jsx-scope': 'off',
   },
   overrides: [
     {

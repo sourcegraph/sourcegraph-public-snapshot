@@ -2,7 +2,7 @@
 // documentation of all the Bootstrap classes we have available in our app, please see refer to the Bootstrap
 // documentation for that. Its primary purpose is to show what Bootstrap's componenents look like with our styling
 // customizations.
-import React, { useState } from 'react'
+import { useState } from 'react'
 
 import { action } from '@storybook/addon-actions'
 import { number } from '@storybook/addon-knobs'
@@ -11,8 +11,7 @@ import classNames from 'classnames'
 import 'storybook-addon-designs'
 
 import { highlightCodeSafe, registerHighlightContributions } from '@sourcegraph/common'
-import { TextArea, Button, ButtonGroup, Link, Select } from '@sourcegraph/wildcard'
-import { BUTTON_SIZES } from '@sourcegraph/wildcard/src/components/Button/constants'
+import { TextArea, Button, ButtonGroup, Link, Select, BUTTON_SIZES } from '@sourcegraph/wildcard'
 
 import { BrandedStory } from '../../components/BrandedStory'
 import { CodeSnippet } from '../../components/CodeSnippet'

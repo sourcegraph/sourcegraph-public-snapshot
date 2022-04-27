@@ -24,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -529,13 +528,6 @@ func TestEvaluateAnd(t *testing.T) {
 			wantAlert:    false,
 		},
 		{
-			name:         "zoekt does not return enough matches, not exhausted",
-			query:        "foo and bar index:only count:50",
-			zoektMatches: 0,
-			filesSkipped: 1,
-			wantAlert:    true,
-		},
-		{
 			name:         "zoekt returns enough matches, not exhausted",
 			query:        "foo and bar index:only count:50",
 			zoektMatches: 50,
@@ -609,38 +601,6 @@ func TestZeroElapsedMilliseconds(t *testing.T) {
 	r := &SearchResultsResolver{}
 	if got := r.ElapsedMilliseconds(); got != 0 {
 		t.Fatalf("got %d, want %d", got, 0)
-	}
-}
-
-func TestIsContextError(t *testing.T) {
-	cases := []struct {
-		err  error
-		want bool
-	}{
-		{
-			context.Canceled,
-			true,
-		},
-		{
-			context.DeadlineExceeded,
-			true,
-		},
-		{
-			errors.Wrap(context.Canceled, "wrapped"),
-			true,
-		},
-		{
-			errors.New("not a context error"),
-			false,
-		},
-	}
-	ctx := context.Background()
-	for _, c := range cases {
-		t.Run(c.err.Error(), func(t *testing.T) {
-			if got := isContextError(ctx, c.err); got != c.want {
-				t.Fatalf("wanted %t, got %t", c.want, got)
-			}
-		})
 	}
 }
 

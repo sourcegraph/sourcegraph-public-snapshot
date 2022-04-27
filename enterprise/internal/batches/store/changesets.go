@@ -15,6 +15,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
+	bbcs "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/bitbucketcloud"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -1178,6 +1179,8 @@ func scanChangeset(t *btypes.Changeset, s dbutil.Scanner) error {
 		t.Metadata = new(bitbucketserver.PullRequest)
 	case extsvc.TypeGitLab:
 		t.Metadata = new(gitlab.MergeRequest)
+	case extsvc.TypeBitbucketCloud:
+		t.Metadata = new(bbcs.AnnotatedPullRequest)
 	default:
 		return errors.New("unknown external service type")
 	}

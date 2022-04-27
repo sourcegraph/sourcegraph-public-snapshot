@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { createMemoryHistory, createLocation } from 'history'
 import { MemoryRouter } from 'react-router'
 

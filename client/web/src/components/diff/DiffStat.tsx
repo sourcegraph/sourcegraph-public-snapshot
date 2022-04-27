@@ -50,9 +50,16 @@ export const DiffStat: React.FunctionComponent<DiffStatProps> = React.memo(funct
         <div className={classNames(styles.diffStat, className)} data-tooltip={labels.join(', ')}>
             {expandedCounts ? (
                 <>
-                    <strong className="text-success mr-1">+{numberWithCommas(added)}</strong>
-                    {changed > 0 && <strong className="text-warning mr-1">&bull;{numberWithCommas(changed)}</strong>}
-                    <strong className="text-danger">&minus;{numberWithCommas(deleted)}</strong>
+                    {/*
+                        a11y-ignore
+                        Rule: "color-contrast" (Elements must have sufficient color contrast)
+                        GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
+                    */}
+                    <strong className="a11y-ignore text-success mr-1">+{numberWithCommas(added)}</strong>
+                    {changed > 0 && (
+                        <strong className="a11y-ignore text-warning mr-1">&bull;{numberWithCommas(changed)}</strong>
+                    )}
+                    <strong className="a11y-ignore text-danger">&minus;{numberWithCommas(deleted)}</strong>
                 </>
             ) : (
                 <small>{numberWithCommas(total + changed)}</small>

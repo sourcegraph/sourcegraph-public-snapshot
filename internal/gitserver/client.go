@@ -4,18 +4,20 @@ import (
 	"bytes"
 	"context"
 	"crypto/md5"
+	"database/sql"
 	"encoding/binary"
 	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/cespare/xxhash/v2"
@@ -23,13 +25,19 @@ import (
 	"github.com/neelance/parallel"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go/ext"
+	"github.com/opentracing/opentracing-go/log"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"golang.org/x/sync/errgroup"
+	"golang.org/x/sync/semaphore"
 
+	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/go-rendezvous"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
@@ -38,9 +46,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+const git = "git"
 
 var (
 	clientFactory  = httpcli.NewInternalClientFactory("gitserver")
@@ -49,9 +60,10 @@ var (
 )
 
 var ClientMocks, emptyClientMocks struct {
-	GetObject func(repo api.RepoName, objectName string) (*gitdomain.GitObject, error)
-	RepoInfo  func(ctx context.Context, repos ...api.RepoName) (*protocol.RepoInfoResponse, error)
-	Archive   func(ctx context.Context, repo api.RepoName, opt ArchiveOptions) (_ io.ReadCloser, err error)
+	GetObject      func(repo api.RepoName, objectName string) (*gitdomain.GitObject, error)
+	RepoInfo       func(ctx context.Context, repos ...api.RepoName) (*protocol.RepoInfoResponse, error)
+	Archive        func(ctx context.Context, repo api.RepoName, opt ArchiveOptions) (_ io.ReadCloser, err error)
+	LocalGitserver bool
 }
 
 // AddrsMock is a mock for Addrs() function. It is separated from ClientMocks
@@ -87,7 +99,8 @@ func NewClient(db database.DB) *ClientImplementor {
 		// Use the binary name for UserAgent. This should effectively identify
 		// which service is making the request (excluding requests proxied via the
 		// frontend internal API)
-		UserAgent: filepath.Base(os.Args[0]),
+		UserAgent:  filepath.Base(os.Args[0]),
+		operations: getOperations(),
 	}
 }
 
@@ -105,8 +118,9 @@ func NewTestClient(cli httpcli.Doer, db database.DB, addrs []string) *ClientImpl
 		// Use the binary name for UserAgent. This should effectively identify
 		// which service is making the request (excluding requests proxied via the
 		// frontend internal API)
-		UserAgent: filepath.Base(os.Args[0]),
-		db:        db,
+		UserAgent:  filepath.Base(os.Args[0]),
+		db:         db,
+		operations: newOperations(&observation.TestContext),
 	}
 }
 
@@ -134,13 +148,24 @@ type ClientImplementor struct {
 
 	// db is a connection to the database
 	db database.DB
+
+	// operations are used for internal observability
+	operations *operations
 }
+
+type RawBatchLogResult struct {
+	Stdout string
+	Error  error
+}
+type BatchLogCallback func(repoCommit api.RepoCommit, gitLogResult RawBatchLogResult) error
 
 //go:generate ../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/gitserver -i Client -o mock_client.go
 type Client interface {
 	// AddrForRepo returns the gitserver address to use for the given repo name.
 	AddrForRepo(context.Context, api.RepoName) (string, error)
 
+	// Addrs returns the addresses for gitservers. It is safe for concurrent
+	// use. It may return different results at different times.
 	Addrs() []string
 
 	// Archive produces an archive from a Git repository.
@@ -150,8 +175,13 @@ type Client interface {
 	// be downloaded from.
 	ArchiveURL(context.Context, api.RepoName, ArchiveOptions) (*url.URL, error)
 
-	// Command creates a new Cmd. Command name must be 'git', otherwise it panics.
-	Command(name string, args ...string) *Cmd
+	// BatchLog invokes the given callback with the `git log` output for a batch of repository
+	// and commit pairs. If the invoked callback returns a non-nil error, the operation will begin
+	// to abort processing further results.
+	BatchLog(ctx context.Context, opts BatchLogOptions, callback BatchLogCallback) error
+
+	// GitCommand creates a new GitCommand.
+	GitCommand(repo api.RepoName, args ...string) GitCommand
 
 	// CreateCommitFromPatch will attempt to create a commit from a patch
 	// If possible, the error returned will be of type protocol.CreateCommitFromPatchError
@@ -224,6 +254,13 @@ type Client interface {
 	// it goes by calling onMatches with each set of results it receives in
 	// response.
 	Search(_ context.Context, _ *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, _ error)
+
+	// DiffPath returns a position-ordered slice of changes (additions or deletions)
+	// of the given path between the given source and target commits.
+	DiffPath(ctx context.Context, repo api.RepoName, sourceCommit, targetCommit, path string, checker authz.SubRepoPermissionChecker) ([]*diff.Hunk, error)
+
+	// ReadDir reads the contents of the named directory at commit.
+	ReadDir(ctx context.Context, db database.DB, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error)
 }
 
 func (c *ClientImplementor) Addrs() []string {
@@ -238,7 +275,7 @@ func (c *ClientImplementor) AddrForRepo(ctx context.Context, repo api.RepoName) 
 	if len(addrs) == 0 {
 		panic("unexpected state: no gitserver addresses")
 	}
-	return AddrForRepo(ctx, c.db, repo, GitServerAddresses{
+	return AddrForRepo(ctx, c.UserAgent, c.db, repo, GitServerAddresses{
 		Addresses:     addrs,
 		PinnedServers: c.pinned(),
 	})
@@ -265,15 +302,27 @@ func (c *ClientImplementor) addrForKey(key string) string {
 	return addrForKey(key, addrs)
 }
 
-var addrForRepoInvoked = promauto.NewCounter(prometheus.CounterOpts{
+var addrForRepoInvoked = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "src_gitserver_addr_for_repo_invoked",
 	Help: "Number of times gitserver.AddrForRepo was invoked",
-})
+}, []string{"user_agent"})
+
+// AddrForRepoCounter is used to track the number of times AddrForRepo is called
+// and is used to determine if we can read the gitserver location from the database.
+// See AddrForRepo for more details.
+var AddrForRepoCounter uint64
+
+// addrForRepoAddrMismatch is used to count the number of times the state of
+// the gitserver_repos table and the hashing algorithm disagree.
+var addrForRepoAddrMismatch = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "src_gitserver_addr_for_repo_addr_mismatch",
+	Help: "Number of times the gitserver_repos state and the result of gitserver.AddrForRepo are mismatched",
+}, []string{"user_agent"})
 
 // AddrForRepo returns the gitserver address to use for the given repo name.
 // It should never be called with a nil addresses pointer.
-func AddrForRepo(ctx context.Context, db database.DB, repo api.RepoName, addresses GitServerAddresses) (string, error) {
-	addrForRepoInvoked.Inc()
+func AddrForRepo(ctx context.Context, userAgent string, db database.DB, repo api.RepoName, addresses GitServerAddresses) (string, error) {
+	addrForRepoInvoked.WithLabelValues(userAgent).Inc()
 
 	repo = protocol.NormalizeRepo(repo) // in case the caller didn't already normalize it
 	rs := string(repo)
@@ -281,15 +330,63 @@ func AddrForRepo(ctx context.Context, db database.DB, repo api.RepoName, address
 		return addr, nil
 	}
 
+	var shardID string
 	useRendezvous, err := shouldUseRendezvousHashing(ctx, db, rs)
 	if err != nil {
 		return "", err
 	}
 	if useRendezvous {
-		return RendezvousAddrForRepo(repo, addresses.Addresses), nil
+		shardID, err = RendezvousAddrForRepo(repo, addresses.Addresses), nil
+	} else {
+		shardID, err = addrForKey(rs, addresses.Addresses), nil
+	}
+	if err != nil {
+		return "", err
 	}
 
-	return addrForKey(rs, addresses.Addresses), nil
+	// This is an experiment to determine the impact on using the database to determine the location of a repo.
+	// It is meant to be used exclusively on Cloud and the rate will be increased progressively.
+	// Once we determine the impact of this experiment, we can remove it.
+	cfg := conf.Get()
+	if envvar.SourcegraphDotComMode() && cfg.ExperimentalFeatures != nil && cfg.ExperimentalFeatures.EnableGitserverClientLookupTable {
+		// get the rate from the configuration. The rate is a percentage, and defaults to 0.
+		var rate uint64 = uint64(conf.Get().ExperimentalFeatures.GitserverClientLookupTableRate)
+		if rate > 100 {
+			rate = 0
+		}
+
+		// We are using a modulo operation to spread the calls to the database across the rate.
+		var mod uint64
+		if rate > 0 {
+			mod = 100 / rate
+		}
+
+		if rate != 0 && atomic.AddUint64(&AddrForRepoCounter, 1)%mod == 0 {
+			span, ctx := ot.StartSpanFromContext(ctx, "GitserverClient.AddrForRepoFromDB")
+			span.SetTag("Repo", repo)
+			defer func() {
+				if err != nil {
+					ext.Error.Set(span, true)
+					span.LogFields(otlog.Error(err))
+				}
+				span.Finish()
+			}()
+
+			gr, err := db.GitserverRepos().GetByName(ctx, repo)
+			switch {
+			case err == nil:
+				// if there is a difference between the database state and the hashing result
+				// we should observe it.
+				if gr.ShardID != shardID {
+					addrForRepoAddrMismatch.WithLabelValues(userAgent).Inc()
+				}
+			case !errors.Is(err, sql.ErrNoRows):
+				log15.Warn("gitserver.AddrForRepo: failed to get gitserver repo from the database", "repo", repo, "err", err)
+			}
+		}
+	}
+
+	return shardID, nil
 }
 
 type GitServerAddresses struct {
@@ -321,6 +418,15 @@ type ArchiveOptions struct {
 	Pathspecs []Pathspec // if nonempty, only include these pathspecs.
 }
 
+type BatchLogOptions protocol.BatchLogRequest
+
+func (opts BatchLogOptions) LogFields() []log.Field {
+	return []log.Field{
+		log.Int("numRepoCommits", len(opts.RepoCommits)),
+		log.String("Format", opts.Format),
+	}
+}
+
 // Pathspec is a git term for a pattern that matches paths using glob-like syntax.
 // https://git-scm.com/docs/gitglossary#Documentation/gitglossary.txt-aiddefpathspecapathspec
 type Pathspec string
@@ -334,7 +440,7 @@ func PathspecLiteral(s string) Pathspec { return Pathspec(":(literal)" + s) }
 func PathspecSuffix(s string) Pathspec { return Pathspec("*" + s) }
 
 // archiveReader wraps the StdoutReader yielded by gitserver's
-// Cmd.StdoutReader with one that knows how to report a repository-not-found
+// RemoteGitCommand.StdoutReader with one that knows how to report a repository-not-found
 // error more carefully.
 type archiveReader struct {
 	base io.ReadCloser
@@ -448,8 +554,8 @@ type badRequestError struct{ error }
 
 func (e badRequestError) BadRequest() bool { return true }
 
-func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, errRes error) {
-	repoName := protocol.NormalizeRepo(c.Repo)
+func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, errRes error) {
+	repoName := protocol.NormalizeRepo(c.repo)
 
 	span, ctx := ot.StartSpanFromContext(ctx, "Client.sendExec")
 	defer func() {
@@ -460,8 +566,8 @@ func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, err
 		span.Finish()
 	}()
 	span.SetTag("request", "Exec")
-	span.SetTag("repo", c.Repo)
-	span.SetTag("args", c.Args[1:])
+	span.SetTag("repo", c.repo)
+	span.SetTag("args", c.args[1:])
 
 	// Check that ctx is not expired.
 	if err := ctx.Err(); err != nil {
@@ -471,11 +577,11 @@ func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, err
 
 	req := &protocol.ExecRequest{
 		Repo:           repoName,
-		EnsureRevision: c.EnsureRevision,
-		Args:           c.Args[1:],
-		NoTimeout:      c.NoTimeout,
+		EnsureRevision: c.EnsureRevision(),
+		Args:           c.args[1:],
+		NoTimeout:      c.noTimeout,
 	}
-	resp, err := c.client.httpPost(ctx, repoName, "exec", req)
+	resp, err := c.execFn(ctx, repoName, "exec", req)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -608,116 +714,203 @@ var deadlineExceededCounter = promauto.NewCounter(prometheus.CounterOpts{
 	Help: "Times that Client.sendExec() returned context.DeadlineExceeded",
 })
 
-// Cmd represents a command to be executed remotely.
-type Cmd struct {
-	client *ClientImplementor
+// BatchLog invokes the given callback with the `git log` output for a batch of repository
+// and commit pairs. If the invoked callback returns a non-nil error, the operation will begin
+// to abort processing further results.
+func (c *ClientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, callback BatchLogCallback) (err error) {
+	ctx, endObservation := c.operations.batchLog.With(ctx, &err, observation.Args{LogFields: opts.LogFields()})
+	defer endObservation(1, observation.Args{})
 
-	Args           []string
-	Repo           api.RepoName // the repository to execute the command in
-	EnsureRevision string
-	ExitStatus     int
-	NoTimeout      bool
-}
+	// Make a request to a single gitserver shard and feed the results to the user-supplied
+	// callback. This function is invoked multiple times (and concurrently) in the loops below
+	// this function definition.
+	performLogRequestToShard := func(ctx context.Context, addr string, repoCommits []api.RepoCommit) (err error) {
+		var numProcessed int
+		repoNames := repoNamesFromRepoCommits(repoCommits)
 
-func (c *ClientImplementor) Command(name string, arg ...string) *Cmd {
-	if name != "git" {
-		panic("gitserver: command name must be 'git'")
-	}
-	return &Cmd{
-		client: c,
-		Args:   append([]string{"git"}, arg...),
-	}
-}
+		ctx, logger, endObservation := c.operations.batchLogSingle.WithAndLogger(ctx, &err, observation.Args{
+			LogFields: []log.Field{
+				log.String("addr", addr),
+				log.Int("numRepos", len(repoNames)),
+				log.Int("numRepoCommits", len(repoCommits)),
+			},
+		})
+		defer func() {
+			endObservation(1, observation.Args{
+				LogFields: []log.Field{
+					log.Int("numProcessed", numProcessed),
+				},
+			})
+		}()
 
-// DividedOutput runs the command and returns its standard output and standard error.
-func (c *Cmd) DividedOutput(ctx context.Context) ([]byte, []byte, error) {
-	rc, trailer, err := c.sendExec(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
+		uri := "http://" + addr + "/batch-log"
+		repoName := api.RepoName(strings.Join(repoNames, ",")) // only used to label spans
 
-	stdout, err := io.ReadAll(rc)
-	rc.Close()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	c.ExitStatus, err = strconv.Atoi(trailer.Get("X-Exec-Exit-Status"))
-	if err != nil {
-		return nil, nil, err
-	}
-
-	stderr := []byte(trailer.Get("X-Exec-Stderr"))
-	if errorMsg := trailer.Get("X-Exec-Error"); errorMsg != "" {
-		return stdout, stderr, errors.New(errorMsg)
-	}
-
-	return stdout, stderr, nil
-}
-
-// Run starts the specified command and waits for it to complete.
-func (c *Cmd) Run(ctx context.Context) error {
-	_, _, err := c.DividedOutput(ctx)
-	return err
-}
-
-// Output runs the command and returns its standard output.
-func (c *Cmd) Output(ctx context.Context) ([]byte, error) {
-	stdout, _, err := c.DividedOutput(ctx)
-	return stdout, err
-}
-
-// CombinedOutput runs the command and returns its combined standard output and standard error.
-func (c *Cmd) CombinedOutput(ctx context.Context) ([]byte, error) {
-	stdout, stderr, err := c.DividedOutput(ctx)
-	return append(stdout, stderr...), err
-}
-
-func (c *Cmd) DisableTimeout() {
-	c.NoTimeout = true
-}
-
-func (c *Cmd) String() string { return fmt.Sprintf("%q", c.Args) }
-
-// StdoutReader returns an io.ReadCloser of stdout of c. If the command has a
-// non-zero return value, Read returns a non io.EOF error. Do not pass in a
-// started command.
-func StdoutReader(ctx context.Context, c *Cmd) (io.ReadCloser, error) {
-	rc, trailer, err := c.sendExec(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return &cmdReader{
-		rc:      rc,
-		trailer: trailer,
-	}, nil
-}
-
-type cmdReader struct {
-	rc      io.ReadCloser
-	trailer http.Header
-}
-
-func (c *cmdReader) Read(p []byte) (int, error) {
-	n, err := c.rc.Read(p)
-	if err == io.EOF {
-		stderr := c.trailer.Get("X-Exec-Stderr")
-		if len(stderr) > 100 {
-			stderr = stderr[:100] + "... (truncated)"
+		request := protocol.BatchLogRequest{
+			RepoCommits: repoCommits,
+			Format:      opts.Format,
 		}
-		if errorMsg := c.trailer.Get("X-Exec-Error"); errorMsg != "" {
-			return 0, errors.Errorf("%s (stderr: %q)", errorMsg, stderr)
+
+		var buf bytes.Buffer
+		if err := json.NewEncoder(&buf).Encode(request); err != nil {
+			return err
 		}
-		if exitStatus := c.trailer.Get("X-Exec-Exit-Status"); exitStatus != "0" {
-			return 0, errors.Errorf("non-zero exit status: %s (stderr: %q)", exitStatus, stderr)
+
+		resp, err := c.do(ctx, repoName, "POST", uri, buf.Bytes())
+		if err != nil {
+			return err
 		}
+		defer resp.Body.Close()
+		logger.Log(log.Int("resp.StatusCode", resp.StatusCode))
+
+		// TODO(efritz) - remove after 3.39 branch cut
+		if resp.StatusCode == http.StatusNotFound {
+			// Frontend and gitserver may be rolling out. Fall back to issuing one
+			// command per item in the batch via the original /exec endpoint. We
+			// inline the same behavior as BatchLog here as this is throw-away code.
+
+			for _, repoCommit := range repoCommits {
+				content, err := func() (string, error) {
+					reader, err := c.execReader(ctx, repoCommit.Repo, []string{"log", "-n", "1", "--name-only", opts.Format, string(repoCommit.CommitID)})
+					if err != nil {
+						return "", errors.Wrap(err, "execReader")
+					}
+
+					content, err := io.ReadAll(reader)
+					if err != nil {
+						return "", errors.Wrap(err, "io.ReadAll")
+					}
+
+					return string(content), nil
+				}()
+
+				rawResult := RawBatchLogResult{
+					Stdout: content,
+					Error:  err,
+				}
+				if err := callback(repoCommit, rawResult); err != nil {
+					return errors.Wrap(err, "commitLogCallback")
+				}
+			}
+
+			return nil
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
+			return errors.Newf("http status %d: %s", resp.StatusCode, body)
+		}
+
+		var response protocol.BatchLogResponse
+		if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+			return err
+		}
+		logger.Log(log.Int("numResults", len(response.Results)))
+
+		for _, result := range response.Results {
+			var err error
+			if result.CommandError != "" {
+				err = errors.New(result.CommandError)
+			}
+
+			rawResult := RawBatchLogResult{
+				Stdout: result.CommandOutput,
+				Error:  err,
+			}
+			if err := callback(result.RepoCommit, rawResult); err != nil {
+				return errors.Wrap(err, "commitLogCallback")
+			}
+
+			numProcessed++
+		}
+
+		return nil
 	}
-	return n, err
+
+	// Construct batches of requests keyed by the address of the server that will receive the batch.
+	// The results from gitserver will have to be re-interlaced before returning to the client, so we
+	// don't need to be particularly concerned about order here.
+
+	batches := make(map[string][]api.RepoCommit, len(opts.RepoCommits))
+	addrsByName := make(map[api.RepoName]string, len(opts.RepoCommits))
+
+	for _, repoCommit := range opts.RepoCommits {
+		addr, ok := addrsByName[repoCommit.Repo]
+		if !ok {
+			addr, err = c.AddrForRepo(ctx, repoCommit.Repo)
+			if err != nil {
+				return err
+			}
+
+			addrsByName[repoCommit.Repo] = addr
+		}
+
+		batches[addr] = append(batches[addr], api.RepoCommit{
+			Repo:     repoCommit.Repo,
+			CommitID: repoCommit.CommitID,
+		})
+	}
+
+	// Perform each batch request concurrently up to a maximum limit of 32 requests
+	// in-flight at one time.
+	//
+	// This limit will be useless in practice most of the  time as we should only be
+	// making one request per shard and instances should _generally_ have fewer than
+	// 32 gitserver shards. This condition is really to catch unexpected bad behavior.
+	// At the time this limit was chosen, we have 20 gitserver shards on our Cloud
+	// environment, which holds a large proportion of GitHub repositories.
+	//
+	// This operation returns partial results in the case of a malformed or missing
+	// repository or a bad commit reference, but does not attempt to return partial
+	// results when an entire shard is down. Any of these operations failing will
+	// cause an error to be returned from the entire BatchLog function.
+
+	sem := semaphore.NewWeighted(int64(32))
+	g, ctx := errgroup.WithContext(ctx)
+
+	for addr, repoCommits := range batches {
+		// avoid capturing loop variable below
+		addr, repoCommits := addr, repoCommits
+
+		if err := sem.Acquire(ctx, 1); err != nil {
+			return err
+		}
+
+		g.Go(func() (err error) {
+			defer sem.Release(1)
+
+			return performLogRequestToShard(ctx, addr, repoCommits)
+		})
+	}
+
+	return g.Wait()
 }
 
-func (c *cmdReader) Close() error {
-	return c.rc.Close()
+func repoNamesFromRepoCommits(repoCommits []api.RepoCommit) []string {
+	repoNames := make([]string, 0, len(repoCommits))
+	repoNameSet := make(map[api.RepoName]struct{}, len(repoCommits))
+
+	for _, rc := range repoCommits {
+		if _, ok := repoNameSet[rc.Repo]; ok {
+			continue
+		}
+
+		repoNameSet[rc.Repo] = struct{}{}
+		repoNames = append(repoNames, string(rc.Repo))
+	}
+
+	return repoNames
+}
+
+func (c *ClientImplementor) GitCommand(repo api.RepoName, arg ...string) GitCommand {
+	if ClientMocks.LocalGitserver {
+		return NewLocalGitCommand(repo, arg...)
+	}
+	return &RemoteGitCommand{
+		repo:   repo,
+		execFn: c.httpPost,
+		args:   append([]string{git}, arg...),
+	}
 }
 
 func (c *ClientImplementor) ListGitolite(ctx context.Context, gitoliteHost string) (list []*gitolite.Repo, err error) {
@@ -1272,8 +1465,7 @@ var ambiguousArgPattern = lazyregexp.New(`ambiguous argument '([^']+)'`)
 func (c *ClientImplementor) ResolveRevisions(ctx context.Context, repo api.RepoName, revs []protocol.RevisionSpecifier) ([]string, error) {
 	args := append([]string{"rev-parse"}, revsToGitArgs(revs)...)
 
-	cmd := c.Command("git", args...)
-	cmd.Repo = repo
+	cmd := c.GitCommand(repo, args...)
 	stdout, stderr, err := cmd.DividedOutput(ctx)
 	if err != nil {
 		if gitdomain.IsRepoNotExist(err) {
@@ -1282,7 +1474,7 @@ func (c *ClientImplementor) ResolveRevisions(ctx context.Context, repo api.RepoN
 		if match := ambiguousArgPattern.FindSubmatch(stderr); match != nil {
 			return nil, &gitdomain.RevisionNotFoundError{Repo: repo, Spec: string(match[1])}
 		}
-		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (stderr: %q)", cmd.Args, stderr))
+		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (stderr: %q)", cmd.Args(), stderr))
 	}
 
 	return strings.Fields(string(stdout)), nil

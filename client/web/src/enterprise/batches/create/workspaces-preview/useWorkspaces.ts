@@ -1,14 +1,12 @@
 import { dataOrThrowErrors } from '@sourcegraph/http-client'
-import {
-    useConnection,
-    UseConnectionResult,
-} from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
 
+import { useConnection, UseConnectionResult } from '../../../../components/FilteredConnection/hooks/useConnection'
 import {
     Scalars,
-    PreviewBatchSpecWorkspaceFields,
     BatchSpecWorkspacesPreviewResult,
     BatchSpecWorkspacesPreviewVariables,
+    PreviewHiddenBatchSpecWorkspaceFields,
+    PreviewVisibleBatchSpecWorkspaceFields,
 } from '../../../../graphql-operations'
 import { WORKSPACES } from '../backend'
 
@@ -28,11 +26,11 @@ export interface WorkspacePreviewFilters {
 export const useWorkspaces = (
     batchSpecID: Scalars['ID'],
     filters?: WorkspacePreviewFilters
-): UseConnectionResult<PreviewBatchSpecWorkspaceFields> =>
+): UseConnectionResult<PreviewHiddenBatchSpecWorkspaceFields | PreviewVisibleBatchSpecWorkspaceFields> =>
     useConnection<
         BatchSpecWorkspacesPreviewResult,
         BatchSpecWorkspacesPreviewVariables,
-        PreviewBatchSpecWorkspaceFields
+        PreviewHiddenBatchSpecWorkspaceFields | PreviewVisibleBatchSpecWorkspaceFields
     >({
         query: WORKSPACES,
         variables: {

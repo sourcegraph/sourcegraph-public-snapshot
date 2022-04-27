@@ -2,14 +2,17 @@ package authz
 
 import (
 	"context"
+	"io/fs"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -295,5 +298,32 @@ func TestSubRepoEnabled(t *testing.T) {
 		if !SubRepoEnabled(checker) {
 			t.Errorf("expected checker to be valid since it is enabled")
 		}
+	})
+}
+
+func TestRepoContentFromFileInfo(t *testing.T) {
+	repo := api.RepoName("my-repo")
+	t.Run("adding trailing slash to directory", func(t *testing.T) {
+		fi := &util.FileInfo{
+			Name_: "app",
+			Mode_: fs.ModeDir,
+		}
+		rc := repoContentFromFileInfo(repo, fi)
+		expected := RepoContent{
+			Repo: repo,
+			Path: "app/",
+		}
+		assert.Equal(t, expected, rc)
+	})
+	t.Run("doesn't add trailing slash if not directory", func(t *testing.T) {
+		fi := &util.FileInfo{
+			Name_: "my-file.txt",
+		}
+		rc := repoContentFromFileInfo(repo, fi)
+		expected := RepoContent{
+			Repo: repo,
+			Path: "my-file.txt",
+		}
+		assert.Equal(t, expected, rc)
 	})
 }

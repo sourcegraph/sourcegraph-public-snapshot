@@ -19,10 +19,10 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps, Settings } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { Button, useObservable, Link, Card, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
+import { PageTitle } from '../components/PageTitle'
 import { SearchPatternType } from '../graphql-operations'
 import { submitSearch } from '../search/helpers'
 import { SearchPageInput } from '../search/home/SearchPageInput'
@@ -104,7 +104,12 @@ export const CommunitySearchContextPage: React.FunctionComponent<CommunitySearch
                     <>{props.communitySearchContextMetadata.description}</>
                 ) : (
                     <span className="text-monospace">
-                        <span className="search-filter-keyword">context:</span>
+                        {/*
+                           a11y-ignore
+                           Rule: "color-contrast" (Elements must have sufficient color contrast)
+                           GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
+                          */}
+                        <span className="search-filter-keyword a11y-ignore">context:</span>
                         {props.communitySearchContextMetadata.spec}
                     </span>
                 )}
@@ -168,7 +173,12 @@ export const CommunitySearchContextPage: React.FunctionComponent<CommunitySearch
                                 <p>
                                     Using the syntax{' '}
                                     <code>
-                                        <span className="search-filter-keyword">context:</span>
+                                        {/*
+                                            a11y-ignore
+                                            Rule: "color-contrast" (Elements must have sufficient color contrast)
+                                            GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
+                                          */}
+                                        <span className="search-filter-keyword a11y-ignore">context:</span>
                                         {props.communitySearchContextMetadata.spec}
                                     </code>{' '}
                                     in a query will search these repositories:

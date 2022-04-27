@@ -1,4 +1,5 @@
 import {
+    InsightViewFiltersInput,
     LineChartSearchInsightDataSeriesInput,
     UpdateLineChartSearchInsightInput,
     UpdatePieChartSearchInsightInput,
@@ -14,11 +15,12 @@ import { getStepInterval } from '../../utils/get-step-interval'
 export function getSearchInsightUpdateInput(insight: MinimalSearchBasedInsightData): UpdateLineChartSearchInsightInput {
     const repositories = insight.executionType !== InsightExecutionType.Backend ? insight.repositories : []
     const [unit, value] = getStepInterval(insight.step)
-    const filters =
+    const filters: InsightViewFiltersInput =
         insight.executionType === InsightExecutionType.Backend
             ? {
-                  includeRepoRegex: insight.filters?.includeRepoRegexp,
-                  excludeRepoRegex: insight.filters?.excludeRepoRegexp,
+                  includeRepoRegex: insight.filters.includeRepoRegexp,
+                  excludeRepoRegex: insight.filters.excludeRepoRegexp,
+                  searchContexts: insight.filters.contexts,
               }
             : {}
 
@@ -43,25 +45,27 @@ export function getSearchInsightUpdateInput(insight: MinimalSearchBasedInsightDa
 export function getCaptureGroupInsightUpdateInput(
     insight: MinimalCaptureGroupInsightData
 ): UpdateLineChartSearchInsightInput {
-    const [unit, value] = getStepInterval(insight.step)
+    const { step, filters, query, title, repositories } = insight
+    const [unit, value] = getStepInterval(step)
 
     return {
         dataSeries: [
             {
-                query: insight.query,
+                query,
                 options: {},
-                repositoryScope: { repositories: insight.repositories },
+                repositoryScope: { repositories },
                 timeScope: { stepInterval: { unit, value } },
                 generatedFromCaptureGroups: true,
             },
         ],
         presentationOptions: {
-            title: insight.title,
+            title,
         },
         viewControls: {
             filters: {
-                includeRepoRegex: insight.filters?.includeRepoRegexp,
-                excludeRepoRegex: insight.filters?.excludeRepoRegexp,
+                includeRepoRegex: filters.includeRepoRegexp,
+                excludeRepoRegex: filters.excludeRepoRegexp,
+                searchContexts: filters.contexts,
             },
         },
     }

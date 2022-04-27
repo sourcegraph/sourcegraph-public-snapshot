@@ -1,15 +1,15 @@
-import React from 'react'
-
 import { Meta, Story } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
 
 import { PieChart } from './PieChart'
 
-export default {
+const StoryConfig: Meta = {
     title: 'web/charts/pie',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
-} as Meta
+}
+
+export default StoryConfig
 
 interface LanguageUsageDatum {
     name: string

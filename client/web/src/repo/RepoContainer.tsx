@@ -371,6 +371,10 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         return <HeroPage icon={AlertCircleIcon} title="Error" subtitle={<ErrorMessage error={repoOrError} />} />
     }
 
+    const isCodeIntelRepositoryBadgeEnabled =
+        !isErrorLike(props.settingsCascade.final) &&
+        props.settingsCascade.final?.experimentalFeatures?.codeIntelRepositoryBadge?.enabled === true
+
     const repoMatchURL = '/' + encodeURIPathComponent(repoName)
 
     const context: RepoContainerContext = {
@@ -426,6 +430,30 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                     />
                 )}
             </RepoHeaderContributionPortal>
+
+            {isCodeIntelRepositoryBadgeEnabled && (
+                <RepoHeaderContributionPortal
+                    position="right"
+                    priority={110}
+                    id="code-intelligence-status"
+                    {...repoHeaderContributionsLifecycleProps}
+                >
+                    {({ actionType }) =>
+                        props.codeIntelBadge && actionType === 'nav' ? (
+                            <props.codeIntelBadge
+                                key="code-intelligence-status"
+                                repoName={repoName}
+                                revision={rawRevision || 'HEAD'}
+                                filePath={filePath || ''}
+                                settingsCascade={props.settingsCascade}
+                            />
+                        ) : (
+                            <></>
+                        )
+                    }
+                </RepoHeaderContributionPortal>
+            )}
+
             <ErrorBoundary location={props.location}>
                 <Switch>
                     {[
@@ -435,6 +463,11 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                         '/-/tree',
                         '/-/commits',
                         '/-/docs',
+                        '/-/branch',
+                        '/-/contributors',
+                        '/-/compare',
+                        '/-/tag',
+                        '/-/home',
                     ].map(routePath => (
                         <Route
                             path={`${repoMatchURL}${routePath}`}

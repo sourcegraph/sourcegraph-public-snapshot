@@ -75,6 +75,11 @@ extend type Mutation {
     Deletes an LSIF index.
     """
     deleteLSIFIndex(id: ID!): EmptyResponse
+
+    """
+    Request support for a particular language.
+    """
+    requestLanguageSupport(language: String!): EmptyResponse
 }
 
 extend type Query {
@@ -241,6 +246,11 @@ extend type Query {
         """
         repos: [String!]
     ): DocumentationSearchResults!
+
+    """
+    Return the languages that this user has requested support for.
+    """
+    requestedLanguageSupport: [String!]!
 }
 
 """
@@ -496,6 +506,11 @@ extend type Repository {
     ): LSIFIndexConnection!
 
     """
+    Provides a summary of the most reecent upload and index status.
+    """
+    codeIntelSummary: CodeIntelRepositorySummary!
+
+    """
     The set of git objects that match the given git object type and glob pattern.
     This resolver is used by the UI to preview what names match a code intelligence
     policy in a given repository.
@@ -558,6 +573,82 @@ extend type GitBlob {
     Provides info on the level of code-intel support for this git blob.
     """
     codeIntelSupport: CodeIntelSupport!
+
+    """
+    Provides code intelligence within the file.
+
+    Experimental: This API is likely to change in the future.
+    """
+    localCodeIntel: JSONValue
+}
+
+"""
+A summary of the most reecent upload and index status.
+"""
+type CodeIntelRepositorySummary {
+    """
+    A list of recent uploads for a specific repository. This list contains processing,
+    recently queued, and the most recently processed uploads for each distinct indexer
+    and root.
+    """
+    recentUploads: [LSIFUploadsWithRepositoryNamespace!]!
+
+    """
+    A list of recent indexes for a specific repository. This list contains processing,
+    recently queued, and the most recently processed indexes for each distinct indexer
+    and root.
+    """
+    recentIndexes: [LSIFIndexesWithRepositoryNamespace!]!
+
+    """
+    The last time uploads of this repository were checked against data retention policies.
+    """
+    lastUploadRetentionScan: DateTime
+
+    """
+    The last time this repository was considered for auto-indexing job scheduling.
+    """
+    lastIndexScan: DateTime
+}
+
+"""
+A group of uploads that share the same root and indexer values.
+"""
+type LSIFUploadsWithRepositoryNamespace {
+    """
+    The root of all uploads in the associated connection.
+    """
+    root: String!
+
+    """
+    The indexer used to produce the each upload in the associated connection.
+    """
+    indexer: CodeIntelIndexer!
+
+    """
+    A list of uploads.
+    """
+    uploads: [LSIFUpload!]!
+}
+
+"""
+A group of indexes that share the same root and indexer values.
+"""
+type LSIFIndexesWithRepositoryNamespace {
+    """
+    The root of all indexes in the associated connection.
+    """
+    root: String!
+
+    """
+    The configured indexer of each index in the associated connection.
+    """
+    indexer: CodeIntelIndexer!
+
+    """
+    A list of indexes.
+    """
+    indexes: [LSIFIndex!]!
 }
 
 """
@@ -1131,6 +1222,11 @@ type LSIFUpload implements Node {
     inputIndexer: String!
 
     """
+    The indexer used to produce this index.
+    """
+    indexer: CodeIntelIndexer
+
+    """
     The upload's current state.
     """
     state: LSIFUploadState!
@@ -1275,6 +1371,11 @@ type LSIFIndex implements Node {
     The name of the target indexer Docker image (e.g., sourcegraph/lsif-go@sha256:...).
     """
     inputIndexer: String!
+
+    """
+    The indexer used to produce the index artifact.
+    """
+    indexer: CodeIntelIndexer
 
     """
     The index's current state.
@@ -1506,12 +1607,12 @@ type CodeIntelSupport {
     """
     Search-based code-intel support overview.
     """
-    searchBasedSupport: SearchBasedCodeIntelSupport!
+    searchBasedSupport: SearchBasedCodeIntelSupport
 
     """
     Precise code-intel support overview.
     """
-    preciseSupport: PreciseCodeIntelSupport!
+    preciseSupport: PreciseCodeIntelSupport
 }
 
 """
@@ -1577,7 +1678,7 @@ type SearchBasedCodeIntelSupport {
     The infered language the underlying tool infered when building an index for
     search-based code-intel.
     """
-    language: String
+    language: String!
 }
 
 """

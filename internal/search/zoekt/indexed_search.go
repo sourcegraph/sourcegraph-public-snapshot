@@ -12,15 +12,13 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 	"go.uber.org/atomic"
-	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -172,27 +170,6 @@ func (rb *IndexedRepoRevs) getRepoInputRev(file *zoekt.FileMatch) (repo types.Mi
 	return repoRev.Repo, inputRevs
 }
 
-const maxUnindexedRepoRevSearchesPerQuery = 200
-
-type OnMissingRepoRevs func([]*search.RepositoryRevisions)
-
-func MissingRepoRevStatus(stream streaming.Sender) OnMissingRepoRevs {
-	if stream == nil {
-		return func([]*search.RepositoryRevisions) {}
-	}
-	return func(repoRevs []*search.RepositoryRevisions) {
-		var status search.RepoStatusMap
-		for _, r := range repoRevs {
-			status.Update(r.Repo.ID, search.RepoStatusMissing)
-		}
-		stream.Send(streaming.SearchEvent{
-			Stats: streaming.Stats{
-				Status: status,
-			},
-		})
-	}
-}
-
 func PartitionRepos(
 	ctx context.Context,
 	repos []*search.RepositoryRevisions,
@@ -200,25 +177,22 @@ func PartitionRepos(
 	typ search.IndexedRequestType,
 	useIndex query.YesNoOnly,
 	containsRefGlobs bool,
-	onMissing OnMissingRepoRevs,
 ) (indexed *IndexedRepoRevs, unindexed []*search.RepositoryRevisions, err error) {
-	if zoektStreamer == nil {
-		if useIndex == query.Only {
-			return nil, nil, errors.Errorf("invalid index:%q (indexed search is not enabled)", useIndex)
-		}
-		return nil, limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, onMissing), nil
-
-	}
 	// Fallback to Unindexed if the query contains valid ref-globs.
 	if containsRefGlobs {
-		return nil, limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, onMissing), nil
+		return nil, repos, nil
 	}
 	// Fallback to Unindexed if index:no
 	if useIndex == query.No {
-		return nil, limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, onMissing), nil
+		return nil, repos, nil
 	}
 
 	tr, ctx := trace.New(ctx, "PartitionRepos", string(typ))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
 	// Only include indexes with symbol information if a symbol request.
 	var filter func(repo *zoekt.MinimalRepoListEntry) bool
 	if typ == search.SymbolRequest {
@@ -241,37 +215,28 @@ func PartitionRepos(
 			log15.Warn("zoektIndexedRepos failed", "error", err)
 		}
 
-		unindexedRepos := limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, onMissing)
-		return nil, unindexedRepos, ctx.Err()
+		return nil, repos, ctx.Err()
 	}
 
 	tr.LogFields(log.Int("all_indexed_set.size", len(list.Minimal)))
 
 	// Split based on indexed vs unindexed
-	indexed, searcherRepos := zoektIndexedRepos(list.Minimal, repos, filter)
+	indexed, unindexed = zoektIndexedRepos(list.Minimal, repos, filter)
 
 	tr.LogFields(
 		log.Int("indexed.size", len(indexed.RepoRevs)),
-		log.Int("searcher_repos.size", len(searcherRepos)),
+		log.Int("unindexed.size", len(unindexed)),
 	)
 
 	// Disable unindexed search
 	if useIndex == query.Only {
-		searcherRepos = limitUnindexedRepos(searcherRepos, 0, onMissing)
+		unindexed = unindexed[:0]
 	}
 
-	unindexed = limitUnindexedRepos(searcherRepos, maxUnindexedRepoRevSearchesPerQuery, onMissing)
 	return indexed, unindexed, nil
 }
 
-func DoZoektSearchGlobal(ctx context.Context, args *search.ZoektParameters, c streaming.Sender) error {
-	if args.Zoekt == nil {
-		return nil
-	}
-
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
+func DoZoektSearchGlobal(ctx context.Context, client zoekt.Streamer, args *search.ZoektParameters, c streaming.Sender) error {
 	k := ResultCountFactor(0, args.FileMatchLimit, true)
 	searchOpts := SearchOpts(ctx, k, args.FileMatchLimit, args.Select)
 
@@ -292,7 +257,7 @@ func DoZoektSearchGlobal(ctx context.Context, args *search.ZoektParameters, c st
 		defer cancel()
 	}
 
-	return args.Zoekt.StreamSearch(ctx, args.Query, &searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
+	return client.StreamSearch(ctx, args.Query, &searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
 		sendMatches(event, func(file *zoekt.FileMatch) (types.MinimalRepo, []string) {
 			repo := types.MinimalRepo{
 				ID:   api.RepoID(file.RepositoryID),
@@ -551,48 +516,18 @@ func zoektIndexedRepos(indexedSet map[uint32]*zoekt.MinimalRepoListEntry, revs [
 	return indexed, unindexed
 }
 
-// limitUnindexedRepos limits the number of repo@revs searched by the
-// unindexed searcher codepath.  Sending many requests to searcher would
-// otherwise cause a flood of system and network requests that result in
-// timeouts or long delays.
-//
-// It returns the new repositories destined for the unindexed searcher code
-// path, and sends an event to stream for any repositories that are limited /
-// excluded.
-//
-// A slice to the input list is returned, it is not copied.
-func limitUnindexedRepos(unindexed []*search.RepositoryRevisions, limit int, onMissing OnMissingRepoRevs) []*search.RepositoryRevisions {
-	var missing []*search.RepositoryRevisions
-
-	for i, repoRevs := range unindexed {
-		limit -= len(repoRevs.Revs)
-		if limit < 0 {
-			missing = unindexed[i:]
-			unindexed = unindexed[:i]
-			break
-		}
-	}
-
-	if len(missing) > 0 {
-		onMissing(missing)
-	}
-
-	return unindexed
-}
-
 type ZoektRepoSubsetSearch struct {
 	Repos          *IndexedRepoRevs // the set of indexed repository revisions to search.
 	Query          zoektquery.Q
 	Typ            search.IndexedRequestType
 	FileMatchLimit int32
 	Select         filter.SelectPath
-	Zoekt          zoekt.Streamer
 	Since          func(time.Time) time.Duration `json:"-"` // since if non-nil will be used instead of time.Since. For tests
 }
 
 // ZoektSearch is a job that searches repositories using zoekt.
-func (z *ZoektRepoSubsetSearch) Run(ctx context.Context, _ database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
-	_, ctx, stream, finish := jobutil.StartSpan(ctx, stream, z)
+func (z *ZoektRepoSubsetSearch) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+	_, ctx, stream, finish := job.StartSpan(ctx, stream, z)
 	defer func() { finish(alert, err) }()
 
 	if z.Repos == nil {
@@ -607,10 +542,7 @@ func (z *ZoektRepoSubsetSearch) Run(ctx context.Context, _ database.DB, stream s
 		since = z.Since
 	}
 
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	return nil, zoektSearch(ctx, z.Repos, z.Query, z.Typ, z.Zoekt, z.FileMatchLimit, z.Select, since, stream)
+	return nil, zoektSearch(ctx, z.Repos, z.Query, z.Typ, clients.Zoekt, z.FileMatchLimit, z.Select, since, stream)
 }
 
 func (*ZoektRepoSubsetSearch) Name() string {
@@ -623,19 +555,15 @@ type GlobalSearch struct {
 	RepoOptions      search.RepoOptions
 }
 
-func (t *GlobalSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
-	_, ctx, stream, finish := jobutil.StartSpan(ctx, stream, t)
+func (t *GlobalSearch) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+	_, ctx, stream, finish := job.StartSpan(ctx, stream, t)
 	defer func() { finish(alert, err) }()
 
-	userPrivateRepos := searchrepos.PrivateReposForActor(ctx, db, t.RepoOptions)
+	userPrivateRepos := searchrepos.PrivateReposForActor(ctx, clients.DB, t.RepoOptions)
 	t.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
 	t.ZoektArgs.Query = t.GlobalZoektQuery.Generate()
 
-	g, ctx := errgroup.WithContext(ctx)
-	g.Go(func() error {
-		return DoZoektSearchGlobal(ctx, t.ZoektArgs, stream)
-	})
-	return nil, g.Wait()
+	return nil, DoZoektSearchGlobal(ctx, clients.Zoekt, t.ZoektArgs, stream)
 }
 
 func (*GlobalSearch) Name() string {

@@ -7,11 +7,11 @@ import { RouteComponentProps } from 'react-router'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { MarketingBlock } from '@sourcegraph/web/src/components/MarketingBlock'
-import { Page } from '@sourcegraph/web/src/components/Page'
-import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { Badge, Button, Checkbox, Input, Link, LoadingSpinner, PageHeader, RadioButton } from '@sourcegraph/wildcard'
 
+import { MarketingBlock } from '../../components/MarketingBlock'
+import { Page } from '../../components/Page'
+import { PageTitle } from '../../components/PageTitle'
 import { SendJoinBetaStatsResult, SendJoinBetaStatsVariables } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 
@@ -183,7 +183,10 @@ export const JoinOpenBetaPage: React.FunctionComponent<Props> = ({ authenticated
                 </h3>
                 <div>
                     Sourcegraph Cloud for small teams is in open beta. During this time, it’s free to use for 30 days.{' '}
-                    <Link to="https://sourcegraph.com/betalimits">Learn more about beta limitations</Link>.
+                    <Link to="https://docs.sourcegraph.com/cloud/organizations/beta-operations">
+                        Learn more about beta limitations
+                    </Link>
+                    .
                 </div>
             </MarketingBlock>
             <h3 className="mt-4 mb-4">To get started, please tell us about your organization:</h3>

@@ -3,8 +3,9 @@ import React from 'react'
 import classNames from 'classnames'
 import BookOpenBlankVariantIcon from 'mdi-react/BookOpenBlankVariantIcon'
 
-import { DismissibleAlert } from '@sourcegraph/web/src/components/DismissibleAlert'
 import { CardBody, Card, Link, Icon } from '@sourcegraph/wildcard'
+
+import { DismissibleAlert } from '../../components/DismissibleAlert'
 
 import styles from './DocumentationWelcomeAlert.module.scss'
 

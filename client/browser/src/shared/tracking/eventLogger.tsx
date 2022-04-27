@@ -5,12 +5,11 @@ import * as uuid from 'uuid'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { background } from '../../browser-extension/web-extension-api/runtime'
 import { storage } from '../../browser-extension/web-extension-api/storage'
 import { UserEvent } from '../../graphql-operations'
 import { logUserEvent, logEvent } from '../backend/userEvents'
-import { isBackground, isInPage } from '../context'
-import { getExtensionVersion, getPlatformName, isDefaultSourcegraphUrl } from '../util/context'
+import { isInPage } from '../context'
+import { getExtensionVersion, getPlatformName } from '../util/context'
 
 const uidKey = 'sourcegraphAnonymousUid'
 
@@ -46,6 +45,9 @@ export class ConditionalTelemetryService implements TelemetryService {
             }
         })
     }
+    /**
+     * @deprecated Use logPageView instead
+     */
     public logViewEvent(eventName: string, eventProperties?: any): void {
         // Wait for this.isEnabled to get a new value
         setTimeout(() => {
@@ -54,6 +56,20 @@ export class ConditionalTelemetryService implements TelemetryService {
             }
         })
     }
+    public logPageView(eventName: string, eventProperties?: any, publicArgument?: any): void {
+        // Wait for this.isEnabled to get a new value
+        setTimeout(() => {
+            if (this.isEnabled) {
+                this.innerTelemetryService.logPageView(eventName, eventProperties, publicArgument)
+            }
+        })
+    }
+    /**
+     * Logs page view events, adding a suffix
+     *
+     * @returns
+     *
+     */
     public unsubscribe(): void {
         // Reset initial state
         this.isEnabled = false
@@ -124,22 +140,11 @@ export class EventLogger implements TelemetryService {
         if (userEvent) {
             logUserEvent(userEvent, anonUserId, this.sourcegraphURL, this.requestGraphQL)
         }
-
-        const firstSourceURL = isDefaultSourcegraphUrl(this.sourcegraphURL)
-            ? (
-                  await (isBackground ? browser.cookies.get : background.getCookie)({
-                      url: this.sourcegraphURL,
-                      name: 'sourcegraphSourceUrl',
-                  })
-              )?.value
-            : undefined
-
         logEvent(
             {
                 name: event,
                 userCookieID: anonUserId,
                 url: this.sourcegraphURL,
-                firstSourceURL,
                 argument: { platform: this.platform, version: this.version, ...eventProperties },
                 publicArgument: { platform: this.platform, version: this.version, ...publicArgument },
             },
@@ -173,9 +178,20 @@ export class EventLogger implements TelemetryService {
     /**
      * Implements {@link TelemetryService}.
      *
+     * @deprecated Use logPageView instead
+     *
      * @param pageTitle The title of the page being viewed.
      */
     public async logViewEvent(pageTitle: string, eventProperties?: any): Promise<void> {
         await this.logEvent(`View${pageTitle}`, eventProperties)
+    }
+
+    /**
+     * Implements {@link TelemetryService}.
+     *
+     * @param eventName The name of the entity being viewed.
+     */
+    public async logPageView(eventName: string, eventProperties?: any, publicArgument?: any): Promise<void> {
+        await this.logEvent(`${eventName}Viewed`, eventProperties, publicArgument)
     }
 }

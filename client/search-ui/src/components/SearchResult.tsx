@@ -20,8 +20,9 @@ import {
     RepositoryMatch,
 } from '@sourcegraph/shared/src/search/stream'
 import { formatRepositoryStarCount } from '@sourcegraph/shared/src/util/stars'
+// eslint-disable-next-line no-restricted-imports
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
-import { Link, Icon } from '@sourcegraph/wildcard'
+import { Link, Icon, useIsTruncated } from '@sourcegraph/wildcard'
 
 import { CommitSearchResultMatch } from './CommitSearchResultMatch'
 
@@ -33,6 +34,7 @@ interface Props extends PlatformContextProps<'requestGraphQL'> {
     icon: React.ComponentType<{ className?: string }>
     onSelect: () => void
     openInNewTab?: boolean
+    containerClassName?: string
 }
 
 export const SearchResult: React.FunctionComponent<Props> = ({
@@ -42,13 +44,32 @@ export const SearchResult: React.FunctionComponent<Props> = ({
     platformContext,
     onSelect,
     openInNewTab,
+    containerClassName,
 }) => {
+    /**
+     * Use the custom hook useIsTruncated to check if overflow: ellipsis is activated for the element
+     * We want to do it on mouse enter as browser window size might change after the element has been
+     * loaded initially
+     */
+    const [titleReference, truncated, checkTruncation] = useIsTruncated()
+
     const renderTitle = (): JSX.Element => {
         const formattedRepositoryStarCount = formatRepositoryStarCount(result.repoStars)
         return (
             <div className={styles.title}>
                 <RepoIcon repoName={repoName} className="text-muted flex-shrink-0" />
-                <span className="test-search-result-label ml-1 flex-shrink-past-contents text-truncate">
+                <span
+                    onMouseEnter={checkTruncation}
+                    className="test-search-result-label ml-1 flex-shrink-past-contents text-truncate"
+                    ref={titleReference}
+                    data-tooltip={
+                        (truncated && result.type === 'repo' && displayRepoName(getRepoMatchLabel(result))) ||
+                        (truncated &&
+                            result.type === 'commit' &&
+                            `${result.authorName}: ${result.message.split('\n', 1)[0]}`) ||
+                        null
+                    }
+                >
                     {result.type === 'commit' && (
                         <>
                             <Link to={getRepositoryUrl(result.repository)}>{displayRepoName(result.repository)}</Link>
@@ -167,6 +188,7 @@ export const SearchResult: React.FunctionComponent<Props> = ({
             resultType={result.type}
             onResultClicked={onSelect}
             expandedChildren={renderBody()}
+            className={containerClassName}
         />
     )
 }

@@ -2,8 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { InputTooltip } from '@sourcegraph/web/src/components/InputTooltip'
-
+import { InputTooltip } from '../../../../components/InputTooltip'
 import { HiddenExternalChangesetFields } from '../../../../graphql-operations'
 
 import { ChangesetStatusCell } from './ChangesetStatusCell'

@@ -8,6 +8,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -52,6 +53,11 @@ const (
 	ChangesetEventKindCommitStatus               ChangesetEventKind = "github:commit_status"
 	ChangesetEventKindCheckSuite                 ChangesetEventKind = "github:check_suite"
 	ChangesetEventKindCheckRun                   ChangesetEventKind = "github:check_run"
+
+	ChangesetEventKindBitbucketCloudApproved         ChangesetEventKind = "bitbucketcloud:approved"
+	ChangesetEventKindBitbucketCloudChangesRequested ChangesetEventKind = "bitbucketcloud:changes_requested"
+	ChangesetEventKindBitbucketCloudCommitStatus     ChangesetEventKind = "bitbucketcloud:commit_status"
+	ChangesetEventKindBitbucketCloudReviewed         ChangesetEventKind = "bitbucketcloud:reviewed"
 
 	ChangesetEventKindBitbucketServerApproved     ChangesetEventKind = "bitbucketserver:approved"
 	ChangesetEventKindBitbucketServerUnapproved   ChangesetEventKind = "bitbucketserver:unapproved"
@@ -121,6 +127,12 @@ func (e *ChangesetEvent) ReviewAuthor() string {
 	case *gitlab.ReviewUnapprovedEvent:
 		return meta.Author.Username
 
+	case *bitbucketcloud.Participant:
+		// We don't have the username available at this level, but since we're
+		// just using this for matching and not for display, we can return the
+		// UUID.
+		return meta.User.UUID
+
 	default:
 		return ""
 	}
@@ -130,12 +142,14 @@ func (e *ChangesetEvent) ReviewAuthor() string {
 func (e *ChangesetEvent) ReviewState() (ChangesetReviewState, error) {
 	switch e.Kind {
 	case ChangesetEventKindBitbucketServerApproved,
-		ChangesetEventKindGitLabApproved:
+		ChangesetEventKindGitLabApproved,
+		ChangesetEventKindBitbucketCloudApproved:
 		return ChangesetReviewStateApproved, nil
 
 	// BitbucketServer's "REVIEWED" activity is created when someone clicks
 	// the "Needs work" button in the UI, which is why we map it to "Changes Requested"
-	case ChangesetEventKindBitbucketServerReviewed:
+	case ChangesetEventKindBitbucketServerReviewed,
+		ChangesetEventKindBitbucketCloudChangesRequested:
 		return ChangesetReviewStateChangesRequested, nil
 
 	case ChangesetEventKindGitHubReviewed:
@@ -240,6 +254,10 @@ func (e *ChangesetEvent) Timestamp() time.Time {
 		// fall back to the event record we created when we received the
 		// webhook.
 		t = e.CreatedAt
+	case *bitbucketcloud.Participant:
+		t = ev.ParticipatedOn
+	case *bitbucketcloud.PullRequestStatus:
+		t = ev.CreatedOn
 	}
 
 	return t
@@ -720,6 +738,14 @@ func (e *ChangesetEvent) Update(o *ChangesetEvent) error {
 	case *gitlabwebhooks.PipelineEvent:
 		o := o.Metadata.(*gitlabwebhooks.PipelineEvent)
 		// We always get the full event, so safe to replace it
+		*e = *o
+
+	case *bitbucketcloud.Participant:
+		o := o.Metadata.(*bitbucketcloud.Participant)
+		*e = *o
+
+	case *bitbucketcloud.PullRequestStatus:
+		o := o.Metadata.(*bitbucketcloud.PullRequestStatus)
 		*e = *o
 
 	default:

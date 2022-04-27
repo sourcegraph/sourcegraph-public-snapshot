@@ -15,7 +15,7 @@ import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { collectMetrics } from '@sourcegraph/shared/src/search/query/metrics'
 import { sanitizeQueryForTelemetry, updateFilters } from '@sourcegraph/shared/src/search/query/transformer'
-import { StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
+import { LATEST_VERSION, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -28,8 +28,6 @@ import { AuthenticatedUser } from '../../auth'
 import { SearchBetaIcon } from '../../components/CtaIcons'
 import { PageTitle } from '../../components/PageTitle'
 import { FeatureFlagProps } from '../../featureFlags/featureFlags'
-import { GettingStartedTour } from '../../gettingStartedTour/GettingStartedTour'
-import { GettingStartedTourInfo } from '../../gettingStartedTour/GettingStartedTourInfo'
 import { usePersistentCadence } from '../../hooks'
 import { useIsActiveIdeIntegrationUser } from '../../IdeExtensionTracker'
 import { CodeInsightsProps } from '../../insights/types'
@@ -40,9 +38,11 @@ import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
 import {
     useExperimentalFeatures,
     useNavbarQueryState,
-    useSearchStack,
+    useNotepad,
     buildSearchURLQueryFromQueryState,
 } from '../../stores'
+import { useTourQueryParameters } from '../../tour/components/Tour/TourAgent'
+import { GettingStartedTour } from '../../tour/GettingStartedTour'
 import { useIsBrowserExtensionActiveUser } from '../../tracking/BrowserExtensionTracker'
 import { SearchUserNeedsCodeHost } from '../../user/settings/codeHosts/OrgUserNeedsCodeHost'
 import { submitSearch } from '../helpers'
@@ -73,11 +73,6 @@ export interface StreamingSearchResultsProps
 
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
-
-// The latest supported version of our search syntax. Users should never be able to determine the search version.
-// The version is set based on the release tag of the instance. Anything before 3.9.0 will not pass a version parameter,
-// and will therefore default to V1.
-export const LATEST_VERSION = 'V2'
 
 const CTA_ALERTS_CADENCE_KEY = 'SearchResultCtaAlerts.pageViews'
 const CTA_ALERT_DISPLAY_CADENCE = 6
@@ -117,8 +112,13 @@ function useCtaAlert(
         IDE_CTA_CADENCE_SHIFT
     )
 
+    const tourQueryParameters = useTourQueryParameters()
+
     const ctaToDisplay = useMemo<CtaToDisplay | undefined>((): CtaToDisplay | undefined => {
         if (!areResultsFound) {
+            return
+        }
+        if (tourQueryParameters?.isTour) {
             return
         }
 
@@ -146,14 +146,15 @@ function useCtaAlert(
         return
     }, [
         areResultsFound,
+        tourQueryParameters?.isTour,
         hasDismissedSignupAlert,
         isAuthenticated,
         displaySignupAndBrowserExtensionCTAsBasedOnCadence,
         hasDismissedBrowserExtensionAlert,
         isBrowserExtensionActiveUser,
         isUsingIdeIntegration,
-        hasDismissedIDEExtensionAlert,
         displayIDEExtensionCTABasedOnCadence,
+        hasDismissedIDEExtensionAlert,
     ])
 
     const onCtaAlertDismissed = useCallback((): void => {
@@ -275,7 +276,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
         }
     }, [results, telemetryService])
 
-    useSearchStack(
+    useNotepad(
         useMemo(
             () =>
                 results?.state === 'complete'
@@ -330,7 +331,6 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
     }, [telemetryService])
 
     const resultsFound = useMemo<boolean>(() => (results ? results.results.length > 0 : false), [results])
-    const showGettingStartedTour = props.isSourcegraphDotCom && !props.authenticatedUser
     const { ctaToDisplay, onCtaAlertDismissed } = useCtaAlert(!!authenticatedUser, resultsFound)
 
     // Log view event when signup CTA is shown
@@ -359,9 +359,13 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                 filters={results?.filters}
                 getRevisions={getRevisions}
                 prefixContent={
-                    showGettingStartedTour ? (
-                        <GettingStartedTour className="mb-1" telemetryService={props.telemetryService} />
-                    ) : undefined
+                    <GettingStartedTour
+                        className="mb-1"
+                        isSourcegraphDotCom={props.isSourcegraphDotCom}
+                        telemetryService={props.telemetryService}
+                        isAuthenticated={!!props.authenticatedUser}
+                        featureFlags={props.featureFlags}
+                    />
                 }
                 buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
             />
@@ -398,7 +402,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
             />
 
             <div className={styles.streamingSearchResultsContainer}>
-                {showGettingStartedTour && <GettingStartedTourInfo className="mt-2 mr-3 mb-3" />}{' '}
+                <GettingStartedTour.Info className="mt-2 mr-3 mb-3" isSourcegraphDotCom={props.isSourcegraphDotCom} />
                 {showSavedSearchModal && (
                     <SavedSearchModal
                         {...props}
@@ -451,6 +455,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                     renderSearchUserNeedsCodeHost={user => (
                         <SearchUserNeedsCodeHost user={user} orgSearchContext={props.selectedSearchContextSpec} />
                     )}
+                    executedQuery={location.search}
                 />
             </div>
         </div>

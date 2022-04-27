@@ -27,9 +27,8 @@ func TestRead(t *testing.T) {
 	ctx := context.Background()
 
 	tests := map[string]struct {
-		file     string
-		maxBytes int64
-		checkFn  func(*testing.T, error, []byte)
+		file    string
+		checkFn func(*testing.T, error, []byte)
 	}{
 		"all": {
 			file: "file1",
@@ -62,7 +61,7 @@ func TestRead(t *testing.T) {
 			UID: 1,
 		})
 		t.Run(name+"-ReadFile", func(t *testing.T) {
-			data, err := ReadFile(ctx, db, repo, commitID, test.file, test.maxBytes, nil)
+			data, err := ReadFile(ctx, db, repo, commitID, test.file, nil)
 			test.checkFn(t, err, data)
 		})
 		t.Run(name+"-ReadFile-with-sub-repo-permissions-no-op", func(t *testing.T) {
@@ -75,7 +74,7 @@ func TestRead(t *testing.T) {
 				}
 				return authz.None, nil
 			})
-			data, err := ReadFile(ctx, db, repo, commitID, test.file, test.maxBytes, checker)
+			data, err := ReadFile(ctx, db, repo, commitID, test.file, checker)
 			test.checkFn(t, err, data)
 		})
 		t.Run(name+"-ReadFile-with-sub-repo-permissions-filters-file", func(t *testing.T) {
@@ -85,7 +84,7 @@ func TestRead(t *testing.T) {
 			checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
 				return authz.None, nil
 			})
-			data, err := ReadFile(ctx, db, repo, commitID, test.file, test.maxBytes, checker)
+			data, err := ReadFile(ctx, db, repo, commitID, test.file, checker)
 			if err != os.ErrNotExist {
 				t.Errorf("unexpected error reading file: %s", err)
 			}
@@ -124,16 +123,6 @@ func TestRead(t *testing.T) {
 			}
 		})
 	}
-
-	t.Run("maxBytes", func(t *testing.T) {
-		data, err := ReadFile(ctx, db, repo, commitID, "file1", 3, nil)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if string(data) != wantData[:3] {
-			t.Errorf("got %q, want %q", data, wantData)
-		}
-	})
 }
 
 func runNewFileReaderTest(ctx context.Context, t *testing.T, repo api.RepoName, commitID api.CommitID, file string,

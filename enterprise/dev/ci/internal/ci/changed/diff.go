@@ -34,6 +34,20 @@ func ForEachDiffType(callback func(d Diff)) {
 	}
 }
 
+// topLevelGoDirs is a slice of directories which contain most of our go code.
+// A PR could just mutate test data or embedded files, so we treat any change
+// in these directories as a go change.
+var topLevelGoDirs = []string{
+	"cmd",
+	"enterprise/cmd",
+	"enterprise/internal",
+	"internal",
+	"lib",
+	"migrations",
+	"monitoring",
+	"schema",
+}
+
 // ParseDiff identifies what has changed in files by generating a Diff that can be used
 // to check for specific changes, e.g.
 //
@@ -49,6 +63,11 @@ func ParseDiff(files []string) (diff Diff) {
 		}
 		if strings.HasSuffix(p, "dev/ci/go-test.sh") {
 			diff |= Go
+		}
+		for _, dir := range topLevelGoDirs {
+			if strings.HasPrefix(p, dir+"/") {
+				diff |= Go
+			}
 		}
 
 		// Client

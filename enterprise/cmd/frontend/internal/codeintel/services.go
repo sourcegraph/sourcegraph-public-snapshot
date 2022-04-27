@@ -17,6 +17,8 @@ import (
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifuploadstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
+	uploadshttp "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/http"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -70,6 +72,15 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 	// Initialize http endpoints
 	operations := httpapi.NewOperations(observationContext)
 	newUploadHandler := func(internal bool) http.Handler {
+		if false {
+			// Until this handler has been implemented, we retain the origial
+			// LSIF update handler.
+			//
+			// See https://github.com/sourcegraph/sourcegraph/issues/33375
+
+			return uploadshttp.GetHandler(uploads.GetService(db))
+		}
+
 		return httpapi.NewUploadHandler(
 			db,
 			&httpapi.DBStoreShim{Store: dbStore},

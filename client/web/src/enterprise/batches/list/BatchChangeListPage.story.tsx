@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { boolean } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
 import { WildcardMockLink, MATCH_ANY_PARAMETERS } from 'wildcard-mock-link'

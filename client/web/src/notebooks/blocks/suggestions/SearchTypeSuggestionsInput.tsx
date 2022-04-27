@@ -1,4 +1,4 @@
-import React, { ReactElement, useCallback, useMemo } from 'react'
+import { ReactElement, useCallback, useMemo } from 'react'
 
 import classNames from 'classnames'
 import { noop } from 'lodash'
@@ -8,8 +8,7 @@ import { delay, startWith } from 'rxjs/operators'
 
 import { pluralize } from '@sourcegraph/common'
 import { createQueryExampleFromString, updateQueryWithFilterAndExample } from '@sourcegraph/search'
-import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
-import { toMonacoSelection } from '@sourcegraph/search-ui/src/input/MonacoQueryInput'
+import { SyntaxHighlightedSearchQuery, toMonacoSelection } from '@sourcegraph/search-ui'
 import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { toMonacoRange } from '@sourcegraph/shared/src/search/query/monaco'

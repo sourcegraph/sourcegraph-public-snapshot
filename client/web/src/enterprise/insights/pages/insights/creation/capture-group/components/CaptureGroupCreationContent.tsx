@@ -8,7 +8,7 @@ import { useAsyncInsightTitleValidator } from '../../../../../components/form/ho
 import { useField } from '../../../../../components/form/hooks/useField'
 import { FormChangeEvent, SubmissionErrors, useForm } from '../../../../../components/form/hooks/useForm'
 import { createRequiredValidator } from '../../../../../components/form/validators'
-import { Insight } from '../../../../../core/types'
+import { Insight } from '../../../../../core'
 import {
     repositoriesExistValidator,
     repositoriesFieldValidator,

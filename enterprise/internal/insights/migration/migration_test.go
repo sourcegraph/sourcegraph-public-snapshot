@@ -5,12 +5,12 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 
 	"github.com/hexops/autogold"
 
 	"github.com/google/go-cmp/cmp"
 
-	insightsdbtesting "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/dbtesting"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 )
 
@@ -48,10 +48,9 @@ func TestToInsightUniqueIdQuery(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
-	defer cleanup()
+	insightsDB := dbtest.NewInsightsDB(t)
 
-	migrator := migrator{insightStore: store.NewInsightStore(timescale)}
+	migrator := migrator{insightStore: store.NewInsightStore(insightsDB)}
 
 	t.Run("match on org ID", func(t *testing.T) {
 		want := "myInsight-org-3"
@@ -61,7 +60,7 @@ func TestToInsightUniqueIdQuery(t *testing.T) {
 			orgIds: []int{3},
 		}
 
-		_, err := timescale.Exec("insert into insight_view (unique_id) values ($1);", want)
+		_, err := insightsDB.Exec("insert into insight_view (unique_id) values ($1);", want)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -85,7 +84,7 @@ func TestToInsightUniqueIdQuery(t *testing.T) {
 			userId: 1,
 		}
 
-		_, err := timescale.Exec("insert into insight_view (unique_id) values ($1);", want)
+		_, err := insightsDB.Exec("insert into insight_view (unique_id) values ($1);", want)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -109,12 +108,12 @@ func TestToInsightUniqueIdQuery(t *testing.T) {
 			orgIds: []int{3},
 		}
 
-		_, err := timescale.Exec("insert into insight_view (unique_id) values ($1);", want)
+		_, err := insightsDB.Exec("insert into insight_view (unique_id) values ($1);", want)
 		if err != nil {
 			t.Fatal(err)
 		}
 		// this one should NOT match
-		_, err = timescale.Exec("insert into insight_view (unique_id) values ($1);", "myInsight3-org-5")
+		_, err = insightsDB.Exec("insert into insight_view (unique_id) values ($1);", "myInsight3-org-5")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -155,12 +154,11 @@ func TestCreateSpecialCaseDashboard(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
-	defer cleanup()
-	migrator := migrator{insightStore: store.NewInsightStore(timescale), dashboardStore: store.NewDashboardStore(timescale)}
+	insightsDB := dbtest.NewInsightsDB(t)
+	migrator := migrator{insightStore: store.NewInsightStore(insightsDB), dashboardStore: store.NewDashboardStore(insightsDB)}
 
 	newView := func(insightId string) {
-		_, err := timescale.Exec("insert into insight_view (unique_id) values ($1);", insightId)
+		_, err := insightsDB.Exec("insert into insight_view (unique_id) values ($1);", insightId)
 		if err != nil {
 			t.Fatal(err)
 		}

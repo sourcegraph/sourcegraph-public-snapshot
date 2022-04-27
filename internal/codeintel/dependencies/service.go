@@ -11,16 +11,16 @@ import (
 	"golang.org/x/sync/semaphore"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/store"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // Service encapsulates the resolution and persistence of dependencies at the repository and package levels.
 type Service struct {
-	dependenciesStore  *store.Store
+	dependenciesStore  Store
 	lockfilesSvc       LockfilesService
 	lockfilesSemaphore *semaphore.Weighted
 	syncer             Syncer
@@ -28,18 +28,20 @@ type Service struct {
 	operations         *operations
 }
 
-var (
-	lockfilesSemaphoreWeight = env.MustGetInt("CODEINTEL_DEPENDENCIES_LOCKFILES_SEMAPHORE_WEIGHT", 64, "The maximum number of concurrent routines parsing lockfile contents.")
-	syncerSemaphoreWeight    = env.MustGetInt("CODEINTEL_DEPENDENCIES_LOCKFILES_SYNCER_WEIGHT", 64, "The maximum number of concurrent routines actively syncing repositories.")
-)
-
-func newService(depsStore *store.Store, lockfilesSvc LockfilesService, syncer Syncer, observationContext *observation.Context) *Service {
+func newService(
+	dependenciesStore Store,
+	lockfilesSvc LockfilesService,
+	lockfilesSemaphore *semaphore.Weighted,
+	syncer Syncer,
+	syncerSemaphore *semaphore.Weighted,
+	observationContext *observation.Context,
+) *Service {
 	return &Service{
-		dependenciesStore:  depsStore,
+		dependenciesStore:  dependenciesStore,
 		lockfilesSvc:       lockfilesSvc,
-		lockfilesSemaphore: semaphore.NewWeighted(int64(lockfilesSemaphoreWeight)),
+		lockfilesSemaphore: lockfilesSemaphore,
 		syncer:             syncer,
-		syncerSemaphore:    semaphore.NewWeighted(int64(syncerSemaphoreWeight)),
+		syncerSemaphore:    syncerSemaphore,
 		operations:         newOperations(observationContext),
 	}
 }
@@ -60,7 +62,7 @@ func (s *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]ty
 		return nil, err
 	}
 
-	hash := func(dep store.DependencyRepo) string {
+	hash := func(dep Repo) string {
 		return strings.Join([]string{dep.Scheme, dep.Name, dep.Version}, ":")
 	}
 
@@ -68,7 +70,7 @@ func (s *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]ty
 	// auxiliary data structures that can be used to feed the upsert and sync operations
 	// below.
 	dependencyRevs = make(map[api.RepoName]types.RevSpecSet, len(repoRevs))
-	dependencies := []store.DependencyRepo{}
+	dependencies := []Repo{}
 	repoNamesByDependency := map[string]api.RepoName{}
 
 	for _, dep := range deps {
@@ -83,7 +85,7 @@ func (s *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]ty
 		}
 		dependencyRevs[repo][rev] = struct{}{}
 
-		dep := store.DependencyRepo{Scheme: scheme, Name: name, Version: version}
+		dep := Repo{Scheme: scheme, Name: name, Version: version}
 		dependencies = append(dependencies, dep)
 		repoNamesByDependency[hash(dep)] = repo
 	}
@@ -98,8 +100,15 @@ func (s *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]ty
 	// names are generally distinct, so we need to re-translate the dependency scheme, name,
 	// and version back to the repository name.
 	newRepos := make([]api.RepoName, 0, len(newDependencies))
+	newReposSet := make(map[api.RepoName]struct{}, len(newDependencies))
 	for _, dep := range newDependencies {
-		newRepos = append(newRepos, repoNamesByDependency[hash(dep)])
+		repoName := repoNamesByDependency[hash(dep)]
+		if _, ok := newReposSet[repoName]; ok {
+			continue
+		}
+
+		newRepos = append(newRepos, repoName)
+		newReposSet[repoName] = struct{}{}
 	}
 
 	// Lazily sync all the repos that were newly added
@@ -209,4 +218,26 @@ func constructLogFields(repoRevs map[api.RepoName]types.RevSpecSet) []log.Field 
 	return []log.Field{
 		log.Int("repoRevs", len(repoRevs)),
 	}
+}
+
+type Repo = shared.Repo
+
+type ListDependencyReposOpts struct {
+	Scheme      string
+	Name        string
+	After       int
+	Limit       int
+	NewestFirst bool
+}
+
+func (s *Service) ListDependencyRepos(ctx context.Context, opts ListDependencyReposOpts) ([]Repo, error) {
+	return s.dependenciesStore.ListDependencyRepos(ctx, store.ListDependencyReposOpts(opts))
+}
+
+func (s *Service) UpsertDependencyRepos(ctx context.Context, deps []Repo) ([]Repo, error) {
+	return s.dependenciesStore.UpsertDependencyRepos(ctx, deps)
+}
+
+func (s *Service) DeleteDependencyReposByID(ctx context.Context, ids ...int) error {
+	return s.dependenciesStore.DeleteDependencyReposByID(ctx, ids...)
 }

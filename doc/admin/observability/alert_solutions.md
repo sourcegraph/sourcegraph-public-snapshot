@@ -927,27 +927,27 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 <br />
 
-## frontend: mean_successful_sentinel_duration_over_1h30m
+## frontend: mean_successful_sentinel_duration_over_2h
 
-<p class="subtitle">mean successful sentinel search duration over 1h30m</p>
+<p class="subtitle">mean successful sentinel search duration over 2h</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> frontend: 5s+ mean successful sentinel search duration over 1h30m for 15m0s
-- <span class="badge badge-critical">critical</span> frontend: 8s+ mean successful sentinel search duration over 1h30m for 30m0s
+- <span class="badge badge-warning">warning</span> frontend: 5s+ mean successful sentinel search duration over 2h for 15m0s
+- <span class="badge badge-critical">critical</span> frontend: 8s+ mean successful sentinel search duration over 2h for 30m0s
 
 **Possible solutions**
 
 - Look at the breakdown by query to determine if a specific query type is being affected
 - Check for high CPU usage on zoekt-webserver
 - Check Honeycomb for unusual activity
-- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#frontend-mean-successful-sentinel-duration-over-1h30m).
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#frontend-mean-successful-sentinel-duration-over-2h).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_mean_successful_sentinel_duration_over_1h30m",
-  "critical_frontend_mean_successful_sentinel_duration_over_1h30m"
+  "warning_frontend_mean_successful_sentinel_duration_over_2h",
+  "critical_frontend_mean_successful_sentinel_duration_over_2h"
 ]
 ```
 
@@ -955,27 +955,27 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 <br />
 
-## frontend: mean_sentinel_stream_latency_over_1h30m
+## frontend: mean_sentinel_stream_latency_over_2h
 
-<p class="subtitle">mean successful sentinel stream latency over 1h30m</p>
+<p class="subtitle">mean successful sentinel stream latency over 2h</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> frontend: 2s+ mean successful sentinel stream latency over 1h30m for 15m0s
-- <span class="badge badge-critical">critical</span> frontend: 3s+ mean successful sentinel stream latency over 1h30m for 30m0s
+- <span class="badge badge-warning">warning</span> frontend: 2s+ mean successful sentinel stream latency over 2h for 15m0s
+- <span class="badge badge-critical">critical</span> frontend: 3s+ mean successful sentinel stream latency over 2h for 30m0s
 
 **Possible solutions**
 
 - Look at the breakdown by query to determine if a specific query type is being affected
 - Check for high CPU usage on zoekt-webserver
 - Check Honeycomb for unusual activity
-- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#frontend-mean-sentinel-stream-latency-over-1h30m).
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#frontend-mean-sentinel-stream-latency-over-2h).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_mean_sentinel_stream_latency_over_1h30m",
-  "critical_frontend_mean_sentinel_stream_latency_over_1h30m"
+  "warning_frontend_mean_sentinel_stream_latency_over_2h",
+  "critical_frontend_mean_sentinel_stream_latency_over_2h"
 ]
 ```
 
@@ -983,27 +983,27 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 <br />
 
-## frontend: 90th_percentile_successful_sentinel_duration_over_1h30m
+## frontend: 90th_percentile_successful_sentinel_duration_over_2h
 
-<p class="subtitle">90th percentile successful sentinel search duration over 1h30m</p>
+<p class="subtitle">90th percentile successful sentinel search duration over 2h</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> frontend: 5s+ 90th percentile successful sentinel search duration over 1h30m for 15m0s
-- <span class="badge badge-critical">critical</span> frontend: 10s+ 90th percentile successful sentinel search duration over 1h30m for 30m0s
+- <span class="badge badge-warning">warning</span> frontend: 5s+ 90th percentile successful sentinel search duration over 2h for 15m0s
+- <span class="badge badge-critical">critical</span> frontend: 10s+ 90th percentile successful sentinel search duration over 2h for 3h30m0s
 
 **Possible solutions**
 
 - Look at the breakdown by query to determine if a specific query type is being affected
 - Check for high CPU usage on zoekt-webserver
 - Check Honeycomb for unusual activity
-- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#frontend-90th-percentile-successful-sentinel-duration-over-1h30m).
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#frontend-90th-percentile-successful-sentinel-duration-over-2h).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_90th_percentile_successful_sentinel_duration_over_1h30m",
-  "critical_frontend_90th_percentile_successful_sentinel_duration_over_1h30m"
+  "warning_frontend_90th_percentile_successful_sentinel_duration_over_2h",
+  "critical_frontend_90th_percentile_successful_sentinel_duration_over_2h"
 ]
 ```
 
@@ -1011,27 +1011,27 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 <br />
 
-## frontend: 90th_percentile_sentinel_stream_latency_over_1h30m
+## frontend: 90th_percentile_sentinel_stream_latency_over_2h
 
-<p class="subtitle">90th percentile successful sentinel stream latency over 1h30m</p>
+<p class="subtitle">90th percentile successful sentinel stream latency over 2h</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> frontend: 4s+ 90th percentile successful sentinel stream latency over 1h30m for 15m0s
-- <span class="badge badge-critical">critical</span> frontend: 6s+ 90th percentile successful sentinel stream latency over 1h30m for 30m0s
+- <span class="badge badge-warning">warning</span> frontend: 4s+ 90th percentile successful sentinel stream latency over 2h for 15m0s
+- <span class="badge badge-critical">critical</span> frontend: 6s+ 90th percentile successful sentinel stream latency over 2h for 3h30m0s
 
 **Possible solutions**
 
 - Look at the breakdown by query to determine if a specific query type is being affected
 - Check for high CPU usage on zoekt-webserver
 - Check Honeycomb for unusual activity
-- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#frontend-90th-percentile-sentinel-stream-latency-over-1h30m).
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#frontend-90th-percentile-sentinel-stream-latency-over-2h).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_90th_percentile_sentinel_stream_latency_over_1h30m",
-  "critical_frontend_90th_percentile_sentinel_stream_latency_over_1h30m"
+  "warning_frontend_90th_percentile_sentinel_stream_latency_over_2h",
+  "critical_frontend_90th_percentile_sentinel_stream_latency_over_2h"
 ]
 ```
 
@@ -1637,6 +1637,32 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 <br />
 
+## postgres: usage_connections_percentage
+
+<p class="subtitle">connection in use</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> postgres: 80%+ connection in use for 5m0s
+- <span class="badge badge-critical">critical</span> postgres: 100%+ connection in use for 5m0s
+
+**Possible solutions**
+
+- Consider increasing [max_connections](https://www.postgresql.org/docs/current/runtime-config-connection.html#GUC-MAX-CONNECTIONS) of the database instance, [learn more](https://docs.sourcegraph.com/admin/config/postgres-conf)
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#postgres-usage-connections-percentage).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_postgres_usage_connections_percentage",
+  "critical_postgres_usage_connections_percentage"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+
+<br />
+
 ## postgres: transaction_durations
 
 <p class="subtitle">maximum transaction durations</p>
@@ -1767,8 +1793,8 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
-- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the (pgsql|codeintel-db) service.
-- **Docker Compose:** Consider increasing `cpus:` of the (pgsql|codeintel-db) container in `docker-compose.yml`.
+- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the (pgsql|codeintel-db|codeinsights-db) service.
+- **Docker Compose:** Consider increasing `cpus:` of the (pgsql|codeintel-db|codeinsights-db) container in `docker-compose.yml`.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#postgres-provisioning-container-cpu-usage-long-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -1792,8 +1818,8 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
-- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the (pgsql|codeintel-db) service.
-- **Docker Compose:** Consider increasing `memory:` of the (pgsql|codeintel-db) container in `docker-compose.yml`.
+- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the (pgsql|codeintel-db|codeinsights-db) service.
+- **Docker Compose:** Consider increasing `memory:` of the (pgsql|codeintel-db|codeinsights-db) container in `docker-compose.yml`.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#postgres-provisioning-container-memory-usage-long-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -1818,7 +1844,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Possible solutions**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the (pgsql|codeintel-db) container in `docker-compose.yml`.
+- **Docker Compose:** Consider increasing `cpus:` of the (pgsql|codeintel-db|codeinsights-db) container in `docker-compose.yml`.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#postgres-provisioning-container-cpu-usage-short-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -1843,7 +1869,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Possible solutions**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of (pgsql|codeintel-db) container in `docker-compose.yml`.
+- **Docker Compose:** Consider increasing `memory:` of (pgsql|codeintel-db|codeinsights-db) container in `docker-compose.yml`.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#postgres-provisioning-container-memory-usage-short-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -3076,11 +3102,11 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Descriptions**
 
-- <span class="badge badge-critical">critical</span> repo-updater: 360000+ total number of user added repos for 5m0s
+- <span class="badge badge-critical">critical</span> repo-updater: 720000+ total number of user added repos for 5m0s
 
 **Possible solutions**
 
-- Check for unusual spikes in user added repos. Each user is only allowed to add 2000 and we have a site wide limit of 400k.
+- Check for unusual spikes in user added repos. Each user is only allowed to add 2000 and we have a site wide limit of 800k.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-user-added-repos).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 

@@ -334,10 +334,8 @@ func (c *V4Client) determineGitHubVersion(ctx context.Context) *semver.Version {
 // Additionally if it fails to parse the version. or the API request fails with an error, it
 // defaults to returning allMatchingSemver as well.
 func (c *V4Client) fetchGitHubVersion(ctx context.Context) (version *semver.Version) {
-	version = allMatchingSemver
-
 	if c.githubDotCom {
-		return
+		return allMatchingSemver
 	}
 
 	// Initiate a v3Client since this requires a V3 API request.
@@ -349,12 +347,12 @@ func (c *V4Client) fetchGitHubVersion(ctx context.Context) (version *semver.Vers
 			"apiURL", c.apiURL,
 			"err", err,
 		)
-		return
+		return allMatchingSemver
 	}
 
 	version, err = semver.NewVersion(v)
 	if err != nil {
-		return
+		return allMatchingSemver
 	}
 
 	return version

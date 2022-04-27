@@ -2,260 +2,193 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
-	"syscall"
+	"time"
 
-	"github.com/peterbourgon/ff/v3"
-	"github.com/peterbourgon/ff/v3/ffcli"
+	"github.com/urfave/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/output"
 )
-
-const (
-	defaultConfigFile          = "sg.config.yaml"
-	defaultConfigOverwriteFile = "sg.config.overwrite.yaml"
-	defaultSecretsFile         = "sg.secrets.json"
-)
-
-var secretsStore *secrets.Store
-
-var (
-	BuildCommit = "dev"
-
-	// globalConf is the global config. If a command needs to access it, it *must* call
-	// `parseConf` before.
-	globalConf *Config
-
-	rootFlagSet         = flag.NewFlagSet("sg", flag.ExitOnError)
-	verboseFlag         = rootFlagSet.Bool("v", false, "verbose mode")
-	configFlag          = rootFlagSet.String("config", defaultConfigFile, "configuration file")
-	overwriteConfigFlag = rootFlagSet.String("overwrite", defaultConfigOverwriteFile, "configuration overwrites file that is gitignored and can be used to, for example, add credentials")
-	skipAutoUpdatesFlag = rootFlagSet.Bool("skip-auto-update", false, "prevent sg from automatically updating itself")
-
-	rootCommand = &ffcli.Command{
-		ShortUsage: "sg [flags] <subcommand>",
-		FlagSet:    rootFlagSet,
-		Exec: func(ctx context.Context, args []string) error {
-			return flag.ErrHelp
-		},
-		Options: []ff.Option{
-			ff.WithEnvVarPrefix("SG"),
-		},
-		Subcommands: []*ffcli.Command{
-			// Common dev tasks
-			runCommand,
-			startCommand,
-			testCommand,
-			lintCommand,
-			dbCommand,
-			migrationCommand,
-			ciCommand,
-
-			// Dev environment
-			doctorCommand,
-			secretCommand,
-			setupCommand,
-
-			// sg commands
-			versionCommand,
-			updateCommand,
-			installCommand,
-
-			// Company
-			liveCommand,
-			teammateCommand,
-			rfcCommand,
-
-			// Misc.
-			opsCommand,
-			auditCommand,
-			funkyLogoCommand,
-		},
-	}
-)
-
-// setMaxOpenFiles will bump the maximum opened files count.
-// It's harmless since the limit only persists for the lifetime of the process and it's quick too.
-func setMaxOpenFiles() error {
-	const maxOpenFiles = 10000
-
-	var rLimit syscall.Rlimit
-	if err := syscall.Getrlimit(syscall.RLIMIT_NOFILE, &rLimit); err != nil {
-		return errors.Wrap(err, "getrlimit failed")
-	}
-
-	if rLimit.Cur < maxOpenFiles {
-		rLimit.Cur = maxOpenFiles
-
-		// This may not succeed, see https://github.com/golang/go/issues/30401
-		err := syscall.Setrlimit(syscall.RLIMIT_NOFILE, &rLimit)
-		if err != nil {
-			return errors.Wrap(err, "setrlimit failed")
-		}
-	}
-
-	return nil
-}
-
-func checkSgVersion(ctx context.Context) error {
-	_, err := root.RepositoryRoot()
-	if err != nil {
-		// Ignore the error, because we only want to check the version if we're
-		// in sourcegraph/sourcegraph
-		return nil
-	}
-
-	if BuildCommit == "dev" {
-		// If `sg` was built with a dirty `./dev/sg` directory it's a dev build
-		// and we don't need to display this message.
-		return nil
-	}
-
-	rev := strings.TrimPrefix(BuildCommit, "dev-")
-	out, err := run.GitCmd("rev-list", fmt.Sprintf("%s..origin/main", rev), "./dev/sg")
-	if err != nil {
-		fmt.Printf("error getting new commits since %s in ./dev/sg: %s\n", rev, err)
-		fmt.Println("try reinstalling sg with `./dev/sg/install.sh`.")
-		os.Exit(1)
-	}
-
-	out = strings.TrimSpace(out)
-	if out == "" {
-		// No newer commits found. sg is up to date.
-		return nil
-	}
-
-	if *skipAutoUpdatesFlag {
-		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "------------------------------------------------------------------------------"))
-		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "       HEY! New version of sg available. Run 'sg update' to install it.       "))
-		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "             To see what's new, run 'sg version changelog -next'.             "))
-		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "------------------------------------------------------------------------------"))
-		return nil
-	}
-
-	stdout.Out.WriteLine(output.Line(output.EmojiInfo, output.StyleSuggestion, "Auto updating sg ..."))
-	err = updateCommand.Exec(ctx, nil)
-	if err != nil {
-		return err
-	}
-	sgPath, err := os.Executable()
-	if err != nil {
-		return err
-	}
-	return syscall.Exec(sgPath, os.Args, os.Environ())
-}
-
-func loadSecrets() error {
-	homePath, err := root.GetSGHomePath()
-	if err != nil {
-		return err
-	}
-	fp := filepath.Join(homePath, defaultSecretsFile)
-	secretsStore, err = secrets.LoadFile(fp)
-	return err
-}
 
 func main() {
-	if err := loadSecrets(); err != nil {
-		fmt.Printf("failed to open secrets: %s\n", err)
-	}
-	ctx := secrets.WithContext(context.Background(), secretsStore)
-
-	if err := rootCommand.Parse(os.Args[1:]); err != nil {
-		os.Exit(1)
+	if os.Args[len(os.Args)-1] == "--generate-bash-completion" {
+		batchCompletionMode = true
 	}
 
-	isUpdateCmd := len(os.Args) >= 2 && os.Args[1] == "update"
-	if !isUpdateCmd {
-		// If we're not running "sg update ...", we want to check the version first
-		err := checkSgVersion(ctx)
-		if err != nil {
-			fmt.Printf("checking sg version failed: %s\n", err)
-			os.Exit(1)
-		}
-	}
-
-	if *verboseFlag {
-		stdout.Out.SetVerbose()
-	}
-
-	// We always try to set this, since we
-	// often want to watch files, start commands, etc...
-	if err := setMaxOpenFiles(); err != nil {
-		fmt.Printf("failed to set max open files: %s\n", err)
-		os.Exit(1)
-	}
-
-	if err := rootCommand.Run(ctx); err != nil {
+	if err := sg.RunContext(context.Background(), os.Args); err != nil {
 		fmt.Printf("error: %s\n", err)
 		os.Exit(1)
 	}
 }
 
-// parseConfAndReset parses the config file, return it and resets the global config.
-// It doesn't use the flagset because it needs to be called before the command.
-func parseConfAndReset() *Config {
-	_, _ = parseConf(defaultConfigFile, defaultConfigOverwriteFile)
-	cfg := globalConf
-	globalConf = nil
-	return cfg
-}
+var (
+	BuildCommit = "dev"
 
-// parseConf parses the config file and the optional overwrite file.
-// Iear the conf has already been parsed it's a noop.
-func parseConf(confFile, overwriteFile string) (bool, output.FancyLine) {
-	if globalConf != nil {
-		return true, output.FancyLine{}
-	}
+	// configFile is the path to use with sgconf.Get - it must not be used before flag
+	// initialization.
+	configFile string
+	// configOverwriteFile is the path to use with sgconf.Get - it must not be used before
+	// flag initialization.
+	configOverwriteFile string
 
-	// Try to determine root of repository, so we can look for config there
-	repoRoot, err := root.RepositoryRoot()
-	if err != nil {
-		return false, output.Linef("", output.StyleWarning, "Failed to determine repository root location: %s", err)
-	}
+	// Global verbose mode
+	verbose bool
 
-	// If the configFlag/overwriteConfigFlag flags have their default value, we
-	// take the value as relative to the root of the repository.
-	if confFile == defaultConfigFile {
-		confFile = filepath.Join(repoRoot, confFile)
-	}
+	// postInitHooks is useful for doing anything that requires flags to be set beforehand,
+	// e.g. generating help text based on parsed config, and are called before any command
+	// Action is executed. These should run quickly and must fail gracefully.
+	//
+	// Commands can register postInitHooks in an 'init()' function that appends to this
+	// slice.
+	postInitHooks []func(cmd *cli.Context)
 
-	if overwriteFile == defaultConfigOverwriteFile {
-		overwriteFile = filepath.Join(repoRoot, overwriteFile)
-	}
+	// batchCompletionMode determines if we are in bash completion mode. In this mode,
+	// sg should respond quickly, so most setup tasks (e.g. postInitHooks) are skipped.
+	//
+	// Do not run complicated tasks, etc. in Before or After hooks when in this mode.
+	batchCompletionMode bool
+)
 
-	globalConf, err = ParseConfigFile(confFile)
-	if err != nil {
-		return false, output.Linef("", output.StyleWarning, "Failed to parse %s%s%s%s as configuration file:%s\n%s", output.StyleBold, confFile, output.StyleReset, output.StyleWarning, output.StyleReset, err)
-	}
+// sg is the main sg CLI application.
+var sg = &cli.App{
+	Usage:       "The Sourcegraph developer tool!",
+	Description: "Learn more: https://docs.sourcegraph.com/dev/background-information/sg",
+	Version:     BuildCommit,
+	Compiled:    time.Now(),
+	Flags: []cli.Flag{
+		&cli.BoolFlag{
+			Name:        "verbose",
+			Usage:       "toggle verbose mode",
+			Aliases:     []string{"v"},
+			EnvVars:     []string{"SG_VERBOSE"},
+			Value:       false,
+			Destination: &verbose,
+		},
+		&cli.StringFlag{
+			Name:        "config",
+			Aliases:     []string{"c"},
+			Usage:       "load sg configuration from `file`",
+			EnvVars:     []string{"SG_CONFIG"},
+			TakesFile:   true,
+			Value:       sgconf.DefaultFile,
+			Destination: &configFile,
+		},
+		&cli.StringFlag{
+			Name:        "overwrite",
+			Aliases:     []string{"o"},
+			Usage:       "load sg configuration from `file` that is gitignored and can be used to, for example, add credentials",
+			EnvVars:     []string{"SG_OVERWRITE"},
+			TakesFile:   true,
+			Value:       sgconf.DefaultOverwriteFile,
+			Destination: &configOverwriteFile,
+		},
+		&cli.BoolFlag{
+			Name:    "skip-auto-update",
+			Usage:   "prevent sg from automatically updating itself",
+			EnvVars: []string{"SG_SKIP_AUTO_UPDATE"},
+			Value:   BuildCommit == "dev", // Default to skip in dev, otherwise don't
+		},
+	},
+	Before: func(cmd *cli.Context) error {
+		if batchCompletionMode {
+			// All other setup pertains to running commands - to keep completions fast,
+			// we skip all other setup.
+			return nil
+		}
 
-	if ok, _ := fileExists(overwriteFile); ok {
-		overwriteConf, err := ParseConfigFile(overwriteFile)
+		if verbose {
+			stdout.Out.SetVerbose()
+		}
+
+		// Validate configuration flags, which is required for sgconf.Get to work everywhere else.
+		if configFile == "" {
+			return errors.Newf("--config must not be empty")
+		}
+		if configOverwriteFile == "" {
+			return errors.Newf("--overwrite must not be empty")
+		}
+
+		// Set up access to secrets
+		secretsStore, err := loadSecrets()
 		if err != nil {
-			return false, output.Linef("", output.StyleWarning, "Failed to parse %s%s%s%s as overwrites configuration file:%s\n%s", output.StyleBold, overwriteFile, output.StyleReset, output.StyleWarning, output.StyleReset, err)
+			writeWarningLinef("failed to open secrets: %s", err)
+		} else {
+			cmd.Context = secrets.WithContext(cmd.Context, secretsStore)
 		}
-		globalConf.Merge(overwriteConf)
-	}
 
-	return true, output.FancyLine{}
+		// We always try to set this, since we often want to watch files, start commands, etc...
+		if err := setMaxOpenFiles(); err != nil {
+			writeWarningLinef("Failed to set max open files: %s", err)
+		}
+
+		// Check for updates, unless we are running update manually.
+		if cmd.Args().First() != "update" {
+			err := checkSgVersionAndUpdate(cmd.Context, cmd.Bool("skip-auto-update"))
+			if err != nil {
+				writeWarningLinef("update check: %s", err)
+				// Do not exit here, so we don't break user flow when they want to
+				// run `sg` but updating fails
+			}
+		}
+
+		// Call registered hooks last
+		for _, hook := range postInitHooks {
+			hook(cmd)
+		}
+
+		return nil
+	},
+	Commands: []*cli.Command{
+		// Common dev tasks
+		startCommand,
+		runCommand,
+		ciCommand,
+		testCommand,
+		lintCommand,
+		generateCommand,
+		dbCommand,
+		migrationCommand,
+
+		// Dev environment
+		doctorCommand,
+		secretCommand,
+		setupCommand,
+
+		// Company
+		teammateCommand,
+		rfcCommand,
+		liveCommand,
+		opsCommand,
+		auditCommand,
+
+		// Util
+		helpCommand,
+		versionCommand,
+		updateCommand,
+		installCommand,
+		funkyLogoCommand,
+	},
+
+	CommandNotFound: suggestCommands,
+
+	EnableBashCompletion:   true,
+	UseShortOptionHandling: true,
+
+	HideVersion:     true,
+	HideHelpCommand: true,
 }
 
-func fileExists(path string) (bool, error) {
-	_, err := os.Stat(path)
+func loadSecrets() (*secrets.Store, error) {
+	homePath, err := root.GetSGHomePath()
 	if err != nil {
-		if os.IsNotExist(err) {
-			return false, nil
-		}
-		return false, err
+		return nil, err
 	}
-	return true, nil
+	fp := filepath.Join(homePath, secrets.DefaultFile)
+	return secrets.LoadFromFile(fp)
 }

@@ -16,12 +16,12 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { ISearchContext } from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Page } from '@sourcegraph/web/src/components/Page'
-import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { PageHeader, LoadingSpinner, useObservable, Alert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
+import { Page } from '../../components/Page'
+import { PageTitle } from '../../components/PageTitle'
 
 import { SearchContextForm } from './SearchContextForm'
 
@@ -81,6 +81,7 @@ export const AuthenticatedEditSearchContextPage: React.FunctionComponent<EditSea
                             {
                                 icon: MagnifyIcon,
                                 to: '/search',
+                                ariaLabel: 'Code Search',
                             },
                             {
                                 to: '/contexts',

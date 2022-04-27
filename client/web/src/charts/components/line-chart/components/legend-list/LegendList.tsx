@@ -1,32 +1,35 @@
-import React from 'react'
+import React, { LiHTMLAttributes } from 'react'
 
 import classNames from 'classnames'
 
-import { LineChartSeries } from '../../types'
-import { getLineColor } from '../../utils'
-
 import styles from './LegendList.module.scss'
 
-interface LegendListProps {
-    series: LineChartSeries<any>[]
+interface LegendListProps extends React.HTMLAttributes<HTMLUListElement> {
     className?: string
 }
 
 export const LegendList: React.FunctionComponent<LegendListProps> = props => {
-    const { series, className } = props
+    const { className, ...attributes } = props
 
     return (
-        <ul className={classNames(styles.legendList, className)}>
-            {series.map(line => (
-                <li key={line.dataKey.toString()} className={styles.legendItem}>
-                    <div
-                        /* eslint-disable-next-line react/forbid-dom-props */
-                        style={{ backgroundColor: getLineColor(line) }}
-                        className={styles.legendMark}
-                    />
-                    {line.name}
-                </li>
-            ))}
+        <ul {...attributes} className={classNames(styles.legendList, className)}>
+            {props.children}
         </ul>
     )
 }
+
+interface LegendItemProps extends LiHTMLAttributes<HTMLLIElement> {
+    color: string
+    name: string
+}
+
+export const LegendItem: React.FunctionComponent<LegendItemProps> = ({ color, name, className, ...attributes }) => (
+    <li {...attributes} className={classNames(styles.legendItem, className)}>
+        <div
+            /* eslint-disable-next-line react/forbid-dom-props */
+            style={{ backgroundColor: color }}
+            className={styles.legendMark}
+        />
+        {name}
+    </li>
+)

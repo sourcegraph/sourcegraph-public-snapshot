@@ -4,12 +4,11 @@ import classNames from 'classnames'
 import AccountQuestionIcon from 'mdi-react/AccountQuestionIcon'
 import SourceForkIcon from 'mdi-react/SourceForkIcon'
 
-import { Badge, Icon } from '@sourcegraph/wildcard'
-import { BadgeProps } from '@sourcegraph/wildcard/src/components/Badge'
+import { Badge, Icon, BadgeProps } from '@sourcegraph/wildcard'
 
 export interface ForkTarget {
     pushUser: boolean
-    namespace?: string | null
+    namespace: string | null
 }
 
 export interface BranchProps extends Pick<BadgeProps, 'variant'> {
@@ -25,7 +24,7 @@ export const Branch: React.FunctionComponent<BranchProps> = ({ className, delete
         className={classNames('text-monospace', className)}
         as={deleted ? 'del' : undefined}
     >
-        {!forkTarget ? (
+        {!forkTarget || forkTarget.namespace === null ? (
             name
         ) : (
             <>

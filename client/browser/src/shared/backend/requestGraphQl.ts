@@ -16,7 +16,6 @@ interface RequestGraphQLOptions<V> {
     request: string
     variables: V
     mightContainPrivateInfo: boolean
-    privateCloudErrors?: Observable<boolean>
 }
 
 interface GraphQLHelpers {
@@ -103,7 +102,12 @@ export function createGraphQLHelpers(sourcegraphURL: string, isExtension: boolea
      * After that, the same instance should be used by all consumers.
      */
     const getBrowserGraphQLClient = once(() =>
-        getGraphQLClient({ headers: getHeaders(), baseUrl: sourcegraphURL, isAuthenticated: false })
+        getGraphQLClient({
+            headers: getHeaders(),
+            baseUrl: sourcegraphURL,
+            isAuthenticated: false,
+            credentials: 'include',
+        })
     )
 
     return { getBrowserGraphQLClient, requestGraphQL }

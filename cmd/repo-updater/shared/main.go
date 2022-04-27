@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	livedependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -36,6 +37,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
@@ -47,6 +49,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
+	"github.com/sourcegraph/sourcegraph/internal/version"
+	sglog "github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 const port = "3182"
@@ -59,9 +63,10 @@ var stateHTMLTemplate string
 type EnterpriseInit func(db database.DB, store *repos.Store, keyring keyring.Ring, cf *httpcli.Factory, server *repoupdater.Server) []debugserver.Dumper
 
 type LazyDebugserverEndpoint struct {
-	repoUpdaterStateEndpoint   http.HandlerFunc
-	listAuthzProvidersEndpoint http.HandlerFunc
-	gitserverReposStatus       http.HandlerFunc
+	repoUpdaterStateEndpoint     http.HandlerFunc
+	listAuthzProvidersEndpoint   http.HandlerFunc
+	gitserverReposStatusEndpoint http.HandlerFunc
+	rateLimiterStateEndpoint     http.HandlerFunc
 }
 
 func Main(enterpriseInit EnterpriseInit) {
@@ -71,15 +76,18 @@ func Main(enterpriseInit EnterpriseInit) {
 	env.Lock()
 	env.HandleHelpFlag()
 
-	if err := profiler.Init(); err != nil {
-		log.Fatalf("failed to start profiler: %v", err)
-	}
-
 	conf.Init()
 	logging.Init()
+	syncLogs := sglog.Init(sglog.Resource{
+		Name:       env.MyName,
+		Version:    version.Version(),
+		InstanceID: hostname.Get(),
+	})
+	defer syncLogs()
 	tracer.Init(conf.DefaultClient())
 	sentry.Init(conf.DefaultClient())
 	trace.Init()
+	profiler.Init()
 
 	// Signals health of startup
 	ready := make(chan struct{})
@@ -126,7 +134,8 @@ func Main(enterpriseInit EnterpriseInit) {
 		m := repos.NewSourceMetrics()
 		m.MustRegister(prometheus.DefaultRegisterer)
 
-		src = repos.NewSourcer(database.NewDB(db), cf, repos.WithDB(db), repos.ObservedSource(log15.Root(), m))
+		depsSvc := livedependencies.GetService(db, nil)
+		src = repos.NewSourcer(db, cf, repos.WithDependenciesService(depsSvc), repos.ObservedSource(log15.Root(), m))
 	}
 
 	updateScheduler := repos.NewUpdateScheduler(db)
@@ -135,12 +144,11 @@ func Main(enterpriseInit EnterpriseInit) {
 		Scheduler:             updateScheduler,
 		GitserverClient:       gitserver.NewClient(db),
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
+		RateLimitSyncer:       repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, store.ExternalServiceStore, repos.RateLimitSyncerOpts{}),
 	}
 
-	rateLimitSyncer := repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, store.ExternalServiceStore)
-	server.RateLimitSyncer = rateLimitSyncer
 	// Attempt to perform an initial sync with all external services
-	if err := rateLimitSyncer.SyncRateLimiters(ctx); err != nil {
+	if err := server.RateLimitSyncer.SyncRateLimiters(ctx); err != nil {
 		// This is not a fatal error since the syncer has been added to the server above
 		// and will still be run whenever an external service is added or updated
 		log15.Error("Performing initial rate limit sync", "err", err)
@@ -215,7 +223,8 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	debugserverEndpoints.repoUpdaterStateEndpoint = repoUpdaterStatsHandler(db, updateScheduler, debugDumpers)
 	debugserverEndpoints.listAuthzProvidersEndpoint = listAuthzProvidersHandler()
-	debugserverEndpoints.gitserverReposStatus = gitserverReposStatusHandler(db)
+	debugserverEndpoints.gitserverReposStatusEndpoint = gitserverReposStatusHandler(db)
+	debugserverEndpoints.rateLimiterStateEndpoint = rateLimiterStateHandler
 
 	// We mark the service as ready now AFTER assigning the additional endpoints in
 	// the debugserver constructed at the top of this function. This ensures we don't
@@ -267,7 +276,15 @@ func createDebugServerRoutine(ready chan struct{}, debugserverEndpoints *LazyDeb
 			Path: "/gitserver-repo-status",
 			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				<-ready
-				debugserverEndpoints.gitserverReposStatus(w, r)
+				debugserverEndpoints.gitserverReposStatusEndpoint(w, r)
+			}),
+		},
+		debugserver.Endpoint{
+			Name: "Rate Limiter State",
+			Path: "/rate-limiter-state",
+			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				<-ready
+				debugserverEndpoints.rateLimiterStateEndpoint(w, r)
 			}),
 		},
 	)
@@ -295,6 +312,17 @@ func gitserverReposStatusHandler(db database.DB) http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write(resp)
 	}
+}
+
+func rateLimiterStateHandler(w http.ResponseWriter, r *http.Request) {
+	info := ratelimit.DefaultRegistry.LimitInfo()
+	resp, err := json.MarshalIndent(info, "", "  ")
+	if err != nil {
+		http.Error(w, fmt.Sprintf("failed to marshal rate limiter state: %q", err.Error()), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_, _ = w.Write(resp)
 }
 
 func listAuthzProvidersHandler() http.HandlerFunc {

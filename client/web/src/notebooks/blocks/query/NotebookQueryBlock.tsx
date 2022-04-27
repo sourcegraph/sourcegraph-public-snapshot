@@ -1,18 +1,16 @@
-import React, { useState, useCallback, useMemo } from 'react'
+import React, { useState, useCallback, useMemo, useEffect } from 'react'
 
 import classNames from 'classnames'
 import { noop } from 'lodash'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import PlayCircleOutlineIcon from 'mdi-react/PlayCircleOutlineIcon'
 import * as Monaco from 'monaco-editor'
-import { useLocation } from 'react-router'
 import { Observable, of } from 'rxjs'
 
 import { HoverMerged } from '@sourcegraph/client-api'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import { SearchContextProps } from '@sourcegraph/search'
-import { StreamingSearchResultsList } from '@sourcegraph/search-ui'
-import { useQueryDiagnostics } from '@sourcegraph/search/src/useQueryIntelligence'
+import { StreamingSearchResultsList, useQueryDiagnostics } from '@sourcegraph/search-ui'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
@@ -75,12 +73,19 @@ export const NotebookQueryBlock: React.FunctionComponent<NotebookQueryBlockProps
         const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
         const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
         const searchResults = useObservable(output ?? of(undefined))
-        const location = useLocation()
+        const [executedQuery, setExecutedQuery] = useState<string>(input.query)
 
         const onInputChange = useCallback(
             (query: string) => onBlockInputChange(id, { type: 'query', input: { query } }),
             [id, onBlockInputChange]
         )
+
+        useEffect(() => {
+            setExecutedQuery(input.query)
+            // We intentionally want to track the input query state at the time
+            // of search submission, not on input change.
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+        }, [output])
 
         useMonacoBlockInput({
             editor,
@@ -160,7 +165,6 @@ export const NotebookQueryBlock: React.FunctionComponent<NotebookQueryBlockProps
                         <StreamingSearchResultsList
                             isSourcegraphDotCom={props.isSourcegraphDotCom}
                             searchContextsEnabled={props.searchContextsEnabled}
-                            location={location}
                             allExpanded={false}
                             results={searchResults}
                             isLightTheme={isLightTheme}
@@ -175,6 +179,7 @@ export const NotebookQueryBlock: React.FunctionComponent<NotebookQueryBlockProps
                             extensionsController={props.extensionsController}
                             hoverifier={hoverifier}
                             openMatchesInNewTab={true}
+                            executedQuery={executedQuery}
                         />
                     </div>
                 )}

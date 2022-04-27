@@ -1,11 +1,10 @@
-import React from 'react'
-
 import { action } from '@storybook/addon-actions'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import * as H from 'history'
 import { NEVER } from 'rxjs'
 
 import { subtypeOf } from '@sourcegraph/common'
+// eslint-disable-next-line no-restricted-imports
 import { WebStory } from '@sourcegraph/web/src/components/WebStory'
 
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'

@@ -5,8 +5,9 @@
   "description": "Sourcegraph Storybook configuration",
   "sideEffects": false,
   "license": "Apache-2.0",
+  "main": "./src/index.ts",
   "scripts": {
-    "eslint": "eslint --cache 'src/**/*.[jt]s?(x)'",
+    "lint:js": "eslint --cache 'src/**/*.[jt]s?(x)'",
     "start": "TS_NODE_TRANSPILE_ONLY=true start-storybook -p 9001 -c ./src -s ./assets,../../ui/assets",
     "build": "TS_NODE_TRANSPILE_ONLY=true build-storybook -c ./src -s ./assets,../../ui/assets",
     "build:webpack-stats": "TS_NODE_TRANSPILE_ONLY=true WEBPACK_DLL_PLUGIN=false start-storybook -c ./src -s ./assets --smoke-test --webpack-stats-json ./storybook-static --loglevel warn",

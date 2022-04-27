@@ -63,6 +63,7 @@ export const Collapsible: React.FunctionComponent<Props> = ({
     buttonClassName = '',
     expandedButtonClassName = '',
     wholeTitleClickable = true,
+    ...rest
 }) => {
     const [isExpanded, setIsExpanded] = useState(defaultExpanded)
     const toggleIsExpanded = useCallback<React.MouseEventHandler<HTMLButtonElement>>(
@@ -83,7 +84,7 @@ export const Collapsible: React.FunctionComponent<Props> = ({
     )
 
     return (
-        <div className={className}>
+        <div className={className} {...rest}>
             <div
                 className={classNames(
                     'd-flex justify-content-between align-items-center position-relative',

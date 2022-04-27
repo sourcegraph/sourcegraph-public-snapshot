@@ -5,7 +5,7 @@ import signale from 'signale'
 
 import { MONACO_LANGUAGES_AND_FEATURES } from '@sourcegraph/build-config'
 
-import { environmentConfig, ROOT_PATH, STATIC_ASSETS_PATH } from '../utils'
+import { ENVIRONMENT_CONFIG, ROOT_PATH, STATIC_ASSETS_PATH } from '../utils'
 
 import { manifestPlugin } from './manifestPlugin'
 import { monacoPlugin } from './monacoPlugin'
@@ -13,7 +13,7 @@ import { packageResolutionPlugin } from './packageResolutionPlugin'
 import { stylePlugin } from './stylePlugin'
 import { workerPlugin } from './workerPlugin'
 
-const isEnterpriseBuild = environmentConfig.ENTERPRISE
+const isEnterpriseBuild = ENVIRONMENT_CONFIG.ENTERPRISE
 
 export const BUILD_OPTIONS: esbuild.BuildOptions = {
     entryPoints: {
@@ -67,7 +67,7 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
     ],
     define: {
         ...Object.fromEntries(
-            Object.entries({ ...environmentConfig, SOURCEGRAPH_API_URL: undefined }).map(([key, value]) => [
+            Object.entries({ ...ENVIRONMENT_CONFIG, SOURCEGRAPH_API_URL: undefined }).map(([key, value]) => [
                 `process.env.${key}`,
                 JSON.stringify(value),
             ])

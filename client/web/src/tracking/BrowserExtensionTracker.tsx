@@ -6,7 +6,7 @@ import { fromFetch } from 'rxjs/fetch'
 import { catchError, filter, map, mapTo, mergeMap, publishReplay, refCount, take } from 'rxjs/operators'
 
 import { isErrorLike, isFirefox } from '@sourcegraph/common'
-import { useLocalStorage, useObservable } from '@sourcegraph/wildcard/src/hooks'
+import { useLocalStorage, useObservable } from '@sourcegraph/wildcard'
 
 import { IS_CHROME } from '../marketing/util'
 import { observeQuerySelector } from '../util/dom'

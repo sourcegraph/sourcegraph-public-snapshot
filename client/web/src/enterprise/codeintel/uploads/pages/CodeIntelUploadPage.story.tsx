@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { Meta, Story } from '@storybook/react'
 import { of } from 'rxjs'
 
@@ -15,6 +13,7 @@ const uploadPrototype: Omit<LsifUploadFields, 'id' | 'state' | 'uploadedAt'> = {
     inputCommit: '9ea5e9f0e0344f8197622df6b36faf48ccd02570',
     inputRoot: 'web/',
     inputIndexer: 'lsif-tsc',
+    indexer: { name: 'lsif-tsc', url: '' },
     failure: null,
     isLatestForRepo: false,
     startedAt: null,

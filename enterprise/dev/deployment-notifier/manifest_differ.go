@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -45,7 +44,6 @@ func (m *manifestDeploymentDiffer) Services() (map[string]*ServiceVersionDiff, e
 func (m *manifestDeploymentDiffer) parseManifests() error {
 	services := map[string]*ServiceVersionDiff{}
 	for _, path := range m.changedFiles {
-		fmt.Println(path)
 		info, err := os.Stat(path)
 		if err != nil {
 			return err
@@ -54,11 +52,22 @@ func (m *manifestDeploymentDiffer) parseManifests() error {
 			// If the file is a directory, skip it.
 			continue
 		}
-		elems := strings.Split(path, string(filepath.Separator))
-		if len(elems) < 1 {
-			// If the file is at the root, skip it. Applications are always in subfolders.
+		ext := filepath.Ext(path)
+		if ext != ".yml" && ext != ".yaml" {
+			// If the file is not yaml, skip it.
 			continue
 		}
+
+		elems := strings.Split(path, string(filepath.Separator))
+		if len(elems) < 2 {
+			// If the file is at the root, skip it. Services are always in subfolders.
+			continue
+		}
+		if elems[0] != "base" {
+			// If the file is not in the base folder where services are, skip it.
+			continue
+		}
+
 		appName := elems[1] // base/elems[1]/...
 
 		filename := filepath.Base(path)

@@ -1,34 +1,50 @@
 package cliutil
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"sort"
 	"strings"
 
-	"github.com/peterbourgon/ff/v3/ffcli"
+	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func Up(commandName string, factory RunnerFactory, out *output.Output, development bool) *ffcli.Command {
-	var (
-		flagSet                  = flag.NewFlagSet(fmt.Sprintf("%s up", commandName), flag.ExitOnError)
-		schemaNameFlag           = flagSet.String("db", "all", `The target schema(s) to modify. Comma-separated values are accepted. Supply "all" (the default) to migrate all schemas.`)
-		unprivilegedOnlyFlag     = flagSet.Bool("unprivileged-only", false, `Do not apply privileged migrations.`)
-		ignoreSingleDirtyLogFlag = flagSet.Bool("ignore-single-dirty-log", development, `Ignore a previously failed attempt if it will be immediately retried by this operation.`)
-	)
+func Up(commandName string, factory RunnerFactory, out *output.Output, development bool) *cli.Command {
+	flags := []cli.Flag{
+		&cli.StringFlag{
+			Name:  "db",
+			Usage: "The target `schema(s)` to modify. Comma-separated values are accepted. Supply \"all\" to migrate all schemas.",
+			Value: "all",
+		},
+		&cli.BoolFlag{
+			Name:  "unprivileged-only",
+			Usage: `Do not apply privileged migrations.`,
+			Value: false,
+		},
+		&cli.BoolFlag{
+			Name:  "ignore-single-dirty-log",
+			Usage: `Ignore a previously failed attempt if it will be immediately retried by this operation.`,
+			Value: development,
+		},
+	}
 
-	exec := func(ctx context.Context, args []string) error {
-		if len(args) != 0 {
+	action := func(cmd *cli.Context) error {
+		if cmd.NArg() != 0 {
 			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments"))
 			return flag.ErrHelp
 		}
 
-		schemaNames := strings.Split(*schemaNameFlag, ",")
+		var (
+			schemaNameFlag           = cmd.String("db")
+			unprivilegedOnlyFlag     = cmd.Bool("unprivileged-only")
+			ignoreSingleDirtyLogFlag = cmd.Bool("ignore-single-dirty-log")
+		)
+
+		schemaNames := strings.Split(schemaNameFlag, ",")
 		if len(schemaNames) == 0 {
 			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: supply a schema via -db"))
 			return flag.ErrHelp
@@ -46,6 +62,7 @@ func Up(commandName string, factory RunnerFactory, out *output.Output, developme
 			})
 		}
 
+		ctx := cmd.Context
 		r, err := factory(ctx, schemaNames)
 		if err != nil {
 			return err
@@ -53,17 +70,17 @@ func Up(commandName string, factory RunnerFactory, out *output.Output, developme
 
 		return r.Run(ctx, runner.Options{
 			Operations:           operations,
-			UnprivilegedOnly:     *unprivilegedOnlyFlag,
-			IgnoreSingleDirtyLog: *ignoreSingleDirtyLogFlag,
+			UnprivilegedOnly:     unprivilegedOnlyFlag,
+			IgnoreSingleDirtyLog: ignoreSingleDirtyLogFlag,
 		})
 	}
 
-	return &ffcli.Command{
-		Name:       "up",
-		ShortUsage: fmt.Sprintf("%s up [-db=<schema>]", commandName),
-		ShortHelp:  "Apply all migrations",
-		FlagSet:    flagSet,
-		Exec:       exec,
-		LongHelp:   ConstructLongHelp(),
+	return &cli.Command{
+		Name:        "up",
+		UsageText:   fmt.Sprintf("%s up [-db=<schema>]", commandName),
+		Usage:       "Apply all migrations",
+		Flags:       flags,
+		Action:      action,
+		Description: ConstructLongHelp(),
 	}
 }

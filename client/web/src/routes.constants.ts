@@ -5,6 +5,7 @@ export enum PageRoutes {
     SearchNotebook = '/search/notebook',
     SignIn = '/sign-in',
     SignUp = '/sign-up',
+    UnlockAccount = '/unlock-account/:token',
     Welcome = '/welcome',
     Settings = '/settings',
     User = '/user',
@@ -23,6 +24,7 @@ export enum PageRoutes {
     Notebooks = '/notebooks',
     RepoContainer = '/:repoRevAndRest+',
     InstallGitHubAppSuccess = '/install-github-app-success',
+    InstallGitHubAppSelectOrg = '/install-github-app-select-org',
 }
 
 export enum EnterprisePageRoutes {

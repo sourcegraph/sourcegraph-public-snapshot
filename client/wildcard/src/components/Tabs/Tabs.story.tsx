@@ -1,9 +1,7 @@
-import React from 'react'
-
 import { Meta, Story } from '@storybook/react'
 
 import brandedStyles from '@sourcegraph/branded/src/global-styles/index.scss'
-import { usePrependStyles } from '@sourcegraph/storybook/src/hooks/usePrependStyles'
+import { usePrependStyles } from '@sourcegraph/storybook'
 
 import { Tabs, Tab, TabList, TabPanel, TabPanels, TabsProps } from '.'
 

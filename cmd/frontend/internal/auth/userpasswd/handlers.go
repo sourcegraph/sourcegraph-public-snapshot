@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/mail"
 	"strings"
 	"time"
 
@@ -27,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type credentials struct {
@@ -36,6 +38,10 @@ type credentials struct {
 	AnonymousUserID string `json:"anonymousUserId"`
 	FirstSourceURL  string `json:"firstSourceUrl"`
 	LastSourceURL   string `json:"lastSourceUrl"`
+}
+
+type unlockAccountInfo struct {
+	Token string `json:"token"`
 }
 
 // HandleSignUp handles submission of the user signup form.
@@ -103,6 +109,10 @@ func handleSignUp(db database.DB, w http.ResponseWriter, r *http.Request, failIf
 	const defaultErrorMessage = "Signup failed unexpectedly."
 
 	if err := suspiciousnames.CheckNameAllowedForUserOrOrganization(creds.Username); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err := checkEmailFormat(creds.Email); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -212,36 +222,50 @@ func handleSignUp(db database.DB, w http.ResponseWriter, r *http.Request, failIf
 	}
 }
 
-func getByEmailOrUsername(ctx context.Context, db database.DB, emailOrUsername string) (*types.User, error) {
-	if strings.Contains(emailOrUsername, "@") {
-		return database.Users(db).GetByVerifiedEmail(ctx, emailOrUsername)
+func checkEmailFormat(email string) error {
+	// Max email length is 320 chars https://datatracker.ietf.org/doc/html/rfc3696#section-3
+	if len(email) > 320 {
+		return errors.Newf("maximum email length is 320, got %d", len(email))
 	}
-	return database.Users(db).GetByUsername(ctx, emailOrUsername)
+	if _, err := mail.ParseAddress(email); err != nil {
+		return err
+	}
+	return nil
 }
 
-// HandleSignIn accepts a POST containing username-password credentials and authenticates the
-// current session if the credentials are valid.
-func HandleSignIn(db database.DB) func(w http.ResponseWriter, r *http.Request) {
+func getByEmailOrUsername(ctx context.Context, db database.DB, emailOrUsername string) (*types.User, error) {
+	if strings.Contains(emailOrUsername, "@") {
+		return db.Users().GetByVerifiedEmail(ctx, emailOrUsername)
+	}
+	return db.Users().GetByUsername(ctx, emailOrUsername)
+}
+
+// HandleSignIn accepts a POST containing username-password credentials and
+// authenticates the current session if the credentials are valid.
+//
+// The account will be locked out after consecutive failed attempts in a certain
+// period of time.
+func HandleSignIn(db database.DB, store LockoutStore) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if handleEnabledCheck(w) {
 			return
 		}
 
-		var usr types.User
-		var actor actor.Actor
+		var user types.User
 
-		var signInResult = database.SecurityEventNameSignInAttempted
-		logSignInEvent(r, db, &usr, &signInResult)
+		signInResult := database.SecurityEventNameSignInAttempted
+		logSignInEvent(r, db, &user, &signInResult)
 
-		// We have more failure scenarios and ONLY one successful scenario. By default
-		// assume a SigninFailed state so that the deferred logSignInEvent function call
+		// We have more failure scenarios and ONLY one successful scenario. By default,
+		// assume a SignInFailed state so that the deferred logSignInEvent function call
 		// will log the correct security event in case of a failure.
 		signInResult = database.SecurityEventNameSignInFailed
-		defer logSignInEvent(r, db, &usr, &signInResult)
+		defer func() {
+			logSignInEvent(r, db, &user, &signInResult)
+			checkAccountLockout(store, &user, &signInResult)
+		}()
 
-		ctx := r.Context()
-
-		if r.Method != "POST" {
+		if r.Method != http.MethodPost {
 			http.Error(w, fmt.Sprintf("Unsupported method %s", r.Method), http.StatusBadRequest)
 			return
 		}
@@ -251,16 +275,41 @@ func HandleSignIn(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		ctx := r.Context()
+
 		// Validate user. Allow login by both email and username (for convenience).
 		u, err := getByEmailOrUsername(ctx, db, creds.Email)
 		if err != nil {
 			httpLogAndError(w, "Authentication failed", http.StatusUnauthorized, "err", err)
 			return
 		}
-		usr = *u
+		user = *u
+
+		if reason, locked := store.IsLockedOut(user.ID); locked {
+			func() {
+				if !conf.CanSendEmail() {
+					return
+				}
+
+				recipient, _, err := db.UserEmails().GetPrimaryEmail(ctx, user.ID)
+				if err != nil {
+					log15.Error("Error getting primary email address", "userID", user.ID, "error", err)
+					return
+				}
+
+				err = store.SendUnlockAccountEmail(ctx, user.ID, recipient)
+				if err != nil {
+					log15.Error("Error sending unlock account email", "userID", user.ID, "error", err)
+					return
+				}
+			}()
+
+			httpLogAndError(w, fmt.Sprintf("Account has been locked out due to %q", reason), http.StatusUnprocessableEntity)
+			return
+		}
 
 		// 🚨 SECURITY: check password
-		correct, err := database.Users(db).IsPassword(ctx, usr.ID, creds.Password)
+		correct, err := db.Users().IsPassword(ctx, user.ID, creds.Password)
 		if err != nil {
 			httpLogAndError(w, "Error checking password", http.StatusInternalServerError, "err", err)
 			return
@@ -270,10 +319,11 @@ func HandleSignIn(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		actor.UID = usr.ID
-
 		// Write the session cookie
-		if err := session.SetActor(w, r, &actor, 0, usr.CreatedAt); err != nil {
+		actor := actor.Actor{
+			UID: user.ID,
+		}
+		if err := session.SetActor(w, r, &actor, 0, user.CreatedAt); err != nil {
 			httpLogAndError(w, "Could not create new user session", http.StatusInternalServerError)
 			return
 		}
@@ -282,12 +332,48 @@ func HandleSignIn(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func logSignInEvent(r *http.Request, db database.DB, usr *types.User, name *database.SecurityEventName) {
+func HandleUnlockAccount(db database.DB, store LockoutStore) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if handleEnabledCheck(w) {
+
+			return
+		}
+
+		if r.Method != http.MethodPost {
+			http.Error(w, fmt.Sprintf("Unsupported method %s", r.Method), http.StatusBadRequest)
+			return
+		}
+
+		var unlockAccountInfo unlockAccountInfo
+		if err := json.NewDecoder(r.Body).Decode(&unlockAccountInfo); err != nil {
+			http.Error(w, "Could not decode request body", http.StatusBadRequest)
+			return
+		}
+
+		if unlockAccountInfo.Token == "" {
+			http.Error(w, "Bad request: missing token", http.StatusBadRequest)
+			return
+		}
+
+		valid, error := store.VerifyUnlockAccountTokenAndReset(unlockAccountInfo.Token)
+
+		if !valid || error != nil {
+			err := "invalid token provided"
+			if error != nil {
+				err = error.Error()
+			}
+			httpLogAndError(w, err, http.StatusUnauthorized)
+			return
+		}
+	}
+}
+
+func logSignInEvent(r *http.Request, db database.DB, user *types.User, name *database.SecurityEventName) {
 	var anonymousID string
 	event := &database.SecurityEvent{
 		Name:            *name,
 		URL:             r.URL.Path,
-		UserID:          uint32(usr.ID),
+		UserID:          uint32(user.ID),
 		AnonymousUserID: anonymousID,
 		Source:          "BACKEND",
 		Timestamp:       time.Now(),
@@ -295,8 +381,20 @@ func logSignInEvent(r *http.Request, db database.DB, usr *types.User, name *data
 
 	// Safe to ignore this error
 	event.AnonymousUserID, _ = cookie.AnonymousUID(r)
-	usagestats.LogBackendEvent(db, usr.ID, deviceid.FromContext(r.Context()), string(*name), nil, nil, featureflag.FromContext(r.Context()), nil)
-	database.SecurityEventLogs(db).LogEvent(r.Context(), event)
+	_ = usagestats.LogBackendEvent(db, user.ID, deviceid.FromContext(r.Context()), string(*name), nil, nil, featureflag.FromContext(r.Context()), nil)
+	db.SecurityEventLogs().LogEvent(r.Context(), event)
+}
+
+func checkAccountLockout(store LockoutStore, user *types.User, event *database.SecurityEventName) {
+	if user.ID <= 0 {
+		return
+	}
+
+	if *event == database.SecurityEventNameSignInSucceeded {
+		store.Reset(user.ID)
+	} else if *event == database.SecurityEventNameSignInFailed {
+		store.IncreaseFailedAttempt(user.ID)
+	}
 }
 
 // HandleCheckUsernameTaken checks availability of username for signup form

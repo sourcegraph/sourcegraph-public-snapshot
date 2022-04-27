@@ -33,7 +33,7 @@ import { MatchGroup } from './ranking/PerFileResultRanking'
 import styles from './FileMatchChildren.module.scss'
 
 interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
-    location: H.Location
+    location?: H.Location
     result: ContentMatch | SymbolMatch | PathMatch
     grouped: MatchGroup[]
     /* Clicking on a match opens the link in a new tab */
@@ -41,7 +41,6 @@ interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
     /* Called when the first result has fully loaded. */
     onFirstResultLoad?: () => void
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
-
     extensionsController?: Pick<ExtensionsController, 'extHostAPI'>
     hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
 }

@@ -13,9 +13,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
@@ -31,10 +31,10 @@ const DefaultSymbolLimit = 100
 // repository at a specific commit. If it has it returns the branch name (for
 // use when querying zoekt). Otherwise an empty string is returned.
 func indexedSymbolsBranch(ctx context.Context, repo *types.MinimalRepo, commit string) string {
-	z := search.Indexed()
-	if z == nil {
+	if !conf.SearchIndexEnabled() {
 		return ""
 	}
+	z := search.Indexed()
 
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
@@ -237,16 +237,16 @@ type RepoUniverseSymbolSearch struct {
 	RepoOptions      search.RepoOptions
 }
 
-func (s *RepoUniverseSymbolSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
-	tr, ctx, stream, finish := jobutil.StartSpan(ctx, stream, s)
+func (s *RepoUniverseSymbolSearch) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
-	userPrivateRepos := repos.PrivateReposForActor(ctx, db, s.RepoOptions)
+	userPrivateRepos := repos.PrivateReposForActor(ctx, clients.DB, s.RepoOptions)
 	s.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
 	s.ZoektArgs.Query = s.GlobalZoektQuery.Generate()
 
 	// always search for symbols in indexed repositories when searching the repo universe.
-	err = zoektutil.DoZoektSearchGlobal(ctx, s.ZoektArgs, stream)
+	err = zoektutil.DoZoektSearchGlobal(ctx, clients.Zoekt, s.ZoektArgs, stream)
 	if err != nil {
 		tr.LogFields(otlog.Error(err))
 		// Only record error if we haven't timed out.

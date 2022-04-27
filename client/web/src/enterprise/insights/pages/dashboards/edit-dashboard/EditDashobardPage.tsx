@@ -14,13 +14,13 @@ import { PageTitle } from '../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../components'
 import { CodeInsightsPage } from '../../../components/code-insights-page/CodeInsightsPage'
 import { FORM_ERROR, SubmissionErrors } from '../../../components/form/hooks/useForm'
-import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
 import {
+    CodeInsightsBackendContext,
     CustomInsightDashboard,
     InsightsDashboardOwner,
     isPersonalOwner,
     isVirtualDashboard,
-} from '../../../core/types'
+} from '../../../core'
 import {
     DashboardCreationFields,
     InsightsDashboardCreationContent,
@@ -109,7 +109,7 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
 
     return (
         <CodeInsightsPage className={classNames('col-8', styles.page)}>
-            <PageTitle title="Configure dashboard" />
+            <PageTitle title={`Configure ${dashboard.title} - Code Insights`} />
 
             <PageHeader path={[{ icon: CodeInsightsIcon }, { text: 'Configure dashboard' }]} />
 

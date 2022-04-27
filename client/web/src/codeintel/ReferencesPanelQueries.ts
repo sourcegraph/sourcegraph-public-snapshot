@@ -43,7 +43,9 @@ const codeIntelFragments = gql`
     }
 `
 
-const gitBlobLsifDataQueryFragment = gql`
+export const USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY = gql`
+    ${codeIntelFragments}
+
     fragment PreciseCodeIntelForLocationFields on GitBlobLSIFData {
         references(
             line: $line
@@ -67,9 +69,7 @@ const gitBlobLsifDataQueryFragment = gql`
             ...LocationConnectionFields
         }
     }
-`
 
-export const USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY = gql`
     query UsePreciseCodeIntelForPosition(
         $repository: String!
         $commit: String!
@@ -94,12 +94,11 @@ export const USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY = gql`
             }
         }
     }
-
-    ${gitBlobLsifDataQueryFragment}
-    ${codeIntelFragments}
 `
 
 export const LOAD_ADDITIONAL_REFERENCES_QUERY = gql`
+    ${codeIntelFragments}
+
     query LoadAdditionalReferences(
         $repository: String!
         $commit: String!
@@ -130,11 +129,11 @@ export const LOAD_ADDITIONAL_REFERENCES_QUERY = gql`
             }
         }
     }
-
-    ${codeIntelFragments}
 `
 
 export const LOAD_ADDITIONAL_IMPLEMENTATIONS_QUERY = gql`
+    ${codeIntelFragments}
+
     query LoadAdditionalImplementations(
         $repository: String!
         $commit: String!
@@ -165,8 +164,6 @@ export const LOAD_ADDITIONAL_IMPLEMENTATIONS_QUERY = gql`
             }
         }
     }
-
-    ${codeIntelFragments}
 `
 
 export const FETCH_HIGHLIGHTED_BLOB = gql`
@@ -185,6 +182,105 @@ export const FETCH_HIGHLIGHTED_BLOB = gql`
                 blob(path: $path) {
                     ...HighlightedGitBlobFields
                 }
+            }
+        }
+    }
+`
+
+export const CODE_INTEL_SEARCH_QUERY = gql`
+    query CodeIntelSearch($query: String!) {
+        search(query: $query) {
+            __typename
+            results {
+                __typename
+                results {
+                    ... on FileMatch {
+                        __typename
+                        file {
+                            url
+                            path
+                            commit {
+                                oid
+                            }
+                            content
+                        }
+                        repository {
+                            name
+                        }
+                        symbols {
+                            name
+                            kind
+                            location {
+                                url
+                                resource {
+                                    path
+                                }
+                                range {
+                                    start {
+                                        line
+                                        character
+                                    }
+                                    end {
+                                        line
+                                        character
+                                    }
+                                }
+                            }
+                            fileLocal
+                        }
+                        lineMatches {
+                            lineNumber
+                            offsetAndLengths
+                        }
+                    }
+                }
+            }
+        }
+    }
+`
+
+export const LOCAL_CODE_INTEL_QUERY = gql`
+    query LocalCodeIntel($repository: String!, $commit: String!, $path: String!) {
+        repository(name: $repository) {
+            commit(rev: $commit) {
+                blob(path: $path) {
+                    localCodeIntel
+                }
+            }
+        }
+    }
+`
+
+export const RESOLVE_REPO_REVISION_BLOB_QUERY = gql`
+    fragment RepoRevisionBlobFields on Repository {
+        id
+        name
+        url
+
+        isFork
+        isArchived
+
+        commit(rev: $revision) {
+            oid
+
+            file(path: $filePath) {
+                content
+            }
+        }
+
+        defaultBranch {
+            abbrevName
+        }
+    }
+
+    query ResolveRepoAndRevision($repoName: String!, $revision: String!, $filePath: String!) {
+        repositoryRedirect(name: $repoName) {
+            __typename
+            ... on Repository {
+                ...RepoRevisionBlobFields
+            }
+            ... on Redirect {
+                url
             }
         }
     }

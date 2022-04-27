@@ -3,12 +3,9 @@ import * as path from 'path'
 
 import commandExists from 'command-exists'
 import { addMinutes } from 'date-fns'
-import * as execa from 'execa'
-import * as semver from 'semver'
 
 import * as batchChanges from './batchChanges'
 import * as changelog from './changelog'
-import * as chart from './chart'
 import { Config, releaseVersions } from './config'
 import {
     getAuthenticatedGitHubClient,
@@ -396,6 +393,7 @@ CI checks in this repository should pass, and a manual review should confirm if 
                             `find . -type f -name '*.md' ! -name 'CHANGELOG.md' -exec ${sed} -i -E 's/sourcegraph\\/server:${versionRegex}/sourcegraph\\/server:${release.version}/g' {} +`,
                             // Update Sourcegraph versions in installation guides
                             `find ./doc/admin/install/ -type f -name '*.md' -exec ${sed} -i -E 's/SOURCEGRAPH_VERSION="v${versionRegex}"/SOURCEGRAPH_VERSION="v${release.version}"/g' {} +`,
+                            `find ./doc/admin/install/ -type f -name '*.md' -exec ${sed} -i -E 's/--version "${versionRegex}"/--version "${release.version}"/g' {} +`,
                             // Update fork variables in installation guides
                             `find ./doc/admin/install/ -type f -name '*.md' -exec ${sed} -i -E "s/DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v${versionRegex}'/DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v${release.version}'/g" {} +`,
                             // Update sourcegraph.com frontpage
@@ -448,8 +446,8 @@ CI checks in this repository should pass, and a manual review should confirm if 
                         commitMessage: defaultPRMessage,
                         title: defaultPRMessage,
                         edits: [
-                            `${sed} -i -E 's/sourcegraph\\/server:${versionRegex}/sourcegraph\\/server:${release.version}/g' 'website/src/components/GetStarted.tsx'`,
-                            `${sed} -i -E 's/sourcegraph\\/server:${versionRegex}/sourcegraph\\/server:${release.version}/g' 'website/src/pages/get-started.tsx'`,
+                            // Update sourcegraph/server:VERSION in all tsx files
+                            `find . -type f -name '*.tsx' -exec ${sed} -i -E 's/sourcegraph\\/server:${versionRegex}/sourcegraph\\/server:${release.version}/g' {} +`,
                         ],
                         ...prBodyAndDraftState(
                             [],
@@ -507,32 +505,15 @@ CI checks in this repository should pass, and a manual review should confirm if 
                     {
                         owner: 'sourcegraph',
                         repo: 'deploy-sourcegraph-helm',
-                        base: 'main',
+                        base: `release/${release.major}.${release.minor}`,
                         head: `publish-${release.version}`,
                         commitMessage: defaultPRMessage,
                         title: defaultPRMessage,
                         edits: [
-                            `sg ops update-images -kind helm -pin-tag ${release.version} charts/sourcegraph/.`,
-                            `${sed} -i 's/appVersion:.*/appVersion: "${release.version}"/g' charts/sourcegraph/Chart.yaml`,
-                            (directory: string) => {
-                                const chartYamlPath = path.join(directory, 'charts/sourcegraph/Chart.yaml')
-                                const metadata = chart.parseChartMetadata(chartYamlPath)
-                                const parsedPreviousVersion = semver.parse(metadata.version)
-                                if (!parsedPreviousVersion) {
-                                    throw new Error('`version` field in Chart.yaml is not valid semver')
-                                }
-                                const nextVersion = notPatchRelease
-                                    ? parsedPreviousVersion.inc('minor')
-                                    : parsedPreviousVersion.inc('patch')
-                                execa.sync(
-                                    'bash',
-                                    [
-                                        '-c',
-                                        `${sed} -i 's/version:.*/version: ${nextVersion.version}/g' charts/sourcegraph/Chart.yaml`,
-                                    ],
-                                    { stdio: 'inherit', cwd: directory }
-                                )
-                            },
+                            `for i in charts/*; do sg ops update-images -kind helm -pin-tag ${release.version} $i/.; done`,
+                            `${sed} -i 's/appVersion:.*/appVersion: "${release.version}"/g' charts/*/Chart.yaml`,
+                            `${sed} -i 's/version:.*/version: "${release.version}"/g' charts/*/Chart.yaml`,
+                            './scripts/helm-docs.sh',
                         ],
                         ...prBodyAndDraftState([]),
                     },

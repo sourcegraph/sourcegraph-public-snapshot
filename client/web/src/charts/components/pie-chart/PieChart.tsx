@@ -1,4 +1,4 @@
-import React, { ReactElement, useMemo, useState } from 'react'
+import { ReactElement, SVGProps, useMemo, useState } from 'react'
 
 import { Group } from '@visx/group'
 import Pie, { PieArcDatum } from '@visx/shape/lib/shapes/Pie'
@@ -6,6 +6,7 @@ import classNames from 'classnames'
 import { noop } from 'rxjs'
 
 import { MaybeLink } from '../../../views/components/view/content/chart-view-content/charts/MaybeLink'
+import { CategoricalLikeChart } from '../../types'
 
 import { PieArc } from './components/PieArc'
 import { distributePieArcs } from './distribute-pie-data'
@@ -20,23 +21,17 @@ const DEFAULT_PADDING = { top: 20, right: 20, bottom: 20, left: 20 }
  * for the first one is 30 / (30 + 90) = 0.25%
  * and for the second one 90 / (30 + 90) = 0.75%
  */
-const getSubtitle = <Datum extends object>(arc: PieArcDatum<Datum>, total: number): string =>
-    `${((100 * arc.value) / total).toFixed(2)}%`
-
-export interface PieChartProps<Datum extends object> {
-    width: number
-    height: number
-    data: Datum[]
-    padding?: typeof DEFAULT_PADDING
-
-    getDatumValue: (datum: Datum) => number
-    getDatumName: (datum: Datum) => string
-    getDatumColor: (datum: Datum) => string | undefined
-    getDatumLink: (datum: Datum) => string | undefined
-    onDatumLinkClick?: (event: React.MouseEvent) => void
+function getSubtitle<Datum>(arc: PieArcDatum<Datum>, total: number): string {
+    return `${((100 * arc.value) / total).toFixed(2)}%`
 }
 
-export function PieChart<Datum extends object = {}>(props: PieChartProps<Datum>): ReactElement | null {
+export interface PieChartProps<Datum> extends CategoricalLikeChart<Datum>, SVGProps<SVGSVGElement> {
+    width: number
+    height: number
+    padding?: typeof DEFAULT_PADDING
+}
+
+export function PieChart<Datum>(props: PieChartProps<Datum>): ReactElement | null {
     const {
         width,
         height,
@@ -45,8 +40,10 @@ export function PieChart<Datum extends object = {}>(props: PieChartProps<Datum>)
         getDatumValue,
         getDatumName,
         getDatumColor,
-        getDatumLink,
+        getDatumLink = noop,
         onDatumLinkClick = noop,
+        className,
+        ...attributes
     } = props
 
     // We have to track which arc is hovered to change order of rendering.
@@ -61,7 +58,7 @@ export function PieChart<Datum extends object = {}>(props: PieChartProps<Datum>)
     const innerWidth = width - padding.left - padding.right
     const innerHeight = height - padding.top - padding.bottom
 
-    const radius = Math.min(innerWidth, innerHeight) / 4
+    const radius = Math.min(innerWidth, innerHeight) / 3
     const centerY = innerHeight / 2
     const centerX = innerWidth / 2
 
@@ -81,7 +78,13 @@ export function PieChart<Datum extends object = {}>(props: PieChartProps<Datum>)
     }
 
     return (
-        <svg aria-label="Pie chart" width={width} height={height} className={styles.svg}>
+        <svg
+            {...attributes}
+            aria-label="Pie chart"
+            width={width}
+            height={height}
+            className={classNames(styles.svg, className)}
+        >
             <Group top={centerY + padding.top} left={centerX + padding.left}>
                 <Pie data={sortedData} pieValue={getDatumValue} outerRadius={radius} cornerRadius={3}>
                     {pie => {

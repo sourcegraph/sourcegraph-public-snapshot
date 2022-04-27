@@ -17,7 +17,7 @@ import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { SettingsRepositoriesPage } from '../../user/settings/repositories/SettingsRepositoriesPage'
 import { UserSettingsManageRepositoriesPage } from '../../user/settings/repositories/UserSettingsManageRepositoriesPage'
 import { OrgAreaPageProps } from '../area/OrgArea'
-import { ORG_CODE_FEATURE_FLAG_NAME, GET_ORG_FEATURE_FLAG_VALUE } from '../backend'
+import { ORG_CODE_FEATURE_FLAG_NAME, GET_ORG_FEATURE_FLAG_VALUE, ORG_DELETION_FEATURE_FLAG_NAME } from '../backend'
 import { useEventBus } from '../emitter'
 
 import { OrgAddCodeHostsPageContainer } from './codeHosts/OrgAddCodeHostsPageContainer'
@@ -61,6 +61,15 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
         }
     )
 
+    const orgDeletionFlag = useQuery<OrgFeatureFlagValueResult, OrgFeatureFlagValueVariables>(
+        GET_ORG_FEATURE_FLAG_VALUE,
+        {
+            variables: { orgID: props.org.id, flagName: ORG_DELETION_FEATURE_FLAG_NAME },
+            fetchPolicy: 'cache-and-network',
+            skip: !props.authenticatedUser || !props.org.id,
+        }
+    )
+
     const onOrgGetStartedRefresh = (): void => {
         emitter.emit('refreshOrgHeader', 'refreshing due to changes on repo setup')
     }
@@ -70,6 +79,7 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
     }
 
     const showOrgCode = data?.organizationFeatureFlagValue || false
+    const showOrgDeletion = orgDeletionFlag.data?.organizationFeatureFlagValue || false
 
     return (
         <div className="d-flex">
@@ -104,7 +114,7 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
                                                 </>
                                             }
                                         />
-                                        {props.isSourcegraphDotCom && props.org.viewerIsMember && (
+                                        {props.isSourcegraphDotCom && props.org.viewerIsMember && showOrgDeletion && (
                                             <DeleteOrg {...routeComponentProps} {...props} />
                                         )}
                                     </div>

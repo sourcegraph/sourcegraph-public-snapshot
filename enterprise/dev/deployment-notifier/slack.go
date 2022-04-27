@@ -16,10 +16,10 @@ import (
 
 var slackTemplate = `:arrow_left: *{{.Environment}}* deployment (<{{.BuildURL}}|build>)
 
-- Applications:
+- Services:
 {{- range .Services }}
     - ` + "`" + `{{ . }}` + "`" + `
-{{- end }} 
+{{- end }}
 
 - Pull Requests:
 {{- range .PullRequests }}
@@ -39,7 +39,7 @@ type pullRequestPresenter struct {
 	WebURL        string
 }
 
-func slackSummary(ctx context.Context, teammates team.TeammateResolver, report *report) (string, error) {
+func slackSummary(ctx context.Context, teammates team.TeammateResolver, report *DeploymentReport, traceURL string) (string, error) {
 	presenter := &slackSummaryPresenter{
 		Environment: report.Environment,
 		BuildURL:    report.BuildkiteBuildURL,
@@ -47,18 +47,57 @@ func slackSummary(ctx context.Context, teammates team.TeammateResolver, report *
 	}
 
 	for _, pr := range report.PullRequests {
-		user := pr.GetUser()
-		if user == nil {
-			return "", errors.Newf("pull request %d has no user", pr.GetNumber())
+		var (
+			notifyOnDeploy   bool
+			notifyOnServices = map[string]struct{}{}
+		)
+		for _, label := range pr.Labels {
+			if *label.Name == "notify-on-deploy" {
+				notifyOnDeploy = true
+			}
+			// Allow users to label 'service/$svc' to get notified only for deployments
+			// when specific services are rolled out
+			if strings.HasPrefix(*label.Name, "service/") {
+				service := strings.Split(*label.Name, "/")[1]
+				if service != "" {
+					notifyOnServices[service] = struct{}{}
+				}
+			}
 		}
-		teammate, err := teammates.ResolveByGitHubHandle(ctx, user.GetLogin())
-		if err != nil {
-			return "", err
+
+		var authorSlackID string
+		if notifyOnDeploy {
+			// Check if we should notify for this particular deployment
+			var shouldNotify bool
+			if len(notifyOnServices) == 0 {
+				shouldNotify = true
+			} else {
+				// If the desired service is included, then notify
+				for _, svc := range report.ServicesPerPullRequest[pr.GetNumber()] {
+					if _, ok := notifyOnServices[svc]; ok {
+						shouldNotify = true
+						break
+					}
+				}
+			}
+
+			if shouldNotify {
+				user := pr.GetUser()
+				if user == nil {
+					return "", errors.Newf("pull request %d has no user", pr.GetNumber())
+				}
+				teammate, err := teammates.ResolveByGitHubHandle(ctx, user.GetLogin())
+				if err != nil {
+					return "", err
+				}
+				authorSlackID = fmt.Sprintf("<@%s>", teammate.SlackID)
+			}
 		}
+
 		presenter.PullRequests = append(presenter.PullRequests, pullRequestPresenter{
 			Name:          pr.GetTitle(),
 			WebURL:        pr.GetHTMLURL(),
-			AuthorSlackID: fmt.Sprintf("<@%s>", teammate.SlackID),
+			AuthorSlackID: authorSlackID,
 		})
 	}
 
@@ -70,6 +109,13 @@ func slackSummary(ctx context.Context, teammates team.TeammateResolver, report *
 	err = tmpl.Execute(&sb, presenter)
 	if err != nil {
 		return "", err
+	}
+
+	if traceURL != "" {
+		_, err = sb.WriteString(fmt.Sprintf("\n<%s|Deployment trace>", traceURL))
+		if err != nil {
+			return "", err
+		}
 	}
 
 	return sb.String(), nil

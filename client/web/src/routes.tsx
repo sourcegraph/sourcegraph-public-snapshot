@@ -12,6 +12,7 @@ import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
 import type { LayoutProps } from './Layout'
 import { CreateNotebookPage } from './notebooks/createPage/CreateNotebookPage'
 import { NotebooksListPage } from './notebooks/listPage/NotebooksListPage'
+import { ConnectGitHubAppPage } from './org/settings/codeHosts/ConnectGitHubAppPage'
 import { InstallGitHubAppSuccessPage } from './org/settings/codeHosts/InstallGitHubAppSuccessPage'
 import type { ExtensionAlertProps } from './repo/actions/InstallIntegrationsAlert'
 import { PageRoutes } from './routes.constants'
@@ -26,6 +27,7 @@ const SearchConsolePage = lazyComponent(() => import('./search/SearchConsolePage
 const NotebookPage = lazyComponent(() => import('./notebooks/notebookPage/NotebookPage'), 'NotebookPage')
 const SignInPage = lazyComponent(() => import('./auth/SignInPage'), 'SignInPage')
 const SignUpPage = lazyComponent(() => import('./auth/SignUpPage'), 'SignUpPage')
+const UnlockAccountPage = lazyComponent(() => import('./auth/UnlockAccount'), 'UnlockAccountPage')
 const PostSignUpPage = lazyComponent(() => import('./auth/PostSignUpPage'), 'PostSignUpPage')
 const SiteInitPage = lazyComponent(() => import('./site-admin/init/SiteInitPage'), 'SiteInitPage')
 
@@ -142,6 +144,11 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         exact: true,
     },
     {
+        path: PageRoutes.UnlockAccount,
+        render: props => <UnlockAccountPage {...props} context={window.context} />,
+        exact: true,
+    },
+    {
         path: PageRoutes.Welcome,
         render: props =>
             /**
@@ -174,6 +181,10 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: PageRoutes.InstallGitHubAppSuccess,
         render: () => <InstallGitHubAppSuccessPage />,
+    },
+    {
+        path: PageRoutes.InstallGitHubAppSelectOrg,
+        render: props => <ConnectGitHubAppPage {...props} />,
     },
     {
         path: PageRoutes.Settings,

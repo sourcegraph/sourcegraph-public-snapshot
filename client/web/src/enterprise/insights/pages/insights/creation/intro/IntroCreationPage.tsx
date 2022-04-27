@@ -6,6 +6,7 @@ import { useLocation } from 'react-router-dom'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { PageHeader, Link } from '@sourcegraph/wildcard'
 
+import { PageTitle } from '../../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../../../../insights/Icons'
 import { CodeInsightsPage } from '../../../../components/code-insights-page/CodeInsightsPage'
 
@@ -53,6 +54,7 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
 
     return (
         <CodeInsightsPage className={styles.container}>
+            <PageTitle title="Create insight - Code Insights" />
             <PageHeader
                 path={[{ icon: CodeInsightsIcon }, { text: 'Create new code insight' }]}
                 description={
@@ -67,16 +69,19 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
             />
 
             <div className={styles.sectionContent}>
-                <SearchInsightCard data-testid="create-search-insights" onClick={handleCreateSearchBasedInsightClick} />
+                <SearchInsightCard
+                    data-testid="create-search-insights"
+                    handleCreate={handleCreateSearchBasedInsightClick}
+                />
 
                 <CaptureGroupInsightCard
                     data-testid="create-capture-group-insight"
-                    onClick={handleCaptureGroupInsightClick}
+                    handleCreate={handleCaptureGroupInsightClick}
                 />
 
                 <LangStatsInsightCard
                     data-testid="create-lang-usage-insight"
-                    onClick={handleCreateCodeStatsInsightClick}
+                    handleCreate={handleCreateCodeStatsInsightClick}
                 />
 
                 <div className={styles.info}>
@@ -86,7 +91,7 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
                     </Link>
                 </div>
 
-                <ExtensionInsightsCard data-testid="explore-extensions" onClick={handleExploreExtensionsClick} />
+                <ExtensionInsightsCard data-testid="explore-extensions" handleCreate={handleExploreExtensionsClick} />
             </div>
         </CodeInsightsPage>
     )

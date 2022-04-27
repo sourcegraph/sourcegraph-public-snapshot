@@ -17,14 +17,19 @@ import (
 
 	"github.com/inconshreveable/log15"
 	jsoniter "github.com/json-iterator/go"
+	"github.com/opentracing/opentracing-go"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/tidwall/gjson"
+	"golang.org/x/sync/semaphore"
+	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	dependenciesStore "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
+	livedependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -35,6 +40,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gomodproxy"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -42,23 +48,30 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	sglog "github.com/sourcegraph/sourcegraph/lib/log"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 var (
-	reposDir                     = env.Get("SRC_REPOS_DIR", "/data/repos", "Root dir containing repos.")
-	wantPctFree                  = env.MustGetInt("SRC_REPOS_DESIRED_PERCENT_FREE", 10, "Target percentage of free space on disk.")
-	janitorInterval              = env.MustGetDuration("SRC_REPOS_JANITOR_INTERVAL", 1*time.Minute, "Interval between cleanup runs")
-	syncRepoStateInterval        = env.MustGetDuration("SRC_REPOS_SYNC_STATE_INTERVAL", 10*time.Minute, "Interval between state syncs")
-	syncRepoStateBatchSize       = env.MustGetInt("SRC_REPOS_SYNC_STATE_BATCH_SIZE", 500, "Number of upserts to perform per batch")
-	syncRepoStateUpsertPerSecond = env.MustGetInt("SRC_REPOS_SYNC_STATE_UPSERT_PER_SEC", 500, "The number of upserted rows allowed per second across all gitserver instances")
+	reposDir                       = env.Get("SRC_REPOS_DIR", "/data/repos", "Root dir containing repos.")
+	wantPctFree                    = env.MustGetInt("SRC_REPOS_DESIRED_PERCENT_FREE", 10, "Target percentage of free space on disk.")
+	janitorInterval                = env.MustGetDuration("SRC_REPOS_JANITOR_INTERVAL", 1*time.Minute, "Interval between cleanup runs")
+	syncRepoStateInterval          = env.MustGetDuration("SRC_REPOS_SYNC_STATE_INTERVAL", 10*time.Minute, "Interval between state syncs")
+	syncRepoStateBatchSize         = env.MustGetInt("SRC_REPOS_SYNC_STATE_BATCH_SIZE", 500, "Number of upserts to perform per batch")
+	syncRepoStateUpsertPerSecond   = env.MustGetInt("SRC_REPOS_SYNC_STATE_UPSERT_PER_SEC", 500, "The number of upserted rows allowed per second across all gitserver instances")
+	batchLogGlobalConcurrencyLimit = env.MustGetInt("SRC_BATCH_LOG_GLOBAL_CONCURRENCY_LIMIT", 256, "The maximum number of in-flight Git commands from all /batch-log requests combined")
+
+	// 80 per second (4800 per minute) is well below our alert threshold of 30k per minute.
+	rateLimitSyncerLimitPerSecond = env.MustGetInt("SRC_REPOS_SYNC_RATE_LIMIT_RATE_PER_SECOND", 80, "Rate limit applied to rate limit syncing")
 )
 
 func main() {
@@ -67,15 +80,18 @@ func main() {
 	env.Lock()
 	env.HandleHelpFlag()
 
-	if err := profiler.Init(); err != nil {
-		log.Fatalf("failed to start profiler: %v", err)
-	}
-
 	conf.Init()
 	logging.Init()
+	syncLogs := sglog.Init(sglog.Resource{
+		Name:       env.MyName,
+		Version:    version.Version(),
+		InstanceID: hostname.Get(),
+	})
+	defer syncLogs()
 	tracer.Init(conf.DefaultClient())
 	sentry.Init(conf.DefaultClient())
 	trace.Init()
+	profiler.Init()
 
 	if reposDir == "" {
 		log.Fatal("git-server: SRC_REPOS_DIR is required")
@@ -96,7 +112,7 @@ func main() {
 	db := database.NewDB(sqlDB)
 
 	repoStore := database.Repos(db)
-	codeintelDB := dependenciesStore.GetStore(db)
+	depsSvc := livedependencies.GetService(db, nil)
 	externalServiceStore := database.ExternalServices(db)
 
 	err = keyring.Init(ctx)
@@ -111,13 +127,20 @@ func main() {
 			return getRemoteURLFunc(ctx, externalServiceStore, repoStore, nil, repo)
 		},
 		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (server.VCSSyncer, error) {
-			return getVCSSyncer(ctx, externalServiceStore, repoStore, codeintelDB, repo)
+			return getVCSSyncer(ctx, externalServiceStore, repoStore, depsSvc, repo)
 		},
-		Hostname:   hostname.Get(),
-		DB:         db,
-		CloneQueue: server.NewCloneQueue(list.New()),
+		Hostname:                hostname.Get(),
+		DB:                      db,
+		CloneQueue:              server.NewCloneQueue(list.New()),
+		GlobalBatchLogSemaphore: semaphore.NewWeighted(int64(batchLogGlobalConcurrencyLimit)),
 	}
-	gitserver.RegisterMetrics(db)
+
+	observationContext := &observation.Context{
+		Logger:     log15.Root(),
+		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Registerer: prometheus.DefaultRegisterer,
+	}
+	gitserver.RegisterMetrics(db, observationContext)
 
 	if tmpDir, err := gitserver.SetupAndClearTmp(); err != nil {
 		log.Fatalf("failed to setup temporary directory: %s", err)
@@ -136,12 +159,21 @@ func main() {
 	// Ready immediately
 	ready := make(chan struct{})
 	close(ready)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Best effort attempt to sync rate limiters for site level external services
+	// early on. If it fails, we'll try again in the background sync below.
+	if err := syncSiteLevelExternalServiceRateLimiters(ctx, externalServiceStore); err != nil {
+		log15.Warn("error performing initial site level rate limit sync", "error", err)
+	}
+
+	go syncRateLimiters(ctx, externalServiceStore, rateLimitSyncerLimitPerSecond)
 	go debugserver.NewServerRoutine(ready).Start()
 	go gitserver.Janitor(janitorInterval)
 	go gitserver.SyncRepoState(syncRepoStateInterval, syncRepoStateBatchSize, syncRepoStateUpsertPerSecond)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 	gitserver.StartClonePipeline(ctx)
 
 	addr := os.Getenv("GITSERVER_ADDR")
@@ -206,6 +238,7 @@ func configureFusionClient(conn schema.PerforceConnection) server.FusionConfig {
 		Retries:             10,
 		MaxChanges:          -1,
 		IncludeBinaries:     false,
+		FsyncEnable:         false,
 	}
 
 	if conn.FusionClient == nil {
@@ -236,6 +269,7 @@ func configureFusionClient(conn schema.PerforceConnection) server.FusionConfig {
 		fc.MaxChanges = conn.FusionClient.MaxChanges
 	}
 	fc.IncludeBinaries = conn.FusionClient.IncludeBinaries
+	fc.FsyncEnable = conn.FusionClient.FsyncEnable
 
 	return fc
 }
@@ -282,6 +316,14 @@ func getRemoteURLFunc(
 		svc, err := externalServiceStore.GetByID(ctx, info.ExternalServiceID())
 		if err != nil {
 			return "", err
+		}
+
+		if svc.CloudDefault && r.Private {
+			// We won't be able to use this remote URL, so we should skip it. This can happen
+			// if a repo moves from being public to private while belonging to both a cloud
+			// default external service and another external service with a token that has
+			// access to the private repo.
+			continue
 		}
 
 		dotcomConfig := conf.SiteConfig().Dotcom
@@ -349,8 +391,13 @@ func editGitHubAppExternalServiceConfigToken(
 	return config, nil
 }
 
-func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalServiceStore, repoStore database.RepoStore,
-	codeintelDB *dependenciesStore.Store, repo api.RepoName) (server.VCSSyncer, error) {
+func getVCSSyncer(
+	ctx context.Context,
+	externalServiceStore database.ExternalServiceStore,
+	repoStore database.RepoStore,
+	depsSvc *dependencies.Service,
+	repo api.RepoName,
+) (server.VCSSyncer, error) {
 	// We need an internal actor in case we are trying to access a private repo. We
 	// only need access in order to find out the type of code host we're using, so
 	// it's safe.
@@ -359,28 +406,28 @@ func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalSer
 		return nil, errors.Wrap(err, "get repository")
 	}
 
-	extractOptions := func(connection interface{}) error {
+	extractOptions := func(connection interface{}) (string, error) {
 		for _, info := range r.Sources {
 			extSvc, err := externalServiceStore.GetByID(ctx, info.ExternalServiceID())
 			if err != nil {
-				return errors.Wrap(err, "get external service")
+				return "", errors.Wrap(err, "get external service")
 			}
 			normalized, err := jsonc.Parse(extSvc.Config)
 			if err != nil {
-				return errors.Wrap(err, "normalize JSON")
+				return "", errors.Wrap(err, "normalize JSON")
 			}
 			if err = jsoniter.Unmarshal(normalized, connection); err != nil {
-				return errors.Wrap(err, "unmarshal JSON")
+				return "", errors.Wrap(err, "unmarshal JSON")
 			}
-			return nil
+			return extSvc.URN(), nil
 		}
-		return errors.Errorf("unexpected empty Sources map in %v", r)
+		return "", errors.Errorf("unexpected empty Sources map in %v", r)
 	}
 
 	switch r.ExternalRepo.ServiceType {
 	case extsvc.TypePerforce:
 		var c schema.PerforceConnection
-		if err := extractOptions(&c); err != nil {
+		if _, err := extractOptions(&c); err != nil {
 			return nil, err
 		}
 		return &server.PerforceDepotSyncer{
@@ -390,16 +437,76 @@ func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalSer
 		}, nil
 	case extsvc.TypeJVMPackages:
 		var c schema.JVMPackagesConnection
-		if err := extractOptions(&c); err != nil {
+		if _, err := extractOptions(&c); err != nil {
 			return nil, err
 		}
-		return &server.JVMPackagesSyncer{Config: &c, DepsStore: codeintelDB}, nil
+		return server.NewJVMPackagesSyncer(&c, depsSvc), nil
 	case extsvc.TypeNpmPackages:
 		var c schema.NpmPackagesConnection
-		if err := extractOptions(&c); err != nil {
+		urn, err := extractOptions(&c)
+		if err != nil {
 			return nil, err
 		}
-		return server.NewNpmPackagesSyncer(c, codeintelDB, nil), nil
+		return server.NewNpmPackagesSyncer(c, depsSvc, nil, urn), nil
+	case extsvc.TypeGoModules:
+		var c schema.GoModulesConnection
+		urn, err := extractOptions(&c)
+		if err != nil {
+			return nil, err
+		}
+		cli := gomodproxy.NewClient(urn, c.Urls, httpcli.ExternalDoer)
+		return server.NewGoModulesSyncer(&c, depsSvc, cli), nil
 	}
 	return &server.GitRepoSyncer{}, nil
+}
+
+func syncSiteLevelExternalServiceRateLimiters(ctx context.Context, store database.ExternalServiceStore) error {
+	svcs, err := store.List(ctx, database.ExternalServicesListOptions{NoNamespace: true})
+	if err != nil {
+		return errors.Wrap(err, "listing external services")
+	}
+	syncer := repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, store, repos.RateLimitSyncerOpts{})
+	return syncer.SyncServices(svcs)
+}
+
+// Sync rate limiters from config. Since we don't have a trigger that watches for
+// changes to rate limits we'll run this periodically in the background.
+func syncRateLimiters(ctx context.Context, store database.ExternalServiceStore, perSecond int) {
+	backoff := 5 * time.Second
+	batchSize := 50
+
+	// perSecond should be spread across all gitserver instances and we want to wait
+	// until we know about at least one instance.
+	var instanceCount int
+	for {
+		instanceCount = len(conf.Get().ServiceConnectionConfig.GitServers)
+		if instanceCount > 0 {
+			break
+		}
+		log15.Warn("found zero gitserver instance, trying again in %s", backoff)
+		time.Sleep(backoff)
+	}
+
+	limiter := rate.NewLimiter(rate.Limit(float64(perSecond)/float64(instanceCount)), batchSize)
+	syncer := repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, store, repos.RateLimitSyncerOpts{
+		PageSize: batchSize,
+		Limiter:  limiter,
+	})
+
+	var lastSuccessfulSync time.Time
+	ticker := time.NewTicker(1 * time.Minute)
+	for {
+		start := time.Now()
+		if err := syncer.SyncLimitersSince(ctx, lastSuccessfulSync); err != nil {
+			log15.Warn("syncRateLimiters: error syncing rate limits", "error", err)
+		} else {
+			lastSuccessfulSync = start
+		}
+
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+		}
+	}
 }

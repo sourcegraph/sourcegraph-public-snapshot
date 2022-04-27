@@ -227,12 +227,17 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                         : undefined
                 }
             >
+                {/*
+                    a11y-ignore
+                    Rule: "color-contrast" (Elements must have sufficient color contrast)
+                    GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
+                */}
                 <ExperimentalActionButton
                     showExperimentalVersion={showActionButtonExperimentalVersion}
                     nonExperimentalLinkTo={toURL}
                     isNonExperimentalLinkDisabled={!canCreateMonitorFromQuery}
                     onNonExperimentalLinkClick={onCreateCodeMonitorButtonSelect}
-                    className="create-code-monitor-button"
+                    className="a11y-ignore create-code-monitor-button"
                     button={
                         <>
                             <Icon className="mr-1" as={CodeMonitoringLogo} />

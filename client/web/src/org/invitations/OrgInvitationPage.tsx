@@ -94,7 +94,7 @@ export const OrgInvitationPage: React.FunctionComponent<Props> = ({ authenticate
     const willVerifyEmail = data?.recipientEmail && !data?.isVerifiedEmail
 
     useEffect(() => {
-        eventLogger.logViewEvent('OrganizationInvitation', { organizationId: orgId, invitationId: data?.id })
+        eventLogger.logPageView('OrganizationInvitation', { organizationId: orgId, invitationId: data?.id })
     }, [orgId, data?.id])
 
     const [respondToInvitation, { loading: respondLoading, error: respondError }] = useMutation<

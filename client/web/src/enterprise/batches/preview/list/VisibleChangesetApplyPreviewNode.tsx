@@ -11,10 +11,10 @@ import FileDocumentEditOutlineIcon from 'mdi-react/FileDocumentEditOutlineIcon'
 
 import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { InputTooltip } from '@sourcegraph/web/src/components/InputTooltip'
 import { Button, Link, Alert, Icon } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../../components/diff/DiffStat'
+import { InputTooltip } from '../../../../components/InputTooltip'
 import { ChangesetState, VisibleChangesetApplyPreviewFields } from '../../../../graphql-operations'
 import { PersonLink } from '../../../../person/PersonLink'
 import { Branch, BranchMerge } from '../../Branch'
@@ -227,6 +227,7 @@ const SelectBox: React.FunctionComponent<{
             checked={selectable.isSelected(isPublishableResult.changesetSpecID)}
             onChange={toggleSelected}
             tooltip="Click to select changeset for bulk-modifying the publication state"
+            aria-label="Click to select changeset for bulk-modifying the publication state"
         />
     ) : (
         <InputTooltip
@@ -235,6 +236,7 @@ const SelectBox: React.FunctionComponent<{
             checked={false}
             disabled={true}
             tooltip={isPublishableResult.reason}
+            aria-label={isPublishableResult.reason}
         />
     )
 

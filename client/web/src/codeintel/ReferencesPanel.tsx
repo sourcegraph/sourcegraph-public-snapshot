@@ -1,27 +1,28 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
 import { capitalize } from 'lodash'
+import ArrowCollapseRightIcon from 'mdi-react/ArrowCollapseRightIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import CloseIcon from 'mdi-react/CloseIcon'
-import OpenInAppIcon from 'mdi-react/OpenInAppIcon'
+import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
 import { MemoryRouter, useHistory, useLocation } from 'react-router'
-import { Collapse } from 'reactstrap'
 
 import { HoveredToken } from '@sourcegraph/codeintellify'
 import {
     addLineRangeQueryParameter,
+    ErrorLike,
     formatSearchParameters,
     lprToRange,
+    pluralize,
     toPositionOrRangeQueryParameter,
     toViewStateHash,
 } from '@sourcegraph/common'
-import { Range } from '@sourcegraph/extension-api-types'
 import { useQuery } from '@sourcegraph/http-client'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -42,21 +43,26 @@ import {
     Input,
     Icon,
     Badge,
-    useObservable,
+    Collapse,
+    CollapseHeader,
+    CollapsePanel,
+    Code,
 } from '@sourcegraph/wildcard'
 
-import {
-    LocationFields,
-    ReferencesPanelHighlightedBlobResult,
-    ReferencesPanelHighlightedBlobVariables,
-} from '../graphql-operations'
-import { resolveRevision } from '../repo/backend'
+import { ReferencesPanelHighlightedBlobResult, ReferencesPanelHighlightedBlobVariables } from '../graphql-operations'
 import { Blob } from '../repo/blob/Blob'
 import { HoverThresholdProps } from '../repo/RepoContainer'
 import { parseBrowserRepoURL } from '../util/url'
 
+import { findLanguageSpec } from './language-specs/languages'
+import { LanguageSpec } from './language-specs/languagespec'
+import { Location, LocationGroup, locationGroupQuality, buildRepoLocationGroups, RepoLocationGroup } from './location'
 import { FETCH_HIGHLIGHTED_BLOB } from './ReferencesPanelQueries'
-import { usePreciseCodeIntel } from './usePreciseCodeIntel'
+import { newSettingsGetter } from './settings'
+import { findSearchToken } from './token'
+import { useCodeIntel } from './useCodeIntel'
+import { useRepoAndBlob } from './useRepoAndBlob'
+import { isDefined } from './util/helpers'
 
 import styles from './ReferencesPanel.module.scss'
 
@@ -64,14 +70,11 @@ type Token = HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisio
 
 interface ReferencesPanelProps
     extends SettingsCascadeProps,
-        PlatformContextProps,
+        PlatformContextProps<'urlToFile' | 'requestGraphQL' | 'settings' | 'forceUpdateTooltip'>,
         TelemetryProps,
         HoverThresholdProps,
         ExtensionsControllerProps,
         ThemeProps {
-    /** The token for which to show references. If it's not set, the panel will try to get enough info out of the URL. */
-    token?: Token
-
     /** Whether to show the first loaded reference in mini code view */
     jumpToFirst?: boolean
 
@@ -97,11 +100,11 @@ const ReferencesPanel: React.FunctionComponent<ReferencesPanelProps> = props => 
     const location = useLocation()
 
     const { hash, pathname, search } = location
-    const { line, character, viewState } = parseQueryAndHash(search, hash)
-    const { filePath, repoName, revision, commitID } = parseBrowserRepoURL(pathname)
+    const { line, character } = parseQueryAndHash(search, hash)
+    const { filePath, repoName, revision } = parseBrowserRepoURL(pathname)
 
     // If we don't have enough information in the URL, we can't render the panel
-    if (!(line && character && filePath && viewState)) {
+    if (!(line && character && filePath)) {
         return null
     }
 
@@ -110,11 +113,7 @@ const ReferencesPanel: React.FunctionComponent<ReferencesPanelProps> = props => 
 
     const token = { repoName, line, character, filePath }
 
-    if (commitID === undefined || revision === undefined) {
-        return <RevisionResolvingReferencesList {...props} {...token} jumpToFirst={jumpToFirst} />
-    }
-
-    return <FilterableReferencesList {...props} token={{ ...token, revision, commitID }} jumpToFirst={jumpToFirst} />
+    return <RevisionResolvingReferencesList {...props} {...token} revision={revision} jumpToFirst={jumpToFirst} />
 }
 
 export const RevisionResolvingReferencesList: React.FunctionComponent<
@@ -126,68 +125,90 @@ export const RevisionResolvingReferencesList: React.FunctionComponent<
         revision?: string
     }
 > = props => {
-    const resolvedRevision = useObservable(useMemo(() => resolveRevision(props), [props]))
+    const { data, loading, error } = useRepoAndBlob(props.repoName, props.filePath, props.revision)
+    if (loading && !data) {
+        return <LoadingCodeIntel />
+    }
 
-    if (!resolvedRevision) {
-        return null
+    if (error && !data) {
+        return <LoadingCodeIntelFailed error={error} />
+    }
+
+    if (!data) {
+        return <>Nothing found</>
     }
 
     const token = {
-        ...props,
-        revision: props.revision || resolvedRevision.defaultBranch,
-        commitID: resolvedRevision.commitID,
+        repoName: props.repoName,
+        line: props.line,
+        character: props.character,
+        filePath: props.filePath,
+        revision: data.revision,
+        commitID: data.commitID,
     }
 
-    return <FilterableReferencesList {...props} token={token} />
+    return (
+        <SearchTokenFindingReferencesList
+            {...props}
+            token={token}
+            isFork={data.isFork}
+            isArchived={data.isArchived}
+            fileContent={data.fileContent}
+        />
+    )
 }
 
-interface Location {
-    resource: {
-        path: string
-        content: string
-        repository: {
-            name: string
-        }
-        commit: {
-            oid: string
-        }
-    }
-    range?: Range
-    url: string
-    lines: string[]
+interface ReferencesPanelPropsWithToken extends ReferencesPanelProps {
+    token: Token
+    isFork: boolean
+    isArchived: boolean
+    fileContent: string
 }
 
-const buildLocation = (node: LocationFields): Location => {
-    const location: Location = {
-        resource: {
-            repository: { name: node.resource.repository.name },
-            content: node.resource.content,
-            path: node.resource.path,
-            commit: node.resource.commit,
+const SearchTokenFindingReferencesList: React.FunctionComponent<ReferencesPanelPropsWithToken> = props => {
+    const languageId = getModeFromPath(props.token.filePath)
+    const spec = findLanguageSpec(languageId)
+    const tokenResult = findSearchToken({
+        text: props.fileContent,
+        position: {
+            line: props.token.line - 1,
+            character: props.token.character - 1,
         },
-        url: '',
-        lines: [],
+        lineRegexes: spec.commentStyles.map(style => style.lineRegex).filter(isDefined),
+        blockCommentStyles: spec.commentStyles.map(style => style.block).filter(isDefined),
+        identCharPattern: spec.identCharPattern,
+    })
+
+    if (!tokenResult?.searchToken) {
+        return (
+            <div>
+                <p className="text-danger">Could not find hovered token.</p>
+            </div>
+        )
     }
-    if (node.range !== null) {
-        location.range = node.range
+
+    return (
+        <ReferencesList
+            {...props}
+            token={props.token}
+            searchToken={tokenResult?.searchToken}
+            spec={spec}
+            fileContent={props.fileContent}
+            isFork={props.isFork}
+            isArchived={props.isArchived}
+        />
+    )
+}
+
+const SHOW_SPINNER_DELAY_MS = 100
+
+export const ReferencesList: React.FunctionComponent<
+    ReferencesPanelPropsWithToken & {
+        searchToken: string
+        spec: LanguageSpec
+        fileContent: string
     }
-    location.url = node.url
-    location.lines = location.resource.content.split(/\r?\n/)
-    return location
-}
-
-interface RepoLocationGroup {
-    repoName: string
-    referenceGroups: LocationGroup[]
-}
-
-interface LocationGroup {
-    repoName: string
-    path: string
-    locations: Location[]
-}
-
-const FilterableReferencesList: React.FunctionComponent<ReferencesPanelProps> = props => {
+> = props => {
     const [filter, setFilter] = useState<string>()
     const debouncedFilter = useDebounce(filter, 150)
 
@@ -195,34 +216,10 @@ const FilterableReferencesList: React.FunctionComponent<ReferencesPanelProps> = 
         setFilter(undefined)
     }, [props.token])
 
-    if (props.token === undefined) {
-        return null
-    }
+    const getSetting = newSettingsGetter(props.settingsCascade)
 
-    return (
-        <>
-            <Input
-                className={classNames('py-0 my-0', styles.referencesFilter)}
-                type="text"
-                placeholder="Filter by filename..."
-                value={filter === undefined ? '' : filter}
-                onChange={event => setFilter(event.target.value)}
-            />
-            <ReferencesList {...props} token={props.token} filter={debouncedFilter} />
-        </>
-    )
-}
-
-const SHOW_SPINNER_DELAY_MS = 100
-
-export const ReferencesList: React.FunctionComponent<
-    ReferencesPanelProps & {
-        token: Token
-        filter?: string
-    }
-> = props => {
     const {
-        lsifData,
+        data,
         error,
         loading,
         referencesHasNextPage,
@@ -231,7 +228,7 @@ export const ReferencesList: React.FunctionComponent<
         fetchMoreImplementations,
         fetchMoreReferencesLoading,
         fetchMoreImplementationsLoading,
-    } = usePreciseCodeIntel({
+    } = useCodeIntel({
         variables: {
             repository: props.token.repoName,
             commit: props.token.commitID,
@@ -240,12 +237,18 @@ export const ReferencesList: React.FunctionComponent<
             // get from hoverifier is 1-indexed.
             line: props.token.line - 1,
             character: props.token.character - 1,
-            filter: props.filter || null,
+            filter: debouncedFilter || null,
             firstReferences: 100,
             afterReferences: null,
             firstImplementations: 100,
             afterImplementations: null,
         },
+        fileContent: props.fileContent,
+        searchToken: props.searchToken,
+        spec: props.spec,
+        isFork: props.isFork,
+        isArchived: props.isArchived,
+        getSetting,
     })
 
     // We only show the inline loading message if loading takes longer than
@@ -258,13 +261,15 @@ export const ReferencesList: React.FunctionComponent<
         // Make sure this effect only runs once
     }, [loading])
 
-    const references = useMemo(() => (lsifData?.references.nodes ?? []).map(buildLocation), [lsifData])
-    const definitions = useMemo(() => (lsifData?.definitions.nodes ?? []).map(buildLocation), [lsifData])
-    const implementations = useMemo(() => (lsifData?.implementations.nodes ?? []).map(buildLocation), [lsifData])
+    const references = useMemo(() => data?.references.nodes ?? [], [data])
+    const definitions = useMemo(() => data?.definitions.nodes ?? [], [data])
+    const implementations = useMemo(() => data?.implementations.nodes ?? [], [data])
 
     // activeLocation is the location that is selected/clicked in the list of
     // definitions/references/implementations.
     const [activeLocation, setActiveLocation] = useState<Location>()
+    const isActiveLocation = (location: Location): boolean =>
+        activeLocation !== undefined && activeLocation.url === location.url
     // We create an in-memory history here so we don't modify the browser
     // location. This panel is detached from the URL state.
     const blobMemoryHistory = useMemo(() => H.createMemoryHistory(), [])
@@ -314,10 +319,9 @@ export const ReferencesList: React.FunctionComponent<
     const onBlobNav = (url: string): void => {
         // If we're going to navigate inside the same file in the same repo we
         // can optimistically jump to that position in the code blob.
-        const resource = activeLocation?.resource
-        if (resource !== undefined) {
+        if (activeLocation !== undefined) {
             const urlToken = tokenFromUrl(url)
-            if (urlToken.filePath === resource.path && urlToken.repoName === resource.repository.name) {
+            if (urlToken.filePath === activeLocation.file && urlToken.repoName === activeLocation.repo) {
                 blobMemoryHistory.push(url)
             }
         }
@@ -325,51 +329,74 @@ export const ReferencesList: React.FunctionComponent<
         panelHistory.push(appendJumpToFirstQueryParameter(url) + toViewStateHash('references'))
     }
 
-    if (loading && !lsifData) {
-        return (
-            <>
-                <LoadingSpinner inline={false} className="mx-auto my-4" />
-                <p className="text-muted text-center">
-                    <i>Loading precise code intel ...</i>
-                </p>
-            </>
-        )
+    const navigateToUrl = (url: string): void => {
+        props.externalHistory.push(url)
+    }
+
+    // Manual management of the open/closed state of collapsible lists so they
+    // stay open/closed across re-renders and re-mounts.
+    const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
+    const handleOpenChange = (id: string, isOpen: boolean): void =>
+        setCollapsed(previous => ({ ...previous, [id]: isOpen }))
+    const isOpen = (id: string): boolean | undefined => collapsed[id]
+    // But when the input changes, we reset the collapse state
+    useEffect(() => {
+        setCollapsed({})
+    }, [props.token])
+
+    if (loading && !data) {
+        return <LoadingCodeIntel />
     }
 
     // If we received an error before we had received any data
-    if (error && !lsifData) {
-        return (
-            <div>
-                <p className="text-danger">Loading precise code intel failed:</p>
-                <pre>{error.message}</pre>
-            </div>
-        )
+    if (error && !data) {
+        return <LoadingCodeIntelFailed error={error} />
     }
 
     // If there weren't any errors and we just didn't receive any data
-    if (!lsifData) {
+    if (!data) {
         return <>Nothing found</>
     }
 
     return (
-        <>
-            <div className={classNames('align-items-stretch', styles.referencesList)}>
-                <div className={classNames('px-0', styles.referencesSideReferences)}>
+        <div className={classNames('align-items-stretch', styles.panel)}>
+            <div className={classNames('px-0', styles.leftSubPanel)}>
+                <CardHeader className={classNames('d-flex align-items-center', styles.cardHeader)}>
+                    <Code size="base" weight="bold">
+                        {props.searchToken}
+                    </Code>
                     {canShowSpinner && (
-                        <div className="text-muted">
-                            <LoadingSpinner inline={true} />
+                        <small className="ml-3 text-muted d-flex align-items-center">
+                            <Icon as={LoadingSpinner} size="sm" inline={true} className="mr-1" />
                             <i>Loading...</i>
-                        </div>
+                        </small>
                     )}
+                </CardHeader>
+                <div className={classNames('d-flex justify-content-start', styles.filter)}>
+                    <small>
+                        <Icon as={FilterOutlineIcon} size="sm" className={styles.filterIcon} />
+                    </small>
+                    <Input
+                        className={classNames('py-0 my-0 w-100 text-small')}
+                        type="text"
+                        placeholder="Type to filter by filename"
+                        value={filter === undefined ? '' : filter}
+                        onChange={event => setFilter(event.target.value)}
+                    />
+                </div>
+                <div className={styles.locationLists}>
                     <CollapsibleLocationList
                         {...props}
                         name="definitions"
                         locations={definitions}
                         hasMore={false}
                         loadingMore={false}
+                        filter={debouncedFilter}
+                        navigateToUrl={navigateToUrl}
+                        isActiveLocation={isActiveLocation}
                         setActiveLocation={onReferenceClick}
-                        filter={props.filter}
-                        activeLocation={activeLocation}
+                        handleOpenChange={handleOpenChange}
+                        isOpen={isOpen}
                     />
                     <CollapsibleLocationList
                         {...props}
@@ -378,9 +405,12 @@ export const ReferencesList: React.FunctionComponent<
                         hasMore={referencesHasNextPage}
                         fetchMore={fetchMoreReferences}
                         loadingMore={fetchMoreReferencesLoading}
+                        filter={debouncedFilter}
+                        navigateToUrl={navigateToUrl}
                         setActiveLocation={onReferenceClick}
-                        filter={props.filter}
-                        activeLocation={activeLocation}
+                        isActiveLocation={isActiveLocation}
+                        handleOpenChange={handleOpenChange}
+                        isOpen={isOpen}
                     />
                     {implementations.length > 0 && (
                         <CollapsibleLocationList
@@ -391,128 +421,139 @@ export const ReferencesList: React.FunctionComponent<
                             fetchMore={fetchMoreImplementations}
                             loadingMore={fetchMoreImplementationsLoading}
                             setActiveLocation={onReferenceClick}
-                            filter={props.filter}
-                            activeLocation={activeLocation}
+                            filter={debouncedFilter}
+                            isActiveLocation={isActiveLocation}
+                            navigateToUrl={navigateToUrl}
+                            handleOpenChange={handleOpenChange}
+                            isOpen={isOpen}
                         />
                     )}
                 </div>
-                {activeLocation !== undefined && (
-                    <div className={classNames('px-0 border-left', styles.referencesSideBlob)}>
-                        <CardHeader className={classNames('pl-1 pr-3 py-1 d-flex justify-content-between')}>
-                            <h4 className="mb-0">
-                                {activeLocation.resource.path}{' '}
-                                <Link
-                                    to={activeLocation.url}
-                                    onClick={event => {
-                                        event.preventDefault()
-                                        props.externalHistory.push(activeLocation.url)
-                                    }}
-                                >
-                                    <Icon as={OpenInAppIcon} />
-                                </Link>
-                            </h4>
-
+            </div>
+            {activeLocation !== undefined && (
+                <div className={classNames('px-0 border-left', styles.rightSubPanel)}>
+                    <CardHeader className={classNames('d-flex', styles.cardHeader)}>
+                        <small>
                             <Button
                                 onClick={() => setActiveLocation(undefined)}
-                                className={classNames('btn-icon p-0', styles.dismissButton)}
+                                className={classNames('btn-icon p-0', styles.sideBlobCollapseButton)}
                                 title="Close panel"
                                 data-tooltip="Close panel"
                                 data-placement="left"
+                                size="sm"
                             >
-                                <Icon as={CloseIcon} />
+                                <Icon size="sm" as={ArrowCollapseRightIcon} className="border-0" />
                             </Button>
-                        </CardHeader>
-                        <SideBlob
-                            {...props}
-                            blobNav={onBlobNav}
-                            history={blobMemoryHistory}
-                            location={blobMemoryHistory.location}
-                            activeLocation={activeLocation}
-                        />
-                    </div>
-                )}
-            </div>
-        </>
+                            <Link
+                                to={activeLocation.url}
+                                onClick={event => {
+                                    event.preventDefault()
+                                    navigateToUrl(activeLocation.url)
+                                }}
+                                className={styles.sideBlobFilename}
+                            >
+                                {activeLocation.file}{' '}
+                            </Link>
+                        </small>
+                    </CardHeader>
+                    <SideBlob
+                        {...props}
+                        blobNav={onBlobNav}
+                        history={blobMemoryHistory}
+                        location={blobMemoryHistory.location}
+                        activeLocation={activeLocation}
+                    />
+                </div>
+            )}
+        </div>
     )
 }
 
-interface CollapsibleLocationListProps {
+interface CollapseProps {
+    isOpen: (id: string) => boolean | undefined
+    handleOpenChange: (id: string, isOpen: boolean) => void
+}
+
+interface ActiveLocationProps {
+    isActiveLocation: (location: Location) => boolean
+    setActiveLocation: (reference: Location | undefined) => void
+}
+
+interface CollapsibleLocationListProps extends ActiveLocationProps, CollapseProps {
     name: string
     locations: Location[]
-    setActiveLocation: (location: Location | undefined) => void
-    activeLocation: Location | undefined
     filter: string | undefined
     hasMore: boolean
     fetchMore?: () => void
     loadingMore: boolean
+    navigateToUrl: (url: string) => void
 }
 
 const CollapsibleLocationList: React.FunctionComponent<CollapsibleLocationListProps> = props => {
-    const [isOpen, setOpen] = useState<boolean>(true)
-    const handleOpen = useCallback(() => setOpen(previousState => !previousState), [])
+    const isOpen = props.isOpen(props.name) ?? true
 
     return (
-        <>
-            <CardHeader className="p-0">
-                <Button
-                    aria-expanded={isOpen}
-                    type="button"
-                    onClick={handleOpen}
-                    className="bg-transparent py-1 px-0 border-bottom border-top-0 border-left-0 border-right-0 d-flex justify-content-start w-100"
-                >
-                    <h4 className="px-1 py-0 mb-0">
-                        {' '}
+        <Collapse isOpen={isOpen} onOpenChange={isOpen => props.handleOpenChange(props.name, isOpen)}>
+            <>
+                <CardHeader className={styles.cardHeaderBig}>
+                    <CollapseHeader
+                        as={Button}
+                        aria-expanded={props.isOpen(props.name)}
+                        type="button"
+                        className="d-flex p-0 justify-content-start w-100"
+                    >
                         {isOpen ? (
                             <Icon aria-label="Close" as={ChevronDownIcon} />
                         ) : (
                             <Icon aria-label="Expand" as={ChevronRightIcon} />
                         )}{' '}
-                        {capitalize(props.name)}
-                        <Badge pill={true} variant="secondary" className="ml-2">
-                            {props.locations.length}
-                            {props.hasMore && '+'}
-                        </Badge>
-                    </h4>
-                </Button>
-            </CardHeader>
+                        <h4 className="mb-0">{capitalize(props.name)}</h4>
+                        <span className={classNames('ml-2 text-muted small', styles.cardHeaderSmallText)}>
+                            ({props.locations.length} displayed{props.hasMore ? ', more available)' : ')'}
+                        </span>
+                    </CollapseHeader>
+                </CardHeader>
 
-            <Collapse id="references" isOpen={isOpen}>
-                {props.locations.length > 0 ? (
-                    <>
+                <CollapsePanel id={props.name}>
+                    {props.locations.length > 0 ? (
                         <LocationsList
                             locations={props.locations}
-                            activeLocation={props.activeLocation}
+                            isActiveLocation={props.isActiveLocation}
                             setActiveLocation={props.setActiveLocation}
                             filter={props.filter}
+                            navigateToUrl={props.navigateToUrl}
+                            handleOpenChange={(id, isOpen) => props.handleOpenChange(props.name + id, isOpen)}
+                            isOpen={id => props.isOpen(props.name + id)}
                         />
-                        {props.hasMore &&
-                            props.fetchMore !== undefined &&
-                            (props.loadingMore ? (
-                                <div className="text-center mb-1">
-                                    <em>Loading more {props.name}...</em>
-                                    <LoadingSpinner inline={true} />
-                                </div>
+                    ) : (
+                        <p className="text-muted pl-2">
+                            {props.filter ? (
+                                <i>
+                                    No {props.name} matching <strong>{props.filter}</strong> found
+                                </i>
                             ) : (
-                                <div className="text-center mb-1">
-                                    <Button variant="secondary" onClick={props.fetchMore}>
-                                        Load more {props.name}
-                                    </Button>
-                                </div>
-                            ))}
-                    </>
-                ) : (
-                    <p className="text-muted pl-2">
-                        {props.filter ? (
-                            <i>
-                                No {props.name} matching <strong>{props.filter}</strong> found
-                            </i>
+                                <i>No {props.name} found</i>
+                            )}
+                        </p>
+                    )}
+
+                    {props.hasMore &&
+                        props.fetchMore !== undefined &&
+                        (props.loadingMore ? (
+                            <div className="text-center mb-1">
+                                <em>Loading more {props.name}...</em>
+                                <LoadingSpinner inline={true} />
+                            </div>
                         ) : (
-                            <i>No {props.name} found</i>
-                        )}
-                    </p>
-                )}
-            </Collapse>
-        </>
+                            <div className="text-center mb-1">
+                                <Button variant="secondary" onClick={props.fetchMore}>
+                                    Load more {props.name}
+                                </Button>
+                            </div>
+                        ))}
+                </CollapsePanel>
+            </>
+        </Collapse>
     )
 }
 
@@ -530,9 +571,9 @@ const SideBlob: React.FunctionComponent<
         ReferencesPanelHighlightedBlobVariables
     >(FETCH_HIGHLIGHTED_BLOB, {
         variables: {
-            repository: props.activeLocation.resource.repository.name,
-            commit: props.activeLocation.resource.commit.oid,
-            path: props.activeLocation.resource.path,
+            repository: props.activeLocation.repo,
+            commit: props.activeLocation.commitID,
+            path: props.activeLocation.file,
         },
         // Cache this data but always re-request it in the background when we revisit
         // this page to pick up newer changes.
@@ -547,7 +588,7 @@ const SideBlob: React.FunctionComponent<
                 <LoadingSpinner inline={false} className="mx-auto my-4" />
                 <p className="text-muted text-center">
                     <i>
-                        Loading <code>{props.activeLocation.resource.path}</code>...
+                        Loading <code>{props.activeLocation.file}</code>...
                     </i>
                 </p>
             </>
@@ -559,7 +600,7 @@ const SideBlob: React.FunctionComponent<
         return (
             <div>
                 <p className="text-danger">
-                    Loading <code>{props.activeLocation.resource.path}</code> failed:
+                    Loading <code>{props.activeLocation.file}</code> failed:
                 </p>
                 <pre>{error.message}</pre>
             </div>
@@ -576,7 +617,7 @@ const SideBlob: React.FunctionComponent<
         return (
             <p className="text-warning text-center">
                 <i>
-                    Highlighting <code>{props.activeLocation.resource.path}</code> failed
+                    Highlighting <code>{props.activeLocation.file}</code> failed
                 </i>
             </p>
         )
@@ -590,17 +631,206 @@ const SideBlob: React.FunctionComponent<
             location={props.location}
             disableStatusBar={true}
             wrapCode={true}
-            className={styles.referencesSideBlobCode}
+            className={styles.sideBlobCode}
             blobInfo={{
-                content: props.activeLocation.resource.content,
                 html,
-                filePath: props.activeLocation.resource.path,
-                repoName: props.activeLocation.resource.repository.name,
-                commitID: props.activeLocation.resource.commit.oid,
-                revision: props.activeLocation.resource.commit.oid,
+                content: props.activeLocation.content,
+                filePath: props.activeLocation.file,
+                repoName: props.activeLocation.repo,
+                commitID: props.activeLocation.commitID,
+                revision: props.activeLocation.commitID,
                 mode: 'lspmode',
             }}
         />
+    )
+}
+
+interface LocationsListProps extends ActiveLocationProps, CollapseProps {
+    locations: Location[]
+    filter: string | undefined
+    navigateToUrl: (url: string) => void
+}
+
+const LocationsList: React.FunctionComponent<LocationsListProps> = ({
+    locations,
+    isActiveLocation,
+    setActiveLocation,
+    filter,
+    navigateToUrl,
+    handleOpenChange,
+    isOpen,
+}) => {
+    const repoLocationGroups = useMemo(() => buildRepoLocationGroups(locations), [locations])
+    const openByDefault = repoLocationGroups.length === 1
+
+    return (
+        <>
+            {repoLocationGroups.map(group => (
+                <CollapsibleRepoLocationGroup
+                    key={group.repoName}
+                    repoLocationGroup={group}
+                    openByDefault={openByDefault}
+                    isActiveLocation={isActiveLocation}
+                    setActiveLocation={setActiveLocation}
+                    filter={filter}
+                    navigateToUrl={navigateToUrl}
+                    handleOpenChange={handleOpenChange}
+                    isOpen={isOpen}
+                />
+            ))}
+        </>
+    )
+}
+
+const CollapsibleRepoLocationGroup: React.FunctionComponent<
+    ActiveLocationProps &
+        CollapseProps & {
+            filter: string | undefined
+            navigateToUrl: (url: string) => void
+            repoLocationGroup: RepoLocationGroup
+            openByDefault: boolean
+        }
+> = ({
+    repoLocationGroup,
+    isActiveLocation,
+    setActiveLocation,
+    navigateToUrl,
+    filter,
+    openByDefault,
+    isOpen,
+    handleOpenChange,
+}) => {
+    const repoUrl = `/${repoLocationGroup.repoName}`
+    const open = isOpen(repoLocationGroup.repoName) ?? openByDefault
+
+    return (
+        <Collapse isOpen={open} onOpenChange={isOpen => handleOpenChange(repoLocationGroup.repoName, isOpen)}>
+            <>
+                <CollapseHeader
+                    as={Button}
+                    aria-expanded={open}
+                    type="button"
+                    className={classNames('d-flex justify-content-start w-100', styles.repoLocationGroup)}
+                >
+                    {open ? (
+                        <Icon aria-label="Close" as={ChevronDownIcon} />
+                    ) : (
+                        <Icon aria-label="Expand" as={ChevronRightIcon} />
+                    )}
+                    <small>
+                        <Link
+                            to={repoUrl}
+                            onClick={event => {
+                                event.preventDefault()
+                                navigateToUrl(repoUrl)
+                            }}
+                            className={classNames('text-small', styles.repoLocationGroupRepoName)}
+                        >
+                            {displayRepoName(repoLocationGroup.repoName)}
+                        </Link>
+                    </small>
+                </CollapseHeader>
+
+                <CollapsePanel id={repoLocationGroup.repoName}>
+                    {repoLocationGroup.referenceGroups.map(group => (
+                        <CollapsibleLocationGroup
+                            key={group.path + group.repoName}
+                            group={group}
+                            isActiveLocation={isActiveLocation}
+                            setActiveLocation={setActiveLocation}
+                            filter={filter}
+                            handleOpenChange={(id, isOpen) => handleOpenChange(repoLocationGroup.repoName + id, isOpen)}
+                            isOpen={id => isOpen(repoLocationGroup.repoName + id)}
+                        />
+                    ))}
+                </CollapsePanel>
+            </>
+        </Collapse>
+    )
+}
+
+const CollapsibleLocationGroup: React.FunctionComponent<
+    ActiveLocationProps &
+        CollapseProps & {
+            group: LocationGroup
+            filter: string | undefined
+        }
+> = ({ group, setActiveLocation, isActiveLocation, filter, isOpen, handleOpenChange }) => {
+    let highlighted = [group.path]
+    if (filter !== undefined) {
+        highlighted = group.path.split(filter)
+    }
+
+    const open = isOpen(group.path) ?? true
+
+    return (
+        <Collapse isOpen={open} onOpenChange={isOpen => handleOpenChange(group.path, isOpen)}>
+            <>
+                <CollapseHeader
+                    as={Button}
+                    aria-expanded={open}
+                    type="button"
+                    className={classNames(
+                        'bg-transparent border-top-0 border-left-0 border-right-0 d-flex justify-content-start w-100',
+                        styles.locationGroup
+                    )}
+                >
+                    {open ? (
+                        <Icon aria-label="Close" as={ChevronDownIcon} />
+                    ) : (
+                        <Icon aria-label="Expand" as={ChevronRightIcon} />
+                    )}
+                    <small className={styles.locationGroupFilename}>
+                        {highlighted.length === 2 ? (
+                            <span>
+                                {highlighted[0]}
+                                <mark>{filter}</mark>
+                                {highlighted[1]}
+                            </span>
+                        ) : (
+                            group.path
+                        )}{' '}
+                        <span className={classNames('ml-2 text-muted small', styles.cardHeaderSmallText)}>
+                            ({group.locations.length} {pluralize('reference', group.locations.length, 'references')})
+                        </span>
+                        <Badge small={true} variant="secondary" className="ml-4">
+                            {locationGroupQuality(group)}
+                        </Badge>
+                    </small>
+                </CollapseHeader>
+
+                <CollapsePanel id={group.repoName + group.path} className="ml-0">
+                    <ul className="list-unstyled mb-0">
+                        {group.locations.map(reference => {
+                            const className = isActiveLocation(reference) ? styles.locationActive : ''
+
+                            return (
+                                <li
+                                    key={reference.url}
+                                    className={classNames('border-0 rounded-0 mb-0', styles.location, className)}
+                                >
+                                    <Link
+                                        as={Button}
+                                        onClick={event => {
+                                            event.preventDefault()
+                                            setActiveLocation(reference)
+                                        }}
+                                        to={reference.url}
+                                        className={styles.locationLink}
+                                    >
+                                        <span className={styles.locationLinkLineNumber}>
+                                            {(reference.range?.start?.line ?? 0) + 1}
+                                            {': '}
+                                        </span>
+                                        <code>{getLineContent(reference)}</code>
+                                    </Link>
+                                </li>
+                            )
+                        })}
+                    </ul>
+                </CollapsePanel>
+            </>
+        </Collapse>
     )
 }
 
@@ -612,185 +842,23 @@ const getLineContent = (location: Location): string => {
     return ''
 }
 
-interface LocationsListProps {
-    locations: Location[]
-    activeLocation?: Location
-    setActiveLocation: (reference: Location | undefined) => void
-    filter: string | undefined
-}
+const LoadingCodeIntel: React.FunctionComponent<{}> = () => (
+    <>
+        <LoadingSpinner inline={false} className="mx-auto my-4" />
+        <p className="text-muted text-center">
+            <i>Loading code intel ...</i>
+        </p>
+    </>
+)
 
-const LocationsList: React.FunctionComponent<LocationsListProps> = ({
-    locations,
-    activeLocation,
-    setActiveLocation,
-    filter,
-}) => {
-    const repoLocationGroups = useMemo((): RepoLocationGroup[] => {
-        const byFile: Record<string, Location[]> = {}
-        for (const location of locations) {
-            if (byFile[location.resource.path] === undefined) {
-                byFile[location.resource.path] = []
-            }
-            byFile[location.resource.path].push(location)
-        }
-
-        const locationsGroups: LocationGroup[] = []
-        Object.keys(byFile).map(path => {
-            const references = byFile[path]
-            const repoName = references[0].resource.repository.name
-            locationsGroups.push({ path, locations: references, repoName })
-        })
-
-        const byRepo: Record<string, LocationGroup[]> = {}
-        for (const group of locationsGroups) {
-            if (byRepo[group.repoName] === undefined) {
-                byRepo[group.repoName] = []
-            }
-            byRepo[group.repoName].push(group)
-        }
-        const repoLocationGroups: RepoLocationGroup[] = []
-        Object.keys(byRepo).map(repoName => {
-            const referenceGroups = byRepo[repoName]
-            repoLocationGroups.push({ repoName, referenceGroups })
-        })
-        return repoLocationGroups
-    }, [locations])
-
-    return (
-        <>
-            {repoLocationGroups.map(repoReferenceGroup => (
-                <RepoLocationGroup
-                    key={repoReferenceGroup.repoName}
-                    repoLocationGroup={repoReferenceGroup}
-                    activeLocation={activeLocation}
-                    setActiveLocation={setActiveLocation}
-                    getLineContent={getLineContent}
-                    filter={filter}
-                />
-            ))}
-        </>
-    )
-}
-
-const RepoLocationGroup: React.FunctionComponent<{
-    repoLocationGroup: RepoLocationGroup
-    activeLocation?: Location
-    setActiveLocation: (reference: Location | undefined) => void
-    getLineContent: (location: Location) => string
-    filter: string | undefined
-}> = ({ repoLocationGroup, setActiveLocation, getLineContent, activeLocation, filter }) => {
-    const [isOpen, setOpen] = useState<boolean>(true)
-    const handleOpen = useCallback(() => setOpen(previousState => !previousState), [])
-
-    return (
-        <>
-            <Button
-                aria-expanded={isOpen}
-                type="button"
-                onClick={handleOpen}
-                className="bg-transparent py-1 border-bottom border-top-0 border-left-0 border-right-0 d-flex justify-content-start w-100"
-            >
-                <span className="p-0 mb-0">
-                    {isOpen ? (
-                        <Icon aria-label="Close" as={ChevronDownIcon} />
-                    ) : (
-                        <Icon aria-label="Expand" as={ChevronRightIcon} />
-                    )}
-
-                    <Link to={`/${repoLocationGroup.repoName}`}>{displayRepoName(repoLocationGroup.repoName)}</Link>
-                </span>
-            </Button>
-
-            <Collapse id={repoLocationGroup.repoName} isOpen={isOpen}>
-                {repoLocationGroup.referenceGroups.map(group => (
-                    <ReferenceGroup
-                        key={group.path + group.repoName}
-                        group={group}
-                        activeLocation={activeLocation}
-                        setActiveLocation={setActiveLocation}
-                        getLineContent={getLineContent}
-                        filter={filter}
-                    />
-                ))}
-            </Collapse>
-        </>
-    )
-}
-
-const ReferenceGroup: React.FunctionComponent<{
-    group: LocationGroup
-    activeLocation?: Location
-    setActiveLocation: (reference: Location | undefined) => void
-    getLineContent: (reference: Location) => string
-    filter: string | undefined
-}> = ({ group, setActiveLocation: setActiveLocation, getLineContent, activeLocation, filter }) => {
-    const [isOpen, setOpen] = useState<boolean>(true)
-    const handleOpen = useCallback(() => setOpen(previousState => !previousState), [])
-
-    let highlighted = [group.path]
-    if (filter !== undefined) {
-        highlighted = group.path.split(filter)
-    }
-
-    return (
-        <div className="ml-4">
-            <Button
-                aria-expanded={isOpen}
-                type="button"
-                onClick={handleOpen}
-                className="bg-transparent py-1 border-bottom border-top-0 border-left-0 border-right-0 d-flex justify-content-start w-100"
-            >
-                <span className={styles.referenceFilename}>
-                    {isOpen ? (
-                        <Icon aria-label="Close" as={ChevronDownIcon} />
-                    ) : (
-                        <Icon aria-label="Expand" as={ChevronRightIcon} />
-                    )}
-                    {highlighted.length === 2 ? (
-                        <span>
-                            {highlighted[0]}
-                            <mark>{filter}</mark>
-                            {highlighted[1]}
-                        </span>
-                    ) : (
-                        group.path
-                    )}{' '}
-                    ({group.locations.length} references)
-                </span>
-            </Button>
-
-            <Collapse id={group.repoName + group.path} isOpen={isOpen} className="ml-2">
-                <ul className="list-unstyled pl-3 py-1 mb-0">
-                    {group.locations.map(reference => {
-                        const className =
-                            activeLocation && activeLocation.url === reference.url ? styles.referenceActive : ''
-
-                        return (
-                            <li key={reference.url} className={classNames('border-0 rounded-0', className)}>
-                                <div>
-                                    <Link
-                                        onClick={event => {
-                                            event.preventDefault()
-                                            setActiveLocation(reference)
-                                        }}
-                                        to={reference.url}
-                                        className={styles.referenceLink}
-                                    >
-                                        <span className={styles.referenceLinkLineNumber}>
-                                            {(reference.range?.start?.line ?? 0) + 1}
-                                            {': '}
-                                        </span>
-                                        <code>{getLineContent(reference)}</code>
-                                    </Link>
-                                </div>
-                            </li>
-                        )
-                    })}
-                </ul>
-            </Collapse>
+const LoadingCodeIntelFailed: React.FunctionComponent<{ error: ErrorLike }> = props => (
+    <>
+        <div>
+            <p className="text-danger">Loading code intel failed:</p>
+            <pre>{props.error.message}</pre>
         </div>
-    )
-}
+    </>
+)
 
 export function locationWithoutViewState(location: H.Location): H.LocationDescriptorObject {
     const parsedQuery = parseQueryAndHash(location.search, location.hash)

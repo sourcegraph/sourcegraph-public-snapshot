@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestMain(m *testing.M) {
@@ -35,8 +34,7 @@ var updateRecordings = flag.Bool("update", false, "make npm API calls, record an
 func newTestHTTPClient(t *testing.T) (client *HTTPClient, stop func()) {
 	t.Helper()
 	recorderFactory, stop := httptestutil.NewRecorderFactory(t, *updateRecordings, t.Name())
-	rateLimit := schema.NpmRateLimit{true, 1000}
-	client = NewHTTPClient("https://registry.npmjs.org", &rateLimit, "")
+	client = NewHTTPClient("urn", "https://registry.npmjs.org", "")
 	doer, err := recorderFactory.Doer()
 	require.Nil(t, err)
 	client.doer = doer
@@ -78,8 +76,7 @@ func TestCredentials(t *testing.T) {
 	defer server.Close()
 
 	ctx := context.Background()
-	rateLimit := schema.NpmRateLimit{true, 1000}
-	client := NewHTTPClient(server.URL, &rateLimit, credentials)
+	client := NewHTTPClient("urn", server.URL, credentials)
 
 	presentDep, err := reposource.ParseNpmDependency("left-pad@1.3.0")
 	require.NoError(t, err)
@@ -147,6 +144,9 @@ func TestFetchSources(t *testing.T) {
 	defer stop()
 	dep, err := reposource.ParseNpmDependency("is-sorted@1.0.0")
 	require.Nil(t, err)
+	info, err := client.GetDependencyInfo(ctx, dep)
+	require.Nil(t, err)
+	dep.TarballURL = info.Dist.TarballURL
 	readSeekCloser, err := client.FetchTarball(ctx, dep)
 	require.Nil(t, err)
 	defer readSeekCloser.Close()

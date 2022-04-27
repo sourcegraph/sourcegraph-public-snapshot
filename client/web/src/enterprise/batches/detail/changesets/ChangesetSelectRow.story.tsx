@@ -1,12 +1,15 @@
-import React from 'react'
-
 import { number } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
 import { of } from 'rxjs'
 
+import { BulkOperationType } from '@sourcegraph/shared/src/graphql-operations'
+
 import { WebStory } from '../../../../components/WebStory'
 import { MultiSelectContextProvider } from '../../MultiSelectContext'
-import { queryAllChangesetIDs as _queryAllChangesetIDs } from '../backend'
+import {
+    queryAllChangesetIDs as _queryAllChangesetIDs,
+    queryAvailableBulkOperations as _queryAvailableBulkOperations,
+} from '../backend'
 
 import { ChangesetSelectRow } from './ChangesetSelectRow'
 
@@ -21,6 +24,8 @@ const HALF_CHANGESET_IDS = CHANGESET_IDS.slice(0, 50)
 const queryAll100ChangesetIDs: typeof _queryAllChangesetIDs = () => of(CHANGESET_IDS)
 const queryAll50ChangesetIDs: typeof _queryAllChangesetIDs = () => of(CHANGESET_IDS.slice(0, 50))
 
+const allBulkOperations = Object.keys(BulkOperationType) as BulkOperationType[]
+
 add('all states', () => {
     const totalChangesets = number('Total changesets', 100)
     const visibleChangesets = number('Visible changesets', 10, { range: true, min: 0, max: totalChangesets })
@@ -30,6 +35,8 @@ add('all states', () => {
     const queryAllChangesetIDs: typeof _queryAllChangesetIDs = () => of(CHANGESET_IDS.slice(0, selectableChangesets))
     const initialSelected = CHANGESET_IDS.slice(0, selectedChangesets)
     const initialVisible = CHANGESET_IDS.slice(0, visibleChangesets)
+
+    const queryAvailableBulkOperations: typeof _queryAvailableBulkOperations = () => of(allBulkOperations)
 
     return (
         <WebStory>
@@ -42,6 +49,7 @@ add('all states', () => {
                             onSubmit={onSubmit}
                             batchChangeID="test-123"
                             queryAllChangesetIDs={queryAllChangesetIDs}
+                            queryAvailableBulkOperations={queryAvailableBulkOperations}
                             queryArguments={{
                                 batchChange: 'test-123',
                                 checkState: null,
@@ -61,6 +69,7 @@ add('all states', () => {
                             onSubmit={onSubmit}
                             batchChangeID="test-123"
                             queryAllChangesetIDs={queryAll100ChangesetIDs}
+                            queryAvailableBulkOperations={queryAvailableBulkOperations}
                             queryArguments={{
                                 batchChange: 'test-123',
                                 checkState: null,
@@ -80,6 +89,7 @@ add('all states', () => {
                             onSubmit={onSubmit}
                             batchChangeID="test-123"
                             queryAllChangesetIDs={queryAll100ChangesetIDs}
+                            queryAvailableBulkOperations={queryAvailableBulkOperations}
                             queryArguments={{
                                 batchChange: 'test-123',
                                 checkState: null,
@@ -99,6 +109,7 @@ add('all states', () => {
                             onSubmit={onSubmit}
                             batchChangeID="test-123"
                             queryAllChangesetIDs={queryAll100ChangesetIDs}
+                            queryAvailableBulkOperations={queryAvailableBulkOperations}
                             queryArguments={{
                                 batchChange: 'test-123',
                                 checkState: null,
@@ -118,6 +129,7 @@ add('all states', () => {
                             onSubmit={onSubmit}
                             batchChangeID="test-123"
                             queryAllChangesetIDs={queryAll50ChangesetIDs}
+                            queryAvailableBulkOperations={queryAvailableBulkOperations}
                             queryArguments={{
                                 batchChange: 'test-123',
                                 checkState: null,
@@ -137,6 +149,7 @@ add('all states', () => {
                             onSubmit={onSubmit}
                             batchChangeID="test-123"
                             queryAllChangesetIDs={queryAll50ChangesetIDs}
+                            queryAvailableBulkOperations={queryAvailableBulkOperations}
                             queryArguments={{
                                 batchChange: 'test-123',
                                 checkState: null,
@@ -156,6 +169,7 @@ add('all states', () => {
                             onSubmit={onSubmit}
                             batchChangeID="test-123"
                             queryAllChangesetIDs={queryAll100ChangesetIDs}
+                            queryAvailableBulkOperations={queryAvailableBulkOperations}
                             queryArguments={{
                                 batchChange: 'test-123',
                                 checkState: null,
@@ -178,6 +192,7 @@ add('all states', () => {
                             onSubmit={onSubmit}
                             batchChangeID="test-123"
                             queryAllChangesetIDs={queryAll100ChangesetIDs}
+                            queryAvailableBulkOperations={queryAvailableBulkOperations}
                             queryArguments={{
                                 batchChange: 'test-123',
                                 checkState: null,
@@ -197,6 +212,7 @@ add('all states', () => {
                             onSubmit={onSubmit}
                             batchChangeID="test-123"
                             queryAllChangesetIDs={queryAll100ChangesetIDs}
+                            queryAvailableBulkOperations={queryAvailableBulkOperations}
                             queryArguments={{
                                 batchChange: 'test-123',
                                 checkState: null,
@@ -216,6 +232,7 @@ add('all states', () => {
                             onSubmit={onSubmit}
                             batchChangeID="test-123"
                             queryAllChangesetIDs={queryAll50ChangesetIDs}
+                            queryAvailableBulkOperations={queryAvailableBulkOperations}
                             queryArguments={{
                                 batchChange: 'test-123',
                                 checkState: null,
@@ -238,6 +255,7 @@ add('all states', () => {
                             onSubmit={onSubmit}
                             batchChangeID="test-123"
                             queryAllChangesetIDs={queryAll50ChangesetIDs}
+                            queryAvailableBulkOperations={queryAvailableBulkOperations}
                             queryArguments={{
                                 batchChange: 'test-123',
                                 checkState: null,

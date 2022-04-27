@@ -67,15 +67,16 @@ describe('Code insights page', () => {
         })
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
-        await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
+        await driver.page.waitForSelector('svg circle')
 
         const variables = await testContext.waitForGraphQLRequest(async () => {
             await driver.page.click('[data-testid="insight-card.001"] [data-testid="InsightContextMenuButton"]')
 
-            await Promise.all([
-                driver.acceptNextDialog(),
-                driver.page.click('[data-testid="insight-context-menu-delete-button"]'),
-            ])
+            await driver.page.click('[data-testid="insight-context-menu-delete-button"]')
+            const [button] = await driver.page.$x("//button[contains(., 'Delete forever')]")
+            if (button) {
+                await button.click()
+            }
         }, 'DeleteInsightView')
 
         assert.strictEqual(variables.id, '001')

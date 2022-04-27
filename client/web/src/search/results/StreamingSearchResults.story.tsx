@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { storiesOf } from '@storybook/react'
 import { createBrowserHistory } from 'history'
 import { EMPTY, NEVER, of } from 'rxjs'

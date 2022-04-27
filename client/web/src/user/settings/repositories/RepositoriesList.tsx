@@ -4,14 +4,14 @@ import { useHistory, useLocation } from 'react-router'
 import { Observable } from 'rxjs'
 
 import { ErrorLike } from '@sourcegraph/common'
+import { Container } from '@sourcegraph/wildcard'
+
 import {
     FilteredConnection,
     FilteredConnectionFilter,
     FilteredConnectionQueryArguments,
     Connection,
-} from '@sourcegraph/web/src/components/FilteredConnection'
-import { Container } from '@sourcegraph/wildcard'
-
+} from '../../../components/FilteredConnection'
 import { SiteAdminRepositoryFields, UserRepositoriesResult, Maybe } from '../../../graphql-operations'
 
 import { RepositoryNode } from './RepositoryNode'

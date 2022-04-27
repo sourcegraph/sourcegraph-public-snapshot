@@ -1,11 +1,10 @@
-import React, { FunctionComponent } from 'react'
+import { FunctionComponent } from 'react'
 
 import classNames from 'classnames'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 
 import { pluralize } from '@sourcegraph/common'
-import { Icon } from '@sourcegraph/wildcard'
-import { Link } from '@sourcegraph/wildcard/src/components/Link'
+import { Link, Icon } from '@sourcegraph/wildcard'
 
 import {
     NormalizedUploadRetentionMatch,

@@ -202,8 +202,8 @@ function useFormFieldState<FormValues, Key extends keyof FormAPI<FormValues>['in
     setFieldStateReference.current = setFieldState
 
     const setState = useCallback(
-        (trasformer: FieldStateTransformer<FormValues[Key]>) => {
-            setFieldStateReference.current(name, trasformer as FieldStateTransformer<unknown>)
+        (transformer: FieldStateTransformer<FormValues[Key]>) => {
+            setFieldStateReference.current(name, transformer as FieldStateTransformer<unknown>)
         },
         [name]
     )

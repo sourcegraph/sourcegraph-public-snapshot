@@ -8,10 +8,10 @@ import { RouteComponentProps } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { MarketingBlock } from '@sourcegraph/web/src/components/MarketingBlock'
-import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { Link, LoadingSpinner, PageHeader, Badge } from '@sourcegraph/wildcard'
 
+import { MarketingBlock } from '../../components/MarketingBlock'
+import { PageTitle } from '../../components/PageTitle'
 import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import {
     GetStartedPageDataResult,
@@ -247,7 +247,7 @@ export const OpenBetaGetStartedPage: React.FunctionComponent<Props> = ({
         (queryResult && !showGetStartPage(queryResult, org.name, openBetaEnabled, isSourcegraphDotCom))
 
     useEffect(() => {
-        eventLogger.logViewEvent('OrganizationGetStarted', { organizationId: org.id })
+        eventLogger.logPageView('OrganizationGetStarted', { organizationId: org.id })
     }, [org.id])
 
     useEffect(() => {

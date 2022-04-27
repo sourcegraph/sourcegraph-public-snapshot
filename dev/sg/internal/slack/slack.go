@@ -28,9 +28,12 @@ func NewClient(ctx context.Context) (*slack.Client, error) {
 
 // retrieveToken obtains a token either from the cached configuration or by asking the user for it.
 func retrieveToken(ctx context.Context) (string, error) {
-	sec := secrets.FromContext(ctx)
+	sec, err := secrets.FromContext(ctx)
+	if err != nil {
+		return "", err
+	}
 	tok := slackToken{}
-	err := sec.Get("slack", &tok)
+	err = sec.Get("slack", &tok)
 	if errors.Is(err, secrets.ErrSecretNotFound) {
 		str, err := getTokenFromUser()
 		if err != nil {

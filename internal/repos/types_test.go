@@ -145,7 +145,7 @@ func TestSyncRateLimiters(t *testing.T) {
 					return svcs[listCalled-1 : listCalled], nil
 				},
 			},
-			limit: 1,
+			pageSize: 1,
 		}
 
 		err := r.SyncRateLimiters(ctx)

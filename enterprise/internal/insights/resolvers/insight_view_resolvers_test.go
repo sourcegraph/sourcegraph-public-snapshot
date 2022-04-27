@@ -5,9 +5,10 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	internalTypes "github.com/sourcegraph/sourcegraph/internal/types"
 
-	insightsdbtesting "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/dbtesting"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 
 	"github.com/google/go-cmp/cmp"
 
@@ -19,11 +20,16 @@ func addrStr(input string) *string {
 }
 
 func TestFilterRepositories(t *testing.T) {
+	ctx := context.Background()
 	tests := []struct {
-		name         string
-		repositories []string
-		filters      types.InsightViewFilters
-		want         []string
+		name           string
+		repositories   []string
+		filters        types.InsightViewFilters
+		want           []string
+		searchContexts []struct {
+			name  string
+			query string
+		}
 	}{
 		{name: "test one exclude",
 			repositories: []string{"github.com/sourcegraph/sourcegraph", "gitlab.com/myrepo/repo"},
@@ -55,10 +61,81 @@ func TestFilterRepositories(t *testing.T) {
 			filters:      types.InsightViewFilters{IncludeRepoRegex: addrStr(".*")},
 			want:         []string{"github.com/sourcegraph/sourcegraph", "gitlab.com/myrepo/repo", "gitlab.com/yourrepo/yourrepo"},
 		},
+		{name: "test context include",
+			repositories: []string{"github.com/sourcegraph/sourcegraph", "gitlab.com/myrepo/repo", "gitlab.com/yourrepo/yourrepo"},
+			filters:      types.InsightViewFilters{SearchContexts: []string{"@dev/mycontext123"}},
+			searchContexts: []struct {
+				name  string
+				query string
+			}{
+				{name: "@dev/mycontext123", query: "repo:^github\\.com/sourcegraph/.*"},
+			},
+			want: []string{"github.com/sourcegraph/sourcegraph"},
+		},
+		{name: "test context exclude",
+			repositories: []string{"github.com/sourcegraph/sourcegraph", "gitlab.com/myrepo/repo", "gitlab.com/yourrepo/yourrepo"},
+			filters:      types.InsightViewFilters{SearchContexts: []string{"@dev/mycontext123"}},
+			searchContexts: []struct {
+				name  string
+				query string
+			}{
+				{name: "@dev/mycontext123", query: "-repo:^github\\.com/sourcegraph/.*"},
+			},
+			want: []string{"gitlab.com/myrepo/repo", "gitlab.com/yourrepo/yourrepo"},
+		},
+		{name: "test context exclude include",
+			repositories: []string{"github.com/sourcegraph/sourcegraph", "gitlab.com/myrepo/repo", "gitlab.com/yourrepo/yourrepo"},
+			filters:      types.InsightViewFilters{SearchContexts: []string{"@dev/mycontext123"}},
+			searchContexts: []struct {
+				name  string
+				query string
+			}{
+				{name: "@dev/mycontext123", query: "-repo:^github.* repo:myrepo"},
+			},
+			want: []string{"gitlab.com/myrepo/repo"},
+		},
+		{name: "test context exclude regex include",
+			repositories: []string{"github.com/sourcegraph/sourcegraph", "gitlab.com/myrepo/repo", "gitlab.com/yourrepo/yourrepo"},
+			filters:      types.InsightViewFilters{SearchContexts: []string{"@dev/mycontext123"}, IncludeRepoRegex: addrStr("myrepo")},
+			searchContexts: []struct {
+				name  string
+				query string
+			}{
+				{name: "@dev/mycontext123", query: "-repo:^github.*"},
+			},
+			want: []string{"gitlab.com/myrepo/repo"},
+		},
+		{name: "test context include regex exclude",
+			repositories: []string{"github.com/sourcegraph/sourcegraph", "gitlab.com/myrepo/repo", "gitlab.com/yourrepo/yourrepo"},
+			filters:      types.InsightViewFilters{SearchContexts: []string{"@dev/mycontext123"}, ExcludeRepoRegex: addrStr("^github.*")},
+			searchContexts: []struct {
+				name  string
+				query string
+			}{
+				{name: "@dev/mycontext123", query: "repo:myrepo"},
+			},
+			want: []string{"gitlab.com/myrepo/repo"},
+		},
+		{name: "test context and regex include",
+			repositories: []string{"github.com/sourcegraph/sourcegraph", "gitlab.com/myrepo/repo", "gitlab.com/yourrepo/yourrepo"},
+			filters:      types.InsightViewFilters{SearchContexts: []string{"@dev/mycontext123"}, IncludeRepoRegex: addrStr("myrepo")},
+			searchContexts: []struct {
+				name  string
+				query string
+			}{
+				{name: "@dev/mycontext123", query: "repo:gitlab"},
+			},
+			want: []string{"gitlab.com/myrepo/repo"},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got, err := filterRepositories(test.filters, test.repositories)
+			mocks := make(map[string]*internalTypes.SearchContext)
+			for _, searchContextDef := range test.searchContexts {
+				mocks[searchContextDef.name] = &internalTypes.SearchContext{Name: searchContextDef.name, Query: searchContextDef.query}
+			}
+
+			got, err := filterRepositories(ctx, test.filters, test.repositories, &fakeSearchContextLoader{mocks: mocks})
 			if err != nil {
 				t.Error(err)
 			}
@@ -84,12 +161,11 @@ func TestFrozenInsightDataSeriesResolver(t *testing.T) {
 		}
 	})
 	t.Run("insight_is_not_frozen_returns_real_resolvers", func(t *testing.T) {
-		timescale, cleanup := insightsdbtesting.TimescaleDB(t)
-		defer cleanup()
+		insightsDB := dbtest.NewInsightsDB(t)
 		base := baseInsightResolver{
-			insightStore:   store.NewInsightStore(timescale),
-			dashboardStore: store.NewDashboardStore(timescale),
-			insightsDB:     timescale,
+			insightStore:   store.NewInsightStore(insightsDB),
+			dashboardStore: store.NewDashboardStore(insightsDB),
+			insightsDB:     insightsDB,
 		}
 
 		series, err := base.insightStore.CreateSeries(ctx, types.InsightSeries{
@@ -128,4 +204,12 @@ func TestFrozenInsightDataSeriesResolver(t *testing.T) {
 			t.Errorf("unexpected results from unfrozen data series resolver")
 		}
 	})
+}
+
+type fakeSearchContextLoader struct {
+	mocks map[string]*internalTypes.SearchContext
+}
+
+func (f *fakeSearchContextLoader) GetByName(ctx context.Context, name string) (*internalTypes.SearchContext, error) {
+	return f.mocks[name], nil
 }

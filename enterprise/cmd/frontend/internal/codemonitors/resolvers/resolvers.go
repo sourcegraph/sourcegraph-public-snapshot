@@ -419,7 +419,7 @@ func sendTestEmail(ctx context.Context, recipient graphql.ID, description string
 	if orgID != 0 {
 		return nil
 	}
-	data := background.NewTestTemplateDataForNewSearchResults(ctx, description)
+	data := background.NewTestTemplateDataForNewSearchResults(description)
 	return background.SendEmailForNewSearchResult(ctx, userID, data)
 }
 

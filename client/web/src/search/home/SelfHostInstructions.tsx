@@ -7,14 +7,15 @@ import DownloadIcon from 'mdi-react/DownloadIcon'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { MarketingBlock } from '@sourcegraph/web/src/components/MarketingBlock'
 import { Button, Link, Icon } from '@sourcegraph/wildcard'
+
+import { MarketingBlock } from '../../components/MarketingBlock'
 
 import styles from './SelfHostInstructions.module.scss'
 
 export const SelfHostInstructions: React.FunctionComponent<TelemetryProps> = ({ telemetryService }) => {
     const dockerCommand =
-        'docker run --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm --volume ~/.sourcegraph/config:/etc/sourcegraph --volume ~/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.38.0'
+        'docker run --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm --volume ~/.sourcegraph/config:/etc/sourcegraph --volume ~/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.39.1'
 
     const copyTooltip = 'Copy command'
     const copyCompletedTooltip = 'Copied!'

@@ -45,7 +45,7 @@ As part of this service you will receive a number of benefits from our team, inc
 
 ## Backup and Restore
 
-- Snapshots are taken every week and kept for 90 days. 
+- Snapshots are taken every week and kept for 90 days.
 
 ## Training, feedback, and engagement
 
@@ -78,6 +78,8 @@ As with any Sourcegraph enterprise customer, you will also receive support from 
 # Security
 
 Your managed instance will be accessible over HTTPS/TLS, provide storage volumes that are encrypted at rest, and would have access restricted to only your team through your enterprise VPN and/or internal [SSO (single sign-on provider)](../auth/index.md) of choice.
+
+If you decide for your manged instance to be public, we will provide security capabilities from Cloudflare such as WAF and rate-limiting. We will also provide a firewall to protect your instance from malicious traffic.
 
 It will be hosted in completely isolated Google Cloud infrastructure, with minimal access even within the Sourcegraph team, both for security and billing purposes. See our [employee handbook](https://handbook.sourcegraph.com/engineering/enablement/delivery/managed#technical-details) to learn more about the cloud architecture we use. Both your team and limited Sourcegraph personnel will have application-level administrator access to the instance.
 

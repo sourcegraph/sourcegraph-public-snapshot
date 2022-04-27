@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { RouteComponentProps } from 'react-router'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
@@ -47,6 +45,20 @@ export const enterpriseOrganizationAreaRoutes: readonly OrgAreaRoute[] = [
                 {...props}
                 initialNamespaceID={props.org.id}
                 batchChangeName={match.params.batchChangeName}
+            />
+        ),
+        condition: ({ batchChangesEnabled, batchChangesExecutionEnabled }) =>
+            batchChangesEnabled && batchChangesExecutionEnabled,
+        fullPage: true,
+    },
+    {
+        path: '/batch-changes/:batchChangeName/executions/:batchSpecID/configuration',
+        render: ({ match, ...props }: OrgAreaPageProps & RouteComponentProps<{ batchChangeName: string }>) => (
+            <CreateOrEditBatchChangePage
+                {...props}
+                initialNamespaceID={props.org.id}
+                batchChangeName={match.params.batchChangeName}
+                isReadOnly={true}
             />
         ),
         condition: ({ batchChangesEnabled, batchChangesExecutionEnabled }) =>

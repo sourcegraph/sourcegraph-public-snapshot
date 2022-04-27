@@ -1,16 +1,45 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
 .search-notebook-page {
     background: var(--color-bg-1);
-    overflow: auto;
+    overflow: hidden;
+    display: flex;
 }
 
 .spacer {
     // Allows scrolling past last blocks in the notebook
     // for easier editing.
-    height: 30rem;
+    height: 80vh;
 }
 
 .auto-save-indicator {
     font-size: 1rem !important;
     width: 1rem !important;
     height: 1rem !important;
+}
+
+.side-column {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    margin-right: 1rem;
+
+    @media (--lg-breakpoint-down) {
+        display: none;
+    }
+}
+
+.center-column {
+    flex: 3;
+    overflow: hidden auto;
+    min-width: #{$viewport-lg};
+
+    .content {
+        max-width: #{$viewport-xl};
+        padding: 0 1rem;
+    }
+
+    @media (--lg-breakpoint-down) {
+        min-width: 0;
+    }
 }

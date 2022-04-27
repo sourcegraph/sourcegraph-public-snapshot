@@ -7,8 +7,9 @@ import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import MenuIcon from 'mdi-react/MenuIcon'
 import { LinkProps, NavLink as RouterLink } from 'react-router-dom'
 
-import { PageRoutes } from '@sourcegraph/web/src/routes.constants'
 import { Button, Link, Icon } from '@sourcegraph/wildcard'
+
+import { PageRoutes } from '../../routes.constants'
 
 import navActionStyles from './NavAction.module.scss'
 import navBarStyles from './NavBar.module.scss'

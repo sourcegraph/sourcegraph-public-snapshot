@@ -263,7 +263,7 @@ export const OrgPendingInvitesPage: React.FunctionComponent<Props> = ({
     const query = useQueryStringParameters()
     const openInviteModal = !!query.get('openInviteModal')
     useEffect(() => {
-        eventLogger.logViewEvent('OrganizationPendingInvites', { organizationId: orgId })
+        eventLogger.logPageView('OrganizationPendingInvites', { organizationId: orgId })
     }, [orgId])
 
     const [invite, setInvite] = useState<IModalInviteResult>()

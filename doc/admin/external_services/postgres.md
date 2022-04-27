@@ -48,7 +48,7 @@ Add the following to your `docker run` command:
   This uses line breaks that are rendered but not copy-pasted to the clipboard.
 -->
 
-<pre class="pre-wrap start-sourcegraph-command"><code>docker run [...]<span class="virtual-br"></span> -e PGHOST=psql1.mycompany.org<span class="virtual-br"></span> -e PGUSER=sourcegraph<span class="virtual-br"></span> -e PGPASSWORD=secret<span class="virtual-br"></span> -e PGDATABASE=sourcegraph<span class="virtual-br"></span> -e PGSSLMODE=require<span class="virtual-br"> -e CODEINTEL_PGHOST=psql2.mycompany.org<span class="virtual-br"></span> -e CODEINTEL_PGUSER=sourcegraph<span class="virtual-br"></span> -e CODEINTEL_PGPASSWORD=secret<span class="virtual-br"></span> -e CODEINTEL_PGDATABASE=sourcegraph-codeintel<span class="virtual-br"></span> -e CODEINTEL_PGSSLMODE=require<span class="virtual-br"></span> sourcegraph/server:3.38.0</code></pre>
+<pre class="pre-wrap start-sourcegraph-command"><code>docker run [...]<span class="virtual-br"></span> -e PGHOST=psql1.mycompany.org<span class="virtual-br"></span> -e PGUSER=sourcegraph<span class="virtual-br"></span> -e PGPASSWORD=secret<span class="virtual-br"></span> -e PGDATABASE=sourcegraph<span class="virtual-br"></span> -e PGSSLMODE=require<span class="virtual-br"> -e CODEINTEL_PGHOST=psql2.mycompany.org<span class="virtual-br"></span> -e CODEINTEL_PGUSER=sourcegraph<span class="virtual-br"></span> -e CODEINTEL_PGPASSWORD=secret<span class="virtual-br"></span> -e CODEINTEL_PGDATABASE=sourcegraph-codeintel<span class="virtual-br"></span> -e CODEINTEL_PGSSLMODE=require<span class="virtual-br"></span> sourcegraph/server:3.39.1</code></pre>
 
 ### Docker Compose
 
@@ -154,7 +154,7 @@ When [PgBouncer] is used, we need to include `statement_cache_mode=describe` in 
 
 Add the following to your `docker run` command:
 
-<pre class="pre-wrap start-sourcegraph-command"><code>docker run [...]<span class="virtual-br"></span> -e PGDATASOURCE="postgres://username:password@sourcegraph-pgbouncer.mycompany.com:5432/sg?statement_cache_mode=describe"<span class="virtual-br"></span> -e CODEINSIGHTS_PGDATASOURCE="postgres://username:password@sourcegraph-codeintel-pgbouncer.mycompany.com:5432/sg?statement_cache_mode=describe"<span class="virtual-br"></span> sourcegraph/server:3.38.0</code></pre>
+<pre class="pre-wrap start-sourcegraph-command"><code>docker run [...]<span class="virtual-br"></span> -e PGDATASOURCE="postgres://username:password@sourcegraph-pgbouncer.mycompany.com:5432/sg?statement_cache_mode=describe"<span class="virtual-br"></span> -e CODEINSIGHTS_PGDATASOURCE="postgres://username:password@sourcegraph-codeintel-pgbouncer.mycompany.com:5432/sg?statement_cache_mode=describe"<span class="virtual-br"></span> sourcegraph/server:3.39.1</code></pre>
 
 ### Docker Compose
 
@@ -300,7 +300,6 @@ spec:
 ## Postgres Permissions and Database Migrations
 
 There is a tight coupling between the respective database service accounts for the Frontend DB, CodeIntel DB and Sourcegraph [database migrations](../../dev/background-information/sql/migrations.md). 
-Currently the Code Insights database uses TimescaleDB. We do not offer support for running the Code Insights database as an external service.
 
 By default, the migrations that Sourcegraph runs expect `SUPERUSER` permissions. Sourcegraph migrations contain SQL that enable extensions and modify roles.
 

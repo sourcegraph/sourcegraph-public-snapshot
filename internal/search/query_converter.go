@@ -2,7 +2,6 @@ package search
 
 import (
 	"regexp/syntax" //nolint:depguard // zoekt requires this pkg
-	"strconv"
 	"strings"
 	"time"
 
@@ -78,9 +77,8 @@ func mapSlice(values []string, f func(string) string) []string {
 }
 
 func count(q query.Basic, p Protocol) int {
-	if count := q.GetCount(); count != "" {
-		v, _ := strconv.Atoi(count) // Invariant: count is validated.
-		return v
+	if count := q.Count(); count != nil {
+		return *count
 	}
 
 	if q.IsStructural() {
@@ -164,7 +162,7 @@ func TimeoutDuration(b query.Basic) time.Duration {
 	timeout := b.GetTimeout()
 	if timeout != nil {
 		d = *timeout
-	} else if b.GetCount() != "" {
+	} else if b.Count() != nil {
 		// If `count:` is set but `timeout:` is not explicitly set, use the max timeout
 		d = maxTimeout
 	}
@@ -290,7 +288,7 @@ func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *Features, 
 	filesExclude = append(filesExclude, mapSlice(langExclude, LangToFileRegexp)...)
 	filesReposMustInclude, filesReposMustExclude := b.IncludeExcludeValues(query.FieldRepoHasFile)
 
-	if typ == SymbolRequest {
+	if typ == SymbolRequest && q != nil {
 		// Tell zoekt q must match on symbols
 		q = &zoekt.Symbol{
 			Expr: q,
@@ -363,9 +361,9 @@ func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *Features, 
 
 // ComputeResultTypes returns result types based three inputs: `type:...` in the query,
 // the `pattern`, and top-level `searchType` (coming from a GQL value).
-func ComputeResultTypes(types []string, pattern string, searchType query.SearchType) result.Types {
+func ComputeResultTypes(types []string, b query.Basic, searchType query.SearchType) result.Types {
 	var rts result.Types
-	if searchType == query.SearchTypeStructural && pattern != "" {
+	if searchType == query.SearchTypeStructural && !b.IsEmptyPattern() {
 		rts = result.TypeStructural
 	} else {
 		if len(types) == 0 {

@@ -9,10 +9,11 @@ import (
 	"strings"
 
 	kms "cloud.google.com/go/kms/apiv1"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"google.golang.org/api/option"
 	kmspb "google.golang.org/genproto/googleapis/cloud/kms/v1"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -98,6 +99,7 @@ func (k *Key) Decrypt(ctx context.Context, cipherText []byte) (_ *encryption.Sec
 func (k *Key) Encrypt(ctx context.Context, plaintext []byte) (_ []byte, err error) {
 	defer func() {
 		cryptographicTotal.WithLabelValues("encrypt", strconv.FormatBool(err == nil)).Inc()
+		encryptPayloadSize.WithLabelValues(strconv.FormatBool(err == nil)).Observe(float64(len(plaintext)) / 1024)
 	}()
 
 	// encrypt plaintext

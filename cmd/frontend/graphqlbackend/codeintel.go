@@ -33,12 +33,16 @@ type CodeIntelResolver interface {
 	UpdateCodeIntelligenceConfigurationPolicy(ctx context.Context, args *UpdateCodeIntelligenceConfigurationPolicyArgs) (*EmptyResponse, error)
 	DeleteCodeIntelligenceConfigurationPolicy(ctx context.Context, args *DeleteCodeIntelligenceConfigurationPolicyArgs) (*EmptyResponse, error)
 
+	RepositorySummary(ctx context.Context, id graphql.ID) (CodeIntelRepositorySummaryResolver, error)
 	IndexConfiguration(ctx context.Context, id graphql.ID) (IndexConfigurationResolver, error) // TODO - rename ...ForRepo
 	UpdateRepositoryIndexConfiguration(ctx context.Context, args *UpdateRepositoryIndexConfigurationArgs) (*EmptyResponse, error)
 	PreviewRepositoryFilter(ctx context.Context, args *PreviewRepositoryFilterArgs) (RepositoryFilterPreviewResolver, error)
 	PreviewGitObjectFilter(ctx context.Context, id graphql.ID, args *PreviewGitObjectFilterArgs) ([]GitObjectFilterPreviewResolver, error)
 	NodeResolvers() map[string]NodeByIDFunc
 	DocumentationSearch(ctx context.Context, args *DocumentationSearchArgs) (DocumentationSearchResultsResolver, error)
+
+	RequestLanguageSupport(ctx context.Context, args *RequestLanguageSupportArgs) (*EmptyResponse, error)
+	RequestedLanguageSupport(ctx context.Context) ([]string, error)
 
 	ExecutorResolver() executor.Resolver
 }
@@ -76,6 +80,7 @@ type LSIFUploadResolver interface {
 	StartedAt() *DateTime
 	FinishedAt() *DateTime
 	InputIndexer() string
+	Indexer() CodeIntelIndexerResolver
 	PlaceInQueue() *int32
 	AssociatedIndex(ctx context.Context) (LSIFIndexResolver, error)
 	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
@@ -105,6 +110,7 @@ type LSIFIndexResolver interface {
 	InputCommit() string
 	InputRoot() string
 	InputIndexer() string
+	Indexer() CodeIntelIndexerResolver
 	QueuedAt() DateTime
 	State() string
 	Failure() *string
@@ -296,6 +302,25 @@ type DeleteCodeIntelligenceConfigurationPolicyArgs struct {
 	Policy graphql.ID
 }
 
+type CodeIntelRepositorySummaryResolver interface {
+	RecentUploads() []LSIFUploadsWithRepositoryNamespaceResolver
+	RecentIndexes() []LSIFIndexesWithRepositoryNamespaceResolver
+	LastUploadRetentionScan() *DateTime
+	LastIndexScan() *DateTime
+}
+
+type LSIFUploadsWithRepositoryNamespaceResolver interface {
+	Root() string
+	Indexer() CodeIntelIndexerResolver
+	Uploads() []LSIFUploadResolver
+}
+
+type LSIFIndexesWithRepositoryNamespaceResolver interface {
+	Root() string
+	Indexer() CodeIntelIndexerResolver
+	Indexes() []LSIFIndexResolver
+}
+
 type IndexConfigurationResolver interface {
 	Configuration(ctx context.Context) (*string, error)
 	InferredConfiguration(ctx context.Context) (*string, error)
@@ -402,5 +427,9 @@ type CodeIntelIndexerResolver interface {
 
 type SearchBasedSupportResolver interface {
 	SupportLevel() string
-	Language() *string
+	Language() string
+}
+
+type RequestLanguageSupportArgs struct {
+	Language string
 }

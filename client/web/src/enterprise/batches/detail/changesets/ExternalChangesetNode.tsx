@@ -15,10 +15,10 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { InputTooltip } from '@sourcegraph/web/src/components/InputTooltip'
 import { Button, Alert, Icon } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../../components/diff/DiffStat'
+import { InputTooltip } from '../../../../components/InputTooltip'
 import { ChangesetSpecType, ExternalChangesetFields } from '../../../../graphql-operations'
 import {
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
@@ -81,6 +81,10 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
         selectable?.onSelect(node.id)
     }, [selectable, node.id])
 
+    const tooltipLabel = viewerCanAdminister
+        ? 'Click to select changeset for bulk operation'
+        : 'You do not have permission to perform this operation'
+
     return (
         <>
             <Button
@@ -103,11 +107,8 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                         checked={selected}
                         onChange={toggleSelected}
                         disabled={!viewerCanAdminister}
-                        tooltip={
-                            viewerCanAdminister
-                                ? 'Click to select changeset for bulk operation'
-                                : 'You do not have permission to perform this operation'
-                        }
+                        tooltip={tooltipLabel}
+                        aria-label={tooltipLabel}
                     />
                 </div>
             ) : (

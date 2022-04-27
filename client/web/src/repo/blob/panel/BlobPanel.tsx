@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 
 import * as H from 'history'
 import { from, Observable, ReplaySubject, Subscription } from 'rxjs'
@@ -236,7 +236,7 @@ export function useBlobPanelViews({
                 panelDefinitions.push({
                     id: 'references',
                     provider: panelSubjectChanges.pipe(
-                        map(({ repoName, commitID, position, revision, filePath, history, location }) => ({
+                        map(({ position, history, location }) => ({
                             title: 'References',
                             content: '',
                             priority: 180,
@@ -256,14 +256,6 @@ export function useBlobPanelViews({
                                     extensionsController={extensionsController}
                                     telemetryService={telemetryService}
                                     key="references"
-                                    token={{
-                                        repoName,
-                                        commitID,
-                                        revision,
-                                        filePath,
-                                        line: position.line,
-                                        character: position.character,
-                                    }}
                                     externalHistory={history}
                                     externalLocation={location}
                                 />

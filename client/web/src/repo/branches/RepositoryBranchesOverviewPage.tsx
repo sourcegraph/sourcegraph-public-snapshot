@@ -27,7 +27,7 @@ interface Data {
     hasMoreActiveBranches: boolean
 }
 
-const queryGitBranches = memoizeObservable(
+export const queryGitBranches = memoizeObservable(
     (args: { repo: Scalars['ID']; first: number }): Observable<Data> =>
         queryGraphQL(
             gql`

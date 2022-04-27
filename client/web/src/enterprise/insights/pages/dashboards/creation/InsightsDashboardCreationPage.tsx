@@ -12,7 +12,7 @@ import { PageTitle } from '../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../components'
 import { CodeInsightsPage } from '../../../components/code-insights-page/CodeInsightsPage'
 import { FORM_ERROR, SubmissionErrors } from '../../../components/form/hooks/useForm'
-import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
+import { CodeInsightsBackendContext } from '../../../core'
 import { useUiFeatures } from '../../../hooks/use-ui-features'
 
 import {
@@ -63,7 +63,7 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDash
 
     return (
         <CodeInsightsPage className={classNames('col-8', styles.page)}>
-            <PageTitle title="Add new dashboard" />
+            <PageTitle title="Add dashboard - Code Insights" />
 
             <PageHeader path={[{ icon: CodeInsightsIcon }, { text: 'Add new dashboard' }]} />
 

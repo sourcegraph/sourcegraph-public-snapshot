@@ -29,7 +29,7 @@ Running just Grafana is a convenient way to validate dashboards.
 
 When doing so, you may wish to connect Grafana to a remote Prometheus instance that you have administrator access to (such as [Sourcegraph's instances](https://handbook.sourcegraph.com/engineering/deployments/instances)), to show more real data than is available on your dev server.
 
-For Kubernetes deployments, you can accomplish this by creating a [sg.config.overwrite.yaml file](../background-information/sg/index.md#Configuration) that replaces your local Prometheus instance with a `kubectl` command that port-forwards traffic from the Prometheus service on the Kubernetes cluster that you're currently connected to:
+For Kubernetes deployments, you can accomplish this by creating a [`sg.config.overwrite.yaml` file](../background-information/sg/index.md#Configuration) that replaces your local Prometheus instance with a `kubectl` command that port-forwards traffic from the Prometheus service on the Kubernetes cluster that you're currently connected to:
 
 ```yaml
 # sg.config.overwrite.yaml
@@ -54,7 +54,7 @@ sg start monitoring
 
 Grafana dashboards will be available at `localhost:3370`.
 
-:information_source: If you are on Linux and are also running [ufw](https://wiki.archlinux.org/title/Uncomplicated_Firewall) for your firewall, the Grafana dashboard might show a `Bad gateway` error. Although not recommended, disabling the firewall is a quick hack to make this work but it should be possible to get `ufw` to play along with `docker` nicely with some research (not covered in this document).
+> NOTE:  If you are on Linux and are also running [ufw](https://wiki.archlinux.org/title/Uncomplicated_Firewall) for your firewall, the Grafana dashboard might show a `Bad gateway` error. Although not recommended, disabling the firewall is a quick hack to make this work but it should be possible to get `ufw` to play along with `docker` nicely with some research (not covered in this document).
 
 Note that instead of `kubectl`, you can replace the command in the `sg.config.overwrite.yaml` above to use whichever port-forwarding mechanism you wish to use to connect to a remote Prometheus instance (as long as Prometheus is available on port `9090` locally).
 The dev targets for Grafana are defined in the following files:

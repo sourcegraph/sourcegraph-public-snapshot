@@ -295,10 +295,6 @@ func (r *RepositoryResolver) ToCommitSearchResult() (*CommitSearchResultResolver
 	return nil, false
 }
 
-func (r *RepositoryResolver) ResultCount() int32 {
-	return 1
-}
-
 func (r *RepositoryResolver) Type(ctx context.Context) (*types.Repo, error) {
 	return r.repo(ctx)
 }
@@ -351,6 +347,10 @@ func (r *RepositoryResolver) IndexConfiguration(ctx context.Context) (IndexConfi
 
 func (r *RepositoryResolver) CodeIntelligenceCommitGraph(ctx context.Context) (CodeIntelligenceCommitGraphResolver, error) {
 	return EnterpriseResolvers.codeIntelResolver.CommitGraph(ctx, r.ID())
+}
+
+func (r *RepositoryResolver) CodeIntelSummary(ctx context.Context) (CodeIntelRepositorySummaryResolver, error) {
+	return EnterpriseResolvers.codeIntelResolver.RepositorySummary(ctx, r.ID())
 }
 
 func (r *RepositoryResolver) PreviewGitObjectFilter(ctx context.Context, args *PreviewGitObjectFilterArgs) ([]GitObjectFilterPreviewResolver, error) {

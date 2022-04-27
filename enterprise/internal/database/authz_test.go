@@ -200,7 +200,6 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-
 			err := s.GrantPendingPermissions(ctx, test.args)
 			if err != nil {
 				t.Fatal(err)
@@ -216,7 +215,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			equal(t, "p.IDs", test.expectRepoIDs, bitmapToArray(p.IDs))
+			equal(t, "p.IDs", test.expectRepoIDs, mapsetToArray(p.IDs))
 		})
 	}
 }
@@ -229,7 +228,7 @@ func TestAuthzStore_AuthorizedRepos(t *testing.T) {
 
 	type update struct {
 		repoID  int32
-		userIDs []uint32
+		userIDs []int32
 	}
 	tests := []struct {
 		name        string
@@ -256,13 +255,13 @@ func TestAuthzStore_AuthorizedRepos(t *testing.T) {
 			updates: []update{
 				{
 					repoID:  1,
-					userIDs: []uint32{1},
+					userIDs: []int32{1},
 				}, {
 					repoID:  2,
-					userIDs: []uint32{1},
+					userIDs: []int32{1},
 				}, {
 					repoID:  3,
-					userIDs: []uint32{1},
+					userIDs: []int32{1},
 				},
 			},
 			expectRepos: []*types.Repo{
@@ -284,7 +283,7 @@ func TestAuthzStore_AuthorizedRepos(t *testing.T) {
 			updates: []update{
 				{
 					repoID:  1,
-					userIDs: []uint32{1},
+					userIDs: []int32{1},
 				},
 			},
 			expectRepos: []*types.Repo{},
@@ -298,7 +297,7 @@ func TestAuthzStore_AuthorizedRepos(t *testing.T) {
 				err := s.store.SetRepoPermissions(ctx, &authz.RepoPermissions{
 					RepoID:  update.repoID,
 					Perm:    authz.Read,
-					UserIDs: toBitmap(update.userIDs...),
+					UserIDs: toMapset(update.userIDs...),
 				})
 				if err != nil {
 					t.Fatal(err)
@@ -325,7 +324,7 @@ func TestAuthzStore_RevokeUserPermissions(t *testing.T) {
 	if err := s.store.SetRepoPermissions(ctx, &authz.RepoPermissions{
 		RepoID:  1,
 		Perm:    authz.Read,
-		UserIDs: toBitmap(1),
+		UserIDs: toMapset(1),
 	}); err != nil {
 		t.Fatal(err)
 	}
