@@ -427,8 +427,10 @@ func (s *Server) SyncRepoState(interval time.Duration, batchSize, perSecond int)
 		previousAddrs = currentAddrs
 
 		gitServerAddrs := gitserver.GitServerAddresses{
-			Addresses:     addrs,
-			PinnedServers: cfg.ExperimentalFeatures.GitServerPinnedRepos,
+			Addresses: addrs,
+		}
+		if cfg.ExperimentalFeatures != nil {
+			gitServerAddrs.PinnedServers = cfg.ExperimentalFeatures.GitServerPinnedRepos
 		}
 		if err := s.syncRepoState(gitServerAddrs, batchSize, perSecond, fullSync); err != nil {
 			log15.Error("Syncing repo state", "error ", err)
