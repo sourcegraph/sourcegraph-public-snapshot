@@ -24,7 +24,7 @@ func NewMatchContextRequest(baseURL string, query string) (*stdhttp.Request, err
 }
 
 type ComputeMatchContextStreamDecoder struct {
-	OnResult  func(ctx []compute.MatchContext)
+	OnResult  func(results []compute.MatchContext)
 	OnUnknown func(event, data []byte)
 }
 

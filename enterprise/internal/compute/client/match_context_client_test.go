@@ -19,8 +19,8 @@ data: {}`
 	resultCount := 0
 	unknownCount := 0
 	decoder := ComputeMatchContextStreamDecoder{
-		OnResult: func(matches []compute.MatchContext) {
-			resultCount += len(matches)
+		OnResult: func(results []compute.MatchContext) {
+			resultCount += len(results)
 		},
 		OnUnknown: func(event, data []byte) {
 			unknownCount++
