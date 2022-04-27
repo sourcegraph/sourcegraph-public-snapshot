@@ -158,7 +158,7 @@ func (h *handler) markFailed(ctx context.Context, executorName string, jobID int
 func (h *handler) heartbeat(ctx context.Context, executor types.Executor, ids []int) (knownIDs []int, err error) {
 	// Write this heartbeat to the database so that we can populate the UI with recent executor activity.
 	if err := h.executorStore.UpsertHeartbeat(ctx, executor); err != nil {
-		log.NamedError("Failed to upsert executor heartbeat", err)
+		logger.Error("Failed to upsert executor heartbeat", log.Error(err))
 	}
 
 	knownIDs, err = h.Store.Heartbeat(ctx, ids, store.HeartbeatOptions{
