@@ -1,4 +1,4 @@
-oimport { storiesOf } from '@storybook/react'
+import { storiesOf } from '@storybook/react'
 
 import { WebStory } from '../../../../components/WebStory'
 import {
