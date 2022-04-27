@@ -1,9 +1,11 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
 
 import { ForwardReferenceComponent } from '../..'
 
 import { ICON_SIZES } from './constants'
+
 import styles from './IconStyle.module.scss'
 
 export interface IconStyleProps {

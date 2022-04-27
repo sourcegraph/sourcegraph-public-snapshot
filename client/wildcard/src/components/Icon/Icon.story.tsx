@@ -1,3 +1,5 @@
+import React from 'react'
+
 import { mdiCheck } from '@mdi/js'
 import { Story, Meta } from '@storybook/react'
 import CheckIcon from 'mdi-react/CheckIcon'

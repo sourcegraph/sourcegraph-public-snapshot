@@ -1,3 +1,5 @@
+import React from 'react'
+
 import MDIIcon from '@mdi/react'
 import { MdiReactIconComponentType, MdiReactIconProps } from 'mdi-react'
 
