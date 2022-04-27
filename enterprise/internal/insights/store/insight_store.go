@@ -456,6 +456,8 @@ func scanInsightViewSeries(rows *sql.Rows, queryErr error) (_ []types.InsightVie
 			&temp.GenerationMethod,
 			&temp.IsFrozen,
 			pq.Array(&temp.DefaultFilterSearchContexts),
+			&temp.SortSeriesBy,
+			&temp.DisplayNumSeries,
 		); err != nil {
 			return []types.InsightViewSeries{}, err
 		}
@@ -581,6 +583,8 @@ func (s *InsightStore) UpdateView(ctx context.Context, view types.InsightView) (
 		pq.Array(view.Filters.SearchContexts),
 		view.OtherThreshold,
 		view.PresentationType,
+		view.SortSeriesBy,
+		view.DisplayNumSeries,
 		view.UniqueID,
 	))
 	var id int
@@ -894,7 +898,7 @@ returning id;`
 const updateInsightViewSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:UpdateView
 UPDATE insight_view SET title = %s, description = %s, default_filter_include_repo_regex = %s, default_filter_exclude_repo_regex = %s,
-default_filter_search_contexts = %s, other_threshold = %s, presentation_type = %s
+default_filter_search_contexts = %s, other_threshold = %s, presentation_type = %s, sort_series_by = %s, display_num_series = %s
 WHERE unique_id = %s
 RETURNING id;`
 
@@ -914,7 +918,7 @@ i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
 i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
 i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex,
 iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method, iv.is_frozen,
-default_filter_search_contexts
+default_filter_search_contexts, iv.sort_series_by, iv.display_num_series
 FROM (%s) iv
          JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
          JOIN insight_series i ON ivs.insight_series_id = i.id
@@ -928,7 +932,7 @@ i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
 i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
 i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex,
 iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method, iv.is_frozen,
-default_filter_search_contexts
+default_filter_search_contexts, iv.sort_series_by, iv.display_num_series
 FROM dashboard_insight_view as dbiv
 		 JOIN insight_view iv ON iv.id = dbiv.insight_view_id
          JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
@@ -970,7 +974,7 @@ SELECT iv.id, 0 as dashboard_insight_id, iv.unique_id, iv.title, iv.description,
        i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
        i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex,
 	   iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method, iv.is_frozen,
-default_filter_search_contexts
+default_filter_search_contexts, iv.sort_series_by, iv.display_num_series
 FROM insight_view iv
 JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
 JOIN insight_series i ON ivs.insight_series_id = i.id

@@ -34,6 +34,8 @@ type InsightViewSeries struct {
 	JustInTime                    bool
 	GenerationMethod              GenerationMethod
 	IsFrozen                      bool
+	SortSeriesBy                  SortSeriesBy
+	DisplayNumSeries              int32
 }
 
 type Insight struct {
@@ -71,6 +73,8 @@ type InsightView struct {
 	OtherThreshold   *float64
 	PresentationType PresentationType
 	IsFrozen         bool
+	SortSeriesBy     SortSeriesBy
+	DisplayNumSeries int32
 }
 
 // InsightSeries is a single data series for a Code Insight. This contains some metadata about the data series, as well
@@ -162,3 +166,12 @@ type Frame struct {
 	To     time.Time
 	Commit string
 }
+
+type SortSeriesBy string
+
+const (
+	HighestResultCount  SortSeriesBy = "HIGHEST_RESULT_COUNT"
+	LowestResultCount   SortSeriesBy = "LOWEST_RESULT_COUNT"
+	AscLexicographical  SortSeriesBy = "ASC_LEXICOGRAPHICAL"
+	DescLexicographical SortSeriesBy = "DESC_LEXICOGRAPHICAL"
+)

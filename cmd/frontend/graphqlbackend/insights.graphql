@@ -614,6 +614,24 @@ input InsightViewControlsInput {
     Input for the default filters for an insight.
     """
     filters: InsightViewFiltersInput!
+    """
+    Input for series' sort order.
+    """
+    sortSeriesBy: SeriesSortOrder
+    """
+    Input for the number of series to display.
+    """
+    displayNumSeries: Int
+}
+
+"""
+Sort order for series.
+"""
+enum SeriesSortOrder {
+    HIGHEST_RESULT_COUNT
+    LOWEST_RESULT_COUNT
+    ASC_LEXICOGRAPHICAL
+    DESC_LEXICOGRAPHICAL
 }
 
 """

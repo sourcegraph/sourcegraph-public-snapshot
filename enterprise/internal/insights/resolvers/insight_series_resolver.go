@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/inconshreveable/log15"
@@ -381,7 +382,10 @@ func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.Insi
 	statusResolver := NewStatusResolver(status, definition.BackfillQueuedAt)
 
 	var resolvers []graphqlbackend.InsightSeriesResolver
-	for capturedValue, points := range groupedByCapture {
+
+	sortedCaptureGroups := getSortedCaptureGroups(definition.SortSeriesBy, groupedByCapture)
+	for _, capturedValue := range sortedCaptureGroups[0:definition.DisplayNumSeries] {
+		points := groupedByCapture[capturedValue]
 		sort.Slice(points, func(i, j int) bool {
 			return points[i].Time.Before(points[j].Time)
 		})
@@ -418,6 +422,47 @@ func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.Insi
 		})
 	}
 	return resolvers, nil
+}
+
+func getSortedCaptureGroups(sortBy types.SortSeriesBy, captureGroups map[string][]store.SeriesPoint) []string {
+	orderedCaptureGroups := make([][]store.SeriesPoint, 0, len(captureGroups))
+	for _, value := range captureGroups {
+		orderedCaptureGroups = append(orderedCaptureGroups, value)
+	}
+
+	sumPoints := func(points []store.SeriesPoint) float64 {
+		var sum float64
+		for _, point := range points {
+			sum += point.Value
+		}
+		return sum
+	}
+
+	// First sort lexicographically (ascending) to make sure the ordering is consistent even if some result counts are equal.
+	sort.SliceStable(orderedCaptureGroups, func(i, j int) bool {
+		return strings.Compare(*orderedCaptureGroups[i][0].Capture, *orderedCaptureGroups[j][0].Capture) < 0
+	})
+
+	switch sortBy {
+	case types.HighestResultCount:
+		sort.SliceStable(orderedCaptureGroups, func(i, j int) bool {
+			return sumPoints(orderedCaptureGroups[i]) > sumPoints(orderedCaptureGroups[j])
+		})
+	case types.LowestResultCount:
+		sort.SliceStable(orderedCaptureGroups, func(i, j int) bool {
+			return sumPoints(orderedCaptureGroups[i]) < sumPoints(orderedCaptureGroups[j])
+		})
+	case types.DescLexicographical:
+		sort.SliceStable(orderedCaptureGroups, func(i, j int) bool {
+			return strings.Compare(*orderedCaptureGroups[i][0].Capture, *orderedCaptureGroups[j][0].Capture) > 0
+		})
+	}
+
+	groupNames := []string{}
+	for _, group := range orderedCaptureGroups {
+		groupNames = append(groupNames, *group[0].Capture)
+	}
+	return groupNames
 }
 
 func expandCaptureGroupSeriesJustInTime(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {

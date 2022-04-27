@@ -463,13 +463,13 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 		return nil, errors.New("No insight view found with this id")
 	}
 
-	filters := filtersFromInput(&args.Input.ViewControls.Filters)
-
 	view, err := tx.UpdateView(ctx, types.InsightView{
 		UniqueID:         insightViewId,
 		Title:            emptyIfNil(args.Input.PresentationOptions.Title),
-		Filters:          filters,
+		Filters:          filtersFromInput(&args.Input.ViewControls.Filters),
 		PresentationType: types.Line,
+		SortSeriesBy:     sortSeriesByDefaultIfNil(args.Input.ViewControls.SortSeriesBy),
+		DisplayNumSeries: displayNumSeriesDefaultIfNil(args.Input.ViewControls.DisplayNumSeries),
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "UpdateView")
@@ -1026,4 +1026,18 @@ func filtersFromInput(input *graphqlbackend.InsightViewFiltersInput) types.Insig
 		}
 	}
 	return filters
+}
+
+func sortSeriesByDefaultIfNil(sortSeriesByString *string) types.SortSeriesBy {
+	if sortSeriesByString == nil {
+		return types.HighestResultCount
+	}
+	return types.SortSeriesBy(*sortSeriesByString)
+}
+
+func displayNumSeriesDefaultIfNil(displayNumSeries *int32) int32 {
+	if displayNumSeries == nil {
+		return 20
+	}
+	return *displayNumSeries
 }

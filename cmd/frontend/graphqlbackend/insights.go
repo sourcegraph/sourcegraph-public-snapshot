@@ -332,7 +332,9 @@ type PieChartOptionsInput struct {
 }
 
 type InsightViewControlsInput struct {
-	Filters InsightViewFiltersInput
+	Filters          InsightViewFiltersInput
+	SortSeriesBy     *string
+	DisplayNumSeries *int32
 }
 
 type InsightViewFiltersInput struct {
