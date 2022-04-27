@@ -38,6 +38,7 @@ export class GoToRawAction extends React.PureComponent<Props> {
         return (
             <RepoHeaderActionAnchor
                 to={to}
+                target="_blank"
                 onClick={this.onClick.bind(this)}
                 className="btn-icon"
                 data-tooltip={descriptiveText}
