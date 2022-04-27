@@ -15,7 +15,6 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { ReferencesPanelWithMemoryRouter } from './ReferencesPanel'
 import { buildReferencePanelMocks } from './ReferencesPanel.mocks'
-import {} from './ReferencesPanelQueries'
 
 const NOOP_SETTINGS_CASCADE = {
     subjects: null,
