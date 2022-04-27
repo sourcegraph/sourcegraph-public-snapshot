@@ -102,7 +102,7 @@ func (t RunType) Matcher() *RunTypeMatcher {
 		}
 	case VsceReleaseBranch:
 		return &RunTypeMatcher{
-			Branch:      "bext/release",
+			Branch:      "vsce/release",
 			BranchExact: true,
 		}
 
