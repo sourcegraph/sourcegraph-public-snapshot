@@ -222,16 +222,16 @@ func Test_optimizeJobs(t *testing.T) {
 		name  string
 		query string
 	}{{
-		name:  "optimize basic expression (Zoekt Text Global)",
+		name:  "optimize basic expression Zoekt Text Global",
 		query: "foo and bar and not baz",
 	}, {
-		name:  "optimize repo-qualified expression (Zoekt Text over repos)",
+		name:  "optimize repo-qualified expression Zoekt Text over repos",
 		query: "repo:derp foo and bar not baz",
 	}, {
-		name:  "optimize repo-qualified expression (Zoekt Text over repos)",
+		name:  "optimize repo-qualified expression Zoekt Text over repos",
 		query: "repo:derp foo and bar not baz",
 	}, {
-		name:  "optimize qualified repo with type:symbol expression (Zoekt Symbol over repos)",
+		name:  "optimize qualified repo with type:symbol expression Zoekt Symbol over repos",
 		query: "repo:derp foo and bar not baz type:symbol",
 	}, {
 		name:  "commit with and",
