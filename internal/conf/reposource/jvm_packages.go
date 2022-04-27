@@ -3,7 +3,6 @@ package reposource
 import (
 	"fmt"
 	"net/url"
-	"sort"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -64,22 +63,21 @@ type MavenDependency struct {
 	Version string
 }
 
-// SortDependencies sorts the dependencies by the semantic version in descending
-// order. The latest version of a dependency becomes the first element of the
-// slice
-func SortDependencies(dependencies []*MavenDependency) {
-	sort.Slice(dependencies, func(i, j int) bool {
-		if dependencies[i].MavenModule.Equal(dependencies[j].MavenModule) {
-			return versionGreaterThan(dependencies[i].Version, dependencies[j].Version)
-		}
-		return dependencies[i].MavenModule.SortText() > dependencies[j].MavenModule.SortText()
-	})
+func (m *MavenDependency) Equal(o *MavenDependency) bool {
+	return m == o || (m != nil && o != nil &&
+		m.MavenModule.Equal(o.MavenModule) &&
+		m.Version == o.Version)
 }
 
-func (m *MavenDependency) Equal(other *MavenDependency) bool {
-	return m == other || (m != nil && other != nil &&
-		m.MavenModule.Equal(other.MavenModule) &&
-		m.Version == other.Version)
+func (m *MavenDependency) Less(other PackageDependency) bool {
+	o := other.(*MavenDependency)
+
+	if m.MavenModule.Equal(o.MavenModule) {
+		return versionGreaterThan(m.Version, o.Version)
+	}
+
+	// TODO: This SortText method is quite inefficient and allocates.
+	return m.SortText() > o.SortText()
 }
 
 func (d *MavenDependency) PackageManagerSyntax() string {

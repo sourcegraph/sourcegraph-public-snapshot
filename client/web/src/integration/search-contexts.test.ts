@@ -6,6 +6,7 @@ import { test } from 'mocha'
 import { highlightFileResult, mixedSearchStreamEvents } from '@sourcegraph/search'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { ISearchContext } from '@sourcegraph/shared/src/schema'
+import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
@@ -241,7 +242,7 @@ describe('Search contexts', () => {
 
         // Take Snapshot
         await percySnapshotWithVariants(driver.page, 'Create static search context page')
-
+        await accessibilityAudit(driver.page)
         // Click create
         await driver.page.click('[data-testid="search-context-submit-button"]')
 
@@ -315,7 +316,7 @@ describe('Search contexts', () => {
 
         // Take Snapshot
         await percySnapshotWithVariants(driver.page, 'Create dynamic query search context page')
-
+        await accessibilityAudit(driver.page)
         // Click create
         await driver.page.click('[data-testid="search-context-submit-button"]')
 
@@ -588,6 +589,7 @@ describe('Search contexts', () => {
         )
 
         await percySnapshotWithVariants(driver.page, 'Search contexts list page')
+        await accessibilityAudit(driver.page)
     })
 
     test('Switching contexts with empty query', async () => {

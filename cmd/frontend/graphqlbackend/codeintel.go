@@ -41,6 +41,9 @@ type CodeIntelResolver interface {
 	NodeResolvers() map[string]NodeByIDFunc
 	DocumentationSearch(ctx context.Context, args *DocumentationSearchArgs) (DocumentationSearchResultsResolver, error)
 
+	RequestLanguageSupport(ctx context.Context, args *RequestLanguageSupportArgs) (*EmptyResponse, error)
+	RequestedLanguageSupport(ctx context.Context) ([]string, error)
+
 	ExecutorResolver() executor.Resolver
 }
 
@@ -425,4 +428,8 @@ type CodeIntelIndexerResolver interface {
 type SearchBasedSupportResolver interface {
 	SupportLevel() string
 	Language() string
+}
+
+type RequestLanguageSupportArgs struct {
+	Language string
 }

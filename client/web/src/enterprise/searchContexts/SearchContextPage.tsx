@@ -160,6 +160,7 @@ export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> 
                                     {
                                         icon: MagnifyIcon,
                                         to: '/search',
+                                        ariaLabel: 'Code Search',
                                     },
                                     {
                                         to: '/contexts',

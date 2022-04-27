@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type reconcilerJob struct{}
@@ -25,11 +26,15 @@ func NewReconcilerJob() job.Job {
 	return &reconcilerJob{}
 }
 
+func (j *reconcilerJob) Description() string {
+	return ""
+}
+
 func (j *reconcilerJob) Config() []env.Config {
 	return []env.Config{}
 }
 
-func (j *reconcilerJob) Routines(_ context.Context) ([]goroutine.BackgroundRoutine, error) {
+func (j *reconcilerJob) Routines(_ context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	observationContext := &observation.Context{
 		Logger:     log15.Root(),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},

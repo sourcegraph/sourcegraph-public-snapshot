@@ -3,8 +3,6 @@ package insights
 import (
 	"context"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/workerdb"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
@@ -14,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type insightsQueryRunnerBaseConfig struct {
@@ -32,16 +31,20 @@ type insightsQueryRunnerJob struct {
 
 var insightsQueryRunnerConfigInst = &insightsQueryRunnerBaseConfig{}
 
+func (s *insightsQueryRunnerJob) Description() string {
+	return ""
+}
+
 func (s *insightsQueryRunnerJob) Config() []env.Config {
 	return []env.Config{insightsQueryRunnerConfigInst}
 }
 
-func (s *insightsQueryRunnerJob) Routines(ctx context.Context) ([]goroutine.BackgroundRoutine, error) {
+func (s *insightsQueryRunnerJob) Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	if !insights.IsEnabled() {
-		log15.Info("Code Insights Disabled. Disabling query runner.")
+		logger.Info("Code Insights Disabled. Disabling query runner.")
 		return []goroutine.BackgroundRoutine{}, nil
 	}
-	log15.Info("Code Insights Enabled. Enabling query runner.")
+	logger.Info("Code Insights Enabled. Enabling query runner.")
 
 	mainAppDb, err := workerdb.Init()
 	if err != nil {
