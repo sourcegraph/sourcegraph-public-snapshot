@@ -5,6 +5,7 @@ import { DATA_SERIES_COLORS, SearchInsightURLValues } from '../../../../insights
 export interface TemplateSection {
     title: string
     templates: Template[]
+    experimental?: boolean
 }
 
 export type Template = SearchTemplate | CaptureGroupTemplate
@@ -1340,6 +1341,7 @@ export const TEMPLATE_SECTIONS: TemplateSection[] = [
     },
     {
         title: 'Go code checker',
+        experimental: true,
         templates: [
             GO_STATIC_CHECK_SA6005,
             GO_STATIC_CHECK_S1002,

@@ -19,6 +19,7 @@ import {
     TooltipController,
     Icon,
     Link,
+    ProductStatusBadge,
 } from '@sourcegraph/wildcard'
 
 import { CodeInsightsBackendContext, InsightType } from '../../../../../core'
@@ -70,7 +71,10 @@ export const CodeInsightsTemplates: React.FunctionComponent<CodeInsightsTemplate
             <Tabs size="medium" className="mt-3" onChange={handleTabChange}>
                 <TabList wrapperClassName={styles.tabList}>
                     {TEMPLATE_SECTIONS.map(section => (
-                        <Tab key={section.title}>{section.title}</Tab>
+                        <Tab key={section.title}>
+                            {section.title}
+                            {section.experimental && <ProductStatusBadge className="ml-1" status="experimental" />}
+                        </Tab>
                     ))}
                 </TabList>
                 <TabPanels>
