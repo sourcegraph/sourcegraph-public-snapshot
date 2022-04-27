@@ -100,7 +100,7 @@ func (h *handler) getSize(record workerutil.Record) int64 {
 
 // handle converts a raw upload into a dump within the given transaction context. Returns true if the
 // upload record was requeued and false otherwise.
-func (h *handler) handle(ctx context.Context, upload store.Upload, trace observation.TraceLogger) (requeued bool, err error) {
+func (h *handler) handle(ctx context.Context, logger log.Logger, upload store.Upload, trace observation.TraceLogger) (requeued bool, err error) {
 	db := database.NewDBWith(h.workerStore)
 	repo, err := backend.NewRepos(db).Get(ctx, api.RepoID(upload.RepositoryID))
 	if err != nil {
@@ -141,7 +141,7 @@ func (h *handler) handle(ctx context.Context, upload store.Upload, trace observa
 				// upload record up to this point, but failed to perform the transaction below. We can
 				// safely assume that the entire index's data is in the codeintel database, as it's
 				// parsed deterministically and written atomically.
-				log15.Warn("LSIF data already exists for upload record")
+				logger.Warn("LSIF data already exists for upload record")
 				trace.Log(otlog.Bool("rewriting", true))
 			} else {
 				return err
