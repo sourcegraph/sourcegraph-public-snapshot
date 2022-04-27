@@ -21,27 +21,23 @@ export const RunServerSideModal: React.FunctionComponent<RunServerSideModalProps
         aria-labelledby={MODAL_LABEL_ID}
         className={styles.modal}
     >
-        <div>
-            <h3 id={MODAL_LABEL_ID}>Running batch changes server-side is not enabled</h3>
-            <Button
-                className={styles.close}
-                onClick={() => {
-                    setIsRunServerSideModalOpen(false)
-                }}
-            >
-                <VisuallyHidden>Close</VisuallyHidden>
-                <CloseIcon className={styles.icon} />
-            </Button>
-        </div>
+        <h3 id={MODAL_LABEL_ID}>Running batch changes server-side is not enabled</h3>
+        <Button
+            className={styles.close}
+            onClick={() => {
+                setIsRunServerSideModalOpen(false)
+            }}
+        >
+            <VisuallyHidden>Close</VisuallyHidden>
+            <CloseIcon className={styles.icon} />
+        </Button>
 
         <div className={styles.content}>
             <div className={styles.left}>
-                <div>
-                    <p>
-                        Install executors to enable running batch changes server-side instead of locally. Executors can
-                        also be autoscaled to speed up creating large-scale batch changes.
-                    </p>
-                </div>
+                <p>
+                    Install executors to enable running batch changes server-side instead of locally. Executors can also
+                    be autoscaled to speed up creating large-scale batch changes.
+                </p>
 
                 <div className={styles.videoContainer}>Video</div>
             </div>

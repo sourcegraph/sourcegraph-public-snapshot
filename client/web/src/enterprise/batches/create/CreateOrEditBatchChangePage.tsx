@@ -439,7 +439,9 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
 
     // When graphql query is completed, check if the data from the query meets this condition and render approriate buttons
     // Until the query is complete, this variable will be undefined and no buttons will show
-    const actionButtons = data ? (data.areExecutorsConfigured ? activeExecutors : noActiveExecutors) : undefined
+    // const actionButtons = data ? (data.areExecutorsConfigured ? activeExecutors : noActiveExecutors) : undefined
+
+    const actionButtons = noActiveExecutors
 
     return (
         <BatchChangePage
