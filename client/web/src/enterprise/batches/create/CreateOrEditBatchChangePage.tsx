@@ -43,8 +43,8 @@ import {
     CreateEmptyBatchChangeResult,
     Scalars,
     BatchSpecWorkspaceResolutionState,
-    GetExecutorsTotalCountResult,
-    GetExecutorsTotalCountVariables,
+    CheckExecutorsAccessTokenResult,
+    CheckExecutorsAccessTokenVariables,
 } from '../../../graphql-operations'
 import { BatchSpecDownloadLink } from '../BatchSpec'
 
@@ -265,7 +265,7 @@ interface EditPageProps extends ThemeProps {
 
 const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetchBatchChange, isLightTheme }) => {
     // Check for active executors to tell if we are able to run batch changes server-side.
-    const { data } = useQuery<GetExecutorsTotalCountResult, GetExecutorsTotalCountVariables>(EXECUTORS, {})
+    const { data } = useQuery<CheckExecutorsAccessTokenResult, CheckExecutorsAccessTokenVariables>(EXECUTORS, {})
 
     // Get the latest batch spec for the batch change.
     const { batchSpec, isApplied: isLatestBatchSpecApplied, initialCode: initialBatchSpecCode } = useInitialBatchSpec(
@@ -439,7 +439,7 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
 
     // When graphql query is completed, check if the data from the query meets this condition and render approriate buttons
     // Until the query is complete, this variable will be undefined and no buttons will show
-    const actionButtons = data ? (data.executors.totalCount > 0 ? activeExecutors : noActiveExecutors) : undefined
+    const actionButtons = data ? (data.areExecutorsConfigured ? activeExecutors : noActiveExecutors) : undefined
 
     return (
         <BatchChangePage

@@ -204,9 +204,7 @@ export const IMPORTING_CHANGESETS = gql`
 `
 
 export const EXECUTORS = gql`
-    query GetExecutorsTotalCount {
-        executors {
-            totalCount
-        }
+    query CheckExecutorsAccessToken {
+        areExecutorsConfigured
     }
 `
