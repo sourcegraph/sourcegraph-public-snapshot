@@ -54,11 +54,6 @@ const (
 	ChangesetEventKindCheckSuite                 ChangesetEventKind = "github:check_suite"
 	ChangesetEventKindCheckRun                   ChangesetEventKind = "github:check_run"
 
-	ChangesetEventKindBitbucketCloudApproved         ChangesetEventKind = "bitbucketcloud:approved"
-	ChangesetEventKindBitbucketCloudChangesRequested ChangesetEventKind = "bitbucketcloud:changes_requested"
-	ChangesetEventKindBitbucketCloudCommitStatus     ChangesetEventKind = "bitbucketcloud:commit_status"
-	ChangesetEventKindBitbucketCloudReviewed         ChangesetEventKind = "bitbucketcloud:reviewed"
-
 	ChangesetEventKindBitbucketServerApproved     ChangesetEventKind = "bitbucketserver:approved"
 	ChangesetEventKindBitbucketServerUnapproved   ChangesetEventKind = "bitbucketserver:unapproved"
 	ChangesetEventKindBitbucketServerDeclined     ChangesetEventKind = "bitbucketserver:declined"
@@ -83,6 +78,29 @@ const (
 	ChangesetEventKindGitLabUnapproved           ChangesetEventKind = "gitlab:unapproved"
 	ChangesetEventKindGitLabMarkWorkInProgress   ChangesetEventKind = "gitlab:mark_wip"
 	ChangesetEventKindGitLabUnmarkWorkInProgress ChangesetEventKind = "gitlab:unmark_wip"
+
+	// These changeset events are created as the result of regular syncs with
+	// Bitbucket Cloud.
+	ChangesetEventKindBitbucketCloudApproved         ChangesetEventKind = "bitbucketcloud:approved"
+	ChangesetEventKindBitbucketCloudChangesRequested ChangesetEventKind = "bitbucketcloud:changes_requested"
+	ChangesetEventKindBitbucketCloudCommitStatus     ChangesetEventKind = "bitbucketcloud:commit_status"
+	ChangesetEventKindBitbucketCloudReviewed         ChangesetEventKind = "bitbucketcloud:reviewed"
+
+	// These changes events are created in response to webhooks received from
+	// Bitbucket Cloud. The exact type that matches each event is included in a
+	// comment after the constant.
+	ChangesetEventKindBitbucketCloudPullRequestApproved              ChangesetEventKind = "bitbucketcloud:pullrequest:approved"                // PullRequestApprovalEvent
+	ChangesetEventKindBitbucketCloudPullRequestChangesRequestCreated ChangesetEventKind = "bitbucketcloud:pullrequest:changes_request_created" // PullRequestChangesRequestCreatedEvent
+	ChangesetEventKindBitbucketCloudPullRequestChangesRequestRemoved ChangesetEventKind = "bitbucketcloud:pullrequest:changes_request_removed" // PullRequestChangesRequestRemovedEvent
+	ChangesetEventKindBitbucketCloudPullRequestCommentCreated        ChangesetEventKind = "bitbucketcloud:pullrequest:comment_created"         // PullRequestCommentCreatedEvent
+	ChangesetEventKindBitbucketCloudPullRequestCommentDeleted        ChangesetEventKind = "bitbucketcloud:pullrequest:comment_deleted"         // PullRequestCommentDeletedEvent
+	ChangesetEventKindBitbucketCloudPullRequestCommentUpdated        ChangesetEventKind = "bitbucketcloud:pullrequest:comment_updated"         // PullRequestCommentUpdatedEvent
+	ChangesetEventKindBitbucketCloudPullRequestFulfilled             ChangesetEventKind = "bitbucketcloud:pullrequest:fulfilled"               // PullRequestFulfilledEvent
+	ChangesetEventKindBitbucketCloudPullRequestRejected              ChangesetEventKind = "bitbucketcloud:pullrequest:rejected"                // PullRequestRejectedEvent
+	ChangesetEventKindBitbucketCloudPullRequestUnapproved            ChangesetEventKind = "bitbucketcloud:pullrequest:unapproved"              // PullRequestUnapprovedEvent
+	ChangesetEventKindBitbucketCloudPullRequestUpdated               ChangesetEventKind = "bitbucketcloud:pullrequest:updated"                 // PullRequestUpdatedEvent
+	ChangesetEventKindBitbucketCloudRepoCommitStatusCreated          ChangesetEventKind = "bitbucketcloud:repo:commit_status_created"          // RepoCommitStatusCreatedEvent
+	ChangesetEventKindBitbucketCloudRepoCommitStatusUpdated          ChangesetEventKind = "bitbucketcloud:repo:commit_status_updated"          // RepoCommitStatusUpdatedEvent
 
 	ChangesetEventKindInvalid ChangesetEventKind = "invalid"
 )
@@ -127,11 +145,23 @@ func (e *ChangesetEvent) ReviewAuthor() string {
 	case *gitlab.ReviewUnapprovedEvent:
 		return meta.Author.Username
 
+	// Bitbucket Cloud generally doesn't return the username in the objects that
+	// we get when syncing or in webhooks, but since this just has to be unique
+	// for each author and isn't surfaced in the UI, we can use the UUID.
 	case *bitbucketcloud.Participant:
-		// We don't have the username available at this level, but since we're
-		// just using this for matching and not for display, we can return the
-		// UUID.
 		return meta.User.UUID
+
+	case *bitbucketcloud.PullRequestApprovedEvent:
+		return meta.Approval.User.UUID
+
+	case *bitbucketcloud.PullRequestUnapprovedEvent:
+		return meta.Approval.User.UUID
+
+	case *bitbucketcloud.PullRequestChangesRequestCreatedEvent:
+		return meta.ChangesRequest.User.UUID
+
+	case *bitbucketcloud.PullRequestChangesRequestRemovedEvent:
+		return meta.ChangesRequest.User.UUID
 
 	default:
 		return ""
@@ -143,13 +173,15 @@ func (e *ChangesetEvent) ReviewState() (ChangesetReviewState, error) {
 	switch e.Kind {
 	case ChangesetEventKindBitbucketServerApproved,
 		ChangesetEventKindGitLabApproved,
-		ChangesetEventKindBitbucketCloudApproved:
+		ChangesetEventKindBitbucketCloudApproved,
+		ChangesetEventKindBitbucketCloudPullRequestApproved:
 		return ChangesetReviewStateApproved, nil
 
 	// BitbucketServer's "REVIEWED" activity is created when someone clicks
 	// the "Needs work" button in the UI, which is why we map it to "Changes Requested"
 	case ChangesetEventKindBitbucketServerReviewed,
-		ChangesetEventKindBitbucketCloudChangesRequested:
+		ChangesetEventKindBitbucketCloudChangesRequested,
+		ChangesetEventKindBitbucketCloudPullRequestChangesRequestCreated:
 		return ChangesetReviewStateChangesRequested, nil
 
 	case ChangesetEventKindGitHubReviewed:
@@ -169,7 +201,9 @@ func (e *ChangesetEvent) ReviewState() (ChangesetReviewState, error) {
 	case ChangesetEventKindGitHubReviewDismissed,
 		ChangesetEventKindBitbucketServerUnapproved,
 		ChangesetEventKindBitbucketServerDismissed,
-		ChangesetEventKindGitLabUnapproved:
+		ChangesetEventKindGitLabUnapproved,
+		ChangesetEventKindBitbucketCloudPullRequestUnapproved,
+		ChangesetEventKindBitbucketCloudPullRequestChangesRequestRemoved:
 		return ChangesetReviewStateDismissed, nil
 
 	default:
@@ -258,6 +292,30 @@ func (e *ChangesetEvent) Timestamp() time.Time {
 		t = ev.ParticipatedOn
 	case *bitbucketcloud.PullRequestStatus:
 		t = ev.CreatedOn
+	case *bitbucketcloud.PullRequestApprovedEvent:
+		t = ev.Approval.Date
+	case *bitbucketcloud.PullRequestChangesRequestCreatedEvent:
+		t = ev.ChangesRequest.Date
+	case *bitbucketcloud.PullRequestChangesRequestRemovedEvent:
+		t = ev.ChangesRequest.Date
+	case *bitbucketcloud.PullRequestCommentCreatedEvent:
+		t = ev.Comment.CreatedOn
+	case *bitbucketcloud.PullRequestCommentDeletedEvent:
+		t = ev.Comment.UpdatedOn
+	case *bitbucketcloud.PullRequestCommentUpdatedEvent:
+		t = ev.Comment.UpdatedOn
+	case *bitbucketcloud.PullRequestFulfilledEvent:
+		t = ev.PullRequest.UpdatedOn
+	case *bitbucketcloud.PullRequestRejectedEvent:
+		t = ev.PullRequest.UpdatedOn
+	case *bitbucketcloud.PullRequestUnapprovedEvent:
+		t = ev.Approval.Date
+	case *bitbucketcloud.PullRequestUpdatedEvent:
+		t = ev.PullRequest.UpdatedOn
+	case *bitbucketcloud.RepoCommitStatusCreatedEvent:
+		t = ev.CommitStatus.CreatedOn
+	case *bitbucketcloud.RepoCommitStatusUpdatedEvent:
+		t = ev.CommitStatus.UpdatedOn
 	}
 
 	return t
@@ -746,6 +804,54 @@ func (e *ChangesetEvent) Update(o *ChangesetEvent) error {
 
 	case *bitbucketcloud.PullRequestStatus:
 		o := o.Metadata.(*bitbucketcloud.PullRequestStatus)
+		*e = *o
+
+	case *bitbucketcloud.PullRequestApprovedEvent:
+		o := o.Metadata.(*bitbucketcloud.PullRequestApprovedEvent)
+		*e = *o
+
+	case *bitbucketcloud.PullRequestChangesRequestCreatedEvent:
+		o := o.Metadata.(*bitbucketcloud.PullRequestChangesRequestCreatedEvent)
+		*e = *o
+
+	case *bitbucketcloud.PullRequestChangesRequestRemovedEvent:
+		o := o.Metadata.(*bitbucketcloud.PullRequestChangesRequestRemovedEvent)
+		*e = *o
+
+	case *bitbucketcloud.PullRequestCommentCreatedEvent:
+		o := o.Metadata.(*bitbucketcloud.PullRequestCommentCreatedEvent)
+		*e = *o
+
+	case *bitbucketcloud.PullRequestCommentDeletedEvent:
+		o := o.Metadata.(*bitbucketcloud.PullRequestCommentDeletedEvent)
+		*e = *o
+
+	case *bitbucketcloud.PullRequestCommentUpdatedEvent:
+		o := o.Metadata.(*bitbucketcloud.PullRequestCommentUpdatedEvent)
+		*e = *o
+
+	case *bitbucketcloud.PullRequestFulfilledEvent:
+		o := o.Metadata.(*bitbucketcloud.PullRequestFulfilledEvent)
+		*e = *o
+
+	case *bitbucketcloud.PullRequestRejectedEvent:
+		o := o.Metadata.(*bitbucketcloud.PullRequestRejectedEvent)
+		*e = *o
+
+	case *bitbucketcloud.PullRequestUnapprovedEvent:
+		o := o.Metadata.(*bitbucketcloud.PullRequestUnapprovedEvent)
+		*e = *o
+
+	case *bitbucketcloud.PullRequestUpdatedEvent:
+		o := o.Metadata.(*bitbucketcloud.PullRequestUpdatedEvent)
+		*e = *o
+
+	case *bitbucketcloud.RepoCommitStatusCreatedEvent:
+		o := o.Metadata.(*bitbucketcloud.RepoCommitStatusCreatedEvent)
+		*e = *o
+
+	case *bitbucketcloud.RepoCommitStatusUpdatedEvent:
+		o := o.Metadata.(*bitbucketcloud.RepoCommitStatusUpdatedEvent)
 		*e = *o
 
 	default:

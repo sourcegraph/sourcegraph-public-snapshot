@@ -49,6 +49,15 @@ func (h Webhook) getRepoForPR(
 			},
 		},
 	})
+	log15.Info("getRepoForPR", "rs", rs, "err", err, "opts", fmt.Sprintf("%+v", database.ReposListOptions{
+		ExternalRepos: []api.ExternalRepoSpec{
+			{
+				ID:          pr.RepoExternalID,
+				ServiceType: h.ServiceType,
+				ServiceID:   externalServiceID,
+			},
+		},
+	}))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load repository")
 	}
@@ -73,6 +82,8 @@ func extractExternalServiceID(extSvc *types.ExternalService) (string, error) {
 	case *schema.BitbucketServerConnection:
 		serviceID = c.Url
 	case *schema.GitLabConnection:
+		serviceID = c.Url
+	case *schema.BitbucketCloudConnection:
 		serviceID = c.Url
 	}
 	if serviceID == "" {
