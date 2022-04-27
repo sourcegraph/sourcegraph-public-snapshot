@@ -76,25 +76,29 @@ public class SourcegraphWindow implements Disposable {
 
     synchronized public void showPopup() {
         if (this.popup == null || this.popup.isDisposed()) {
-            this.popup = JBPopupFactory.getInstance().createComponentPopupBuilder(panel, panel) // TODO: Try moving this to the constructor to prevent flickering
-                .setTitle("Sourcegraph")
-                .setCancelOnClickOutside(false)
-                .setResizable(true)
-                .setModalContext(false)
-                .setRequestFocus(true)
-                .setFocusable(true)
-                .setMovable(true)
-                .setBelongsToGlobalPopupStack(true)
-                .setCancelOnOtherWindowOpen(true)
-                .setCancelKeyEnabled(true)
-                .setNormalWindowLevel(true)
-                .createPopup();
+            this.popup = createPopup();
             this.popup.showCenteredInCurrentWindow(this.project);
         }
 
         // If the popup is already shown, hitting alt + a gain should behave the same as the native find in files
         // feature and focus the search field.
         this.jcefWindow.focus();
+    }
+
+    public JBPopup createPopup() {
+        return JBPopupFactory.getInstance().createComponentPopupBuilder(panel, panel)
+            .setTitle("Sourcegraph")
+            .setCancelOnClickOutside(false)
+            .setResizable(true)
+            .setModalContext(false)
+            .setRequestFocus(true)
+            .setFocusable(true)
+            .setMovable(true)
+            .setBelongsToGlobalPopupStack(true)
+            .setCancelOnOtherWindowOpen(true)
+            .setCancelKeyEnabled(true)
+            .setNormalWindowLevel(true)
+            .createPopup();
     }
 
     @Override
