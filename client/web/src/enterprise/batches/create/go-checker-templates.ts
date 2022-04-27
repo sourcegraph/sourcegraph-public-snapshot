@@ -640,7 +640,7 @@ changesetTemplate:
 `
 }
 
-export function getTemplateFn(kind: string | null): ((name: string) => string) | undefined {
+export function getTemplateRenderer(kind: string | null): ((name: string) => string) | undefined {
     if (!kind) {
         return undefined
     }

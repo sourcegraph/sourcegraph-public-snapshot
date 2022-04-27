@@ -10,6 +10,7 @@ import { useHistory } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
+import { isErrorLike } from '@sourcegraph/common'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import {
@@ -19,7 +20,6 @@ import {
 } from '@sourcegraph/shared/src/settings/settings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { HeroPage } from '@sourcegraph/web/src/components/HeroPage'
 import {
     PageHeader,
     Button,
@@ -35,9 +35,13 @@ import {
     TabPanel,
     TabPanels,
     RadioButton,
+    Card,
+    CardBody,
+    H4,
 } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
+import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
 import {
     BatchChangeFields,
@@ -54,11 +58,12 @@ import {
 import { BatchSpecDownloadLink } from '../BatchSpec'
 
 import { GET_BATCH_CHANGE_TO_EDIT, CREATE_EMPTY_BATCH_CHANGE, CREATE_BATCH_SPEC_FROM_RAW } from './backend'
+import { CodeInsightsBatchesIcon } from './CodeInsightsBatchesIcon'
 import { DownloadSpecModal } from './DownloadSpecModal'
 import { EditorFeedbackPanel } from './editor/EditorFeedbackPanel'
 import { MonacoBatchSpecEditor } from './editor/MonacoBatchSpecEditor'
 import { ExecutionOptions, ExecutionOptionsDropdown } from './ExecutionOptions'
-import { getTemplateFn } from './go-checker-templates'
+import { getTemplateRenderer } from './go-checker-templates'
 import { LibraryPane } from './library/LibraryPane'
 import { NamespaceSelector } from './NamespaceSelector'
 import { useBatchSpecCode } from './useBatchSpecCode'
@@ -160,23 +165,41 @@ interface CreatePageProps extends SettingsCascadeProps<Settings> {
     batchChangeName?: string
 }
 
-const parameters = new URLSearchParams(location.search)
-
-function getTitle(): string {
-    if (parameters.has('title')) {
-        return `Create batch change for ${parameters.get('title') ?? ''}`
-    }
-    return 'Create batch change'
-}
-
 const CreatePage: React.FunctionComponent<CreatePageProps> = props => {
     const isNewBatchChange = props.batchChangeName === undefined && !props.isReadOnly
+
+    const parameters = new URLSearchParams(location.search)
+
+    const templateRenderer = getTemplateRenderer(parameters.get('kind'))
+
+    const enableInsightsTemplates =
+        (templateRenderer &&
+            props.settingsCascade.final !== null &&
+            !isErrorLike(props.settingsCascade.final) &&
+            props.settingsCascade.final.experimentalFeatures?.goCodeCheckerTemplates) ??
+        false
 
     return (
         <div className="w-100 p-4">
             <PageTitle title="Create new batch change" />
+            {enableInsightsTemplates && parameters.has('title') && (
+                <Card className={classNames('mb-5', styles.codeInsightsBanner)}>
+                    <CardBody>
+                        <div className="d-flex justify-content-between align-items-center">
+                            <CodeInsightsBatchesIcon className="mr-4" />
+                            <div className="flex-grow-1">
+                                <H4>You are creating a batch change from a code insight</H4>
+                                <p className="mb-0">
+                                    Let Sourcegraph help you with <strong>{parameters.get('title')}</strong> by
+                                    preparing a relevant <strong>batch change</strong>.
+                                </p>
+                            </div>
+                        </div>
+                    </CardBody>
+                </Card>
+            )}
             <PageHeader
-                path={[{ icon: BatchChangesIcon, to: '.' }, { text: getTitle() }]}
+                path={[{ icon: BatchChangesIcon, to: '.' }, { text: 'Create batch change' }]}
                 className="flex-1 pb-2"
                 description="Run custom code over hundreds of repositories and manage the resulting changesets."
                 annotation={<FeedbackBadge status="experimental" feedback={{ mailto: 'support@sourcegraph.com' }} />}
@@ -196,7 +219,7 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = props => {
                 </TabList>
                 <TabPanels>
                     <TabPanel>
-                        <BatchConfigurationPage {...props} />
+                        <BatchConfigurationPage {...props} renderTemplate={templateRenderer} />
                     </TabPanel>
 
                     <TabPanel>
@@ -226,6 +249,11 @@ interface BatchConfigurationPageProps extends SettingsCascadeProps<Settings> {
     isReadOnly?: boolean
     /** Batch change when in read-only mode */
     batchChangeName?: string
+
+    /**
+     * When set, apply a template to the batch spec before redirecting to the edit page.
+     */
+    renderTemplate?: (name: string) => string
 }
 
 const BatchConfigurationPage: React.FunctionComponent<BatchConfigurationPageProps> = ({
@@ -233,6 +261,7 @@ const BatchConfigurationPage: React.FunctionComponent<BatchConfigurationPageProp
     settingsCascade,
     isReadOnly,
     batchChangeName,
+    renderTemplate,
 }) => {
     const [createEmptyBatchChange, { loading: batchChangeLoading, error: batchChangeError }] = useMutation<
         CreateEmptyBatchChangeResult,
@@ -268,8 +297,11 @@ const BatchConfigurationPage: React.FunctionComponent<BatchConfigurationPageProp
             variables: { namespace: selectedNamespace.id, name: nameInput },
         })
             .then(args => {
-                const getTemplate = getTemplateFn(parameters.get('kind'))
-                const template = getTemplate?.(nameInput)
+                if (!renderTemplate) {
+                    return Promise.resolve(args)
+                }
+
+                const template = renderTemplate(nameInput)
 
                 return args.data?.createEmptyBatchChange.id && template
                     ? createBatchSpecFromRaw({
@@ -296,7 +328,7 @@ const BatchConfigurationPage: React.FunctionComponent<BatchConfigurationPageProp
                     label="Batch change name"
                     value={nameInput}
                     onChange={onNameChange}
-                    // pattern={String(NAME_PATTERN)}
+                    pattern={String(NAME_PATTERN)}
                     required={true}
                     status={isNameValid === undefined ? undefined : isNameValid ? 'valid' : 'error'}
                     placeholder="My batch change name"

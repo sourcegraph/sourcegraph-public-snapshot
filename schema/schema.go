@@ -1693,6 +1693,8 @@ type SettingsExperimentalFeatures struct {
 	FuzzyFinder *bool `json:"fuzzyFinder,omitempty"`
 	// FuzzyFinderCaseInsensitiveFileCountThreshold description: The maximum number of files a repo can have to use case-insensitive fuzzy finding
 	FuzzyFinderCaseInsensitiveFileCountThreshold *float64 `json:"fuzzyFinderCaseInsensitiveFileCountThreshold,omitempty"`
+	// GoCodeCheckerTemplates description: Shows a panel with code insights templates for go code checker results.
+	GoCodeCheckerTemplates *bool `json:"goCodeCheckerTemplates,omitempty"`
 	// HomepageUserInvitation description: Shows a panel to invite collaborators to Sourcegraph on home page.
 	HomepageUserInvitation *bool `json:"homepageUserInvitation,omitempty"`
 	// SearchContextsQuery description: DEPRECATED: This feature is now permanently enabled. Enables query based search contexts
