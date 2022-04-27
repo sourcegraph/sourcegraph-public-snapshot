@@ -51,7 +51,7 @@ func (s *Service) ApplyBatchChange(
 	ctx context.Context,
 	opts ApplyBatchChangeOpts,
 ) (batchChange *btypes.BatchChange, err error) {
-	ctx, endObservation := s.operations.applyBatchChange.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.applyBatchChange.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	batchSpec, err := s.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{
@@ -172,7 +172,7 @@ func (s *Service) ReconcileBatchChange(
 	ctx context.Context,
 	batchSpec *btypes.BatchSpec,
 ) (batchChange *btypes.BatchChange, previousSpecID int64, err error) {
-	ctx, endObservation := s.operations.reconcileBatchChange.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.reconcileBatchChange.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	batchChange, err = s.GetBatchChangeMatchingBatchSpec(ctx, batchSpec)

@@ -290,7 +290,7 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 	processLog.Info("Dequeued record for processing", log.Int("id", record.RecordID()))
 
 	if hook, ok := w.handler.(WithHooks); ok {
-		preCtx, endObservation := w.options.Metrics.operations.preHandle.With(handleCtx, nil, observation.Args{})
+		preCtx, _, endObservation := w.options.Metrics.operations.preHandle.With(handleCtx, nil, observation.Args{})
 		// Open namespace for logger to avoid key collisions on fields
 		hook.PreHandle(preCtx, processLog.With(log.Namespace("prehandle")), record)
 		endObservation(1, observation.Args{})
@@ -305,7 +305,7 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 				// this worker anymore at this point. Tracing hierarchy is still correct,
 				// as handleCtx used in preHandle/handle is at the same level as
 				// workerCtxWithSpan
-				postCtx, endObservation := w.options.Metrics.operations.postHandle.With(workerCtxWithSpan, nil, observation.Args{})
+				postCtx, _, endObservation := w.options.Metrics.operations.postHandle.With(workerCtxWithSpan, nil, observation.Args{})
 				defer endObservation(1, observation.Args{})
 				// Open namespace for logger to avoid key collisions on fields
 				hook.PostHandle(postCtx, processLog.With(log.Namespace("posthandle")), record)
@@ -331,7 +331,7 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 // handle processes the given record. This method returns an error only if there is an issue updating
 // the record to a terminal state - no handler errors will bubble up.
 func (w *Worker) handle(ctx, workerContext context.Context, processLog log.Logger, record Record) (err error) {
-	ctx, endOperation := w.options.Metrics.operations.handle.With(ctx, &err, observation.Args{})
+	ctx, _, endOperation := w.options.Metrics.operations.handle.With(ctx, &err, observation.Args{})
 	defer endOperation(1, observation.Args{})
 
 	recordLog := processLog.With(log.Int("record.id", record.RecordID()))

@@ -174,7 +174,7 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.
 }
 
 func (h *dependencySyncSchedulerHandler) insertDependencyRepo(ctx context.Context, pkg precise.Package) (new bool, err error) {
-	ctx, endObservation := dependencyReposOps.InsertCloneableDependencyRepo.With(ctx, &err, observation.Args{
+	ctx, _, endObservation := dependencyReposOps.InsertCloneableDependencyRepo.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{pkg.Scheme},
 	})
 	defer func() {

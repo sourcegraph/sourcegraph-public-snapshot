@@ -51,7 +51,7 @@ func main() {
 
 	// Initialize tracing/metrics
 	observationContext := &observation.Context{
-		Logger:     log15.Root(),
+		Logger:     sglog.Scoped("service", "executor service"),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
@@ -108,7 +108,7 @@ func main() {
 
 func makeWorkerMetrics(queueName string) workerutil.WorkerMetrics {
 	observationContext := &observation.Context{
-		Logger:     log15.Root(),
+		Logger:     sglog.Scoped("executor_processor", "executor worker processor"),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}

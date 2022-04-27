@@ -1,11 +1,11 @@
 # How to add and use logging
 
-> NOTE: Sourcegraph's new logging standards are still a work in progress - please leave a comment in [this discussion](https://github.com/sourcegraph/sourcegraph/discussions/33248) if you have any feedback or ideas!
+> NOTE: For how to *use* Sourcegraph's observability and an overview of our observability features, refer to the [observability for site administrators documentation](../../admin/observability/index.md).
 
 The recommended logger at Sourcegraph is `github.com/sourcegraph/sourcegraph/lib/log`, which exports:
 
 1. A standardized, strongly-typed, and structured logging interface, `log.Logger`
-   1. Production output from this logger (`SRC_LOG_FORMAT=json`) complies with the [OpenTelemetry log data model](https://opentelemetry.io/docs/reference/specification/logs/data-model/)
+   1. Production output from this logger (`SRC_LOG_FORMAT=json`) complies with the [OpenTelemetry log data model](https://opentelemetry.io/docs/reference/specification/logs/data-model/) (also see: [Logging: OpenTelemetry](../../admin/observability/logs.md#opentelemetry))
    2. `log.Logger` has a variety of constructors for spawning new loggers with context, namely `Scoped`, `WithTrace`, and `WithFields`.
 2. An initialization function to be called in `func main()`, `log.Init`
    1. Log level can be configured with `SRC_LOG_LEVEL`
@@ -19,6 +19,8 @@ For testing purposes, we also provide:
 2. A getter to retrieve a `log.Logger` instance and a callback to programmatically iterate log output, `logtest.Scoped`
    1. The standard `logtest.Scoped` will also work after `logtest.Init`
    2. Programatically iterable logs are available from the `logtest.Captured` logger instance
+
+> NOTE: Sourcegraph's new logging standards are still a work in progress - please leave a comment in [this discussion](https://github.com/sourcegraph/sourcegraph/discussions/33248) if you have any feedback or ideas!
 
 ## Core concepts
 

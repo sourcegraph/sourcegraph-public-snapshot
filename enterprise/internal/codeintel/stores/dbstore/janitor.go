@@ -62,7 +62,7 @@ func ScanSourcedCommits(rows *sql.Rows, queryErr error) (_ []SourcedCommits, err
 // paths and clean up that occupied (but useless) space. The output is of this method is
 // ordered by repository ID then by commit.
 func (s *Store) StaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) (_ []SourcedCommits, err error) {
-	ctx, trace, endObservation := s.operations.staleSourcedCommits.WithAndLogger(ctx, &err, observation.Args{})
+	ctx, trace, endObservation := s.operations.staleSourcedCommits.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	now = now.UTC()
@@ -123,7 +123,7 @@ GROUP BY repository_id, commit
 // to the given repository identifier and commit. This method returns the count of upload and index records
 // modified, respectively.
 func (s *Store) UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (uploadsUpdated int, indexesUpdated int, err error) {
-	ctx, trace, endObservation := s.operations.updateSourcedCommits.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := s.operations.updateSourcedCommits.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 		log.String("commit", commit),
 	}})
@@ -207,7 +207,7 @@ func (s *Store) DeleteSourcedCommits(ctx context.Context, repositoryID int, comm
 	indexesDeleted int,
 	err error,
 ) {
-	ctx, trace, endObservation := s.operations.deleteSourcedCommits.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := s.operations.deleteSourcedCommits.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 		log.String("commit", commit),
 	}})
@@ -301,7 +301,7 @@ func scanTripleOfCounts(rows *sql.Rows, queryErr error) (value1, value2, value3 
 
 // DeleteOldAuditLogs removes lsif_upload audit log records older than the given max age.
 func (s *Store) DeleteOldAuditLogs(ctx context.Context, maxAge time.Duration, now time.Time) (_ int, err error) {
-	ctx, endObservation := s.operations.deleteOldAuditLogs.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.deleteOldAuditLogs.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	count, _, err := basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(deleteOldAuditLogsQuery, now, int(maxAge/time.Second))))

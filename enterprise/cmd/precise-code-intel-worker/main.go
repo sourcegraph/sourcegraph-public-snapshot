@@ -8,7 +8,6 @@ import (
 	"time"
 
 	smithyhttp "github.com/aws/smithy-go/transport/http"
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -71,7 +70,7 @@ func main() {
 
 	// Initialize tracing/metrics
 	observationContext := &observation.Context{
-		Logger:     log15.Root(),
+		Logger:     sglog.Scoped("worker", "the precise codeintel worker"),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 		HoneyDataset: &honey.Dataset{
