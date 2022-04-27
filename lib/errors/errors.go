@@ -61,8 +61,11 @@ func CombineErrors(err1, err2 error) MultiError {
 
 // Append returns a MultiError created from all given errors, skipping errs that are nil.
 // If no non-nil errors are provided, nil is returned.
-func Append(err error, errs ...error) MultiError {
+func Append(err error, firstErr error, errs ...error) MultiError {
 	multi := CombineErrors(err, nil)
+	if firstErr != nil {
+		multi = CombineErrors(multi, firstErr)
+	}
 	for _, e := range errs {
 		if e != nil {
 			multi = CombineErrors(multi, e)
