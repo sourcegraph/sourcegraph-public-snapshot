@@ -123,7 +123,7 @@ const defaultMaxSearchResults = 30
 // Timeouts are reported through the context, and as a special case errNoResultsInTimeout
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
-func zoektSearch(ctx context.Context, args *search.TextPatternInfo, branchRepos []zoektquery.BranchRepos, since func(t time.Time) time.Duration, endpoints []string, useFullDeadline bool, c chan<- zoektSearchStreamEvent) (fm []zoekt.FileMatch, limitHit bool, partial map[api.RepoID]struct{}, err error) {
+func zoektSearch(ctx context.Context, args *search.TextPatternInfo, branchRepos []zoektquery.BranchRepos, since func(t time.Time) time.Duration, endpoints []string, c chan<- zoektSearchStreamEvent) (fm []zoekt.FileMatch, limitHit bool, partial map[api.RepoID]struct{}, err error) {
 	defer func() {
 		if c != nil {
 			c <- zoektSearchStreamEvent{
@@ -147,23 +147,6 @@ func zoektSearch(ctx context.Context, args *search.TextPatternInfo, branchRepos 
 	k := zoektutil.ResultCountFactor(numRepos, args.FileMatchLimit, false)
 	searchOpts := zoektutil.SearchOpts(ctx, k, args.FileMatchLimit, nil)
 	searchOpts.Whole = true
-
-	// TODO(@camdencheek) TODO(@rvantonder) handle "timeout:..." values in this context.
-	if useFullDeadline {
-		// If the user manually specified a timeout, allow zoekt to use all of the remaining timeout.
-		deadline, _ := ctx.Deadline()
-		searchOpts.MaxWallTime = time.Until(deadline)
-
-		// We don't want our context's deadline to cut off zoekt so that we can get the results
-		// found before the deadline.
-		//
-		// We'll create a new context that gets cancelled if the other context is cancelled for any
-		// reason other than the deadline being exceeded. This essentially means the deadline for the new context
-		// will be `deadline + time for zoekt to cancel + network latency`.
-		var cancel context.CancelFunc
-		ctx, cancel = contextWithoutDeadline(ctx)
-		defer cancel()
-	}
 
 	filePathPatterns, err := handleFilePathPatterns(args)
 	if err != nil {
