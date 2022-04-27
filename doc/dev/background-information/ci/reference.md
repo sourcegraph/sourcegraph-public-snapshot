@@ -153,6 +153,18 @@ Base pipeline (more steps might be included based on branch changes):
 - npm Release
 - Upload build trace
 
+### VS Code extension release build
+
+The run type for branches matching `vsce/release` (exact match).
+
+Base pipeline (more steps might be included based on branch changes):
+
+- ESLint (all)
+- Stylelint (all)
+- Puppeteer tests for vscode extension
+- Extension release
+- Upload build trace
+
 ### Main branch
 
 The run type for branches matching `main` (exact match).
