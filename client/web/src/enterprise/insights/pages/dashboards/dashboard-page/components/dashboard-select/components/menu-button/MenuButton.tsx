@@ -15,16 +15,17 @@ import styles from './MenuButton.module.scss'
 interface MenuButtonProps {
     dashboards: InsightDashboard[]
     className?: string
+    onClick?: React.EventHandler<React.MouseEvent>
 }
 
 /**
  * Renders ListBox menu button for dashboard select component.
  */
 export const MenuButton: React.FunctionComponent<MenuButtonProps> = props => {
-    const { dashboards, className } = props
+    const { dashboards, className, onClick } = props
 
     return (
-        <ListboxButton className={classNames(styles.button, className)}>
+        <ListboxButton className={classNames(styles.button, className)} onClick={onClick}>
             {({ value, isExpanded }) => {
                 const dashboard = dashboards.find(dashboard => dashboard.id === value)
 

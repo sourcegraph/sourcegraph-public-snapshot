@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useContext, useEffect, useRef, useState } from 'react'
 
 import { ListboxGroup, ListboxGroupLabel, ListboxInput, ListboxList, ListboxPopover } from '@reach/listbox'
 import { VisuallyHidden } from '@reach/visually-hidden'
@@ -34,6 +34,7 @@ export interface DashboardSelectProps {
 export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = props => {
     const { value, dashboards: rawDashboards, onSelect, className } = props
     const [filter, setFilter] = useState('')
+    const filterReference = useRef<HTMLInputElement>(null)
     const [dashboards, setDashboards] = useState(rawDashboards)
     const {
         UIFeatures: { licensed },
@@ -52,6 +53,11 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
     const handleFilter: React.ChangeEventHandler<HTMLInputElement> = event => {
         setFilter(event.target.value)
     }
+
+    const handleMenuButtonClick = (): NodeJS.Timeout =>
+        setTimeout(() => {
+            filterReference.current?.focus()
+        }, 0)
 
     useEffect(() => {
         if (filter === '') {
@@ -73,7 +79,7 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
                 value={value ?? 'unknown'}
                 onChange={handleChange}
             >
-                <MenuButton dashboards={dashboards} />
+                <MenuButton dashboards={dashboards} onClick={handleMenuButtonClick} />
 
                 <ListboxPopover className={classNames(styles.popover)} portal={true}>
                     <ListboxList className={classNames(styles.list, 'dropdown-menu')}>
@@ -82,6 +88,7 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
                             value={filter}
                             placeholder="Find dashboard..."
                             className="mx-1"
+                            ref={filterReference}
                             onChange={handleFilter}
                         />
                         {dashboards.filter(isVirtualDashboard).map(dashboard => (
