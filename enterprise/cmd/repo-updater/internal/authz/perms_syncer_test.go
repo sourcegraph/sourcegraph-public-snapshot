@@ -177,7 +177,6 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	}()
 
 	reposStore := repos.NewStore(db, sql.TxOptions{})
-	reposStore.RepoStore = mockRepos
 	s := NewPermsSyncer(db, reposStore, perms, timeutil.Now, nil)
 
 	p.fetchUserPerms = func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error) {
@@ -266,7 +265,6 @@ func TestPermsSyncer_syncUserPerms_noPerms(t *testing.T) {
 	}()
 
 	reposStore := repos.NewStore(db, sql.TxOptions{})
-	reposStore.RepoStore = mockRepos
 	s := NewPermsSyncer(db, reposStore, perms, timeutil.Now, nil)
 
 	tests := []struct {
@@ -356,7 +354,6 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 	}()
 
 	reposStore := repos.NewStore(db, sql.TxOptions{})
-	reposStore.RepoStore = mockRepos
 	s := NewPermsSyncer(db, reposStore, perms, timeutil.Now, nil)
 
 	t.Run("invalid token", func(t *testing.T) {
@@ -458,7 +455,6 @@ func TestPermsSyncer_syncUserPerms_prefixSpecs(t *testing.T) {
 	}()
 
 	reposStore := repos.NewStore(db, sql.TxOptions{})
-	reposStore.RepoStore = mockRepos
 	s := NewPermsSyncer(db, reposStore, perms, timeutil.Now, nil)
 
 	p.fetchUserPerms = func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error) {
@@ -531,7 +527,6 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 	}()
 
 	reposStore := repos.NewStore(db, sql.TxOptions{})
-	reposStore.RepoStore = mockRepos
 	s := NewPermsSyncer(db, reposStore, perms, timeutil.Now, nil)
 
 	p.fetchUserPerms = func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error) {
@@ -567,7 +562,6 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 
 	newPermsSyncer := func(perms edb.PermsStore) *PermsSyncer {
 		reposStore := repos.NewStore(db, sql.TxOptions{})
-		reposStore.RepoStore = mockRepos
 		return NewPermsSyncer(db, reposStore, perms, timeutil.Now, nil)
 	}
 

@@ -28,7 +28,7 @@ func TestStatusMessages(t *testing.T) {
 	}
 	ctx := context.Background()
 	db := dbtest.NewDB(t)
-	store := NewStore(db, sql.TxOptions{})
+	store := NewStore(database.NewDB(db), sql.TxOptions{})
 
 	admin, err := database.Users(db).Create(ctx, database.NewUser{
 		Email:                 "a1@example.com",

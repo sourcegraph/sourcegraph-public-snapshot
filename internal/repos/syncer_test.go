@@ -145,7 +145,8 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 			UpdatedAt:   clock.Now(),
 		}
 
-		err := s.Exec(context.Background(), sqlf.Sprintf(`INSERT INTO users (id, username) VALUES (1, 'u')`))
+		q := sqlf.Sprintf(`INSERT INTO users (id, username) VALUES (1, 'u')`)
+		_, err := s.Handle().DB().ExecContext(context.Background(), q.Query(sqlf.PostgresBindVar), q.Args()...)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -690,7 +691,8 @@ func testSyncRepo(s repos.Store) func(*testing.T) {
 			ctx := context.Background()
 
 			t.Run(tc.name, func(t *testing.T) {
-				err := s.Exec(ctx, sqlf.Sprintf("DELETE FROM repo"))
+				q := sqlf.Sprintf("DELETE FROM repo")
+				_, err := s.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -946,7 +948,8 @@ func testSyncerMultipleServices(store repos.Store) func(t *testing.T) {
 		// it should add a job for all external services
 		var jobCount int
 		for i := 0; i < 10; i++ {
-			if err := store.QueryRow(ctx, sqlf.Sprintf("SELECT COUNT(*) FROM external_service_sync_jobs")).Scan(&jobCount); err != nil {
+			q := sqlf.Sprintf("SELECT COUNT(*) FROM external_service_sync_jobs")
+			if err := store.Handle().DB().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&jobCount); err != nil {
 				t.Fatal(err)
 			}
 			if jobCount == len(services) {
@@ -978,7 +981,8 @@ func testSyncerMultipleServices(store repos.Store) func(t *testing.T) {
 
 		var jobsCompleted int
 		for i := 0; i < 10; i++ {
-			if err := store.QueryRow(ctx, sqlf.Sprintf("SELECT COUNT(*) FROM external_service_sync_jobs where state = 'completed'")).Scan(&jobsCompleted); err != nil {
+			q := sqlf.Sprintf("SELECT COUNT(*) FROM external_service_sync_jobs where state = 'completed'")
+			if err := store.Handle().DB().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&jobsCompleted); err != nil {
 				t.Fatal(err)
 			}
 			if jobsCompleted == len(services) {
@@ -1402,7 +1406,8 @@ func testUserAddedRepos(store repos.Store) func(*testing.T) {
 		now := time.Now()
 
 		var userID int32
-		err := store.QueryRow(ctx, sqlf.Sprintf("INSERT INTO users (username) VALUES ('bbs-admin') RETURNING id")).
+		q := sqlf.Sprintf("INSERT INTO users (username) VALUES ('bbs-admin') RETURNING id")
+		err := store.Handle().DB().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).
 			Scan(&userID)
 		if err != nil {
 			t.Fatal(err)
@@ -1533,14 +1538,12 @@ func testUserAddedRepos(store repos.Store) func(*testing.T) {
 		conf.Mock(nil)
 
 		// If the user has the AllowUserExternalServicePrivate tag, user service can also sync private code
-		err = store.Exec(
-			ctx,
-			sqlf.Sprintf(
-				"UPDATE users SET tags = %s WHERE id = %s",
-				pq.Array([]string{database.TagAllowUserExternalServicePrivate}),
-				userID,
-			),
+		q = sqlf.Sprintf(
+			"UPDATE users SET tags = %s WHERE id = %s",
+			pq.Array([]string{database.TagAllowUserExternalServicePrivate}),
+			userID,
 		)
+		_, err = store.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1559,7 +1562,8 @@ func testUserAddedRepos(store repos.Store) func(*testing.T) {
 
 		// Confirm that there are two relationships
 		assertSourceCount(ctx, t, store, 2)
-		err = store.Exec(ctx, sqlf.Sprintf("UPDATE users SET tags = '{}' WHERE id = %s", userID))
+		q = sqlf.Sprintf("UPDATE users SET tags = '{}' WHERE id = %s", userID)
+		_, err = store.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -2032,7 +2036,8 @@ func testUserAndOrgReposAreCountedCorrectly(store repos.Store) func(*testing.T) 
 func assertSourceCount(ctx context.Context, t *testing.T, store repos.Store, want int) {
 	t.Helper()
 	var rowCount int
-	if err := store.QueryRow(ctx, sqlf.Sprintf("SELECT COUNT(*) FROM external_service_repos")).Scan(&rowCount); err != nil {
+	q := sqlf.Sprintf("SELECT COUNT(*) FROM external_service_repos")
+	if err := store.Handle().DB().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&rowCount); err != nil {
 		t.Fatal(err)
 	}
 	if rowCount != want {
@@ -2043,7 +2048,8 @@ func assertSourceCount(ctx context.Context, t *testing.T, store repos.Store, wan
 func assertDeletedRepoCount(ctx context.Context, t *testing.T, store repos.Store, want int) {
 	t.Helper()
 	var rowCount int
-	if err := store.QueryRow(ctx, sqlf.Sprintf("SELECT COUNT(*) FROM repo where deleted_at is not null")).Scan(&rowCount); err != nil {
+	q := sqlf.Sprintf("SELECT COUNT(*) FROM repo where deleted_at is not null")
+	if err := store.Handle().DB().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&rowCount); err != nil {
 		t.Fatal(err)
 	}
 	if rowCount != want {

@@ -55,12 +55,12 @@ func testSyncRateLimiters(store repos.Store) func(*testing.T) {
 				services = append(services, svc)
 			}
 
-			if err := tx.ExternalServiceStore.Upsert(ctx, services...); err != nil {
+			if err := tx.ExternalServiceStore().Upsert(ctx, services...); err != nil {
 				t.Fatalf("failed to setup store: %v", err)
 			}
 
 			registry := ratelimit.NewRegistry()
-			syncer := repos.NewRateLimitSyncer(registry, tx.ExternalServiceStore, repos.RateLimitSyncerOpts{})
+			syncer := repos.NewRateLimitSyncer(registry, tx.ExternalServiceStore(), repos.RateLimitSyncerOpts{})
 			err := syncer.SyncRateLimiters(ctx)
 			if err != nil {
 				t.Fatal(err)
@@ -145,13 +145,14 @@ func testStoreEnqueueSyncJobs(store repos.Store) func(*testing.T) {
 
 			t.Run(tc.name, func(t *testing.T) {
 				t.Cleanup(func() {
-					if err := store.Exec(ctx, sqlf.Sprintf("DELETE FROM external_service_sync_jobs;DELETE FROM external_services")); err != nil {
+					q := sqlf.Sprintf("DELETE FROM external_service_sync_jobs;DELETE FROM external_services")
+					if _, err := store.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 						t.Fatal(err)
 					}
 				})
 				stored := tc.stored.Clone()
 
-				if err := store.ExternalServiceStore.Upsert(ctx, stored...); err != nil {
+				if err := store.ExternalServiceStore().Upsert(ctx, stored...); err != nil {
 					t.Fatalf("failed to setup store: %v", err)
 				}
 
@@ -193,7 +194,8 @@ func testStoreEnqueueSingleSyncJob(store repos.Store) func(*testing.T) {
 
 		ctx := context.Background()
 		t.Cleanup(func() {
-			if err := store.Exec(ctx, sqlf.Sprintf("DELETE FROM external_service_sync_jobs;DELETE FROM external_services")); err != nil {
+			q := sqlf.Sprintf("DELETE FROM external_service_sync_jobs;DELETE FROM external_services")
+			if _, err := store.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 				t.Fatal(err)
 			}
 		})
@@ -217,7 +219,8 @@ func testStoreEnqueueSingleSyncJob(store repos.Store) func(*testing.T) {
 		assertCount := func(t *testing.T, want int) {
 			t.Helper()
 			var count int
-			if err := store.QueryRow(ctx, sqlf.Sprintf("SELECT COUNT(*) FROM external_service_sync_jobs")).Scan(&count); err != nil {
+			q := sqlf.Sprintf("SELECT COUNT(*) FROM external_service_sync_jobs")
+			if err := store.Handle().DB().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count); err != nil {
 				t.Fatal(err)
 			}
 			if count != want {
@@ -240,7 +243,8 @@ func testStoreEnqueueSingleSyncJob(store repos.Store) func(*testing.T) {
 		assertCount(t, 1)
 
 		// If we change status to processing it should not add a new row
-		if err := store.Exec(ctx, sqlf.Sprintf("UPDATE external_service_sync_jobs SET state='processing'")); err != nil {
+		q := sqlf.Sprintf("UPDATE external_service_sync_jobs SET state='processing'")
+		if _, err := store.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 			t.Fatal(err)
 		}
 		err = store.EnqueueSingleSyncJob(ctx, service.ID)
@@ -250,7 +254,8 @@ func testStoreEnqueueSingleSyncJob(store repos.Store) func(*testing.T) {
 		assertCount(t, 1)
 
 		// If we change status to completed we should be able to enqueue another one
-		if err = store.Exec(ctx, sqlf.Sprintf("UPDATE external_service_sync_jobs SET state='completed'")); err != nil {
+		q = sqlf.Sprintf("UPDATE external_service_sync_jobs SET state='completed'")
+		if _, err = store.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 			t.Fatal(err)
 		}
 		err = store.EnqueueSingleSyncJob(ctx, service.ID)
@@ -260,12 +265,13 @@ func testStoreEnqueueSingleSyncJob(store repos.Store) func(*testing.T) {
 		assertCount(t, 2)
 
 		// Test that cloud default external services don't get jobs enqueued (no-ops instead of errors)
-		if err = store.Exec(ctx, sqlf.Sprintf("UPDATE external_service_sync_jobs SET state='completed'")); err != nil {
+		q = sqlf.Sprintf("UPDATE external_service_sync_jobs SET state='completed'")
+		if _, err = store.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 			t.Fatal(err)
 		}
 
 		service.CloudDefault = true
-		err = store.ExternalServiceStore.Upsert(ctx, &service)
+		err = store.ExternalServiceStore().Upsert(ctx, &service)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -277,7 +283,8 @@ func testStoreEnqueueSingleSyncJob(store repos.Store) func(*testing.T) {
 		assertCount(t, 2)
 
 		// Test that cloud default external services don't get jobs enqueued also when there are no job rows.
-		if err = store.Exec(ctx, sqlf.Sprintf("DELETE FROM external_service_sync_jobs")); err != nil {
+		q = sqlf.Sprintf("DELETE FROM external_service_sync_jobs")
+		if _, err = store.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 			t.Fatal(err)
 		}
 
@@ -299,7 +306,7 @@ DELETE FROM external_services;
 DELETE FROM repo;
 DELETE FROM users;
 `)
-			if err := store.Exec(ctx, q); err != nil {
+			if _, err := store.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 				t.Fatal(err)
 			}
 		})
@@ -340,7 +347,7 @@ INSERT INTO external_service_repos (external_service_id, repo_id, clone_url, use
 		`, svc.ID, svc.ID),
 		}
 		for _, q := range qs {
-			if err := store.Exec(ctx, q); err != nil {
+			if _, err := store.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -367,7 +374,7 @@ DELETE FROM external_services;
 DELETE FROM repo;
 DELETE FROM users;
 `)
-			if err := store.Exec(ctx, q); err != nil {
+			if _, err := store.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 				t.Fatal(err)
 			}
 		})
@@ -410,7 +417,7 @@ VALUES
 		`, svc.ID, svc.ID, svc.ID),
 		}
 		for _, q := range qs {
-			if err := store.Exec(ctx, q); err != nil {
+			if _, err := store.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -464,7 +471,7 @@ func transact(ctx context.Context, s repos.Store, test func(testing.TB, repos.St
 		var err error
 		txStore := s
 
-		if !s.InTransaction() {
+		if !s.Handle().InTransaction() {
 			txStore, err = s.Transact(ctx)
 			if err != nil {
 				t.Fatalf("failed to start transaction: %v", err)
@@ -488,11 +495,11 @@ func createExternalServices(t *testing.T, store repos.Store, opts ...func(*types
 	}
 
 	// create a few external services
-	if err := store.ExternalServiceStore.Upsert(context.Background(), svcs...); err != nil {
+	if err := store.ExternalServiceStore().Upsert(context.Background(), svcs...); err != nil {
 		t.Fatalf("failed to insert external services: %v", err)
 	}
 
-	services, err := store.ExternalServiceStore.List(context.Background(), database.ExternalServicesListOptions{})
+	services, err := store.ExternalServiceStore().List(context.Background(), database.ExternalServicesListOptions{})
 	if err != nil {
 		t.Fatal("failed to list external services")
 	}

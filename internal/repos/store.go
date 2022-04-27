@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -32,8 +31,13 @@ type Store interface {
 	// ExternalServiceStore returns a database.ExternalServiceStore using the same
 	// database handle.
 	ExternalServiceStore() database.ExternalServiceStore
-	// SetMetrics sets the given metrics for the store.
+
+	// SetLogger updates logger for the store in place.
+	SetLogger(l logging.ErrorLogger)
+	// SetMetrics updates metrics for the store in place.
 	SetMetrics(m StoreMetrics)
+	// SetTracer updates tracer for the store in place.
+	SetTracer(t trace.Tracer)
 
 	basestore.ShareableStore
 	With(other basestore.ShareableStore) Store
@@ -102,7 +106,8 @@ type store struct {
 	// Metrics are sent to Prometheus by default.
 	Metrics StoreMetrics
 	// Used for tracing calls to store methods. Uses opentracing.GlobalTracer() by default.
-	Tracer               trace.Tracer
+	Tracer trace.Tracer
+
 	repoStore            database.RepoStore
 	gitserverReposStore  database.GitserverRepoStore
 	externalServiceStore database.ExternalServiceStore
@@ -119,14 +124,14 @@ type ReposMocks struct {
 
 var Mocks ReposMocks // todo
 
-// NewStore instantiates and returns a new DBStore with prepared statements.
-func NewStore(db dbutil.DB, txOpts sql.TxOptions) Store {
+// NewStore instantiates and returns a new Store with given database handle.
+func NewStore(db database.DB, txOpts sql.TxOptions) Store {
 	s := basestore.NewWithDB(db, txOpts)
 	return &store{
 		Store:                s,
-		repoStore:            database.ReposWith(s),
-		gitserverReposStore:  database.NewGitserverReposWith(s),
-		externalServiceStore: database.ExternalServicesWith(s),
+		repoStore:            db.Repos(),
+		gitserverReposStore:  db.GitserverRepos(),
+		externalServiceStore: db.ExternalServices(),
 		Log:                  log15.Root(),
 		Tracer:               trace.Tracer{Tracer: opentracing.GlobalTracer()},
 	}
@@ -144,9 +149,9 @@ func (s *store) ExternalServiceStore() database.ExternalServiceStore {
 	return s.externalServiceStore
 }
 
-func (s *store) SetMetrics(m StoreMetrics) {
-	s.Metrics = m
-}
+func (s *store) SetLogger(l logging.ErrorLogger) { s.Log = l }
+func (s *store) SetMetrics(m StoreMetrics)       { s.Metrics = m }
+func (s *store) SetTracer(t trace.Tracer)        { s.Tracer = t }
 
 func (s *store) With(other basestore.ShareableStore) Store {
 	return &store{
