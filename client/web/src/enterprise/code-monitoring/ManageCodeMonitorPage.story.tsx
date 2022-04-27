@@ -1,5 +1,4 @@
 import { storiesOf } from '@storybook/react'
-import React from 'react'
 import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
@@ -26,6 +25,7 @@ add('ManageCodeMonitorPage', () => (
                 updateCodeMonitor={sinon.fake()}
                 fetchCodeMonitor={sinon.fake((id: string) => of(mockCodeMonitor))}
                 deleteCodeMonitor={sinon.fake((id: string) => NEVER)}
+                isSourcegraphDotCom={false}
             />
         )}
     </WebStory>

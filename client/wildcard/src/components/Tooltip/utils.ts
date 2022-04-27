@@ -1,6 +1,7 @@
 import Popper from 'popper.js'
 
 import { Tooltip } from './constants'
+
 import styles from './Tooltip.module.scss'
 
 /**

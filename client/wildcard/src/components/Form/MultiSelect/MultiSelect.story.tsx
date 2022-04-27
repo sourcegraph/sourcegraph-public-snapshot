@@ -1,5 +1,6 @@
+import { useState } from 'react'
+
 import { Meta, Story } from '@storybook/react'
-import React, { useState } from 'react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
@@ -47,6 +48,21 @@ const BaseSelect = (props: Partial<Pick<MultiSelectProps, 'isValid' | 'isDisable
     )
 }
 
+const SelectWithValues = () => {
+    const [selectedOptions, setSelectedOptions] = useState<MultiSelectState<OptionValue>>([OPTIONS[5], OPTIONS[1]])
+
+    return (
+        <MultiSelect
+            options={OPTIONS}
+            defaultValue={selectedOptions}
+            onChange={setSelectedOptions}
+            message="I am a message"
+            label="Select your favorite ice cream flavors."
+            aria-label="Select your favorite ice cream flavors."
+        />
+    )
+}
+
 export const MultiSelectExamples: Story = () => (
     <>
         <h1>Multi Select</h1>
@@ -68,6 +84,11 @@ export const MultiSelectExamples: Story = () => (
                 <BaseSelect isDisabled={true} />
             </div>
         </Grid>
+
+        <h2>Pre-selected values (300px wide container)</h2>
+        <div style={{ width: '300px ' }}>
+            <SelectWithValues />
+        </div>
     </>
 )
 

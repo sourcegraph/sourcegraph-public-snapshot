@@ -1,5 +1,4 @@
 import { storiesOf } from '@storybook/react'
-import React from 'react'
 // We need to import `create` to make a mock store just for this story.
 // eslint-disable-next-line no-restricted-imports
 import create from 'zustand'
@@ -7,6 +6,7 @@ import create from 'zustand'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import {
     BuildSearchQueryURLParameters,
+    InitialParametersSource,
     SearchPatternType,
     SearchQueryState,
     SearchQueryStateStoreProvider,
@@ -28,6 +28,7 @@ const { add } = storiesOf('search-ui/results/sidebar/SearchSidebar', module).add
 })
 
 const mockUseQueryState = create<SearchQueryState>((set, get) => ({
+    parametersSource: InitialParametersSource.DEFAULT,
     queryState: { query: '' },
     searchCaseSensitivity: false,
     searchPatternType: SearchPatternType.literal,

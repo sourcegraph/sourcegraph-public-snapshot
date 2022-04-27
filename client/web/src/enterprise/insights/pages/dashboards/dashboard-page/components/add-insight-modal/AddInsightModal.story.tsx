@@ -1,18 +1,13 @@
-/* eslint-disable @typescript-eslint/no-floating-promises */
+import { useState } from 'react'
+
 import { storiesOf } from '@storybook/react'
-import React, { useState } from 'react'
 import { of } from 'rxjs'
 
 import { WebStory } from '../../../../../../../components/WebStory'
 import { CodeInsightsBackendStoryMock } from '../../../../../CodeInsightsBackendStoryMock'
-import { ReachableInsight } from '../../../../../core/backend/code-insights-backend-types'
-import {
-    InsightsDashboardType,
-    InsightsDashboardScope,
-    CustomInsightDashboard,
-    InsightExecutionType,
-    InsightType,
-} from '../../../../../core/types'
+import { AccessibleInsightInfo } from '../../../../../core/backend/code-insights-backend-types'
+import { CodeInsightsGqlBackend } from '../../../../../core/backend/gql-backend/code-insights-gql-backend'
+import { CustomInsightDashboard, InsightsDashboardOwnerType, InsightsDashboardType } from '../../../../../core/types'
 
 import { AddInsightModal } from './AddInsightModal'
 
@@ -26,86 +21,39 @@ const { add } = storiesOf('web/insights/AddInsightModal', module)
 
 const dashboard: CustomInsightDashboard = {
     type: InsightsDashboardType.Custom,
-    scope: InsightsDashboardScope.Personal,
     id: '001',
     title: 'Test dashboard',
     insightIds: [],
-    owner: {
-        id: 'user_test_id',
-        name: 'Emir Kusturica',
-    },
+    owners: [{ id: '001', title: 'Hieronymus Bosch', type: InsightsDashboardOwnerType.Personal }],
 }
 
-const mockInsights: ReachableInsight[] = [
+const mockInsights: AccessibleInsightInfo[] = [
     {
         id: 'searchInsights.insight.personalGraphQLTypesMigration',
         title: '[Personal] Migration to new GraphQL TS types',
-        repositories: ['github.com/sourcegraph/sourcegraph'],
-        series: [],
-        step: { weeks: 6 },
-        owner: {
-            id: 'user_test_id',
-            name: 'test',
-        },
     },
     {
         id: 'searchInsights.insight.testOrg1graphQLTypesMigration',
         title:
             '[Test ORG 1] Migration to new GraphQL TS types [Test ORG 1] Migration to new GraphQL TS types [Test ORG 1] Migration to new GraphQL TS types',
-        repositories: ['github.com/sourcegraph/sourcegraph'],
-        series: [],
-        step: { weeks: 6 },
-        owner: {
-            id: 'test_org_1_id',
-            name: 'Test organization 1 Test organization 1 Test organization 1',
-        },
     },
     {
         id: 'searchInsights.insight.testOrg1graphQLTypesMigration1',
         title: '[Test ORG 1] Migration to new GraphQL TS types',
-        repositories: ['github.com/sourcegraph/sourcegraph'],
-        series: [],
-        step: { weeks: 6 },
-        owner: {
-            id: 'test_org_1_id',
-            name: 'Test organization 1 Test organization 1 Test organization 1',
-        },
     },
     {
         id: 'searchInsights.insight.testOrg1graphQLTypesMigration2',
         title: '[Test ORG 1] Migration to new GraphQL TS types',
-        repositories: ['github.com/sourcegraph/sourcegraph'],
-        series: [],
-        step: { weeks: 6 },
-        owner: {
-            id: 'test_org_1_id',
-            name: 'Test organization 1 Test organization 1 Test organization 1',
-        },
     },
     {
         id: 'searchInsights.insight.testOrg2graphQLTypesMigration',
         title: '[Test ORG 2] Migration to new GraphQL TS types',
-        repositories: ['github.com/sourcegraph/sourcegraph'],
-        series: [],
-        step: { weeks: 6 },
-        owner: {
-            id: 'test_org_2_id',
-            name: 'Test organization 2',
-        },
     },
-].map(insight => ({
-    ...insight,
-    dashboardReferenceCount: 0,
-    otherThreshold: 0,
-    query: '',
-    type: InsightExecutionType.Backend,
-    viewType: InsightType.SearchBased,
-    visibility: 'global',
-}))
+]
 
-const codeInsightsBackend = {
-    getReachableInsights: () => of(mockInsights),
-    getDashboardSubjects: () => of([]),
+const codeInsightsBackend: Partial<CodeInsightsGqlBackend> = {
+    getAccessibleInsightsList: () => of(mockInsights),
+    getDashboardOwners: () => of([]),
 }
 
 add('AddInsightModal', () => {

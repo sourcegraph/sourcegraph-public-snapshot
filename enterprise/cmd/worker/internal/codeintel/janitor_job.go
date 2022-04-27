@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type janitorJob struct{}
@@ -24,11 +25,15 @@ func NewJanitorJob() job.Job {
 	return &janitorJob{}
 }
 
+func (j *janitorJob) Description() string {
+	return ""
+}
+
 func (j *janitorJob) Config() []env.Config {
 	return []env.Config{janitorConfigInst}
 }
 
-func (j *janitorJob) Routines(ctx context.Context) ([]goroutine.BackgroundRoutine, error) {
+func (j *janitorJob) Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	observationContext := &observation.Context{
 		Logger:     log15.Root(),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
@@ -78,6 +83,7 @@ func (j *janitorJob) Routines(ctx context.Context) ([]goroutine.BackgroundRoutin
 		janitor.NewUploadExpirer(dbStoreShim, policyMatcher, janitorConfigInst.RepositoryProcessDelay, janitorConfigInst.RepositoryBatchSize, janitorConfigInst.UploadProcessDelay, janitorConfigInst.UploadBatchSize, janitorConfigInst.PolicyBatchSize, janitorConfigInst.CommitBatchSize, janitorConfigInst.BranchesCacheMaxKeys, janitorConfigInst.CleanupTaskInterval, metrics),
 		janitor.NewExpiredUploadDeleter(dbStoreShim, janitorConfigInst.CleanupTaskInterval, metrics),
 		janitor.NewHardDeleter(dbStoreShim, lsifStoreShim, janitorConfigInst.CleanupTaskInterval, metrics),
+		janitor.NewAuditLogJanitor(dbStoreShim, janitorConfigInst.AuditLogMaxAge, janitorConfigInst.CleanupTaskInterval, metrics),
 
 		// Current indexes
 		janitor.NewDocumentationSearchCurrentJanitor(lsifStoreShim, janitorConfigInst.DocumentationSearchCurrentMinimumTimeSinceLastCheck, janitorConfigInst.DocumentationSearchCurrentBatchSize, janitorConfigInst.CleanupTaskInterval, metrics),

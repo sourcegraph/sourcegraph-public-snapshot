@@ -1,5 +1,6 @@
-import * as H from 'history'
 import React, { useState, useCallback, useMemo } from 'react'
+
+import * as H from 'history'
 import { Observable, concat, of } from 'rxjs'
 import { switchMap, catchError, startWith, takeUntil, tap, delay } from 'rxjs/operators'
 
@@ -10,6 +11,7 @@ import { Button, LoadingSpinner, useEventObservable, Link, Alert } from '@source
 import { CodeMonitorFields, ToggleCodeMonitorEnabledResult } from '../../graphql-operations'
 
 import { toggleCodeMonitorEnabled as _toggleCodeMonitorEnabled } from './backend'
+
 import styles from './CodeMonitoringNode.module.scss'
 
 export interface CodeMonitorNodeProps {
@@ -97,6 +99,7 @@ export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
                             value={enabled}
                             className="mr-3"
                             disabled={toggleMonitorOrError === LOADING}
+                            aria-label="Toggle code monitoring"
                         />
                     </div>
                     <Button

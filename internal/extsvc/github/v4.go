@@ -27,6 +27,9 @@ import (
 
 // V4Client is a GitHub GraphQL API client.
 type V4Client struct {
+	// The URN of the external service that the client is derived from.
+	urn string
+
 	// apiURL is the base URL of a GitHub API. It must point to the base URL of the GitHub API. This
 	// is https://api.github.com for GitHub.com and http[s]://[github-enterprise-hostname]/api for
 	// GitHub Enterprise.
@@ -57,7 +60,7 @@ type V4Client struct {
 //
 // apiURL must point to the base URL of the GitHub API. See the docstring for
 // V4Client.apiURL.
-func NewV4Client(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V4Client {
+func NewV4Client(urn string, apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V4Client {
 	apiURL = canonicalizedURL(apiURL)
 	if gitHubDisable {
 		cli = disabledClient{}
@@ -82,10 +85,11 @@ func NewV4Client(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V4Cli
 		tokenHash = a.Hash()
 	}
 
-	rl := ratelimit.DefaultRegistry.Get(apiURL.String())
+	rl := ratelimit.DefaultRegistry.Get(urn)
 	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(apiURL.String(), tokenHash, "graphql", &ratelimit.Monitor{HeaderPrefix: "X-"})
 
 	return &V4Client{
+		urn:              urn,
 		apiURL:           apiURL,
 		githubDotCom:     urlIsGitHubDotCom(apiURL),
 		auth:             a,
@@ -99,7 +103,7 @@ func NewV4Client(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V4Cli
 // the current V4Client, except authenticated as the GitHub user with the given
 // authenticator instance (most likely a token).
 func (c *V4Client) WithAuthenticator(a auth.Authenticator) *V4Client {
-	return NewV4Client(c.apiURL, a, c.httpClient)
+	return NewV4Client(c.urn, c.apiURL, a, c.httpClient)
 }
 
 // RateLimitMonitor exposes the rate limit monitor.
@@ -330,14 +334,12 @@ func (c *V4Client) determineGitHubVersion(ctx context.Context) *semver.Version {
 // Additionally if it fails to parse the version. or the API request fails with an error, it
 // defaults to returning allMatchingSemver as well.
 func (c *V4Client) fetchGitHubVersion(ctx context.Context) (version *semver.Version) {
-	version = allMatchingSemver
-
 	if c.githubDotCom {
-		return
+		return allMatchingSemver
 	}
 
 	// Initiate a v3Client since this requires a V3 API request.
-	v3Client := NewV3Client(c.apiURL, c.auth, c.httpClient)
+	v3Client := NewV3Client(c.urn, c.apiURL, c.auth, c.httpClient)
 	v, err := v3Client.GetVersion(ctx)
 	if err != nil {
 		log15.Warn("Failed to fetch GitHub enterprise version",
@@ -345,12 +347,12 @@ func (c *V4Client) fetchGitHubVersion(ctx context.Context) (version *semver.Vers
 			"apiURL", c.apiURL,
 			"err", err,
 		)
-		return
+		return allMatchingSemver
 	}
 
 	version, err = semver.NewVersion(v)
 	if err != nil {
-		return
+		return allMatchingSemver
 	}
 
 	return version
@@ -586,7 +588,7 @@ fragment RepositoryFields on Repository {
 func (c *V4Client) Fork(ctx context.Context, owner, repo string, org *string) (*Repository, error) {
 	// Unfortunately, the GraphQL API doesn't provide a mutation to fork as of
 	// December 2021, so we have to fall back to the REST API.
-	return NewV3Client(c.apiURL, c.auth, c.httpClient).Fork(ctx, owner, repo, org)
+	return NewV3Client(c.urn, c.apiURL, c.auth, c.httpClient).Fork(ctx, owner, repo, org)
 }
 
 type RecentCommittersParams struct {

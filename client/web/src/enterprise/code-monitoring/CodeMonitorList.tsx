@@ -1,9 +1,9 @@
-import PlusIcon from 'mdi-react/PlusIcon'
 import React, { useCallback, useState } from 'react'
+
 import { useHistory, useLocation } from 'react-router'
 import { of } from 'rxjs'
 
-import { Button, Container, Link, Icon } from '@sourcegraph/wildcard'
+import { Button, Container, H2, H3, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { FilteredConnection } from '../../components/FilteredConnection'
@@ -13,7 +13,6 @@ import { CodeMonitorInfo } from './CodeMonitorInfo'
 import { CodeMonitorNode, CodeMonitorNodeProps } from './CodeMonitoringNode'
 import { CodeMonitoringPageProps } from './CodeMonitoringPage'
 import { CodeMonitorSignUpLink } from './CodeMonitoringSignUpLink'
-import styles from './CodeMonitorList.module.scss'
 
 type CodeMonitorFilter = 'all' | 'user'
 
@@ -27,13 +26,12 @@ const CodeMonitorEmptyList: React.FunctionComponent<{ authenticatedUser: Authent
 }) => (
     <div className="text-center">
         <h2 className="text-muted mb-2">No code monitors have been created.</h2>
-        {authenticatedUser ? (
-            <Button to="/code-monitoring/new" variant="primary" as={Link}>
-                <Icon as={PlusIcon} />
-                Create a code monitor
-            </Button>
-        ) : (
-            <CodeMonitorSignUpLink eventName="SignUpPLGMonitor_EmptyList" text="Get started with code monitors" />
+        {!authenticatedUser && (
+            <CodeMonitorSignUpLink
+                className="my-3"
+                eventName="SignUpPLGMonitor_EmptyList"
+                text="Get started with code monitors"
+            />
         )}
     </div>
 )
@@ -70,7 +68,7 @@ export const CodeMonitorList: React.FunctionComponent<CodeMonitorListProps> = ({
         <>
             <div className="row mb-5">
                 <div className="d-flex flex-column col-2 mr-2">
-                    <h3>Filters</h3>
+                    <H3 as={H2}>Filters</H3>
                     <Button
                         className="text-left"
                         onClick={() => setMonitorListFilter('all')}
@@ -113,7 +111,7 @@ export const CodeMonitorList: React.FunctionComponent<CodeMonitorListProps> = ({
                             cursorPaging={true}
                             withCenteredSummary={true}
                             emptyElement={<CodeMonitorEmptyList authenticatedUser={authenticatedUser} />}
-                            className={styles.list}
+                            listComponent="div"
                         />
                     </Container>
                 </div>

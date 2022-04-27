@@ -1,3 +1,5 @@
+import React, { useCallback, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import ArrowCollapseUpIcon from 'mdi-react/ArrowCollapseUpIcon'
@@ -7,23 +9,21 @@ import FormatQuoteOpenIcon from 'mdi-react/FormatQuoteOpenIcon'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import MenuIcon from 'mdi-react/MenuIcon'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
-import React, { useCallback, useMemo, useState } from 'react'
 
+import { ContributableMenu } from '@sourcegraph/client-api'
 import { SearchPatternTypeProps, CaseSensitivityProps } from '@sourcegraph/search'
 import { ActionItem } from '@sourcegraph/shared/src/actions/ActionItem'
 import { ActionsContainer } from '@sourcegraph/shared/src/actions/ActionsContainer'
-import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, ButtonLink, Link, useLocalStorage } from '@sourcegraph/wildcard'
+import { Button, ButtonLink, Link, useLocalStorage, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 import { BookmarkRadialGradientIcon, CodeMonitorRadialGradientIcon } from '../../components/CtaIcons'
 import { SearchPatternType } from '../../graphql-operations'
-import featureTourStyles from '../FeatureTour.module.scss'
 import { defaultPopperModifiers } from '../input/tour-options'
 import { renderBrandedToString } from '../render-branded-to-string'
 import {
@@ -36,6 +36,8 @@ import {
 import { ButtonDropdownCta, ButtonDropdownCtaProps } from './ButtonDropdownCta'
 import { CreateCodeInsightButton } from './components/CreateCodeInsightButton'
 import { CreateSearchContextButton } from './components/CreateSearchContextButton'
+
+import featureTourStyles from '../FeatureTour.module.scss'
 import styles from './SearchResultsInfoBar.module.scss'
 
 function getFeatureTourElementFn(isAuthenticatedUser: boolean): (onClose: () => void) => HTMLElement {
@@ -140,7 +142,7 @@ const QuotesInterpretedLiterallyNotice: React.FunctionComponent<SearchResultsInf
             data-tooltip="Your search query is interpreted literally, including the quotes. Use the .* toggle to switch between literal and regular expression search."
         >
             <span>
-                <FormatQuoteOpenIcon className="icon-inline" />
+                <Icon as={FormatQuoteOpenIcon} />
                 Searching literally <strong>(including quotes)</strong>
             </span>
         </small>
@@ -225,15 +227,20 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                         : undefined
                 }
             >
+                {/*
+                    a11y-ignore
+                    Rule: "color-contrast" (Elements must have sufficient color contrast)
+                    GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
+                */}
                 <ExperimentalActionButton
                     showExperimentalVersion={showActionButtonExperimentalVersion}
                     nonExperimentalLinkTo={toURL}
                     isNonExperimentalLinkDisabled={!canCreateMonitorFromQuery}
                     onNonExperimentalLinkClick={onCreateCodeMonitorButtonSelect}
-                    className="create-code-monitor-button"
+                    className="a11y-ignore create-code-monitor-button"
                     button={
                         <>
-                            <CodeMonitoringLogo className="icon-inline mr-1" />
+                            <Icon className="mr-1" as={CodeMonitoringLogo} />
                             Monitor
                         </>
                     }
@@ -269,7 +276,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                     className="test-save-search-link"
                     button={
                         <>
-                            <BookmarkOutlineIcon className="icon-inline mr-1" />
+                            <Icon className="mr-1" as={BookmarkOutlineIcon} />
                             Save search
                         </>
                     }
@@ -313,9 +320,9 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                     variant="secondary"
                     size="sm"
                 >
-                    <MenuIcon className="icon-inline mr-1" />
+                    <Icon className="mr-1" as={MenuIcon} />
                     Filters
-                    {showFilters ? <MenuUpIcon className="icon-inline" /> : <MenuDownIcon className="icon-inline" />}
+                    <Icon as={showFilters ? MenuUpIcon : MenuDownIcon} />
                 </Button>
 
                 {props.stats}
@@ -373,11 +380,10 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                                     variant="secondary"
                                     size="sm"
                                 >
-                                    {props.allExpanded ? (
-                                        <ArrowCollapseUpIcon className="icon-inline mr-0" />
-                                    ) : (
-                                        <ArrowExpandDownIcon className="icon-inline mr-0" />
-                                    )}
+                                    <Icon
+                                        className="mr-0"
+                                        as={props.allExpanded ? ArrowCollapseUpIcon : ArrowExpandDownIcon}
+                                    />
                                 </Button>
                             </li>
                         </>

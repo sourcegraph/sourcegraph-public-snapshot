@@ -2,6 +2,8 @@ import assert from 'assert'
 
 import expect from 'expect'
 
+import { mixedSearchStreamEvents } from '@sourcegraph/search'
+import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
@@ -97,6 +99,7 @@ describe('Code monitoring', () => {
                 },
             }),
         })
+        testContext.overrideSearchStreamEvents(mixedSearchStreamEvents)
     })
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
@@ -106,6 +109,7 @@ describe('Code monitoring', () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/code-monitoring')
             await driver.page.waitForSelector('[data-testid="code-monitoring-page"]')
             await percySnapshotWithVariants(driver.page, 'Code monitor list')
+            await accessibilityAudit(driver.page)
         })
     })
 
@@ -115,6 +119,7 @@ describe('Code monitoring', () => {
             await driver.page.waitForSelector('.test-name-input')
 
             await percySnapshotWithVariants(driver.page, 'Code monitoring - Form')
+            await accessibilityAudit(driver.page)
 
             await driver.page.type('.test-name-input', 'test monitor')
 

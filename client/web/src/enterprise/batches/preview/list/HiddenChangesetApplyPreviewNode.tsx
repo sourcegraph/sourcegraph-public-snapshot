@@ -1,17 +1,19 @@
-import classNames from 'classnames'
-import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 import React from 'react'
 
+import classNames from 'classnames'
+import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
+
 import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
-import { InputTooltip } from '@sourcegraph/web/src/components/InputTooltip'
 import { Icon } from '@sourcegraph/wildcard'
 
+import { InputTooltip } from '../../../../components/InputTooltip'
 import { ChangesetSpecType, HiddenChangesetApplyPreviewFields } from '../../../../graphql-operations'
 import { ChangesetStatusCell } from '../../detail/changesets/ChangesetStatusCell'
 
-import styles from './HiddenChangesetApplyPreviewNode.module.scss'
 import { PreviewActions } from './PreviewActions'
 import { PreviewNodeIndicator } from './PreviewNodeIndicator'
+
+import styles from './HiddenChangesetApplyPreviewNode.module.scss'
 
 export interface HiddenChangesetApplyPreviewNodeProps {
     node: HiddenChangesetApplyPreviewFields

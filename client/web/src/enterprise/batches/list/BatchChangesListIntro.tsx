@@ -1,26 +1,40 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
 
 import { CardBody, Card, Link } from '@sourcegraph/wildcard'
 
 import { SourcegraphIcon } from '../../../auth/icons'
 
+import { BatchChangesChangelogAlert } from './BatchChangesChangelogAlert'
+
 import styles from './BatchChangesListIntro.module.scss'
 
 export interface BatchChangesListIntroProps {
-    licensed: boolean | undefined
+    isLicensed: boolean | undefined
 }
 
-export const BatchChangesListIntro: React.FunctionComponent<BatchChangesListIntroProps> = ({ licensed }) => {
-    if (licensed === undefined || licensed === true) {
+export const BatchChangesListIntro: React.FunctionComponent<BatchChangesListIntroProps> = ({ isLicensed }) => {
+    if (isLicensed === undefined) {
         return null
     }
 
     return (
         <div className="row">
-            <div className="col-12 col-md-6 mb-3">
-                <BatchChangesUnlicensedAlert />
-            </div>
+            {isLicensed === true ? (
+                <div className="col-12">
+                    <BatchChangesChangelogAlert />
+                </div>
+            ) : (
+                <>
+                    <div className="col-12 col-md-6 mb-3">
+                        <BatchChangesUnlicensedAlert />
+                    </div>
+                    <div className="col-12 col-md-6 mb-3">
+                        <BatchChangesChangelogAlert />
+                    </div>
+                </>
+            )}
         </div>
     )
 }

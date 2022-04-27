@@ -1,11 +1,11 @@
 import {
     BatchSpecWorkspaceResolutionState,
     WorkspaceResolutionStatusResult,
-    PreviewBatchSpecWorkspaceFields,
     BatchSpecImportingChangesetsResult,
     PreviewBatchSpecImportingChangesetFields,
     BatchSpecWorkspacesPreviewResult,
     EditBatchChangeFields,
+    PreviewVisibleBatchSpecWorkspaceFields,
 } from '../../../../graphql-operations'
 
 export const mockBatchSpec = (): EditBatchChangeFields['currentSpec'] => ({
@@ -31,9 +31,10 @@ export const mockWorkspaceResolutionStatus = (
 
 export const mockWorkspace = (
     id: number,
-    fields?: Partial<PreviewBatchSpecWorkspaceFields>
-): PreviewBatchSpecWorkspaceFields => ({
-    __typename: 'BatchSpecWorkspace',
+    fields?: Partial<PreviewVisibleBatchSpecWorkspaceFields>
+): PreviewVisibleBatchSpecWorkspaceFields => ({
+    __typename: 'VisibleBatchSpecWorkspace',
+    id: `id-${id}`,
     path: '/',
     searchResultPaths: ['/first-path'],
     cachedResultFound: false,
@@ -50,7 +51,6 @@ export const mockWorkspace = (
     branch: {
         __typename: 'GitRef',
         id: 'main-branch-id',
-        abbrevName: 'main',
         displayName: 'main',
         ...fields?.branch,
         target: {
@@ -62,7 +62,7 @@ export const mockWorkspace = (
     },
 })
 
-export const mockWorkspaces = (count: number): PreviewBatchSpecWorkspaceFields[] =>
+export const mockWorkspaces = (count: number): PreviewVisibleBatchSpecWorkspaceFields[] =>
     [...new Array(count).keys()].map(id => mockWorkspace(id))
 
 const mockImportingChangeset = (

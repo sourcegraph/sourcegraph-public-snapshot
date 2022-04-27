@@ -1,5 +1,6 @@
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React from 'react'
+
+import MapSearchIcon from 'mdi-react/MapSearchIcon'
 
 import { Link } from '@sourcegraph/wildcard'
 

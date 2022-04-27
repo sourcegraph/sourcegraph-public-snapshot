@@ -1,8 +1,10 @@
+import { FunctionComponent } from 'react'
+
 import classNames from 'classnames'
-import React, { FunctionComponent } from 'react'
 
 import { RepositoryPreview } from './RepositoryPreview'
 import { ReposMatchingPattern } from './ReposMatchingPattern'
+
 import styles from './ReposMatchingPatternList.module.scss'
 
 export interface ReposMatchingPatternListProps {

@@ -126,7 +126,7 @@ exports[`FilterLink should have correct links for repos 1`] = `
           title="gitlab.com"
         >
           <svg
-            class="mdi-icon icon-inline text-muted sidebarSectionIcon"
+            class="mdi-icon iconInline text-muted sidebarSectionIcon"
             fill="currentColor"
             height="24"
             viewBox="0 0 24 24"
@@ -170,7 +170,7 @@ exports[`FilterLink should have correct links for repos 1`] = `
           title="github.com"
         >
           <svg
-            class="mdi-icon icon-inline text-muted sidebarSectionIcon"
+            class="mdi-icon iconInline text-muted sidebarSectionIcon"
             fill="currentColor"
             height="24"
             viewBox="0 0 24 24"
@@ -248,7 +248,7 @@ exports[`FilterLink should have show icons for repos on cloud 1`] = `
           title="gitlab.com"
         >
           <svg
-            class="mdi-icon icon-inline text-muted sidebarSectionIcon"
+            class="mdi-icon iconInline text-muted sidebarSectionIcon"
             fill="currentColor"
             height="24"
             viewBox="0 0 24 24"
@@ -292,7 +292,7 @@ exports[`FilterLink should have show icons for repos on cloud 1`] = `
           title="github.com"
         >
           <svg
-            class="mdi-icon icon-inline text-muted sidebarSectionIcon"
+            class="mdi-icon iconInline text-muted sidebarSectionIcon"
             fill="currentColor"
             height="24"
             viewBox="0 0 24 24"

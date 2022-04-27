@@ -1,6 +1,5 @@
 import { mdiShieldCheck } from '@mdi/js'
 import classNames from 'classnames'
-import React from 'react'
 
 import { Icon, AccessibleIcon } from '@sourcegraph/wildcard'
 

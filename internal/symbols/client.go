@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -191,6 +192,42 @@ func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (sym
 	}
 
 	return filtered, nil
+}
+
+func (c *Client) LocalCodeIntel(ctx context.Context, args types.RepoCommitPath) (result *types.LocalCodeIntelPayload, err error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "squirrel.Client.LocalCodeIntel")
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.LogFields(otlog.Error(err))
+		}
+		span.Finish()
+	}()
+	span.SetTag("Repo", args.Repo)
+	span.SetTag("CommitID", args.Commit)
+
+	resp, err := c.httpPost(ctx, "localCodeIntel", api.RepoName(args.Repo), args)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		// best-effort inclusion of body in error message
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
+		return nil, errors.Errorf(
+			"Squirrel.LocalCodeIntel http status %d: %s",
+			resp.StatusCode,
+			string(body),
+		)
+	}
+
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	if err != nil {
+		return nil, errors.Wrap(err, "decoding response body")
+	}
+
+	return result, nil
 }
 
 func (c *Client) httpPost(

@@ -6,6 +6,7 @@ import type * as sourcegraph from 'sourcegraph'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
+import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
@@ -1063,7 +1064,7 @@ describe('Blob viewer', () => {
             await driver.page.waitForSelector('.test-file-match-children-item', { visible: true })
 
             await percySnapshotWithVariants(driver.page, 'Blob Reference Panel', { waitForCodeHighlighting: true })
-
+            await accessibilityAudit(driver.page)
             // Click on the first reference
             await driver.page.click('.test-file-match-children-item')
 
@@ -1159,11 +1160,11 @@ describe('Blob viewer', () => {
 
                 // Alert should not show up now that the user has dismissed it once
                 await driver.page.waitForSelector('[data-testid="repo-header"]')
-                // `browserExtensionInstalled` emits false after 500ms, so
+                // `useIsBrowserExtensionActiveUser` emits false after 1000ms, so
                 // wait 500ms after [data-testid="repo-header"] is visible, at which point we know
-                // that `RepoContainer` has subscribed to `browserExtensionInstalled`.
+                // that `RepoContainer` has subscribed to `useIsBrowserExtensionActiveUser`.
                 // After this point, we know whether or not the alert will be displayed for this page load.
-                await driver.page.waitFor(500)
+                await driver.page.waitFor(1000)
                 assert(
                     !(await driver.page.$('[data-testid="install-browser-extension-alert"]')),
                     'Expected "Install browser extension" alert to not be displayed before user dismisses it once'

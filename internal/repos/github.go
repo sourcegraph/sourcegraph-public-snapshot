@@ -207,11 +207,12 @@ func newGithubSource(
 		return nil, err
 	}
 	token := &auth.OAuthBearerToken{Token: c.Token}
+	urn := svc.URN()
 
 	var (
-		v3Client     = github.NewV3Client(apiURL, token, cli)
-		v4Client     = github.NewV4Client(apiURL, token, cli)
-		searchClient = github.NewV3SearchClient(apiURL, token, cli)
+		v3Client     = github.NewV3Client(urn, apiURL, token, cli)
+		v4Client     = github.NewV4Client(urn, apiURL, token, cli)
+		searchClient = github.NewV3SearchClient(urn, apiURL, token, cli)
 	)
 
 	useGitHubApp := false
@@ -233,7 +234,7 @@ func newGithubSource(
 		if err != nil {
 			return nil, errors.Wrap(err, "parse api.github.com")
 		}
-		client := github.NewV3Client(apiURL, auther, nil)
+		client := github.NewV3Client(urn, apiURL, auther, nil)
 
 		installationID, err := strconv.ParseInt(c.GithubAppInstallationID, 10, 64)
 		if err != nil {
@@ -246,8 +247,8 @@ func newGithubSource(
 		}
 
 		auther = &auth.OAuthBearerToken{Token: token}
-		v3Client = github.NewV3Client(apiURL, auther, cli)
-		v4Client = github.NewV4Client(apiURL, auther, cli)
+		v3Client = github.NewV3Client(urn, apiURL, auther, cli)
+		v4Client = github.NewV4Client(urn, apiURL, auther, cli)
 
 		useGitHubApp = true
 	}
@@ -258,15 +259,17 @@ func newGithubSource(
 			"graphql": v4Client.RateLimitMonitor(),
 			"search":  searchClient.RateLimitMonitor(),
 		} {
-			// Need to copy the resource or func will use the last one seen while iterating
+			// Copy the resource or funcs below will use the last one seen while iterating
 			// the map
 			resource := resource
+			// Copy displayName so that the funcs below don't capture the svc pointer
+			displayName := svc.DisplayName
 			monitor.SetCollector(&ratelimit.MetricsCollector{
 				Remaining: func(n float64) {
-					githubRemainingGauge.WithLabelValues(resource, svc.DisplayName).Set(n)
+					githubRemainingGauge.WithLabelValues(resource, displayName).Set(n)
 				},
 				WaitDuration: func(n time.Duration) {
-					githubRatelimitWaitCounter.WithLabelValues(resource, svc.DisplayName).Add(n.Seconds())
+					githubRatelimitWaitCounter.WithLabelValues(resource, displayName).Add(n.Seconds())
 				},
 			})
 		}

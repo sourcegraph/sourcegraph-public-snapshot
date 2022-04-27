@@ -1,7 +1,8 @@
+import React, { useCallback, useEffect, useRef, useState } from 'react'
+
 import { useLazyQuery } from '@apollo/client'
 import classNames from 'classnames'
 import { debounce } from 'lodash'
-import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { Dropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 
 import { Input } from '@sourcegraph/wildcard'
@@ -11,6 +12,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { UserAvatar } from '../../user/UserAvatar'
 
 import { SEARCH_USERS_AUTOCOMPLETE_QUERY } from './gqlQueries'
+
 import styles from './SearchUserAutocomplete.module.scss'
 
 interface IUserItem {
@@ -127,6 +129,7 @@ export const AutocompleteSearchUsers: React.FunctionComponent<AutocompleteSearch
     const searchUsers = useCallback(
         (query: string): void => {
             setOpenResults(true)
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
             getUsers({ variables: { query, organization: orgId } })
         },
         [getUsers, orgId]
@@ -162,11 +165,18 @@ export const AutocompleteSearchUsers: React.FunctionComponent<AutocompleteSearch
         [firstResult]
     )
 
-    const onSelectUser = useCallback((user: IUserItem) => {
-        eventLogger.logViewEvent('AutocompleteUsersSearchSelected', { user: user.username })
-        setOpenResults(false)
-        setUsernameOrEmail(user.username)
-    }, [])
+    const onSelectUser = useCallback(
+        (user: IUserItem) => {
+            eventLogger.log(
+                'InviteAutocompleteUserSelected',
+                { organizationId: orgId, user: user.username },
+                { organizationId: orgId }
+            )
+            setOpenResults(false)
+            setUsernameOrEmail(user.username)
+        },
+        [orgId]
+    )
 
     const onMenuKeyDown = useCallback((event: React.KeyboardEvent): void => {
         if (event.key === 'Escape') {

@@ -1,6 +1,5 @@
 import { render } from '@testing-library/react'
 import * as H from 'history'
-import React from 'react'
 import { NEVER } from 'rxjs'
 
 import { subtypeOf } from '@sourcegraph/common'

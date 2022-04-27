@@ -58,6 +58,36 @@ func (r *schemaResolver) AutocompleteMembersSearch(ctx context.Context, args *st
 	return users, nil
 }
 
+func (r *schemaResolver) OrgMembersSummary(ctx context.Context, args *struct {
+	Organization graphql.ID
+}) (*OrgMembersSummaryResolver, error) {
+	actor := actor.FromContext(ctx)
+	if !actor.IsAuthenticated() {
+		return nil, errors.New("no current user")
+	}
+
+	orgID, err := UnmarshalOrgID(args.Organization)
+	if err != nil {
+		return nil, err
+	}
+
+	usersCount, err := r.db.OrgMembers().MemberCount(ctx, orgID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	pendingInvites, err := r.db.OrgInvitations().Count(ctx, database.OrgInvitationsListOptions{OrgID: orgID})
+
+	if err != nil {
+		return nil, err
+	}
+
+	var summary = NewOrgMembersSummaryResolver(r.db, orgID, int32(usersCount), int32(pendingInvites))
+
+	return summary, nil
+}
+
 type organizationMembershipConnectionResolver struct {
 	nodes []*organizationMembershipResolver
 }
@@ -125,4 +155,31 @@ func (r *OrgMemberAutocompleteSearchItemResolver) InOrg() *bool {
 
 func NewOrgMemberAutocompleteSearchItemResolver(db database.DB, user *types.OrgMemberAutocompleteSearchItem) *OrgMemberAutocompleteSearchItemResolver {
 	return &OrgMemberAutocompleteSearchItemResolver{db: db, user: user}
+}
+
+type OrgMembersSummaryResolver struct {
+	db           database.DB
+	id           int32
+	membersCount int32
+	invitesCount int32
+}
+
+func NewOrgMembersSummaryResolver(db database.DB, orgId int32, membersCount int32, invitesCount int32) *OrgMembersSummaryResolver {
+	return &OrgMembersSummaryResolver{
+		db:           db,
+		id:           orgId,
+		membersCount: membersCount,
+		invitesCount: invitesCount,
+	}
+}
+func (r *OrgMembersSummaryResolver) ID() graphql.ID {
+	return MarshalUserID(r.id)
+}
+
+func (r *OrgMembersSummaryResolver) MembersCount() int32 {
+	return r.membersCount
+}
+
+func (r *OrgMembersSummaryResolver) InvitesCount() int32 {
+	return r.invitesCount
 }

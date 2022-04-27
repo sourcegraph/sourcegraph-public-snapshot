@@ -1,3 +1,5 @@
+import React from 'react'
+
 import { Edit, FormattingOptions, JSONPath } from '@sqs/jsonc-parser'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import AwsIcon from 'mdi-react/AwsIcon'
@@ -5,9 +7,9 @@ import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
 import GitIcon from 'mdi-react/GitIcon'
 import GitLabIcon from 'mdi-react/GitlabIcon'
+import LanguageGoIcon from 'mdi-react/LanguageGoIcon'
 import LanguageJavaIcon from 'mdi-react/LanguageJavaIcon'
 import NpmIcon from 'mdi-react/NpmIcon'
-import React from 'react'
 
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
 import { Link } from '@sourcegraph/wildcard'
@@ -15,9 +17,11 @@ import { Link } from '@sourcegraph/wildcard'
 import awsCodeCommitSchemaJSON from '../../../../../schema/aws_codecommit.schema.json'
 import bitbucketCloudSchemaJSON from '../../../../../schema/bitbucket_cloud.schema.json'
 import bitbucketServerSchemaJSON from '../../../../../schema/bitbucket_server.schema.json'
+import gerritSchemaJSON from '../../../../../schema/gerrit.schema.json'
 import githubSchemaJSON from '../../../../../schema/github.schema.json'
 import gitlabSchemaJSON from '../../../../../schema/gitlab.schema.json'
 import gitoliteSchemaJSON from '../../../../../schema/gitolite.schema.json'
+import goModulesSchemaJSON from '../../../../../schema/go-modules.schema.json'
 import jvmPackagesSchemaJSON from '../../../../../schema/jvm-packages.schema.json'
 import npmPackagesSchemaJSON from '../../../../../schema/npm-packages.schema.json'
 import otherExternalServiceSchemaJSON from '../../../../../schema/other_external_service.schema.json'
@@ -1210,6 +1214,8 @@ const JVM_PACKAGES: AddExternalServiceOptions = {
                     <code>"org.hamcrest:hamcrest-core:1.3:default"</code>.
                 </li>
             </ol>
+            <p>⚠️ JVM dependency repositories are visible by all users of the Sourcegraph instance.</p>
+            <p>⚠️ It is only possible to register one JVM dependency code host per Sourcegraph instance.</p>
         </div>
     ),
     editorActions: [],
@@ -1236,12 +1242,33 @@ const PAGURE: AddExternalServiceOptions = {
     editorActions: [],
 }
 
+const GERRIT: AddExternalServiceOptions = {
+    kind: ExternalServiceKind.GERRIT,
+    title: 'Gerrit',
+    icon: GitIcon,
+    jsonSchema: gerritSchemaJSON,
+    defaultDisplayName: 'Gerrit',
+    defaultConfig: `{
+  "url": "https://gerrit.example.com",
+}`,
+    instructions: (
+        <div>
+            <ol>
+                <li>
+                    In the configuration below, set <Field>url</Field> to the URL of Gerrit instance.
+                </li>
+            </ol>
+        </div>
+    ),
+    editorActions: [],
+}
+
 const NPM_PACKAGES: AddExternalServiceOptions = {
     kind: ExternalServiceKind.NPMPACKAGES,
-    title: 'NPM Dependencies',
+    title: 'npm Dependencies',
     icon: NpmIcon,
     jsonSchema: npmPackagesSchemaJSON,
-    defaultDisplayName: 'NPM Dependencies',
+    defaultDisplayName: 'npm Dependencies',
     defaultConfig: `{
   "registry": "https://registry.npmjs.org",
   "dependencies": []
@@ -1250,7 +1277,7 @@ const NPM_PACKAGES: AddExternalServiceOptions = {
         <div>
             <ol>
                 <li>
-                    In the configuration below, set <Field>registry</Field> to the applicable NPM registry. For example,
+                    In the configuration below, set <Field>registry</Field> to the applicable npm registry. For example,
                     <code>"https://registry.npmjs.mycompany.com"</code> or <code>"https://registry.npmjs.org"</code>.
                     Note that this URL may not be the same as where packages can be searched (such as{' '}
                     <code>https://www.npmjs.org</code>). If you're unsure about the exact URL URL for a custom registry,
@@ -1264,6 +1291,39 @@ const NPM_PACKAGES: AddExternalServiceOptions = {
                     supported.
                 </li>
             </ol>
+            <p>⚠️ npm package repositories are visible by all users of the Sourcegraph instance.</p>
+            <p>⚠️ It is only possible to register one npm package code host per Sourcegraph instance.</p>
+        </div>
+    ),
+    editorActions: [],
+}
+
+const GO_MODULES = {
+    kind: ExternalServiceKind.GOMODULES,
+    title: 'Go Dependencies',
+    icon: LanguageGoIcon,
+    jsonSchema: goModulesSchemaJSON,
+    defaultDisplayName: 'Go Dependencies',
+    defaultConfig: `{
+  "urls": ["https://proxy.golang.org"],
+  "dependencies": []
+}`,
+    instructions: (
+        <div>
+            <ol>
+                <li>
+                    In the configuration below, set <Field>urls</Field> to the Go module proxies you want to sync
+                    dependency repositories from. For example, <code>"https://user:pass@athens.mycompany.com"</code> or{' '}
+                    <code>"https://proxy.golang.org"</code>. A module will be synced from the first proxy that has it,
+                    trying the next when it's not found.
+                </li>
+                <li>
+                    In the configuration below, set <Field>dependencies</Field> to the list of packages that you want to
+                    manually add. For example, <code>"cloud.google.com/go/kms@v1.1.0"</code>.
+                </li>
+            </ol>
+            <p>⚠️ go module repositories are visible by all users of the Sourcegraph instance.</p>
+            <p>⚠️ It is only possible to register one go modules code host per Sourcegraph instance.</p>
         </div>
     ),
     editorActions: [],
@@ -1280,10 +1340,12 @@ export const codeHostExternalServices: Record<string, AddExternalServiceOptions>
     srcservegit: SRC_SERVE_GIT,
     gitolite: GITOLITE,
     git: GENERIC_GIT,
+    goModules: GO_MODULES,
     ...(window.context?.experimentalFeatures?.perforce === 'enabled' ? { perforce: PERFORCE } : {}),
-    ...(window.context?.experimentalFeatures?.jvmPackages === 'enabled' ? { jvmPackages: JVM_PACKAGES } : {}),
+    ...(window.context?.experimentalFeatures?.jvmPackages === 'disabled' ? {} : { jvmPackages: JVM_PACKAGES }),
     ...(window.context?.experimentalFeatures?.pagure === 'enabled' ? { pagure: PAGURE } : {}),
-    ...(window.context?.experimentalFeatures?.npmPackages === 'enabled' ? { npmPackages: NPM_PACKAGES } : {}),
+    ...(window.context?.experimentalFeatures?.gerrit === 'enabled' ? { gerrit: GERRIT } : {}),
+    ...(window.context?.experimentalFeatures?.npmPackages === 'disabled' ? {} : { npmPackages: NPM_PACKAGES }),
 }
 
 export const nonCodeHostExternalServices: Record<string, AddExternalServiceOptions> = {
@@ -1305,6 +1367,8 @@ export const defaultExternalServices: Record<ExternalServiceKind, AddExternalSer
     [ExternalServiceKind.OTHER]: GENERIC_GIT,
     [ExternalServiceKind.AWSCODECOMMIT]: AWS_CODE_COMMIT,
     [ExternalServiceKind.PERFORCE]: PERFORCE,
+    [ExternalServiceKind.GERRIT]: GERRIT,
+    [ExternalServiceKind.GOMODULES]: GO_MODULES,
     [ExternalServiceKind.JVMPACKAGES]: JVM_PACKAGES,
     [ExternalServiceKind.PAGURE]: PAGURE,
     [ExternalServiceKind.NPMPACKAGES]: NPM_PACKAGES,

@@ -1,6 +1,7 @@
+import { useCallback, useMemo, useState, useEffect } from 'react'
+
 import { FetchResult } from '@apollo/client'
 import { noop } from 'lodash'
-import { useCallback, useMemo, useState, useEffect } from 'react'
 
 import { useLazyQuery, useMutation, useQuery } from '@sourcegraph/http-client'
 
@@ -181,7 +182,10 @@ export const useWorkspacesPreview = (
                         .catch((error: Error) => setError(error.message))
                     startPolling(POLLING_INTERVAL)
                 })
-                .catch((error: Error) => setError(error.message))
+                .catch((error: Error) => {
+                    setError(error.message)
+                    setIsInProgress(false)
+                })
         },
         [
             batchSpecID,
@@ -252,7 +256,9 @@ export const useWorkspacesPreview = (
             // We can stop polling once the workspace resolution completes.
             stop()
             // Fetch the results of the workspace preview resolution.
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
             fetchWorkspaces()
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
             fetchImportingChangesets()
             // Call the optional `onComplete` handler.
             onComplete?.()

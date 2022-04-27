@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import * as React from 'react'
+
+import classNames from 'classnames'
 import { DecorationAttachmentRenderOptions, ThemableDecorationStyle } from 'sourcegraph'
 
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'

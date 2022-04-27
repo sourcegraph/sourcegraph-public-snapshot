@@ -1,6 +1,7 @@
+import React, { useCallback, useState } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
-import React, { useCallback, useState } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError } from '@sourcegraph/common'
@@ -75,6 +76,8 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<Props> = ({
                         }
                     } else if (response.status === 401) {
                         throw new Error('User or password was incorrect')
+                    } else if (response.status === 422) {
+                        throw new Error('The account has been locked out')
                     } else {
                         throw new Error('Unknown Error')
                     }
@@ -111,15 +114,10 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<Props> = ({
                         autoComplete="username"
                     />
                 </div>
-                <div className="form-group d-flex flex-column align-content-start">
-                    <div className="d-flex justify-content-between">
-                        <label htmlFor="password">Password</label>
-                        {context.resetPasswordEnabled && (
-                            <small className="form-text text-muted">
-                                <Link to="/password-reset">Forgot password?</Link>
-                            </small>
-                        )}
-                    </div>
+                <div className="form-group d-flex flex-column align-content-start position-relative">
+                    <label htmlFor="password" className="align-self-start">
+                        Password
+                    </label>
                     <PasswordInput
                         onChange={onPasswordFieldChange}
                         value={password}
@@ -128,6 +126,11 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<Props> = ({
                         autoComplete="current-password"
                         placeholder=" "
                     />
+                    {context.resetPasswordEnabled && (
+                        <small className="form-text text-muted align-self-end position-absolute">
+                            <Link to="/password-reset">Forgot password?</Link>
+                        </small>
+                    )}
                 </div>
                 <div
                     className={classNames('form-group', {

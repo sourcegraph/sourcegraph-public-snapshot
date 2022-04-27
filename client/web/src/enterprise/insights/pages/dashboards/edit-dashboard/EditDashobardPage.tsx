@@ -1,6 +1,7 @@
+import React, { useContext, useMemo } from 'react'
+
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useContext, useMemo } from 'react'
 import { useHistory } from 'react-router'
 
 import { asError } from '@sourcegraph/common'
@@ -9,14 +10,17 @@ import { Badge, Button, Container, LoadingSpinner, PageHeader, useObservable, Li
 import { AuthenticatedUser } from '../../../../../auth'
 import { HeroPage } from '../../../../../components/HeroPage'
 import { LoaderButton } from '../../../../../components/LoaderButton'
-import { Page } from '../../../../../components/Page'
 import { PageTitle } from '../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../components'
+import { CodeInsightsPage } from '../../../components/code-insights-page/CodeInsightsPage'
 import { FORM_ERROR, SubmissionErrors } from '../../../components/form/hooks/useForm'
-import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
-import { CustomInsightDashboard, isVirtualDashboard } from '../../../core/types'
-import { isBuiltInInsightDashboard } from '../../../core/types/dashboard/real-dashboard'
-import { isGlobalSubject, SupportedInsightSubject } from '../../../core/types/subjects'
+import {
+    CodeInsightsBackendContext,
+    CustomInsightDashboard,
+    InsightsDashboardOwner,
+    isPersonalOwner,
+    isVirtualDashboard,
+} from '../../../core'
 import {
     DashboardCreationFields,
     InsightsDashboardCreationContent,
@@ -36,10 +40,10 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
     const { dashboardId, authenticatedUser } = props
     const history = useHistory()
 
-    const { getDashboardById, getDashboardSubjects, updateDashboard } = useContext(CodeInsightsBackendContext)
+    const { getDashboardById, getDashboardOwners, updateDashboard } = useContext(CodeInsightsBackendContext)
 
     // Load edit dashboard information
-    const subjects = useObservable(useMemo(() => getDashboardSubjects(), [getDashboardSubjects]))
+    const owners = useObservable(useMemo(() => getDashboardOwners(), [getDashboardOwners]))
 
     const dashboard = useObservable(
         useMemo(
@@ -51,12 +55,12 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
     )
 
     // Loading state
-    if (subjects === undefined || dashboard === undefined) {
+    if (owners === undefined || dashboard === undefined) {
         return <LoadingSpinner />
     }
 
     // In case if we got null that means we couldn't find this dashboard
-    if (dashboard === null || isVirtualDashboard(dashboard) || isBuiltInInsightDashboard(dashboard)) {
+    if (dashboard === null || isVirtualDashboard(dashboard)) {
         return (
             <HeroPage
                 icon={MapSearchIcon}
@@ -79,15 +83,18 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
             return
         }
 
-        const { name, visibility, type } = dashboardValues
+        const { name, owner } = dashboardValues
+
+        if (!owner) {
+            throw new Error('You have to specify a dashboard visibility')
+        }
 
         try {
             const updatedDashboard = await updateDashboard({
                 id: dashboard.id,
                 nextDashboardInput: {
                     name,
-                    visibility,
-                    type,
+                    owners: [owner],
                 },
             }).toPromise()
 
@@ -101,8 +108,8 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
     const handleCancel = (): void => history.goBack()
 
     return (
-        <Page className={classNames('col-8', styles.page)}>
-            <PageTitle title="Configure dashboard" />
+        <CodeInsightsPage className={classNames('col-8', styles.page)}>
+            <PageTitle title={`Configure ${dashboard.title} - Code Insights`} />
 
             <PageHeader path={[{ icon: CodeInsightsIcon }, { text: 'Configure dashboard' }]} />
 
@@ -115,8 +122,8 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
 
             <Container className="mt-4">
                 <InsightsDashboardCreationContent
-                    initialValues={getDashboardInitialValues(dashboard, subjects)}
-                    subjects={subjects}
+                    initialValues={getDashboardInitialValues(dashboard, owners)}
+                    owners={owners}
                     onSubmit={handleSubmit}
                 >
                     {formAPI => (
@@ -145,31 +152,19 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
                     )}
                 </InsightsDashboardCreationContent>
             </Container>
-        </Page>
+        </CodeInsightsPage>
     )
 }
 
 function getDashboardInitialValues(
     dashboard: CustomInsightDashboard,
-    subjects: SupportedInsightSubject[]
+    availableOwners: InsightsDashboardOwner[]
 ): DashboardCreationFields | undefined {
-    if (dashboard.owner) {
-        return { name: dashboard.title, visibility: dashboard.owner.id }
+    const { title } = dashboard
+    const owner = dashboard.owners.find(owner => availableOwners.some(availableOwner => availableOwner.id === owner.id))
+
+    return {
+        name: title,
+        owner: owner ?? availableOwners.find(isPersonalOwner)!,
     }
-
-    if (dashboard.grants) {
-        const { users, organizations, global } = dashboard.grants
-        const globalSubject = subjects.find(isGlobalSubject)
-
-        if (global && globalSubject) {
-            return { name: dashboard.title, visibility: globalSubject.id }
-        }
-
-        return {
-            name: dashboard.title,
-            visibility: users[0] ?? organizations[0] ?? 'unkown',
-        }
-    }
-
-    return
 }

@@ -1,11 +1,12 @@
-import * as H from 'history'
 import React, { useCallback } from 'react'
 
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { FileDiffConnection } from '@sourcegraph/web/src/components/diff/FileDiffConnection'
-import { FileDiffNode } from '@sourcegraph/web/src/components/diff/FileDiffNode'
-import { FilteredConnectionQueryArguments } from '@sourcegraph/web/src/components/FilteredConnection'
+import * as H from 'history'
 
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+
+import { FileDiffConnection } from '../../../../components/diff/FileDiffConnection'
+import { FileDiffNode } from '../../../../components/diff/FileDiffNode'
+import { FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
 import { Scalars } from '../../../../graphql-operations'
 
 import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from './backend'

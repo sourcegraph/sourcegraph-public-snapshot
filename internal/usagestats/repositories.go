@@ -5,6 +5,9 @@ import (
 
 	"github.com/google/zoekt"
 	"github.com/google/zoekt/query"
+
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 )
@@ -34,10 +37,10 @@ type Repositories struct {
 	OtherBranchesNewLinesCount uint64
 }
 
-func GetRepositories(ctx context.Context) (*Repositories, error) {
+func GetRepositories(ctx context.Context, db database.DB) (*Repositories, error) {
 	var total Repositories
 
-	stats, err := gitserver.DefaultClient.ReposStats(ctx)
+	stats, err := gitserver.NewClient(db).ReposStats(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +50,7 @@ func GetRepositories(ctx context.Context) (*Repositories, error) {
 		total.GitDirBytes += uint64(stat.GitDirBytes)
 	}
 
-	if search.Indexed() == nil {
+	if !conf.SearchIndexEnabled() {
 		return &total, nil
 	}
 

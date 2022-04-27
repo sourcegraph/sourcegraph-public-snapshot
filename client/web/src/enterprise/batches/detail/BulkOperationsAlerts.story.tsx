@@ -1,6 +1,5 @@
 import { useMemo } from '@storybook/addons'
 import { storiesOf } from '@storybook/react'
-import React from 'react'
 
 import { BulkOperationState } from '@sourcegraph/shared/src/graphql-operations'
 

@@ -1,6 +1,7 @@
+import * as React from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
-import * as React from 'react'
 // eslint-disable-next-line no-restricted-imports
 import { Link } from 'react-router-dom'
 
@@ -35,3 +36,5 @@ export const AnchorLink = React.forwardRef(({ to, as: Component, children, class
         </Component>
     )
 }) as ForwardReferenceComponent<Link<unknown>, AnchorLinkProps>
+
+AnchorLink.displayName = 'AnchorLink'

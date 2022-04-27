@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+
+import classNames from 'classnames'
 import { Dropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 
 import { SearchContextInputProps, SubmitSearchProps } from '@sourcegraph/search'
@@ -11,8 +12,9 @@ import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { SearchContextCtaPrompt } from './SearchContextCtaPrompt'
-import styles from './SearchContextDropdown.module.scss'
 import { SearchContextMenu } from './SearchContextMenu'
+
+import styles from './SearchContextDropdown.module.scss'
 
 export interface SearchContextDropdownProps
     extends SearchContextInputProps,
@@ -122,7 +124,12 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                 data-tooltip={disabledTooltipText}
             >
                 <code className={classNames('test-selected-search-context-spec', styles.buttonContent)}>
-                    <span className="search-filter-keyword">context</span>
+                    {
+                        // a11y-ignore
+                        // Rule: "color-contrast" (Elements must have sufficient color contrast)
+                        // GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
+                    }
+                    <span className="a11y-ignore search-filter-keyword">context</span>
                     <span className="search-filter-separator">:</span>
                     {selectedSearchContextSpec?.startsWith('@') ? (
                         <>
@@ -134,7 +141,12 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                     )}
                 </code>
             </DropdownToggle>
-            <DropdownMenu positionFixed={true} className={styles.menu}>
+            {/*
+               a11y-ignore
+               Rule: "aria-required-children" (Certain ARIA roles must contain particular children)
+               GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/34348
+             */}
+            <DropdownMenu positionFixed={true} className={classNames('a11y-ignore', styles.menu)}>
                 <SearchContextMenu
                     {...props}
                     showSearchContextManagement={showSearchContextManagement}

@@ -1,6 +1,7 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
@@ -25,8 +26,9 @@ import { RouteDescriptor } from '../../util/contributions'
 import { UserAreaRouteContext } from '../area/UserArea'
 
 import { EditUserProfilePageGQLFragment } from './profile/UserSettingsProfilePage'
-import styles from './UserSettingsArea.module.scss'
 import { UserSettingsSidebar, UserSettingsSidebarItems } from './UserSettingsSidebar'
+
+import styles from './UserSettingsArea.module.scss'
 
 const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 

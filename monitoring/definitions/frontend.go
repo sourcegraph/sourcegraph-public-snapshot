@@ -156,7 +156,7 @@ func Frontend() *monitoring.Container {
 							Query:       `histogram_quantile(0.9, sum by(le) (rate(src_http_request_duration_seconds_bucket{route="blob"}[10m])))`,
 							Critical:    monitoring.Alert().GreaterOrEqual(5),
 							Panel:       monitoring.Panel().LegendFormat("latency").Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerCoreApplication,
+							Owner:       monitoring.ObservableOwnerRepoManagement,
 							PossibleSolutions: `
 								- Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
 								- Trace a request to see what the slowest part is: https://docs.sourcegraph.com/admin/observability/tracing
@@ -337,6 +337,8 @@ func Frontend() *monitoring.Container {
 			shared.CodeIntelligence.NewDependencyServiceGroup(containerName),
 			shared.CodeIntelligence.NewLockfilesGroup(containerName),
 
+			shared.GitServer.NewClientGroup(containerName),
+
 			shared.Batches.NewDBStoreGroup(containerName),
 			shared.Batches.NewServiceGroup(containerName),
 
@@ -434,7 +436,7 @@ func Frontend() *monitoring.Container {
 							Query:             `histogram_quantile(0.99, sum by (le,category)(rate(src_gitserver_request_duration_seconds_bucket{job=~"(sourcegraph-)?frontend"}[5m])))`,
 							Warning:           monitoring.Alert().GreaterOrEqual(20),
 							Panel:             monitoring.Panel().LegendFormat("{{category}}").Unit(monitoring.Seconds),
-							Owner:             monitoring.ObservableOwnerCoreApplication,
+							Owner:             monitoring.ObservableOwnerRepoManagement,
 							PossibleSolutions: "none",
 						},
 						{
@@ -443,7 +445,7 @@ func Frontend() *monitoring.Container {
 							Query:             `sum by (category)(increase(src_gitserver_request_duration_seconds_count{job=~"(sourcegraph-)?frontend",code!~"2.."}[5m])) / ignoring(code) group_left sum by (category)(increase(src_gitserver_request_duration_seconds_count{job=~"(sourcegraph-)?frontend"}[5m])) * 100`,
 							Warning:           monitoring.Alert().GreaterOrEqual(5).For(15 * time.Minute),
 							Panel:             monitoring.Panel().LegendFormat("{{category}}").Unit(monitoring.Percentage),
-							Owner:             monitoring.ObservableOwnerCoreApplication,
+							Owner:             monitoring.ObservableOwnerRepoManagement,
 							PossibleSolutions: "none",
 						},
 					},
@@ -480,7 +482,7 @@ func Frontend() *monitoring.Container {
 							Query:          `sum(irate(src_http_request_duration_seconds_count{route="sign-in",method="post"}[5m]))`,
 							NoAlert:        true,
 							Panel:          monitoring.Panel().Unit(monitoring.RequestsPerSecond),
-							Owner:          monitoring.ObservableOwnerCoreApplication,
+							Owner:          monitoring.ObservableOwnerCloudSaaS,
 							Interpretation: `Rate (QPS) of requests to sign-in`,
 						},
 						{
@@ -489,7 +491,7 @@ func Frontend() *monitoring.Container {
 							Query:          `histogram_quantile(0.99, sum(rate(src_http_request_duration_seconds_bucket{route="sign-in",method="post"}[5m])) by (le))`,
 							NoAlert:        true,
 							Panel:          monitoring.Panel().Unit(monitoring.Milliseconds),
-							Owner:          monitoring.ObservableOwnerCoreApplication,
+							Owner:          monitoring.ObservableOwnerCloudSaaS,
 							Interpretation: `99% percentile of sign-in latency`,
 						},
 						{
@@ -498,7 +500,7 @@ func Frontend() *monitoring.Container {
 							Query:          `sum by (code)(irate(src_http_request_duration_seconds_count{route="sign-in",method="post"}[5m]))/ ignoring (code) group_left sum(irate(src_http_request_duration_seconds_count{route="sign-in",method="post"}[5m]))*100`,
 							NoAlert:        true,
 							Panel:          monitoring.Panel().Unit(monitoring.Percentage),
-							Owner:          monitoring.ObservableOwnerCoreApplication,
+							Owner:          monitoring.ObservableOwnerCloudSaaS,
 							Interpretation: `Percentage of sign-in requests grouped by http code`,
 						},
 					},
@@ -510,7 +512,7 @@ func Frontend() *monitoring.Container {
 
 							NoAlert:        true,
 							Panel:          monitoring.Panel().Unit(monitoring.RequestsPerSecond),
-							Owner:          monitoring.ObservableOwnerCoreApplication,
+							Owner:          monitoring.ObservableOwnerCloudSaaS,
 							Interpretation: `Rate (QPS) of requests to sign-up`,
 						},
 						{
@@ -520,7 +522,7 @@ func Frontend() *monitoring.Container {
 							Query:          `histogram_quantile(0.99, sum(rate(src_http_request_duration_seconds_bucket{route="sign-up",method="post"}[5m])) by (le))`,
 							NoAlert:        true,
 							Panel:          monitoring.Panel().Unit(monitoring.Milliseconds),
-							Owner:          monitoring.ObservableOwnerCoreApplication,
+							Owner:          monitoring.ObservableOwnerCloudSaaS,
 							Interpretation: `99% percentile of sign-up latency`,
 						},
 						{
@@ -529,7 +531,7 @@ func Frontend() *monitoring.Container {
 							Query:          `sum by (code)(irate(src_http_request_duration_seconds_count{route="sign-up",method="post"}[5m]))/ ignoring (code) group_left sum(irate(src_http_request_duration_seconds_count{route="sign-out"}[5m]))*100`,
 							NoAlert:        true,
 							Panel:          monitoring.Panel().Unit(monitoring.Percentage),
-							Owner:          monitoring.ObservableOwnerCoreApplication,
+							Owner:          monitoring.ObservableOwnerCloudSaaS,
 							Interpretation: `Percentage of sign-up requests grouped by http code`,
 						},
 					},
@@ -540,7 +542,7 @@ func Frontend() *monitoring.Container {
 							Query:          `sum(irate(src_http_request_duration_seconds_count{route="sign-out"}[5m]))`,
 							NoAlert:        true,
 							Panel:          monitoring.Panel().Unit(monitoring.RequestsPerSecond),
-							Owner:          monitoring.ObservableOwnerCoreApplication,
+							Owner:          monitoring.ObservableOwnerCloudSaaS,
 							Interpretation: `Rate (QPS) of requests to sign-out`,
 						},
 						{
@@ -549,7 +551,7 @@ func Frontend() *monitoring.Container {
 							Query:          `histogram_quantile(0.99, sum(rate(src_http_request_duration_seconds_bucket{route="sign-out"}[5m])) by (le))`,
 							NoAlert:        true,
 							Panel:          monitoring.Panel().Unit(monitoring.Milliseconds),
-							Owner:          monitoring.ObservableOwnerCoreApplication,
+							Owner:          monitoring.ObservableOwnerCloudSaaS,
 							Interpretation: `99% percentile of sign-out latency`,
 						},
 						{
@@ -558,8 +560,28 @@ func Frontend() *monitoring.Container {
 							Query:          ` sum by (code)(irate(src_http_request_duration_seconds_count{route="sign-out"}[5m]))/ ignoring (code) group_left sum(irate(src_http_request_duration_seconds_count{route="sign-out"}[5m]))*100`,
 							NoAlert:        true,
 							Panel:          monitoring.Panel().Unit(monitoring.Percentage),
-							Owner:          monitoring.ObservableOwnerCoreApplication,
+							Owner:          monitoring.ObservableOwnerCloudSaaS,
 							Interpretation: `Percentage of sign-out requests grouped by http code`,
+						},
+					},
+					{
+						{
+							Name:           "account_failed_sign_in_attempts",
+							Description:    "rate of failed sign-in attempts",
+							Query:          `sum(rate(src_frontend_account_failed_sign_in_attempts_total[1m]))`,
+							NoAlert:        true,
+							Panel:          monitoring.Panel().Unit(monitoring.Number),
+							Owner:          monitoring.ObservableOwnerCloudSaaS,
+							Interpretation: `Failed sign-in attempts per minute`,
+						},
+						{
+							Name:           "account_lockouts",
+							Description:    "rate of account lockouts",
+							Query:          `sum(rate(src_frontend_account_lockouts_total[1m]))`,
+							NoAlert:        true,
+							Panel:          monitoring.Panel().Unit(monitoring.Number),
+							Owner:          monitoring.ObservableOwnerCloudSaaS,
+							Interpretation: `Account lockouts per minute`,
 						},
 					},
 				}},
@@ -580,7 +602,7 @@ func Frontend() *monitoring.Container {
 							Warning:     monitoring.Alert().GreaterOrEqual(15000).For(5 * time.Minute),
 							Critical:    monitoring.Alert().GreaterOrEqual(30000).For(5 * time.Minute),
 							Panel:       monitoring.Panel().Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerCoreApplication,
+							Owner:       monitoring.ObservableOwnerRepoManagement,
 							PossibleSolutions: `
 								- Revert recent commits that cause extensive listing from "external_services" and/or "user_external_accounts" tables.
 							`,
@@ -591,7 +613,7 @@ func Frontend() *monitoring.Container {
 							Query:       `min by (kubernetes_name) (src_encryption_cache_hit_total/(src_encryption_cache_hit_total+src_encryption_cache_miss_total))`,
 							NoAlert:     true,
 							Panel:       monitoring.Panel().Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerCoreApplication,
+							Owner:       monitoring.ObservableOwnerRepoManagement,
 							Interpretation: `
 								- Encryption cache hit ratio (hits/(hits+misses)) - minimum across all instances of a workload.
 							`,
@@ -602,7 +624,7 @@ func Frontend() *monitoring.Container {
 							Query:       `sum by (kubernetes_name) (irate(src_encryption_cache_eviction_total[5m]))`,
 							NoAlert:     true,
 							Panel:       monitoring.Panel().Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerCoreApplication,
+							Owner:       monitoring.ObservableOwnerRepoManagement,
 							Interpretation: `
 								- Rate of encryption cache evictions (caused by cache exceeding its maximum size) - sum across all instances of a workload
 							`,
@@ -677,11 +699,11 @@ func Frontend() *monitoring.Container {
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:        "mean_successful_sentinel_duration_over_1h30m",
-							Description: "mean successful sentinel search duration over 1h30m",
+							Name:        "mean_successful_sentinel_duration_over_2h",
+							Description: "mean successful sentinel search duration over 2h",
 							// WARNING: if you change this, ensure that it will not trigger alerts on a customer instance
 							// since these panels relate to metrics that don't exist on a customer instance.
-							Query:          "sum(rate(src_search_response_latency_seconds_sum{source=~`searchblitz.*`, status=`success`}[1h30m])) / sum(rate(src_search_response_latency_seconds_count{source=~`searchblitz.*`, status=`success`}[1h30m]))",
+							Query:          "sum(rate(src_search_response_latency_seconds_sum{source=~`searchblitz.*`, status=`success`}[2h])) / sum(rate(src_search_response_latency_seconds_count{source=~`searchblitz.*`, status=`success`}[2h]))",
 							Warning:        monitoring.Alert().GreaterOrEqual(5).For(15 * time.Minute),
 							Critical:       monitoring.Alert().GreaterOrEqual(8).For(30 * time.Minute),
 							Panel:          monitoring.Panel().LegendFormat("duration").Unit(monitoring.Seconds).With(monitoring.PanelOptions.NoLegend()),
@@ -694,11 +716,11 @@ func Frontend() *monitoring.Container {
 							`,
 						},
 						{
-							Name:        "mean_sentinel_stream_latency_over_1h30m",
-							Description: "mean successful sentinel stream latency over 1h30m",
+							Name:        "mean_sentinel_stream_latency_over_2h",
+							Description: "mean successful sentinel stream latency over 2h",
 							// WARNING: if you change this, ensure that it will not trigger alerts on a customer instance
 							// since these panels relate to metrics that don't exist on a customer instance.
-							Query:    `sum(rate(src_search_streaming_latency_seconds_sum{source=~"searchblitz.*"}[1h30m])) / sum(rate(src_search_streaming_latency_seconds_count{source=~"searchblitz.*"}[1h30m]))`,
+							Query:    `sum(rate(src_search_streaming_latency_seconds_sum{source=~"searchblitz.*"}[2h])) / sum(rate(src_search_streaming_latency_seconds_count{source=~"searchblitz.*"}[2h]))`,
 							Warning:  monitoring.Alert().GreaterOrEqual(2).For(15 * time.Minute),
 							Critical: monitoring.Alert().GreaterOrEqual(3).For(30 * time.Minute),
 							Panel: monitoring.Panel().LegendFormat("latency").Unit(monitoring.Seconds).With(
@@ -716,13 +738,13 @@ func Frontend() *monitoring.Container {
 					},
 					{
 						{
-							Name:        "90th_percentile_successful_sentinel_duration_over_1h30m",
-							Description: "90th percentile successful sentinel search duration over 1h30m",
+							Name:        "90th_percentile_successful_sentinel_duration_over_2h",
+							Description: "90th percentile successful sentinel search duration over 2h",
 							// WARNING: if you change this, ensure that it will not trigger alerts on a customer instance
 							// since these panels relate to metrics that don't exist on a customer instance.
-							Query:          `histogram_quantile(0.90, sum by (le)(label_replace(rate(src_search_response_latency_seconds_bucket{source=~"searchblitz.*", status="success"}[1h30m]), "source", "$1", "source", "searchblitz_(.*)")))`,
+							Query:          `histogram_quantile(0.90, sum by (le)(label_replace(rate(src_search_response_latency_seconds_bucket{source=~"searchblitz.*", status="success"}[2h]), "source", "$1", "source", "searchblitz_(.*)")))`,
 							Warning:        monitoring.Alert().GreaterOrEqual(5).For(15 * time.Minute),
-							Critical:       monitoring.Alert().GreaterOrEqual(10).For(30 * time.Minute),
+							Critical:       monitoring.Alert().GreaterOrEqual(10).For(210 * time.Minute),
 							Panel:          monitoring.Panel().LegendFormat("duration").Unit(monitoring.Seconds).With(monitoring.PanelOptions.NoLegend()),
 							Owner:          monitoring.ObservableOwnerSearch,
 							Interpretation: `90th percentile search duration for all successful sentinel queries`,
@@ -733,13 +755,13 @@ func Frontend() *monitoring.Container {
 							`,
 						},
 						{
-							Name:        "90th_percentile_sentinel_stream_latency_over_1h30m",
-							Description: "90th percentile successful sentinel stream latency over 1h30m",
+							Name:        "90th_percentile_sentinel_stream_latency_over_2h",
+							Description: "90th percentile successful sentinel stream latency over 2h",
 							// WARNING: if you change this, ensure that it will not trigger alerts on a customer instance
 							// since these panels relate to metrics that don't exist on a customer instance.
-							Query:    `histogram_quantile(0.90, sum by (le)(label_replace(rate(src_search_streaming_latency_seconds_bucket{source=~"searchblitz.*"}[1h30m]), "source", "$1", "source", "searchblitz_(.*)")))`,
+							Query:    `histogram_quantile(0.90, sum by (le)(label_replace(rate(src_search_streaming_latency_seconds_bucket{source=~"searchblitz.*"}[2h]), "source", "$1", "source", "searchblitz_(.*)")))`,
 							Warning:  monitoring.Alert().GreaterOrEqual(4).For(15 * time.Minute),
-							Critical: monitoring.Alert().GreaterOrEqual(6).For(30 * time.Minute),
+							Critical: monitoring.Alert().GreaterOrEqual(6).For(210 * time.Minute),
 							Panel: monitoring.Panel().LegendFormat("latency").Unit(monitoring.Seconds).With(
 								monitoring.PanelOptions.NoLegend(),
 								monitoring.PanelOptions.ColorOverride("latency", "#8AB8FF"),
@@ -907,7 +929,7 @@ func orgMetricRows(orgMetricSpec []struct {
 				Query:          `sum(irate(src_graphql_request_duration_seconds_count{route="` + m.route + `"}[5m]))`,
 				NoAlert:        true,
 				Panel:          monitoring.Panel().Unit(monitoring.RequestsPerSecond),
-				Owner:          monitoring.ObservableOwnerCoreApplication,
+				Owner:          monitoring.ObservableOwnerRepoManagement,
 				Interpretation: `Rate (QPS) of ` + m.description,
 			},
 			{
@@ -916,7 +938,7 @@ func orgMetricRows(orgMetricSpec []struct {
 				Query:          `histogram_quantile(0.99, sum(rate(src_graphql_request_duration_seconds_bucket{route="` + m.route + `"}[5m])) by (le))`,
 				NoAlert:        true,
 				Panel:          monitoring.Panel().Unit(monitoring.Milliseconds),
-				Owner:          monitoring.ObservableOwnerCoreApplication,
+				Owner:          monitoring.ObservableOwnerRepoManagement,
 				Interpretation: `99 percentile latency of` + m.description,
 			},
 			{
@@ -925,7 +947,7 @@ func orgMetricRows(orgMetricSpec []struct {
 				Query:          `sum (irate(src_graphql_request_duration_seconds_count{route="` + m.route + `",success="false"}[5m]))/sum(irate(src_graphql_request_duration_seconds_count{route="` + m.route + `"}[5m]))*100`,
 				NoAlert:        true,
 				Panel:          monitoring.Panel().Unit(monitoring.Percentage),
-				Owner:          monitoring.ObservableOwnerCoreApplication,
+				Owner:          monitoring.ObservableOwnerRepoManagement,
 				Interpretation: `Percentage of ` + m.description + ` that return an error`,
 			},
 		})

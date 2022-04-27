@@ -1,8 +1,9 @@
+import React, { useCallback, useState } from 'react'
+
 import * as H from 'history'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import InformationIcon from 'mdi-react/InformationIcon'
 import PencilIcon from 'mdi-react/PencilIcon'
-import React, { useCallback, useState } from 'react'
 
 import { isErrorLike, asError } from '@sourcegraph/common'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'

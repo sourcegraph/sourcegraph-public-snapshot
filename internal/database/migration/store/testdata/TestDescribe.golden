@@ -1,0 +1,1513 @@
+schemas.SchemaDescription{
+	Enums: []schemas.EnumDescription{
+		{
+			Name: "mpaa_rating",
+			Labels: []string{
+				"G",
+				"PG",
+				"PG-13",
+				"R",
+				"NC-17",
+			},
+		},
+	},
+	Functions: []schemas.FunctionDescription{
+		{
+			Name: "_group_concat",
+			Definition: `CREATE OR REPLACE FUNCTION public._group_concat(text, text)
+ RETURNS text
+ LANGUAGE sql
+ IMMUTABLE
+AS $function$
+SELECT CASE
+  WHEN $2 IS NULL THEN $1
+  WHEN $1 IS NULL THEN $2
+  ELSE $1 || ', ' || $2
+END
+$function$
+`,
+		},
+		{
+			Name: "film_in_stock",
+			Definition: `CREATE OR REPLACE FUNCTION public.film_in_stock(p_film_id integer, p_store_id integer, OUT p_film_count integer)
+ RETURNS SETOF integer
+ LANGUAGE sql
+AS $function$
+     SELECT inventory_id
+     FROM inventory
+     WHERE film_id = $1
+     AND store_id = $2
+     AND inventory_in_stock(inventory_id);
+$function$
+`,
+		},
+		{
+			Name: "film_not_in_stock",
+			Definition: `CREATE OR REPLACE FUNCTION public.film_not_in_stock(p_film_id integer, p_store_id integer, OUT p_film_count integer)
+ RETURNS SETOF integer
+ LANGUAGE sql
+AS $function$
+    SELECT inventory_id
+    FROM inventory
+    WHERE film_id = $1
+    AND store_id = $2
+    AND NOT inventory_in_stock(inventory_id);
+$function$
+`,
+		},
+		{
+			Name: "get_customer_balance",
+			Definition: `CREATE OR REPLACE FUNCTION public.get_customer_balance(p_customer_id integer, p_effective_date timestamp without time zone)
+ RETURNS numeric
+ LANGUAGE plpgsql
+AS $function$
+       --#OK, WE NEED TO CALCULATE THE CURRENT BALANCE GIVEN A CUSTOMER_ID AND A DATE
+       --#THAT WE WANT THE BALANCE TO BE EFFECTIVE FOR. THE BALANCE IS:
+       --#   1) RENTAL FEES FOR ALL PREVIOUS RENTALS
+       --#   2) ONE DOLLAR FOR EVERY DAY THE PREVIOUS RENTALS ARE OVERDUE
+       --#   3) IF A FILM IS MORE THAN RENTAL_DURATION * 2 OVERDUE, CHARGE THE REPLACEMENT_COST
+       --#   4) SUBTRACT ALL PAYMENTS MADE BEFORE THE DATE SPECIFIED
+DECLARE
+    v_rentfees DECIMAL(5,2); --#FEES PAID TO RENT THE VIDEOS INITIALLY
+    v_overfees INTEGER;      --#LATE FEES FOR PRIOR RENTALS
+    v_payments DECIMAL(5,2); --#SUM OF PAYMENTS MADE PREVIOUSLY
+BEGIN
+    SELECT COALESCE(SUM(film.rental_rate),0) INTO v_rentfees
+    FROM film, inventory, rental
+    WHERE film.film_id = inventory.film_id
+      AND inventory.inventory_id = rental.inventory_id
+      AND rental.rental_date <= p_effective_date
+      AND rental.customer_id = p_customer_id;
+    SELECT COALESCE(SUM(IF((rental.return_date - rental.rental_date) > (film.rental_duration * '1 day'::interval),
+        ((rental.return_date - rental.rental_date) - (film.rental_duration * '1 day'::interval)),0)),0) INTO v_overfees
+    FROM rental, inventory, film
+    WHERE film.film_id = inventory.film_id
+      AND inventory.inventory_id = rental.inventory_id
+      AND rental.rental_date <= p_effective_date
+      AND rental.customer_id = p_customer_id;
+    SELECT COALESCE(SUM(payment.amount),0) INTO v_payments
+    FROM payment
+    WHERE payment.payment_date <= p_effective_date
+    AND payment.customer_id = p_customer_id;
+    RETURN v_rentfees + v_overfees - v_payments;
+END
+$function$
+`,
+		},
+		{
+			Name: "inventory_held_by_customer",
+			Definition: `CREATE OR REPLACE FUNCTION public.inventory_held_by_customer(p_inventory_id integer)
+ RETURNS integer
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+    v_customer_id INTEGER;
+BEGIN
+  SELECT customer_id INTO v_customer_id
+  FROM rental
+  WHERE return_date IS NULL
+  AND inventory_id = p_inventory_id;
+  RETURN v_customer_id;
+END $function$
+`,
+		},
+		{
+			Name: "inventory_in_stock",
+			Definition: `CREATE OR REPLACE FUNCTION public.inventory_in_stock(p_inventory_id integer)
+ RETURNS boolean
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+    v_rentals INTEGER;
+    v_out     INTEGER;
+BEGIN
+    -- AN ITEM IS IN-STOCK IF THERE ARE EITHER NO ROWS IN THE rental TABLE
+    -- FOR THE ITEM OR ALL ROWS HAVE return_date POPULATED
+    SELECT count(*) INTO v_rentals
+    FROM rental
+    WHERE inventory_id = p_inventory_id;
+    IF v_rentals = 0 THEN
+      RETURN TRUE;
+    END IF;
+    SELECT COUNT(rental_id) INTO v_out
+    FROM inventory LEFT JOIN rental USING(inventory_id)
+    WHERE inventory.inventory_id = p_inventory_id
+    AND rental.return_date IS NULL;
+    IF v_out > 0 THEN
+      RETURN FALSE;
+    ELSE
+      RETURN TRUE;
+    END IF;
+END $function$
+`,
+		},
+		{
+			Name: "last_day",
+			Definition: `CREATE OR REPLACE FUNCTION public.last_day(timestamp without time zone)
+ RETURNS date
+ LANGUAGE sql
+ IMMUTABLE STRICT
+AS $function$
+  SELECT CASE
+    WHEN EXTRACT(MONTH FROM $1) = 12 THEN
+      (((EXTRACT(YEAR FROM $1) + 1) operator(pg_catalog.||) '-01-01')::date - INTERVAL '1 day')::date
+    ELSE
+      ((EXTRACT(YEAR FROM $1) operator(pg_catalog.||) '-' operator(pg_catalog.||) (EXTRACT(MONTH FROM $1) + 1) operator(pg_catalog.||) '-01')::date - INTERVAL '1 day')::date
+    END
+$function$
+`,
+		},
+		{
+			Name: "last_updated",
+			Definition: `CREATE OR REPLACE FUNCTION public.last_updated()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+    NEW.last_update = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END $function$
+`,
+		},
+		{
+			Name: "rewards_report",
+			Definition: `CREATE OR REPLACE FUNCTION public.rewards_report(min_monthly_purchases integer, min_dollar_amount_purchased numeric)
+ RETURNS SETOF customer
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+    last_month_start DATE;
+    last_month_end DATE;
+rr RECORD;
+tmpSQL TEXT;
+BEGIN
+    /* Some sanity checks... */
+    IF min_monthly_purchases = 0 THEN
+        RAISE EXCEPTION 'Minimum monthly purchases parameter must be > 0';
+    END IF;
+    IF min_dollar_amount_purchased = 0.00 THEN
+        RAISE EXCEPTION 'Minimum monthly dollar amount purchased parameter must be > $0.00';
+    END IF;
+    last_month_start := CURRENT_DATE - '3 month'::interval;
+    last_month_start := to_date((extract(YEAR FROM last_month_start) || '-' || extract(MONTH FROM last_month_start) || '-01'),'YYYY-MM-DD');
+    last_month_end := LAST_DAY(last_month_start);
+    /*
+    Create a temporary storage area for Customer IDs.
+    */
+    CREATE TEMPORARY TABLE tmpCustomer (customer_id INTEGER NOT NULL PRIMARY KEY);
+    /*
+    Find all customers meeting the monthly purchase requirements
+    */
+    tmpSQL := 'INSERT INTO tmpCustomer (customer_id)
+        SELECT p.customer_id
+        FROM payment AS p
+        WHERE DATE(p.payment_date) BETWEEN '||quote_literal(last_month_start) ||' AND '|| quote_literal(last_month_end) || '
+        GROUP BY customer_id
+        HAVING SUM(p.amount) > '|| min_dollar_amount_purchased || '
+        AND COUNT(customer_id) > ' ||min_monthly_purchases ;
+    EXECUTE tmpSQL;
+    /*
+    Output ALL customer information of matching rewardees.
+    Customize output as needed.
+    */
+    FOR rr IN EXECUTE 'SELECT c.* FROM tmpCustomer AS t INNER JOIN customer AS c ON t.customer_id = c.customer_id' LOOP
+        RETURN NEXT rr;
+    END LOOP;
+    /* Clean up */
+    tmpSQL := 'DROP TABLE tmpCustomer';
+    EXECUTE tmpSQL;
+RETURN;
+END
+$function$
+`,
+		},
+	},
+	Sequences: []schemas.SequenceDescription{
+		{
+			Name:         "actor_actor_id_seq",
+			TypeName:     "bigint",
+			StartValue:   1,
+			MinimumValue: 1,
+			MaximumValue: 9223372036854775807,
+			Increment:    1,
+			CycleOption:  "NO",
+		},
+		{
+			Name:         "address_address_id_seq",
+			TypeName:     "bigint",
+			StartValue:   1,
+			MinimumValue: 1,
+			MaximumValue: 9223372036854775807,
+			Increment:    1,
+			CycleOption:  "NO",
+		},
+		{
+			Name:         "category_category_id_seq",
+			TypeName:     "bigint",
+			StartValue:   1,
+			MinimumValue: 1,
+			MaximumValue: 9223372036854775807,
+			Increment:    1,
+			CycleOption:  "NO",
+		},
+		{
+			Name:         "city_city_id_seq",
+			TypeName:     "bigint",
+			StartValue:   1,
+			MinimumValue: 1,
+			MaximumValue: 9223372036854775807,
+			Increment:    1,
+			CycleOption:  "NO",
+		},
+		{
+			Name:         "country_country_id_seq",
+			TypeName:     "bigint",
+			StartValue:   1,
+			MinimumValue: 1,
+			MaximumValue: 9223372036854775807,
+			Increment:    1,
+			CycleOption:  "NO",
+		},
+		{
+			Name:         "customer_customer_id_seq",
+			TypeName:     "bigint",
+			StartValue:   1,
+			MinimumValue: 1,
+			MaximumValue: 9223372036854775807,
+			Increment:    1,
+			CycleOption:  "NO",
+		},
+		{
+			Name:         "film_film_id_seq",
+			TypeName:     "bigint",
+			StartValue:   1,
+			MinimumValue: 1,
+			MaximumValue: 9223372036854775807,
+			Increment:    1,
+			CycleOption:  "NO",
+		},
+		{
+			Name:         "inventory_inventory_id_seq",
+			TypeName:     "bigint",
+			StartValue:   1,
+			MinimumValue: 1,
+			MaximumValue: 9223372036854775807,
+			Increment:    1,
+			CycleOption:  "NO",
+		},
+		{
+			Name:         "language_language_id_seq",
+			TypeName:     "bigint",
+			StartValue:   1,
+			MinimumValue: 1,
+			MaximumValue: 9223372036854775807,
+			Increment:    1,
+			CycleOption:  "NO",
+		},
+		{
+			Name:         "payment_payment_id_seq",
+			TypeName:     "bigint",
+			StartValue:   1,
+			MinimumValue: 1,
+			MaximumValue: 9223372036854775807,
+			Increment:    1,
+			CycleOption:  "NO",
+		},
+		{
+			Name:         "rental_rental_id_seq",
+			TypeName:     "bigint",
+			StartValue:   1,
+			MinimumValue: 1,
+			MaximumValue: 9223372036854775807,
+			Increment:    1,
+			CycleOption:  "NO",
+		},
+		{
+			Name:         "staff_staff_id_seq",
+			TypeName:     "bigint",
+			StartValue:   1,
+			MinimumValue: 1,
+			MaximumValue: 9223372036854775807,
+			Increment:    1,
+			CycleOption:  "NO",
+		},
+		{
+			Name:         "store_store_id_seq",
+			TypeName:     "bigint",
+			StartValue:   1,
+			MinimumValue: 1,
+			MaximumValue: 9223372036854775807,
+			Increment:    1,
+			CycleOption:  "NO",
+		},
+	},
+	Tables: []schemas.TableDescription{
+		{
+			Name: "actor",
+			Columns: []schemas.ColumnDescription{
+				{
+					Name:        "actor_id",
+					Index:       1,
+					TypeName:    "integer",
+					Default:     "nextval('actor_actor_id_seq'::regclass)",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:                   "first_name",
+					Index:                  2,
+					TypeName:               "character varying(45)",
+					CharacterMaximumLength: 45,
+					IsGenerated:            "NEVER",
+				},
+				{
+					Name:                   "last_name",
+					Index:                  3,
+					TypeName:               "character varying(45)",
+					CharacterMaximumLength: 45,
+					IsGenerated:            "NEVER",
+				},
+				{
+					Name:        "last_update",
+					Index:       4,
+					TypeName:    "timestamp without time zone",
+					Default:     "now()",
+					IsGenerated: "NEVER",
+				},
+			},
+			Indexes: []schemas.IndexDescription{
+				{
+					Name:                 "actor_pkey",
+					IsPrimaryKey:         true,
+					IsUnique:             true,
+					IndexDefinition:      "CREATE UNIQUE INDEX actor_pkey ON actor USING btree (actor_id)",
+					ConstraintType:       "p",
+					ConstraintDefinition: "PRIMARY KEY (actor_id)",
+				},
+				{
+					Name:            "idx_actor_last_name",
+					IndexDefinition: "CREATE INDEX idx_actor_last_name ON actor USING btree (last_name)",
+				},
+			},
+			Triggers: []schemas.TriggerDescription{{
+				Name:       "last_updated",
+				Definition: "CREATE TRIGGER last_updated BEFORE UPDATE ON actor FOR EACH ROW EXECUTE FUNCTION last_updated()",
+			}},
+		},
+		{
+			Name: "address",
+			Columns: []schemas.ColumnDescription{
+				{
+					Name:                   "address",
+					Index:                  2,
+					TypeName:               "character varying(50)",
+					CharacterMaximumLength: 50,
+					IsGenerated:            "NEVER",
+				},
+				{
+					Name:                   "address2",
+					Index:                  3,
+					TypeName:               "character varying(50)",
+					IsNullable:             true,
+					CharacterMaximumLength: 50,
+					IsGenerated:            "NEVER",
+				},
+				{
+					Name:        "address_id",
+					Index:       1,
+					TypeName:    "integer",
+					Default:     "nextval('address_address_id_seq'::regclass)",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:        "city_id",
+					Index:       5,
+					TypeName:    "smallint",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:                   "district",
+					Index:                  4,
+					TypeName:               "character varying(20)",
+					CharacterMaximumLength: 20,
+					IsGenerated:            "NEVER",
+				},
+				{
+					Name:        "last_update",
+					Index:       8,
+					TypeName:    "timestamp without time zone",
+					Default:     "now()",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:                   "phone",
+					Index:                  7,
+					TypeName:               "character varying(20)",
+					CharacterMaximumLength: 20,
+					IsGenerated:            "NEVER",
+				},
+				{
+					Name:                   "postal_code",
+					Index:                  6,
+					TypeName:               "character varying(10)",
+					IsNullable:             true,
+					CharacterMaximumLength: 10,
+					IsGenerated:            "NEVER",
+				},
+			},
+			Indexes: []schemas.IndexDescription{
+				{
+					Name:                 "address_pkey",
+					IsPrimaryKey:         true,
+					IsUnique:             true,
+					IndexDefinition:      "CREATE UNIQUE INDEX address_pkey ON address USING btree (address_id)",
+					ConstraintType:       "p",
+					ConstraintDefinition: "PRIMARY KEY (address_id)",
+				},
+				{
+					Name:            "idx_fk_city_id",
+					IndexDefinition: "CREATE INDEX idx_fk_city_id ON address USING btree (city_id)",
+				},
+			},
+			Constraints: []schemas.ConstraintDescription{{
+				Name:                 "fk_address_city",
+				ConstraintType:       "f",
+				RefTableName:         "city",
+				ConstraintDefinition: "FOREIGN KEY (city_id) REFERENCES city(city_id)",
+			}},
+			Triggers: []schemas.TriggerDescription{{
+				Name:       "last_updated",
+				Definition: "CREATE TRIGGER last_updated BEFORE UPDATE ON address FOR EACH ROW EXECUTE FUNCTION last_updated()",
+			}},
+		},
+		{
+			Name: "category",
+			Columns: []schemas.ColumnDescription{
+				{
+					Name:        "category_id",
+					Index:       1,
+					TypeName:    "integer",
+					Default:     "nextval('category_category_id_seq'::regclass)",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:        "last_update",
+					Index:       3,
+					TypeName:    "timestamp without time zone",
+					Default:     "now()",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:                   "name",
+					Index:                  2,
+					TypeName:               "character varying(25)",
+					CharacterMaximumLength: 25,
+					IsGenerated:            "NEVER",
+				},
+			},
+			Indexes: []schemas.IndexDescription{{
+				Name:                 "category_pkey",
+				IsPrimaryKey:         true,
+				IsUnique:             true,
+				IndexDefinition:      "CREATE UNIQUE INDEX category_pkey ON category USING btree (category_id)",
+				ConstraintType:       "p",
+				ConstraintDefinition: "PRIMARY KEY (category_id)",
+			}},
+			Triggers: []schemas.TriggerDescription{{
+				Name:       "last_updated",
+				Definition: "CREATE TRIGGER last_updated BEFORE UPDATE ON category FOR EACH ROW EXECUTE FUNCTION last_updated()",
+			}},
+		},
+		{
+			Name: "city",
+			Columns: []schemas.ColumnDescription{
+				{
+					Name:                   "city",
+					Index:                  2,
+					TypeName:               "character varying(50)",
+					CharacterMaximumLength: 50,
+					IsGenerated:            "NEVER",
+				},
+				{
+					Name:        "city_id",
+					Index:       1,
+					TypeName:    "integer",
+					Default:     "nextval('city_city_id_seq'::regclass)",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:        "country_id",
+					Index:       3,
+					TypeName:    "smallint",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:        "last_update",
+					Index:       4,
+					TypeName:    "timestamp without time zone",
+					Default:     "now()",
+					IsGenerated: "NEVER",
+				},
+			},
+			Indexes: []schemas.IndexDescription{
+				{
+					Name:                 "city_pkey",
+					IsPrimaryKey:         true,
+					IsUnique:             true,
+					IndexDefinition:      "CREATE UNIQUE INDEX city_pkey ON city USING btree (city_id)",
+					ConstraintType:       "p",
+					ConstraintDefinition: "PRIMARY KEY (city_id)",
+				},
+				{
+					Name:            "idx_fk_country_id",
+					IndexDefinition: "CREATE INDEX idx_fk_country_id ON city USING btree (country_id)",
+				},
+			},
+			Constraints: []schemas.ConstraintDescription{{
+				Name:                 "fk_city",
+				ConstraintType:       "f",
+				RefTableName:         "country",
+				ConstraintDefinition: "FOREIGN KEY (country_id) REFERENCES country(country_id)",
+			}},
+			Triggers: []schemas.TriggerDescription{{
+				Name:       "last_updated",
+				Definition: "CREATE TRIGGER last_updated BEFORE UPDATE ON city FOR EACH ROW EXECUTE FUNCTION last_updated()",
+			}},
+		},
+		{
+			Name: "country",
+			Columns: []schemas.ColumnDescription{
+				{
+					Name:                   "country",
+					Index:                  2,
+					TypeName:               "character varying(50)",
+					CharacterMaximumLength: 50,
+					IsGenerated:            "NEVER",
+				},
+				{
+					Name:        "country_id",
+					Index:       1,
+					TypeName:    "integer",
+					Default:     "nextval('country_country_id_seq'::regclass)",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:        "last_update",
+					Index:       3,
+					TypeName:    "timestamp without time zone",
+					Default:     "now()",
+					IsGenerated: "NEVER",
+				},
+			},
+			Indexes: []schemas.IndexDescription{{
+				Name:                 "country_pkey",
+				IsPrimaryKey:         true,
+				IsUnique:             true,
+				IndexDefinition:      "CREATE UNIQUE INDEX country_pkey ON country USING btree (country_id)",
+				ConstraintType:       "p",
+				ConstraintDefinition: "PRIMARY KEY (country_id)",
+			}},
+			Triggers: []schemas.TriggerDescription{{
+				Name:       "last_updated",
+				Definition: "CREATE TRIGGER last_updated BEFORE UPDATE ON country FOR EACH ROW EXECUTE FUNCTION last_updated()",
+			}},
+		},
+		{
+			Name: "customer",
+			Columns: []schemas.ColumnDescription{
+				{
+					Name:        "active",
+					Index:       10,
+					TypeName:    "integer",
+					IsNullable:  true,
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:        "activebool",
+					Index:       7,
+					TypeName:    "boolean",
+					Default:     "true",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:        "address_id",
+					Index:       6,
+					TypeName:    "smallint",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:        "create_date",
+					Index:       8,
+					TypeName:    "date",
+					Default:     "('now'::text)::date",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:        "customer_id",
+					Index:       1,
+					TypeName:    "integer",
+					Default:     "nextval('customer_customer_id_seq'::regclass)",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:                   "email",
+					Index:                  5,
+					TypeName:               "character varying(50)",
+					IsNullable:             true,
+					CharacterMaximumLength: 50,
+					IsGenerated:            "NEVER",
+				},
+				{
+					Name:                   "first_name",
+					Index:                  3,
+					TypeName:               "character varying(45)",
+					CharacterMaximumLength: 45,
+					IsGenerated:            "NEVER",
+				},
+				{
+					Name:                   "last_name",
+					Index:                  4,
+					TypeName:               "character varying(45)",
+					CharacterMaximumLength: 45,
+					IsGenerated:            "NEVER",
+				},
+				{
+					Name:        "last_update",
+					Index:       9,
+					TypeName:    "timestamp without time zone",
+					IsNullable:  true,
+					Default:     "now()",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:        "store_id",
+					Index:       2,
+					TypeName:    "smallint",
+					IsGenerated: "NEVER",
+				},
+			},
+			Indexes: []schemas.IndexDescription{
+				{
+					Name:                 "customer_pkey",
+					IsPrimaryKey:         true,
+					IsUnique:             true,
+					IndexDefinition:      "CREATE UNIQUE INDEX customer_pkey ON customer USING btree (customer_id)",
+					ConstraintType:       "p",
+					ConstraintDefinition: "PRIMARY KEY (customer_id)",
+				},
+				{
+					Name:            "idx_fk_address_id",
+					IndexDefinition: "CREATE INDEX idx_fk_address_id ON customer USING btree (address_id)",
+				},
+				{
+					Name:            "idx_fk_store_id",
+					IndexDefinition: "CREATE INDEX idx_fk_store_id ON customer USING btree (store_id)",
+				},
+				{
+					Name:            "idx_last_name",
+					IndexDefinition: "CREATE INDEX idx_last_name ON customer USING btree (last_name)",
+				},
+			},
+			Constraints: []schemas.ConstraintDescription{{
+				Name:                 "customer_address_id_fkey",
+				ConstraintType:       "f",
+				RefTableName:         "address",
+				ConstraintDefinition: "FOREIGN KEY (address_id) REFERENCES address(address_id) ON UPDATE CASCADE ON DELETE RESTRICT",
+			}},
+			Triggers: []schemas.TriggerDescription{{
+				Name:       "last_updated",
+				Definition: "CREATE TRIGGER last_updated BEFORE UPDATE ON customer FOR EACH ROW EXECUTE FUNCTION last_updated()",
+			}},
+		},
+		{
+			Name: "film",
+			Columns: []schemas.ColumnDescription{
+				{
+					Name:        "description",
+					Index:       3,
+					TypeName:    "text",
+					IsNullable:  true,
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:        "film_id",
+					Index:       1,
+					TypeName:    "integer",
+					Default:     "nextval('film_film_id_seq'::regclass)",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:        "fulltext",
+					Index:       13,
+					TypeName:    "tsvector",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:        "language_id",
+					Index:       5,
+					TypeName:    "smallint",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:        "last_update",
+					Index:       11,
+					TypeName:    "timestamp without time zone",
+					Default:     "now()",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:        "length",
+					Index:       8,
+					TypeName:    "smallint",
+					IsNullable:  true,
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:        "rating",
+					Index:       10,
+					TypeName:    "mpaa_rating",
+					IsNullable:  true,
+					Default:     "'G'::mpaa_rating",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:        "release_year",
+					Index:       4,
+					TypeName:    "integer",
+					IsNullable:  true,
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:        "rental_duration",
+					Index:       6,
+					TypeName:    "smallint",
+					Default:     "3",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:        "rental_rate",
+					Index:       7,
+					TypeName:    "numeric",
+					Default:     "4.99",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:        "replacement_cost",
+					Index:       9,
+					TypeName:    "numeric",
+					Default:     "19.99",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:        "special_features",
+					Index:       12,
+					TypeName:    "text[]",
+					IsNullable:  true,
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:                   "title",
+					Index:                  2,
+					TypeName:               "character varying(255)",
+					CharacterMaximumLength: 255,
+					IsGenerated:            "NEVER",
+				},
+			},
+			Indexes: []schemas.IndexDescription{
+				{
+					Name:            "film_fulltext_idx",
+					IndexDefinition: "CREATE INDEX film_fulltext_idx ON film USING gist (fulltext)",
+				},
+				{
+					Name:                 "film_pkey",
+					IsPrimaryKey:         true,
+					IsUnique:             true,
+					IndexDefinition:      "CREATE UNIQUE INDEX film_pkey ON film USING btree (film_id)",
+					ConstraintType:       "p",
+					ConstraintDefinition: "PRIMARY KEY (film_id)",
+				},
+				{
+					Name:            "idx_fk_language_id",
+					IndexDefinition: "CREATE INDEX idx_fk_language_id ON film USING btree (language_id)",
+				},
+				{
+					Name:            "idx_title",
+					IndexDefinition: "CREATE INDEX idx_title ON film USING btree (title)",
+				},
+			},
+			Constraints: []schemas.ConstraintDescription{{
+				Name:                 "film_language_id_fkey",
+				ConstraintType:       "f",
+				RefTableName:         "language",
+				ConstraintDefinition: "FOREIGN KEY (language_id) REFERENCES language(language_id) ON UPDATE CASCADE ON DELETE RESTRICT",
+			}},
+			Triggers: []schemas.TriggerDescription{
+				{
+					Name:       "film_fulltext_trigger",
+					Definition: "CREATE TRIGGER film_fulltext_trigger BEFORE INSERT OR UPDATE ON film FOR EACH ROW EXECUTE FUNCTION tsvector_update_trigger('fulltext', 'pg_catalog.english', 'title', 'description')",
+				},
+				{
+					Name:       "last_updated",
+					Definition: "CREATE TRIGGER last_updated BEFORE UPDATE ON film FOR EACH ROW EXECUTE FUNCTION last_updated()",
+				},
+			},
+		},
+		{
+			Name: "film_actor",
+			Columns: []schemas.ColumnDescription{
+				{
+					Name:        "actor_id",
+					Index:       1,
+					TypeName:    "smallint",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:        "film_id",
+					Index:       2,
+					TypeName:    "smallint",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:        "last_update",
+					Index:       3,
+					TypeName:    "timestamp without time zone",
+					Default:     "now()",
+					IsGenerated: "NEVER",
+				},
+			},
+			Indexes: []schemas.IndexDescription{
+				{
+					Name:                 "film_actor_pkey",
+					IsPrimaryKey:         true,
+					IsUnique:             true,
+					IndexDefinition:      "CREATE UNIQUE INDEX film_actor_pkey ON film_actor USING btree (actor_id, film_id)",
+					ConstraintType:       "p",
+					ConstraintDefinition: "PRIMARY KEY (actor_id, film_id)",
+				},
+				{
+					Name:            "idx_fk_film_id",
+					IndexDefinition: "CREATE INDEX idx_fk_film_id ON film_actor USING btree (film_id)",
+				},
+			},
+			Constraints: []schemas.ConstraintDescription{
+				{
+					Name:                 "film_actor_actor_id_fkey",
+					ConstraintType:       "f",
+					RefTableName:         "actor",
+					ConstraintDefinition: "FOREIGN KEY (actor_id) REFERENCES actor(actor_id) ON UPDATE CASCADE ON DELETE RESTRICT",
+				},
+				{
+					Name:                 "film_actor_film_id_fkey",
+					ConstraintType:       "f",
+					RefTableName:         "film",
+					ConstraintDefinition: "FOREIGN KEY (film_id) REFERENCES film(film_id) ON UPDATE CASCADE ON DELETE RESTRICT",
+				},
+			},
+			Triggers: []schemas.TriggerDescription{{
+				Name:       "last_updated",
+				Definition: "CREATE TRIGGER last_updated BEFORE UPDATE ON film_actor FOR EACH ROW EXECUTE FUNCTION last_updated()",
+			}},
+		},
+		{
+			Name: "film_category",
+			Columns: []schemas.ColumnDescription{
+				{
+					Name:        "category_id",
+					Index:       2,
+					TypeName:    "smallint",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:        "film_id",
+					Index:       1,
+					TypeName:    "smallint",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:        "last_update",
+					Index:       3,
+					TypeName:    "timestamp without time zone",
+					Default:     "now()",
+					IsGenerated: "NEVER",
+				},
+			},
+			Indexes: []schemas.IndexDescription{{
+				Name:                 "film_category_pkey",
+				IsPrimaryKey:         true,
+				IsUnique:             true,
+				IndexDefinition:      "CREATE UNIQUE INDEX film_category_pkey ON film_category USING btree (film_id, category_id)",
+				ConstraintType:       "p",
+				ConstraintDefinition: "PRIMARY KEY (film_id, category_id)",
+			}},
+			Constraints: []schemas.ConstraintDescription{
+				{
+					Name:                 "film_category_category_id_fkey",
+					ConstraintType:       "f",
+					RefTableName:         "category",
+					ConstraintDefinition: "FOREIGN KEY (category_id) REFERENCES category(category_id) ON UPDATE CASCADE ON DELETE RESTRICT",
+				},
+				{
+					Name:                 "film_category_film_id_fkey",
+					ConstraintType:       "f",
+					RefTableName:         "film",
+					ConstraintDefinition: "FOREIGN KEY (film_id) REFERENCES film(film_id) ON UPDATE CASCADE ON DELETE RESTRICT",
+				},
+			},
+			Triggers: []schemas.TriggerDescription{{
+				Name:       "last_updated",
+				Definition: "CREATE TRIGGER last_updated BEFORE UPDATE ON film_category FOR EACH ROW EXECUTE FUNCTION last_updated()",
+			}},
+		},
+		{
+			Name: "inventory",
+			Columns: []schemas.ColumnDescription{
+				{
+					Name:        "film_id",
+					Index:       2,
+					TypeName:    "smallint",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:        "inventory_id",
+					Index:       1,
+					TypeName:    "integer",
+					Default:     "nextval('inventory_inventory_id_seq'::regclass)",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:        "last_update",
+					Index:       4,
+					TypeName:    "timestamp without time zone",
+					Default:     "now()",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:        "store_id",
+					Index:       3,
+					TypeName:    "smallint",
+					IsGenerated: "NEVER",
+				},
+			},
+			Indexes: []schemas.IndexDescription{
+				{
+					Name:            "idx_store_id_film_id",
+					IndexDefinition: "CREATE INDEX idx_store_id_film_id ON inventory USING btree (store_id, film_id)",
+				},
+				{
+					Name:                 "inventory_pkey",
+					IsPrimaryKey:         true,
+					IsUnique:             true,
+					IndexDefinition:      "CREATE UNIQUE INDEX inventory_pkey ON inventory USING btree (inventory_id)",
+					ConstraintType:       "p",
+					ConstraintDefinition: "PRIMARY KEY (inventory_id)",
+				},
+			},
+			Constraints: []schemas.ConstraintDescription{{
+				Name:                 "inventory_film_id_fkey",
+				ConstraintType:       "f",
+				RefTableName:         "film",
+				ConstraintDefinition: "FOREIGN KEY (film_id) REFERENCES film(film_id) ON UPDATE CASCADE ON DELETE RESTRICT",
+			}},
+			Triggers: []schemas.TriggerDescription{{
+				Name:       "last_updated",
+				Definition: "CREATE TRIGGER last_updated BEFORE UPDATE ON inventory FOR EACH ROW EXECUTE FUNCTION last_updated()",
+			}},
+		},
+		{
+			Name: "language",
+			Columns: []schemas.ColumnDescription{
+				{
+					Name:        "language_id",
+					Index:       1,
+					TypeName:    "integer",
+					Default:     "nextval('language_language_id_seq'::regclass)",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:        "last_update",
+					Index:       3,
+					TypeName:    "timestamp without time zone",
+					Default:     "now()",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:                   "name",
+					Index:                  2,
+					TypeName:               "character(20)",
+					CharacterMaximumLength: 20,
+					IsGenerated:            "NEVER",
+				},
+			},
+			Indexes: []schemas.IndexDescription{{
+				Name:                 "language_pkey",
+				IsPrimaryKey:         true,
+				IsUnique:             true,
+				IndexDefinition:      "CREATE UNIQUE INDEX language_pkey ON language USING btree (language_id)",
+				ConstraintType:       "p",
+				ConstraintDefinition: "PRIMARY KEY (language_id)",
+			}},
+			Triggers: []schemas.TriggerDescription{{
+				Name:       "last_updated",
+				Definition: "CREATE TRIGGER last_updated BEFORE UPDATE ON language FOR EACH ROW EXECUTE FUNCTION last_updated()",
+			}},
+		},
+		{
+			Name: "payment",
+			Columns: []schemas.ColumnDescription{
+				{
+					Name:        "amount",
+					Index:       5,
+					TypeName:    "numeric",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:        "customer_id",
+					Index:       2,
+					TypeName:    "smallint",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:        "payment_date",
+					Index:       6,
+					TypeName:    "timestamp without time zone",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:        "payment_id",
+					Index:       1,
+					TypeName:    "integer",
+					Default:     "nextval('payment_payment_id_seq'::regclass)",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:        "rental_id",
+					Index:       4,
+					TypeName:    "integer",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:        "staff_id",
+					Index:       3,
+					TypeName:    "smallint",
+					IsGenerated: "NEVER",
+				},
+			},
+			Indexes: []schemas.IndexDescription{
+				{
+					Name:            "idx_fk_customer_id",
+					IndexDefinition: "CREATE INDEX idx_fk_customer_id ON payment USING btree (customer_id)",
+				},
+				{
+					Name:            "idx_fk_rental_id",
+					IndexDefinition: "CREATE INDEX idx_fk_rental_id ON payment USING btree (rental_id)",
+				},
+				{
+					Name:            "idx_fk_staff_id",
+					IndexDefinition: "CREATE INDEX idx_fk_staff_id ON payment USING btree (staff_id)",
+				},
+				{
+					Name:                 "payment_pkey",
+					IsPrimaryKey:         true,
+					IsUnique:             true,
+					IndexDefinition:      "CREATE UNIQUE INDEX payment_pkey ON payment USING btree (payment_id)",
+					ConstraintType:       "p",
+					ConstraintDefinition: "PRIMARY KEY (payment_id)",
+				},
+			},
+			Constraints: []schemas.ConstraintDescription{
+				{
+					Name:                 "payment_customer_id_fkey",
+					ConstraintType:       "f",
+					RefTableName:         "customer",
+					ConstraintDefinition: "FOREIGN KEY (customer_id) REFERENCES customer(customer_id) ON UPDATE CASCADE ON DELETE RESTRICT",
+				},
+				{
+					Name:                 "payment_rental_id_fkey",
+					ConstraintType:       "f",
+					RefTableName:         "rental",
+					ConstraintDefinition: "FOREIGN KEY (rental_id) REFERENCES rental(rental_id) ON UPDATE CASCADE ON DELETE SET NULL",
+				},
+				{
+					Name:                 "payment_staff_id_fkey",
+					ConstraintType:       "f",
+					RefTableName:         "staff",
+					ConstraintDefinition: "FOREIGN KEY (staff_id) REFERENCES staff(staff_id) ON UPDATE CASCADE ON DELETE RESTRICT",
+				},
+			},
+			Triggers: []schemas.TriggerDescription{},
+		},
+		{
+			Name: "rental",
+			Columns: []schemas.ColumnDescription{
+				{
+					Name:        "customer_id",
+					Index:       4,
+					TypeName:    "smallint",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:        "inventory_id",
+					Index:       3,
+					TypeName:    "integer",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:        "last_update",
+					Index:       7,
+					TypeName:    "timestamp without time zone",
+					Default:     "now()",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:        "rental_date",
+					Index:       2,
+					TypeName:    "timestamp without time zone",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:        "rental_id",
+					Index:       1,
+					TypeName:    "integer",
+					Default:     "nextval('rental_rental_id_seq'::regclass)",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:        "return_date",
+					Index:       5,
+					TypeName:    "timestamp without time zone",
+					IsNullable:  true,
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:        "staff_id",
+					Index:       6,
+					TypeName:    "smallint",
+					IsGenerated: "NEVER",
+				},
+			},
+			Indexes: []schemas.IndexDescription{
+				{
+					Name:            "idx_fk_inventory_id",
+					IndexDefinition: "CREATE INDEX idx_fk_inventory_id ON rental USING btree (inventory_id)",
+				},
+				{
+					Name:            "idx_unq_rental_rental_date_inventory_id_customer_id",
+					IsUnique:        true,
+					IndexDefinition: "CREATE UNIQUE INDEX idx_unq_rental_rental_date_inventory_id_customer_id ON rental USING btree (rental_date, inventory_id, customer_id)",
+				},
+				{
+					Name:                 "rental_pkey",
+					IsPrimaryKey:         true,
+					IsUnique:             true,
+					IndexDefinition:      "CREATE UNIQUE INDEX rental_pkey ON rental USING btree (rental_id)",
+					ConstraintType:       "p",
+					ConstraintDefinition: "PRIMARY KEY (rental_id)",
+				},
+			},
+			Constraints: []schemas.ConstraintDescription{
+				{
+					Name:                 "rental_customer_id_fkey",
+					ConstraintType:       "f",
+					RefTableName:         "customer",
+					ConstraintDefinition: "FOREIGN KEY (customer_id) REFERENCES customer(customer_id) ON UPDATE CASCADE ON DELETE RESTRICT",
+				},
+				{
+					Name:                 "rental_inventory_id_fkey",
+					ConstraintType:       "f",
+					RefTableName:         "inventory",
+					ConstraintDefinition: "FOREIGN KEY (inventory_id) REFERENCES inventory(inventory_id) ON UPDATE CASCADE ON DELETE RESTRICT",
+				},
+				{
+					Name:                 "rental_staff_id_key",
+					ConstraintType:       "f",
+					RefTableName:         "staff",
+					ConstraintDefinition: "FOREIGN KEY (staff_id) REFERENCES staff(staff_id)",
+				},
+			},
+			Triggers: []schemas.TriggerDescription{{
+				Name:       "last_updated",
+				Definition: "CREATE TRIGGER last_updated BEFORE UPDATE ON rental FOR EACH ROW EXECUTE FUNCTION last_updated()",
+			}},
+		},
+		{
+			Name: "staff",
+			Columns: []schemas.ColumnDescription{
+				{
+					Name:        "active",
+					Index:       7,
+					TypeName:    "boolean",
+					Default:     "true",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:        "address_id",
+					Index:       4,
+					TypeName:    "smallint",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:                   "email",
+					Index:                  5,
+					TypeName:               "character varying(50)",
+					IsNullable:             true,
+					CharacterMaximumLength: 50,
+					IsGenerated:            "NEVER",
+				},
+				{
+					Name:                   "first_name",
+					Index:                  2,
+					TypeName:               "character varying(45)",
+					CharacterMaximumLength: 45,
+					IsGenerated:            "NEVER",
+				},
+				{
+					Name:                   "last_name",
+					Index:                  3,
+					TypeName:               "character varying(45)",
+					CharacterMaximumLength: 45,
+					IsGenerated:            "NEVER",
+				},
+				{
+					Name:        "last_update",
+					Index:       10,
+					TypeName:    "timestamp without time zone",
+					Default:     "now()",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:                   "password",
+					Index:                  9,
+					TypeName:               "character varying(40)",
+					IsNullable:             true,
+					CharacterMaximumLength: 40,
+					IsGenerated:            "NEVER",
+				},
+				{
+					Name:        "picture",
+					Index:       11,
+					TypeName:    "bytea",
+					IsNullable:  true,
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:        "staff_id",
+					Index:       1,
+					TypeName:    "integer",
+					Default:     "nextval('staff_staff_id_seq'::regclass)",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:        "store_id",
+					Index:       6,
+					TypeName:    "smallint",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:                   "username",
+					Index:                  8,
+					TypeName:               "character varying(16)",
+					CharacterMaximumLength: 16,
+					IsGenerated:            "NEVER",
+				},
+			},
+			Indexes: []schemas.IndexDescription{{
+				Name:                 "staff_pkey",
+				IsPrimaryKey:         true,
+				IsUnique:             true,
+				IndexDefinition:      "CREATE UNIQUE INDEX staff_pkey ON staff USING btree (staff_id)",
+				ConstraintType:       "p",
+				ConstraintDefinition: "PRIMARY KEY (staff_id)",
+			}},
+			Constraints: []schemas.ConstraintDescription{{
+				Name:                 "staff_address_id_fkey",
+				ConstraintType:       "f",
+				RefTableName:         "address",
+				ConstraintDefinition: "FOREIGN KEY (address_id) REFERENCES address(address_id) ON UPDATE CASCADE ON DELETE RESTRICT",
+			}},
+			Triggers: []schemas.TriggerDescription{{
+				Name:       "last_updated",
+				Definition: "CREATE TRIGGER last_updated BEFORE UPDATE ON staff FOR EACH ROW EXECUTE FUNCTION last_updated()",
+			}},
+		},
+		{
+			Name: "store",
+			Columns: []schemas.ColumnDescription{
+				{
+					Name:        "address_id",
+					Index:       3,
+					TypeName:    "smallint",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:        "last_update",
+					Index:       4,
+					TypeName:    "timestamp without time zone",
+					Default:     "now()",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:        "manager_staff_id",
+					Index:       2,
+					TypeName:    "smallint",
+					IsGenerated: "NEVER",
+				},
+				{
+					Name:        "store_id",
+					Index:       1,
+					TypeName:    "integer",
+					Default:     "nextval('store_store_id_seq'::regclass)",
+					IsGenerated: "NEVER",
+				},
+			},
+			Indexes: []schemas.IndexDescription{
+				{
+					Name:            "idx_unq_manager_staff_id",
+					IsUnique:        true,
+					IndexDefinition: "CREATE UNIQUE INDEX idx_unq_manager_staff_id ON store USING btree (manager_staff_id)",
+				},
+				{
+					Name:                 "store_pkey",
+					IsPrimaryKey:         true,
+					IsUnique:             true,
+					IndexDefinition:      "CREATE UNIQUE INDEX store_pkey ON store USING btree (store_id)",
+					ConstraintType:       "p",
+					ConstraintDefinition: "PRIMARY KEY (store_id)",
+				},
+			},
+			Constraints: []schemas.ConstraintDescription{
+				{
+					Name:                 "store_address_id_fkey",
+					ConstraintType:       "f",
+					RefTableName:         "address",
+					ConstraintDefinition: "FOREIGN KEY (address_id) REFERENCES address(address_id) ON UPDATE CASCADE ON DELETE RESTRICT",
+				},
+				{
+					Name:                 "store_manager_staff_id_fkey",
+					ConstraintType:       "f",
+					RefTableName:         "staff",
+					ConstraintDefinition: "FOREIGN KEY (manager_staff_id) REFERENCES staff(staff_id) ON UPDATE CASCADE ON DELETE RESTRICT",
+				},
+			},
+			Triggers: []schemas.TriggerDescription{{
+				Name:       "last_updated",
+				Definition: "CREATE TRIGGER last_updated BEFORE UPDATE ON store FOR EACH ROW EXECUTE FUNCTION last_updated()",
+			}},
+		},
+	},
+	Views: []schemas.ViewDescription{
+		{
+			Name: "actor_info",
+			Definition: ` SELECT a.actor_id,
+    a.first_name,
+    a.last_name,
+    group_concat(DISTINCT (((c.name)::text || ': '::text) || ( SELECT group_concat((f.title)::text) AS group_concat
+           FROM ((film f
+             JOIN film_category fc_1 ON ((f.film_id = fc_1.film_id)))
+             JOIN film_actor fa_1 ON ((f.film_id = fa_1.film_id)))
+          WHERE ((fc_1.category_id = c.category_id) AND (fa_1.actor_id = a.actor_id))
+          GROUP BY fa_1.actor_id))) AS film_info
+   FROM (((actor a
+     LEFT JOIN film_actor fa ON ((a.actor_id = fa.actor_id)))
+     LEFT JOIN film_category fc ON ((fa.film_id = fc.film_id)))
+     LEFT JOIN category c ON ((fc.category_id = c.category_id)))
+  GROUP BY a.actor_id, a.first_name, a.last_name;`,
+		},
+		{
+			Name: "customer_list",
+			Definition: ` SELECT cu.customer_id AS id,
+    (((cu.first_name)::text || ' '::text) || (cu.last_name)::text) AS name,
+    a.address,
+    a.postal_code AS "zip code",
+    a.phone,
+    city.city,
+    country.country,
+        CASE
+            WHEN cu.activebool THEN 'active'::text
+            ELSE ''::text
+        END AS notes,
+    cu.store_id AS sid
+   FROM (((customer cu
+     JOIN address a ON ((cu.address_id = a.address_id)))
+     JOIN city ON ((a.city_id = city.city_id)))
+     JOIN country ON ((city.country_id = country.country_id)));`,
+		},
+		{
+			Name: "film_list",
+			Definition: ` SELECT film.film_id AS fid,
+    film.title,
+    film.description,
+    category.name AS category,
+    film.rental_rate AS price,
+    film.length,
+    film.rating,
+    group_concat((((actor.first_name)::text || ' '::text) || (actor.last_name)::text)) AS actors
+   FROM ((((category
+     LEFT JOIN film_category ON ((category.category_id = film_category.category_id)))
+     LEFT JOIN film ON ((film_category.film_id = film.film_id)))
+     JOIN film_actor ON ((film.film_id = film_actor.film_id)))
+     JOIN actor ON ((film_actor.actor_id = actor.actor_id)))
+  GROUP BY film.film_id, film.title, film.description, category.name, film.rental_rate, film.length, film.rating;`,
+		},
+		{
+			Name: "nicer_but_slower_film_list",
+			Definition: ` SELECT film.film_id AS fid,
+    film.title,
+    film.description,
+    category.name AS category,
+    film.rental_rate AS price,
+    film.length,
+    film.rating,
+    group_concat((((upper("substring"((actor.first_name)::text, 1, 1)) || lower("substring"((actor.first_name)::text, 2))) || upper("substring"((actor.last_name)::text, 1, 1))) || lower("substring"((actor.last_name)::text, 2)))) AS actors
+   FROM ((((category
+     LEFT JOIN film_category ON ((category.category_id = film_category.category_id)))
+     LEFT JOIN film ON ((film_category.film_id = film.film_id)))
+     JOIN film_actor ON ((film.film_id = film_actor.film_id)))
+     JOIN actor ON ((film_actor.actor_id = actor.actor_id)))
+  GROUP BY film.film_id, film.title, film.description, category.name, film.rental_rate, film.length, film.rating;`,
+		},
+		{
+			Name: "sales_by_film_category",
+			Definition: ` SELECT c.name AS category,
+    sum(p.amount) AS total_sales
+   FROM (((((payment p
+     JOIN rental r ON ((p.rental_id = r.rental_id)))
+     JOIN inventory i ON ((r.inventory_id = i.inventory_id)))
+     JOIN film f ON ((i.film_id = f.film_id)))
+     JOIN film_category fc ON ((f.film_id = fc.film_id)))
+     JOIN category c ON ((fc.category_id = c.category_id)))
+  GROUP BY c.name
+  ORDER BY (sum(p.amount)) DESC;`,
+		},
+		{
+			Name: "sales_by_store",
+			Definition: ` SELECT (((c.city)::text || ','::text) || (cy.country)::text) AS store,
+    (((m.first_name)::text || ' '::text) || (m.last_name)::text) AS manager,
+    sum(p.amount) AS total_sales
+   FROM (((((((payment p
+     JOIN rental r ON ((p.rental_id = r.rental_id)))
+     JOIN inventory i ON ((r.inventory_id = i.inventory_id)))
+     JOIN store s ON ((i.store_id = s.store_id)))
+     JOIN address a ON ((s.address_id = a.address_id)))
+     JOIN city c ON ((a.city_id = c.city_id)))
+     JOIN country cy ON ((c.country_id = cy.country_id)))
+     JOIN staff m ON ((s.manager_staff_id = m.staff_id)))
+  GROUP BY cy.country, c.city, s.store_id, m.first_name, m.last_name
+  ORDER BY cy.country, c.city;`,
+		},
+		{
+			Name: "staff_list",
+			Definition: ` SELECT s.staff_id AS id,
+    (((s.first_name)::text || ' '::text) || (s.last_name)::text) AS name,
+    a.address,
+    a.postal_code AS "zip code",
+    a.phone,
+    city.city,
+    country.country,
+    s.store_id AS sid
+   FROM (((staff s
+     JOIN address a ON ((s.address_id = a.address_id)))
+     JOIN city ON ((a.city_id = city.city_id)))
+     JOIN country ON ((city.country_id = country.country_id)));`,
+		},
+	},
+}

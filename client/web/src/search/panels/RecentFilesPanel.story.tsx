@@ -1,13 +1,12 @@
 import { storiesOf } from '@storybook/react'
-import React from 'react'
-import { NEVER, of } from 'rxjs'
+import { noop } from 'lodash'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../components/WebStory'
 
 import { RecentFilesPanel } from './RecentFilesPanel'
-import { _fetchRecentFileViews } from './utils'
+import { recentFilesPayload } from './utils'
 
 const { add } = storiesOf('web/search/panels/RecentFilesPanel', module)
     .addParameters({
@@ -30,7 +29,9 @@ const emptyRecentFiles = {
 
 const props = {
     authenticatedUser: null,
-    fetchRecentFileViews: _fetchRecentFileViews,
+    recentFilesFragment: { recentFilesLogs: recentFilesPayload() },
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-explicit-any
+    fetchMore: noop as any,
     telemetryService: NOOP_TELEMETRY_SERVICE,
 }
 
@@ -42,10 +43,10 @@ add('RecentFilesPanel', () => (
                 <RecentFilesPanel {...props} />
 
                 <h2>Loading</h2>
-                <RecentFilesPanel {...props} fetchRecentFileViews={() => NEVER} />
+                <RecentFilesPanel {...props} recentFilesFragment={null} />
 
                 <h2>Empty</h2>
-                <RecentFilesPanel {...props} fetchRecentFileViews={() => of(emptyRecentFiles)} />
+                <RecentFilesPanel {...props} recentFilesFragment={{ recentFilesLogs: emptyRecentFiles }} />
             </div>
         )}
     </WebStory>

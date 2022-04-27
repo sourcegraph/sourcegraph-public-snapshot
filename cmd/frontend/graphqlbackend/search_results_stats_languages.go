@@ -12,7 +12,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/inventory"
-	"github.com/sourcegraph/sourcegraph/internal/search/job"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -39,15 +40,19 @@ func (srs *searchResultsStats) Languages(ctx context.Context) ([]*languageStatis
 }
 
 func (srs *searchResultsStats) getResults(ctx context.Context) (result.Matches, error) {
-	args := srs.sr.JobArgs()
 	srs.once.Do(func() {
-		j, err := job.ToSearchJob(args, srs.sr.SearchInputs.Query)
+		b, err := query.ToBasicQuery(srs.sr.SearchInputs.Query)
+		if err != nil {
+			srs.err = err
+			return
+		}
+		j, err := jobutil.ToSearchJob(srs.sr.SearchInputs, b)
 		if err != nil {
 			srs.err = err
 			return
 		}
 		agg := streaming.NewAggregatingStream()
-		_, err = j.Run(ctx, srs.sr.db, agg)
+		_, err = j.Run(ctx, srs.sr.JobClients(), agg)
 		if err != nil {
 			srs.err = err
 			return
@@ -126,12 +131,12 @@ func searchResultsStatsLanguages(ctx context.Context, db database.DB, matches []
 				defer run.Release()
 
 				repoName := repoMatch.RepoName()
-				_, oid, err := git.GetDefaultBranch(ctx, repoName.Name)
+				_, oid, err := git.GetDefaultBranch(ctx, db, repoName.Name)
 				if err != nil {
 					run.Error(err)
 					return
 				}
-				inv, err := backend.NewRepos(db.Repos()).GetInventory(ctx, repoName.ToRepo(), oid, true)
+				inv, err := backend.NewRepos(db).GetInventory(ctx, repoName.ToRepo(), oid, true)
 				if err != nil {
 					run.Error(err)
 					return
@@ -152,7 +157,7 @@ func searchResultsStatsLanguages(ctx context.Context, db database.DB, matches []
 		goroutine.Go(func() {
 			defer run.Release()
 
-			invCtx, err := backend.InventoryContext(repos[key.repo].Name, key.commitID, true)
+			invCtx, err := backend.InventoryContext(repos[key.repo].Name, db, key.commitID, true)
 			if err != nil {
 				run.Error(err)
 				return

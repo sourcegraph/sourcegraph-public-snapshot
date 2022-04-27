@@ -1,6 +1,5 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import React from 'react'
 import sinon from 'sinon'
 
 import { Button } from '../../Button'
@@ -26,8 +25,8 @@ describe('FeedbackPrompt', () => {
         )
     })
 
-    afterEach(async () => {
-        await cleanup()
+    afterEach(() => {
+        cleanup()
         onSubmit.resetHistory()
     })
 

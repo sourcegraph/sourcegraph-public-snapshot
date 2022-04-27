@@ -1,5 +1,6 @@
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { useEffect } from 'react'
+
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
@@ -66,6 +67,7 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
                             {
                                 icon: BatchChangesIcon,
                                 to: '/batch-changes',
+                                ariaLabel: 'Batch changes',
                             },
                             { to: `${spec.namespace.url}/batch-changes`, text: spec.namespace.namespaceName },
                             { text: spec.description.name },

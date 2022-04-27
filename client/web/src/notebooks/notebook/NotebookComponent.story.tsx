@@ -1,5 +1,4 @@
 import { storiesOf } from '@storybook/react'
-import React from 'react'
 import { NEVER, of } from 'rxjs'
 
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
@@ -12,7 +11,6 @@ import {
 
 import { BlockInit } from '..'
 import { WebStory } from '../../components/WebStory'
-import { RepositoryFields } from '../../graphql-operations'
 
 import { NotebookComponent } from './NotebookComponent'
 
@@ -21,9 +19,9 @@ const { add } = storiesOf('web/search/notebooks/notebook/NotebookComponent', mod
     .addParameters({ chromatic: { disableSnapshots: false } })
 
 const blocks: BlockInit[] = [
-    { id: '1', type: 'md', input: '# Markdown' },
-    { id: '2', type: 'query', input: 'Query' },
-    { id: '3', type: 'md', input: '# Markdown 1' },
+    { id: '1', type: 'md', input: { text: '# Markdown' } },
+    { id: '2', type: 'query', input: { query: 'Query' } },
+    { id: '3', type: 'md', input: { text: '# Markdown 1' } },
     {
         id: '4',
         type: 'file',
@@ -35,9 +33,6 @@ const blocks: BlockInit[] = [
         },
     },
 ]
-
-const resolveRevision = () => of({ commitID: 'commit1', defaultBranch: 'main', rootTreeURL: '' })
-const fetchRepository = () => of({ id: 'repo' } as RepositoryFields)
 
 add('default', () => (
     <WebStory>
@@ -54,8 +49,6 @@ add('default', () => (
                 blocks={blocks}
                 settingsCascade={EMPTY_SETTINGS_CASCADE}
                 extensionsController={extensionsController}
-                fetchRepository={fetchRepository}
-                resolveRevision={resolveRevision}
                 authenticatedUser={null}
                 showSearchContext={true}
                 platformContext={NOOP_PLATFORM_CONTEXT}
@@ -82,8 +75,6 @@ add('default read-only', () => (
                 blocks={blocks}
                 settingsCascade={EMPTY_SETTINGS_CASCADE}
                 extensionsController={extensionsController}
-                fetchRepository={fetchRepository}
-                resolveRevision={resolveRevision}
                 authenticatedUser={null}
                 showSearchContext={true}
                 platformContext={NOOP_PLATFORM_CONTEXT}

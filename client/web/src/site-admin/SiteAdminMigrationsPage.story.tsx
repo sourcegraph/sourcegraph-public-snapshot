@@ -1,6 +1,5 @@
 import { storiesOf } from '@storybook/react'
 import * as H from 'history'
-import React from 'react'
 import { Observable, of } from 'rxjs'
 
 import { WebStory } from '../components/WebStory'

@@ -1,17 +1,17 @@
+import React, { useEffect } from 'react'
+
 import PlusIcon from 'mdi-react/PlusIcon'
-import React, { useContext, useMemo, useEffect } from 'react'
 import { matchPath, useHistory } from 'react-router'
 import { useLocation } from 'react-router-dom'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
-import { Button, Link, PageHeader, Tabs, TabList, Tab, Badge, useObservable, Icon } from '@sourcegraph/wildcard'
+import { Button, Link, PageHeader, Tabs, TabList, Tab, Icon, TabPanels, TabPanel } from '@sourcegraph/wildcard'
 
-import { Page } from '../../../components/Page'
 import { CodeInsightsIcon } from '../../../insights/Icons'
-import { CodeInsightsBackendContext } from '../core/backend/code-insights-backend-context'
-import { ALL_INSIGHTS_DASHBOARD_ID } from '../core/types/dashboard/virtual-dashboard'
+import { CodeInsightsPage } from '../components/code-insights-page/CodeInsightsPage'
+import { ALL_INSIGHTS_DASHBOARD } from '../core/constants'
 
 import { DashboardsContentPage } from './dashboards/dashboard-page/DashboardsContentPage'
 
@@ -52,11 +52,9 @@ export const CodeInsightsRootPage: React.FunctionComponent<CodeInsightsRootPageP
         }) ?? {}
 
     const [hasInsightPageBeenViewed, markMainPageAsViewed] = useTemporarySetting('insights.wasMainPageOpen', false)
-    const { getUiFeatures } = useContext(CodeInsightsBackendContext)
-    const features = useObservable(useMemo(() => getUiFeatures(), [getUiFeatures]))
 
-    const dashboardId = params?.dashboardId ?? ALL_INSIGHTS_DASHBOARD_ID
-    const queryParameterDashboardId = query.get('dashboardId') ?? ALL_INSIGHTS_DASHBOARD_ID
+    const dashboardId = params?.dashboardId ?? ALL_INSIGHTS_DASHBOARD.id
+    const queryParameterDashboardId = query.get('dashboardId') ?? ALL_INSIGHTS_DASHBOARD.id
 
     const handleTabNavigationChange = (selectedTab: CodeInsightsRootPageTab): void => {
         switch (selectedTab) {
@@ -74,14 +72,9 @@ export const CodeInsightsRootPage: React.FunctionComponent<CodeInsightsRootPageP
     }, [hasInsightPageBeenViewed, markMainPageAsViewed])
 
     return (
-        <Page>
-            {!features?.licensed && (
-                <Badge variant="info" className="mb-2">
-                    Free trial
-                </Badge>
-            )}
+        <CodeInsightsPage>
             <PageHeader
-                path={[{ icon: CodeInsightsIcon }, { text: 'Insights' }]}
+                path={[{ icon: CodeInsightsIcon, text: 'Insights' }]}
                 actions={
                     <>
                         <Button as={Link} to="/insights/add-dashboard" variant="secondary" className="mr-2">
@@ -100,21 +93,21 @@ export const CodeInsightsRootPage: React.FunctionComponent<CodeInsightsRootPageP
                 className="align-items-start mb-3"
             />
 
-            <Tabs index={activeView} size="medium" className="mb-3" onChange={handleTabNavigationChange}>
+            <Tabs index={activeView} size="medium" className="mb-3" onChange={handleTabNavigationChange} lazy={true}>
                 <TabList>
                     <Tab index={CodeInsightsRootPageTab.CodeInsights}>Code Insights</Tab>
 
                     <Tab index={CodeInsightsRootPageTab.GettingStarted}>Getting started</Tab>
                 </TabList>
+                <TabPanels className="mt-3">
+                    <TabPanel>
+                        <DashboardsContentPage telemetryService={telemetryService} dashboardID={params?.dashboardId} />
+                    </TabPanel>
+                    <TabPanel>
+                        <LazyCodeInsightsGettingStartedPage telemetryService={telemetryService} />
+                    </TabPanel>
+                </TabPanels>
             </Tabs>
-
-            {activeView === CodeInsightsRootPageTab.CodeInsights && (
-                <DashboardsContentPage telemetryService={telemetryService} dashboardID={params?.dashboardId} />
-            )}
-
-            {activeView === CodeInsightsRootPageTab.GettingStarted && (
-                <LazyCodeInsightsGettingStartedPage telemetryService={telemetryService} />
-            )}
-        </Page>
+        </CodeInsightsPage>
     )
 }

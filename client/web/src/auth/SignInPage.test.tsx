@@ -1,5 +1,4 @@
 import { createMemoryHistory, createLocation } from 'history'
-import React from 'react'
 import { MemoryRouter } from 'react-router'
 
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'

@@ -1,8 +1,6 @@
 .file-block-inputs {
     padding: 1rem;
     background-color: var(--body-bg);
-    border-top-left-radius: var(--border-radius);
-    border-top-right-radius: var(--border-radius);
     border-bottom: 1px solid var(--border-color);
 }
 
@@ -30,4 +28,28 @@
     background-color: var(--input-bg);
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
+}
+
+.file-suggestions {
+    display: flex;
+    flex-direction: column;
+    overflow: auto;
+    max-height: 15rem;
+    padding-top: 0.5rem;
+    padding-right: 0.5rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.file-button {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    font-weight: normal;
+    text-align: left;
+    margin-bottom: 0.25rem;
+    border: 1px solid var(--color-bg-2);
+
+    &:hover {
+        background-color: var(--color-bg-2);
+    }
 }

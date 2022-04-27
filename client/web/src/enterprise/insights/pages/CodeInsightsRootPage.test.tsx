@@ -1,8 +1,9 @@
 /* eslint-disable ban/ban */
+import React from 'react'
+
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import * as H from 'history'
-import React from 'react'
 import { MemoryRouter } from 'react-router'
 import { Route } from 'react-router-dom'
 import { of } from 'rxjs'
@@ -11,12 +12,12 @@ import sinon from 'sinon'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
 
-import { CodeInsightsBackend } from '../core/backend/code-insights-backend'
 import {
+    CodeInsightsBackend,
     CodeInsightsBackendContext,
     FakeDefaultCodeInsightsBackend,
-} from '../core/backend/code-insights-backend-context'
-import { ALL_INSIGHTS_DASHBOARD_ID } from '../core/types/dashboard/virtual-dashboard'
+    ALL_INSIGHTS_DASHBOARD,
+} from '../core'
 
 import { CodeInsightsRootPage, CodeInsightsRootPageTab } from './CodeInsightsRootPage'
 
@@ -40,6 +41,7 @@ jest.mock('react-router', () => ({
 const mockTelemetryService = {
     log: sinon.spy(),
     logViewEvent: sinon.spy(),
+    logPageView: sinon.spy(),
 }
 
 const fakeApi = new FakeDefaultCodeInsightsBackend()
@@ -94,11 +96,12 @@ describe('CodeInsightsRootPage', () => {
                 route: '/insights/dashboards/',
                 api: {
                     getUiFeatures: () => of({ licensed: true }),
+                    getDashboards: () => of([]),
                 },
             }
         )
 
-        expect(testLocation.pathname).toEqual(`${url}/${ALL_INSIGHTS_DASHBOARD_ID}`)
+        expect(testLocation.pathname).toEqual(`${url}/${ALL_INSIGHTS_DASHBOARD.id}`)
     })
 
     it('should render dashboard not found page when id is not found', () => {

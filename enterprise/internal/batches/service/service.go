@@ -62,7 +62,6 @@ type Service struct {
 type operations struct {
 	createBatchSpec                      *observation.Operation
 	createBatchSpecFromRaw               *observation.Operation
-	enqueueBatchSpecResolution           *observation.Operation
 	executeBatchSpec                     *observation.Operation
 	cancelBatchSpec                      *observation.Operation
 	replaceBatchSpecInput                *observation.Operation
@@ -113,7 +112,6 @@ func newOperations(observationContext *observation.Context) *operations {
 		singletonOperations = &operations{
 			createBatchSpec:                      op("CreateBatchSpec"),
 			createBatchSpecFromRaw:               op("CreateBatchSpecFromRaw"),
-			enqueueBatchSpecResolution:           op("EnqueueBatchSpecResolution"),
 			executeBatchSpec:                     op("ExecuteBatchSpec"),
 			cancelBatchSpec:                      op("CancelBatchSpec"),
 			replaceBatchSpecInput:                op("ReplaceBatchSpecInput"),
@@ -179,9 +177,7 @@ func (s *Service) CreateEmptyBatchChange(ctx context.Context, opts CreateEmptyBa
 	}
 
 	actor := actor.FromContext(ctx)
-	if !actor.IsAuthenticated() {
-		return nil, errors.New("no authenticated actor in context")
-	}
+	// Actor is guaranteed to be set here, because CheckNamespaceAccess above enforces it.
 
 	batchSpec := &btypes.BatchSpec{
 		RawSpec:         string(rawSpec),
@@ -344,6 +340,7 @@ func (s *Service) CreateBatchSpecFromRaw(ctx context.Context, opts CreateBatchSp
 	}
 	spec.NamespaceOrgID = opts.NamespaceOrgID
 	spec.NamespaceUserID = opts.NamespaceUserID
+	// Actor is guaranteed to be set here, because CheckNamespaceAccess above enforces it.
 	actor := actor.FromContext(ctx)
 	spec.UserID = actor.UID
 
@@ -385,24 +382,7 @@ func (s *Service) createBatchSpecForExecution(ctx context.Context, tx *store.Sto
 	return tx.CreateBatchSpecResolutionJob(ctx, &btypes.BatchSpecResolutionJob{
 		State:       btypes.BatchSpecResolutionJobStateQueued,
 		BatchSpecID: opts.spec.ID,
-	})
-}
-
-type EnqueueBatchSpecResolutionOpts struct {
-	BatchSpecID int64
-
-	AllowIgnored     bool
-	AllowUnsupported bool
-}
-
-// EnqueueBatchSpecResolution creates a pending BatchSpec that will be picked up by a worker in the background.
-func (s *Service) EnqueueBatchSpecResolution(ctx context.Context, opts EnqueueBatchSpecResolutionOpts) (err error) {
-	ctx, endObservation := s.operations.enqueueBatchSpecResolution.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	return s.store.CreateBatchSpecResolutionJob(ctx, &btypes.BatchSpecResolutionJob{
-		State:       btypes.BatchSpecResolutionJobStateQueued,
-		BatchSpecID: opts.BatchSpecID,
+		InitiatorID: opts.spec.UserID,
 	})
 }
 
@@ -602,6 +582,7 @@ func (s *Service) UpsertBatchSpecInput(ctx context.Context, opts UpsertBatchSpec
 	}
 	spec.NamespaceOrgID = opts.NamespaceOrgID
 	spec.NamespaceUserID = opts.NamespaceUserID
+	// Actor is guaranteed to be set here, because CheckNamespaceAccess above enforces it.
 	actor := actor.FromContext(ctx)
 	spec.UserID = actor.UID
 
@@ -1471,4 +1452,94 @@ func (s *Service) RetryBatchSpecExecution(ctx context.Context, opts RetryBatchSp
 	}
 
 	return nil
+}
+
+type GetAvailableBulkOperationsOpts struct {
+	BatchChange int64
+	Changesets  []int64
+}
+
+// GetAvailableBulkOperations returns all bulk operations that can be carried out
+// on an array of changesets.
+func (s *Service) GetAvailableBulkOperations(ctx context.Context, opts GetAvailableBulkOperationsOpts) ([]string, error) {
+	bulkOperationsCounter := map[btypes.ChangesetJobType]int{
+		btypes.ChangesetJobTypeClose:     0,
+		btypes.ChangesetJobTypeComment:   0,
+		btypes.ChangesetJobTypeDetach:    0,
+		btypes.ChangesetJobTypeMerge:     0,
+		btypes.ChangesetJobTypePublish:   0,
+		btypes.ChangesetJobTypeReenqueue: 0,
+	}
+
+	changesets, _, err := s.store.ListChangesets(ctx, store.ListChangesetsOpts{
+		IDs:          opts.Changesets,
+		EnforceAuthz: true,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, changeset := range changesets {
+		isChangesetArchived := changeset.ArchivedIn(opts.BatchChange)
+		isChangesetDraft := changeset.ExternalState == btypes.ChangesetExternalStateDraft
+		isChangesetOpen := changeset.ExternalState == btypes.ChangesetExternalStateOpen
+		isChangesetClosed := changeset.ExternalState == btypes.ChangesetExternalStateClosed
+		isChangesetMerged := changeset.ExternalState == btypes.ChangesetExternalStateMerged
+		isChangsetJobFailed := changeset.ReconcilerState == btypes.ReconcilerStateFailed
+
+		// can changeset be published
+		isChangesetCommentable := isChangesetOpen || isChangesetDraft || isChangesetMerged || isChangesetClosed
+		isChangesetClosable := isChangesetOpen || isChangesetDraft || isChangsetJobFailed
+
+		// check what operations this changeset support, most likely from the state
+		// so get the changeset then derive the operations from it's state.
+
+		// DETACH
+		if isChangesetArchived {
+			bulkOperationsCounter[btypes.ChangesetJobTypeDetach] += 1
+		}
+
+		// REENQUEUE
+		if !isChangesetArchived && isChangsetJobFailed {
+			bulkOperationsCounter[btypes.ChangesetJobTypeReenqueue] += 1
+		}
+
+		// PUBLISH
+		if !isChangesetArchived {
+			bulkOperationsCounter[btypes.ChangesetJobTypePublish] += 1
+		}
+
+		// CLOSE
+		if !isChangesetArchived && isChangesetClosable {
+			bulkOperationsCounter[btypes.ChangesetJobTypeClose] += 1
+		}
+
+		// MERGE
+		if !isChangesetArchived && !isChangsetJobFailed && isChangesetOpen {
+			bulkOperationsCounter[btypes.ChangesetJobTypeMerge] += 1
+		}
+
+		// COMMENT
+		if isChangesetCommentable {
+			bulkOperationsCounter[btypes.ChangesetJobTypeComment] += 1
+		}
+	}
+
+	noOfChangesets := len(opts.Changesets)
+	availableBulkOperations := make([]string, 0, len(bulkOperationsCounter))
+
+	for jobType, count := range bulkOperationsCounter {
+		// we only want to return bulkoperationType that can be applied
+		// to all given changesets.
+		if count == noOfChangesets {
+			operation := strings.ToUpper(string(jobType))
+			if operation == "COMMENTATORE" {
+				operation = "COMMENT"
+			}
+			availableBulkOperations = append(availableBulkOperations, operation)
+		}
+	}
+
+	return availableBulkOperations, nil
 }

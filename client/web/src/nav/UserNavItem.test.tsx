@@ -1,7 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import * as H from 'history'
-import React from 'react'
 import { MemoryRouter } from 'react-router'
 import sinon from 'sinon'
 

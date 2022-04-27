@@ -1,15 +1,16 @@
+import React, { useCallback, useState } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import PlusIcon from 'mdi-react/PlusIcon'
-import React, { useCallback, useState } from 'react'
 
 import { SearchContextProps } from '@sourcegraph/search'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { Page } from '@sourcegraph/web/src/components/Page'
 import { PageHeader, Link, Button, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
+import { Page } from '../../components/Page'
 
 import { SearchContextsListTab } from './SearchContextsListTab'
 
@@ -71,6 +72,7 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
                         {
                             icon: MagnifyIcon,
                             to: '/search',
+                            ariaLabel: 'Code Search',
                         },
                         {
                             text: 'Contexts',

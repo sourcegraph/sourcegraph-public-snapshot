@@ -2,7 +2,6 @@ import { boolean } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
 import classNames from 'classnames'
 import { addHours } from 'date-fns'
-import React from 'react'
 import { of } from 'rxjs'
 
 import { WebStory } from '../../../../components/WebStory'
@@ -13,8 +12,9 @@ import {
     ChangesetState,
 } from '../../../../graphql-operations'
 
-import gridStyles from './BatchChangeChangesets.module.scss'
 import { ExternalChangesetNode } from './ExternalChangesetNode'
+
+import gridStyles from './BatchChangeChangesets.module.scss'
 
 const { add } = storiesOf('web/batches/ExternalChangesetNode', module).addDecorator(story => (
     <div className={classNames(gridStyles.batchChangeChangesetsGrid, 'p-3 container')}>{story()}</div>

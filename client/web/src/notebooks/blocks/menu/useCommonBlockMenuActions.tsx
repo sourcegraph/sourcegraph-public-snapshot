@@ -1,30 +1,29 @@
+import { useMemo } from 'react'
+
 import ArrowDownIcon from 'mdi-react/ArrowDownIcon'
 import ArrowUpIcon from 'mdi-react/ArrowUpIcon'
 import ContentDuplicateIcon from 'mdi-react/ContentDuplicateIcon'
 import DeleteIcon from 'mdi-react/DeleteIcon'
-import React, { useMemo } from 'react'
 
 import { isMacPlatform as isMacPlatformFn } from '@sourcegraph/common'
+import { Icon } from '@sourcegraph/wildcard'
 
 import { BlockProps } from '../..'
+import { useIsBlockInputFocused } from '../useIsBlockInputFocused'
 import { useModifierKeyLabel } from '../useModifierKeyLabel'
 
 import { BlockMenuAction } from './NotebookBlockMenu'
 
-interface UseCommonBlockMenuActionsOptions
-    extends Pick<BlockProps, 'isReadOnly' | 'onDeleteBlock' | 'onDuplicateBlock' | 'onMoveBlock'> {
-    isInputFocused: boolean
-}
-
 export const useCommonBlockMenuActions = ({
-    isInputFocused,
+    id,
     isReadOnly,
     onMoveBlock,
     onDeleteBlock,
     onDuplicateBlock,
-}: UseCommonBlockMenuActionsOptions): BlockMenuAction[] => {
+}: Pick<BlockProps, 'id' | 'isReadOnly' | 'onDeleteBlock' | 'onDuplicateBlock' | 'onMoveBlock'>): BlockMenuAction[] => {
     const isMacPlatform = useMemo(() => isMacPlatformFn(), [])
     const modifierKeyLabel = useModifierKeyLabel()
+    const isInputFocused = useIsBlockInputFocused(id)
     return useMemo(() => {
         if (isReadOnly) {
             return []
@@ -33,28 +32,28 @@ export const useCommonBlockMenuActions = ({
             {
                 type: 'button',
                 label: 'Duplicate',
-                icon: <ContentDuplicateIcon className="icon-inline" />,
+                icon: <Icon as={ContentDuplicateIcon} />,
                 onClick: onDuplicateBlock,
                 keyboardShortcutLabel: !isInputFocused ? `${modifierKeyLabel} + D` : '',
             },
             {
                 type: 'button',
                 label: 'Move Up',
-                icon: <ArrowUpIcon className="icon-inline" />,
+                icon: <Icon as={ArrowUpIcon} />,
                 onClick: id => onMoveBlock(id, 'up'),
                 keyboardShortcutLabel: !isInputFocused ? `${modifierKeyLabel} + ↑` : '',
             },
             {
                 type: 'button',
                 label: 'Move Down',
-                icon: <ArrowDownIcon className="icon-inline" />,
+                icon: <Icon as={ArrowDownIcon} />,
                 onClick: id => onMoveBlock(id, 'down'),
                 keyboardShortcutLabel: !isInputFocused ? `${modifierKeyLabel} + ↓` : '',
             },
             {
                 type: 'button',
                 label: 'Delete',
-                icon: <DeleteIcon className="icon-inline" />,
+                icon: <Icon as={DeleteIcon} />,
                 onClick: onDeleteBlock,
                 keyboardShortcutLabel: !isInputFocused ? (isMacPlatform ? '⌘ + ⌫' : 'Del') : '',
             },

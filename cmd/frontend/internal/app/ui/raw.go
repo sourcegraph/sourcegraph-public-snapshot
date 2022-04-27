@@ -91,8 +91,9 @@ func serveRaw(db database.DB) handlerFunc {
 			requestedPath = "/" + requestedPath
 		}
 
+		client := gitserver.NewClient(db)
 		if requestedPath == "/" && r.Method == "HEAD" {
-			_, err = gitserver.DefaultClient.RepoInfo(r.Context(), common.Repo.Name)
+			_, err = client.RepoInfo(r.Context(), common.Repo.Name)
 			if err != nil {
 				w.WriteHeader(http.StatusNotFound)
 				return err
@@ -182,8 +183,8 @@ func serveRaw(db database.DB) handlerFunc {
 			// caching locally is not useful. Additionally we transfer the output over the
 			// internet, so we use default compression levels on zips (instead of no
 			// compression).
-			f, err := git.ArchiveReaderWithSubRepo(r.Context(), authz.DefaultSubRepoPermsChecker, common.Repo,
-				gitserver.ArchiveOptions{Format: format, Treeish: string(common.CommitID), Paths: []string{relativePath}})
+			f, err := git.ArchiveReader(r.Context(), db, authz.DefaultSubRepoPermsChecker, common.Repo.Name,
+				gitserver.ArchiveOptions{Format: format, Treeish: string(common.CommitID), Pathspecs: []gitserver.Pathspec{gitserver.PathspecLiteral(relativePath)}})
 			if err != nil {
 				return err
 			}
@@ -234,7 +235,7 @@ func serveRaw(db database.DB) handlerFunc {
 			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 			w.Header().Set("X-Content-Type-Options", "nosniff")
 
-			fi, err := git.Stat(r.Context(), authz.DefaultSubRepoPermsChecker, common.Repo.Name, common.CommitID, requestedPath)
+			fi, err := git.Stat(r.Context(), db, authz.DefaultSubRepoPermsChecker, common.Repo.Name, common.CommitID, requestedPath)
 			if err != nil {
 				if os.IsNotExist(err) {
 					requestType = "404"
@@ -246,7 +247,7 @@ func serveRaw(db database.DB) handlerFunc {
 
 			if fi.IsDir() {
 				requestType = "dir"
-				infos, err := git.ReadDir(r.Context(), authz.DefaultSubRepoPermsChecker, common.Repo.Name, common.CommitID, requestedPath, false)
+				infos, err := client.ReadDir(r.Context(), db, authz.DefaultSubRepoPermsChecker, common.Repo.Name, common.CommitID, requestedPath, false)
 				if err != nil {
 					return err
 				}
@@ -269,7 +270,7 @@ func serveRaw(db database.DB) handlerFunc {
 			// File
 			requestType = "file"
 			size = fi.Size()
-			f, err := git.NewFileReader(r.Context(), common.Repo.Name, common.CommitID, requestedPath, authz.DefaultSubRepoPermsChecker)
+			f, err := git.NewFileReader(r.Context(), db, common.Repo.Name, common.CommitID, requestedPath, authz.DefaultSubRepoPermsChecker)
 			if err != nil {
 				return err
 			}

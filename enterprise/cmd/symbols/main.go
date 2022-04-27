@@ -19,12 +19,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	gitserver "github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -170,38 +173,12 @@ func NewGitserver(repositoryFetcher fetcher.RepositoryFetcher) Gitserver {
 	return Gitserver{repositoryFetcher: repositoryFetcher}
 }
 
-func (g Gitserver) LogReverseEach(repo string, commit string, n int, onLogEntry func(entry rockskip.LogEntry) error) error {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	command := gitserver.DefaultClient.Command("git", rockskip.LogReverseArgs(n, commit)...)
-	command.Repo = api.RepoName(repo)
-	// We run a single `git log` command and stream the output while the repo is being processed, which
-	// can take much longer than 1 minute (the default timeout).
-	command.DisableTimeout()
-	stdout, err := gitserver.StdoutReader(ctx, command)
-	if err != nil {
-		return err
-	}
-	defer stdout.Close()
-
-	return errors.Wrap(rockskip.ParseLogReverseEach(stdout, onLogEntry), "ParseLogReverseEach")
+func (g Gitserver) LogReverseEach(repo string, db database.DB, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error {
+	return gitserver.NewClient(db).LogReverseEach(repo, commit, n, onLogEntry)
 }
 
-func (g Gitserver) RevListEach(repo string, commit string, onCommit func(commit string) (shouldContinue bool, err error)) error {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	command := gitserver.DefaultClient.Command("git", rockskip.RevListArgs(commit)...)
-	command.Repo = api.RepoName(repo)
-	command.DisableTimeout()
-	stdout, err := gitserver.StdoutReader(ctx, command)
-	if err != nil {
-		return err
-	}
-	defer stdout.Close()
-
-	return rockskip.RevListEach(stdout, onCommit)
+func (g Gitserver) RevListEach(repo string, db database.DB, commit string, onCommit func(commit string) (shouldContinue bool, err error)) error {
+	return git.RevList(repo, db, commit, onCommit)
 }
 
 func (g Gitserver) ArchiveEach(repo string, commit string, paths []string, onFile func(path string, contents []byte) error) error {

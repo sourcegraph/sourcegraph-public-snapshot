@@ -1,6 +1,5 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import * as H from 'history'
-import React from 'react'
 import { of } from 'rxjs'
 
 import { Location } from '@sourcegraph/extension-api-types'

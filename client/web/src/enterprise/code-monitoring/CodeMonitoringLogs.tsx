@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { useMemo } from 'react'
+
+import classNames from 'classnames'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { Card } from '@sourcegraph/wildcard'
@@ -20,9 +21,10 @@ import {
     MonitorTriggerEventsVariables,
 } from '../../graphql-operations'
 
-import styles from './CodeMonitoringLogs.module.scss'
 import { CodeMonitorLogsHeader } from './components/logs/CodeMonitorLogsHeader'
 import { MonitorLogNode } from './components/logs/MonitorLogNode'
+
+import styles from './CodeMonitoringLogs.module.scss'
 
 export const CODE_MONITOR_EVENTS = gql`
     query MonitorTriggerEvents($first: Int, $after: String, $triggerEventsFirst: Int, $triggerEventsAfter: String) {
@@ -160,7 +162,7 @@ export const CodeMonitoringLogs: React.FunctionComponent<{ now?: () => Date; _te
                                 noun="monitor"
                                 pluralNoun="monitors"
                                 hasNextPage={hasNextPage}
-                                emptyElement={<div>You haven't created any monitors yet</div>}
+                                emptyElement={<div className={styles.empty}>You haven't created any monitors yet</div>}
                             />
                             {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
                         </SummaryContainer>

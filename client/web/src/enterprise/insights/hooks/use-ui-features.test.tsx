@@ -1,10 +1,8 @@
-import { renderHook } from '@testing-library/react-hooks'
 import React from 'react'
-import { of } from 'rxjs'
 
-import { CodeInsightsBackend } from '../core/backend/code-insights-backend'
-import { CodeInsightsBackendContext } from '../core/backend/code-insights-backend-context'
-import { CodeInsightsGqlBackend } from '../core/backend/gql-api/code-insights-gql-backend'
+import { renderHook } from '@testing-library/react-hooks'
+
+import { CodeInsightsBackend, CodeInsightsBackendContext, CodeInsightsGqlBackend } from '../core'
 
 import { useUiFeatures } from './use-ui-features'
 
@@ -23,7 +21,7 @@ const UiFeatureWrapper: React.FunctionComponent<UiFeatureWrapperProps> = ({ mock
 describe('useUiFeatures', () => {
     test.each([true, false])('should return licensed: %s', licensed => {
         const mockApi: Partial<CodeInsightsBackend> = {
-            getUiFeatures: () => of({ licensed }),
+            UIFeatures: { licensed, insightsLimit: 2 },
         }
         const wrapper: React.FunctionComponent = ({ children }) => (
             <UiFeatureWrapper mockApi={mockApi}>{children}</UiFeatureWrapper>

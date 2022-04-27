@@ -1,11 +1,12 @@
-import { BehaviorSubject } from 'rxjs'
+import { BehaviorSubject, of } from 'rxjs'
 import { filter, first } from 'rxjs/operators'
 import sinon from 'sinon'
 import sourcegraph from 'sourcegraph'
 
+import { Contributions } from '@sourcegraph/client-api'
+
 import { SettingsCascade } from '../../../settings/settings'
 import { MainThreadAPI } from '../../contract'
-import { Contributions } from '../../protocol'
 import { pretendRemote } from '../../util'
 import { activateExtensions, ExecutableExtension } from '../activation'
 import { ExtensionHostState } from '../extensionHostState'
@@ -50,6 +51,7 @@ describe('Extension activation', () => {
                 function createExtensionAPI() {
                     return {} as typeof sourcegraph
                 },
+                of(true),
                 noopPromise,
                 noopPromise
             )

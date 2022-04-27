@@ -1,7 +1,8 @@
 /* eslint jsx-a11y/no-static-element-interactions: warn, jsx-a11y/tabindex-no-positive: warn, jsx-a11y/no-noninteractive-tabindex: warn */
+import * as React from 'react'
+
 import * as H from 'history'
 import { isEqual } from 'lodash'
-import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, startWith } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
@@ -14,9 +15,10 @@ import { AbsoluteRepo } from '@sourcegraph/shared/src/util/url'
 
 import { dirname } from '../util/path'
 
-import styles from './Tree.module.scss'
 import { TreeRoot } from './TreeRoot'
 import { getDomElement, scrollIntoView } from './util'
+
+import styles from './Tree.module.scss'
 
 interface Props extends AbsoluteRepo, ExtensionsControllerProps, ThemeProps, TelemetryProps {
     history: H.History

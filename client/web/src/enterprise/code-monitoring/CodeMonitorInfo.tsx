@@ -1,6 +1,7 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
-import React from 'react'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { Button, Alert, Icon } from '@sourcegraph/wildcard'

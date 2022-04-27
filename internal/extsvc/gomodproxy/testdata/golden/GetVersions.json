@@ -1,0 +1,20 @@
+[
+  {
+   "Version": {
+    "Path": "github.com/gorilla/mux",
+    "Version": "v1.8.0"
+   },
+   "Error": "\u003cnil\u003e"
+  },
+  {
+   "Version": {
+    "Path": "github.com/tsenart/vegeta/v12",
+    "Version": "v12.8.4"
+   },
+   "Error": "\u003cnil\u003e"
+  },
+  {
+   "Version": null,
+   "Error": "bad go module proxy response with status code 410 for /github.com/!nike-!inc/cerberus-go-client/v3/@v/v3.0.1-!a!l!p!h!a.info: not found: github.com/Nike-Inc/cerberus-go-client/v3@v3.0.1-ALPHA: invalid version: unknown revision v3.0.1-ALPHA"
+  }
+ ]

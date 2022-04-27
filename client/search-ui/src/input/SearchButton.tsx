@@ -1,12 +1,14 @@
-import classNames from 'classnames'
-import SearchIcon from 'mdi-react/SearchIcon'
 import React from 'react'
 
+import classNames from 'classnames'
+import SearchIcon from 'mdi-react/SearchIcon'
+
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Icon } from '@sourcegraph/wildcard'
+
+import { SearchHelpDropdownButton } from './SearchHelpDropdownButton'
 
 import styles from './SearchButton.module.scss'
-import { SearchHelpDropdownButton } from './SearchHelpDropdownButton'
 
 interface Props extends TelemetryProps {
     /** Hide the "help" icon and dropdown. */
@@ -33,7 +35,7 @@ export const SearchButton: React.FunctionComponent<Props> = ({
             aria-label="Search"
             variant="primary"
         >
-            <SearchIcon className="icon-inline" aria-hidden="true" />
+            <Icon aria-hidden="true" as={SearchIcon} />
         </Button>
         {!hideHelpButton && (
             <SearchHelpDropdownButton isSourcegraphDotCom={isSourcegraphDotCom} telemetryService={telemetryService} />

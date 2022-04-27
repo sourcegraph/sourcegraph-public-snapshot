@@ -1,6 +1,5 @@
 import { Meta } from '@storybook/react'
 import RegexIcon from 'mdi-react/RegexIcon'
-import React from 'react'
 
 import { Button } from '@sourcegraph/wildcard'
 
@@ -21,7 +20,7 @@ before:2021-12-23T00:00:00+03:00 database.NewDB
 
 export const SimpleMonacoField = () => (
     <div className="d-flex flex-column" style={{ gap: '2rem', width: 400 }}>
-        <Monaco.Field value="" placeholder="Example: type:diff repo:sourcegrph/* " />
+        <Monaco.Field value="" placeholder="Example: type:diff repo:sourcegraph/* " />
 
         <Monaco.Field value="repo:github.com/sourcegraph/sourcegraph" />
 
@@ -34,7 +33,7 @@ export const SimpleMonacoField = () => (
         <Monaco.Field value="repo:github.com/sourcegraph/sourcegraph" className="is-invalid" />
 
         <Monaco.Root>
-            <Monaco.Field value="" placeholder="Example: type:diff repo:sourcegrph/* " />
+            <Monaco.Field value="" placeholder="Example: type:diff repo:sourcegraph/* " />
             <Button variant="icon" disabled={true}>
                 <RegexIcon
                     size={21}

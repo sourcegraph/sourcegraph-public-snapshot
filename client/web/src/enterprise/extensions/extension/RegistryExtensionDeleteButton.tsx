@@ -1,7 +1,8 @@
+import * as React from 'react'
+
 import { upperFirst } from 'lodash'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import WarningIcon from 'mdi-react/WarningIcon'
-import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
 

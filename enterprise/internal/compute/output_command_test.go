@@ -10,8 +10,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -53,7 +55,10 @@ func fileMatch(content string) result.Match {
 		return []byte(content), nil
 	}
 	return &result.FileMatch{
-		File: result.File{Path: "my/awesome/path"},
+		File: result.File{
+			Repo: types.MinimalRepo{Name: "my/awesome/repo"},
+			Path: "my/awesome/path.ml",
+		},
 	}
 }
 
@@ -71,7 +76,7 @@ func TestRun(t *testing.T) {
 	test := func(q string, m result.Match) string {
 		defer git.ResetMocks()
 		computeQuery, _ := Parse(q)
-		res, err := computeQuery.Command.Run(context.Background(), m)
+		res, err := computeQuery.Command.Run(context.Background(), database.NewMockDB(), m)
 		if err != nil {
 			return err.Error()
 		}
@@ -82,6 +87,11 @@ func TestRun(t *testing.T) {
 		"template substitution regexp",
 		"(1)\n(2)\n(3)\n").
 		Equal(t, test(`content:output((\d) -> ($1))`, fileMatch("a 1 b 2 c 3")))
+
+	autogold.Want(
+		"handles repo match via select on file match",
+		"my/awesome/repo\n").
+		Equal(t, test(`lang:ocaml content:output(.* -> $repo) select:repo`, fileMatch("a 1 b 2 c 3")))
 
 	autogold.Want(
 		"template substitution regexp with commit author",
@@ -98,4 +108,8 @@ func TestRun(t *testing.T) {
 		">bar<").
 		Equal(t, test(`content:output.structural(foo(:[arg]) -> >:[arg]<)`, fileMatch("foo(bar)")))
 
+	autogold.Want(
+		"substitute language",
+		"OCaml\n").
+		Equal(t, test(`content:output((.|\n)* -> $lang)`, fileMatch("anything")))
 }

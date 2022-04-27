@@ -1,5 +1,4 @@
 import { storiesOf } from '@storybook/react'
-import React from 'react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
@@ -58,18 +57,28 @@ add('Overview', () => (
                                     externalServiceKind: ExternalServiceKind.GITHUB,
                                     externalServiceURL: 'https://github.com/',
                                     requiresSSH: false,
+                                    requiresUsername: false,
                                 },
                                 {
                                     credential: null,
                                     externalServiceKind: ExternalServiceKind.GITLAB,
                                     externalServiceURL: 'https://gitlab.com/',
                                     requiresSSH: false,
+                                    requiresUsername: false,
                                 },
                                 {
                                     credential: sshCredential(true),
                                     externalServiceKind: ExternalServiceKind.BITBUCKETSERVER,
                                     externalServiceURL: 'https://bitbucket.sgdev.org/',
                                     requiresSSH: true,
+                                    requiresUsername: false,
+                                },
+                                {
+                                    credential: null,
+                                    externalServiceKind: ExternalServiceKind.BITBUCKETCLOUD,
+                                    externalServiceURL: 'https://bitbucket.org/',
+                                    requiresSSH: false,
+                                    requiresUsername: true,
                                 }
                             ),
                         },
@@ -103,18 +112,28 @@ add('Config added', () => (
                                     externalServiceKind: ExternalServiceKind.GITHUB,
                                     externalServiceURL: 'https://github.com/',
                                     requiresSSH: false,
+                                    requiresUsername: false,
                                 },
                                 {
                                     credential: sshCredential(false),
                                     externalServiceKind: ExternalServiceKind.GITLAB,
                                     externalServiceURL: 'https://gitlab.com/',
                                     requiresSSH: false,
+                                    requiresUsername: false,
                                 },
                                 {
                                     credential: sshCredential(false),
                                     externalServiceKind: ExternalServiceKind.BITBUCKETSERVER,
                                     externalServiceURL: 'https://bitbucket.sgdev.org/',
                                     requiresSSH: true,
+                                    requiresUsername: false,
+                                },
+                                {
+                                    credential: sshCredential(false),
+                                    externalServiceKind: ExternalServiceKind.BITBUCKETCLOUD,
+                                    externalServiceURL: 'https://bitbucket.org/',
+                                    requiresSSH: false,
+                                    requiresUsername: true,
                                 }
                             ),
                         },

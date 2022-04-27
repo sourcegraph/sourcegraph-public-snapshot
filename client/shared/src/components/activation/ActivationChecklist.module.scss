@@ -48,6 +48,8 @@
     margin: 0 1.25rem;
     padding: 0 0.5rem;
     border-bottom-width: 1px;
+    // overides [data-reach-menu-list], [data-reach-menu-items] whites property
+    white-space: normal;
 }
 
 .icon-container {

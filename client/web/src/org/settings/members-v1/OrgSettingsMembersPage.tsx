@@ -1,6 +1,7 @@
+import * as React from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
-import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, startWith, switchMap, tap } from 'rxjs/operators'
@@ -22,6 +23,7 @@ import { OrgAreaPageProps } from '../../area/OrgArea'
 import { removeUserFromOrganization } from '../../backend'
 
 import { InviteForm } from './InviteForm'
+
 import styles from './OrgSettingsMembersPage.module.scss'
 
 interface UserNodeProps {

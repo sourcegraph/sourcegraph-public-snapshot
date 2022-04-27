@@ -1,12 +1,13 @@
+import { FunctionComponent, useMemo } from 'react'
+
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
 import FileUploadIcon from 'mdi-react/FileUploadIcon'
 import ProgressClockIcon from 'mdi-react/ProgressClockIcon'
-import React, { FunctionComponent, useMemo } from 'react'
 
 import { LSIFUploadState } from '@sourcegraph/shared/src/graphql-operations'
-import { Timeline, TimelineStage } from '@sourcegraph/web/src/components/Timeline'
 
+import { Timeline, TimelineStage } from '../../../../components/Timeline'
 import { LsifUploadFields } from '../../../../graphql-operations'
 
 export interface CodeIntelUploadTimelineProps {

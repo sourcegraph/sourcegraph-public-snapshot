@@ -19,6 +19,10 @@ var (
 		Name: "src_repoupdater_perms_syncer_stale_perms",
 		Help: "The number of records that have stale permissions",
 	}, []string{"type"})
+	metricsStrictStalePerms = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "src_repoupdater_perms_syncer_strict_stale_perms",
+		Help: "The number of records that have permissions older than 1h",
+	}, []string{"type"})
 	metricsPermsGap = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "src_repoupdater_perms_syncer_perms_gap_seconds",
 		Help: "The time gap between least and most up to date permissions",
@@ -36,4 +40,9 @@ var (
 		Name: "src_repoupdater_perms_syncer_queue_size",
 		Help: "The size of the sync request queue",
 	})
+	metricsRateLimiterWaitDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "src_repoupdater_perms_syncer_sync_wait_duration_seconds",
+		Help:    "Time spent waiting on rate-limiter to sync permissions",
+		Buckets: []float64{0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120},
+	}, []string{"type", "success"})
 )

@@ -1,5 +1,4 @@
 import { render } from '@testing-library/react'
-import React from 'react'
 
 import { Input } from './Input'
 
@@ -16,10 +15,46 @@ describe('Input', () => {
                 placeholder="loading status input"
             />
         )
+
+        expect(container.firstChild).toMatchInlineSnapshot(`
+            <div
+              class="container d-flex"
+            >
+              <input
+                class="input form-control with-invalid-icon"
+                placeholder="loading status input"
+                title="Input loading"
+                type="text"
+                value="Input value"
+              />
+              <div
+                class="loadingSpinner spinner"
+              />
+            </div>
+        `)
+    })
+
+    it('renders an input with label correctly', () => {
+        const { container } = render(
+            <Input
+                defaultValue="Input value"
+                title="Input loading"
+                message="random message"
+                status="loading"
+                placeholder="loading status input"
+                label="Input label"
+            />
+        )
+
         expect(container.firstChild).toMatchInlineSnapshot(`
             <label
-              class="w-100"
+              class="label w-100"
             >
+              <div
+                class="mb-2"
+              >
+                Input label
+              </div>
               <div
                 class="container d-flex"
               >

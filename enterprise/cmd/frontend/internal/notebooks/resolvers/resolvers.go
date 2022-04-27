@@ -106,6 +106,12 @@ func convertNotebookBlockInput(inputBlock graphqlbackend.CreateNotebookBlockInpu
 			SymbolContainerName: inputBlock.SymbolInput.SymbolContainerName,
 			SymbolKind:          inputBlock.SymbolInput.SymbolKind,
 		}
+	case graphqlbackend.NotebookComputeBlockType:
+		if inputBlock.ComputeInput == nil {
+			return nil, errors.Errorf("query block with id %s is missing input", inputBlock.ID)
+		}
+		block.Type = notebooks.NotebookComputeBlockType
+		block.ComputeInput = &notebooks.NotebookComputeBlockInput{Value: *inputBlock.ComputeInput}
 	default:
 		return nil, errors.Newf("invalid block type: %s", inputBlock.Type)
 	}
@@ -491,6 +497,13 @@ func (r *notebookBlockResolver) ToSymbolBlock() (graphqlbackend.SymbolBlockResol
 	return nil, false
 }
 
+func (r *notebookBlockResolver) ToComputeBlock() (graphqlbackend.ComputeBlockResolver, bool) {
+	if r.block.Type == notebooks.NotebookComputeBlockType {
+		return &computeBlockResolver{r.block}, true
+	}
+	return nil, false
+}
+
 type markdownBlockResolver struct {
 	// block.type == NotebookMarkdownBlockType
 	block notebooks.NotebookBlock
@@ -608,4 +621,17 @@ func (r *symbolBlockInputResolver) SymbolContainerName() string {
 
 func (r *symbolBlockInputResolver) SymbolKind() string {
 	return r.input.SymbolKind
+}
+
+type computeBlockResolver struct {
+	// block.type == NotebookComputeBlockType
+	block notebooks.NotebookBlock
+}
+
+func (r *computeBlockResolver) ID() string {
+	return r.block.ID
+}
+
+func (r *computeBlockResolver) ComputeInput() string {
+	return r.block.ComputeInput.Value
 }

@@ -1,3 +1,5 @@
+import React, { useCallback, useState } from 'react'
+
 import classNames from 'classnames'
 import { parseISO } from 'date-fns'
 import { upperFirst } from 'lodash'
@@ -8,16 +10,16 @@ import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import StarIcon from 'mdi-react/StarIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
-import React, { useCallback, useState } from 'react'
 
 import { BatchSpecState } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
 import { Button, Link, Icon } from '@sourcegraph/wildcard'
 
+import { Timestamp } from '../../components/time/Timestamp'
 import { BatchSpecListFields, Scalars } from '../../graphql-operations'
 
 import { BatchSpec } from './BatchSpec'
+
 import styles from './BatchSpecNode.module.scss'
 
 export interface BatchSpecNodeProps extends ThemeProps {

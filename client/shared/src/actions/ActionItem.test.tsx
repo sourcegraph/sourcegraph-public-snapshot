@@ -1,7 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import * as H from 'history'
-import React from 'react'
 import { NEVER } from 'rxjs'
 
 import { createBarrier } from '../api/integration-test/testHelpers'

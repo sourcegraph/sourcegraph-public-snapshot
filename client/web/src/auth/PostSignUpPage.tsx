@@ -1,31 +1,32 @@
-import classNames from 'classnames'
 import React, { FunctionComponent, useState, useEffect, useCallback, useRef } from 'react'
+
+import classNames from 'classnames'
 import { useLocation, useHistory } from 'react-router'
 
 import { ErrorLike } from '@sourcegraph/common'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { BrandLogo } from '@sourcegraph/web/src/components/branding/BrandLogo'
-import { HeroPage } from '@sourcegraph/web/src/components/HeroPage'
-import { PageRoutes } from '@sourcegraph/web/src/routes.constants'
 import { Alert, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
+import { BrandLogo } from '../components/branding/BrandLogo'
+import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { SourcegraphContext } from '../jscontext'
+import { PageRoutes } from '../routes.constants'
 import { eventLogger } from '../tracking/eventLogger'
 import { SelectAffiliatedRepos } from '../user/settings/repositories/SelectAffiliatedRepos'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../util'
 
-import styles from './PostSignUpPage.module.scss'
 import { getReturnTo } from './SignInSignUpCommon'
-import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
 import { Steps, Step, StepList, StepPanels, StepPanel } from './Steps'
 import { useExternalServices } from './useExternalServices'
 import { CodeHostsConnection } from './welcome/CodeHostsConnection'
 import { Footer } from './welcome/Footer'
 import { InviteCollaborators } from './welcome/InviteCollaborators/InviteCollaborators'
-import { TeamsBeta } from './welcome/TeamsBeta'
+
+import styles from './PostSignUpPage.module.scss'
+import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
 
 interface PostSignUpPage {
     authenticatedUser: AuthenticatedUser
@@ -135,7 +136,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                     className="text-left"
                     body={
                         <div className="pb-1 d-flex flex-column align-items-center w-100">
-                            <div className={styles.progress}>
+                            <div className={styles.container}>
                                 {hasErrors && (
                                     <Alert className="mb-4" role="alert" variant="danger">
                                         Sorry, something went wrong. Try refreshing the page or{' '}
@@ -146,12 +147,11 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                 <p className="text-muted pb-3">Follow these steps to set up your account</p>
                             </div>
                             <div className="mt-2 pb-3 d-flex flex-column align-items-center w-100">
-                                <Steps initialStep={debug ? parseInt(debug, 10) : 1} totalSteps={4}>
-                                    <StepList numeric={true} className={styles.progress}>
+                                <Steps initialStep={debug ? parseInt(debug, 10) : 1} totalSteps={3}>
+                                    <StepList numeric={true} className={styles.container}>
                                         <Step borderColor="purple">Connect with code hosts</Step>
                                         <Step borderColor="blue">Add repositories</Step>
-                                        <Step borderColor="orange">Teams beta</Step>
-                                        <Step borderColor="green">Invite collaborators</Step>
+                                        <Step borderColor="orange">Invite collaborators</Step>
                                     </StepList>
                                     <StepPanels>
                                         <StepPanel>
@@ -195,13 +195,6 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                                 />
                                                 <Footer onFinish={finishWelcomeFlow} isSkippable={true} />
                                             </div>
-                                        </StepPanel>
-                                        <StepPanel>
-                                            <TeamsBeta
-                                                onFinish={finishWelcomeFlow}
-                                                onError={onError}
-                                                username={user.username}
-                                            />
                                         </StepPanel>
                                         <StepPanel>
                                             <InviteCollaborators

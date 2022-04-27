@@ -1,15 +1,17 @@
+import { MouseEventHandler, PointerEventHandler, ReactElement } from 'react'
+
 import { GlyphDot as Glyph } from '@visx/glyph'
 import { EventHandlerParams, GlyphProps } from '@visx/xychart/lib/types'
 import classNames from 'classnames'
-import React, { MouseEventHandler, PointerEventHandler, ReactElement } from 'react'
 import { LineChartSeries } from 'sourcegraph'
 
 import { MaybeLink } from '../../MaybeLink'
 import { Point } from '../types'
 
-import styles from './GlyphContent.module.scss'
 import { getLineStroke } from './LineChartContent'
 import { dateLabelFormatter } from './TickComponent'
+
+import styles from './GlyphContent.module.scss'
 
 /**
  * Type for active datum state in LineChartContent component. In order to render active state

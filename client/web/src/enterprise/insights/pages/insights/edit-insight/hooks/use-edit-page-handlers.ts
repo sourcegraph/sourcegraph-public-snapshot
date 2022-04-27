@@ -1,4 +1,5 @@
 import { useContext, useMemo } from 'react'
+
 import { useHistory } from 'react-router-dom'
 
 import { asError } from '@sourcegraph/common'
@@ -7,50 +8,45 @@ import { useObservable } from '@sourcegraph/wildcard'
 import { eventLogger } from '../../../../../../tracking/eventLogger'
 import { FORM_ERROR, SubmissionErrors } from '../../../../components/form/hooks/useForm'
 import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
-import { Insight } from '../../../../core/types'
-import { ALL_INSIGHTS_DASHBOARD_ID } from '../../../../core/types/dashboard/virtual-dashboard'
+import { CreationInsightInput } from '../../../../core/backend/code-insights-backend-types'
+import { ALL_INSIGHTS_DASHBOARD } from '../../../../core/constants'
 import { useQueryParameters } from '../../../../hooks/use-query-parameters'
 import { getTrackingTypeByInsightType } from '../../../../pings'
 
-export interface UseHandleSubmitProps {
-    originalInsight: Insight | null | undefined
-}
-
 export interface useHandleSubmitOutput {
-    handleSubmit: (newInsight: Insight) => Promise<SubmissionErrors>
+    handleSubmit: (newInsight: CreationInsightInput) => Promise<SubmissionErrors>
     handleCancel: () => void
 }
 
 /**
  * Returns submit and cancel handlers for the insight edit submit page.
  */
-export function useEditPageHandlers(props: UseHandleSubmitProps): useHandleSubmitOutput {
-    const { originalInsight } = props
-
+export function useEditPageHandlers(props: { id: string | undefined }): useHandleSubmitOutput {
+    const { id } = props
     const { updateInsight, getDashboardById } = useContext(CodeInsightsBackendContext)
     const history = useHistory()
 
     const { dashboardId } = useQueryParameters(['dashboardId'])
     const dashboard = useObservable(useMemo(() => getDashboardById({ dashboardId }), [getDashboardById, dashboardId]))
 
-    const handleSubmit = async (newInsight: Insight): Promise<SubmissionErrors> => {
-        if (!originalInsight) {
+    const handleSubmit = async (newInsight: CreationInsightInput): Promise<SubmissionErrors> => {
+        if (!id) {
             return
         }
 
         try {
             await updateInsight({
-                oldInsight: originalInsight,
-                newInsight,
+                insightId: id,
+                nextInsightData: newInsight,
             }).toPromise()
 
-            const insightType = getTrackingTypeByInsightType(newInsight.viewType)
+            const insightType = getTrackingTypeByInsightType(newInsight.type)
 
             eventLogger.log('InsightEdit', { insightType }, { insightType })
 
             if (!dashboard) {
                 // Navigate user to the dashboard page with new created dashboard
-                history.push(`/insights/dashboards/${ALL_INSIGHTS_DASHBOARD_ID}`)
+                history.push(`/insights/dashboards/${ALL_INSIGHTS_DASHBOARD.id}`)
 
                 return
             }
@@ -65,7 +61,7 @@ export function useEditPageHandlers(props: UseHandleSubmitProps): useHandleSubmi
 
     const handleCancel = (): void => {
         if (!dashboard) {
-            history.push(`/insights/dashboards/${ALL_INSIGHTS_DASHBOARD_ID}`)
+            history.push(`/insights/dashboards/${ALL_INSIGHTS_DASHBOARD.id}`)
             return
         }
 

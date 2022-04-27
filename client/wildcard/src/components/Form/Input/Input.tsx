@@ -1,15 +1,26 @@
+import { useRef, forwardRef, InputHTMLAttributes, ReactNode } from 'react'
+
 import classNames from 'classnames'
-import React, { forwardRef, InputHTMLAttributes, ReactNode } from 'react'
+import { useMergeRefs } from 'use-callback-ref'
 
 import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 
+import { useAutoFocus } from '../../../hooks/useAutoFocus'
 import { ForwardReferenceComponent } from '../../../types'
+import { Label } from '../../Typography/Label'
 
 import styles from './Input.module.scss'
 
-interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+export enum InputStatus {
+    initial = 'initial',
+    error = 'error',
+    loading = 'loading',
+    valid = 'valid',
+}
+
+export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
     /** text label of input. */
-    label?: string
+    label?: ReactNode
     /** Description block shown below the input. */
     message?: ReactNode
     /** Custom class name for root label element. */
@@ -19,7 +30,8 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
     /** Input icon (symbol) which render right after the input element. */
     inputSymbol?: ReactNode
     /** Exclusive status */
-    status?: 'error' | 'loading' | 'valid'
+    status?: InputStatus | `${InputStatus}`
+    error?: ReactNode
     /** Disable input behavior */
     disabled?: boolean
     /** Determines the size of the input */
@@ -40,42 +52,56 @@ export const Input = forwardRef((props, reference) => {
         inputClassName,
         inputSymbol,
         disabled,
-        status,
+        status = InputStatus.initial,
+        error,
+        autoFocus,
         ...otherProps
     } = props
 
-    return (
-        <label className={classNames('w-100', className)}>
-            {label && <div className="mb-2">{variant === 'regular' ? label : <small>{label}</small>}</div>}
+    const localReference = useRef<HTMLInputElement>(null)
+    const mergedReference = useMergeRefs([localReference, reference])
 
-            <LoaderInput className="d-flex" loading={status === 'loading'}>
+    useAutoFocus({ autoFocus, reference: localReference })
+
+    const messageClassName = 'form-text font-weight-normal mt-2'
+    const inputWithMessage = (
+        <>
+            <LoaderInput className={classNames('d-flex', !label && className)} loading={status === InputStatus.loading}>
                 <Component
                     disabled={disabled}
                     type={type}
                     className={classNames(styles.input, inputClassName, 'form-control', 'with-invalid-icon', {
-                        'is-valid': status === 'valid',
-                        'is-invalid': status === 'error',
+                        'is-valid': status === InputStatus.valid,
+                        'is-invalid': error || status === InputStatus.error,
                         'form-control-sm': variant === 'small',
                     })}
                     {...otherProps}
-                    ref={reference}
+                    ref={mergedReference}
+                    autoFocus={autoFocus}
                 />
 
                 {inputSymbol}
             </LoaderInput>
 
-            {message && (
-                <small
-                    className={classNames(
-                        status === 'error' ? 'text-danger' : 'text-muted',
-                        'form-text font-weight-normal mt-2'
-                    )}
-                >
-                    {message}
+            {error && (
+                <small role="alert" className={classNames('text-danger', messageClassName)}>
+                    {error}
                 </small>
             )}
-        </label>
+            {!error && message && <small className={classNames('text-muted', messageClassName)}>{message}</small>}
+        </>
     )
+
+    if (label) {
+        return (
+            <Label className={classNames('w-100', className)}>
+                {label && <div className="mb-2">{variant === 'regular' ? label : <small>{label}</small>}</div>}
+                {inputWithMessage}
+            </Label>
+        )
+    }
+
+    return inputWithMessage
 }) as ForwardReferenceComponent<'input', InputProps>
 
 Input.displayName = 'Input'

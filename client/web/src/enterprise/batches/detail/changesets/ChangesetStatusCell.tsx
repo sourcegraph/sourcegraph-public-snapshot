@@ -1,3 +1,5 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import ArchiveIcon from 'mdi-react/ArchiveIcon'
@@ -7,7 +9,6 @@ import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import SourceMergeIcon from 'mdi-react/SourceMergeIcon'
 import SourcePullIcon from 'mdi-react/SourcePullIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
-import React from 'react'
 
 import { ChangesetFields, ChangesetState, Scalars } from '../../../../graphql-operations'
 

@@ -1,6 +1,5 @@
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import React from 'react'
 import sinon from 'sinon'
 
 import { SearchScope } from '@sourcegraph/shared/src/schema/settings.schema'

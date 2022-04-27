@@ -1,5 +1,4 @@
 import { render, RenderResult, cleanup, fireEvent } from '@testing-library/react'
-import React from 'react'
 import sinon from 'sinon'
 
 import { PageSelector, PageSelectorProps } from './PageSelector'

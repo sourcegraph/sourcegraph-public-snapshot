@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/internal/cookie"
+
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -14,6 +16,10 @@ import (
 const (
 	// headerKeyActorUID is the header key for the actor's user ID.
 	headerKeyActorUID = "X-Sourcegraph-Actor-UID"
+
+	// headerKeyAnonymousActorUID is an optional header to propagate the
+	// anonymous UID of an unauthenticated actor.
+	headerKeyActorAnonymousUID = "X-Sourcegraph-Actor-Anonymous-UID"
 )
 
 const (
@@ -77,9 +83,12 @@ func (t *HTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		req.Header.Set(headerKeyActorUID, actor.UIDString())
 		metricOutgoingActors.WithLabelValues(metricActorTypeUser, path).Inc()
 
-	// Indicate no actor is associated with request
+	// Indicate no authenticated actor is associated with request
 	default:
 		req.Header.Set(headerKeyActorUID, headerValueNoActor)
+		if actor.AnonymousUID != "" {
+			req.Header.Set(headerKeyActorAnonymousUID, actor.AnonymousUID)
+		}
 		metricOutgoingActors.WithLabelValues(metricActorTypeNone, path).Inc()
 	}
 
@@ -108,8 +117,13 @@ func HTTPMiddleware(next http.Handler) http.Handler {
 			ctx = WithInternalActor(ctx)
 			metricIncomingActors.WithLabelValues(metricActorTypeInternal, path).Inc()
 
-		// Request not associated with any actor
+		// Request not associated with an authenticated user
 		case "", headerValueNoActor:
+			// Even though the current user is authenticated, we may still have
+			// an anonymous UID to propagate.
+			if anonymousUID := req.Header.Get(headerKeyActorAnonymousUID); anonymousUID != "" {
+				ctx = WithActor(ctx, FromAnonymousUser(anonymousUID))
+			}
 			metricIncomingActors.WithLabelValues(metricActorTypeNone, path).Inc()
 
 		// Request associated with authenticated user - add user actor to context
@@ -147,4 +161,20 @@ func getCondensedURLPath(urlPath string) string {
 		return "/git/..."
 	}
 	return urlPath
+}
+
+// AnonymousUIDMiddleware sets the actor to an unauthenticated actor with an anonymousUID
+// from the cookie if it exists. It will not overwrite an existing actor.
+func AnonymousUIDMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		// Don't clobber an existing authenticated actor
+		if a := FromContext(req.Context()); !a.IsAuthenticated() && !a.IsInternal() {
+			if anonymousUID, ok := cookie.AnonymousUID(req); ok {
+				ctx := WithActor(req.Context(), FromAnonymousUser(anonymousUID))
+				next.ServeHTTP(rw, req.WithContext(ctx))
+				return
+			}
+		}
+		next.ServeHTTP(rw, req)
+	})
 }

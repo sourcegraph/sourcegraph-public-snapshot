@@ -1,7 +1,7 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "jsx": "react",
+    "jsx": "react-jsx",
     "module": "esnext",
     "sourceRoot": "src",
     "baseUrl": ".",
@@ -16,6 +16,7 @@
     { "path": "../codeintellify" },
     { "path": "../template-parser" },
     { "path": "../http-client" },
+    { "path": "../client-api" },
   ],
   "include": ["**/*", ".*", "./src/**/*.json"],
   "exclude": ["../../node_modules", "./node_modules", "./out", "./src/end-to-end"],

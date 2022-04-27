@@ -1,6 +1,7 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
-import React from 'react'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { ExtensionDevelopmentToolsPopover } from '@sourcegraph/shared/src/extensions/devtools'

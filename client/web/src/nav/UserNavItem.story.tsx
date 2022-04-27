@@ -1,8 +1,9 @@
+import React, { useEffect, useRef } from 'react'
+
 import { action } from '@storybook/addon-actions'
 import { boolean, select } from '@storybook/addon-knobs'
 import { useMemo } from '@storybook/addons'
 import { Meta, Story } from '@storybook/react'
-import React, { useEffect, useRef } from 'react'
 
 import { Position } from '@sourcegraph/wildcard'
 

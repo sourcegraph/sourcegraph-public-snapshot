@@ -7,9 +7,14 @@
     height: 15rem;
 }
 
-.tab-panel {
+.tabs {
     display: flex;
     flex-direction: column;
     position: relative;
     height: 100%;
+}
+
+.tab-panels {
+    overflow-y: auto;
+    overflow-x: hidden;
 }

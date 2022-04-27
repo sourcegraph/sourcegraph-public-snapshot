@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { CSSProperties } from 'react'
+
+import classNames from 'classnames'
 
 import { isErrorLike, sanitizeClass } from '@sourcegraph/common'
 import { Card } from '@sourcegraph/wildcard'
@@ -10,13 +11,14 @@ import { PlatformContextProps } from '../platform/context'
 import { TelemetryProps } from '../telemetry/telemetryService'
 import { ThemeProps } from '../theme'
 
-import hoverOverlayStyle from './HoverOverlay.module.scss'
 import type { HoverContext, HoverOverlayBaseProps, GetAlertClassName, GetAlertVariant } from './HoverOverlay.types'
 import { HoverOverlayAlerts, HoverOverlayAlertsProps } from './HoverOverlayAlerts'
 import { HoverOverlayContents } from './HoverOverlayContents'
-import style from './HoverOverlayContents.module.scss'
 import { HoverOverlayLogo } from './HoverOverlayLogo'
 import { useLogTelemetryEvent } from './useLogTelemetryEvent'
+
+import hoverOverlayStyle from './HoverOverlay.module.scss'
+import style from './HoverOverlayContents.module.scss'
 
 const LOADING = 'loading' as const
 

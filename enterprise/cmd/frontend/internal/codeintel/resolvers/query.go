@@ -6,6 +6,7 @@ import (
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
@@ -71,6 +72,7 @@ type Documentation struct {
 }
 
 type queryResolver struct {
+	db                  database.DB
 	dbStore             DBStore
 	lsifStore           LSIFStore
 	cachedCommitChecker *cachedCommitChecker
@@ -82,12 +84,21 @@ type queryResolver struct {
 	uploadCache         map[int]store.Dump
 	operations          *operations
 	checker             authz.SubRepoPermissionChecker
+
+	// maximumIndexesPerMonikerSearch configures the maximum number of reference upload identifiers
+	// that can be passed to a single moniker search query. Previously this limit was meant to keep
+	// the number of SQLite files we'd have to open within a single call relatively low. Since we've
+	// migrated to Postgres this limit is not a concern. Now we only want to limit these values
+	// based on the number of elements we can pass to an IN () clause in the codeintel-db, as well
+	// as the size required to encode them in a user-facing pagination cursor.
+	maximumIndexesPerMonikerSearch int
 }
 
 // NewQueryResolver create a new query resolver with the given services. The methods of this
 // struct return queries for the given repository, commit, and path, and will query only the
 // bundles associated with the given dump objects.
 func NewQueryResolver(
+	db database.DB,
 	dbStore DBStore,
 	lsifStore LSIFStore,
 	cachedCommitChecker *cachedCommitChecker,
@@ -98,12 +109,14 @@ func NewQueryResolver(
 	uploads []store.Dump,
 	operations *operations,
 	checker authz.SubRepoPermissionChecker,
+	maximumIndexesPerMonikerSearch int,
 ) QueryResolver {
-	return newQueryResolver(dbStore, lsifStore, cachedCommitChecker, positionAdjuster,
-		repositoryID, commit, path, uploads, operations, checker)
+	return newQueryResolver(db, dbStore, lsifStore, cachedCommitChecker, positionAdjuster,
+		repositoryID, commit, path, uploads, operations, checker, maximumIndexesPerMonikerSearch)
 }
 
 func newQueryResolver(
+	db database.DB,
 	dbStore DBStore,
 	lsifStore LSIFStore,
 	cachedCommitChecker *cachedCommitChecker,
@@ -114,6 +127,7 @@ func newQueryResolver(
 	uploads []store.Dump,
 	operations *operations,
 	checker authz.SubRepoPermissionChecker,
+	maximumIndexesPerMonikerSearch int,
 ) *queryResolver {
 	// Maintain a map from identifers to hydrated upload records from the database. We use
 	// this map as a quick lookup when constructing the resulting location set. Any additional
@@ -125,16 +139,18 @@ func newQueryResolver(
 	}
 
 	return &queryResolver{
-		dbStore:             dbStore,
-		lsifStore:           lsifStore,
-		cachedCommitChecker: cachedCommitChecker,
-		positionAdjuster:    positionAdjuster,
-		operations:          operations,
-		repositoryID:        repositoryID,
-		commit:              commit,
-		path:                path,
-		uploads:             uploads,
-		uploadCache:         uploadCache,
-		checker:             checker,
+		db:                             db,
+		dbStore:                        dbStore,
+		lsifStore:                      lsifStore,
+		cachedCommitChecker:            cachedCommitChecker,
+		positionAdjuster:               positionAdjuster,
+		operations:                     operations,
+		repositoryID:                   repositoryID,
+		commit:                         commit,
+		path:                           path,
+		uploads:                        uploads,
+		uploadCache:                    uploadCache,
+		checker:                        checker,
+		maximumIndexesPerMonikerSearch: maximumIndexesPerMonikerSearch,
 	}
 }

@@ -1,11 +1,13 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
 
 import { useWildcardTheme } from '../../hooks/useWildcardTheme'
 import { Link } from '../Link'
 
-import styles from './Badge.module.scss'
 import { BADGE_VARIANTS } from './constants'
+
+import styles from './Badge.module.scss'
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
     /**

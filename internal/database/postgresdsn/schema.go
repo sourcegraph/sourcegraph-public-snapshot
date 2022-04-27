@@ -58,7 +58,11 @@ func comparePostgresDSNs(name1, name2, dsn1, dsn2 string) error {
 	}
 
 	if url1.Host == url2.Host && url1.Path == url2.Path {
-		return errors.Errorf("%s and %s databases must be distinct: %s and %s seem to refer to the same database", name1, name2, dsn1, dsn2)
+		return errors.Errorf("databases %s and %s must be distinct, but both target %s", name1, name2, &url.URL{
+			Scheme: "postgres",
+			Host:   url1.Host,
+			Path:   url1.Path,
+		})
 	}
 
 	return nil

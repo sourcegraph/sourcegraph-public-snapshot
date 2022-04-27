@@ -1,5 +1,4 @@
 import { createMemoryHistory } from 'history'
-import React from 'react'
 import { of, Observable } from 'rxjs'
 
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'

@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/execute"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
@@ -32,6 +33,8 @@ type SearchClient interface {
 		stream streaming.Sender,
 		inputs *run.SearchInputs,
 	) (_ *search.Alert, err error)
+
+	JobClients() job.RuntimeClients
 }
 
 func NewSearchClient(db database.DB, zoektStreamer zoekt.Streamer, searcherURLs *endpoint.Map) SearchClient {
@@ -65,10 +68,14 @@ func (s *searchClient) Execute(
 	stream streaming.Sender,
 	inputs *run.SearchInputs,
 ) (*search.Alert, error) {
-	jobArgs := &job.Args{
-		SearchInputs: inputs,
+	return execute.Execute(ctx, stream, inputs, s.JobClients())
+}
+
+func (s *searchClient) JobClients() job.RuntimeClients {
+	return job.RuntimeClients{
+		DB:           s.db,
 		Zoekt:        s.zoekt,
 		SearcherURLs: s.searcherURLs,
+		Gitserver:    gitserver.NewClient(s.db),
 	}
-	return execute.Execute(ctx, s.db, stream, jobArgs)
 }

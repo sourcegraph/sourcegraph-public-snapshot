@@ -1,6 +1,7 @@
+import React, { useCallback, useEffect, useState } from 'react'
+
 import { gql, useMutation } from '@apollo/client'
 import { debounce } from 'lodash'
-import React, { useCallback, useEffect, useState } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'

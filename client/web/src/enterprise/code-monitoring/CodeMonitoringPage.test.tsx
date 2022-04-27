@@ -1,5 +1,4 @@
 import { render, fireEvent } from '@testing-library/react'
-import * as React from 'react'
 import { MemoryRouter } from 'react-router'
 import { of } from 'rxjs'
 import sinon from 'sinon'

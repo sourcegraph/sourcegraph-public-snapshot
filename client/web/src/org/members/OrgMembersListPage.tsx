@@ -1,8 +1,10 @@
+import React, { useCallback, useEffect, useState } from 'react'
+
 import { useMutation, useQuery } from '@apollo/client'
 import classNames from 'classnames'
 import ChevronDown from 'mdi-react/ChevronDownIcon'
 import CogIcon from 'mdi-react/CogIcon'
-import React, { useCallback, useEffect, useState } from 'react'
+import { RouteComponentProps } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { pluralize } from '@sourcegraph/common'
@@ -35,18 +37,23 @@ import { OrgAreaPageProps } from '../area/OrgArea'
 import { AddMemberToOrgModal } from './AddMemberToOrgModal'
 import { ORG_MEMBERS_QUERY, ORG_MEMBER_REMOVE_MUTATION } from './gqlQueries'
 import { IModalInviteResult, InvitedNotification, InviteMemberModalHandler } from './InviteMemberModal'
-import styles from './OrgMembersListPage.module.scss'
 import { getPaginatedItems, OrgMemberNotification } from './utils'
 
-interface Props extends Pick<OrgAreaPageProps, 'org' | 'authenticatedUser' | 'isSourcegraphDotCom'> {}
-interface Member {
+import styles from './OrgMembersListPage.module.scss'
+
+interface Props
+    extends Pick<OrgAreaPageProps, 'org' | 'authenticatedUser' | 'isSourcegraphDotCom'>,
+        RouteComponentProps {
+    onOrgGetStartedRefresh: () => void
+}
+export interface Member {
     id: string
     username: string
     displayName: Maybe<string>
     avatarURL: Maybe<string>
 }
 
-interface MembersTypeNode {
+export interface MembersTypeNode {
     viewerCanAdminister: boolean
     members: {
         totalCount: number
@@ -60,7 +67,7 @@ interface MemberItemProps {
     isSelf: boolean
     onlyMember: boolean
     orgId: string
-    onMemberRemoved: (username: string) => void
+    onMemberRemoved: (username: string, isSelf: boolean) => void
 }
 
 const MemberItem: React.FunctionComponent<MemberItemProps> = ({
@@ -77,9 +84,13 @@ const MemberItem: React.FunctionComponent<MemberItemProps> = ({
     >(ORG_MEMBER_REMOVE_MUTATION)
 
     const onRemoveClick = useCallback(async () => {
+        eventLogger.log('RemoveFromOrganizationClicked', { organizationId: orgId }, { organizationId: orgId })
         if (window.confirm(isSelf ? 'Leave the organization?' : `Remove the user ${member.username}?`)) {
+            eventLogger.log('RemoveFromOrganizationConfirmed', { organizationId: orgId }, { organizationId: orgId })
             await removeUserFromOrganization({ variables: { organization: orgId, user: member.id } })
-            onMemberRemoved(member.username)
+            onMemberRemoved(member.username, isSelf)
+        } else {
+            eventLogger.log('RemoveFromOrganizationDismissed', { organizationId: orgId }, { organizationId: orgId })
         }
     }, [isSelf, member.username, removeUserFromOrganization, onMemberRemoved, member.id, orgId])
 
@@ -168,10 +179,22 @@ const MembersResultHeader: React.FunctionComponent<{ total: number; orgName: str
 /**
  * The organization members list page.
  */
-export const OrgMembersListPage: React.FunctionComponent<Props> = ({ org, authenticatedUser }) => {
+export const OrgMembersListPage: React.FunctionComponent<Props> = ({
+    org,
+    authenticatedUser,
+    onOrgGetStartedRefresh,
+    history,
+}) => {
     const [invite, setInvite] = useState<IModalInviteResult>()
     const [notification, setNotification] = useState<string>()
     const [page, setPage] = useState(1)
+    const setPageWithEventLogging = useCallback(
+        (index: number) => {
+            setPage(index)
+            eventLogger.log('MemberListPaginationClicked', { organizationId: org.id }, { organizationId: org.id })
+        },
+        [setPage, org.id]
+    )
 
     const { data, loading, error, refetch } = useQuery<OrganizationMembersResult, OrganizationMembersVariables>(
         ORG_MEMBERS_QUERY,
@@ -181,7 +204,7 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({ org, authen
     )
 
     useEffect(() => {
-        eventLogger.logViewEvent('OrgMembersListV2', { orgId: org.id })
+        eventLogger.logPageView('OrganizationMembers', { organizationId: org.id })
     }, [org.id])
 
     const isSelf = (userId: string): boolean => authenticatedUser !== null && userId === authenticatedUser.id
@@ -189,8 +212,9 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({ org, authen
     const onInviteSent = useCallback(
         (result: IModalInviteResult) => {
             setInvite(result)
+            onOrgGetStartedRefresh()
         },
-        [setInvite]
+        [setInvite, onOrgGetStartedRefresh]
     )
 
     const onInviteSentMessageDismiss = useCallback(() => {
@@ -205,17 +229,23 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({ org, authen
         async (username: string) => {
             setNotification(`You succesfully added ${username} to ${org.name}`)
             await onShouldRefetch()
+            onOrgGetStartedRefresh()
         },
-        [setNotification, onShouldRefetch, org.name]
+        [setNotification, onShouldRefetch, org.name, onOrgGetStartedRefresh]
     )
 
     const onMemberRemoved = useCallback(
-        async (username: string) => {
-            setNotification(`${username} has been removed from the ${org.name} organization on Sourcegraph`)
-            setPage(1)
-            await onShouldRefetch()
+        async (username: string, isSelf: boolean) => {
+            if (isSelf) {
+                history.push(userURL(authenticatedUser.username))
+            } else {
+                setNotification(`${username} has been removed from the ${org.name} organization on Sourcegraph`)
+                setPage(1)
+                await onShouldRefetch()
+                onOrgGetStartedRefresh()
+            }
         },
-        [setNotification, onShouldRefetch, org.name]
+        [org.name, onShouldRefetch, onOrgGetStartedRefresh, history, authenticatedUser.username]
     )
 
     const onNotificationDismiss = useCallback(() => {
@@ -252,6 +282,7 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({ org, authen
                             orgName={org.name}
                             orgId={org.id}
                             onInviteSent={onInviteSent}
+                            eventLoggerEventName="InviteMemberButtonClicked"
                         />
                     )}
                 </div>
@@ -285,7 +316,7 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({ org, authen
                     <PageSelector
                         className="mt-4 mb-4"
                         currentPage={page}
-                        onPageChange={setPage}
+                        onPageChange={setPageWithEventLogging}
                         totalPages={pagedData.totalPages}
                     />
                 )}
@@ -298,6 +329,7 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({ org, authen
                                 <InviteMemberModalHandler
                                     orgName={org.name}
                                     triggerLabel="Invite a teammate"
+                                    eventLoggerEventName="InviteMemberCTAClicked"
                                     orgId={org.id}
                                     onInviteSent={onInviteSent}
                                     className={styles.inviteMemberLink}

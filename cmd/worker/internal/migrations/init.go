@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // migrator configures an out of band migration runner process to execute in the background.
@@ -31,11 +32,15 @@ func NewMigrator(registerMigrators func(db database.DB, outOfBandMigrationRunner
 	}
 }
 
+func (m *migrator) Description() string {
+	return ""
+}
+
 func (m *migrator) Config() []env.Config {
 	return nil
 }
 
-func (m *migrator) Routines(ctx context.Context) ([]goroutine.BackgroundRoutine, error) {
+func (m *migrator) Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	sqlDB, err := workerdb.Init()
 	if err != nil {
 		return nil, err
@@ -54,7 +59,7 @@ func (m *migrator) Routines(ctx context.Context) ([]goroutine.BackgroundRoutine,
 	}
 
 	if os.Getenv("SRC_DISABLE_OOBMIGRATION_VALIDATION") != "" {
-		log15.Warn("Skipping out-of-band migrations check")
+		logger.Warn("Skipping out-of-band migrations check")
 	} else {
 		if err := oobmigration.ValidateOutOfBandMigrationRunner(ctx, db, outOfBandMigrationRunner); err != nil {
 			return nil, err

@@ -1,5 +1,6 @@
-import ArrowLeftIcon from 'mdi-react/ArrowLeftIcon'
 import React from 'react'
+
+import ArrowLeftIcon from 'mdi-react/ArrowLeftIcon'
 
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { Button, Link, Icon } from '@sourcegraph/wildcard'

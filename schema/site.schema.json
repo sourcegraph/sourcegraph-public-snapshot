@@ -55,6 +55,11 @@
       "type": "boolean",
       "default": false
     },
+    "defaultRateLimit": {
+      "description": "The rate limit (in requests per hour) for the default rate limiter in the rate limiters registry. By default this is disabled and the default rate limit is infinity.",
+      "type": "number",
+      "default": -1
+    },
     "experimentalFeatures": {
       "description": "Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.",
       "type": "object",
@@ -70,6 +75,39 @@
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "enabled"
+        },
+        "passwordPolicy": {
+          "description": "Enables and configures password policy. This will allow admins to enforce password complexity and length requirements.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "description": "Enables password policy",
+              "type": "boolean",
+              "default": true
+            },
+            "minimumLength": {
+              "description": "The minimum length required for a password",
+              "type": "integer",
+              "length": 12,
+              "default": 12
+            },
+            "numberOfSpecialCharacters": {
+              "description": "The required number of special characters",
+              "type": "integer",
+              "length": 2
+            },
+            "requireAtLeastOneNumber": {
+              "description": "Does the password require a number",
+              "type": "boolean",
+              "default": true
+            },
+            "requireUpperandLowerCase": {
+              "description": "Require Mixed characters",
+              "type": "boolean",
+              "default": true
+            }
+          }
         },
         "debug.log": {
           "description": "Turns on debug logging for specific debugging scenarios.",
@@ -97,8 +135,9 @@
         },
         "dependenciesSearch": {
           "description": "Enables support for repo:dependencies predicate queries.",
-          "type": "boolean",
-          "default": false
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "enabled"
         },
         "andOrQuery": {
           "description": "DEPRECATED: Interpret a search input query as an and/or query.",
@@ -136,6 +175,12 @@
           "enum": ["enabled", "disabled"],
           "default": "disabled"
         },
+        "gerrit": {
+          "description": "Allow adding Gerrit code host connections",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
+        },
         "subRepoPermissions": {
           "type": "object",
           "additionalProperties": false,
@@ -160,7 +205,7 @@
           }
         },
         "npmPackages": {
-          "description": "Allow adding NPM packages code host connections",
+          "description": "Allow adding npm packages code host connections",
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "enabled"
@@ -380,6 +425,31 @@
           "description": "Enable filtering of all exec commands on gitserver based on a pre-defined allowlist",
           "type": "boolean",
           "default": true
+        },
+        "enableGitserverClientLookupTable": {
+          "description": "Enable getting repository location from the database. Works only on Cloud.",
+          "type": "boolean",
+          "default": false
+        },
+        "gitserverClientLookupTable.Rate": {
+          "description": "Percentage of calls to AddrFromRepo that read from the database. Only used if enableGitserverClientLookupTable is true.",
+          "type": "integer",
+          "default": 0,
+          "minimum": 0,
+          "maximum": 100
+        },
+        "gitServerPinnedRepos": {
+          "description": "List of repositories pinned to specific gitserver instances. The specified repositories will remain at their pinned servers on scaling the cluster. If the specified pinned server differs from the current server that stores the repository, then it must be re-cloned to the specified server.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "examples": [
+            {
+              "github.com/foo/bar": "gitserverHostname",
+              "github.com/foo/bar2": "gitserverHostname2"
+            }
+          ]
         }
       },
       "examples": [
@@ -622,6 +692,63 @@
       "default": -1,
       "group": "External services"
     },
+    "syntaxHighlighting": {
+      "title": "SyntaxHighlighting",
+      "description": "Syntax highlighting configuration",
+      "type": "object",
+      "required": ["engine", "languages"],
+      "properties": {
+        "engine": {
+          "title": "SyntaxHighlightingEngine",
+          "type": "object",
+          "required": ["default"],
+          "properties": {
+            "default": {
+              "description": "The default syntax highlighting engine to use",
+              "type": "string",
+              "enum": ["tree-sitter", "syntect"]
+            },
+            "overrides": {
+              "description": "Manually specify overrides for syntax highlighting engine per language",
+              "type": "object",
+              "additionalProperties": { "type": "string", "enum": ["tree-sitter", "syntect"] }
+            }
+          }
+        },
+        "languages": {
+          "title": "SyntaxHighlightingLanguage",
+          "type": "object",
+          "required": ["extensions", "patterns"],
+          "properties": {
+            "extensions": {
+              "description": "Map of extension to language",
+              "type": "object",
+              "additionalProperties": { "type": "string" }
+            },
+            "patterns": {
+              "description": "Map of patterns to language. Will return after first match, if any.",
+              "type": "array",
+              "items": {
+                "title": "SyntaxHighlightingLanguagePatterns",
+                "type": "object",
+                "required": ["pattern", "language"],
+                "properties": {
+                  "pattern": {
+                    "description": "Regular expression which matches the filepath",
+                    "type": "string",
+                    "format": "regex"
+                  },
+                  "language": {
+                    "description": "Name of the language if pattern matches",
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "repoListUpdateInterval": {
       "description": "Interval (in minutes) for checking code hosts (such as GitHub, Gitolite, etc.) for new repositories.",
       "type": "integer",
@@ -745,6 +872,21 @@
       },
       "examples": [{ "bindID": "email" }, { "bindID": "username" }],
       "group": "Security"
+    },
+    "permissions.syncScheduleInterval": {
+      "description": "Time interval (in seconds) of how often each component picks up authorization changes in external services.",
+      "type": "integer",
+      "default": 15
+    },
+    "permissions.syncOldestUsers": {
+      "description": "Number of user permissions to schedule for syncing in single scheduler iteration",
+      "type": "integer",
+      "default": 10
+    },
+    "permissions.syncOldestRepos": {
+      "description": "Number of repo permissions to schedule for syncing in single scheduler iteration",
+      "type": "integer",
+      "default": 10
     },
     "branding": {
       "description": "Customize Sourcegraph homepage logo and search icon.\n\nOnly available in Sourcegraph Enterprise.",
@@ -933,6 +1075,47 @@
       "type": "string",
       "examples": ["https://sourcegraph.example.com"]
     },
+    "observability.logging": {
+      "description": "Configuration for logging to external services.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "datadog": {
+          "description": "Datadog configuration",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "RUM": {
+              "description": "Datadog RUM configuration",
+              "type": "object",
+              "required": ["clientToken", "applicationId"],
+              "additionalProperties": false,
+              "properties": {
+                "clientToken": {
+                  "description": "Datadog client token required RUM (https://docs.datadoghq.com/real_user_monitoring/browser/#setup).",
+                  "type": "string"
+                },
+                "applicationId": {
+                  "description": "Datadog application ID required RUM (https://docs.datadoghq.com/real_user_monitoring/browser/#setup).",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "examples": [
+        {
+          "datadog": {
+            "RUM": {
+              "clientToken": "aaa1111a1a11a1aa11a1aa1a111aaa111aa",
+              "applicationId": "a11aa111-a1aa-1a11-aaa1-a11a111a111a"
+            }
+          }
+        }
+      ],
+      "group": "Debug"
+    },
     "observability.tracing": {
       "description": "Controls the settings for distributed tracing.",
       "type": "object",
@@ -1076,6 +1259,13 @@
       "default": 60,
       "examples": [120]
     },
+    "insights.commit.indexer.windowDuration": {
+      "description": "The number of days of commits the insights commit indexer will pull during each request (0 is no limit).",
+      "type": "integer",
+      "group": "CodeInsights",
+      "default": 0,
+      "examples": [30]
+    },
     "htmlHeadTop": {
       "description": "HTML to inject at the top of the `<head>` element on each page, for analytics scripts",
       "type": "string",
@@ -1195,6 +1385,39 @@
       "type": "integer",
       "default": 14400,
       "group": "Authentication"
+    },
+    "auth.lockout": {
+      "description": "The config options for account lockout",
+      "type": "object",
+      "properties": {
+        "failedAttemptThreshold": {
+          "description": "The threshold of failed sign-in attempts in a consecutive period",
+          "type": "integer",
+          "default": 5
+        },
+        "lockoutPeriod": {
+          "description": "The number of seconds for the lockout period",
+          "type": "integer",
+          "default": 1800
+        },
+        "consecutivePeriod": {
+          "description": "The number of seconds to be considered as a consecutive period",
+          "type": "integer",
+          "default": 3600
+        }
+      },
+      "group": "Authentication"
+    },
+    "auth.unlockAccountLinkSigningKey": {
+      "description": "Base64 encoded HMAC Signing key to sign a JWT token, which is attached to each invitation URL.",
+      "type": "string",
+      "group": "Authentication"
+    },
+    "auth.unlockAccountLinkExpiry": {
+      "description": "Validity expressed in minutes of the unlock account token",
+      "type": "integer",
+      "group": "Authentication",
+      "default": 5
     },
     "update.channel": {
       "description": "The channel on which to automatically check for Sourcegraph updates.",

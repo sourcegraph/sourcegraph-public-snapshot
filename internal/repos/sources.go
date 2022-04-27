@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -23,9 +23,9 @@ type Sourcer func(*types.ExternalService) (Source, error)
 // http.Clients needed to contact the respective upstream code host APIs.
 //
 // The provided decorator functions will be applied to the Source.
-func NewSourcer(externalServicesStore database.ExternalServiceStore, cf *httpcli.Factory, decs ...func(Source) Source) Sourcer {
+func NewSourcer(db database.DB, cf *httpcli.Factory, decs ...func(Source) Source) Sourcer {
 	return func(svc *types.ExternalService) (Source, error) {
-		src, err := NewSource(externalServicesStore, svc, cf)
+		src, err := NewSource(db, svc, cf)
 		if err != nil {
 			return nil, err
 		}
@@ -39,30 +39,36 @@ func NewSourcer(externalServicesStore database.ExternalServiceStore, cf *httpcli
 }
 
 // NewSource returns a repository yielding Source from the given ExternalService configuration.
-func NewSource(externalServicesStore database.ExternalServiceStore, svc *types.ExternalService, cf *httpcli.Factory) (Source, error) {
+func NewSource(db database.DB, svc *types.ExternalService, cf *httpcli.Factory) (Source, error) {
+	externalServicesStore := db.ExternalServices()
+
 	switch strings.ToUpper(svc.Kind) {
 	case extsvc.KindGitHub:
 		return NewGithubSource(externalServicesStore, svc, cf)
 	case extsvc.KindGitLab:
 		return NewGitLabSource(svc, cf)
+	case extsvc.KindGerrit:
+		return NewGerritSource(svc, cf)
 	case extsvc.KindBitbucketServer:
 		return NewBitbucketServerSource(svc, cf)
 	case extsvc.KindBitbucketCloud:
 		return NewBitbucketCloudSource(svc, cf)
 	case extsvc.KindGitolite:
-		return NewGitoliteSource(svc, cf)
+		return NewGitoliteSource(db, svc, cf)
 	case extsvc.KindPhabricator:
 		return NewPhabricatorSource(svc, cf)
 	case extsvc.KindAWSCodeCommit:
 		return NewAWSCodeCommitSource(svc, cf)
 	case extsvc.KindPerforce:
 		return NewPerforceSource(svc)
+	case extsvc.KindGoModules:
+		return NewGoModulesSource(svc, cf)
 	case extsvc.KindJVMPackages:
 		return NewJVMPackagesSource(svc)
 	case extsvc.KindPagure:
 		return NewPagureSource(svc, cf)
-	case extsvc.KindNPMPackages:
-		return NewNPMPackagesSource(svc)
+	case extsvc.KindNpmPackages:
+		return NewNpmPackagesSource(svc)
 	case extsvc.KindOther:
 		return NewOtherSource(svc, cf)
 	default:
@@ -86,17 +92,17 @@ type RepoGetter interface {
 	GetRepo(context.Context, string) (*types.Repo, error)
 }
 
-type DBSource interface {
+type DependenciesServiceSource interface {
 	Source
-	SetDB(dbutil.DB)
+	SetDependenciesService(depsSvc *dependencies.Service)
 }
 
-// WithDB returns a decorator used in NewSourcer that calls SetDB on Sources that
-// can be upgraded to it.
-func WithDB(db dbutil.DB) func(Source) Source {
+// WithDependenciesService returns a decorator used in NewSourcer that calls SetDB on
+// Sources that can be upgraded to it.
+func WithDependenciesService(depsSvc *dependencies.Service) func(Source) Source {
 	return func(src Source) Source {
-		if s, ok := src.(DBSource); ok {
-			s.SetDB(db)
+		if s, ok := src.(DependenciesServiceSource); ok {
+			s.SetDependenciesService(depsSvc)
 			return s
 		}
 		return src

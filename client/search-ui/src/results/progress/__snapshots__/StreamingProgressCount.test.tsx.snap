@@ -30,7 +30,7 @@ exports[`StreamingProgressCount should render correctly for 0 repositories 1`] =
   >
     0 results in 0.00s
     <svg
-      class="mdi-icon ml-1 icon-inline"
+      class="mdi-icon iconInline ml-1"
       data-tooltip="From 0 repositories"
       fill="currentColor"
       height="24"
@@ -53,7 +53,7 @@ exports[`StreamingProgressCount should render correctly for 1 item complete 1`] 
   >
     1 result in 1.25s
     <svg
-      class="mdi-icon ml-1 icon-inline"
+      class="mdi-icon iconInline ml-1"
       data-tooltip="From 1 repository"
       fill="currentColor"
       height="24"
@@ -76,7 +76,7 @@ exports[`StreamingProgressCount should render correctly for 123 items complete 1
   >
     123 results in 1.25s
     <svg
-      class="mdi-icon ml-1 icon-inline"
+      class="mdi-icon iconInline ml-1"
       data-tooltip="From 500 repositories"
       fill="currentColor"
       height="24"
@@ -99,7 +99,7 @@ exports[`StreamingProgressCount should render correctly for big numbers complete
   >
     1.2m results in 52.50s
     <svg
-      class="mdi-icon ml-1 icon-inline"
+      class="mdi-icon iconInline ml-1"
       data-tooltip="From 8.9k repositories"
       fill="currentColor"
       height="24"
@@ -122,7 +122,7 @@ exports[`StreamingProgressCount should render correctly for limithit 1`] = `
   >
     123+ results in 1.25s
     <svg
-      class="mdi-icon ml-1 icon-inline"
+      class="mdi-icon iconInline ml-1"
       data-tooltip="From 500 repositories"
       fill="currentColor"
       height="24"
@@ -153,7 +153,7 @@ exports[`StreamingProgressCount should render correctly when a trace url is prov
       href="https://sourcegraph.test:3443/-/debug/jaeger/trace/abcdefg"
     >
       <svg
-        class="mdi-icon mr-2 icon-inline"
+        class="mdi-icon iconInline mr-2"
         fill="currentColor"
         height="24"
         viewBox="0 0 24 24"

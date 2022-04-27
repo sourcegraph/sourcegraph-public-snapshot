@@ -17,6 +17,7 @@ const (
 	tagID      = "id"
 	tagSuccess = "success"
 	tagState   = "state"
+	tagReason  = "reason"
 )
 
 var (
@@ -38,7 +39,7 @@ var (
 	syncErrors = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_repoupdater_syncer_sync_errors_total",
 		Help: "Total number of sync errors",
-	}, []string{tagFamily, tagOwner})
+	}, []string{tagFamily, tagOwner, tagReason})
 
 	syncDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Name: "src_repoupdater_syncer_sync_duration_seconds",
@@ -265,4 +266,61 @@ AND NOT EXISTS(SELECT FROM external_service_sync_jobs WHERE external_service_id 
 		return seconds.Float64
 	})
 
+	// Count the number of repos owned by site level external services that haven't
+	// been fetched in 8 hours.
+	//
+	// We always return zero for Sourcegraph.com because we currently have a lot of
+	// repos owned by the Starburst service in this state and until that's resolved
+	// it would just be noise.
+	promauto.NewGaugeFunc(prometheus.GaugeOpts{
+		Name: "src_repoupdater_stale_repos",
+		Help: "The number of repos that haven't been fetched in at least 8 hours",
+	}, func() float64 {
+		if sourcegraphDotCom {
+			return 0
+		}
+
+		count, err := scanCount(`
+select count(*)
+from gitserver_repos
+where last_fetched < now() - interval '8 hours'
+  and last_error != ''
+  and exists(select
+             from external_service_repos
+                      join external_services es on external_service_repos.external_service_id = es.id
+                      join repo r on external_service_repos.repo_id = r.id
+             where not es.cloud_default
+               and gitserver_repos.repo_id = repo_id
+               and external_service_repos.user_id is null
+               and external_service_repos.org_id is null
+               and es.deleted_at is null
+               and r.deleted_at is null
+    )
+`)
+		if err != nil {
+			log15.Error("Failed to count stale repos", "err", err)
+			return 0
+		}
+		return count
+	})
+
+	// Count the number of repos that are deleted but still cloned on disk. These
+	// repos are eligible to be purged.
+	promauto.NewGaugeFunc(prometheus.GaugeOpts{
+		Name: "src_repoupdater_purgeable_repos",
+		Help: "The number of deleted repos that are still cloned on disk",
+	}, func() float64 {
+		count, err := scanCount(`
+select count(*) from
+gitserver_repos
+where clone_status = 'cloned'
+and exists
+  (select from repo where id = repo_id and deleted_at is not null)
+`)
+		if err != nil {
+			log15.Error("Failed to count purgeable repos", "err", err)
+			return 0
+		}
+		return count
+	})
 }

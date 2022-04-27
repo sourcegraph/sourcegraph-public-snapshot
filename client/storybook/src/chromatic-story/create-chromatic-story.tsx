@@ -1,5 +1,6 @@
-import { StoryFn } from '@storybook/addons'
 import React, { ReactElement, useEffect } from 'react'
+
+import { StoryFn } from '@storybook/addons'
 import { useDarkMode } from 'storybook-dark-mode'
 
 import { THEME_DARK_CLASS, THEME_LIGHT_CLASS } from '../themes'

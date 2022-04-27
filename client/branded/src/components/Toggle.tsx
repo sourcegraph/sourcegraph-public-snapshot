@@ -1,7 +1,9 @@
-import classNames from 'classnames'
 import * as React from 'react'
 
+import classNames from 'classnames'
+
 import { TOGGLE_DISPLAY } from './constants'
+
 import styles from './Toggle.module.scss'
 
 interface Props {

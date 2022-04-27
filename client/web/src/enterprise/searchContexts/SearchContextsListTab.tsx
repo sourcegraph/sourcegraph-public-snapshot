@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { useCallback, useMemo } from 'react'
+
+import classNames from 'classnames'
 import { useHistory, useLocation } from 'react-router'
 import { catchError } from 'rxjs/operators'
 
@@ -11,16 +12,17 @@ import {
     SearchContextMinimalFields,
 } from '@sourcegraph/search'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { Badge, useObservable, Link, Card } from '@sourcegraph/wildcard'
+
+import { AuthenticatedUser } from '../../auth'
 import {
     FilteredConnection,
     FilteredConnectionFilter,
     FilteredConnectionFilterValue,
-} from '@sourcegraph/web/src/components/FilteredConnection'
-import { Badge, useObservable, Link, Card } from '@sourcegraph/wildcard'
-
-import { AuthenticatedUser } from '../../auth'
+} from '../../components/FilteredConnection'
 
 import { SearchContextNode, SearchContextNodeProps } from './SearchContextNode'
+
 import styles from './SearchContextsListTab.module.scss'
 
 export interface SearchContextsListTabProps

@@ -1,6 +1,5 @@
 import { screen } from '@testing-library/react'
-import React from 'react'
-import { of } from 'rxjs'
+import { noop } from 'rxjs'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
@@ -36,7 +35,9 @@ describe('RecentFilesPanel', () => {
 
         const props = {
             authenticatedUser: null,
-            fetchRecentFileViews: () => of(recentFiles),
+            recentFilesFragment: { recentFilesLogs: recentFiles },
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-explicit-any
+            fetchMore: noop as any,
             telemetryService: NOOP_TELEMETRY_SERVICE,
         }
 
@@ -75,7 +76,9 @@ describe('RecentFilesPanel', () => {
 
         const props = {
             authenticatedUser: null,
-            fetchRecentFileViews: () => of(recentFiles),
+            recentFilesFragment: { recentFilesLogs: recentFiles },
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-explicit-any
+            fetchMore: noop as any,
             telemetryService: NOOP_TELEMETRY_SERVICE,
         }
 
@@ -109,7 +112,9 @@ describe('RecentFilesPanel', () => {
 
         const props = {
             authenticatedUser: null,
-            fetchRecentFileViews: () => of(recentFiles),
+            recentFilesFragment: { recentFilesLogs: recentFiles },
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-explicit-any
+            fetchMore: noop as any,
             telemetryService: NOOP_TELEMETRY_SERVICE,
         }
 
@@ -140,7 +145,9 @@ describe('RecentFilesPanel', () => {
 
         const props = {
             authenticatedUser: null,
-            fetchRecentFileViews: () => of(recentFiles),
+            recentFilesFragment: { recentFilesLogs: recentFiles },
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-explicit-any
+            fetchMore: noop as any,
             telemetryService: NOOP_TELEMETRY_SERVICE,
         }
 

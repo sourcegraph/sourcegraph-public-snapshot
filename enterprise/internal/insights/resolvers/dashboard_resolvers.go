@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -64,7 +65,7 @@ func (d *dashboardConnectionResolver) compute(ctx context.Context) ([]*types.Das
 				d.err = errors.Wrap(err, "unmarshalDashboardID")
 			}
 			if !id.isVirtualized() {
-				args.ID = int(id.Arg)
+				args.ID = []int{int(id.Arg)}
 			}
 		}
 
@@ -360,13 +361,24 @@ func (r *Resolver) DeleteInsightsDashboard(ctx context.Context, args *graphqlbac
 		return emptyResponse, nil
 	}
 
+	licenseError := licensing.Check(licensing.FeatureCodeInsights)
+	if licenseError != nil {
+		lamDashboardId, err := r.dashboardStore.EnsureLimitedAccessModeDashboard(ctx)
+		if err != nil {
+			return nil, errors.Wrap(err, "EnsureLimitedAccessModeDashboard")
+		}
+		if lamDashboardId == int(dashboardID.Arg) {
+			return nil, errors.New("Cannot delete this dashboard in Limited Access Mode")
+		}
+	}
+
 	permissionsValidator := PermissionsValidatorFromBase(&r.baseInsightResolver)
 	err = permissionsValidator.validateUserAccessForDashboard(ctx, int(dashboardID.Arg))
 	if err != nil {
 		return nil, err
 	}
 
-	err = r.dashboardStore.DeleteDashboard(ctx, dashboardID.Arg)
+	err = r.dashboardStore.DeleteDashboard(ctx, int(dashboardID.Arg))
 	if err != nil {
 		return emptyResponse, err
 	}
@@ -389,6 +401,17 @@ func (r *Resolver) AddInsightViewToDashboard(ctx context.Context, args *graphqlb
 		return nil, err
 	}
 	defer func() { err = tx.Done(err) }()
+
+	licenseError := licensing.Check(licensing.FeatureCodeInsights)
+	if licenseError != nil {
+		lamDashboardId, err := tx.EnsureLimitedAccessModeDashboard(ctx)
+		if err != nil {
+			return nil, errors.Wrap(err, "EnsureLimitedAccessModeDashboard")
+		}
+		if lamDashboardId == int(dashboardID.Arg) {
+			return nil, errors.New("Cannot add insights to this dashboard while in Limited Access Mode")
+		}
+	}
 
 	permissionsValidator := PermissionsValidatorFromBase(&r.baseInsightResolver)
 	txValidator := permissionsValidator.WithBaseStore(tx.Store)
@@ -413,7 +436,7 @@ func (r *Resolver) AddInsightViewToDashboard(ctx context.Context, args *graphqlb
 		}
 	}
 
-	dashboards, err := tx.GetDashboards(ctx, store.DashboardQueryArgs{ID: int(dashboardID.Arg),
+	dashboards, err := tx.GetDashboards(ctx, store.DashboardQueryArgs{ID: []int{int(dashboardID.Arg)},
 		UserID: txValidator.userIds, OrgID: txValidator.orgIds})
 	if err != nil {
 		return nil, errors.Wrap(err, "GetDashboards")
@@ -441,6 +464,17 @@ func (r *Resolver) RemoveInsightViewFromDashboard(ctx context.Context, args *gra
 	}
 	defer func() { err = tx.Done(err) }()
 
+	licenseError := licensing.Check(licensing.FeatureCodeInsights)
+	if licenseError != nil {
+		lamDashboardId, err := tx.EnsureLimitedAccessModeDashboard(ctx)
+		if err != nil {
+			return nil, errors.Wrap(err, "EnsureLimitedAccessModeDashboard")
+		}
+		if lamDashboardId == int(dashboardID.Arg) {
+			return nil, errors.New("Cannot remove insights from this dashboard while in Limited Access Mode")
+		}
+	}
+
 	permissionsValidator := PermissionsValidatorFromBase(&r.baseInsightResolver)
 	txValidator := permissionsValidator.WithBaseStore(tx.Store)
 	err = txValidator.validateUserAccessForDashboard(ctx, int(dashboardID.Arg))
@@ -452,7 +486,7 @@ func (r *Resolver) RemoveInsightViewFromDashboard(ctx context.Context, args *gra
 	if err != nil {
 		return nil, errors.Wrap(err, "RemoveViewsFromDashboard")
 	}
-	dashboards, err := tx.GetDashboards(ctx, store.DashboardQueryArgs{ID: int(dashboardID.Arg),
+	dashboards, err := tx.GetDashboards(ctx, store.DashboardQueryArgs{ID: []int{int(dashboardID.Arg)},
 		UserID: txValidator.userIds, OrgID: txValidator.orgIds})
 	if err != nil {
 		return nil, errors.Wrap(err, "GetDashboards")

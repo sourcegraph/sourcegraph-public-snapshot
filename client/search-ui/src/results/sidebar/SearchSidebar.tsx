@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { useCallback, useMemo } from 'react'
+
+import classNames from 'classnames'
 import { useHistory } from 'react-router'
 import StickyBox from 'react-sticky-box'
 import shallow from 'zustand/shallow'
@@ -24,9 +25,10 @@ import { getFiltersOfKind, useLastRepoName } from './helpers'
 import { getQuickLinks } from './QuickLink'
 import { RevisionsProps } from './revisions'
 import { getSearchReferenceFactory } from './SearchReference'
-import styles from './SearchSidebar.module.scss'
 import { SearchSidebarSection } from './SearchSidebarSection'
 import { getSearchTypeLinks } from './SearchTypeLink'
+
+import styles from './SearchSidebar.module.scss'
 
 export interface SearchSidebarProps
     extends Omit<SubmitSearchParameters, 'history' | 'query' | 'source' | 'searchParameters'>,
@@ -38,7 +40,7 @@ export interface SearchSidebarProps
 
     /**
      * Not yet implemented in the VS Code extension (blocked on Apollo Client integration).
-     * */
+     */
     getRevisions?: (revisionsProps: Omit<RevisionsProps, 'query'>) => (query: string) => JSX.Element
 
     /**
@@ -47,6 +49,12 @@ export interface SearchSidebarProps
     prefixContent?: JSX.Element
 
     buildSearchURLQueryFromQueryState: (queryParameters: BuildSearchQueryURLParameters) => string
+
+    /**
+     * Force search type links to be rendered as buttons.
+     * Used e.g. in the VS Code extension to update search query state.
+     */
+    forceButton?: boolean
 }
 
 const selectFromQueryState = ({
@@ -102,7 +110,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
             setCollapsedSections(openSections => {
                 const newSettings: TemporarySettings['search.collapsedSidebarSections'] = {
                     ...openSections,
-                    [id]: open,
+                    [id]: !open,
                 }
                 return newSettings
             })
@@ -149,6 +157,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                         query,
                         selectedSearchContextSpec: props.selectedSearchContextSpec,
                         buildSearchURLQueryFromQueryState: props.buildSearchURLQueryFromQueryState,
+                        forceButton: props.forceButton,
                     })}
                 </SearchSidebarSection>
                 <SearchSidebarSection

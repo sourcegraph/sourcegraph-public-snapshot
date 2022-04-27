@@ -1,7 +1,6 @@
 import { boolean } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
 import { subDays } from 'date-fns'
-import React from 'react'
 
 import { Card } from '@sourcegraph/wildcard'
 

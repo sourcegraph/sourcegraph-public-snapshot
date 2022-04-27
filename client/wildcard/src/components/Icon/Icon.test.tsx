@@ -1,7 +1,6 @@
 import { mdiCheck } from '@mdi/js'
 import { render } from '@testing-library/react'
 import CheckIcon from 'mdi-react/CheckIcon'
-import React from 'react'
 
 import { Icon } from './Icon'
 

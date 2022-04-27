@@ -2,6 +2,7 @@ package codeintel
 
 import (
 	"context"
+	"time"
 
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
@@ -15,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type commitGraphJob struct{}
@@ -23,11 +25,15 @@ func NewCommitGraphJob() job.Job {
 	return &commitGraphJob{}
 }
 
+func (j *commitGraphJob) Description() string {
+	return ""
+}
+
 func (j *commitGraphJob) Config() []env.Config {
 	return []env.Config{commitGraphConfigInst}
 }
 
-func (j *commitGraphJob) Routines(ctx context.Context) ([]goroutine.BackgroundRoutine, error) {
+func (j *commitGraphJob) Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	observationContext := &observation.Context{
 		Logger:     log15.Root(),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
@@ -62,6 +68,19 @@ func (j *commitGraphJob) Routines(ctx context.Context) ([]goroutine.BackgroundRo
 			observationContext,
 		),
 	}
+
+	observationContext.Registerer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Name: "src_codeintel_commit_graph_queued_duration_seconds_total",
+		Help: "The maximum amount of time a repository has had a stale commit graph.",
+	}, func() float64 {
+		age, err := dbStore.MaxStaleAge(context.Background())
+		if err != nil {
+			log15.Error("Failed to determine stale commit graph age", "error", err)
+			return 0
+		}
+
+		return float64(age) / float64(time.Second)
+	}))
 
 	return routines, nil
 }

@@ -1,7 +1,6 @@
 import { Meta } from '@storybook/react'
-import React from 'react'
 
-import { WebStory } from '@sourcegraph/web/src/components/WebStory'
+import { WebStory } from '../../components/WebStory'
 
 import { RevisionsPopover } from './RevisionsPopover'
 import { MOCK_PROPS, MOCK_REQUESTS } from './RevisionsPopover.mocks'

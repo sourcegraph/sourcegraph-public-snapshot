@@ -1,6 +1,5 @@
 import { storiesOf } from '@storybook/react'
 import classNames from 'classnames'
-import React from 'react'
 import { of } from 'rxjs'
 
 import { WebStory } from '../../../../components/WebStory'
@@ -14,8 +13,9 @@ import {
     VisibleChangesetApplyPreviewFields,
 } from '../../../../graphql-operations'
 
-import styles from './PreviewList.module.scss'
 import { VisibleChangesetApplyPreviewNode } from './VisibleChangesetApplyPreviewNode'
+
+import styles from './PreviewList.module.scss'
 
 const { add } = storiesOf('web/batches/preview/VisibleChangesetApplyPreviewNode', module).addDecorator(story => (
     <div className={classNames(styles.previewListGrid, 'p-3 container')}>{story()}</div>

@@ -1,14 +1,15 @@
+import React, { useCallback, useEffect, useState } from 'react'
+
+import { gql } from '@apollo/client'
 import classNames from 'classnames'
 import PencilOutlineIcon from 'mdi-react/PencilOutlineIcon'
 import PlusIcon from 'mdi-react/PlusIcon'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { Observable } from 'rxjs'
 
-import { ISavedSearch } from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, ButtonGroup, useObservable, Link, Menu, MenuButton, MenuList, MenuItem } from '@sourcegraph/wildcard'
+import { Button, ButtonGroup, Link, Menu, MenuButton, MenuList, MenuItem, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
+import { SavedSearchesPanelFragment } from '../../graphql-operations'
 import { buildSearchURLQueryFromQueryState } from '../../stores'
 
 import { EmptyPanelContainer } from './EmptyPanelContainer'
@@ -19,18 +20,37 @@ import { PanelContainer } from './PanelContainer'
 interface Props extends TelemetryProps {
     className?: string
     authenticatedUser: AuthenticatedUser | null
-    fetchSavedSearches: () => Observable<ISavedSearch[]>
+    savedSearchesFragment: SavedSearchesPanelFragment | null
     insideTabPanel?: boolean
 }
 
+export const savedSearchesPanelFragment = gql`
+    fragment SavedSearchesPanelFragment on Query {
+        savedSearches @include(if: $enableSavedSearches) {
+            id
+            description
+            notify
+            notifySlack
+            query
+            namespace {
+                __typename
+                id
+                namespaceName
+            }
+            slackWebhookURL
+        }
+    }
+`
+
 export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
     authenticatedUser,
-    fetchSavedSearches,
     className,
     telemetryService,
     insideTabPanel,
+    savedSearchesFragment,
 }) => {
-    const savedSearches = useObservable(useMemo(() => fetchSavedSearches(), [fetchSavedSearches]))
+    const savedSearches = savedSearchesFragment?.savedSearches ?? null
+
     const [showAllSearches, setShowAllSearches] = useState(true)
 
     useEffect(() => {
@@ -61,7 +81,7 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
                     variant="secondary"
                     as={Link}
                 >
-                    <PlusIcon className="icon-inline" />
+                    <Icon as={PlusIcon} />
                     Create a saved search
                 </Button>
             )}
@@ -75,16 +95,16 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
                 <small>Search</small>
                 <small>Edit</small>
             </div>
-            <dl className="list-group-flush flex-grow-1">
+            <ul className="list-group-flush flex-grow-1 list-group mb-3">
                 {savedSearches
                     ?.filter(search => (showAllSearches ? true : search.namespace.id === authenticatedUser?.id))
                     .map(search => (
-                        <dd key={search.id} className="text-monospace test-saved-search-entry">
+                        <li key={search.id} className="text-monospace test-saved-search-entry d-block mb-2">
                             <div className="d-flex justify-content-between">
                                 <small>
                                     <Link
                                         to={'/search?' + buildSearchURLQueryFromQueryState({ query: search.query })}
-                                        className=" p-0"
+                                        className="p-0"
                                         onClick={logEvent('SavedSearchesPanelSearchClicked')}
                                     >
                                         {search.description}
@@ -95,27 +115,33 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
                                         <Link
                                             to={`/users/${search.namespace.namespaceName}/searches/${search.id}`}
                                             onClick={logEvent('SavedSearchesPanelEditClicked')}
+                                            aria-label={`Edit saved search ${search.description}`}
                                         >
-                                            <PencilOutlineIcon className="icon-inline" />
+                                            <Icon as={PencilOutlineIcon} />
                                         </Link>
                                     ) : (
                                         <Link
                                             to={`/organizations/${search.namespace.namespaceName}/searches/${search.id}`}
                                             onClick={logEvent('SavedSearchesPanelEditClicked')}
+                                            aria-label={`Edit saved search ${search.description}`}
                                         >
-                                            <PencilOutlineIcon className="icon-inline" />
+                                            <Icon as={PencilOutlineIcon} />
                                         </Link>
                                     ))}
                             </div>
-                        </dd>
+                        </li>
                     ))}
-            </dl>
+            </ul>
             {authenticatedUser && (
                 <FooterPanel className="p-1">
                     <small>
+                        {/*
+                           a11y-ignore
+                           Rule: "color-contrast" (Elements must have sufficient color contrast)
+                        */}
                         <Link
                             to={`/users/${authenticatedUser.username}/searches`}
-                            className=" text-left"
+                            className="text-left a11y-ignore"
                             onClick={logEvent('SavedSearchesPanelViewAllClicked')}
                         >
                             View saved searches

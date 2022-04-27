@@ -1,12 +1,13 @@
-import classNames from 'classnames'
-import * as H from 'history'
 import * as React from 'react'
 
+import classNames from 'classnames'
+import * as H from 'history'
+
+import { ContributableMenu } from '@sourcegraph/client-api'
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { isHTTPAuthError } from '@sourcegraph/http-client'
 import { ActionNavItemsClassProps, ActionsNavItems } from '@sourcegraph/shared/src/actions/ActionsNavItems'
 import { ContributionScope } from '@sourcegraph/shared/src/api/extension/api/context/context'
-import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -15,9 +16,10 @@ import { DiffOrBlobInfo, FileInfoWithContent } from '../code-hosts/shared/codeHo
 import { SignInButton } from '../code-hosts/shared/SignInButton'
 import { defaultRevisionToCommitID } from '../code-hosts/shared/util/fileInfo'
 
-import styles from './CodeViewToolbar.module.scss'
 import { OpenDiffOnSourcegraph } from './OpenDiffOnSourcegraph'
 import { OpenOnSourcegraph } from './OpenOnSourcegraph'
+
+import styles from './CodeViewToolbar.module.scss'
 
 export interface ButtonProps {
     listItemClass?: string

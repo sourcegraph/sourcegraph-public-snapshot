@@ -1,3 +1,5 @@
+import React, { useCallback } from 'react'
+
 import classNames from 'classnames'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
@@ -6,7 +8,6 @@ import GithubIcon from 'mdi-react/GithubIcon'
 import GitlabIcon from 'mdi-react/GitlabIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import TickIcon from 'mdi-react/TickIcon'
-import React, { useCallback } from 'react'
 
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { Badge, LoadingSpinner, Link, Icon } from '@sourcegraph/wildcard'
@@ -14,6 +15,7 @@ import { Badge, LoadingSpinner, Link, Icon } from '@sourcegraph/wildcard'
 import { ExternalServiceKind } from '../../../graphql-operations'
 
 import { RepositoryNodeContainer } from './components'
+
 import styles from './RepositoryNode.module.scss'
 
 interface RepositoryNodeProps {

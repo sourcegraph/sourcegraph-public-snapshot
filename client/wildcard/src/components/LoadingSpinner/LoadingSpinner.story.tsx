@@ -1,6 +1,5 @@
 import { boolean } from '@storybook/addon-knobs'
 import { Meta, Story } from '@storybook/react'
-import React from 'react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'

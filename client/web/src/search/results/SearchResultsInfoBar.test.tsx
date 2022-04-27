@@ -1,6 +1,5 @@
 import { createMemoryHistory, createLocation } from 'history'
 import { noop } from 'lodash'
-import React from 'react'
 import { NEVER } from 'rxjs'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'

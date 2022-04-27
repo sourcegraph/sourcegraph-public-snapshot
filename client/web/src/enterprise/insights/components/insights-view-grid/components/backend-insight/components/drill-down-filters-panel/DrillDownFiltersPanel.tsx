@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 
-import { SearchBasedBackendFilters } from '../../../../../../core/types/insight/search-insight'
+import { InsightFilters } from '../../../../../../core'
 import { FormChangeEvent, SubmissionResult } from '../../../../../form/hooks/useForm'
 
 import {
@@ -11,6 +11,7 @@ import {
     DrillDownInsightCreationForm,
     DrillDownInsightCreationFormValues,
 } from './components/drill-down-insight-creation-form/DrillDownInsightCreationForm'
+
 import styles from './DrillDownFiltersPanel.module.scss'
 
 enum DrillDownFiltersStep {
@@ -19,10 +20,10 @@ enum DrillDownFiltersStep {
 }
 
 export interface DrillDownFiltersPanelProps {
-    initialFiltersValue: SearchBasedBackendFilters
-    originalFiltersValue: SearchBasedBackendFilters
-    onFiltersChange: (filters: SearchBasedBackendFilters) => void
-    onFilterSave: (filters: SearchBasedBackendFilters) => SubmissionResult
+    initialFiltersValue: InsightFilters
+    originalFiltersValue: InsightFilters
+    onFiltersChange: (filters: InsightFilters) => void
+    onFilterSave: (filters: InsightFilters) => SubmissionResult
     onInsightCreate: (values: DrillDownInsightCreationFormValues) => SubmissionResult
 }
 
@@ -31,18 +32,9 @@ export const DrillDownFiltersPanel: React.FunctionComponent<DrillDownFiltersPane
 
     const handleFilterChange = (event: FormChangeEvent<DrillDownFiltersFormValues>): void => {
         if (event.valid) {
-            onFiltersChange({
-                includeRepoRegexp: event.values.includeRepoRegexp,
-                excludeRepoRegexp: event.values.excludeRepoRegexp,
-            })
+            onFiltersChange(event.values)
         }
     }
-
-    const handleFilterSave = (values: DrillDownFiltersFormValues): SubmissionResult =>
-        onFilterSave({
-            includeRepoRegexp: values.includeRepoRegexp,
-            excludeRepoRegexp: values.excludeRepoRegexp,
-        })
 
     // By default always render filters mode
     const [step, setStep] = useState(DrillDownFiltersStep.Filters)
@@ -54,7 +46,7 @@ export const DrillDownFiltersPanel: React.FunctionComponent<DrillDownFiltersPane
                 initialFiltersValue={initialFiltersValue}
                 originalFiltersValue={originalFiltersValue}
                 onFiltersChange={handleFilterChange}
-                onFilterSave={handleFilterSave}
+                onFilterSave={onFilterSave}
                 onCreateInsightRequest={() => setStep(DrillDownFiltersStep.ViewCreation)}
             />
         )

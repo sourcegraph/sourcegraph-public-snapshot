@@ -1,5 +1,4 @@
 import { storiesOf } from '@storybook/react'
-import React from 'react'
 
 import { LoaderButton } from './LoaderButton'
 import { WebStory } from './WebStory'

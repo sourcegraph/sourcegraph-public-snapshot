@@ -1,7 +1,6 @@
 import { Meta, Story } from '@storybook/react'
 import { startCase } from 'lodash'
 import SearchIcon from 'mdi-react/SearchIcon'
-import React from 'react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
@@ -9,6 +8,7 @@ import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 import { ButtonLink } from '..'
 import { BUTTON_VARIANTS } from '../Button/constants'
 import { Grid } from '../Grid'
+import { Icon } from '../Icon'
 
 const Config: Meta = {
     title: 'wildcard/ButtonLink',
@@ -75,7 +75,7 @@ export const Overview: Story = () => (
             onClick={console.log}
             className="mb-2"
         >
-            <SearchIcon className="icon-inline mr-1" />
+            <Icon as={SearchIcon} className="mr-1" />
             Search
         </ButtonLink>
         <h2>Smaller</h2>

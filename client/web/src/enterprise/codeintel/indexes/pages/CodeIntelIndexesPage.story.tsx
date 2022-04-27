@@ -1,5 +1,4 @@
 import { Meta, Story } from '@storybook/react'
-import React from 'react'
 import { of } from 'rxjs'
 
 import { WebStory } from '../../../../components/WebStory'
@@ -21,6 +20,7 @@ const indexPrototype: Omit<LsifIndexFields, 'id' | 'state' | 'queuedAt'> = {
     inputCommit: '',
     inputRoot: 'web/',
     inputIndexer: 'lsif-tsc',
+    indexer: { name: 'lsif-tsc', url: '' },
     failure: null,
     startedAt: null,
     finishedAt: null,

@@ -37,7 +37,7 @@ docker container run \
   \
   --volume ~/.sourcegraph/config:/etc/sourcegraph  \
   --volume ~/.sourcegraph/data:/var/opt/sourcegraph  \
-  sourcegraph/server:3.37.0
+  sourcegraph/server:3.39.1
 ```
 
 ### Sourcegraph Cluster (Kubernetes)
@@ -167,7 +167,7 @@ Usage instructions are provided via [the `caddy` service's inline comments insid
 
 ### HTTPS with Custom Certificates in Docker Compose
 
-In https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml:
+In your [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml)within the caddy section:
     
 1. In the Environment section of the compose file uncomment & update this line with your Sourcegraph Site Address:
 

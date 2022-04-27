@@ -8,6 +8,8 @@
 $blue: #0b70db;
 $indigo: #0864c6;
 $purple: #a305e1;
+$purple-01: #e8d1ff;
+$purple-03: #820dde;
 $pink: #d68cf3;
 $red: $oc-red-9;
 $orange: $oc-orange-7;
@@ -65,6 +67,8 @@ $theme-colors: (
     --blue: #{$blue};
     --indigo: #{$indigo};
     --purple: #{$purple};
+    --purple-01: #{$purple-01};
+    --purple-03: #{$purple-03};
     --pink: #{$pink};
     --red: #{$red};
     --orange: #{$orange};
@@ -151,7 +155,7 @@ $theme-colors: (
     --code-bg: var(--white);
     --intel-bg: var(--white);
     --subtle-bg: var(--gray-02);
-    --subtle-bg-2: #{rgba($gray-02, 0.6)};
+    --subtle-bg-2: #{rgba($gray-02, 0.5)};
     --search-input-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
     --code-line-highlight-color: var(--color-bg-2);
     --diff-add-bg: #eeffec;
@@ -159,6 +163,11 @@ $theme-colors: (
     --code-selection-bg: var(--gray-03);
     --sourcegraph-logo-text-color: #000000;
     --marketing-gradient: linear-gradient(90.64deg, #e4d3fc 3.11%, #d7f0fd 83.64%);
+    --marketing-gradient-25: linear-gradient(
+        90.64deg,
+        rgba(228, 211, 252, 0.25) 3.11%,
+        rgba(215, 240, 253, 0.25) 83.64%
+    );
     --modal-bg: #{rgba($gray-04, 0.5)};
 }
 
@@ -218,6 +227,7 @@ $theme-colors: (
     --code-selection-bg: var(--gray-08);
     --sourcegraph-logo-text-color: var(--white);
     --marketing-gradient: linear-gradient(90.64deg, rgba(108, 8, 223, 0.5) 3.11%, rgba(0, 165, 213, 0.5) 83.64%);
+    --marketing-gradient-25: linear-gradient(90.64deg, rgba(108, 8, 223, 0.25) 3.11%, rgba(0, 165, 213, 0.25) 83.64%);
     --modal-bg: #{rgba($gray-08, 0.5)};
 }
 
@@ -228,4 +238,5 @@ $theme-colors: (
     --focus-box-shadow: 0 0 0 0.125rem var(--primary-2);
     --btn-link-disabled-color: var(--primary-2);
     --vulnerability-announcement: linear-gradient(to right, #8f3fce, #b80887);
+    --text-muted-transparent: #{rgba($gray-06, 0.3)};
 }

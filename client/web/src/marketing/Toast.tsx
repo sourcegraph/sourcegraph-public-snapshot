@@ -1,8 +1,9 @@
-import classNames from 'classnames'
-import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
 
-import { Button, CardTitle, CardBody, Card } from '@sourcegraph/wildcard'
+import classNames from 'classnames'
+import CloseIcon from 'mdi-react/CloseIcon'
+
+import { Button, CardTitle, CardBody, Card, Icon } from '@sourcegraph/wildcard'
 
 import styles from './Toast.module.scss'
 
@@ -25,7 +26,7 @@ export const Toast: React.FunctionComponent<ToastProps> = props => (
                     className={classNames('test-close-toast', styles.closeButton)}
                     aria-label="Close"
                 >
-                    <CloseIcon className="icon-inline" />
+                    <Icon as={CloseIcon} />
                 </Button>
             </CardTitle>
             {props.subtitle}

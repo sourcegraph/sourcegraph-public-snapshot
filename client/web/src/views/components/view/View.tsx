@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { PropsWithChildren, ReactNode } from 'react'
+
+import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
 
 import { Card } from '@sourcegraph/wildcard'

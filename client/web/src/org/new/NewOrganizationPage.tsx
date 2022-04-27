@@ -1,5 +1,6 @@
-import * as H from 'history'
 import React, { useCallback, useEffect, useState } from 'react'
+
+import * as H from 'history'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'

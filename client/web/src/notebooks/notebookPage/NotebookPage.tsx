@@ -1,10 +1,11 @@
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+
 import classNames from 'classnames'
+import BookOutlineIcon from 'mdi-react/BookOutlineIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
-import MagnifyIcon from 'mdi-react/MagnifyIcon'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
-import { catchError, debounceTime, delay, startWith, switchMap } from 'rxjs/operators'
+import { catchError, delay, startWith, switchMap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
@@ -12,22 +13,13 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Page } from '@sourcegraph/web/src/components/Page'
-import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
-import {
-    FeedbackBadge,
-    LoadingSpinner,
-    PageHeader,
-    useEventObservable,
-    useObservable,
-    Alert,
-} from '@sourcegraph/wildcard'
+import { LoadingSpinner, PageHeader, useEventObservable, useObservable, Alert } from '@sourcegraph/wildcard'
 
 import { Block } from '..'
 import { AuthenticatedUser } from '../../auth'
+import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
 import { NotebookFields, NotebookInput, Scalars } from '../../graphql-operations'
-import { resolveRevision as _resolveRevision, fetchRepository as _fetchRepository } from '../../repo/backend'
 import { SearchStreamingProps } from '../../search'
 import {
     fetchNotebook as _fetchNotebook,
@@ -40,22 +32,24 @@ import { copyNotebook as _copyNotebook, CopyNotebookProps } from '../notebook'
 import { blockToGQLInput, convertNotebookTitleToFileName, GQLBlockToGQLInput } from '../serialize'
 
 import { NotebookContent } from './NotebookContent'
-import styles from './NotebookPage.module.scss'
 import { NotebookPageHeaderActions } from './NotebookPageHeaderActions'
 import { NotebookTitle } from './NotebookTitle'
+
+import styles from './NotebookPage.module.scss'
 
 interface NotebookPageProps
     extends Pick<RouteComponentProps<{ id: Scalars['ID'] }>, 'match'>,
         SearchStreamingProps,
         ThemeProps,
         TelemetryProps,
-        Omit<StreamingSearchResultsListProps, 'allExpanded' | 'extensionsController' | 'platformContext'>,
+        Omit<
+            StreamingSearchResultsListProps,
+            'allExpanded' | 'extensionsController' | 'platformContext' | 'executedQuery'
+        >,
         PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings' | 'forceUpdateTooltip'>,
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {
     authenticatedUser: AuthenticatedUser | null
     globbing: boolean
-    resolveRevision?: typeof _resolveRevision
-    fetchRepository?: typeof _fetchRepository
     fetchNotebook?: typeof _fetchNotebook
     updateNotebook?: typeof _updateNotebook
     deleteNotebook?: typeof _deleteNotebook
@@ -71,21 +65,32 @@ function isNotebookLoaded(notebook: NotebookFields | Error | typeof LOADING | un
 }
 
 export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
-    fetchRepository = _fetchRepository,
-    resolveRevision = _resolveRevision,
     fetchNotebook = _fetchNotebook,
     updateNotebook = _updateNotebook,
     deleteNotebook = _deleteNotebook,
     createNotebookStar = _createNotebookStar,
     deleteNotebookStar = _deleteNotebookStar,
     copyNotebook = _copyNotebook,
-    ...props
+    globbing,
+    streamSearch,
+    isLightTheme,
+    telemetryService,
+    searchContextsEnabled,
+    isSourcegraphDotCom,
+    fetchHighlightedFileLineRanges,
+    authenticatedUser,
+    showSearchContext,
+    settingsCascade,
+    platformContext,
+    extensionsController,
+    match,
 }) => {
-    useEffect(() => props.telemetryService.logViewEvent('SearchNotebookPage'), [props.telemetryService])
+    useEffect(() => telemetryService.logPageView('SearchNotebookPage'), [telemetryService])
 
-    const notebookId = props.match.params.id
+    const notebookId = match.params.id
     const [notebookTitle, setNotebookTitle] = useState('')
     const [updateQueue, setUpdateQueue] = useState<Partial<NotebookInput>[]>([])
+    const outlineContainerElement = useRef<HTMLDivElement | null>(null)
 
     const exportedFileName = useMemo(
         () => `${notebookTitle ? convertNotebookTitleToFileName(notebookTitle) : 'notebook'}.snb.md`,
@@ -107,9 +112,8 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
         useCallback(
             (update: Observable<NotebookInput>) =>
                 update.pipe(
-                    debounceTime(400),
                     switchMap(notebook =>
-                        updateNotebook({ id: notebookId, notebook }).pipe(delay(400), startWith(LOADING))
+                        updateNotebook({ id: notebookId, notebook }).pipe(delay(300), startWith(LOADING))
                     ),
                     catchError(error => [asError(error)])
                 ),
@@ -149,12 +153,7 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
     }, [updateQueue, latestNotebook, onUpdateNotebook, setUpdateQueue])
 
     const onUpdateBlocks = useCallback(
-        (blocks: Block[]) =>
-            setUpdateQueue(queue =>
-                queue.concat([
-                    { blocks: blocks.flatMap(block => (block.type === 'compute' ? [] : [blockToGQLInput(block)])) },
-                ])
-            ),
+        (blocks: Block[]) => setUpdateQueue(queue => queue.concat([{ blocks: blocks.map(blockToGQLInput) }])),
         [setUpdateQueue]
     )
 
@@ -174,113 +173,127 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
     )
 
     return (
-        <div className={classNames('w-100 p-2', styles.searchNotebookPage)}>
+        <div className={classNames('w-100', styles.searchNotebookPage)}>
             <PageTitle title={notebookTitle || 'Notebook'} />
-            <Page>
-                {isErrorLike(notebookOrError) && (
-                    <Alert variant="danger">
-                        Error while loading the notebook: <strong>{notebookOrError.message}</strong>
-                    </Alert>
-                )}
-                {isErrorLike(updatedNotebookOrError) && (
-                    <Alert variant="danger">
-                        Error while updating the notebook: <strong>{updatedNotebookOrError.message}</strong>
-                    </Alert>
-                )}
-                {notebookOrError === LOADING && (
-                    <div className="d-flex justify-content-center">
-                        <LoadingSpinner />
-                    </div>
-                )}
-                {isNotebookLoaded(notebookOrError) && (
-                    <>
-                        <PageHeader
-                            annotation={
-                                <FeedbackBadge status="beta" feedback={{ mailto: 'support@sourcegraph.com' }} />
-                            }
-                            path={[
-                                { icon: MagnifyIcon, to: '/search' },
-                                { to: '/notebooks', text: 'Notebooks' },
-                                {
-                                    text: (
-                                        <NotebookTitle
-                                            title={notebookOrError.title}
-                                            viewerCanManage={notebookOrError.viewerCanManage}
-                                            onUpdateTitle={onUpdateTitle}
-                                            telemetryService={props.telemetryService}
-                                        />
-                                    ),
-                                },
-                            ]}
-                            actions={
-                                <NotebookPageHeaderActions
-                                    isSourcegraphDotCom={props.isSourcegraphDotCom}
-                                    authenticatedUser={props.authenticatedUser}
-                                    notebookId={notebookId}
-                                    viewerCanManage={notebookOrError.viewerCanManage}
-                                    isPublic={notebookOrError.public}
-                                    namespace={notebookOrError.namespace}
-                                    onUpdateVisibility={onUpdateVisibility}
-                                    deleteNotebook={deleteNotebook}
-                                    starsCount={notebookOrError.stars.totalCount}
-                                    viewerHasStarred={notebookOrError.viewerHasStarred}
-                                    createNotebookStar={createNotebookStar}
-                                    deleteNotebookStar={deleteNotebookStar}
-                                    telemetryService={props.telemetryService}
-                                />
-                            }
-                        />
-                        <small className="d-flex align-items-center mt-2">
-                            <div className="mr-2">
-                                Created{' '}
-                                {notebookOrError.creator && (
-                                    <span>
-                                        by <strong>@{notebookOrError.creator.username}</strong>
-                                    </span>
-                                )}{' '}
-                                <Timestamp date={notebookOrError.createdAt} />
-                            </div>
-                            <div className="d-flex align-items-center">
-                                {latestNotebook === LOADING && (
-                                    <>
-                                        <LoadingSpinner className={classNames('m-1', styles.autoSaveIndicator)} />{' '}
-                                        Autosaving notebook...
-                                    </>
-                                )}
-                                {isNotebookLoaded(latestNotebook) && (
-                                    <>
-                                        <CheckCircleIcon
-                                            className={classNames('text-success m-1', styles.autoSaveIndicator)}
-                                        />
+            <div className={styles.sideColumn} ref={outlineContainerElement} />
+            <div className={styles.centerColumn}>
+                <div className={styles.content}>
+                    {isErrorLike(notebookOrError) && (
+                        <Alert variant="danger">
+                            Error while loading the notebook: <strong>{notebookOrError.message}</strong>
+                        </Alert>
+                    )}
+                    {isErrorLike(updatedNotebookOrError) && (
+                        <Alert variant="danger">
+                            Error while updating the notebook: <strong>{updatedNotebookOrError.message}</strong>
+                        </Alert>
+                    )}
+                    {notebookOrError === LOADING && (
+                        <div className="d-flex justify-content-center">
+                            <LoadingSpinner />
+                        </div>
+                    )}
+                    {isNotebookLoaded(notebookOrError) && (
+                        <>
+                            <PageHeader
+                                className="mt-2"
+                                path={[
+                                    { to: '/notebooks', icon: BookOutlineIcon, ariaLabel: 'Notebooks' },
+                                    {
+                                        text: (
+                                            <NotebookTitle
+                                                title={notebookOrError.title}
+                                                viewerCanManage={notebookOrError.viewerCanManage}
+                                                onUpdateTitle={onUpdateTitle}
+                                                telemetryService={telemetryService}
+                                            />
+                                        ),
+                                    },
+                                ]}
+                                actions={
+                                    <NotebookPageHeaderActions
+                                        isSourcegraphDotCom={isSourcegraphDotCom}
+                                        authenticatedUser={authenticatedUser}
+                                        notebookId={notebookId}
+                                        viewerCanManage={notebookOrError.viewerCanManage}
+                                        isPublic={notebookOrError.public}
+                                        namespace={notebookOrError.namespace}
+                                        onUpdateVisibility={onUpdateVisibility}
+                                        deleteNotebook={deleteNotebook}
+                                        starsCount={notebookOrError.stars.totalCount}
+                                        viewerHasStarred={notebookOrError.viewerHasStarred}
+                                        createNotebookStar={createNotebookStar}
+                                        deleteNotebookStar={deleteNotebookStar}
+                                        telemetryService={telemetryService}
+                                    />
+                                }
+                            />
+                            <small className="d-flex align-items-center mt-2">
+                                <div className="mr-2">
+                                    Created{' '}
+                                    {notebookOrError.creator && (
                                         <span>
-                                            Last updated{' '}
-                                            {latestNotebook.updater && (
-                                                <span>
-                                                    by <strong>@{latestNotebook.updater.username}</strong>
-                                                </span>
-                                            )}
-                                            &nbsp;
+                                            by <strong>@{notebookOrError.creator.username}</strong>
                                         </span>
-                                        <Timestamp date={latestNotebook.updatedAt} />
-                                    </>
-                                )}
-                            </div>
-                        </small>
-                        <hr className="mt-2 mb-3" />
-                        <NotebookContent
-                            {...props}
-                            viewerCanManage={notebookOrError.viewerCanManage}
-                            blocks={notebookOrError.blocks}
-                            onUpdateBlocks={onUpdateBlocks}
-                            fetchRepository={fetchRepository}
-                            resolveRevision={resolveRevision}
-                            onCopyNotebook={onCopyNotebook}
-                            exportedFileName={exportedFileName}
-                        />
-                        <div className={styles.spacer} />
-                    </>
-                )}
-            </Page>
+                                    )}{' '}
+                                    <Timestamp date={notebookOrError.createdAt} />
+                                </div>
+                                <div className="d-flex align-items-center">
+                                    {latestNotebook === LOADING && (
+                                        <>
+                                            <LoadingSpinner className={classNames('m-1', styles.autoSaveIndicator)} />{' '}
+                                            Autosaving notebook...
+                                        </>
+                                    )}
+                                    {isNotebookLoaded(latestNotebook) && (
+                                        <>
+                                            <CheckCircleIcon
+                                                className={classNames('text-success m-1', styles.autoSaveIndicator)}
+                                            />
+                                            <span>
+                                                Last updated{' '}
+                                                {latestNotebook.updater && (
+                                                    <span>
+                                                        by <strong>@{latestNotebook.updater.username}</strong>
+                                                    </span>
+                                                )}
+                                                &nbsp;
+                                            </span>
+                                            <Timestamp date={latestNotebook.updatedAt} />
+                                        </>
+                                    )}
+                                </div>
+                            </small>
+                            <hr className="mt-2 mb-3" />
+                        </>
+                    )}
+                    {isNotebookLoaded(notebookOrError) && (
+                        <>
+                            <NotebookContent
+                                viewerCanManage={notebookOrError.viewerCanManage}
+                                blocks={notebookOrError.blocks}
+                                onUpdateBlocks={onUpdateBlocks}
+                                onCopyNotebook={onCopyNotebook}
+                                exportedFileName={exportedFileName}
+                                globbing={globbing}
+                                streamSearch={streamSearch}
+                                isLightTheme={isLightTheme}
+                                telemetryService={telemetryService}
+                                searchContextsEnabled={searchContextsEnabled}
+                                isSourcegraphDotCom={isSourcegraphDotCom}
+                                fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                                authenticatedUser={authenticatedUser}
+                                showSearchContext={showSearchContext}
+                                settingsCascade={settingsCascade}
+                                platformContext={platformContext}
+                                extensionsController={extensionsController}
+                                outlineContainerElement={outlineContainerElement.current}
+                            />
+                            <div className={styles.spacer} />
+                        </>
+                    )}
+                </div>
+            </div>
         </div>
     )
 }

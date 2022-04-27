@@ -52,6 +52,12 @@ repo:@*refs/heads/:^master type:diff after:"1 week ago" (eslint-disable)
 file:package.json type:diff after:"1 week ago"
 ```
 
+[Search an error message from your dependencies](https://sourcegraph.com/search?q=context:global+repo:deps%28%5Egithub%5C.com/sourcegraph/sourcegraph%24%403.37%29+Observable+cannot+be+called+as+a+function&patternType=literal)<br/>
+
+```sgquery
+repo:deps(^github\.com/sourcegraph/sourcegraph$@3.37) Observable cannot be called as a function
+```
+
 [Files that are Apache licensed](https://sourcegraph.com/search?q=licensed+to+the+apache+software+foundation+select:file&patternType=literal)<br/>
 
 ```sgquery

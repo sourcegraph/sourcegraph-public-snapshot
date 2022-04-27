@@ -1,4 +1,5 @@
 import { cncf } from './cncf'
+import { julia } from './Julia'
 import { kubernetes } from './Kubernetes'
 import { o3de } from './o3de'
 import { stackStorm } from './StackStorm'
@@ -13,4 +14,5 @@ export const communitySearchContextsList: CommunitySearchContextMetadata[] = [
     stackStorm,
     kubernetes,
     stanford,
+    julia,
 ]

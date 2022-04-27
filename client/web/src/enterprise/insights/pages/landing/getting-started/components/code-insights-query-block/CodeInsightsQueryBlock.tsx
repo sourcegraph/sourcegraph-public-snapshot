@@ -1,5 +1,6 @@
+import { forwardRef } from 'react'
+
 import classNames from 'classnames'
-import React, { forwardRef } from 'react'
 
 import { ForwardReferenceComponent } from '@sourcegraph/wildcard'
 

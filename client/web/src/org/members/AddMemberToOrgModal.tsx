@@ -1,9 +1,10 @@
+import React, { useCallback, useState } from 'react'
+
 import { useMutation } from '@apollo/client'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { debounce } from 'lodash'
 import CloseIcon from 'mdi-react/CloseIcon'
-import React, { useCallback, useState } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Button, Input, Modal } from '@sourcegraph/wildcard'
@@ -12,6 +13,7 @@ import { AddUserToOrganizationResult, AddUserToOrganizationVariables } from '../
 import { eventLogger } from '../../tracking/eventLogger'
 
 import { ADD_USERNAME_OR_EMAIL_TO_ORG_MUTATION } from './gqlQueries'
+
 import styles from './InviteMemberModal.module.scss'
 
 export interface AddMemberToOrgModalProps {

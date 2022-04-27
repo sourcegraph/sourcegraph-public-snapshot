@@ -1,6 +1,5 @@
 import { action } from '@storybook/addon-actions'
 import { storiesOf } from '@storybook/react'
-import React from 'react'
 
 import { registerHighlightContributions } from '@sourcegraph/common'
 import { MarkupKind } from '@sourcegraph/extension-api-classes'

@@ -3,9 +3,9 @@
 ARG JAEGER_VERSION
 FROM jaegertracing/jaeger-agent:${JAEGER_VERSION} as base
 
-FROM sourcegraph/alpine-3.12:120059_2021-12-09_b34c7b2@sha256:9a1fde12f56fea02027cf4caeebdddfedb7b73bf8db6c16f7907a6e04a29134c
+FROM sourcegraph/alpine-3.12:142406_2022-04-14_8836ac3499f4@sha256:4681a48d1fb9a73fef1b540c08b3411f797351bbeda749f5dca21213a1e71526
 USER root
-RUN apk --no-cache add bash curl apk-tools=2.10.8-r0
+RUN apk --no-cache add bash curl apk-tools>=2.10.8-r0
 
 COPY --from=base /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=base /go/bin/agent-linux /go/bin/agent-linux

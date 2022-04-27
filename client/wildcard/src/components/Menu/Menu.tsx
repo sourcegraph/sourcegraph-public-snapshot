@@ -1,6 +1,7 @@
+import { ComponentType, forwardRef, useMemo } from 'react'
+
 import { Menu as ReachMenu, MenuProps as ReachMenuProps } from '@reach/menu-button'
-import { isFunction, noop } from 'lodash'
-import React, { ComponentType, forwardRef } from 'react'
+import { isFunction, noop, uniqueId } from 'lodash'
 
 import { ForwardReferenceComponent } from '../..'
 import { Popover } from '../Popover'
@@ -19,10 +20,13 @@ export type MenuProps = ReachMenuProps & {
  * @see — Docs https://reach.tech/menu-button#menu
  */
 export const Menu = forwardRef((props, reference) => {
-    const { children, as: Component, ...rest } = props
+    const { children, as: Component, id, ...rest } = props
+    // To fix Rule: "aria-valid-attr-value"
+    // Invalid ARIA attribute value: aria-controls="menu--1"
+    const uniqueAriaControlId = useMemo(() => id ?? uniqueId('menu-'), [id])
 
     return (
-        <ReachMenu as={Component} ref={reference} {...rest}>
+        <ReachMenu as={Component} ref={reference} id={uniqueAriaControlId} {...rest}>
             {({ isExpanded }) => (
                 <Popover isOpen={isExpanded} onOpenChange={noop}>
                     {isFunction(children) ? children({ isExpanded, isOpen: isExpanded }) : children}

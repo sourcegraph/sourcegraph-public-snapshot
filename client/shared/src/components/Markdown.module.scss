@@ -22,7 +22,7 @@
 
         a:global(.anchor) {
             opacity: 0;
-            font-size: var(font-size-base);
+            font-size: 1rem; // keep consistently-sized anchor links
             margin-left: -1rem;
             padding: 0.125rem;
             &::before {
@@ -32,6 +32,12 @@
         &:hover a:global(.anchor) {
             opacity: 1;
         }
+    }
+
+    h1 {
+        // workaround for svg in Sourcegraph README h1 logo not rendering with a size.
+        // also maybe intentional, to allow the h1 ruler all the way across the page?
+        width: 100%;
     }
 
     table,

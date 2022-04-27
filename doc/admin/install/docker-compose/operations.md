@@ -58,7 +58,7 @@ We **strongly** recommend that you create and run Sourcegraph from your own fork
 
   ```bash
   # Specify the version you want to install
-  export SOURCEGRAPH_VERSION="v3.37.0"
+  export SOURCEGRAPH_VERSION="v3.39.1"
   # Check out the selected version for use, in a new branch called "release"
   git checkout $SOURCEGRAPH_VERSION -b release
   ```
@@ -142,6 +142,8 @@ sourcegraph-frontend-0:
 ```
 
 See ["Environment variables in Compose"](https://docs.docker.com/compose/environment-variables/) for other ways to pass these environment variables to the relevant services (including from the command line, a .env file, etc.).
+
+> _Note: After adding a new environment variable to your `docker-compose.yaml` you'll need to redeploy from the new spec by running `docker-compose up -d`, running `docker-compose restart` will not be sufficiant to add the new environment variable._
 
 ## Upgrade
 

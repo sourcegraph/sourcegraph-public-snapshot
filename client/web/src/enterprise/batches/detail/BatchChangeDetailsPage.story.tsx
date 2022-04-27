@@ -2,7 +2,6 @@ import { boolean } from '@storybook/addon-knobs'
 import { useMemo } from '@storybook/addons'
 import { storiesOf } from '@storybook/react'
 import { subDays } from 'date-fns'
-import React from 'react'
 import { of } from 'rxjs'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 

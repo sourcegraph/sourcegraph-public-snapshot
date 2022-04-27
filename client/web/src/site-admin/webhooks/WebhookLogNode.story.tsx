@@ -1,12 +1,13 @@
 import { storiesOf } from '@storybook/react'
 import classNames from 'classnames'
-import React from 'react'
 
-import { WebStory } from '@sourcegraph/web/src/components/WebStory'
 import { Container } from '@sourcegraph/wildcard'
+
+import { WebStory } from '../../components/WebStory'
 
 import { webhookLogNode } from './story/fixtures'
 import { WebhookLogNode } from './WebhookLogNode'
+
 import gridStyles from './WebhookLogPage.module.scss'
 
 const { add } = storiesOf('web/site-admin/webhooks/WebhookLogNode', module)

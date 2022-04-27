@@ -36,30 +36,28 @@ type InsightsPingEmitter struct {
 func (e *InsightsPingEmitter) emit(ctx context.Context) error {
 	log15.Info("Emitting Code Insights Pings")
 
-	err := e.emitInsightTotalCounts(ctx)
-	if err != nil {
-		return errors.Wrap(err, "emitInsightTotalCounts")
+	type emitter func(ctx context.Context) error
+	var emitters = map[string]emitter{
+		"emitInsightTotalCounts":      e.emitInsightTotalCounts,
+		"emitIntervalCounts":          e.emitIntervalCounts,
+		"emitOrgVisibleInsightCounts": e.emitOrgVisibleInsightCounts,
+		"emitTotalOrgsWithDashboard":  e.emitTotalOrgsWithDashboard,
+		"emitTotalDashboards":         e.emitTotalDashboards,
+		"emitInsightsPerDashboard":    e.emitInsightsPerDashboard,
+		"emitTotalCountCritical":      e.emitTotalCountCritical,
 	}
-	err = e.emitIntervalCounts(ctx)
-	if err != nil {
-		return errors.Wrap(err, "emitIntervalCounts")
+	hasError := false
+	for name, delegate := range emitters {
+		err := delegate(ctx)
+		if err != nil {
+			log15.Error(errors.Wrap(err, name).Error())
+			hasError = true
+		}
 	}
-	err = e.emitOrgVisibleInsightCounts(ctx)
-	if err != nil {
-		return errors.Wrap(err, "emitOrgVisibleInsightCounts")
+	if hasError {
+		log15.Error("Code Insights ping emitter encountered errors. Errors were skipped")
 	}
-	err = e.emitTotalOrgsWithDashboard(ctx)
-	if err != nil {
-		return errors.Wrap(err, "emitTotalOrgsWithDashboard")
-	}
-	err = e.emitTotalDashboards(ctx)
-	if err != nil {
-		return errors.Wrap(err, "emitTotalDashboards")
-	}
-	err = e.emitInsightsPerDashboard(ctx)
-	if err != nil {
-		return errors.Wrap(err, "emitInsightsPerDashboard")
-	}
+
 	return nil
 }
 
@@ -89,6 +87,26 @@ func (e *InsightsPingEmitter) emitInsightTotalCounts(ctx context.Context) error 
 	}
 
 	err = e.SaveEvent(ctx, usagestats.InsightsTotalCountPingName, marshal)
+	if err != nil {
+		return errors.Wrap(err, "SaveEvent")
+	}
+	return nil
+}
+
+func (e *InsightsPingEmitter) emitTotalCountCritical(ctx context.Context) error {
+	var arg types.CodeInsightsCriticalTelemetry
+	count, err := e.GetTotalCountCritical(ctx)
+	if err != nil {
+		return errors.Wrap(err, "GetTotalCountCritical")
+	}
+	arg.TotalInsights = int32(count)
+
+	marshal, err := json.Marshal(arg)
+	if err != nil {
+		return errors.Wrap(err, "Marshal")
+	}
+
+	err = e.SaveEvent(ctx, usagestats.InsightsTotalCountCriticalPingName, marshal)
 	if err != nil {
 		return errors.Wrap(err, "SaveEvent")
 	}

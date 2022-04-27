@@ -1,15 +1,45 @@
 import { Duration } from 'date-fns'
-import { LineChartContent } from 'sourcegraph'
 
-import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
+import { Series } from '../../../../charts'
+import {
+    RuntimeInsight,
+    InsightDashboard,
+    SearchBasedInsightSeries,
+    CaptureGroupInsight,
+    LangStatsInsight,
+    InsightsDashboardOwner,
+    SearchBackendBasedInsight,
+    SearchRuntimeBasedInsight,
+} from '../types'
+import { InsightContentType } from '../types/insight/common'
 
-import { ExtensionInsight, Insight, InsightDashboard, SearchBasedInsightSeries } from '../types'
+export interface CategoricalChartContent<Datum> {
+    data: Datum[]
+    getDatumValue: (datum: Datum) => number
+    getDatumName: (datum: Datum) => string
+    getDatumColor: (datum: Datum) => string | undefined
+    getDatumLink?: (datum: Datum) => string | undefined
+}
+
+export interface SeriesChartContent<Datum> {
+    series: Series<Datum>[]
+}
+
+export interface InsightCategoricalContent<Datum> {
+    type: InsightContentType.Categorical
+    content: CategoricalChartContent<Datum>
+}
+
+export interface InsightSeriesContent<Datum> {
+    type: InsightContentType.Series
+    content: SeriesChartContent<Datum>
+}
+
+export type InsightContent<Datum> = InsightSeriesContent<Datum> | InsightCategoricalContent<Datum>
 
 export interface DashboardCreateInput {
     name: string
-    visibility: string
-    insightIds?: string[]
-    type?: string
+    owners: InsightsDashboardOwner[]
 }
 
 export interface DashboardCreateResult {
@@ -39,30 +69,37 @@ export interface FindInsightByNameInput {
     name: string
 }
 
+export type MinimalSearchRuntimeBasedInsightData = Omit<
+    SearchRuntimeBasedInsight,
+    'id' | 'dashboardReferenceCount' | 'isFrozen'
+>
+export type MinimalSearchBackendBasedInsightData = Omit<
+    SearchBackendBasedInsight,
+    'id' | 'dashboardReferenceCount' | 'isFrozen'
+>
+export type MinimalSearchBasedInsightData = MinimalSearchRuntimeBasedInsightData | MinimalSearchBackendBasedInsightData
+
+export type MinimalCaptureGroupInsightData = Omit<CaptureGroupInsight, 'id' | 'dashboardReferenceCount' | 'isFrozen'>
+export type MinimalLangStatsInsightData = Omit<LangStatsInsight, 'id' | 'dashboardReferenceCount' | 'isFrozen'>
+
+export type CreationInsightInput =
+    | MinimalSearchBasedInsightData
+    | MinimalCaptureGroupInsightData
+    | MinimalLangStatsInsightData
+
 export interface InsightCreateInput {
-    insight: Insight
+    insight: CreationInsightInput
     dashboard: InsightDashboard | null
 }
 
 export interface InsightUpdateInput {
-    oldInsight: Insight
-    newInsight: Insight
+    insightId: string
+    nextInsightData: CreationInsightInput
 }
 
 export interface RemoveInsightFromDashboardInput {
     insightId: string
     dashboardId: string
-}
-
-export interface SearchInsightSettings {
-    series: SearchBasedInsightSeries[]
-    step: Duration
-    repositories: string[]
-}
-
-export interface LangStatsInsightsSettings {
-    repository: string
-    otherThreshold: number
 }
 
 export interface CaptureInsightSettings {
@@ -71,45 +108,48 @@ export interface CaptureInsightSettings {
     step: Duration
 }
 
-export type ReachableInsight = Insight & {
-    owner: {
-        id: string
-        name: string
-    }
+export interface AccessibleInsightInfo {
+    id: string
+    title: string
+}
+
+export interface BackendInsightDatum {
+    dateTime: Date
+    value: number | null
+    link?: string
 }
 
 export interface BackendInsightData {
-    id: string
-    view: {
-        title: string
-        subtitle?: string
-        content: LineChartContent<any, string>[]
-        isFetchingHistoricalData: boolean
-    }
+    content: SeriesChartContent<any>
+    isFetchingHistoricalData: boolean
 }
 
-export interface GetBuiltInsightInput<D extends keyof ViewContexts> {
-    insight: ExtensionInsight
-    options: { where: D; context: ViewContexts[D] }
+export interface GetBuiltInsightInput {
+    insight: RuntimeInsight
 }
 
-export interface GetSearchInsightContentInput<D extends keyof ViewContexts> {
-    insight: SearchInsightSettings
-    options: {
-        where: D
-        context: ViewContexts[D]
-    }
+export interface GetSearchInsightContentInput {
+    series: SearchBasedInsightSeries[]
+    step: Duration
+    repositories: string[]
 }
 
-export interface GetLangStatsInsightContentInput<D extends keyof ViewContexts> {
-    insight: LangStatsInsightsSettings
-    options: {
-        where: D
-        context: ViewContexts[D]
-    }
+export interface GetLangStatsInsightContentInput {
+    repository: string
+    otherThreshold: number
 }
 
 export interface RepositorySuggestionData {
     id: string
     name: string
+}
+
+export interface UiFeaturesConfig {
+    licensed: boolean
+    insightsLimit: number | null
+}
+
+export interface HasInsightsInput {
+    first: number
+    isFrozen?: boolean
 }

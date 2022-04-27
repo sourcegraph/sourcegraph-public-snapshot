@@ -13,6 +13,25 @@ All notable changes to Sourcegraph [Browser Extensions](./README.md) are documen
 
 ## Unreleased
 
+- Fix Sourcegraph buttons styles on Bitbucket cloud: [issues/32598](https://github.com/sourcegraph/sourcegraph/issues/32598), [pull/33787](https://github.com/sourcegraph/sourcegraph/pull/33787)
+- Fix repo visibility check logic: [issues/29244](https://github.com/sourcegraph/sourcegraph/issues/29244), [pull/33352](https://github.com/sourcegraph/sourcegraph/pull/33352)
+- Add different browser extension icons for development mode builds: [issue/33587](https://github.com/sourcegraph/sourcegraph/issues/33587), [pull/34353](https://github.com/sourcegraph/sourcegraph/pull/34353)
+
+## Chrome & Firefox 22.4.7.1712, Safari v1.13
+
+- Update banners for not synced private repositories banners when on Sourcegraph Cloud instance and not added repositories when on other instances: [pull/31922](https://github.com/sourcegraph/sourcegraph/pull/31922), [issues/31920](https://github.com/sourcegraph/sourcegraph/issues/31920)
+- Fix style errors in browser console: [pull/32604](https://github.com/sourcegraph/sourcegraph/pull/32604), [issues/32443](https://github.com/sourcegraph/sourcegraph/issues/32443)
+- Fix styles conflict on GitLab: [pull/32548](https://github.com/sourcegraph/sourcegraph/pull/32548), [issues/32462](https://github.com/sourcegraph/sourcegraph/issues/32462)
+- Fixes telemetry for initial "browser extension installed" event [#pull/33175](https://github.com/sourcegraph/sourcegraph/pull/33175), [#issues/33143](https://github.com/sourcegraph/sourcegraph/issues/33143)
+- Fix native integration to pass cookies/credentials for "Extensions" info GraphQL request [#pull/33406](https://github.com/sourcegraph/sourcegraph/pull/33406), [#issues/32599](https://github.com/sourcegraph/sourcegraph/issues/32599)
+
+## Chrome & Firefox v22.3.11.1145, Safari v1.12
+
+- Fix client-side routing support on GitHub repository browse file tree pages: [#pull/32199](https://github.com/sourcegraph/sourcegraph/pull/32199), [#issues/31716](https://github.com/sourcegraph/sourcegraph/issues/31716)
+- Fix code intel popup buttons overflow issue on GitHub: [#pull/31698](https://github.com/sourcegraph/sourcegraph/pull/31698), [#issues/31359](https://github.com/sourcegraph/sourcegraph/issues/31359)
+- Make 'Configure on Sourcegraph' button navigate to manage repositories page when on default Sourcegraph URL: [#pull/31690](https://github.com/sourcegraph/sourcegraph/pull/31690), [#issues/3066](https://github.com/sourcegraph/sourcegraph/issues/3066)
+- Add installs/uninstall events tracking: [#pull/31785](https://github.com/sourcegraph/sourcegraph/pull/31785), [issues/31486](https://github.com/sourcegraph/sourcegraph/issues/31486)
+
 ## Chrome & Firefox v22.2.11.1553, Safari v1.11
 
 - Make "single click to definition" an opt-in through advanced settings: [#pull/30540](https://github.com/sourcegraph/sourcegraph/pull/30540), [#issues/#30437](https://github.com/sourcegraph/sourcegraph/issues/30437)

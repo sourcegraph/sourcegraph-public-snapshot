@@ -2,7 +2,6 @@ import { boolean } from '@storybook/addon-knobs'
 import { useMemo, useCallback } from '@storybook/addons'
 import { storiesOf } from '@storybook/react'
 import { subDays } from 'date-fns'
-import React from 'react'
 import { of } from 'rxjs'
 
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
@@ -14,6 +13,8 @@ import {
     ChangesetSpecType,
     ChangesetState,
     BatchChangeFields,
+    BatchSpecState,
+    BatchChangeState,
 } from '../../../graphql-operations'
 import {
     queryChangesets as _queryChangesets,
@@ -79,6 +80,10 @@ const batchChangeDefaults: BatchChangeFields = {
             totalCount: 0,
         },
     },
+    batchSpecs: {
+        nodes: [{ state: BatchSpecState.COMPLETED }],
+        pageInfo: { hasNextPage: false },
+    },
     bulkOperations: {
         __typename: 'BulkOperationConnection',
         totalCount: 0,
@@ -88,6 +93,7 @@ const batchChangeDefaults: BatchChangeFields = {
         totalCount: 0,
         nodes: [],
     },
+    state: BatchChangeState.OPEN,
 }
 
 const queryChangesets: typeof _queryChangesets = () =>

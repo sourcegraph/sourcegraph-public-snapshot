@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { useMemo } from 'react'
+
+import classNames from 'classnames'
 
 import { renderMarkdown } from '@sourcegraph/common'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
@@ -18,12 +19,13 @@ import {
     ChangesetStatusMerged,
 } from '../detail/changesets/ChangesetStatusCell'
 
-import styles from './BatchChangeNode.module.scss'
 import { BatchChangeStatePill } from './BatchChangeStatePill'
+
+import styles from './BatchChangeNode.module.scss'
 
 export interface BatchChangeNodeProps {
     node: ListBatchChange
-    executionEnabled: boolean
+    isExecutionEnabled: boolean
     /** Used for testing purposes. Sets the current date */
     now?: () => Date
     displayNamespace: boolean
@@ -36,7 +38,15 @@ const StateBadge: React.FunctionComponent<{ state: BatchChangeState }> = ({ stat
     switch (state) {
         case BatchChangeState.OPEN:
             return (
-                <Badge variant="success" className={classNames(styles.batchChangeNodeBadge, 'text-uppercase')}>
+                /*
+                        a11y-ignore
+                        Rule: "color-contrast" (Elements must have sufficient color contrast)
+                        GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
+                    */
+                <Badge
+                    variant="success"
+                    className={classNames('a11y-ignore', styles.batchChangeNodeBadge, 'text-uppercase')}
+                >
                     Open
                 </Badge>
             )
@@ -61,7 +71,7 @@ const StateBadge: React.FunctionComponent<{ state: BatchChangeState }> = ({ stat
  */
 export const BatchChangeNode: React.FunctionComponent<BatchChangeNodeProps> = ({
     node,
-    executionEnabled,
+    isExecutionEnabled,
     now = () => new Date(),
     displayNamespace,
 }) => {
@@ -74,7 +84,7 @@ export const BatchChangeNode: React.FunctionComponent<BatchChangeNodeProps> = ({
     const nodeLink = useMemo(() => {
         // Before SSBC, all batch changes took you to the same place, the node detail
         // page. Closed batch changes also take you to this page.
-        if (!executionEnabled || node.state === BatchChangeState.CLOSED) {
+        if (!isExecutionEnabled || node.state === BatchChangeState.CLOSED) {
             return node.url
         }
 
@@ -103,12 +113,12 @@ export const BatchChangeNode: React.FunctionComponent<BatchChangeNodeProps> = ({
             default:
                 return node.url
         }
-    }, [executionEnabled, node.url, node.state, node.currentSpec, latestExecution])
+    }, [isExecutionEnabled, node.url, node.state, node.currentSpec, latestExecution])
 
     return (
         <>
             <span className={styles.batchChangeNodeSeparator} />
-            {executionEnabled ? (
+            {isExecutionEnabled ? (
                 <BatchChangeStatePill
                     state={node.state}
                     latestExecutionState={node.batchSpecs.nodes[0]?.state}

@@ -6,6 +6,8 @@ import (
 	"text/template"
 	"unicode/utf8"
 
+	"github.com/go-enry/go-enry/v2"
+
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
@@ -188,6 +190,7 @@ type MetaEnvironment struct {
 	Author  string
 	Date    string
 	Email   string
+	Lang    string
 }
 
 var empty = struct{}{}
@@ -200,6 +203,7 @@ var builtinVariables = map[string]struct{}{
 	"author":  empty,
 	"date":    empty,
 	"email":   empty,
+	"lang":    empty,
 }
 
 func templatize(pattern string) string {
@@ -240,12 +244,19 @@ func substituteMetaVariables(pattern string, env *MetaEnvironment) (string, erro
 // metavariables can be referenced and substituted for in an output template.
 func NewMetaEnvironment(r result.Match, content string) *MetaEnvironment {
 	switch m := r.(type) {
+	case *result.RepoMatch:
+		return &MetaEnvironment{
+			Repo:    string(m.Name),
+			Content: string(m.Name),
+		}
 	case *result.FileMatch:
+		lang, _ := enry.GetLanguageByExtension(m.Path)
 		return &MetaEnvironment{
 			Repo:    string(m.Repo.Name),
 			Path:    m.Path,
 			Commit:  string(m.CommitID),
 			Content: content,
+			Lang:    lang,
 		}
 	case *result.CommitMatch:
 		return &MetaEnvironment{

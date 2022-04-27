@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import * as React from 'react'
+
+import classNames from 'classnames'
 import { CardElement, ReactStripeElements } from 'react-stripe-elements'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'

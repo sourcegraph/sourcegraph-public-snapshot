@@ -17,7 +17,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -213,17 +216,17 @@ func NewSubprocessGit(gitDir string) (*SubprocessGit, error) {
 	}, nil
 }
 
-func (git SubprocessGit) Close() error {
-	err := git.catFileStdin.Close()
+func (g SubprocessGit) Close() error {
+	err := g.catFileStdin.Close()
 	if err != nil {
 		return err
 	}
-	return git.catFileCmd.Wait()
+	return g.catFileCmd.Wait()
 }
 
-func (git SubprocessGit) LogReverseEach(repo string, givenCommit string, n int, onLogEntry func(entry LogEntry) error) (returnError error) {
-	log := exec.Command("git", LogReverseArgs(n, givenCommit)...)
-	log.Dir = git.gitDir
+func (g SubprocessGit) LogReverseEach(repo string, db database.DB, givenCommit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) (returnError error) {
+	log := exec.Command("git", gitdomain.LogReverseArgs(n, givenCommit)...)
+	log.Dir = g.gitDir
 	output, err := log.StdoutPipe()
 	if err != nil {
 		return err
@@ -240,12 +243,12 @@ func (git SubprocessGit) LogReverseEach(repo string, givenCommit string, n int, 
 		}
 	}()
 
-	return ParseLogReverseEach(output, onLogEntry)
+	return gitdomain.ParseLogReverseEach(output, onLogEntry)
 }
 
-func (git SubprocessGit) RevListEach(repo string, givenCommit string, onCommit func(commit string) (shouldContinue bool, err error)) (returnError error) {
-	revList := exec.Command("git", RevListArgs(givenCommit)...)
-	revList.Dir = git.gitDir
+func (g SubprocessGit) RevListEach(repo string, db database.DB, givenCommit string, onCommit func(commit string) (shouldContinue bool, err error)) (returnError error) {
+	revList := exec.Command("git", git.RevListArgs(givenCommit)...)
+	revList.Dir = g.gitDir
 	output, err := revList.StdoutPipe()
 	if err != nil {
 		return err
@@ -262,17 +265,17 @@ func (git SubprocessGit) RevListEach(repo string, givenCommit string, onCommit f
 		}
 	}()
 
-	return RevListEach(output, onCommit)
+	return git.RevListEach(output, onCommit)
 }
 
-func (git SubprocessGit) ArchiveEach(repo string, commit string, paths []string, onFile func(path string, contents []byte) error) error {
+func (g SubprocessGit) ArchiveEach(repo string, commit string, paths []string, onFile func(path string, contents []byte) error) error {
 	for _, path := range paths {
-		_, err := git.catFileStdin.Write([]byte(fmt.Sprintf("%s:%s\n", commit, path)))
+		_, err := g.catFileStdin.Write([]byte(fmt.Sprintf("%s:%s\n", commit, path)))
 		if err != nil {
 			return errors.Wrap(err, "writing to cat-file stdin")
 		}
 
-		line, err := git.catFileStdout.ReadString('\n')
+		line, err := g.catFileStdout.ReadString('\n')
 		if err != nil {
 			return errors.Wrap(err, "read newline")
 		}
@@ -286,12 +289,12 @@ func (git SubprocessGit) ArchiveEach(repo string, commit string, paths []string,
 			return errors.Wrap(err, "parse size")
 		}
 
-		fileContents, err := io.ReadAll(io.LimitReader(&git.catFileStdout, size))
+		fileContents, err := io.ReadAll(io.LimitReader(&g.catFileStdout, size))
 		if err != nil {
 			return errors.Wrap(err, "read contents")
 		}
 
-		discarded, err := git.catFileStdout.Discard(1) // Discard the trailing newline
+		discarded, err := g.catFileStdout.Discard(1) // Discard the trailing newline
 		if err != nil {
 			return errors.Wrap(err, "discard newline")
 		}

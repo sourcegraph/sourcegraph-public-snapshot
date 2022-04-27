@@ -1,12 +1,14 @@
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 
-import { Button, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
+
+import { Button, Popover, PopoverContent, PopoverTrigger, Position, Icon } from '@sourcegraph/wildcard'
 
 import { StreamingProgressProps } from './StreamingProgress'
-import styles from './StreamingProgressSkippedButton.module.scss'
 import { StreamingProgressSkippedPopover } from './StreamingProgressSkippedPopover'
+
+import styles from './StreamingProgressSkippedButton.module.scss'
 
 export const StreamingProgressSkippedButton: React.FunctionComponent<
     Pick<StreamingProgressProps, 'progress' | 'onSearchAgain'>
@@ -39,8 +41,8 @@ export const StreamingProgressSkippedButton: React.FunctionComponent<
                         as={Button}
                         aria-expanded={isOpen}
                     >
-                        {skippedWithWarningOrError ? <AlertCircleIcon className="mr-2 icon-inline" /> : null}
-                        Some results excluded <ChevronDownIcon data-caret={true} className="icon-inline mr-0" />
+                        {skippedWithWarningOrError ? <Icon className="mr-2" as={AlertCircleIcon} /> : null}
+                        Some results excluded <Icon data-caret={true} className="mr-0" as={ChevronDownIcon} />
                     </PopoverTrigger>
                     <PopoverContent
                         position={Position.bottomStart}

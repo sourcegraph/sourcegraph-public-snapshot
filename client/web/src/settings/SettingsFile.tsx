@@ -1,7 +1,8 @@
+import * as React from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import * as _monaco from 'monaco-editor' // type only
-import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, filter, map, startWith } from 'rxjs/operators'
 
@@ -12,9 +13,9 @@ import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { SaveToolbar } from '../components/SaveToolbar'
 import { settingsActions } from '../site-admin/configHelpers'
-import adminConfigurationStyles from '../site-admin/SiteAdminConfigurationPage.module.scss'
 import { eventLogger } from '../tracking/eventLogger'
 
+import adminConfigurationStyles from '../site-admin/SiteAdminConfigurationPage.module.scss'
 import styles from './SettingsFile.module.scss'
 
 interface Props extends ThemeProps, TelemetryProps {
@@ -189,7 +190,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                         ))}
                     </div>
                 </div>
-                <React.Suspense fallback={<LoadingSpinner className="icon-inline mt-2" />}>
+                <React.Suspense fallback={<LoadingSpinner className="mt-2" />}>
                     <MonacoSettingsEditor
                         value={contents}
                         jsonSchema={this.props.jsonSchema}

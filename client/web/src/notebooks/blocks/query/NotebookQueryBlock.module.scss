@@ -15,4 +15,10 @@
     padding: 0.5rem;
     background-color: var(--color-bg-1);
     border: 1px solid var(--border-color);
+
+    &:focus,
+    &:focus-within {
+        border: 1px solid var(--border-active-color) !important;
+        box-shadow: 0 0 0 0.125rem var(--primary-2);
+    }
 }

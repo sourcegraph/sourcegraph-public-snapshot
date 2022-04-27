@@ -1,5 +1,4 @@
 import { render } from '@testing-library/react'
-import React from 'react'
 
 import { ConfiguredRegistryExtension } from '@sourcegraph/shared/src/extensions/extension'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'

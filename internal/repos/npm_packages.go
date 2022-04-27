@@ -6,10 +6,8 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	dependenciesStore "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm/npmpackages"
@@ -19,38 +17,38 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// A NPMPackagesSource creates git repositories from `*-sources.tar.gz` files of
-// published NPM dependencies from the JS ecosystem.
-type NPMPackagesSource struct {
+// A NpmPackagesSource creates git repositories from `*-sources.tar.gz` files of
+// published npm dependencies from the JS ecosystem.
+type NpmPackagesSource struct {
 	svc        *types.ExternalService
-	connection schema.NPMPackagesConnection
-	depsStore  DependenciesStore
+	connection schema.NpmPackagesConnection
+	depsSvc    *dependencies.Service
 	client     npm.Client
 }
 
-// NewNPMPackagesSource returns a new NPMSource from the given external
+// NewNpmPackagesSource returns a new NpmSource from the given external
 // service.
-func NewNPMPackagesSource(svc *types.ExternalService) (*NPMPackagesSource, error) {
-	var c schema.NPMPackagesConnection
+func NewNpmPackagesSource(svc *types.ExternalService) (*NpmPackagesSource, error) {
+	var c schema.NpmPackagesConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return &NPMPackagesSource{
+	return &NpmPackagesSource{
 		svc:        svc,
 		connection: c,
-		/*dbStore initialized in SetDB */
-		client: npm.NewHTTPClient(c.Registry, c.RateLimit, c.Credentials),
+		/* depsSvc initialized in SetDependenciesService */
+		client: npm.NewHTTPClient(svc.URN(), c.Registry, c.Credentials),
 	}, nil
 }
 
-var _ Source = &NPMPackagesSource{}
+var _ Source = &NpmPackagesSource{}
 
-// ListRepos returns all NPM artifacts accessible to all connections
+// ListRepos returns all npm artifacts accessible to all connections
 // configured in Sourcegraph via the external services configuration.
 //
 // [FIXME: deduplicate-listed-repos] The current implementation will return
 // multiple repos with the same URL if there are different versions of it.
-func (s *NPMPackagesSource) ListRepos(ctx context.Context, results chan SourceResult) {
+func (s *NpmPackagesSource) ListRepos(ctx context.Context, results chan SourceResult) {
 	npmPackages, err := npmPackages(s.connection)
 	if err != nil {
 		results <- SourceResult{Err: err}
@@ -74,8 +72,8 @@ func (s *NPMPackagesSource) ListRepos(ctx context.Context, results chan SourceRe
 	totalDBFetched, totalDBResolved, lastID := 0, 0, 0
 	pkgVersions := map[string]*npm.PackageInfo{}
 	for {
-		dbDeps, err := s.depsStore.ListDependencyRepos(ctx, dependenciesStore.ListDependencyReposOpts{
-			Scheme:      dependenciesStore.NPMPackagesScheme,
+		dbDeps, err := s.depsSvc.ListDependencyRepos(ctx, dependencies.ListDependencyReposOpts{
+			Scheme:      dependencies.NpmPackagesScheme,
 			After:       lastID,
 			Limit:       100,
 			NewestFirst: true,
@@ -90,32 +88,31 @@ func (s *NPMPackagesSource) ListRepos(ctx context.Context, results chan SourceRe
 		totalDBFetched += len(dbDeps)
 		lastID = dbDeps[len(dbDeps)-1].ID
 		for _, dbDep := range dbDeps {
-			parsedDbPackage, err := reposource.ParseNPMPackageFromPackageSyntax(dbDep.Name)
+			parsedDbPackage, err := reposource.ParseNpmPackageFromPackageSyntax(dbDep.Name)
 			if err != nil {
 				log15.Error("failed to parse npm package name retrieved from database", "package", dbDep.Name, "error", err)
 				continue
 			}
 
-			npmDependency := reposource.NPMDependency{NPMPackage: parsedDbPackage, Version: dbDep.Version}
+			npmDependency := reposource.NpmDependency{NpmPackage: parsedDbPackage, Version: dbDep.Version}
 			pkgKey := npmDependency.PackageSyntax()
 			info := pkgVersions[pkgKey]
+
 			if info == nil {
-				info, err = s.client.GetPackageInfo(ctx, npmDependency.NPMPackage)
+				info, err = s.client.GetPackageInfo(ctx, npmDependency.NpmPackage)
 				if err != nil {
 					pkgVersions[pkgKey] = &npm.PackageInfo{Versions: map[string]*npm.DependencyInfo{}}
-					log15.Warn("npm package not found in registry", "package", pkgKey, "err", err)
 					continue
 				}
+
 				pkgVersions[pkgKey] = info
 			}
+
 			if _, hasVersion := info.Versions[npmDependency.Version]; !hasVersion {
-				if len(info.Versions) != 0 { // We must've already logged a package not found earlier if len is 0.
-					log15.Warn("npm dependency does not exist",
-						"dependency", npmDependency.PackageManagerSyntax())
-				}
 				continue
 			}
-			repo := s.makeRepo(npmDependency.NPMPackage, info.Description)
+
+			repo := s.makeRepo(npmDependency.NpmPackage, info.Description)
 			totalDBResolved++
 			results <- SourceResult{Source: s, Repo: repo}
 		}
@@ -123,8 +120,8 @@ func (s *NPMPackagesSource) ListRepos(ctx context.Context, results chan SourceRe
 	log15.Info("finish resolving npm artifacts", "totalDB", totalDBFetched, "totalDBResolved", totalDBResolved, "totalConfig", len(npmPackages))
 }
 
-func (s *NPMPackagesSource) GetRepo(ctx context.Context, name string) (*types.Repo, error) {
-	pkg, err := reposource.ParseNPMPackageFromRepoURL(name)
+func (s *NpmPackagesSource) GetRepo(ctx context.Context, name string) (*types.Repo, error) {
+	pkg, err := reposource.ParseNpmPackageFromRepoURL(name)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +134,7 @@ func (s *NPMPackagesSource) GetRepo(ctx context.Context, name string) (*types.Re
 	return s.makeRepo(pkg, info.Description), nil
 }
 
-func (s *NPMPackagesSource) makeRepo(npmPackage *reposource.NPMPackage, description string) *types.Repo {
+func (s *NpmPackagesSource) makeRepo(npmPackage *reposource.NpmPackage, description string) *types.Repo {
 	urn := s.svc.URN()
 	cloneURL := npmPackage.CloneURL()
 	repoName := npmPackage.RepoName()
@@ -147,8 +144,8 @@ func (s *NPMPackagesSource) makeRepo(npmPackage *reposource.NPMPackage, descript
 		URI:         string(repoName),
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          string(repoName),
-			ServiceID:   extsvc.TypeNPMPackages,
-			ServiceType: extsvc.TypeNPMPackages,
+			ServiceID:   extsvc.TypeNpmPackages,
+			ServiceType: extsvc.TypeNpmPackages,
 		},
 		Private: false,
 		Sources: map[string]*types.SourceInfo{
@@ -164,43 +161,39 @@ func (s *NPMPackagesSource) makeRepo(npmPackage *reposource.NPMPackage, descript
 }
 
 // ExternalServices returns a singleton slice containing the external service.
-func (s *NPMPackagesSource) ExternalServices() types.ExternalServices {
+func (s *NpmPackagesSource) ExternalServices() types.ExternalServices {
 	return types.ExternalServices{s.svc}
 }
 
-func (s *NPMPackagesSource) SetDB(db dbutil.DB) {
-	s.depsStore = dependenciesStore.GetStore(database.NewDB(db))
+func (s *NpmPackagesSource) SetDependenciesService(depsSvc *dependencies.Service) {
+	s.depsSvc = depsSvc
 }
 
 // npmPackages gets the list of applicable packages by de-duplicating dependencies
 // present in the configuration.
-func npmPackages(connection schema.NPMPackagesConnection) ([]*reposource.NPMPackage, error) {
+func npmPackages(connection schema.NpmPackagesConnection) ([]*reposource.NpmPackage, error) {
 	dependencies, err := npmDependencies(connection)
 	if err != nil {
 		return nil, err
 	}
-	npmPackages := []*reposource.NPMPackage{}
+	npmPackages := []*reposource.NpmPackage{}
 	isAdded := make(map[string]bool)
 	for _, dep := range dependencies {
 		if key := dep.PackageSyntax(); !isAdded[key] {
-			npmPackages = append(npmPackages, dep.NPMPackage)
+			npmPackages = append(npmPackages, dep.NpmPackage)
 			isAdded[key] = true
 		}
 	}
 	return npmPackages, nil
 }
 
-func npmDependencies(connection schema.NPMPackagesConnection) (dependencies []*reposource.NPMDependency, err error) {
+func npmDependencies(connection schema.NpmPackagesConnection) (dependencies []*reposource.NpmDependency, err error) {
 	for _, dep := range connection.Dependencies {
-		dependency, err := reposource.ParseNPMDependency(dep)
+		dependency, err := reposource.ParseNpmDependency(dep)
 		if err != nil {
 			return nil, err
 		}
 		dependencies = append(dependencies, dependency)
 	}
 	return dependencies, nil
-}
-
-type DependenciesStore interface {
-	ListDependencyRepos(ctx context.Context, opts dependenciesStore.ListDependencyReposOpts) ([]dependenciesStore.DependencyRepo, error)
 }

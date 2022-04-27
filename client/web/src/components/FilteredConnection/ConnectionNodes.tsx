@@ -1,5 +1,6 @@
-import * as H from 'history'
 import * as React from 'react'
+
+import * as H from 'history'
 
 import { Connection } from './ConnectionType'
 import { ConnectionList, ShowMoreButton, SummaryContainer, ConnectionSummary } from './ui'

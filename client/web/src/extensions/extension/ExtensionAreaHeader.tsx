@@ -1,20 +1,22 @@
+import React, { useState, useCallback, useMemo } from 'react'
+
 import classNames from 'classnames'
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
-import React, { useState, useCallback, useMemo } from 'react'
 import { NavLink, RouteComponentProps } from 'react-router-dom'
 
 import { isErrorLike } from '@sourcegraph/common'
 import { isExtensionEnabled, splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
 import { ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
-import { PageHeader, AlertLink, useTimeoutManager, Alert } from '@sourcegraph/wildcard'
+import { PageHeader, AlertLink, useTimeoutManager, Alert, Icon } from '@sourcegraph/wildcard'
 
 import { NavItemWithIconDescriptor } from '../../util/contributions'
 import { ExtensionToggle } from '../ExtensionToggle'
 
 import { ExtensionAreaRouteContext } from './ExtensionArea'
-import styles from './ExtensionAreaHeader.module.scss'
 import { ExtensionStatusBadge } from './ExtensionStatusBadge'
+
+import styles from './ExtensionAreaHeader.module.scss'
 
 interface ExtensionAreaHeaderProps extends ExtensionAreaRouteContext, RouteComponentProps<{}> {
     navItems: readonly ExtensionAreaHeaderNavItem[]
@@ -200,7 +202,7 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                         <div className="mt-4">
                             <ul className="nav nav-tabs">
                                 {props.navItems.map(
-                                    ({ to, label, exact, icon: Icon, condition = () => true }) =>
+                                    ({ to, label, exact, icon: ItemIcon, condition = () => true }) =>
                                         condition(props) && (
                                             <li key={label} className="nav-item">
                                                 <NavLink
@@ -210,7 +212,7 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                                     exact={exact}
                                                 >
                                                     <span>
-                                                        {Icon && <Icon className="icon-inline" />}{' '}
+                                                        {ItemIcon && <Icon as={ItemIcon} />}{' '}
                                                         <span className="text-content" data-tab-content={label}>
                                                             {label}
                                                         </span>

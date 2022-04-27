@@ -1,7 +1,9 @@
-import * as H from 'history'
 import React, { useCallback, useEffect, useMemo } from 'react'
+
+import * as H from 'history'
 import { Observable } from 'rxjs'
 
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { PageHeader, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -15,12 +17,14 @@ import { convertActionsForCreate } from './action-converters'
 import { createCodeMonitor as _createCodeMonitor } from './backend'
 import { CodeMonitorForm } from './components/CodeMonitorForm'
 
-interface CreateCodeMonitorPageProps {
+interface CreateCodeMonitorPageProps extends ThemeProps {
     location: H.Location
     history: H.History
     authenticatedUser: AuthenticatedUser
 
     createCodeMonitor?: typeof _createCodeMonitor
+
+    isSourcegraphDotCom: boolean
 }
 
 const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPageProps> = ({
@@ -28,6 +32,8 @@ const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<CreateCodeMoni
     history,
     location,
     createCodeMonitor = _createCodeMonitor,
+    isLightTheme,
+    isSourcegraphDotCom,
 }) => {
     const triggerQuery = useMemo(() => new URLSearchParams(location.search).get('trigger-query') ?? undefined, [
         location.search,
@@ -67,7 +73,10 @@ const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<CreateCodeMoni
         <div className="container col-8">
             <PageTitle title="Create new code monitor" />
             <PageHeader
-                path={[{ icon: CodeMonitoringLogo, to: '/code-monitoring' }, { text: 'Create code monitor' }]}
+                path={[
+                    { icon: CodeMonitoringLogo, to: '/code-monitoring', ariaLabel: 'Code monitoring logo' },
+                    { text: 'Create code monitor' },
+                ]}
                 description={
                     <>
                         Code monitors watch your code for specific triggers and run actions in response.{' '}
@@ -85,6 +94,8 @@ const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<CreateCodeMoni
                 triggerQuery={triggerQuery}
                 description={description}
                 submitButtonLabel="Create code monitor"
+                isLightTheme={isLightTheme}
+                isSourcegraphDotCom={isSourcegraphDotCom}
             />
         </div>
     )

@@ -1,9 +1,9 @@
-import React, { ReactElement } from 'react'
+import { ReactElement } from 'react'
+
 import { MultiValueGenericProps } from 'react-select'
 
 import { Badge } from '../../Badge'
 
-import styles from './MultiSelect.module.scss'
 import { MultiSelectOption } from './types'
 
 // Overwrite the multi value container with Wildcard `Badge`
@@ -12,5 +12,5 @@ export const MultiValueContainer = <OptionValue extends unknown = unknown>({
     selectProps: _selectProps,
     ...props
 }: MultiValueGenericProps<MultiSelectOption<OptionValue>, true>): ReactElement => (
-    <Badge variant="secondary" className={styles.multiValueContainer} {...props} />
+    <Badge variant="secondary" className={_innerProps.className} {...props} />
 )

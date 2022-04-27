@@ -1,7 +1,6 @@
 import { select } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
-import React from 'react'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
@@ -58,6 +57,7 @@ add('Requires SSH - step 1', () => (
                     )}
                     externalServiceURL="https://github.com/"
                     requiresSSH={true}
+                    requiresUsername={false}
                     afterCreate={noop}
                     onCancel={noop}
                 />
@@ -78,6 +78,7 @@ add('Requires SSH - step 2', () => (
                 )}
                 externalServiceURL="https://github.com/"
                 requiresSSH={true}
+                requiresUsername={false}
                 afterCreate={noop}
                 onCancel={noop}
                 initialStep="get-ssh-key"
@@ -95,6 +96,7 @@ add('GitHub', () => (
                 externalServiceKind={ExternalServiceKind.GITHUB}
                 externalServiceURL="https://github.com/"
                 requiresSSH={false}
+                requiresUsername={false}
                 afterCreate={noop}
                 onCancel={noop}
             />
@@ -111,6 +113,7 @@ add('GitLab', () => (
                 externalServiceKind={ExternalServiceKind.GITLAB}
                 externalServiceURL="https://gitlab.com/"
                 requiresSSH={false}
+                requiresUsername={false}
                 afterCreate={noop}
                 onCancel={noop}
             />
@@ -127,6 +130,24 @@ add('Bitbucket Server', () => (
                 externalServiceKind={ExternalServiceKind.BITBUCKETSERVER}
                 externalServiceURL="https://bitbucket.sgdev.org/"
                 requiresSSH={false}
+                requiresUsername={false}
+                afterCreate={noop}
+                onCancel={noop}
+            />
+        )}
+    </WebStory>
+))
+
+add('Bitbucket Cloud', () => (
+    <WebStory>
+        {props => (
+            <AddCredentialModal
+                {...props}
+                userID="user-id-1"
+                externalServiceKind={ExternalServiceKind.BITBUCKETCLOUD}
+                externalServiceURL="https://bitbucket.org/"
+                requiresSSH={false}
+                requiresUsername={true}
                 afterCreate={noop}
                 onCancel={noop}
             />

@@ -1,6 +1,5 @@
 import { MockedResponse } from '@apollo/client/testing'
 import { storiesOf } from '@storybook/react'
-import React from 'react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
@@ -25,7 +24,7 @@ const createMock = (...hosts: BatchChangesCodeHostFields[]): MockedResponse<Glob
             query: getDocumentNode(GLOBAL_CODE_HOSTS),
             variables: {
                 after: null,
-                first: 20,
+                first: 15,
             },
         },
         result: {
@@ -50,18 +49,28 @@ add('Overview', () => (
                         externalServiceKind: ExternalServiceKind.GITHUB,
                         externalServiceURL: 'https://github.com/',
                         requiresSSH: false,
+                        requiresUsername: false,
                     },
                     {
                         credential: null,
                         externalServiceKind: ExternalServiceKind.GITLAB,
                         externalServiceURL: 'https://gitlab.com/',
                         requiresSSH: false,
+                        requiresUsername: false,
                     },
                     {
                         credential: null,
                         externalServiceKind: ExternalServiceKind.BITBUCKETSERVER,
                         externalServiceURL: 'https://bitbucket.sgdev.org/',
                         requiresSSH: true,
+                        requiresUsername: false,
+                    },
+                    {
+                        credential: null,
+                        externalServiceKind: ExternalServiceKind.BITBUCKETCLOUD,
+                        externalServiceURL: 'https://bitbucket.org/',
+                        requiresSSH: false,
+                        requiresUsername: true,
                     }
                 )}
             >
@@ -86,6 +95,7 @@ add('Config added', () => (
                         externalServiceKind: ExternalServiceKind.GITHUB,
                         externalServiceURL: 'https://github.com/',
                         requiresSSH: false,
+                        requiresUsername: false,
                     },
                     {
                         credential: {
@@ -97,6 +107,7 @@ add('Config added', () => (
                         externalServiceKind: ExternalServiceKind.GITLAB,
                         externalServiceURL: 'https://gitlab.com/',
                         requiresSSH: false,
+                        requiresUsername: false,
                     },
                     {
                         credential: {
@@ -108,6 +119,19 @@ add('Config added', () => (
                         externalServiceKind: ExternalServiceKind.BITBUCKETSERVER,
                         externalServiceURL: 'https://bitbucket.sgdev.org/',
                         requiresSSH: true,
+                        requiresUsername: false,
+                    },
+                    {
+                        credential: {
+                            id: '123',
+                            isSiteCredential: true,
+                            sshPublicKey:
+                                'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
+                        },
+                        externalServiceKind: ExternalServiceKind.BITBUCKETCLOUD,
+                        externalServiceURL: 'https://bitbucket.org/',
+                        requiresSSH: false,
+                        requiresUsername: true,
                     }
                 )}
             >

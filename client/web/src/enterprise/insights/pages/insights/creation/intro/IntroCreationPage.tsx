@@ -1,13 +1,14 @@
-import classNames from 'classnames'
 import React, { useEffect } from 'react'
+
 import { useHistory } from 'react-router'
 import { useLocation } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { PageHeader, Link } from '@sourcegraph/wildcard'
 
-import { Page } from '../../../../../../components/Page'
+import { PageTitle } from '../../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../../../../insights/Icons'
+import { CodeInsightsPage } from '../../../../components/code-insights-page/CodeInsightsPage'
 
 import {
     CaptureGroupInsightCard,
@@ -15,6 +16,7 @@ import {
     LangStatsInsightCard,
     SearchInsightCard,
 } from './cards/InsightCards'
+
 import styles from './IntroCreationPage.module.scss'
 
 interface IntroCreationPageProps extends TelemetryProps {}
@@ -51,7 +53,8 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
     }, [telemetryService])
 
     return (
-        <Page className={classNames('container pb-5', styles.container)}>
+        <CodeInsightsPage className={styles.container}>
+            <PageTitle title="Create insight - Code Insights" />
             <PageHeader
                 path={[{ icon: CodeInsightsIcon }, { text: 'Create new code insight' }]}
                 description={
@@ -66,16 +69,19 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
             />
 
             <div className={styles.sectionContent}>
-                <SearchInsightCard data-testid="create-search-insights" onClick={handleCreateSearchBasedInsightClick} />
+                <SearchInsightCard
+                    data-testid="create-search-insights"
+                    handleCreate={handleCreateSearchBasedInsightClick}
+                />
 
                 <CaptureGroupInsightCard
                     data-testid="create-capture-group-insight"
-                    onClick={handleCaptureGroupInsightClick}
+                    handleCreate={handleCaptureGroupInsightClick}
                 />
 
                 <LangStatsInsightCard
                     data-testid="create-lang-usage-insight"
-                    onClick={handleCreateCodeStatsInsightClick}
+                    handleCreate={handleCreateCodeStatsInsightClick}
                 />
 
                 <div className={styles.info}>
@@ -85,8 +91,8 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
                     </Link>
                 </div>
 
-                <ExtensionInsightsCard data-testid="explore-extensions" onClick={handleExploreExtensionsClick} />
+                <ExtensionInsightsCard data-testid="explore-extensions" handleCreate={handleExploreExtensionsClick} />
             </div>
-        </Page>
+        </CodeInsightsPage>
     )
 }

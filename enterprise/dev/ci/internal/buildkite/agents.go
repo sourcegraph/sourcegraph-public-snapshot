@@ -1,7 +1,7 @@
 package buildkite
 
 const (
-	AgentQueueStandard  = "standard"
-	AgentQueueBaremetal = "baremetal"
-	AgentQueueJob       = "job"
+	AgentQueueStandard = "standard"
+	// TODO eventually replace with 'standard'
+	AgentQueueStateless = "stateless"
 )

@@ -1,6 +1,7 @@
+import React, { useEffect, useMemo } from 'react'
+
 import { subDays, startOfDay } from 'date-fns'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import React, { useEffect, useMemo } from 'react'
 
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { useQuery } from '@sourcegraph/http-client'
@@ -19,6 +20,7 @@ import {
 } from '../../../graphql-operations'
 import { Description } from '../Description'
 
+import { ActiveExecutionNotice } from './ActiveExecutionNotice'
 import { deleteBatchChange as _deleteBatchChange, BATCH_CHANGE_BY_NAMESPACE } from './backend'
 import { BatchChangeDetailsActionSection } from './BatchChangeDetailsActionSection'
 import { BatchChangeDetailsProps, BatchChangeDetailsTabs, TabName } from './BatchChangeDetailsTabs'
@@ -110,6 +112,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                     {
                         icon: BatchChangesIcon,
                         to: '/batch-changes',
+                        ariaLabel: 'Batch changes',
                     },
                     { to: `${batchChange.namespace.url}/batch-changes`, text: batchChange.namespace.namespaceName },
                     { text: batchChange.name },
@@ -137,6 +140,11 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
             />
             <BulkOperationsAlerts location={location} bulkOperations={batchChange.activeBulkOperations} />
             <SupersedingBatchSpecAlert spec={batchChange.currentSpec.supersedingBatchSpec} />
+            <ActiveExecutionNotice
+                batchSpecs={batchChange.batchSpecs.nodes}
+                batchChangeURL={batchChange.url}
+                className="mb-3"
+            />
             <ClosedNotice closedAt={batchChange.closedAt} className="mb-3" />
             <UnpublishedNotice
                 unpublished={batchChange.changesetsStats.unpublished}

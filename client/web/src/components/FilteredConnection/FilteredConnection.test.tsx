@@ -1,6 +1,5 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { createLocation } from 'history'
-import React from 'react'
 import sinon from 'sinon'
 
 import { ConnectionNodes } from './ConnectionNodes'

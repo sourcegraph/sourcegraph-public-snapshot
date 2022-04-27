@@ -6,7 +6,7 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	dependenciesStore "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -16,7 +16,7 @@ func InferRepositoryAndRevision(pkg precise.Package) (repoName api.RepoName, git
 	for _, fn := range []func(pkg precise.Package) (api.RepoName, string, bool){
 		inferGoRepositoryAndRevision,
 		inferJVMRepositoryAndRevision,
-		inferNPMRepositoryAndRevision,
+		inferNpmRepositoryAndRevision,
 	} {
 		if repoName, gitTagOrCommit, ok := fn(pkg); ok {
 			return repoName, gitTagOrCommit, true
@@ -49,19 +49,19 @@ func inferGoRepositoryAndRevision(pkg precise.Package) (api.RepoName, string, bo
 }
 
 func inferJVMRepositoryAndRevision(pkg precise.Package) (api.RepoName, string, bool) {
-	if pkg.Scheme != dependenciesStore.JVMPackagesScheme {
+	if pkg.Scheme != dependencies.JVMPackagesScheme {
 		return "", "", false
 	}
 	return api.RepoName(pkg.Name), "v" + pkg.Version, true
 }
 
-func inferNPMRepositoryAndRevision(pkg precise.Package) (api.RepoName, string, bool) {
-	if pkg.Scheme != dependenciesStore.NPMPackagesScheme {
+func inferNpmRepositoryAndRevision(pkg precise.Package) (api.RepoName, string, bool) {
+	if pkg.Scheme != dependencies.NpmPackagesScheme {
 		return "", "", false
 	}
-	npmPkg, err := reposource.ParseNPMPackageFromPackageSyntax(pkg.Name)
+	npmPkg, err := reposource.ParseNpmPackageFromPackageSyntax(pkg.Name)
 	if err != nil {
-		log15.Error("invalid NPM package name in database", "error", err)
+		log15.Error("invalid npm package name in database", "error", err)
 		return "", "", false
 	}
 	return npmPkg.RepoName(), "v" + pkg.Version, true

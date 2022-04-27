@@ -1,6 +1,7 @@
+import React, { MouseEvent, useContext, useState } from 'react'
+
 import copy from 'copy-to-clipboard'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
-import React, { MouseEvent, useContext, useState } from 'react'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -20,7 +21,7 @@ import {
     Link,
 } from '@sourcegraph/wildcard'
 
-import { InsightType } from '../../../../../core/types'
+import { CodeInsightsBackendContext, InsightType } from '../../../../../core'
 import { encodeCaptureInsightURL } from '../../../../insights/creation/capture-group'
 import { encodeSearchInsightUrl } from '../../../../insights/creation/search-insight'
 import {
@@ -30,8 +31,9 @@ import {
 } from '../../../CodeInsightsLandingPageContext'
 import { CodeInsightsQueryBlock } from '../code-insights-query-block/CodeInsightsQueryBlock'
 
-import styles from './CodeInsightsTemplates.module.scss'
 import { Template, TEMPLATE_SECTIONS } from './constants'
+
+import styles from './CodeInsightsTemplates.module.scss'
 
 function getTemplateURL(template: Template): string {
     switch (template.type) {
@@ -135,6 +137,10 @@ const TemplateCard: React.FunctionComponent<TemplateCardProps> = props => {
     const { template, telemetryService } = props
     const { mode } = useContext(CodeInsightsLandingPageContext)
 
+    const {
+        UIFeatures: { licensed },
+    } = useContext(CodeInsightsBackendContext)
+
     const series =
         template.type === InsightType.SearchBased
             ? template.templateValues.series ?? []
@@ -167,7 +173,7 @@ const TemplateCard: React.FunctionComponent<TemplateCardProps> = props => {
                     className="mr-auto"
                     onClick={handleUseTemplateLinkClick}
                 >
-                    Use this template
+                    {licensed ? 'Use this template' : 'Explore template'}
                 </Button>
             )}
         </Card>

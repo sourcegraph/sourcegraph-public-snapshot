@@ -1,5 +1,6 @@
-import * as H from 'history'
 import React, { useEffect, useCallback, useState } from 'react'
+
+import * as H from 'history'
 
 import { asError, isErrorLike, renderMarkdown } from '@sourcegraph/common'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'

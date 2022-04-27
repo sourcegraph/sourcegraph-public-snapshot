@@ -1,5 +1,6 @@
+import { FunctionComponent } from 'react'
+
 import DeleteIcon from 'mdi-react/DeleteIcon'
-import React, { FunctionComponent } from 'react'
 
 import { ErrorLike } from '@sourcegraph/common'
 import { LSIFUploadState } from '@sourcegraph/shared/src/graphql-operations'

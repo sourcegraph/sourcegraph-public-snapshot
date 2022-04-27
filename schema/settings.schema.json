@@ -154,7 +154,7 @@
         "showSearchNotebook": {
           "description": "Enables the search notebook at search/notebook",
           "type": "boolean",
-          "default": false,
+          "default": true,
           "!go": {
             "pointer": true
           }
@@ -207,7 +207,7 @@
           }
         },
         "treeSitterEnabled": {
-          "description": "Enables tree sitter for enabled filetypes",
+          "description": "DEPRECATED: Enables tree sitter for enabled filetypes.",
           "type": "boolean",
           "default": false,
           "!go": {
@@ -223,7 +223,7 @@
           }
         },
         "enableSearchStack": {
-          "description": "Enables search stack",
+          "description": "REMOVED: This feature can now be enabled/disabled via the notepad button on the notebooks list page.",
           "type": "boolean",
           "default": false,
           "!go": {
@@ -248,12 +248,35 @@
           }
         },
         "coolCodeIntel": {
-          "description": "Use the (cool) experimental reference panel for code intelligence",
+          "description": "Use the (cool) experimental reference panel for code intelligence.",
           "type": "boolean",
           "default": false,
           "!go": {
             "pointer": true
           }
+        },
+        "codeIntelRepositoryBadge": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "description": "Show the code intelligence badge when viewing a repository.",
+              "type": "boolean",
+              "default": false,
+              "!go": {
+                "pointer": true
+              }
+            },
+            "forNerds": {
+              "description": "Show entirely too much information.",
+              "type": "boolean",
+              "default": false,
+              "!go": {
+                "pointer": true
+              }
+            }
+          },
+          "required": ["enabled"],
+          "additionalProperties": false
         },
         "showCodeMonitoringLogs": {
           "description": "Shows code monitoring logs tab.",
@@ -267,6 +290,15 @@
           "description": "Shows a panel to invite collaborators to Sourcegraph on home page.",
           "type": "boolean",
           "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "editor": {
+          "description": "Specifies which (code) editor to use for query and text input",
+          "type": "string",
+          "default": "monaco",
+          "enum": ["monaco", "codemirror6"],
           "!go": {
             "pointer": true
           }

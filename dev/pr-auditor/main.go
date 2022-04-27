@@ -60,6 +60,7 @@ func main() {
 		log.Printf("performing checks against allow-listed pull request base %q", ref)
 	default:
 		log.Printf("unknown pull request base %q - discarding\n", ref)
+		return
 	}
 	if payload.PullRequest.Draft {
 		log.Println("skipping event on draft PR")

@@ -132,5 +132,7 @@ func (r *GitRefResolver) Target() interface {
 func (r *GitRefResolver) Repository() *RepositoryResolver { return r.repo }
 
 func (r *GitRefResolver) URL() string {
-	return r.repo.URL() + "@" + escapePathForURL(r.AbbrevName())
+	url := r.repo.url()
+	url.Path += "@" + r.AbbrevName()
+	return url.String()
 }

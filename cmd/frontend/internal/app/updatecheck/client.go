@@ -176,10 +176,10 @@ func getAndMarshalHomepagePanelsJSON(ctx context.Context, db database.DB) (_ jso
 	return json.Marshal(homepagePanels)
 }
 
-func getAndMarshalRepositoriesJSON(ctx context.Context) (_ json.RawMessage, err error) {
+func getAndMarshalRepositoriesJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalRepositoriesJSON")(&err)
 
-	repos, err := usagestats.GetRepositories(ctx)
+	repos, err := usagestats.GetRepositories(ctx, db)
 	if err != nil {
 		return nil, err
 	}
@@ -285,7 +285,19 @@ func getAndMarshalCodeHostIntegrationUsageJSON(ctx context.Context, db database.
 	return json.Marshal(codeHostIntegrationUsage)
 }
 
+func getAndMarshalIDEExtensionsUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalIDEExtensionsUsageJSON")
+
+	ideExtensionsUsage, err := usagestats.GetIDEExtensionsUsageStatistics(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(ideExtensionsUsage)
+}
+
 func getAndMarshalCodeHostVersionsJSON(_ context.Context, _ database.DB) (_ json.RawMessage, err error) {
+
 	defer recordOperation("getAndMarshalCodeHostVersionsJSON")(&err)
 
 	versions, err := versions.GetVersions()
@@ -363,25 +375,27 @@ func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 	}
 
 	r := &pingRequest{
-		ClientSiteID:             siteid.Get(),
-		DeployType:               deploy.Type(),
-		ClientVersionString:      version.Version(),
-		LicenseKey:               conf.Get().LicenseKey,
-		CodeIntelUsage:           []byte("{}"),
-		NewCodeIntelUsage:        []byte("{}"),
-		SearchUsage:              []byte("{}"),
-		BatchChangesUsage:        []byte("{}"),
-		GrowthStatistics:         []byte("{}"),
-		CTAUsage:                 []byte("{}"),
-		SavedSearches:            []byte("{}"),
-		HomepagePanels:           []byte("{}"),
-		Repositories:             []byte("{}"),
-		RetentionStatistics:      []byte("{}"),
-		SearchOnboarding:         []byte("{}"),
-		ExtensionsUsage:          []byte("{}"),
-		CodeInsightsUsage:        []byte("{}"),
-		CodeMonitoringUsage:      []byte("{}"),
-		CodeHostIntegrationUsage: []byte("{}"),
+		ClientSiteID:                  siteid.Get(),
+		DeployType:                    deploy.Type(),
+		ClientVersionString:           version.Version(),
+		LicenseKey:                    conf.Get().LicenseKey,
+		CodeIntelUsage:                []byte("{}"),
+		NewCodeIntelUsage:             []byte("{}"),
+		SearchUsage:                   []byte("{}"),
+		BatchChangesUsage:             []byte("{}"),
+		GrowthStatistics:              []byte("{}"),
+		CTAUsage:                      []byte("{}"),
+		SavedSearches:                 []byte("{}"),
+		HomepagePanels:                []byte("{}"),
+		Repositories:                  []byte("{}"),
+		RetentionStatistics:           []byte("{}"),
+		SearchOnboarding:              []byte("{}"),
+		ExtensionsUsage:               []byte("{}"),
+		CodeInsightsUsage:             []byte("{}"),
+		CodeInsightsCriticalTelemetry: []byte("{}"),
+		CodeMonitoringUsage:           []byte("{}"),
+		CodeHostIntegrationUsage:      []byte("{}"),
+		IDEExtensionsUsage:            []byte("{}"),
 	}
 
 	totalUsers, err := getTotalUsersCount(ctx, db)
@@ -467,7 +481,7 @@ func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 			logFunc("telemetry: updatecheck.getAndMarshalSearchOnboardingJSON failed", "error", err)
 		}
 
-		r.Repositories, err = getAndMarshalRepositoriesJSON(ctx)
+		r.Repositories, err = getAndMarshalRepositoriesJSON(ctx, db)
 		if err != nil {
 			logFunc("telemetry: updatecheck.getAndMarshalRepositoriesJSON failed", "error", err)
 		}
@@ -494,7 +508,12 @@ func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 
 		r.CodeHostIntegrationUsage, err = getAndMarshalCodeHostIntegrationUsageJSON(ctx, db)
 		if err != nil {
-			logFunc("telemetry: updatecheck.getAndMarshalCodeMonitoringUsageJSON failed", "error", err)
+			logFunc("telemetry: updatecheck.getAndMarshalCodeHostIntegrationUsageJSON failed", "error", err)
+		}
+
+		r.IDEExtensionsUsage, err = getAndMarshalIDEExtensionsUsageJSON(ctx, db)
+		if err != nil {
+			logFunc("telemetry: updatecheck.getAndMarshalIDEExtensionsUsageJSON failed", "error", err)
 		}
 
 		r.CodeHostVersions, err = getAndMarshalCodeHostVersionsJSON(ctx, db)
@@ -545,7 +564,7 @@ func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 
 		wg.Wait()
 	} else {
-		r.Repositories, err = getAndMarshalRepositoriesJSON(ctx)
+		r.Repositories, err = getAndMarshalRepositoriesJSON(ctx, db)
 		if err != nil {
 			logFunc("telemetry: updatecheck.getAndMarshalRepositoriesJSON failed", "error", err)
 		}

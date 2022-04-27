@@ -1,5 +1,6 @@
+import { FunctionComponent } from 'react'
+
 import { upperFirst } from 'lodash'
-import React, { FunctionComponent } from 'react'
 
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 

@@ -10,7 +10,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"os"
 	"strconv"
 	"strings"
 
@@ -20,23 +19,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type featureFlags struct {
-	// StatelessBuild triggers a stateless build by overriding the default queue to send the build on the stateles
-	// agents and forces a MainDryRun type build to avoid impacting normal builds.
-	//
-	// It is meant to test the stateless builds without any side effects.
-	StatelessBuild bool
-}
-
-// FeatureFlags are for experimenting with CI pipeline features. Use sparingly!
-var FeatureFlags = featureFlags{
-	StatelessBuild: os.Getenv("CI_FEATURE_FLAG_STATELESS") == "true",
-}
-
 type Pipeline struct {
 	Env    map[string]string `json:"env,omitempty"`
-	Steps  []interface{}     `json:"steps"`
 	Notify []slackNotifier   `json:"notify,omitempty"`
+
+	// Steps are *Step or *Pipeline with Group set.
+	Steps []interface{} `json:"steps"`
 
 	// Group, if provided, indicates this Pipeline is actually a group of steps.
 	// See: https://buildkite.com/docs/pipelines/group-step
@@ -53,14 +41,23 @@ type Pipeline struct {
 
 var nonAlphaNumeric = regexp.MustCompile("[^a-zA-Z0-9]+")
 
-func (p *Pipeline) EnsureUniqueKeys() error {
-	occurences := map[string]int{}
+// EnsureUniqueKeys validates generated pipeline have unique keys, and provides a key
+// based on the label if not available.
+func (p *Pipeline) EnsureUniqueKeys(occurences map[string]int) error {
 	for _, step := range p.Steps {
 		if s, ok := step.(*Step); ok {
 			if s.Key == "" {
 				s.Key = nonAlphaNumeric.ReplaceAllString(s.Label, "")
 			}
 			occurences[s.Key] += 1
+		}
+		if p, ok := step.(*Pipeline); ok {
+			if p.Group.Key == "" || p.Group.Group == "" {
+				return errors.Newf("group %+v must have key and group name", p)
+			}
+			if err := p.EnsureUniqueKeys(occurences); err != nil {
+				return err
+			}
 		}
 	}
 	for k, count := range occurences {
@@ -138,12 +135,13 @@ type Step struct {
 }
 
 type RetryOptions struct {
-	Automatic *AutomaticRetryOptions `json:"automatic,omitempty"`
-	Manual    *ManualRetryOptions    `json:"manual,omitempty"`
+	Automatic []AutomaticRetryOptions `json:"automatic,omitempty"`
+	Manual    *ManualRetryOptions     `json:"manual,omitempty"`
 }
 
 type AutomaticRetryOptions struct {
-	Limit int `json:"limit,omitempty"`
+	Limit      int         `json:"limit,omitempty"`
+	ExitStatus interface{} `json:"exit_status,omitempty"`
 }
 
 type ManualRetryOptions struct {
@@ -450,11 +448,36 @@ func SoftFail(exitCodes ...int) StepOpt {
 // Docs: https://buildkite.com/docs/pipelines/command-step#automatic-retry-attributes
 func AutomaticRetry(limit int) StepOpt {
 	return func(step *Step) {
-		step.Retry = &RetryOptions{
-			Automatic: &AutomaticRetryOptions{
-				Limit: limit,
-			},
+		if step.Retry == nil {
+			step.Retry = &RetryOptions{}
 		}
+		if step.Retry.Automatic == nil {
+			step.Retry.Automatic = []AutomaticRetryOptions{}
+		}
+		step.Retry.Automatic = append(step.Retry.Automatic, AutomaticRetryOptions{
+			Limit:      limit,
+			ExitStatus: "*",
+		})
+	}
+}
+
+// AutomaticRetryStatus enables automatic retry for the step with the number of times this job can be retried
+// when the given exitStatus is encountered.
+//
+// The maximum value this can be set to is 10.
+// Docs: https://buildkite.com/docs/pipelines/command-step#automatic-retry-attributes
+func AutomaticRetryStatus(limit int, exitStatus int) StepOpt {
+	return func(step *Step) {
+		if step.Retry == nil {
+			step.Retry = &RetryOptions{}
+		}
+		if step.Retry.Automatic == nil {
+			step.Retry.Automatic = []AutomaticRetryOptions{}
+		}
+		step.Retry.Automatic = append(step.Retry.Automatic, AutomaticRetryOptions{
+			Limit:      limit,
+			ExitStatus: strconv.Itoa(exitStatus),
+		})
 	}
 }
 

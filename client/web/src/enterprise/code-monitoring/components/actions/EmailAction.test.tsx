@@ -1,7 +1,6 @@
 import { MockedResponse } from '@apollo/client/testing'
 import { render } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import React from 'react'
 import sinon from 'sinon'
 
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
@@ -36,6 +35,27 @@ describe('EmailAction', () => {
             __typename: 'MonitorEmail',
             enabled: true,
             includeResults: false,
+            id: '',
+            recipients: { nodes: [{ id: 'userID' }] },
+        })
+    })
+
+    test('enable include results', () => {
+        const setActionSpy = sinon.spy()
+        const { getByTestId } = render(
+            <MockedTestProvider>
+                <EmailAction {...props} setAction={setActionSpy} />
+            </MockedTestProvider>
+        )
+
+        userEvent.click(getByTestId('form-action-toggle-email'))
+        userEvent.click(getByTestId('include-results-toggle-email'))
+        userEvent.click(getByTestId('submit-action-email'))
+
+        sinon.assert.calledOnceWithExactly(setActionSpy, {
+            __typename: 'MonitorEmail',
+            enabled: true,
+            includeResults: true,
             id: '',
             recipients: { nodes: [{ id: 'userID' }] },
         })

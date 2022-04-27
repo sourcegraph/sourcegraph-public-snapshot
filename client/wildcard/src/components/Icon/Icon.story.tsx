@@ -1,7 +1,6 @@
 import { mdiCheck } from '@mdi/js'
 import { Story, Meta } from '@storybook/react'
 import CheckIcon from 'mdi-react/CheckIcon'
-import React from 'react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'

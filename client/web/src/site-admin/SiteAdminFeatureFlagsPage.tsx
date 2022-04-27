@@ -1,6 +1,7 @@
+import React, { useCallback, useMemo } from 'react'
+
 import classNames from 'classnames'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import React, { useCallback, useMemo } from 'react'
 import { RouteComponentProps, useHistory } from 'react-router'
 import { of, Observable, forkJoin } from 'rxjs'
 import { catchError, map, mergeMap } from 'rxjs/operators'
@@ -15,6 +16,7 @@ import { PageTitle } from '../components/PageTitle'
 import { FeatureFlagFields, SearchPatternType, SearchVersion } from '../graphql-operations'
 
 import { fetchFeatureFlags as defaultFetchFeatureFlags } from './backend'
+
 import styles from './SiteAdminFeatureFlagsPage.module.scss'
 
 interface SiteAdminFeatureFlagsPageProps extends RouteComponentProps<{}>, TelemetryProps {

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+
 import { of, from, Subject, ObservableInput, Observable, asyncScheduler, scheduled, Unsubscribable } from 'rxjs'
 import { mergeMap, map, takeUntil, take, catchError, takeWhile, switchMap, publish, refCount } from 'rxjs/operators'
 
@@ -29,7 +30,23 @@ export interface FetchResult<T> {
     loading: boolean
 }
 
-const MAX_PARALLEL_QUERIES = 2
+export enum LazyQueryStatus {
+    Loading,
+    Data,
+    Error,
+}
+
+export type LazyQueryState<T> =
+    | { status: LazyQueryStatus.Loading }
+    | { status: LazyQueryStatus.Data; data: T }
+    | { status: LazyQueryStatus.Error; error: ErrorLike }
+
+export interface LazyQueryResult<T> {
+    state: LazyQueryState<T>
+    query: (request: () => ObservableInput<T>) => Unsubscribable
+}
+
+const MAX_PARALLEL_QUERIES = 3
 
 /**
  * Parallel requests hooks factory. This factory/function generates special
@@ -74,7 +91,7 @@ export function createUseParallelRequestsHook<T>({ maxRequests } = { maxRequests
                             takeUntil(cancel),
                             map(payload => ({ payload, onComplete })),
                             // In order to close observable and free up space for other queued requests
-                            // in merge map queue. Consider to move this into consumers request calls
+                            // in merge map queue. Consider moving this into consumers request calls
                             take(1),
                             catchError(error =>
                                 of({
@@ -143,12 +160,8 @@ export function createUseParallelRequestsHook<T>({ maxRequests } = { maxRequests
          * This provides query methods that allows to you run your request in parallel with
          * other request that have been made with useParallelRequests request calls.
          */
-        lazyQuery: <D>(): FetchResult<D> & { query: (request: () => ObservableInput<D>) => Unsubscribable } => {
-            const [state, setState] = useState<FetchResult<D>>({
-                data: undefined,
-                error: undefined,
-                loading: true,
-            })
+        lazyQuery: <D>(): LazyQueryResult<D> => {
+            const [state, setState] = useState<LazyQueryState<D>>({ status: LazyQueryStatus.Loading })
 
             const localRequestPool = useRef<Request<D>[]>([])
 
@@ -165,7 +178,7 @@ export function createUseParallelRequestsHook<T>({ maxRequests } = { maxRequests
             const query = useCallback((request: () => ObservableInput<D>) => {
                 const cancelStream = new Subject<boolean>()
 
-                setState({ data: undefined, loading: true, error: undefined })
+                setState({ status: LazyQueryStatus.Loading })
 
                 const event: Request<D> = {
                     request,
@@ -175,10 +188,10 @@ export function createUseParallelRequestsHook<T>({ maxRequests } = { maxRequests
                         localRequestPool.current = localRequestPool.current.filter(request => request !== event)
 
                         if (isErrorLike(result)) {
-                            return setState({ data: undefined, loading: false, error: result })
+                            return setState({ status: LazyQueryStatus.Error, error: result })
                         }
 
-                        setState({ data: result, loading: false, error: undefined })
+                        setState({ status: LazyQueryStatus.Data, data: result })
                     },
                 }
 
@@ -198,7 +211,7 @@ export function createUseParallelRequestsHook<T>({ maxRequests } = { maxRequests
                 }
             }, [])
 
-            return { ...state, query }
+            return { state, query }
         },
     }
 }

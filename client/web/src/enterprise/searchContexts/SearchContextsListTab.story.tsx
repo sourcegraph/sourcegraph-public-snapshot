@@ -1,6 +1,5 @@
 import { storiesOf } from '@storybook/react'
 import { subDays } from 'date-fns'
-import React from 'react'
 import { Observable, of } from 'rxjs'
 
 import { ListSearchContextsResult } from '@sourcegraph/search'

@@ -1,5 +1,3 @@
-import * as React from 'react'
-
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { LayoutRouteProps } from '../routes'
@@ -26,6 +24,7 @@ const StanfordCommunitySearchContextPage = lazyComponent(
     'StanfordCommunitySearchContextPage'
 )
 const CncfCommunitySearchContextPage = lazyComponent(() => import('./cncf'), 'CncfCommunitySearchContextPage')
+const JuliaCommunitySearchContextPage = lazyComponent(() => import('./Julia'), 'JuliaCommunitySearchContextPage')
 
 // Hack! Hardcode these routes into cmd/frontend/internal/app/ui/router.go
 export const communitySearchContextsRoutes: readonly LayoutRouteProps<any>[] = [
@@ -62,6 +61,11 @@ export const communitySearchContextsRoutes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/cncf',
         render: props => <CncfCommunitySearchContextPage {...props} />,
+        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
+    },
+    {
+        path: '/julia',
+        render: props => <JuliaCommunitySearchContextPage {...props} />,
         condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
     },
 ]

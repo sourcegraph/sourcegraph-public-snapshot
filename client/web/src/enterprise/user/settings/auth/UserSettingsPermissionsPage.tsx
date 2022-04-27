@@ -1,5 +1,6 @@
-import * as H from 'history'
 import React, { useEffect, useMemo } from 'react'
+
+import * as H from 'history'
 
 import { Container, PageHeader, LoadingSpinner, useObservable, Alert, Link } from '@sourcegraph/wildcard'
 
@@ -10,6 +11,7 @@ import { ActionContainer } from '../../../../repo/settings/components/ActionCont
 import { eventLogger } from '../../../../tracking/eventLogger'
 
 import { scheduleUserPermissionsSync, userPermissionsInfo } from './backend'
+
 import styles from './UserSettingsPermissionsPage.module.scss'
 
 /**

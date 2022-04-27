@@ -1,13 +1,14 @@
 import 'focus-visible'
 
+import * as React from 'react'
+
 import { ApolloProvider } from '@apollo/client'
 import { ShortcutProvider } from '@slimsag/react-shortcuts'
 import { createBrowserHistory } from 'history'
 import ServerIcon from 'mdi-react/ServerIcon'
-import * as React from 'react'
 import { Route, Router } from 'react-router'
 import { ScrollManager } from 'react-scroll-manager'
-import { combineLatest, from, Subscription, fromEvent, of, Subject } from 'rxjs'
+import { combineLatest, from, Subscription, fromEvent, of, Subject, Observable } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 import * as uuid from 'uuid'
 
@@ -30,6 +31,8 @@ import {
 import { getEnabledExtensions } from '@sourcegraph/shared/src/api/client/enabledExtensions'
 import { preloadExtensions } from '@sourcegraph/shared/src/api/client/preload'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
+import { fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
+import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import {
     Controller as ExtensionsController,
     createController as createExtensionsController,
@@ -45,6 +48,7 @@ import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TemporarySettingsProvider } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'
 import { TemporarySettingsStorage } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
+import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
 import {
     // This is the root Tooltip usage
     // eslint-disable-next-line no-restricted-imports
@@ -78,7 +82,6 @@ import { blockToGQLInput } from './notebooks/serialize'
 import { OrgAreaRoute } from './org/area/OrgArea'
 import { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
 import { createPlatformContext } from './platform/context'
-import { fetchHighlightedFileLineRanges } from './repo/backend'
 import { RepoContainerRoute } from './repo/RepoContainer'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
 import { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
@@ -87,14 +90,12 @@ import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import { LayoutRouteProps } from './routes'
 import { PageRoutes } from './routes.constants'
 import { parseSearchURL } from './search'
-import { fetchSavedSearches, fetchRecentSearches, fetchRecentFileViews, fetchCollaborators } from './search/backend'
+import { NotepadContainer } from './search/Notepad'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
-import { SearchStack } from './search/SearchStack'
 import { listUserRepositories } from './site-admin/backend'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { CodeHostScopeProvider } from './site/CodeHostScopeAlerts/CodeHostScopeProvider'
-import styles from './SourcegraphWebApp.module.scss'
 import {
     setQueryStateFromSettings,
     setQueryStateFromURL,
@@ -102,6 +103,7 @@ import {
     getExperimentalFeatures,
     useNavbarQueryState,
 } from './stores'
+import { BrowserExtensionTracker } from './tracking/BrowserExtensionTracker'
 import { eventLogger } from './tracking/eventLogger'
 import { withActivation } from './tracking/withActivation'
 import { UserAreaRoute } from './user/area/UserArea'
@@ -109,9 +111,10 @@ import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 import { UserSessionStores } from './UserSessionStores'
-import { globbingEnabledFromSettings } from './util/globbing'
 import { observeLocation } from './util/location'
 import { siteSubjectNoAdmin, viewerSubjectFromSettings } from './util/settings'
+
+import styles from './SourcegraphWebApp.module.scss'
 
 export interface SourcegraphWebAppProps
     extends CodeIntelligenceProps,
@@ -257,7 +260,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                 })
             })
             .catch(error => {
-                console.error('Error initalizing GraphQL client', error)
+                console.error('Error initializing GraphQL client', error)
             })
 
         this.subscriptions.add(
@@ -331,9 +334,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
 
         this.subscriptions.add(
             fetchFeatureFlags().subscribe(event => {
-                // Disabling linter here because this is not yet used anywhere.
-                // This can be re-enabled as soon as feature flags are leveraged.
-                // eslint-disable-next-line react/no-unused-state
                 this.setState({ featureFlags: event })
             })
         )
@@ -424,7 +424,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                                 }
                                                                 // Search query
                                                                 fetchHighlightedFileLineRanges={
-                                                                    fetchHighlightedFileLineRanges
+                                                                    this.fetchHighlightedFileLineRanges
                                                                 }
                                                                 // Extensions
                                                                 platformContext={this.platformContext}
@@ -461,10 +461,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                                     this.state.defaultSearchContextSpec
                                                                 }
                                                                 globbing={this.state.globbing}
-                                                                fetchSavedSearches={fetchSavedSearches}
-                                                                fetchRecentSearches={fetchRecentSearches}
-                                                                fetchCollaborators={fetchCollaborators}
-                                                                fetchRecentFileViews={fetchRecentFileViews}
                                                                 streamSearch={aggregateStreamingSearch}
                                                                 onUserExternalServicesOrRepositoriesUpdate={
                                                                     this.onUserExternalServicesOrRepositoriesUpdate
@@ -477,8 +473,9 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                         </CodeHostScopeProvider>
                                                     )}
                                                 />
-                                                <SearchStack onCreateNotebook={this.onCreateNotebook} />
+                                                <NotepadContainer onCreateNotebook={this.onCreateNotebook} />
                                                 <IdeExtensionTracker />
+                                                <BrowserExtensionTracker />
                                             </Router>
                                         </ScrollManager>
                                         <Tooltip key={1} />
@@ -565,4 +562,9 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             })
         )
     }
+    private fetchHighlightedFileLineRanges = (
+        parameters: FetchFileParameters,
+        force?: boolean | undefined
+    ): Observable<string[][]> =>
+        fetchHighlightedFileLineRanges({ ...parameters, platformContext: this.platformContext }, force)
 }

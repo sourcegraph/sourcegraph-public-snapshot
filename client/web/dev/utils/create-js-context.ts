@@ -1,5 +1,6 @@
 import { SourcegraphContext } from '../../src/jscontext'
 
+import { ENVIRONMENT_CONFIG } from './environment-config'
 import { getSiteConfig } from './get-site-config'
 
 // TODO: share with `client/web/src/integration/jscontext` which is not included into `tsconfig.json` now.
@@ -49,7 +50,7 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
         },
         siteID: 'TestSiteID',
         siteGQLID: 'TestGQLSiteID',
-        sourcegraphDotComMode: true,
+        sourcegraphDotComMode: ENVIRONMENT_CONFIG.SOURCEGRAPHDOTCOM_MODE,
         githubAppCloudSlug: 'TestApp',
         githubAppCloudClientID: 'TestClientID',
         userAgentIsBot: false,

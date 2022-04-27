@@ -1,7 +1,8 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
-import React from 'react'
 
+// eslint-disable-next-line no-restricted-imports
 import { ExtensionRadialGradientIcon } from '@sourcegraph/web/src/components/CtaIcons'
+// eslint-disable-next-line no-restricted-imports
 import { WebStory } from '@sourcegraph/web/src/components/WebStory'
 
 import { CtaAlert } from './CtaAlert'

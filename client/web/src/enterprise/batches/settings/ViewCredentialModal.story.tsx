@@ -1,6 +1,5 @@
 import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
-import React from 'react'
 
 import { WebStory } from '../../../components/WebStory'
 import { BatchChangesCredentialFields, ExternalServiceKind } from '../../../graphql-operations'
@@ -33,6 +32,7 @@ add('View', () => (
                     externalServiceKind: ExternalServiceKind.GITHUB,
                     externalServiceURL: 'https://github.com/',
                     requiresSSH: true,
+                    requiresUsername: false,
                 }}
                 credential={credential}
                 onClose={noop}

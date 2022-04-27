@@ -1,5 +1,6 @@
-import { isEqual } from 'lodash'
 import { useEffect, useRef } from 'react'
+
+import { isEqual } from 'lodash'
 
 import { isErrorLike } from '@sourcegraph/common'
 

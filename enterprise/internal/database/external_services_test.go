@@ -216,21 +216,6 @@ func TestValidateExternalServiceConfig(t *testing.T) {
 		},
 		{
 			kind:   extsvc.KindGitolite,
-			desc:   "phabricator without url nor callsignCommand",
-			config: `{"phabricator": {}}`,
-			assert: includes(
-				"phabricator: url is required",
-				"phabricator: callsignCommand is required",
-			),
-		},
-		{
-			kind:   extsvc.KindGitolite,
-			desc:   "phabricator with invalid url",
-			config: `{"phabricator": {"url": "not-a-url"}}`,
-			assert: includes("phabricator.url: Does not match format 'uri'"),
-		},
-		{
-			kind:   extsvc.KindGitolite,
 			desc:   "invalid empty exclude",
 			config: `{"exclude": []}`,
 			assert: includes(`exclude: Array must have at least 1 items`),

@@ -1,3 +1,5 @@
+import React, { useCallback, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import DomainIcon from 'mdi-react/DomainIcon'
 import DotsHorizontalIcon from 'mdi-react/DotsHorizontalIcon'
@@ -5,7 +7,6 @@ import LockIcon from 'mdi-react/LockIcon'
 import StarIcon from 'mdi-react/StarIcon'
 import StarOutlineIcon from 'mdi-react/StarOutlineIcon'
 import WebIcon from 'mdi-react/WebIcon'
-import React, { useCallback, useMemo, useState } from 'react'
 import { Observable } from 'rxjs'
 import { catchError, switchMap, tap } from 'rxjs/operators'
 
@@ -20,6 +21,7 @@ import {
     MenuList,
     MenuHeader,
     Position,
+    Icon,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -32,9 +34,10 @@ import {
 } from '../backend'
 
 import { DeleteNotebookModal } from './DeleteNotebookModal'
-import styles from './NotebookPageHeaderActions.module.scss'
 import { ShareOption } from './NotebookShareOptionsDropdown'
 import { ShareNotebookModal } from './ShareNotebookModal'
+
+import styles from './NotebookPageHeaderActions.module.scss'
 
 export interface NotebookPageHeaderActionsProps extends TelemetryProps {
     isSourcegraphDotCom: boolean
@@ -156,7 +159,7 @@ const NotebookSettingsDropdown: React.FunctionComponent<NotebookSettingsDropdown
     return (
         <>
             <Menu>
-                <MenuButton outline={true}>
+                <MenuButton outline={true} aria-label="Notebook action">
                     <DotsHorizontalIcon />
                 </MenuButton>
                 <MenuList position={Position.bottomEnd}>
@@ -241,17 +244,15 @@ const NotebookStarsButton: React.FunctionComponent<NotebookStarsButtonProps> = (
 
     return (
         <Button
-            className="d-flex align-items-center"
+            className="d-flex align-items-center pl-0"
             outline={true}
             disabled={disabled}
             onClick={() => onStarToggle(viewerHasStarred)}
         >
             {viewerHasStarred ? (
-                <StarIcon
-                    className={classNames('icon-inline', styles.notebookStarIcon, styles.notebookStarIconActive)}
-                />
+                <Icon className={classNames(styles.notebookStarIcon, styles.notebookStarIconActive)} as={StarIcon} />
             ) : (
-                <StarOutlineIcon className={classNames('icon-inline', styles.notebookStarIcon)} />
+                <Icon className={styles.notebookStarIcon} as={StarOutlineIcon} />
             )}
             <span className="ml-1">{starsCount}</span>
         </Button>

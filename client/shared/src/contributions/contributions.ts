@@ -1,7 +1,8 @@
 import { sortBy } from 'lodash'
 
+import { ContributableMenu, Contributions, Evaluated } from '@sourcegraph/client-api'
+
 import { ActionItemAction } from '../actions/ActionItem'
-import { ContributableMenu, Contributions, Evaluated } from '../api/protocol'
 
 const MENU_ITEMS_PROP_SORT_ORDER = ['group', 'id']
 

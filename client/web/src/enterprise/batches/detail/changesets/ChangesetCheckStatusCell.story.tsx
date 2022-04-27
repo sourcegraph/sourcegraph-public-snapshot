@@ -1,6 +1,5 @@
 import { storiesOf } from '@storybook/react'
 import { capitalize } from 'lodash'
-import React from 'react'
 
 import { WebStory } from '../../../../components/WebStory'
 import { ChangesetCheckState } from '../../../../graphql-operations'

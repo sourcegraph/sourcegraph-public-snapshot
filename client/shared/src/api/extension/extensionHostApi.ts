@@ -12,6 +12,12 @@ import {
 } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 
+import {
+    fromHoverMerged,
+    TextDocumentIdentifier,
+    ContributableViewContainer,
+    TextDocumentPositionParameters,
+} from '@sourcegraph/client-api'
 import { LOADING, MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import {
     allOf,
@@ -24,14 +30,12 @@ import {
     property,
 } from '@sourcegraph/common'
 import * as clientType from '@sourcegraph/extension-api-types'
-import { parseRepoURI } from '@sourcegraph/shared/src/util/url'
 import { Context } from '@sourcegraph/template-parser'
 
 import { getModeFromPath } from '../../languages'
-import { fromHoverMerged } from '../client/types/hover'
-import { match, TextDocumentIdentifier } from '../client/types/textDocument'
+import { parseRepoURI } from '../../util/url'
+import { match } from '../client/types/textDocument'
 import { FlatExtensionHostAPI } from '../contract'
-import { ContributableViewContainer, TextDocumentPositionParameters } from '../protocol'
 import { ExtensionViewer, ViewerId, ViewerWithPartialModel } from '../viewerTypes'
 
 import { ExtensionCodeEditor } from './api/codeEditor'

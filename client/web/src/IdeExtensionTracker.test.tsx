@@ -1,5 +1,4 @@
 import { cleanup, render } from '@testing-library/react'
-import React from 'react'
 import { MemoryRouter } from 'react-router-dom'
 
 import { TemporarySettings } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
@@ -20,7 +19,7 @@ describe('IdeExtensionTracker', () => {
             'vscode',
         ],
         [
-            'https://sourcegraph.com/sign-up?editor=vscode&utm_medium=VSCIDE&utm_source=sidebar&utm_campaign=vsce-sign-up&utm_content=sign-up',
+            'https://sourcegraph.com/sign-up?editor=vscode&utm_medium=VSCODE&utm_source=sidebar&utm_campaign=vsce-sign-up&utm_content=sign-up',
             'vscode',
         ],
         ['https://sourcegraph.com/?something=different', null],

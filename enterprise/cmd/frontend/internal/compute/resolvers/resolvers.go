@@ -198,7 +198,7 @@ func toResultResolverList(ctx context.Context, cmd compute.Command, matches []re
 
 	results := make([]gql.ComputeResultResolver, 0, len(matches))
 	for _, m := range matches {
-		computeResult, err := cmd.Run(ctx, m)
+		computeResult, err := cmd.Run(ctx, db, m)
 		if err != nil {
 			return nil, err
 		}

@@ -1,5 +1,4 @@
 import { cleanup, within, fireEvent } from '@testing-library/react'
-import React from 'react'
 
 import { RevisionsProps } from '@sourcegraph/search-ui'
 import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/shared/src/testing'

@@ -8,8 +8,10 @@ export const createJITMigrationToGQLInsightMetadataFixture = (options: InsightOp
     __typename: 'InsightView',
     id: '001',
     dashboardReferenceCount: 0,
+    isFrozen: false,
     appliedFilters: {
         __typename: 'InsightViewFilters',
+        searchContexts: [],
         includeRepoRegex: '',
         excludeRepoRegex: '',
     },
@@ -71,10 +73,12 @@ export const STORYBOOK_GROWTH_INSIGHT_METADATA_FIXTURE: InsightViewNode = {
     __typename: 'InsightView',
     id: '002',
     dashboardReferenceCount: 0,
+    isFrozen: false,
     appliedFilters: {
         __typename: 'InsightViewFilters',
         includeRepoRegex: '',
         excludeRepoRegex: '',
+        searchContexts: [],
     },
     presentation: {
         __typename: 'LineChartInsightViewPresentation',
@@ -112,10 +116,12 @@ export const SOURCEGRAPH_LANG_STATS_INSIGHT_METADATA_FIXTURE: InsightViewNode = 
     __typename: 'InsightView',
     id: '003',
     dashboardReferenceCount: 0,
+    isFrozen: false,
     appliedFilters: {
         __typename: 'InsightViewFilters',
         includeRepoRegex: '',
         excludeRepoRegex: '',
+        searchContexts: [],
     },
     presentation: {
         __typename: 'PieChartInsightViewPresentation',

@@ -48,6 +48,7 @@ func TestGetUploadByID(t *testing.T) {
 		RepositoryID:   123,
 		RepositoryName: "n-123",
 		Indexer:        "lsif-go",
+		IndexerVersion: "1.2.3",
 		NumParts:       1,
 		UploadedParts:  []int{},
 		Rank:           nil,
@@ -307,6 +308,9 @@ func TestGetUploads(t *testing.T) {
 		Upload{ID: 12, Commit: makeCommit(3331), UploadedAt: t1, FinishedAt: &t1, Root: "sub1/", State: "deleted"},
 		Upload{ID: 13, UploadedAt: t2, FinishedAt: &t1, State: "deleted", FailureMessage: &failureMessage, Indexer: "lsif-tsc"},
 		Upload{ID: 14, Commit: makeCommit(3333), UploadedAt: t3, FinishedAt: &t2, Root: "sub2/", State: "deleted"},
+
+		// deleted repo
+		Upload{ID: 15, Commit: makeCommit(3334), UploadedAt: t4, State: "deleted", RepositoryID: 53, RepositoryName: "DELETED-barfoo"},
 	)
 	insertVisibleAtTip(t, db, 50, 2, 5, 7, 8)
 
@@ -331,17 +335,18 @@ func TestGetUploads(t *testing.T) {
 	}
 
 	type testCase struct {
-		repositoryID   int
-		state          string
-		term           string
-		visibleAtTip   bool
-		dependencyOf   int
-		dependentOf    int
-		uploadedBefore *time.Time
-		uploadedAfter  *time.Time
-		inCommitGraph  bool
-		oldestFirst    bool
-		expectedIDs    []int
+		repositoryID     int
+		state            string
+		term             string
+		visibleAtTip     bool
+		dependencyOf     int
+		dependentOf      int
+		uploadedBefore   *time.Time
+		uploadedAfter    *time.Time
+		inCommitGraph    bool
+		oldestFirst      bool
+		allowDeletedRepo bool
+		expectedIDs      []int
 	}
 	testCases := []testCase{
 		{expectedIDs: []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}},
@@ -367,6 +372,7 @@ func TestGetUploads(t *testing.T) {
 		{dependentOf: 10, expectedIDs: []int{}},
 		{dependencyOf: 11, expectedIDs: []int{8}},
 		{dependentOf: 11, expectedIDs: []int{}},
+		{allowDeletedRepo: true, state: "deleted", expectedIDs: []int{12, 13, 14, 15}},
 	}
 
 	runTest := func(testCase testCase, lo, hi int) (errors int) {
@@ -383,18 +389,19 @@ func TestGetUploads(t *testing.T) {
 
 		t.Run(name, func(t *testing.T) {
 			uploads, totalCount, err := store.GetUploads(ctx, GetUploadsOptions{
-				RepositoryID:   testCase.repositoryID,
-				State:          testCase.state,
-				Term:           testCase.term,
-				VisibleAtTip:   testCase.visibleAtTip,
-				DependencyOf:   testCase.dependencyOf,
-				DependentOf:    testCase.dependentOf,
-				UploadedBefore: testCase.uploadedBefore,
-				UploadedAfter:  testCase.uploadedAfter,
-				InCommitGraph:  testCase.inCommitGraph,
-				OldestFirst:    testCase.oldestFirst,
-				Limit:          3,
-				Offset:         lo,
+				RepositoryID:     testCase.repositoryID,
+				State:            testCase.state,
+				Term:             testCase.term,
+				VisibleAtTip:     testCase.visibleAtTip,
+				DependencyOf:     testCase.dependencyOf,
+				DependentOf:      testCase.dependentOf,
+				UploadedBefore:   testCase.uploadedBefore,
+				UploadedAfter:    testCase.uploadedAfter,
+				InCommitGraph:    testCase.inCommitGraph,
+				OldestFirst:      testCase.oldestFirst,
+				AllowDeletedRepo: testCase.allowDeletedRepo,
+				Limit:            3,
+				Offset:           lo,
 			})
 			if err != nil {
 				t.Fatalf("unexpected error getting uploads for repo: %s", err)
@@ -410,7 +417,7 @@ func TestGetUploads(t *testing.T) {
 					ids = append(ids, upload.ID)
 				}
 				if diff := cmp.Diff(testCase.expectedIDs[lo:hi], ids); diff != "" {
-					t.Errorf("unexpected upload ids at offset %d (-want +got):\n%s", lo, diff)
+					t.Errorf("unexpected upload ids at offset %d-%d (-want +got):\n%s", lo, hi, diff)
 					errors++
 				}
 			}
@@ -1523,5 +1530,94 @@ func TestUpdateCommitedAt(t *testing.T) {
 	}
 	if diff := cmp.Diff([]time.Time{t3, t4, t1, t2}, commitDates); diff != "" {
 		t.Errorf("unexpected commit dates(-want +got):\n%s", diff)
+	}
+}
+
+func TestLastUploadRetentionScanForRepository(t *testing.T) {
+	db := dbtest.NewDB(t)
+	store := testStore(db)
+	ctx := context.Background()
+
+	ts, err := store.LastUploadRetentionScanForRepository(ctx, 50)
+	if err != nil {
+		t.Fatalf("unexpected error querying last upload retention scan: %s", err)
+	}
+	if ts != nil {
+		t.Fatalf("unexpected timestamp for repository. want=%v have=%s", nil, ts)
+	}
+
+	expected := time.Unix(1587396557, 0).UTC()
+
+	if err := store.Exec(ctx, sqlf.Sprintf(`
+		INSERT INTO lsif_last_retention_scan (repository_id, last_retention_scan_at)
+		VALUES (%s, %s)
+	`, 50, expected)); err != nil {
+		t.Fatalf("unexpected error inserting timestamp: %s", err)
+	}
+
+	ts, err = store.LastUploadRetentionScanForRepository(ctx, 50)
+	if err != nil {
+		t.Fatalf("unexpected error querying last upload retention scan: %s", err)
+	}
+	if ts == nil || !ts.Equal(expected) {
+		t.Fatalf("unexpected timestamp for repository. want=%s have=%s", expected, ts)
+	}
+}
+
+func TestRecentUploadsSummary(t *testing.T) {
+	db := dbtest.NewDB(t)
+	store := testStore(db)
+	ctx := context.Background()
+
+	t0 := time.Unix(1587396557, 0).UTC()
+	t1 := t0.Add(-time.Minute * 1)
+	t2 := t0.Add(-time.Minute * 2)
+	t3 := t0.Add(-time.Minute * 3)
+	t4 := t0.Add(-time.Minute * 4)
+	t5 := t0.Add(-time.Minute * 5)
+	t6 := t0.Add(-time.Minute * 6)
+	t7 := t0.Add(-time.Minute * 7)
+	t8 := t0.Add(-time.Minute * 8)
+	t9 := t0.Add(-time.Minute * 9)
+
+	r1 := 1
+	r2 := 2
+
+	addDefaults := func(upload Upload) Upload {
+		upload.Commit = makeCommit(upload.ID)
+		upload.RepositoryID = 50
+		upload.RepositoryName = "n-50"
+		upload.IndexerVersion = "latest"
+		upload.UploadedParts = []int{}
+		return upload
+	}
+
+	uploads := []Upload{
+		addDefaults(Upload{ID: 150, UploadedAt: t0, Root: "r1", Indexer: "i1", State: "queued", Rank: &r2}), // visible (group 1)
+		addDefaults(Upload{ID: 151, UploadedAt: t1, Root: "r1", Indexer: "i1", State: "queued", Rank: &r1}), // visible (group 1)
+		addDefaults(Upload{ID: 152, FinishedAt: &t2, Root: "r1", Indexer: "i1", State: "errored"}),          // visible (group 1)
+		addDefaults(Upload{ID: 153, FinishedAt: &t3, Root: "r1", Indexer: "i2", State: "completed"}),        // visible (group 2)
+		addDefaults(Upload{ID: 154, FinishedAt: &t4, Root: "r2", Indexer: "i1", State: "completed"}),        // visible (group 3)
+		addDefaults(Upload{ID: 155, FinishedAt: &t5, Root: "r2", Indexer: "i1", State: "errored"}),          // shadowed
+		addDefaults(Upload{ID: 156, FinishedAt: &t6, Root: "r2", Indexer: "i2", State: "completed"}),        // visible (group 4)
+		addDefaults(Upload{ID: 157, FinishedAt: &t7, Root: "r2", Indexer: "i2", State: "errored"}),          // shadowed
+		addDefaults(Upload{ID: 158, FinishedAt: &t8, Root: "r2", Indexer: "i2", State: "errored"}),          // shadowed
+		addDefaults(Upload{ID: 159, FinishedAt: &t9, Root: "r2", Indexer: "i2", State: "errored"}),          // shadowed
+	}
+	insertUploads(t, db, uploads...)
+
+	summary, err := store.RecentUploadsSummary(ctx, 50)
+	if err != nil {
+		t.Fatalf("unexpected error querying recent upload summary: %s", err)
+	}
+
+	expected := []UploadsWithRepositoryNamespace{
+		{Root: "r1", Indexer: "i1", Uploads: []Upload{uploads[0], uploads[1], uploads[2]}},
+		{Root: "r1", Indexer: "i2", Uploads: []Upload{uploads[3]}},
+		{Root: "r2", Indexer: "i1", Uploads: []Upload{uploads[4]}},
+		{Root: "r2", Indexer: "i2", Uploads: []Upload{uploads[6]}},
+	}
+	if diff := cmp.Diff(expected, summary); diff != "" {
+		t.Errorf("unexpected upload summary (-want +got):\n%s", diff)
 	}
 }

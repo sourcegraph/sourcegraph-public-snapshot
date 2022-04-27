@@ -3,12 +3,6 @@
     height: 100%;
 }
 
-.workspaces-list-container {
-    width: 40%;
-    max-width: 350px;
-    flex-shrink: 0;
-}
-
 .layout-container {
     // Default of min-height: auto when this element is display: flex allows children to
     // set its height. We want to keep this fixed and have children overflow: auto
@@ -16,6 +10,14 @@
     min-height: 0;
 }
 
-.workspaces-list {
-    overflow-y: auto;
+.workspaces-stat {
+    color: var(--text-muted);
+    margin: 0 0.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    svg {
+        height: 1.25rem;
+    }
 }

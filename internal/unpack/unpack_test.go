@@ -2,6 +2,7 @@ package unpack
 
 import (
 	"archive/tar"
+	"archive/zip"
 	"bytes"
 	"compress/gzip"
 	"fmt"
@@ -16,6 +17,24 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 )
+
+func TestTgzFallback(t *testing.T) {
+	tar := makeTar(t, &fileInfo{path: "foo", contents: "bar", mode: 0655})
+
+	t.Run("with-io-read-seeker", func(t *testing.T) {
+		err := Tgz(bytes.NewReader(tar), t.TempDir(), Opts{})
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	t.Run("without-io-read-seeker", func(t *testing.T) {
+		err := Tgz(bytes.NewBuffer(tar), t.TempDir(), Opts{})
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+}
 
 // TestUnpack tests general properties of all unpack functions.
 func TestUnpack(t *testing.T) {
@@ -38,6 +57,10 @@ func TestUnpack(t *testing.T) {
 	for _, p := range []packer{
 		{"tar", Tar, makeTar},
 		{"tgz", Tgz, makeTgz},
+		{"zip", func(r io.Reader, dir string, opts Opts) error {
+			br := r.(*bytes.Reader)
+			return Zip(br, int64(br.Len()), dir, opts)
+		}, makeZip},
 	} {
 		testCases = append(testCases, []testCase{
 			{
@@ -82,7 +105,7 @@ func TestUnpack(t *testing.T) {
 				packer: p,
 				name:   "illegal-absolute-link-path",
 				in: []*fileInfo{
-					{path: "passwd", link: "/etc/passwd", mode: fs.ModeSymlink},
+					{path: "passwd", contents: "/etc/passwd", mode: fs.ModeSymlink},
 				},
 				err: "/etc/passwd: illegal link path",
 			},
@@ -90,7 +113,7 @@ func TestUnpack(t *testing.T) {
 				packer: p,
 				name:   "illegal-relative-link-path",
 				in: []*fileInfo{
-					{path: "passwd", link: "../../etc/passwd", mode: fs.ModeSymlink},
+					{path: "passwd", contents: "../../etc/passwd", mode: fs.ModeSymlink},
 				},
 				err: "../../etc/passwd: illegal link path",
 			},
@@ -101,8 +124,8 @@ func TestUnpack(t *testing.T) {
 				in: []*fileInfo{
 					{path: "bar", contents: "bar", mode: 0655},
 					{path: "../../etc/passwd", contents: "foo", mode: 0655},
-					{path: "passwd", link: "../../etc/passwd", mode: fs.ModeSymlink},
-					{path: "passwd", link: "/etc/passwd", mode: fs.ModeSymlink},
+					{path: "passwd", contents: "../../etc/passwd", mode: fs.ModeSymlink},
+					{path: "passwd", contents: "/etc/passwd", mode: fs.ModeSymlink},
 				},
 				out: []*fileInfo{
 					{path: "bar", contents: "bar", mode: 0655, size: 3},
@@ -113,11 +136,29 @@ func TestUnpack(t *testing.T) {
 				name:   "symbolic-link",
 				in: []*fileInfo{
 					{path: "bar", contents: "bar", mode: 0655},
-					{path: "foo", link: "bar", mode: fs.ModeSymlink},
+					{path: "foo", contents: "bar", mode: fs.ModeSymlink},
 				},
 				out: []*fileInfo{
 					{path: "bar", contents: "bar", mode: 0655, size: 3},
-					{path: "foo", link: "bar", mode: fs.ModeSymlink},
+					{path: "foo", contents: "bar", mode: fs.ModeSymlink, size: 3},
+				},
+			},
+			{
+				packer: p,
+				name:   "dir-permissions",
+				in: []*fileInfo{
+					{path: "dir", mode: fs.ModeDir},
+					{path: "dir/file1", contents: "x", mode: 0000},
+					{path: "dir/file2", contents: "x", mode: 0200},
+					{path: "dir/file3", contents: "x", mode: 0400},
+					{path: "dir/file4", contents: "x", mode: 0600},
+				},
+				out: []*fileInfo{
+					{path: "dir", mode: fs.ModeDir | 0700},
+					{path: "dir/file1", contents: "x", mode: 0600, size: 1},
+					{path: "dir/file2", contents: "x", mode: 0600, size: 1},
+					{path: "dir/file3", contents: "x", mode: 0600, size: 1},
+					{path: "dir/file4", contents: "x", mode: 0600, size: 1},
 				},
 			},
 		}...)
@@ -137,6 +178,36 @@ func TestUnpack(t *testing.T) {
 			assertUnpack(t, dir, tc.out)
 		})
 	}
+}
+
+func makeZip(t testing.TB, files ...*fileInfo) []byte {
+	var buf bytes.Buffer
+	zw := zip.NewWriter(&buf)
+
+	for _, f := range files {
+		h, err := zip.FileInfoHeader(f)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		h.Name = f.path
+		fw, err := zw.CreateHeader(h)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(f.contents) > 0 {
+			if _, err := fw.Write([]byte(f.contents)); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+
+	if err := zw.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	return buf.Bytes()
 }
 
 func makeTgz(t testing.TB, files ...*fileInfo) []byte {
@@ -164,7 +235,7 @@ func makeTar(t testing.TB, files ...*fileInfo) []byte {
 			t.Fatal(err)
 		}
 
-		if len(f.contents) > 0 {
+		if len(f.contents) > 0 && f.mode.IsRegular() {
 			if _, err := tw.Write([]byte(f.contents)); err != nil {
 				t.Fatal(err)
 			}
@@ -215,10 +286,16 @@ type tarFile struct {
 func makeTarFiles(t testing.TB, fs ...*fileInfo) []*tarFile {
 	tfs := make([]*tarFile, 0, len(fs))
 	for _, f := range fs {
-		header, err := tar.FileInfoHeader(f, f.link)
+		link := ""
+		if f.mode&os.ModeSymlink != 0 {
+			link = f.contents
+		}
+
+		header, err := tar.FileInfoHeader(f, link)
 		if err != nil {
 			t.Fatal(err)
 		}
+
 		header.Name = f.path
 		tfs = append(tfs, &tarFile{Header: header, fileInfo: f})
 	}
@@ -227,7 +304,6 @@ func makeTarFiles(t testing.TB, fs ...*fileInfo) []*tarFile {
 
 type fileInfo struct {
 	path     string
-	link     string
 	mode     fs.FileMode
 	modtime  time.Time
 	contents string
@@ -242,19 +318,19 @@ func makeFileInfo(t testing.TB, dir, path string, d fs.DirEntry) *fileInfo {
 
 	var (
 		contents []byte
-		link     string
+		mode     = info.Mode()
 	)
 
-	mode := info.Mode()
 	if !d.IsDir() {
 		name := filepath.Join(dir, path)
 		if mode&fs.ModeSymlink != 0 {
-			link, err = os.Readlink(name)
+			link, err := os.Readlink(name)
 			if err != nil {
 				t.Fatal(err)
 			}
 			// Different OSes set different permissions in a symlink so we ignore them.
 			mode = fs.ModeSymlink
+			contents = []byte(link)
 		} else if contents, err = os.ReadFile(name); err != nil {
 			t.Fatal(err)
 		}
@@ -262,7 +338,6 @@ func makeFileInfo(t testing.TB, dir, path string, d fs.DirEntry) *fileInfo {
 
 	return &fileInfo{
 		path:     path,
-		link:     link,
 		mode:     mode,
 		modtime:  info.ModTime(),
 		contents: string(contents),

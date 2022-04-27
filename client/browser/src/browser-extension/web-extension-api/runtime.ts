@@ -19,7 +19,7 @@ export const background: BackgroundPageApi = {
     createBlobURL: messageSender('createBlobURL'),
     openOptionsPage: messageSender('openOptionsPage'),
     requestGraphQL: messageSender('requestGraphQL'),
-    notifyPrivateCloudError: messageSender('notifyPrivateCloudError'),
-    checkPrivateCloudError: messageSender('checkPrivateCloudError'),
+    notifyRepoSyncError: messageSender('notifyRepoSyncError'),
+    checkRepoSyncError: messageSender('checkRepoSyncError'),
     fetchCache: messageSender('fetchCache'),
 }

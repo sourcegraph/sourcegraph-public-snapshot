@@ -1,7 +1,6 @@
 import { storiesOf } from '@storybook/react'
 import isChromatic from 'chromatic/isChromatic'
 import { createMemoryHistory } from 'history'
-import React from 'react'
 import { ChartContent } from 'sourcegraph'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -11,6 +10,7 @@ import { LINE_CHART_CONTENT_MOCK, LINE_CHART_WITH_MANY_LINES } from '../../../..
 
 import { LineChartLayoutOrientation, LineChartSettingsContext } from './charts/line'
 import { ChartViewContent } from './ChartViewContent'
+
 import styles from './ChartViewContent.story.module.scss'
 
 const history = createMemoryHistory()
@@ -21,6 +21,7 @@ const commonProps = {
     viewID: '1',
     telemetryService: NOOP_TELEMETRY_SERVICE,
     className: styles.chart,
+    locked: false,
 }
 
 const { add } = storiesOf('web/ChartViewContent', module).addDecorator(story => (

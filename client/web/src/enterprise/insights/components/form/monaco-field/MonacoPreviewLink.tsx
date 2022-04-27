@@ -1,6 +1,7 @@
+import React, { useMemo } from 'react'
+
 import classNames from 'classnames'
 import LinkExternalIcon from 'mdi-react/OpenInNewIcon'
-import React, { useMemo } from 'react'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'

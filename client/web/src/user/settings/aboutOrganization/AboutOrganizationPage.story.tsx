@@ -1,8 +1,8 @@
 import { DecoratorFn, Meta } from '@storybook/react'
-import React from 'react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { WebStory } from '@sourcegraph/web/src/components/WebStory'
+
+import { WebStory } from '../../../components/WebStory'
 
 import { AboutOrganizationPage } from './AboutOrganizationPage'
 

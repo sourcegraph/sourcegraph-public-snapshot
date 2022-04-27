@@ -2,7 +2,6 @@ import { storiesOf } from '@storybook/react'
 import { parseISO } from 'date-fns'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
-import React from 'react'
 
 import { Timeline } from './Timeline'
 import { WebStory } from './WebStory'

@@ -1,14 +1,14 @@
-import classNames from 'classnames'
 import React, { useCallback, useMemo, useState } from 'react'
+
+import classNames from 'classnames'
 import { RouteComponentProps, useHistory } from 'react-router'
-import { Form } from 'reactstrap'
 import { Observable, of, throwError } from 'rxjs'
 import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators'
 
+import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { QueryState, SearchContextProps } from '@sourcegraph/search'
-import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
-import { LazyMonacoQueryInput } from '@sourcegraph/search-ui/src/input/LazyMonacoQueryInput'
+import { SyntaxHighlightedSearchQuery, LazyMonacoQueryInput } from '@sourcegraph/search-ui'
 import {
     Scalars,
     SearchContextInput,
@@ -19,7 +19,6 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { ISearchContext, ISearchContextRepositoryRevisionsInput } from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { ALLOW_NAVIGATION, AwayPrompt } from '@sourcegraph/web/src/components/AwayPrompt'
 import {
     Container,
     Button,
@@ -32,11 +31,12 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
+import { ALLOW_NAVIGATION, AwayPrompt } from '../../components/AwayPrompt'
+import { useExperimentalFeatures } from '../../stores'
 
 import { fetchRepositoriesByNames } from './backend'
 import { DeleteSearchContextModal } from './DeleteSearchContextModal'
 import { parseConfig } from './repositoryRevisionsConfigParser'
-import styles from './SearchContextForm.module.scss'
 import {
     getSelectedNamespace,
     getSelectedNamespaceFromUser,
@@ -45,6 +45,8 @@ import {
     SelectedNamespaceType,
 } from './SearchContextOwnerDropdown'
 import { SearchContextRepositoriesFormArea } from './SearchContextRepositoriesFormArea'
+
+import styles from './SearchContextForm.module.scss'
 
 const MAX_DESCRIPTION_LENGTH = 1024
 const MAX_NAME_LENGTH = 32
@@ -87,7 +89,12 @@ function getVisibilityRadioButtons(selectedNamespaceType: SelectedNamespaceType)
 function getSearchContextSpecPreview(selectedNamespace: SelectedNamespace, searchContextName: string): JSX.Element {
     return (
         <code className={styles.searchContextFormPreview} data-testid="search-context-preview">
-            <span className="search-filter-keyword">context:</span>
+            {/*
+                a11y-ignore
+                Rule: "color-contrast" (Elements must have sufficient color contrast)
+                GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
+            */}
+            <span className="search-filter-keyword a11y-ignore">context:</span>
             {selectedNamespace.name.length > 0 && (
                 <>
                     <span className="search-keyword">@</span>
@@ -142,6 +149,7 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
         platformContext,
     } = props
     const history = useHistory()
+    const editorComponent = useExperimentalFeatures(features => features.editor ?? 'monaco')
 
     const [name, setName] = useState(searchContext ? searchContext.name : '')
     const [description, setDescription] = useState(searchContext ? searchContext.description : '')
@@ -328,9 +336,12 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                         />
                     </div>
                     <div className="flex-1">
-                        <div className="mb-2">Context name</div>
+                        <div id="context-name-label" className="mb-2">
+                            Context name
+                        </div>
                         <input
                             className={classNames('w-100', 'form-control', styles.searchContextFormNameInput)}
+                            aria-labelledby="context-name-label"
                             data-testid="search-context-name-input"
                             value={name}
                             type="text"
@@ -436,13 +447,13 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                         />
                         <div className={styles.searchContextFormQuery} data-testid="search-context-dynamic-query">
                             <LazyMonacoQueryInput
+                                editorComponent={editorComponent}
                                 isLightTheme={props.isLightTheme}
                                 patternType={SearchPatternType.regexp}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
                                 caseSensitive={true}
                                 queryState={queryState}
                                 onChange={setQueryState}
-                                onSubmit={() => {}}
                                 globbing={false}
                                 preventNewLine={false}
                             />

@@ -1,5 +1,4 @@
 import { screen } from '@testing-library/react'
-import React from 'react'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'

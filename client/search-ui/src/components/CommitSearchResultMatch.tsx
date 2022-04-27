@@ -1,6 +1,7 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import { isEqual, range } from 'lodash'
-import React from 'react'
 import VisibilitySensor from 'react-visibility-sensor'
 import { combineLatest, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, switchMap } from 'rxjs/operators'

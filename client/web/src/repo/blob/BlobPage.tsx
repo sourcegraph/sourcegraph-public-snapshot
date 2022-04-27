@@ -1,8 +1,9 @@
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { Redirect } from 'react-router'
 import { Observable } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
@@ -27,11 +28,9 @@ import { PageTitle } from '../../components/PageTitle'
 import { render as renderLsifHtml } from '../../lsif/html'
 import { copyNotebook, CopyNotebookProps } from '../../notebooks/notebook'
 import { SearchStreamingProps } from '../../search'
-import { useSearchStack, useExperimentalFeatures } from '../../stores'
-import { getExperimentalFeatures } from '../../util/get-experimental-features'
+import { useNotepad, useExperimentalFeatures } from '../../stores'
 import { basename } from '../../util/path'
 import { toTreeURL } from '../../util/url'
-import { fetchRepository, resolveRevision } from '../backend'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { HoverThresholdProps } from '../RepoContainer'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
@@ -43,11 +42,12 @@ import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { getModeFromURL } from './actions/utils'
 import { fetchBlob } from './backend'
 import { Blob, BlobInfo } from './Blob'
-import styles from './BlobPage.module.scss'
 import { GoToRawAction } from './GoToRawAction'
 import { useBlobPanelViews } from './panel/BlobPanel'
 import { RenderedFile } from './RenderedFile'
 import { RenderedNotebookMarkdown, SEARCH_NOTEBOOK_FILE_EXTENSION } from './RenderedNotebookMarkdown'
+
+import styles from './BlobPage.module.scss'
 
 interface Props
     extends AbsoluteRepoFile,
@@ -88,8 +88,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
     useEffect(() => {
         props.telemetryService.logViewEvent('Blob', { repoName, filePath })
     }, [repoName, commitID, filePath, renderMode, props.telemetryService])
-
-    useSearchStack(
+    useNotepad(
         useMemo(
             () => ({
                 type: 'file',
@@ -131,9 +130,6 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
         }, [filePath, revision, repoName, repoUrl, props.telemetryService])
     )
 
-    const settings = getExperimentalFeatures(props.settingsCascade.final)
-    const treeSitterEnabled = !!settings.treeSitterEnabled
-
     // Bundle latest blob with all other file info to pass to `Blob`
     // Prevents https://github.com/sourcegraph/sourcegraph/issues/14965 by not allowing
     // components to use current file props while blob hasn't updated, since all information
@@ -153,7 +149,6 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                             commitID,
                             filePath,
                             disableTimeout,
-                            treeSitterEnabled,
                         })
                     ),
                     map(blob => {
@@ -162,7 +157,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                         }
 
                         // Replace html with lsif generated HTML, if available
-                        if (blob.highlight.lsif) {
+                        if (blob.highlight.lsif && blob.highlight.lsif !== '{}') {
                             blob.highlight.html = renderLsifHtml(blob.highlight.lsif, blob.content)
                         }
 
@@ -182,7 +177,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                     }),
                     catchError((error): [ErrorLike] => [asError(error)])
                 ),
-            [repoName, revision, commitID, filePath, mode, treeSitterEnabled]
+            [repoName, revision, commitID, filePath, mode]
         )
     )
 
@@ -344,8 +339,6 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                 <RenderedNotebookMarkdown
                     {...props}
                     markdown={blobInfoOrError.content}
-                    resolveRevision={resolveRevision}
-                    fetchRepository={fetchRepository}
                     onCopyNotebook={onCopyNotebook}
                     showSearchContext={showSearchContext}
                     exportedFileName={basename(blobInfoOrError.filePath)}

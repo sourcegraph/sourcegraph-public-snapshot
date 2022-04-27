@@ -1,6 +1,5 @@
 import '@sourcegraph/shared/src/polyfills'
 
-import React from 'react'
 import { render } from 'react-dom'
 
 import { EmbeddedWebApp } from './EmbeddedWebApp'

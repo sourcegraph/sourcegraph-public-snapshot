@@ -68,11 +68,26 @@ No [token scopes](https://docs.github.com/en/developers/apps/building-oauth-apps
 
 You should always include a token in a configuration for a GitHub.com URL to avoid being denied service by GitHub's [unauthenticated rate limits](https://developer.github.com/v3/#rate-limiting). If you don't want to automatically synchronize repositories from the account associated with your personal access token, you can create a token without a [`repo` scope](https://developer.github.com/apps/building-oauth-apps/scopes-for-oauth-apps/#available-scopes) for the purposes of bypassing rate limit restrictions only.
 
+## GitHub Enterprise Server rate limits
+
+Rate limiting may not be enabled by default. To check and verify the current rate limit settings, you may make a request to the `/rate_limit` endpoint like this:
+
+```
+$ curl -s https://<github-enterprise-url>/api/v3/rate_limit -H "Authorization: Bearer <token>"
+{
+  "message": "Rate limiting is not enabled.",
+  "documentation_url": "https://docs.github.com/enterprise/3.3/rest/reference/rate-limit#get-rate-limit-status-for-the-authenticated-user"
+}
+```
+
 ### Internal rate limits
 
 Internal rate limiting can be configured to limit the rate at which requests are made from Sourcegraph to GitHub. 
 
-If enabled, the default rate is set at 5000 per hour which can be configured via the `requestsPerHour` field (see below). If rate limiting is configured more than once for the same code host instance, the most restrictive limit will be used.
+If enabled, the default rate is set at 5000 per hour which can be configured via the `requestsPerHour` field (see below):
+
+- For Sourcegraph <=3.38, if rate limiting is configured more than once for the same code host instance, the most restrictive limit will be used.
+- For Sourcegraph >=3.39, rate limiting should be enabled and configured for each individual code host connection.
 
 **NOTE** Internal rate limiting is only currently applied when synchronising changesets in [batch changes](../../batch_changes/index.md), repository permissions and repository metadata from code hosts.
 
@@ -100,7 +115,7 @@ Using webhooks is highly recommended when using [batch changes](../../batch_chan
 
 To set up webhooks:
 
-1. In Sourcegraph, go to **Site admin > Manage repositories** and edit the GitHub configuration.
+1. In Sourcegraph, go to **Site admin > Manage code hosts** and edit the GitHub configuration.
 1. Add the `"webhooks"` property to the configuration (you can generate a secret with `openssl rand -hex 32`):<br /> `"webhooks": [{"org": "your_org", "secret": "verylongrandomsecret"}]`
 1. Click **Update repositories**.
 1. Copy the webhook URL displayed below the **Update repositories** button.

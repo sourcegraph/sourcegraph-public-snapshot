@@ -1,8 +1,9 @@
+import { useMemo, useContext } from 'react'
+
 import { AxisScale, AxisScaleOutput } from '@visx/axis'
 import { DefaultOutput, ScaleConfig, scaleLinear, scaleTime } from '@visx/scale'
 import { PickScaleConfigWithoutType } from '@visx/scale/lib/types/ScaleConfig'
 import { ScaleTime } from 'd3-scale'
-import { useMemo, useContext } from 'react'
 
 import { LineChartSettingsContext } from '../line-chart-settings-provider'
 import { Accessors } from '../types'

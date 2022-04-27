@@ -1,6 +1,5 @@
 import MDIIcon from '@mdi/react'
 import { MdiReactIconComponentType, MdiReactIconProps } from 'mdi-react'
-import React from 'react'
 
 import { AccessibleSvgProps, AccessibleSvg } from './AccessibleSvg'
 import { IconStyle, IconStyleProps } from './IconStyle'

@@ -1,6 +1,5 @@
 import { act } from '@testing-library/react'
 import * as H from 'history'
-import React from 'react'
 import { of } from 'rxjs'
 
 import * as GQL from '@sourcegraph/shared/src/schema'

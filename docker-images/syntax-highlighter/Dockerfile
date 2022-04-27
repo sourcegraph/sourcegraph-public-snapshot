@@ -24,7 +24,7 @@ RUN git checkout v1.0.4 && go build -o /http-server-stabilizer .
 #######################
 # Compile final image #
 #######################
-FROM sourcegraph/alpine-3.14:133078_2022-02-22_93c48931ca68@sha256:bea3854c52314db8dbf33d977117de8bcf8eeb7620da70820d5b1e9b56dc473a
+FROM sourcegraph/alpine-3.14:142406_2022-04-14_8836ac3499f4@sha256:2a2d1cbaec78882661fe1aa5b0a4af0c23a37be2ea9ff8aadc2da5b80852c233
 COPY --from=ss syntect_server /
 COPY --from=hss http-server-stabilizer /
 

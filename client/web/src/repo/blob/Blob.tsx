@@ -1,9 +1,10 @@
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+
 import classNames from 'classnames'
 import { Remote } from 'comlink'
 import * as H from 'history'
 import iterate from 'iterare'
 import { isEqual } from 'lodash'
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { BehaviorSubject, combineLatest, merge, EMPTY, from, fromEvent, of, ReplaySubject, Subscription } from 'rxjs'
 import {
     catchError,
@@ -20,6 +21,7 @@ import {
 } from 'rxjs/operators'
 import useDeepCompareEffect from 'use-deep-compare-effect'
 
+import { HoverMerged } from '@sourcegraph/client-api'
 import {
     getCodeElementsInRange,
     HoveredToken,
@@ -42,7 +44,6 @@ import {
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { groupDecorationsByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
@@ -73,8 +74,9 @@ import { WebHoverOverlay } from '../../components/shared'
 import { StatusBar } from '../../extensions/components/StatusBar'
 import { HoverThresholdProps } from '../RepoContainer'
 
-import styles from './Blob.module.scss'
 import { LineDecorator } from './LineDecorator'
+
+import styles from './Blob.module.scss'
 
 /**
  * toPortalID builds an ID that will be used for the {@link LineDecorator} portal containers.
@@ -83,7 +85,7 @@ const toPortalID = (line: number): string => `line-decoration-attachment-${line}
 
 export interface BlobProps
     extends SettingsCascadeProps,
-        PlatformContextProps,
+        PlatformContextProps<'urlToFile' | 'requestGraphQL' | 'settings' | 'forceUpdateTooltip'>,
         TelemetryProps,
         HoverThresholdProps,
         ExtensionsControllerProps,

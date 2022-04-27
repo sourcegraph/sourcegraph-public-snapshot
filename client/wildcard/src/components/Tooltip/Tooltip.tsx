@@ -1,11 +1,13 @@
+import React, { ReactNode, useMemo } from 'react'
+
 import classNames from 'classnames'
 import Popper from 'popper.js'
-import React, { ReactNode, useMemo } from 'react'
 import { Tooltip as BootstrapTooltip } from 'reactstrap'
 
-import styles from './Tooltip.module.scss'
 import { useTooltipState } from './useTooltipState'
 import { getTooltipStyle } from './utils'
+
+import styles from './Tooltip.module.scss'
 
 interface TooltipProps {
     className?: string

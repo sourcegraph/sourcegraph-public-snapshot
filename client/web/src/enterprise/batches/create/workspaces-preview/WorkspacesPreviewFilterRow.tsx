@@ -1,4 +1,5 @@
 import React, { useCallback, useRef, useState } from 'react'
+
 import { useHistory } from 'react-router'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
@@ -49,8 +50,8 @@ export const WorkspacePreviewFilterRow: React.FunctionComponent<WorkspacePreview
     )
 
     return (
-        <div className="w-100 row mr-1">
-            <div className="m-0 col">
+        <div className="w-100 row">
+            <div className="m-0 p-0 col">
                 <Form className="d-flex mb-2" onSubmit={onSubmit}>
                     <Input
                         disabled={disabled}

@@ -1,6 +1,5 @@
 import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
-import React from 'react'
 import { of } from 'rxjs'
 
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
@@ -50,7 +49,7 @@ add('default', () => (
                 {...noopBlockCallbacks}
                 authenticatedUser={null}
                 id="query-block-1"
-                input="query"
+                input={{ query: 'query' }}
                 output={of(streamingSearchResult)}
                 isSelected={false}
                 isReadOnly={false}
@@ -75,7 +74,7 @@ add('selected', () => (
                 {...props}
                 {...noopBlockCallbacks}
                 id="query-block-1"
-                input="query"
+                input={{ query: 'query' }}
                 output={of(streamingSearchResult)}
                 isSelected={true}
                 isOtherBlockSelected={false}
@@ -101,7 +100,7 @@ add('read-only selected', () => (
                 {...props}
                 {...noopBlockCallbacks}
                 id="query-block-1"
-                input="query"
+                input={{ query: 'query' }}
                 output={of(streamingSearchResult)}
                 isSelected={true}
                 isReadOnly={true}

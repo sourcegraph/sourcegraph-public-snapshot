@@ -81,6 +81,9 @@ type Store interface {
 	// QueuedCount returns the number of queued records matching the given conditions.
 	QueuedCount(ctx context.Context, includeProcessing bool, conditions []*sqlf.Query) (int, error)
 
+	// MaxDurationInQueue returns the maximum age of queued records in this store. Returns 0 if there are no queued records.
+	MaxDurationInQueue(ctx context.Context) (time.Duration, error)
+
 	// Dequeue selects the first queued record matching the given conditions and updates the state to processing. If there
 	// is such a record, it is returned. If there is no such unclaimed record, a nil record and and a nil cancel function
 	// will be returned along with a false-valued flag. This method must not be called from within a transaction.
@@ -174,6 +177,7 @@ type Options struct {
 	//   - id: integer primary key
 	//   - state: text (may be updated to `queued`, `processing`, `errored`, or `failed`)
 	//   - failure_message: text
+	//   - queued_at: timestamp with time zone
 	//   - started_at: timestamp with time zone
 	//   - last_heartbeat_at: timestamp with time zone
 	//   - finished_at: timestamp with time zone
@@ -285,8 +289,8 @@ func newStore(handle *basestore.TransactableHandle, options Options, observation
 	}
 
 	alternateColumnNames := map[string]string{}
-	for _, column := range columns {
-		alternateColumnNames[column.name] = column.name
+	for _, column := range columnNames {
+		alternateColumnNames[column] = column
 	}
 	for k, v := range options.AlternateColumnNames {
 		alternateColumnNames[k] = v
@@ -338,34 +342,22 @@ func (s *store) With(other basestore.ShareableStore) Store {
 	}
 }
 
-// columns contain the names of the columns expected to be defined by the target table.
-var columns = []struct {
-	name              string
-	defaultExpression bool
-}{
-	{"id", true},
-	{"state", true},
-	{"failure_message", true},
-	{"started_at", true},
-	{"last_heartbeat_at", false},
-	{"finished_at", true},
-	{"process_after", true},
-	{"num_resets", true},
-	{"num_failures", true},
-	{"execution_logs", true},
-	{"worker_hostname", false},
-}
-
-// DefaultColumnExpressions returns a slice of expressions for the default column name we expect.
-func DefaultColumnExpressions() []*sqlf.Query {
-	expressions := make([]*sqlf.Query, 0, len(columns))
-	for _, column := range columns {
-		if column.defaultExpression {
-			expressions = append(expressions, sqlf.Sprintf(column.name))
-		}
-	}
-
-	return expressions
+// columnNames contain the names of the columns expected to be defined by the target table.
+// Note: adding a new column to this list requires updating the worker documentation
+// https://github.com/sourcegraph/sourcegraph/blob/main/doc/dev/background-information/workers.md#database-backed-stores
+var columnNames = []string{
+	"id",
+	"state",
+	"failure_message",
+	"queued_at",
+	"started_at",
+	"last_heartbeat_at",
+	"finished_at",
+	"process_after",
+	"num_resets",
+	"num_failures",
+	"execution_logs",
+	"worker_hostname",
 }
 
 // QueuedCount returns the number of queued records matching the given conditions.
@@ -396,6 +388,83 @@ SELECT COUNT(*) FROM %s WHERE (
 	{state} IN (%s) OR
 	({state} = 'errored' AND {num_failures} < %s)
 ) %s
+`
+
+// MaxDurationInQueue returns the longest duration for which a job associated with this store instance has
+// been in the queued state (including errored records that can be retried in the future). This method returns
+// an duration of zero if there are no jobs ready for processing.
+//
+// If records backed by this store do not have an initial state of 'queued', or if it is possible to requeue
+// records outside of this package, manual care should be taken to set the queued_at column to the proper time.
+// This method makes no guarantees otherwise.
+//
+// See https://github.com/sourcegraph/sourcegraph/issues/32624.
+func (s *store) MaxDurationInQueue(ctx context.Context) (_ time.Duration, err error) {
+	ctx, endObservation := s.operations.maxDurationInQueue.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	now := s.now()
+	retryAfter := int(s.options.RetryAfter / time.Second)
+
+	ageInSeconds, ok, err := basestore.ScanFirstInt(s.Query(ctx, s.formatQuery(
+		maxDurationInQueueQuery,
+		// candidates
+		quote(s.options.ViewName),
+		// oldest_queued
+		now,
+		// oldest_retryable
+		retryAfter,
+		retryAfter,
+		now,
+		retryAfter,
+		s.options.MaxNumRetries,
+	)))
+	if err != nil {
+		return 0, err
+	}
+	if !ok {
+		return 0, nil
+	}
+
+	return time.Duration(ageInSeconds) * time.Second, nil
+}
+
+const maxDurationInQueueQuery = `
+-- source: internal/workerutil/store.go:MaxDurationInQueue
+WITH
+candidates AS (
+	SELECT * FROM %s
+),
+oldest_queued AS (
+	SELECT
+		-- Select when the record was most recently dequeueable
+		GREATEST({queued_at}, {process_after}) AS last_queued_at
+	FROM candidates
+	WHERE
+		{state} = 'queued' AND
+		({process_after} IS NULL OR {process_after} <= %s)
+),
+oldest_retryable AS (
+	SELECT
+		-- Select when the record was most recently dequeueable
+		{finished_at} + (%s * '1 second'::interval) AS last_queued_at
+	FROM candidates
+	WHERE
+		%s > 0 AND
+		{state} = 'errored' AND
+		%s - {finished_at} > (%s * '1 second'::interval) AND
+		{num_failures} < %s
+),
+oldest_record AS (
+	(
+		SELECT last_queued_at FROM oldest_queued
+		UNION
+		SELECT last_queued_at FROM oldest_retryable
+	)
+	ORDER BY last_queued_at
+	LIMIT 1
+)
+SELECT EXTRACT(EPOCH FROM NOW() - last_queued_at)::integer AS age FROM oldest_record
 `
 
 // columnsUpdatedByDequeue are the unmapped column names modified by the dequeue method.
@@ -641,7 +710,11 @@ func (s *store) Requeue(ctx context.Context, id int, after time.Time) (err error
 const requeueQuery = `
 -- source: internal/workerutil/store.go:Requeue
 UPDATE %s
-SET {state} = 'queued', {process_after} = %s
+SET
+	{state} = 'queued',
+	{queued_at} = clock_timestamp(),
+	{started_at} = null,
+	{process_after} = %s
 WHERE {id} = %s
 `
 
@@ -933,6 +1006,7 @@ WITH stalled AS (
 UPDATE %s
 SET
 	{state} = 'queued',
+	{queued_at} = clock_timestamp(),
 	{started_at} = null,
 	{num_resets} = {num_resets} + 1
 WHERE {id} IN (SELECT {id} FROM stalled)
@@ -979,7 +1053,7 @@ WHERE
 func (s *store) fetchDebugInformationForJob(ctx context.Context, recordID int) (debug string, err error) {
 	debug, ok, err := basestore.ScanFirstNullString(s.Query(ctx, s.formatQuery(
 		fetchDebugInformationForJob,
-		quote(s.options.TableName),
+		quote(extractTableName(s.options.TableName)),
 		quote(s.options.TableName),
 		recordID,
 	)))
@@ -1067,8 +1141,8 @@ func matchModifiedColumnExpressions(viewName string, columnExpressions []*sqlf.Q
 
 // makeColumnPrefixes returns the set of prefixes of a column to indicate that the column belongs to a
 // particular table or aliased table. The given name should be the table name  or the aliased table
-// reference: `TableName` or `TableName alias`. The return slice always  includes an empty string for a
-// bare column reference.
+// reference: `TableName` or `TableName alias`. The return slice always  includes an empty string for
+// a bare column reference.
 func makeColumnPrefixes(name string) []string {
 	parts := strings.Split(name, " ")
 
@@ -1085,4 +1159,14 @@ func makeColumnPrefixes(name string) []string {
 	default:
 		return []string{""}
 	}
+}
+
+// extractTableName returns the alias if supplied (`Tablename alias`) and the tablename otherwise.
+func extractTableName(name string) string {
+	parts := strings.Split(name, " ")
+	if len(parts) == 2 {
+		return parts[1]
+	}
+
+	return parts[0]
 }

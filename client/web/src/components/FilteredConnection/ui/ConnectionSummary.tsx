@@ -1,5 +1,4 @@
 import classNames from 'classnames'
-import * as React from 'react'
 
 import { pluralize } from '@sourcegraph/common'
 

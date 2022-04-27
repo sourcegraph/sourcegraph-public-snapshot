@@ -1,7 +1,8 @@
+import React, { AnchorHTMLAttributes } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import { noop } from 'lodash'
-import React, { AnchorHTMLAttributes } from 'react'
 import { Key } from 'ts-key-enum'
 
 import { isDefined } from '@sourcegraph/common'
@@ -122,3 +123,5 @@ export const ButtonLink = React.forwardRef((props, reference) => {
         </Button>
     )
 }) as ForwardReferenceComponent<typeof AnchorLink, ButtonLinkProps>
+
+ButtonLink.displayName = 'ButtonLink'

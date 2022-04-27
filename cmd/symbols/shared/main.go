@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
+	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -28,6 +29,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
+	"github.com/sourcegraph/sourcegraph/internal/version"
+	sglog "github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 const addr = ":3184"
@@ -35,12 +38,22 @@ const addr = ":3184"
 type SetupFunc func(observationContext *observation.Context, gitserverClient gitserver.GitserverClient, repositoryFetcher fetcher.RepositoryFetcher) (types.SearchFunc, func(http.ResponseWriter, *http.Request), []goroutine.BackgroundRoutine, string, error)
 
 func Main(setup SetupFunc) {
-	routines := []goroutine.BackgroundRoutine{}
+	// Initialization
+	env.HandleHelpFlag()
+	conf.Init()
+	logging.Init()
+	syncLogs := sglog.Init(sglog.Resource{
+		Name:       env.MyName,
+		Version:    version.Version(),
+		InstanceID: hostname.Get(),
+	})
+	defer syncLogs()
+	tracer.Init(conf.DefaultClient())
+	sentry.Init(conf.DefaultClient())
+	trace.Init()
+	profiler.Init()
 
-	// Set up Google Cloud Profiler when running in Cloud
-	if err := profiler.Init(); err != nil {
-		log.Fatalf("Failed to start profiler: %v", err)
-	}
+	routines := []goroutine.BackgroundRoutine{}
 
 	// Initialize tracing/metrics
 	observationContext := &observation.Context{
@@ -52,6 +65,7 @@ func Main(setup SetupFunc) {
 			SampleRate: 5,
 		},
 	}
+
 	// Run setup
 	gitserverClient := gitserver.NewClient(observationContext)
 	repositoryFetcher := fetcher.NewRepositoryFetcher(gitserverClient, types.LoadRepositoryFetcherConfig(env.BaseConfig{}).MaxTotalPathsLength, observationContext)
@@ -60,14 +74,6 @@ func Main(setup SetupFunc) {
 		log.Fatalf("Failed to setup: %v", err)
 	}
 	routines = append(routines, newRoutines...)
-
-	// Initialization
-	env.HandleHelpFlag()
-	conf.Init()
-	logging.Init()
-	tracer.Init(conf.DefaultClient())
-	sentry.Init(conf.DefaultClient())
-	trace.Init()
 
 	// Start debug server
 	ready := make(chan struct{})

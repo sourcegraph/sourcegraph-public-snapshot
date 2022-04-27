@@ -1,5 +1,6 @@
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useContext, useMemo } from 'react'
+
+import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { RouteComponentProps, Switch, Route, useRouteMatch } from 'react-router'
 import { Redirect } from 'react-router-dom'
 
@@ -13,8 +14,7 @@ import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { HeroPage } from '../../components/HeroPage'
 
-import { CodeInsightsBackendContext } from './core/backend/code-insights-backend-context'
-import { useGetApi } from './hooks/use-get-api'
+import { CodeInsightsBackendContext } from './core'
 import { GaConfirmationModal } from './modals/GaConfirmationModal'
 import {
     CodeInsightsRootPage,
@@ -52,14 +52,8 @@ export const CodeInsightsAppRouter = withAuthenticatedUser<CodeInsightsAppRouter
     const { telemetryService, authenticatedUser } = props
 
     const match = useRouteMatch()
-    const api = useGetApi()
-
-    if (!api) {
-        return null
-    }
-
     return (
-        <CodeInsightsBackendContext.Provider value={api}>
+        <>
             <Route path="*" component={GaConfirmationModal} />
 
             <Switch>
@@ -113,7 +107,7 @@ export const CodeInsightsAppRouter = withAuthenticatedUser<CodeInsightsAppRouter
 
                 <Route component={NotFoundPage} key="hardcoded-key" />
             </Switch>
-        </CodeInsightsBackendContext.Provider>
+        </>
     )
 })
 
@@ -121,7 +115,7 @@ const CodeInsightsRedirect: React.FunctionComponent = () => {
     const { hasInsights } = useContext(CodeInsightsBackendContext)
 
     const match = useRouteMatch()
-    const isThereAvailableInsights = useObservable(useMemo(() => hasInsights(), [hasInsights]))
+    const isThereAvailableInsights = useObservable(useMemo(() => hasInsights(1), [hasInsights]))
 
     if (isThereAvailableInsights === undefined) {
         return <LoadingSpinner />

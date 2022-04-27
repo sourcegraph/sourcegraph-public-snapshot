@@ -1,14 +1,15 @@
-import * as H from 'history'
 import React, { useMemo } from 'react'
+
+import * as H from 'history'
 import { Observable } from 'rxjs'
 import { AggregableBadge } from 'sourcegraph'
 
+import { HoverMerged } from '@sourcegraph/client-api'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import { isErrorLike, pluralize } from '@sourcegraph/common'
 import { Badge } from '@sourcegraph/wildcard'
 
 import { ActionItemAction } from '../actions/ActionItem'
-import { HoverMerged } from '../api/client/types/hover'
 import { Controller as ExtensionsController } from '../extensions/controller'
 import { HoverContext } from '../hover/HoverOverlay.types'
 import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl, getRepositoryUrl, getRevision } from '../search/stream'
@@ -94,7 +95,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
     }, [settings])
     const renderTitle = (): JSX.Element => (
         <>
-            <RepoIcon repoName={result.repository} className="icon-inline text-muted" />
+            <RepoIcon repoName={result.repository} className="text-muted flex-shrink-0" />
             <RepoFileLink
                 repoName={result.repository}
                 repoURL={repoAtRevisionURL}
@@ -105,14 +106,14 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
                         ? `${props.repoDisplayName}${revisionDisplayName ? `@${revisionDisplayName}` : ''}`
                         : undefined
                 }
-                className="ml-1"
+                className="ml-1 flex-shrink-past-contents text-truncate"
             />
         </>
     )
 
     // The number of lines of context to show before and after each match.
     const context = useMemo(() => {
-        if (props.location.pathname === '/search') {
+        if (props.location?.pathname === '/search') {
             // Check if search.contextLines is configured in settings.
             const contextLinesSetting =
                 isSettingsValid(props.settingsCascade) &&

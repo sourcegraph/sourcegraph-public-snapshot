@@ -1,6 +1,5 @@
 import { action } from '@storybook/addon-actions'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
-import React from 'react'
 
 import { WebStory } from '../../components/WebStory'
 

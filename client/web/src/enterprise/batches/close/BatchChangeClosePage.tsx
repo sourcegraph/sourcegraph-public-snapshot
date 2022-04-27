@@ -1,7 +1,8 @@
+import React, { useState, useMemo, useCallback } from 'react'
+
 import { subDays } from 'date-fns'
 import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import React, { useState, useMemo, useCallback } from 'react'
 
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'

@@ -3,25 +3,20 @@ package repos
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 type ComputeExcludedRepos struct {
 	Options search.RepoOptions
 }
 
-func (c *ComputeExcludedRepos) Run(ctx context.Context, db database.DB, s streaming.Sender) (_ *search.Alert, err error) {
-	tr, ctx := trace.New(ctx, "ComputeExcludedRepos", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+func (c *ComputeExcludedRepos) Run(ctx context.Context, clients job.RuntimeClients, s streaming.Sender) (alert *search.Alert, err error) {
+	_, ctx, s, finish := job.StartSpan(ctx, s, c)
+	defer func() { finish(alert, err) }()
 
-	repositoryResolver := Resolver{DB: db}
-	excluded, err := repositoryResolver.Excluded(ctx, c.Options)
+	excluded, err := computeExcludedRepos(ctx, clients.DB, c.Options)
 	if err != nil {
 		return nil, err
 	}

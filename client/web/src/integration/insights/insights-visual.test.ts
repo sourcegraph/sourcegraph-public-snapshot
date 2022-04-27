@@ -1,5 +1,6 @@
 import delay from 'delay'
 
+import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
@@ -19,7 +20,10 @@ import {
 } from './fixtures/runtime-insights'
 import { overrideInsightsGraphQLApi } from './utils/override-insights-graphql-api'
 
-describe('[VISUAL] Code insights page', () => {
+// Disable these tests since SVG elements rendering is super flaky in the Percy sandbox,
+// Enable these visual code insights tests when we finish the investigation around screenshot
+// testing tooling.
+describe.skip('[VISUAL] Code insights page', () => {
     let driver: Driver
     let testContext: WebIntegrationTestContext
 
@@ -44,9 +48,10 @@ describe('[VISUAL] Code insights page', () => {
     afterEachSaveScreenshotIfFailed(() => driver.page)
 
     async function takeChartSnapshot(name: string): Promise<void> {
-        await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
+        await driver.page.waitForSelector('svg circle')
         await delay(500)
         await percySnapshotWithVariants(driver.page, name)
+        await accessibilityAudit(driver.page)
     }
 
     it('is styled correctly with back-end insights', async () => {
@@ -115,6 +120,7 @@ describe('[VISUAL] Code insights page', () => {
 
         await delay(500)
         await percySnapshotWithVariants(driver.page, 'Code insights page with search-based errored insight')
+        await accessibilityAudit(driver.page)
     })
 
     it('is styled correctly with all types of insight', async () => {
@@ -200,6 +206,7 @@ describe('[VISUAL] Code insights page', () => {
             await driver.page.waitForSelector('input[name="name"]')
 
             await percySnapshotWithVariants(driver.page, 'Code insights add new dashboard page')
+            await accessibilityAudit(driver.page)
         })
     })
 })

@@ -7,7 +7,9 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/go-diff/diff"
 
+	bbcs "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -96,7 +98,49 @@ func TestChangeset_SetMetadata(t *testing.T) {
 		meta interface{}
 		want *Changeset
 	}{
-		"bitbucketserver": {
+		"bitbucketcloud with fork": {
+			meta: &bbcs.AnnotatedPullRequest{
+				PullRequest: &bitbucketcloud.PullRequest{
+					ID: 12345,
+					Source: bitbucketcloud.PullRequestEndpoint{
+						Branch: bitbucketcloud.PullRequestBranch{Name: "branch"},
+						Repo:   bitbucketcloud.Repo{FullName: "fork/repo", UUID: "fork"},
+					},
+					UpdatedOn: time.Unix(10, 0),
+				},
+				Statuses: []*bitbucketcloud.PullRequestStatus{},
+			},
+			want: &Changeset{
+				ExternalID:            "12345",
+				ExternalServiceType:   extsvc.TypeBitbucketCloud,
+				ExternalBranch:        "refs/heads/branch",
+				ExternalForkNamespace: "fork",
+				ExternalUpdatedAt:     time.Unix(10, 0),
+			},
+		},
+		"bitbucketcloud without fork": {
+			meta: &bbcs.AnnotatedPullRequest{
+				PullRequest: &bitbucketcloud.PullRequest{
+					ID: 12345,
+					Source: bitbucketcloud.PullRequestEndpoint{
+						Branch: bitbucketcloud.PullRequestBranch{Name: "branch"},
+						Repo:   bitbucketcloud.Repo{UUID: "repo"},
+					},
+					Destination: bitbucketcloud.PullRequestEndpoint{
+						Repo: bitbucketcloud.Repo{UUID: "repo"},
+					},
+					UpdatedOn: time.Unix(10, 0),
+				},
+				Statuses: []*bitbucketcloud.PullRequestStatus{},
+			},
+			want: &Changeset{
+				ExternalID:            "12345",
+				ExternalServiceType:   extsvc.TypeBitbucketCloud,
+				ExternalBranch:        "refs/heads/branch",
+				ExternalForkNamespace: "",
+				ExternalUpdatedAt:     time.Unix(10, 0),
+			},
+		}, "bitbucketserver": {
 			meta: &bitbucketserver.PullRequest{
 				ID: 12345,
 				FromRef: bitbucketserver.Ref{
@@ -163,6 +207,9 @@ func TestChangeset_SetMetadata(t *testing.T) {
 func TestChangeset_Title(t *testing.T) {
 	want := "foo"
 	for name, meta := range map[string]interface{}{
+		"bitbucketcloud": &bbcs.AnnotatedPullRequest{
+			PullRequest: &bitbucketcloud.PullRequest{Title: want},
+		},
 		"bitbucketserver": &bitbucketserver.PullRequest{
 			Title: want,
 		},
@@ -196,6 +243,9 @@ func TestChangeset_Title(t *testing.T) {
 func TestChangeset_ExternalCreatedAt(t *testing.T) {
 	want := time.Unix(10, 0)
 	for name, meta := range map[string]interface{}{
+		"bitbucketcloud": &bbcs.AnnotatedPullRequest{
+			PullRequest: &bitbucketcloud.PullRequest{CreatedOn: want},
+		},
 		"bitbucketserver": &bitbucketserver.PullRequest{
 			CreatedDate: 10 * 1000,
 		},
@@ -226,6 +276,13 @@ func TestChangeset_ExternalCreatedAt(t *testing.T) {
 func TestChangeset_Body(t *testing.T) {
 	want := "foo"
 	for name, meta := range map[string]interface{}{
+		"bitbucketcloud": &bbcs.AnnotatedPullRequest{
+			PullRequest: &bitbucketcloud.PullRequest{
+				Rendered: bitbucketcloud.RenderedPullRequestMarkup{
+					Description: bitbucketcloud.RenderedMarkup{Raw: want},
+				},
+			},
+		},
 		"bitbucketserver": &bitbucketserver.PullRequest{
 			Description: want,
 		},
@@ -259,6 +316,13 @@ func TestChangeset_Body(t *testing.T) {
 func TestChangeset_URL(t *testing.T) {
 	want := "foo"
 	for name, meta := range map[string]interface{}{
+		"bitbucketcloud": &bbcs.AnnotatedPullRequest{
+			PullRequest: &bitbucketcloud.PullRequest{
+				Links: bitbucketcloud.Links{
+					"html": bitbucketcloud.Link{Href: want},
+				},
+			},
+		},
 		"bitbucketserver": &bitbucketserver.PullRequest{
 			Links: struct {
 				Self []struct {
@@ -302,6 +366,16 @@ func TestChangeset_HeadRefOid(t *testing.T) {
 		meta interface{}
 		want string
 	}{
+		"bitbucketcloud": {
+			meta: &bbcs.AnnotatedPullRequest{
+				PullRequest: &bitbucketcloud.PullRequest{
+					Source: bitbucketcloud.PullRequestEndpoint{
+						Commit: bitbucketcloud.PullRequestCommit{Hash: "foo"},
+					},
+				},
+			},
+			want: "foo",
+		},
 		"bitbucketserver": {
 			meta: &bitbucketserver.PullRequest{},
 			want: "",
@@ -342,6 +416,16 @@ func TestChangeset_HeadRef(t *testing.T) {
 		meta interface{}
 		want string
 	}{
+		"bitbucketcloud": {
+			meta: &bbcs.AnnotatedPullRequest{
+				PullRequest: &bitbucketcloud.PullRequest{
+					Source: bitbucketcloud.PullRequestEndpoint{
+						Branch: bitbucketcloud.PullRequestBranch{Name: "foo"},
+					},
+				},
+			},
+			want: "refs/heads/foo",
+		},
 		"bitbucketserver": {
 			meta: &bitbucketserver.PullRequest{
 				FromRef: bitbucketserver.Ref{ID: "foo"},
@@ -384,6 +468,16 @@ func TestChangeset_BaseRefOid(t *testing.T) {
 		meta interface{}
 		want string
 	}{
+		"bitbucketcloud": {
+			meta: &bbcs.AnnotatedPullRequest{
+				PullRequest: &bitbucketcloud.PullRequest{
+					Destination: bitbucketcloud.PullRequestEndpoint{
+						Commit: bitbucketcloud.PullRequestCommit{Hash: "foo"},
+					},
+				},
+			},
+			want: "foo",
+		},
 		"bitbucketserver": {
 			meta: &bitbucketserver.PullRequest{},
 			want: "",
@@ -424,6 +518,16 @@ func TestChangeset_BaseRef(t *testing.T) {
 		meta interface{}
 		want string
 	}{
+		"bitbucketcloud": {
+			meta: &bbcs.AnnotatedPullRequest{
+				PullRequest: &bitbucketcloud.PullRequest{
+					Destination: bitbucketcloud.PullRequestEndpoint{
+						Branch: bitbucketcloud.PullRequestBranch{Name: "foo"},
+					},
+				},
+			},
+			want: "refs/heads/foo",
+		},
 		"bitbucketserver": {
 			meta: &bitbucketserver.PullRequest{
 				ToRef: bitbucketserver.Ref{ID: "foo"},
@@ -466,6 +570,10 @@ func TestChangeset_Labels(t *testing.T) {
 		meta interface{}
 		want []ChangesetLabel
 	}{
+		"bitbucketcloud": {
+			meta: &bbcs.AnnotatedPullRequest{},
+			want: []ChangesetLabel{},
+		},
 		"bitbucketserver": {
 			meta: &bitbucketserver.PullRequest{},
 			want: []ChangesetLabel{},

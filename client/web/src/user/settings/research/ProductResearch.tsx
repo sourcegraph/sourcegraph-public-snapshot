@@ -1,5 +1,6 @@
-import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import React, { useEffect } from 'react'
+
+import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Container, PageHeader, ButtonLink, Icon } from '@sourcegraph/wildcard'

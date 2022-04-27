@@ -1,5 +1,4 @@
 import { subMonths, addDays } from 'date-fns'
-import React from 'react'
 
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 

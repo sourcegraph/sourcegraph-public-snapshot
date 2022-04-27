@@ -46,7 +46,7 @@ function go_test() {
     cp "./dev/ci/go-test-failures.richstyle.yml" $RICHGO_CONFIG
     mkdir -p ./annotations
     richgo testfilter <"$tmpfile" >>./annotations/go-test
-    rm -rf RICHGO_CONFIG
+    rm -rf $RICHGO_CONFIG
     set +x
   fi
 
@@ -69,29 +69,34 @@ if [ -n "$FILTER_ACTION" ]; then
   echo -e "--- :information_source: \033[0;34mFiltering go tests: $FILTER_ACTION $FILTER_TARGETS\033[0m"
 fi
 
-# Buildkite analytics
-
+echo "--- install tools"
 # https://github.com/sourcegraph/sourcegraph/issues/28469
 # TODO is that the best way to handle this?
 go install github.com/jstemmer/go-junit-report@latest
+# Install richgo for better output
+# This fork gives us the `anyStyle` configuration required to hide log lines
+go install github.com/jhchabran/richgo@installable
+# Reshim so that the above tools are available
 asdf reshim golang
 
 # For searcher
 echo "--- comby install"
 ./dev/comby-install-or-upgrade.sh
 
-# For code insights test
-./dev/codeinsights-db.sh &
-export CODEINSIGHTS_PGDATASOURCE=postgres://postgres:password@127.0.0.1:5435/postgres
-export DB_STARTUP_TIMEOUT=360s # codeinsights-db needs more time to start in some instances.
+# Temporary fix to keep the backcompat test operational until the next release.
+# This is needed because the go-test.sh is protected and the backcompat tests are
+# not checking out the old version when the tests with the old code against the latest
+# commit database schema.
+# TODO @jhchabran remove this when we release the next version.
+if [ "v3.38.0" == "$(git describe --tags)" ];then
+  # For code insights test
+  ./dev/codeinsights-db.sh &
+  export CODEINSIGHTS_PGDATASOURCE=postgres://postgres:password@127.0.0.1:5435/postgres
+  export DB_STARTUP_TIMEOUT=360s # codeinsights-db needs more time to start in some instances.
+fi
 
 # Disable GraphQL logs which are wildly noisy
 export NO_GRAPHQL_LOG=true
-
-# Install richgo for better output
-# This fork gives us the `anyStyle` configuration required to hide log lines
-go install github.com/jhchabran/richgo@installable
-asdf reshim golang
 
 # Used to ignore directories (for example, when using submodules)
 #   (It appears to be unused, but it's actually used doing -v below)
@@ -102,7 +107,7 @@ declare -A IGNORED_DIRS=(
 )
 
 # We have multiple go.mod files and go list doesn't recurse into them.
-find . -name go.mod -exec dirname '{}' \; | while read -r d; do
+find . -name go.mod -type f -exec dirname '{}' \; | while read -r d; do
 
   # Skip any ignored directories.
   if [ -v "IGNORED_DIRS[$d]" ]; then

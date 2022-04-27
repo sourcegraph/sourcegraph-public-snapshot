@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
@@ -25,8 +26,10 @@ type BitbucketCloudSource struct {
 	svc     *types.ExternalService
 	config  *schema.BitbucketCloudConnection
 	exclude excludeFunc
-	client  *bitbucketcloud.Client
+	client  bitbucketcloud.Client
 }
+
+var _ UserSource = &BitbucketCloudSource{}
 
 // NewBitbucketCloudSource returns a new BitbucketCloudSource from the given external service.
 func NewBitbucketCloudSource(svc *types.ExternalService, cf *httpcli.Factory) (*BitbucketCloudSource, error) {
@@ -38,15 +41,6 @@ func NewBitbucketCloudSource(svc *types.ExternalService, cf *httpcli.Factory) (*
 }
 
 func newBitbucketCloudSource(svc *types.ExternalService, c *schema.BitbucketCloudConnection, cf *httpcli.Factory) (*BitbucketCloudSource, error) {
-	if c.ApiURL == "" {
-		c.ApiURL = "https://api.bitbucket.org"
-	}
-	apiURL, err := url.Parse(c.ApiURL)
-	if err != nil {
-		return nil, err
-	}
-	apiURL = extsvc.NormalizeBaseURL(apiURL)
-
 	if cf == nil {
 		cf = httpcli.ExternalClientFactory
 	}
@@ -67,9 +61,10 @@ func newBitbucketCloudSource(svc *types.ExternalService, c *schema.BitbucketClou
 		return nil, err
 	}
 
-	client := bitbucketcloud.NewClient(apiURL, cli)
-	client.Username = c.Username
-	client.AppPassword = c.AppPassword
+	client, err := bitbucketcloud.NewClient(svc.URN(), c, cli)
+	if err != nil {
+		return nil, err
+	}
 
 	return &BitbucketCloudSource{
 		svc:     svc,
@@ -174,8 +169,8 @@ func (s *BitbucketCloudSource) listAllRepos(ctx context.Context, results chan So
 		var err error
 		var repos []*bitbucketcloud.Repo
 		for page.HasMore() || page.Page == 0 {
-			if repos, page, err = s.client.Repos(ctx, page, s.client.Username); err != nil {
-				ch <- batch{err: errors.Wrapf(err, "bibucketcloud.repos: item=%q, page=%+v", s.client.Username, page)}
+			if repos, page, err = s.client.Repos(ctx, page, s.config.Username); err != nil {
+				ch <- batch{err: errors.Wrapf(err, "bitbucketcloud.repos: item=%q, page=%+v", s.config.Username, page)}
 				break
 			}
 
@@ -194,7 +189,7 @@ func (s *BitbucketCloudSource) listAllRepos(ctx context.Context, results chan So
 			var repos []*bitbucketcloud.Repo
 			for page.HasMore() || page.Page == 0 {
 				if repos, page, err = s.client.Repos(ctx, page, t); err != nil {
-					ch <- batch{err: errors.Wrapf(err, "bibucketcloud.teams: item=%q, page=%+v", t, page)}
+					ch <- batch{err: errors.Wrapf(err, "bitbucketcloud.teams: item=%q, page=%+v", t, page)}
 					break
 				}
 
@@ -227,4 +222,32 @@ func (s *BitbucketCloudSource) listAllRepos(ctx context.Context, results chan So
 			}
 		}
 	}
+}
+
+// WithAuthenticator returns a copy of the original Source configured to use
+// the given authenticator, provided that authenticator type is supported by
+// the code host.
+func (s *BitbucketCloudSource) WithAuthenticator(a auth.Authenticator) (Source, error) {
+	switch a.(type) {
+	case
+		*auth.BasicAuth,
+		*auth.BasicAuthWithSSH:
+		break
+
+	default:
+		return nil, newUnsupportedAuthenticatorError("BitbucketCloudSource", a)
+	}
+
+	sc := *s
+	sc.client = sc.client.WithAuthenticator(a)
+
+	return &sc, nil
+
+}
+
+// ValidateAuthenticator validates the currently set authenticator is usable.
+// Returns an error, when validating the Authenticator yielded an error.
+func (s *BitbucketCloudSource) ValidateAuthenticator(ctx context.Context) error {
+	_, err := s.client.CurrentUser(ctx)
+	return err
 }

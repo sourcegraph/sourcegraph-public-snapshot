@@ -1,5 +1,4 @@
 import { render, RenderResult, cleanup } from '@testing-library/react'
-import React from 'react'
 import sinon from 'sinon'
 
 import { Steps, Step, StepsProps, StepList, StepPanel, StepPanels } from '.'

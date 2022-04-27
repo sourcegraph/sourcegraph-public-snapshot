@@ -2,6 +2,7 @@ import assert from 'assert'
 
 import { subtypeOf } from '@sourcegraph/common'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { emptyResponse } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
@@ -25,6 +26,7 @@ describe('Organizations', () => {
         viewerCanAdminister: true,
         viewerIsMember: false,
         viewerPendingInvitation: null,
+        viewerNeedsCodeHostUpdate: false,
     })
 
     let driver: Driver
@@ -87,6 +89,7 @@ describe('Organizations', () => {
             await driver.page.waitForSelector('.test-create-org-button')
 
             await percySnapshotWithVariants(driver.page, 'Site admin org page')
+            await accessibilityAudit(driver.page)
 
             await driver.page.click('.test-create-org-button')
 
@@ -145,8 +148,13 @@ describe('Organizations', () => {
                             },
                         },
                     }),
+                    GetStartedInfo: () => ({
+                        membersSummary: { membersCount: 1, invitesCount: 1, __typename: 'OrgMembersSummary' },
+                        repoCount: { total: { totalCount: 1, __typename: 'RepositoryConnection' }, __typename: 'Org' },
+                        extServices: { totalCount: 1, __typename: 'ExternalServiceConnection' },
+                    }),
                 })
-                await driver.page.goto(testContext.driver.sourcegraphBaseUrl + '/organizations/sourcegraph/settings')
+                await driver.page.goto(driver.sourcegraphBaseUrl + '/organizations/sourcegraph/settings')
                 const updatedSettings = '// updated'
                 await driver.page.waitForSelector('.test-settings-file .monaco-editor')
                 await driver.replaceText({
@@ -167,6 +175,7 @@ describe('Organizations', () => {
                 })
 
                 await percySnapshotWithVariants(driver.page, 'Organization settings page')
+                await accessibilityAudit(driver.page)
             })
         })
         describe('Members tab', () => {
@@ -200,12 +209,15 @@ describe('Organizations', () => {
                     RemoveUserFromOrganization: () => ({
                         removeUserFromOrganization: emptyResponse,
                     }),
+                    GetStartedInfo: () => ({
+                        membersSummary: { membersCount: 1, invitesCount: 1, __typename: 'OrgMembersSummary' },
+                        repoCount: { total: { totalCount: 1, __typename: 'RepositoryConnection' }, __typename: 'Org' },
+                        extServices: { totalCount: 1, __typename: 'ExternalServiceConnection' },
+                    }),
                 }
                 testContext.overrideGraphQL(graphQlResults)
 
-                await driver.page.goto(
-                    testContext.driver.sourcegraphBaseUrl + '/organizations/sourcegraph/settings/members'
-                )
+                await driver.page.goto(driver.sourcegraphBaseUrl + '/organizations/sourcegraph/settings/members')
 
                 await driver.page.waitForSelector('.test-remove-org-member')
 
@@ -218,6 +230,7 @@ describe('Organizations', () => {
                 )
 
                 await percySnapshotWithVariants(driver.page, 'Organization members list')
+                await accessibilityAudit(driver.page)
 
                 // Override for the fetch post-removal
                 testContext.overrideGraphQL({

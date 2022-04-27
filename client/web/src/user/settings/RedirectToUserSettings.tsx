@@ -1,5 +1,4 @@
 import * as H from 'history'
-import * as React from 'react'
 import { Redirect } from 'react-router'
 
 import { userURL } from '..'

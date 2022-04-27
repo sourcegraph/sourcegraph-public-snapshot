@@ -2,7 +2,7 @@
 # base image used by all Sourcegraph Docker images.
 
 # alpine_base CHECK:ALPINE_OK
-FROM alpine:3.14@sha256:635f0aa53d99017b38d1a0aa5b2082f7812b03e3cdb299103fe77b5c8a07f1d2 AS alpine_base
+FROM alpine:3.14@sha256:a6bb9fc72d69d4ae3bc76875a7614c271db2ee25cfbdd8b7ed36ffa3e1c903be AS alpine_base
 
 LABEL org.opencontainers.image.url=https://sourcegraph.com/
 LABEL org.opencontainers.image.source=https://github.com/sourcegraph/sourcegraph/
@@ -31,3 +31,9 @@ RUN apk update && apk add --no-cache \
     mailcap \
     tini \
     wget
+
+# Patch CVE 2022-0778
+# Issue: https://github.com/sourcegraph/sourcegraph/issues/32679
+# PR: https://github.com/sourcegraph/sourcegraph/pull/32682
+# @TODO: Remove this with the next release of Alpine
+RUN apk add --upgrade --no-cache libcrypto1.1>=1.1.1n-r0 libssl1.1>=1.1.1n-r0

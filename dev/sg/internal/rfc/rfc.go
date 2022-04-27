@@ -24,7 +24,10 @@ const (
 
 // Retrieve a token, saves the token, then returns the generated client.
 func getClient(ctx context.Context, config *oauth2.Config, out *output.Output) (*http.Client, error) {
-	sec := secrets.FromContext(ctx)
+	sec, err := secrets.FromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
 	tok := &oauth2.Token{}
 	if err := sec.Get("rfc", tok); err != nil {
 		// ...if it doesn't exist, open browser and ask user to give us

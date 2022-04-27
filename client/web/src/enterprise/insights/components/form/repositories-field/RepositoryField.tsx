@@ -1,5 +1,6 @@
+import { ChangeEvent, forwardRef, Ref, useImperativeHandle, useRef } from 'react'
+
 import { Combobox, ComboboxInput, ComboboxPopover } from '@reach/combobox'
-import React, { ChangeEvent, forwardRef, Ref, useImperativeHandle, useRef } from 'react'
 
 import { FlexTextArea } from '@sourcegraph/wildcard'
 
@@ -7,8 +8,9 @@ import { getSanitizedRepositories } from '../../creation-ui-kit'
 
 import { SuggestionsPanel } from './components/suggestion-panel/SuggestionPanel'
 import { useRepoSuggestions } from './hooks/use-repo-suggestions'
-import styles from './RepositoriesField.module.scss'
 import { RepositoryFieldProps } from './types'
+
+import styles from './RepositoriesField.module.scss'
 
 /**
  * Renders single repository field with suggestions.
@@ -39,8 +41,8 @@ export const RepositoryField = forwardRef((props: RepositoryFieldProps, referenc
                 onChange={handleInputChange}
             />
 
-            <ComboboxPopover className={styles.comboboxPopover}>
-                <SuggestionsPanel value={searchValue} suggestions={suggestions} />
+            <ComboboxPopover className={styles.comboboxReachPopover}>
+                <SuggestionsPanel value={searchValue} suggestions={suggestions} className={styles.popover} />
             </ComboboxPopover>
         </Combobox>
     )

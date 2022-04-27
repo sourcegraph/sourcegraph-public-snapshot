@@ -41,6 +41,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -53,6 +54,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	sglog "github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 var (
@@ -118,9 +120,12 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 	log.SetFlags(0)
 	log.SetPrefix("")
 
-	if err := profiler.Init(); err != nil {
-		log.Fatalf("failed to initialize profiling: %v", err)
-	}
+	syncLogs := sglog.Init(sglog.Resource{
+		Name:       env.MyName,
+		Version:    version.Version(),
+		InstanceID: hostname.Get(),
+	})
+	defer syncLogs()
 
 	ready := make(chan struct{})
 	go debugserver.NewServerRoutine(ready).Start()
@@ -175,6 +180,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 	tracer.Init(conf.DefaultClient())
 	sentry.Init(conf.DefaultClient())
 	trace.Init()
+	profiler.Init()
 
 	// Run enterprise setup hook
 	enterprise := enterpriseSetupHook(db, conf.DefaultClient())
@@ -337,6 +343,7 @@ func makeInternalAPI(schema *graphql.Schema, db database.DB, enterprise enterpri
 		schema,
 		db,
 		enterprise.NewCodeIntelUploadHandler,
+		enterprise.NewComputeStreamHandler,
 		rateLimiter,
 	)
 	httpServer := &http.Server{

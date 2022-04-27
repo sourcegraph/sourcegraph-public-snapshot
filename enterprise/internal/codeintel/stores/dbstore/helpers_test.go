@@ -53,6 +53,9 @@ func insertUploads(t testing.TB, db *sql.DB, uploads ...Upload) {
 		if upload.Indexer == "" {
 			upload.Indexer = "lsif-go"
 		}
+		if upload.IndexerVersion == "" {
+			upload.IndexerVersion = "latest"
+		}
 		if upload.UploadedParts == nil {
 			upload.UploadedParts = []int{}
 		}
@@ -75,11 +78,12 @@ func insertUploads(t testing.TB, db *sql.DB, uploads ...Upload) {
 				num_failures,
 				repository_id,
 				indexer,
+				indexer_version,
 				num_parts,
 				uploaded_parts,
 				upload_size,
 				associated_index_id
-			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 		`,
 			upload.ID,
 			upload.Commit,
@@ -94,6 +98,7 @@ func insertUploads(t testing.TB, db *sql.DB, uploads ...Upload) {
 			upload.NumFailures,
 			upload.RepositoryID,
 			upload.Indexer,
+			upload.IndexerVersion,
 			upload.NumParts,
 			pq.Array(upload.UploadedParts),
 			upload.UploadSize,
@@ -186,10 +191,16 @@ func insertRepo(t testing.TB, db *sql.DB, id int, name string) {
 		name = fmt.Sprintf("n-%d", id)
 	}
 
+	deletedAt := sqlf.Sprintf("NULL")
+	if strings.HasPrefix(name, "DELETED-") {
+		deletedAt = sqlf.Sprintf("%s", time.Unix(1587396557, 0).UTC())
+	}
+
 	query := sqlf.Sprintf(
-		`INSERT INTO repo (id, name) VALUES (%s, %s) ON CONFLICT (id) DO NOTHING`,
+		`INSERT INTO repo (id, name, deleted_at) VALUES (%s, %s, %s) ON CONFLICT (id) DO NOTHING`,
 		id,
 		name,
+		deletedAt,
 	)
 	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 		t.Fatalf("unexpected error while upserting repository: %s", err)
@@ -461,6 +472,7 @@ func dumpToUpload(expected Dump) Upload {
 		RepositoryID:      expected.RepositoryID,
 		RepositoryName:    expected.RepositoryName,
 		Indexer:           expected.Indexer,
+		IndexerVersion:    expected.IndexerVersion,
 		AssociatedIndexID: expected.AssociatedIndexID,
 	}
 }

@@ -1,22 +1,15 @@
-import { Combobox, ComboboxInput, ComboboxPopover } from '@reach/combobox'
-import React, {
-    ChangeEvent,
-    FocusEvent,
-    forwardRef,
-    MouseEvent,
-    Ref,
-    useImperativeHandle,
-    useRef,
-    useState,
-} from 'react'
+import { ChangeEvent, FocusEvent, forwardRef, MouseEvent, Ref, useImperativeHandle, useRef, useState } from 'react'
 
-import { FlexTextArea } from '@sourcegraph/wildcard'
+import { Combobox, ComboboxInput, ComboboxPopover } from '@reach/combobox'
+
+import { FlexTextArea, ForwardReferenceComponent } from '@sourcegraph/wildcard'
 
 import { SuggestionsPanel } from './components/suggestion-panel/SuggestionPanel'
 import { useRepoSuggestions } from './hooks/use-repo-suggestions'
-import styles from './RepositoriesField.module.scss'
 import { RepositoryFieldProps } from './types'
 import { getSuggestionsSearchTerm } from './utils/get-suggestions-search-term'
+
+import styles from './RepositoriesField.module.scss'
 
 /**
  * Renders multi repositories input with suggestions.
@@ -124,13 +117,13 @@ const RepositoriesField = forwardRef((props: RepositoryFieldProps, reference: Re
             />
 
             {panel && (
-                <ComboboxPopover className={styles.comboboxPopover}>
-                    <SuggestionsPanel value={searchValue} suggestions={suggestions} />
+                <ComboboxPopover hidden={false} className={styles.comboboxReachPopover}>
+                    <SuggestionsPanel value={searchValue} suggestions={suggestions} className={styles.popover} />
                 </ComboboxPopover>
             )}
         </Combobox>
     )
-})
+}) as ForwardReferenceComponent<'input', RepositoryFieldProps>
 
 RepositoriesField.displayName = 'RepositoriesField'
 

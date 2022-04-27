@@ -87,7 +87,7 @@ type Mutation {
 
     Only authenticated users may perform this mutation.
     """
-    createOrganization(name: String!, displayName: String): Org!
+    createOrganization(name: String!, displayName: String, statsID: ID): Org!
     """
     Updates an organization.
 
@@ -879,6 +879,7 @@ enum EventSource {
     CODEHOSTINTEGRATION
     BACKEND
     STATICWEB
+    IDEEXTENSION
 }
 
 """
@@ -1539,6 +1540,16 @@ type Query {
         """
         query: String!
     ): [AutocompleteMemberSearchItem!]!
+
+    """
+    Get started organization summary
+    """
+    orgMembersSummary(
+        """
+        The organization ID
+        """
+        organization: ID!
+    ): OrgMembersSummary!
 }
 
 """
@@ -2269,9 +2280,11 @@ enum ExternalServiceKind {
     AWSCODECOMMIT
     BITBUCKETCLOUD
     BITBUCKETSERVER
+    GERRIT
     GITHUB
     GITLAB
     GITOLITE
+    GOMODULES
     JVMPACKAGES
     NPMPACKAGES
     OTHER
@@ -3164,7 +3177,6 @@ type FileDiffHunk {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
-        treeSitterEnabled: Boolean = false
     ): HighlightedDiffHunkBody!
 }
 
@@ -3757,6 +3769,15 @@ type GitCommit implements Node {
     """
     externalURLs: [ExternalLink!]!
     """
+    The Git tree or blob in this commit at the given path.
+    """
+    path(
+        """
+        The path of the tree or blob.
+        """
+        path: String = ""
+    ): GitTreeOrBlob
+    """
     The Git tree in this commit at the given path.
     """
     tree(
@@ -3836,6 +3857,11 @@ type GitCommit implements Node {
         includePatterns: [String!]
     ): SymbolConnection!
 }
+
+"""
+Either a git tree or blob.
+"""
+union GitTreeOrBlob = GitTree | GitBlob
 
 """
 A set of Git behind/ahead counts for one commit relative to another.
@@ -4165,8 +4191,6 @@ interface File2 {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
-
-        treeSitterEnabled: Boolean = false
     ): HighlightedFile!
 }
 
@@ -4230,7 +4254,6 @@ type VirtualFile implements File2 {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
-        treeSitterEnabled: Boolean = false
     ): HighlightedFile!
 }
 
@@ -4332,7 +4355,6 @@ type GitBlob implements TreeEntry & File2 {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
-        treeSitterEnabled: Boolean = false
     ): HighlightedFile!
     """
     Submodule metadata if this tree points to a submodule
@@ -5086,6 +5108,10 @@ type Org implements Node & SettingsSubject & Namespace {
     """
     viewerIsMember: Boolean!
     """
+    Whether the viewer needs to update their code host connection.
+    """
+    viewerNeedsCodeHostUpdate: Boolean!
+    """
     The URL to the organization.
     """
     url: String!
@@ -5196,6 +5222,24 @@ type AutocompleteMemberSearchItem {
     If the user belongs to current Organization.
     """
     inOrg: Boolean
+}
+
+"""
+Result organization members count and pending invitations count.
+"""
+type OrgMembersSummary {
+    """
+    The unique ID for the Org.
+    """
+    id: ID!
+    """
+    Total number of members for the org.
+    """
+    membersCount: Int!
+    """
+    Total number of pending invites for the org.
+    """
+    invitesCount: Int!
 }
 
 """
@@ -6496,6 +6540,11 @@ type EventLogsConnection {
 A list of code host repositories
 """
 type CodeHostRepositoryConnection {
+    """
+    Errors returned from the code host.
+    """
+    codeHostErrors: [String!]!
+
     """
     A list of repositories affiliated with a code host.
     """

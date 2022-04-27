@@ -1,5 +1,6 @@
 import assert from 'assert'
 
+import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
@@ -126,7 +127,7 @@ describe('Code insight edit insight page', () => {
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/edit/001')
 
         // Waiting for all important part of creation form will be rendered.
-        await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
+        await driver.page.waitForSelector('[name="repositories"]')
 
         // Edit all insight form fields ↓
 
@@ -301,6 +302,7 @@ describe('Code insight edit insight page', () => {
         )
 
         await percySnapshotWithVariants(driver.page, 'Code insights edit page with search-based insight creation UI')
+        await accessibilityAudit(driver.page)
 
         // Gather all filled inputs within a creation UI form.
         const grabbedInsightInfo = await driver.page.evaluate(getInsightFormValues)

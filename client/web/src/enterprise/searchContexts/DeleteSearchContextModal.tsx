@@ -1,4 +1,5 @@
 import React, { useCallback } from 'react'
+
 import { useHistory } from 'react-router'
 import { Observable } from 'rxjs'
 import { mergeMap, startWith, tap, catchError } from 'rxjs/operators'
@@ -7,8 +8,9 @@ import { asError, isErrorLike } from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { ISearchContext } from '@sourcegraph/shared/src/schema'
-import { ALLOW_NAVIGATION } from '@sourcegraph/web/src/components/AwayPrompt'
 import { Button, LoadingSpinner, useEventObservable, Modal, Alert } from '@sourcegraph/wildcard'
+
+import { ALLOW_NAVIGATION } from '../../components/AwayPrompt'
 
 interface DeleteSearchContextModalProps
     extends Pick<SearchContextProps, 'deleteSearchContext'>,

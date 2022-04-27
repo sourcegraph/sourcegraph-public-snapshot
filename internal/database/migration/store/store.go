@@ -218,9 +218,9 @@ SELECT
 	p.blocks_done,
 	p.tuples_total,
 	p.tuples_done
-FROM pg_stat_all_indexes ai
-JOIN pg_index pi ON pi.indexrelid = ai.indexrelid
-LEFT JOIN pg_stat_progress_create_index p ON p.relid = ai.relid AND p.index_relid = ai.indexrelid
+FROM pg_catalog.pg_stat_all_indexes ai
+JOIN pg_catalog.pg_index pi ON pi.indexrelid = ai.indexrelid
+LEFT JOIN pg_catalog.pg_stat_progress_create_index p ON p.relid = ai.relid AND p.index_relid = ai.indexrelid
 WHERE
 	ai.relname = %s AND
 	ai.indexrelname = %s

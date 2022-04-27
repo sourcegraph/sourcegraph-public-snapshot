@@ -2,15 +2,12 @@ package main
 
 import (
 	"context"
-	"log"
-	"os"
-	"strconv"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/workerdb"
-	batchesjanitor "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/batches/janitor"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/batches"
 	batchesmigrations "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/batches/migrations"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel"
 	codeintelmigrations "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/migrations"
@@ -22,30 +19,43 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 func main() {
-	debug, _ := strconv.ParseBool(os.Getenv("DEBUG"))
-	if debug {
-		log.Println("enterprise edition")
-	}
+	syncLogs := log.Init(log.Resource{
+		Name:    env.MyName,
+		Version: version.Version(),
+	})
+	defer syncLogs()
+
+	logger := log.Scoped("worker", "worker enterprise edition")
 
 	go setAuthzProviders()
 
 	additionalJobs := map[string]job.Job{
-		"codeintel-commitgraph":    codeintel.NewCommitGraphJob(),
-		"codeintel-janitor":        codeintel.NewJanitorJob(),
-		"codeintel-auto-indexing":  codeintel.NewIndexingJob(),
-		"codehost-version-syncing": versions.NewSyncingJob(),
-		"insights-job":             workerinsights.NewInsightsJob(),
-		"batches-janitor":          batchesjanitor.NewJanitorJob(),
-		"executors-janitor":        executors.NewJanitorJob(),
-		"codemonitors-job":         codemonitors.NewCodeMonitorJob(),
+		"codeintel-commitgraph":      codeintel.NewCommitGraphJob(),
+		"codeintel-janitor":          codeintel.NewJanitorJob(),
+		"codeintel-auto-indexing":    codeintel.NewIndexingJob(),
+		"codehost-version-syncing":   versions.NewSyncingJob(),
+		"insights-job":               workerinsights.NewInsightsJob(),
+		"insights-query-runner-job":  workerinsights.NewInsightsQueryRunnerJob(),
+		"batches-janitor":            batches.NewJanitorJob(),
+		"batches-scheduler":          batches.NewSchedulerJob(),
+		"batches-reconciler":         batches.NewReconcilerJob(),
+		"batches-bulk-processor":     batches.NewBulkOperationProcessorJob(),
+		"batches-workspace-resolver": batches.NewWorkspaceResolverJob(),
+		"executors-janitor":          executors.NewJanitorJob(),
+		"codemonitors-job":           codemonitors.NewCodeMonitorJob(),
 	}
 
-	shared.Start(additionalJobs, registerEnterpriseMigrations)
+	if err := shared.Start(logger, additionalJobs, registerEnterpriseMigrations); err != nil {
+		logger.Fatal(err.Error())
+	}
 }
 
 func init() {
@@ -66,7 +76,7 @@ func setAuthzProviders() {
 	ctx := context.Background()
 
 	for range time.NewTicker(eiauthz.RefreshInterval()).C {
-		allowAccessByDefault, authzProviders, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), database.ExternalServices(db))
+		allowAccessByDefault, authzProviders, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), database.ExternalServices(db), database.NewDB(db))
 		authz.SetProviders(allowAccessByDefault, authzProviders)
 	}
 }

@@ -16,8 +16,7 @@ import (
 
 	"github.com/Masterminds/semver"
 	"github.com/google/go-github/github"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/inconshreveable/log15"
 	"github.com/segmentio/fasthash/fnv1"
 	"golang.org/x/oauth2"
 
@@ -1509,12 +1508,6 @@ func newHttpResponseState(statusCode int, headers http.Header) *httpResponseStat
 	}
 }
 
-// These headers are used for conditional requests.
-var (
-	headerIfNoneMatch     = "If-None-Match"
-	headerIfModifiedSince = "If-Modified-Since"
-)
-
 func doRequest(ctx context.Context, apiURL *url.URL, auth auth.Authenticator, rateLimitMonitor *ratelimit.Monitor, httpClient httpcli.Doer, req *http.Request, result interface{}) (responseState *httpResponseState, err error) {
 	req.URL.Path = path.Join(apiURL.Path, req.URL.Path)
 	req.URL = apiURL.ResolveReference(req.URL)
@@ -1545,6 +1538,8 @@ func doRequest(ctx context.Context, apiURL *url.URL, auth auth.Authenticator, ra
 	}
 	defer resp.Body.Close()
 
+	log15.Debug("doRequest", "status", resp.Status, "x-ratelimit-remaining", resp.Header.Get("x-ratelimit-remaining"))
+
 	// For 401 responses we receive a remaining limit of 0. This will cause the next
 	// call to block for up to an hour because it believes we have run out of tokens.
 	// Instead, we should fail fast.
@@ -1564,13 +1559,11 @@ func doRequest(ctx context.Context, apiURL *url.URL, auth auth.Authenticator, ra
 		return newHttpResponseState(resp.StatusCode, resp.Header), &err
 	}
 
-	// If this is a conditional request (If-None-Match or If-Modified-Since header in the request)
-	// and the response is a 304 (resource not modified), the body is empty. Return early. It is now
-	// the caller's responsibility to read from a cache.
+	// If the resource is not modified, the body is empty. Return early. This is expected for
+	// resources that support conditional requests.
 	//
 	// See: https://docs.github.com/en/rest/overview/resources-in-the-rest-api#conditional-requests
-	if (req.Header.Get(headerIfNoneMatch) != "" || req.Header.Get(headerIfModifiedSince) != "") &&
-		resp.StatusCode == 304 {
+	if resp.StatusCode == 304 {
 		return newHttpResponseState(resp.StatusCode, resp.Header), nil
 	}
 
@@ -1741,52 +1734,8 @@ type Repository struct {
 	Visibility Visibility `json:",omitempty"`
 }
 
-func ownerNameCacheKey(owner, name string) string       { return "0:" + owner + "/" + name }
-func nameWithOwnerCacheKey(nameWithOwner string) string { return "0:" + nameWithOwner }
-func nodeIDCacheKey(id string) string                   { return "1:" + id }
-
 // GetRepositoryMock is set by tests to mock (*Client).GetRepository.
 var GetRepositoryMock func(ctx context.Context, owner, name string) (*Repository, error)
-
-// cachedGetRepository caches the getRepositoryFromAPI call.
-func (c *V3Client) cachedGetRepository(ctx context.Context, key string, getRepositoryFromAPI func(ctx context.Context) (repo *Repository, keys []string, err error)) (*Repository, error) {
-	if cached := c.getRepositoryFromCache(key); cached != nil {
-		reposGitHubCacheCounter.WithLabelValues("hit").Inc()
-		if cached.NotFound {
-			return nil, ErrRepoNotFound
-		}
-		return &cached.Repository, nil
-	}
-
-	repo, keys, err := getRepositoryFromAPI(ctx)
-	if IsNotFound(err) {
-		// Before we do anything, ensure we cache NotFound responses.
-		// Do this if client is unauthed or authed, it's okay since we're only caching not found responses here.
-		c.addRepositoryToCache(keys, &cachedRepo{NotFound: true})
-		reposGitHubCacheCounter.WithLabelValues("notfound").Inc()
-	}
-	if err != nil {
-		reposGitHubCacheCounter.WithLabelValues("error").Inc()
-		return nil, err
-	}
-
-	c.addRepositoryToCache(keys, &cachedRepo{Repository: *repo})
-	reposGitHubCacheCounter.WithLabelValues("miss").Inc()
-
-	return repo, nil
-}
-
-var reposGitHubCacheCounter = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "src_repos_github_cache_hit",
-	Help: "Counts cache hits and misses for GitHub repo metadata.",
-}, []string{"type"})
-
-type cachedRepo struct {
-	Repository
-
-	// NotFound indicates that the GitHub API reported that the repository was not found.
-	NotFound bool
-}
 
 type restRepositoryPermissions struct {
 	Admin bool `json:"admin"`
@@ -1956,6 +1905,7 @@ type UserEmail struct {
 }
 
 type Org struct {
+	ID    int    `json:"id,omitempty"`
 	Login string `json:"login,omitempty"`
 }
 

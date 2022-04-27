@@ -1,5 +1,6 @@
-import AddIcon from 'mdi-react/AddIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+
+import AddIcon from 'mdi-react/AddIcon'
 import { EMPTY, Observable } from 'rxjs'
 import { catchError, tap } from 'rxjs/operators'
 
@@ -7,14 +8,6 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike, repeatUntil } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { queryExternalServices } from '@sourcegraph/web/src/components/externalServices/backend'
-import {
-    FilteredConnectionFilter,
-    FilteredConnectionQueryArguments,
-    Connection,
-} from '@sourcegraph/web/src/components/FilteredConnection'
-import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
-import { SelfHostedCtaLink } from '@sourcegraph/web/src/components/SelfHostedCtaLink'
 import {
     Container,
     PageHeader,
@@ -29,12 +22,21 @@ import {
 
 import { AuthenticatedUser } from '../../../auth'
 import { requestGraphQL } from '../../../backend/graphql'
+import { queryExternalServices } from '../../../components/externalServices/backend'
+import {
+    FilteredConnectionFilter,
+    FilteredConnectionQueryArguments,
+    Connection,
+} from '../../../components/FilteredConnection'
+import { PageTitle } from '../../../components/PageTitle'
+import { SelfHostedCtaLink } from '../../../components/SelfHostedCtaLink'
 import {
     SiteAdminRepositoryFields,
     ExternalServicesResult,
     CodeHostSyncDueResult,
     CodeHostSyncDueVariables,
     RepositoriesResult,
+    OrgAreaOrganizationFields,
 } from '../../../graphql-operations'
 import {
     listUserRepositories,
@@ -46,9 +48,11 @@ import { eventLogger } from '../../../tracking/eventLogger'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
 import { Owner } from '../cloud-ga'
 import { OrgUserNeedsCodeHost } from '../codeHosts/OrgUserNeedsCodeHost'
+import { OrgUserNeedsGithubUpgrade } from '../codeHosts/OrgUserNeedsGithubUpgrade'
 
 import { UserSettingReposContainer } from './components'
 import { defaultFilters, RepositoriesList } from './RepositoriesList'
+
 import styles from './SettingsRepositoriesPage.module.scss'
 
 interface Props
@@ -57,6 +61,8 @@ interface Props
     owner: Owner
     routingPrefix: string
     authenticatedUser: AuthenticatedUser
+    onOrgGetStartedRefresh?: () => void
+    org?: OrgAreaOrganizationFields
 }
 
 type SyncStatusOrError = undefined | 'scheduled' | 'schedule-complete' | ErrorLike
@@ -70,6 +76,8 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     telemetryService,
     onUserExternalServicesOrRepositoriesUpdate,
     authenticatedUser,
+    onOrgGetStartedRefresh,
+    org,
 }) => {
     const [hasRepos, setHasRepos] = useState(false)
     const [externalServices, setExternalServices] = useState<ExternalServicesResult['externalServices']['nodes']>()
@@ -253,6 +261,9 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
             if (value as Connection<SiteAdminRepositoryFields>) {
                 const conn = value as Connection<SiteAdminRepositoryFields>
 
+                if (onOrgGetStartedRefresh) {
+                    onOrgGetStartedRefresh()
+                }
                 // hasRepos is only useful when query is not set since user may
                 // still have repos that don't match given query
                 if (query === '') {
@@ -264,7 +275,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                 }
             }
         },
-        []
+        [onOrgGetStartedRefresh]
     )
 
     const logManageRepositoriesClick = useCallback(() => {
@@ -327,7 +338,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                     orgDisplayName={owner.name}
                 />
             )}
-
+            {!isUserOwner && authenticatedUser && org && org.viewerNeedsCodeHostUpdate && <OrgUserNeedsGithubUpgrade />}
             <PageTitle title="Your repositories" />
             <PageHeader
                 headingElement="h2"

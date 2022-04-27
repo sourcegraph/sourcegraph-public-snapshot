@@ -195,7 +195,13 @@ extend type Query {
     """
     Return all insight views visible to the authenticated user.
     """
-    insightViews(first: Int, after: String, id: ID, filters: InsightViewFiltersInput): InsightViewConnection!
+    insightViews(
+        first: Int
+        after: String
+        id: ID
+        isFrozen: Boolean
+        filters: InsightViewFiltersInput
+    ): InsightViewConnection!
 
     """
     Generate an ephemeral time series for a Search based code insight, generally for the purposes of live preview.
@@ -573,6 +579,11 @@ input LineChartSearchInsightInput {
     The dashboard IDs to associate this insight with once created.
     """
     dashboards: [ID!]
+
+    """
+    The default values for filters and aggregates for this line chart.
+    """
+    viewControls: InsightViewControlsInput
 }
 
 """
@@ -617,6 +628,11 @@ input InsightViewFiltersInput {
     A regex string for which to exclude repositories in a filter.
     """
     excludeRepoRegex: String
+
+    """
+    A list of query based search contexts to include in the filters for the view.
+    """
+    searchContexts: [String!]
 }
 
 """
@@ -941,6 +957,11 @@ type InsightViewFilters {
     A regex string for which to exclude repositories from a filter.
     """
     excludeRepoRegex: String
+
+    """
+    The names of query based search contexts that are used as a filter.
+    """
+    searchContexts: [String!]
 }
 
 """

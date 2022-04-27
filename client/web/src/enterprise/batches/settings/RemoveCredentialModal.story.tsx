@@ -1,6 +1,5 @@
 import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
-import React from 'react'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 
@@ -32,6 +31,7 @@ add('No ssh', () => (
                 codeHost={{
                     credential,
                     requiresSSH: false,
+                    requiresUsername: false,
                     externalServiceKind: ExternalServiceKind.GITHUB,
                     externalServiceURL: 'https://github.com/',
                 }}
@@ -51,6 +51,7 @@ add('Requires ssh', () => (
                 codeHost={{
                     credential,
                     requiresSSH: true,
+                    requiresUsername: false,
                     externalServiceKind: ExternalServiceKind.GITHUB,
                     externalServiceURL: 'https://github.com/',
                 }}

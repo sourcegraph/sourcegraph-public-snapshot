@@ -1,7 +1,5 @@
-import * as Sentry from '@sentry/browser'
 import classNames from 'classnames'
 import { trimStart } from 'lodash'
-import React from 'react'
 import { render } from 'react-dom'
 import { defer, of } from 'rxjs'
 import { distinctUntilChanged, filter, map } from 'rxjs/operators'
@@ -33,13 +31,14 @@ import { NativeTooltip } from '../shared/nativeTooltips'
 import { getSelectionsFromHash, observeSelectionsFromHash } from '../shared/util/selections'
 import { ViewResolver } from '../shared/views'
 
-import styles from './codeHost.module.scss'
 import { markdownBodyViewResolver } from './contentViews'
 import { diffDomFunctions, searchCodeSnippetDOMFunctions, singleFileDOMFunctions } from './domFunctions'
 import { getCommandPaletteMount } from './extensions'
 import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './fileInfo'
 import { setElementTooltip } from './tooltip'
 import { getFileContainers, parseURL, getFilePath } from './util'
+
+import styles from './codeHost.module.scss'
 
 /**
  * Creates the mount element for the CodeViewToolbar on code views containing
@@ -377,39 +376,29 @@ const searchEnhancement: GithubCodeHost['searchEnhancement'] = {
 }
 
 /**
- * Checks whether repository is private or not using Github API + fallback to DOM element check
- *
- * @description See https://docs.github.com/en/rest/reference/repos#get-a-repository
- * @description see rate limit https://docs.github.com/en/rest/overview/resources-in-the-rest-api#rate-limiting
+ * Checks whether repository is private by querying its page on GitHub
+ * and either parsing the HTML response or falling back to DOM element check.
  */
-export const isPrivateRepository = (
+export const isPrivateRepository = async (
     repoName: string,
     fetchCache = background.fetchCache,
-    fallbackSelector = '#repository-container-header h1 span.Label'
+    fallbackSelector = '#repository-container-header h2 span.Label'
 ): Promise<boolean> => {
     if (window.location.hostname !== 'github.com') {
         return Promise.resolve(true)
     }
-    return fetchCache<{ private?: boolean }>({
-        url: `https://api.github.com/repos/${repoName}`,
-        credentials: 'omit',
-        cacheMaxAge: 60 * 60 * 1000, // 1 hour
-    })
-        .then(response => {
-            const rateLimit = response.headers['x-ratelimit-remaining']
-            if (Number(rateLimit) <= 0) {
-                const rateLimitError = new Error('Github rate limit exceeded.')
-                Sentry.captureException(rateLimitError)
-                throw rateLimitError
-            }
-            return response
+    try {
+        const { status } = await fetchCache({
+            url: `https://github.com/${repoName}`,
+            credentials: 'omit',
+            cacheMaxAge: 60 * 60 * 1000, // 1 hour
         })
-        .then(({ data }) => typeof data.private !== 'boolean' || data.private)
-        .catch(error => {
-            // If network error or rate-limit exceeded fallback to DOM check
-            console.warn('Failed to fetch if the repository is private.', error)
-            return document.querySelector(fallbackSelector)?.textContent?.toLowerCase().trim() !== 'public'
-        })
+        return status !== 200
+    } catch (error) {
+        // If network error
+        console.warn('Failed to fetch if the repository is private.', error)
+        return document.querySelector(fallbackSelector)?.textContent?.toLowerCase().trim() !== 'public'
+    }
 }
 
 export interface GithubCodeHost extends CodeHost {

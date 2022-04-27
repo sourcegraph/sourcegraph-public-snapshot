@@ -1,9 +1,10 @@
+import * as React from 'react'
+
 import classNames from 'classnames'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import MessageTextOutlineIcon from 'mdi-react/MessageTextOutlineIcon'
 import PlusIcon from 'mdi-react/PlusIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
-import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
@@ -13,7 +14,7 @@ import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { SearchPatternTypeProps } from '@sourcegraph/search'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Container, PageHeader, LoadingSpinner, Button, Link } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, Button, Link, Icon } from '@sourcegraph/wildcard'
 
 import { NamespaceProps } from '../namespaces'
 import { deleteSavedSearch, fetchSavedSearches } from '../search/backend'
@@ -65,7 +66,7 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
         return (
             <div className={classNames(styles.row, 'list-group-item test-saved-search-list-page-row')}>
                 <div className="d-flex">
-                    <MessageTextOutlineIcon className={classNames(styles.rowIcon, 'icon-inline')} />
+                    <Icon className={styles.rowIcon} as={MessageTextOutlineIcon} />
                     <Link
                         to={
                             '/search?' +
@@ -86,7 +87,7 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
                         size="sm"
                         as={Link}
                     >
-                        <SettingsIcon className="icon-inline" /> Settings
+                        <Icon as={SettingsIcon} /> Settings
                     </Button>{' '}
                     <Button
                         className="test-delete-saved-search-button"
@@ -95,8 +96,9 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
                         data-tooltip="Delete saved search"
                         variant="danger"
                         size="sm"
+                        aria-label="Delete saved search"
                     >
-                        <DeleteIcon className="icon-inline" />
+                        <Icon as={DeleteIcon} />
                     </Button>
                 </div>
             </div>
@@ -151,7 +153,7 @@ export class SavedSearchListPage extends React.Component<Props, State> {
                             variant="primary"
                             as={Link}
                         >
-                            <PlusIcon className="icon-inline" /> Add saved search
+                            <Icon as={PlusIcon} /> Add saved search
                         </Button>
                     }
                     className="mb-3"

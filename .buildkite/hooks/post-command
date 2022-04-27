@@ -2,7 +2,7 @@
 
 (
     exit_code="$BUILDKITE_COMMAND_EXIT_STATUS"
-    BUILDEVENT_APIKEY=$CI_BUILDEVENT_API_KEY
+    BUILDEVENT_APIKEY="$CI_HONEYCOMB_API_KEY"
     BUILDEVENT_DATASET="$CI_BUILDEVENT_DATASET"
     export BUILDEVENT_DATASET
     export BUILDEVENT_APIKEY
@@ -20,7 +20,12 @@
     done
 
     # None of the exit codes were 0 or soft fails, report the failure then.
-    buildevents build "$BUILDKITE_BUILD_ID" "$BUILD_START_TIME" failure
+    # buildevents wfpwfp # build "$BUILDKITE_BUILD_ID" "$BUILD_START_TIME" failure
+    if ! buildevents build "$BUILDKITE_BUILD_ID" "$BUILD_START_TIME" failure; then
+      echo -e "\033[33m┌────────────────────────────────────────────────────────────────────┐\033[0m"
+      echo -e "\033[33m│ The failure in this hook does not impact the outcome of this build │\033[0m"
+      echo -e "\033[33m└────────────────────────────────────────────────────────────────────┘\033[0m"
+    fi
 
     # Return the original exit code
     exit "$exit_code"

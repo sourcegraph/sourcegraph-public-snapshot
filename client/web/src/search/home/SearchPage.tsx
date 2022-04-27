@@ -1,6 +1,7 @@
+import React, { useEffect, useMemo } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
-import React, { useEffect, useMemo } from 'react'
 
 import { SearchContextInputProps } from '@sourcegraph/search'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
@@ -22,9 +23,10 @@ import { ThemePreferenceProps } from '../../theme'
 import { HomePanels } from '../panels/HomePanels'
 
 import { LoggedOutHomepage } from './LoggedOutHomepage'
-import styles from './SearchPage.module.scss'
 import { SearchPageFooter } from './SearchPageFooter'
 import { SearchPageInput } from './SearchPageInput'
+
+import styles from './SearchPage.module.scss'
 
 export interface SearchPageProps
     extends SettingsCascadeProps<Settings>,
@@ -74,9 +76,7 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
         <div className={classNames('d-flex flex-column align-items-center px-3', styles.searchPage)}>
             <BrandLogo className={styles.logo} isLightTheme={props.isLightTheme} variant="logo" />
             {props.isSourcegraphDotCom && (
-                <div className="text-muted text-center font-italic mt-3">
-                    Search your code and 2M+ open source repositories
-                </div>
+                <div className="text-muted text-center mt-3">Search your code and 2M+ open source repositories</div>
             )}
             <div
                 className={classNames(styles.searchContainer, {

@@ -17,6 +17,7 @@ type operations struct {
 	deleteConfigurationPolicyByID               *observation.Operation
 	deleteIndexByID                             *observation.Operation
 	deleteIndexesWithoutRepository              *observation.Operation
+	deleteOldAuditLogs                          *observation.Operation
 	deleteOverlappingDumps                      *observation.Operation
 	deleteSourcedCommits                        *observation.Operation
 	deleteUploadByID                            *observation.Operation
@@ -48,6 +49,9 @@ type operations struct {
 	insertIndex                                 *observation.Operation
 	insertUpload                                *observation.Operation
 	isQueued                                    *observation.Operation
+	languagesRequestedBy                        *observation.Operation
+	lastIndexScanForRepository                  *observation.Operation
+	lastUploadRetentionScanForRepository        *observation.Operation
 	markComplete                                *observation.Operation
 	markErrored                                 *observation.Operation
 	markFailed                                  *observation.Operation
@@ -55,12 +59,16 @@ type operations struct {
 	markIndexErrored                            *observation.Operation
 	markQueued                                  *observation.Operation
 	markRepositoryAsDirty                       *observation.Operation
+	maxStaleAge                                 *observation.Operation
 	queueSize                                   *observation.Operation
+	recentIndexesSummary                        *observation.Operation
+	recentUploadsSummary                        *observation.Operation
 	referenceIDsAndFilters                      *observation.Operation
 	referencesForUpload                         *observation.Operation
 	refreshCommitResolvability                  *observation.Operation
 	repoIDsByGlobPatterns                       *observation.Operation
 	repoName                                    *observation.Operation
+	requestLanguageSupport                      *observation.Operation
 	requeue                                     *observation.Operation
 	requeueIndex                                *observation.Operation
 	selectPoliciesForRepositoryMembershipUpdate *observation.Operation
@@ -106,61 +114,70 @@ func newOperations(observationContext *observation.Context, metrics *metrics.RED
 	}
 
 	return &operations{
-		addUploadPart:                       op("AddUploadPart"),
-		calculateVisibleUploads:             op("CalculateVisibleUploads"),
-		commitGraphMetadata:                 op("CommitGraphMetadata"),
-		commitsVisibleToUpload:              op("CommitsVisibleToUpload"),
-		createConfigurationPolicy:           op("CreateConfigurationPolicy"),
-		definitionDumps:                     op("DefinitionDumps"),
-		deleteConfigurationPolicyByID:       op("DeleteConfigurationPolicyByID"),
-		deleteIndexByID:                     op("DeleteIndexByID"),
-		deleteIndexesWithoutRepository:      op("DeleteIndexesWithoutRepository"),
-		deleteOverlappingDumps:              op("DeleteOverlappingDumps"),
-		deleteSourcedCommits:                op("DeleteSourcedCommits"),
-		deleteUploadByID:                    op("DeleteUploadByID"),
-		deleteUploadsStuckUploading:         op("DeleteUploadsStuckUploading"),
-		deleteUploadsWithoutRepository:      op("DeleteUploadsWithoutRepository"),
-		dequeue:                             op("Dequeue"),
-		dequeueIndex:                        op("DequeueIndex"),
-		dirtyRepositories:                   op("DirtyRepositories"),
-		findClosestDumps:                    op("FindClosestDumps"),
-		findClosestDumpsFromGraphFragment:   op("FindClosestDumpsFromGraphFragment"),
-		getConfigurationPolicies:            op("GetConfigurationPolicies"),
-		getConfigurationPolicyByID:          op("GetConfigurationPolicyByID"),
-		getDumpsByIDs:                       op("GetDumpsByIDs"),
-		getIndexByID:                        op("GetIndexByID"),
-		getIndexConfigurationByRepositoryID: op("GetIndexConfigurationByRepositoryID"),
-		getIndexes:                          op("GetIndexes"),
-		getIndexesByIDs:                     op("GetIndexesByIDs"),
-		getOldestCommitDate:                 op("GetOldestCommitDate"),
-		getUploadByID:                       op("GetUploadByID"),
-		getUploads:                          op("GetUploads"),
-		getUploadsByIDs:                     op("GetUploadsByIDs"),
-		hardDeleteUploadByID:                op("HardDeleteUploadByID"),
-		hasCommit:                           op("HasCommit"),
-		hasRepository:                       op("HasRepository"),
-		indexQueueSize:                      op("IndexQueueSize"),
-		insertCloneableDependencyRepo:       op("InsertCloneableDependencyRepo"),
-		insertDependencyIndexingJob:         op("InsertDependencyIndexingJob"),
-		insertDependencySyncingJob:          op("InsertDependencySyncingJob"),
-		insertIndex:                         op("InsertIndex"),
-		insertUpload:                        op("InsertUpload"),
-		isQueued:                            op("IsQueued"),
-		markComplete:                        op("MarkComplete"),
-		markErrored:                         op("MarkErrored"),
-		markFailed:                          op("MarkFailed"),
-		markIndexComplete:                   op("MarkIndexComplete"),
-		markIndexErrored:                    op("MarkIndexErrored"),
-		markQueued:                          op("MarkQueued"),
-		markRepositoryAsDirty:               op("MarkRepositoryAsDirty"),
-		queueSize:                           op("QueueSize"),
-		referenceIDsAndFilters:              op("ReferenceIDsAndFilters"),
-		referencesForUpload:                 op("ReferencesForUpload"),
-		refreshCommitResolvability:          op("RefreshCommitResolvability"),
-		repoIDsByGlobPatterns:               op("repoIDsByGlobPatterns"),
-		repoName:                            op("RepoName"),
-		requeue:                             op("Requeue"),
-		requeueIndex:                        op("RequeueIndex"),
+		addUploadPart:                        op("AddUploadPart"),
+		calculateVisibleUploads:              op("CalculateVisibleUploads"),
+		commitGraphMetadata:                  op("CommitGraphMetadata"),
+		commitsVisibleToUpload:               op("CommitsVisibleToUpload"),
+		createConfigurationPolicy:            op("CreateConfigurationPolicy"),
+		definitionDumps:                      op("DefinitionDumps"),
+		deleteConfigurationPolicyByID:        op("DeleteConfigurationPolicyByID"),
+		deleteIndexByID:                      op("DeleteIndexByID"),
+		deleteIndexesWithoutRepository:       op("DeleteIndexesWithoutRepository"),
+		deleteOldAuditLogs:                   op("DeleteOldAuditLogs"),
+		deleteOverlappingDumps:               op("DeleteOverlappingDumps"),
+		deleteSourcedCommits:                 op("DeleteSourcedCommits"),
+		deleteUploadByID:                     op("DeleteUploadByID"),
+		deleteUploadsStuckUploading:          op("DeleteUploadsStuckUploading"),
+		deleteUploadsWithoutRepository:       op("DeleteUploadsWithoutRepository"),
+		dequeue:                              op("Dequeue"),
+		dequeueIndex:                         op("DequeueIndex"),
+		dirtyRepositories:                    op("DirtyRepositories"),
+		findClosestDumps:                     op("FindClosestDumps"),
+		findClosestDumpsFromGraphFragment:    op("FindClosestDumpsFromGraphFragment"),
+		getConfigurationPolicies:             op("GetConfigurationPolicies"),
+		getConfigurationPolicyByID:           op("GetConfigurationPolicyByID"),
+		getDumpsByIDs:                        op("GetDumpsByIDs"),
+		getIndexByID:                         op("GetIndexByID"),
+		getIndexConfigurationByRepositoryID:  op("GetIndexConfigurationByRepositoryID"),
+		getIndexes:                           op("GetIndexes"),
+		getIndexesByIDs:                      op("GetIndexesByIDs"),
+		getOldestCommitDate:                  op("GetOldestCommitDate"),
+		getUploadByID:                        op("GetUploadByID"),
+		getUploads:                           op("GetUploads"),
+		getUploadsByIDs:                      op("GetUploadsByIDs"),
+		hardDeleteUploadByID:                 op("HardDeleteUploadByID"),
+		hasCommit:                            op("HasCommit"),
+		hasRepository:                        op("HasRepository"),
+		indexQueueSize:                       op("IndexQueueSize"),
+		insertCloneableDependencyRepo:        op("InsertCloneableDependencyRepo"),
+		insertDependencyIndexingJob:          op("InsertDependencyIndexingJob"),
+		insertDependencySyncingJob:           op("InsertDependencySyncingJob"),
+		insertIndex:                          op("InsertIndex"),
+		insertUpload:                         op("InsertUpload"),
+		isQueued:                             op("IsQueued"),
+		languagesRequestedBy:                 op("LanguagesRequestedBy"),
+		lastIndexScanForRepository:           op("LastIndexScanForRepository"),
+		lastUploadRetentionScanForRepository: op("LastUploadRetentionScanForRepository"),
+		markComplete:                         op("MarkComplete"),
+		markErrored:                          op("MarkErrored"),
+		markFailed:                           op("MarkFailed"),
+		markIndexComplete:                    op("MarkIndexComplete"),
+		markIndexErrored:                     op("MarkIndexErrored"),
+		markQueued:                           op("MarkQueued"),
+		markRepositoryAsDirty:                op("MarkRepositoryAsDirty"),
+		maxStaleAge:                          op("MaxStaleAge"),
+		queueSize:                            op("QueueSize"),
+		recentIndexesSummary:                 op("RecentIndexesSummary"),
+		recentUploadsSummary:                 op("RecentUploadsSummary"),
+		referenceIDsAndFilters:               op("ReferenceIDsAndFilters"),
+		referencesForUpload:                  op("ReferencesForUpload"),
+		refreshCommitResolvability:           op("RefreshCommitResolvability"),
+		repoIDsByGlobPatterns:                op("repoIDsByGlobPatterns"),
+		repoName:                             op("RepoName"),
+		requestLanguageSupport:               op("RequestLanguageSupport"),
+		requeue:                              op("Requeue"),
+		requeueIndex:                         op("RequeueIndex"),
+
 		selectPoliciesForRepositoryMembershipUpdate: op("selectPoliciesForRepositoryMembershipUpdate"),
 		selectRepositoriesForIndexScan:              op("SelectRepositoriesForIndexScan"),
 		selectRepositoriesForRetentionScan:          op("SelectRepositoriesForRetentionScan"),

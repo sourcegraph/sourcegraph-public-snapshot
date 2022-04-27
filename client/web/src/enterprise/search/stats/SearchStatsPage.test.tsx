@@ -1,6 +1,5 @@
 import { render, act } from '@testing-library/react'
 import * as H from 'history'
-import React from 'react'
 import { MemoryRouter } from 'react-router'
 import { of } from 'rxjs'
 

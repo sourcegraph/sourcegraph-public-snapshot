@@ -1,4 +1,3 @@
-import React from 'react'
 import { Redirect } from 'react-router'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'

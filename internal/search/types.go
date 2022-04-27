@@ -4,15 +4,11 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 
-	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -103,45 +99,13 @@ type ZoektParameters struct {
 	Typ            IndexedRequestType
 	FileMatchLimit int32
 	Select         filter.SelectPath
-
-	Zoekt zoekt.Streamer
 }
 
 // SearcherParameters the inputs for a search fulfilled by the Searcher service
 // (cmd/searcher). Searcher fulfills (1) unindexed literal and regexp searches
 // and (2) structural search requests.
 type SearcherParameters struct {
-	SearcherURLs *endpoint.Map
-	PatternInfo  *TextPatternInfo
-
-	// UseFullDeadline indicates that the search should try do as much work as
-	// it can within context.Deadline. If false the search should try and be
-	// as fast as possible, even if a "slow" deadline is set.
-	//
-	// For example searcher will wait to full its archive cache for a
-	// repository if this field is true. Another example is we set this field
-	// to true if the user requests a specific timeout or maximum result size.
-	UseFullDeadline bool
-}
-
-// TextParameters are the parameters passed to a search backend. It contains the Pattern
-// to search for, as well as the hydrated list of repository revisions to
-// search. It defines behavior for text search on repository names, file names, and file content.
-type TextParameters struct {
 	PatternInfo *TextPatternInfo
-	RepoOptions RepoOptions
-	Features    Features
-	ResultTypes result.Types
-	Timeout     time.Duration
-
-	Repos []*RepositoryRevisions
-
-	Mode GlobalSearchMode
-
-	// Query is the parsed query from the user. You should be using Pattern
-	// instead, but Query is useful for checking extra fields that are set and
-	// ignored by Pattern, such as index:no
-	Query query.Q
 
 	// UseFullDeadline indicates that the search should try do as much work as
 	// it can within context.Deadline. If false the search should try and be
@@ -151,9 +115,6 @@ type TextParameters struct {
 	// repository if this field is true. Another example is we set this field
 	// to true if the user requests a specific timeout or maximum result size.
 	UseFullDeadline bool
-
-	Zoekt        zoekt.Streamer
-	SearcherURLs *endpoint.Map
 }
 
 // TextPatternInfo is the struct used by vscode pass on search queries. Keep it in
@@ -262,15 +223,23 @@ type RepoOptions struct {
 	Dependencies             []string
 	CaseSensitiveRepoFilters bool
 	SearchContextSpec        string
-	NoForks                  bool
-	OnlyForks                bool
-	NoArchived               bool
-	OnlyArchived             bool
-	CommitAfter              string
-	Visibility               query.RepoVisibility
-	Limit                    int
-	Cursors                  []*types.Cursor
-	Query                    query.Q
+
+	CommitAfter string
+	Visibility  query.RepoVisibility
+	Limit       int
+	Cursors     []*types.Cursor
+
+	// Explicit forks indicates whether `fork:` was set explicitly in the query,
+	// or whether the values were set from defaults.
+	ForkSet   bool
+	NoForks   bool
+	OnlyForks bool
+
+	// ArchivedSet indicates whether `archived:` was set explicitly in the query,
+	// or whether the values were set from defaults.
+	ArchivedSet  bool
+	NoArchived   bool
+	OnlyArchived bool
 }
 
 func (op *RepoOptions) String() string {

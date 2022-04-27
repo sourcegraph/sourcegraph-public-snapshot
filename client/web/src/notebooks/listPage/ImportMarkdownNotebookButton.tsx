@@ -1,10 +1,11 @@
-import UploadIcon from 'mdi-react/UploadIcon'
 import React, { useCallback, useRef } from 'react'
+
+import UploadIcon from 'mdi-react/UploadIcon'
 import * as uuid from 'uuid'
 
 import { ErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { CreateNotebookVariables } from '../../graphql-operations'
@@ -47,8 +48,8 @@ export const ImportMarkdownNotebookButton: React.FunctionComponent<ImportMarkdow
                 setImportState(INVALID_IMPORT_FILE_ERROR)
                 return
             }
-            const blocks = convertMarkdownToBlocks(event.target.result).flatMap(block =>
-                block.type === 'compute' ? [] : [blockToGQLInput({ id: uuid.v4(), ...block })]
+            const blocks = convertMarkdownToBlocks(event.target.result).map(block =>
+                blockToGQLInput({ id: uuid.v4(), ...block })
             )
             const title = fileName.split('.snb.md')[0].trim() || 'New Notebook'
             importNotebook({ title, blocks, public: false, namespace: authenticatedUser.id })
@@ -88,8 +89,13 @@ export const ImportMarkdownNotebookButton: React.FunctionComponent<ImportMarkdow
                 onChange={onFileInputChange}
                 data-testid="import-markdown-notebook-file-input"
             />
-            <Button variant="secondary" onClick={onImportButtonClick} disabled={importState === LOADING}>
-                <UploadIcon className="icon-inline mr-1" />
+            <Button
+                variant="secondary"
+                onClick={onImportButtonClick}
+                disabled={importState === LOADING}
+                className="ml-2"
+            >
+                <Icon className="mr-1" as={UploadIcon} />
                 <span>{importState === LOADING ? 'Importing...' : 'Import Markdown notebook'}</span>
             </Button>
         </>

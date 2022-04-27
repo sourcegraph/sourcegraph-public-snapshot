@@ -88,11 +88,11 @@ func TestSearch(t *testing.T) {
 
 	testSearchOther(t)
 
-	// This test runs after all others because its adds a NPM external service
+	// This test runs after all others because its adds a npm external service
 	// which expands the set of repositories in the instance. All previous tests
 	// assume only the repos from gqltest-github-search exist.
 	//
-	// Adding and deleting the NPM external service in between all other tests is
+	// Adding and deleting the dependency repos external services in between all other tests is
 	// flaky since deleting an external service doesn't cancel a running external
 	// service sync job for it.
 	t.Run("repo:deps", testDependenciesSearch(client, streamClient))
@@ -1158,9 +1158,9 @@ func testSearchClient(t *testing.T, client searchClient) {
 				counts: counts{Repo: 0},
 			},
 			{
-				`repo contains respects parameters that affect repo search (fork)`,
-				`repo:sgtest/mux fork:yes repo:contains.file(README)`,
-				counts{Repo: 1},
+				name:   `repo contains respects parameters that affect repo search (fork)`,
+				query:  `repo:sgtest/mux fork:yes repo:contains.file(README)`,
+				counts: counts{Repo: 1},
 			},
 			{
 				name:   `commit results without repo filter`,
@@ -1178,19 +1178,19 @@ func testSearchClient(t *testing.T, client searchClient) {
 				counts: counts{Repo: 6},
 			},
 			{
-				`repo has commit after`,
-				`repo:go-diff repo:contains.commit.after(10 years ago)`,
-				counts{Repo: 1},
+				name:   `repo has commit after`,
+				query:  `repo:go-diff repo:contains.commit.after(10 years ago)`,
+				counts: counts{Repo: 1},
 			},
 			{
-				`repo has commit after no results`,
-				`repo:go-diff repo:contains.commit.after(1 second ago)`,
-				counts{Repo: 0},
+				name:   `repo has commit after no results`,
+				query:  `repo:go-diff repo:contains.commit.after(1 second ago)`,
+				counts: counts{Repo: 0},
 			},
 			{
-				`unscoped repo has commit after no results`,
-				`repo:contains.commit.after(1 second ago)`,
-				counts{Repo: 0},
+				name:   `unscoped repo has commit after no results`,
+				query:  `repo:contains.commit.after(1 second ago)`,
+				counts: counts{Repo: 0},
 			},
 		}
 
@@ -1360,33 +1360,10 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 	return func(t *testing.T) {
 		t.Helper()
 
-		cfg, err := client.SiteConfiguration()
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		oldConfig := *cfg
-
-		if cfg.ExperimentalFeatures == nil {
-			cfg.ExperimentalFeatures = &schema.ExperimentalFeatures{}
-		}
-
-		if cfg.ExperimentalFeatures.NpmPackages != "enabled" {
-			cfg.ExperimentalFeatures.NpmPackages = "enabled"
-		}
-
-		if !cfg.ExperimentalFeatures.DependenciesSearch {
-			cfg.ExperimentalFeatures.DependenciesSearch = true
-		}
-
-		if err = client.UpdateSiteConfiguration(cfg); err != nil {
-			t.Fatal(err)
-		}
-
-		_, err = client.AddExternalService(gqltestutil.AddExternalServiceInput{
-			Kind:        extsvc.KindNPMPackages,
+		_, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
+			Kind:        extsvc.KindNpmPackages,
 			DisplayName: "gqltest-npm-search",
-			Config: mustMarshalJSONString(&schema.NPMPackagesConnection{
+			Config: mustMarshalJSONString(&schema.NpmPackagesConnection{
 				Registry: "https://registry.npmjs.org",
 				Dependencies: []string{
 					"urql@2.2.0", // We're searching the dependencies of this repo.
@@ -1397,23 +1374,23 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 			t.Fatal(err)
 		}
 
-		// Set up a NPM external service to test dependencies search
-		t.Cleanup(func() {
-			if err := client.UpdateSiteConfiguration(&oldConfig); err != nil {
-				t.Fatal(err)
-			}
+		_, err = client.AddExternalService(gqltestutil.AddExternalServiceInput{
+			Kind:        extsvc.KindGoModules,
+			DisplayName: "gqltest-go-search",
+			Config: mustMarshalJSONString(&schema.GoModulesConnection{
+				Urls: []string{"https://proxy.golang.org"},
+				Dependencies: []string{
+					"github.com/oklog/ulid/v2@v2.0.2",
+				},
+			}),
 		})
-
-		err = client.WaitForReposToBeCloned("npm/urql")
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		const query = `r:deps(^npm/urql$@v2.2.0) r:core|wonka`
-
-		want := []string{
-			"/npm/urql/core@v1.9.2",
-			"/npm/wonka@v4.0.7",
+		err = client.WaitForReposToBeCloned("npm/urql", "go/github.com/oklog/ulid/v2")
+		if err != nil {
+			t.Fatal(err)
 		}
 
 		for _, tc := range []struct {
@@ -1424,8 +1401,16 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 			{"stream", streamClient},
 		} {
 			tc := tc
-			t.Run(tc.name, func(t *testing.T) {
+			t.Run(tc.name+"/"+"repos", func(t *testing.T) {
 				began := time.Now()
+
+				const query = `(r:deps(^npm/urql$@v2.2.0) r:core|wonka) OR r:deps(oklog/ulid)`
+
+				want := []string{
+					"/go/github.com/pborman/getopt@v0.0.0-20170112200414-7148bc3a4c30",
+					"/npm/urql/core@v1.9.2",
+					"/npm/wonka@v4.0.7",
+				}
 
 				for {
 					results, err := tc.client.SearchRepositories(query)
@@ -1449,6 +1434,29 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 					}
 					break
 				}
+			})
+
+			t.Run(tc.name+"/"+"no-alert", func(t *testing.T) {
+				const query = `r:deps(^npm/urql$@v2.2.0) split`
+				results, err := tc.client.SearchFiles(query)
+
+				require.NoError(t, err)
+				require.NotEmpty(t, results.Results)
+				require.NotZero(t, results.MatchCount)
+				require.Nil(t, results.Alert)
+			})
+
+			t.Run(tc.name+"/"+"alert", func(t *testing.T) {
+				const query = `r:deps(^npm/urqLOL$) split`
+				results, err := tc.client.SearchFiles(query)
+
+				require.NoError(t, err)
+				require.Empty(t, results.Results)
+				require.Zero(t, results.MatchCount)
+				require.Equal(t, results.Alert, &gqltestutil.SearchAlert{
+					Title:       "No dependency repositories found",
+					Description: "Dependency repos are cloned on-demand when first searched. Try again in a few seconds if you know the given repositories have dependencies.\n\nRead more about dependencies search [here](https://docs.sourcegraph.com/code_search/how-to/dependencies_search).",
+				})
 			})
 		}
 	}

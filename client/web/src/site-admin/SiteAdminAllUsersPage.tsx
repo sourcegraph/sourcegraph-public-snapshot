@@ -1,10 +1,11 @@
+import * as React from 'react'
+
 import * as H from 'history'
 import { isEqual } from 'lodash'
 import AddIcon from 'mdi-react/AddIcon'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import RadioactiveIcon from 'mdi-react/RadioactiveIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
-import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { merge, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
@@ -12,7 +13,7 @@ import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError } from '@sourcegraph/common'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, Link, Alert } from '@sourcegraph/wildcard'
+import { Button, Link, Alert, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { CopyableText } from '../components/CopyableText'
@@ -151,7 +152,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                                     size="sm"
                                     as={Link}
                                 >
-                                    <SettingsIcon className="icon-inline" /> Settings
+                                    <Icon as={SettingsIcon} /> Settings
                                 </Button>
                             ) &&
                             ' '}
@@ -205,7 +206,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                                 variant="danger"
                                 size="sm"
                             >
-                                <DeleteIcon className="icon-inline" />
+                                <Icon as={DeleteIcon} />
                             </Button>
                         )}
                         {this.props.node.id !== this.props.authenticatedUser.id && (
@@ -217,7 +218,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                                 variant="danger"
                                 size="sm"
                             >
-                                <RadioactiveIcon className="icon-inline" />
+                                <Icon as={RadioactiveIcon} />
                             </Button>
                         )}
                     </div>
@@ -417,7 +418,7 @@ export class SiteAdminAllUsersPage extends React.Component<Props, State> {
                     <h2 className="mb-0">Users</h2>
                     <div>
                         <Button to="/site-admin/users/new" variant="primary" as={Link}>
-                            <AddIcon className="icon-inline" /> Create user account
+                            <Icon as={AddIcon} /> Create user account
                         </Button>
                     </div>
                 </div>

@@ -85,7 +85,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			cli := extsvcGitHub.NewV3Client(uri, &auth.OAuthBearerToken{Token: token}, doer)
+			cli := extsvcGitHub.NewV3Client(svc.URN(), uri, &auth.OAuthBearerToken{Token: token}, doer)
 
 			testDB := dbtest.NewDB(t)
 			ctx := actor.WithInternalActor(context.Background())
@@ -151,8 +151,8 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			wantIDs := []uint32{1}
-			if diff := cmp.Diff(wantIDs, p.IDs.ToArray()); diff != "" {
+			wantIDs := []int32{1}
+			if diff := cmp.Diff(wantIDs, p.GenerateSortedIDsSlice()); diff != "" {
 				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
 			}
 		})
@@ -166,7 +166,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			cli := extsvcGitHub.NewV3Client(uri, &auth.OAuthBearerToken{Token: token}, doer)
+			cli := extsvcGitHub.NewV3Client(svc.URN(), uri, &auth.OAuthBearerToken{Token: token}, doer)
 
 			testDB := dbtest.NewDB(t)
 			ctx := actor.WithInternalActor(context.Background())
@@ -232,8 +232,8 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			wantIDs := []uint32{1}
-			if diff := cmp.Diff(wantIDs, p.IDs.ToArray()); diff != "" {
+			wantIDs := []int32{1}
+			if diff := cmp.Diff(wantIDs, p.GenerateSortedIDsSlice()); diff != "" {
 				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
 			}
 
@@ -246,7 +246,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if diff := cmp.Diff(wantIDs, p.IDs.ToArray()); diff != "" {
+			if diff := cmp.Diff(wantIDs, p.GenerateSortedIDsSlice()); diff != "" {
 				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
 			}
 		})
@@ -270,7 +270,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			cli := extsvcGitHub.NewV3Client(uri, &auth.OAuthBearerToken{Token: token}, doer)
+			cli := extsvcGitHub.NewV3Client(svc.URN(), uri, &auth.OAuthBearerToken{Token: token}, doer)
 
 			testDB := dbtest.NewDB(t)
 			ctx := actor.WithInternalActor(context.Background())
@@ -339,8 +339,8 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			wantIDs := []uint32{1}
-			if diff := cmp.Diff(wantIDs, p.IDs.ToArray()); diff != "" {
+			wantIDs := []int32{1}
+			if diff := cmp.Diff(wantIDs, p.GenerateSortedIDsSlice()); diff != "" {
 				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
 			}
 		})
@@ -354,7 +354,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			cli := extsvcGitHub.NewV3Client(uri, &auth.OAuthBearerToken{Token: token}, doer)
+			cli := extsvcGitHub.NewV3Client(svc.URN(), uri, &auth.OAuthBearerToken{Token: token}, doer)
 
 			testDB := dbtest.NewDB(t)
 			ctx := actor.WithInternalActor(context.Background())
@@ -423,8 +423,8 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			wantIDs := []uint32{1}
-			if diff := cmp.Diff(wantIDs, p.IDs.ToArray()); diff != "" {
+			wantIDs := []int32{1}
+			if diff := cmp.Diff(wantIDs, p.GenerateSortedIDsSlice()); diff != "" {
 				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
 			}
 
@@ -437,7 +437,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if diff := cmp.Diff(wantIDs, p.IDs.ToArray()); diff != "" {
+			if diff := cmp.Diff(wantIDs, p.GenerateSortedIDsSlice()); diff != "" {
 				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
 			}
 		})

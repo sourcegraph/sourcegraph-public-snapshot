@@ -1,10 +1,10 @@
 .combobox {
     width: 100%;
 
-    &-popover {
-        border: solid 1px var(--border-color);
-        box-shadow: var(--box-shadow);
-        background-color: var(--input-bg);
+    // Reset default @reach ui combobox styles
+    &-reach-popover {
+        border: none;
+        box-shadow: none;
 
         /**
             By default reach-ui/combobox sets `font-size` to 85% for the content
@@ -13,4 +13,10 @@
          */
         font-size: inherit;
     }
+}
+
+.popover {
+    border: solid 1px var(--border-color);
+    box-shadow: var(--box-shadow);
+    background-color: var(--input-bg);
 }

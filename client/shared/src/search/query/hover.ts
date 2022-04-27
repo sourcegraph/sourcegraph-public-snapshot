@@ -173,7 +173,7 @@ const toPredicateHover = (token: MetaPredicate): string => {
     return ''
 }
 
-const toHover = (token: DecoratedToken): string => {
+export const toHover = (token: DecoratedToken): string => {
     switch (token.type) {
         case 'pattern': {
             const quantity = token.value.length > 1 ? 'string' : 'character'

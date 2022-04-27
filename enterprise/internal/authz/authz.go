@@ -37,6 +37,7 @@ func ProvidersFromConfig(
 	ctx context.Context,
 	cfg conftypes.SiteConfigQuerier,
 	store database.ExternalServiceStore,
+	db database.DB,
 ) (
 	allowAccessByDefault bool,
 	providers []authz.Provider,
@@ -157,7 +158,7 @@ func ProvidersFromConfig(
 	}
 
 	if len(perforceConns) > 0 {
-		pfProviders, pfProblems, pfWarnings := perforce.NewAuthzProviders(perforceConns)
+		pfProviders, pfProblems, pfWarnings := perforce.NewAuthzProviders(perforceConns, db)
 		providers = append(providers, pfProviders...)
 		seriousProblems = append(seriousProblems, pfProblems...)
 		warnings = append(warnings, pfWarnings...)
@@ -197,6 +198,7 @@ func ProviderFromExternalService(
 	externalServicesStore database.ExternalServiceStore,
 	siteConfig schema.SiteConfiguration,
 	svc *types.ExternalService,
+	db database.DB,
 ) (authz.Provider, error) {
 	if MockProviderFromExternalService != nil {
 		return MockProviderFromExternalService(siteConfig, svc)
@@ -259,6 +261,7 @@ func ProviderFromExternalService(
 					PerforceConnection: c,
 				},
 			},
+			db,
 		)
 	default:
 		return nil, errors.Errorf("unsupported connection type %T", cfg)

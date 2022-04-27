@@ -1,9 +1,10 @@
+import { PointerEventHandler, ReactElement } from 'react'
+
 import { Annotation, Connector } from '@visx/annotation'
 import { Group } from '@visx/group'
 import { PieArcDatum } from '@visx/shape/lib/shapes/Pie'
 import classNames from 'classnames'
 import { Arc as ArcType } from 'd3-shape'
-import React, { PointerEventHandler, ReactElement } from 'react'
 
 import { Label } from '../../../annotation/Label'
 

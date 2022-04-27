@@ -1,12 +1,14 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
 import { noop } from 'rxjs'
 
 import { styles } from '../../../../../../components/creation-ui-kit'
 import { FormChangeEvent, SubmissionErrors } from '../../../../../../components/form/hooks/useForm'
+import { Insight } from '../../../../../../core'
 import { CreateInsightFormFields } from '../../types'
-import { SearchInsightLivePreview } from '../live-preview-chart/SearchInsightLivePreview'
-import { SearchInsightCreationForm } from '../search-insight-creation-form/SearchInsightCreationForm'
+import { SearchInsightCreationForm } from '../SearchInsightCreationForm'
+import { SearchInsightLivePreview } from '../SearchInsightLivePreview'
 
 import { useEditableSeries, createDefaultEditSeries } from './hooks/use-editable-series'
 import { useInsightCreationForm } from './hooks/use-insight-creation-form/use-insight-creation-form'
@@ -18,6 +20,7 @@ export interface SearchInsightCreationContentProps {
     initialValue?: Partial<CreateInsightFormFields>
     className?: string
     dataTestId?: string
+    insight?: Insight
 
     onSubmit: (values: CreateInsightFormFields) => SubmissionErrors | Promise<SubmissionErrors> | void
     onCancel?: () => void
@@ -27,7 +30,16 @@ export interface SearchInsightCreationContentProps {
 }
 
 export const SearchInsightCreationContent: React.FunctionComponent<SearchInsightCreationContentProps> = props => {
-    const { mode = 'creation', initialValue, className, dataTestId, onSubmit, onCancel = noop, onChange = noop } = props
+    const {
+        mode = 'creation',
+        initialValue,
+        className,
+        dataTestId,
+        insight,
+        onSubmit,
+        onCancel = noop,
+        onChange = noop,
+    } = props
 
     const {
         form: { values, formAPI, ref, handleSubmit },
@@ -58,12 +70,12 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
     }
 
     // If some fields that needed to run live preview  are invalid
-    // we should disabled live chart preview
+    // we should disable live chart preview
     const allFieldsForPreviewAreValid =
         repositories.meta.validState === 'VALID' &&
         (series.meta.validState === 'VALID' || editSeries.some(series => series.valid)) &&
         stepValue.meta.validState === 'VALID' &&
-        // For all repos mode we are not able to show the live preview chart
+        // For the "all repositories" mode we are not able to show the live preview chart
         !allReposMode.input.value
 
     const hasFilledValue =
@@ -89,6 +101,7 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
                 stepValue={stepValue}
                 isFormClearActive={hasFilledValue}
                 dashboardReferenceCount={initialValue?.dashboardReferenceCount}
+                insight={insight}
                 onSeriesLiveChange={listen}
                 onCancel={onCancel}
                 onEditSeriesRequest={editRequest}

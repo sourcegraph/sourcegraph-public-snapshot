@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { useCallback } from 'react'
+
+import classNames from 'classnames'
 
 import { SyntaxHighlightedSearchQuery, ModalVideo } from '@sourcegraph/search-ui'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -8,14 +9,15 @@ import { Card, Link } from '@sourcegraph/wildcard'
 
 import { communitySearchContextsList } from '../../communitySearchContexts/HomepageConfig'
 import { FeatureFlagProps } from '../../featureFlags/featureFlags'
-import { GettingStartedTour } from '../../gettingStartedTour/GettingStartedTour'
+import { GettingStartedTour } from '../../tour/GettingStartedTour'
 
 import { CustomersSection } from './CustomersSection'
 import { DynamicWebFonts } from './DynamicWebFonts'
 import { HeroSection } from './HeroSection'
 import { SearchExample, exampleTripsAndTricks, fonts } from './LoggedOutHomepage.constants'
-import styles from './LoggedOutHomepage.module.scss'
 import { SelfHostInstructions } from './SelfHostInstructions'
+
+import styles from './LoggedOutHomepage.module.scss'
 
 export interface LoggedOutHomepageProps extends TelemetryProps, ThemeProps, FeatureFlagProps {}
 
@@ -67,9 +69,11 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
         <div className={styles.loggedOutHomepage}>
             <div className={styles.content}>
                 <GettingStartedTour
-                    isFixedHeight={true}
-                    className={styles.gettingStartedTour}
+                    height={8}
+                    className={classNames(styles.gettingStartedTour, 'h-100')}
                     telemetryService={props.telemetryService}
+                    featureFlags={props.featureFlags}
+                    isSourcegraphDotCom={true}
                 />
                 <div className={styles.videoCard}>
                     <div className={classNames(styles.title, 'mb-2')}>Watch and learn</div>

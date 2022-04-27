@@ -1,6 +1,5 @@
 import { boolean } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
-import React from 'react'
 
 import { FileDiffHunkFields, DiffHunkLineType } from '../../graphql-operations'
 import { WebStory } from '../WebStory'

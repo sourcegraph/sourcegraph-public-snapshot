@@ -448,9 +448,9 @@ func serviceConnections() conftypes.ServiceConnections {
 		}
 
 		serviceConnectionsVal = conftypes.ServiceConnections{
-			PostgresDSN:              dsns["frontend"],
-			CodeIntelPostgresDSN:     dsns["codeintel"],
-			CodeInsightsTimescaleDSN: dsns["codeinsights"],
+			PostgresDSN:          dsns["frontend"],
+			CodeIntelPostgresDSN: dsns["codeintel"],
+			CodeInsightsDSN:      dsns["codeinsights"],
 		}
 	})
 
@@ -460,9 +460,9 @@ func serviceConnections() conftypes.ServiceConnections {
 	}
 
 	return conftypes.ServiceConnections{
-		GitServers:               addrs,
-		PostgresDSN:              serviceConnectionsVal.PostgresDSN,
-		CodeIntelPostgresDSN:     serviceConnectionsVal.CodeIntelPostgresDSN,
-		CodeInsightsTimescaleDSN: serviceConnectionsVal.CodeInsightsTimescaleDSN,
+		GitServers:           addrs,
+		PostgresDSN:          serviceConnectionsVal.PostgresDSN,
+		CodeIntelPostgresDSN: serviceConnectionsVal.CodeIntelPostgresDSN,
+		CodeInsightsDSN:      serviceConnectionsVal.CodeInsightsDSN,
 	}
 }

@@ -3,11 +3,11 @@ package resolvers
 import (
 	"context"
 	"fmt"
-	"sort"
+	"strings"
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 
 	"github.com/grafana/regexp"
 	"github.com/graph-gophers/graphql-go"
@@ -17,10 +17,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -41,8 +39,9 @@ var _ graphqlbackend.InsightDataSeriesDefinition = &insightDataSeriesDefinitionU
 var _ graphqlbackend.InsightViewConnectionResolver = &InsightViewQueryConnectionResolver{}
 
 type insightViewResolver struct {
-	view            *types.Insight
-	overrideFilters *types.InsightViewFilters
+	view                *types.Insight
+	overrideFilters     *types.InsightViewFilters
+	dataSeriesGenerator insightSeriesResolverGenerator
 
 	baseInsightResolver
 }
@@ -69,6 +68,10 @@ func (i *insightViewFiltersResolver) ExcludeRepoRegex(ctx context.Context) (*str
 	return i.filters.ExcludeRepoRegex, nil
 }
 
+func (i *insightViewFiltersResolver) SearchContexts(ctx context.Context) (*[]string, error) {
+	return &i.filters.SearchContexts, nil
+}
+
 func (i *insightViewResolver) AppliedFilters(ctx context.Context) (graphqlbackend.InsightViewFiltersResolver, error) {
 	if i.overrideFilters != nil {
 		return &insightViewFiltersResolver{filters: i.overrideFilters}, nil
@@ -76,8 +79,61 @@ func (i *insightViewResolver) AppliedFilters(ctx context.Context) (graphqlbacken
 	return &insightViewFiltersResolver{filters: &i.view.Filters}, nil
 }
 
+// registerDataSeriesGenerators if the generators that create resolvers for DataSeries haven't been generated then loadthem
+func (i *insightViewResolver) registerDataSeriesGenerators() {
+	// already registered no op
+	if i.dataSeriesGenerator != nil {
+		return
+	}
+
+	// create the known ways to resolve a data series
+	jitCaptureGroupGenerator := newSeriesResolverGenerator(
+		func(series types.InsightViewSeries) bool {
+			return series.JustInTime && series.GeneratedFromCaptureGroups
+		},
+		expandCaptureGroupSeriesJustInTime,
+	)
+	recordedCaptureGroupGenerator := newSeriesResolverGenerator(
+		func(series types.InsightViewSeries) bool {
+			return !series.JustInTime && series.GeneratedFromCaptureGroups
+		},
+		expandCaptureGroupSeriesRecorded,
+	)
+	recordedGenerator := newSeriesResolverGenerator(
+		func(series types.InsightViewSeries) bool {
+			return !series.JustInTime && !series.GeneratedFromCaptureGroups
+		},
+		recordedSeries,
+	)
+
+	jitStreamingGenerator := newSeriesResolverGenerator(
+		func(series types.InsightViewSeries) bool {
+			return series.JustInTime && !series.GeneratedFromCaptureGroups
+		},
+		streamingSeriesJustInTime,
+	)
+
+	// build the chain of generators
+	jitCaptureGroupGenerator.SetNext(recordedCaptureGroupGenerator)
+	recordedCaptureGroupGenerator.SetNext(recordedGenerator)
+	recordedGenerator.SetNext(jitStreamingGenerator)
+
+	// set the struct variable to the first generator in the chain
+	i.dataSeriesGenerator = jitCaptureGroupGenerator
+}
+
 func (i *insightViewResolver) DataSeries(ctx context.Context) ([]graphqlbackend.InsightSeriesResolver, error) {
 	var resolvers []graphqlbackend.InsightSeriesResolver
+	if i.view.IsFrozen {
+		// if the view is frozen, we do not show time series data. This is just a basic limitation to prevent
+		// easy mis-use of unlicensed features.
+		return nil, nil
+	}
+	// Ensure that the data series generators have been registered
+	i.registerDataSeriesGenerators()
+	if i.dataSeriesGenerator == nil {
+		return nil, errors.New("no dataseries resolver generator registered")
+	}
 
 	var filters *types.InsightViewFilters
 	if i.overrideFilters != nil {
@@ -86,35 +142,49 @@ func (i *insightViewResolver) DataSeries(ctx context.Context) ([]graphqlbackend.
 		filters = &i.view.Filters
 	}
 
-	for j, current := range i.view.Series {
-		if current.GeneratedFromCaptureGroups && current.JustInTime {
-			// this works fine for now because these are all just-in-time series. As soon as we start including global / recorded
-			// series, we need to have some logic to either fetch from the database or calculate the time series.
-			expanded, err := expandCaptureGroupSeriesJustInTime(ctx, current, i.baseInsightResolver, *filters)
-			if err != nil {
-				return nil, errors.Wrapf(err, "expandCaptureGroupSeriesJustInTime for seriesID: %s", current.SeriesID)
-			}
-			resolvers = append(resolvers, expanded...)
-		} else if current.GeneratedFromCaptureGroups && !current.JustInTime {
-			return expandCaptureGroupSeriesRecorded(ctx, current, i.baseInsightResolver, *filters)
-		} else {
-			resolvers = append(resolvers, &insightSeriesResolver{
-				insightsStore:   i.timeSeriesStore,
-				workerBaseStore: i.workerBaseStore,
-				series:          i.view.Series[j],
-				metadataStore:   i.insightStore,
-				filters:         *filters,
-			})
+	for _, current := range i.view.Series {
+		seriesResolvers, err := i.dataSeriesGenerator.Generate(ctx, current, i.baseInsightResolver, *filters)
+		if err != nil {
+			return nil, errors.Wrapf(err, "generate for seriesID: %s", current.SeriesID)
 		}
+		resolvers = append(resolvers, seriesResolvers...)
 	}
 	return resolvers, nil
 }
 
-func filterRepositories(filters types.InsightViewFilters, repositories []string) ([]string, error) {
+func filterRepositories(ctx context.Context, filters types.InsightViewFilters, repositories []string, scLoader SearchContextLoader) ([]string, error) {
 	matches := make(map[string]interface{})
-	// exclude
+
+	// we need to "unwrap" the search contexts and extract the regexps that compose
+	// the Sourcegraph query filters. Then we will union these sets of included /
+	// excluded regexps with the standalone filter regexp strings that are
+	// available.
+	var includedWrapped []string
+	var excludedWrapped []string
+	inc, exc, err := unwrapSearchContexts(ctx, scLoader, filters.SearchContexts)
+	if err != nil {
+		return nil, errors.Wrap(err, "unwrapSearchContexts")
+	}
+	includedWrapped = append(includedWrapped, inc...)
+	if filters.IncludeRepoRegex != nil && *filters.IncludeRepoRegex != "" {
+		includedWrapped = append(includedWrapped, *filters.IncludeRepoRegex)
+	}
+
+	// we have to wrap the excluded ones in a non-capturing group so that we can
+	// apply regexp OR semantics across the entire set
+	wrapRegexp := func(r string) string {
+		return fmt.Sprintf("(?:%s)", r)
+	}
+	for _, s := range exc {
+		excludedWrapped = append(excludedWrapped, wrapRegexp(s))
+	}
 	if filters.ExcludeRepoRegex != nil && *filters.ExcludeRepoRegex != "" {
-		excludeRegexp, err := regexp.Compile(*filters.ExcludeRepoRegex)
+		excludedWrapped = append(excludedWrapped, wrapRegexp(*filters.ExcludeRepoRegex))
+	}
+
+	// first we process the exclude regexps and remove these repos from the original search results
+	if len(excludedWrapped) > 0 {
+		excludeRegexp, err := regexp.Compile(strings.Join(excludedWrapped, "|"))
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to compile ExcludeRepoRegex")
 		}
@@ -128,14 +198,33 @@ func filterRepositories(filters types.InsightViewFilters, repositories []string)
 			matches[repository] = struct{}{}
 		}
 	}
-	// include
-	if filters.IncludeRepoRegex != nil && *filters.IncludeRepoRegex != "" {
-		includeRegexp, err := regexp.Compile(*filters.IncludeRepoRegex)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to compile IncludeRepoRegex")
+
+	// finally we process the included regexps over the set of repos that remain after we exclude
+	if len(includedWrapped) > 0 {
+		// we are iterating through a set of patterns and trying to match all of them to
+		// replicate forward lookahead semantics, which are not available in RE2. This
+		// means that every single provided regexp gets an opportunity to match and
+		// consume against the entire input string, and we only consider success if we
+		// can match every single input pattern.
+		matchAll := func(patterns []*regexp.Regexp, input string) bool {
+			for _, pattern := range patterns {
+				if !pattern.MatchString(input) {
+					return false
+				}
+			}
+			return true
+		}
+
+		patterns := make([]*regexp.Regexp, 0, len(includedWrapped))
+		for _, wrapped := range includedWrapped {
+			compile, err := regexp.Compile(wrapped)
+			if err != nil {
+				return nil, errors.Wrap(err, "regexp.Compile for included regexp set")
+			}
+			patterns = append(patterns, compile)
 		}
 		for match := range matches {
-			if !includeRegexp.MatchString(match) {
+			if !matchAll(patterns, match) {
 				delete(matches, match)
 			}
 		}
@@ -146,119 +235,6 @@ func filterRepositories(filters types.InsightViewFilters, repositories []string)
 		results = append(results, match)
 	}
 	return results, nil
-}
-
-func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {
-	var opts store.SeriesPointsOpts
-
-	// Query data points only for the series we are representing.
-	seriesID := definition.SeriesID
-	opts.SeriesID = &seriesID
-
-	// Default to last 12mo of data
-	frames := query.BuildFrames(12, timeseries.TimeInterval{
-		Unit:  types.IntervalUnit(definition.SampleIntervalUnit),
-		Value: definition.SampleIntervalValue,
-	}, time.Now())
-	oldest := time.Now().AddDate(-1, 0, 0)
-	if len(frames) != 0 {
-		possibleOldest := frames[0].From
-		if possibleOldest.Before(oldest) {
-			oldest = possibleOldest
-		}
-	}
-	opts.From = &oldest
-
-	if filters.IncludeRepoRegex != nil {
-		opts.IncludeRepoRegex = *filters.IncludeRepoRegex
-	}
-	if filters.ExcludeRepoRegex != nil {
-		opts.ExcludeRepoRegex = *filters.ExcludeRepoRegex
-	}
-	groupedByCapture := make(map[string][]store.SeriesPoint)
-	allPoints, err := r.timeSeriesStore.SeriesPoints(ctx, opts)
-	if err != nil {
-		return nil, err
-	}
-
-	for i := range allPoints {
-		point := allPoints[i]
-		if point.Capture == nil {
-			// skip nil values, this shouldn't be a real possibility
-			continue
-		}
-		groupedByCapture[*point.Capture] = append(groupedByCapture[*point.Capture], point)
-	}
-
-	status, err := queryrunner.QueryJobsStatus(ctx, r.workerBaseStore, seriesID)
-	if err != nil {
-		return nil, errors.Wrap(err, "QueryJobsStatus")
-	}
-	statusResolver := NewStatusResolver(status, definition.BackfillQueuedAt)
-
-	var resolvers []graphqlbackend.InsightSeriesResolver
-	for capturedValue, points := range groupedByCapture {
-		sort.Slice(points, func(i, j int) bool {
-			return points[i].Time.Before(points[j].Time)
-		})
-		resolvers = append(resolvers, &precalculatedInsightSeriesResolver{
-			insightsStore:   r.timeSeriesStore,
-			workerBaseStore: r.workerBaseStore,
-			series:          definition,
-			metadataStore:   r.insightStore,
-			points:          points,
-			label:           capturedValue,
-			filters:         filters,
-			seriesId:        fmt.Sprintf("%s-%s", seriesID, capturedValue),
-			statusResolver:  statusResolver,
-		})
-	}
-	if len(resolvers) == 0 {
-		// We are manually populating a mostly empty resolver here - this slightly hacky solution is to unify the
-		// expectations of the webapp when querying for series state. For a standard search series there is
-		// always a resolver since each series maps one to one with it's definition.
-		// With a capture groups series we derive each unique series dynamically - which means it's possible to have a
-		// series definition with zero resulting series. This most commonly occurs when the insight is just created,
-		// before any data has been generated yet. Without this,
-		// our capture groups insights don't share the loading state behavior.
-		resolvers = append(resolvers, &precalculatedInsightSeriesResolver{
-			insightsStore:   r.timeSeriesStore,
-			workerBaseStore: r.workerBaseStore,
-			series:          definition,
-			metadataStore:   r.insightStore,
-			statusResolver:  statusResolver,
-			seriesId:        definition.SeriesID,
-			points:          nil,
-			label:           definition.Label,
-			filters:         filters,
-		})
-	}
-	return resolvers, nil
-}
-
-func expandCaptureGroupSeriesJustInTime(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {
-	executor := query.NewCaptureGroupExecutor(r.postgresDB, r.insightsDB, time.Now)
-	interval := timeseries.TimeInterval{
-		Unit:  types.IntervalUnit(definition.SampleIntervalUnit),
-		Value: definition.SampleIntervalValue,
-	}
-
-	matchedRepos, err := filterRepositories(filters, definition.Repositories)
-	if err != nil {
-		return nil, err
-	}
-	log15.Debug("capture group series", "seriesId", definition.SeriesID, "filteredRepos", matchedRepos)
-	generatedSeries, err := executor.Execute(ctx, definition.Query, matchedRepos, interval)
-	if err != nil {
-		return nil, errors.Wrap(err, "CaptureGroupExecutor.Execute")
-	}
-
-	var resolvers []graphqlbackend.InsightSeriesResolver
-	for i := range generatedSeries {
-		resolvers = append(resolvers, &dynamicInsightSeriesResolver{generated: &generatedSeries[i]})
-	}
-
-	return resolvers, nil
 }
 
 func (i *insightViewResolver) Presentation(ctx context.Context) (graphqlbackend.InsightPresentation, error) {
@@ -391,16 +367,40 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 	uid := actor.FromContext(ctx).UID
 	permissionsValidator := PermissionsValidatorFromBase(&r.baseInsightResolver)
 
-	tx, err := r.insightStore.Transact(ctx)
+	insightTx, err := r.insightStore.Transact(ctx)
+	dashboardTx := r.dashboardStore.With(insightTx)
 	if err != nil {
 		return nil, err
 	}
-	defer func() { err = tx.Done(err) }()
+	defer func() { err = insightTx.Done(err) }()
 
-	view, err := tx.CreateView(ctx, types.InsightView{
+	var dashboardIds []int
+	if args.Input.Dashboards != nil {
+		for _, id := range *args.Input.Dashboards {
+			dashboardID, err := unmarshalDashboardID(id)
+			if err != nil {
+				return nil, errors.Wrapf(err, "unmarshalDashboardID, id:%s", dashboardID)
+			}
+			dashboardIds = append(dashboardIds, int(dashboardID.Arg))
+		}
+	}
+
+	lamDashboardId, err := createInsightLicenseCheck(ctx, insightTx, dashboardTx, dashboardIds)
+	if err != nil {
+		return nil, errors.Wrapf(err, "createInsightLicenseCheck")
+	}
+	if lamDashboardId != 0 {
+		dashboardIds = append(dashboardIds, lamDashboardId)
+	}
+
+	var filters types.InsightViewFilters
+	if args.Input.ViewControls != nil {
+		filters = filtersFromInput(&args.Input.ViewControls.Filters)
+	}
+	view, err := insightTx.CreateView(ctx, types.InsightView{
 		Title:            emptyIfNil(args.Input.Options.Title),
 		UniqueID:         ksuid.New().String(),
-		Filters:          types.InsightViewFilters{},
+		Filters:          filters,
 		PresentationType: types.Line,
 	}, []store.InsightViewGrant{store.UserGrant(int(uid))})
 	if err != nil {
@@ -408,27 +408,22 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 	}
 
 	for _, series := range args.Input.DataSeries {
-		err = createAndAttachSeries(ctx, tx, view, series)
+		err = createAndAttachSeries(ctx, insightTx, view, series)
 		if err != nil {
 			return nil, errors.Wrap(err, "createAndAttachSeries")
 		}
 	}
 
-	if args.Input.Dashboards != nil {
-		dashboardTx := r.dashboardStore.With(tx)
-		err := validateUserDashboardPermissions(ctx, dashboardTx, *args.Input.Dashboards, database.Orgs(r.postgresDB))
-		if err != nil {
-			return nil, err
-		}
-
-		for _, id := range *args.Input.Dashboards {
-			dashboardID, err := unmarshalDashboardID(id)
+	if len(dashboardIds) > 0 {
+		if args.Input.Dashboards != nil {
+			err := validateUserDashboardPermissions(ctx, dashboardTx, *args.Input.Dashboards, database.Orgs(r.postgresDB))
 			if err != nil {
-				return nil, errors.Wrapf(err, "unmarshalDashboardID, id:%s", dashboardID)
+				return nil, err
 			}
-
-			log15.Debug("AddView", "insightId", view.UniqueID, "dashboardId", dashboardID.Arg)
-			err = dashboardTx.AddViewsToDashboard(ctx, int(dashboardID.Arg), []string{view.UniqueID})
+		}
+		for _, dashboardId := range dashboardIds {
+			log15.Debug("AddView", "insightId", view.UniqueID, "dashboardId", dashboardId)
+			err = dashboardTx.AddViewsToDashboard(ctx, dashboardId, []string{view.UniqueID})
 			if err != nil {
 				return nil, errors.Wrap(err, "AddViewsToDashboard")
 			}
@@ -468,12 +463,12 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 		return nil, errors.New("No insight view found with this id")
 	}
 
+	filters := filtersFromInput(&args.Input.ViewControls.Filters)
+
 	view, err := tx.UpdateView(ctx, types.InsightView{
-		UniqueID: insightViewId,
-		Title:    emptyIfNil(args.Input.PresentationOptions.Title),
-		Filters: types.InsightViewFilters{
-			IncludeRepoRegex: args.Input.ViewControls.Filters.IncludeRepoRegex,
-			ExcludeRepoRegex: args.Input.ViewControls.Filters.ExcludeRepoRegex},
+		UniqueID:         insightViewId,
+		Title:            emptyIfNil(args.Input.PresentationOptions.Title),
+		Filters:          filters,
 		PresentationType: types.Line,
 	})
 	if err != nil {
@@ -533,15 +528,35 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 }
 
 func (r *Resolver) CreatePieChartSearchInsight(ctx context.Context, args *graphqlbackend.CreatePieChartSearchInsightArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
-	tx, err := r.insightStore.Transact(ctx)
+	insightTx, err := r.insightStore.Transact(ctx)
+	dashboardTx := r.dashboardStore.With(insightTx)
 	if err != nil {
 		return nil, err
 	}
-	defer func() { err = tx.Done(err) }()
+	defer func() { err = insightTx.Done(err) }()
 	permissionsValidator := PermissionsValidatorFromBase(&r.baseInsightResolver)
 
+	var dashboardIds []int
+	if args.Input.Dashboards != nil {
+		for _, id := range *args.Input.Dashboards {
+			dashboardID, err := unmarshalDashboardID(id)
+			if err != nil {
+				return nil, errors.Wrapf(err, "unmarshalDashboardID, id:%s", dashboardID)
+			}
+			dashboardIds = append(dashboardIds, int(dashboardID.Arg))
+		}
+	}
+
+	lamDashboardId, err := createInsightLicenseCheck(ctx, insightTx, dashboardTx, dashboardIds)
+	if err != nil {
+		return nil, errors.Wrapf(err, "createInsightLicenseCheck")
+	}
+	if lamDashboardId != 0 {
+		dashboardIds = append(dashboardIds, lamDashboardId)
+	}
+
 	uid := actor.FromContext(ctx).UID
-	view, err := tx.CreateView(ctx, types.InsightView{
+	view, err := insightTx.CreateView(ctx, types.InsightView{
 		Title:            args.Input.PresentationOptions.Title,
 		UniqueID:         ksuid.New().String(),
 		OtherThreshold:   &args.Input.PresentationOptions.OtherThreshold,
@@ -551,7 +566,7 @@ func (r *Resolver) CreatePieChartSearchInsight(ctx context.Context, args *graphq
 		return nil, errors.Wrap(err, "CreateView")
 	}
 	repos := args.Input.RepositoryScope.Repositories
-	seriesToAdd, err := tx.CreateSeries(ctx, types.InsightSeries{
+	seriesToAdd, err := insightTx.CreateSeries(ctx, types.InsightSeries{
 		SeriesID:           ksuid.New().String(),
 		Query:              args.Input.Query,
 		CreatedAt:          time.Now(),
@@ -569,26 +584,21 @@ func (r *Resolver) CreatePieChartSearchInsight(ctx context.Context, args *graphq
 	if err != nil {
 		return nil, errors.Wrap(err, "CreateSeries")
 	}
-	err = tx.AttachSeriesToView(ctx, seriesToAdd, view, types.InsightViewSeriesMetadata{})
+	err = insightTx.AttachSeriesToView(ctx, seriesToAdd, view, types.InsightViewSeriesMetadata{})
 	if err != nil {
 		return nil, errors.Wrap(err, "AttachSeriesToView")
 	}
 
-	if args.Input.Dashboards != nil {
-		dashboardTx := r.dashboardStore.With(tx)
-		err := validateUserDashboardPermissions(ctx, dashboardTx, *args.Input.Dashboards, database.Orgs(r.postgresDB))
-		if err != nil {
-			return nil, err
-		}
-
-		for _, id := range *args.Input.Dashboards {
-			dashboardID, err := unmarshalDashboardID(id)
+	if len(dashboardIds) > 0 {
+		if args.Input.Dashboards != nil {
+			err := validateUserDashboardPermissions(ctx, dashboardTx, *args.Input.Dashboards, database.Orgs(r.postgresDB))
 			if err != nil {
-				return nil, errors.Wrapf(err, "unmarshalDashboardID, id:%s", dashboardID)
+				return nil, err
 			}
-
-			log15.Debug("AddView", "insightId", view.UniqueID, "dashboardId", dashboardID.Arg)
-			err = dashboardTx.AddViewsToDashboard(ctx, int(dashboardID.Arg), []string{view.UniqueID})
+		}
+		for _, dashboardId := range dashboardIds {
+			log15.Debug("AddView", "insightId", view.UniqueID, "dashboardId", dashboardId)
+			err = dashboardTx.AddViewsToDashboard(ctx, dashboardId, []string{view.UniqueID})
 			if err != nil {
 				return nil, errors.Wrap(err, "AddViewsToDashboard")
 			}
@@ -755,6 +765,7 @@ type InsightViewQueryConnectionResolver struct {
 
 func (d *InsightViewQueryConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.InsightViewResolver, error) {
 	resolvers := make([]graphqlbackend.InsightViewResolver, 0)
+	var scs []string
 
 	views, _, err := d.computeViews(ctx)
 	if err != nil {
@@ -763,9 +774,13 @@ func (d *InsightViewQueryConnectionResolver) Nodes(ctx context.Context) ([]graph
 	for i := range views {
 		resolver := &insightViewResolver{view: &views[i], baseInsightResolver: d.baseInsightResolver}
 		if d.args.Filters != nil {
+			if d.args.Filters.SearchContexts != nil {
+				scs = *d.args.Filters.SearchContexts
+			}
 			resolver.overrideFilters = &types.InsightViewFilters{
 				IncludeRepoRegex: d.args.Filters.IncludeRepoRegex,
 				ExcludeRepoRegex: d.args.Filters.ExcludeRepoRegex,
+				SearchContexts:   scs,
 			}
 		}
 		resolvers = append(resolvers, resolver)
@@ -802,6 +817,11 @@ func (r *InsightViewQueryConnectionResolver) computeViews(ctx context.Context) (
 		if r.args.First != nil {
 			// Ask for one more result than needed in order to determine if there is a next page.
 			args.Limit = int(*r.args.First) + 1
+		}
+		if r.args.IsFrozen != nil {
+			// Filter insight views by their frozen state. We use a pointer for the argument because
+			// we might want to not filter on this attribute at all, and `bool` defaults to false.
+			args.IsFrozen = r.args.IsFrozen
 		}
 		var err error
 		args.UserID, args.OrgID, err = getUserPermissions(ctx, orgStore)
@@ -962,4 +982,48 @@ func (r *Resolver) DeleteInsightView(ctx context.Context, args *graphqlbackend.D
 	}
 
 	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func createInsightLicenseCheck(ctx context.Context, insightTx *store.InsightStore, dashboardTx *store.DBDashboardStore, dashboardIds []int) (int, error) {
+	licenseError := licensing.Check(licensing.FeatureCodeInsights)
+	if licenseError != nil {
+		globalUnfrozenInsightCount, _, err := insightTx.GetUnfrozenInsightCount(ctx)
+		if err != nil {
+			return 0, errors.Wrap(err, "GetUnfrozenInsightCount")
+		}
+		if globalUnfrozenInsightCount >= 2 {
+			return 0, errors.New("Cannot create more than 2 global insights in Limited Access Mode.")
+		}
+		if len(dashboardIds) > 0 {
+			dashboards, err := dashboardTx.GetDashboards(ctx, store.DashboardQueryArgs{ID: dashboardIds, WithoutAuthorization: true})
+			if err != nil {
+				return 0, errors.Wrap(err, "GetDashboards")
+			}
+			for _, dashboard := range dashboards {
+				if !dashboard.GlobalGrant {
+					return 0, errors.New("Cannot create an insight on a non-global dashboard in Limited Access Mode.")
+				}
+			}
+		}
+
+		lamDashboardId, err := dashboardTx.EnsureLimitedAccessModeDashboard(ctx)
+		if err != nil {
+			return 0, errors.Wrap(err, "EnsureLimitedAccessModeDashboard")
+		}
+		return lamDashboardId, nil
+	}
+
+	return 0, nil
+}
+
+func filtersFromInput(input *graphqlbackend.InsightViewFiltersInput) types.InsightViewFilters {
+	filters := types.InsightViewFilters{}
+	if input != nil {
+		filters.IncludeRepoRegex = input.IncludeRepoRegex
+		filters.ExcludeRepoRegex = input.ExcludeRepoRegex
+		if input.SearchContexts != nil {
+			filters.SearchContexts = *input.SearchContexts
+		}
+	}
+	return filters
 }

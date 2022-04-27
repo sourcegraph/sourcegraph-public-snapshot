@@ -1,20 +1,29 @@
 import { escapeRegExp } from 'lodash'
+// We're using marked import here to access the `marked` package type definitions.
+// eslint-disable-next-line no-restricted-imports
+import { marked, Renderer } from 'marked'
 import { Observable, forkJoin, of } from 'rxjs'
 import { startWith, catchError, mapTo, map, switchMap } from 'rxjs/operators'
 import * as uuid from 'uuid'
 
 import { renderMarkdown, asError, isErrorLike } from '@sourcegraph/common'
 import { transformSearchQuery } from '@sourcegraph/shared/src/api/client/search'
-import { aggregateStreamingSearch, emptyAggregateResults, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
+import {
+    aggregateStreamingSearch,
+    emptyAggregateResults,
+    LATEST_VERSION,
+    SymbolMatch,
+} from '@sourcegraph/shared/src/search/stream'
 import { UIRangeSpec } from '@sourcegraph/shared/src/util/url'
 
 import { Block, BlockInit, BlockDependencies, BlockInput, BlockDirection, SymbolBlockInput } from '..'
 import { NotebookFields, SearchPatternType } from '../../graphql-operations'
-import { LATEST_VERSION } from '../../search/results/StreamingSearchResults'
 import { parseBrowserRepoURL } from '../../util/url'
 import { createNotebook } from '../backend'
-import { fetchSuggestions } from '../blocks/suggestions'
+import { fetchSuggestions } from '../blocks/suggestions/suggestions'
 import { blockToGQLInput, serializeBlockToMarkdown } from '../serialize'
+
+import markdownBlockStyles from '../blocks/markdown/NotebookMarkdownBlock.module.scss'
 
 const DONE = 'DONE' as const
 
@@ -28,7 +37,7 @@ export function copyNotebook({ title, blocks, namespace }: CopyNotebookProps): O
     return createNotebook({
         notebook: {
             title,
-            blocks: blocks.flatMap(block => (block.type === 'compute' ? [] : [blockToGQLInput(block)])),
+            blocks: blocks.map(blockToGQLInput),
             namespace,
             public: false,
         },
@@ -66,6 +75,24 @@ function findSymbolAtRevision(
             return { range, revision: matchingFile.commit ?? '' }
         })
     )
+}
+
+export class NotebookHeadingMarkdownRenderer extends Renderer {
+    public heading(
+        this: marked.Renderer<never>,
+        text: string,
+        level: 1 | 2 | 3 | 4 | 5 | 6,
+        raw: string,
+        slugger: marked.Slugger
+    ): string {
+        const headerPrefix = this.options.headerPrefix ?? ''
+        const slug = slugger.slug(raw)
+        const headingId = `${slug}-${headerPrefix}`
+        return `<h${level} id="${headingId}">
+            <a class="${markdownBlockStyles.headingLink}" href="#${headingId}">#</a>
+            <span>${text}</span>
+        </h${level}>\n`
+    }
 }
 
 export class Notebook {
@@ -115,7 +142,13 @@ export class Notebook {
         }
         switch (block.type) {
             case 'md':
-                this.blocks.set(block.id, { ...block, output: renderMarkdown(block.input) })
+                this.blocks.set(block.id, {
+                    ...block,
+                    output: renderMarkdown(block.input.text, {
+                        renderer: new NotebookHeadingMarkdownRenderer(),
+                        headerPrefix: block.id,
+                    }),
+                })
                 break
             case 'query':
                 this.blocks.set(block.id, {
@@ -123,7 +156,7 @@ export class Notebook {
                     output: aggregateStreamingSearch(
                         transformSearchQuery({
                             // Removes comments
-                            query: block.input.replace(/\/\/.*/g, ''),
+                            query: block.input.query.replace(/\/\/.*/g, ''),
                             extensionHostAPIPromise: this.dependencies.extensionHostAPI,
                         }),
                         {
@@ -209,6 +242,8 @@ export class Notebook {
                 this.blocks.set(block.id, { ...block, output })
                 break
             }
+            case 'compute':
+                this.blocks.set(block.id, { ...block, output: null })
         }
     }
 
@@ -231,6 +266,8 @@ export class Notebook {
                 observables.push(block.output.pipe(mapTo(DONE)))
             } else if (block.type === 'symbol') {
                 observables.push(block.output.pipe(mapTo(DONE)))
+            } else if (block.type === 'compute') {
+                // Noop: Compute block does not currently emit an output observable.
             }
         }
         // We store output observables and join them into a single observable,

@@ -1,6 +1,7 @@
+import React, { useEffect, useRef } from 'react'
+
 import { Meta, Story } from '@storybook/react'
 import BarChartIcon from 'mdi-react/BarChartIcon'
-import React, { useEffect, useRef } from 'react'
 
 import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import { CodeMonitoringNavItem } from '../code-monitoring/CodeMonitoringNavItem'

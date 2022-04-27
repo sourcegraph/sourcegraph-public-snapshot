@@ -39,7 +39,7 @@ This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
 - Aggregate daily, weekly, and monthly latencies (in ms) of search queries
 - Aggregate daily, weekly, and monthly integer counts of the following query syntax:
   - The number of boolean operators (`and`, `or`, `not` keywords)
-  - The number of built-in predicate keywords (`contains`, `contains.file`, `contains.repo`, `contains.commit.after`)
+  - The number of built-in predicate keywords (`contains`, `contains.file`, `contains.repo`, `contains.commit.after`, `dependencies`)
   - The number of `select` keywords by kind (`repo`, `file`, `content`, `symbol`, `commit.diff.added`, `commit.diff.removed`)
   - The number of queries using the `context:` filter without the default `global` value
   - The number of queries with only patterns (e.g., without filters like `repo:` or `file:`)
@@ -101,7 +101,6 @@ This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
   - Total count of insights grouped by time interval (step size) in days  
   - Total count of insights set organization visible grouped by insight type
   - Total count of insights grouped by presentation type, series type, and presentation-series type.
-
 - Code monitoring usage data
   - Total number of views of the code monitoring page
   - Total number of views of the create code monitor page
@@ -111,8 +110,16 @@ This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
   - Total number of clicks on the code monitor email search link
 - Code Host integration usage data (Browser extension / Native Integration)
   - Aggregate counts of current daily, weekly, and monthly unique users and total events
-  - Aggregate counts of current daily, weekly, and monthly unique users and total events
-  - who visited Sourcegraph instance from browser extension
+  - Aggregate counts of current daily, weekly, and monthly unique users and total events who visited Sourcegraph instance from browser extension
+- IDE extensions usage data
+  - Aggregate counts of current daily, weekly, and monthly searches performed:
+    - Count of unique users who performed searches
+    - Count of total searches performed
+  - Aggregate counts of current daily user state:
+    - Count of users who installed the extension
+    - Count of users who uninstalled the extension 
+  - Aggregate count of current daily redirects from extension to Sourcegraph instance
+
 
 
 - CTA usage data

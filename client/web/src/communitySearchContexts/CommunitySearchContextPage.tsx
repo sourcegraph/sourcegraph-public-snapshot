@@ -1,10 +1,11 @@
+import React, { useEffect, useMemo } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
 import GitlabIcon from 'mdi-react/GitlabIcon'
 import SourceRepositoryMultipleIcon from 'mdi-react/SourceRepositoryMultipleIcon'
-import React, { useEffect, useMemo } from 'react'
 import { catchError, startWith } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
@@ -18,10 +19,10 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps, Settings } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
-import { Button, useObservable, Link, Card } from '@sourcegraph/wildcard'
+import { Button, useObservable, Link, Card, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
+import { PageTitle } from '../components/PageTitle'
 import { SearchPatternType } from '../graphql-operations'
 import { submitSearch } from '../search/helpers'
 import { SearchPageInput } from '../search/home/SearchPageInput'
@@ -29,8 +30,9 @@ import { useNavbarQueryState } from '../stores'
 import { ThemePreferenceProps } from '../theme'
 import { eventLogger } from '../tracking/eventLogger'
 
-import styles from './CommunitySearchContextPage.module.scss'
 import { CommunitySearchContextMetadata } from './types'
+
+import styles from './CommunitySearchContextPage.module.scss'
 
 export interface CommunitySearchContextPageProps
     extends SettingsCascadeProps<Settings>,
@@ -102,7 +104,12 @@ export const CommunitySearchContextPage: React.FunctionComponent<CommunitySearch
                     <>{props.communitySearchContextMetadata.description}</>
                 ) : (
                     <span className="text-monospace">
-                        <span className="search-filter-keyword">context:</span>
+                        {/*
+                           a11y-ignore
+                           Rule: "color-contrast" (Elements must have sufficient color contrast)
+                           GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
+                          */}
+                        <span className="search-filter-keyword a11y-ignore">context:</span>
                         {props.communitySearchContextMetadata.spec}
                     </span>
                 )}
@@ -160,13 +167,18 @@ export const CommunitySearchContextPage: React.FunctionComponent<CommunitySearch
                         <div className="order-2-lg order-1-xs">
                             <Card className={styles.repoCard}>
                                 <h2>
-                                    <SourceRepositoryMultipleIcon className="icon-inline mr-2" />
+                                    <Icon className="mr-2" as={SourceRepositoryMultipleIcon} />
                                     Repositories
                                 </h2>
                                 <p>
                                     Using the syntax{' '}
                                     <code>
-                                        <span className="search-filter-keyword">context:</span>
+                                        {/*
+                                            a11y-ignore
+                                            Rule: "color-contrast" (Elements must have sufficient color contrast)
+                                            GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
+                                          */}
+                                        <span className="search-filter-keyword a11y-ignore">context:</span>
                                         {props.communitySearchContextMetadata.spec}
                                     </code>{' '}
                                     in a query will search these repositories:
@@ -214,7 +226,7 @@ const RepoLink: React.FunctionComponent<{ repo: string }> = ({ repo }) => (
         {repo.startsWith('github.com') && (
             <>
                 <Link to={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
-                    <GithubIcon className={classNames('icon-inline', styles.repoListIcon)} />
+                    <Icon className={styles.repoListIcon} as={GithubIcon} />
                 </Link>
                 <Link to={`/${repo}`} className="text-monospace search-filter-keyword">
                     {displayRepoName(repo)}
@@ -224,7 +236,7 @@ const RepoLink: React.FunctionComponent<{ repo: string }> = ({ repo }) => (
         {repo.startsWith('gitlab.com') && (
             <>
                 <Link to={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
-                    <GitlabIcon className={classNames('icon-inline', styles.repoListIcon)} />
+                    <Icon className={styles.repoListIcon} as={GitlabIcon} />
                 </Link>
                 <Link to={`/${repo}`} className="text-monospace search-filter-keyword">
                     {displayRepoName(repo)}
@@ -234,7 +246,7 @@ const RepoLink: React.FunctionComponent<{ repo: string }> = ({ repo }) => (
         {repo.startsWith('bitbucket.com') && (
             <>
                 <Link to={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
-                    <BitbucketIcon className={classNames('icon-inline', styles.repoListIcon)} />
+                    <Icon className={styles.repoListIcon} as={BitbucketIcon} />
                 </Link>
                 <Link to={`/${repo}`} className="text-monospace search-filter-keyword">
                     {displayRepoName(repo)}

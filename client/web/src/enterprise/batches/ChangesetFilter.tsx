@@ -1,6 +1,7 @@
+import React, { useCallback } from 'react'
+
 import classNames from 'classnames'
 import { upperFirst, lowerCase } from 'lodash'
-import React, { useCallback } from 'react'
 
 import { Select } from '@sourcegraph/wildcard'
 
@@ -29,7 +30,7 @@ export const ChangesetFilter = <T extends string>({
     return (
         <>
             <Select
-                aria-label=""
+                aria-label={label}
                 id=""
                 selectClassName={classNames('form-control changeset-filter__dropdown', className)}
                 className="mb-0"

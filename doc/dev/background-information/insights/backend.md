@@ -9,9 +9,9 @@
     - [(4) The historical data enqueuer gets to work](#4-the-queryrunner-worker-gets-work-and-runs-the-search-query)
     - [(5) Query-time and rendering!](#5-query-time-and-rendering)
 - [Debugging](#debugging)
-    - [Accessing the TimescaleDB instance](#accessing-the-timescaledb-instance)
+    - [Accessing the Code Insights database](#accessing-the-code-insights-database)
     - [Finding logs](#finding-logs)
-    - [Inspecting the Timescale database](#inspecting-the-timescale-database)
+    - [Inspecting the Code Insights database](#inspecting-the-code-insights-database)
         - [Querying data](#querying-data)
         - [Inserting data](#inserting-data)
 - [Creating DB migrations](#creating-db-migrations)
@@ -19,7 +19,7 @@
 ## State of the backend
 
 * Supports running search-based insights over all indexable repositories on the Sourcegraph installation.
-* Is backed by a [TimescaleDB](https://www.timescale.com) instance. See the [database section](#database) below for more information.
+* Is backed by a separate Postgres instance. See the [database section](#database) below for more information.
 * Optimizes unnecessary search queries by using an index of commits to query only for time periods that have had at least one commit.
 * Supports regexp based drilldown on repository name.
 * Provides permissions restrictions by filtering of repositories that are not visible to the user at query time.
@@ -36,8 +36,8 @@ The following architecture diagram shows how the backend fits into the two Sourc
 ## Deployment Status
 Code Insights backend is currently disabled on `sourcegraph.com` until solutions can be built to address the large indexed repo count.
 
-## Feature Flags
-Code Insights is currently an experimental feature, and ships with an "escape hatch" feature flag that will completely disable the dependency on TimescaleDB (named `codeinsights-db`). This feature flag is implemented as an environment variable that if set true `DISABLE_CODE_INSIGHTS=true` will disable the dependency and will not start the Code Insights background workers or GraphQL resolvers. This variable must be set on both the `worker` and `frontend` services to remove the dependency. If the flag is not set on both services, the `codeinsights-db` dependency will be required.
+## Feature Flags 
+Code Insights ships with an "escape hatch" feature flag that will completely disable the dependency on the Code Insights DB (named `codeinsights-db`). This feature flag is implemented as an environment variable that if set true `DISABLE_CODE_INSIGHTS=true` will disable the dependency and will not start the Code Insights background workers or GraphQL resolvers. This variable must be set on both the `worker` and `frontend` services to remove the dependency. If the flag is not set on both services, the `codeinsights-db` dependency will be required.
 
 Implementation of this environment variable can be found in the [`frontend`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/insights/insights.go#L43) and [`worker`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/insights/background/background.go#L30) services.
 
@@ -55,18 +55,11 @@ Code Insights is currently enabled by default on customer instances 3.32 and lat
 ```
 
 ## Database
-Currently, Code Insights uses a [TimescaleDB](https://www.timescale.com) database running on the OSS license. The original intention was to use
-some of the timeseries query features, as well as the hypertable. Many of these are behind a proprietary license that would require non-trivial
+Historically, Code Insights used a [TimescaleDB](https://www.timescale.com) database running on the OSS license. The original intention was to use
+some of the timeseries query features, as well as the hypertable. Many of these are behind a proprietary license that would have required non-trivial
 work to bundle with Sourcegraph.
 
-Additionally, we have many customers running on managed databases for Postgres (RDS, Cloud SQL, etc) that do not support the TimescaleDB plugin.
-Recently our distribution team has started to encourage customers to use managed DB solutions as the product grows. Given entire categories of customers
-would be excluded from using Code Insights, we have decided we must move away from TimescaleDB.
-
-We are currently in progress to retire TimescaleDB in favor of the standard vanilla Postgres image that ships with Sourcegraph. This will simplify our operations, support, and likely
-will not present a performance problem given the primary constraint on Code Insights is search throughput.
-
-The current timeline is planned such that this migration will begin in 3.37, and finish in 3.38.
+As of Sourcegraph 3.38, Code Insights no longer uses TimescaleDB and has moved to a standard vanilla Postgres image. The Code Insights database is still separate from the main Sourcegraph database. 
 
 ## Insight Metadata
 Historically, insights ran entirely within the Sourcegraph extensions API on the browser. These insights are limited to small sets of manually defined repositories
@@ -215,7 +208,7 @@ installations `Searcher` service.
 
 ### (5) Query-time and rendering!
 
-The webapp frontend invokes a GraphQL API which is served by the Sourcegraph `frontend` monolith backend service in order to query information about backend insights. ([cpde](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/+lang:go+InsightConnectionResolver&patternType=literal))
+The webapp frontend invokes a GraphQL API which is served by the Sourcegraph `frontend` monolith backend service in order to query information about backend insights. ([code](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/+lang:go+InsightConnectionResolver&patternType=literal))
 
 1. A GraphQL resolver `insightViewResolver` returns all the distinct data series in a single insight (UI panel) ([code](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+type+insightViewResolver+struct&patternType=literal))
 2. A [resolver is selected](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/insights/resolvers/insight_view_resolvers.go?L98-118) depending on the type of series, and whether or not dynamic search results need to be expanded.
@@ -276,7 +269,7 @@ This being a pretty complex, high cardinality, and slow-moving system - debuggin
 
 In this section, I'll cover useful tips I have for debugging the system when developing it or otherwise using it.
 
-### Accessing the TimescaleDB instance
+### Accessing the Code Insights database
 
 #### Dev and docker compose deployments
 
@@ -297,7 +290,7 @@ kubectl exec -it deployment/codeinsights-db -- psql -U postgres
 
 Since insights runs inside of the `frontend` and `worker` containers/processes, it can be difficult to locate the relevant logs. Best way to do it is to grep for `insights`.
 
-The `frontend` will contain logs about e.g. the GraphQL resolvers and TimescaleDB migrations being ran, while `worker` will have the vast majority of logs coming from the insights background workers.
+The `frontend` will contain logs about e.g. the GraphQL resolvers and Postgres migrations being ran, while `worker` will have the vast majority of logs coming from the insights background workers.
 
 #### Docker compose deployments
 
@@ -311,11 +304,11 @@ and
 docker logs worker | grep insights
 ```
 
-### Inspecting the Timescale database
+### Inspecting the Code Insights database
 
-Read the [initial schema migration](https://github.com/sourcegraph/sourcegraph/blob/main/migrations/codeinsights/1000000001/up.sql) which contains all of the tables we create in TimescaleDB and describes them in detail. This will explain the general layout of the database schema, etc.
+Read the [initial schema migration](https://github.com/sourcegraph/sourcegraph/blob/main/migrations/codeinsights/1000000001/up.sql) which contains all of the tables we create in Postgres and describes them in detail. This will explain the general layout of the database schema, etc.
 
-The most important table in TimescaleDB is `series_points`, that's where the actual data is stored. It's a [hypertable](https://docs.timescale.com/latest/using-timescaledb/hypertables).
+The most important table in the insights database is `series_points`, that's where the actual data is stored.
 
 #### Querying data
 
@@ -441,31 +434,8 @@ INSERT INTO series_points(
 
 You can omit all of the `*repo*` fields (nullable) if you want to store a data point describing a global (associated with no repository) series of data.
 
-##### Inserting fake generated data points
-
-TimescaleDB has a `generate_series` function you can use like this to insert one data point every 15 days for the last year:
-
-```
-INSERT INTO series_points(
-    series_id,
-    time,
-    value,
-    metadata_id,
-    repo_id,
-    repo_name_id,
-    original_repo_name_id)
-SELECT time,
-    "my unique test series ID",
-    random()*80 - 40,
-    (SELECT id FROM metadata WHERE metadata = '{"hello": "world", "languages": ["Go", "Python", "Java"]}'),
-    2,
-    (SELECT id FROM repo_names WHERE name = 'github.com/gorilla/mux-renamed'),
-    (SELECT id FROM repo_names WHERE name = 'github.com/gorilla/mux-original')
-    FROM generate_series(TIMESTAMP '2020-01-01 00:00:00', TIMESTAMP '2021-01-01 00:00:00', INTERVAL '15 day') AS time;
-```
-
 ## Creating DB migrations
 
-Since TimescaleDB is just Postgres (with an extension), we use the same SQL migration framework we use for our other Postgres databases. `migrations/codeinsights` in the root of this repository contains the migrations for the Code Insights Timescale database, they are executed when the frontend starts up (as is the same with e.g. codeintel DB migrations.)
+`migrations/codeinsights` in the root of this repository contains the migrations for the Code Insights database, they are executed when the frontend starts up (as is the same with e.g. codeintel DB migrations.)
 
 Currently, the migration process blocks `frontend` and `worker` startup - which is one issue [we will need to solve](https://github.com/sourcegraph/sourcegraph/issues/18388).

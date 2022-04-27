@@ -1,3 +1,5 @@
+import React, { useCallback, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import AccountEditIcon from 'mdi-react/AccountEditIcon'
@@ -6,14 +8,13 @@ import CheckboxBlankCircleIcon from 'mdi-react/CheckboxBlankCircleIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import FileDocumentEditOutlineIcon from 'mdi-react/FileDocumentEditOutlineIcon'
-import React, { useCallback, useMemo, useState } from 'react'
 
 import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { InputTooltip } from '@sourcegraph/web/src/components/InputTooltip'
 import { Button, Link, Alert, Icon } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../../components/diff/DiffStat'
+import { InputTooltip } from '../../../../components/InputTooltip'
 import { ChangesetState, VisibleChangesetApplyPreviewFields } from '../../../../graphql-operations'
 import { PersonLink } from '../../../../person/PersonLink'
 import { Branch, BranchMerge } from '../../Branch'
@@ -28,6 +29,7 @@ import { ChangesetSpecFileDiffConnection } from './ChangesetSpecFileDiffConnecti
 import { GitBranchChangesetDescriptionInfo } from './GitBranchChangesetDescriptionInfo'
 import { PreviewActions } from './PreviewActions'
 import { PreviewNodeIndicator } from './PreviewNodeIndicator'
+
 import styles from './VisibleChangesetApplyPreviewNode.module.scss'
 
 export interface VisibleChangesetApplyPreviewNodeProps extends ThemeProps {
@@ -225,6 +227,7 @@ const SelectBox: React.FunctionComponent<{
             checked={selectable.isSelected(isPublishableResult.changesetSpecID)}
             onChange={toggleSelected}
             tooltip="Click to select changeset for bulk-modifying the publication state"
+            aria-label="Click to select changeset for bulk-modifying the publication state"
         />
     ) : (
         <InputTooltip
@@ -233,6 +236,7 @@ const SelectBox: React.FunctionComponent<{
             checked={false}
             disabled={true}
             tooltip={isPublishableResult.reason}
+            aria-label={isPublishableResult.reason}
         />
     )
 

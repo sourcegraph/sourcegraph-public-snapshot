@@ -1,5 +1,6 @@
+import { FunctionComponent, useState } from 'react'
+
 import classNames from 'classnames'
-import React, { FunctionComponent, useState } from 'react'
 
 import { Select } from '@sourcegraph/wildcard'
 

@@ -1,9 +1,10 @@
+import { FunctionComponent } from 'react'
+
 import classNames from 'classnames'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
-import React, { FunctionComponent } from 'react'
 
 import { pluralize } from '@sourcegraph/common'
-import { Link } from '@sourcegraph/wildcard/src/components/Link'
+import { Link, Icon } from '@sourcegraph/wildcard'
 
 import {
     NormalizedUploadRetentionMatch,
@@ -54,16 +55,18 @@ const RetentionPolicyRetentionMatchNode: FunctionComponent<{ match: RetentionPol
                                 .slice(0, 4)
                                 .map(hash => hash.slice(0, 7))
                                 .join(', ')}
-                            <InformationOutlineIcon
-                                className="ml-1 icon-inline"
+                            <Icon
+                                className="ml-1"
                                 data-tooltip="This upload is retained to service code-intel queries for commit(s) with applicable retention policies."
+                                as={InformationOutlineIcon}
                             />
                         </>
                     )}
                     {!match.configurationPolicy && (
-                        <InformationOutlineIcon
-                            className="ml-1 icon-inline"
+                        <Icon
+                            className="ml-1"
                             data-tooltip="Uploads at the tip of the default branch are always retained indefinitely."
+                            as={InformationOutlineIcon}
                         />
                     )}
                 </div>
@@ -89,9 +92,10 @@ const UploadReferenceRetentionMatchNode: FunctionComponent<{ match: UploadRefere
                             </Link>
                         ))
                         .reduce((previous, current) => [previous, ', ', current])}
-                    <InformationOutlineIcon
-                        className="ml-1 icon-inline"
+                    <Icon
+                        className="ml-1"
                         data-tooltip="Uploads that are dependencies of other upload(s) are retained to service cross-repository code-intel queries."
+                        as={InformationOutlineIcon}
                     />
                 </div>
             </div>

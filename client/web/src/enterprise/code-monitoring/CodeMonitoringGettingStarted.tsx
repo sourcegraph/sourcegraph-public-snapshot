@@ -1,12 +1,14 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import PlusIcon from 'mdi-react/PlusIcon'
-import React from 'react'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Link, Button, CardBody, Card, Icon } from '@sourcegraph/wildcard'
 
-import styles from './CodeMonitoringGettingStarted.module.scss'
 import { CodeMonitorSignUpLink } from './CodeMonitoringSignUpLink'
+
+import styles from './CodeMonitoringGettingStarted.module.scss'
 
 interface CodeMonitoringGettingStartedProps extends ThemeProps {
     isSignedIn: boolean

@@ -1,11 +1,13 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
-import React from 'react'
 
 import { SearchContextMinimalFields } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
-import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
 import { Badge, Link } from '@sourcegraph/wildcard'
+
+import { Timestamp } from '../../components/time/Timestamp'
 
 import styles from './SearchContextNode.module.scss'
 

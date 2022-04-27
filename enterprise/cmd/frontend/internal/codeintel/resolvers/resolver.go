@@ -8,11 +8,13 @@ import (
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
@@ -42,7 +44,8 @@ type Resolver interface {
 	DeleteConfigurationPolicyByID(ctx context.Context, id int) (err error)
 
 	IndexConfiguration(ctx context.Context, repositoryID int) ([]byte, bool, error)
-	InferredIndexConfiguration(ctx context.Context, repositoryID int) (*config.IndexConfiguration, bool, error)
+	InferedIndexConfiguration(ctx context.Context, repositoryID int, commit string) (*config.IndexConfiguration, bool, error)
+	InferedIndexConfigurationHints(ctx context.Context, repositoryID int, commit string) ([]config.IndexJobHint, error)
 	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, configuration string) error
 
 	CommitGraph(ctx context.Context, repositoryID int) (gql.CodeIntelligenceCommitGraphResolver, error)
@@ -56,11 +59,23 @@ type Resolver interface {
 	UploadConnectionResolver(opts store.GetUploadsOptions) *UploadsResolver
 	IndexConnectionResolver(opts store.GetIndexesOptions) *IndexesResolver
 	QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataArgs) (QueryResolver, error)
+	RepositorySummary(ctx context.Context, repositoryID int) (RepositorySummary, error)
+
+	RequestLanguageSupport(ctx context.Context, userID int, language string) error
+	RequestedLanguageSupport(ctx context.Context, userID int) ([]string, error)
 
 	ExecutorResolver() executor.Resolver
 }
 
+type RepositorySummary struct {
+	RecentUploads           []dbstore.UploadsWithRepositoryNamespace
+	RecentIndexes           []dbstore.IndexesWithRepositoryNamespace
+	LastUploadRetentionScan *time.Time
+	LastIndexScan           *time.Time
+}
+
 type resolver struct {
+	db               database.DB
 	dbStore          DBStore
 	lsifStore        LSIFStore
 	gitserverClient  GitserverClient
@@ -70,6 +85,9 @@ type resolver struct {
 	operations       *operations
 	executorResolver executor.Resolver
 	symbolsClient    *symbols.Client
+
+	// See the same field on the QueryResolver struct
+	maximumIndexesPerMonikerSearch int
 }
 
 // NewResolver creates a new resolver with the given services.
@@ -81,10 +99,11 @@ func NewResolver(
 	indexEnqueuer IndexEnqueuer,
 	hunkCache HunkCache,
 	symbolsClient *symbols.Client,
+	maximumIndexesPerMonikerSearch int,
 	observationContext *observation.Context,
-	dbConn dbutil.DB,
+	dbConn database.DB,
 ) Resolver {
-	return newResolver(dbStore, lsifStore, gitserverClient, policyMatcher, indexEnqueuer, hunkCache, symbolsClient, observationContext, dbConn)
+	return newResolver(dbStore, lsifStore, gitserverClient, policyMatcher, indexEnqueuer, hunkCache, symbolsClient, maximumIndexesPerMonikerSearch, observationContext, dbConn)
 }
 
 func newResolver(
@@ -95,19 +114,22 @@ func newResolver(
 	indexEnqueuer IndexEnqueuer,
 	hunkCache HunkCache,
 	symbolsClient *symbols.Client,
+	maximumIndexesPerMonikerSearch int,
 	observationContext *observation.Context,
-	dbConn dbutil.DB,
+	dbConn database.DB,
 ) *resolver {
 	return &resolver{
-		dbStore:          dbStore,
-		lsifStore:        lsifStore,
-		gitserverClient:  gitserverClient,
-		policyMatcher:    policyMatcher,
-		indexEnqueuer:    indexEnqueuer,
-		hunkCache:        hunkCache,
-		symbolsClient:    symbolsClient,
-		operations:       newOperations(observationContext),
-		executorResolver: executor.New(dbConn),
+		db:                             dbConn,
+		dbStore:                        dbStore,
+		lsifStore:                      lsifStore,
+		gitserverClient:                gitserverClient,
+		policyMatcher:                  policyMatcher,
+		indexEnqueuer:                  indexEnqueuer,
+		hunkCache:                      hunkCache,
+		symbolsClient:                  symbolsClient,
+		maximumIndexesPerMonikerSearch: maximumIndexesPerMonikerSearch,
+		operations:                     newOperations(observationContext),
+		executorResolver:               executor.New(dbConn),
 	}
 }
 
@@ -196,16 +218,18 @@ func (r *resolver) QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataA
 	}
 
 	return NewQueryResolver(
+		r.db,
 		r.dbStore,
 		r.lsifStore,
 		cachedCommitChecker,
-		NewPositionAdjuster(args.Repo, string(args.Commit), r.hunkCache),
+		NewPositionAdjuster(gitserver.NewClient(r.db), args.Repo, string(args.Commit), r.hunkCache),
 		int(args.Repo.ID),
 		string(args.Commit),
 		args.Path,
 		dumps,
 		r.operations,
 		authz.DefaultSubRepoPermsChecker,
+		r.maximumIndexesPerMonikerSearch,
 	), nil
 }
 
@@ -241,13 +265,22 @@ func (r *resolver) IndexConfiguration(ctx context.Context, repositoryID int) ([]
 	return configuration.Data, true, nil
 }
 
-func (r *resolver) InferredIndexConfiguration(ctx context.Context, repositoryID int) (*config.IndexConfiguration, bool, error) {
-	maybeConfig, err := r.indexEnqueuer.InferIndexConfiguration(ctx, repositoryID)
+func (r *resolver) InferedIndexConfiguration(ctx context.Context, repositoryID int, commit string) (*config.IndexConfiguration, bool, error) {
+	maybeConfig, _, err := r.indexEnqueuer.InferIndexConfiguration(ctx, repositoryID, commit)
 	if err != nil || maybeConfig == nil {
 		return nil, false, err
 	}
 
 	return maybeConfig, true, nil
+}
+
+func (r *resolver) InferedIndexConfigurationHints(ctx context.Context, repositoryID int, commit string) ([]config.IndexJobHint, error) {
+	_, hints, err := r.indexEnqueuer.InferIndexConfiguration(ctx, repositoryID, commit)
+	if err != nil {
+		return nil, err
+	}
+
+	return hints, nil
 }
 
 func (r *resolver) UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, configuration string) error {
@@ -309,4 +342,33 @@ func (r *resolver) SupportedByCtags(ctx context.Context, filepath string, repoNa
 	}
 
 	return false, "", nil
+}
+
+func (r *resolver) RepositorySummary(ctx context.Context, repositoryID int) (RepositorySummary, error) {
+	recentUploads, err := r.dbStore.RecentUploadsSummary(ctx, repositoryID)
+	if err != nil {
+		return RepositorySummary{}, err
+	}
+
+	recentIndexes, err := r.dbStore.RecentIndexesSummary(ctx, repositoryID)
+	if err != nil {
+		return RepositorySummary{}, err
+	}
+
+	lastUploadRetentionScan, err := r.dbStore.LastUploadRetentionScanForRepository(ctx, repositoryID)
+	if err != nil {
+		return RepositorySummary{}, err
+	}
+
+	lastIndexScan, err := r.dbStore.LastIndexScanForRepository(ctx, repositoryID)
+	if err != nil {
+		return RepositorySummary{}, err
+	}
+
+	return RepositorySummary{
+		RecentUploads:           recentUploads,
+		RecentIndexes:           recentIndexes,
+		LastUploadRetentionScan: lastUploadRetentionScan,
+		LastIndexScan:           lastIndexScan,
+	}, nil
 }

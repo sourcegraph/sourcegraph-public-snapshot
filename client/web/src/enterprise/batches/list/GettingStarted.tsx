@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
 
 import { Container, CardBody, Card, Link } from '@sourcegraph/wildcard'
 
@@ -148,7 +149,12 @@ export const GettingStarted: React.FunctionComponent<GettingStartedProps> = ({ f
                             View the product marketing page for a high-level overview of benefits and customer use
                             cases.
                         </p>
-                        <Link to="https://about.sourcegraph.com/batch-changes" rel="noopener">
+                        {/*
+                            a11y-ignore
+                            Rule: "color-contrast" (Elements must have sufficient color contrast)
+                            GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
+                        */}
+                        <Link to="https://about.sourcegraph.com/batch-changes" rel="noopener" className="a11y-ignore">
                             Batch Changes marketing page
                         </Link>
                     </CardBody>

@@ -1,6 +1,7 @@
+import { useCallback } from 'react'
+
 import { storiesOf } from '@storybook/react'
 import * as H from 'history'
-import React, { useCallback } from 'react'
 import { BehaviorSubject, of } from 'rxjs'
 
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
@@ -9,9 +10,10 @@ import { pretendProxySubscribable, pretendRemote } from '@sourcegraph/shared/src
 import { extensionsController } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { AppRouterContainer } from '../../components/AppRouterContainer'
-import webStyles from '../../SourcegraphWebApp.scss'
 
 import { StatusBar } from './StatusBar'
+
+import webStyles from '../../SourcegraphWebApp.scss'
 
 const LOCATION: H.Location = { hash: '', pathname: '/', search: '', state: undefined }
 

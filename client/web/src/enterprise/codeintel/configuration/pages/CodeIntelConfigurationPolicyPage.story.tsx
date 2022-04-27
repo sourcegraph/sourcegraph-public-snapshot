@@ -1,11 +1,10 @@
 import { boolean, withKnobs } from '@storybook/addon-knobs'
 import { Meta, Story } from '@storybook/react'
-import React from 'react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { GitObjectType } from '@sourcegraph/shared/src/graphql-operations'
-import { WebStory } from '@sourcegraph/web/src/components/WebStory'
 
+import { WebStory } from '../../../../components/WebStory'
 import { CodeIntelligenceConfigurationPolicyFields } from '../../../../graphql-operations'
 import { POLICY_CONFIGURATION_BY_ID } from '../hooks/usePolicyConfigurationById'
 import { PREVIEW_GIT_OBJECT_FILTER } from '../hooks/usePreviewGitObjectFilter'

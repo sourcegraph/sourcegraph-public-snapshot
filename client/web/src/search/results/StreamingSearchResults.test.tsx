@@ -1,7 +1,8 @@
+import React from 'react'
+
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createBrowserHistory } from 'history'
-import React from 'react'
 import { BrowserRouter } from 'react-router-dom'
 import { EMPTY, NEVER, of } from 'rxjs'
 import sinon from 'sinon'
@@ -245,7 +246,7 @@ describe('StreamingSearchResults', () => {
         })
 
         for (const [index, test] of tests.entries()) {
-            await cleanup()
+            cleanup()
 
             const results: AggregateStreamingSearchResults = {
                 ...streamingSearchResult,

@@ -1,6 +1,7 @@
+import React, { ChangeEventHandler, memo } from 'react'
+
 import classNames from 'classnames'
 import { startCase } from 'lodash'
-import React, { ChangeEventHandler, memo } from 'react'
 import { noop } from 'rxjs'
 
 import { DATA_SERIES_COLORS } from '../../constants'

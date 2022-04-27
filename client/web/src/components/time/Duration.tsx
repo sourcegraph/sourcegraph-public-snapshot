@@ -1,5 +1,6 @@
-import { parseISO } from 'date-fns'
 import React, { useEffect, useReducer } from 'react'
+
+import { parseISO } from 'date-fns'
 
 export interface DurationProps {
     /** The start time. */

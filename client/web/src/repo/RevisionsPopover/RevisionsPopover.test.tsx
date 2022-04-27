@@ -1,5 +1,4 @@
 import { cleanup, within, fireEvent, act } from '@testing-library/react'
-import React from 'react'
 
 import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/shared/src/testing'
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'

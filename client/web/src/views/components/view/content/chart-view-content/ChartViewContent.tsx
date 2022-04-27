@@ -1,13 +1,15 @@
+import { FunctionComponent, useCallback } from 'react'
+
 import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'
 import { noop } from 'lodash'
-import React, { FunctionComponent, useCallback } from 'react'
 import { ChartContent } from 'sourcegraph'
 
 import { BarChart } from './charts/bar/BarChart'
 import { LineChart } from './charts/line'
 import { DatumZoneClickEvent } from './charts/line/types'
 import { PieChart } from './charts/pie/PieChart'
+
 import styles from './ChartViewContent.module.scss'
 
 export enum ChartViewContentLayout {
@@ -36,13 +38,20 @@ export interface ChartViewContentProps {
      * the chart datum (pie arc, line point, bar category)
      */
     onDatumLinkClick?: () => void
+    locked?: boolean
 }
 
 /**
  * Display chart content with different type of charts (line, bar, pie)
  */
 export const ChartViewContent: FunctionComponent<ChartViewContentProps> = props => {
-    const { content, className = '', layout = ChartViewContentLayout.ByParentSize, onDatumLinkClick = noop } = props
+    const {
+        content,
+        className = '',
+        layout = ChartViewContentLayout.ByParentSize,
+        onDatumLinkClick = noop,
+        locked = false,
+    } = props
 
     // Click link-zone handler for line chart only. Catch click around point and redirect user by
     // link which we've got from the nearest datum point to user cursor position. This allows user
@@ -78,19 +87,32 @@ export const ChartViewContent: FunctionComponent<ChartViewContentProps> = props 
                                 width={width}
                                 height={height}
                                 hasChartParentFixedSize={isResponsive}
+                                locked={locked}
                             />
                         )
                     }
 
                     if (content.chart === 'bar') {
                         return (
-                            <BarChart {...content} width={width} height={height} onDatumLinkClick={onDatumLinkClick} />
+                            <BarChart
+                                {...content}
+                                width={width}
+                                height={height}
+                                onDatumLinkClick={onDatumLinkClick}
+                                locked={locked}
+                            />
                         )
                     }
 
                     if (content.chart === 'pie') {
                         return (
-                            <PieChart {...content} width={width} height={height} onDatumLinkClick={onDatumLinkClick} />
+                            <PieChart
+                                {...content}
+                                width={width}
+                                height={height}
+                                onDatumLinkClick={onDatumLinkClick}
+                                locked={locked}
+                            />
                         )
                     }
 

@@ -1,22 +1,24 @@
+import React, { useCallback, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
-import React, { useCallback, useMemo, useState } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { CopyableText } from '@sourcegraph/web/src/components/CopyableText'
 import { LoadingSpinner, Button, Link, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
+import { CopyableText } from '../../../components/CopyableText'
 import { LoaderButton } from '../../../components/LoaderButton'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { UserAvatar } from '../../../user/UserAvatar'
 import { useSteps } from '../../Steps'
 
 import { InvitableCollaborator } from './InviteCollaborators'
-import styles from './InviteCollaborators.module.scss'
 import { useInviteEmailToSourcegraph } from './useInviteEmailToSourcegraph'
+
+import styles from './InviteCollaborators.module.scss'
 
 const SELECT_REPOS_STEP = 2
 
@@ -147,10 +149,7 @@ export const InvitePane: React.FunctionComponent<Props> = ({
                                 className={classNames('d-flex', 'ml-3', 'align-items-center', index !== 0 && 'mt-3')}
                                 key={person.email}
                             >
-                                <UserAvatar
-                                    className={classNames('icon-inline', 'mr-3', styles.avatar)}
-                                    user={person}
-                                />
+                                <UserAvatar inline={true} className={classNames('mr-3', styles.avatar)} user={person} />
                                 <div>
                                     <strong>{person.displayName}</strong>
                                     <div className="text-muted">{person.email}</div>

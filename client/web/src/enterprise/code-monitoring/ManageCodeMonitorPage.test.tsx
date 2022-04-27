@@ -1,7 +1,6 @@
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import * as H from 'history'
-import * as React from 'react'
 import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
@@ -46,6 +45,8 @@ describe('ManageCodeMonitorPage', () => {
         },
         toggleCodeMonitorEnabled: sinon.spy((id: string, enabled: boolean) => of({ id: 'test', enabled: true })),
         deleteCodeMonitor: sinon.spy((id: string) => NEVER),
+        isLightTheme: false,
+        isSourcegraphDotCom: false,
     }
 
     test('Form is pre-loaded with code monitor data', () => {

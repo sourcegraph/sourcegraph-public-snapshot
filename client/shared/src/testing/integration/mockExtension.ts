@@ -1,10 +1,8 @@
 import { PollyServer } from '@pollyjs/core'
 import type * as sourcegraph from 'sourcegraph'
 
-import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
-
 import { ExtensionManifest } from '../../extensions/extensionManifest'
-import { ExtensionsResult } from '../../graphql-operations'
+import { ExtensionsResult, SharedGraphQlOperations } from '../../graphql-operations'
 import { Settings } from '../../settings/settings'
 
 interface ExtensionMockingInit {

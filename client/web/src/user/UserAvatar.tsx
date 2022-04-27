@@ -1,7 +1,9 @@
-import classNames from 'classnames'
 import React from 'react'
 
+import classNames from 'classnames'
+
 import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
+import { Icon } from '@sourcegraph/wildcard'
 
 import styles from './UserAvatar.module.scss'
 
@@ -16,6 +18,10 @@ interface Props {
     ['data-tooltip']?: string
     targetID?: string
     alt?: string
+    /**
+     * Whether to render with icon-inline className
+     */
+    inline?: boolean
 }
 
 /**
@@ -26,6 +32,7 @@ export const UserAvatar: React.FunctionComponent<Props> = ({
     user,
     className,
     targetID,
+    inline,
     // Exclude children since neither <img /> nor mdi-react icons receive them
     children,
     ...otherProps
@@ -41,16 +48,20 @@ export const UserAvatar: React.FunctionComponent<Props> = ({
         } catch {
             // noop
         }
-        return (
-            <img
-                className={classNames(styles.userAvatar, className)}
-                src={url}
-                id={targetID}
-                alt=""
-                role="presentation"
-                {...otherProps}
-            />
-        )
+
+        const imgProps = {
+            className: classNames(styles.userAvatar, className),
+            src: url,
+            id: targetID,
+            role: 'presentation',
+            ...otherProps,
+        }
+
+        if (inline) {
+            return <Icon as="img" alt="" {...imgProps} />
+        }
+
+        return <img alt="" {...imgProps} />
     }
 
     const name = user?.displayName || user?.username || ''
@@ -63,9 +74,15 @@ export const UserAvatar: React.FunctionComponent<Props> = ({
         return initials[0]
     }
 
-    return (
-        <div id={targetID} className={classNames(styles.userAvatar, className)}>
-            <span className={styles.initials}>{getInitials(name)}</span>
-        </div>
-    )
+    const props = {
+        id: targetID,
+        className: classNames(styles.userAvatar, className),
+        children: <span className={styles.initials}>{getInitials(name)}</span>,
+    }
+
+    if (inline) {
+        return <Icon as="div" {...props} />
+    }
+
+    return <div {...props} />
 }

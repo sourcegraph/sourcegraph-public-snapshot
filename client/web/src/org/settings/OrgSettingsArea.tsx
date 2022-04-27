@@ -1,6 +1,7 @@
+import * as React from 'react'
+
 import * as H from 'history'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
@@ -16,7 +17,8 @@ import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { SettingsRepositoriesPage } from '../../user/settings/repositories/SettingsRepositoriesPage'
 import { UserSettingsManageRepositoriesPage } from '../../user/settings/repositories/UserSettingsManageRepositoriesPage'
 import { OrgAreaPageProps } from '../area/OrgArea'
-import { ORG_CODE_FEATURE_FLAG_NAME, GET_ORG_FEATURE_FLAG_VALUE } from '../backend'
+import { ORG_CODE_FEATURE_FLAG_NAME, GET_ORG_FEATURE_FLAG_VALUE, ORG_DELETION_FEATURE_FLAG_NAME } from '../backend'
+import { useEventBus } from '../emitter'
 
 import { OrgAddCodeHostsPageContainer } from './codeHosts/OrgAddCodeHostsPageContainer'
 import { DeleteOrg } from './DeleteOrg'
@@ -44,6 +46,7 @@ interface Props extends OrgAreaPageProps, RouteComponentProps<{}>, ThemeProps {
  * an organization's settings.
  */
 export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
+    const emitter = useEventBus()
     // we can ignore the error states in this case
     // if there is an error, we will not show the code host connections and repository screens
     // same for until the feature flag value is loaded (which in practice should be fast)
@@ -58,11 +61,25 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
         }
     )
 
+    const orgDeletionFlag = useQuery<OrgFeatureFlagValueResult, OrgFeatureFlagValueVariables>(
+        GET_ORG_FEATURE_FLAG_VALUE,
+        {
+            variables: { orgID: props.org.id, flagName: ORG_DELETION_FEATURE_FLAG_NAME },
+            fetchPolicy: 'cache-and-network',
+            skip: !props.authenticatedUser || !props.org.id,
+        }
+    )
+
+    const onOrgGetStartedRefresh = (): void => {
+        emitter.emit('refreshOrgHeader', 'refreshing due to changes on repo setup')
+    }
+
     if (!props.authenticatedUser) {
         return null
     }
 
     const showOrgCode = data?.organizationFeatureFlagValue || false
+    const showOrgDeletion = orgDeletionFlag.data?.organizationFeatureFlagValue || false
 
     return (
         <div className="d-flex">
@@ -97,7 +114,7 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
                                                 </>
                                             }
                                         />
-                                        {props.isSourcegraphDotCom && props.org.viewerIsMember && (
+                                        {props.isSourcegraphDotCom && props.org.viewerIsMember && showOrgDeletion && (
                                             <DeleteOrg {...routeComponentProps} {...props} />
                                         )}
                                     </div>
@@ -135,6 +152,7 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
                                                 type: 'org',
                                                 name: props.org.displayName || props.org.name,
                                             }}
+                                            onOrgGetStartedRefresh={onOrgGetStartedRefresh}
                                             context={window.context}
                                             routingPrefix={`${props.org.url}/settings`}
                                             telemetryService={props.telemetryService}
@@ -155,6 +173,7 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
                                                 type: 'org',
                                                 name: props.org.displayName || props.org.name,
                                             }}
+                                            onOrgGetStartedRefresh={onOrgGetStartedRefresh}
                                             routingPrefix={`${props.org.url}/settings`}
                                             onUserExternalServicesOrRepositoriesUpdate={() => {}} // TODO...
                                         />

@@ -1,19 +1,20 @@
+import React, { useCallback, useMemo } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import ChevronDoubleLeftIcon from 'mdi-react/ChevronDoubleLeftIcon'
 import FileTreeIcon from 'mdi-react/FileTreeIcon'
-import React, { useCallback, useMemo } from 'react'
 
-import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
 import { ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { Collapsible } from '@sourcegraph/web/src/components/Collapsible'
-import { Button, useLocalStorage, Link } from '@sourcegraph/wildcard'
+import { Button, useLocalStorage, Link, Icon, Panel } from '@sourcegraph/wildcard'
 
+import { Collapsible } from '../../components/Collapsible'
 import { RepositoryFields } from '../../graphql-operations'
 import { toDocumentationURL } from '../../util/url'
 
 import { DocumentationIndexNode, IndexNode } from './DocumentationIndexNode'
 import { GQLDocumentationNode, GQLDocumentationPathInfo, isExcluded, Tag } from './graphql'
+
 import styles from './RepositoryDocumentationSidebar.module.scss'
 
 interface Props extends Partial<RevisionSpec>, ResolvedRevisionSpec {
@@ -145,72 +146,62 @@ export const RepositoryDocumentationSidebar: React.FunctionComponent<Props> = ({
                 data-tooltip="Show sidebar"
                 variant="icon"
             >
-                <FileTreeIcon className="icon-inline" />
+                <Icon as={FileTreeIcon} />
             </Button>
         )
     }
 
     return (
-        <Resizable
-            defaultSize={384}
-            handlePosition="right"
-            storageKey={SIZE_STORAGE_KEY}
-            element={
-                <div className="repository-documentation-sidebar d-flex flex-column w-100 border-right">
-                    <div className="d-flex flex-0 mx-3">
-                        <Button
-                            onClick={handleSidebarToggle}
-                            className="bg-transparent border-0 ml-auto p-1 position-relative focus-behaviour"
-                            title="Close panel"
-                            data-tooltip="Collapse panel"
-                            data-placement="right"
-                        >
-                            <ChevronDoubleLeftIcon className="icon-inline" />
-                        </Button>
-                    </div>
-                    <div
-                        aria-hidden={true}
-                        className={classNames('overflow-auto px-3', styles.repositoryDocumentationSidebarScroller)}
+        <Panel defaultSize={384} position="left" storageKey={SIZE_STORAGE_KEY}>
+            <div className="repository-documentation-sidebar d-flex flex-column w-100 h-100 border-right">
+                <div className="d-flex flex-0 mx-3">
+                    <Button
+                        onClick={handleSidebarToggle}
+                        className="bg-transparent border-0 ml-auto p-1 position-relative focus-behaviour"
+                        title="Close panel"
+                        data-tooltip="Collapse panel"
+                        data-placement="right"
                     >
-                        {props.pathInfo.isIndex && (
-                            <>
-                                <h4 className="text-nowrap">Index</h4>
-                                {props.pathInfo.children.length > 0 ? (
-                                    <SubpagesList
-                                        onToggle={onToggle}
-                                        {...props}
-                                        node={node}
-                                        activePathID={activePathID}
-                                    />
-                                ) : (
-                                    <p>Looks like there's nothing to see here..</p>
-                                )}
-                            </>
-                        )}
-                        {!props.pathInfo.isIndex && props.pathInfo.children.length > 0 && (
-                            <>
-                                <h4 className="text-nowrap">Subpages</h4>
-                                <SubpagesList onToggle={onToggle} {...props} node={node} activePathID={activePathID} />
-                            </>
-                        )}
-                        {!props.pathInfo.isIndex &&
-                            props.pathInfo.children.length === 0 &&
-                            isExcluded(node, excludingTags) && (
-                                <>
-                                    <p>Looks like there's nothing to see here..</p>
-                                </>
-                            )}
-                        <DocumentationIndexNode
-                            {...props}
-                            node={indexNode}
-                            pagePathID={props.pagePathID}
-                            depth={0}
-                            excludingTags={excludingTags}
-                        />
-                    </div>
+                        <Icon as={ChevronDoubleLeftIcon} />
+                    </Button>
                 </div>
-            }
-        />
+                <div
+                    aria-hidden={true}
+                    className={classNames('overflow-auto px-3', styles.repositoryDocumentationSidebarScroller)}
+                >
+                    {props.pathInfo.isIndex && (
+                        <>
+                            <h4 className="text-nowrap">Index</h4>
+                            {props.pathInfo.children.length > 0 ? (
+                                <SubpagesList onToggle={onToggle} {...props} node={node} activePathID={activePathID} />
+                            ) : (
+                                <p>Looks like there's nothing to see here..</p>
+                            )}
+                        </>
+                    )}
+                    {!props.pathInfo.isIndex && props.pathInfo.children.length > 0 && (
+                        <>
+                            <h4 className="text-nowrap">Subpages</h4>
+                            <SubpagesList onToggle={onToggle} {...props} node={node} activePathID={activePathID} />
+                        </>
+                    )}
+                    {!props.pathInfo.isIndex &&
+                        props.pathInfo.children.length === 0 &&
+                        isExcluded(node, excludingTags) && (
+                            <>
+                                <p>Looks like there's nothing to see here..</p>
+                            </>
+                        )}
+                    <DocumentationIndexNode
+                        {...props}
+                        node={indexNode}
+                        pagePathID={props.pagePathID}
+                        depth={0}
+                        excludingTags={excludingTags}
+                    />
+                </div>
+            </div>
+        </Panel>
     )
 }
 

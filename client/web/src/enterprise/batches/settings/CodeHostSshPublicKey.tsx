@@ -1,7 +1,8 @@
+import React, { useCallback, useState } from 'react'
+
 import copy from 'copy-to-clipboard'
 import { noop } from 'lodash'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
-import React, { useCallback, useState } from 'react'
 
 import { Button, TextArea, Link, Icon } from '@sourcegraph/wildcard'
 
@@ -15,7 +16,9 @@ const configInstructionLinks: Record<ExternalServiceKind, string> = {
         'https://confluence.atlassian.com/bitbucketserver/ssh-user-keys-for-personal-use-776639793.html',
     [ExternalServiceKind.AWSCODECOMMIT]: 'unsupported',
     [ExternalServiceKind.BITBUCKETCLOUD]: 'unsupported',
+    [ExternalServiceKind.GERRIT]: 'unsupported',
     [ExternalServiceKind.GITOLITE]: 'unsupported',
+    [ExternalServiceKind.GOMODULES]: 'unsupported',
     [ExternalServiceKind.JVMPACKAGES]: 'unsupported',
     [ExternalServiceKind.NPMPACKAGES]: 'unsupported',
     [ExternalServiceKind.OTHER]: 'unsupported',

@@ -5,14 +5,25 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-var executorsAccessToken = "executors-access-token"
-var openIDSecret = "open-id-secret"
-var gitlabClientSecret = "gitlab-client-secret"
-var githubClientSecret = "github-client-secret"
+const (
+	executorsAccessToken              = "executorsAccessToken"
+	authOpenIDClientSecret            = "authOpenIDClientSecret"
+	authGitHubClientSecret            = "authGitHubClientSecret"
+	authGitLabClientSecret            = "authGitLabClientSecret"
+	emailSMTPPassword                 = "emailSMTPPassword"
+	organizationInvitationsSigningKey = "organizationInvitationsSigningKey"
+	githubClientSecret                = "githubClientSecret"
+	dotcomGitHubAppCloudClientSecret  = "dotcomGitHubAppCloudClientSecret"
+	dotcomGitHubAppCloudPrivateKey    = "dotcomGitHubAppCloudPrivateKey"
+	authUnlockAccountLinkSigningKey   = "authUnlockAccountLinkSigningKey"
+)
 
 func TestValidate(t *testing.T) {
 	t.Run("valid", func(t *testing.T) {
@@ -130,75 +141,121 @@ func TestProblems(t *testing.T) {
 	}
 }
 
-func TestRedact(t *testing.T) {
-	t.Run("redact secrets", func(t *testing.T) {
-		input := getTestSiteWithSecrets(executorsAccessToken, openIDSecret, gitlabClientSecret, githubClientSecret)
-		redacted, err := RedactSecrets(conftypes.RawUnified{
-			Site: input,
-		})
-		if err != nil {
-			t.Errorf("unexpected error redacting secrets: %s", err)
-		}
-		expected := getTestSiteWithRedactedSecrets()
-		if !redacted.Equal(conftypes.RawUnified{Site: expected}) {
-			t.Errorf("unexpected output of RedactSecrets")
-		}
-	})
+func TestRedactSecrets(t *testing.T) {
+	redacted, err := RedactSecrets(
+		conftypes.RawUnified{
+			Site: getTestSiteWithSecrets(
+				executorsAccessToken,
+				authOpenIDClientSecret, authGitLabClientSecret, authGitHubClientSecret,
+				emailSMTPPassword,
+				organizationInvitationsSigningKey,
+				githubClientSecret,
+				dotcomGitHubAppCloudClientSecret,
+				dotcomGitHubAppCloudPrivateKey,
+				authUnlockAccountLinkSigningKey,
+			),
+		},
+	)
+	require.NoError(t, err)
+
+	want := getTestSiteWithRedactedSecrets()
+	assert.Equal(t, want, redacted.Site)
 }
 
-func TestUnredact(t *testing.T) {
+func TestUnredactSecrets(t *testing.T) {
+	previousSite := getTestSiteWithSecrets(
+		executorsAccessToken,
+		authOpenIDClientSecret, authGitLabClientSecret, authGitHubClientSecret,
+		emailSMTPPassword,
+		organizationInvitationsSigningKey,
+		githubClientSecret,
+		dotcomGitHubAppCloudClientSecret,
+		dotcomGitHubAppCloudPrivateKey,
+		authUnlockAccountLinkSigningKey,
+	)
+
 	t.Run("replaces REDACTED with corresponding secret", func(t *testing.T) {
 		input := getTestSiteWithRedactedSecrets()
-		previousSite := getTestSiteWithSecrets(executorsAccessToken, openIDSecret, githubClientSecret, gitlabClientSecret)
 		unredactedSite, err := UnredactSecrets(input, conftypes.RawUnified{Site: previousSite})
-		if err != nil {
-			t.Errorf("unexpected error unredacting secrets: %s", err)
-		}
-		if strings.Contains(unredactedSite, RedactedSecret) {
-			t.Errorf("expected unredacted to contain secrets")
-		}
-		expectedUnredacted := conftypes.RawUnified{Site: previousSite}
-		unredacted := conftypes.RawUnified{Site: unredactedSite}
-		if !unredacted.Equal(expectedUnredacted) {
-			t.Errorf("unexpected output of UnredactSecrets")
-		}
+		require.NoError(t, err)
+		assert.NotContains(t, unredactedSite, RedactedSecret)
+		assert.Equal(t, previousSite, unredactedSite)
 	})
+
 	t.Run("unredacts secrets AND respects specified edits to secret", func(t *testing.T) {
-		input := getTestSiteWithSecrets("new-access-token", RedactedSecret, "new-github-client-secret", RedactedSecret)
-		previousSite := getTestSiteWithSecrets(executorsAccessToken, openIDSecret, githubClientSecret, gitlabClientSecret)
+		input := getTestSiteWithSecrets(
+			"new"+executorsAccessToken,
+			RedactedSecret, "new"+authGitLabClientSecret, RedactedSecret,
+			RedactedSecret,
+			RedactedSecret,
+			RedactedSecret,
+			RedactedSecret,
+			RedactedSecret,
+			RedactedSecret,
+		)
 		unredactedSite, err := UnredactSecrets(input, conftypes.RawUnified{Site: previousSite})
-		if err != nil {
-			t.Errorf("unexpected error unredacting secrets: %s", err)
-		}
-		// Expect to have newly-specified secrets and to fill in "REDACTED" secrets w/ secrets from previous site
-		expectedUnredacted := conftypes.RawUnified{Site: getTestSiteWithSecrets("new-access-token", openIDSecret, "new-github-client-secret", gitlabClientSecret)}
-		unredacted := conftypes.RawUnified{Site: unredactedSite}
-		if !unredacted.Equal(expectedUnredacted) {
-			t.Errorf("unexpected output of UnredactSecrets")
-		}
+		require.NoError(t, err)
+
+		// Expect to have newly-specified secrets and to fill in "REDACTED" secrets with secrets from previous site
+		want := getTestSiteWithSecrets(
+			"new"+executorsAccessToken,
+			authOpenIDClientSecret, "new"+authGitLabClientSecret, authGitHubClientSecret,
+			emailSMTPPassword,
+			organizationInvitationsSigningKey,
+			githubClientSecret,
+			dotcomGitHubAppCloudClientSecret,
+			dotcomGitHubAppCloudPrivateKey,
+			authUnlockAccountLinkSigningKey,
+		)
+		assert.Equal(t, want, unredactedSite)
 	})
+
 	t.Run("unredacts secrets and respects edits to config", func(t *testing.T) {
-		newEmail := "new_email@example.com"
-		input := getTestSiteWithSecrets("new-access-token", RedactedSecret, "new-github-client-secret", RedactedSecret, newEmail)
-		previousSite := getTestSiteWithSecrets(executorsAccessToken, openIDSecret, githubClientSecret, gitlabClientSecret)
+		const newEmail = "new_email@example.com"
+		input := getTestSiteWithSecrets(
+			"new"+executorsAccessToken,
+			RedactedSecret, "new"+authGitLabClientSecret, RedactedSecret,
+			RedactedSecret,
+			RedactedSecret,
+			RedactedSecret,
+			RedactedSecret,
+			RedactedSecret,
+			RedactedSecret,
+			newEmail,
+		)
 		unredactedSite, err := UnredactSecrets(input, conftypes.RawUnified{Site: previousSite})
-		if err != nil {
-			t.Errorf("unexpected error unredacting secrets: %s", err)
-		}
+		require.NoError(t, err)
+
 		// Expect new secrets and new email to show up in the unredacted version
-		expectedUnredacted := conftypes.RawUnified{Site: getTestSiteWithSecrets("new-access-token", openIDSecret, "new-github-client-secret", gitlabClientSecret, newEmail)}
-		unredacted := conftypes.RawUnified{Site: unredactedSite}
-		if !unredacted.Equal(expectedUnredacted) {
-			t.Errorf("unexpected output of UnredactSecrets")
-		}
+		want := getTestSiteWithSecrets(
+			"new"+executorsAccessToken,
+			authOpenIDClientSecret, "new"+authGitLabClientSecret, authGitHubClientSecret,
+			emailSMTPPassword,
+			organizationInvitationsSigningKey,
+			githubClientSecret,
+			dotcomGitHubAppCloudClientSecret,
+			dotcomGitHubAppCloudPrivateKey,
+			authUnlockAccountLinkSigningKey,
+			newEmail,
+		)
+		assert.Equal(t, want, unredactedSite)
 	})
 }
 
 func getTestSiteWithRedactedSecrets() string {
-	return getTestSiteWithSecrets(RedactedSecret, RedactedSecret, RedactedSecret, RedactedSecret)
+	return getTestSiteWithSecrets(RedactedSecret, RedactedSecret, RedactedSecret, RedactedSecret, RedactedSecret, RedactedSecret, RedactedSecret, RedactedSecret, RedactedSecret, RedactedSecret)
 }
 
-func getTestSiteWithSecrets(execAccessToken, openIDSecret, githubSecret, gitlabSecret string, optionalEdit ...string) string {
+func getTestSiteWithSecrets(
+	executorsAccessToken,
+	authOpenIDClientSecret, authGitHubClientSecret, authGitLabClientSecret,
+	emailSMTPPassword,
+	organizationInvitationsSigningKey,
+	githubClientSecret,
+	dotcomGitHubAppCloudClientSecret, dotcomGitHubAppCloudPrivateKey,
+	authUnlockAccountLinkSigningKey string,
+	optionalEdit ...string,
+) string {
 	email := "noreply+dev@sourcegraph.com"
 	if len(optionalEdit) > 0 {
 		email = optionalEdit[0]
@@ -240,8 +297,31 @@ func getTestSiteWithSecrets(execAccessToken, openIDSecret, githubSecret, gitlabS
   "observability.tracing": {
     "sampling":"selective"
   },
-  "externalService.userMode": "all"
+  "externalService.userMode": "all",
+  "email.smtp": {
+    "password": "%s"
+  },
+  "organizationInvitations": {
+    "signingKey": "%s"
+  },
+  "githubClientSecret": "%s",
+  "dotcom": {
+    "githubApp.cloud": {
+      "clientSecret": "%s",
+      "privateKey": "%s"
+    }
+  },
+  "auth.unlockAccountLinkSigningKey": "%s",
 }
-`, email, execAccessToken, openIDSecret, githubSecret, gitlabSecret)
+`,
+		email,
+		executorsAccessToken,
+		authOpenIDClientSecret, authGitHubClientSecret, authGitLabClientSecret,
+		emailSMTPPassword,
+		organizationInvitationsSigningKey,
+		githubClientSecret,
+		dotcomGitHubAppCloudClientSecret, dotcomGitHubAppCloudPrivateKey,
+		authUnlockAccountLinkSigningKey,
+	)
 
 }

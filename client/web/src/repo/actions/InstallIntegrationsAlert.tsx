@@ -1,11 +1,12 @@
 import React, { useCallback, useMemo } from 'react'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import { useLocalStorage, useObservable } from '@sourcegraph/wildcard'
+import { useLocalStorage } from '@sourcegraph/wildcard'
 
 import { usePersistentCadence } from '../../hooks'
 import { useIsActiveIdeIntegrationUser } from '../../IdeExtensionTracker'
-import { browserExtensionInstalled } from '../../tracking/analyticsUtils'
+import { useTourQueryParameters } from '../../tour/components/Tour/TourAgent'
+import { useIsBrowserExtensionActiveUser } from '../../tracking/BrowserExtensionTracker'
 import { HOVER_COUNT_KEY, HOVER_THRESHOLD } from '../RepoContainer'
 
 import { BrowserExtensionAlert } from './BrowserExtensionAlert'
@@ -41,7 +42,7 @@ export const InstallIntegrationsAlert: React.FunctionComponent<InstallIntegratio
         DISPLAY_CADENCE,
         IDE_CTA_CADENCE_SHIFT
     )
-    const isBrowserExtensionInstalled = useObservable<boolean>(browserExtensionInstalled)
+    const isBrowserExtensionActiveUser = useIsBrowserExtensionActiveUser()
     const isUsingIdeIntegration = useIsActiveIdeIntegrationUser()
     const [hoverCount] = useLocalStorage<number>(HOVER_COUNT_KEY, 0)
     const [hasDismissedBrowserExtensionAlert, setHasDismissedBrowserExtensionAlert] = useTemporarySetting(
@@ -53,10 +54,16 @@ export const InstallIntegrationsAlert: React.FunctionComponent<InstallIntegratio
         false
     )
 
+    const tourQueryParameters = useTourQueryParameters()
+
     const ctaToDisplay = useMemo<CtaToDisplay | undefined>(
         (): CtaToDisplay | undefined => {
+            if (tourQueryParameters?.isTour) {
+                return
+            }
+
             if (
-                isBrowserExtensionInstalled === false &&
+                isBrowserExtensionActiveUser === false &&
                 displayBrowserExtensionCTABasedOnCadence &&
                 hasDismissedBrowserExtensionAlert === false &&
                 hoverCount >= HOVER_THRESHOLD
@@ -72,7 +79,7 @@ export const InstallIntegrationsAlert: React.FunctionComponent<InstallIntegratio
                 return 'ide'
             }
 
-            return undefined
+            return
         },
         /**
          * Intentionally use useMemo() here without a dependency on hoverCount to only show the alert on the next reload,
@@ -84,8 +91,9 @@ export const InstallIntegrationsAlert: React.FunctionComponent<InstallIntegratio
             displayIDEExtensionCTABasedOnCadence,
             hasDismissedBrowserExtensionAlert,
             hasDismissedIDEExtensionAlert,
-            isBrowserExtensionInstalled,
+            isBrowserExtensionActiveUser,
             isUsingIdeIntegration,
+            tourQueryParameters,
         ]
     )
 

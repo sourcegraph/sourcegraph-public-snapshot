@@ -1,9 +1,8 @@
 import { Meta, Story } from '@storybook/react'
-import React from 'react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
-import { PRODUCT_STATUSES } from '@sourcegraph/wildcard/src/components/Badge/constants'
+import { PRODUCT_STATUSES } from '@sourcegraph/wildcard'
 
 import { FeedbackBadge } from '.'
 

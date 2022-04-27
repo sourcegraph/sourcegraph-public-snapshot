@@ -1,13 +1,11 @@
 import { storiesOf } from '@storybook/react'
-import React from 'react'
-import { NEVER, of } from 'rxjs'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../components/WebStory'
 
 import { CollaboratorsPanel } from './CollaboratorsPanel'
-import { _fetchCollaborators, authUser } from './utils'
+import { collaboratorsPayload, authUser } from './utils'
 
 const { add } = storiesOf('web/search/panels/CollaboratorsPanel', module).addParameters({
     design: {
@@ -19,7 +17,7 @@ const { add } = storiesOf('web/search/panels/CollaboratorsPanel', module).addPar
 
 const props = {
     authenticatedUser: authUser,
-    fetchCollaborators: _fetchCollaborators,
+    collaboratorsFragment: { collaborators: collaboratorsPayload() },
     telemetryService: NOOP_TELEMETRY_SERVICE,
 }
 
@@ -31,10 +29,10 @@ add('CollaboratorsPanel', () => (
                 <CollaboratorsPanel {...props} />
 
                 <h2>Loading</h2>
-                <CollaboratorsPanel {...props} fetchCollaborators={() => NEVER} />
+                <CollaboratorsPanel {...props} collaboratorsFragment={null} />
 
                 <h2>Empty</h2>
-                <CollaboratorsPanel {...props} fetchCollaborators={() => of([])} />
+                <CollaboratorsPanel {...props} collaboratorsFragment={{ collaborators: [] }} />
             </div>
         )}
     </WebStory>

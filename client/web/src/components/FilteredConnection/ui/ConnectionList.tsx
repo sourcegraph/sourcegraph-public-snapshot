@@ -1,9 +1,10 @@
+import React, { AriaAttributes } from 'react'
+
 import classNames from 'classnames'
-import React from 'react'
 
 import styles from './ConnectionList.module.scss'
 
-interface ConnectionListProps {
+interface ConnectionListProps extends AriaAttributes {
     /** list HTML element type. Default is <ul>. */
     as?: 'ul' | 'table' | 'div'
 
@@ -22,10 +23,12 @@ export const ConnectionList: React.FunctionComponent<ConnectionListProps> = ({
     className,
     children,
     compact,
+    ...props
 }) => (
     <ListComponent
         className={classNames(styles.normal, compact && styles.compact, className)}
         data-testid="filtered-connection-nodes"
+        {...props}
     >
         {children}
     </ListComponent>

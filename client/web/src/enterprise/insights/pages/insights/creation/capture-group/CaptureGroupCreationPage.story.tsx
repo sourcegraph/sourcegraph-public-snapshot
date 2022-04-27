@@ -1,13 +1,10 @@
 import { Meta, Story } from '@storybook/react'
 import { noop } from 'lodash'
-import React from 'react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../../../../components/WebStory'
-import { LINE_CHART_WITH_HUGE_NUMBER_OF_LINES } from '../../../../../../views/mocks/charts-content'
-import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
-import { CodeInsightsGqlBackend } from '../../../../core/backend/gql-api/code-insights-gql-backend'
+import { CodeInsightsBackendContext, SeriesChartContent, CodeInsightsGqlBackend } from '../../../../core'
 
 import { CaptureGroupCreationPage as CaptureGroupCreationPageComponent } from './CaptureGroupCreationPage'
 
@@ -31,7 +28,7 @@ class CodeInsightExampleBackend extends CodeInsightsGqlBackend {
             { id: '4', name: 'github.com/another-example/sub-repo-2' },
         ])
 
-    public getCaptureInsightContent = () => Promise.resolve(LINE_CHART_WITH_HUGE_NUMBER_OF_LINES)
+    public getCaptureInsightContent = (): Promise<SeriesChartContent<any>> => Promise.resolve({ series: [] })
 }
 
 const api = new CodeInsightExampleBackend({} as any)

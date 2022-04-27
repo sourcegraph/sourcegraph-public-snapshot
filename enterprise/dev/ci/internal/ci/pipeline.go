@@ -61,6 +61,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// HoneyComb dataset that stores build traces.
 		"CI_BUILDEVENT_DATASET": "buildkite",
 	}
+	bk.FeatureFlags.ApplyEnv(env)
 
 	// On release branches Percy must compare to the previous commit of the release branch, not main.
 	if c.RunType.Is(runtype.ReleaseBranch) {
@@ -76,7 +77,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 
 	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
-	const minimumUpgradeableVersion = "3.37.0"
+	const minimumUpgradeableVersion = "3.39.0"
 
 	// Set up operations that add steps to a pipeline.
 	ops := operations.NewSet()
@@ -91,8 +92,17 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			// set it up separately from CoreTestOperations
 			ops.Merge(operations.NewNamedSet(operations.PipelineSetupSetName,
 				triggerAsync(buildOptions)))
+
+			// Do not create client PR preview if Go or GraphQL is changed to avoid confusing
+			// preview behavior, because only Client code is used to deploy application preview.
+			if !c.Diff.Has(changed.Go) && !c.Diff.Has(changed.GraphQL) {
+				ops.Append(prPreview())
+			}
 		}
-		ops.Merge(CoreTestOperations(c.Diff, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
+		ops.Merge(CoreTestOperations(c.Diff, CoreTestOperationsOptions{
+			MinimumUpgradeableVersion:  minimumUpgradeableVersion,
+			ClientLintOnlyChangedFiles: c.RunType.Is(runtype.PullRequest),
+		}))
 
 	case runtype.ReleaseNightly:
 		ops.Append(triggerReleaseBranchHealthchecks(minimumUpgradeableVersion))
@@ -102,15 +112,20 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			buildCandidateDockerImage("server", c.Version, c.candidateImageTag()),
 			backendIntegrationTests(c.candidateImageTag()))
 
-		// Run default set of PR checks as well
-		ops.Merge(CoreTestOperations(c.Diff, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
+		// always include very backend-oriented changes in this set of tests
+		testDiff := c.Diff | changed.DatabaseSchema | changed.Go
+		ops.Merge(CoreTestOperations(
+			testDiff,
+			CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion},
+		))
 
 	case runtype.BextReleaseBranch:
 		// If this is a browser extension release branch, run the browser-extension tests and
 		// builds.
 		ops = operations.NewSet(
-			addClientLinters,
-			addBrowserExt,
+			addClientLintersForAllFiles,
+			addBrowserExtensionUnitTests,
+			addBrowserExtensionIntegrationTests(0), // we pass 0 here as we don't have other pipeline steps to contribute to the resulting Percy build
 			frontendTests,
 			wait,
 			addBrowserExtensionReleaseSteps)
@@ -119,8 +134,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// If this is a browser extension nightly build, run the browser-extension tests and
 		// e2e tests.
 		ops = operations.NewSet(
-			addClientLinters,
-			addBrowserExt,
+			addClientLintersForAllFiles,
+			addBrowserExtensionUnitTests,
+			recordBrowserExtensionIntegrationTests,
 			frontendTests,
 			wait,
 			addBrowserExtensionE2ESteps)
@@ -249,6 +265,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		AfterEveryStepOpts: []bk.StepOpt{
 			withDefaultTimeout,
 			withAgentQueueDefaults,
+			withAgentLostRetries,
 		},
 	}
 	// Toggle profiling of each step
@@ -260,7 +277,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	ops.Apply(pipeline)
 
 	// Validate generated pipeline have unique keys
-	if err := pipeline.EnsureUniqueKeys(); err != nil {
+	if err := pipeline.EnsureUniqueKeys(make(map[string]int)); err != nil {
 		return nil, err
 	}
 
@@ -310,17 +327,7 @@ func withDefaultTimeout(s *bk.Step) {
 // steps are configured appropriately to run on the queue
 func withAgentQueueDefaults(s *bk.Step) {
 	if len(s.Agents) == 0 || s.Agents["queue"] == "" {
-		if bk.FeatureFlags.StatelessBuild {
-			s.Agents["queue"] = bk.AgentQueueJob
-		} else {
-			s.Agents["queue"] = bk.AgentQueueStandard
-		}
-	}
-
-	if s.Agents["queue"] != bk.AgentQueueBaremetal {
-		// Use athens proxy for go modules downloads, falling back to direct
-		// https://github.com/sourcegraph/infrastructure/blob/main/buildkite/kubernetes/athens-proxy/athens-athens-proxy.Deployment.yaml
-		s.Env["GOPROXY"] = "http://athens-athens-proxy,direct"
+		s.Agents["queue"] = bk.AgentQueueStateless
 	}
 }
 
@@ -331,4 +338,23 @@ func withProfiling(s *bk.Step) {
 		prefixed = append(prefixed, fmt.Sprintf("env time -v %s", cmd))
 	}
 	s.Command = prefixed
+}
+
+// withAgentLostRetries insert automatic retries when the job has failed because it lost its agent.
+//
+// If the step has been marked as not retryable, the retry will be skipped.
+func withAgentLostRetries(s *bk.Step) {
+	if s.Retry != nil && s.Retry.Manual != nil && !s.Retry.Manual.Allowed {
+		return
+	}
+	if s.Retry == nil {
+		s.Retry = &bk.RetryOptions{}
+	}
+	if s.Retry.Automatic == nil {
+		s.Retry.Automatic = []bk.AutomaticRetryOptions{}
+	}
+	s.Retry.Automatic = append(s.Retry.Automatic, bk.AutomaticRetryOptions{
+		Limit:      1,
+		ExitStatus: -1,
+	})
 }

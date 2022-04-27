@@ -21,7 +21,7 @@
 # We deviate from git gc like follows:
 # - For "git repack" and "git commit-graph write" we choose a different set of
 # flags.
-# - We ommit the commands "git rerere" and "git worktree prune" because they
+# - We omit the commands "git rerere" and "git worktree prune" because they
 # don't apply to our use-case.
 #
 # git-maintenance
@@ -46,15 +46,13 @@ git pack-refs --all --prune
 # --all Process the reflogs of all references
 git reflog expire --all
 
-# With multi-pack-index and geometric packing, repacking should take time
-# proportional to the number of new objects. Inspired by
-# https://github.blog/2021-04-29-scaling-monorepo-maintenance/
-# --write-midx reqiures git>=2.34.1.
-# [NOTE: git-version-min-requirement]
-git -c pack.windowMemory=100m repack --write-midx --write-bitmap-index -d --geometric=2
-
-# Usually run by git gc. Prune all unreachable objects form the object database.
-git prune --expire 2.weeks.ago
+# Usually run by git gc. Here with the additional option --window-memory
+# and --write-bitmap-index. We previously set the option --geometric=2, however
+# this turned out to be too memory intensive for monorepos on some customer
+# instances. Restricting the memory consumption by setting pack.windowMemory,
+# pack.deltaCacheSize and pack.threads in addition to --geometric=2 seemed to
+# have no effect.
+git repack -d -l -A --write-bitmap-index --window-memory 100m --unpack-unreachable=now
 
 # With the --changed-paths option, compute and write information about the
 # paths changed between a commit and its first parent. This operation can take

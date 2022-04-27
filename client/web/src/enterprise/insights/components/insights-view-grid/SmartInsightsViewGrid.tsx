@@ -1,14 +1,15 @@
-import { isEqual } from 'lodash'
 import React, { memo, useCallback, useEffect, useState } from 'react'
+
+import { isEqual } from 'lodash'
 import { Layout, Layouts } from 'react-grid-layout'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { ViewGrid } from '../../../../views'
-import { Insight } from '../../core/types'
+import { Insight } from '../../core'
 import { getTrackingTypeByInsightType } from '../../pings'
 
-import { SmartInsight } from './components/smart-insight/SmartInsight'
+import { SmartInsight } from './components/SmartInsight'
 import { insightLayoutGenerator, recalculateGridLayout } from './utils/grid-layout-generator'
 
 interface SmartInsightsViewGridProps extends TelemetryProps {
@@ -17,16 +18,15 @@ interface SmartInsightsViewGridProps extends TelemetryProps {
      * insights.
      */
     insights: Insight[]
+    className?: string
 }
-
-const INSIGHT_PAGE_CONTEXT = {}
 
 /**
  * Renders grid of smart (stateful) insight card. These cards can independently extract and update
  * the insights settings (settings cascade subjects).
  */
 export const SmartInsightsViewGrid: React.FunctionComponent<SmartInsightsViewGridProps> = memo(props => {
-    const { telemetryService, insights } = props
+    const { telemetryService, insights, className } = props
 
     const [layouts, setLayouts] = useState<Layouts>({})
     const [resizingView, setResizeView] = useState<Layout | null>(null)
@@ -41,7 +41,7 @@ export const SmartInsightsViewGrid: React.FunctionComponent<SmartInsightsViewGri
                 const insight = insights.find(insight => item.i === insight.id)
 
                 if (insight) {
-                    const insightType = getTrackingTypeByInsightType(insight.viewType)
+                    const insightType = getTrackingTypeByInsightType(insight.type)
 
                     telemetryService.log('InsightUICustomization', { insightType }, { insightType })
                 }
@@ -74,6 +74,7 @@ export const SmartInsightsViewGrid: React.FunctionComponent<SmartInsightsViewGri
     return (
         <ViewGrid
             layouts={layouts}
+            className={className}
             onResizeStart={handleResizeStart}
             onResizeStop={handleResizeStop}
             onDragStart={trackUICustomization}
@@ -85,10 +86,6 @@ export const SmartInsightsViewGrid: React.FunctionComponent<SmartInsightsViewGri
                     insight={insight}
                     telemetryService={telemetryService}
                     resizing={resizingView?.i === insight.id}
-                    // Set execution insight context explicitly since this grid component is used
-                    // only for the dashboard (insights) page
-                    where="insightsPage"
-                    context={INSIGHT_PAGE_CONTEXT}
                 />
             ))}
         </ViewGrid>

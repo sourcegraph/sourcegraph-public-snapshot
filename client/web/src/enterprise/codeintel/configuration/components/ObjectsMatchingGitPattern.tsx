@@ -1,5 +1,6 @@
+import { FunctionComponent, useEffect, useMemo, useState } from 'react'
+
 import { debounce } from 'lodash'
-import React, { FunctionComponent, useEffect, useMemo, useState } from 'react'
 
 import { GitObjectType } from '../../../../graphql-operations'
 

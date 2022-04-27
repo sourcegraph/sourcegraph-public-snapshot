@@ -179,22 +179,22 @@ func TestGitLabSource_makeRepo(t *testing.T) {
 
 	tests := []struct {
 		name   string
-		schmea *schema.GitLabConnection
+		schema *schema.GitLabConnection
 	}{
 		{
 			name: "simple",
-			schmea: &schema.GitLabConnection{
+			schema: &schema.GitLabConnection{
 				Url: "https://gitlab.com",
 			},
 		}, {
 			name: "ssh",
-			schmea: &schema.GitLabConnection{
+			schema: &schema.GitLabConnection{
 				Url:        "https://gitlab.com",
 				GitURLType: "ssh",
 			},
 		}, {
 			name: "path-pattern",
-			schmea: &schema.GitLabConnection{
+			schema: &schema.GitLabConnection{
 				Url:                   "https://gitlab.com",
 				RepositoryPathPattern: "gl/{pathWithNamespace}",
 			},
@@ -206,7 +206,7 @@ func TestGitLabSource_makeRepo(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			s, err := newGitLabSource(&svc, test.schmea, nil)
+			s, err := newGitLabSource(&svc, test.schema, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -224,7 +224,7 @@ func TestGitLabSource_makeRepo(t *testing.T) {
 func TestGitLabSource_WithAuthenticator(t *testing.T) {
 	t.Run("supported", func(t *testing.T) {
 		var src Source
-		src, err := newGitLabSource(nil, &schema.GitLabConnection{}, nil)
+		src, err := newGitLabSource(&types.ExternalService{}, &schema.GitLabConnection{}, nil)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
@@ -248,7 +248,7 @@ func TestGitLabSource_WithAuthenticator(t *testing.T) {
 		} {
 			t.Run(name, func(t *testing.T) {
 				var src Source
-				src, err := newGitLabSource(nil, &schema.GitLabConnection{}, nil)
+				src, err := newGitLabSource(&types.ExternalService{}, &schema.GitLabConnection{}, nil)
 				if err != nil {
 					t.Errorf("unexpected non-nil error: %v", err)
 				}
