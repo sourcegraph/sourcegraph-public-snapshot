@@ -1,5 +1,7 @@
+import { quoteYAMLString } from './yaml-util'
+
 export function goCheckerSA6005Template(name: string): string {
-    return `name: ${name}
+    return `name: ${quoteYAMLString(name)}
 description: |
     This batch change uses [Comby](https://comby.dev) to improve inefficient string comparison with strings.ToLower or strings.ToUpper
 on:
@@ -37,7 +39,7 @@ changesetTemplate:
 }
 
 export function goCheckerS1002Template(name: string): string {
-    return `name: ${name}
+    return `name: ${quoteYAMLString(name)}
 description: |
     This batch change uses [Comby](https://comby.dev) to omit comparison with boolean constant
 on:
@@ -67,7 +69,7 @@ changesetTemplate:
 }
 
 export function goCheckerS1003Template(name: string): string {
-    return `name: ${name}
+    return `name: ${quoteYAMLString(name)}
 description: |
     This batch change uses [Comby](https://comby.dev) to replace calls to strings.Index with strings.Contains.
 on:
@@ -148,7 +150,7 @@ changesetTemplate:
 }
 
 export function goCheckerS1004Template(name: string): string {
-    return `name: ${name}
+    return `name: ${quoteYAMLString(name)}
 description: |
     This batch change uses [Comby](https://comby.dev) to replace call to bytes.Compare with bytes.Equal
 on:
@@ -178,7 +180,7 @@ changesetTemplate:
 }
 
 export function goCheckerS1005Template(name: string): string {
-    return `name: ${name}
+    return `name: ${quoteYAMLString(name)}
 description: |
     This batch change uses [Comby](https://comby.dev) to drop unnecessary use of the blank identifier
 on:
@@ -215,7 +217,7 @@ changesetTemplate:
 }
 
 export function goCheckerS1006Template(name: string): string {
-    return `name: ${name}
+    return `name: ${quoteYAMLString(name)}
 description: |
     This batch change uses [Comby](https://comby.dev) to use for { ... } for infinite loops
 on:
@@ -239,7 +241,7 @@ changesetTemplate:
 }
 
 export function goCheckerS1010Template(name: string): string {
-    return `name: ${name}
+    return `name: ${quoteYAMLString(name)}
 description: |
     This batch change uses [Comby](https://comby.dev) to omit default slice index
 on:
@@ -263,7 +265,7 @@ changesetTemplate:
 }
 
 export function goCheckerS1012Template(name: string): string {
-    return `name: ${name}
+    return `name: ${quoteYAMLString(name)}
 description: |
     This batch change uses [Comby](https://comby.dev) to replace time.Now().Sub(x) with time.Since(x)
 on:
@@ -287,7 +289,7 @@ changesetTemplate:
 }
 
 export function goCheckerS1019Template(name: string): string {
-    return `name: ${name}
+    return `name: ${quoteYAMLString(name)}
 description: |
     This batch change uses [Comby](https://comby.dev) to simplify make call by omitting redundant arguments
 on:
@@ -320,7 +322,7 @@ changesetTemplate:
 }
 
 export function goCheckerS1020Template(name: string): string {
-    return `name: ${name}
+    return `name: ${quoteYAMLString(name)}
 description: |
     This batch change uses [Comby](https://comby.dev) to omit redundant nil check in type assertion
 on:
@@ -356,7 +358,7 @@ changesetTemplate:
 }
 
 export function goCheckerS1023Template(name: string): string {
-    return `name: ${name}
+    return `name: ${quoteYAMLString(name)}
 description: |
     This batch change uses [Comby](https://comby.dev) to omit redundant control flow
 on:
@@ -386,7 +388,7 @@ changesetTemplate:
 }
 
 export function goCheckerS1024Template(name: string): string {
-    return `name: ${name}
+    return `name: ${quoteYAMLString(name)}
 description: |
     This batch change uses [Comby](https://comby.dev) to replace x.Sub(time.Now()) with time.Until(x)
 on:
@@ -415,7 +417,7 @@ changesetTemplate:
 }
 
 export function goCheckerS1025Template(name: string): string {
-    return `name: ${name}
+    return `name: ${quoteYAMLString(name)}
 description: |
     This batch change uses [Comby](https://comby.dev) to enforce don’t use fmt.Sprintf("%s", x) unnecessarily
 on:
@@ -439,7 +441,7 @@ changesetTemplate:
 }
 
 export function goCheckerS1028Template(name: string): string {
-    return `name: ${name}
+    return `name: ${quoteYAMLString(name)}
 description: |
     This batch change uses [Comby](https://comby.dev) to simplify error construction with fmt.Errorf
 on:
@@ -464,7 +466,7 @@ changesetTemplate:
 }
 
 export function goCheckerS1029Template(name: string): string {
-    return `name: ${name}
+    return `name: ${quoteYAMLString(name)}
 description: |
     This batch change uses [Comby](https://comby.dev) to range over the string directly
 on:
@@ -489,7 +491,7 @@ changesetTemplate:
 }
 
 export function goCheckerS1032Template(name: string): string {
-    return `name: ${name}
+    return `name: ${quoteYAMLString(name)}
 description: |
     This batch change uses [Comby](https://comby.dev) to use sort.Ints(x), sort.Float64s(x), and sort.Strings(x)
 on:
@@ -522,7 +524,7 @@ changesetTemplate:
 }
 
 export function goCheckerS1035Template(name: string): string {
-    return `name: ${name}
+    return `name: ${quoteYAMLString(name)}
 description: |
     This batch change uses [Comby](https://comby.dev) to remove redundant call to net/http.CanonicalHeaderKey in method call on net/http.Header
 on:
@@ -559,7 +561,7 @@ changesetTemplate:
 }
 
 export function goCheckerS1037Template(name: string): string {
-    return `name: ${name}
+    return `name: ${quoteYAMLString(name)}
 description: |
     This batch change uses [Comby](https://comby.dev) to remove redundant call to net/http.CanonicalHeaderKey in method call on net/http.Header
 on:
@@ -587,7 +589,7 @@ changesetTemplate:
 }
 
 export function goCheckerS1038Template(name: string): string {
-    return `name: ${name}
+    return `name: ${quoteYAMLString(name)}
 description: |
     This batch change uses [Comby](https://comby.dev) to remove redundant call to net/http.CanonicalHeaderKey in method call on net/http.Header
 on:
@@ -615,7 +617,7 @@ changesetTemplate:
 }
 
 export function goCheckerS1039Template(name: string): string {
-    return `name: ${name}
+    return `name: ${quoteYAMLString(name)}
 description: |
     This batch change uses [Comby](https://comby.dev) to improve unnecessary use of fmt.Sprint
 on:
