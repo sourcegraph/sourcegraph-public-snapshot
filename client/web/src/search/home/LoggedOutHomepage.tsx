@@ -27,6 +27,7 @@ interface TipsAndTricksProps extends TelemetryProps {
     moreLink: {
         href: string
         label: string
+        trackEventName: string
     }
 }
 const TipsAndTricks: React.FunctionComponent<TipsAndTricksProps> = ({
@@ -57,7 +58,11 @@ const TipsAndTricks: React.FunctionComponent<TipsAndTricksProps> = ({
                     </div>
                 ))}
             </div>
-            <Link className={styles.tipsAndTricksMore} to={moreLink.href}>
+            <Link
+                className={styles.tipsAndTricksMore}
+                onClick={searchExampleClicked(moreLink.trackEventName)}
+                to={moreLink.href}
+            >
                 {moreLink.label}
             </Link>
         </div>
@@ -101,6 +106,7 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
                     moreLink={{
                         label: 'More search features',
                         href: 'https://docs.sourcegraph.com/code_search/explanations/features',
+                        trackEventName: 'HomepageExampleMoreSearchFeaturesClicked',
                     }}
                     {...props}
                 />
