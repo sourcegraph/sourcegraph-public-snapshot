@@ -78,7 +78,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/log"
-	"github.com/sourcegraph/sourcegraph/lib/log/otfields"
 )
 
 // Context carries context about where to send logs, trace spans, and register
@@ -341,13 +340,12 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 
 	logger := op.Logger.With(toLogFields(args.LogFields)...)
 
-	var traceContext *otfields.TraceContext
-	if traceContext = trace.Context(ctx); traceContext != nil {
+	if traceContext := trace.Context(ctx); traceContext != nil {
 		event.AddField("traceID", traceContext.TraceID)
 		logger = logger.WithTrace(*traceContext)
 	}
 
-	trLogger := traceLogger{
+	trLogger := &traceLogger{
 		opName: snakecaseOpName,
 		event:  event,
 		trace:  tr,
@@ -358,12 +356,14 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 		trLogger.initWithTags(mergedFields...)
 	}
 
-	return ctx, &trLogger, func(count float64, finishArgs Args) {
+	return ctx, trLogger, func(count float64, finishArgs Args) {
 		since := time.Since(start)
 		elapsed := since.Seconds()
 		elapsedMs := since.Milliseconds()
 		defaultFinishFields := []otlog.Field{otlog.Float64("count", count), otlog.Float64("elapsed", elapsed)}
-		logFields := mergeLogFields(defaultFinishFields, finishArgs.LogFields, args.LogFields)
+		finishLogFields := mergeLogFields(defaultFinishFields, finishArgs.LogFields)
+
+		logFields := mergeLogFields(defaultFinishFields, finishLogFields)
 		metricLabels := mergeLabels(op.metricLabels, args.MetricLabelValues, finishArgs.MetricLabelValues)
 
 		if multi := new(ErrCollector); err != nil && errors.As(*err, &multi) {
@@ -380,8 +380,13 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 			honeyErr   = op.applyErrorFilter(err, EmitForHoney)
 			sentryErr  = op.applyErrorFilter(err, EmitForSentry)
 		)
-		op.emitErrorLogs(logErr, logFields, traceContext)
-		op.emitHoneyEvent(honeyErr, snakecaseOpName, event, finishArgs.LogFields, elapsedMs) // op. and args.LogFields already added at start
+
+		// already has all the other log fields
+		op.emitErrorLogs(trLogger, logErr, finishLogFields)
+
+		// op. and args.LogFields already added at start
+		op.emitHoneyEvent(honeyErr, snakecaseOpName, event, finishArgs.LogFields, elapsedMs)
+
 		op.emitMetrics(metricsErr, count, elapsed, metricLabels)
 		op.finishTrace(traceErr, tr, logFields)
 		op.emitSentryError(sentryErr, logFields)
@@ -401,16 +406,14 @@ func (op *Operation) startTrace(ctx context.Context) (*trace.Trace, context.Cont
 
 // emitErrorLogs will log as message if the operation has failed. This log contains the error
 // as well as all of the log fields attached ot the operation, the args to With, and the args
-// to the finish function. This does nothing if the no logger was supplied on the observation
-// context.
-func (op *Operation) emitErrorLogs(err *error, logFields []otlog.Field, traceContext *otfields.TraceContext) {
-	if op.Logger == nil || err == nil || *err == nil {
+// to the finish function.
+func (op *Operation) emitErrorLogs(trLogger TraceLogger, err *error, logFields []otlog.Field) {
+	if err == nil || *err == nil {
 		return
 	}
-
 	fields := append(toLogFields(logFields), zap.Error(*err))
-	op.Logger.
-		WithTrace(*traceContext).
+
+	trLogger.
 		AddCallerSkip(2). // callback() -> emitErrorLogs() -> Logger
 		Error(op.name, fields...)
 }
