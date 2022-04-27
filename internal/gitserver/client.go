@@ -718,7 +718,7 @@ var deadlineExceededCounter = promauto.NewCounter(prometheus.CounterOpts{
 // and commit pairs. If the invoked callback returns a non-nil error, the operation will begin
 // to abort processing further results.
 func (c *ClientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, callback BatchLogCallback) (err error) {
-	ctx, endObservation := c.operations.batchLog.With(ctx, &err, observation.Args{LogFields: opts.LogFields()})
+	ctx, _, endObservation := c.operations.batchLog.With(ctx, &err, observation.Args{LogFields: opts.LogFields()})
 	defer endObservation(1, observation.Args{})
 
 	// Make a request to a single gitserver shard and feed the results to the user-supplied
@@ -728,7 +728,7 @@ func (c *ClientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 		var numProcessed int
 		repoNames := repoNamesFromRepoCommits(repoCommits)
 
-		ctx, logger, endObservation := c.operations.batchLogSingle.WithAndLogger(ctx, &err, observation.Args{
+		ctx, logger, endObservation := c.operations.batchLogSingle.With(ctx, &err, observation.Args{
 			LogFields: []log.Field{
 				log.String("addr", addr),
 				log.Int("numRepos", len(repoNames)),

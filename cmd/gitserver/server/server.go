@@ -1173,7 +1173,7 @@ func (s *Server) handleBatchLog(w http.ResponseWriter, r *http.Request) {
 	// Run git log for a single repository.
 	// Invoked multiple times from the handler defined below.
 	performGitLogCommand := func(ctx context.Context, repoCommit api.RepoCommit, format string) (output string, isRepoCloned bool, err error) {
-		ctx, endObservation := operations.batchLogSingle.With(ctx, &err, observation.Args{
+		ctx, _, endObservation := operations.batchLogSingle.With(ctx, &err, observation.Args{
 			LogFields: append(
 				[]log.Field{
 					log.String("format", format),
@@ -1206,7 +1206,7 @@ func (s *Server) handleBatchLog(w http.ResponseWriter, r *http.Request) {
 
 	// Handles the /batch-log route
 	instrumentedHandler := func(ctx context.Context) (statusCodeOnError int, err error) {
-		ctx, logger, endObservation := operations.batchLog.WithAndLogger(ctx, &err, observation.Args{})
+		ctx, logger, endObservation := operations.batchLog.With(ctx, &err, observation.Args{})
 		defer func() {
 			endObservation(1, observation.Args{LogFields: []log.Field{
 				log.Int("statusCodeOnError", statusCodeOnError),

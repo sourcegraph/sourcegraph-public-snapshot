@@ -3,7 +3,6 @@ package batches
 import (
 	"database/sql"
 
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -15,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // InitStore initializes and returns a *store.Store instance.
@@ -29,7 +29,7 @@ func InitStore() (*store.Store, error) {
 
 var initStore = memo.NewMemoizedConstructor(func() (interface{}, error) {
 	observationContext := &observation.Context{
-		Logger:     log15.Root(),
+		Logger:     log.Scoped("store.batches", "batches store"),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
@@ -54,7 +54,7 @@ func InitReconcilerWorkerStore() (dbworkerstore.Store, error) {
 
 var initReconcilerWorkerStore = memo.NewMemoizedConstructor(func() (interface{}, error) {
 	observationContext := &observation.Context{
-		Logger:     log15.Root(),
+		Logger:     log.Scoped("store.reconciler", "reconciler worker store"),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
@@ -79,7 +79,7 @@ func InitBulkOperationWorkerStore() (dbworkerstore.Store, error) {
 
 var initBulkOperationWorkerStore = memo.NewMemoizedConstructor(func() (interface{}, error) {
 	observationContext := &observation.Context{
-		Logger:     log15.Root(),
+		Logger:     log.Scoped("store.bulk_ops", "bulk operation worker store"),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
@@ -104,7 +104,7 @@ func InitBatchSpecWorkspaceExecutionWorkerStore() (store.BatchSpecWorkspaceExecu
 
 var initBatchSpecWorkspaceExecutionWorkerStore = memo.NewMemoizedConstructor(func() (interface{}, error) {
 	observationContext := &observation.Context{
-		Logger:     log15.Root(),
+		Logger:     log.Scoped("store.execution", "the batch spec workspace execution worker store"),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
@@ -129,7 +129,7 @@ func InitBatchSpecResolutionWorkerStore() (dbworkerstore.Store, error) {
 
 var initBatchSpecResolutionWorkerStore = memo.NewMemoizedConstructor(func() (interface{}, error) {
 	observationContext := &observation.Context{
-		Logger:     log15.Root(),
+		Logger:     log.Scoped("store.batch_spec_resolution", "the batch spec resolution worker store"),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}

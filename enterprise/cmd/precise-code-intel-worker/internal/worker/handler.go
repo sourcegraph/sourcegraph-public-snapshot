@@ -53,7 +53,7 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 
 	var requeued bool
 
-	ctx, logger, endObservation := h.handleOp.WithAndLogger(ctx, &err, observation.Args{})
+	ctx, logger, endObservation := h.handleOp.With(ctx, &err, observation.Args{})
 	defer func() {
 		endObservation(1, observation.Args{
 			LogFields: append(
