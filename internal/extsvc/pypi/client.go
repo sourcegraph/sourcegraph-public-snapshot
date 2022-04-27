@@ -58,34 +58,34 @@ type Client struct {
 	proxy string
 }
 
-func NewClient(urn string, urls []string, cli httpcli.Doer) *Client {
+func NewClient(urn string, urls []string, credentials string) *Client {
 	return &Client{
-		urls:    urls,
-		cli:     cli,
-		limiter: ratelimit.DefaultRegistry.Get(urn),
+		urls: urls,
+
+		// ExternalDoer sets the user-agent as suggested by PyPI
+		// https://warehouse.pypa.io/api-reference/.
+		cli:         httpcli.ExternalDoer,
+		limiter:     ratelimit.DefaultRegistry.Get(urn),
+		credentials: credentials,
 	}
 }
 
-// ProjectInfo is a subset of the fields returned by Pypi's JSON API.
+// ProjectInfo is a subset of the fields returned by PyPI's JSON API
+// https://warehouse.pypa.io/api-reference/json.html.
 type ProjectInfo struct {
-	Info Info `json:"info"`
-
-	// URLs.
+	Info Info         `json:"info"`
 	URLS []ReleaseURL `json:"urls"`
 }
 
 type Info struct {
-	Name string `json:"name"`
-
-	// The version of the project.
+	Name    string `json:"name"`
 	Version string `json:"version"`
 }
 
 type ReleaseURL struct {
 	URL string `json:"url"`
 
-	// TODO: maybe enum?
-	// Either sdist, bdist_wheel, maybe bdist_egg?
+	// Either sdist, bdist_wheel, or bdist_egg.
 	PackageType string `json:"packagetype"`
 }
 
@@ -215,8 +215,9 @@ func toArchiveType(path string) archiveType {
 	return ""
 }
 
+// TODO: do we need a rate limiter for fetching resources?
+// TODO: This is served by one of the supported storage backends. Do the storage backends and the API share credentials?
 func (c *Client) fetchTarBall(ctx context.Context, url string) (io.ReadCloser, error) {
-	// TODO: do we need a rate limiter for fetching resources?
 	startWait := time.Now()
 	if err := c.limiter.Wait(ctx); err != nil {
 		return nil, err
@@ -231,7 +232,6 @@ func (c *Client) fetchTarBall(ctx context.Context, url string) (io.ReadCloser, e
 		return nil, err
 	}
 
-	//TODO: copy-pasta from npm. Validate with pypi documentation.
 	if c.credentials != "" {
 		req.Header.Set("Authorization", "Bearer "+c.credentials)
 	}

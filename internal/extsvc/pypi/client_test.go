@@ -278,7 +278,6 @@ func TestToArchiveType(t *testing.T) {
 // newTestClient returns a pypi Client that records its interactions
 // to testdata/vcr/.
 func newTestClient(t testing.TB, name string, update bool) *Client {
-	// TODO: do I need normalize?
 	cassete := filepath.Join("testdata/vcr/", normalize(name))
 	rec, err := httptestutil.NewRecorder(cassete, update)
 	if err != nil {
@@ -291,12 +290,14 @@ func newTestClient(t testing.TB, name string, update bool) *Client {
 		}
 	})
 
-	hc, err := httpcli.NewFactory(nil, httptestutil.NewRecorderOpt(rec)).Doer()
+	doer, err := httpcli.NewFactory(nil, httptestutil.NewRecorderOpt(rec)).Doer()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	return NewClient("urn", []string{"https://pypi.org"}, hc)
+	c := NewClient("urn", []string{"https://pypi.org"}, "")
+	c.cli = doer
+	return c
 }
 
 var normalizer = lazyregexp.New("[^A-Za-z0-9-]+")
