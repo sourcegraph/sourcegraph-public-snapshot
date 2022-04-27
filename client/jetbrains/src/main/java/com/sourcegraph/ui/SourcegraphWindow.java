@@ -25,6 +25,7 @@ public class SourcegraphWindow implements Disposable {
     private JCEFWindow jcefWindow;
     private final EditorFactory editorFactory;
     private JBPanel editorPanel;
+    private JBPopup popup;
 
     public SourcegraphWindow(Project project) {
         this.project = project;
@@ -74,25 +75,35 @@ public class SourcegraphWindow implements Disposable {
         panel.add(splitter, BorderLayout.CENTER);
     }
 
-    public JBPopup createPopup() {
-        JBPopup popup =  JBPopupFactory.getInstance().createComponentPopupBuilder(panel, panel)
-            .setTitle("Sourcegraph")
-            .setCancelOnClickOutside(false)
-            .setResizable(true)
-            .setModalContext(false)
-            .setRequestFocus(true)
-            .setFocusable(true)
-            .setMovable(true)
-            .setBelongsToGlobalPopupStack(true)
-            .setCancelOnOtherWindowOpen(true)
-            .setCancelKeyEnabled(true)
-            .setNormalWindowLevel(true)
-            .createPopup();
+    synchronized public JBPopup showPopup() {
+        if (this.popup == null || this.popup.isDisposed()) {
+            this.popup = JBPopupFactory.getInstance().createComponentPopupBuilder(panel, panel)
+                .setTitle("Sourcegraph")
+                .setCancelOnClickOutside(false)
+                .setResizable(true)
+                .setModalContext(false)
+                .setRequestFocus(true)
+                .setFocusable(true)
+                .setMovable(true)
+                .setBelongsToGlobalPopupStack(true)
+                .setCancelOnOtherWindowOpen(true)
+                .setCancelKeyEnabled(true)
+                .setNormalWindowLevel(true)
+                .createPopup();
+            this.popup.showCenteredInCurrentWindow(this.project);
+        }
+
+        // If the popup is already shown, hitting alt + a gain should behave the same as the native find in files
+        // feature and focus the search field.
         this.jcefWindow.focus();
+
         return popup;
     }
 
     @Override
     public void dispose() {
+        if (this.popup != null) {
+            this.popup.dispose();
+        }
     }
 }

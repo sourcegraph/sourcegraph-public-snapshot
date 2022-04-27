@@ -17,7 +17,7 @@ public class OpenSearchAction extends AnAction implements DumbAware {
             if (this.window == null) {
                 this.window = new SourcegraphWindow(e.getProject());
             }
-            this.window.createPopup().showCenteredInCurrentWindow(ProjectManager.getInstance().getOpenProjects()[0]);
+            this.window.showPopup();
         });
     }
 }

@@ -30,40 +30,28 @@ export interface AddCredentialModalProps {
 
 const HELP_TEXT_LINK_URL = 'https://docs.sourcegraph.com/batch_changes/quickstart#configure-code-host-credentials'
 
-const helpTexts: Record<ExternalServiceKind, JSX.Element> = {
+const scopeRequirements: Record<ExternalServiceKind, JSX.Element> = {
     [ExternalServiceKind.GITHUB]: (
-        <>
-            <Link to={HELP_TEXT_LINK_URL} rel="noreferrer noopener" target="_blank">
-                Create a new access token
-            </Link>{' '}
+        <span>
             with the <code>repo</code>, <code>read:org</code>, <code>user:email</code>, <code>read:discussion</code>,
             and <code>workflow</code> scopes.
-        </>
+        </span>
     ),
     [ExternalServiceKind.GITLAB]: (
-        <>
-            <Link to={HELP_TEXT_LINK_URL} rel="noreferrer noopener" target="_blank">
-                Create a new access token
-            </Link>{' '}
+        <span>
             with <code>api</code>, <code>read_repository</code>, and <code>write_repository</code> scopes.
-        </>
+        </span>
     ),
     [ExternalServiceKind.BITBUCKETSERVER]: (
-        <>
-            <Link to={HELP_TEXT_LINK_URL} rel="noreferrer noopener" target="_blank">
-                Create a new access token
-            </Link>{' '}
+        <span>
             with <code>write</code> permissions on the project and repository level.
-        </>
+        </span>
     ),
     [ExternalServiceKind.BITBUCKETCLOUD]: (
-        <>
-            <Link to={HELP_TEXT_LINK_URL} rel="noreferrer noopener" target="_blank">
-                Create a new access token
-            </Link>{' '}
+        <span>
             with <code>account:read</code>, <code>repo:write</code>, <code>pr:write</code>, and{' '}
             <code>pipeline:read</code> permissions.
-        </>
+        </span>
     ),
 
     // These are just for type completeness and serve as placeholders for a bright future.
@@ -215,7 +203,17 @@ export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps
                                     value={credential}
                                     onChange={onChangeCredential}
                                 />
-                                <p className="form-text">{helpTexts[externalServiceKind]}</p>
+                                <p className="form-text">
+                                    <Link
+                                        to={HELP_TEXT_LINK_URL}
+                                        rel="noreferrer noopener"
+                                        target="_blank"
+                                        aria-label="Follow our docs to learn how to create a new access token on this code host"
+                                    >
+                                        Create a new access token
+                                    </Link>{' '}
+                                    {scopeRequirements[externalServiceKind]}
+                                </p>
                             </div>
                             <div className="d-flex justify-content-end">
                                 <Button
