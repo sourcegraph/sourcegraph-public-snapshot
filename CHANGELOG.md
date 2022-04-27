@@ -27,6 +27,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Code Insights: Fixed line chart data series hover effect. Now the active line will be rendered on top of the others.
 - Unverified primary emails no longer breaks the Emails-page for users and Users-page for Site Admin. [#34312](https://github.com/sourcegraph/sourcegraph/pull/34312)
+- Searches containing `or` expressions are now optimized to evaluate natively on the backends that support it ([#34382](https://github.com/sourcegraph/sourcegraph/pull/34382)), and both commit and diff search have been updated to run optimized `and`, `or`, and `not` queries. [#34595](https://github.com/sourcegraph/sourcegraph/pull/34595)
 
 ### Removed
 
