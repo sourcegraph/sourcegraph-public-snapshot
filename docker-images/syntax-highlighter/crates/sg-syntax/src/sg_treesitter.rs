@@ -114,15 +114,16 @@ pub fn lsif_highlight(q: SourcegraphQuery) -> Result<JsonValue, JsonValue> {
         .ok_or_else(|| json!({"error": "Must pass a filetype for /lsif" }))?
         .to_lowercase();
 
-    if !CONFIGURATIONS.contains_key(filetype.as_str()) {
-        Err(json!({
-            "error": format!("{} is not a valid filetype for treesitter", filetype)
-        }))
-    } else {
-        let data = index_language(&filetype, &q.code).map_err(jsonify_err)?;
-        let encoded = data.write_to_bytes().map_err(jsonify_err)?;
+    match index_language(&filetype, &q.code) {
+        Ok(document) => {
+            let encoded = document.write_to_bytes().map_err(jsonify_err)?;
 
-        Ok(json!({"data": base64::encode(&encoded), "plaintext": false}))
+            Ok(json!({"data": base64::encode(&encoded), "plaintext": false}))
+        }
+        Err(Error::InvalidLanguage) => Err(json!({
+            "error": format!("{} is not a valid filetype for treesitter", filetype)
+        })),
+        Err(err) => Err(jsonify_err(err)),
     }
 }
 
@@ -206,6 +207,7 @@ impl LineManager {
         (line, offset - self.offsets.last().unwrap())
     }
 
+    // range takes in start and end offsets and returns start/end line/column.
     fn range(&self, start: usize, end: usize) -> Vec<i32> {
         let start_line = self.line_and_col(start);
         let end_line = self.line_and_col(end);
@@ -293,31 +295,29 @@ impl LsifEmitter {
     where
         F: Fn(Highlight) -> SyntaxKind,
     {
-        // let mut highlights = Vec::new();
         let mut doc = Document::new();
 
         let line_manager = LineManager::new(source)?;
 
         let mut highlights = vec![];
         for event in highlighter {
-            match event {
-                Ok(HighlightEvent::HighlightStart(s)) => highlights.push(s),
-                Ok(HighlightEvent::HighlightEnd) => {
+            match event? {
+                HighlightEvent::HighlightStart(s) => highlights.push(s),
+                HighlightEvent::HighlightEnd => {
                     highlights.pop();
                 }
 
                 // No highlights matched
-                Ok(HighlightEvent::Source { .. }) if highlights.is_empty() => {}
+                HighlightEvent::Source { .. } if highlights.is_empty() => {}
 
                 // When a `start`->`end` has some highlights
-                Ok(HighlightEvent::Source { start, end }) => {
+                HighlightEvent::Source { start, end } => {
                     let mut occurence = Occurrence::new();
                     occurence.range = line_manager.range(start, end);
                     occurence.syntax_kind = get_syntax_kind_for_hl(*highlights.last().unwrap());
 
                     doc.occurrences.push(occurence);
                 }
-                Err(a) => return Err(a),
             }
         }
 
