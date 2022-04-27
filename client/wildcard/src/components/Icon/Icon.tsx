@@ -26,7 +26,7 @@ interface HiddenIconProps extends BaseIconProps {
 }
 
 // We're currently migrating our icons to provide a descriptive label or use aria-hidden to be excluded from screen readers.
-// Migration issue: plzdontforgettoadd
+// Migration issue: https://github.com/sourcegraph/sourcegraph/issues/34582
 // TODO: We should enforce that these props are provided once that migration is complete.
 export type IconProps = HiddenIconProps | ScreenReaderIconProps
 
