@@ -196,7 +196,7 @@ You can schedule builds with build schedules, which automatically create builds 
 2. Complete the form to create a new build where you can define the intervals with the `Cron Interval` field. Check out the [Buildkite Docs](https://buildkite.com/docs/pipelines/scheduled-builds#schedule-intervals-predefined-intervals) to see a list of predefined intervals.
 
 ![image](https://user-images.githubusercontent.com/68532117/165358933-a27e4293-a363-4a77-84d7-a3ce67f743d2.png)
-
+You can also inject custom environment variables, for example, to trigger a custom [Run Type](#Run-types). 
 ##### Creating annotations
 
 Annotations get rendered in the Buildkite UI to present the viewer notices about the build.
