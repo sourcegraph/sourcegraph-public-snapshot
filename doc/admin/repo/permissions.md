@@ -422,7 +422,7 @@ Overall, one entry of `user_pending_permissions` table means that _"There is a u
 
 #### Repo pending permissions
 
-`repo_pending_permissions` table maps `user_pending_permissions` entities to repo ID alongside with permission type (read/write). One row of the table maps one repo ID to an array of `user_pending_permissions` entries. Basically it is designed as an inverted `user_pending_permissions` for more performant CRUD operations (as per DB migration description in [this commit](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/compare/0705aa790d31fcd51713f4432496cc6bbb49cce8...bc30ae1186cf7a491ef21a5c00cb2f565288dfbb#diff-660eca66a5fad95783448fa468b2ce2fR50)).
+`repo_pending_permissions` table maps `user_pending_permissions` entities to repo ID alongside with permission type (only `read` currently). One row of the table maps one repo ID to an array of `user_pending_permissions` entries. Basically it is designed as an inverted `user_pending_permissions` for more performant CRUD operations (as per DB migration description in [this commit](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/compare/0705aa790d31fcd51713f4432496cc6bbb49cce8...bc30ae1186cf7a491ef21a5c00cb2f565288dfbb#diff-660eca66a5fad95783448fa468b2ce2fR50)).
 
 ## Explicit permissions API
 
