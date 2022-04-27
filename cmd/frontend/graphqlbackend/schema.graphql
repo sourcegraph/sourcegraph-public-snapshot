@@ -1507,6 +1507,13 @@ type Query {
     ): ExecutorConnection!
 
     """
+    Returns true if executors have been configured on the Sourcegraph instance.
+    This is based on heuristics and doesn't necessarily mean that they would be
+    working.
+    """
+    areExecutorsConfigured: Boolean!
+
+    """
     (experimental)
     Get invitation based on the JWT in the invitation URL
     """
