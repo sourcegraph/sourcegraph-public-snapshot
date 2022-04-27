@@ -57,6 +57,7 @@ export const HomeTab: React.FunctionComponent<Props> = ({
     revision,
     filePath,
     codeIntelligenceEnabled,
+    codeIntelligenceBadgeContent: CodeIntelligenceBadge,
     batchChangesEnabled,
     ...props
 }) => {
@@ -278,27 +279,14 @@ export const HomeTab: React.FunctionComponent<Props> = ({
                         {/* CODE-INTEL */}
                         <div className="mb-3">
                             <h2>Code intel</h2>
-                            <div className={styles.item}>
-                                <Badge
-                                    variant={codeIntelligenceEnabled ? 'secondary' : 'danger'}
-                                    className={classNames('text-uppercase col-4', styles.itemBadge)}
-                                >
-                                    {codeIntelligenceEnabled ? 'CONFIGURABLE' : 'DISABLED'}
-                                </Badge>
-                                <div className="col">
-                                    <div>Precise code intelligence</div>
-                                </div>
-                            </div>
-                            <div className="text-right">
-                                <Link
-                                    className="btn btn-sm btn-link mr-0 pr-0"
-                                    to={`/${encodeURIPathComponent(repo.name)}/-/code-intelligence`}
-                                >
-                                    {codeIntelligenceEnabled
-                                        ? 'Set up for this repository'
-                                        : 'Manage code intelligence'}
-                                </Link>
-                            </div>
+                            {CodeIntelligenceBadge && (
+                                <CodeIntelligenceBadge
+                                    repoName={repo.name}
+                                    revision={revision}
+                                    filePath={filePath}
+                                    {...props}
+                                />
+                            )}
                         </div>
                         {/* BATCH CHANGES */}
                         <div className="mb-3">

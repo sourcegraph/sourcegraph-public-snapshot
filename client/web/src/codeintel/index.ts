@@ -5,5 +5,6 @@ import { CodeIntelligenceBadge } from './CodeIntelligenceBadge'
  */
 export interface CodeIntelligenceProps {
     codeIntelligenceEnabled: boolean
-    codeIntelligenceBadge?: typeof CodeIntelligenceBadge
+    codeIntelligenceBadgeMenu?: typeof CodeIntelligenceBadge
+    codeIntelligenceBadgeContent?: typeof CodeIntelligenceBadge
 }
