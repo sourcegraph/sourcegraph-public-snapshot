@@ -732,7 +732,8 @@ func optimizeJobs(baseJob job.Job, inputs *run.SearchInputs, q query.Basic) (job
 				*zoekt.GlobalSearch,
 				*symbol.RepoUniverseSymbolSearch,
 				*zoekt.ZoektRepoSubsetSearch,
-				*zoekt.ZoektSymbolSearch:
+				*zoekt.ZoektSymbolSearch,
+				*commit.CommitSearch:
 				optimizedJobs = append(optimizedJobs, currentJob)
 				return currentJob
 			default:
@@ -780,6 +781,12 @@ func optimizeJobs(baseJob job.Job, inputs *run.SearchInputs, q query.Basic) (job
 
 			case *symbol.RepoUniverseSymbolSearch:
 				if exists("RepoUniverseSymbolSearch") {
+					return &noopJob{}
+				}
+				return currentJob
+
+			case *commit.CommitSearch:
+				if exists("Commit") || exists("Diff") {
 					return &noopJob{}
 				}
 				return currentJob
