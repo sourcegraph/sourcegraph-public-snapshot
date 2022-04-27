@@ -463,8 +463,7 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 		return nil, errors.New("No insight view found with this id")
 	}
 
-	var filters types.InsightViewFilters
-	filters = filtersFromInput(&args.Input.ViewControls.Filters)
+	filters := filtersFromInput(&args.Input.ViewControls.Filters)
 
 	view, err := tx.UpdateView(ctx, types.InsightView{
 		UniqueID:         insightViewId,

@@ -154,7 +154,7 @@ describe('Organizations', () => {
                         extServices: { totalCount: 1, __typename: 'ExternalServiceConnection' },
                     }),
                 })
-                await driver.page.goto(testContext.driver.sourcegraphBaseUrl + '/organizations/sourcegraph/settings')
+                await driver.page.goto(driver.sourcegraphBaseUrl + '/organizations/sourcegraph/settings')
                 const updatedSettings = '// updated'
                 await driver.page.waitForSelector('.test-settings-file .monaco-editor')
                 await driver.replaceText({
@@ -217,9 +217,7 @@ describe('Organizations', () => {
                 }
                 testContext.overrideGraphQL(graphQlResults)
 
-                await driver.page.goto(
-                    testContext.driver.sourcegraphBaseUrl + '/organizations/sourcegraph/settings/members'
-                )
+                await driver.page.goto(driver.sourcegraphBaseUrl + '/organizations/sourcegraph/settings/members')
 
                 await driver.page.waitForSelector('.test-remove-org-member')
 

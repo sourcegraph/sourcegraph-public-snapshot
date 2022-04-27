@@ -12,7 +12,6 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 	"go.uber.org/atomic"
-	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -179,13 +178,6 @@ func PartitionRepos(
 	useIndex query.YesNoOnly,
 	containsRefGlobs bool,
 ) (indexed *IndexedRepoRevs, unindexed []*search.RepositoryRevisions, err error) {
-	if zoektStreamer == nil {
-		if useIndex == query.Only {
-			return nil, nil, errors.Errorf("invalid index:%q (indexed search is not enabled)", useIndex)
-		}
-		return nil, repos, nil
-
-	}
 	// Fallback to Unindexed if the query contains valid ref-globs.
 	if containsRefGlobs {
 		return nil, repos, nil
@@ -245,13 +237,6 @@ func PartitionRepos(
 }
 
 func DoZoektSearchGlobal(ctx context.Context, client zoekt.Streamer, args *search.ZoektParameters, c streaming.Sender) error {
-	if client == nil {
-		return nil
-	}
-
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
 	k := ResultCountFactor(0, args.FileMatchLimit, true)
 	searchOpts := SearchOpts(ctx, k, args.FileMatchLimit, args.Select)
 
@@ -557,9 +542,6 @@ func (z *ZoektRepoSubsetSearch) Run(ctx context.Context, clients job.RuntimeClie
 		since = z.Since
 	}
 
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
 	return nil, zoektSearch(ctx, z.Repos, z.Query, z.Typ, clients.Zoekt, z.FileMatchLimit, z.Select, since, stream)
 }
 
@@ -581,11 +563,7 @@ func (t *GlobalSearch) Run(ctx context.Context, clients job.RuntimeClients, stre
 	t.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
 	t.ZoektArgs.Query = t.GlobalZoektQuery.Generate()
 
-	g, ctx := errgroup.WithContext(ctx)
-	g.Go(func() error {
-		return DoZoektSearchGlobal(ctx, clients.Zoekt, t.ZoektArgs, stream)
-	})
-	return nil, g.Wait()
+	return nil, DoZoektSearchGlobal(ctx, clients.Zoekt, t.ZoektArgs, stream)
 }
 
 func (*GlobalSearch) Name() string {

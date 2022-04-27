@@ -277,7 +277,7 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 	logger.Info("Dequeued record for processing", "name", w.options.Name, "id", record.RecordID(), "traceID", trace.IDFromSpan(workerSpan))
 
 	if hook, ok := w.handler.(WithHooks); ok {
-		preCtx, endObservation := w.options.Metrics.operations.preHandle.With(handleCtx, nil, observation.Args{})
+		preCtx, _, endObservation := w.options.Metrics.operations.preHandle.With(handleCtx, nil, observation.Args{})
 		hook.PreHandle(preCtx, record)
 		endObservation(1, observation.Args{})
 	}
@@ -291,7 +291,7 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 				// this worker anymore at this point. Tracing hierarchy is still correct,
 				// as handleCtx used in preHandle/handle is at the same level as
 				// workerCtxWithSpan
-				postCtx, endObservation := w.options.Metrics.operations.postHandle.With(workerCtxWithSpan, nil, observation.Args{})
+				postCtx, _, endObservation := w.options.Metrics.operations.postHandle.With(workerCtxWithSpan, nil, observation.Args{})
 				defer endObservation(1, observation.Args{})
 				hook.PostHandle(postCtx, record)
 			}
@@ -316,7 +316,7 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 // handle processes the given record. This method returns an error only if there is an issue updating
 // the record to a terminal state - no handler errors will bubble up.
 func (w *Worker) handle(ctx, workerContext context.Context, record Record) (err error) {
-	ctx, endOperation := w.options.Metrics.operations.handle.With(ctx, &err, observation.Args{})
+	ctx, _, endOperation := w.options.Metrics.operations.handle.With(ctx, &err, observation.Args{})
 	defer endOperation(1, observation.Args{})
 
 	// If a maximum runtime is configured, set a deadline on the handle context.

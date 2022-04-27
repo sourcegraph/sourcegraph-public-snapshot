@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { gql } from '@apollo/client'
 import { createMockClient } from '@apollo/client/testing'
 import { cleanup, within, fireEvent } from '@testing-library/react'

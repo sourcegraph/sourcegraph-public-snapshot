@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/md5"
+	"database/sql"
 	"encoding/binary"
 	"encoding/gob"
 	"encoding/json"
@@ -14,9 +15,9 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/cespare/xxhash/v2"
@@ -34,6 +35,7 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/go-rendezvous"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -49,6 +51,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+const git = "git"
+
 var (
 	clientFactory  = httpcli.NewInternalClientFactory("gitserver")
 	defaultDoer, _ = clientFactory.Doer()
@@ -56,9 +60,10 @@ var (
 )
 
 var ClientMocks, emptyClientMocks struct {
-	GetObject func(repo api.RepoName, objectName string) (*gitdomain.GitObject, error)
-	RepoInfo  func(ctx context.Context, repos ...api.RepoName) (*protocol.RepoInfoResponse, error)
-	Archive   func(ctx context.Context, repo api.RepoName, opt ArchiveOptions) (_ io.ReadCloser, err error)
+	GetObject      func(repo api.RepoName, objectName string) (*gitdomain.GitObject, error)
+	RepoInfo       func(ctx context.Context, repos ...api.RepoName) (*protocol.RepoInfoResponse, error)
+	Archive        func(ctx context.Context, repo api.RepoName, opt ArchiveOptions) (_ io.ReadCloser, err error)
+	LocalGitserver bool
 }
 
 // AddrsMock is a mock for Addrs() function. It is separated from ClientMocks
@@ -302,6 +307,18 @@ var addrForRepoInvoked = promauto.NewCounterVec(prometheus.CounterOpts{
 	Help: "Number of times gitserver.AddrForRepo was invoked",
 }, []string{"user_agent"})
 
+// AddrForRepoCounter is used to track the number of times AddrForRepo is called
+// and is used to determine if we can read the gitserver location from the database.
+// See AddrForRepo for more details.
+var AddrForRepoCounter uint64
+
+// addrForRepoAddrMismatch is used to count the number of times the state of
+// the gitserver_repos table and the hashing algorithm disagree.
+var addrForRepoAddrMismatch = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "src_gitserver_addr_for_repo_addr_mismatch",
+	Help: "Number of times the gitserver_repos state and the result of gitserver.AddrForRepo are mismatched",
+}, []string{"user_agent"})
+
 // AddrForRepo returns the gitserver address to use for the given repo name.
 // It should never be called with a nil addresses pointer.
 func AddrForRepo(ctx context.Context, userAgent string, db database.DB, repo api.RepoName, addresses GitServerAddresses) (string, error) {
@@ -313,15 +330,63 @@ func AddrForRepo(ctx context.Context, userAgent string, db database.DB, repo api
 		return addr, nil
 	}
 
+	var shardID string
 	useRendezvous, err := shouldUseRendezvousHashing(ctx, db, rs)
 	if err != nil {
 		return "", err
 	}
 	if useRendezvous {
-		return RendezvousAddrForRepo(repo, addresses.Addresses), nil
+		shardID, err = RendezvousAddrForRepo(repo, addresses.Addresses), nil
+	} else {
+		shardID, err = addrForKey(rs, addresses.Addresses), nil
+	}
+	if err != nil {
+		return "", err
 	}
 
-	return addrForKey(rs, addresses.Addresses), nil
+	// This is an experiment to determine the impact on using the database to determine the location of a repo.
+	// It is meant to be used exclusively on Cloud and the rate will be increased progressively.
+	// Once we determine the impact of this experiment, we can remove it.
+	cfg := conf.Get()
+	if envvar.SourcegraphDotComMode() && cfg.ExperimentalFeatures != nil && cfg.ExperimentalFeatures.EnableGitserverClientLookupTable {
+		// get the rate from the configuration. The rate is a percentage, and defaults to 0.
+		var rate uint64 = uint64(conf.Get().ExperimentalFeatures.GitserverClientLookupTableRate)
+		if rate > 100 {
+			rate = 0
+		}
+
+		// We are using a modulo operation to spread the calls to the database across the rate.
+		var mod uint64
+		if rate > 0 {
+			mod = 100 / rate
+		}
+
+		if rate != 0 && atomic.AddUint64(&AddrForRepoCounter, 1)%mod == 0 {
+			span, ctx := ot.StartSpanFromContext(ctx, "GitserverClient.AddrForRepoFromDB")
+			span.SetTag("Repo", repo)
+			defer func() {
+				if err != nil {
+					ext.Error.Set(span, true)
+					span.LogFields(otlog.Error(err))
+				}
+				span.Finish()
+			}()
+
+			gr, err := db.GitserverRepos().GetByName(ctx, repo)
+			switch {
+			case err == nil:
+				// if there is a difference between the database state and the hashing result
+				// we should observe it.
+				if gr.ShardID != shardID {
+					addrForRepoAddrMismatch.WithLabelValues(userAgent).Inc()
+				}
+			case !errors.Is(err, sql.ErrNoRows):
+				log15.Warn("gitserver.AddrForRepo: failed to get gitserver repo from the database", "repo", repo, "err", err)
+			}
+		}
+	}
+
+	return shardID, nil
 }
 
 type GitServerAddresses struct {
@@ -375,7 +440,7 @@ func PathspecLiteral(s string) Pathspec { return Pathspec(":(literal)" + s) }
 func PathspecSuffix(s string) Pathspec { return Pathspec("*" + s) }
 
 // archiveReader wraps the StdoutReader yielded by gitserver's
-// Cmd.StdoutReader with one that knows how to report a repository-not-found
+// RemoteGitCommand.StdoutReader with one that knows how to report a repository-not-found
 // error more carefully.
 type archiveReader struct {
 	base io.ReadCloser
@@ -489,7 +554,7 @@ type badRequestError struct{ error }
 
 func (e badRequestError) BadRequest() bool { return true }
 
-func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, errRes error) {
+func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, errRes error) {
 	repoName := protocol.NormalizeRepo(c.repo)
 
 	span, ctx := ot.StartSpanFromContext(ctx, "Client.sendExec")
@@ -653,7 +718,7 @@ var deadlineExceededCounter = promauto.NewCounter(prometheus.CounterOpts{
 // and commit pairs. If the invoked callback returns a non-nil error, the operation will begin
 // to abort processing further results.
 func (c *ClientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, callback BatchLogCallback) (err error) {
-	ctx, endObservation := c.operations.batchLog.With(ctx, &err, observation.Args{LogFields: opts.LogFields()})
+	ctx, _, endObservation := c.operations.batchLog.With(ctx, &err, observation.Args{LogFields: opts.LogFields()})
 	defer endObservation(1, observation.Args{})
 
 	// Make a request to a single gitserver shard and feed the results to the user-supplied
@@ -663,7 +728,7 @@ func (c *ClientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 		var numProcessed int
 		repoNames := repoNamesFromRepoCommits(repoCommits)
 
-		ctx, logger, endObservation := c.operations.batchLogSingle.WithAndLogger(ctx, &err, observation.Args{
+		ctx, logger, endObservation := c.operations.batchLogSingle.With(ctx, &err, observation.Args{
 			LogFields: []log.Field{
 				log.String("addr", addr),
 				log.Int("numRepos", len(repoNames)),
@@ -837,154 +902,14 @@ func repoNamesFromRepoCommits(repoCommits []api.RepoCommit) []string {
 	return repoNames
 }
 
-// GitCommand is an interface describing a git command to be executed remotely.
-type GitCommand interface {
-	// DividedOutput runs the command and returns its standard output and standard error.
-	DividedOutput(ctx context.Context) ([]byte, []byte, error)
-
-	// Output runs the command and returns its standard output.
-	Output(ctx context.Context) ([]byte, error)
-
-	// CombinedOutput runs the command and returns its combined standard output and standard error.
-	CombinedOutput(ctx context.Context) ([]byte, error)
-
-	// DisableTimeout turns command timeout off
-	DisableTimeout()
-
-	// Repo returns repo against which the command is run
-	Repo() api.RepoName
-
-	// Args returns arguments of the command
-	Args() []string
-
-	// ExitStatus returns exit status of the command
-	ExitStatus() int
-
-	// SetEnsureRevision sets the revision which should be ensured when the command is ran
-	SetEnsureRevision(r string)
-
-	// EnsureRevision returns ensureRevision parameter of the command
-	EnsureRevision() string
-
-	// String returns string representation of the command (in fact prints args parameter of the command)
-	String() string
-
-	// StdoutReader returns an io.ReadCloser of stdout of c. If the command has a
-	// non-zero return value, Read returns a non io.EOF error. Do not pass in a
-	// started command.
-	StdoutReader(ctx context.Context) (io.ReadCloser, error)
-}
-
-// Cmd represents a command to be executed remotely.
-type Cmd struct {
-	repo           api.RepoName // the repository to execute the command in
-	ensureRevision string
-	args           []string
-	noTimeout      bool
-	exitStatus     int
-	execFn         func(ctx context.Context, repo api.RepoName, op string, payload interface{}) (resp *http.Response, err error)
-}
-
-// DividedOutput runs the command and returns its standard output and standard error.
-func (c *Cmd) DividedOutput(ctx context.Context) ([]byte, []byte, error) {
-	rc, trailer, err := c.sendExec(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	stdout, err := io.ReadAll(rc)
-	rc.Close()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	c.exitStatus, err = strconv.Atoi(trailer.Get("X-Exec-Exit-Status"))
-	if err != nil {
-		return nil, nil, err
-	}
-
-	stderr := []byte(trailer.Get("X-Exec-Stderr"))
-	if errorMsg := trailer.Get("X-Exec-Error"); errorMsg != "" {
-		return stdout, stderr, errors.New(errorMsg)
-	}
-
-	return stdout, stderr, nil
-}
-
-// Output runs the command and returns its standard output.
-func (c *Cmd) Output(ctx context.Context) ([]byte, error) {
-	stdout, _, err := c.DividedOutput(ctx)
-	return stdout, err
-}
-
-// CombinedOutput runs the command and returns its combined standard output and standard error.
-func (c *Cmd) CombinedOutput(ctx context.Context) ([]byte, error) {
-	stdout, stderr, err := c.DividedOutput(ctx)
-	return append(stdout, stderr...), err
-}
-
-func (c *Cmd) DisableTimeout() {
-	c.noTimeout = true
-}
-
-func (c *Cmd) Repo() api.RepoName { return c.repo }
-
-func (c *Cmd) Args() []string { return c.args }
-
-func (c *Cmd) ExitStatus() int { return c.exitStatus }
-
-func (c *Cmd) SetEnsureRevision(r string) { c.ensureRevision = r }
-
-func (c *Cmd) EnsureRevision() string { return c.ensureRevision }
-
-func (c *Cmd) String() string { return fmt.Sprintf("%q", c.args) }
-
-// StdoutReader returns an io.ReadCloser of stdout of c. If the command has a
-// non-zero return value, Read returns a non io.EOF error. Do not pass in a
-// started command.
-func (c *Cmd) StdoutReader(ctx context.Context) (io.ReadCloser, error) {
-	rc, trailer, err := c.sendExec(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return &cmdReader{
-		rc:      rc,
-		trailer: trailer,
-	}, nil
-}
-
-type cmdReader struct {
-	rc      io.ReadCloser
-	trailer http.Header
-}
-
-func (c *cmdReader) Read(p []byte) (int, error) {
-	n, err := c.rc.Read(p)
-	if err == io.EOF {
-		stderr := c.trailer.Get("X-Exec-Stderr")
-		if len(stderr) > 100 {
-			stderr = stderr[:100] + "... (truncated)"
-		}
-		if errorMsg := c.trailer.Get("X-Exec-Error"); errorMsg != "" {
-			return 0, errors.Errorf("%s (stderr: %q)", errorMsg, stderr)
-		}
-		if exitStatus := c.trailer.Get("X-Exec-Exit-Status"); exitStatus != "0" {
-			return 0, errors.Errorf("non-zero exit status: %s (stderr: %q)", exitStatus, stderr)
-		}
-	}
-	return n, err
-}
-
-func (c *cmdReader) Close() error {
-	return c.rc.Close()
-}
-
 func (c *ClientImplementor) GitCommand(repo api.RepoName, arg ...string) GitCommand {
-	return &Cmd{
+	if ClientMocks.LocalGitserver {
+		return NewLocalGitCommand(repo, arg...)
+	}
+	return &RemoteGitCommand{
 		repo:   repo,
 		execFn: c.httpPost,
-		args:   append([]string{"git"}, arg...),
+		args:   append([]string{git}, arg...),
 	}
 }
 

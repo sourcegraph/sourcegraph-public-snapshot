@@ -224,6 +224,7 @@ func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.C
 // logLevelOverrides builds a map of commands -> log level that should be overridden in the environment.
 func logLevelOverrides() map[string]string {
 	levelServices := make(map[string][]string)
+	levelServices["debug"] = parseCsvs(debugStartServices.Value())
 	levelServices["info"] = parseCsvs(infoStartServices.Value())
 	levelServices["warn"] = parseCsvs(warnStartServices.Value())
 	levelServices["error"] = parseCsvs(errorStartServices.Value())

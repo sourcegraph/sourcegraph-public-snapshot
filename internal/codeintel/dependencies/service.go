@@ -49,7 +49,7 @@ func newService(
 // Dependencies resolves the (transitive) dependencies for a set of repository and revisions.
 // Both the input repoRevs and the output dependencyRevs are a map from repository names to revspecs.
 func (s *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]types.RevSpecSet) (dependencyRevs map[api.RepoName]types.RevSpecSet, err error) {
-	ctx, endObservation := s.operations.dependencies.With(ctx, &err, observation.Args{LogFields: constructLogFields(repoRevs)})
+	ctx, _, endObservation := s.operations.dependencies.With(ctx, &err, observation.Args{LogFields: constructLogFields(repoRevs)})
 	defer func() {
 		endObservation(1, observation.Args{LogFields: []log.Field{
 			log.Int("numDependencyRevs", len(dependencyRevs)),
@@ -231,21 +231,11 @@ type ListDependencyReposOpts struct {
 }
 
 func (s *Service) ListDependencyRepos(ctx context.Context, opts ListDependencyReposOpts) ([]Repo, error) {
-	drs, err := s.dependenciesStore.ListDependencyRepos(ctx, store.ListDependencyReposOpts(opts))
-	if err != nil {
-		return nil, err
-	}
-
-	return drs, nil
+	return s.dependenciesStore.ListDependencyRepos(ctx, store.ListDependencyReposOpts(opts))
 }
 
 func (s *Service) UpsertDependencyRepos(ctx context.Context, deps []Repo) ([]Repo, error) {
-	drs, err := s.dependenciesStore.UpsertDependencyRepos(ctx, deps)
-	if err != nil {
-		return nil, err
-	}
-
-	return drs, nil
+	return s.dependenciesStore.UpsertDependencyRepos(ctx, deps)
 }
 
 func (s *Service) DeleteDependencyReposByID(ctx context.Context, ids ...int) error {

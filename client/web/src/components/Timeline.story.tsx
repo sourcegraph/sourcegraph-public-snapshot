@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { storiesOf } from '@storybook/react'
 import { parseISO } from 'date-fns'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'

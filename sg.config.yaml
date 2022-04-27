@@ -37,6 +37,7 @@ env:
   JAEGER_SERVER_URL: http://localhost:16686
   ZOEKT_HOST: localhost:3070
 
+  SRC_DEVELOPMENT: 'true'
   SRC_PROF_HTTP: ''
   SRC_PROF_SERVICES: |
     [
@@ -298,7 +299,7 @@ commands:
   caddy:
     ignoreStdout: true
     ignoreStderr: true
-    cmd: .bin/caddy_${CADDY_VERSION}_$([[ "$(go env GOOS)" = "darwin" ]] && echo "mac" || echo "$(go env GOOS)")_$(go env GOARCH) run --watch --config=dev/Caddyfile
+    cmd: .bin/caddy_${CADDY_VERSION} run --watch --config=dev/Caddyfile
     install: |
       case "$(go env GOOS)" in
         linux)
@@ -309,7 +310,7 @@ commands:
           ;;
       esac
       name="caddy_${CADDY_VERSION}_${os}_$(go env GOARCH)"
-      target="$PWD/.bin/$name"
+      target="$PWD/.bin/caddy_${CADDY_VERSION}"
       url="https://github.com/caddyserver/caddy/releases/download/v${CADDY_VERSION}/${name}.tar.gz"
 
       if [ ! -f "${target}" ]; then
@@ -530,13 +531,12 @@ commands:
 
   jaeger:
     cmd: |
-      .bin/jaeger-all-in-one-${JAEGER_VERSION}-$(go env GOOS)-$(go env GOARCH) --log-level ${JAEGER_LOG_LEVEL}
+      .bin/jaeger-all-in-one-${JAEGER_VERSION} --log-level ${JAEGER_LOG_LEVEL}
     install: |
       set -e
       mkdir -p "${JAEGER_DISK}"
-
       suffix="${JAEGER_VERSION}-$(go env GOOS)-$(go env GOARCH)"
-      target="$PWD/.bin/jaeger-all-in-one-${suffix}"
+      target="$PWD/.bin/jaeger-all-in-one-${JAEGER_VERSION}"
       url="https://github.com/jaegertracing/jaeger/releases/download/v${JAEGER_VERSION}/jaeger-${suffix}.tar.gz"
 
       if [ ! -f "${target}" ]; then

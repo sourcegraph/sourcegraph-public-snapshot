@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { Meta, Story } from '@storybook/react'
 
 import brandedStyles from '@sourcegraph/branded/src/global-styles/index.scss'

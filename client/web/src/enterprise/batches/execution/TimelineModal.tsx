@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react'
 
+import VisuallyHidden from '@reach/visually-hidden'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
@@ -25,7 +26,8 @@ export const TimelineModal: React.FunctionComponent<TimelineModalProps> = ({ nod
     <Modal className={styles.modalBody} onDismiss={onCancel} aria-label="Execution timeline">
         <div className="d-flex justify-content-between">
             <h3 className="mb-0">Execution timeline</h3>
-            <Button className="p-0 m-0" onClick={onCancel} variant="link" size="sm">
+            <Button className="p-0 ml-2" onClick={onCancel} variant="icon">
+                <VisuallyHidden>Close</VisuallyHidden>
                 <Icon as={CloseIcon} />
             </Button>
         </div>

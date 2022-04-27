@@ -244,7 +244,7 @@ const NotebookStarsButton: React.FunctionComponent<NotebookStarsButtonProps> = (
 
     return (
         <Button
-            className="d-flex align-items-center"
+            className="d-flex align-items-center pl-0"
             outline={true}
             disabled={disabled}
             onClick={() => onStarToggle(viewerHasStarred)}

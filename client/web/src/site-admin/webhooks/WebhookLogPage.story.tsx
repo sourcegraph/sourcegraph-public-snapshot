@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { storiesOf } from '@storybook/react'
 import { addMinutes, formatRFC3339 } from 'date-fns'
 import { of } from 'rxjs'

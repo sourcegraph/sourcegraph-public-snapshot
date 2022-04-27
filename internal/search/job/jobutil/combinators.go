@@ -79,6 +79,45 @@ func (r *PriorityJob) Run(ctx context.Context, clients job.RuntimeClients, s str
 	return maxAlerter.Alert, errs
 }
 
+// NewSequentialJob will create a job that sequentially runs a list of jobs.
+// This is used to implement logic where we might like to order independent
+// search operations, favoring results returns by jobs earlier in the list to
+// those appearing later in the list. If this job sees a cancellation for a
+// child job, it stops executing additional jobs and returns.
+func NewSequentialJob(children ...job.Job) job.Job {
+	if len(children) == 0 {
+		return &noopJob{}
+	}
+	if len(children) == 1 {
+		return children[0]
+	}
+	return &SequentialJob{children: children}
+}
+
+type SequentialJob struct {
+	children []job.Job
+}
+
+func (s *SequentialJob) Name() string {
+	return "SequentialJob"
+}
+
+func (s *SequentialJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+	var maxAlerter search.MaxAlerter
+	var errs errors.MultiError
+
+	for _, child := range s.children {
+		alert, err := child.Run(ctx, clients, stream)
+		if ctx.Err() != nil {
+			// Cancellation or Deadline hit implies it's time to stop running jobs.
+			return maxAlerter.Alert, errs
+		}
+		maxAlerter.Add(alert)
+		errs = errors.Append(errs, err)
+	}
+	return maxAlerter.Alert, errs
+}
+
 // NewParallelJob will create a job that runs all its child jobs in separate
 // goroutines, then waits for all to complete. It returns an aggregated error
 // if any of the child jobs failed.

@@ -517,6 +517,7 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
                     ) : null}
                 </div>
                 <Panel
+                    className="d-flex"
                     defaultSize={500}
                     minSize={405}
                     maxSize={1400}

@@ -188,31 +188,23 @@ func TestToEvaluateJob(t *testing.T) {
 	}
 
 	autogold.Want("root limit for streaming search", `
-(TIMEOUT
-  20s
-  (LIMIT
-    500
-    (PARALLEL
-      ZoektGlobalSearch
-      RepoSearch
-      ComputeExcludedRepos)))
+(PARALLEL
+  ZoektGlobalSearch
+  RepoSearch
+  ComputeExcludedRepos)
 `).Equal(t, test("foo", search.Streaming))
 
 	autogold.Want("root limit for batch search", `
-(TIMEOUT
-  20s
-  (LIMIT
-    30
-    (PARALLEL
-      ZoektGlobalSearch
-      RepoSearch
-      ComputeExcludedRepos)))
+(PARALLEL
+  ZoektGlobalSearch
+  RepoSearch
+  ComputeExcludedRepos)
 `).Equal(t, test("foo", search.Batch))
 }
 
 func Test_optimizeJobs(t *testing.T) {
 	test := func(input string) string {
-		q, _ := query.ParseLiteral(input)
+		plan, _ := query.Pipeline(query.InitLiteral(input))
 		inputs := &run.SearchInputs{
 			UserSettings:        &schema.Settings{},
 			PatternType:         query.SearchTypeLiteral,
@@ -220,186 +212,215 @@ func Test_optimizeJobs(t *testing.T) {
 			OnSourcegraphDotCom: true,
 		}
 
-		b, _ := query.ToBasicQuery(q)
-		baseJob, _ := toPatternExpressionJob(inputs, b)
-		optimizedJob, _ := optimizeJobs(baseJob, inputs, b)
+		baseJob, _ := NewJob(inputs, plan, IdentityPass)
+		optimizedJob, _ := NewJob(inputs, plan, OptimizationPass)
 		return "\nBASE:\n\n" + PrettySexp(baseJob) + "\n\nOPTIMIZED:\n\n" + PrettySexp(optimizedJob) + "\n"
 	}
 
 	autogold.Want("optimize basic expression (Zoekt Text Global)", `
 BASE:
 
-(AND
-  (LIMIT
-    40000
-    (PARALLEL
-      ZoektGlobalSearch
-      RepoSearch
-      ComputeExcludedRepos))
-  (LIMIT
-    40000
-    (PARALLEL
-      ZoektGlobalSearch
-      RepoSearch
-      ComputeExcludedRepos))
-  (LIMIT
-    40000
-    (PARALLEL
-      ZoektGlobalSearch
-      RepoSearch
-      ComputeExcludedRepos)))
+(ALERT
+  (TIMEOUT
+    20s
+    (LIMIT
+      500
+      (AND
+        (LIMIT
+          40000
+          (PARALLEL
+            ZoektGlobalSearch
+            RepoSearch
+            ComputeExcludedRepos))
+        (LIMIT
+          40000
+          (PARALLEL
+            ZoektGlobalSearch
+            RepoSearch
+            ComputeExcludedRepos))
+        (LIMIT
+          40000
+          (PARALLEL
+            ZoektGlobalSearch
+            RepoSearch
+            ComputeExcludedRepos))))))
 
 OPTIMIZED:
 
-(PARALLEL
-  ZoektGlobalSearch
-  (AND
+(ALERT
+  (TIMEOUT
+    20s
     (LIMIT
-      40000
+      500
       (PARALLEL
-        NoopJob
-        RepoSearch
-        ComputeExcludedRepos))
-    (LIMIT
-      40000
-      (PARALLEL
-        NoopJob
-        RepoSearch
-        ComputeExcludedRepos))
-    (LIMIT
-      40000
-      (PARALLEL
-        NoopJob
-        RepoSearch
-        ComputeExcludedRepos))))
+        ZoektGlobalSearch
+        (AND
+          (LIMIT
+            40000
+            (PARALLEL
+              NoopJob
+              RepoSearch
+              ComputeExcludedRepos))
+          (LIMIT
+            40000
+            (PARALLEL
+              NoopJob
+              RepoSearch
+              ComputeExcludedRepos))
+          (LIMIT
+            40000
+            (PARALLEL
+              NoopJob
+              RepoSearch
+              ComputeExcludedRepos)))))))
 `).Equal(t, test("foo and bar and not baz"))
 
 	autogold.Want("optimize repo-qualified expression (Zoekt Text over repos)", `
 BASE:
 
-(AND
-  (LIMIT
-    40000
-    (PARALLEL
-      REPOPAGER
-        (PARALLEL
-          NoopJob
-          Searcher))
-      RepoSearch
-      ComputeExcludedRepos))
-  (LIMIT
-    40000
-    (PARALLEL
-      REPOPAGER
-        (PARALLEL
-          NoopJob
-          Searcher))
-      RepoSearch
-      ComputeExcludedRepos))
-  (LIMIT
-    40000
-    (PARALLEL
-      REPOPAGER
-        (PARALLEL
-          NoopJob
-          Searcher))
-      RepoSearch
-      ComputeExcludedRepos)))
+(ALERT
+  (TIMEOUT
+    20s
+    (LIMIT
+      500
+      (AND
+        (LIMIT
+          40000
+          (PARALLEL
+            REPOPAGER
+              (PARALLEL
+                ZoektRepoSubset
+                Searcher))
+            RepoSearch
+            ComputeExcludedRepos))
+        (LIMIT
+          40000
+          (PARALLEL
+            REPOPAGER
+              (PARALLEL
+                ZoektRepoSubset
+                Searcher))
+            RepoSearch
+            ComputeExcludedRepos))
+        (LIMIT
+          40000
+          (PARALLEL
+            REPOPAGER
+              (PARALLEL
+                ZoektRepoSubset
+                Searcher))
+            RepoSearch
+            ComputeExcludedRepos))))))
 
 OPTIMIZED:
 
-(PARALLEL
-  REPOPAGER
-    ZoektRepoSubset)
-  (AND
+(ALERT
+  (TIMEOUT
+    20s
     (LIMIT
-      40000
+      500
       (PARALLEL
         REPOPAGER
-          (PARALLEL
-            NoopJob
-            Searcher))
-        RepoSearch
-        ComputeExcludedRepos))
-    (LIMIT
-      40000
-      (PARALLEL
-        REPOPAGER
-          (PARALLEL
-            NoopJob
-            Searcher))
-        RepoSearch
-        ComputeExcludedRepos))
-    (LIMIT
-      40000
-      (PARALLEL
-        REPOPAGER
-          (PARALLEL
-            NoopJob
-            Searcher))
-        RepoSearch
-        ComputeExcludedRepos))))
+          ZoektRepoSubset)
+        (AND
+          (LIMIT
+            40000
+            (PARALLEL
+              REPOPAGER
+                (PARALLEL
+                  NoopJob
+                  Searcher))
+              RepoSearch
+              ComputeExcludedRepos))
+          (LIMIT
+            40000
+            (PARALLEL
+              REPOPAGER
+                (PARALLEL
+                  NoopJob
+                  Searcher))
+              RepoSearch
+              ComputeExcludedRepos))
+          (LIMIT
+            40000
+            (PARALLEL
+              REPOPAGER
+                (PARALLEL
+                  NoopJob
+                  Searcher))
+              RepoSearch
+              ComputeExcludedRepos)))))))
 `).Equal(t, test("repo:derp foo and bar not baz"))
 
 	autogold.Want("optimize qualified repo with type:symbol expression (Zoekt Symbol over repos)", `
 BASE:
 
-(AND
-  (LIMIT
-    40000
-    (PARALLEL
-      REPOPAGER
-        (PARALLEL
-          NoopJob
-          SymbolSearcher))
-      ComputeExcludedRepos))
-  (LIMIT
-    40000
-    (PARALLEL
-      REPOPAGER
-        (PARALLEL
-          NoopJob
-          SymbolSearcher))
-      ComputeExcludedRepos))
-  (LIMIT
-    40000
-    (PARALLEL
-      REPOPAGER
-        (PARALLEL
-          NoopJob
-          SymbolSearcher))
-      ComputeExcludedRepos)))
+(ALERT
+  (TIMEOUT
+    20s
+    (LIMIT
+      500
+      (AND
+        (LIMIT
+          40000
+          (PARALLEL
+            REPOPAGER
+              (PARALLEL
+                ZoektSymbolSearch
+                SymbolSearcher))
+            ComputeExcludedRepos))
+        (LIMIT
+          40000
+          (PARALLEL
+            REPOPAGER
+              (PARALLEL
+                ZoektSymbolSearch
+                SymbolSearcher))
+            ComputeExcludedRepos))
+        (LIMIT
+          40000
+          (PARALLEL
+            REPOPAGER
+              (PARALLEL
+                ZoektSymbolSearch
+                SymbolSearcher))
+            ComputeExcludedRepos))))))
 
 OPTIMIZED:
 
-(PARALLEL
-  REPOPAGER
-    ZoektSymbolSearch)
-  (AND
+(ALERT
+  (TIMEOUT
+    20s
     (LIMIT
-      40000
+      500
       (PARALLEL
         REPOPAGER
-          (PARALLEL
-            NoopJob
-            SymbolSearcher))
-        ComputeExcludedRepos))
-    (LIMIT
-      40000
-      (PARALLEL
-        REPOPAGER
-          (PARALLEL
-            NoopJob
-            SymbolSearcher))
-        ComputeExcludedRepos))
-    (LIMIT
-      40000
-      (PARALLEL
-        REPOPAGER
-          (PARALLEL
-            NoopJob
-            SymbolSearcher))
-        ComputeExcludedRepos))))
+          ZoektSymbolSearch)
+        (AND
+          (LIMIT
+            40000
+            (PARALLEL
+              REPOPAGER
+                (PARALLEL
+                  NoopJob
+                  SymbolSearcher))
+              ComputeExcludedRepos))
+          (LIMIT
+            40000
+            (PARALLEL
+              REPOPAGER
+                (PARALLEL
+                  NoopJob
+                  SymbolSearcher))
+              ComputeExcludedRepos))
+          (LIMIT
+            40000
+            (PARALLEL
+              REPOPAGER
+                (PARALLEL
+                  NoopJob
+                  SymbolSearcher))
+              ComputeExcludedRepos)))))))
 `).Equal(t, test("repo:derp foo and bar not baz type:symbol"))
 
 }

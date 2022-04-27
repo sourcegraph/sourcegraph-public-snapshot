@@ -3,7 +3,6 @@ package codeintel
 import (
 	"context"
 
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -19,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type indexingJob struct{}
@@ -27,13 +27,17 @@ func NewIndexingJob() job.Job {
 	return &indexingJob{}
 }
 
+func (j *indexingJob) Description() string {
+	return ""
+}
+
 func (j *indexingJob) Config() []env.Config {
 	return []env.Config{indexingConfigInst}
 }
 
-func (j *indexingJob) Routines(ctx context.Context) ([]goroutine.BackgroundRoutine, error) {
+func (j *indexingJob) Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	observationContext := &observation.Context{
-		Logger:     log15.Root(),
+		Logger:     logger.Scoped("routines", "indexing job routines"),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}

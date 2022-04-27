@@ -41,7 +41,7 @@ func (s *subRepoPermsFilterJob) Run(ctx context.Context, clients job.RuntimeClie
 		event.Results, err = applySubRepoFiltering(ctx, checker, event.Results)
 		if err != nil {
 			mu.Lock()
-			errs = errors.Append(err)
+			errs = errors.Append(errs, err)
 			mu.Unlock()
 		}
 		stream.Send(event)

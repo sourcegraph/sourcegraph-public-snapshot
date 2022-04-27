@@ -6,7 +6,9 @@ import (
 	"bytes"
 	"container/list"
 	"context"
+	"crypto/md5"
 	"crypto/sha256"
+	"encoding/binary"
 	"encoding/gob"
 	"encoding/hex"
 	"encoding/json"
@@ -600,10 +602,7 @@ func (s *Server) syncRepoState(gitServerAddrs gitserver.GitServerAddresses, batc
 	err := store.IterateRepoGitserverStatus(ctx, options, func(repo types.RepoGitserverStatus) error {
 		repoSyncStateCounter.WithLabelValues("check").Inc()
 		// Ensure we're only dealing with repos we are responsible for
-		addr, err := gitserver.AddrForRepo(ctx, filepath.Base(os.Args[0]), s.DB, repo.Name, gitServerAddrs)
-		if err != nil {
-			return err
-		}
+		addr := addrForKey(repo.Name, gitServerAddrs.Addresses)
 		if !s.hostnameMatch(addr) {
 			repoSyncStateCounter.WithLabelValues("other_shard").Inc()
 			return nil
@@ -648,6 +647,17 @@ func (s *Server) syncRepoState(gitServerAddrs gitserver.GitServerAddresses, batc
 	writeBatch()
 
 	return err
+}
+
+// addrForKey is used only during gitserver client experiment and will be removed as soon as the experiment ends.
+// In fact this commit will be just reverted.
+// If it still bothers you -- contact sashaostrikov
+func addrForKey(repo api.RepoName, addrs []string) string {
+	repo = protocol.NormalizeRepo(repo) // in case the caller didn't already normalize it
+	rs := string(repo)
+	sum := md5.Sum([]byte(rs))
+	serverIndex := binary.BigEndian.Uint64(sum[:]) % uint64(len(addrs))
+	return addrs[serverIndex]
 }
 
 // Stop cancels the running background jobs and returns when done.
@@ -1163,7 +1173,7 @@ func (s *Server) handleBatchLog(w http.ResponseWriter, r *http.Request) {
 	// Run git log for a single repository.
 	// Invoked multiple times from the handler defined below.
 	performGitLogCommand := func(ctx context.Context, repoCommit api.RepoCommit, format string) (output string, isRepoCloned bool, err error) {
-		ctx, endObservation := operations.batchLogSingle.With(ctx, &err, observation.Args{
+		ctx, _, endObservation := operations.batchLogSingle.With(ctx, &err, observation.Args{
 			LogFields: append(
 				[]log.Field{
 					log.String("format", format),
@@ -1196,7 +1206,7 @@ func (s *Server) handleBatchLog(w http.ResponseWriter, r *http.Request) {
 
 	// Handles the /batch-log route
 	instrumentedHandler := func(ctx context.Context) (statusCodeOnError int, err error) {
-		ctx, logger, endObservation := operations.batchLog.WithAndLogger(ctx, &err, observation.Args{})
+		ctx, logger, endObservation := operations.batchLog.With(ctx, &err, observation.Args{})
 		defer func() {
 			endObservation(1, observation.Args{LogFields: []log.Field{
 				log.Int("statusCodeOnError", statusCodeOnError),

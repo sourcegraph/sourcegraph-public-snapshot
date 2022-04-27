@@ -1,4 +1,4 @@
-import React, { useState, FunctionComponent } from 'react'
+import { useState, FunctionComponent } from 'react'
 
 import { asError, ErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
