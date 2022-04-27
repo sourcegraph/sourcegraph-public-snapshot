@@ -23,7 +23,7 @@ import (
 var ErrPrometheusUnavailable = errors.New("prometheus API is unavailable")
 
 // PrometheusURL is the configured Prometheus instance.
-var PrometheusURL = env.Get("PROMETHEUS_URL", "", "prometheus server URL")
+var PrometheusURL = env.Get("PROMETHEUS_URL", "http://localhost:9090", "prometheus server URL")
 
 // Client provides the interface for interacting with Sourcegraph Prometheus, including
 // prom-wrapper. See https://docs.sourcegraph.com/dev/background-information/observability/prometheus
