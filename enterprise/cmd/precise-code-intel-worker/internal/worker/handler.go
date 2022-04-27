@@ -64,7 +64,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerut
 		})
 	}()
 
-	requeued, err = h.handle(ctx, upload, otLogger)
+	requeued, err = h.handle(ctx, logger, upload, otLogger)
 
 	return err
 }
