@@ -1,4 +1,4 @@
-import * as React from 'react'
+import React, { useMemo } from 'react'
 
 import classNames from 'classnames'
 
@@ -8,6 +8,7 @@ import { Notice, Settings } from '@sourcegraph/shared/src/schema/settings.schema
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { Alert, AlertProps } from '@sourcegraph/wildcard'
 
+import { AuthenticatedUser } from '../auth'
 import { DismissibleAlert } from '../components/DismissibleAlert'
 
 import styles from './Notices.module.scss'
@@ -51,7 +52,12 @@ interface Props extends SettingsCascadeProps {
 
     /** Display notices for this location. */
     location: Notice['location']
+
+    authenticatedUser: AuthenticatedUser | null
 }
+
+// FIXME: change to get from featureFlags
+const experimentEnabled = true
 
 /**
  * Displays notices from settings for a specific location.
@@ -61,16 +67,30 @@ export const Notices: React.FunctionComponent<React.PropsWithChildren<Props>> = 
     alertClassName,
     settingsCascade,
     location,
+    authenticatedUser,
 }) => {
-    if (
-        !isSettingsValid<Settings>(settingsCascade) ||
-        !settingsCascade.final.notices ||
-        !Array.isArray(settingsCascade.final.notices)
-    ) {
-        return null
-    }
+    const notices = useMemo(() => {
+        const verifyEmailNotices = (experimentEnabled && authenticatedUser ? authenticatedUser.emails : [])
+            .filter(({ verified }) => !verified)
+            .map(
+                ({ email }): Notice => ({
+                    message: `Your email ${email as string} is not verified. <a href="#">Send verification email.</a>`,
+                    location: 'top',
+                    dismissible: false,
+                })
+            )
 
-    const notices = settingsCascade.final.notices.filter(notice => notice.location === location)
+        if (
+            !isSettingsValid<Settings>(settingsCascade) ||
+            !settingsCascade.final.notices ||
+            !Array.isArray(settingsCascade.final.notices)
+        ) {
+            return verifyEmailNotices
+        }
+
+        return [...verifyEmailNotices, ...settingsCascade.final.notices.filter(notice => notice.location === location)]
+    }, [authenticatedUser, location, settingsCascade])
+
     if (notices.length === 0) {
         return null
     }

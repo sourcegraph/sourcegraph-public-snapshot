@@ -123,7 +123,12 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                         .
                     </DismissibleAlert>
                 )}
-                <Notices alertClassName={styles.alert} location="top" settingsCascade={this.props.settingsCascade} />
+                <Notices
+                    alertClassName={styles.alert}
+                    location="top"
+                    settingsCascade={this.props.settingsCascade}
+                    authenticatedUser={this.props.authenticatedUser}
+                />
             </div>
         )
     }
