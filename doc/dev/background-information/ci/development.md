@@ -77,6 +77,20 @@ The pipeline generator provides an API for this that, at a high level, works lik
 
 For more details about best practices and additional features and capabilities, please refer to [the `bk.AnnotatedCmd` docstring](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eenterprise/dev/ci/internal/buildkite+AnnotatedCmd+type:symbol&patternType=literal).
 
+#### Creating scheduled builds
+
+You can schedule builds with build schedules, which automatically create builds at the specified intervals. They are useful to create, for example, nightly builds.
+
+1. Go to `Pipeline Settings` in buildkite and then click `New Schedule`
+
+![image](https://user-images.githubusercontent.com/68532117/165358554-85e48dd0-379c-4461-aef7-09e1cd058569.png)
+
+2. Complete the form to create a new build where you can define the intervals with the `Cron Interval` field. Check out the [Buildkite Docs](https://buildkite.com/docs/pipelines/scheduled-builds#schedule-intervals-predefined-intervals) to see a list of predefined intervals.
+
+![image](https://user-images.githubusercontent.com/68532117/165358933-a27e4293-a363-4a77-84d7-a3ce67f743d2.png)
+
+> NOTE: You can also inject custom environment variables, for example, to trigger a custom [Run Type](#run-types). 
+
 #### Caching build artefacts
 
 For caching artefacts in steps to speed up steps, see [How to cache CI artefacts](../../how-to/cache_ci_artefacts.md).
