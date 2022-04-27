@@ -1,10 +1,11 @@
 package com.sourcegraph.action;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import org.jetbrains.annotations.NotNull;
 
 public class SearchSelection extends SearchActionBase {
     @Override
-    public void actionPerformed(AnActionEvent e) {
-        super.actionPerformedMode(e, "search");
+    public void actionPerformed(@NotNull AnActionEvent event) {
+        super.actionPerformedMode(event, "search");
     }
 }

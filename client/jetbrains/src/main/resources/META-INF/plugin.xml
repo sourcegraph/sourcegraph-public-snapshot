@@ -14,25 +14,29 @@
   </extensions>
 
   <actions>
-    <action id="sourcegraph.openFile" class="com.sourcegraph.action.OpenFile" text="Open File" description="Open selection in Sourcegraph">
-      <keyboard-shortcut first-keystroke="alt shift a" keymap="$default"/>
-    </action>
-    <action id="sourcegraph.searchSelection" class="com.sourcegraph.action.SearchSelection" text="Search selection" description="Search selection on Sourcegraph">
-      <keyboard-shortcut first-keystroke="alt s" keymap="$default"/>
-    </action>
-    <action id="sourcegraph.searchRepository" class="com.sourcegraph.action.SearchRepository" text="Search selection in repository" description="Search selection in repository on Sourcegraph">
-      <keyboard-shortcut first-keystroke="alt r" keymap="$default"/>
-    </action>
-    <action id="sourcegraph.copy" class="com.sourcegraph.action.Copy" text="Copy Link to File" description="Copy link to Sourcegraph">
-      <keyboard-shortcut first-keystroke="alt c" keymap="$default"/>
-    </action>
-    <group id="SourcegraphEditor" icon="/icons/icon.png" popup="true" text="Sourcegraph">
-      <reference ref="sourcegraph.searchSelection"/>
-      <reference ref="sourcegraph.searchRepository"/>
-      <reference ref="sourcegraph.openFile"/>
-      <reference ref="sourcegraph.copy"/>
-      <add-to-group anchor="last" group-id="EditorPopupMenu"/>
-    </group>
+      <action id="sourcegraph.openFile" class="com.sourcegraph.action.OpenFile" text="Open File"
+              description="Open selection in Sourcegraph">
+          <keyboard-shortcut first-keystroke="alt shift a" keymap="$default"/>
+      </action>
+      <action id="sourcegraph.searchSelection" class="com.sourcegraph.action.SearchSelection" text="Search Selection"
+              description="Search selection on Sourcegraph">
+          <keyboard-shortcut first-keystroke="alt s" keymap="$default"/>
+      </action>
+      <action id="sourcegraph.searchRepository" class="com.sourcegraph.action.SearchRepository"
+              text="Search Selection in Repository" description="Search selection in repository on Sourcegraph">
+          <keyboard-shortcut first-keystroke="alt r" keymap="$default"/>
+      </action>
+      <action id="sourcegraph.copy" class="com.sourcegraph.action.Copy" text="Copy Link to File"
+              description="Copy link to Sourcegraph">
+          <keyboard-shortcut first-keystroke="alt c" keymap="$default"/>
+      </action>
+      <group id="SourcegraphEditor" icon="/icons/icon.png" popup="true" text="Sourcegraph">
+          <reference ref="sourcegraph.searchSelection"/>
+          <reference ref="sourcegraph.searchRepository"/>
+          <reference ref="sourcegraph.openFile"/>
+          <reference ref="sourcegraph.copy"/>
+          <add-to-group anchor="last" group-id="EditorPopupMenu"/>
+      </group>
     <action id="com.sourcegraph.action.OpenRevisionAction" icon="/icons/icon.png" class="com.sourcegraph.action.OpenRevisionAction" text="Open in Sourcegraph" description="Open revision diff in Sourcegraph">
       <add-to-group group-id="VcsHistoryActionsGroup" anchor="last"/>
       <add-to-group group-id="Vcs.Log.ContextMenu" anchor="last"/>
