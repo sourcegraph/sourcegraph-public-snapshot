@@ -46,6 +46,7 @@ func mockZipFile(data []byte) (*zipFile, error) {
 }
 
 func tempZipFileOnDisk(data []byte) (string, func(), error) {
+	// TODO(ryanslade)
 	z, err := mockZipFile(data)
 	if err != nil {
 		return "", nil, err
