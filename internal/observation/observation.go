@@ -78,6 +78,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/log"
+	"github.com/sourcegraph/sourcegraph/lib/log/otfields"
 )
 
 // Context carries context about where to send logs, trace spans, and register
@@ -226,7 +227,9 @@ func (t *traceLogger) Log(fields ...otlog.Field) {
 	if t.trace != nil {
 		t.trace.LogFields(fields...)
 	}
-	t.Logger.Info("trace.event", toLogFields(fields)...)
+	t.Logger.
+		AddCallerSkip(1). // Log() -> Logger
+		Info("trace.log", toLogFields(fields)...)
 }
 
 func (t *traceLogger) Tag(fields ...otlog.Field) {
@@ -338,7 +341,8 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 
 	logger := op.Logger.With(toLogFields(args.LogFields)...)
 
-	if traceContext := trace.Context(ctx); traceContext != nil {
+	var traceContext *otfields.TraceContext
+	if traceContext = trace.Context(ctx); traceContext != nil {
 		event.AddField("traceID", traceContext.TraceID)
 		logger = logger.WithTrace(*traceContext)
 	}
@@ -376,7 +380,7 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 			honeyErr   = op.applyErrorFilter(err, EmitForHoney)
 			sentryErr  = op.applyErrorFilter(err, EmitForSentry)
 		)
-		op.emitErrorLogs(logErr, logFields)
+		op.emitErrorLogs(logErr, logFields, traceContext)
 		op.emitHoneyEvent(honeyErr, snakecaseOpName, event, finishArgs.LogFields, elapsedMs) // op. and args.LogFields already added at start
 		op.emitMetrics(metricsErr, count, elapsed, metricLabels)
 		op.finishTrace(traceErr, tr, logFields)
@@ -399,13 +403,16 @@ func (op *Operation) startTrace(ctx context.Context) (*trace.Trace, context.Cont
 // as well as all of the log fields attached ot the operation, the args to With, and the args
 // to the finish function. This does nothing if the no logger was supplied on the observation
 // context.
-func (op *Operation) emitErrorLogs(err *error, logFields []otlog.Field) {
+func (op *Operation) emitErrorLogs(err *error, logFields []otlog.Field, traceContext *otfields.TraceContext) {
 	if op.Logger == nil || err == nil || *err == nil {
 		return
 	}
 
 	fields := append(toLogFields(logFields), zap.Error(*err))
-	op.Logger.Error(op.name, fields...)
+	op.Logger.
+		WithTrace(*traceContext).
+		AddCallerSkip(2). // callback() -> emitErrorLogs() -> Logger
+		Error(op.name, fields...)
 }
 
 func (op *Operation) emitHoneyEvent(err *error, opName string, event honey.Event, logFields []otlog.Field, duration int64) {
