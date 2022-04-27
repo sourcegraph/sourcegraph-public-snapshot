@@ -161,7 +161,7 @@ func main() {
 	if !inAllowedNumCommits || timeExceeded || flags.DryRun {
 
 		td := TemplateData{
-			VersionAge:       time.Now().Sub(currentCommit.Date).String(),
+			VersionAge:       time.Now().Sub(currentCommit.Date).Truncate(time.Second).String(),
 			Version:          version,
 			Environment:      flags.Environment,
 			CommitTooOld:     timeExceeded,
@@ -181,7 +181,9 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
+
 		log.Println("Cloud is not current!")
+		fmt.Println(msg.String())
 	}
 
 	log.Printf("Now: %s\n", time.Now().String())
