@@ -34,7 +34,6 @@ func (rr ComputeMatchContextStreamDecoder) ReadAll(r io.Reader) error {
 	dec := http.NewDecoder(r)
 
 	for dec.Scan() {
-
 		event := dec.Event()
 		data := dec.Data()
 
@@ -47,24 +46,6 @@ func (rr ComputeMatchContextStreamDecoder) ReadAll(r io.Reader) error {
 				return errors.Errorf("failed to decode compute match context payload: %w", err)
 			}
 			rr.OnResult(&d)
-		} else if bytes.Equal(event, []byte("alert")) {
-			if rr.OnAlert == nil {
-				continue
-			}
-			var d http.EventAlert
-			if err := json.Unmarshal(data, &d); err != nil {
-				return errors.Errorf("failed to decode alert payload: %w", err)
-			}
-			rr.OnAlert(&d)
-		} else if bytes.Equal(event, []byte("error")) {
-			if rr.OnError == nil {
-				continue
-			}
-			var d http.EventError
-			if err := json.Unmarshal(data, &d); err != nil {
-				return errors.Errorf("failed to decode error payload: %w", err)
-			}
-			rr.OnError(&d)
 		} else if bytes.Equal(event, []byte("done")) {
 			// Always the last event
 			break
