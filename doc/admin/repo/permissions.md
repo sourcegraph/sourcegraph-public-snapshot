@@ -399,6 +399,31 @@ mutation {
 
 <br />
 
+### Pending permissions
+
+Pending permissions are created and stored when the repo permissions fetched from the code host contain users which are not yet users of Sourcegraph. This information is stored for the purpose of immediate repo access for such users after joining Sourcegraph. During the process of user creation `user_pending_permissions` is queried and if there are any permissions for the user being created, then these permissions are added to `user_permissions` table and this user is ready to go in no time. Without pending permissions, user would have waited for user permissions sync to happen.
+
+As soon as new user is created (to be more precise -- during the creation process itself), pending permissions are used to populate "ordinary" permissions (`repo_permissions` and `user_permissions` tables), after that `user_permissions_table` is cleared (however, `repo_pending_permissions` [is not](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.39.1/-/blob/enterprise/internal/database/perms_store.go?L979-981)).
+
+#### External code host user <-> Sourcegraph user mapping
+
+`user_pending_permissions` table has a `bind_id` column which is an ID of the user of external code host: a username for Bitbucket Server, a GraphID for GitHub or a user ID for GitLab. 
+
+User pending permission is a composite entity containing of:
+- `service_type` (e.g. `github.com`, `gitlab`, `bitbucketServer`);
+- `service_id` (ID of the code host, e.g. `https://github.com/`, `https://gitlab.com/`);
+- `permission` (bitmask for a set of permissions);
+- `object_type` (type of what is enumerated in `object_ids_ints` column; for now it is `repos`);
+- and `bind_id`
+ 
+all of which are included in a unique constraint. This entity is addressed in `user_ids_ints` column of `repo_pending_permissions` table by `id`.
+
+Overall, one entry of `user_pending_permissions` table means that _"There is a user with `bind_id` ID of this exact (`service_id`) external code host of this (`service_type`) type with such permissions for this (`object_ids_ints`) set of repos"_
+
+#### Repo pending permissions
+
+`repo_pending_permissions` table maps `user_pending_permissions` entities to repo ID alongside with permission type (read/write). One row of the table maps one repo ID to an array of `user_pending_permissions` entries. Basically it is designed as an inverted `user_pending_permissions` for more performant CRUD operations (as per DB migration description in [this commit](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/compare/0705aa790d31fcd51713f4432496cc6bbb49cce8...bc30ae1186cf7a491ef21a5c00cb2f565288dfbb#diff-660eca66a5fad95783448fa468b2ce2fR50)).
+
 ## Explicit permissions API
 
 Sourcegraph exposes a GraphQL API to explicitly set repository permissions as an alternative to the code-host-specific repository permissions sync mechanisms.
