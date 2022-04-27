@@ -101,12 +101,12 @@ const markRepositoryAsDirtyQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/commits.go:MarkRepositoryAsDirty
 INSERT INTO lsif_dirty_repositories (repository_id, dirty_token, update_token)
 VALUES (%s, 1, 0)
-ON CONFLICT (repository_id)
-DO UPDATE SET dirty_token = lsif_dirty_repositories.dirty_token + 1,
-set_dirty_at = CASE WHEN lsif_dirty_repositories.update_token = lsif_dirty_repositories.dirty_token
-	THEN NOW()
-	ELSE lsif_dirty_repositories.set_dirty_at
-END
+ON CONFLICT (repository_id) DO UPDATE SET
+    dirty_token = lsif_dirty_repositories.dirty_token + 1,
+    set_dirty_at = CASE
+        WHEN lsif_dirty_repositories.update_token = lsif_dirty_repositories.dirty_token THEN NOW()
+        ELSE lsif_dirty_repositories.set_dirty_at
+    END
 `
 
 func scanIntPairs(rows *sql.Rows, queryErr error) (_ map[int]int, err error) {
