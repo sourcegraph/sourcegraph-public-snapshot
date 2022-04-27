@@ -187,7 +187,7 @@ For more advanced pipelines, see [Run types](#run-types).
 
 ##### Creating scheduled builds
 
-You can schedule builds with build schedules, which automatically create builds at the  specified intervals. 
+You can schedule builds with build schedules, which automatically create builds at the specified intervals. They are useful to create, for example, nightly builds. 
 
 1. Go to `Pipeline Settings` in buildkite and then click `New Schedule`
 
