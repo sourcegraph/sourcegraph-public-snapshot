@@ -13,13 +13,11 @@ import (
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/backend"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -231,31 +229,6 @@ func writeZip(ctx context.Context, w io.Writer, fileMatches []zoekt.FileMatch) (
 }
 
 var errNoResultsInTimeout = errors.New("no results found in specified timeout")
-
-// contextWithoutDeadline returns a context which will cancel if the cOld is
-// canceled.
-func contextWithoutDeadline(cOld context.Context) (context.Context, context.CancelFunc) {
-	cNew, cancel := context.WithCancel(context.Background())
-
-	// Set trace context so we still get spans propagated
-	cNew = trace.CopyContext(cNew, cOld)
-
-	// Copy actor from cOld to cNew.
-	cNew = actor.WithActor(cNew, actor.FromContext(cOld))
-
-	go func() {
-		select {
-		case <-cOld.Done():
-			// cancel the new context if the old one is done for some reason other than the deadline passing.
-			if cOld.Err() != context.DeadlineExceeded {
-				cancel()
-			}
-		case <-cNew.Done():
-		}
-	}()
-
-	return cNew, cancel
-}
 
 // atomicEndpoints allows us to update the endpoints used by our zoekt client.
 type atomicEndpoints struct {
