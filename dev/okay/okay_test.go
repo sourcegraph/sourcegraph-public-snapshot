@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 func TestMain(m *testing.M) {
 	logtest.Init(m)
 	m.Run()
+	os.Exit(0)
 }
 
 func TestPush(t *testing.T) {
