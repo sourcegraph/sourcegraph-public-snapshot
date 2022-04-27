@@ -48,16 +48,34 @@ func TestProject(t *testing.T) {
 	testutil.AssertGolden(t, "testdata/golden/project.json", update(t.Name()), result)
 }
 
-func TestGetArchive(t *testing.T) {
+func TestGetArchive_tarball(t *testing.T) {
+	dir := t.TempDir()
+
 	ctx := context.Background()
-	cli := newTestClient(t, "GetArchive", update(t.Name()))
+	cli := newTestClient(t, "GetArchive_tarball", update(t.Name()))
 
 	u, err := cli.GetArchive(ctx, "hsf", "1.1.0")
 	if err != nil {
 		t.Fatal(err)
 	}
+	err = u.Unpack(dir)
+	if err != nil {
+		t.Fatal()
+	}
+}
 
-	err = u.Unpack(t.TempDir())
+func TestGetArchive_wheel(t *testing.T) {
+	dir := t.TempDir()
+
+	ctx := context.Background()
+	cli := newTestClient(t, "GetArchive_wheel", update(t.Name()))
+
+	u, err := cli.GetArchive(ctx, "odoo14-addon-sale-product-set-packaging-qty", "14.0.1.1.0")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = u.Unpack(dir)
 	if err != nil {
 		t.Fatal()
 	}

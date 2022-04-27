@@ -40,7 +40,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/unpack"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -120,11 +119,6 @@ func (c *Client) project(ctx context.Context, project string) (*ProjectInfo, err
 	return pi, nil
 }
 
-// Unpacker abstracts the various archive formats pypi offers, such as tar.gzip and wheel.
-type Unpacker interface {
-	Unpack(dstDir string) error
-}
-
 func (c *Client) GetArchive(ctx context.Context, project string, version string) (Unpacker, error) {
 	releaseInfo, err := c.Release(ctx, project, version)
 	if err != nil {
@@ -138,11 +132,10 @@ func (c *Client) GetArchive(ctx context.Context, project string, version string)
 
 	switch u.PackageType {
 
-	// TODO: support wheels
 	case "sdist":
 		atype := toArchiveType(u.URL)
 		if atype == "" {
-			return nil, errors.Errorf("archive %s does not have a file extension for %s==%s", u.URL, project, version)
+			return nil, errors.Errorf("archive %s has unsupported file extension %s==%s", u.URL, project, version)
 		}
 		switch atype {
 		case gztar:
@@ -154,9 +147,34 @@ func (c *Client) GetArchive(ctx context.Context, project string, version string)
 		default:
 			return nil, errors.Errorf("unsupported archive type %s for %s==%s", atype, project, version)
 		}
+	case "bdist_wheel":
+		b, err := c.fetchWheel(ctx, u.URL)
+		if err != nil {
+			return nil, err
+		}
+		return &wheelUnpacker{b}, nil
+
 	default:
 		return nil, errors.Errorf("unsupported package type %s for %s==%s", u.PackageType, project, version)
 	}
+}
+
+func (c *Client) fetchWheel(ctx context.Context, url string) ([]byte, error) {
+	startWait := time.Now()
+	if err := c.limiter.Wait(ctx); err != nil {
+		return nil, err
+	}
+
+	if d := time.Since(startWait); d > rateLimitingWaitThreshold {
+		log15.Warn("%s proxy client self-enforced API rate limit: request delayed longer than expected due to rate limit", c.proxy, "delay", d)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return c.do(req)
 }
 
 type archiveType string
@@ -197,16 +215,8 @@ func toArchiveType(path string) archiveType {
 	return ""
 }
 
-// Implements Unpacker.
-type tarballUnpacker struct {
-	rc io.ReadCloser
-}
-
-func (t tarballUnpacker) Unpack(dstDir string) error {
-	return unpack.DecompressTgz(t.rc, dstDir)
-}
-
 func (c *Client) fetchTarBall(ctx context.Context, url string) (io.ReadCloser, error) {
+	// TODO: do we need a rate limiter for fetching resources?
 	startWait := time.Now()
 	if err := c.limiter.Wait(ctx); err != nil {
 		return nil, err
