@@ -98,21 +98,12 @@ func FetchSources(ctx context.Context, config *schema.JVMPackagesConnection, dep
 		return "", err
 	}
 	if len(paths) == 0 || (len(paths) == 1 && paths[0] == "") {
-		return "", &ErrNoSources{Dependency: dependency}
+		return "", errors.Errorf("no sources for %s", dependency)
 	}
 	if len(paths) > 1 {
 		return "", errors.Errorf("expected single JAR path but found multiple: %v", paths)
 	}
 	return paths[0], nil
-}
-
-// ErrNoSources indicates that a dependency has no sources
-type ErrNoSources struct {
-	Dependency *reposource.MavenDependency
-}
-
-func (e ErrNoSources) Error() string {
-	return fmt.Sprintf("no sources for dependency %v", e.Dependency)
 }
 
 func FetchByteCode(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenDependency) (byteCodeJarPath string, err error) {
@@ -142,7 +133,7 @@ func FetchByteCode(ctx context.Context, config *schema.JVMPackagesConnection, de
 	return paths[0], nil
 }
 
-func Exists(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenDependency) (exists bool, err error) {
+func Exists(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenDependency) (err error) {
 	ctx, endObservation := operations.exists.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("dependency", dependency.PackageManagerSyntax()),
 	}})
@@ -150,16 +141,25 @@ func Exists(ctx context.Context, config *schema.JVMPackagesConnection, dependenc
 
 	if dependency.IsJDK() {
 		_, err = FetchSources(ctx, config, dependency)
-		return err == nil, err
+	} else {
+		_, err = runCoursierCommand(
+			ctx,
+			config,
+			"resolve",
+			"--quiet", "--quiet",
+			"--intransitive", dependency.PackageManagerSyntax(),
+		)
 	}
-	_, err = runCoursierCommand(
-		ctx,
-		config,
-		"resolve",
-		"--quiet", "--quiet",
-		"--intransitive", dependency.PackageManagerSyntax(),
-	)
-	return err == nil, err
+	if err != nil {
+		return &coursierError{err}
+	}
+	return nil
+}
+
+type coursierError struct{ error }
+
+func (e coursierError) NotFound() bool {
+	return true
 }
 
 func runCoursierCommand(ctx context.Context, config *schema.JVMPackagesConnection, args ...string) (stdoutLines []string, err error) {

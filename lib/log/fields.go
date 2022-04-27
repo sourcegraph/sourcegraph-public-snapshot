@@ -3,6 +3,8 @@ package log
 import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+
+	"github.com/sourcegraph/sourcegraph/lib/log/internal/encoders"
 )
 
 // A Field is a marshaling operation used to add a key-value pair to a logger's context.
@@ -54,3 +56,9 @@ var (
 	// third-party libraries.
 	Namespace = zap.Namespace
 )
+
+// Object constructs a field that places all the given fields within the given key's
+// namespace.
+func Object(key string, fields ...Field) Field {
+	return zap.Object(key, encoders.FieldsObjectEncoder(fields))
+}
