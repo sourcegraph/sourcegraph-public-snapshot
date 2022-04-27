@@ -26,7 +26,7 @@ use sg_macros::include_project_file_optional;
 // (I can also add per-language mappings for these if we want, but you could also just do that with
 //  unique match groups. For example `@rust-bracket`, or similar. That doesn't need any
 //  particularly new rust code to be written. You can just modify queries for that)
-const MATCHES_TO_SYNTAX_KINDS: &[(&str, SyntaxKind); 32] = &[
+const MATCHES_TO_SYNTAX_KINDS: &[(&str, SyntaxKind)] = &[
     ("attribute",               SyntaxKind::UnspecifiedSyntaxKind),
     ("boolean",                 SyntaxKind::BooleanLiteral),
     ("comment",                 SyntaxKind::Comment),
