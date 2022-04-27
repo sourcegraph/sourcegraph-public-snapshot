@@ -724,7 +724,7 @@ const CollapsibleRepoLocationGroup: React.FunctionComponent<
                                 event.preventDefault()
                                 navigateToUrl(repoUrl)
                             }}
-                            className={classNames('text-small', styles.repoLocationGroupRepoName)}
+                            className={classNames('text-small', styles.repoLocationGroupHeaderRepoName)}
                         >
                             {displayRepoName(repoLocationGroup.repoName)}
                         </Link>
@@ -780,7 +780,7 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                     ) : (
                         <Icon aria-label="Expand" as={ChevronRightIcon} />
                     )}
-                    <small className={styles.locationGroupFilename}>
+                    <small className={styles.locationGroupHeaderFilename}>
                         {highlighted.length === 2 ? (
                             <span>
                                 {highlighted[0]}

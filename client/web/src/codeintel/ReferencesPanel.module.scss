@@ -39,6 +39,7 @@ $filter-input-height: 1.5rem;
 
         &--repo-name {
             padding-left: 0.6rem;
+            font-size: 0.875rem;
         }
     }
 }
@@ -62,6 +63,7 @@ $filter-input-height: 1.5rem;
         &--filename {
             padding-left: 0.6rem;
             font-weight: 400;
+            font-size: 0.875rem;
 
             mark {
                 padding-left: 0;
