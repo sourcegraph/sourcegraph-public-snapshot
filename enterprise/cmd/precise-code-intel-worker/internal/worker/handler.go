@@ -8,7 +8,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 	otlog "github.com/opentracing/opentracing-go/log"
@@ -107,7 +106,7 @@ func (h *handler) handle(ctx context.Context, logger log.Logger, upload store.Up
 		return false, errors.Wrap(err, "Repos.Get")
 	}
 
-	if requeued, err := requeueIfCloningOrCommitUnknown(ctx, db, h.workerStore, upload, repo); err != nil || requeued {
+	if requeued, err := requeueIfCloningOrCommitUnknown(ctx, logger, db, h.workerStore, upload, repo); err != nil || requeued {
 		return requeued, err
 	}
 
@@ -127,7 +126,7 @@ func (h *handler) handle(ctx context.Context, logger log.Logger, upload store.Up
 		return directoryChildren, nil
 	}
 
-	return false, withUploadData(ctx, h.uploadStore, upload.ID, trace, func(r io.Reader) (err error) {
+	return false, withUploadData(ctx, logger, h.uploadStore, upload.ID, trace, func(r io.Reader) (err error) {
 		groupedBundleData, err := conversion.Correlate(ctx, r, upload.Root, getChildren)
 		if err != nil {
 			return errors.Wrap(err, "conversion.Correlate")
@@ -237,7 +236,7 @@ const requeueDelay = time.Minute
 // cloning or if the commit does not exist, then the upload will be requeued and this function returns a true
 // valued flag. Otherwise, the repo does not exist or there is an unexpected infrastructure error, which we'll
 // fail on.
-func requeueIfCloningOrCommitUnknown(ctx context.Context, db database.DB, workerStore dbworkerstore.Store, upload store.Upload, repo *types.Repo) (requeued bool, _ error) {
+func requeueIfCloningOrCommitUnknown(ctx context.Context, logger log.Logger, db database.DB, workerStore dbworkerstore.Store, upload store.Upload, repo *types.Repo) (requeued bool, _ error) {
 	_, err := backend.NewRepos(db).ResolveRev(ctx, repo, upload.Commit)
 	if err == nil {
 		// commit is resolvable
@@ -258,14 +257,16 @@ func requeueIfCloningOrCommitUnknown(ctx context.Context, db database.DB, worker
 	if err := workerStore.Requeue(ctx, upload.ID, after); err != nil {
 		return false, errors.Wrap(err, "store.Requeue")
 	}
-	log15.Warn("Requeued LSIF upload record", "id", upload.ID, "reason", reason)
+	logger.Warn("Requeued LSIF upload record",
+		log.Int("id", upload.ID),
+		log.String("reason", reason))
 	return true, nil
 }
 
 // withUploadData will invoke the given function with a reader of the upload's raw data. The
 // consumer should expect raw newline-delimited JSON content. If the function returns without
 // an error, the upload file will be deleted.
-func withUploadData(ctx context.Context, uploadStore uploadstore.Store, id int, trace observation.TraceLogger, fn func(r io.Reader) error) error {
+func withUploadData(ctx context.Context, logger log.Logger, uploadStore uploadstore.Store, id int, trace observation.TraceLogger, fn func(r io.Reader) error) error {
 	uploadFilename := fmt.Sprintf("upload-%d.lsif.gz", id)
 
 	trace.Log(otlog.String("uploadFilename", uploadFilename))
@@ -288,7 +289,9 @@ func withUploadData(ctx context.Context, uploadStore uploadstore.Store, id int, 
 	}
 
 	if err := uploadStore.Delete(ctx, uploadFilename); err != nil {
-		log15.Warn("Failed to delete upload file", "err", err, "filename", uploadFilename)
+		logger.Warn("Failed to delete upload file",
+			log.NamedError("err", err),
+			log.String("filename", uploadFilename))
 	}
 
 	return nil
