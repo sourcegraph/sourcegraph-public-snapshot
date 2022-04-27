@@ -102,7 +102,7 @@ func mkProjectInfo(t *testing.T, urls []string) *ProjectInfo {
 			Name:    "deadbeef",
 			Version: "1.0",
 		},
-		URLS: releaseURLs,
+		URLs: releaseURLs,
 	}
 }
 

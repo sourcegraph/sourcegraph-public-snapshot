@@ -1,6 +1,6 @@
 // Package pypi
 //
-// A wrapper around pypi's JSON API (https://warehouse.pypa.io/api-reference/json.html).
+// A client for PyPI's JSON API (https://warehouse.pypa.io/api-reference/json.html).
 //
 // Nomenclature:
 //
@@ -44,14 +44,14 @@ import (
 )
 
 type Client struct {
-	// A list of pypi proxies.
+	// A list of PyPI proxies.
 	urls []string
 	cli  httpcli.Doer
 
 	// TODO: confirm which authentication pypi requires.
 	credentials string
 
-	// Self-imposed rate-limiter. Pypi.org does not impose a rate limiting policy.
+	// Self-imposed rate-limiter. pypi.org does not impose a rate limiting policy.
 	limiter *rate.Limiter
 
 	// The name of this proxy. Used in error messages.
@@ -74,11 +74,15 @@ func NewClient(urn string, urls []string, credentials string) *Client {
 // https://warehouse.pypa.io/api-reference/json.html.
 type ProjectInfo struct {
 	Info Info         `json:"info"`
-	URLS []ReleaseURL `json:"urls"`
+	URLs []ReleaseURL `json:"urls"`
 }
 
 type Info struct {
-	Name    string `json:"name"`
+	Name string `json:"name"`
+
+	// Depending on whether ProjectInfo is returned by Client.Release or
+	// Client.project, Version is the version of the release that was requested
+	// (Client.Release) or the latest available version (Client.project).
 	Version string `json:"version"`
 }
 
@@ -267,7 +271,7 @@ func (n pypiError) Error() string {
 }
 
 func selectURL(info *ProjectInfo) (ReleaseURL, error) {
-	for _, u := range info.URLS {
+	for _, u := range info.URLs {
 		if u.PackageType == "sdist" {
 			return u, nil
 		}
@@ -275,12 +279,9 @@ func selectURL(info *ProjectInfo) (ReleaseURL, error) {
 
 	// This release doesn't offer an archive. We will try to find a wheel that
 	// targets platform "any" instead.
-	for _, u := range info.URLS {
+	for _, u := range info.URLs {
 		if u.PackageType == "bdist_wheel" {
 			p := getPlatform(u.URL)
-			if p == "" {
-				continue
-			}
 			if p == "any" {
 				return u, nil
 			}
@@ -288,7 +289,7 @@ func selectURL(info *ProjectInfo) (ReleaseURL, error) {
 	}
 
 	// Return the first wheel.
-	for _, u := range info.URLS {
+	for _, u := range info.URLs {
 		if u.PackageType == "bdist_wheel" {
 			return u, nil
 		}
