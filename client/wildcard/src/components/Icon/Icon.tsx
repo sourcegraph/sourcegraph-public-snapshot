@@ -18,7 +18,7 @@ interface BaseIconProps extends Omit<MdiReactIconProps, 'children'> {
 }
 
 interface ScreenReaderIconProps extends BaseIconProps {
-    'aria-label'?: string
+    title?: string
 }
 
 interface HiddenIconProps extends BaseIconProps {
