@@ -36,6 +36,7 @@ func TestIntegration(t *testing.T) {
 		{"ListExternalServicePrivateRepoIDsByUserID", testStoreListExternalServicePrivateRepoIDsByUserID},
 		{"Syncer/SyncWorker", testSyncWorkerPlumbing},
 		{"Syncer/Sync", testSyncerSync},
+		{"Syncer/SyncDoesNotOverwriteUpdatedConfig", testSyncDoesNotOverwriteUpdatedConfig},
 		{"Syncer/SyncRepo", testSyncRepo},
 		{"Syncer/Run", testSyncRun},
 		{"Syncer/MultipleServices", testSyncerMultipleServices},
