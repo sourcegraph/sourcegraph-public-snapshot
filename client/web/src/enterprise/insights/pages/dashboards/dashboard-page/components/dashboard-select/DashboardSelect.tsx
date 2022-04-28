@@ -57,7 +57,7 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
     const handleMenuButtonClick = (): NodeJS.Timeout =>
         setTimeout(() => {
             filterReference.current?.focus()
-        }, 0)
+        }, 20)
 
     useEffect(() => {
         if (filter === '') {
