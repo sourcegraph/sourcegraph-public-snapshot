@@ -10,6 +10,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 	"unicode/utf8"
 
@@ -17,6 +18,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
 	"google.golang.org/protobuf/proto"
@@ -32,9 +34,31 @@ import (
 var (
 	syntectServer = env.Get("SRC_SYNTECT_SERVER", "http://syntect-server:9238", "syntect_server HTTP(s) address")
 	client        *gosyntect.Client
-
-	highlightOp *observation.Operation
 )
+
+var (
+	highlightOpOnce sync.Once
+	highlightOp     *observation.Operation
+)
+
+func getHighlightOp() *observation.Operation {
+	highlightOpOnce.Do(func() {
+		obsvCtx := observation.Context{
+			HoneyDataset: &honey.Dataset{
+				Name:       "codeintel-syntax-highlighting",
+				SampleRate: 10, // 1 in 10
+			},
+		}
+
+		highlightOp = obsvCtx.Operation(observation.Op{
+			Name:        "codeintel.syntax-highlight.Code",
+			LogFields:   []otlog.Field{},
+			ErrorFilter: func(err error) observation.ErrorFilterBehaviour { return observation.EmitForHoney },
+		})
+	})
+
+	return highlightOp
+}
 
 func init() {
 	client = gosyntect.New(syntectServer)
@@ -315,7 +339,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		filetypeQuery.Engine = EngineSyntect
 	}
 
-	ctx, errCollector, trace, endObservation := highlightOp.WithErrorsAndLogger(ctx, &err, observation.Args{LogFields: []otlog.Field{
+	ctx, errCollector, trace, endObservation := getHighlightOp().WithErrorsAndLogger(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("revision", p.Metadata.Revision),
 		otlog.String("repo", p.Metadata.RepoName),
 		otlog.String("fileExtension", filepath.Ext(p.Filepath)),
