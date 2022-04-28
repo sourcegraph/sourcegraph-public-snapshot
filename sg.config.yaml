@@ -968,12 +968,12 @@ tests:
 
   frontend-e2e:
     cmd: |
-      echo -e "\n\n\033[0;33mWarning, sg start enterprise-e2e must be already running in a different terminal!\033[0m\n\n" && \
-      GH_TOKEN=$(gcloud secrets versions access latest --project=sourcegraph-ci --secret="BUILDKITE_GITHUBDOTCOM_TOKEN") yarn run test-e2e
+      ./dev/run-frontend-e2e.sh
     env:
       TEST_USER_EMAIL: test@sourcegraph.com
       TEST_USER_PASSWORD: supersecurepassword
       SOURCEGRAPH_BASE_URL: https://sourcegraph.test:3443
+      BROWSER: chrome
 
   docsite:
     cmd: .bin/docsite_${DOCSITE_VERSION} check ./doc
