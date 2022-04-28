@@ -1,5 +1,9 @@
 @import 'wildcard/src/global-styles/breakpoints';
 
+:root {
+    --primary: red;
+}
+
 .root {
     height: 100vh;
     width: 100vw;
