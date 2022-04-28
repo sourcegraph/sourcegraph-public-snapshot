@@ -121,7 +121,7 @@ func startCmd(ctx context.Context, dir string, cmd Command, globalEnv map[string
 
 	sc.Cmd = exec.CommandContext(commandCtx, "bash", "-c", cmd.Cmd)
 	sc.Cmd.Dir = dir
-	sc.Cmd.Env = makeEnv(globalEnv, cmd.Env)
+	sc.Cmd.Env = makeEnv(cmd.Env, globalEnv)
 
 	var stdoutWriter, stderrWriter io.Writer
 	logger := newCmdLogger(commandCtx, cmd.Name, stdout.Out)
