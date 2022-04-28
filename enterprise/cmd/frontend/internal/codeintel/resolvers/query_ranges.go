@@ -17,7 +17,7 @@ const slowRangesRequestThreshold = time.Second
 // results are partial and do not include references outside the current file, or any location that
 // requires cross-linking of bundles (cross-repo or cross-root).
 func (r *queryResolver) Ranges(ctx context.Context, startLine, endLine int) (adjustedRanges []AdjustedCodeIntelligenceRange, err error) {
-	ctx, trace, endObservation := observeResolver(ctx, &err, "Ranges", r.operations.ranges, slowRangesRequestThreshold, observation.Args{
+	ctx, trace, endObservation := observeResolver(ctx, &err, r.operations.ranges, slowRangesRequestThreshold, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", r.repositoryID),
 			log.String("commit", r.commit),

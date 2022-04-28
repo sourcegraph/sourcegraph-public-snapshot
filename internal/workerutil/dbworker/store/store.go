@@ -362,7 +362,7 @@ var columnNames = []string{
 
 // QueuedCount returns the number of queued records matching the given conditions.
 func (s *store) QueuedCount(ctx context.Context, includeProcessing bool, conditions []*sqlf.Query) (_ int, err error) {
-	ctx, endObservation := s.operations.queuedCount.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.queuedCount.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	stateQueries := make([]*sqlf.Query, 0, 2)
@@ -400,7 +400,7 @@ SELECT COUNT(*) FROM %s WHERE (
 //
 // See https://github.com/sourcegraph/sourcegraph/issues/32624.
 func (s *store) MaxDurationInQueue(ctx context.Context) (_ time.Duration, err error) {
-	ctx, endObservation := s.operations.maxDurationInQueue.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.maxDurationInQueue.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	now := s.now()
@@ -488,7 +488,7 @@ var columnsUpdatedByDequeue = []string{
 //
 // The supplied conditions may use the alias provided in `ViewName`, if one was supplied.
 func (s *store) Dequeue(ctx context.Context, workerHostname string, conditions []*sqlf.Query) (_ workerutil.Record, _ bool, err error) {
-	ctx, trace, endObservation := s.operations.dequeue.WithAndLogger(ctx, &err, observation.Args{})
+	ctx, trace, endObservation := s.operations.dequeue.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	if s.InTransaction() {
@@ -616,7 +616,7 @@ func (s *store) makeDequeueUpdateStatements(updatedColumns map[string]*sqlf.Quer
 }
 
 func (s *store) Heartbeat(ctx context.Context, ids []int, options HeartbeatOptions) (knownIDs []int, err error) {
-	ctx, endObservation := s.operations.heartbeat.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.heartbeat.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	if len(ids) == 0 {
@@ -693,7 +693,7 @@ RETURNING {id}
 // Requeue updates the state of the record with the given identifier to queued and adds a processing delay before
 // the next dequeue of this record can be performed.
 func (s *store) Requeue(ctx context.Context, id int, after time.Time) (err error) {
-	ctx, endObservation := s.operations.requeue.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.requeue.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("id", id),
 		log.String("after", after.String()),
 	}})
@@ -722,7 +722,7 @@ WHERE {id} = %s
 // used with UpdateExecutionLogEntry) and a possible error. When the record is not found (due to options not matching
 // or the record being deleted), ErrExecutionLogEntryNotUpdated is returned.
 func (s *store) AddExecutionLogEntry(ctx context.Context, id int, entry workerutil.ExecutionLogEntry, options ExecutionLogEntryOptions) (entryID int, err error) {
-	ctx, endObservation := s.operations.addExecutionLogEntry.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.addExecutionLogEntry.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("id", id),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -773,7 +773,7 @@ RETURNING array_length({execution_logs}, 1)
 // UpdateExecutionLogEntry updates the executor log entry with the given ID on the given record. When the record is not
 // found (due to options not matching or the record being deleted), ErrExecutionLogEntryNotUpdated is returned.
 func (s *store) UpdateExecutionLogEntry(ctx context.Context, recordID, entryID int, entry workerutil.ExecutionLogEntry, options ExecutionLogEntryOptions) (err error) {
-	ctx, endObservation := s.operations.updateExecutionLogEntry.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.updateExecutionLogEntry.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("recordID", recordID),
 		log.Int("entryID", entryID),
 	}})
@@ -831,7 +831,7 @@ RETURNING
 // the processing state to a terminal state, this method will have no effect. This method returns a boolean flag
 // indicating if the record was updated.
 func (s *store) MarkComplete(ctx context.Context, id int, options MarkFinalOptions) (_ bool, err error) {
-	ctx, endObservation := s.operations.markComplete.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.markComplete.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("id", id),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -858,7 +858,7 @@ RETURNING {id}
 // if the current state of the record is processing. A requeued record or a record already marked with an
 // error will not be updated. This method returns a boolean flag indicating if the record was updated.
 func (s *store) MarkErrored(ctx context.Context, id int, failureMessage string, options MarkFinalOptions) (_ bool, err error) {
-	ctx, endObservation := s.operations.markErrored.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.markErrored.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("id", id),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -889,7 +889,7 @@ RETURNING {id}
 // if the current state of the record is processing. A requeued record or a record already marked with an
 // error will not be updated. This method returns a boolean flag indicating if the record was updated.
 func (s *store) MarkFailed(ctx context.Context, id int, failureMessage string, options MarkFinalOptions) (_ bool, err error) {
-	ctx, endObservation := s.operations.markFailed.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.markFailed.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("id", id),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -924,7 +924,7 @@ const defaultResetFailureMessage = "job processor died while handling this messa
 // identifiers the age of the record's last heartbeat timestamp for each record reset to queued and failed states,
 // respectively.
 func (s *store) ResetStalled(ctx context.Context) (resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs map[int]time.Duration, err error) {
-	ctx, trace, endObservation := s.operations.resetStalled.WithAndLogger(ctx, &err, observation.Args{})
+	ctx, trace, endObservation := s.operations.resetStalled.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	now := s.now()

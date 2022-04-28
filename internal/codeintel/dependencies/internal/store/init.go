@@ -3,13 +3,13 @@ package store
 import (
 	"sync"
 
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 var (
@@ -23,7 +23,7 @@ func GetStore(db database.DB) *Store {
 	// it with this package level sync.Once.
 	opsOnce.Do(func() {
 		ops = newOperations(&observation.Context{
-			Logger:     log15.Root(),
+			Logger:     log.Scoped("dependencies.store", "dependencies store"),
 			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 			Registerer: prometheus.DefaultRegisterer,
 		})

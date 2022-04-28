@@ -82,16 +82,18 @@ public class SchemeHandler extends CefResourceHandlerAdapter {
     }
 
     private boolean loadContent(String resName) {
-        InputStream inStream = getClass().getResourceAsStream(resName);
-        if (inStream != null) {
-            try {
+        try (
+            InputStream inStream = getClass().getResourceAsStream(resName)
+        ) {
+            if (inStream != null) {
                 ByteArrayOutputStream outFile = new ByteArrayOutputStream();
-                int readByte = -1;
+                int readByte;
                 while ((readByte = inStream.read()) >= 0) outFile.write(readByte);
                 this.data = outFile.toByteArray();
                 return true;
-            } catch (IOException e) {
             }
+        } catch (IOException e) {
+            return false;
         }
         return false;
     }

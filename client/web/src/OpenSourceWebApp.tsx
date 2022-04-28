@@ -48,7 +48,6 @@ export const OpenSourceWebApp: React.FunctionComponent = () => (
         routes={routes}
         keyboardShortcuts={KEYBOARD_SHORTCUTS}
         codeIntelligenceEnabled={false}
-        codeIntelligenceRepositoryMenu={undefined}
         batchChangesEnabled={false}
         searchContextsEnabled={false}
     />

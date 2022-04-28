@@ -7,6 +7,7 @@ import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 import { asError, isErrorLike, ErrorLike } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { useInputValidation, deriveInputClassName } from '@sourcegraph/shared/src/util/useInputValidation'
+import { screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { LoaderButton } from '../../../components/LoaderButton'
@@ -56,6 +57,8 @@ export const AddUserEmailForm: FunctionComponent<Props> = ({ user, className, on
                 )
 
                 eventLogger.log('NewUserEmailAddressAdded')
+                screenReaderAnnounce('Email address added')
+
                 overrideEmailState({ value: '' })
                 setStatusOrError(undefined)
 

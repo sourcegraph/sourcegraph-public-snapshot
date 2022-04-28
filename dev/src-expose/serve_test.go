@@ -143,11 +143,7 @@ func testReposHandler(t *testing.T, h http.Handler, repos []Repo) {
 }
 
 func gitInitRepos(t *testing.T, names ...string) string {
-	root, err := os.MkdirTemp("", "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { os.RemoveAll(root) })
+	root := t.TempDir()
 	root = filepath.Join(root, "repos-root")
 
 	for _, name := range names {
@@ -165,11 +161,7 @@ func gitInitRepos(t *testing.T, names ...string) string {
 }
 
 func TestIgnoreGitSubmodules(t *testing.T) {
-	root, err := os.MkdirTemp("", "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { os.RemoveAll(root) })
+	root := t.TempDir()
 
 	if err := os.MkdirAll(filepath.Join(root, "dir"), os.ModePerm); err != nil {
 		t.Fatal(err)

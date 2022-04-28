@@ -41,7 +41,7 @@ func (s *Store) WriteDocumentationPages(
 	repositoryNameID int,
 	languageNameID int,
 ) (count uint32, err error) {
-	ctx, trace, endObservation := s.operations.writeDocumentationPages.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := s.operations.writeDocumentationPages.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", upload.ID),
 		log.String("repo", upload.RepositoryName),
 		log.String("commit", upload.Commit),
@@ -124,7 +124,7 @@ FROM t_lsif_data_documentation_pages source
 
 // WriteDocumentationPathInfo is called (transactionally) from the precise-code-intel-worker.
 func (s *Store) WriteDocumentationPathInfo(ctx context.Context, bundleID int, documentationPathInfo chan *precise.DocumentationPathInfoData) (count uint32, err error) {
-	ctx, trace, endObservation := s.operations.writeDocumentationPathInfo.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := s.operations.writeDocumentationPathInfo.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -190,7 +190,7 @@ FROM t_lsif_data_documentation_path_info source
 
 // WriteDocumentationMappings is called (transactionally) from the precise-code-intel-worker.
 func (s *Store) WriteDocumentationMappings(ctx context.Context, bundleID int, mappings chan precise.DocumentationMapping) (count uint32, err error) {
-	ctx, trace, endObservation := s.operations.writeDocumentationMappings.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := s.operations.writeDocumentationMappings.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -256,7 +256,7 @@ FROM t_lsif_data_documentation_mappings source
 // outside of a long-running transaction to reduce lock contention between shared rows being held longer
 // than necessary.
 func (s *Store) WriteDocumentationSearchPrework(ctx context.Context, upload dbstore.Upload, repo *types.Repo, isDefaultBranch bool) (_ int, _ int, err error) {
-	ctx, endObservation := s.operations.writeDocumentationSearchPrework.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.writeDocumentationSearchPrework.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repo", upload.RepositoryName),
 		log.Int("bundleID", upload.ID),
 	}})
@@ -304,7 +304,7 @@ func (s *Store) WriteDocumentationSearch(
 	repositoryNameID int,
 	languageNameID int,
 ) (err error) {
-	ctx, endObservation := s.operations.writeDocumentationSearch.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.writeDocumentationSearch.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repo", upload.RepositoryName),
 		log.Int("bundleID", upload.ID),
 		log.Int("pages", len(pages)),

@@ -296,11 +296,7 @@ func TestServer_handleP4Exec(t *testing.T) {
 }
 
 func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_packed_refs(b *testing.B) {
-	tmp, err := os.MkdirTemp("", "gitserver_test")
-	if err != nil {
-		b.Fatal(err)
-	}
-	defer os.RemoveAll(tmp)
+	tmp := b.TempDir()
 
 	dir := filepath.Join(tmp, ".git")
 	gitDir := GitDir(dir)
@@ -312,7 +308,7 @@ func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_packed_refs(b *testing.B) {
 	// This simulates the most amount of work quickRevParseHead has to do, and
 	// is also the most common in prod. That is where the final rev is in
 	// packed-refs.
-	err = os.WriteFile(filepath.Join(dir, "HEAD"), []byte(fmt.Sprintf("ref: %s\n", masterRef)), 0600)
+	err := os.WriteFile(filepath.Join(dir, "HEAD"), []byte(fmt.Sprintf("ref: %s\n", masterRef)), 0600)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -374,11 +370,7 @@ func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_packed_refs(b *testing.B) {
 }
 
 func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_unpacked_refs(b *testing.B) {
-	tmp, err := os.MkdirTemp("", "gitserver_test")
-	if err != nil {
-		b.Fatal(err)
-	}
-	defer os.RemoveAll(tmp)
+	tmp := b.TempDir()
 
 	dir := filepath.Join(tmp, ".git")
 	gitDir := GitDir(dir)
@@ -1236,6 +1228,32 @@ func TestSyncRepoState(t *testing.T) {
 	if gr.CloneStatus != types.CloneStatusCloned {
 		t.Fatalf("Want %v, got %v", types.CloneStatusCloned, gr.CloneStatus)
 	}
+
+	t.Run("sync deleted repo", func(t *testing.T) {
+		// Fake setting an incorrect status
+		if err := database.GitserverRepos(db).SetCloneStatus(ctx, dbRepo.Name, types.CloneStatusUnknown, hostname); err != nil {
+			t.Fatal(err)
+		}
+
+		// We should continue to sync deleted repos
+		if err := database.Repos(db).Delete(ctx, dbRepo.ID); err != nil {
+			t.Fatal(err)
+		}
+
+		err = s.syncRepoState(gitserver.GitServerAddresses{Addresses: []string{hostname}}, 10, 10, true)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		gr, err := database.GitserverRepos(db).GetByID(ctx, dbRepo.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if gr.CloneStatus != types.CloneStatusCloned {
+			t.Fatalf("Want %v, got %v", types.CloneStatusCloned, gr.CloneStatus)
+		}
+	})
 }
 
 type BatchLogTest struct {
