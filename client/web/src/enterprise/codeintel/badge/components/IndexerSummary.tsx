@@ -55,19 +55,19 @@ export const IndexerSummary: React.FunctionComponent<IndexerSummaryProps> = ({
     const telemetricRedirectClassName = classNames('m-0 p-0', styles.telemetricRedirect)
 
     return (
-        <div className="px-2 py-1">
+        <div className={classNames('px-2 py-1', styles.badgeWrapper)}>
             <div className="d-flex align-items-center">
                 <div className="px-2 py-1 text-uppercase">
                     {summary.uploads.length + summary.indexes.length > 0 ? (
-                        <Badge variant="success" className={className}>
+                        <Badge variant="success" small={true} className={className}>
                             Enabled
                         </Badge>
                     ) : summary.indexer?.url ? (
-                        <Badge variant="secondary" className={className}>
+                        <Badge variant="secondary" small={true} className={className}>
                             Configurable
                         </Badge>
                     ) : (
-                        <Badge variant="outlineSecondary" className={className}>
+                        <Badge variant="outlineSecondary" small={true} className={className}>
                             Unavailable
                         </Badge>
                     )}
