@@ -1409,7 +1409,7 @@
       "group": "Authentication"
     },
     "auth.unlockAccountLinkSigningKey": {
-      "description": "Base64 encoded HMAC Signing key to sign a JWT token, which is attached to each invitation URL.",
+      "description": "Base64-encoded HMAC signing key to sign the JWT token for account unlock URLs",
       "type": "string",
       "group": "Authentication"
     },
