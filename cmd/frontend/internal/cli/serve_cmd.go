@@ -127,12 +127,14 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 	})
 	defer syncLogs()
 
+	logger := sglog.Scoped("server", "the frontend server program")
+
 	ready := make(chan struct{})
 	go debugserver.NewServerRoutine(ready).Start()
 
 	sqlDB, err := InitDB()
 	if err != nil {
-		log.Fatalf("ERROR: %v", err)
+		return err
 	}
 	db := database.NewDB(sqlDB)
 
@@ -140,20 +142,20 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 		log15.Warn("Skipping out-of-band migrations check")
 	} else {
 		observationContext := &observation.Context{
-			Logger:     log15.Root(),
+			Logger:     logger,
 			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 			Registerer: prometheus.DefaultRegisterer,
 		}
 		outOfBandMigrationRunner := oobmigration.NewRunnerWithDB(db, oobmigration.RefreshInterval, observationContext)
 
 		if err := oobmigration.ValidateOutOfBandMigrationRunner(ctx, db, outOfBandMigrationRunner); err != nil {
-			log.Fatalf("failed to validate out of band migrations: %v", err)
+			return errors.Wrap(err, "failed to validate out of band migrations")
 		}
 	}
 
 	// override site config first
 	if err := overrideSiteConfig(ctx, db); err != nil {
-		log.Fatalf("failed to apply site config overrides: %v", err)
+		return errors.Wrap(err, "failed to apply site config overrides")
 	}
 	globals.ConfigurationServerFrontendOnly = conf.InitConfigurationServerFrontendOnly(&configurationSource{db: db})
 	conf.Init()
@@ -161,17 +163,17 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 
 	// now we can init the keyring, as it depends on site config
 	if err := keyring.Init(ctx); err != nil {
-		log.Fatalf("failed to initialize encryption keyring: %v", err)
+		return errors.Wrap(err, "failed to initialize encryption keyring")
 	}
 
 	if err := overrideGlobalSettings(ctx, db); err != nil {
-		log.Fatalf("failed to override global settings: %v", err)
+		return errors.Wrap(err, "failed to override global settings")
 	}
 
 	// now the keyring is configured it's safe to override the rest of the config
 	// and that config can access the keyring
 	if err := overrideExtSvcConfig(ctx, db); err != nil {
-		log.Fatalf("failed to override external service config: %v", err)
+		return errors.Wrap(err, "failed to override external service config")
 	}
 
 	// Filter trace logs
@@ -187,7 +189,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 
 	authz.DefaultSubRepoPermsChecker, err = authz.NewSubRepoPermsClient(database.SubRepoPerms(db))
 	if err != nil {
-		log.Fatalf("Failed to create sub-repo client: %v", err)
+		return errors.Wrap(err, "Failed to create sub-repo client")
 	}
 	ui.InitRouter(db, enterprise.CodeIntelResolver)
 
@@ -287,11 +289,9 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 	}
 
 	if printLogo {
-		fmt.Println(" ")
-		fmt.Println(logoColor)
-		fmt.Println(" ")
+		logger.Info(fmt.Sprintf("\n\n%s\n\n", logoColor))
 	}
-	fmt.Printf("✱ Sourcegraph is ready at: %s\n", globals.ExternalURL())
+	logger.Info(fmt.Sprintf("✱ Sourcegraph is ready at: %s\n", globals.ExternalURL()))
 	close(ready)
 
 	goroutine.MonitorBackgroundRoutines(context.Background(), routines...)

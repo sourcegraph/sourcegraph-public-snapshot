@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-enry/go-enry/v2"
 	"github.com/grafana/regexp"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 )

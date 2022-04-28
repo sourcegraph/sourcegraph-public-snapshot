@@ -18,7 +18,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
-	workerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type SyncWorkerOptions struct {
@@ -101,7 +102,7 @@ func newWorkerMetrics(r prometheus.Registerer) workerutil.WorkerMetrics {
 		observationContext = &observation.TestContext
 	} else {
 		observationContext = &observation.Context{
-			Logger:     log15.Root(),
+			Logger:     log.Scoped("sync_worker", ""),
 			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 			Registerer: r,
 		}

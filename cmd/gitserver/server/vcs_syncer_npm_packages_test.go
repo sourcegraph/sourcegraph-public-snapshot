@@ -43,16 +43,14 @@ const (
 )
 
 func TestNoMaliciousFilesNpm(t *testing.T) {
-	dir, err := os.MkdirTemp("", "")
-	assert.Nil(t, err)
-	defer os.RemoveAll(dir)
+	dir := t.TempDir()
 
 	extractPath := path.Join(dir, "extracted")
 	assert.Nil(t, os.Mkdir(extractPath, os.ModePerm))
 
 	tgz := bytes.NewReader(createMaliciousTgz(t))
 
-	err = decompressTgz(tgz, extractPath)
+	err := decompressTgz(tgz, extractPath)
 	assert.Nil(t, err) // Malicious files are skipped
 
 	dirEntries, err := os.ReadDir(extractPath)
@@ -78,12 +76,7 @@ func createMaliciousTgz(t *testing.T) []byte {
 }
 
 func TestNpmCloneCommand(t *testing.T) {
-	dir, err := os.MkdirTemp("", "")
-	require.NoError(t, err)
-
-	t.Cleanup(func() {
-		require.NoError(t, os.RemoveAll(dir))
-	})
+	dir := t.TempDir()
 
 	tgz1 := createTgz(t, []fileInfo{{exampleJSFilepath, []byte(exampleJSFileContents)}})
 	tgz2 := createTgz(t, []fileInfo{{exampleTSFilepath, []byte(exampleTSFileContents)}})
@@ -260,9 +253,7 @@ func TestDecompressTgz(t *testing.T) {
 
 	for i, testData := range table {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			dir, err := os.MkdirTemp("", "")
-			require.NoError(t, err)
-			t.Cleanup(func() { require.NoError(t, os.RemoveAll(dir)) })
+			dir := t.TempDir()
 
 			var fileInfos []fileInfo
 			for _, path := range testData.paths {
@@ -320,9 +311,7 @@ func testDecompressTgzNoOOBImpl(t *testing.T, entries []tar.Header) {
 
 	reader := bytes.NewReader(buffer.Bytes())
 
-	outDir, err := os.MkdirTemp("", "decompress-oobfix-")
-	require.Nil(t, err)
-	defer os.RemoveAll(outDir)
+	outDir := t.TempDir()
 
 	require.NotPanics(t, func() {
 		decompressTgz(reader, outDir)

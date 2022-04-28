@@ -46,7 +46,7 @@ func scanCommitGraphView(rows *sql.Rows, queryErr error) (_ *commitgraph.CommitG
 
 // HasRepository determines if there is LSIF data for the given repository.
 func (s *Store) HasRepository(ctx context.Context, repositoryID int) (_ bool, err error) {
-	ctx, endObservation := s.operations.hasRepository.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.hasRepository.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -62,7 +62,7 @@ SELECT 1 FROM lsif_uploads WHERE state NOT IN ('deleted', 'deleting') AND reposi
 
 // HasCommit determines if the given commit is known for the given repository.
 func (s *Store) HasCommit(ctx context.Context, repositoryID int, commit string) (_ bool, err error) {
-	ctx, endObservation := s.operations.hasCommit.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.hasCommit.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 		log.String("commit", commit),
 	}})
@@ -89,7 +89,7 @@ SELECT
 
 // MarkRepositoryAsDirty marks the given repository's commit graph as out of date.
 func (s *Store) MarkRepositoryAsDirty(ctx context.Context, repositoryID int) (err error) {
-	ctx, endObservation := s.operations.markRepositoryAsDirty.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.markRepositoryAsDirty.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -127,7 +127,7 @@ func scanIntPairs(rows *sql.Rows, queryErr error) (_ map[int]int, err error) {
 // DirtyRepositories returns a map from repository identifiers to a dirty token for each repository whose commit
 // graph is out of date. This token should be passed to CalculateVisibleUploads in order to unmark the repository.
 func (s *Store) DirtyRepositories(ctx context.Context) (_ map[int]int, err error) {
-	ctx, trace, endObservation := s.operations.dirtyRepositories.WithAndLogger(ctx, &err, observation.Args{})
+	ctx, trace, endObservation := s.operations.dirtyRepositories.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	repositories, err := scanIntPairs(s.Store.Query(ctx, sqlf.Sprintf(dirtyRepositoriesQuery)))
@@ -152,7 +152,7 @@ SELECT ldr.repository_id, ldr.dirty_token
 // only repositories that would be returned by DirtyRepositories. This method returns a duration of zero if there
 // are no stale repositories.
 func (s *Store) MaxStaleAge(ctx context.Context) (_ time.Duration, err error) {
-	ctx, endObservation := s.operations.maxStaleAge.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.maxStaleAge.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	ageSeconds, ok, err := basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(maxStaleAgeQuery)))
@@ -180,7 +180,7 @@ SELECT EXTRACT(EPOCH FROM NOW() - ldr.updated_at)::integer AS age
 // CommitsVisibleToUpload returns the set of commits for which the given upload can answer code intelligence queries.
 // To paginate, supply the token returned from this method to the invocation for the next page.
 func (s *Store) CommitsVisibleToUpload(ctx context.Context, uploadID, limit int, token *string) (_ []string, nextToken *string, err error) {
-	ctx, endObservation := s.operations.commitsVisibleToUpload.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.commitsVisibleToUpload.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("uploadID", uploadID),
 		log.Int("limit", limit),
 	}})
@@ -235,7 +235,7 @@ LIMIT %s
 // CommitGraphMetadata returns whether or not the commit graph for the given repository is stale, along with the date of
 // the most recent commit graph refresh for the given repository.
 func (s *Store) CommitGraphMetadata(ctx context.Context, repositoryID int) (stale bool, updatedAt *time.Time, err error) {
-	ctx, endObservation := s.operations.commitGraphMetadata.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.commitGraphMetadata.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -335,7 +335,7 @@ func (s *Store) calculateVisibleUploadsInternal(
 	dirtyToken int,
 	now *sqlf.Query,
 ) (err error) {
-	ctx, trace, endObservation := s.operations.calculateVisibleUploads.WithAndLogger(ctx, &err, observation.Args{
+	ctx, trace, endObservation := s.operations.calculateVisibleUploads.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", repositoryID),
 			log.Int("numCommitGraphKeys", len(commitGraph.Order())),
@@ -492,7 +492,7 @@ WHERE repository_id = %s
 // caused massive table bloat on some instances. Storing into a temporary table and then inserting/updating/deleting
 // records into the persisted table minimizes the number of tuples we need to touch and drastically reduces table bloat.
 func (s *Store) writeVisibleUploads(ctx context.Context, sanitizedInput *sanitizedCommitInput) (err error) {
-	ctx, trace, endObservation := s.operations.writeVisibleUploads.WithAndLogger(ctx, &err, observation.Args{})
+	ctx, trace, endObservation := s.operations.writeVisibleUploads.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	if err := s.createTemporaryNearestUploadsTables(ctx); err != nil {
@@ -601,7 +601,7 @@ CREATE TEMPORARY TABLE t_lsif_uploads_visible_at_tip (
 // persistNearestUploads modifies the lsif_nearest_uploads table so that it has same data
 // as t_lsif_nearest_uploads for the given repository.
 func (s *Store) persistNearestUploads(ctx context.Context, repositoryID int) (err error) {
-	ctx, trace, endObservation := s.operations.persistNearestUploads.WithAndLogger(ctx, &err, observation.Args{})
+	ctx, trace, endObservation := s.operations.persistNearestUploads.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	rowsInserted, rowsUpdated, rowsDeleted, err := s.bulkTransfer(
@@ -652,7 +652,7 @@ WHERE
 // persistNearestUploadsLinks modifies the lsif_nearest_uploads_links table so that it has same
 // data as t_lsif_nearest_uploads_links for the given repository.
 func (s *Store) persistNearestUploadsLinks(ctx context.Context, repositoryID int) (err error) {
-	ctx, trace, endObservation := s.operations.persistNearestUploadsLinks.WithAndLogger(ctx, &err, observation.Args{})
+	ctx, trace, endObservation := s.operations.persistNearestUploadsLinks.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	rowsInserted, rowsUpdated, rowsDeleted, err := s.bulkTransfer(
@@ -704,7 +704,7 @@ WHERE
 // persistUploadsVisibleAtTip modifies the lsif_uploads_visible_at_tip table so that it has same
 // data as t_lsif_uploads_visible_at_tip for the given repository.
 func (s *Store) persistUploadsVisibleAtTip(ctx context.Context, repositoryID int) (err error) {
-	ctx, trace, endObservation := s.operations.persistUploadsVisibleAtTip.WithAndLogger(ctx, &err, observation.Args{})
+	ctx, trace, endObservation := s.operations.persistUploadsVisibleAtTip.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	rowsInserted, rowsUpdated, rowsDeleted, err := s.bulkTransfer(

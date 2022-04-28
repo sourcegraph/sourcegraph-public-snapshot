@@ -237,7 +237,7 @@ func (r *workHandler) searchHandler(ctx context.Context, job *Job, series *types
 	}
 	defer func() { err = tx.Done(err) }()
 
-	if job.PersistMode == string(store.SnapshotMode) {
+	if store.PersistMode(job.PersistMode) == store.SnapshotMode {
 		// The purpose of the snapshot is for low fidelity but recently updated data points.
 		// We store one snapshot of an insight at any time, so we prune the table whenever adding a new series.
 		if err := tx.DeleteSnapshots(ctx, series); err != nil {
@@ -271,14 +271,26 @@ func (r *workHandler) computeHandler(ctx context.Context, job *Job, series *type
 	if series.JustInTime {
 		return errors.Newf("just in time series are not eligible for background processing, series_id: %s", series.ID)
 	}
-	if store.PersistMode(job.PersistMode) != store.RecordMode {
-		return nil
+
+	tx, err := r.insightsStore.Transact(ctx)
+	if err != nil {
+		return err
 	}
+	defer func() { err = tx.Done(err) }()
+
+	if store.PersistMode(job.PersistMode) == store.SnapshotMode {
+		// The purpose of the snapshot is for low fidelity but recently updated data points.
+		// We store one snapshot of an insight at any time, so we prune the table whenever adding a new series.
+		if err := tx.DeleteSnapshots(ctx, series); err != nil {
+			return err
+		}
+	}
+
 	recordings, err := r.generateComputeRecordings(ctx, job, recordTime)
 	if err != nil {
 		return err
 	}
-	if recordErr := r.insightsStore.RecordSeriesPoints(ctx, recordings); recordErr != nil {
+	if recordErr := tx.RecordSeriesPoints(ctx, recordings); recordErr != nil {
 		err = errors.Append(err, errors.Wrap(recordErr, "RecordSeriesPointsCapture"))
 	}
 	return err
@@ -307,7 +319,7 @@ func (r *workHandler) searchStreamHandler(ctx context.Context, job *Job, series 
 	}
 	defer func() { err = tx.Done(err) }()
 
-	if job.PersistMode == string(store.SnapshotMode) {
+	if store.PersistMode(job.PersistMode) == store.SnapshotMode {
 		// The purpose of the snapshot is for low fidelity but recently updated data points.
 		// We store one snapshot of an insight at any time, so we prune the table whenever adding a new series.
 		if err := tx.DeleteSnapshots(ctx, series); err != nil {

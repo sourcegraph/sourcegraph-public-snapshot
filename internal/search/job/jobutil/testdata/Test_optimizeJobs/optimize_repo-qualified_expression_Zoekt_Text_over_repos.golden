@@ -1,0 +1,78 @@
+INPUT:
+
+repo:derp foo and bar not baz
+
+BASE:
+
+(ALERT
+  (TIMEOUT
+    20s
+    (LIMIT
+      500
+      (AND
+        (LIMIT
+          40000
+          (PARALLEL
+            REPOPAGER
+              (PARALLEL
+                ZoektRepoSubset
+                Searcher))
+            RepoSearch
+            ComputeExcludedRepos))
+        (LIMIT
+          40000
+          (PARALLEL
+            REPOPAGER
+              (PARALLEL
+                ZoektRepoSubset
+                Searcher))
+            RepoSearch
+            ComputeExcludedRepos))
+        (LIMIT
+          40000
+          (PARALLEL
+            REPOPAGER
+              (PARALLEL
+                ZoektRepoSubset
+                Searcher))
+            RepoSearch
+            ComputeExcludedRepos))))))
+
+OPTIMIZED:
+
+(ALERT
+  (TIMEOUT
+    20s
+    (LIMIT
+      500
+      (PARALLEL
+        REPOPAGER
+          ZoektRepoSubset)
+        (AND
+          (LIMIT
+            40000
+            (PARALLEL
+              REPOPAGER
+                (PARALLEL
+                  NoopJob
+                  Searcher))
+              RepoSearch
+              ComputeExcludedRepos))
+          (LIMIT
+            40000
+            (PARALLEL
+              REPOPAGER
+                (PARALLEL
+                  NoopJob
+                  Searcher))
+              RepoSearch
+              ComputeExcludedRepos))
+          (LIMIT
+            40000
+            (PARALLEL
+              REPOPAGER
+                (PARALLEL
+                  NoopJob
+                  Searcher))
+              RepoSearch
+              ComputeExcludedRepos)))))))

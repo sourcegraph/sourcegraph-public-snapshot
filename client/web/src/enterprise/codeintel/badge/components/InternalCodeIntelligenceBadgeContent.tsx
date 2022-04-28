@@ -11,12 +11,12 @@ import { UseCodeIntelStatusPayload } from '../hooks/useCodeIntelStatus'
 
 import { UploadOrIndexMetaTable } from './UploadOrIndexMetaTable'
 
-export type InternalBadgeContentProps = SettingsCascadeProps & {
+export type InternalCodeIntelligenceBadgeContentProps = SettingsCascadeProps & {
     data: UseCodeIntelStatusPayload
     now?: () => Date
 }
 
-export const InternalBadgeContent: React.FunctionComponent<InternalBadgeContentProps> = ({
+export const InternalCodeIntelligenceBadgeContent: React.FunctionComponent<InternalCodeIntelligenceBadgeContentProps> = ({
     data,
     now,
     settingsCascade,
