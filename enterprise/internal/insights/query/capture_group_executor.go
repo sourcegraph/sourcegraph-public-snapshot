@@ -73,7 +73,7 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 	log15.Debug("Generated repoIds", "repoids", repoIds)
 
 	frames := BuildFrames(7, interval, c.clock())
-	pivotedStream := make(map[string]timeCounts)
+	pivoted := make(map[string]timeCounts)
 
 	for _, repository := range repositories {
 		firstCommit, err := git.FirstEverCommit(ctx, c.db, api.RepoName(repository), authz.DefaultSubRepoPermsChecker)
@@ -115,19 +115,18 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 
 			for _, timeGroupElement := range grouped {
 				value := timeGroupElement.Value
-				if _, ok := pivotedStream[value]; !ok {
-					pivotedStream[value] = generateTimes(plan)
+				if _, ok := pivoted[value]; !ok {
+					pivoted[value] = generateTimes(plan)
 				}
-				pivotedStream[value][execution.RecordingTime] = timeGroupElement.Count
+				pivoted[value][execution.RecordingTime] = timeGroupElement.Count
 				for _, children := range execution.SharedRecordings {
-					pivotedStream[value][children] += timeGroupElement.Count
+					pivoted[value][children] += timeGroupElement.Count
 				}
 			}
 		}
 	}
 
-	var calculated []GeneratedTimeSeries
-	calculated = makeTimeSeries(pivotedStream)
+	calculated := makeTimeSeries(pivoted)
 	return calculated, nil
 }
 
