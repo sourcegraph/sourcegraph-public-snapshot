@@ -2217,7 +2217,6 @@ func testSyncDoesNotOverwriteUpdatedConfig(store *repos.Store) func(*testing.T) 
 
 		now := time.Now()
 
-		// create fake source (one user and one org)
 		svc := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "Github - SyncDoesNotOverwriteUpdatedConfig",
