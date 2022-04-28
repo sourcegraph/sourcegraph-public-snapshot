@@ -145,7 +145,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 	options := database.ReposListOptions{
 		IncludePatterns:       includePatterns,
 		Names:                 depNames,
-		ExcludePattern:        search.UnionRegExps(excludePatterns),
+		ExcludePattern:        query.UnionRegExps(excludePatterns),
 		CaseSensitivePatterns: op.CaseSensitiveRepoFilters,
 		Cursors:               op.Cursors,
 		// List N+1 repos so we can see if there are repos omitted due to our repo limit.
@@ -427,7 +427,7 @@ func computeExcludedRepos(ctx context.Context, db database.DB, op search.RepoOpt
 
 	options := database.ReposListOptions{
 		IncludePatterns: includePatterns,
-		ExcludePattern:  search.UnionRegExps(excludePatterns),
+		ExcludePattern:  query.UnionRegExps(excludePatterns),
 		// List N+1 repos so we can see if there are repos omitted due to our repo limit.
 		LimitOffset:            &database.LimitOffset{Limit: limit + 1},
 		NoForks:                op.NoForks,
@@ -761,7 +761,7 @@ func PrivateReposForActor(ctx context.Context, db database.DB, repoOptions searc
 		NoForks:        repoOptions.NoForks,
 		OnlyArchived:   repoOptions.OnlyArchived,
 		NoArchived:     repoOptions.NoArchived,
-		ExcludePattern: search.UnionRegExps(repoOptions.MinusRepoFilters),
+		ExcludePattern: query.UnionRegExps(repoOptions.MinusRepoFilters),
 	})
 
 	if err != nil {
