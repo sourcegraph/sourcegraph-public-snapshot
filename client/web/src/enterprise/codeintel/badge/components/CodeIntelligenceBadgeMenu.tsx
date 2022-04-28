@@ -17,7 +17,6 @@ import {
     Position,
 } from '@sourcegraph/wildcard'
 
-import { CodeIntelligenceBadgeProps as DefaultRepositoryMenuProps } from '../../../../codeintel/CodeIntelligenceBadge'
 import { LSIFUploadState, LSIFIndexState } from '../../../../graphql-operations'
 import {
     massageIndexerSupportMetadata,
@@ -26,52 +25,13 @@ import {
     useRequestLanguageSupportQuery as defaultUseRequestLanguageSupportQuery,
 } from '../hooks/useCodeIntelStatus'
 
+import { CodeIntelligenceBadgeContentProps } from './CodeIntelligenceBadgeContent'
 import { InternalCodeIntelligenceBadgeContent } from './InternalCodeIntelligenceBadgeContent'
 import { UserFacingCodeIntelligenceBadgeContent } from './UserFacingCodeIntelligenceBadgeContent'
 
-import styles from './CodeIntelligenceBadge.module.scss'
+import styles from './CodeIntelligenceBadgeMenu.module.scss'
 
-interface CodeIntelligenceBadgeStorybookProps {
-    isStorybook?: boolean
-    now?: () => Date
-    useCodeIntelStatus?: typeof defaultUseCodeIntelStatus
-    useRequestedLanguageSupportQuery?: typeof defaultUseRequestedLanguageSupportQuery
-    useRequestLanguageSupportQuery?: typeof defaultUseRequestLanguageSupportQuery
-}
-
-export interface CodeIntelligenceBadgeProps extends DefaultRepositoryMenuProps, CodeIntelligenceBadgeStorybookProps {}
-
-export const CodeIntelligenceBadgeContent: React.FunctionComponent<CodeIntelligenceBadgeProps> = props => {
-    const { data, loading, error } = defaultUseCodeIntelStatus({
-        variables: {
-            repository: props.repoName,
-            commit: props.revision,
-            path: props.filePath,
-        },
-    })
-
-    const indexerSupportMetadata = data && massageIndexerSupportMetadata(data)
-
-    return loading ? (
-        <div className="px-2 py-1">
-            <LoadingSpinner />
-        </div>
-    ) : error ? (
-        <div className="px-2 py-1">
-            <ErrorAlert prefix="Error loading repository summary" error={error} />
-        </div>
-    ) : data && indexerSupportMetadata ? (
-        <UserFacingCodeIntelligenceBadgeContent
-            repoName={props.repoName}
-            indexerSupportMetadata={indexerSupportMetadata}
-            useRequestedLanguageSupportQuery={defaultUseRequestedLanguageSupportQuery}
-            useRequestLanguageSupportQuery={defaultUseRequestLanguageSupportQuery}
-            settingsCascade={props.settingsCascade}
-        />
-    ) : null
-}
-
-export const CodeIntelligenceBadgeMenu: React.FunctionComponent<CodeIntelligenceBadgeProps> = ({
+export const CodeIntelligenceBadgeMenu: React.FunctionComponent<CodeIntelligenceBadgeContentProps> = ({
     isStorybook,
     now,
     useCodeIntelStatus = defaultUseCodeIntelStatus,

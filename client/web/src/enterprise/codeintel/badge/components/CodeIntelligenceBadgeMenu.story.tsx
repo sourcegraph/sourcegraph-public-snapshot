@@ -12,7 +12,8 @@ import {
 } from '../../../../graphql-operations'
 import { UseCodeIntelStatusPayload, UseRequestLanguageSupportParameters } from '../hooks/useCodeIntelStatus'
 
-import { CodeIntelligenceBadgeMenu, CodeIntelligenceBadgeProps } from './CodeIntelligenceBadge'
+import { CodeIntelligenceBadgeContentProps } from './CodeIntelligenceBadgeContent'
+import { CodeIntelligenceBadgeMenu } from './CodeIntelligenceBadgeMenu'
 
 const uploadPrototype: Omit<LsifUploadFields, 'id' | 'state' | 'uploadedAt'> = {
     __typename: 'LSIFUpload',
@@ -221,7 +222,7 @@ const emptyPayload: UseCodeIntelStatusPayload = {
 
 const now = () => new Date('2020-06-15T15:25:00+00:00')
 
-const defaultProps: CodeIntelligenceBadgeProps = {
+const defaultProps: CodeIntelligenceBadgeContentProps = {
     repoName: 'repoName',
     revision: 'commitID',
     filePath: 'foo/bar/baz.bonk',
