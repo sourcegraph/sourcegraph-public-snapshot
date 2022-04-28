@@ -2,15 +2,10 @@ package search
 
 import (
 	"strings"
-	"time"
 
 	"github.com/go-enry/go-enry/v2"
 	"github.com/go-enry/go-enry/v2/data"
 	"github.com/grafana/regexp"
-
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/search/limits"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
 )
 
 // UnionRegExps separates values with a | operator to create a string
@@ -68,19 +63,3 @@ const (
 	Streaming Protocol = iota
 	Batch
 )
-
-func TimeoutDuration(b query.Basic) time.Duration {
-	d := limits.DefaultTimeout
-	maxTimeout := time.Duration(limits.SearchLimits(conf.Get()).MaxTimeoutSeconds) * time.Second
-	timeout := b.GetTimeout()
-	if timeout != nil {
-		d = *timeout
-	} else if b.Count() != nil {
-		// If `count:` is set but `timeout:` is not explicitly set, use the max timeout
-		d = maxTimeout
-	}
-	if d > maxTimeout {
-		d = maxTimeout
-	}
-	return d
-}

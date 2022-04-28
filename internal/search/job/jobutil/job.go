@@ -2,6 +2,7 @@ package jobutil
 
 import (
 	"strings"
+	"time"
 
 	"github.com/grafana/regexp"
 	"github.com/inconshreveable/log15"
@@ -9,6 +10,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
@@ -857,7 +859,7 @@ func NewJob(inputs *run.SearchInputs, plan query.Plan, optimize Pass) (job.Job, 
 
 		// Apply limits and Timeouts.
 		maxResults := q.ToParseTree().MaxResults(inputs.DefaultLimit())
-		timeout := search.TimeoutDuration(q)
+		timeout := TimeoutDuration(q)
 		child = NewTimeoutJob(timeout, NewLimitJob(maxResults, child))
 
 		children = append(children, child)
@@ -892,4 +894,20 @@ func computeFileMatchLimit(q query.Basic, p search.Protocol) int {
 		return limits.DefaultMaxSearchResultsStreaming
 	}
 	panic("unreachable")
+}
+
+func TimeoutDuration(b query.Basic) time.Duration {
+	d := limits.DefaultTimeout
+	maxTimeout := time.Duration(limits.SearchLimits(conf.Get()).MaxTimeoutSeconds) * time.Second
+	timeout := b.GetTimeout()
+	if timeout != nil {
+		d = *timeout
+	} else if b.Count() != nil {
+		// If `count:` is set but `timeout:` is not explicitly set, use the max timeout
+		d = maxTimeout
+	}
+	if d > maxTimeout {
+		d = maxTimeout
+	}
+	return d
 }
