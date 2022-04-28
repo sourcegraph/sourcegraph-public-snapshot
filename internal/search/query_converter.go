@@ -56,10 +56,3 @@ func LangToFileRegexp(lang string) string {
 	}
 	return UnionRegExps(patterns)
 }
-
-type Protocol int
-
-const (
-	Streaming Protocol = iota
-	Batch
-)
