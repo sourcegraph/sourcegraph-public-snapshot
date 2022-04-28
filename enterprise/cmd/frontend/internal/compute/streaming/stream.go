@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -88,6 +89,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		// Instantly send results if we have not sent any yet.
 		if first && matchesBuf.Len() > 0 {
+			log15.Info("flushing first now")
 			first = false
 			matchesFlush()
 		}

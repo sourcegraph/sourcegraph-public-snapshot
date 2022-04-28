@@ -60,6 +60,7 @@ func NewComputeStream(ctx context.Context, db database.DB, query string) (<-chan
 	if err != nil {
 		close(eventsC)
 		close(errorC)
+
 		return eventsC, func() error { return err }
 	}
 
