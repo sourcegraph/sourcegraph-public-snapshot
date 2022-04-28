@@ -1,13 +1,15 @@
-import React, { ChangeEvent, useState } from 'react'
+import { ChangeEvent, FunctionComponent, useState } from 'react'
 
 import { gql, useQuery } from '@apollo/client'
 import { Combobox, ComboboxInput, ComboboxList, ComboboxOption, ComboboxOptionText } from '@reach/combobox'
+import classNames from 'classnames'
+import { noop } from 'lodash'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Link, LoadingSpinner } from '@sourcegraph/wildcard'
+import { InputProps, Link, LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { GetSearchContextsResult } from '../../../../../../../../../../graphql-operations'
-import { DrillDownRegExpInput } from '../drill-down-reg-exp-input/DrillDownRegExpInput'
+import { GetSearchContextsResult } from '../../../../../../../../../graphql-operations'
+import { DrillDownInput } from '../drill-down-input/DrillDownInput'
 
 import styles from './DrillDownSearchContextFilter.module.scss'
 
@@ -27,51 +29,50 @@ export const SEARCH_CONTEXT_GQL = gql`
     }
 `
 
-interface DrillDownSearchContextFilter {}
+interface DrillDownSearchContextFilter extends InputProps {}
 
 interface SearchContextState {
-    query: string
     showSuggest: boolean
 }
 
 const INITIAL_STATE: SearchContextState = {
-    query: '',
     showSuggest: true,
 }
 
-export const DrillDownSearchContextFilter: React.FunctionComponent<DrillDownSearchContextFilter> = props => {
+export const DrillDownSearchContextFilter: FunctionComponent<DrillDownSearchContextFilter> = props => {
+    const { value = '', className, onChange = noop, ...attributes } = props
+
     const [searchState, setSearchState] = useState<SearchContextState>(INITIAL_STATE)
 
     const handleSelect = (value: string): void => {
-        console.log('select')
-
         setSearchState({
-            query: value,
             showSuggest: false,
         })
+
+        onChange(value)
     }
 
     const handleChange = (event: ChangeEvent<HTMLInputElement>): void => {
-        console.log('input change')
-
         setSearchState({
-            query: event.target.value,
             showSuggest: true,
         })
+
+        onChange(event)
     }
 
     return (
         <Combobox onSelect={handleSelect}>
             <ComboboxInput
-                as={DrillDownRegExpInput}
+                {...attributes}
+                as={DrillDownInput}
                 placeholder="global (default)"
                 prefix="context:"
-                value={searchState.query}
+                value={value.toString()}
+                className={classNames(className, styles.input)}
                 onChange={handleChange}
-                className={styles.input}
             />
 
-            {searchState.showSuggest && <SuggestPanel query={searchState.query} />}
+            {searchState.showSuggest && <SuggestPanel query={value.toString()} />}
         </Combobox>
     )
 }
@@ -80,7 +81,7 @@ interface SuggestPanelProps {
     query: string
 }
 
-const SuggestPanel: React.FunctionComponent<SuggestPanelProps> = props => {
+const SuggestPanel: FunctionComponent<SuggestPanelProps> = props => {
     const { query } = props
 
     const { data, loading, error } = useQuery<GetSearchContextsResult>(SEARCH_CONTEXT_GQL, {

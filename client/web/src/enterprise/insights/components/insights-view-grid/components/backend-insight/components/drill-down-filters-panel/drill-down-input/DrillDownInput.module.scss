@@ -11,6 +11,10 @@
     font-weight: normal;
 }
 
+.input-container {
+    flex: 1;
+}
+
 .input {
     font-size: inherit;
     border-top-left-radius: 0;
@@ -26,6 +30,7 @@
     display: flex;
     align-items: center;
     margin-bottom: 0.5rem;
+    font-size: 0.75rem;
 }
 
 .label-reset-button {

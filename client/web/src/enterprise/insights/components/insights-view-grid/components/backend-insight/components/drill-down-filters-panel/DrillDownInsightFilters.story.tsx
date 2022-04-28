@@ -1,17 +1,17 @@
-import React from 'react'
-
 import { MockedResponse } from '@apollo/client/testing/core/mocking/mockLink'
-import { Meta } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
-import { WebStory } from '../../../../../../../../../../components/WebStory'
-import { GetSearchContextsResult } from '../../../../../../../../../../graphql-operations'
+import { WebStory } from '../../../../../../../../components/WebStory'
+import { GetSearchContextsResult } from '../../../../../../../../graphql-operations'
+import { InsightFilters } from '../../../../../../core'
 
-import { DrillDownSearchContextFilter, SEARCH_CONTEXT_GQL } from './DrillDownSearchContextFilter'
+import { DrillDownInsightFilters } from './DrillDownInsightFilters'
+import { SEARCH_CONTEXT_GQL } from './search-context/DrillDownSearchContextFilter'
 
 const defaultStory: Meta = {
-    title: 'web/insights/DrillDownSearchContextFilter',
+    title: 'web/insights/DrillDownInsightFilters',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
 }
 
@@ -69,8 +69,26 @@ const CONTEXTS_GQL_MOCKS: MockedResponse<GetSearchContextsResult> = {
     },
 }
 
-export const DrillDownSearchContextFilterExample = () => (
+const ORIGINAL_FILTERS: InsightFilters = {
+    includeRepoRegexp: '',
+    excludeRepoRegexp: '',
+    context: '',
+}
+
+const FILTERS: InsightFilters = {
+    includeRepoRegexp: 'hello world loooong loooooooooooooong repo filter regular expressssssion',
+    excludeRepoRegexp: 'hello world loooong loooooooooooooong repo filter regular expressssssion',
+    context: '',
+}
+
+export const DrillDownFiltersShowcase: Story = () => (
     <MockedTestProvider mocks={[CONTEXTS_GQL_MOCKS]}>
-        <DrillDownSearchContextFilter />
+        <DrillDownInsightFilters
+            initialValues={FILTERS}
+            originalValues={ORIGINAL_FILTERS}
+            onFiltersChange={console.log}
+            onFilterSave={console.log}
+            onCreateInsightRequest={console.log}
+        />
     </MockedTestProvider>
 )

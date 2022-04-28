@@ -3,7 +3,7 @@
 }
 
 .input {
-    font-size: 0.75rem;
+    margin-bottom: 0.75rem;
 }
 
 .seperator {
@@ -16,7 +16,6 @@
     flex-direction: column;
     height: 7.5rem;
     overflow: auto;
-    margin-top: 0.75rem;
     padding-top: 0.5rem;
     border-top: 1px solid var(--border-color);
 
