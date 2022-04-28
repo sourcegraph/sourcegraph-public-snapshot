@@ -375,6 +375,17 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         !isErrorLike(props.settingsCascade.final) &&
         props.settingsCascade.final?.experimentalFeatures?.codeIntelRepositoryBadge?.enabled === true
 
+    // Remove leading repository name and possible leading revision, then compare the remaining routes to
+    // see if we should display the code intelligence badge for this route. We want this to be visible on
+    // the repo root page, as well as directory and code views, but not administrative/non-code views.
+    const matchRevisionAndRest = props.match.params.repoRevAndRest.slice(repoName.length)
+    const matchOnlyRest =
+        revision && matchRevisionAndRest.startsWith(`@${revision || ''}`)
+            ? matchRevisionAndRest.slice(revision.length + 1)
+            : matchRevisionAndRest
+    const isCodeIntelRepositoryBadgeVisibleOnRoute =
+        matchOnlyRest === '' || matchOnlyRest.startsWith('/-/tree') || matchOnlyRest.startsWith('/-/blob')
+
     const repoMatchURL = '/' + encodeURIPathComponent(repoName)
 
     const context: RepoContainerContext = {
@@ -431,7 +442,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                 )}
             </RepoHeaderContributionPortal>
 
-            {isCodeIntelRepositoryBadgeEnabled && (
+            {isCodeIntelRepositoryBadgeEnabled && isCodeIntelRepositoryBadgeVisibleOnRoute && (
                 <RepoHeaderContributionPortal
                     position="right"
                     priority={110}
