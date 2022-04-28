@@ -351,8 +351,8 @@ func toTextPatternInfo(q query.Basic, resultTypes result.Types, p search.Protoco
 	filesInclude, filesExclude := q.IncludeExcludeValues(query.FieldFile)
 	// Handle lang: and -lang: filters.
 	langInclude, langExclude := q.IncludeExcludeValues(query.FieldLang)
-	filesInclude = append(filesInclude, mapSlice(langInclude, search.LangToFileRegexp)...)
-	filesExclude = append(filesExclude, mapSlice(langExclude, search.LangToFileRegexp)...)
+	filesInclude = append(filesInclude, mapSlice(langInclude, query.LangToFileRegexp)...)
+	filesExclude = append(filesExclude, mapSlice(langExclude, query.LangToFileRegexp)...)
 	filesReposMustInclude, filesReposMustExclude := q.IncludeExcludeValues(query.FieldRepoHasFile)
 	selector, _ := filter.SelectPathFromString(q.FindValue(query.FieldSelect)) // Invariant: select is validated
 	count := count(q, p)
@@ -384,7 +384,7 @@ func toTextPatternInfo(q query.Basic, resultTypes result.Types, p search.Protoco
 
 		// Values dependent on parameters.
 		IncludePatterns:              filesInclude,
-		ExcludePattern:               search.UnionRegExps(filesExclude),
+		ExcludePattern:               query.UnionRegExps(filesExclude),
 		FilePatternsReposMustInclude: filesReposMustInclude,
 		FilePatternsReposMustExclude: filesReposMustExclude,
 		PatternMatchesPath:           resultTypes.Has(result.TypePath),

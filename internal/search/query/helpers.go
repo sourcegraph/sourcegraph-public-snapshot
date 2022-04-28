@@ -1,4 +1,4 @@
-package search
+package query
 
 import (
 	"strings"
