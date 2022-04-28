@@ -118,7 +118,11 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                 onOpenChange={opened => handleCollapseState(FilterSection.SearchContext, opened)}
             >
                 <small className={styles.sectionDescription}>
-                    Choose <Link to="">query-based search context (beta)</Link> to change the scope of this insight.
+                    Choose{' '}
+                    <Link to="/help/code_search/how-to/search_contexts#beta-query-based-search-contexts">
+                        query-based search context (beta)
+                    </Link>{' '}
+                    to change the scope of this insight.
                 </small>
 
                 <DrillDownSearchContextFilter
