@@ -72,7 +72,7 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 			frontendTests,                // ~4.5m
 			addWebApp,                    // ~5.5m
 			addBrowserExtensionUnitTests, // ~4.5m
-			addVSCExtIntegrationTests,    // ~5.5m
+			addVsceIntegrationTests,      // ~5.5m
 			addTypescriptCheck,           // ~4m
 		)
 
@@ -239,15 +239,15 @@ func getParallelTestCount(webParallelTestCount int) int {
 }
 
 // Builds and tests the VS Code extensions.
-func addVSCExtIntegrationTests(pipeline *bk.Pipeline) {
+func addVsceIntegrationTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(
 		":vscode: Puppeteer tests for VS Code extension",
 		withYarnCache(),
+		bk.Parallelism(50),
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("yarn generate"),
 		bk.Cmd("yarn --cwd client/vscode -s build:test"),
 		bk.Cmd("yarn --cwd client/vscode -s test-integration --verbose"),
-		bk.AutomaticRetry(1),
 	)
 }
 
@@ -518,8 +518,8 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 }
 
 // Release the browser extension.
-func addVSCodeExtensionReleaseSteps(pipeline *bk.Pipeline) {
-	addVSCExtIntegrationTests(pipeline)
+func addVsceReleaseSteps(pipeline *bk.Pipeline) {
+	addVsceIntegrationTests(pipeline)
 
 	pipeline.AddWait()
 

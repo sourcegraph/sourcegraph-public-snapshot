@@ -134,10 +134,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// If this is a vs code extension release branch, run the vscode-extension tests and release
 		ops = operations.NewSet(
 			addClientLintersForAllFiles,
-			addBrowserExtensionUnitTests,
-			addVSCExtIntegrationTests,
+			addVsceIntegrationTests,
 			wait,
-			addVSCodeExtensionReleaseSteps)
+			addVsceReleaseSteps)
 
 	case runtype.BextNightly:
 		// If this is a browser extension nightly build, run the browser-extension tests and
@@ -154,7 +153,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// If this is a VS Code extension nightly build, run the vsce-extension integration tests
 		ops = operations.NewSet(
 			addClientLintersForAllFiles,
-			addVSCExtIntegrationTests)
+			addVsceIntegrationTests)
 
 	case runtype.ImagePatch:
 		// only build image for the specified image in the branch name
