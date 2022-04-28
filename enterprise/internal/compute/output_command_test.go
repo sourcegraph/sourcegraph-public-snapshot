@@ -90,8 +90,8 @@ func TestRun(t *testing.T) {
 
 	autogold.Want(
 		"handles repo match via select on file match",
-		"my/awesome/repo\n").
-		Equal(t, test(`lang:ocaml content:output(.* -> $repo) select:repo`, fileMatch("a 1 b 2 c 3")))
+		"my/awesome/repo").
+		Equal(t, test(`lang:ocaml content:output((\d) -> $repo) select:repo`, fileMatch("a 1 b 2 c 3")))
 
 	autogold.Want(
 		"template substitution regexp with commit author",
