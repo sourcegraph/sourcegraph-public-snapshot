@@ -1,4 +1,3 @@
-
 # Precise code intelligence examples
 
 A list of repositories with precise code intelligence enabled to showcase
