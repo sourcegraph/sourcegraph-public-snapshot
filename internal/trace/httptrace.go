@@ -136,11 +136,10 @@ var (
 // 🚨 SECURITY: This handler is served to all clients, even on private servers to clients who have
 // not authenticated. It must not reveal any sensitive information.
 func HTTPMiddleware(next http.Handler, siteConfig conftypes.SiteConfigQuerier) http.Handler {
-	rootLogger := log.Scoped("http", "http tracing middleware")
+	logger := log.Scoped("http", "http tracing middleware")
 
 	return sentry.Recoverer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		logger := rootLogger // do not mutate root logger
 
 		// extract propagated span
 		wireContext, err := ot.GetTracer(ctx).Extract(
@@ -203,7 +202,6 @@ func HTTPMiddleware(next http.Handler, siteConfig conftypes.SiteConfigQuerier) h
 				routeName = "graphql: unknown"
 			}
 		}
-		logger = logger.With(log.String("route_name", routeName))
 		span.SetOperationName("Serve: " + routeName)
 		span.SetTag("Route", routeName)
 
@@ -235,6 +233,7 @@ func HTTPMiddleware(next http.Handler, siteConfig conftypes.SiteConfigQuerier) h
 		if m.Duration >= minDuration || m.Code >= minCode {
 			fields := make([]log.Field, 0, 20)
 			fields = append(fields,
+				log.String("route_name", routeName),
 				log.String("method", r.Method),
 				log.String("url", truncate(r.URL.String(), 100)),
 				log.Int("code", m.Code),
