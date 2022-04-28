@@ -42,7 +42,7 @@ func assertGolden(t testing.TB, expected interface{}) {
 
 // newTestClient returns a bitbucketcloud.Client that records its interactions
 // to testdata/vcr/.
-func newTestClient(t testing.TB) (*client, func()) {
+func newTestClient(t testing.TB) *client {
 	t.Helper()
 
 	cassette := filepath.Join("testdata/vcr/", normalize(t.Name()))
@@ -50,6 +50,11 @@ func newTestClient(t testing.TB) (*client, func()) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	t.Cleanup(func() {
+		if err := rec.Stop(); err != nil {
+			t.Errorf("failed to update test data: %s", err)
+		}
+	})
 
 	hc, err := httpcli.NewFactory(nil, httptestutil.NewRecorderOpt(rec)).Doer()
 	if err != nil {
@@ -65,11 +70,7 @@ func newTestClient(t testing.TB) (*client, func()) {
 		t.Fatal(err)
 	}
 
-	return cli, func() {
-		if err := rec.Stop(); err != nil {
-			t.Errorf("failed to update test data: %s", err)
-		}
-	}
+	return cli
 }
 
 var normalizer = lazyregexp.New("[^A-Za-z0-9-]+")
