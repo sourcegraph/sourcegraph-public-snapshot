@@ -32,7 +32,7 @@ export const TipsAndTricks: React.FunctionComponent<TipsAndTricksProps> = ({
     )
     return (
         <div className={classNames(styles.tipsAndTricks)}>
-            <div className={classNames('mb-2', styles.title)}>{title}</div>
+            <div className={classNames('mb-2', styles.tipsAndTricksTitle)}>{title}</div>
             <div className={styles.tipsAndTricksExamples}>
                 {examples.map(example => (
                     <div key={example.query} className={styles.tipsAndTricksExample}>
