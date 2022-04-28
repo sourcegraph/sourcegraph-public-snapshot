@@ -21,8 +21,11 @@ $filter-input-height: 1.5rem;
     }
 }
 
+$group-header-font-size: 0.875rem;
+$group-divider-height: 0.25rem;
+
 .repo-location-group {
-    margin-bottom: 0.33rem;
+    margin-bottom: $group-divider-height;
 
     &:last-child {
         margin-bottom: 0;
@@ -39,13 +42,13 @@ $filter-input-height: 1.5rem;
 
         &--repo-name {
             padding-left: 0.6rem;
-            font-size: 0.875rem;
+            font-size: $group-header-font-size;
         }
     }
 }
 
 .location-group {
-    margin-bottom: 0.33rem;
+    margin-bottom: $group-divider-height;
 
     &:last-child {
         margin-bottom: 0;
@@ -63,7 +66,7 @@ $filter-input-height: 1.5rem;
         &--filename {
             padding-left: 0.6rem;
             font-weight: 400;
-            font-size: 0.875rem;
+            font-size: $group-header-font-size;
 
             mark {
                 padding-left: 0;
