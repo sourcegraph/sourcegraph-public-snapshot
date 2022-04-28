@@ -87,6 +87,7 @@ export const IndexerSummary: React.FunctionComponent<IndexerSummaryProps> = ({
                             <TelemetricRedirect
                                 to={summary.indexer.url}
                                 label="Set up for this repository"
+                                alwaysShowLabel={true}
                                 eventName="CodeIntelligenceIndexerSetupInvestigated"
                                 className={telemetricRedirectClassName}
                             />
@@ -110,6 +111,7 @@ export const IndexerSummary: React.FunctionComponent<IndexerSummaryProps> = ({
                                     <TelemetricRedirect
                                         to={`/${repoName}/-/code-intelligence/uploads?filters=errored`}
                                         label="Latest upload processing"
+                                        alwaysShowLabel={true}
                                         eventName="CodeIntelligenceUploadErrorInvestigated"
                                         className={telemetricRedirectClassName}
                                     />{' '}
@@ -122,6 +124,7 @@ export const IndexerSummary: React.FunctionComponent<IndexerSummaryProps> = ({
                                     <TelemetricRedirect
                                         to={`/${repoName}/-/code-intelligence/indexes?filters=errored`}
                                         label="Latest indexing"
+                                        alwaysShowLabel={true}
                                         eventName="CodeIntelligenceIndexErrorInvestigated"
                                         className={telemetricRedirectClassName}
                                     />{' '}
