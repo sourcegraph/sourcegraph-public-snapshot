@@ -9,10 +9,8 @@ import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
-import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { SearchContextCtaPrompt } from './SearchContextCtaPrompt'
 import { SearchContextMenu } from './SearchContextMenu'
 
 import styles from './SearchContextDropdown.module.scss'
@@ -22,21 +20,17 @@ export interface SearchContextDropdownProps
         TelemetryProps,
         Partial<Pick<SubmitSearchProps, 'submitSearch'>>,
         PlatformContextProps<'requestGraphQL'> {
-    isSourcegraphDotCom: boolean
     showSearchContextManagement: boolean
     authenticatedUser: AuthenticatedUser | null
     query: string
     className?: string
     onEscapeMenuClose?: () => void
-    isExternalServicesUserModeAll?: boolean
+    searchContextCta?: React.ReactNode
 }
 
 export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdownProps> = props => {
     const {
-        isSourcegraphDotCom,
         authenticatedUser,
-        hasUserAddedRepositories,
-        hasUserAddedExternalServices,
         query,
         selectedSearchContextSpec,
         setSelectedSearchContextSpec,
@@ -47,10 +41,8 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         telemetryService,
         onEscapeMenuClose,
         showSearchContextManagement,
-        isExternalServicesUserModeAll,
+        searchContextCta,
     } = props
-
-    const [contextCtaDismissed, setContextCtaDismissed] = useTemporarySetting('search.contexts.ctaDismissed', false)
 
     const [isOpen, setIsOpen] = useState(false)
     const toggleOpen = useCallback(() => {
@@ -88,11 +80,6 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen])
-
-    const onCtaDismissed = (): void => {
-        setContextCtaDismissed(true)
-    }
-    const isUserAnOrgMember = authenticatedUser && authenticatedUser.organizations.nodes.length !== 0
 
     const onCloseMenu = useCallback(
         (isEscapeKey?: boolean) => {
@@ -156,15 +143,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                     fetchSearchContexts={fetchSearchContexts}
                     closeMenu={onCloseMenu}
                 />
-                {isSourcegraphDotCom && !isUserAnOrgMember && !hasUserAddedRepositories && !contextCtaDismissed && (
-                    <SearchContextCtaPrompt
-                        telemetryService={telemetryService}
-                        authenticatedUser={authenticatedUser}
-                        hasUserAddedExternalServices={hasUserAddedExternalServices}
-                        onDismiss={onCtaDismissed}
-                        isExternalServicesUserModeAll={isExternalServicesUserModeAll}
-                    />
-                )}
+                {searchContextCta}
             </DropdownMenu>
         </Dropdown>
     )

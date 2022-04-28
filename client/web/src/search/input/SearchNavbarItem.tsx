@@ -20,6 +20,7 @@ import { FuzzyFinder } from '../../components/fuzzyFinder/FuzzyFinder'
 import { useExperimentalFeatures, useNavbarQueryState, setSearchCaseSensitivity } from '../../stores'
 import { NavbarQueryState, setSearchPatternType } from '../../stores/navbarSearchQueryState'
 import { getExperimentalFeatures } from '../../util/get-experimental-features'
+import { SearchContextCtaContainer } from '../SearchContextCtaContainer'
 
 interface Props
     extends ActivationProps,
@@ -124,8 +125,13 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
                 autoFocus={autoFocus}
                 hideHelpButton={isSearchPage}
                 onHandleFuzzyFinder={setIsFuzzyFinderVisible}
-                isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
                 structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
+                searchContextCta={
+                    <SearchContextCtaContainer
+                        telemetryService={props.telemetryService}
+                        isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
+                    />
+                }
             />
             <Shortcut
                 {...KEYBOARD_SHORTCUT_FUZZY_FINDER.keybindings[0]}

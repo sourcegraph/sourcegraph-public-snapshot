@@ -20,8 +20,8 @@ import {
 import { AuthProvider, SourcegraphContext } from '../../../jscontext'
 import { GET_ORG_FEATURE_FLAG_VALUE, GITHUB_APP_FEATURE_FLAG_NAME } from '../../../org/backend'
 import { useCodeHostScopeContext } from '../../../site/CodeHostScopeAlerts/CodeHostScopeProvider'
+import { dispatch } from '../../../stores'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
 import { githubRepoScopeRequired, gitlabAPIScopeRequired, Owner } from '../cloud-ga'
 
 import { CodeHostItem, ParentWindow } from './CodeHostItem'
@@ -29,9 +29,7 @@ import { CodeHostListItem } from './CodeHostListItem'
 
 type AuthProvidersByKind = Partial<Record<ExternalServiceKind, AuthProvider>>
 
-export interface UserAddCodeHostsPageProps
-    extends Pick<UserExternalServicesOrRepositoriesUpdateProps, 'onUserExternalServicesOrRepositoriesUpdate'>,
-        TelemetryProps {
+export interface UserAddCodeHostsPageProps extends TelemetryProps {
     owner: Owner
     codeHostExternalServices: Record<string, AddExternalServiceOptions>
     routingPrefix: string
@@ -102,7 +100,6 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     codeHostExternalServices,
     routingPrefix,
     context,
-    onUserExternalServicesOrRepositoriesUpdate,
     telemetryService,
     onOrgGetStartedRefresh,
 }) => {
@@ -211,8 +208,12 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         await checkAndSetOutageAlert(services)
 
         const repoCount = fetchedServices.reduce((sum, codeHost) => sum + codeHost.repoCount, 0)
-        onUserExternalServicesOrRepositoriesUpdate(fetchedServices.length, repoCount)
-    }, [owner.id, onUserExternalServicesOrRepositoriesUpdate])
+        dispatch({
+            type: 'UserExternalServicesOrRepositoriesUpdate',
+            externalServicesCount: fetchedServices.length,
+            userRepoCount: repoCount,
+        })
+    }, [owner.id])
 
     const handleServiceUpsert = useCallback(
         (service: ListExternalServiceFields): void => {

@@ -102,6 +102,8 @@ import {
     setExperimentalFeaturesFromSettings,
     getExperimentalFeatures,
     useNavbarQueryState,
+    useAppContext,
+    dispatch,
 } from './stores'
 import { BrowserExtensionTracker } from './tracking/BrowserExtensionTracker'
 import { eventLogger } from './tracking/eventLogger'
@@ -163,9 +165,6 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
 
     selectedSearchContextSpec?: string
     defaultSearchContextSpec: string
-    hasUserAddedRepositories: boolean
-    hasUserSyncedPublicRepositories: boolean
-    hasUserAddedExternalServices: boolean
 
     /**
      * Whether globbing is enabled for filters.
@@ -230,14 +229,12 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         )
 
         setQueryStateFromURL(window.location.search)
+        useAppContext.setState({ isSourcegraphDotCom: window.context.sourcegraphDotComMode })
 
         this.state = {
             settingsCascade: EMPTY_SETTINGS_CASCADE,
             viewerSubject: siteSubjectNoAdmin(),
             defaultSearchContextSpec: 'global', // global is default for now, user will be able to change this at some point
-            hasUserAddedRepositories: false,
-            hasUserSyncedPublicRepositories: false,
-            hasUserAddedExternalServices: false,
             globbing: false,
             featureFlags: new Map<FeatureFlagName, boolean>(),
         }
@@ -272,6 +269,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                 ([settingsCascade, authenticatedUser]) => {
                     setExperimentalFeaturesFromSettings(settingsCascade)
                     setQueryStateFromSettings(settingsCascade)
+                    useAppContext.setState({ authenticatedUser: authenticatedUser ?? null })
                     this.setState({
                         settingsCascade,
                         authenticatedUser,
@@ -279,7 +277,10 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                         viewerSubject: viewerSubjectFromSettings(settingsCascade, authenticatedUser),
                     })
                 },
-                () => this.setState({ authenticatedUser: null })
+                () => {
+                    useAppContext.setState({ authenticatedUser: null })
+                    this.setState({ authenticatedUser: null })
+                }
             )
         )
 
@@ -304,9 +305,10 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                     if (!isErrorLike(result) && result !== null) {
                         const [userRepositoriesResult, externalServicesResult] = result
 
-                        this.setState({
-                            hasUserAddedRepositories: userRepositoriesResult.nodes.length > 0,
-                            hasUserAddedExternalServices: externalServicesResult.nodes.length > 0,
+                        dispatch({
+                            type: 'UserExternalServicesOrRepositoriesUpdate',
+                            userRepoCount: userRepositoriesResult.nodes.length,
+                            externalServicesCount: externalServicesResult.nodes.length,
                         })
                     }
                 })
@@ -434,10 +436,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                                     window.context.sourcegraphDotComMode
                                                                 }
                                                                 searchContextsEnabled={this.props.searchContextsEnabled}
-                                                                hasUserAddedRepositories={this.hasUserAddedRepositories()}
-                                                                hasUserAddedExternalServices={
-                                                                    this.state.hasUserAddedExternalServices
-                                                                }
                                                                 selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
                                                                 setSelectedSearchContextSpec={
                                                                     this.setSelectedSearchContextSpec
@@ -462,12 +460,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                                 }
                                                                 globbing={this.state.globbing}
                                                                 streamSearch={aggregateStreamingSearch}
-                                                                onUserExternalServicesOrRepositoriesUpdate={
-                                                                    this.onUserExternalServicesOrRepositoriesUpdate
-                                                                }
-                                                                onSyncedPublicRepositoriesUpdate={
-                                                                    this.onSyncedPublicRepositoriesUpdate
-                                                                }
                                                                 featureFlags={this.state.featureFlags}
                                                             />
                                                         </CodeHostScopeProvider>
@@ -494,25 +486,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             </ApolloProvider>
         )
     }
-
-    private onUserExternalServicesOrRepositoriesUpdate = (
-        externalServicesCount: number,
-        userRepoCount: number
-    ): void => {
-        this.setState({
-            hasUserAddedExternalServices: externalServicesCount > 0,
-            hasUserAddedRepositories: userRepoCount > 0,
-        })
-    }
-
-    private onSyncedPublicRepositoriesUpdate = (publicReposCount: number): void => {
-        this.setState({
-            hasUserSyncedPublicRepositories: publicReposCount > 0,
-        })
-    }
-
-    private hasUserAddedRepositories = (): boolean =>
-        this.state.hasUserAddedRepositories || this.state.hasUserSyncedPublicRepositories
 
     private getSelectedSearchContextSpec = (): string | undefined =>
         getExperimentalFeatures().showSearchContext ? this.state.selectedSearchContextSpec : undefined

@@ -19,7 +19,6 @@ import { PageRoutes } from './routes.constants'
 import { SearchPageWrapper } from './search/SearchPageWrapper'
 import { getExperimentalFeatures, useExperimentalFeatures } from './stores'
 import { ThemePreferenceProps } from './theme'
-import { UserExternalServicesOrRepositoriesUpdateProps } from './util'
 
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
 const ExtensionsArea = lazyComponent(() => import('./extensions/ExtensionsArea'), 'ExtensionsArea')
@@ -40,8 +39,7 @@ export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof
         BreadcrumbSetters,
         ExtensionAlertProps,
         CodeIntelligenceProps,
-        BatchChangesProps,
-        UserExternalServicesOrRepositoriesUpdateProps {
+        BatchChangesProps {
     isSourcegraphDotCom: boolean
     isMacPlatform: boolean
 }
@@ -169,7 +167,6 @@ export const routes: readonly LayoutRouteProps<any>[] = [
                     authenticatedUser={props.authenticatedUser}
                     telemetryService={props.telemetryService}
                     context={window.context}
-                    onUserExternalServicesOrRepositoriesUpdate={props.onUserExternalServicesOrRepositoriesUpdate}
                     setSelectedSearchContextSpec={props.setSelectedSearchContextSpec}
                 />
             ) : (

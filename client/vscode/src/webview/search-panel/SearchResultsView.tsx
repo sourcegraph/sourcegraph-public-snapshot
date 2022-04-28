@@ -353,8 +353,6 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
                     patternType={context.submittedSearchQueryState?.searchPatternType}
                     setPatternType={setPatternType}
                     isSourcegraphDotCom={isSourcegraphDotCom}
-                    hasUserAddedExternalServices={false}
-                    hasUserAddedRepositories={true} // Used for search context CTA, which we won't show here.
                     structuralSearchDisabled={false}
                     queryState={userQueryState}
                     onChange={onChange}

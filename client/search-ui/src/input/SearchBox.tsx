@@ -53,11 +53,10 @@ export interface SearchBoxProps
 
     onHandleFuzzyFinder?: React.Dispatch<React.SetStateAction<boolean>>
 
-    /** Set in JSContext only available to the web app. */
-    isExternalServicesUserModeAll?: boolean
-
     /** Called with the underlying editor instance on creation. */
     onEditorCreated?: (editor: IEditor) => void
+
+    searchContextCta?: React.ReactNode
 }
 
 export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
