@@ -7,7 +7,11 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/output"
+	"google.golang.org/protobuf/proto"
 
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/reader"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsiftyped"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/upload"
 
 	"github.com/sourcegraph/src-cli/internal/api"
@@ -84,10 +88,12 @@ func init() {
 //
 // On success, the global lsifUploadFlags object will be populated with valid values. An
 // error is returned on failure.
-func parseAndValidateLSIFUploadFlags(args []string) error {
+func parseAndValidateLSIFUploadFlags(args []string) (*output.Output, error) {
 	if err := lsifUploadFlagSet.Parse(args); err != nil {
-		return err
+		return nil, err
 	}
+
+	out := lsifUploadOutput()
 
 	// extract only the -insecure-skip-verify flag so we dont get 'flag provided but not defined'
 	var insecureSkipVerifyFlag []string
@@ -102,11 +108,15 @@ func parseAndValidateLSIFUploadFlags(args []string) error {
 	// and maybe we'll use some in the future
 	lsifUploadFlags.apiFlags = api.NewFlags(apiClientFlagSet)
 	if err := apiClientFlagSet.Parse(insecureSkipVerifyFlag); err != nil {
-		return err
+		return nil, err
+	}
+
+	if err := handleLSIFTyped(out); err != nil {
+		return nil, err
 	}
 
 	if inferenceErrors := inferMissingLSIFUploadFlags(); len(inferenceErrors) > 0 {
-		return errorWithHint{
+		return nil, errorWithHint{
 			err: inferenceErrors[0].err, hint: strings.Join([]string{
 				fmt.Sprintf(
 					"Unable to determine %s from environment. Check your working directory or supply -%s={value} explicitly",
@@ -118,15 +128,91 @@ func parseAndValidateLSIFUploadFlags(args []string) error {
 	}
 
 	if err := validateLSIFUploadFlags(); err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return out, nil
+}
+
+// lsifUploadOutput returns an output object that should be used to print the progres
+// of requests made during this upload. If -json, -no-progress, or -trace>0 is given,
+// then no output object is defined.
+//
+// For -no-progress and -trace>0 conditions, emergency loggers will be used to display
+// inferred arguments and the URL at which processing status is shown.
+func lsifUploadOutput() (out *output.Output) {
+	if lsifUploadFlags.json || lsifUploadFlags.noProgress || lsifUploadFlags.verbosity > 0 {
+		return nil
+	}
+
+	return output.NewOutput(flag.CommandLine.Output(), output.OutputOpts{
+		Verbose: true,
+	})
 }
 
 type argumentInferenceError struct {
 	argument string
 	err      error
+}
+
+func handleLSIFTyped(out *output.Output) error {
+	if strings.HasSuffix(lsifUploadFlags.file, ".lsif-typed") {
+		// The user explicitly passed in a -file flag that points to an LSIF Typed index.
+		inputFile := lsifUploadFlags.file
+		outputFile := strings.TrimSuffix(inputFile, "-typed")
+		lsifUploadFlags.file = outputFile
+		return convertLSIFTypedToLSIFGraph(out, inputFile, outputFile)
+	}
+
+	if _, err := os.Stat(lsifUploadFlags.file); err == nil {
+		// Do nothing, the provided -flag flag points to an existing
+		// file that does not have the file extension `*.lsif-typed`.
+		return nil
+	}
+
+	lsifTypedFile := lsifUploadFlags.file + "-typed"
+	if _, err := os.Stat(lsifTypedFile); os.IsNotExist(err) {
+		// The inferred path of the sibling `*.lsif-typed` file does not exist.
+		return nil
+	}
+
+	// The provided -file flag points to an `*.lsif` file that doesn't exist
+	// so we convert the sibling `*.lsif-typed` file (which we confirmed exists).
+	return convertLSIFTypedToLSIFGraph(out, lsifTypedFile, lsifUploadFlags.file)
+}
+
+// Reads the LSIF Typed encoded input file and writes the corresponding LSIF
+// Graph encoded output file.
+func convertLSIFTypedToLSIFGraph(out *output.Output, inputFile, outputFile string) error {
+	out.Writef("%s  Converting %s into %s", output.EmojiInfo, inputFile, outputFile)
+	tmp, err := os.Create(outputFile)
+	if err != nil {
+		return err
+	}
+	defer tmp.Close()
+
+	data, err := os.ReadFile(inputFile)
+	if err != nil {
+		panic(err)
+	}
+	index := lsiftyped.Index{}
+	err = proto.Unmarshal(data, &index)
+	if err != nil {
+		panic(errors.Wrapf(err, "failed to parse protobuf file '%s'", inputFile))
+	}
+	els, err := reader.ConvertTypedIndexToGraphIndex(&index)
+	if err != nil {
+		panic(errors.Wrapf(err, "failed reader.ConvertTypedIndexToGraphIndex"))
+	}
+	err = reader.WriteNDJSON(reader.ElementsToJsonElements(els), tmp)
+	if err != nil {
+		panic(err)
+	}
+	err = tmp.Close()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // inferMissingLSIFUploadFlags updates the flags values which were not explicitly

@@ -22,6 +22,7 @@ require (
 	github.com/sourcegraph/sourcegraph/lib v0.0.0-20220414150621-eeb00fcedd88
 	github.com/stretchr/testify v1.7.1
 	golang.org/x/net v0.0.0-20220325170049-de3da57026de
+	google.golang.org/protobuf v1.27.1
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 	jaytaylor.com/html2text v0.0.0-20200412013138-3577fbdbcff7
 )

@@ -57,8 +57,7 @@ Examples:
 func handleLSIFUpload(args []string) error {
 	ctx := context.Background()
 
-	err := parseAndValidateLSIFUploadFlags(args)
-	out := lsifUploadOutput()
+	out, err := parseAndValidateLSIFUploadFlags(args)
 	if !lsifUploadFlags.json {
 		if out != nil {
 			printInferredArguments(out)
@@ -117,22 +116,6 @@ func handleLSIFUpload(args []string) error {
 	}
 
 	return nil
-}
-
-// lsifUploadOutput returns an output object that should be used to print the progres
-// of requests made during this upload. If -json, -no-progress, or -trace>0 is given,
-// then no output object is defined.
-//
-// For -no-progress and -trace>0 conditions, emergency loggers will be used to display
-// inferred arguments and the URL at which processing status is shown.
-func lsifUploadOutput() (out *output.Output) {
-	if lsifUploadFlags.json || lsifUploadFlags.noProgress || lsifUploadFlags.verbosity > 0 {
-		return nil
-	}
-
-	return output.NewOutput(flag.CommandLine.Output(), output.OutputOpts{
-		Verbose: true,
-	})
 }
 
 // lsifUploadOptions creates a set of upload options given the values in the flags.
