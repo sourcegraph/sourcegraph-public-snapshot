@@ -68,7 +68,7 @@ Site configuration example:
 
 <span class="badge badge-note">Sourcegraph 3.39+</span>
 
-Account will be lockout for 30 minutes after 5 consecutive failed sign-in attempts within one hour for builtin authentication provider. The threshold and duration of periods can be customized via `"auth.lockout"` in the site configuration:
+Account will be locked out for 30 minutes after 5 consecutive failed sign-in attempts within one hour for the builtin authentication provider. The threshold and duration of lockout and consecutive periods can be customized via `"auth.lockout"` in the site configuration:
 
 ```json
 {
