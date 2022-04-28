@@ -610,7 +610,7 @@ func (s *Server) syncRepoState(gitServerAddrs gitserver.GitServerAddresses, batc
 		// We may have a deleted repo, we need to extract the original name both to
 		// ensure that the shard check is correct and also so that we can find the
 		// directory.
-		repo.Name = api.UndeleteRepoName(repo.Name)
+		repo.Name = api.UndeletedRepoName(repo.Name)
 
 		// Ensure we're only dealing with repos we are responsible for
 		addr := addrForKey(repo.Name, gitServerAddrs.Addresses)

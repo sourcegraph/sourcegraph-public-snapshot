@@ -30,10 +30,10 @@ func (r RepoName) Equal(o RepoName) bool {
 
 var deletedRegex = lazyregexp.New("DELETED-[0-9]+\\.[0-9]+-")
 
-// UndeleteRepoName will "undeleted" a repo name. When we soft-delete a repo we
+// UndeletedRepoName will "undeleted" a repo name. When we soft-delete a repo we
 // change its name in the database, this function extracts the original repo
 // name.
-func UndeleteRepoName(name RepoName) RepoName {
+func UndeletedRepoName(name RepoName) RepoName {
 	return RepoName(deletedRegex.ReplaceAllString(string(name), ""))
 }
 
