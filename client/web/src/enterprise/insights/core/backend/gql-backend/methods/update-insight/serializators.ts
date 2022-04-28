@@ -20,7 +20,7 @@ export function getSearchInsightUpdateInput(insight: MinimalSearchBasedInsightDa
             ? {
                   includeRepoRegex: insight.filters.includeRepoRegexp,
                   excludeRepoRegex: insight.filters.excludeRepoRegexp,
-                  searchContexts: [insight.filters.context],
+                  searchContexts: insight.filters.context ? [insight.filters.context] : [],
               }
             : {}
 
@@ -65,7 +65,7 @@ export function getCaptureGroupInsightUpdateInput(
             filters: {
                 includeRepoRegex: filters.includeRepoRegexp,
                 excludeRepoRegex: filters.excludeRepoRegexp,
-                searchContexts: [filters.context],
+                searchContexts: insight.filters.context ? [filters.context] : [],
             },
         },
     }

@@ -59,6 +59,17 @@ describe('Backend insight drill down filters', () => {
                     },
                 }),
 
+                GetSearchContexts: () => ({
+                    __typename: 'Query',
+                    searchContexts: {
+                        __typename: 'SearchContextConnection',
+                        nodes: [],
+                        pageInfo: {
+                            hasNextPage: false,
+                        },
+                    },
+                }),
+
                 UpdateLineChartSearchInsight: () => ({
                     __typename: 'Mutation',
                     updateLineChartSearchInsight: {
@@ -127,6 +138,17 @@ describe('Backend insight drill down filters', () => {
                     insightViews: {
                         __typename: 'InsightViewConnection',
                         nodes: [MIGRATION_TO_GQL_INSIGHT_DATA_FIXTURE],
+                    },
+                }),
+
+                GetSearchContexts: () => ({
+                    __typename: 'Query',
+                    searchContexts: {
+                        __typename: 'SearchContextConnection',
+                        nodes: [],
+                        pageInfo: {
+                            hasNextPage: false,
+                        },
                     },
                 }),
 
