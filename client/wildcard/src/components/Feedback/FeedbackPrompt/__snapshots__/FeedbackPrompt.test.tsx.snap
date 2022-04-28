@@ -515,6 +515,7 @@ exports[`FeedbackPrompt should render submit error correctly 1`] = `
           </ul>
           <div
             class="mt-3"
+            role="alert"
           >
             <strong>
               Error submitting feedback

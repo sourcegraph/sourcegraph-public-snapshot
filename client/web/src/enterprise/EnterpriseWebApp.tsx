@@ -5,7 +5,10 @@ import { KEYBOARD_SHORTCUTS } from '@sourcegraph/shared/src/keyboardShortcuts/ke
 
 import { SourcegraphWebApp } from '../SourcegraphWebApp'
 
-import { CodeIntelligenceBadge } from './codeintel/badge/components/CodeIntelligenceBadge'
+import {
+    CodeIntelligenceBadgeContent,
+    CodeIntelligenceBadgeMenu,
+} from './codeintel/badge/components/CodeIntelligenceBadge'
 import { enterpriseExtensionAreaHeaderNavItems } from './extensions/extension/extensionAreaHeaderNavItems'
 import { enterpriseExtensionAreaRoutes } from './extensions/extension/routes'
 import { enterpriseExtensionsAreaHeaderActionButtons } from './extensions/extensionsAreaHeaderActionButtons'
@@ -48,7 +51,8 @@ export const EnterpriseWebApp: React.FunctionComponent = () => (
         routes={enterpriseRoutes}
         keyboardShortcuts={KEYBOARD_SHORTCUTS}
         codeIntelligenceEnabled={true}
-        codeIntelligenceBadge={CodeIntelligenceBadge}
+        codeIntelligenceBadgeMenu={CodeIntelligenceBadgeMenu}
+        codeIntelligenceBadgeContent={CodeIntelligenceBadgeContent}
         codeInsightsEnabled={true}
         batchChangesEnabled={window.context.batchChangesEnabled}
         searchContextsEnabled={true}

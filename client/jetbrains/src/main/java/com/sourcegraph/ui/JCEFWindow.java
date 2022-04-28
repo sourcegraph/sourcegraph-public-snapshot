@@ -12,15 +12,13 @@ import org.cef.browser.CefBrowser;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.Objects;
 
 public class JCEFWindow {
-    private JPanel panel;
-    private Project project;
-    private JBCefBrowserBase browser;
+    private final JPanel panel;
     private CefBrowser cefBrowser;
 
     public JCEFWindow(Project project) {
-        this.project = project;
         panel = new JPanel(new BorderLayout());
 
         if (!JBCefApp.isSupported()) {
@@ -29,24 +27,18 @@ public class JCEFWindow {
             return;
         }
 
-        this.browser = new JBCefBrowser("http://sourcegraph/html/index.html") ;
-        this.cefBrowser= browser.getCefBrowser();
+        JBCefBrowserBase browser = new JBCefBrowser("http://sourcegraph/html/index.html");
+        this.cefBrowser = browser.getCefBrowser();
 
-        CefApp
-            .getInstance()
-            .registerSchemeHandlerFactory(
-    "http",
-    "sourcegraph",
-                new SchemeHandlerFactory()
-            );
+        CefApp.getInstance().registerSchemeHandlerFactory("http", "sourcegraph", new SchemeHandlerFactory());
 
-        panel.add(this.browser.getComponent(),BorderLayout.CENTER);
+        panel.add(Objects.requireNonNull(browser.getComponent()), BorderLayout.CENTER);
 
 
         String backgroundColor = "#" + Integer.toHexString(UIUtil.getPanelBackground().getRGB()).substring(2);
-        this.browser.setPageBackgroundColor(backgroundColor);
+        browser.setPageBackgroundColor(backgroundColor);
 
-        Disposer.register(project, this.browser);
+        Disposer.register(project, browser);
     }
 
     public JPanel getContent() {

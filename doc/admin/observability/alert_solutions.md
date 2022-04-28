@@ -1416,7 +1416,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -1441,7 +1441,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -1466,7 +1466,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -1491,7 +1491,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -1516,7 +1516,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -1541,7 +1541,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -1564,7 +1564,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -1587,7 +1587,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -1610,7 +1610,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -4546,7 +4546,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -4571,7 +4571,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -4596,7 +4596,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -4621,7 +4621,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -4646,7 +4646,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -4671,7 +4671,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -4694,7 +4694,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 

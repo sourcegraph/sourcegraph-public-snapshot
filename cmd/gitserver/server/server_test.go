@@ -1228,6 +1228,32 @@ func TestSyncRepoState(t *testing.T) {
 	if gr.CloneStatus != types.CloneStatusCloned {
 		t.Fatalf("Want %v, got %v", types.CloneStatusCloned, gr.CloneStatus)
 	}
+
+	t.Run("sync deleted repo", func(t *testing.T) {
+		// Fake setting an incorrect status
+		if err := database.GitserverRepos(db).SetCloneStatus(ctx, dbRepo.Name, types.CloneStatusUnknown, hostname); err != nil {
+			t.Fatal(err)
+		}
+
+		// We should continue to sync deleted repos
+		if err := database.Repos(db).Delete(ctx, dbRepo.ID); err != nil {
+			t.Fatal(err)
+		}
+
+		err = s.syncRepoState(gitserver.GitServerAddresses{Addresses: []string{hostname}}, 10, 10, true)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		gr, err := database.GitserverRepos(db).GetByID(ctx, dbRepo.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if gr.CloneStatus != types.CloneStatusCloned {
+			t.Fatalf("Want %v, got %v", types.CloneStatusCloned, gr.CloneStatus)
+		}
+	})
 }
 
 type BatchLogTest struct {
