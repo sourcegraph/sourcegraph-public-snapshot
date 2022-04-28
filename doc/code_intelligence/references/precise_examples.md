@@ -1,6 +1,6 @@
 # Precise code intelligence examples
 
-A list of repositories with precise code intelligence enabled to showcase
+The following repositories have precise code intelligence enabled:
 
 ## Go
 - [sourcegraph/sourcegraph](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/cmd/executor/internal/apiclient/client.go?L230:18&subtree=true#tab=references)
