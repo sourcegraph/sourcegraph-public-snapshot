@@ -12,11 +12,11 @@ func TestUndeletedRepoName(t *testing.T) {
 	}{
 		{
 			name: "Blank",
-			have: RepoName("github.com/owner/repo"),
-			want: RepoName("github.com/owner/repo"),
+			have: RepoName(""),
+			want: RepoName(""),
 		},
 		{
-			name: "Non deleted",
+			name: "Non deleted, should not change",
 			have: RepoName("github.com/owner/repo"),
 			want: RepoName("github.com/owner/repo"),
 		},
