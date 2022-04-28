@@ -33,7 +33,7 @@ const INSIGHT_CONFIGURATION_MOCK: SearchBackendBasedInsight = {
     type: InsightType.SearchBased,
     executionType: InsightExecutionType.Backend,
     step: { weeks: 2 },
-    filters: { excludeRepoRegexp: '', includeRepoRegexp: '', contexts: [] },
+    filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
     dashboardReferenceCount: 0,
     isFrozen: false,
 }
