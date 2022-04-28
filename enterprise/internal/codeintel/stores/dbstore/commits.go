@@ -101,7 +101,12 @@ const markRepositoryAsDirtyQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/commits.go:MarkRepositoryAsDirty
 INSERT INTO lsif_dirty_repositories (repository_id, dirty_token, update_token)
 VALUES (%s, 1, 0)
-ON CONFLICT (repository_id) DO UPDATE SET dirty_token = lsif_dirty_repositories.dirty_token + 1
+ON CONFLICT (repository_id) DO UPDATE SET
+    dirty_token = lsif_dirty_repositories.dirty_token + 1,
+    set_dirty_at = CASE
+        WHEN lsif_dirty_repositories.update_token = lsif_dirty_repositories.dirty_token THEN NOW()
+        ELSE lsif_dirty_repositories.set_dirty_at
+    END
 `
 
 func scanIntPairs(rows *sql.Rows, queryErr error) (_ map[int]int, err error) {
@@ -168,7 +173,7 @@ func (s *Store) MaxStaleAge(ctx context.Context) (_ time.Duration, err error) {
 
 const maxStaleAgeQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/commits.go:MaxStaleAge
-SELECT EXTRACT(EPOCH FROM NOW() - ldr.updated_at)::integer AS age
+SELECT EXTRACT(EPOCH FROM NOW() - ldr.set_dirty_at)::integer AS age
   FROM lsif_dirty_repositories ldr
     INNER JOIN repo ON repo.id = ldr.repository_id
   WHERE ldr.dirty_token > ldr.update_token
