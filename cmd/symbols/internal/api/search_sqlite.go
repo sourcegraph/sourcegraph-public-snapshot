@@ -22,7 +22,7 @@ const searchTimeout = 60 * time.Second
 
 func MakeSqliteSearchFunc(operations *sharedobservability.Operations, cachedDatabaseWriter writer.CachedDatabaseWriter) types.SearchFunc {
 	return func(ctx context.Context, args types.SearchArgs) (results []result.Symbol, err error) {
-		ctx, trace, endObservation := operations.Search.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+		ctx, trace, endObservation := operations.Search.With(ctx, &err, observation.Args{LogFields: []log.Field{
 			log.String("repo", string(args.Repo)),
 			log.String("commitID", string(args.CommitID)),
 			log.String("query", args.Query),

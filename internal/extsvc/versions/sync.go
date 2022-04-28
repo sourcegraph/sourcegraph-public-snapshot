@@ -4,8 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/workerdb"
@@ -16,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 const syncInterval = 24 * time.Hour
@@ -26,11 +25,15 @@ func NewSyncingJob() job.Job {
 
 type syncingJob struct{}
 
+func (j *syncingJob) Description() string {
+	return ""
+}
+
 func (j *syncingJob) Config() []env.Config {
 	return []env.Config{}
 }
 
-func (j *syncingJob) Routines(_ context.Context) ([]goroutine.BackgroundRoutine, error) {
+func (j *syncingJob) Routines(_ context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	if envvar.SourcegraphDotComMode() {
 		// If we're on sourcegraph.com we don't want to run this
 		return nil, nil
@@ -46,7 +49,7 @@ func (j *syncingJob) Routines(_ context.Context) ([]goroutine.BackgroundRoutine,
 
 	store := database.NewDB(db).ExternalServices()
 	handler := goroutine.NewHandlerWithErrorMessage("sync versions of external services", func(ctx context.Context) error {
-		versions, err := loadVersions(ctx, store, sourcer)
+		versions, err := loadVersions(ctx, logger, store, sourcer)
 		if err != nil {
 			return err
 		}
@@ -59,7 +62,7 @@ func (j *syncingJob) Routines(_ context.Context) ([]goroutine.BackgroundRoutine,
 	}, nil
 }
 
-func loadVersions(ctx context.Context, store database.ExternalServiceStore, sourcer repos.Sourcer) ([]*Version, error) {
+func loadVersions(ctx context.Context, logger log.Logger, store database.ExternalServiceStore, sourcer repos.Sourcer) ([]*Version, error) {
 	var versions []*Version
 
 	es, err := store.List(ctx, database.ExternalServicesListOptions{})
@@ -90,13 +93,16 @@ func loadVersions(ctx context.Context, store database.ExternalServiceStore, sour
 
 		versionSrc, ok := src.(repos.VersionSource)
 		if !ok {
-			log15.Debug("external service source does not implement VersionSource interface", "kind", svc.Kind)
+			logger.Debug("external service source does not implement VersionSource interface",
+				log.String("kind", svc.Kind))
 			continue
 		}
 
 		v, err := versionSrc.Version(ctx)
 		if err != nil {
-			log15.Warn("failed to fetch version of code host", "version", v, "error", err)
+			logger.Warn("failed to fetch version of code host",
+				log.String("version", v),
+				log.Error(err))
 			continue
 		}
 

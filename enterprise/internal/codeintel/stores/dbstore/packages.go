@@ -13,7 +13,7 @@ import (
 
 // UpdatePackages upserts package data tied to the given upload.
 func (s *Store) UpdatePackages(ctx context.Context, dumpID int, packages []precise.Package) (err error) {
-	ctx, endObservation := s.operations.updatePackages.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.updatePackages.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("numPackages", len(packages)),
 	}})
 	defer endObservation(1, observation.Args{})

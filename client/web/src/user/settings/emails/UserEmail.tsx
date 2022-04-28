@@ -2,7 +2,7 @@ import { useState, FunctionComponent } from 'react'
 
 import { asError, ErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { Badge, Button } from '@sourcegraph/wildcard'
+import { Badge, Button, screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import {
@@ -62,6 +62,7 @@ export const UserEmail: FunctionComponent<Props> = ({
 
             setIsLoading(false)
             eventLogger.log('UserEmailAddressDeleted')
+            screenReaderAnnounce('Email address removed')
 
             if (onDidRemove) {
                 onDidRemove(email)

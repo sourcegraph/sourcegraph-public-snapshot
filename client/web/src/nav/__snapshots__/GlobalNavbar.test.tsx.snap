@@ -61,6 +61,8 @@ exports[`GlobalNavbar default 1`] = `
         >
           <div
             class="link d-flex align-items-center p-0"
+            data-test-active="false"
+            data-test-id="/search"
           >
             <div
               class="h-100 d-flex linkContent navDropdownWrapper"
@@ -320,6 +322,8 @@ exports[`GlobalNavbar low-profile 1`] = `
         >
           <div
             class="link d-flex align-items-center p-0"
+            data-test-active="false"
+            data-test-id="/search"
           >
             <div
               class="h-100 d-flex linkContent navDropdownWrapper"

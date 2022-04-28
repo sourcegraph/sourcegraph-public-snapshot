@@ -16,6 +16,12 @@ type Resource struct {
 	// Version is the version string of the service API or implementation. For Sourcegraph
 	// services, this should be from 'internal/version.Version()'
 	Version string
+	// InstanceID is the string ID of the service instance. For Sourcegraph services, this
+	// should be from 'internal/hostname.Get()'
+	//
+	// If unset, InstanceID is set to a generated UUID, as per the OpenTelemetry log spec:
+	// https://opentelemetry.io/docs/reference/specification/resource/semantic_conventions/#service
+	InstanceID string
 }
 
 // TraceContext represents a trace to associate with log entries.

@@ -5,7 +5,7 @@ package main
 import (
 	"context"
 	"io"
-	"log"
+	stdlog "log"
 	"net"
 	"net/http"
 	"os"
@@ -15,7 +15,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/internal/search"
@@ -29,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
@@ -38,7 +38,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	sglog "github.com/sourcegraph/sourcegraph/lib/log"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 var (
@@ -85,7 +85,7 @@ func shutdownOnSignal(ctx context.Context, server *http.Server) error {
 	return server.Shutdown(ctx)
 }
 
-func run() error {
+func run(logger log.Logger) error {
 	// Ready immediately
 	ready := make(chan struct{})
 	close(ready)
@@ -128,7 +128,7 @@ func run() error {
 			MaxCacheSizeBytes: cacheSizeBytes,
 			DB:                db,
 		},
-		Log: sglog.Scoped("service", "the searcher service"),
+		Log: logger,
 	}
 	service.Store.Start()
 
@@ -166,7 +166,7 @@ func run() error {
 
 	// Listen
 	g.Go(func() error {
-		log15.Info("searcher: listening", "addr", server.Addr)
+		logger.Info("listening", log.String("addr", server.Addr))
 		if err := server.ListenAndServe(); err != http.ErrServerClosed {
 			return err
 		}
@@ -184,20 +184,24 @@ func run() error {
 func main() {
 	env.Lock()
 	env.HandleHelpFlag()
-	log.SetFlags(0)
+	stdlog.SetFlags(0)
 	conf.Init()
 	logging.Init()
-	sglog.Init(sglog.Resource{
-		Name:    env.MyName,
-		Version: version.Version(),
+	syncLogs := log.Init(log.Resource{
+		Name:       env.MyName,
+		Version:    version.Version(),
+		InstanceID: hostname.Get(),
 	})
+	defer syncLogs()
 	tracer.Init(conf.DefaultClient())
 	sentry.Init(conf.DefaultClient())
 	trace.Init()
 	profiler.Init()
 
-	err := run()
+	logger := log.Scoped("service", "the searcher service")
+
+	err := run(logger)
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal("searcher failed", log.Error(err))
 	}
 }

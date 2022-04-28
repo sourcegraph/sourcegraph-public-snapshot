@@ -369,6 +369,7 @@
     "@reach/menu-button": "^0.16.2",
     "@reach/tabs": "^0.16.4",
     "@reach/visually-hidden": "^0.16.0",
+    "@react-aria/live-announcer": "^3.0.5",
     "@sentry/browser": "^6.13.2",
     "@slimsag/react-shortcuts": "^1.2.1",
     "@sourcegraph/extension-api-classes": "^1.1.0",

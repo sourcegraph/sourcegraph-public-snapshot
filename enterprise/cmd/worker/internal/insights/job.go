@@ -3,8 +3,6 @@ package insights
 import (
 	"context"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/workerdb"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
@@ -14,20 +12,25 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type insightsJob struct{}
+
+func (s *insightsJob) Description() string {
+	return ""
+}
 
 func (s *insightsJob) Config() []env.Config {
 	return nil
 }
 
-func (s *insightsJob) Routines(ctx context.Context) ([]goroutine.BackgroundRoutine, error) {
+func (s *insightsJob) Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	if !insights.IsEnabled() {
-		log15.Info("Code Insights Disabled. Disabling background jobs.")
+		logger.Info("Code Insights Disabled. Disabling background jobs.")
 		return []goroutine.BackgroundRoutine{}, nil
 	}
-	log15.Info("Code Insights Enabled. Enabling background jobs.")
+	logger.Info("Code Insights Enabled. Enabling background jobs.")
 
 	mainAppDb, err := workerdb.Init()
 	if err != nil {

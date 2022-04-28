@@ -144,6 +144,9 @@ func TestFetchSources(t *testing.T) {
 	defer stop()
 	dep, err := reposource.ParseNpmDependency("is-sorted@1.0.0")
 	require.Nil(t, err)
+	info, err := client.GetDependencyInfo(ctx, dep)
+	require.Nil(t, err)
+	dep.TarballURL = info.Dist.TarballURL
 	readSeekCloser, err := client.FetchTarball(ctx, dep)
 	require.Nil(t, err)
 	defer readSeekCloser.Close()

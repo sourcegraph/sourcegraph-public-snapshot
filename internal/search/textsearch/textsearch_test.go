@@ -456,7 +456,7 @@ func RunRepoSubsetTextSearch(
 		}
 
 		typ := search.TextRequest
-		zoektQuery, err := search.QueryToZoektQuery(b, resultTypes, nil, typ)
+		zoektQuery, err := zoektutil.QueryToZoektQuery(b, resultTypes, nil, typ)
 		if err != nil {
 			return nil, streaming.Stats{}, err
 		}
