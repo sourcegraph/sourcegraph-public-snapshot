@@ -36,19 +36,21 @@ func NewComputeStream(ctx context.Context, db database.DB, query string) (<-chan
 	}
 
 	eventsC := make(chan Event)
+	errorC := make(chan error, 1)
 	stream := streaming.StreamFunc(func(event streaming.SearchEvent) {
 		if len(event.Results) > 0 {
 			callback := func(result compute.Result) {
 				eventsC <- Event{Results: []compute.Result{result}}
 			}
-			_ = toComputeResultStream(ctx, db, computeQuery.Command, event.Results, callback)
-			// TODO(rvantonder): compute err is currently ignored. Process it and send alerts/errors as needed.
+			err = toComputeResultStream(ctx, db, computeQuery.Command, event.Results, callback)
+			errorC <- err
 		}
 	})
 
 	settings, err := graphqlbackend.DecodedViewerFinalSettings(ctx, db)
 	if err != nil {
 		close(eventsC)
+		close(errorC)
 		return eventsC, func() error { return err }
 	}
 
@@ -57,6 +59,7 @@ func NewComputeStream(ctx context.Context, db database.DB, query string) (<-chan
 	inputs, err := searchClient.Plan(ctx, "", &patternType, searchQuery, search.Streaming, settings, envvar.SourcegraphDotComMode())
 	if err != nil {
 		close(eventsC)
+		close(errorC)
 		return eventsC, func() error { return err }
 	}
 
@@ -67,12 +70,17 @@ func NewComputeStream(ctx context.Context, db database.DB, query string) (<-chan
 	go func() {
 		defer close(final)
 		defer close(eventsC)
+		defer close(errorC)
 
 		_, err := searchClient.Execute(ctx, stream, inputs)
 		final <- finalResult{err: err}
 	}()
 
 	return eventsC, func() error {
+		computeErr := <-errorC
+		if computeErr != nil {
+			return computeErr
+		}
 		f := <-final
 		return f.err
 	}
