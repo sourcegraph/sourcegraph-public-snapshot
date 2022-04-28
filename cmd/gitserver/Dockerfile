@@ -7,7 +7,7 @@
 FROM sourcegraph/alpine-3.12:142406_2022-04-14_8836ac3499f4@sha256:4681a48d1fb9a73fef1b540c08b3411f797351bbeda749f5dca21213a1e71526 AS p4cli
 
 # hadolint ignore=DL3003
-RUN wget http://cdist2.perforce.com/perforce/r20.1/bin.linux26x86_64/p4 && \
+RUN wget http://cdist2.perforce.com/perforce/r21.2/bin.linux26x86_64/p4 && \
     mv p4 /usr/local/bin/p4 && \
     chmod +x /usr/local/bin/p4
 
