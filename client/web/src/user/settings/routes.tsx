@@ -141,7 +141,6 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
                 owner={{ id: props.authenticatedUser.id, tags: props.authenticatedUser.tags, type: 'user' }}
                 context={window.context}
                 routingPrefix={props.user.url + '/settings'}
-                onUserExternalServicesOrRepositoriesUpdate={props.onUserExternalServicesOrRepositoriesUpdate}
                 telemetryService={props.telemetryService}
             />
         ),

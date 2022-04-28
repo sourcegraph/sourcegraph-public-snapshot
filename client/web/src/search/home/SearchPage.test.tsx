@@ -114,8 +114,6 @@ describe('SearchPage', () => {
         isLightTheme: true,
         fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
         fetchSearchContexts: mockFetchSearchContexts,
-        hasUserAddedRepositories: false,
-        hasUserAddedExternalServices: false,
         getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
         featureFlags: new Map<FeatureFlagName, boolean>(),
     }

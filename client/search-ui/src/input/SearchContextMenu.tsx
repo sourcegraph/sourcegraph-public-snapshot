@@ -87,10 +87,7 @@ export const SearchContextMenuItem: React.FunctionComponent<
 }
 
 export interface SearchContextMenuProps
-    extends Omit<
-            SearchContextInputProps,
-            'setSelectedSearchContextSpec' | 'hasUserAddedRepositories' | 'hasUserAddedExternalServices'
-        >,
+    extends Omit<SearchContextInputProps, 'setSelectedSearchContextSpec'>,
         PlatformContextProps<'requestGraphQL'>,
         TelemetryProps {
     showSearchContextManagement: boolean
