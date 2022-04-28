@@ -2,25 +2,10 @@ package query
 
 import (
 	"encoding/json"
-	"strings"
 	"testing"
 
 	"github.com/hexops/autogold"
 )
-
-func planToString(disjuncts [][]Node) string {
-	var plan Plan
-	for _, disjunct := range disjuncts {
-		parameters, pattern, _ := PartitionSearchPattern(disjunct)
-		plan = append(plan, Basic{Parameters: parameters, Pattern: pattern})
-	}
-
-	var result []string
-	for _, basic := range plan {
-		result = append(result, toString(basic.ToParseTree()))
-	}
-	return strings.Join(result, " ")
-}
 
 func TestPipelineStructural(t *testing.T) {
 	test := func(input string) string {
