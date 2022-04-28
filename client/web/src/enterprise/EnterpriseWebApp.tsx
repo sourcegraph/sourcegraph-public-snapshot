@@ -5,10 +5,8 @@ import { KEYBOARD_SHORTCUTS } from '@sourcegraph/shared/src/keyboardShortcuts/ke
 
 import { SourcegraphWebApp } from '../SourcegraphWebApp'
 
-import {
-    CodeIntelligenceBadgeContent,
-    CodeIntelligenceBadgeMenu,
-} from './codeintel/badge/components/CodeIntelligenceBadge'
+import { CodeIntelligenceBadgeContent } from './codeintel/badge/components/CodeIntelligenceBadgeContent'
+import { CodeIntelligenceBadgeMenu } from './codeintel/badge/components/CodeIntelligenceBadgeMenu'
 import { enterpriseExtensionAreaHeaderNavItems } from './extensions/extension/extensionAreaHeaderNavItems'
 import { enterpriseExtensionAreaRoutes } from './extensions/extension/routes'
 import { enterpriseExtensionsAreaHeaderActionButtons } from './extensions/extensionsAreaHeaderActionButtons'
