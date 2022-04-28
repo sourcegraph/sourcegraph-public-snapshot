@@ -12,7 +12,7 @@ export interface TelemetricRedirectProps {
     className?: string
 }
 
-const MaximumTelemetryDelay = 5000
+const MAXIMUM_TELEMETRY_DELAY = 5000
 
 export const TelemetricRedirect: React.FunctionComponent<TelemetricRedirectProps> = ({
     to,
