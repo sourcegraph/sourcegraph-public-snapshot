@@ -69,16 +69,23 @@ export const Notices: React.FunctionComponent<React.PropsWithChildren<Props>> = 
     location,
     authenticatedUser,
 }) => {
-    const notices = useMemo(() => {
-        const verifyEmailNotices = (experimentEnabled && authenticatedUser ? authenticatedUser.emails : [])
+    const notices: Notice[] = useMemo(() => {
+        const userEmails: AuthenticatedUser['emails'] =
+            experimentEnabled && authenticatedUser ? authenticatedUser.emails : []
+
+        const verifyEmailNotices: Notice[] = userEmails
             .filter(({ verified }) => !verified)
             .map(
                 ({ email }): Notice => ({
-                    message: `Your email ${email as string} is not verified. <a href="#">Send verification email.</a>`,
+                    message: `Please, verify your email <strong>${(email as string)
+                        .split('@')
+                        .join('\\@')}</strong>. <a href="${
+                        authenticatedUser?.settingsURL as string
+                    }/emails">Send verification email.</a>`,
                     location: 'top',
                     dismissible: false,
                 })
-            )
+            ) as Notice[]
 
         if (
             !isSettingsValid<Settings>(settingsCascade) ||
@@ -97,8 +104,8 @@ export const Notices: React.FunctionComponent<React.PropsWithChildren<Props>> = 
 
     return (
         <div className={classNames(styles.notices, className)}>
-            {notices.map((notice, index) => (
-                <NoticeAlert key={index} testId="notice-alert" className={alertClassName} notice={notice} />
+            {notices.map(notice => (
+                <NoticeAlert key={notice.message} testId="notice-alert" className={alertClassName} notice={notice} />
             ))}
         </div>
     )

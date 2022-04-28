@@ -51,3 +51,5 @@ export const Alert = React.forwardRef(
         )
     }
 ) as ForwardReferenceComponent<'div', AlertProps>
+
+Alert.displayName = 'Alert'
