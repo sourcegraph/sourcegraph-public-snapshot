@@ -636,7 +636,7 @@ func (s *Syncer) SyncExternalService(
 	svc.NextSyncAt = now.Add(interval)
 	svc.LastSyncAt = now
 
-	err = s.Store.ExternalServiceStore.Upsert(ctx, svc)
+	err = tx.Upsert(ctx, svc)
 	if err != nil {
 		errs = errors.Append(errs, errors.Wrap(err, "upserting external service"))
 	}
