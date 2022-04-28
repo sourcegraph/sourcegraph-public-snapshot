@@ -178,9 +178,7 @@ func newPackage(pkg shared.Package) precise.Package {
 
 	switch pkg.Scheme {
 	case dependencies.JVMPackagesScheme:
-		if strings.HasPrefix(p.Name, "maven/") {
-			p.Name = p.Name[len("maven/"):]
-		}
+		p.Name = strings.TrimPrefix(p.Name, "maven/")
 		p.Name = strings.ReplaceAll(p.Name, "/", ":")
 	}
 
