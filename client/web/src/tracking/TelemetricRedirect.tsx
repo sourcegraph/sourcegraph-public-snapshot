@@ -34,7 +34,7 @@ export const TelemetricRedirect: React.FunctionComponent<TelemetricRedirectProps
             // Begin to log event
             logEventSynchronously(eventName),
             // If the event takes >5s, then we go ahead with the redirect
-            new Promise(resolve => setTimeout(resolve, MaximumTelemetryDelay)),
+            new Promise(resolve => setTimeout(resolve, MAXIMUM_TELEMETRY_DELAY)),
         ])
             .then(
                 // Redirect unconditionally
