@@ -7,8 +7,8 @@ import { logEventSynchronously } from '../user/settings/backend'
 
 export interface TelemetricRedirectProps {
     to: string
+    label: string
     eventName: string
-    children: React.ReactNode
     className?: string
 }
 
@@ -16,8 +16,8 @@ const MaximumTelemetryDelay = 5000
 
 export const TelemetricRedirect: React.FunctionComponent<TelemetricRedirectProps> = ({
     to,
+    label,
     eventName,
-    children,
     className,
 }) => {
     const [loading, setLoading] = useState(false)
@@ -50,8 +50,6 @@ export const TelemetricRedirect: React.FunctionComponent<TelemetricRedirectProps
     return redirect ? (
         <Redirect to={to} />
     ) : (
-        <LoaderButton variant="link" className={className} onClick={onClick} loading={loading}>
-            {children}
-        </LoaderButton>
+        <LoaderButton variant="link" label={label} className={className} onClick={onClick} loading={loading} />
     )
 }
