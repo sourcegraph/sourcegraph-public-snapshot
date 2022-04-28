@@ -56,7 +56,8 @@ LABEL org.opencontainers.image.version=${VERSION}
 LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
 
 # ctags is dynamically linked against jansson
-RUN apk add --no-cache bind-tools ca-certificates mailcap tini jansson
+# libstdc++ and libgcc are for tree-sitter
+RUN apk add --no-cache bind-tools ca-certificates mailcap tini jansson libstdc++ libgcc
 
 COPY --from=ctags /usr/local/bin/universal-ctags /usr/local/bin/universal-ctags
 
