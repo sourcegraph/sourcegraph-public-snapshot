@@ -47,7 +47,7 @@ var ErrUnknownJob = errors.New("unknown job")
 // dequeue selects a job record from the database and stashes metadata including
 // the job record and the locking transaction. If no job is available for processing,
 // a false-valued flag is returned.
-func (h *handler) dequeue(ctx context.Context, logger log.Logger, executorName string) (_ apiclient.Job, dequeued bool, _ error) {
+func (h *handler) dequeue(ctx context.Context, executorName string) (_ apiclient.Job, dequeued bool, _ error) {
 	// executorName is supposed to be unique.
 	record, dequeued, err := h.Store.Dequeue(ctx, executorName, nil)
 	if err != nil {
@@ -57,6 +57,7 @@ func (h *handler) dequeue(ctx context.Context, logger log.Logger, executorName s
 		return apiclient.Job{}, false, nil
 	}
 
+	logger := log.Scoped("dequeue", "Select a job record from the database.")
 	job, err := h.RecordTransformer(ctx, record)
 	if err != nil {
 		if _, err := h.Store.MarkFailed(ctx, record.RecordID(), fmt.Sprintf("failed to transform record: %s", err), store.MarkFinalOptions{}); err != nil {
@@ -156,6 +157,9 @@ func (h *handler) markFailed(ctx context.Context, executorName string, jobID int
 
 // heartbeat calls Heartbeat for the given jobs.
 func (h *handler) heartbeat(ctx context.Context, executor types.Executor, ids []int) (knownIDs []int, err error) {
+
+	logger := log.Scoped("heartbeat", "Write this heartbeat to the database")
+
 	// Write this heartbeat to the database so that we can populate the UI with recent executor activity.
 	if err := h.executorStore.UpsertHeartbeat(ctx, executor); err != nil {
 		logger.Error("Failed to upsert executor heartbeat", log.Error(err))

@@ -9,11 +9,11 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/grafana/regexp"
-	"github.com/inconshreveable/log15"
 
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/store"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // SetupRoutes registers all route handlers required for all configured executor
@@ -162,18 +162,17 @@ func (h *handler) wrapHandler(w http.ResponseWriter, r *http.Request, payload in
 		http.Error(w, fmt.Sprintf("Failed to unmarshal payload: %s", err.Error()), http.StatusBadRequest)
 		return
 	}
-
+	logger := log.Scoped("payload", "")
 	status, payload, err := handler()
 	if err != nil {
-		log15.Error("Handler returned an error", "err", err)
+		logger.Error("Handler returned an error", log.Error(err))
 
 		status = http.StatusInternalServerError
 		payload = errorResponse{Error: err.Error()}
 	}
-
 	data, err := json.Marshal(payload)
 	if err != nil {
-		log15.Error("Failed to serialize payload", "err", err)
+		logger.Error("Failed to serialize payload", log.Error(err))
 		http.Error(w, fmt.Sprintf("Failed to serialize payload: %s", err), http.StatusInternalServerError)
 		return
 	}

@@ -13,7 +13,6 @@ import (
 	workerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	workerstoremocks "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store/mocks"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 func TestDequeue(t *testing.T) {
@@ -43,7 +42,7 @@ func TestDequeue(t *testing.T) {
 
 	handler := newHandler(executorStore, QueueOptions{Store: store, RecordTransformer: recordTransformer})
 
-	job, dequeued, err := handler.dequeue(context.Background(), logtest.Scoped(t), "deadbeef")
+	job, dequeued, err := handler.dequeue(context.Background(), "deadbeef")
 	if err != nil {
 		t.Fatalf("unexpected error dequeueing job: %s", err)
 	}
@@ -61,7 +60,7 @@ func TestDequeue(t *testing.T) {
 func TestDequeueNoRecord(t *testing.T) {
 	handler := newHandler(NewMockStore(), QueueOptions{Store: workerstoremocks.NewMockStore()})
 
-	_, dequeued, err := handler.dequeue(context.Background(), logtest.Scoped(t), "deadbeef")
+	_, dequeued, err := handler.dequeue(context.Background(), "deadbeef")
 	if err != nil {
 		t.Fatalf("unexpected error dequeueing job: %s", err)
 	}
@@ -83,7 +82,7 @@ func TestAddExecutionLogEntry(t *testing.T) {
 
 	handler := newHandler(executorStore, QueueOptions{Store: store, RecordTransformer: recordTransformer})
 
-	job, dequeued, err := handler.dequeue(context.Background(), logtest.Scoped(t), "deadbeef")
+	job, dequeued, err := handler.dequeue(context.Background(), "deadbeef")
 	if err != nil {
 		t.Fatalf("unexpected error dequeueing job: %s", err)
 	}
@@ -141,7 +140,7 @@ func TestUpdateExecutionLogEntry(t *testing.T) {
 
 	handler := newHandler(executorStore, QueueOptions{Store: store, RecordTransformer: recordTransformer})
 
-	job, dequeued, err := handler.dequeue(context.Background(), logtest.Scoped(t), "deadbeef")
+	job, dequeued, err := handler.dequeue(context.Background(), "deadbeef")
 	if err != nil {
 		t.Fatalf("unexpected error dequeueing job: %s", err)
 	}
@@ -200,7 +199,7 @@ func TestMarkComplete(t *testing.T) {
 
 	handler := newHandler(executorStore, QueueOptions{Store: store, RecordTransformer: recordTransformer})
 
-	job, dequeued, err := handler.dequeue(context.Background(), logtest.Scoped(t), "deadbeef")
+	job, dequeued, err := handler.dequeue(context.Background(), "deadbeef")
 	if err != nil {
 		t.Fatalf("unexpected error dequeueing job: %s", err)
 	}
@@ -256,7 +255,7 @@ func TestMarkErrored(t *testing.T) {
 
 	handler := newHandler(executorStore, QueueOptions{Store: store, RecordTransformer: recordTransformer})
 
-	job, dequeued, err := handler.dequeue(context.Background(), logtest.Scoped(t), "deadbeef")
+	job, dequeued, err := handler.dequeue(context.Background(), "deadbeef")
 	if err != nil {
 		t.Fatalf("unexpected error dequeueing job: %s", err)
 	}
@@ -315,7 +314,7 @@ func TestMarkFailed(t *testing.T) {
 
 	handler := newHandler(executorStore, QueueOptions{Store: store, RecordTransformer: recordTransformer})
 
-	job, dequeued, err := handler.dequeue(context.Background(), logtest.Scoped(t), "deadbeef")
+	job, dequeued, err := handler.dequeue(context.Background(), "deadbeef")
 	if err != nil {
 		t.Fatalf("unexpected error dequeueing job: %s", err)
 	}
@@ -388,7 +387,7 @@ func TestHeartbeat(t *testing.T) {
 
 	handler := newHandler(executorStore, QueueOptions{Store: s, RecordTransformer: recordTransformer})
 
-	if knownIDs, err := handler.heartbeat(context.Background(), logtest.Scoped(t), executor, []int{testKnownID, 10}); err != nil {
+	if knownIDs, err := handler.heartbeat(context.Background(), executor, []int{testKnownID, 10}); err != nil {
 		t.Fatalf("unexpected error performing heartbeat: %s", err)
 	} else if diff := cmp.Diff([]int{testKnownID}, knownIDs); diff != "" {
 		t.Errorf("unexpected unknown ids (-want +got):\n%s", diff)
