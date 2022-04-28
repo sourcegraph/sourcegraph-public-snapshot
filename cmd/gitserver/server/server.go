@@ -440,7 +440,8 @@ func (s *Server) SyncRepoState(interval time.Duration, batchSize, perSecond int)
 	}
 }
 
-// StartClonePipeline clones repos asynchronosuly. It creates a producer-consumer pipeline.
+// StartClonePipeline clones repos asynchronously. It creates a producer-consumer
+// pipeline.
 func (s *Server) StartClonePipeline(ctx context.Context) {
 	jobs := make(chan *cloneJob)
 
