@@ -109,7 +109,7 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 			log15.Debug("executing query", "query", modifiedQuery)
 			grouped, err := c.computeSearch(ctx, modifiedQuery)
 			if err != nil {
-				return nil, err
+				return nil, errors.Wrapf(err, "failed to execute capture group search for repository:%s commit:%s", repository, execution.Revision)
 			}
 
 			sort.Slice(grouped, func(i, j int) bool {
