@@ -1,5 +1,9 @@
 import React from 'react'
 
+import classNames from 'classnames'
+
+import styles from './CodeInsightsBatchesIcon.module.scss'
+
 export const CodeInsightsBatchesIcon: React.FunctionComponent<{ className?: string }> = ({ className }) => (
     <svg
         width="40"
@@ -7,7 +11,7 @@ export const CodeInsightsBatchesIcon: React.FunctionComponent<{ className?: stri
         viewBox="0 0 40 40"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
-        className={className}
+        className={classNames(styles.icon, className)}
     >
         <path
             fillRule="evenodd"

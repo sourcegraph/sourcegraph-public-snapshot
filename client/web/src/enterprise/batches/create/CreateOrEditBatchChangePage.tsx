@@ -6,7 +6,7 @@ import { noop } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 import LockIcon from 'mdi-react/LockIcon'
-import { useHistory } from 'react-router'
+import { useHistory, useLocation } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
@@ -168,12 +168,14 @@ interface CreatePageProps extends SettingsCascadeProps<Settings> {
 const CreatePage: React.FunctionComponent<CreatePageProps> = props => {
     const isNewBatchChange = props.batchChangeName === undefined && !props.isReadOnly
 
+    const location = useLocation()
     const parameters = new URLSearchParams(location.search)
-
     const templateRenderer = getTemplateRenderer(parameters.get('kind'))
+    const codeInsightTitle = parameters.get('title') ?? undefined
 
     const enableInsightsTemplates =
-        (templateRenderer &&
+        (codeInsightTitle &&
+            templateRenderer &&
             props.settingsCascade.final !== null &&
             !isErrorLike(props.settingsCascade.final) &&
             props.settingsCascade.final.experimentalFeatures?.goCodeCheckerTemplates) ??
@@ -182,7 +184,7 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = props => {
     return (
         <div className="w-100 p-4">
             <PageTitle title="Create new batch change" />
-            {enableInsightsTemplates && parameters.has('title') && (
+            {enableInsightsTemplates && (
                 <Card className={classNames('mb-5', styles.codeInsightsBanner)}>
                     <CardBody>
                         <div className="d-flex justify-content-between align-items-center">
@@ -190,8 +192,8 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = props => {
                             <div className="flex-grow-1">
                                 <H4>You are creating a batch change from a code insight</H4>
                                 <p className="mb-0">
-                                    Let Sourcegraph help you with <strong>{parameters.get('title')}</strong> by
-                                    preparing a relevant <strong>batch change</strong>.
+                                    Let Sourcegraph help you with <strong>{codeInsightTitle}</strong> by preparing a
+                                    relevant <strong>batch change</strong>.
                                 </p>
                             </div>
                         </div>
@@ -219,7 +221,11 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = props => {
                 </TabList>
                 <TabPanels>
                     <TabPanel>
-                        <BatchConfigurationPage {...props} renderTemplate={templateRenderer} />
+                        <BatchConfigurationPage
+                            {...props}
+                            renderTemplate={templateRenderer}
+                            insightName={codeInsightTitle}
+                        />
                     </TabPanel>
 
                     <TabPanel>
@@ -254,6 +260,9 @@ interface BatchConfigurationPageProps extends SettingsCascadeProps<Settings> {
      * When set, apply a template to the batch spec before redirecting to the edit page.
      */
     renderTemplate?: (name: string) => string
+
+    /** The name of the insight this was created from, if any. */
+    insightName?: string
 }
 
 const BatchConfigurationPage: React.FunctionComponent<BatchConfigurationPageProps> = ({
@@ -262,6 +271,7 @@ const BatchConfigurationPage: React.FunctionComponent<BatchConfigurationPageProp
     isReadOnly,
     batchChangeName,
     renderTemplate,
+    insightName,
 }) => {
     const [createEmptyBatchChange, { loading: batchChangeLoading, error: batchChangeError }] = useMutation<
         CreateEmptyBatchChangeResult,
@@ -293,6 +303,14 @@ const BatchConfigurationPage: React.FunctionComponent<BatchConfigurationPageProp
     const history = useHistory()
     const handleCancel = (): void => history.goBack()
     const handleCreate = (): void => {
+        const redirectSearchParameters = new URLSearchParams()
+        if (insightName) {
+            redirectSearchParameters.set('title', insightName)
+        }
+        let serializedRedirectSearchParameters = redirectSearchParameters.toString()
+        if (serializedRedirectSearchParameters.length > 0) {
+            serializedRedirectSearchParameters = '?' + serializedRedirectSearchParameters
+        }
         createEmptyBatchChange({
             variables: { namespace: selectedNamespace.id, name: nameInput },
         })
@@ -309,7 +327,11 @@ const BatchConfigurationPage: React.FunctionComponent<BatchConfigurationPageProp
                       }).then(() => Promise.resolve(args))
                     : Promise.resolve(args)
             })
-            .then(({ data }) => (data ? history.push(`${data.createEmptyBatchChange.url}/edit`) : noop()))
+            .then(({ data }) =>
+                data
+                    ? history.push(`${data.createEmptyBatchChange.url}/edit${serializedRedirectSearchParameters}`)
+                    : noop()
+            )
             // We destructure and surface the error from `useMutation` instead.
             .catch(noop)
     }
@@ -400,6 +422,10 @@ interface EditPageProps extends ThemeProps {
 }
 
 const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetchBatchChange, isLightTheme }) => {
+    const location = useLocation()
+    const parameters = new URLSearchParams(location.search)
+    const codeInsightTitle = parameters.get('title')
+
     // Get the latest batch spec for the batch change.
     const { batchSpec, isApplied: isLatestBatchSpecApplied, initialCode: initialBatchSpecCode } = useInitialBatchSpec(
         batchChange
@@ -551,6 +577,22 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
                 <LibraryPane name={batchChange.name} onReplaceItem={clearErrorsAndHandleCodeChange} />
                 <div className={styles.editorContainer}>
                     <h4 className={styles.header}>Batch spec</h4>
+                    {codeInsightTitle && (
+                        <Card className={classNames('mb-3', styles.codeInsightsBanner)}>
+                            <CardBody>
+                                <div className="d-flex justify-content-between align-items-center">
+                                    <CodeInsightsBatchesIcon className="mr-4" />
+                                    <div className="flex-grow-1">
+                                        <H4>Start from template for the {codeInsightTitle}</H4>
+                                        <p className="mb-0">
+                                            Sourcegraph pre-selected a Batch Specification for the batch change started
+                                            from {codeInsightTitle}.
+                                        </p>
+                                    </div>
+                                </div>
+                            </CardBody>
+                        </Card>
+                    )}
                     <MonacoBatchSpecEditor
                         batchChangeName={batchChange.name}
                         className={styles.editor}
