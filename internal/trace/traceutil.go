@@ -108,11 +108,15 @@ type Tracer struct {
 
 // New returns a new Trace with the specified family and title.
 func (t Tracer) New(ctx context.Context, family, title string, tags ...Tag) (*Trace, context.Context) {
+	return t.NewWithOptions(ctx, family, title, tags, nil)
+}
+
+func (t Tracer) NewWithOptions(ctx context.Context, family, title string, tags []Tag, options []opentracing.StartSpanOption) (*Trace, context.Context) {
 	span, ctx := ot.StartSpanFromContextWithTracer(
 		ctx,
 		t.Tracer,
 		family,
-		tagsOpt{title: title, tags: tags},
+		append(options, tagsOpt{title: title, tags: tags})...,
 	)
 	tr := nettrace.New(family, title)
 	trace := &Trace{span: span, trace: tr, family: family}
@@ -211,6 +215,12 @@ func (t *Trace) SetErrorIfNotContext(err error) {
 		return
 	}
 	t.SetError(err)
+}
+
+// GetBaggageItem retrieves the baggage item from the underlying opentracing span. Not
+// supported for golang.org/x/net/trace.Trace
+func (t *Trace) GetBaggageItem(key string) string {
+	return t.span.BaggageItem(key)
 }
 
 // Finish declares that this trace and span is complete.

@@ -66,6 +66,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
@@ -188,6 +189,9 @@ type TraceLogger interface {
 
 	// Logger is a logger scoped to this trace.
 	log.Logger
+
+	// GetTrace returns the underlying trace instance, if any. Use sparingly.
+	GetTrace() *trace.Trace
 }
 
 // TestTraceLogger creates an empty TraceLogger that can be used for testing. The logger
@@ -243,6 +247,10 @@ func (t *traceLogger) Tag(fields ...otlog.Field) {
 	t.Logger = t.Logger.With(toLogFields(fields)...)
 }
 
+func (t *traceLogger) GetTrace() *trace.Trace {
+	return t.trace
+}
+
 // FinishFunc is the shape of the function returned by With and should be invoked within
 // a defer directly before the observed function returns or when a context is cancelled
 // with OnCancel.
@@ -287,6 +295,8 @@ type Args struct {
 	MetricLabelValues []string
 	// LogFields that apply only to this invocation of the operation.
 	LogFields []otlog.Field
+	// SpanOptions is provided to the opentracing span construction.
+	SpanOptions []opentracing.StartSpanOption
 }
 
 // WithErrors prepares the necessary timers, loggers, and metrics to observe the invocation of an
@@ -326,7 +336,7 @@ func (op *Operation) WithErrorsAndLogger(ctx context.Context, root *error, args 
 // to the active trace, and a function to be deferred until the end of the operation.
 func (op *Operation) With(ctx context.Context, err *error, args Args) (context.Context, TraceLogger, FinishFunc) {
 	start := time.Now()
-	tr, ctx := op.startTrace(ctx)
+	tr, ctx := op.startTrace(ctx, args.SpanOptions)
 
 	event := honey.NoopEvent()
 	snakecaseOpName := toSnakeCase(op.name)
@@ -395,12 +405,12 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 
 // startTrace creates a new Trace object and returns the wrapped context. This returns
 // an unmodified context and a nil startTrace if no tracer was supplied on the observation context.
-func (op *Operation) startTrace(ctx context.Context) (*trace.Trace, context.Context) {
+func (op *Operation) startTrace(ctx context.Context, opts []opentracing.StartSpanOption) (*trace.Trace, context.Context) {
 	if op.context.Tracer == nil {
 		return nil, ctx
 	}
 
-	tr, ctx := op.context.Tracer.New(ctx, op.kebabName, "")
+	tr, ctx := op.context.Tracer.NewWithOptions(ctx, op.kebabName, "", nil, opts)
 	return tr, ctx
 }
 
