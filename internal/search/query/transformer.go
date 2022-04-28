@@ -373,63 +373,19 @@ func partition(nodes []Node, fn func(node Node) bool) (left, right []Node) {
 	return left, right
 }
 
-// product appends the list of n elements in right to each of the m rows in
-// left. If left is empty, it is initialized with right.
-func product(left [][]Node, right []Node) [][]Node {
-	result := [][]Node{}
-	if len(left) == 0 {
-		return append(result, right)
-	}
-
-	for _, row := range left {
-		newRow := make([]Node, len(row))
-		copy(newRow, row)
-		result = append(result, append(newRow, right...))
-	}
-	return result
-}
-
-// distribute applies the distributed property to nodes. See the dnf function
-// for context. Its first argument takes the current set of prefixes to prepend
-// to each term in an or-expression.
-func distribute(prefixes [][]Node, nodes []Node) [][]Node {
-	for _, node := range nodes {
-		switch v := node.(type) {
-		case Operator:
-			switch v.Kind {
-			case Or:
-				result := [][]Node{}
-				for _, o := range v.Operands {
-					var newPrefixes [][]Node
-					newPrefixes = distribute(newPrefixes, []Node{o})
-					for _, newPrefix := range newPrefixes {
-						result = append(result, product(prefixes, newPrefix)...)
-					}
-				}
-				prefixes = result
-			case And, Concat:
-				prefixes = distribute(prefixes, v.Operands)
-			}
-		case Parameter, Pattern:
-			prefixes = product(prefixes, []Node{v})
-		}
-	}
-	return prefixes
-}
-
 // distribute applies the distributed property to the parameters of basic
 // queries. See the BuildPlan function for context. Its first argument takes
 // the current set of prefixes to prepend to each term in an or-expression.
 // Importantly, unlike a full DNF, this function does not distribute `or`
 // expressions in the pattern.
-func basicDistribute(prefixes []Basic, nodes []Node) []Basic {
+func distribute(prefixes []Basic, nodes []Node) []Basic {
 	for _, node := range nodes {
 		switch v := node.(type) {
 		case Operator:
 			// If the node is all pattern expressions,
 			// we can add it to the existing patterns as-is.
 			if isPatternExpression(v.Operands) {
-				prefixes = basicProduct(prefixes, Basic{Pattern: v})
+				prefixes = product(prefixes, Basic{Pattern: v})
 				continue
 			}
 
@@ -437,41 +393,41 @@ func basicDistribute(prefixes []Basic, nodes []Node) []Basic {
 			case Or:
 				result := make([]Basic, 0, len(prefixes)*len(v.Operands))
 				for _, o := range v.Operands {
-					newBasics := basicDistribute([]Basic{}, []Node{o})
+					newBasics := distribute([]Basic{}, []Node{o})
 					for _, newBasic := range newBasics {
-						result = append(result, basicProduct(prefixes, newBasic)...)
+						result = append(result, product(prefixes, newBasic)...)
 					}
 				}
 				prefixes = result
 			case And, Concat:
-				prefixes = basicDistribute(prefixes, v.Operands)
+				prefixes = distribute(prefixes, v.Operands)
 			}
 		case Parameter:
-			prefixes = basicProduct(prefixes, Basic{Parameters: []Parameter{v}})
+			prefixes = product(prefixes, Basic{Parameters: []Parameter{v}})
 		case Pattern:
-			prefixes = basicProduct(prefixes, Basic{Pattern: v})
+			prefixes = product(prefixes, Basic{Pattern: v})
 		}
 	}
 	return prefixes
 }
 
-// basicProduct computes a conjunction between toMerge and each of the
+// product computes a conjunction between toMerge and each of the
 // input Basic queries.
-func basicProduct(basics []Basic, toMerge Basic) []Basic {
+func product(basics []Basic, toMerge Basic) []Basic {
 	if len(basics) == 0 {
 		return []Basic{toMerge}
 	}
 	result := make([]Basic, len(basics))
 	for i, basic := range basics {
-		result[i] = basicConjunction(basic, toMerge)
+		result[i] = conjunction(basic, toMerge)
 	}
 	return result
 }
 
-// basicConjunction returns a new Basic query that is equivalent to the
+// conjunction returns a new Basic query that is equivalent to the
 // conjunction of the two inputs. The equivalent of combining
 // `(repo:a b) and (repo:c d)` into `repo:a repo:c b and d`
-func basicConjunction(left, right Basic) Basic {
+func conjunction(left, right Basic) Basic {
 	var pattern Node
 	if left.Pattern == nil {
 		pattern = right.Pattern
@@ -487,23 +443,6 @@ func basicConjunction(left, right Basic) Basic {
 	}
 }
 
-// Dnf returns the Disjunctive Normal Form of a query (a flat sequence of
-// or-expressions) by applying the distributive property on (possibly nested)
-// or-expressions. For example, the query:
-//
-// (repo:a (file:b OR file:c))
-// in DNF becomes:
-// (repo:a file:b) OR (repo:a file:c)
-//
-// Using the DNF expression makes it easy to support general nested queries that
-// imply scope, like the one above: We simply evaluate all disjuncts and union
-// the results. Note that various optimizations are possible
-// during evaluation, but those are separate query pre- or postprocessing steps
-// separate from this general transformation.
-func Dnf(query []Node) [][]Node {
-	return distribute([][]Node{}, query)
-}
-
 // BuildPlan converts a raw query tree into a set of disjunct basic queries
 // (Plan). Note that a basic query can still have a tree structure within its
 // pattern node, just not in any of the parameters.
@@ -517,7 +456,7 @@ func Dnf(query []Node) [][]Node {
 // is transformed to
 //   (repo:a (b OR c)) OR (repo:b (b OR c))
 func BuildPlan(query []Node) Plan {
-	return basicDistribute([]Basic{}, query)
+	return distribute([]Basic{}, query)
 }
 
 func substituteOrForRegexp(nodes []Node) []Node {
