@@ -45,7 +45,7 @@ const CONTEXTS_GQL_MOCKS: MockedResponse<GetSearchContextsResult> = {
                         name: '@sourcegraph/code-insights',
                         query: 'repo:github.com/sourcegraph/sourcegraph2',
                         description: 'Hello this is mee, your friend context 2',
-                    }
+                    },
                 ],
                 pageInfo: {
                     hasNextPage: false,

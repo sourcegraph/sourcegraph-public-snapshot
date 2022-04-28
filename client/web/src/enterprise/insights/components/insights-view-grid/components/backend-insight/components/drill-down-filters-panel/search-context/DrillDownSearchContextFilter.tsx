@@ -6,7 +6,8 @@ import classNames from 'classnames'
 import { noop } from 'lodash'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { InputProps, Link, LoadingSpinner } from '@sourcegraph/wildcard'
+import { isDefined } from '@sourcegraph/common'
+import { InputProps, Link, LoadingSpinner, useDebounce } from '@sourcegraph/wildcard'
 
 import { GetSearchContextsResult } from '../../../../../../../../../graphql-operations'
 import { DrillDownInput } from '../drill-down-input/DrillDownInput'
@@ -31,32 +32,17 @@ export const SEARCH_CONTEXT_GQL = gql`
 
 interface DrillDownSearchContextFilter extends InputProps {}
 
-interface SearchContextState {
-    showSuggest: boolean
-}
-
-const INITIAL_STATE: SearchContextState = {
-    showSuggest: true,
-}
-
 export const DrillDownSearchContextFilter: FunctionComponent<DrillDownSearchContextFilter> = props => {
     const { value = '', className, onChange = noop, ...attributes } = props
-
-    const [searchState, setSearchState] = useState<SearchContextState>(INITIAL_STATE)
+    const [showSuggest, setShowSuggest] = useState<boolean>(true)
 
     const handleSelect = (value: string): void => {
-        setSearchState({
-            showSuggest: false,
-        })
-
+        setShowSuggest(false)
         onChange(value)
     }
 
     const handleChange = (event: ChangeEvent<HTMLInputElement>): void => {
-        setSearchState({
-            showSuggest: true,
-        })
-
+        setShowSuggest(true)
         onChange(event)
     }
 
@@ -72,7 +58,7 @@ export const DrillDownSearchContextFilter: FunctionComponent<DrillDownSearchCont
                 onChange={handleChange}
             />
 
-            {searchState.showSuggest && <SuggestPanel query={value.toString()} />}
+            {showSuggest && <SuggestPanel query={value.toString()} />}
         </Combobox>
     )
 }
@@ -84,9 +70,13 @@ interface SuggestPanelProps {
 const SuggestPanel: FunctionComponent<SuggestPanelProps> = props => {
     const { query } = props
 
+    const debouncedQuery = useDebounce(query, 700)
     const { data, loading, error } = useQuery<GetSearchContextsResult>(SEARCH_CONTEXT_GQL, {
-        variables: { query },
+        variables: { query: debouncedQuery },
     })
+
+    const queryBasedContexts =
+        data?.searchContexts.nodes.filter(node => isDefined(node.query) && node.query !== '') ?? []
 
     return (
         <ComboboxList className={styles.suggestionList}>
@@ -95,12 +85,12 @@ const SuggestPanel: FunctionComponent<SuggestPanelProps> = props => {
             ) : error ? (
                 <ErrorAlert error={error} />
             ) : data ? (
-                data.searchContexts.nodes.length === 0 ? (
+                queryBasedContexts.length === 0 ? (
                     <span className={styles.suggestNoDataFound}>
                         No query-based search contexts found. <Link to="/contexts/new">Create search context</Link>
                     </span>
                 ) : (
-                    data.searchContexts.nodes.map(context => (
+                    queryBasedContexts.map(context => (
                         <ComboboxOption key={context.id} value={context.name} className={styles.suggestItem}>
                             <small className={styles.suggestItemName}>
                                 <ComboboxOptionText />
