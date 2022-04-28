@@ -15,7 +15,7 @@ export type ProductStatusType = typeof PRODUCT_STATUSES[number]
 const STATUS_VARIANT_MAPPING: Record<ProductStatusType, typeof BADGE_VARIANTS[number]> = {
     prototype: 'warning',
     wip: 'warning',
-    experimental: 'info',
+    experimental: 'warning',
     beta: 'info',
     new: 'info',
 }

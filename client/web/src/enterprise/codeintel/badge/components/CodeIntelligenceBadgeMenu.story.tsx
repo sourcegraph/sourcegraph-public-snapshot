@@ -12,7 +12,8 @@ import {
 } from '../../../../graphql-operations'
 import { UseCodeIntelStatusPayload, UseRequestLanguageSupportParameters } from '../hooks/useCodeIntelStatus'
 
-import { CodeIntelligenceBadge, CodeIntelligenceBadgeProps } from './CodeIntelligenceBadge'
+import { CodeIntelligenceBadgeContentProps } from './CodeIntelligenceBadgeContent'
+import { CodeIntelligenceBadgeMenu } from './CodeIntelligenceBadgeMenu'
 
 const uploadPrototype: Omit<LsifUploadFields, 'id' | 'state' | 'uploadedAt'> = {
     __typename: 'LSIFUpload',
@@ -221,14 +222,13 @@ const emptyPayload: UseCodeIntelStatusPayload = {
 
 const now = () => new Date('2020-06-15T15:25:00+00:00')
 
-const defaultProps: CodeIntelligenceBadgeProps = {
+const defaultProps: CodeIntelligenceBadgeContentProps = {
     repoName: 'repoName',
     revision: 'commitID',
     filePath: 'foo/bar/baz.bonk',
     settingsCascade: { subjects: null, final: null },
-    isOpen: true,
+    isStorybook: true,
     now,
-    showBadgeCta: false,
     useCodeIntelStatus: () => ({ data: emptyPayload, loading: false }),
     useRequestedLanguageSupportQuery: () => ({
         data: { languages: ['ocaml'] },
@@ -246,7 +246,7 @@ const defaultProps: CodeIntelligenceBadgeProps = {
         { loading: false },
     ],
 }
-const { add } = storiesOf('web/codeintel/enterprise/CodeIntelligenceBadge', module).addDecorator(story => (
+const { add } = storiesOf('web/codeintel/enterprise/CodeIntelligenceBadgeMenu', module).addDecorator(story => (
     <WebStory>{() => story()}</WebStory>
 ))
 
@@ -255,26 +255,28 @@ const withPayload = (payload: Partial<UseCodeIntelStatusPayload>): typeof defaul
     useCodeIntelStatus: () => ({ data: { ...emptyPayload, ...payload }, loading: false }),
 })
 
-add('Unsupported', () => <CodeIntelligenceBadge {...defaultProps} />)
+add('Unsupported', () => <CodeIntelligenceBadgeMenu {...defaultProps} />)
 
-add('Unavailable', () => <CodeIntelligenceBadge {...withPayload({ searchBasedSupport })} />)
+add('Unavailable', () => <CodeIntelligenceBadgeMenu {...withPayload({ searchBasedSupport })} />)
 
-add('Multiple projects', () => <CodeIntelligenceBadge {...withPayload({ preciseSupport: multiplePreciseSupport })} />)
+add('Multiple projects', () => (
+    <CodeIntelligenceBadgeMenu {...withPayload({ preciseSupport: multiplePreciseSupport })} />
+))
 
 add('Multiple projects, one enabled', () => (
-    <CodeIntelligenceBadge {...withPayload({ recentUploads: [completedUpload], preciseSupport })} />
+    <CodeIntelligenceBadgeMenu {...withPayload({ recentUploads: [completedUpload], preciseSupport })} />
 ))
 
 add('Processing error', () => (
-    <CodeIntelligenceBadge {...withPayload({ recentUploads: [completedUpload, failingUpload] })} />
+    <CodeIntelligenceBadgeMenu {...withPayload({ recentUploads: [completedUpload, failingUpload] })} />
 ))
 
 add('Indexing error', () => (
-    <CodeIntelligenceBadge {...withPayload({ recentUploads: [completedUpload], recentIndexes: [failingIndex] })} />
+    <CodeIntelligenceBadgeMenu {...withPayload({ recentUploads: [completedUpload], recentIndexes: [failingIndex] })} />
 ))
 
 add('Multiple errors', () => (
-    <CodeIntelligenceBadge
+    <CodeIntelligenceBadgeMenu
         {...withPayload({ recentUploads: [completedUpload, failingUpload], recentIndexes: [failingIndex] })}
     />
 ))

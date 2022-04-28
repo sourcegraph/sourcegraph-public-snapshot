@@ -3,6 +3,7 @@
 exports[`Alert renders variant 'danger' correctly 1`] = `
 <div
   class=""
+  role="alert"
 >
   <h4>
     Too many matching repositories
@@ -14,6 +15,7 @@ exports[`Alert renders variant 'danger' correctly 1`] = `
 exports[`Alert renders variant 'info' correctly 1`] = `
 <div
   class=""
+  role="alert"
 >
   <h4>
     Too many matching repositories
@@ -25,6 +27,7 @@ exports[`Alert renders variant 'info' correctly 1`] = `
 exports[`Alert renders variant 'merged' correctly 1`] = `
 <div
   class=""
+  role="alert"
 >
   <h4>
     Too many matching repositories
@@ -36,6 +39,7 @@ exports[`Alert renders variant 'merged' correctly 1`] = `
 exports[`Alert renders variant 'note' correctly 1`] = `
 <div
   class=""
+  role="alert"
 >
   <h4>
     Too many matching repositories
@@ -47,6 +51,7 @@ exports[`Alert renders variant 'note' correctly 1`] = `
 exports[`Alert renders variant 'primary' correctly 1`] = `
 <div
   class=""
+  role="alert"
 >
   <h4>
     Too many matching repositories
@@ -58,6 +63,7 @@ exports[`Alert renders variant 'primary' correctly 1`] = `
 exports[`Alert renders variant 'secondary' correctly 1`] = `
 <div
   class=""
+  role="alert"
 >
   <h4>
     Too many matching repositories
@@ -69,6 +75,7 @@ exports[`Alert renders variant 'secondary' correctly 1`] = `
 exports[`Alert renders variant 'success' correctly 1`] = `
 <div
   class=""
+  role="alert"
 >
   <h4>
     Too many matching repositories
@@ -80,6 +87,7 @@ exports[`Alert renders variant 'success' correctly 1`] = `
 exports[`Alert renders variant 'waiting' correctly 1`] = `
 <div
   class=""
+  role="alert"
 >
   <h4>
     Too many matching repositories
@@ -91,6 +99,7 @@ exports[`Alert renders variant 'waiting' correctly 1`] = `
 exports[`Alert renders variant 'warning' correctly 1`] = `
 <div
   class=""
+  role="alert"
 >
   <h4>
     Too many matching repositories

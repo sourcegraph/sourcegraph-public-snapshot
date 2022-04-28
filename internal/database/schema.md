@@ -1280,6 +1280,7 @@ Tracks jobs that scan imports of indexes to schedule auto-index jobs.
  dirty_token   | integer                  |           | not null | 
  update_token  | integer                  |           | not null | 
  updated_at    | timestamp with time zone |           |          | 
+ set_dirty_at  | timestamp with time zone |           | not null | now()
 Indexes:
     "lsif_dirty_repositories_pkey" PRIMARY KEY, btree (repository_id)
 
