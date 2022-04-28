@@ -4,7 +4,6 @@ import classNames from 'classnames'
 import BrainIcon from 'mdi-react/BrainIcon'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { isDefined } from '@sourcegraph/common'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import {
     Badge,
@@ -19,40 +18,62 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { CodeIntelligenceBadgeProps as DefaultRepositoryMenuProps } from '../../../../codeintel/CodeIntelligenceBadge'
+import { LSIFUploadState, LSIFIndexState } from '../../../../graphql-operations'
 import {
-    LsifIndexFields,
-    LsifUploadFields,
-    PreciseSupportLevel,
-    LSIFUploadState,
-    LSIFIndexState,
-    SearchBasedSupportLevel,
-} from '../../../../graphql-operations'
-import {
+    massageIndexerSupportMetadata,
     useCodeIntelStatus as defaultUseCodeIntelStatus,
-    UseCodeIntelStatusPayload,
     useRequestedLanguageSupportQuery as defaultUseRequestedLanguageSupportQuery,
     useRequestLanguageSupportQuery as defaultUseRequestLanguageSupportQuery,
 } from '../hooks/useCodeIntelStatus'
 
-import { IndexerSummary } from './IndexerSummary'
-import { InternalBadgeContent } from './InternalBadgeContent'
-import { Unsupported } from './Unsupported'
+import { InternalCodeIntelligenceBadgeContent } from './InternalCodeIntelligenceBadgeContent'
+import { UserFacingCodeIntelligenceBadgeContent } from './UserFacingCodeIntelligenceBadgeContent'
 
 import styles from './CodeIntelligenceBadge.module.scss'
 
-export type CodeIntelligenceBadgeProps = DefaultRepositoryMenuProps & {
-    isOpen?: boolean
+interface CodeIntelligenceBadgeStorybookProps {
+    isStorybook?: boolean
     now?: () => Date
-    showBadgeCta?: boolean
     useCodeIntelStatus?: typeof defaultUseCodeIntelStatus
     useRequestedLanguageSupportQuery?: typeof defaultUseRequestedLanguageSupportQuery
     useRequestLanguageSupportQuery?: typeof defaultUseRequestLanguageSupportQuery
 }
 
-export const CodeIntelligenceBadge: React.FunctionComponent<CodeIntelligenceBadgeProps> = ({
-    isOpen,
+export interface CodeIntelligenceBadgeProps extends DefaultRepositoryMenuProps, CodeIntelligenceBadgeStorybookProps {}
+
+export const CodeIntelligenceBadgeContent: React.FunctionComponent<CodeIntelligenceBadgeProps> = props => {
+    const { data, loading, error } = defaultUseCodeIntelStatus({
+        variables: {
+            repository: props.repoName,
+            commit: props.revision,
+            path: props.filePath,
+        },
+    })
+
+    const indexerSupportMetadata = data && massageIndexerSupportMetadata(data)
+
+    return loading ? (
+        <div className="px-2 py-1">
+            <LoadingSpinner />
+        </div>
+    ) : error ? (
+        <div className="px-2 py-1">
+            <ErrorAlert prefix="Error loading repository summary" error={error} />
+        </div>
+    ) : data && indexerSupportMetadata ? (
+        <UserFacingCodeIntelligenceBadgeContent
+            repoName={props.repoName}
+            indexerSupportMetadata={indexerSupportMetadata}
+            useRequestedLanguageSupportQuery={defaultUseRequestedLanguageSupportQuery}
+            useRequestLanguageSupportQuery={defaultUseRequestLanguageSupportQuery}
+            settingsCascade={props.settingsCascade}
+        />
+    ) : null
+}
+
+export const CodeIntelligenceBadgeMenu: React.FunctionComponent<CodeIntelligenceBadgeProps> = ({
+    isStorybook,
     now,
-    showBadgeCta,
     useCodeIntelStatus = defaultUseCodeIntelStatus,
     useRequestedLanguageSupportQuery = defaultUseRequestedLanguageSupportQuery,
     useRequestLanguageSupportQuery = defaultUseRequestLanguageSupportQuery,
@@ -75,9 +96,8 @@ export const CodeIntelligenceBadge: React.FunctionComponent<CodeIntelligenceBadg
 
     // Determine if we should show a badge CTA at all. The initial value will be
     // the current user's temporary setting (so we can show it until they interact).
-    // This value may change on click of the top level menu. The comparison with the
-    // showBadgeCta prop is for use in storybooks (to set badgeUsed = true).
-    const [badgeUsed, setBadgeUsed] = useTemporarySetting('codeintel.badge.used', showBadgeCta === false)
+    // This value may change on click of the top level menu.
+    const [badgeUsed, setBadgeUsed] = useTemporarySetting('codeintel.badge.used', isStorybook === true)
 
     // Listen to all updates of badgeUsed and determine if we've ever seen a value that
     // was strictly false.
@@ -123,7 +143,7 @@ export const CodeIntelligenceBadge: React.FunctionComponent<CodeIntelligenceBadg
                     <Icon as={BrainIcon} />
                 </MenuButton>
 
-                <MenuList position={Position.bottomEnd} className={styles.dropdownMenu} isOpen={isOpen}>
+                <MenuList position={Position.bottomEnd} className={styles.dropdownMenu} isOpen={isStorybook}>
                     <MenuHeader>
                         Code intelligence{' '}
                         {isNew && (
@@ -145,137 +165,25 @@ export const CodeIntelligenceBadge: React.FunctionComponent<CodeIntelligenceBadg
                         </div>
                     ) : data && indexerSupportMetadata ? (
                         <>
-                            <BadgeContent
+                            <UserFacingCodeIntelligenceBadgeContent
                                 repoName={props.repoName}
                                 indexerSupportMetadata={indexerSupportMetadata}
-                                now={now}
                                 onClose={onContentClose}
+                                now={now}
                                 useRequestedLanguageSupportQuery={useRequestedLanguageSupportQuery}
                                 useRequestLanguageSupportQuery={useRequestLanguageSupportQuery}
+                                settingsCascade={props.settingsCascade}
                             />
 
-                            <InternalBadgeContent data={data} settingsCascade={props.settingsCascade} now={now} />
+                            <InternalCodeIntelligenceBadgeContent
+                                data={data}
+                                settingsCascade={props.settingsCascade}
+                                now={now}
+                            />
                         </>
                     ) : null}
                 </MenuList>
             </>
         </Menu>
     )
-}
-
-const BadgeContent: React.FunctionComponent<{
-    repoName: string
-    indexerSupportMetadata: IndexerSupportMetadata
-    now?: () => Date
-    onClose?: () => void
-    useRequestedLanguageSupportQuery: typeof defaultUseRequestedLanguageSupportQuery
-    useRequestLanguageSupportQuery: typeof defaultUseRequestLanguageSupportQuery
-}> = ({
-    repoName,
-    indexerSupportMetadata: { allIndexers, indexerNames, uploadsByIndexerName, indexesByIndexerName },
-    onClose,
-    now,
-    useRequestedLanguageSupportQuery,
-    useRequestLanguageSupportQuery,
-}) => {
-    // Call onClose when this component unmounts
-    useEffect(() => onClose, [onClose])
-
-    // Expand badges to be as large as the maximum badge when we are displaying
-    // badges of different types. This condition checks that there's at least
-    // two distinct states being displayed in the following rendered component.
-    const className =
-        new Set(
-            indexerNames.map(name =>
-                (uploadsByIndexerName.get(name)?.length || 0) + (indexesByIndexerName.get(name)?.length || 0) > 0
-                    ? 'enabled'
-                    : allIndexers.find(candidate => candidate.name === name) !== undefined
-                    ? 'configurable'
-                    : 'unavailable'
-            )
-        ).size > 1
-            ? styles.badgeMultiple
-            : undefined
-
-    return indexerNames.length === 0 ? (
-        <Unsupported />
-    ) : (
-        <>
-            {indexerNames.map((name, index) => (
-                <React.Fragment key={`indexer-${name}`}>
-                    {index > 0 && <MenuDivider />}
-                    <IndexerSummary
-                        repoName={repoName}
-                        summary={{
-                            name,
-                            uploads: uploadsByIndexerName.get(name) || [],
-                            indexes: indexesByIndexerName.get(name) || [],
-                            indexer: allIndexers.find(candidate => candidate.name === name),
-                        }}
-                        className={className}
-                        useRequestedLanguageSupportQuery={useRequestedLanguageSupportQuery}
-                        useRequestLanguageSupportQuery={useRequestLanguageSupportQuery}
-                        now={now}
-                    />
-                </React.Fragment>
-            ))}
-        </>
-    )
-}
-
-interface IndexerSupportMetadata {
-    allIndexers: { name: string; url: string }[]
-    indexerNames: string[]
-    uploadsByIndexerName: Map<string, LsifUploadFields[]>
-    indexesByIndexerName: Map<string, LsifIndexFields[]>
-}
-
-function massageIndexerSupportMetadata(data: UseCodeIntelStatusPayload): IndexerSupportMetadata {
-    const allUploads = data.recentUploads.flatMap(uploads => uploads.uploads)
-    const uploadsByIndexerName = groupBy<LsifUploadFields, string>(allUploads, getIndexerName)
-    const allIndexes = data.recentIndexes.flatMap(indexes => indexes.indexes)
-    const indexesByIndexerName = groupBy<LsifIndexFields, string>(allIndexes, getIndexerName)
-
-    const nativelySupportedIndexers = (data.preciseSupport || [])
-        .filter(support => support.supportLevel === PreciseSupportLevel.NATIVE)
-        .map(support => support.indexers?.[0])
-        .filter(isDefined)
-
-    const allIndexers = [
-        ...groupBy(
-            [...allUploads, ...allIndexes]
-                .map(index => index.indexer || undefined)
-                .filter(isDefined)
-                .concat(nativelySupportedIndexers),
-            indexer => indexer.name
-        ).values(),
-    ].map(indexers => indexers[0])
-
-    const languages = [
-        ...new Set(
-            data.searchBasedSupport
-                ?.filter(support => support.supportLevel === SearchBasedSupportLevel.BASIC)
-                .map(support => support.language)
-        ),
-    ].sort()
-    const fakeIndexerNames = languages.map(name => `lsif-${name.toLowerCase()}`)
-    const indexerNames = [...new Set(allIndexers.map(indexer => indexer.name).concat(fakeIndexerNames))].sort()
-
-    return {
-        allIndexers,
-        indexerNames,
-        uploadsByIndexerName,
-        indexesByIndexerName,
-    }
-}
-
-function groupBy<V, K>(values: V[], keyFn: (value: V) => K): Map<K, V[]> {
-    return values.reduce(
-        (map, value) => map.set(keyFn(value), (map.get(keyFn(value)) || []).concat([value])),
-        new Map<K, V[]>()
-    )
-}
-
-function getIndexerName(uploadOrIndexer: LsifUploadFields | LsifIndexFields): string {
-    return uploadOrIndexer.indexer?.name || ''
 }
