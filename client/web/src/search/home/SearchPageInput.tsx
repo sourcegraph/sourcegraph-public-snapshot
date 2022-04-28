@@ -33,10 +33,11 @@ import { ThemePreferenceProps } from '../../theme'
 import { submitSearch } from '../helpers'
 import { useSearchOnboardingTour } from '../input/SearchOnboardingTour'
 import { QuickLinks } from '../QuickLinks'
+import { SearchContextCtaContainer } from '../SearchContextCtaContainer'
 
 import styles from './SearchPageInput.module.scss'
 
-interface Props
+export interface SearchPageInputProps
     extends SettingsCascadeProps<Settings>,
         ThemeProps,
         ThemePreferenceProps,
@@ -67,7 +68,7 @@ const queryStateSelector = (
     patternType: state.searchPatternType,
 })
 
-export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Props>> = (props: Props) => {
+export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<SearchPageInputProps>> = props => {
     /** The value entered by the user in the query input */
     const [userQueryState, setUserQueryState] = useState({
         query: props.queryPrefix ? props.queryPrefix : '',
@@ -125,7 +126,6 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
             userQueryState.query,
         ]
     )
-
     const onSubmit = useCallback(
         (event?: React.FormEvent): void => {
             event?.preventDefault()
@@ -156,8 +156,13 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                         onChange={setUserQueryState}
                         onSubmit={onSubmit}
                         autoFocus={props.showOnboardingTour ? shouldFocusQueryInput : props.autoFocus !== false}
-                        isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
                         structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
+                        searchContextCta={
+                            <SearchContextCtaContainer
+                                telemetryService={props.telemetryService}
+                                isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
+                            />
+                        }
                     />
                 </div>
                 <QuickLinks quickLinks={quickLinks} className={styles.inputSubContainer} />

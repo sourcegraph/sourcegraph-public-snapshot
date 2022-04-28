@@ -9,6 +9,7 @@
  * everything that should be in here is already in here.
  */
 
+export { dispatch, register } from './dispatcher'
 export {
     useNavbarQueryState,
     setQueryStateFromURL,
@@ -24,3 +25,5 @@ export {
     setExperimentalFeaturesFromSettings,
 } from './experimentalFeatures'
 export { useNotepadState, useNotepad } from './notepad'
+export * from './appContext'
+export { useSearchContextCta, useShowSearchContextCta } from './searchContextCta'

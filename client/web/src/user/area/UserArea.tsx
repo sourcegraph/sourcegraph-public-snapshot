@@ -21,7 +21,6 @@ import { Page } from '../../components/Page'
 import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { UserAreaUserFields, UserAreaUserProfileResult, UserAreaUserProfileVariables } from '../../graphql-operations'
 import { NamespaceProps } from '../../namespaces'
-import { UserExternalServicesOrRepositoriesUpdateProps } from '../../util'
 import { RouteDescriptor } from '../../util/contributions'
 import { UserSettingsAreaRoute } from '../settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from '../settings/UserSettingsSidebar'
@@ -77,8 +76,7 @@ interface UserAreaProps
         BreadcrumbsProps,
         BreadcrumbSetters,
         BatchChangesProps,
-        FeatureFlagProps,
-        UserExternalServicesOrRepositoriesUpdateProps {
+        FeatureFlagProps {
     userAreaRoutes: readonly UserAreaRoute[]
     userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[]
     userSettingsSideBarItems: UserSettingsSidebarItems
@@ -107,8 +105,7 @@ export interface UserAreaRouteContext
         BreadcrumbsProps,
         BreadcrumbSetters,
         BatchChangesProps,
-        FeatureFlagProps,
-        UserExternalServicesOrRepositoriesUpdateProps {
+        FeatureFlagProps {
     /** The user area main URL. */
     url: string
 

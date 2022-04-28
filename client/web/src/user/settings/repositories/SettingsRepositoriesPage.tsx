@@ -44,8 +44,8 @@ import {
     fetchUserRepositoriesCount,
     fetchOrgRepositoriesCount,
 } from '../../../site-admin/backend'
+import { dispatch } from '../../../stores'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
 import { Owner } from '../cloud-ga'
 import { OrgUserNeedsCodeHost } from '../codeHosts/OrgUserNeedsCodeHost'
 import { OrgUserNeedsGithubUpgrade } from '../codeHosts/OrgUserNeedsGithubUpgrade'
@@ -55,9 +55,7 @@ import { defaultFilters, RepositoriesList } from './RepositoriesList'
 
 import styles from './SettingsRepositoriesPage.module.scss'
 
-interface Props
-    extends TelemetryProps,
-        Pick<UserExternalServicesOrRepositoriesUpdateProps, 'onUserExternalServicesOrRepositoriesUpdate'> {
+interface Props extends TelemetryProps {
     owner: Owner
     routingPrefix: string
     authenticatedUser: AuthenticatedUser
@@ -74,7 +72,6 @@ export const SettingsRepositoriesPage: React.FunctionComponent<React.PropsWithCh
     owner,
     routingPrefix,
     telemetryService,
-    onUserExternalServicesOrRepositoriesUpdate,
     authenticatedUser,
     onOrgGetStartedRefresh,
     org,
@@ -156,7 +153,11 @@ export const SettingsRepositoriesPage: React.FunctionComponent<React.PropsWithCh
         if (repoCount) {
             setHasRepos(true)
         }
-        onUserExternalServicesOrRepositoriesUpdate(services.length, repoCount)
+        dispatch({
+            type: 'UserExternalServicesOrRepositoriesUpdate',
+            externalServicesCount: services.length,
+            userRepoCount: repoCount,
+        })
 
         // configure filters
         const specificCodeHostFilters = services.map(service => ({
@@ -175,7 +176,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<React.PropsWithCh
         }
 
         setRepoFilters([statusFilter, updatedCodeHostFilter])
-    }, [fetchExternalServices, fetchRepositoriesCount, onUserExternalServicesOrRepositoriesUpdate, owner.id])
+    }, [fetchExternalServices, fetchRepositoriesCount, owner.id])
 
     const TWO_SECONDS = 2
 
