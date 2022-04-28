@@ -16,10 +16,10 @@ import styles from './DrillDownSearchContextFilter.module.scss'
 
 export const SEARCH_CONTEXT_GQL = gql`
     query GetSearchContexts($query: String!) {
-        searchContexts(first: 10, query: $query) {
+        searchContexts(query: $query) {
             nodes {
                 id
-                name
+                spec
                 query
                 description
             }
@@ -91,7 +91,7 @@ const SuggestPanel: FunctionComponent<SuggestPanelProps> = props => {
                     </span>
                 ) : (
                     queryBasedContexts.map(context => (
-                        <ComboboxOption key={context.id} value={context.name} className={styles.suggestItem}>
+                        <ComboboxOption key={context.id} value={context.spec} className={styles.suggestItem}>
                             <small className={styles.suggestItemName}>
                                 <ComboboxOptionText />
                             </small>
