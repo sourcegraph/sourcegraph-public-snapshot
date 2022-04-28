@@ -193,6 +193,7 @@ type TraceLogger interface {
 // TestTraceLogger creates an empty TraceLogger that can be used for testing. The logger
 // should be 'logtest.Scoped(t)'.
 func TestTraceLogger(logger log.Logger) TraceLogger {
+	println("asdf")
 	return &traceLogger{Logger: logger}
 }
 
