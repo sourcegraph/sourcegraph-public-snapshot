@@ -19,9 +19,7 @@ func TestClient_Repo(t *testing.T) {
 	// https://bitbucket.org/sourcegraph-testing/sourcegraph/.
 
 	ctx := context.Background()
-
-	c, save := newTestClient(t)
-	defer save()
+	c := newTestClient(t)
 
 	t.Run("valid repo", func(t *testing.T) {
 		repo, err := c.Repo(ctx, "sourcegraph-testing", "sourcegraph")
@@ -42,9 +40,7 @@ func TestClient_Repos(t *testing.T) {
 	// WHEN UPDATING: ensure the token in use can read
 	// https://bitbucket.org/sourcegraph-testing/sourcegraph/ and
 	// https://bitbucket.org/sourcegraph-testing/src-cli/.
-
-	cli, save := newTestClient(t)
-	defer save()
+	cli := newTestClient(t)
 
 	timeout, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
 	defer cancel()
@@ -160,9 +156,7 @@ func TestClient_ForkRepository(t *testing.T) {
 	repo := "src-cli-fork-00"
 
 	ctx := context.Background()
-
-	c, save := newTestClient(t)
-	defer save()
+	c := newTestClient(t)
 
 	// Get the current user for use in the actual fork calls (as a workspace).
 	user, err := c.CurrentUser(ctx)
