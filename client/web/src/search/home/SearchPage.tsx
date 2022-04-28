@@ -82,6 +82,7 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
                 className={classNames(styles.searchContainer, {
                     [styles.searchContainerWithContentBelow]: props.isSourcegraphDotCom || showEnterpriseHomePanels,
                 })}
+                data-owner="Search"
             >
                 <SearchPageInput {...props} showOnboardingTour={showOnboardingTour} source="home" />
             </div>

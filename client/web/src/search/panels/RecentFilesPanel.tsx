@@ -107,7 +107,7 @@ export const RecentFilesPanel: React.FunctionComponent<Props> = ({
     }
 
     const contentDisplay = (
-        <div>
+        <div data-owner="Code Intel">
             <div className="mb-1 mt-2">
                 <small>File</small>
             </div>

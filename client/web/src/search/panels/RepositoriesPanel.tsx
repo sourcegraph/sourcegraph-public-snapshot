@@ -125,7 +125,7 @@ export const RepositoriesPanel: React.FunctionComponent<Props> = ({
     }
 
     const contentDisplay = (
-        <div className="mt-2">
+        <div className="mt-2" data-owner="Code Intel">
             <div className="d-flex mb-1">
                 <small>Search</small>
             </div>

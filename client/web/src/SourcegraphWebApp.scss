@@ -74,6 +74,31 @@ body,
     min-width: 0;
 }
 
+[data-owner] {
+    &:hover:after {
+        content: attr(data-owner); /* here's the magic */
+        position: absolute;
+
+        /* vertically center */
+        top: 50%;
+        transform: translateY(-50%);
+
+        /* basic styles */
+        height: 100%;
+        width: 100%;
+        padding: 10px;
+        border-radius: 10px;
+        background: #000;
+        color: #fff;
+        text-align: center;
+
+        z-index: 999999;
+        background-color: rgba(11, 112, 219, 0.4) !important;
+        outline: 1px dotted red;
+        pointer-events: none;
+    }
+}
+
 // Global styles provided by @reach packages. Should be imported once in the global scope.
 @import '@reach/combobox/styles.css';
 @import '@reach/menu-button/styles.css';

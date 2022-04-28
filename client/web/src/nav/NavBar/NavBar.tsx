@@ -60,7 +60,7 @@ const useOutsideClickDetector = (
 }
 
 export const NavBar = ({ children, logo }: NavBarProps): JSX.Element => (
-    <nav aria-label="Main Menu" className={navBarStyles.navbar}>
+    <nav aria-label="Main Menu" className={navBarStyles.navbar} data-owner="Frontend Platform">
         <h1 className={navBarStyles.logo}>
             <RouterLink className="d-flex align-items-center" to={PageRoutes.Search}>
                 {logo}
