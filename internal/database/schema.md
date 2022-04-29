@@ -1606,8 +1606,8 @@ Stores metadata about an LSIF index uploaded by a user.
 
 # Table "public.lsif_uploads_audit_logs"
 ```
-       Column        |           Type           | Collation | Nullable | Default 
----------------------+--------------------------+-----------+----------+---------
+       Column        |           Type           | Collation | Nullable | Default  
+---------------------+--------------------------+-----------+----------+----------
  log_timestamp       | timestamp with time zone |           |          | now()
  record_deleted_at   | timestamp with time zone |           |          | 
  upload_id           | integer                  |           | not null | 
@@ -1619,8 +1619,8 @@ Stores metadata about an LSIF index uploaded by a user.
  indexer_version     | text                     |           |          | 
  upload_size         | integer                  |           |          | 
  associated_index_id | integer                  |           |          | 
- committed_at        | timestamp with time zone |           |          | 
  transition_columns  | USER-DEFINED[]           |           |          | 
+ reason              | text                     |           |          | ''::text
 Indexes:
     "lsif_uploads_audit_logs_timestamp" brin (log_timestamp)
     "lsif_uploads_audit_logs_upload_id" btree (upload_id)
@@ -1628,6 +1628,8 @@ Indexes:
 ```
 
 **log_timestamp**: Timestamp for this log entry.
+
+**reason**: The reason/source for this entry.
 
 **record_deleted_at**: Set once the upload this entry is associated with is deleted. Once NOW() - record_deleted_at is above a certain threshold, this log entry will be deleted.
 
