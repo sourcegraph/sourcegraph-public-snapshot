@@ -30,8 +30,9 @@ type Worker struct {
 	shutdownClock    glock.Clock
 	numDequeues      int             // tracks number of dequeue attempts
 	handlerSemaphore chan struct{}   // tracks available handler slots
-	ctx              context.Context // root context passed to the handler
-	cancel           func()          // cancels the root context
+	rootCtx          context.Context // root context passed to the handler
+	dequeueCtx       context.Context // context used for dequeue loop (based on root)
+	dequeueCancel    func()          // cancels the dequeue context
 	wg               sync.WaitGroup  // tracks active handler routines
 	finished         chan struct{}   // signals that Start has finished
 	runningIDSet     *IDSet          // tracks the running job IDs to heartbeat
@@ -94,7 +95,7 @@ func newWorker(ctx context.Context, store Store, handler Handler, options Worker
 		options.WorkerHostname = hostname.Get()
 	}
 
-	ctx, cancel := context.WithCancel(ctx)
+	dequeueContext, cancel := context.WithCancel(ctx)
 
 	handlerSemaphore := make(chan struct{}, options.NumHandlers)
 	for i := 0; i < options.NumHandlers; i++ {
@@ -109,8 +110,9 @@ func newWorker(ctx context.Context, store Store, handler Handler, options Worker
 		heartbeatClock:   heartbeatClock,
 		shutdownClock:    shutdownClock,
 		handlerSemaphore: handlerSemaphore,
-		ctx:              ctx,
-		cancel:           cancel,
+		rootCtx:          ctx,
+		dequeueCtx:       dequeueContext,
+		dequeueCancel:    cancel,
 		finished:         make(chan struct{}),
 		runningIDSet:     newIDSet(),
 	}
@@ -126,13 +128,14 @@ func (w *Worker) Start() {
 	go func() {
 		for {
 			select {
-			case <-w.ctx.Done():
+			case <-w.finished:
+				// All jobs finished. Heart can rest now :comfy:
 				return
 			case <-w.heartbeatClock.After(w.options.HeartbeatInterval):
 			}
 
 			ids := w.runningIDSet.Slice()
-			knownIDs, err := w.store.Heartbeat(w.ctx, ids)
+			knownIDs, err := w.store.Heartbeat(w.rootCtx, ids)
 			if err != nil {
 				logger.Error("Failed to refresh heartbeats", "name", w.options.Name, "ids", ids, "error", err)
 			}
@@ -168,7 +171,10 @@ loop:
 
 		ok, err := w.dequeueAndHandle()
 		if err != nil {
-			if w.ctx.Err() != nil && errors.Is(err, w.ctx.Err()) {
+			// Note that both rootCtx and dequeueCtx are used in the dequeueAndHandle
+			// method, but only dequeueCtx errors can be forwarded. The rootCtx is only
+			// used within a Go routine, so its error cannot be returned synchronously.
+			if w.dequeueCtx.Err() != nil && errors.Is(err, w.dequeueCtx.Err()) {
 				// If the error is due to the loop being shut down, just break
 				break loop
 			}
@@ -192,7 +198,7 @@ loop:
 
 		select {
 		case <-w.dequeueClock.After(delay):
-		case <-w.ctx.Done():
+		case <-w.dequeueCtx.Done():
 			break loop
 		case <-shutdownChan:
 			reason = "MaxActiveTime elapsed"
@@ -208,7 +214,7 @@ loop:
 // context passed to the database and the handler functions (which may cause the currently processing
 // unit of work to fail). This method blocks until all handler goroutines have exited.
 func (w *Worker) Stop() {
-	w.cancel()
+	w.dequeueCancel()
 	w.Wait()
 }
 
@@ -231,8 +237,8 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 	// If we block here we are waiting for a handler to exit so that we do not
 	// exceed our configured concurrency limit.
 	case <-w.handlerSemaphore:
-	case <-w.ctx.Done():
-		return false, w.ctx.Err()
+	case <-w.dequeueCtx.Done():
+		return false, w.dequeueCtx.Err()
 	}
 	defer func() {
 		if !dequeued {
@@ -244,7 +250,7 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 		}
 	}()
 
-	dequeueable, extraDequeueArguments, err := w.preDequeueHook(w.ctx)
+	dequeueable, extraDequeueArguments, err := w.preDequeueHook(w.dequeueCtx)
 	if err != nil {
 		return false, errors.Wrap(err, "Handler.PreDequeueHook")
 	}
@@ -254,7 +260,7 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 	}
 
 	// Select a queued record to process and the transaction that holds it
-	record, dequeued, err := w.store.Dequeue(w.ctx, w.options.WorkerHostname, extraDequeueArguments)
+	record, dequeued, err := w.store.Dequeue(w.dequeueCtx, w.options.WorkerHostname, extraDequeueArguments)
 	if err != nil {
 		return false, errors.Wrap(err, "store.Dequeue")
 	}
@@ -263,7 +269,8 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 		return false, nil
 	}
 
-	workerSpan, workerCtxWithSpan := ot.StartSpanFromContext(ot.WithShouldTrace(w.ctx, true), w.options.Name)
+	// Create context and span based on the root context
+	workerSpan, workerCtxWithSpan := ot.StartSpanFromContext(ot.WithShouldTrace(w.rootCtx, true), w.options.Name)
 	handleCtx, cancel := context.WithCancel(workerCtxWithSpan)
 
 	// Register the record as running so it is included in heartbeat updates.
