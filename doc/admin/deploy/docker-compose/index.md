@@ -449,8 +449,8 @@ You will need:
 
 We offer cloud-specific Sourcegraph installation guides:
 
-- [Install Sourcegraph with Docker Compose on Amazon Web Services](../../install/docker-compose/aws.md)
-- [Install Sourcegraph with Docker Compose on Google Cloud](../../install/docker-compose/google_cloud.md)
-- [Install Sourcegraph with Docker Compose on DigitalOcean](../../install/docker-compose/digitalocean.md)
+- [Deploy Sourcegraph with Docker Compose on Amazon Web Services](../../deploy/docker-compose/aws.md)
+- [Deploy Sourcegraph with Docker Compose on Google Cloud](../../deploy/docker-compose/google_cloud.md)
+- [Deploy Sourcegraph with Docker Compose on DigitalOcean](../../deploy/docker-compose/digitalocean.md)
 
 For next steps and further configuration options, visit the [site administration documentation](../../index.md).
