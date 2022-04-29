@@ -229,8 +229,8 @@
 /batch_changes/how-tos/configuring_user_credentials /batch_changes/how-tos/configuring_credentials 308
 /batch-changes/references/troubleshooting /batch_changes/references/troubleshooting 308
 
-/admin/install/docker-compose/update /admin/deploy/docker-compose/operations#upgrade 308
-/admin/install/docker-compose/configure /admin/deploy/docker-compose/operations#configure 308
+/admin/install/docker-compose/update /admin/deploy/docker-compose/index.md#upgrade 308
+/admin/install/docker-compose/configure /admin/deploy/docker-compose/index.md#configuration 308
 /admin/install/kubernetes/overlays /admin/deploy/kubernetes/configure 308
 
 /dev/background-information/continuous_integration /dev/background-information/ci 308
