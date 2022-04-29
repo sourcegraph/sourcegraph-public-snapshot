@@ -125,6 +125,7 @@ import {
 } from './nativeTooltips'
 import { SignInButton } from './SignInButton'
 import { resolveRepoNamesForDiffOrFileInfo, defaultRevisionToCommitID } from './util/fileInfo'
+import { observeSelectionsFromHash } from './util/selections'
 import {
     ViewOnSourcegraphButtonClassProps,
     ViewOnSourcegraphButton,
@@ -855,6 +856,18 @@ export async function handleCodeHost({
     const history = H.createBrowserHistory()
     const subscriptions = new Subscription()
     const { requestGraphQL, sourcegraphURL } = platformContext
+
+    subscriptions.add(
+        combineLatest([observeSelectionsFromHash(), from(extensionsController.extHostAPI)])
+            .pipe(
+                tap(([selections, extensionHostAPI]) => {
+                    extensionHostAPI
+                        .setEditorSelections({ viewerId: 'viewer#0' }, selections)
+                        .catch(error => console.error('Error updating editor selections on extension host', error))
+                })
+            )
+            .subscribe()
+    )
 
     const addedElements = mutations.pipe(
         concatAll(),
