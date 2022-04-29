@@ -30,6 +30,7 @@ var schemeToExternalService = map[string]string{
 // records from lsif_dependency_syncing_jobs.
 func NewDependencySyncScheduler(
 	dbStore DBStore,
+	logger log.Logger,
 	workerStore dbworkerstore.Store,
 	externalServiceStore ExternalServiceStore,
 	metrics workerutil.WorkerMetrics,
@@ -42,7 +43,7 @@ func NewDependencySyncScheduler(
 		extsvcStore: externalServiceStore,
 	}
 
-	return dbworker.NewWorker(rootContext, workerStore, handler, workerutil.WorkerOptions{
+	return dbworker.NewWorker(rootContext, logger, workerStore, handler, workerutil.WorkerOptions{
 		Name:              "precise_code_intel_dependency_sync_scheduler_worker",
 		NumHandlers:       1,
 		Interval:          time.Second * 5,

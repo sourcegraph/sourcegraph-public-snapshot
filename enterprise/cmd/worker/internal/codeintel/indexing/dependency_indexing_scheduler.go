@@ -30,6 +30,7 @@ var disableIndexScheduler, _ = strconv.ParseBool(os.Getenv("CODEINTEL_DEPENDENCY
 // records from lsif_dependency_indexing_jobs.
 func NewDependencyIndexingScheduler(
 	dbStore DBStore,
+	logger log.Logger,
 	workerStore dbworkerstore.Store,
 	externalServiceStore ExternalServiceStore,
 	repoUpdaterClient RepoUpdaterClient,
@@ -50,7 +51,7 @@ func NewDependencyIndexingScheduler(
 		gitserver:     gitserverClient,
 	}
 
-	return dbworker.NewWorker(rootContext, workerStore, handler, workerutil.WorkerOptions{
+	return dbworker.NewWorker(rootContext, logger, workerStore, handler, workerutil.WorkerOptions{
 		Name:              "precise_code_intel_dependency_indexing_scheduler_worker",
 		NumHandlers:       numProcessorRoutines,
 		Interval:          pollInterval,
