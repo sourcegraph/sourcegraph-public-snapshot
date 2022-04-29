@@ -71,18 +71,20 @@ func TestDownload(t *testing.T) {
 	var tarFiles []string
 
 	err = filepath.WalkDir(tmp, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return filepath.SkipDir
+		}
 		if d.IsDir() {
 			return nil
 		}
-		var f *os.File
-		f, err = os.Open(path)
-		if err != nil {
-			return err
+		f, lErr := os.Open(path)
+		if lErr != nil {
+			return lErr
 		}
 		defer f.Close()
-		b, err := io.ReadAll(f)
-		if err != nil {
-			return err
+		b, lErr := io.ReadAll(f)
+		if lErr != nil {
+			return lErr
 		}
 		hasher.Write(b)
 		tarFiles = append(tarFiles, strings.TrimPrefix(path, tmp))
