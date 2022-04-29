@@ -18,6 +18,7 @@ type Output struct {
 	SearchPattern MatchPattern
 	OutputPattern string
 	Separator     string
+	Selector      string
 }
 
 func (c *Output) ToSearchPattern() string {
@@ -96,5 +97,12 @@ func (c *Output) Run(ctx context.Context, db database.DB, r result.Match) (Resul
 	if err != nil {
 		return nil, err
 	}
+
+	if c.Selector != "" {
+		// Don't run the search pattern over the search result content
+		// when there's an explicit `select:` value.
+		return &Text{Value: outputPattern, Kind: "output"}, nil
+	}
+
 	return output(ctx, content, c.SearchPattern, outputPattern, c.Separator)
 }
