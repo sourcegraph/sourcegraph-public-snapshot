@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
@@ -20,13 +19,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 const (
 	eventRetentionInDays int = 7
 )
 
-func newTriggerQueryRunner(ctx context.Context, db edb.EnterpriseDB, metrics codeMonitorsMetrics) *workerutil.Worker {
+func newTriggerQueryRunner(ctx context.Context, logger log.Logger, db edb.EnterpriseDB, metrics codeMonitorsMetrics) *workerutil.Worker {
 	options := workerutil.WorkerOptions{
 		Name:              "code_monitors_trigger_jobs_worker",
 		NumHandlers:       1,
@@ -34,7 +34,7 @@ func newTriggerQueryRunner(ctx context.Context, db edb.EnterpriseDB, metrics cod
 		HeartbeatInterval: 15 * time.Second,
 		Metrics:           metrics.workerMetrics,
 	}
-	worker := dbworker.NewWorker(ctx, createDBWorkerStoreForTriggerJobs(db), &queryRunner{db: db}, options)
+	worker := dbworker.NewWorker(ctx, logger, createDBWorkerStoreForTriggerJobs(db), &queryRunner{db: db}, options)
 	return worker
 }
 
@@ -82,7 +82,7 @@ func newTriggerJobsLogDeleter(ctx context.Context, store edb.CodeMonitorStore) g
 	return goroutine.NewPeriodicGoroutine(ctx, 60*time.Minute, deleteLogs)
 }
 
-func newActionRunner(ctx context.Context, s edb.CodeMonitorStore, metrics codeMonitorsMetrics) *workerutil.Worker {
+func newActionRunner(ctx context.Context, logger log.Logger, s edb.CodeMonitorStore, metrics codeMonitorsMetrics) *workerutil.Worker {
 	options := workerutil.WorkerOptions{
 		Name:              "code_monitors_action_jobs_worker",
 		NumHandlers:       1,
@@ -90,7 +90,7 @@ func newActionRunner(ctx context.Context, s edb.CodeMonitorStore, metrics codeMo
 		HeartbeatInterval: 15 * time.Second,
 		Metrics:           metrics.workerMetrics,
 	}
-	worker := dbworker.NewWorker(ctx, createDBWorkerStoreForActionJobs(s), &actionRunner{s}, options)
+	worker := dbworker.NewWorker(ctx, logger, createDBWorkerStoreForActionJobs(s), &actionRunner{s}, options)
 	return worker
 }
 
@@ -139,10 +139,10 @@ type queryRunner struct {
 	db edb.EnterpriseDB
 }
 
-func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err error) {
+func (r *queryRunner) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
 	defer func() {
 		if err != nil {
-			log15.Error("queryRunner.Handle", "error", err)
+			logger.Error("queryRunner.Handle", log.Error(err))
 		}
 	}()
 
@@ -211,11 +211,11 @@ type actionRunner struct {
 	edb.CodeMonitorStore
 }
 
-func (r *actionRunner) Handle(ctx context.Context, record workerutil.Record) (err error) {
-	log15.Info("actionRunner.Handle starting")
+func (r *actionRunner) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
+	logger.Info("actionRunner.Handle starting")
 	defer func() {
 		if err != nil {
-			log15.Error("actionRunner.Handle", "error", err)
+			logger.Error("actionRunner.Handle", log.Error(err))
 		}
 	}()
 
