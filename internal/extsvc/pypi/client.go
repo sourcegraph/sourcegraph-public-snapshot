@@ -30,6 +30,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -152,6 +153,10 @@ OUTER:
 			}
 		}
 
+		if cur.URL == "" {
+			return nil, errors.New("anchor tag without URL")
+		}
+
 	INNER:
 		for {
 			tt := z.Next()
@@ -160,6 +165,14 @@ OUTER:
 				break OUTER
 			case html.TextToken:
 				cur.Name = string(z.Text())
+
+				// the text of the anchor tag MUST match the final path component (the filename)
+				// of the URL. The URL SHOULD include a hash in the form of a URL fragment with
+				// the following syntax: #<hashname>=<hashvalue>
+				if base := strings.Split(filepath.Base(cur.URL), "#")[0]; base != cur.Name {
+					return nil, errors.Newf("%s != %s: text does not match final path component", cur.Name, base)
+				}
+
 				files = append(files, cur)
 				break INNER
 			}

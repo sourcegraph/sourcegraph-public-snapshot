@@ -1,11 +1,13 @@
 package pypi
 
 import (
+	"bytes"
 	"context"
 	"flag"
 	"path"
 	"path/filepath"
 	"testing"
+	"text/template"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/regexp"
@@ -83,6 +85,55 @@ func TestParse_empty(t *testing.T) {
 	}
 }
 
+func TestParse_broken(t *testing.T) {
+	tmpl, err := template.New("project").Parse(`<!DOCTYPE html>
+<html>
+  <body>
+	{{.Body}}
+  </body>
+</html>
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tc := []struct {
+		name string
+		Body string
+	}{
+		{
+			name: "no href",
+			Body: "<a>frob-1.0.0</a>",
+		},
+		{
+			name: "no text",
+			Body: "<a href=\"/frob-1.0.0.tar.gz/\"></a>",
+		},
+		{
+			name: "text does not match base",
+			Body: "<a href=\"/frob-1.0.0.tar.gz/\">foo</a>",
+		},
+		{
+			name: "no href no text",
+			Body: "<a></a>",
+		},
+	}
+
+	for _, c := range tc {
+		t.Run(c.name, func(t *testing.T) {
+			buf := bytes.Buffer{}
+			err = tmpl.Execute(&buf, c)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err := Parse(buf.Bytes())
+			if err == nil {
+				t.Fatal("expected error")
+			}
+		})
+	}
+}
+
 func TestParse_PEP503(t *testing.T) {
 	// There may be any other HTML elements on the API pages as long as the required
 	// anchor elements exist.
@@ -95,10 +146,10 @@ func TestParse_PEP503(t *testing.T) {
   </head>
   <body>
 	<h1>Links for frob</h1>
-    <a href="/frob-1.0.0.tar.gz/" data-requires-python="&gt;=3">frob-1.0.0</a>
+    <a href="/frob-1.0.0.tar.gz/" data-requires-python="&gt;=3">frob-1.0.0.tar.gz</a>
 	<h2>More links for frob</h1>
 	<div>
-	    <a href="/frob-2.0.0.tar.gz/" data-gpg-sig="true">frob-2.0.0</a>
+	    <a href="/frob-2.0.0.tar.gz/" data-gpg-sig="true">frob-2.0.0.tar.gz</a>
 	</div>
   </body>
 </html>
@@ -112,12 +163,12 @@ func TestParse_PEP503(t *testing.T) {
 	tr := true
 	want := []File{
 		{
-			Name:               "frob-1.0.0",
+			Name:               "frob-1.0.0.tar.gz",
 			URL:                "/frob-1.0.0.tar.gz/",
 			DataRequiresPython: ">=3",
 		},
 		{
-			Name:       "frob-2.0.0",
+			Name:       "frob-2.0.0.tar.gz",
 			URL:        "/frob-2.0.0.tar.gz/",
 			DataGPGSig: &tr,
 		},
@@ -131,7 +182,7 @@ func TestParse_PEP503(t *testing.T) {
 // goos: darwin
 // goarch: arm64
 // pkg: github.com/sourcegraph/sourcegraph/internal/extsvc/pypi
-// BenchmarkParse-10           5781            207931 ns/op
+// BenchmarkParse-10           5180            229265 ns/op
 func BenchmarkParse(b *testing.B) {
 	cli := newTestClient(b, "Download", update("TestDownload"))
 	data, err := cli.Project(context.Background(), "requests")
