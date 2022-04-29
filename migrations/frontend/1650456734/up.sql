@@ -155,9 +155,9 @@ $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION func_configuration_policies_transition_columns_diff IS 'Diffs two `configuration_policies_transition_columns` values into an array of hstores, where each hstore is in the format {"column"=>"<column name>", "old"=>"<previous value>", "new"=>"<new value>"}.';
 
 -- CREATE OR REPLACE only supported in Postgres 14+
-DROP TRIGGER IF EXISTS trigger_configuration_policies_update ON configuration_policies;
-DROP TRIGGER IF EXISTS trigger_configuration_policies_delete ON configuration_policies;
-DROP TRIGGER IF EXISTS trigger_configuration_policies_insert ON configuration_policies;
+DROP TRIGGER IF EXISTS trigger_configuration_policies_update ON lsif_configuration_policies;
+DROP TRIGGER IF EXISTS trigger_configuration_policies_delete ON lsif_configuration_policies;
+DROP TRIGGER IF EXISTS trigger_configuration_policies_insert ON lsif_configuration_policies;
 
 CREATE TRIGGER trigger_configuration_policies_update
 BEFORE UPDATE OF name, pattern, retention_enabled, retention_duration_hours, type, retain_intermediate_commits

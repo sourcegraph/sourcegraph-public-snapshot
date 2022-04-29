@@ -661,6 +661,26 @@ Indexes:
 
 ```
 
+# Table "public.configuration_policies_audit_logs"
+```
+       Column       |           Type           | Collation | Nullable |      Default      
+--------------------+--------------------------+-----------+----------+-------------------
+ log_timestamp      | timestamp with time zone |           |          | clock_timestamp()
+ record_deleted_at  | timestamp with time zone |           |          | 
+ policy_id          | integer                  |           | not null | 
+ transition_columns | USER-DEFINED[]           |           |          | 
+Indexes:
+    "configuration_policies_audit_logs_policy_id" btree (policy_id)
+    "configuration_policies_audit_logs_timestamp" brin (log_timestamp)
+
+```
+
+**log_timestamp**: Timestamp for this log entry.
+
+**record_deleted_at**: Set once the upload this entry is associated with is deleted. Once NOW() - record_deleted_at is above a certain threshold, this log entry will be deleted.
+
+**transition_columns**: Array of changes that occurred to the upload for this entry, in the form of {&#34;column&#34;=&gt;&#34;&lt;column name&gt;&#34;, &#34;old&#34;=&gt;&#34;&lt;previous value&gt;&#34;, &#34;new&#34;=&gt;&#34;&lt;new value&gt;&#34;}.
+
 # Table "public.critical_and_site_config"
 ```
    Column   |           Type           | Collation | Nullable |                       Default                        
@@ -1157,6 +1177,10 @@ Stores data points for a code insight that do not need to be queried directly, b
 Indexes:
     "lsif_configuration_policies_pkey" PRIMARY KEY, btree (id)
     "lsif_configuration_policies_repository_id" btree (repository_id)
+Triggers:
+    trigger_configuration_policies_delete AFTER DELETE ON lsif_configuration_policies REFERENCING OLD TABLE AS old FOR EACH STATEMENT EXECUTE FUNCTION func_configuration_policies_delete()
+    trigger_configuration_policies_insert AFTER INSERT ON lsif_configuration_policies FOR EACH ROW EXECUTE FUNCTION func_configuration_policies_insert()
+    trigger_configuration_policies_update BEFORE UPDATE OF name, pattern, retention_enabled, retention_duration_hours, type, retain_intermediate_commits ON lsif_configuration_policies FOR EACH ROW EXECUTE FUNCTION func_configuration_policies_update()
 
 ```
 
