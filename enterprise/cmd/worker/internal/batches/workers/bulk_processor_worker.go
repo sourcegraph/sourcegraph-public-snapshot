@@ -19,6 +19,7 @@ import (
 // from the database and passes them to the bulk executor for processing.
 func NewBulkOperationWorker(
 	ctx context.Context,
+	logger log.Logger,
 	s *store.Store,
 	workerStore dbworkerstore.Store,
 	sourcer sources.Sourcer,
@@ -34,7 +35,7 @@ func NewBulkOperationWorker(
 		Metrics:           workerutil.NewMetrics(observationContext, "batch_changes_bulk_processor"),
 	}
 
-	worker := dbworker.NewWorker(ctx, workerStore, r.HandlerFunc(), options)
+	worker := dbworker.NewWorker(ctx, logger, workerStore, r.HandlerFunc(), options)
 	return worker
 }
 

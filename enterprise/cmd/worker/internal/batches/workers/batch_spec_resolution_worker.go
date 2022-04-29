@@ -9,12 +9,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // NewBatchSpecResolutionWorker creates a dbworker.newWorker that fetches BatchSpecResolutionJobs
 // specs and passes them to the batchSpecWorkspaceCreator.
 func NewBatchSpecResolutionWorker(
 	ctx context.Context,
+	logger log.Logger,
 	s *store.Store,
 	workerStore dbworkerstore.Store,
 	observationContext *observation.Context,
@@ -29,6 +31,6 @@ func NewBatchSpecResolutionWorker(
 		Metrics:           workerutil.NewMetrics(observationContext, "batch_changes_batch_spec_resolution_worker"),
 	}
 
-	worker := dbworker.NewWorker(ctx, workerStore, e.HandlerFunc(), options)
+	worker := dbworker.NewWorker(ctx, logger, workerStore, e.HandlerFunc(), options)
 	return worker
 }
