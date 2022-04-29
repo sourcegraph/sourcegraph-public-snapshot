@@ -33,5 +33,5 @@ func (j *codeMonitorJob) Routines(ctx context.Context, logger log.Logger) ([]gor
 		return nil, err
 	}
 
-	return background.NewBackgroundJobs(edb.NewEnterpriseDB(database.NewDB(sqlDB))), nil
+	return background.NewBackgroundJobs(logger, edb.NewEnterpriseDB(database.NewDB(sqlDB))), nil
 }
