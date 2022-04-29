@@ -30,19 +30,11 @@ export interface SelectOptionProps {
  */
 export const SelectOption: React.FunctionComponent<SelectOptionProps> = props => {
     const { value, label, badge, className, filter = '' } = props
-    const matcher = new RegExp(`(${filter})`, 'ig')
-    const splitLabel = label.split(matcher)
-    const parsedLabel =
-        filter.length > 0
-            ? splitLabel.map((chunk, index) =>
-                  matcher.test(chunk) ? <b key={index}>{chunk}</b> : <span key={index}>{chunk}</span>
-              )
-            : label
 
     return (
         <ListboxOption className={classNames(styles.option, className)} value={value}>
             <TruncatedText title={label} className={styles.text}>
-                {parsedLabel}
+                <ParsedLabel filter={filter} label={label} />
             </TruncatedText>
             {badge && <InsightsBadge value={badge} className={styles.badge} />}
         </ListboxOption>
@@ -69,5 +61,26 @@ export const SelectDashboardOption: React.FunctionComponent<SelectDashboardOptio
             filter={filter}
             className={className}
         />
+    )
+}
+
+interface ParsedLabelProps {
+    filter: string
+    label: string
+}
+const ParsedLabel: React.FunctionComponent<ParsedLabelProps> = ({ filter, label }) => {
+    if (filter.length === 0) {
+        return <span>label</span>
+    }
+
+    const matcher = new RegExp(`(${filter})`, 'ig')
+    const splitLabel = label.split(matcher)
+
+    return (
+        <>
+            {splitLabel.map((chunk, index) =>
+                matcher.test(chunk) ? <b key={index}>{chunk}</b> : <span key={index}>{chunk}</span>
+            )}
+        </>
     )
 }
