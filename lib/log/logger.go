@@ -70,7 +70,7 @@ type Logger interface {
 // Scopes should be static values, NOT dynamic values like identifiers or parameters.
 func Scoped(scope string, description string) Logger {
 	safeGet := !development // do not panic in prod
-	adapted := &zapAdapter{Logger: globallogger.Get(safeGet)}
+	adapted := &zapAdapter{Logger: globallogger.Get(safeGet), fromPackageScoped: true}
 
 	return adapted.Scoped(scope, description).With(otfields.AttributesNamespace)
 }
@@ -93,6 +93,10 @@ type zapAdapter struct {
 
 	// additionalCore tracks an additional Core to write to - only to be used by logtest.
 	additionalCore zapcore.Core
+
+	// fromPackageScoped indicates this logger is from log.Scoped. Do not copy this to
+	// child loggers, and do not set this anywhere except log.Scoped.
+	fromPackageScoped bool
 }
 
 var _ Logger = &zapAdapter{}
@@ -116,9 +120,15 @@ func (z *zapAdapter) Scoped(scope string, description string) Logger {
 	}
 	if len(description) > 0 {
 		if _, alreadyLogged := createdScopes.LoadOrStore(newScope, struct{}{}); !alreadyLogged {
-			scopedLogger.Debug("logger.scoped",
-				zap.String("scope", scope),
-				zap.String("description", description))
+			callerSkip := 1 // Logger.Scoped() -> Logger.Debug()
+			if z.fromPackageScoped {
+				callerSkip += 1 // log.Scoped() -> Logger.Scoped() -> Logger.Debug()
+			}
+			scopedLogger.
+				AddCallerSkip(callerSkip).
+				Debug("logger.scoped",
+					zap.String("scope", scope),
+					zap.String("description", description))
 		}
 	}
 	return scopedLogger
