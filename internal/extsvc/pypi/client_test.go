@@ -92,16 +92,13 @@ func TestDownload(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	hash := hex.EncodeToString(hasher.Sum(nil))
-	type result struct {
+	testutil.AssertGolden(t, "testdata/golden/requests", update(t.Name()), struct {
 		TarHash string
 		Files   []string
-	}
-	res := result{
-		TarHash: hash,
+	}{
+		TarHash: hex.EncodeToString(hasher.Sum(nil)),
 		Files:   tarFiles,
-	}
-	testutil.AssertGolden(t, "testdata/golden/requests", update(t.Name()), res)
+	})
 }
 
 func TestParse(t *testing.T) {
