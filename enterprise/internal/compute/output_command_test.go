@@ -94,6 +94,11 @@ func TestRun(t *testing.T) {
 		Equal(t, test(`lang:ocaml content:output((\d) -> $repo) select:repo`, fileMatch("a 1 b 2 c 3")))
 
 	autogold.Want(
+		"honor type:path efficiently (don't hydrate file content when type:path is set)",
+		"my/awesome/path.ml content is my/awesome/path.ml with extension: ml\n").
+		Equal(t, test(`content:output(awesome/.+\.(\w+) -> $path content is $content with extension: $1) type:path`, fileMatch("a 1 b 2 c 3")))
+
+	autogold.Want(
 		"template substitution regexp with commit author",
 		"bob: (1)\nbob: (2)\nbob: (3)\n").
 		Equal(t, test(`content:output((\d) -> $author: ($1))`, commitMatch("a 1 b 2 c 3")))

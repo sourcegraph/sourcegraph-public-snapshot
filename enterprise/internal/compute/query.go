@@ -194,13 +194,24 @@ func parseOutput(q *query.Basic) (Command, bool, error) {
 		return nil, false, nil
 	}
 
+	var typeValue string
+	query.VisitField(q.ToParseTree(), query.FieldType, func(value string, _ bool, _ query.Annotation) {
+		typeValue = value
+	})
+
 	var selector string
 	query.VisitField(q.ToParseTree(), query.FieldSelect, func(value string, _ bool, _ query.Annotation) {
 		selector = value
 	})
 
 	// The default separator is newline and cannot be changed currently.
-	return &Output{SearchPattern: matchPattern, OutputPattern: right, Separator: "\n", Selector: selector}, true, nil
+	return &Output{
+		SearchPattern: matchPattern,
+		OutputPattern: right,
+		Separator:     "\n",
+		TypeValue:     typeValue,
+		Selector:      selector,
+	}, true, nil
 }
 
 func parseMatchOnly(q *query.Basic) (Command, bool, error) {
