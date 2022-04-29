@@ -7,6 +7,7 @@ import { TruncatedText } from '../../../../../../../components'
 import { CustomInsightDashboard } from '../../../../../../../core'
 import { getDashboardOwnerName, getDashboardTitle } from '../../helpers/get-dashboard-title'
 import { InsightsBadge } from '../insights-badge/InsightsBadge'
+import { ParsedLabel } from '../parsed-label/ParsedLabel'
 
 import styles from './SelectOption.module.scss'
 
@@ -61,26 +62,5 @@ export const SelectDashboardOption: React.FunctionComponent<SelectDashboardOptio
             filter={filter}
             className={className}
         />
-    )
-}
-
-interface ParsedLabelProps {
-    filter: string
-    label: string
-}
-const ParsedLabel: React.FunctionComponent<ParsedLabelProps> = ({ filter, label }) => {
-    if (filter.length === 0) {
-        return <span>{label}</span>
-    }
-
-    const matcher = new RegExp(`(${filter})`, 'ig')
-    const splitLabel = label.split(matcher)
-
-    return (
-        <>
-            {splitLabel.map((chunk, index) =>
-                matcher.test(chunk) ? <b key={index}>{chunk}</b> : <span key={index}>{chunk}</span>
-            )}
-        </>
     )
 }
