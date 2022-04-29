@@ -168,7 +168,7 @@ func (j *CommitSearch) ExpandUsernames(ctx context.Context, db database.DB) (err
 			return n
 		}
 
-		*expr = "(" + strings.Join(expanded, ")|(") + ")"
+		*expr = "(?:" + strings.Join(expanded, ")|(?:") + ")"
 		return n
 	})
 	return err

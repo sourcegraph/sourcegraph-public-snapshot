@@ -209,31 +209,31 @@ func TestSubstituteOrForRegexp(t *testing.T) {
 	}{
 		{
 			input: "foo or bar",
-			want:  `"(foo)|(bar)"`,
+			want:  `"(?:foo)|(?:bar)"`,
 		},
 		{
 			input: "(foo or (bar or baz))",
-			want:  `"(foo)|(bar)|(baz)"`,
+			want:  `"(?:foo)|(?:bar)|(?:baz)"`,
 		},
 		{
 			input: "repo:foobar foo or (bar or baz)",
-			want:  `(or "(bar)|(baz)" (and "repo:foobar" "foo"))`,
+			want:  `(or "(?:bar)|(?:baz)" (and "repo:foobar" "foo"))`,
 		},
 		{
 			input: "(foo or (bar or baz)) and foobar",
-			want:  `(and "(foo)|(bar)|(baz)" "foobar")`,
+			want:  `(and "(?:foo)|(?:bar)|(?:baz)" "foobar")`,
 		},
 		{
 			input: "(foo or (bar and baz))",
-			want:  `(or "(foo)" (and "bar" "baz"))`,
+			want:  `(or "(?:foo)" (and "bar" "baz"))`,
 		},
 		{
 			input: "foo or (bar and baz) or foobar",
-			want:  `(or "(foo)|(foobar)" (and "bar" "baz"))`,
+			want:  `(or "(?:foo)|(?:foobar)" (and "bar" "baz"))`,
 		},
 		{
 			input: "repo:foo a or b",
-			want:  `(and "repo:foo" "(a)|(b)")`,
+			want:  `(and "repo:foo" "(?:a)|(?:b)")`,
 		},
 	}
 	for _, c := range cases {
