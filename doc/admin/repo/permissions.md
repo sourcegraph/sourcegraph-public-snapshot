@@ -414,11 +414,11 @@ The [`user_pending_permissions` table](https://sourcegraph.com/github.com/source
 User pending permission is a composite entity comprising:
 - `service_type` (e.g. `github`, `gitlab`, `bitbucketServer`)
 - `service_id` (ID of the code host, e.g. `https://github.com/`, `https://gitlab.com/`)
-- `permission` (bitmask for a set of permissions)
+- `permission` (access level, e.g. "read")
 - `object_type` (type of what is enumerated in `object_ids_ints` column; for now it is `repos`)
 - `bind_id`
  
-All of which are included as a unique constraint. This entity is addressed in `user_ids_ints` column of [`repo_pending_permissions` table](#repo-pending-permissions) by `id`.
+All of which are included as a unique constraint. This entity is addressed in `user_ids_ints` column of [`repo_pending_permissions` table](#repo-pending-permissions) by `id`. Please see [this godoc](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@8e128dd3434b9e548176f8f1148ead3981458db9/-/blob/internal/authz/perms.go?L190-218=) for more information.
 
 Overall, one entry of `user_pending_permissions` table means that _"There is a user with `bind_id` ID of this exact (`service_id`) external code host of this (`service_type`) type with such permissions for this (`object_ids_ints`) set of repos"_.
 
