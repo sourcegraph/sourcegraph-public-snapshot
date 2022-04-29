@@ -168,6 +168,11 @@
           "description": "Experimental: If set, configures hours cached permissions from teams and organizations should be kept for. Setting a negative value disables syncing from teams and organizations, and falls back to the default behaviour of syncing all permisisons directly from user-repository affiliations instead. [Learn more](https://docs.sourcegraph.com/admin/repo/permissions#teams-and-organizations-permissions-caching).",
           "type": "number",
           "default": 72
+        },
+        "internalRepos": {
+          "description": "Experimental: If set, configures the cached permissions to use a pseudo-org internally to support visibility of internal repositories for all users that belong to an organization. Ignored if GroupsCacheTTL is a positive number.",
+          "type": "boolean",
+          "default": "false"
         }
       }
     },
