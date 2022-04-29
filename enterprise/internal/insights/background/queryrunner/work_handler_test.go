@@ -455,7 +455,7 @@ func TestGetSeries(t *testing.T) {
 	}
 
 	t.Run("series definition does not exist", func(t *testing.T) {
-		_, err := workHandler.getSeries(ctx, log, "seriesshouldnotexist")
+		_, err := workHandler.getSeries(ctx, logtest.Scoped(t), "seriesshouldnotexist")
 		if err == nil {
 			t.Fatal("expected error from getSeries")
 		}
