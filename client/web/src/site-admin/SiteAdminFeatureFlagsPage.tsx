@@ -151,7 +151,7 @@ export const SiteAdminFeatureFlagsPage: React.FunctionComponent<SiteAdminFeature
                                   )
                               )
                           )
-                        : of(flags)
+                        : of([])
                 ),
                 // Observable<T[]> => T[]
                 mergeMap(flags => flags),
