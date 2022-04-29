@@ -117,8 +117,8 @@ func ComputeDecoder() (client.ComputeMatchContextStreamDecoder, *ComputeTabulati
 	byRepo := make(map[string]*ComputeMatch)
 	getRepoCounts := func(matchContext compute.MatchContext) *ComputeMatch {
 		var v *ComputeMatch
-		if v, ok := byRepo[matchContext.Repository]; ok {
-			return v
+		if got, ok := byRepo[matchContext.Repository]; ok {
+			return got
 		}
 		v = newComputeMatch(matchContext.Repository, matchContext.RepositoryID)
 		byRepo[matchContext.Repository] = v
