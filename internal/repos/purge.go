@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // RunRepositoryPurgeWorker is a worker which deletes repos which are present
@@ -44,61 +45,36 @@ func RunRepositoryPurgeWorker(ctx context.Context, db database.DB) {
 
 func purge(ctx context.Context, db database.DB, log log15.Logger) error {
 	start := time.Now()
-	// If we fetch enabled first we have the following race condition:
-	//
-	// 1. Fetched enabled list without repo X.
-	// 2. repo X is enabled and cloned.
-	// 3. Fetched cloned list with repo X.
-	//
-	// However, if we fetch cloned first the only race is we may miss a
-	// repository that got disabled. The next time purge runs we will remove
-	// it though.
 	gitserverClient := gitserver.NewClient(db)
-	cloned, err := gitserverClient.ListCloned(ctx)
-	if err != nil {
-		return err
-	}
+	var (
+		total   int
+		success int
+		failed  int
+	)
 
-	enabledList, err := db.Repos().ListEnabledNames(ctx)
-	if err != nil {
-		return err
-	}
-	enabled := make(map[api.RepoName]struct{})
-	for _, repo := range enabledList {
-		enabled[protocol.NormalizeRepo(repo)] = struct{}{}
-	}
-
-	success := 0
-	failed := 0
-
-	// remove repositories that are in cloned but not in enabled
-	for _, repoStr := range cloned {
-		repo := protocol.NormalizeRepo(api.RepoName(repoStr))
-		if _, ok := enabled[repo]; ok {
-			continue
-		}
-
-		// Race condition: A repo can be re-enabled between our listing and
-		// now. This should be very rare, so we ignore it since it will get
-		// cloned again.
-		if err = gitserverClient.Remove(ctx, repo); err != nil {
-			// Do not fail at this point, just log so we can remove other
-			// repos.
-			log.Error("failed to remove disabled repository", "repo", repo, "error", err)
+	err := database.GitserverRepos(db).IteratePurgeableRepos(ctx, time.Time{}, func(repo api.RepoName) error {
+		total++
+		repo = protocol.NormalizeRepo(repo)
+		if err := gitserverClient.Remove(ctx, repo); err != nil {
+			// Do not fail at this point, just log so we can remove other repos.
+			log.Warn("failed to remove repository", "repo", repo, "error", err)
 			purgeFailed.Inc()
 			failed++
-			continue
+			return nil
 		}
 		success++
 		purgeSuccess.Inc()
-	}
-
+		return nil
+	})
 	// If we did something we log with a higher level.
 	statusLogger := log.Info
 	if failed > 0 {
 		statusLogger = log.Warn
 	}
-	statusLogger("repository cloned purge finished", "enabled", len(enabled), "cloned", len(cloned)-success, "removed", success, "failed", failed, "duration", time.Since(start))
+	statusLogger("repository cloned purge finished", "total", total, "removed", success, "failed", failed, "duration", time.Since(start))
+	if err != nil {
+		return errors.Wrap(err, "iterating purgeable repos")
+	}
 
 	return nil
 }
