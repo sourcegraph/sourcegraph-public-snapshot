@@ -21,7 +21,7 @@ var (
 )
 
 var (
-gitserverRequestRateLimit = env.MustGetInt("CODEINTEL_AUTOINDEXING_INFERENCE_GITSERVER_REQUEST_LIMIT", 20, "The maximum number of request to gitserver per second that can be made from the autoindexing inference service.")
+gitserverRequestRateLimit = env.MustGetInt("CODEINTEL_AUTOINDEXING_INFERENCE_GITSERVER_REQUEST_LIMIT", 100, "The maximum number of request to gitserver per second that can be made from the autoindexing inference service.")
 )
 
 func GetService(db database.DB) *Service {
