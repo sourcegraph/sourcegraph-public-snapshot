@@ -116,7 +116,7 @@ func (s *Store) ExecResult(ctx context.Context, query *sqlf.Query) (sql.Result, 
 // is either rolled back or committed. This does not perform argument parameterization.
 func (s *Store) SetLocal(ctx context.Context, key, value string) (func(context.Context) error, error) {
 	if !s.InTransaction() {
-		return nil, ErrNotInTransaction
+		return func(ctx context.Context) error { return nil }, ErrNotInTransaction
 	}
 
 	return func(ctx context.Context) error {

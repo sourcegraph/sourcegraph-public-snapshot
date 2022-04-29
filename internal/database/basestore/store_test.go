@@ -101,11 +101,13 @@ func TestSetLocal(t *testing.T) {
 	}
 
 	store, _ = store.Transact(context.Background())
+	defer store.Done(err)
 	func() {
 		unset, err := store.SetLocal(context.Background(), "sourcegraph.banana", "phone")
 		if err != nil {
 			t.Fatalf("unexpected error: %s", err)
 		}
+		defer unset(context.Background())
 
 		str, _, err := ScanFirstString(store.Query(context.Background(), sqlf.Sprintf("SELECT current_setting('sourcegraph.banana')")))
 		if err != nil {
@@ -115,11 +117,9 @@ func TestSetLocal(t *testing.T) {
 		if str != "phone" {
 			t.Fatalf("unexpected value. want=%q got=%q", "phone", str)
 		}
-
-		defer unset(context.Background())
 	}()
 
-	str, _, err := ScanFirstString(store.Query(context.Background(), sqlf.Sprintf("SELECT current_setting('sourcegraph.banana')")))
+	str, _, err := ScanFirstString(store.Query(context.Background(), sqlf.Sprintf("SELECT current_setting('sourcegraph.banana', true)")))
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
