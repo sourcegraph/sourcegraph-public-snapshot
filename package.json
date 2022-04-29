@@ -334,7 +334,6 @@
     "terser-webpack-plugin": "^5.1.4",
     "thread-loader": "^3.0.4",
     "ts-loader": "^9.2.6",
-    "ts-morph": "^8.1.0",
     "ts-node": "^10.7.0",
     "typed-scss-modules": "^4.1.1",
     "typescript": "^4.5.2",
