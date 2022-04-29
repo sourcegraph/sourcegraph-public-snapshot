@@ -24,7 +24,7 @@ func UnionRegExps(values []string) string {
 		// pretty printed.
 		return values[0]
 	}
-	return "(" + strings.Join(values, ")|(") + ")"
+	return "(?:" + strings.Join(values, ")|(?:") + ")"
 }
 
 // filenamesFromLanguage is a map of language name to full filenames
