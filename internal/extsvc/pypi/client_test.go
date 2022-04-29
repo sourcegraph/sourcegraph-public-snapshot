@@ -70,23 +70,27 @@ func TestDownload(t *testing.T) {
 	hasher := sha1.New()
 	var tarFiles []string
 
-	filepath.WalkDir(tmp, func(path string, d fs.DirEntry, err error) error {
+	err = filepath.WalkDir(tmp, func(path string, d fs.DirEntry, err error) error {
 		if d.IsDir() {
 			return nil
 		}
-		f, err := os.Open(path)
+		var f *os.File
+		f, err = os.Open(path)
 		if err != nil {
-			t.Fatal(err)
+			return err
 		}
 		defer f.Close()
 		b, err := io.ReadAll(f)
 		if err != nil {
-			t.Fatal(err)
+			return err
 		}
 		hasher.Write(b)
 		tarFiles = append(tarFiles, strings.TrimPrefix(path, tmp))
 		return nil
 	})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	hash := hex.EncodeToString(hasher.Sum(nil))
 	type result struct {
