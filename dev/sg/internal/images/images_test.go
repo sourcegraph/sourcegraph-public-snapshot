@@ -122,20 +122,42 @@ func TestParseRawImgString(t *testing.T) {
 			},
 		},
 		{
-			"base",
-			"index.docker.io/sourcegraph/server:3.36.2",
+			"only digest",
+			"index.docker.io/sourcegraph/server@sha256:07d7407fdc656d7513aa54cdffeeecb33aa4e284eea2fd82e27342411430e5f2",
 			&ImageReference{
 				Registry: "docker.io",
 				Name:     "sourcegraph/server",
-				Tag:      "3.36.2",
-				Digest:   "",
+				Digest:   "sha256:07d7407fdc656d7513aa54cdffeeecb33aa4e284eea2fd82e27342411430e5f2",
+				Tag:      "",
+			},
+		},
+		{
+			"non-sg image",
+			"prom/blackbox-exporter:v0.17.0@sha256:1d8a5c9ff17e2493a39e4aea706b4ea0c8302ae0dc2aa8b0e9188c5919c9bd9c",
+			&ImageReference{
+				Registry: "docker.io",
+				Name:     "prom/blackbox-exporter",
+				Tag:      "v0.17.0",
+				Digest:   "sha256:1d8a5c9ff17e2493a39e4aea706b4ea0c8302ae0dc2aa8b0e9188c5919c9bd9c",
+			},
+		},
+		{
+			"org and repo only",
+			"sourcegraph/gitserver",
+			&ImageReference{
+				Registry: "docker.io",
+				Name:     "sourcegraph/gitserver",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got, _ := parseImgString(tt.tag); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("parseImgString() got = %v, want %v", got, tt.want)
+			if got, err := parseImgString(tt.tag); !reflect.DeepEqual(got, tt.want) {
+				if err != nil {
+					t.Errorf("parseImgString() error = %v", err)
+				} else {
+					t.Errorf("parseImgString() got = %v, want %v", got, tt.want)
+				}
 			}
 		})
 	}

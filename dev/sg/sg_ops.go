@@ -30,6 +30,7 @@ var (
 	opsUpdateImagesContainerRegistryUsernameFlag string
 	opsUpdateImagesContainerRegistryPasswordFlag string
 	opsUpdateImagesPinTagFlag                    string
+	opsUpdateImagesContainerSlice                string
 	opsUpdateImagesCommand                       = &cli.Command{
 		Name:        "update-images",
 		ArgsUsage:   "<dir>",
@@ -56,6 +57,11 @@ var (
 				Name:        "pin-tag",
 				Usage:       "pin all images to a specific sourcegraph `tag` (e.g. 3.36.2, insiders)",
 				Destination: &opsUpdateImagesPinTagFlag,
+			},
+			&cli.StringFlag{
+				Name:        "images",
+				Usage:       "provide a comma seperated list of images to update: sourcegraph/frontend, sourcegraph/gitserver, etc ",
+				Destination: &opsUpdateImagesContainerSlice,
 			},
 		},
 		Action: execAdapter(opsUpdateImage),
@@ -104,8 +110,13 @@ func opsUpdateImage(ctx context.Context, args []string) error {
 
 	if opsUpdateImagesPinTagFlag == "" {
 		writeWarningLinef("No pin tag is provided.")
-		writeWarningLinef("Falling back to the latest deveopment build available.")
+		writeWarningLinef("Falling back to the latest development build available.")
 	}
 
-	return images.Parse(args[0], *dockerCredentials, images.DeploymentType(opsUpdateImagesDeploymentKindFlag), opsUpdateImagesPinTagFlag)
+	var rawContainers []string
+	if opsUpdateImagesContainerSlice != "" {
+		rawContainers = strings.Split(opsUpdateImagesContainerSlice, ",")
+	}
+
+	return images.Parse(args[0], *dockerCredentials, images.DeploymentType(opsUpdateImagesDeploymentKindFlag), opsUpdateImagesPinTagFlag, rawContainers...)
 }

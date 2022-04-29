@@ -32,16 +32,26 @@ const (
 	DeploymentTypeHelm DeploymentType = "helm"
 )
 
-func Parse(path string, creds credentials.Credentials, deploy DeploymentType, pinTag string) error {
+func Parse(path string, creds credentials.Credentials, deploy DeploymentType, pinTag string, rawImages ...string) error {
+
+	var imageRefs []*ImageReference
+	for _, rawImage := range rawImages {
+		imgRef, err := parseImgString(rawImage)
+		if err != nil {
+			return err
+		}
+		imageRefs = append(imageRefs, imgRef)
+	}
+
 	if deploy == DeploymentTypeK8S {
-		return ParseK8S(path, creds, pinTag)
+		return ParseK8S(path, creds, pinTag, imageRefs)
 	} else if deploy == DeploymentTypeHelm {
-		return ParseHelm(path, creds, pinTag)
+		return ParseHelm(path, creds, pinTag, imageRefs)
 	}
 	return errors.Newf("deployment kind %s is not supported", deploy)
 }
 
-func ParseK8S(path string, creds credentials.Credentials, pinTag string) error {
+func ParseK8S(path string, creds credentials.Credentials, pinTag string, imgsToUpdate []*ImageReference) error {
 	rw := &kio.LocalPackageReadWriter{
 		KeepReaderAnnotations: false,
 		PreserveSeqIndent:     true,
@@ -57,7 +67,7 @@ func ParseK8S(path string, creds credentials.Credentials, pinTag string) error {
 
 	err := kio.Pipeline{
 		Inputs:                []kio.Reader{rw},
-		Filters:               []kio.Filter{imageFilter{credentials: &creds, pinTag: pinTag}},
+		Filters:               []kio.Filter{imageFilter{credentials: &creds, pinTag: pinTag, imagesToUpdate: imgsToUpdate}},
 		Outputs:               []kio.Writer{rw},
 		ContinueOnEmptyResult: true,
 	}.Execute()
@@ -92,7 +102,7 @@ func extraImages(m interface{}, acc *[]string) {
 	}
 }
 
-func ParseHelm(path string, creds credentials.Credentials, pinTag string) error {
+func ParseHelm(path string, creds credentials.Credentials, pinTag string, imgToUpdate []*ImageReference) error {
 	valuesFilePath := filepath.Join(path, "values.yaml")
 	valuesFile, err := os.ReadFile(valuesFilePath)
 	if err != nil {
@@ -117,7 +127,7 @@ func ParseHelm(path string, creds credentials.Credentials, pinTag string) error 
 	valuesFileString := string(valuesFile)
 	for _, img := range images {
 		var updatedImg string
-		updatedImg, err = updateImage(img, creds, pinTag)
+		updatedImg, err = tryUpdateImage(img, creds, pinTag, imgToUpdate)
 		if err != nil {
 			return errors.Wrapf(err, "couldn't update image %s", img)
 		}
@@ -145,8 +155,9 @@ func ParseHelm(path string, creds credentials.Credentials, pinTag string) error 
 }
 
 type imageFilter struct {
-	credentials *credentials.Credentials
-	pinTag      string
+	credentials    *credentials.Credentials
+	imagesToUpdate []*ImageReference
+	pinTag         string
 }
 
 var _ kio.Filter = &imageFilter{}
@@ -155,7 +166,7 @@ var _ kio.Filter = &imageFilter{}
 // Analogous to http://www.linfo.org/filters.html
 func (filter imageFilter) Filter(in []*yaml.RNode) ([]*yaml.RNode, error) {
 	for _, r := range in {
-		if err := parseYamlForImage(r, *filter.credentials, filter.pinTag); err != nil {
+		if err := parseYamlForImage(r, *filter.credentials, filter.pinTag, filter.imagesToUpdate); err != nil {
 			if errors.As(err, &ErrNoImage{}) || errors.Is(err, ErrNoUpdateNeeded) || errors.As(err, &ErrUnsupportedRepository{}) || errors.Is(err, ErrUnsupportedTag) {
 				stdout.Out.Verbosef("Encountered expected err: %v\n", err)
 				continue
@@ -171,7 +182,7 @@ var conventionalInitContainerPaths = [][]string{
 	{"spec", "template", "spec", "initContainers"},
 }
 
-func parseYamlForImage(r *yaml.RNode, credential credentials.Credentials, pinTag string) error {
+func parseYamlForImage(r *yaml.RNode, credential credentials.Credentials, pinTag string, imgToUpdate []*ImageReference) error {
 	containers, err := r.Pipe(yaml.LookupFirstMatch(yaml.ConventionalContainerPaths))
 	if err != nil {
 		return errors.Newf("%v: %s", err, r.GetName())
@@ -196,7 +207,7 @@ func parseYamlForImage(r *yaml.RNode, credential credentials.Credentials, pinTag
 		if err != nil {
 			return err
 		}
-		updatedImage, err := updateImage(s, credential, pinTag)
+		updatedImage, err := tryUpdateImage(s, credential, pinTag, imgToUpdate)
 		if err != nil {
 			return err
 		}
@@ -232,60 +243,88 @@ type imageRepository struct {
 }
 
 func (image ImageReference) String() string {
-	return fmt.Sprintf("%s/%s:%s@%s", image.Registry, image.Name, image.Tag, image.Digest)
+	switch {
+	case image.Tag == "" && image.Digest == "":
+		return fmt.Sprintf("%s/%s", image.Registry, image.Name)
+
+	case image.Tag == "" && image.Digest != "":
+		return fmt.Sprintf("%s/%s@%s", image.Registry, image.Name, image.Digest)
+
+	case image.Tag != "" && image.Digest != "":
+		return fmt.Sprintf("%s/%s:%s", image.Registry, image.Name, image.Tag)
+
+	default:
+		return fmt.Sprintf("%s/%s:%s@%s", image.Registry, image.Name, image.Tag, image.Digest)
+	}
 }
 
-func (image ImageReference) Repository() string {
+// Org returns the repo name: ie "sourcegraph/frontend:latest" it will return "sourcegraph"
+func (image ImageReference) Org() string {
 	if s := strings.Split(image.Name, "/"); len(s) > 1 {
 		return s[0]
 	}
 	return ""
 }
 
+// Repo returns the repo name: ie "sourcegraph/frontend:latest" it will return "frontend"
+func (image ImageReference) Repo() string {
+	if s := strings.Split(image.Name, "/"); len(s) > 1 {
+		return s[1]
+	}
+	return ""
+}
+
 func parseImgString(rawImg string) (*ImageReference, error) {
-	ref, err := reference.ParseNormalizedNamed(strings.TrimSpace(rawImg))
+	ref, err := reference.ParseAnyReference(strings.TrimSpace(rawImg))
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "couldn't parse image %s", rawImg)
 	}
 
-	imgRef := &ImageReference{
-		Registry: reference.Domain(ref),
-	}
+	imgRef := &ImageReference{}
 
-	if nameTagged, ok := ref.(reference.NamedTagged); ok {
-		imgRef.Tag = nameTagged.Tag()
-		imgRef.Name = reference.Path(nameTagged)
-		if canonical, ok := ref.(reference.Canonical); ok {
-			newNamed, err := reference.WithName(canonical.Name())
-			if err != nil {
-				return nil, err
-			}
-			newCanonical, err := reference.WithDigest(newNamed, canonical.Digest())
-			if err != nil {
-				return nil, err
-			}
-			imgRef.Digest = newCanonical.Digest()
-		}
+	if named, ok := ref.(reference.Named); ok {
+		imgRef.Name = reference.Path(named)
+		imgRef.Registry = reference.Domain(named)
+	}
+	if tagged, ok := ref.(reference.NamedTagged); ok {
+		imgRef.Tag = tagged.Tag()
+	}
+	if digested, ok := ref.(reference.Digested); ok {
+		imgRef.Digest = digested.Digest()
 	}
 
 	return imgRef, nil
 }
 
 func isImageRepoSupported(ref ImageReference) bool {
-	name := ref.Repository()
+	name := ref.Org()
 	if name != "sourcegraph" {
 		return false
 	}
 	return true
 }
 
-func updateImage(rawImage string, credential credentials.Credentials, pinTag string) (string, error) {
+func isInList(s string, list []*ImageReference) bool {
+	for _, v := range list {
+		if s == v.Repo() {
+			return true
+		}
+	}
+	return false
+}
+
+func tryUpdateImage(rawImage string, credential credentials.Credentials, pinTag string, imagesToUpdate []*ImageReference) (string, error) {
 	imgRef, err := parseImgString(rawImage)
 	if err != nil {
 		return "", err
 	}
 	if !isImageRepoSupported(*imgRef) {
-		return imgRef.String(), ErrUnsupportedRepository{imgRef.Repository()}
+		return imgRef.String(), ErrUnsupportedRepository{imgRef.Org()}
+	}
+	// check if image is in our list of images to update if imagesToUpdate is not empty
+	if len(imagesToUpdate) > 0 && !isInList(imgRef.Repo(), imagesToUpdate) {
+		stdout.Out.Verbosef("skipping image %s, not in list of images to update\n", imgRef.String())
+		return imgRef.String(), nil
 	}
 
 	imgRef.Credentials = &credential
@@ -332,7 +371,7 @@ type ErrNoImage struct {
 }
 
 func (m ErrNoImage) Error() string {
-	return fmt.Sprintf("no images found for resource: %s of kind: %s", m.Name, m.Kind)
+	return fmt.Sprintf("no images matching constraints found for resource: %s of kind: %s", m.Name, m.Kind)
 }
 
 type ErrUnsupportedRepository struct {
