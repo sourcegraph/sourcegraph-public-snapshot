@@ -131,14 +131,14 @@ func TestParse_PEP503(t *testing.T) {
 // goos: darwin
 // goarch: arm64
 // pkg: github.com/sourcegraph/sourcegraph/internal/extsvc/pypi
-// BenchmarkParse-10           5749            208365 ns/op
+// BenchmarkParse-10           5781            207931 ns/op
 func BenchmarkParse(b *testing.B) {
 	cli := newTestClient(b, "Download", update("TestDownload"))
 	data, err := cli.Project(context.Background(), "requests")
 	if err != nil {
 		b.Fatal(err)
 	}
-
+	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		_, err := Parse(data)
 		if err != nil {
