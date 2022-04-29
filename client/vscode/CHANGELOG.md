@@ -6,9 +6,13 @@ The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release v
 
 ### Changes
 
+- Display current extension version and instance version in frontend [issues/3](https://github.com/sourcegraph/sourcegraph/issues/)
+
 ### Fixes
 
 - Remove incorrect unsupported instance error messages on first load [issues/34207](https://github.com/sourcegraph/sourcegraph/issues/34207)
+- Links to open remote file in Sourcegraph web are now decoded correctly [34630](https://github.com/sourcegraph/sourcegraph/issues/34630)
+- Remove pattern restriction basePath [issues/](https://github.com/sourcegraph/sourcegraph/issues/)
 
 ## 2.2.1
 

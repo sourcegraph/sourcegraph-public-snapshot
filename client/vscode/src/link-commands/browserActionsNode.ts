@@ -31,19 +31,25 @@ export async function browserActions(action: string, logRedirectEvent: (uri: str
         const instanceUrl = vscode.workspace.getConfiguration('sourcegraph').get('url')
         if (typeof instanceUrl === 'string') {
             // construct sourcegraph url for current file
-            sourcegraphUrl = getSourcegraphFileUrl(instanceUrl, remoteURL, branch, fileRelative, editor) + vsceUtms
+            sourcegraphUrl =
+                getSourcegraphFileUrl(instanceUrl, remoteURL, branch, fileRelative.replaceAll('\\', '/'), editor) +
+                vsceUtms
         }
     }
+    const decodedUri = decodeURIComponent(sourcegraphUrl)
+
     // Log redirect events
     logRedirectEvent(sourcegraphUrl)
 
     // Open in browser or Copy file link
-    if (action === 'open' && sourcegraphUrl) {
-        await vscode.env.openExternal(vscode.Uri.parse(sourcegraphUrl))
-    } else if (action === 'copy' && sourcegraphUrl) {
-        const decodedUri = decodeURIComponent(sourcegraphUrl)
-        await env.clipboard.writeText(decodedUri).then(() => vscode.window.showInformationMessage('Copied!'))
-    } else {
-        throw new Error(`Failed to ${action} file link: invalid URL`)
+    switch (action) {
+        case 'open':
+            await vscode.env.openExternal(vscode.Uri.parse(decodedUri))
+            break
+        case 'copy':
+            await env.clipboard.writeText(decodedUri).then(() => vscode.window.showInformationMessage('Copied!'))
+            break
+        default:
+            throw new Error(`Failed to ${action} file link: invalid URL`)
     }
 }
