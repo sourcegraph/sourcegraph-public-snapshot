@@ -25,7 +25,8 @@ type Provider struct {
 	client   func() (client, error)
 	codeHost *extsvc.CodeHost
 	// groupsCache may be nil if group caching is disabled (negative TTL)
-	groupsCache *cachedGroups
+	groupsCache   *cachedGroups
+	internalRepos bool
 
 	// enableGithubInternalRepoVisibility is a feature flag to optionally enable a fix for
 	// internal repos on GithHub Enterprise. At the moment we do not handle internal repos
@@ -43,6 +44,7 @@ type ProviderOptions struct {
 
 	BaseToken      string
 	GroupsCacheTTL time.Duration
+	InternalRepos  bool
 }
 
 func NewProvider(urn string, opts ProviderOptions) *Provider {
@@ -63,9 +65,10 @@ func NewProvider(urn string, opts ProviderOptions) *Provider {
 	}
 
 	return &Provider{
-		urn:         urn,
-		codeHost:    codeHost,
-		groupsCache: cg,
+		urn:           urn,
+		codeHost:      codeHost,
+		groupsCache:   cg,
+		internalRepos: opts.InternalRepos,
 		client: func() (client, error) {
 			return &ClientAdapter{V3Client: opts.GitHubClient}, nil
 		},

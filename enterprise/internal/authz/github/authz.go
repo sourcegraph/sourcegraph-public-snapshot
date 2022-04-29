@@ -91,6 +91,23 @@ func NewAuthzProviders(
 			p.groupsCache = nil
 		}
 
+		// This is a separate check than the above if-else block because by the end of the above
+		// block, it will be certain if p.gropusCache is non nil, depeneding on which we make the
+		// next check.
+		//
+		// c.Authorization.Internal and c.Authorization.GroupsCacheTTL are mutually exclusive.
+		if p.groupsCache != nil && p.internalRepos {
+			warnings = append(warnings,
+				fmt.Sprintf("GitHub config for %[1]s has both `authorization.groupsCacheTTL` and "+
+					"`authorization.internalRepos` enabled, but they are mutually exclusive. "+
+					"`authorization.internalRepos` will be disabled. Update the code host config "+
+					"to resolve this warning.",
+					p.ServiceID(),
+				),
+			)
+			p.internalRepos = false
+		}
+
 		// Register this provider.
 		ps = append(ps, p)
 	}
@@ -136,6 +153,7 @@ func newAuthzProvider(
 		GitHubURL:      baseURL,
 		BaseToken:      c.Token,
 		GroupsCacheTTL: ttl,
+		InternalRepos:  c.Authorization.InternalRepos,
 	}), nil
 }
 
