@@ -52,6 +52,7 @@ func (j *bulkOperationProcessorJob) Routines(_ context.Context, logger log.Logge
 
 	bulkProcessorWorker := workers.NewBulkOperationWorker(
 		workCtx,
+		logger,
 		bstore,
 		resStore,
 		sources.NewSourcer(httpcli.NewExternalClientFactory()),

@@ -50,6 +50,7 @@ func (j *workspaceResolverJob) Routines(_ context.Context, logger log.Logger) ([
 
 	resolverWorker := workers.NewBatchSpecResolutionWorker(
 		workCtx,
+		logger,
 		bstore,
 		resStore,
 		observationContext,
