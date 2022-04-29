@@ -19,6 +19,7 @@ type Output struct {
 	OutputPattern string
 	Separator     string
 	Selector      string
+	TypeValue     string
 }
 
 func (c *Output) ToSearchPattern() string {
@@ -61,11 +62,14 @@ func output(ctx context.Context, fragment string, matchPattern MatchPattern, rep
 	return &Text{Value: newContent, Kind: "output"}, nil
 }
 
-func resultContent(ctx context.Context, db database.DB, r result.Match) (string, bool, error) {
+func resultContent(ctx context.Context, db database.DB, r result.Match, onlyPath bool) (string, bool, error) {
 	switch m := r.(type) {
 	case *result.RepoMatch:
 		return string(m.Name), true, nil
 	case *result.FileMatch:
+		if onlyPath {
+			return m.Path, true, nil
+		}
 		contentBytes, err := git.ReadFile(ctx, db, m.Repo.Name, m.CommitID, m.Path, authz.DefaultSubRepoPermsChecker)
 		if err != nil {
 			return "", false, err
@@ -85,7 +89,8 @@ func resultContent(ctx context.Context, db database.DB, r result.Match) (string,
 }
 
 func (c *Output) Run(ctx context.Context, db database.DB, r result.Match) (Result, error) {
-	content, ok, err := resultContent(ctx, db, r)
+	onlyPath := c.TypeValue == "path" // don't read file contents for file matches when we only want type:path
+	content, ok, err := resultContent(ctx, db, r, onlyPath)
 	if err != nil {
 		return nil, err
 	}
