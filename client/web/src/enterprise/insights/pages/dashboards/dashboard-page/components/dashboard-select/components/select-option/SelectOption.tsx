@@ -70,7 +70,7 @@ interface ParsedLabelProps {
 }
 const ParsedLabel: React.FunctionComponent<ParsedLabelProps> = ({ filter, label }) => {
     if (filter.length === 0) {
-        return <span>label</span>
+        return <span>{label}</span>
     }
 
     const matcher = new RegExp(`(${filter})`, 'ig')
