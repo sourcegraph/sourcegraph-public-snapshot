@@ -38,7 +38,7 @@ require (
 	github.com/dghubble/gologin v2.2.0+incompatible
 	github.com/dgraph-io/ristretto v0.1.0
 	github.com/dineshappavoo/basex v0.0.0-20170425072625-481a6f6dc663
-	github.com/distribution/distribution/v3 v3.0.0-20220128175647-b60926597a1b
+	github.com/distribution/distribution/v3 v3.0.0-20220427074907-edf5aa3c399f
 	github.com/dnaeon/go-vcr v1.2.0
 	github.com/docker/docker-credential-helpers v0.6.4
 	github.com/fatih/color v1.13.0
@@ -376,7 +376,7 @@ require (
 
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
-	github.com/aws/aws-sdk-go v1.42.45 // indirect
+	github.com/aws/aws-sdk-go v1.43.16 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.2.0 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.1.4 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.2.0 // indirect
