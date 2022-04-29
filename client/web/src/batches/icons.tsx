@@ -38,6 +38,8 @@ const BaseBatchChangesIcon: BaseIcon = React.memo(function BaseBatchChangesIcon(
             className={className}
             viewBox={viewBox}
             {...props}
+            role="img"
+            aria-label="Batch Changes Icon"
             xmlns="http://www.w3.org/2000/svg"
         >
             <path
