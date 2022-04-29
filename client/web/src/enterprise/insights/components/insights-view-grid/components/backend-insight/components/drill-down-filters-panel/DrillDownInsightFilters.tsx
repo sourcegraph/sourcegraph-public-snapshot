@@ -124,7 +124,11 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
             >
                 <small className={styles.sectionDescription}>
                     Choose{' '}
-                    <Link to="/help/code_search/how-to/search_contexts#beta-query-based-search-contexts">
+                    <Link
+                        to="/help/code_search/how-to/search_contexts#beta-query-based-search-contexts"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
                         query-based search context (beta)
                     </Link>{' '}
                     to change the scope of this insight.
