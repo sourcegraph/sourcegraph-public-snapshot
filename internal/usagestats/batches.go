@@ -16,13 +16,18 @@ func GetBatchChangesUsageStatistics(ctx context.Context, db database.DB) (*types
 
 	const batchChangesCountsQuery = `
 SELECT
-    COUNT(*)                                      AS batch_changes_count,
-    COUNT(*) FILTER (WHERE closed_at IS NOT NULL) AS batch_changes_closed_count
-FROM batch_changes;
+    COUNT(*)                                      					AS batch_changes_count,
+    COUNT(*) FILTER (WHERE batch_changes.closed_at IS NOT NULL) 	AS batch_changes_closed_count,
+    COUNT(*) FILTER (WHERE batch_specs.created_from_raw = TRUE) 	AS batch_changes_created_via_executor,
+    COUNT(*) FILTER (WHERE batch_specs.created_from_raw = FALSE) 	AS batch_changes_created_locally
+FROM batch_changes
+	LEFT JOIN batch_specs ON batch_changes.batch_spec_id = batch_specs.id;
 `
 	if err := db.QueryRowContext(ctx, batchChangesCountsQuery).Scan(
 		&stats.BatchChangesCount,
 		&stats.BatchChangesClosedCount,
+		&stats.ExecutorBatchChangesCount,
+		&stats.LocalBatchChangesCount,
 	); err != nil {
 		return nil, err
 	}
@@ -95,11 +100,11 @@ WHERE name IN ('BatchSpecCreated', 'ViewBatchChangeApplyPage', 'ViewBatchChangeD
 	}
 	defer rows.Close()
 
-	stats.BulkOperationsCount = make(map[string]int)
+	stats.BulkOperationsCount = make(map[string]int32)
 
 	for rows.Next() {
 		var jobType string
-		var count int
+		var count int32
 		if err = rows.Scan(&jobType, &count); err != nil {
 			return nil, err
 		}
@@ -139,7 +144,7 @@ WHERE name IN ('BatchSpecCreated', 'ViewBatchChangeApplyPage', 'ViewBatchChangeD
 	defer rows.Close()
 
 	for rows.Next() {
-		var count int
+		var count int32
 		var changesetRange, source string
 		if err = rows.Scan(&count, &changesetRange, &source); err != nil {
 			return nil, err

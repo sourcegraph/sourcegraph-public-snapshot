@@ -771,6 +771,14 @@ type BatchChangesUsageStatistics struct {
 	// instance. This can go down when users delete a batch change.
 	BatchChangesClosedCount int32
 
+	// ExecutorBatchChangesCount is the number of batch changes created via an
+	// executor.
+	ExecutorBatchChangesCount int32
+
+	// ExecutorBatchChangesCount is the number of batch changes created via the
+	// CLI locally.
+	LocalBatchChangesCount int32
+
 	// BatchSpecsCreatedCount is the number of batch change specs that have been
 	// created by running `src batch [preview|apply]`. This number never
 	// goes down since it's based on event logs, even if the batch specs
@@ -851,7 +859,7 @@ type BatchChangesUsageStatistics struct {
 	ActiveExectutorsCount int16
 
 	// BulkOperationsCount is the count of bulk operations used to manage changesets
-	BulkOperationsCount map[string]int
+	BulkOperationsCount map[string]int32
 
 	SSBCBatchChangeDistribution []*SSBCBatchChangeDistribution
 }
@@ -865,7 +873,7 @@ type SSBCBatchChangeDistribution struct {
 	Range string
 
 	// the number of changesets belonging to a range of result
-	Count int
+	Count int32
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change

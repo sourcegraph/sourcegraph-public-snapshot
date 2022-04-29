@@ -263,7 +263,7 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 			// batch change 3 should be ignored because it's too old
 		},
 		ActiveExectutorsCount: 2,
-		BulkOperationsCount: map[string]int{
+		BulkOperationsCount: map[string]int32{
 			"commentatore": 2,
 			"close":        1,
 			"publish":      2,
@@ -275,6 +275,8 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 			{Source: "local", Range: "0-9 changesets", Count: 2},
 			{Source: "executor", Range: "0-9 changesets", Count: 1},
 		},
+		LocalBatchChangesCount:    2,
+		ExecutorBatchChangesCount: 1,
 	}
 	if diff := cmp.Diff(want, have); diff != "" {
 		t.Fatal(diff)
