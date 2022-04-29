@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // A Syncer periodically synchronizes available repositories from all its given Sources
@@ -35,7 +36,7 @@ type Syncer struct {
 	Synced chan Diff
 
 	// Logger if non-nil is logged to.
-	Logger log15.Logger
+	Logger log.Logger
 
 	// Now is time.Now. Can be set by tests to get deterministic output.
 	Now func() time.Time
@@ -64,7 +65,7 @@ type RunOptions struct {
 }
 
 // Run runs the Sync at the specified interval.
-func (s *Syncer) Run(ctx context.Context, store *Store, opts RunOptions) error {
+func (s *Syncer) Run(ctx context.Context, logger log.Logger, store *Store, opts RunOptions) error {
 	if opts.EnqueueInterval == nil {
 		opts.EnqueueInterval = func() time.Duration { return time.Minute }
 	}
@@ -79,7 +80,7 @@ func (s *Syncer) Run(ctx context.Context, store *Store, opts RunOptions) error {
 		s.initialUnmodifiedDiffFromStore(ctx, store)
 	}
 
-	worker, resetter := NewSyncWorker(ctx, store.Handle().DB(), &syncHandler{
+	worker, resetter := NewSyncWorker(ctx, logger, store.Handle().DB(), &syncHandler{
 		syncer:          s,
 		store:           store,
 		minSyncInterval: opts.MinSyncInterval,
@@ -100,7 +101,7 @@ func (s *Syncer) Run(ctx context.Context, store *Store, opts RunOptions) error {
 		if !conf.Get().DisableAutoCodeHostSyncs {
 			err := store.EnqueueSyncJobs(ctx, opts.IsCloud)
 			if err != nil && s.Logger != nil {
-				s.Logger.Error("Enqueuing sync jobs", "error", err)
+				s.Logger.Error("Enqueuing sync jobs", log.Error(err))
 			}
 		}
 		sleep(ctx, opts.EnqueueInterval())
@@ -115,7 +116,7 @@ type syncHandler struct {
 	minSyncInterval func() time.Duration
 }
 
-func (s *syncHandler) Handle(ctx context.Context, record workerutil.Record) (err error) {
+func (s *syncHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
 	sj, ok := record.(*SyncJob)
 	if !ok {
 		return errors.Errorf("expected repos.SyncJob, got %T", record)
@@ -188,7 +189,7 @@ func (s *Syncer) initialUnmodifiedDiffFromStore(ctx context.Context, store *Stor
 	stored, err := store.RepoStore.List(ctx, database.ReposListOptions{})
 	if err != nil {
 		if s.Logger != nil {
-			s.Logger.Warn("initialUnmodifiedDiffFromStore store.ListRepos", "error", err)
+			s.Logger.Warn("initialUnmodifiedDiffFromStore store.ListRepos", log.Error(err))
 		}
 		return
 	}
@@ -258,7 +259,7 @@ func (d Diff) Len() int {
 //
 // The "background" boolean flag indicates that we should run this
 // sync in the background vs block and call s.syncRepo synchronously.
-func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background bool) (repo *types.Repo, err error) {
+func (s *Syncer) SyncRepo(ctx context.Context, logger log.Logger, name api.RepoName, background bool) (repo *types.Repo, err error) {
 	tr, ctx := trace.New(ctx, "Syncer.SyncRepo", string(name))
 	defer tr.Finish()
 
@@ -296,7 +297,10 @@ func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background boo
 			_, _, _ = s.syncGroup.Do(string(name), func() (interface{}, error) {
 				updatedRepo, err := s.syncRepo(ctx, codehost, name, repo)
 				if err != nil {
-					log15.Error("SyncRepo", "name", name, "error", err, "background", background)
+					logger.Error("SyncRepo",
+						log.String("name", string(name)),
+						log.NamedError("error", err),
+						log.Bool("background", background))
 				}
 				return updatedRepo, nil
 			})
@@ -308,7 +312,10 @@ func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background boo
 		return s.syncRepo(ctx, codehost, name, repo)
 	})
 	if err != nil {
-		log15.Error("SyncRepo", "name", name, "error", err, "background", background)
+		logger.Error("SyncRepo",
+			log.String("name", string(name)),
+			log.NamedError("error", err),
+			log.Bool("background", background))
 		return nil, err
 	}
 	return updatedRepo.(*types.Repo), nil
@@ -759,13 +766,13 @@ func (s *Syncer) delete(ctx context.Context, svc *types.ExternalService, seen ma
 	return len(deleted), err
 }
 
-var discardLogger = func() log15.Logger {
-	l := log15.New()
+var discardLogger = func() log.Logger {
+	l := log.Logger
 	l.SetHandler(log15.DiscardHandler())
 	return l
 }()
 
-func (s *Syncer) log() log15.Logger {
+func (s *Syncer) log() log.Logger {
 	if s.Logger == nil {
 		return discardLogger
 	}

@@ -2,7 +2,6 @@ package repos_test
 
 import (
 	"context"
-	"log"
 	"testing"
 	"time"
 
@@ -13,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 func testSyncWorkerPlumbing(repoStore *repos.Store) func(t *testing.T) {
@@ -49,7 +49,7 @@ func testSyncWorkerPlumbing(repoStore *repos.Store) func(t *testing.T) {
 		h := &fakeRepoSyncHandler{
 			jobChan: jobChan,
 		}
-		worker, resetter := repos.NewSyncWorker(ctx, repoStore.Handle().DB(), h, repos.SyncWorkerOptions{
+		worker, resetter := repos.NewSyncWorker(ctx, logger log.Logger, repoStore.Handle().DB(), h, repos.SyncWorkerOptions{
 			NumHandlers:    1,
 			WorkerInterval: 1 * time.Millisecond,
 		})
@@ -81,7 +81,6 @@ type fakeRepoSyncHandler struct {
 	jobChan chan *repos.SyncJob
 }
 
-func (h *fakeRepoSyncHandler) Handle(ctx context.Context, _ log.Logger, record workerutil.Record) error {
 	sj, ok := record.(*repos.SyncJob)
 	if !ok {
 		return errors.Errorf("expected repos.SyncJob, got %T", record)

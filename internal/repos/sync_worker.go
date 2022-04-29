@@ -31,7 +31,7 @@ type SyncWorkerOptions struct {
 }
 
 // NewSyncWorker creates a new external service sync worker.
-func NewSyncWorker(ctx context.Context, db dbutil.DB, handler workerutil.Handler, opts SyncWorkerOptions) (*workerutil.Worker, *dbworker.Resetter) {
+func NewSyncWorker(ctx context.Context, logger log.Logger, db dbutil.DB, handler workerutil.Handler, opts SyncWorkerOptions) (*workerutil.Worker, *dbworker.Resetter) {
 	if opts.NumHandlers == 0 {
 		opts.NumHandlers = 3
 	}
@@ -74,7 +74,7 @@ func NewSyncWorker(ctx context.Context, db dbutil.DB, handler workerutil.Handler
 		MaxNumRetries:     0,
 	})
 
-	worker := dbworker.NewWorker(ctx, store, handler, workerutil.WorkerOptions{
+	worker := dbworker.NewWorker(ctx, logger, store, handler, workerutil.WorkerOptions{
 		Name:              "repo_sync_worker",
 		NumHandlers:       opts.NumHandlers,
 		Interval:          opts.WorkerInterval,
