@@ -99,13 +99,12 @@ func (s *JVMPackagesSource) listDependentRepos(ctx context.Context, results chan
 
 		lastID = dbDeps[len(dbDeps)-1].ID
 
-		for _, dep := range dbDeps {
-			parsedModule, err := reposource.ParseMavenModule(dep.Name)
+		for _, d := range dbDeps {
+			mavenDependency, err := reposource.ParseMavenDependency(d.Name + ":" + d.Version)
 			if err != nil {
-				log15.Warn("error parsing maven module", "error", err, "module", dep.Name)
+				log15.Warn("error parsing maven module", "error", err, "module", d.Name)
 				continue
 			}
-			mavenDependency := &reposource.MavenDependency{MavenModule: parsedModule, Version: dep.Version}
 
 			// We dont return anything that isnt resolvable here, to reduce logspam from gitserver. This codepath
 			// should be hit much less frequently than gitservers attempts to get packages, so there should be less
