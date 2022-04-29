@@ -212,7 +212,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                         loading={formAPI.submitting}
                         label={getSubmitButtonText({ submitting: formAPI.submitting, hasAppliedFilters })}
                         type="submit"
-                        disabled={formAPI.submitting || !hasFiltersChanged}
+                        disabled={!formAPI.valid || formAPI.submitting || !hasFiltersChanged}
                         variant="secondary"
                         size="sm"
                         outline={true}
@@ -223,7 +223,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                         type="button"
                         variant="secondary"
                         size="sm"
-                        disabled={!hasFiltersChanged}
+                        disabled={!hasFiltersChanged || !formAPI.valid}
                         onClick={onCreateInsightRequest}
                     >
                         <Icon className="mr-1" as={PlusIcon} />
