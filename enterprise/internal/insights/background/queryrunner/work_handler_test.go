@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 
@@ -445,6 +446,7 @@ func TestGetSeries(t *testing.T) {
 		return now
 	}
 	ctx := context.Background()
+	log := logtest.Scoped(t)
 
 	workHandler := workHandler{
 		metadadataStore: metadataStore,
@@ -453,7 +455,7 @@ func TestGetSeries(t *testing.T) {
 	}
 
 	t.Run("series definition does not exist", func(t *testing.T) {
-		_, err := workHandler.getSeries(ctx, "seriesshouldnotexist")
+		_, err := workHandler.getSeries(ctx, log, "seriesshouldnotexist")
 		if err == nil {
 			t.Fatal("expected error from getSeries")
 		}
@@ -482,7 +484,7 @@ func TestGetSeries(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		got, err := workHandler.getSeries(ctx, series.SeriesID)
+		got, err := workHandler.getSeries(ctx, log, series.SeriesID)
 		if err != nil {
 			t.Fatal("unexpected error from getseries")
 		}

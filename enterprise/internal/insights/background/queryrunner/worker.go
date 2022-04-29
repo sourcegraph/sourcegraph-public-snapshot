@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // This file contains all the methods required to:
@@ -36,7 +37,7 @@ import (
 
 // NewWorker returns a worker that will execute search queries and insert information about the
 // results into the code insights database.
-func NewWorker(ctx context.Context, workerStore dbworkerstore.Store, insightsStore *store.Store, metrics workerutil.WorkerMetrics) *workerutil.Worker {
+func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore.Store, insightsStore *store.Store, metrics workerutil.WorkerMetrics) *workerutil.Worker {
 	numHandlers := conf.Get().InsightsQueryWorkerConcurrency
 	if numHandlers <= 0 {
 		numHandlers = 1
@@ -57,7 +58,7 @@ func NewWorker(ctx context.Context, workerStore dbworkerstore.Store, insightsSto
 
 	go conf.Watch(func() {
 		val := getRateLimit()
-		log15.Info(fmt.Sprintf("Updating insights/query-worker rate limit value=%v", val))
+		logger.Info(fmt.Sprintf("Updating insights/query-worker rate limit value=%v", val))
 		limiter.SetLimit(val)
 	})
 
@@ -75,7 +76,7 @@ func NewWorker(ctx context.Context, workerStore dbworkerstore.Store, insightsSto
 		return float64(count)
 	}))
 
-	return dbworker.NewWorker(ctx, workerStore, &workHandler{
+	return dbworker.NewWorker(ctx, logger, workerStore, &workHandler{
 		baseWorkerStore: basestore.NewWithDB(workerStore.Handle().DB(), sql.TxOptions{}),
 		insightsStore:   insightsStore,
 		limiter:         limiter,

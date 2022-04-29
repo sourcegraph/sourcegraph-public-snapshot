@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 var _ workerutil.Handler = &workHandler{}
@@ -39,7 +40,7 @@ type workHandler struct {
 	computeSearch func(context.Context, string) ([]query.ComputeResult, error)
 }
 
-func (r *workHandler) getSeries(ctx context.Context, seriesID string) (*types.InsightSeries, error) {
+func (r *workHandler) getSeries(ctx context.Context, logger log.Logger, seriesID string) (*types.InsightSeries, error) {
 	var val *types.InsightSeries
 	var ok bool
 
@@ -344,7 +345,7 @@ func (r *workHandler) searchStreamHandler(ctx context.Context, job *Job, series 
 	return err
 }
 
-func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err error) {
+func (r *workHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
 	// 🚨 SECURITY: The request is performed without authentication, we get back results from every
 	// repository on Sourcegraph - results will be filtered when users query for insight data based on the
 	// repositories they can see.
@@ -363,7 +364,7 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 		return errors.Wrap(err, "dequeueJob")
 	}
 
-	series, err := r.getSeries(ctx, job.SeriesID)
+	series, err := r.getSeries(ctx, logger, job.SeriesID)
 	if err != nil {
 		return errors.Wrap(err, "getSeries")
 	}
