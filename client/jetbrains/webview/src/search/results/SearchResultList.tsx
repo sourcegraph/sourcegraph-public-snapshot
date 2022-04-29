@@ -15,7 +15,6 @@ export const SearchResultList: React.FunctionComponent<Props> = ({ results }) =>
     const scrollViewReference = createRef<HTMLDivElement>()
     const [selectedResult, setSelectedResult] = useState<null | string>(null)
 
-    console.log({ selectedResult })
     useEffect(() => {
         if (selectedResult === null) {
             setSelectedResult(getFirstResultId(results))
