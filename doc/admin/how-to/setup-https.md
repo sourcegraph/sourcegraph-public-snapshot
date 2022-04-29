@@ -8,7 +8,7 @@ This document will take you through how to setup HTTPS connection using the prei
 
 ## Steps for GCE-GKE user
 
-> WARNING: Please visit our [Kubernetes Configuration Docs](https://docs.sourcegraph.com/admin/install/kubernetes/configure#ingress-controller-recommended) for more detail on Network-related topics
+> WARNING: Please visit our [Kubernetes Configuration Docs](../deploy/kubernetes/configure#ingress-controller-recommended) for more detail on Network-related topics
 > 
 
 ### 1. Install the NGINX ingress controller (ingress-nginx) 

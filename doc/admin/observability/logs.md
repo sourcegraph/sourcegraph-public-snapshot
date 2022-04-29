@@ -12,7 +12,7 @@ A Sourcegraph service's log level is configured via the environment variable `SR
 * `eror`: Error.
 * `crit`: Critical.
 
-Learn more about how to apply these environment variables in [docker-compose](../install/docker-compose/operations.md#set-environment-variables) and [server](../install/docker/operations.md#environment-variables) deployments. 
+Learn more about how to apply these environment variables in [docker-compose](../deploy/docker-compose/index.md#set-environment-variables) and [server](../deploy/docker-single-container/index.md#environment-variables) deployments. 
 
 ## Log format
 

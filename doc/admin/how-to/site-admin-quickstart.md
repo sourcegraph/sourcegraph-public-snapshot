@@ -8,23 +8,18 @@ This guide will walk you through the features and functionalities available to y
 ### What is the best deployment option for me?
 We recommend Docker Compose for most initial production deployments. You can [migrate to a different deployment method](https://docs.sourcegraph.com/admin/updates#migrating-to-a-new-deployment-type) later on if needed.
 
-If you need a deployment option that offers a higher level of scalability and availability, the [Kubernetes deployment](https://docs.sourcegraph.com/admin/install/kubernetes) is recommended. 
+If you need a deployment option that offers a higher level of scalability and availability, the [Kubernetes deployment](../deploy/kubernetes) is recommended. 
 
-To help give you a starting point on choosing a deployment option and allocating resources to it, check out our [resource estimator](https://docs.sourcegraph.com/admin/install/resource_estimator).
+To help give you a starting point on choosing a deployment option and allocating resources to it, check out our [resource estimator](../deploy/resource_estimator).
 
-For a comphrensive deployment guide for each option, check out our in-depth documentation for both [Docker Compose](https://docs.sourcegraph.com/admin/install/docker-compose) and [Kubernetes](https://docs.sourcegraph.com/admin/install/kubernetes).
+For a comphrensive deployment guide for each option, check out our in-depth documentation for both [Docker Compose](../deploy/docker-compose) and [Kubernetes](../deploy/kubernetes).
 
 ### Deployment options 
-| Deployment Type                                             | Suggested for                                           | Setup time        | Resource isolation | Auto-healing | Multi-machine |
-| ----------------------------------------------------------- | ------------------------------------------------------- | ----------------- | :----------------: | :----------: | :-----------: |
-| [**★ Docker Compose**](https://docs.sourcegraph.com/admin/install/docker-compose) | **Small & medium** production deployments               | 🟢 5 minutes     |         ✅         |      ✅      |      ❌       |
-| [**★ Kubernetes**](https://docs.sourcegraph.com/admin/install/kubernetes)         | **Medium & large** highly-available cluster deployments | 🟠 30-90 minutes |         ✅         |      ✅      |      ✅       |
-| [Single-container](https://docs.sourcegraph.com/admin/install/docker)              | Local testing                                           | 🟢 1 minute      |         ❌         |      ❌      |      ❌       |
 
-> **NOTE: Some features for production deployments [require a Sourcegraph license](https://about.sourcegraph.com/pricing/)**.
+Our recommended deployment type is [Kubernetes with Helm](../deploy/kubernetes/helm.md). If this is not a viable option, we also support a number of other deployment types which are described in the [Deployment overview](../deploy/index.md).
 
 ### Self-hosted vs. Managed instances
-Regardless of the deployment option you choose, Sourcegraph can be self-hosted locally or with the cloud provider of your choice. We also offer [managed instances](https://docs.sourcegraph.com/admin/install/managed) (we handle deployment, updates, and management of the instance for you). Please [contact us](https://about.sourcegraph.com/contact/sales) if you are interested in learning more about managed instances. 
+Regardless of the deployment option you choose, Sourcegraph can be self-hosted locally or with the cloud provider of your choice. We also offer [managed instances](../deploy/managed) (we handle deployment, updates, and management of the instance for you). Please [contact us](https://about.sourcegraph.com/contact/sales) if you are interested in learning more about managed instances. 
 
 
 ## Updating your instance 

@@ -16,7 +16,7 @@ Resolving this error requires discovering which migration file failed to run, an
 * This document assumes that you are installing Sourcegraph or were attempting an upgrade when an error occurred. 
 * **NOTE: If you encountered this error during an upgrade, ensure you followed the [proper step upgrade process documented here.](https://docs.sourcegraph.com/admin/updates) If you skipped a minor version during an upgrade, you will need to revert back to the last minor version your instance was on before following the steps in this document.**
 
-The following procedure requires that you are able to execute commands from inside the database container. Learn more about shelling into [kubernetes](https://docs.sourcegraph.com/admin/install/kubernetes/operations#access-the-database), [docker-compose](https://docs.sourcegraph.com/admin/install/docker-compose/operations#access-the-database), and [Sourcegraph single-container](https://docs.sourcegraph.com/admin/install/docker/operations#access-the-database) instances at these links. 
+The following procedure requires that you are able to execute commands from inside the database container. Learn more about shelling into [kubernetes](https://docs.sourcegraph.com/admin/deploy/kubernetes/operations#access-the-database), [docker-compose](https://docs.sourcegraph.com/admin/deploy/docker-compose/operations#access-the-database), and [Sourcegraph single-container](https://docs.sourcegraph.com/admin/deploy/docker-single-container/operations#access-the-database) instances at these links. 
 
 ## TL;DR Steps to resolve
 

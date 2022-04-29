@@ -117,7 +117,7 @@ Other monitoring systems that support Prometheus scraping (for example, Datadog 
 
 ### I am getting "Error: Cluster information not available" in the Instrumentation page, what should I do?
 
-This error is expected if your instance was not [deployed with Kubernetes](./install/kubernetes/index.md). The Instrumentation page is currently only available for Kubernetes instances.
+This error is expected if your instance was not [deployed with Kubernetes](./deploy/kubernetes/index.md). The Instrumentation page is currently only available for Kubernetes instances.
 
 ## Troubleshooting
 

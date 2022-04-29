@@ -69,8 +69,8 @@ Here are some examples of what your site config might look like:
 
 Then, confirm there are no error messages in:
 
-- [Docker Compose](../../install/docker-compose/index.md) and [Kubernetes](../../install/kubernetes/index.md): the `sourcegraph-frontend` deployment logs
-- [Single-container](../../install/docker/index.md): the `sourcegraph/server` container logs
+- [Docker Compose](../../deploy/docker-compose/index.md) and [Kubernetes](../../deploy/kubernetes/index.md): the `sourcegraph-frontend` deployment logs
+- [Single-container](../../deploy/docker-single-container/index.md): the `sourcegraph/server` container logs
 
 The most likely error message indicating a problem is `Error prefetching SAML service provider metadata`. See [SAML troubleshooting](#troubleshooting) for more tips.
 
@@ -80,8 +80,8 @@ Security Assertion Markup Language (SAML) is a common web protocol used pass aut
 ### Enable logging in Sourcegraph containers
 Set the env var `INSECURE_SAML_LOG_TRACES=1` to log all SAML requests and responses on:
 
-- [Docker Compose](../../install/docker-compose/index.md) and [Kubernetes](../../install/kubernetes/index.md): the `sourcegraph-frontend` deployment
-- [Single-container](../../install/docker/index.md): the `sourcegraph/server` container
+- [Docker Compose](../../deploy/docker-compose/index.md) and [Kubernetes](../../deploy/kubernetes/index.md): the `sourcegraph-frontend` deployment
+- [Single-container](../../deploy/docker-single-container/index.md): the `sourcegraph/server` container
 
 ### Debugging with your browser
 When debugging a problem with SAML its often helpful to use your browsers developer tools to directly observer the XML assertions and their contents. Below are some general pointers on how to collect SAML communications:

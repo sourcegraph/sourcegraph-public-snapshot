@@ -10,7 +10,7 @@ The [developing observability page](../background-information/observability/inde
 
 Service-side, metrics should be made available over HTTP for Prometheus to scrape.
 By default, Prometheus expects metrics to be exported on `$SERVICEPORT/metrics` - for example, run your local Sourcegraph dev server and metrics should be available on `http://localhost:$SERVICEPORT/metrics`.
-How this is configured varies across the various [Sourcegraph deployment options](../../admin/install/index.md) - see [tracking a new service](#tracking-a-new-service).
+How this is configured varies across the various [Sourcegraph deployment options](../../admin/deploy/index.md) - see [tracking a new service](#tracking-a-new-service).
 
 ### Tracking a new service
 
