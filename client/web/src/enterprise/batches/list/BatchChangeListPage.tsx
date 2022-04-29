@@ -153,8 +153,8 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                     <ConnectionContainer>
                         <div className={styles.filtersRow}>
                             {(licenseAndUsageInfo?.allBatchChanges.totalCount || 0) > 0 && (
-                                <H3 as={H2} className="align-self-end flex-1">
-                                    {lastTotalCount} batch changes
+                                <H3 as={H2} className="align-self-end flex-1" aria-live="assertive" aria-atomic="true">
+                                    {`${lastTotalCount} batch changes`}
                                 </H3>
                             )}
                             <H4 as={H3} className="mb-0 mr-2">
@@ -168,10 +168,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                             />
                         </div>
                         {error && <ConnectionError errors={[error.message]} />}
-                        <ConnectionList
-                            as="div"
-                            className={classNames(styles.grid, isExecutionEnabled ? styles.wide : styles.narrow)}
-                        >
+                        <ConnectionList as="ul">
                             {connection?.nodes?.map(node => (
                                 <BatchChangeNode
                                     key={node.id}

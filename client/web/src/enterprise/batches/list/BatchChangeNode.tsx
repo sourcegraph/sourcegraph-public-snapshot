@@ -116,7 +116,7 @@ export const BatchChangeNode: React.FunctionComponent<React.PropsWithChildren<Ba
     }, [isExecutionEnabled, node.url, node.state, node.currentSpec, latestExecution])
 
     return (
-        <>
+        <li className={classNames(styles.grid, isExecutionEnabled ? styles.wide : styles.narrow)}>
             <span className={styles.batchChangeNodeSeparator} />
             {isExecutionEnabled ? (
                 <BatchChangeStatePill
@@ -164,19 +164,34 @@ export const BatchChangeNode: React.FunctionComponent<React.PropsWithChildren<Ba
             {node.state !== BatchChangeState.DRAFT && (
                 <>
                     <ChangesetStatusOpen
+                        aria-label={`${node.changesetsStats.open} open changesets`}
                         className="d-block d-sm-flex"
-                        label={<span className="text-muted">{node.changesetsStats.open} open</span>}
+                        label={
+                            <span className="text-muted" aria-hidden="true">{`${node.changesetsStats.open} open`}</span>
+                        }
                     />
                     <ChangesetStatusClosed
                         className="d-block d-sm-flex text-center"
-                        label={<span className="text-muted">{node.changesetsStats.closed} closed</span>}
+                        aria-label={`${node.changesetsStats.closed} closed changesets`}
+                        label={
+                            <span
+                                className="text-muted"
+                                aria-hidden={true}
+                            >{`${node.changesetsStats.closed} closed`}</span>
+                        }
                     />
                     <ChangesetStatusMerged
                         className="d-block d-sm-flex"
-                        label={<span className="text-muted">{node.changesetsStats.merged} merged</span>}
+                        aria-label={`${node.changesetsStats.merged} merged changesets`}
+                        label={
+                            <span
+                                className="text-muted"
+                                aria-hidden={true}
+                            >{`${node.changesetsStats.merged} merged`}</span>
+                        }
                     />
                 </>
             )}
-        </>
+        </li>
     )
 }
