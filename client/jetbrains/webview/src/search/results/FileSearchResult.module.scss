@@ -1,15 +1,16 @@
-.list {
-    height:auto;
-    overflow-y: auto;
-}
-
-.list-item {
+.item {
     width: 100%;
     overflow-x: hidden;
     cursor: pointer;
     user-select: none;
 }
 
-.list-item-active {
+.item-active {
     background-color: lightcoral;
+}
+
+.header {
+    background-color: lightgray;
+    color: black;
+    pointer-events: none;
 }

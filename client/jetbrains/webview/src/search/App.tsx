@@ -10,7 +10,7 @@ import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/setting
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { WildcardThemeContext } from '@sourcegraph/wildcard'
 
-import { SearchResultList } from './SearchResultList'
+import { SearchResultList } from './results/SearchResultList'
 
 import styles from './App.module.scss'
 
