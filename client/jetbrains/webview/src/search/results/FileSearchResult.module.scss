@@ -1,12 +1,22 @@
-.item {
+.line {
     width: 100%;
     overflow-x: hidden;
     cursor: pointer;
     user-select: none;
-}
+    background-color: var(--code-bg);
 
-.item-active {
-    background-color: lightcoral;
+    &-active {
+        background-color: var(--code-selection-bg);
+    }
+
+    &-code {
+        color: var(--body-color);
+    }
+
+    &-line-number {
+        color: red;
+        font-size: 0.8rem;
+    }
 }
 
 .header {
@@ -25,6 +35,11 @@
     &-divider {
         border-right: 1px solid var(--border-color-2);
         height: 1rem;
+    }
+
+    &-link {
+        cursor: text;
+        pointer-events: none;
     }
 
     p {

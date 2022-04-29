@@ -6,5 +6,13 @@ import { App } from './App'
 
 setLinkComponent(AnchorLink)
 
+function onOpen(id: string): void {
+    console.log('open', id)
+}
+
+function onPreviewChange(id: string): void {
+    console.log('preview', id)
+}
+
 const node = document.querySelector('#main') as HTMLDivElement
-render(<App />, node)
+render(<App onOpen={onOpen} onPreviewChange={onPreviewChange} />, node)

@@ -29,9 +29,9 @@ export const FileSearchResult: React.FunctionComponent<Props> = ({
         const key = getIdForLine(result, line)
         const onClick = (): void => selectResultFromId(key)
 
-        if (key === selectedResult) {
-            console.log(result, line)
-        }
+        // if (key === selectedResult) {
+        //     console.log(result, line)
+        // }
 
         return (
             // The below element's accessibility is handled via a document level event listener.
@@ -39,65 +39,18 @@ export const FileSearchResult: React.FunctionComponent<Props> = ({
             // eslint-disable-next-line jsx-a11y/click-events-have-key-events,jsx-a11y/no-static-element-interactions
             <div
                 id={`search-result-list-item-${key}`}
-                className={classNames(styles.item, {
-                    [styles.itemActive]: key === selectedResult,
+                className={classNames(styles.line, {
+                    [styles.lineActive]: key === selectedResult,
                 })}
                 onMouseDown={preventAll}
                 onClick={onClick}
                 key={key}
             >
-                {line.line} <small>{result.path}</small>
+                <div className={styles.lineCode}>{line.line}</div>
+                <div className={styles.lineLineNumber}>{line.lineNumber}</div>
             </div>
         )
     })
-
-    // const renderTitle = (): JSX.Element => {
-    //     const formattedRepositoryStarCount = formatRepositoryStarCount(result.repoStars)
-    //     return (
-    //         <div className={styles.title}>
-    //             <RepoIcon repoName={repoName} className="text-muted flex-shrink-0" />
-    //             <span
-    //                 onMouseEnter={checkTruncation}
-    //                 className="test-search-result-label ml-1 flex-shrink-past-contents text-truncate"
-    //                 ref={titleReference}
-    //                 data-tooltip={
-    //                     (truncated && result.type === 'repo' && displayRepoName(getRepoMatchLabel(result))) ||
-    //                     (truncated &&
-    //                         result.type === 'commit' &&
-    //                         `${result.authorName}: ${result.message.split('\n', 1)[0]}`) ||
-    //                     null
-    //                 }
-    //             >
-    //                 {result.type === 'commit' && (
-    //                     <>
-    //                         <Link to={getRepositoryUrl(result.repository)}>{displayRepoName(result.repository)}</Link>
-    //                         {' › '}
-    //                         <Link to={getCommitMatchUrl(result)}>{result.authorName}</Link>
-    //                         {': '}
-    //                         <Link to={getCommitMatchUrl(result)}>{result.message.split('\n', 1)[0]}</Link>
-    //                     </>
-    //                 )}
-    //                 {result.type === 'repo' && (
-    //                     <Link to={getRepoMatchUrl(result)}>{displayRepoName(getRepoMatchLabel(result))}</Link>
-    //                 )}
-    //             </span>
-    //             <span className={styles.spacer} />
-    //             {result.type === 'commit' && (
-    //                 <Link to={getCommitMatchUrl(result)}>
-    //                     <code className={styles.commitOid}>{result.oid.slice(0, 7)}</code>{' '}
-    //                     <Timestamp date={result.authorDate} noAbout={true} strict={true} />
-    //                 </Link>
-    //             )}
-    //             {result.type === 'commit' && formattedRepositoryStarCount && <div className={styles.divider} />}
-    //             {formattedRepositoryStarCount && (
-    //                 <>
-    //                     <SearchResultStar />
-    //                     {formattedRepositoryStarCount}
-    //                 </>
-    //             )}
-    //         </div>
-    //     )
-    // }
 
     const repoDisplayName = result.repository
     const repoAtRevisionURL = '#'
@@ -106,9 +59,9 @@ export const FileSearchResult: React.FunctionComponent<Props> = ({
     const title = (
         // eslint-disable-next-line jsx-a11y/no-static-element-interactions
         <div className={styles.header} onMouseDown={preventAll}>
-            <Icon className="flex-shrink-0" as={FileDocumentIcon} />
-            <div className={classNames('mx-1', styles.headerDivider)} />
             <div className={classNames(styles.headerTitle)} data-testid="result-container-header">
+                <Icon className="flex-shrink-0" as={FileDocumentIcon} />
+                <div className={classNames('mx-1', styles.headerDivider)} />
                 <RepoIcon repoName={result.repository} className="text-muted flex-shrink-0" />
                 <RepoFileLink
                     repoName={result.repository}
@@ -116,7 +69,7 @@ export const FileSearchResult: React.FunctionComponent<Props> = ({
                     filePath={result.path}
                     fileURL={getFileMatchUrl(result)}
                     repoDisplayName={repoDisplayName}
-                    className="ml-1 flex-shrink-past-contents text-truncate"
+                    className={classNames('ml-1', 'flex-shrink-past-contents', 'text-truncate', styles.headerLink)}
                 />
             </div>
             {formattedRepositoryStarCount && (

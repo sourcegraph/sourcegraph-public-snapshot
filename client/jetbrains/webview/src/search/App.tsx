@@ -14,12 +14,16 @@ import { SearchResultList } from './results/SearchResultList'
 
 import styles from './App.module.scss'
 
-export const App: React.FunctionComponent = () => {
+interface Props {
+    onPreviewChange: (result: string) => void
+    onOpen: (result: string) => void
+}
+
+export const App: React.FunctionComponent<Props> = ({ onPreviewChange, onOpen }: Props) => {
     const [caseSensitive, setCaseSensitivity] = useState(false)
     const [patternType, setPatternType] = useState(SearchPatternType.literal)
     const [results, setResults] = useState<SearchMatch[]>([])
     const [lastSearchedQuery, setLastSearchedQuery] = useState<null | string>(null)
-
     const [userQueryState, setUserQueryState] = useState<QueryState>({
         query: '',
     })
@@ -102,7 +106,12 @@ export const App: React.FunctionComponent = () => {
                     </form>
                 </div>
                 {/* We reset the search result list whenever a new search is started using key={lastSearchedQuery} */}
-                <SearchResultList results={results} key={lastSearchedQuery} />
+                <SearchResultList
+                    results={results}
+                    key={lastSearchedQuery}
+                    onPreviewChange={onPreviewChange}
+                    onOpen={onOpen}
+                />
             </div>
         </WildcardThemeContext.Provider>
     )

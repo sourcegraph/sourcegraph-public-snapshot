@@ -8,23 +8,33 @@ import { getElementFromId, getFirstResultId, getNextResult, getPreviousResult } 
 import styles from './SearchResultList.module.scss'
 
 interface Props {
+    onPreviewChange: (result: string) => void
+    onOpen: (result: string) => void
     results: SearchMatch[]
 }
 
-export const SearchResultList: React.FunctionComponent<Props> = ({ results }) => {
+export const SearchResultList: React.FunctionComponent<Props> = ({ results, onPreviewChange, onOpen }) => {
     const scrollViewReference = createRef<HTMLDivElement>()
     const [selectedResult, setSelectedResult] = useState<null | string>(null)
 
+    const selectResultFromId = useCallback(
+        (id: null | string) => {
+            if (id !== null) {
+                getElementFromId(id)?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+                onPreviewChange(id)
+            } else {
+                onPreviewChange('')
+            }
+            setSelectedResult(id)
+        },
+        [onPreviewChange]
+    )
+
     useEffect(() => {
         if (selectedResult === null) {
-            setSelectedResult(getFirstResultId(results))
+            selectResultFromId(getFirstResultId(results))
         }
-    }, [selectedResult, results])
-
-    const selectResultFromId = useCallback((id: string) => {
-        setSelectedResult(id)
-        getElementFromId(id)?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
-    }, [])
+    }, [selectedResult, results, selectResultFromId])
 
     const onKeyDown = useCallback(
         (event: KeyboardEvent) => {
@@ -53,6 +63,11 @@ export const SearchResultList: React.FunctionComponent<Props> = ({ results }) =>
                 return
             }
 
+            if (event.key === 'Enter' && event.ctrlKey === true) {
+                onOpen(selectedResult)
+                return
+            }
+
             if (event.key === 'ArrowDown') {
                 const next = getNextResult(currentElement)
                 if (next) {
@@ -77,7 +92,7 @@ export const SearchResultList: React.FunctionComponent<Props> = ({ results }) =>
                 return
             }
         },
-        [selectResultFromId, selectedResult, scrollViewReference]
+        [selectedResult, onOpen, selectResultFromId, scrollViewReference]
     )
 
     useEffect(() => {
