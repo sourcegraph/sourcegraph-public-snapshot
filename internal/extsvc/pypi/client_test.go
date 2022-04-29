@@ -3,9 +3,15 @@ package pypi
 import (
 	"bytes"
 	"context"
+	"crypto/sha1"
+	"encoding/hex"
 	"flag"
+	"io"
+	"io/fs"
+	"os"
 	"path"
 	"path/filepath"
+	"strings"
 	"testing"
 	"text/template"
 
@@ -15,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
+	"github.com/sourcegraph/sourcegraph/internal/unpack"
 )
 
 var updateRegex = flag.String("update", "", "Update testdata of tests matching the given regex")
@@ -35,31 +42,67 @@ func TestDownload(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	fs, err := Parse(b)
+	files, err := Parse(b)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Pick the oldest tarball.
 	j := -1
-	for i, f := range fs {
+	for i, f := range files {
 		if path.Ext(f.Name) == ".gz" {
 			j = i
 			break
 		}
 	}
 
-	p, err := cli.Download(ctx, fs[j].URL)
+	p, err := cli.Download(ctx, files[j].URL)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	testutil.AssertGolden(t, "testdata/golden/requests", update(t.Name()), p)
+	tmp := t.TempDir()
+	err = unpack.Tgz(bytes.NewReader(p), tmp, unpack.Opts{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	hasher := sha1.New()
+	var tarFiles []string
+
+	filepath.WalkDir(tmp, func(path string, d fs.DirEntry, err error) error {
+		if d.IsDir() {
+			return nil
+		}
+		f, err := os.Open(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer f.Close()
+		b, err := io.ReadAll(f)
+		if err != nil {
+			t.Fatal(err)
+		}
+		hasher.Write(b)
+		tarFiles = append(tarFiles, strings.TrimPrefix(path, tmp))
+		return nil
+	})
+
+	hash := hex.EncodeToString(hasher.Sum(nil))
+	type result struct {
+		TarHash string
+		Files   []string
+	}
+	res := result{
+		TarHash: hash,
+		Files:   tarFiles,
+	}
+	testutil.AssertGolden(t, "testdata/golden/requests", update(t.Name()), res)
 }
 
 func TestParse(t *testing.T) {
 	cli := newTestClient(t, "Parse", update(t.Name()))
-	b, err := cli.Project(context.Background(), "tiny")
+	b, err := cli.Project(context.Background(), "gpg-vault")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -67,7 +110,7 @@ func TestParse(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	testutil.AssertGolden(t, "testdata/golden/tiny", update(t.Name()), files)
+	testutil.AssertGolden(t, "testdata/golden/gpg-vault", update(t.Name()), files)
 }
 
 func TestParse_empty(t *testing.T) {
@@ -102,20 +145,12 @@ func TestParse_broken(t *testing.T) {
 		Body string
 	}{
 		{
-			name: "no href",
-			Body: "<a>frob-1.0.0</a>",
-		},
-		{
 			name: "no text",
 			Body: "<a href=\"/frob-1.0.0.tar.gz/\"></a>",
 		},
 		{
 			name: "text does not match base",
 			Body: "<a href=\"/frob-1.0.0.tar.gz/\">foo</a>",
-		},
-		{
-			name: "no href no text",
-			Body: "<a></a>",
 		},
 	}
 
@@ -150,6 +185,7 @@ func TestParse_PEP503(t *testing.T) {
 	<h2>More links for frob</h1>
 	<div>
 	    <a href="/frob-2.0.0.tar.gz/" data-gpg-sig="true">frob-2.0.0.tar.gz</a>
+	    <a>frob-3.0.0.tar.gz</a>
 	</div>
   </body>
 </html>

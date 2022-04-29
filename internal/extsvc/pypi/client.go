@@ -107,9 +107,10 @@ type File struct {
 	DataRequiresPython string
 }
 
-// Parse parses the output of Client.Project into a list of files.
+// Parse parses the output of Client.Project into a list of files. Anchor tags
+// without href are ignored.
 func Parse(b []byte) ([]File, error) {
-	files := []File{}
+	var files []File
 
 	z := html.NewTokenizer(bytes.NewReader(b))
 
@@ -118,7 +119,7 @@ func Parse(b []byte) ([]File, error) {
 	// file for the project".
 	nextAnchor := func() bool {
 		for {
-			switch tt := z.Next(); tt {
+			switch z.Next() {
 			case html.ErrorToken:
 				return false
 			case html.StartTagToken:
@@ -136,7 +137,7 @@ OUTER:
 		// Parse attributes.
 		for {
 			k, v, more := z.TagAttr()
-			switch attr := string(k); attr {
+			switch string(k) {
 			case "href":
 				cur.URL = string(v)
 			case "data-requires-python":
@@ -154,13 +155,12 @@ OUTER:
 		}
 
 		if cur.URL == "" {
-			return nil, errors.New("anchor tag without URL")
+			continue
 		}
 
 	INNER:
 		for {
-			tt := z.Next()
-			switch tt {
+			switch z.Next() {
 			case html.ErrorToken:
 				break OUTER
 			case html.TextToken:
@@ -169,7 +169,11 @@ OUTER:
 				// the text of the anchor tag MUST match the final path component (the filename)
 				// of the URL. The URL SHOULD include a hash in the form of a URL fragment with
 				// the following syntax: #<hashname>=<hashvalue>
-				if base := strings.Split(filepath.Base(cur.URL), "#")[0]; base != cur.Name {
+				u, err := url.Parse(cur.URL)
+				if err != nil {
+					return nil, err
+				}
+				if base := filepath.Base(u.Path); base != cur.Name {
 					return nil, errors.Newf("%s != %s: text does not match final path component", cur.Name, base)
 				}
 
