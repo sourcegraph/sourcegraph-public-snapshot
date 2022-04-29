@@ -132,6 +132,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
 
                 <DrillDownSearchContextFilter
                     spellCheck={false}
+                    autoComplete="off"
                     autoFocus={true}
                     className={styles.input}
                     status={getFilterInputStatus(contexts)}
