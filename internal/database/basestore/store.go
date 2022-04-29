@@ -115,6 +115,10 @@ func (s *Store) ExecResult(ctx context.Context, query *sqlf.Query) (sql.Result, 
 // Calling this method only makes sense within a transaction, as the setting is unset after the transaction
 // is either rolled back or committed. This does not perform argument parameterization.
 func (s *Store) SetLocal(ctx context.Context, key, value string) (func(context.Context) error, error) {
+	if !s.InTransaction() {
+		return nil, ErrNotInTransaction
+	}
+
 	return func(ctx context.Context) error {
 		return s.Exec(ctx, sqlf.Sprintf(fmt.Sprintf(`SET LOCAL "%s" TO ''`, key)))
 	}, s.Exec(ctx, sqlf.Sprintf(fmt.Sprintf(`SET LOCAL "%s" TO "%s"`, key, value)))
