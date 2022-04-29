@@ -73,7 +73,7 @@
 /admin/auth/saml_with_microsoft_adfs /admin/auth/saml/microsoft_adfs 308
 /admin/config/critical_config /admin/migration/3_11 308
 /admin/external_service/bitbucketserver /integration/bitbucket_server 308
-/admin/install/cluster.md /admin/install/index.md 308
+/admin/install/cluster.md /admin/deploy/index.md 308
 /admin/monitoring /admin/observability 308
 /admin/monitoring/reporting_search_timeouts /admin/observability/troubleshooting#scenario-search-timeouts 308
 /admin/monitoring/metrics_reference /admin/observability/metrics_guide 308
@@ -229,9 +229,9 @@
 /batch_changes/how-tos/configuring_user_credentials /batch_changes/how-tos/configuring_credentials 308
 /batch-changes/references/troubleshooting /batch_changes/references/troubleshooting 308
 
-/admin/install/docker-compose/update /admin/install/docker-compose/operations#upgrade 308
-/admin/install/docker-compose/configure /admin/install/docker-compose/operations#configure 308
-/admin/install/kubernetes/overlays /admin/install/kubernetes/configure 308
+/admin/install/docker-compose/update /admin/deploy/docker-compose/operations#upgrade 308
+/admin/install/docker-compose/configure /admin/deploy/docker-compose/operations#configure 308
+/admin/install/kubernetes/overlays /admin/deploy/kubernetes/configure 308
 
 /dev/background-information/continuous_integration /dev/background-information/ci 308
 /dev/how-to/add_and_use_logging /dev/how-to/add_logging 308
