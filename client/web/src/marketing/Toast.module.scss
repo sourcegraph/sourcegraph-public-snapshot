@@ -7,12 +7,18 @@
     align-items: flex-start;
     border-radius: 0.25rem;
     border: 1px solid var(--border-color);
+    max-width: 520px;
 }
 
 .header {
     display: flex;
     align-items: center;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.25rem;
+
+    h2 {
+        font-weight: 600;
+        font-size: 1rem;
+    }
 }
 
 .contents {
@@ -24,17 +30,25 @@
 }
 
 .contents-cta {
-    margin-top: 1.5rem;
+    margin-top: 1rem;
 }
 
-.close-button {
-    position: absolute;
-    top: 10px;
-    right: 10px;
+.toast-body {
+    padding-top: 0.688rem;
+}
+
+.close-button-wrap {
+    margin-bottom: 0.438rem;
+
+    svg {
+        fill: var(--icon-color);
+        height: 0.875rem;
+        width: 0.875rem;
+    }
 }
 
 .footer {
     width: 100%;
-    padding: 1rem;
+    padding: 0.75rem;
     border-top: 1px solid var(--border-color);
 }

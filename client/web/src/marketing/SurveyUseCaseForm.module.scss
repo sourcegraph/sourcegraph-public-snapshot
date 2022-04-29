@@ -1,0 +1,30 @@
+.toast {
+    > div {
+        &:first-child {
+            padding-right: 0.688rem;
+        }
+    }
+}
+
+.textarea {
+    > div {
+        font-size: 0.75rem;
+    }
+}
+
+.check-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+
+    label {
+        font-size: 0.75rem;
+        line-height: 136%;
+        letter-spacing: -0.25px;
+    }
+}
+
+.toast-subtitle {
+    font-weight: 500;
+    font-size: 0.875rem;
+}

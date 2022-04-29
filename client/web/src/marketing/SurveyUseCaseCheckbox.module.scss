@@ -1,0 +1,48 @@
+.check-button {
+    border-radius: 2rem;
+    font-weight: 400;
+}
+
+.checkbox {
+    height: 0.813rem;
+    width: 0.813rem;
+    display: block;
+}
+
+.checkbox-default {
+    background: var(--white);
+    border: 2px solid var(--text-muted);
+    box-sizing: border-box;
+    border-radius: 0.152rem;
+}
+
+.check-button-active {
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--primary);
+
+    &:not(:disabled):not(:global(.disabled)) {
+        background-color: var(--primary);
+        color: var(--white);
+
+        &:hover:not(:focus),
+        &:focus,
+        &:active {
+            color: var(--white) !important; // Overides default button psudo state color
+            background-color: var(--primary) !important; // Overides default button psudo state background
+        }
+    }
+
+    .checkmark::after {
+        display: block;
+        content: '';
+        width: 0.313rem;
+        height: 0.625rem;
+        border: solid var(--white);
+        border-width: 0 2px 2px 0;
+        -webkit-transform: rotate(45deg);
+        -ms-transform: rotate(45deg);
+        transform: rotate(45deg);
+        margin-left: 0.25rem;
+    }
+}

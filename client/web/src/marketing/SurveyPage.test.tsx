@@ -49,7 +49,7 @@ describe('SurveyPage', () => {
                 'How likely is it that you would recommend Sourcegraph to a friend?'
             )
             expect(recommendRadioGroup).toBeVisible()
-            const score10 = within(recommendRadioGroup).getByLabelText(mockVariables.score)
+            const score10 = within(recommendRadioGroup).getByRole('button', { name: String(mockVariables.score) })
             fireEvent.click(score10)
 
             const reasonInput = renderResult.getByLabelText(

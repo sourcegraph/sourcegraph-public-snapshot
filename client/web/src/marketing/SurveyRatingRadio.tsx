@@ -2,7 +2,6 @@ import React, { useState } from 'react'
 
 import classNames from 'classnames'
 import { range } from 'lodash'
-import { useHistory } from 'react-router'
 
 import { Button } from '@sourcegraph/wildcard'
 
@@ -18,21 +17,12 @@ interface SurveyRatingRadio {
 }
 
 export const SurveyRatingRadio: React.FunctionComponent<SurveyRatingRadio> = props => {
-    const history = useHistory()
-    const [focusedIndex, setFocusedIndex] = useState<number | null>(null)
+    const [selectedIndex, setSelectedIndexIndex] = useState<number | null>(null)
 
-    const handleFocus = (index: number): void => {
-        setFocusedIndex(index)
-    }
-
-    const handleBlur = (): void => {
-        setFocusedIndex(null)
-    }
-
-    const handleChange = (score: number): void => {
+    const handleClick = (score: number): void => {
         eventLogger.log('SurveyButtonClicked', { score }, { score })
-        history.push(`/survey/${score}`)
 
+        setSelectedIndexIndex(score)
         if (props.onChange) {
             props.onChange(score)
         }
@@ -43,31 +33,18 @@ export const SurveyRatingRadio: React.FunctionComponent<SurveyRatingRadio> = pro
             aria-labelledby={props.ariaLabelledby}
             aria-describedby="survey-rating-scale"
             className={radioStyles.scores}
-            onBlur={handleBlur}
         >
             {range(0, 11).map(score => {
-                const pressed = score === props.score
-                const focused = score === focusedIndex
+                const selected = score === selectedIndex
 
                 return (
                     <Button
                         key={score}
-                        className={classNames(radioStyles.ratingBtn, {
-                            active: pressed,
-                            focus: focused,
-                        })}
-                        variant="primary"
-                        as="label"
+                        className={classNames(radioStyles.ratingBtn, !selected && radioStyles.ratingBtnDefault)}
+                        variant={score === selectedIndex ? 'primary' : 'secondary'}
+                        outline={score !== selectedIndex}
+                        onClick={() => handleClick(score)}
                     >
-                        <input
-                            type="radio"
-                            name="survey-score"
-                            value={score}
-                            onChange={() => handleChange(score)}
-                            onFocus={() => handleFocus(score)}
-                            className={radioStyles.ratingRadio}
-                        />
-
                         {score}
                     </Button>
                 )

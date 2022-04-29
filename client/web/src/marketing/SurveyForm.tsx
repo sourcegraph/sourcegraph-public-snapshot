@@ -55,10 +55,12 @@ export const SurveyForm: React.FunctionComponent<SurveyFormProps> = ({ authentic
         },
     })
 
-    const handleScoreChange = (): void => {
+    const handleScoreChange = (newScore: number): void => {
         if (validationError) {
             setValidationError(null)
         }
+
+        history.push(`/survey/${newScore}`)
     }
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {

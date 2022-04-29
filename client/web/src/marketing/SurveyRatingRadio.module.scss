@@ -9,11 +9,16 @@
 }
 
 .rating-btn {
-    width: 2rem;
+    width: 2.5rem;
+    height: 2rem;
     padding: 0.25rem;
     margin: 0 0.125rem;
+    cursor: pointer;
 }
 
+.rating-btn-default {
+    background-color: var(--body-bg);
+}
 .rating-btn:first-of-type {
     margin-left: 0;
 }
