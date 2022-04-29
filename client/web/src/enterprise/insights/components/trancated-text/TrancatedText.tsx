@@ -1,13 +1,13 @@
-import React, { PropsWithChildren } from 'react'
+import { forwardRef } from 'react'
 
 import classNames from 'classnames'
 
+import { ForwardReferenceComponent } from '@sourcegraph/wildcard'
+
 import styles from './TruncatedText.module.scss'
 
-export const TruncatedText: React.FunctionComponent<
-    PropsWithChildren<React.HTMLAttributes<HTMLSpanElement>>
-> = props => {
-    const { className, ...otherProps } = props
+export const TruncatedText = forwardRef((props, reference) => {
+    const { as: Component = 'span', className, ...otherProps } = props
 
-    return <span className={classNames(className, styles.truncatedText)} {...otherProps} />
-}
+    return <Component className={classNames(className, styles.truncatedText)} {...otherProps} />
+}) as ForwardReferenceComponent<'span'>

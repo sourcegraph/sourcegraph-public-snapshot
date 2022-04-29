@@ -4,6 +4,7 @@
 
 .input {
     margin-bottom: 0.75rem;
+    font-family: var(--monospace-font-family);
 }
 
 .seperator {
@@ -39,15 +40,28 @@
     display: flex;
     padding: 0.25rem;
     font-size: 0.75rem;
+    color: var(--body-color);
+
+    &[data-highlighted],
+    &:hover {
+        background: var(--primary);
+        color: var(--body-bg);
+
+        .suggest-item-description {
+            color: var(--body-bg);
+        }
+    }
 }
 
 .suggest-item-name {
-    flex: 1;
-    max-width: 9rem;
+    width: 10rem;
+    flex-grow: 0;
+    font-size: 0.75rem;
 }
 
 .suggest-item-description {
     flex: 1;
+    font-size: 0.75rem;
     color: var(--text-muted);
 }
 

@@ -3,6 +3,7 @@ import { PropsWithChildren, ReactElement } from 'react'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { Button, Collapse, CollapseHeader, CollapsePanel, Icon } from '@sourcegraph/wildcard'
 
 import { TruncatedText } from '../../../../../../trancated-text/TrancatedText'
@@ -34,11 +35,15 @@ export function FilterCollapseSection(props: PropsWithChildren<FilterCollapseSec
 
                     <span className={styles.buttonText}>{title}</span>
 
-                    {!open && preview && <TruncatedText className={styles.filterBadge}>{preview}</TruncatedText>}
+                    {!open && preview && (
+                        <TruncatedText className={styles.filterBadge}>
+                            <SyntaxHighlightedSearchQuery query={preview} />
+                        </TruncatedText>
+                    )}
                     {hasActiveFilter && <div className={styles.changedFilterMarker} />}
                 </CollapseHeader>
 
-                <CollapsePanel className={styles.collapsePanel}>{children}</CollapsePanel>
+                {open && <CollapsePanel className={styles.collapsePanel}>{children}</CollapsePanel>}
             </div>
 
             <hr />

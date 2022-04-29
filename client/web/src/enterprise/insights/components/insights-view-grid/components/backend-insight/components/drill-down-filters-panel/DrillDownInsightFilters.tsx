@@ -1,5 +1,6 @@
-import { FunctionComponent, useState } from 'react'
+import { FunctionComponent, useMemo, useState } from 'react'
 
+import { useApolloClient } from '@apollo/client'
 import { isEqual } from 'lodash'
 import PlusIcon from 'mdi-react/PlusIcon'
 
@@ -7,7 +8,6 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Button, Icon, Link } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../components/LoaderButton'
-import { getDefaultInputProps } from '../../../../../form/getDefaultInputProps'
 import { useField } from '../../../../../form/hooks/useField'
 import { FORM_ERROR, FormChangeEvent, SubmissionResult, useForm } from '../../../../../form/hooks/useForm'
 
@@ -15,6 +15,7 @@ import { DrillDownInput, LabelWithReset } from './drill-down-input/DrillDownInpu
 import { FilterCollapseSection } from './filter-collapse-section/FilterCollapseSection'
 import { DrillDownSearchContextFilter } from './search-context/DrillDownSearchContextFilter'
 import { getSerializedRepositoriesFilter, getSerializedSearchContextFilter, validRegexp } from './utils'
+import { createSearchContextValidator, getFilterInputStatus } from './validators'
 
 import styles from './DrillDownInsightFilters.module.scss'
 
@@ -57,9 +58,13 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
         onSubmit: onFilterSave,
     })
 
+    const client = useApolloClient()
+    const contextValidator = useMemo(() => createSearchContextValidator(client), [client])
+
     const contexts = useField({
         name: 'context',
         formApi: formAPI,
+        validators: { async: contextValidator },
     })
 
     const includeRegex = useField({
@@ -127,8 +132,10 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
 
                 <DrillDownSearchContextFilter
                     spellCheck={false}
+                    autoFocus={true}
                     className={styles.input}
-                    {...getDefaultInputProps(contexts)}
+                    status={getFilterInputStatus(contexts)}
+                    {...contexts.input}
                 />
             </FilterCollapseSection>
 
@@ -158,7 +165,8 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                             placeholder="regexp-pattern"
                             spellCheck={false}
                             className={styles.input}
-                            {...getDefaultInputProps(includeRegex)}
+                            status={getFilterInputStatus(includeRegex)}
+                            {...includeRegex.input}
                         />
                     </LabelWithReset>
 
@@ -172,7 +180,8 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                             placeholder="regexp-pattern"
                             spellCheck={false}
                             className={styles.input}
-                            {...getDefaultInputProps(excludeRegex)}
+                            status={getFilterInputStatus(excludeRegex)}
+                            {...excludeRegex.input}
                         />
                     </LabelWithReset>
                 </fieldset>
@@ -190,7 +199,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                             target="_blank"
                             rel="noopener"
                         >
-                            Default filter
+                            Default filters
                         </Link>{' '}
                         applied
                     </small>

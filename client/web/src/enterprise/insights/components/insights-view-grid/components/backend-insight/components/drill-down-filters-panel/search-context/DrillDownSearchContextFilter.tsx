@@ -1,4 +1,4 @@
-import { ChangeEvent, FunctionComponent, useState } from 'react'
+import { ChangeEvent, FunctionComponent, memo, useState } from 'react'
 
 import { gql, useQuery } from '@apollo/client'
 import { Combobox, ComboboxInput, ComboboxList, ComboboxOption, ComboboxOptionText } from '@reach/combobox'
@@ -10,6 +10,7 @@ import { isDefined } from '@sourcegraph/common'
 import { InputProps, Link, LoadingSpinner, useDebounce } from '@sourcegraph/wildcard'
 
 import { GetSearchContextsResult } from '../../../../../../../../../graphql-operations'
+import { TruncatedText } from '../../../../../../trancated-text/TrancatedText'
 import { DrillDownInput } from '../drill-down-input/DrillDownInput'
 
 import styles from './DrillDownSearchContextFilter.module.scss'
@@ -35,6 +36,7 @@ interface DrillDownSearchContextFilter extends InputProps {}
 export const DrillDownSearchContextFilter: FunctionComponent<DrillDownSearchContextFilter> = props => {
     const { value = '', className, onChange = noop, ...attributes } = props
     const [showSuggest, setShowSuggest] = useState<boolean>(true)
+    const debouncedQuery = useDebounce(value, 700)
 
     const handleSelect = (value: string): void => {
         setShowSuggest(false)
@@ -58,7 +60,7 @@ export const DrillDownSearchContextFilter: FunctionComponent<DrillDownSearchCont
                 onChange={handleChange}
             />
 
-            {showSuggest && <SuggestPanel query={value.toString()} />}
+            {showSuggest && <SuggestPanel query={debouncedQuery.toString()} />}
         </Combobox>
     )
 }
@@ -67,12 +69,12 @@ interface SuggestPanelProps {
     query: string
 }
 
-const SuggestPanel: FunctionComponent<SuggestPanelProps> = props => {
+const SuggestPanel: FunctionComponent<SuggestPanelProps> = memo(props => {
     const { query } = props
 
-    const debouncedQuery = useDebounce(query, 700)
     const { data, loading, error } = useQuery<GetSearchContextsResult>(SEARCH_CONTEXT_GQL, {
-        variables: { query: debouncedQuery },
+        fetchPolicy: 'network-only',
+        variables: { query },
     })
 
     const queryBasedContexts =
@@ -87,19 +89,25 @@ const SuggestPanel: FunctionComponent<SuggestPanelProps> = props => {
             ) : data ? (
                 queryBasedContexts.length === 0 ? (
                     <span className={styles.suggestNoDataFound}>
-                        No query-based search contexts found. <Link to="/contexts/new">Create search context</Link>
+                        No query-based search contexts found.{' '}
+                        <Link to="/contexts/new" rel="noreferrer noopener" target="_blank">
+                            Create search context
+                        </Link>
                     </span>
                 ) : (
                     queryBasedContexts.map(context => (
                         <ComboboxOption key={context.id} value={context.spec} className={styles.suggestItem}>
-                            <small className={styles.suggestItemName}>
+                            <TruncatedText as="small" className={styles.suggestItemName}>
                                 <ComboboxOptionText />
-                            </small>
-                            <small className={styles.suggestItemDescription}>{context.description}</small>
+                            </TruncatedText>
+
+                            <TruncatedText as="small" className={styles.suggestItemDescription}>
+                                {context.description}
+                            </TruncatedText>
                         </ComboboxOption>
                     ))
                 )
             ) : null}
         </ComboboxList>
     )
-}
+})
