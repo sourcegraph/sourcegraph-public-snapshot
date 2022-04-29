@@ -99,10 +99,10 @@ func (s *JVMPackagesSource) listDependentRepos(ctx context.Context, results chan
 
 		lastID = dbDeps[len(dbDeps)-1].ID
 
-		for _, d := range dbDeps {
-			mavenDependency, err := reposource.ParseMavenDependency(d.Name + ":" + d.Version)
+		for _, dep := range dbDeps {
+			mavenDependency, err := reposource.ParseMavenDependency(dep.Name + ":" + dep.Version)
 			if err != nil {
-				log15.Warn("error parsing maven module", "error", err, "module", d.Name)
+				log15.Warn("error parsing maven module", "error", err, "module", dep.Name)
 				continue
 			}
 

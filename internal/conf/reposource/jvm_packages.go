@@ -103,8 +103,8 @@ func (d *MavenDependency) LsifJavaDependencies() []string {
 	return []string{d.PackageManagerSyntax()}
 }
 
-// ParseMavenDependency parses a dependency string in the Coursier format (colon seperated group ID, artifact ID and version)
-// into a MavenDependency.
+// ParseMavenDependency parses a dependency string in the Coursier format
+// (colon seperated group ID, artifact ID and an optional version) into a MavenDependency.
 func ParseMavenDependency(dependency string) (*MavenDependency, error) {
 	dep := &MavenDependency{MavenModule: &MavenModule{}}
 
