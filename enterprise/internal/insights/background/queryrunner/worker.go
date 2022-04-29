@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
+
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -82,6 +84,14 @@ func NewWorker(ctx context.Context, workerStore dbworkerstore.Store, insightsSto
 		metadadataStore: store.NewInsightStore(insightsStore.Handle().DB()),
 		seriesCache:     sharedCache,
 		computeSearch:   query.ComputeSearch,
+		computeSearchStream: func(ctx context.Context, query string) (*streaming.ComputeTabulationResult, error) {
+			decoder, streamResults := streaming.ComputeDecoder()
+			err := streaming.ComputeMatchContextStream(ctx, query, decoder)
+			if err != nil {
+				return nil, err
+			}
+			return streamResults, nil
+		},
 	}, options)
 }
 

@@ -6,6 +6,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
 	"golang.org/x/time/rate"
@@ -36,7 +38,8 @@ type workHandler struct {
 	mu          sync.RWMutex
 	seriesCache map[string]*types.InsightSeries
 
-	computeSearch func(context.Context, string) ([]query.ComputeResult, error)
+	computeSearch       func(context.Context, string) ([]query.ComputeResult, error)
+	computeSearchStream func(ctx context.Context, query string) (*streaming.ComputeTabulationResult, error) // this is hacky, I admit. I don't really have time at the moment to fix this mess of weird types across GQL and stream.
 }
 
 func (r *workHandler) getSeries(ctx context.Context, seriesID string) (*types.InsightSeries, error) {
@@ -119,6 +122,63 @@ func (r *workHandler) generateComputeRecordings(ctx context.Context, job *Job, r
 		for _, group := range groupedByCapture {
 			capture := group.Value
 			recordings = append(recordings, ToRecording(job, float64(group.Count), recordTime, byRepo[0].RepoName(), repoId, &capture)...)
+		}
+	}
+	return recordings, nil
+}
+
+func (r *workHandler) generateComputeRecordingsStream(ctx context.Context, job *Job, recordTime time.Time) (_ []store.RecordSeriesPointArgs, err error) {
+	log15.Info("we streamin now")
+	streamResults, err := r.computeSearchStream(ctx, job.SearchQuery)
+	if err != nil {
+		return nil, err
+	}
+	checker := authz.DefaultSubRepoPermsChecker
+	log15.Info("REE", "results", streamResults.RepoCounts)
+
+	var recordings []store.RecordSeriesPointArgs
+
+	type repoCaptureCounts struct {
+		repoCaptureCounts map[string]int
+		repoID            int32
+		repoName          string
+	}
+
+	// byRepo := make(map[int32]repoCaptureCounts)
+	// getForRepo := func(m *streaming.ComputeMatch) *repoCaptureCounts {
+	// 	log15.Info("grouping")
+	// 	if v, ok := byRepo[m.RepositoryID]; ok {
+	// 		return &v
+	// 	}
+	// 	return &repoCaptureCounts{
+	// 		repoCaptureCounts: make(map[string]int),
+	// 		repoID:            m.RepositoryID,
+	// 		repoName:          m.RepositoryName,
+	// 	}
+	// }
+
+	// // first group by repository because the compute matches are grouped per file
+	// for _, match := range streamResults.RepoCounts {
+	// 	log15.Info("match", "match", match)
+	// 	current := getForRepo(match)
+	// 	for capture, count := range match.ValueCounts {
+	// 		current.repoCaptureCounts[capture] += count
+	// 	}
+	// }
+
+	// then build recordings for each repository, capture pair
+	for _, match := range streamResults.RepoCounts {
+		// log15.Info("repoCount", "rc", repoCount)
+
+		var subRepoEnabled bool
+		subRepoEnabled, err = checkSubRepoPermissions(ctx, checker, match.RepositoryID, err)
+		if subRepoEnabled {
+			continue
+		}
+
+		for capturedValue, count := range match.ValueCounts {
+			capture := &capturedValue
+			recordings = append(recordings, ToRecording(job, float64(count), recordTime, match.RepositoryName, api.RepoID(match.RepositoryID), capture)...)
 		}
 	}
 	return recordings, nil
@@ -286,7 +346,13 @@ func (r *workHandler) computeHandler(ctx context.Context, job *Job, series *type
 		}
 	}
 
-	recordings, err := r.generateComputeRecordings(ctx, job, recordTime)
+	computeDelegate := r.generateComputeRecordingsStream
+	useGraphQL := conf.Get().InsightsComputeGraphql
+	if useGraphQL != nil && *useGraphQL {
+		computeDelegate = r.generateComputeRecordings
+	}
+
+	recordings, err := computeDelegate(ctx, job, recordTime)
 	if err != nil {
 		return err
 	}
