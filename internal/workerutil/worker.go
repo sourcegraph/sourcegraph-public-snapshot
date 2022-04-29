@@ -211,8 +211,8 @@ loop:
 }
 
 // Stop will cause the worker loop to exit after the current iteration. This is done by canceling the
-// context passed to the database and the handler functions (which may cause the currently processing
-// unit of work to fail). This method blocks until all handler goroutines have exited.
+// context passed to the dequeue operations (but not the handler perations). This method blocks until
+// all handler goroutines have exited.
 func (w *Worker) Stop() {
 	w.dequeueCancel()
 	w.Wait()
