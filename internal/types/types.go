@@ -13,6 +13,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
+// BatchChangeSource represents how a batch change can be created
+// it can either be created locally or via an executor (SSBC)
+type BatchChangeSource string
+
+const (
+	ExecutorBatchChangeSource BatchChangeSource = "executor"
+	LocalBatchChangeSource    BatchChangeSource = "local"
+)
+
 // A SourceInfo represents a source a Repo belongs to (such as an external service).
 type SourceInfo struct {
 	ID       string
@@ -771,14 +780,6 @@ type BatchChangesUsageStatistics struct {
 	// instance. This can go down when users delete a batch change.
 	BatchChangesClosedCount int32
 
-	// ExecutorBatchChangesCount is the number of batch changes created via an
-	// executor.
-	ExecutorBatchChangesCount int32
-
-	// ExecutorBatchChangesCount is the number of batch changes created via the
-	// CLI locally.
-	LocalBatchChangesCount int32
-
 	// BatchSpecsCreatedCount is the number of batch change specs that have been
 	// created by running `src batch [preview|apply]`. This number never
 	// goes down since it's based on event logs, even if the batch specs
@@ -861,19 +862,37 @@ type BatchChangesUsageStatistics struct {
 	// BulkOperationsCount is the count of bulk operations used to manage changesets
 	BulkOperationsCount map[string]int32
 
-	SSBCBatchChangeDistribution []*SSBCBatchChangeDistribution
+	// ChangesetDistribution is the distribution of batch changes per source and the amount of
+	// changesets created via the different sources
+	ChangesetDistribution []*ChangesetDistribution
+
+	// BatchChangeStatsBySource is the distribution of batch change x changesets statistics
+	// across multiple sources
+	BatchChangeStatsBySource []*BatchChangeStatsBySource
 }
 
-type SSBCBatchChangeDistribution struct {
+type BatchChangeStatsBySource struct {
 	// the source of the changesets belonging to the batch changes
 	// indicating whether the changeset was created via an executor or locally
-	Source string
+	Source BatchChangeSource
+
+	// the amount of changesets published using this batch change source
+	PublishedChangesetsCount int32
+
+	// the amount of batch changes created from this source
+	BatchChangesCount int32
+}
+
+type ChangesetDistribution struct {
+	// the source of the changesets belonging to the batch changes
+	// indicating whether the changeset was created via an executor or locally
+	Source BatchChangeSource
 
 	// range of changeset distribution per batch_change
 	Range string
 
-	// the number of changesets belonging to a range of result
-	Count int32
+	// number of batch changes with the range of changesets defined
+	BatchChangesCount int32
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change

@@ -271,12 +271,14 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 			"detach":       1,
 			"reenqueue":    1,
 		},
-		SSBCBatchChangeDistribution: []*types.SSBCBatchChangeDistribution{
-			{Source: "local", Range: "0-9 changesets", Count: 2},
-			{Source: "executor", Range: "0-9 changesets", Count: 1},
+		ChangesetDistribution: []*types.ChangesetDistribution{
+			{Source: "local", Range: "0-9 changesets", BatchChangesCount: 2},
+			{Source: "executor", Range: "0-9 changesets", BatchChangesCount: 1},
 		},
-		LocalBatchChangesCount:    2,
-		ExecutorBatchChangesCount: 1,
+		BatchChangeStatsBySource: []*types.BatchChangeStatsBySource{
+			{Source: "local", PublishedChangesetsCount: 6, BatchChangesCount: 2},
+			{Source: "executor", PublishedChangesetsCount: 2, BatchChangesCount: 1},
+		},
 	}
 	if diff := cmp.Diff(want, have); diff != "" {
 		t.Fatal(diff)

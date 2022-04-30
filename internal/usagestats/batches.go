@@ -17,17 +17,13 @@ func GetBatchChangesUsageStatistics(ctx context.Context, db database.DB) (*types
 	const batchChangesCountsQuery = `
 SELECT
     COUNT(*)                                      					AS batch_changes_count,
-    COUNT(*) FILTER (WHERE batch_changes.closed_at IS NOT NULL) 	AS batch_changes_closed_count,
-    COUNT(*) FILTER (WHERE batch_specs.created_from_raw = TRUE) 	AS batch_changes_created_via_executor,
-    COUNT(*) FILTER (WHERE batch_specs.created_from_raw = FALSE) 	AS batch_changes_created_locally
-FROM batch_changes
-	LEFT JOIN batch_specs ON batch_changes.batch_spec_id = batch_specs.id;
+    COUNT(*) FILTER (WHERE batch_changes.closed_at IS NOT NULL) 	AS batch_changes_closed_count
+FROM batch_changes;
 `
+
 	if err := db.QueryRowContext(ctx, batchChangesCountsQuery).Scan(
 		&stats.BatchChangesCount,
 		&stats.BatchChangesClosedCount,
-		&stats.ExecutorBatchChangesCount,
-		&stats.LocalBatchChangesCount,
 	); err != nil {
 		return nil, err
 	}
@@ -112,32 +108,31 @@ WHERE name IN ('BatchSpecCreated', 'ViewBatchChangeApplyPage', 'ViewBatchChangeD
 		stats.BulkOperationsCount[jobType] = count
 	}
 
-	ssbcDistributionQuery := `SELECT
+	changesetDistributionQuery := `
+SELECT
 	COUNT(*),
 	batch_changes_range.range,
-	CASE
-		WHEN batch_changes_range.source = TRUE THEN 'executor'
-		ELSE 'local'
-	END AS source
-	FROM (
-		SELECT
-			CASE
-				WHEN COUNT(changesets.id) BETWEEN 0 AND 9 THEN '0-9 changesets'
-				WHEN COUNT(changesets.id) BETWEEN 10 AND 49 THEN '10-49 changesets'
-				WHEN COUNT(changesets.id) BETWEEN 50 AND 99 THEN '50-99 changesets'
-				WHEN COUNT(changesets.id) BETWEEN 100 AND 199 THEN '100-199 changesets'
-				WHEN COUNT(changesets.id) BETWEEN 200 AND 999 THEN '200-999 changesets'
-				ELSE '1000+ changesets'
-			END AS range,
-			batch_specs.created_from_raw AS source
-		FROM batch_changes
-		LEFT JOIN batch_specs AS batch_specs ON batch_changes.batch_spec_id = batch_specs.id
-		LEFT JOIN changesets ON changesets.owned_by_batch_change_id = batch_changes.id
-		GROUP BY batch_changes.id, batch_specs.created_from_raw
-	) AS batch_changes_range
-	GROUP BY batch_changes_range.range, batch_changes_range.source;
+	created_from_raw
+FROM (
+	SELECT
+		CASE
+			WHEN COUNT(changesets.id) BETWEEN 0 AND 9 THEN '0-9 changesets'
+			WHEN COUNT(changesets.id) BETWEEN 10 AND 49 THEN '10-49 changesets'
+			WHEN COUNT(changesets.id) BETWEEN 50 AND 99 THEN '50-99 changesets'
+			WHEN COUNT(changesets.id) BETWEEN 100 AND 199 THEN '100-199 changesets'
+			WHEN COUNT(changesets.id) BETWEEN 200 AND 999 THEN '200-999 changesets'
+			ELSE '1000+ changesets'
+		END AS range,
+		batch_specs.created_from_raw
+	FROM batch_changes
+	LEFT JOIN batch_specs AS batch_specs ON batch_changes.batch_spec_id = batch_specs.id
+	LEFT JOIN changesets ON changesets.owned_by_batch_change_id = batch_changes.id
+	GROUP BY batch_changes.id, batch_specs.created_from_raw
+) AS batch_changes_range
+GROUP BY batch_changes_range.range, created_from_raw;
 `
-	rows, err = db.QueryContext(ctx, ssbcDistributionQuery)
+
+	rows, err = db.QueryContext(ctx, changesetDistributionQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -145,15 +140,23 @@ WHERE name IN ('BatchSpecCreated', 'ViewBatchChangeApplyPage', 'ViewBatchChangeD
 
 	for rows.Next() {
 		var count int32
-		var changesetRange, source string
-		if err = rows.Scan(&count, &changesetRange, &source); err != nil {
+		var changesetRange string
+		var createdFromRaw bool
+		if err = rows.Scan(&count, &changesetRange, &createdFromRaw); err != nil {
 			return nil, err
 		}
 
-		stats.SSBCBatchChangeDistribution = append(stats.SSBCBatchChangeDistribution, &types.SSBCBatchChangeDistribution{
-			Range:  changesetRange,
-			Count:  count,
-			Source: source,
+		var batchChangeSource types.BatchChangeSource
+		if createdFromRaw {
+			batchChangeSource = types.ExecutorBatchChangeSource
+		} else {
+			batchChangeSource = types.LocalBatchChangeSource
+		}
+
+		stats.ChangesetDistribution = append(stats.ChangesetDistribution, &types.ChangesetDistribution{
+			Range:             changesetRange,
+			BatchChangesCount: count,
+			Source:            batchChangeSource,
 		})
 	}
 
@@ -271,6 +274,45 @@ ORDER BY batch_change_counts.creation_week ASC
 		}
 
 		stats.BatchChangesCohorts = append(stats.BatchChangesCohorts, &cohort)
+	}
+
+	batchChangeSourceStatQuery := `
+SELECT
+	batch_specs.created_from_raw,
+	COUNT(changesets.id) AS published_changesets_count,
+	COUNT(distinct batch_changes.id) AS batch_changes_count
+FROM batch_changes
+INNER JOIN batch_specs ON batch_specs.id = batch_changes.batch_spec_id
+LEFT JOIN changesets ON batch_changes.id = changesets.owned_by_batch_change_id
+WHERE changesets.publication_state = 'PUBLISHED'
+GROUP BY batch_specs.created_from_raw;
+`
+	rows, err = db.QueryContext(ctx, batchChangeSourceStatQuery)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var publishedChangesetsCount, batchChangeCount int32
+		var createdFromRaw bool
+
+		if err = rows.Scan(&createdFromRaw, &publishedChangesetsCount, &batchChangeCount); err != nil {
+			return nil, err
+		}
+
+		var batchChangeSource types.BatchChangeSource
+		if createdFromRaw {
+			batchChangeSource = types.ExecutorBatchChangeSource
+		} else {
+			batchChangeSource = types.LocalBatchChangeSource
+		}
+
+		stats.BatchChangeStatsBySource = append(stats.BatchChangeStatsBySource, &types.BatchChangeStatsBySource{
+			PublishedChangesetsCount: publishedChangesetsCount,
+			BatchChangesCount:        batchChangeCount,
+			Source:                   batchChangeSource,
+		})
 	}
 
 	return &stats, nil
