@@ -17,7 +17,7 @@ interface ResponseFromJava {
 declare global {
     interface Window {
         initializeSourcegraph: (isDarkTheme: boolean) => void,
-        javaBridge: (request: RequestToJava) => Promise<ResponseFromJava>
+        callJava: (request: RequestToJava) => Promise<ResponseFromJava>
     }
 }
 
