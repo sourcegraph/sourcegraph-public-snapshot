@@ -7,17 +7,11 @@ interface RequestToJava {
     arguments: object,
 }
 
-interface ResponseFromJava {
-    success: boolean
-    errorMessage: string | null
-    data: object
-}
-
 /* Add global functions to global window object */
 declare global {
     interface Window {
         initializeSourcegraph: (isDarkTheme: boolean) => void,
-        callJava: (request: RequestToJava) => Promise<ResponseFromJava>
+        callJava: (request: RequestToJava) => Promise<object>
     }
 }
 
