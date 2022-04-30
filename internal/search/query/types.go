@@ -97,31 +97,6 @@ func (b Basic) MapParameters(parameters []Parameter) Basic {
 	return Basic{Parameters: parameters, Pattern: b.Pattern}
 }
 
-// Count returns the string value of the "count:" field. Returns empty string if none.
-func (b Basic) Count() (count *int) {
-	VisitField(ToNodes(b.Parameters), FieldCount, func(value string, _ bool, _ Annotation) {
-		c, err := strconv.Atoi(value)
-		if err != nil {
-			panic(fmt.Sprintf("Value %q for count cannot be parsed as an int", value))
-		}
-		count = &c
-	})
-	return count
-}
-
-// GetTimeout returns the time.Duration value from the `timeout:` field.
-func (b Basic) GetTimeout() *time.Duration {
-	var timeout *time.Duration
-	VisitField(ToNodes(b.Parameters), FieldTimeout, func(value string, _ bool, _ Annotation) {
-		t, err := time.ParseDuration(value)
-		if err != nil {
-			panic(fmt.Sprintf("Value %q for timeout cannot be parsed as an duration: %s", value, err))
-		}
-		timeout = &t
-	})
-	return timeout
-}
-
 // MapCount returns a copy of a basic query with a count parameter set.
 func (b Basic) MapCount(count int) Basic {
 	parameters := MapParameter(ToNodes(b.Parameters), func(field, value string, negated bool, annotation Annotation) Node {
@@ -139,14 +114,6 @@ func (b Basic) String() string {
 
 func (b Basic) StringHuman() string {
 	return fmt.Sprintf("%s %s", StringHuman(ToNodes(b.Parameters)), StringHuman([]Node{b.Pattern}))
-}
-
-func (b Basic) VisitParameter(field string, f func(value string, negated bool, annotation Annotation)) {
-	for _, p := range b.Parameters {
-		if p.Field == field {
-			f(p.Value, p.Negated, p.Annotation)
-		}
-	}
 }
 
 // HasPatternLabel returns whether a pattern atom has a specified label.
@@ -172,55 +139,6 @@ func (b Basic) IsRegexp() bool {
 
 func (b Basic) IsStructural() bool {
 	return b.HasPatternLabel(Structural)
-}
-
-// FindParameter calls f on parameters matching field in b.
-func (b Basic) FindParameter(field string, f func(value string, negated bool, annotation Annotation)) {
-	for _, p := range b.Parameters {
-		if p.Field == field {
-			f(p.Value, p.Negated, p.Annotation)
-			break
-		}
-	}
-}
-
-// FindValue returns the first value of a parameter matching field in b. It
-// doesn't inspect whether the field is negated.
-func (b Basic) FindValue(field string) (value string) {
-	var found string
-	b.FindParameter(field, func(v string, _ bool, _ Annotation) {
-		found = v
-	})
-	return found
-}
-
-func (b Basic) IsCaseSensitive() bool {
-	return Q(ToNodes(b.Parameters)).IsCaseSensitive()
-}
-
-func (b Basic) Index() YesNoOnly {
-	v := Q(ToNodes(b.Parameters)).yesNoOnlyValue(FieldIndex)
-	if v == nil {
-		return Yes
-	}
-	return *v
-}
-
-func (b Basic) Fork() *YesNoOnly {
-	return Q(ToNodes(b.Parameters)).yesNoOnlyValue(FieldFork)
-}
-
-func (b Basic) Archived() *YesNoOnly {
-	return Q(ToNodes(b.Parameters)).yesNoOnlyValue(FieldArchived)
-}
-
-func (b Basic) Repositories() (repos, excludeRepos []string) {
-	return Q(ToNodes(b.Parameters)).Repositories()
-}
-
-func (b Basic) Visibility() RepoVisibility {
-	visibilityStr := b.FindValue(FieldVisibility)
-	return ParseVisibility(visibilityStr)
 }
 
 // PatternString returns the simple string pattern of a basic query. It assumes
@@ -288,6 +206,89 @@ func (b Basic) MaxResults(defaultLimit int) int {
 	}
 
 	return limits.DefaultMaxSearchResults
+}
+
+// Count returns the string value of the "count:" field. Returns empty string if none.
+func (b Basic) Count() (count *int) {
+	VisitField(ToNodes(b.Parameters), FieldCount, func(value string, _ bool, _ Annotation) {
+		c, err := strconv.Atoi(value)
+		if err != nil {
+			panic(fmt.Sprintf("Value %q for count cannot be parsed as an int", value))
+		}
+		count = &c
+	})
+	return count
+}
+
+// GetTimeout returns the time.Duration value from the `timeout:` field.
+func (b Basic) GetTimeout() *time.Duration {
+	var timeout *time.Duration
+	VisitField(ToNodes(b.Parameters), FieldTimeout, func(value string, _ bool, _ Annotation) {
+		t, err := time.ParseDuration(value)
+		if err != nil {
+			panic(fmt.Sprintf("Value %q for timeout cannot be parsed as an duration: %s", value, err))
+		}
+		timeout = &t
+	})
+	return timeout
+}
+
+func (b Basic) VisitParameter(field string, f func(value string, negated bool, annotation Annotation)) {
+	for _, p := range b.Parameters {
+		if p.Field == field {
+			f(p.Value, p.Negated, p.Annotation)
+		}
+	}
+}
+
+func (b Basic) IsCaseSensitive() bool {
+	return Q(ToNodes(b.Parameters)).IsCaseSensitive()
+}
+
+func (b Basic) Index() YesNoOnly {
+	v := Q(ToNodes(b.Parameters)).yesNoOnlyValue(FieldIndex)
+	if v == nil {
+		return Yes
+	}
+	return *v
+}
+
+func (b Basic) Fork() *YesNoOnly {
+	return Q(ToNodes(b.Parameters)).yesNoOnlyValue(FieldFork)
+}
+
+func (b Basic) Archived() *YesNoOnly {
+	return Q(ToNodes(b.Parameters)).yesNoOnlyValue(FieldArchived)
+}
+
+func (b Basic) Repositories() (repos, excludeRepos []string) {
+	return Q(ToNodes(b.Parameters)).Repositories()
+}
+
+func (b Basic) Visibility() RepoVisibility {
+	visibilityStr := b.FindValue(FieldVisibility)
+	return ParseVisibility(visibilityStr)
+}
+
+
+// FindValue returns the first value of a parameter matching field in b. It
+// doesn't inspect whether the field is negated.
+func (b Basic) FindValue(field string) (value string) {
+	var found string
+	b.FindParameter(field, func(v string, _ bool, _ Annotation) {
+		found = v
+	})
+	return found
+}
+
+// FindParameter calls f on parameters matching field in b.
+func (b Basic) FindParameter(field string, f func(value string, negated bool, annotation Annotation)) {
+	for _, p := range b.Parameters {
+		if p.Field == field {
+			f(p.Value, p.Negated, p.Annotation)
+			break
+		}
+	}
 }
 
 // A query is a tree of Nodes. We choose the type name Q so that external uses like query.Q do not stutter.
