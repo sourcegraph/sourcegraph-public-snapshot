@@ -7,6 +7,8 @@ import com.intellij.ui.jcef.JBCefBrowser;
 import com.intellij.ui.jcef.JBCefBrowserBase;
 import com.intellij.util.ui.UIUtil;
 import com.sourcegraph.scheme.SchemeHandlerFactory;
+import com.sourcegraph.service.JSToJavaBridge;
+import com.sourcegraph.service.JSToJavaBridgeRequestHandler;
 import org.cef.CefApp;
 import org.cef.browser.CefBrowser;
 
@@ -21,24 +23,28 @@ public class JCEFWindow {
     public JCEFWindow(Project project) {
         panel = new JPanel(new BorderLayout());
 
+        /* Make sure JCEF is supported */
         if (!JBCefApp.isSupported()) {
             JLabel warningLabel = new JLabel("Unfortunately, the browser is not available on your system. Try running the IDE with the default OpenJDK.");
             panel.add(warningLabel);
             return;
         }
 
-        JBCefBrowserBase browser = new JBCefBrowser("http://sourcegraph/html/index.html");
+        /* Create and set up JCEF browser */
+        String url = "http://sourcegraph/html/index.html";
+        JBCefBrowserBase browser = new JBCefBrowser(url);
         this.cefBrowser = browser.getCefBrowser();
-
         CefApp.getInstance().registerSchemeHandlerFactory("http", "sourcegraph", new SchemeHandlerFactory());
-
-        panel.add(Objects.requireNonNull(browser.getComponent()), BorderLayout.CENTER);
-
-
         String backgroundColor = "#" + Integer.toHexString(UIUtil.getPanelBackground().getRGB()).substring(2);
         browser.setPageBackgroundColor(backgroundColor);
-
         Disposer.register(project, browser);
+
+        /* Add browser to panel */
+        panel.add(Objects.requireNonNull(browser.getComponent()), BorderLayout.CENTER);
+
+        /* Create bridge, set up handlers, then run init function */
+        JSToJavaBridge bridge = new JSToJavaBridge(browser, new JSToJavaBridgeRequestHandler(), "");
+        Disposer.register(browser, bridge);
     }
 
     public JPanel getContent() {
