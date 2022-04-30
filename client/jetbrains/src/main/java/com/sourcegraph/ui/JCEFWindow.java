@@ -5,7 +5,6 @@ import com.intellij.openapi.util.Disposer;
 import com.intellij.ui.jcef.JBCefApp;
 import com.intellij.ui.jcef.JBCefBrowser;
 import com.intellij.ui.jcef.JBCefBrowserBase;
-import com.intellij.util.ui.UIUtil;
 import com.sourcegraph.scheme.SchemeHandlerFactory;
 import com.sourcegraph.service.JSToJavaBridge;
 import com.sourcegraph.service.JSToJavaBridgeRequestHandler;
@@ -31,19 +30,18 @@ public class JCEFWindow {
         }
 
         /* Create and set up JCEF browser */
-        String url = "http://sourcegraph/html/index.html";
-        JBCefBrowserBase browser = new JBCefBrowser(url);
+        JBCefBrowserBase browser = new JBCefBrowser("http://sourcegraph/html/index.html");
         this.cefBrowser = browser.getCefBrowser();
         CefApp.getInstance().registerSchemeHandlerFactory("http", "sourcegraph", new SchemeHandlerFactory());
-        String backgroundColor = "#" + Integer.toHexString(UIUtil.getPanelBackground().getRGB()).substring(2);
-        browser.setPageBackgroundColor(backgroundColor);
+        browser.setPageBackgroundColor(ThemeService.getPanelBackgroundColorHexString());
         Disposer.register(project, browser);
 
         /* Add browser to panel */
         panel.add(Objects.requireNonNull(browser.getComponent()), BorderLayout.CENTER);
 
         /* Create bridge, set up handlers, then run init function */
-        JSToJavaBridge bridge = new JSToJavaBridge(browser, new JSToJavaBridgeRequestHandler(), "");
+        String initJSCode = "window.initializeSourcegraph(" + (ThemeService.isDarkTheme() ? "true" : "false") + ");";
+        JSToJavaBridge bridge = new JSToJavaBridge(browser, new JSToJavaBridgeRequestHandler(), initJSCode);
         Disposer.register(browser, bridge);
     }
 
