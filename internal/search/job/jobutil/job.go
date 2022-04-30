@@ -694,20 +694,11 @@ func toPatternExpressionJob(inputs *run.SearchInputs, q query.Basic) (job.Job, e
 }
 
 func ToEvaluateJob(inputs *run.SearchInputs, q query.Basic) (job.Job, error) {
-	var (
-		job job.Job
-		err error
-	)
 	if q.Pattern == nil {
-		job, err = ToSearchJob(inputs, q)
+		return ToSearchJob(inputs, q)
 	} else {
-		job, err = toPatternExpressionJob(inputs, q)
+		return toPatternExpressionJob(inputs, q)
 	}
-	if err != nil {
-		return nil, err
-	}
-
-	return job, nil
 }
 
 // optimizeJobs optimizes a baseJob query with respect to an incoming basic
