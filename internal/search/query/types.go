@@ -169,8 +169,8 @@ type Parameters []Parameter
 
 // IncludeExcludeValues partitions multiple values of a field into positive
 // (include) and negated (exclude) values.
-func (b Basic) IncludeExcludeValues(field string) (include, exclude []string) {
-	b.VisitParameter(field, func(v string, negated bool, _ Annotation) {
+func (p Parameters) IncludeExcludeValues(field string) (include, exclude []string) {
+	VisitField(ToNodes(p), field, func(v string, negated bool, _ Annotation) {
 		if negated {
 			exclude = append(exclude, v)
 		} else {
@@ -181,16 +181,16 @@ func (b Basic) IncludeExcludeValues(field string) (include, exclude []string) {
 }
 
 // Exists returns whether a parameter exists in the query (whether negated or not).
-func (b Basic) Exists(field string) bool {
+func (p Parameters) Exists(field string) bool {
 	found := false
-	b.VisitParameter(field, func(_ string, _ bool, _ Annotation) {
+	VisitField(ToNodes(p), field, func(_ string, _ bool, _ Annotation) {
 		found = true
 	})
 	return found
 }
 
-func (b Basic) Dependencies() (dependencies []string) {
-	VisitPredicate(b.ToParseTree(), func(field, name, value string) {
+func (p Parameters) Dependencies() (dependencies []string) {
+	VisitPredicate(ToNodes(p), func(field, name, value string) {
 		if field == FieldRepo && (name == "dependencies" || name == "deps") {
 			dependencies = append(dependencies, value)
 		}
@@ -198,8 +198,8 @@ func (b Basic) Dependencies() (dependencies []string) {
 	return dependencies
 }
 
-func (b Basic) MaxResults(defaultLimit int) int {
-	if count := b.Count(); count != nil {
+func (p Parameters) MaxResults(defaultLimit int) int {
+	if count := p.Count(); count != nil {
 		return *count
 	}
 
@@ -211,8 +211,8 @@ func (b Basic) MaxResults(defaultLimit int) int {
 }
 
 // Count returns the string value of the "count:" field. Returns empty string if none.
-func (b Basic) Count() (count *int) {
-	VisitField(ToNodes(b.Parameters), FieldCount, func(value string, _ bool, _ Annotation) {
+func (p Parameters) Count() (count *int) {
+	VisitField(ToNodes(p), FieldCount, func(value string, _ bool, _ Annotation) {
 		c, err := strconv.Atoi(value)
 		if err != nil {
 			panic(fmt.Sprintf("Value %q for count cannot be parsed as an int", value))
@@ -223,9 +223,9 @@ func (b Basic) Count() (count *int) {
 }
 
 // GetTimeout returns the time.Duration value from the `timeout:` field.
-func (b Basic) GetTimeout() *time.Duration {
+func (p Parameters) GetTimeout() *time.Duration {
 	var timeout *time.Duration
-	VisitField(ToNodes(b.Parameters), FieldTimeout, func(value string, _ bool, _ Annotation) {
+	VisitField(ToNodes(p), FieldTimeout, func(value string, _ bool, _ Annotation) {
 		t, err := time.ParseDuration(value)
 		if err != nil {
 			panic(fmt.Sprintf("Value %q for timeout cannot be parsed as an duration: %s", value, err))
@@ -235,58 +235,89 @@ func (b Basic) GetTimeout() *time.Duration {
 	return timeout
 }
 
-func (b Basic) VisitParameter(field string, f func(value string, negated bool, annotation Annotation)) {
-	for _, p := range b.Parameters {
-		if p.Field == field {
-			f(p.Value, p.Negated, p.Annotation)
+func (p Parameters) VisitParameter(field string, f func(value string, negated bool, annotation Annotation)) {
+	for _, parameter := range p {
+		if parameter.Field == field {
+			f(parameter.Value, parameter.Negated, parameter.Annotation)
 		}
 	}
 }
 
-func (b Basic) IsCaseSensitive() bool {
-	return Q(ToNodes(b.Parameters)).IsCaseSensitive()
+func (p Parameters) boolValue(field string) bool {
+	result := false
+	VisitField(ToNodes(p), field, func(value string, _ bool, _ Annotation) {
+		result, _ = parseBool(value) // err was checked during parsing and validation.
+	})
+	return result
 }
 
-func (b Basic) Index() YesNoOnly {
-	v := Q(ToNodes(b.Parameters)).yesNoOnlyValue(FieldIndex)
+func (p Parameters) IsCaseSensitive() bool {
+	return p.boolValue(FieldCase)
+}
+
+func (p Parameters) yesNoOnlyValue(field string) *YesNoOnly {
+	var res *YesNoOnly
+	VisitField(ToNodes(p), field, func(value string, _ bool, _ Annotation) {
+		yno := ParseYesNoOnly(value)
+		if yno == Invalid {
+			panic(fmt.Sprintf("Invalid value %q for field %q", value, field))
+		}
+		res = &yno
+	})
+	return res
+}
+
+func (p Parameters) Index() YesNoOnly {
+	v := p.yesNoOnlyValue(FieldIndex)
 	if v == nil {
 		return Yes
 	}
 	return *v
 }
 
-func (b Basic) Fork() *YesNoOnly {
-	return Q(ToNodes(b.Parameters)).yesNoOnlyValue(FieldFork)
+func (p Parameters) Fork() *YesNoOnly {
+	return p.yesNoOnlyValue(FieldFork)
 }
 
-func (b Basic) Archived() *YesNoOnly {
-	return Q(ToNodes(b.Parameters)).yesNoOnlyValue(FieldArchived)
+func (p Parameters) Archived() *YesNoOnly {
+	return p.yesNoOnlyValue(FieldArchived)
 }
 
-func (b Basic) Repositories() (repos, excludeRepos []string) {
-	return Q(ToNodes(b.Parameters)).Repositories()
+func (p Parameters) Repositories() (repos []string, negatedRepos []string) {
+	VisitField(ToNodes(p), FieldRepo, func(value string, negated bool, a Annotation) {
+		if a.Labels.IsSet(IsPredicate) {
+			return
+		}
+
+		if negated {
+			negatedRepos = append(negatedRepos, value)
+		} else {
+			repos = append(repos, value)
+		}
+	})
+	return repos, negatedRepos
 }
 
-func (b Basic) Visibility() RepoVisibility {
-	visibilityStr := b.FindValue(FieldVisibility)
+func (p Parameters) Visibility() RepoVisibility {
+	visibilityStr := p.FindValue(FieldVisibility)
 	return ParseVisibility(visibilityStr)
 }
 
 // FindValue returns the first value of a parameter matching field in b. It
 // doesn't inspect whether the field is negated.
-func (b Basic) FindValue(field string) (value string) {
+func (p Parameters) FindValue(field string) (value string) {
 	var found string
-	b.FindParameter(field, func(v string, _ bool, _ Annotation) {
+	p.FindParameter(field, func(v string, _ bool, _ Annotation) {
 		found = v
 	})
 	return found
 }
 
 // FindParameter calls f on parameters matching field in b.
-func (b Basic) FindParameter(field string, f func(value string, negated bool, annotation Annotation)) {
-	for _, p := range b.Parameters {
-		if p.Field == field {
-			f(p.Value, p.Negated, p.Annotation)
+func (p Parameters) FindParameter(field string, f func(value string, negated bool, annotation Annotation)) {
+	for _, parameter := range p {
+		if parameter.Field == field {
+			f(parameter.Value, parameter.Negated, parameter.Annotation)
 			break
 		}
 	}
