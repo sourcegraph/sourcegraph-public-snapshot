@@ -13,8 +13,35 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
 
-func toComputeResultStream(ctx context.Context, db database.DB, cmd compute.Command, matches []result.Match, f func(compute.Result)) error {
+func toCommitDiffResults(matches []result.Match) []result.Match {
+	newMatches := make([]result.Match, 0, len(matches))
 	for _, m := range matches {
+		switch v := m.(type) {
+		case *result.CommitMatch:
+			if v.DiffPreview != nil {
+				fileDiffs, err := result.ParseDiffString(v.DiffPreview.Content)
+				if err != nil {
+					continue // @rvantonder honey badger mode
+				}
+				for _, diff := range fileDiffs {
+					newMatches = append(newMatches, &result.CommitDiffMatch{
+						Commit:   v.Commit,
+						Repo:     v.Repo,
+						DiffFile: &diff,
+					})
+				}
+			} else {
+				newMatches = append(newMatches, m)
+			}
+		default:
+			newMatches = append(newMatches, m)
+		}
+	}
+	return newMatches
+}
+
+func toComputeResultStream(ctx context.Context, db database.DB, cmd compute.Command, matches []result.Match, f func(compute.Result)) error {
+	for _, m := range toCommitDiffResults(matches) {
 		result, err := cmd.Run(ctx, db, m)
 		if err != nil {
 			return err
