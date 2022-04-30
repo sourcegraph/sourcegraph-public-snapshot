@@ -168,7 +168,7 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 				required = resultTypes.Without(result.TypeCommit) == 0
 			}
 			addJob(required, &commit.CommitSearch{
-				Query:                commit.QueryToGitQuery(b.ToParseTree(), diff),
+				Query:                commit.QueryToGitQuery(b, diff),
 				RepoOpts:             repoOptions,
 				Diff:                 diff,
 				HasTimeFilter:        b.Exists("after") || b.Exists("before"),
