@@ -68,8 +68,8 @@ func (p Plan) ToParseTree() Q {
 //   (2) parameters that scope the evaluation of search
 //       patterns (e.g., to repos, files, etc.).
 type Basic struct {
-	Pattern    Node
-	Parameters []Parameter
+	Parameters
+	Pattern Node
 }
 
 func (b Basic) ToParseTree() Q {
@@ -164,6 +164,8 @@ func (b Basic) IsEmptyPattern() bool {
 	}
 	return false
 }
+
+type Parameters []Parameter
 
 // IncludeExcludeValues partitions multiple values of a field into positive
 // (include) and negated (exclude) values.
@@ -269,7 +271,6 @@ func (b Basic) Visibility() RepoVisibility {
 	visibilityStr := b.FindValue(FieldVisibility)
 	return ParseVisibility(visibilityStr)
 }
-
 
 // FindValue returns the first value of a parameter matching field in b. It
 // doesn't inspect whether the field is negated.
