@@ -1,4 +1,4 @@
-FROM redis:5-alpine@sha256:fea243676a4d2d67f5990ddcbd4a56db9423b7f25e55758491e39988efc1cfbe
+FROM redis:5-alpine@sha256:ed670ae81585e6bc3d4847fde5de862ac711cdd9e4c3b5fc3acc9f72c4ce5030
 
 RUN mkdir -p /redis-data && chown -R redis:redis /redis-data
 
