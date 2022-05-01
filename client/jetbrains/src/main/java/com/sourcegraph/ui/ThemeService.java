@@ -1,10 +1,26 @@
 package com.sourcegraph.ui;
 
+import com.google.gson.JsonObject;
 import com.intellij.util.ui.UIUtil;
 
+import javax.swing.*;
 import java.awt.*;
 
 public class ThemeService {
+    public static JsonObject getCurrentThemeAsJson() {
+        // Find the name of properties here: https://plugins.jetbrains.com/docs/intellij/themes-metadata.html#key-naming-scheme
+        JsonObject theme = new JsonObject();
+        theme.addProperty("isDarkTheme", isDarkTheme());
+        theme.addProperty("backgroundColor", getHexString(UIUtil.getPanelBackground()));
+        theme.addProperty("buttonArc", UIManager.get("Button.arc").toString());
+        theme.addProperty("buttonColor", getHexString(UIManager.getColor("Button.default.background")));
+        theme.addProperty("color", getHexString(UIUtil.getLabelForeground()));
+        theme.addProperty("font", UIUtil.getLabelFont().getFontName());
+        theme.addProperty("fontSize", UIUtil.getLabelFont().getSize());
+        theme.addProperty("labelBackground", getHexString(UIManager.getColor("Label.background")));
+        return theme;
+    }
+
     public static String getPanelBackgroundColorHexString() {
         return getHexString(UIUtil.getPanelBackground());
     }

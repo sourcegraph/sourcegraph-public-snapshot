@@ -1,8 +1,9 @@
 import { render } from 'react-dom'
 
 import { App } from './App'
+import { callJava } from './mockJavaInterface'
 
-interface RequestToJava {
+export interface RequestToJava {
     action: string,
     arguments: object,
 }
@@ -28,5 +29,6 @@ window.initializeSourcegraph = (isDarkTheme: boolean) => {
 
 /* Initialize app for standalone server */
 if (window.location.search.includes('standalone=true')) {
+    window.callJava = callJava
     window.initializeSourcegraph(true)
 }

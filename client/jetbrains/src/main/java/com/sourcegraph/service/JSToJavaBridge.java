@@ -43,10 +43,14 @@ public class JSToJavaBridge implements Disposable {
                 cefBrowser.executeJavaScript(
                     "window.callJava = async function(request) {" +
                         "    return new Promise((resolve, reject) => { " +
+                        "        const requestAsString = JSON.stringify(request);" +
+                        "        const onSuccessCallback = function(responseAsString) {" +
+                        "            resolve(JSON.parse(responseAsString));" +
+                        "        };" +
                         "        const onFailureCallback = function(errorCode, errorMessage) {" +
                         "            reject(new Error(`${errorCode} - ${errorMessage}`));" +
                         "        };" +
-                        jsToJavaBridge.inject("request", "resolve", "onFailureCallback") +
+                        "        " + jsToJavaBridge.inject("requestAsString", "onSuccessCallback", "onFailureCallback") +
                         "    });" +
                         "};",
                     cefBrowser.getURL(), 0);

@@ -2,6 +2,7 @@ package com.sourcegraph.service;
 
 import com.google.gson.JsonObject;
 import com.intellij.ui.jcef.JBCefJSQuery;
+import com.sourcegraph.ui.ThemeService;
 
 import javax.annotation.Nullable;
 
@@ -9,7 +10,12 @@ public class JSToJavaBridgeRequestHandler {
     public JBCefJSQuery.Response handle(JsonObject request) {
         String action = request.get("action").getAsString();
         // JsonObject arguments = request.getAsJsonObject("arguments");
-        return createResponse(2, "Unknown action: " + action, null);
+        if (action.equals("getTheme")) {
+            JsonObject currentThemeAsJson = ThemeService.getCurrentThemeAsJson();
+            return createResponse(currentThemeAsJson);
+        } else {
+            return createResponse(2, "Unknown action: " + action, null);
+        }
     }
 
     public JBCefJSQuery.Response handleInvalidRequest() {
@@ -17,10 +23,10 @@ public class JSToJavaBridgeRequestHandler {
     }
 
     private JBCefJSQuery.Response createResponse(@Nullable JsonObject result) {
-        return new JBCefJSQuery.Response(result != null ? result.getAsString() : null);
+        return new JBCefJSQuery.Response(result != null ? result.toString() : null);
     }
 
     private JBCefJSQuery.Response createResponse(int errorCode, @Nullable String errorMessage, @Nullable JsonObject data) {
-        return new JBCefJSQuery.Response(data != null ? data.getAsString() : null, errorCode, errorMessage);
+        return new JBCefJSQuery.Response(data != null ? data.toString() : null, errorCode, errorMessage);
     }
 }
