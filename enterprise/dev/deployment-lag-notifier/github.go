@@ -119,6 +119,9 @@ func getCommitLog(client *http.Client, numCommits int) ([]Commit, error) {
 	if err != nil {
 		return commits, err
 	}
+	if len(gh) != numCommits {
+		return commits, errors.Newf("did not receive the expected number of commits. got: %v", len(gh))
+	}
 
 	for _, g := range gh {
 		lines := strings.Split(g.Commit.Message, "\n")

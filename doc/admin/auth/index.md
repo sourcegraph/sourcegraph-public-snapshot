@@ -64,6 +64,47 @@ Site configuration example:
 }
 ```
 
+### Account lockout
+
+<span class="badge badge-note">Sourcegraph 3.39+</span>
+
+Account will be locked out for 30 minutes after 5 consecutive failed sign-in attempts within one hour for the builtin authentication provider. The threshold and duration of lockout and consecutive periods can be customized via `"auth.lockout"` in the site configuration:
+
+```json
+{
+  // ...
+  "auth.lockout": {
+    // The number of seconds to be considered as a consecutive period
+    "consecutivePeriod": 3600,
+    // The threshold of failed sign-in attempts in a consecutive period
+    "failedAttemptThreshold": 5,
+    // The number of seconds for the lockout period
+    "lockoutPeriod": 1800
+  }
+}
+```
+
+To enabled self-serve account unlock through emails, add the following lines to your site configuration:
+
+```json
+{
+  // Validity expressed in minutes of the unlock account token
+  "auth.unlockAccountLinkExpiry": 30,
+  // Base64-encoded HMAC signing key to sign the JWT token for account unlock URLs
+  "auth.unlockAccountLinkSigningKey": "your-signing-key",
+}
+```
+
+The `ssh-keygen` command can be used to generate and encode the signing key, for example:
+
+```bash
+$ ssh-keygen -t ed25519 -a 128 -f auth.unlockAccountLinkSigningKey
+$ base64 auth.unlockAccountLinkSigningKey | tr -d '\n'
+LS0tLS1CRUdJTiBPUEVOU1NIIFBSSVZBVEUgS0VZLS0tLS0KYjNCbGJu...
+```
+
+Copy the result of the `base64` command as the value of the `"auth.unlockAccountLinkSigningKey"`.
+
 ## GitHub
 
 [Create a GitHub OAuth

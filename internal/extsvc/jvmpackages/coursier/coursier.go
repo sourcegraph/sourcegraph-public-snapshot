@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"path"
@@ -12,15 +11,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/inconshreveable/log15"
-	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -28,33 +23,27 @@ import (
 var CoursierBinary = "coursier"
 
 var (
-	coursierCacheDir   string
-	observationContext *observation.Context
-	operations         *Operations
-	invocTimeout, _    = time.ParseDuration(env.Get("SRC_COURSIER_TIMEOUT", "2m", "Time limit per Coursier invocation, which is used to resolve JVM/Java dependencies."))
+	coursierCacheDir string
+	invocTimeout, _  = time.ParseDuration(env.Get("SRC_COURSIER_TIMEOUT", "2m", "Time limit per Coursier invocation, which is used to resolve JVM/Java dependencies."))
 )
 
 func init() {
-	observationContext = &observation.Context{
-		Logger:     log15.Root(),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
-	operations = NewOperations(observationContext)
-
 	// Should only be set for gitserver for persistence, repo-updater will use ephemeral storage.
 	// repo-updater only performs existence checks which doesnt involve downloading any JARs (except for JDK),
 	// only POM files which are much lighter.
 	if reposDir := os.Getenv("SRC_REPOS_DIR"); reposDir != "" {
 		coursierCacheDir = filepath.Join(reposDir, "coursier")
 		if err := os.MkdirAll(coursierCacheDir, os.ModePerm); err != nil {
-			log.Fatalf("failed to create coursier cache dir in %s: %s", coursierCacheDir, err)
+			println(fmt.Sprintf("failed to create coursier cache dir in %s: %s", coursierCacheDir, err))
+			os.Exit(1)
 		}
 	}
 }
 
 func FetchSources(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenDependency) (sourceCodeJarPath string, err error) {
-	ctx, endObservation := operations.fetchSources.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+	operations := getOperations()
+
+	ctx, _, endObservation := operations.fetchSources.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("dependency", dependency.PackageManagerSyntax()),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -107,7 +96,9 @@ func FetchSources(ctx context.Context, config *schema.JVMPackagesConnection, dep
 }
 
 func FetchByteCode(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenDependency) (byteCodeJarPath string, err error) {
-	ctx, endObservation := operations.fetchByteCode.With(ctx, &err, observation.Args{})
+	operations := getOperations()
+
+	ctx, _, endObservation := operations.fetchByteCode.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	paths, err := runCoursierCommand(
@@ -134,7 +125,9 @@ func FetchByteCode(ctx context.Context, config *schema.JVMPackagesConnection, de
 }
 
 func Exists(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenDependency) (err error) {
-	ctx, endObservation := operations.exists.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+	operations := getOperations()
+
+	ctx, _, endObservation := operations.exists.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("dependency", dependency.PackageManagerSyntax()),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -163,10 +156,12 @@ func (e coursierError) NotFound() bool {
 }
 
 func runCoursierCommand(ctx context.Context, config *schema.JVMPackagesConnection, args ...string) (stdoutLines []string, err error) {
+	operations := getOperations()
+
 	ctx, cancel := context.WithTimeout(ctx, invocTimeout)
 	defer cancel()
 
-	ctx, trace, endObservation := operations.runCommand.WithAndLogger(ctx, &err, observation.Args{LogFields: []otlog.Field{
+	ctx, trace, endObservation := operations.runCommand.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("repositories", strings.Join(config.Maven.Repositories, "|")),
 		otlog.String("args", strings.Join(args, ", ")),
 	}})

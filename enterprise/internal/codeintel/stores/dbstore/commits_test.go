@@ -128,7 +128,7 @@ func TestMaxStaleAge(t *testing.T) {
 			repository_id,
 			update_token,
 			dirty_token,
-			updated_at
+			set_dirty_at
 		)
 		VALUES
 			(50, 10, 10, NOW() - '45 minutes'::interval), -- not dirty

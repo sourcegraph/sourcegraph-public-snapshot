@@ -112,7 +112,7 @@ var ScanFirstIndexRecord = scanFirstIndexRecord
 
 // GetIndexByID returns an index by its identifier and boolean flag indicating its existence.
 func (s *Store) GetIndexByID(ctx context.Context, id int) (_ Index, _ bool, err error) {
-	ctx, endObservation := s.operations.getIndexByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.getIndexByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("id", id),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -173,7 +173,7 @@ WHERE u.id = %s AND %s
 // GetIndexesByIDs returns an index for each of the given identifiers. Not all given ids will necessarily
 // have a corresponding element in the returned list.
 func (s *Store) GetIndexesByIDs(ctx context.Context, ids ...int) (_ []Index, err error) {
-	ctx, endObservation := s.operations.getIndexesByIDs.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.getIndexesByIDs.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("ids", intsToString(ids)),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -237,7 +237,7 @@ type GetIndexesOptions struct {
 
 // GetIndexes returns a list of indexes and the total count of records matching the given conditions.
 func (s *Store) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Index, _ int, err error) {
-	ctx, trace, endObservation := s.operations.getIndexes.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := s.operations.getIndexes.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", opts.RepositoryID),
 		log.String("state", opts.State),
 		log.String("term", opts.Term),
@@ -347,7 +347,7 @@ func makeIndexSearchCondition(term string) *sqlf.Query {
 
 // IsQueued returns true if there is an index or an upload for the repository and commit.
 func (s *Store) IsQueued(ctx context.Context, repositoryID int, commit string) (_ bool, err error) {
-	ctx, endObservation := s.operations.isQueued.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.isQueued.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 		log.String("commit", commit),
 	}})
@@ -368,7 +368,7 @@ SELECT COUNT(*) WHERE EXISTS (
 
 // InsertIndexes inserts a new index and returns the hydrated index models.
 func (s *Store) InsertIndexes(ctx context.Context, indexes []Index) (_ []Index, err error) {
-	ctx, endObservation := s.operations.insertIndex.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.insertIndex.With(ctx, &err, observation.Args{})
 	defer func() {
 		endObservation(1, observation.Args{LogFields: []log.Field{
 			log.Int("numIndexes", len(indexes)),
@@ -465,7 +465,7 @@ var IndexColumnsWithNullRank = indexColumnsWithNullRank
 
 // DeleteIndexByID deletes an index by its identifier.
 func (s *Store) DeleteIndexByID(ctx context.Context, id int) (_ bool, err error) {
-	ctx, endObservation := s.operations.deleteIndexByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.deleteIndexByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("id", id),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -489,7 +489,7 @@ DELETE FROM lsif_indexes WHERE id = %s RETURNING repository_id
 // DeletedRepositoryGracePeriod ago. This returns the repository identifier mapped to the number of indexes
 // that were removed for that repository.
 func (s *Store) DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error) {
-	ctx, trace, endObservation := s.operations.deleteIndexesWithoutRepository.WithAndLogger(ctx, &err, observation.Args{})
+	ctx, trace, endObservation := s.operations.deleteIndexesWithoutRepository.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	// TODO(efritz) - this would benefit from an index on repository_id. We currently have
@@ -536,7 +536,7 @@ SELECT d.repository_id, COUNT(*) FROM deleted d GROUP BY d.repository_id
 // LastIndexScanForRepository returns the last timestamp, if any, that the repository with the given
 // identifier was considered for auto-indexing scheduling.
 func (s *Store) LastIndexScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error) {
-	ctx, endObservation := s.operations.lastIndexScanForRepository.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.lastIndexScanForRepository.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -565,7 +565,7 @@ type IndexesWithRepositoryNamespace struct {
 // include the set of unprocessed records as well as the latest finished record. These values allow users to
 // quickly determine if a particular root/indexer pair os up-to-date or having issues processing.
 func (s *Store) RecentIndexesSummary(ctx context.Context, repositoryID int) (summaries []IndexesWithRepositoryNamespace, err error) {
-	ctx, logger, endObservation := s.operations.recentIndexesSummary.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, logger, endObservation := s.operations.recentIndexesSummary.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 	}})
 	defer endObservation(1, observation.Args{})

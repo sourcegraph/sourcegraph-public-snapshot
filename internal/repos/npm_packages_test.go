@@ -2,7 +2,6 @@ package repos
 
 import (
 	"context"
-	"os"
 	"sort"
 	"testing"
 
@@ -121,10 +120,6 @@ var testDependencyRepos = func() []dependencies.Repo {
 func TestListRepos(t *testing.T) {
 	ctx := context.Background()
 	depsSvc := testDependenciesService(ctx, t, testDependencyRepos)
-
-	dir, err := os.MkdirTemp("", "")
-	require.Nil(t, err)
-	defer os.RemoveAll(dir)
 
 	svc := types.ExternalService{
 		Kind:   extsvc.KindNpmPackages,

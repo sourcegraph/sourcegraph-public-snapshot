@@ -56,7 +56,7 @@ func (h *Handler) serveJSON(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) handleRequest(r *http.Request) (payload interface{}, statusCode int, err error) {
-	ctx, trace, endObservation := h.operations.todo.WithAndLogger(r.Context(), &err, observation.Args{})
+	ctx, trace, endObservation := h.operations.todo.With(r.Context(), &err, observation.Args{})
 	defer func() {
 		endObservation(1, observation.Args{LogFields: []log.Field{
 			log.Int("statusCode", statusCode),

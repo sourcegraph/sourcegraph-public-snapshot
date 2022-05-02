@@ -3,6 +3,9 @@ package streaming
 import (
 	"fmt"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute/client"
+
 	streamapi "github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 )
@@ -84,4 +87,57 @@ type SearchMatch struct {
 	RepositoryID   int32
 	RepositoryName string
 	MatchCount     int
+}
+
+type ComputeMatch struct {
+	RepositoryID   int32
+	RepositoryName string
+	ValueCounts    map[string]int
+}
+
+type TabulatedValue struct {
+	MatchCount int
+	Value      string
+}
+
+func newComputeMatch(repoName string, repoID int32) *ComputeMatch {
+	return &ComputeMatch{
+		ValueCounts:    make(map[string]int),
+		RepositoryID:   repoID,
+		RepositoryName: repoName,
+	}
+}
+
+type ComputeTabulationResult struct {
+	StreamDecoderEvents
+	RepoCounts map[string]*ComputeMatch
+}
+
+func ComputeDecoder() (client.ComputeMatchContextStreamDecoder, *ComputeTabulationResult) {
+	byRepo := make(map[string]*ComputeMatch)
+	getRepoCounts := func(matchContext compute.MatchContext) *ComputeMatch {
+		var v *ComputeMatch
+		if got, ok := byRepo[matchContext.Repository]; ok {
+			return got
+		}
+		v = newComputeMatch(matchContext.Repository, matchContext.RepositoryID)
+		byRepo[matchContext.Repository] = v
+		return v
+	}
+
+	return client.ComputeMatchContextStreamDecoder{
+			OnResult: func(results []compute.MatchContext) {
+				for _, result := range results {
+					current := getRepoCounts(result)
+					for _, match := range result.Matches {
+						for _, data := range match.Environment {
+							current.ValueCounts[data.Value] += 1
+						}
+					}
+				}
+			},
+		}, &ComputeTabulationResult{
+			StreamDecoderEvents: StreamDecoderEvents{},
+			RepoCounts:          byRepo,
+		}
 }

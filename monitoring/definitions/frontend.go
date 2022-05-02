@@ -929,7 +929,7 @@ func orgMetricRows(orgMetricSpec []struct {
 				Query:          `sum(irate(src_graphql_request_duration_seconds_count{route="` + m.route + `"}[5m]))`,
 				NoAlert:        true,
 				Panel:          monitoring.Panel().Unit(monitoring.RequestsPerSecond),
-				Owner:          monitoring.ObservableOwnerRepoManagement,
+				Owner:          monitoring.ObservableOwnerDevOps,
 				Interpretation: `Rate (QPS) of ` + m.description,
 			},
 			{
@@ -938,7 +938,7 @@ func orgMetricRows(orgMetricSpec []struct {
 				Query:          `histogram_quantile(0.99, sum(rate(src_graphql_request_duration_seconds_bucket{route="` + m.route + `"}[5m])) by (le))`,
 				NoAlert:        true,
 				Panel:          monitoring.Panel().Unit(monitoring.Milliseconds),
-				Owner:          monitoring.ObservableOwnerRepoManagement,
+				Owner:          monitoring.ObservableOwnerDevOps,
 				Interpretation: `99 percentile latency of` + m.description,
 			},
 			{
@@ -947,7 +947,7 @@ func orgMetricRows(orgMetricSpec []struct {
 				Query:          `sum (irate(src_graphql_request_duration_seconds_count{route="` + m.route + `",success="false"}[5m]))/sum(irate(src_graphql_request_duration_seconds_count{route="` + m.route + `"}[5m]))*100`,
 				NoAlert:        true,
 				Panel:          monitoring.Panel().Unit(monitoring.Percentage),
-				Owner:          monitoring.ObservableOwnerRepoManagement,
+				Owner:          monitoring.ObservableOwnerDevOps,
 				Interpretation: `Percentage of ` + m.description + ` that return an error`,
 			},
 		})

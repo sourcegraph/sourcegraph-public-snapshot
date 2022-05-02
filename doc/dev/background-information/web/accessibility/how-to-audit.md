@@ -13,8 +13,8 @@ Before starting your audit, you should ensure the following statements are true:
 
 ## Auditing a user journey
 
-1. Navigate through the journey using **only** the <kbd>tab</kbd> key.
-    - Ensure that you are able to access all important **actions**.
+1. Navigate through the journey using **only** the keyboard.
+    - Ensure that you are able to access and trigger all important **actions**.
     - Ensure that the current focus position is always **clear** and **visible**.
 2. Enable a screen reader. Navigate through the user journey **without** looking at your screen.
     - Would a user be able to understand the **content** of the journey?

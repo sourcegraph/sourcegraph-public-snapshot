@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 func TestDependencySyncSchedulerJVM(t *testing.T) {
@@ -105,5 +106,75 @@ func TestDependencySyncSchedulerGomod(t *testing.T) {
 
 	if len(mockDBStore.InsertCloneableDependencyRepoFunc.History()) != 0 {
 		t.Errorf("unexpected number of calls to InsertCloneableDependencyRepo. want=%d have=%d", 0, len(mockDBStore.InsertCloneableDependencyRepoFunc.History()))
+	}
+}
+
+func TestNewPackage(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		in   shared.Package
+		out  precise.Package
+	}{
+		{
+			name: "jvm name normalization",
+			in: shared.Package{
+				Scheme:  dependencies.JVMPackagesScheme,
+				Name:    "maven/junit/junit",
+				Version: "4.2",
+			},
+			out: precise.Package{
+				Scheme:  dependencies.JVMPackagesScheme,
+				Name:    "junit:junit",
+				Version: "4.2",
+			},
+		},
+		{
+			name: "jvm name normalization no-op",
+			in: shared.Package{
+				Scheme:  dependencies.JVMPackagesScheme,
+				Name:    "junit:junit",
+				Version: "4.2",
+			},
+			out: precise.Package{
+				Scheme:  dependencies.JVMPackagesScheme,
+				Name:    "junit:junit",
+				Version: "4.2",
+			},
+		},
+		{
+			name: "npm no-op",
+			in: shared.Package{
+				Scheme:  dependencies.NpmPackagesScheme,
+				Name:    "@graphql-mesh/graphql",
+				Version: "0.24.0",
+			},
+			out: precise.Package{
+				Scheme:  dependencies.NpmPackagesScheme,
+				Name:    "@graphql-mesh/graphql",
+				Version: "0.24.0",
+			},
+		},
+		{
+			name: "go no-op",
+			in: shared.Package{
+				Scheme:  dependencies.GoModulesScheme,
+				Name:    "github.com/tsenart/vegeta/v12",
+				Version: "12.7.0",
+			},
+			out: precise.Package{
+				Scheme:  dependencies.GoModulesScheme,
+				Name:    "github.com/tsenart/vegeta/v12",
+				Version: "12.7.0",
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			have := newPackage(tc.in)
+			want := tc.out
+
+			if diff := cmp.Diff(want, have); diff != "" {
+				t.Fatalf("mismatch (-want, +have): %s", diff)
+			}
+		})
 	}
 }

@@ -1763,7 +1763,7 @@ type SiteConfiguration struct {
 	AuthSessionExpiry string `json:"auth.sessionExpiry,omitempty"`
 	// AuthUnlockAccountLinkExpiry description: Validity expressed in minutes of the unlock account token
 	AuthUnlockAccountLinkExpiry int `json:"auth.unlockAccountLinkExpiry,omitempty"`
-	// AuthUnlockAccountLinkSigningKey description: Base64 encoded HMAC Signing key to sign a JWT token, which is attached to each invitation URL.
+	// AuthUnlockAccountLinkSigningKey description: Base64-encoded HMAC signing key to sign the JWT token for account unlock URLs
 	AuthUnlockAccountLinkSigningKey string `json:"auth.unlockAccountLinkSigningKey,omitempty"`
 	// AuthUserOrgMap description: Ensure that matching users are members of the specified orgs (auto-joining users to the orgs if they are not already a member). Provide a JSON object of the form `{"*": ["org1", "org2"]}`, where org1 and org2 are orgs that all users are automatically joined to. Currently the only supported key is `"*"`.
 	AuthUserOrgMap map[string][]string `json:"auth.userOrgMap,omitempty"`
@@ -1861,6 +1861,8 @@ type SiteConfiguration struct {
 	InsightsCommitIndexerInterval int `json:"insights.commit.indexer.interval,omitempty"`
 	// InsightsCommitIndexerWindowDuration description: The number of days of commits the insights commit indexer will pull during each request (0 is no limit).
 	InsightsCommitIndexerWindowDuration int `json:"insights.commit.indexer.windowDuration,omitempty"`
+	// InsightsComputeGraphql description: Force GraphQL mode for insights compute searches. This will overwrite the default streaming behavior and force search clients to use the GraphQL API
+	InsightsComputeGraphql *bool `json:"insights.compute.graphql,omitempty"`
 	// InsightsHistoricalFrameLength description: (debug) duration of historical insights timeframes, one point per repository will be recorded in each timeframe.
 	InsightsHistoricalFrameLength string `json:"insights.historical.frameLength,omitempty"`
 	// InsightsHistoricalFrames description: (debug) number of historical insights timeframes to populate
