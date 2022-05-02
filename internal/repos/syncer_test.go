@@ -2216,7 +2216,7 @@ func setupSyncErroredTest(ctx context.Context, s repos.Store, t *testing.T,
 	return syncer, dbRepos
 }
 
-func testSyncDoesNotOverwriteUpdatedConfig(store *repos.Store) func(*testing.T) {
+func testSyncDoesNotOverwriteUpdatedConfig(store repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
@@ -2232,7 +2232,7 @@ func testSyncDoesNotOverwriteUpdatedConfig(store *repos.Store) func(*testing.T) 
 		}
 
 		// setup service
-		if err := store.ExternalServiceStore.Upsert(ctx, svc); err != nil {
+		if err := store.ExternalServiceStore().Upsert(ctx, svc); err != nil {
 			t.Fatal(err)
 		}
 
@@ -2243,7 +2243,7 @@ func testSyncDoesNotOverwriteUpdatedConfig(store *repos.Store) func(*testing.T) 
 				// Update the config while the sync is running, emulating what a user
 				// could do via the UI.
 				svc.Config = updatedConfig
-				err := store.ExternalServiceStore.Upsert(ctx, svc)
+				err := store.ExternalServiceStore().Upsert(ctx, svc)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -2257,7 +2257,7 @@ func testSyncDoesNotOverwriteUpdatedConfig(store *repos.Store) func(*testing.T) 
 			t.Fatal("Error occurred. Should not happen because neither site nor user/org limit is exceeded.")
 		}
 
-		syncedSvc, err := store.ExternalServiceStore.GetByID(ctx, svc.ID)
+		syncedSvc, err := store.ExternalServiceStore().GetByID(ctx, svc.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
