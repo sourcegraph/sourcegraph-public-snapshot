@@ -8,7 +8,7 @@ This guide will walk you through the features and functionalities available to y
 ### What is the best deployment option for me?
 We recommend Docker Compose for most initial production deployments. You can [migrate to a different deployment method](../updates/index.md#migrating-to-a-new-deployment-type) later on if needed.
 
-If you need a deployment option that offers a higher level of scalability and availability, the [Kubernetes deployment](../deploy/kubernetes) is recommended. 
+If you need a deployment option that offers a higher level of scalability and availability, the [Kubernetes deployment](../deploy/kubernetes/index.md) is recommended. 
 
 To help give you a starting point on choosing a deployment option and allocating resources to it, check out our [resource estimator](../deploy/resource_estimator.md).
 
@@ -73,5 +73,5 @@ One key component to managing a Sourcegraph instance is having the ability to ob
 ### Viewing instance health and metrics
 Alerts and metrics can be viewed and monitored in Grafana. To access the Grafana dashboard bundled with your Sourcegraph instance, go to **User menu > Site admin > Monitoring**.
 
-We also have an exhaustive [reference guide](../observability//dashboards.md) for understanding the available dashboards, and an [alert solutions guide](../observability/alert_solutions.md) with descriptions and possible solutions for each alert that fires in Grafana. 
+We also have an exhaustive [reference guide](../observability/dashboards.md) for understanding the available dashboards, and an [alert solutions guide](../observability/alert_solutions.md) with descriptions and possible solutions for each alert that fires in Grafana. 
 
