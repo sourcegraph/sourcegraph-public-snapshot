@@ -1,6 +1,5 @@
 import React, { useCallback, useState } from 'react'
 
-import classNames from 'classnames'
 import { EMPTY, NEVER, of } from 'rxjs'
 
 import { SearchPatternType, QueryState } from '@sourcegraph/search'
@@ -63,7 +62,7 @@ export const App: React.FunctionComponent<Props> = ({ onPreviewChange, onPreview
 
     return (
         <WildcardThemeContext.Provider value={{ isBranded: true }}>
-            <div className={classNames('theme-dark', styles.root)}>
+            <div className={styles.root}>
                 <div className={styles.searchBoxContainer}>
                     {/* eslint-disable-next-line react/forbid-elements */}
                     <form
