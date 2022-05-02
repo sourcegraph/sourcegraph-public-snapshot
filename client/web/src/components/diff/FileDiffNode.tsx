@@ -120,11 +120,7 @@ export const FileDiffNode: React.FunctionComponent<FileDiffNodeProps> = ({
                             </Badge>
                         )}
                         {stat}
-                        <span className={classNames('ml-2', styles.headerPath)}>{path}</span>
-                    </div>
-                    <div className={styles.headerActions}>
-                        {/* We only have a 'view' component for GitBlobs, but not for `VirtualFile`s. */}
-                        {node.mostRelevantFile.__typename === 'GitBlob' && (
+                        {node.mostRelevantFile.__typename === 'GitBlob' ? (
                             <Button
                                 to={node.mostRelevantFile.url}
                                 data-tooltip="View file at revision"
@@ -132,9 +128,14 @@ export const FileDiffNode: React.FunctionComponent<FileDiffNodeProps> = ({
                                 size="sm"
                                 as={Link}
                             >
-                                View
+                                {path}
                             </Button>
-                        )}
+                        ) : (
+                            <span className="ml-2">{path}</span>
+                        )}{' '}
+                        <Link to={{ ...location, hash: anchor }} className={classNames('ml-2', styles.headerPath)}>
+                            #
+                        </Link>
                     </div>
                 </div>
                 {expanded &&
