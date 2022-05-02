@@ -1,20 +1,19 @@
 package reposource
 
 import (
+	"strings"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
-// TODO: should scheme be Python instead?
-const poetryScheme = "poetry"
-
-func NewPoetryDependency(name, version string) *PoetryDependency {
-	return &PoetryDependency{
+func NewPythonDependency(name, version string) *PythonDependency {
+	return &PythonDependency{
 		Name:    name,
 		Version: version,
 	}
 }
 
-type PoetryDependency struct {
+type PythonDependency struct {
 	Name    string
 	Version string
 
@@ -22,37 +21,39 @@ type PoetryDependency struct {
 	PackageURL string
 }
 
-func (p *PoetryDependency) Scheme() string {
-	return poetryScheme
+func (p *PythonDependency) Scheme() string {
+	return "python"
 }
 
-func (p *PoetryDependency) PackageSyntax() string {
+func (p *PythonDependency) PackageSyntax() string {
 	return p.Name
 }
 
-func (p *PoetryDependency) PackageManagerSyntax() string {
+func (p *PythonDependency) PackageManagerSyntax() string {
 	if p.Version == "" {
 		return p.Name
 	}
 	return p.Name + "==" + p.Version
 }
 
-func (p *PoetryDependency) PackageVersion() string {
+func (p *PythonDependency) PackageVersion() string {
 	return p.Version
 }
 
-func (p *PoetryDependency) RepoName() api.RepoName {
-	return api.RepoName(poetryScheme + "/" + p.Name)
+func (p *PythonDependency) RepoName() api.RepoName {
+	return api.RepoName("python/" + p.Name)
 }
 
-func (p *PoetryDependency) GitTagFromVersion() string {
-	return p.Version
+func (p *PythonDependency) GitTagFromVersion() string {
+	version := strings.TrimPrefix(p.Version, "v")
+	return "v" + version
 }
 
-func (p *PoetryDependency) Less(other PackageDependency) bool {
-	o := other.(*PoetryDependency)
+func (p *PythonDependency) Less(other PackageDependency) bool {
+	o := other.(*PythonDependency)
 
 	if p.Name == o.Name {
+		// TODO: validate once we add a dependency source for vcs syncer.
 		return versionGreaterThan(p.Version, o.Version)
 	}
 
