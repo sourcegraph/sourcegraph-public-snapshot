@@ -4,14 +4,14 @@ import { App } from './App'
 import { callJava } from './mockJavaInterface'
 
 export interface RequestToJava {
-    action: string,
-    arguments: object,
+    action: string
+    arguments: object
 }
 
 /* Add global functions to global window object */
 declare global {
     interface Window {
-        initializeSourcegraph: (isDarkTheme: boolean) => void,
+        initializeSourcegraph: (isDarkTheme: boolean) => void
         callJava: (request: RequestToJava) => Promise<object>
     }
 }

@@ -22,12 +22,15 @@ export const App: React.FunctionComponent = () => {
     })
 
     useEffect(() => {
-        window.callJava({ action: 'getTheme', arguments: {} }).then(response => {
-            const root = document.querySelector(':root') as HTMLElement
-            root.style.setProperty('--primary', (response as { buttonColor: string }).buttonColor)
-        }).catch((error: Error) => {
-            console.error(`Failed to get theme: ${error.message}`)
-        })
+        window
+            .callJava({ action: 'getTheme', arguments: {} })
+            .then(response => {
+                const root = document.querySelector(':root') as HTMLElement
+                root.style.setProperty('--primary', (response as { buttonColor: string }).buttonColor)
+            })
+            .catch((error: Error) => {
+                console.error(`Failed to get theme: ${error.message}`)
+            })
     }, [])
 
     const onSubmit = useCallback(() => {

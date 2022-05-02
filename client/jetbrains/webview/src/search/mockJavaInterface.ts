@@ -14,20 +14,24 @@ export async function callJava(request: RequestToJava): Promise<object> {
     })
 }
 
-function handleRequest(request: RequestToJava,
-                       onSuccessCallback: (responseAsString: string) => void,
-                       onFailureCallback: (errorCode: number, errorMessage: string) => void): void {
+function handleRequest(
+    request: RequestToJava,
+    onSuccessCallback: (responseAsString: string) => void,
+    onFailureCallback: (errorCode: number, errorMessage: string) => void
+): void {
     if (request.action === 'getTheme') {
-        onSuccessCallback(JSON.stringify({
-            isDarkTheme: true,
-            backgroundColor: 'blue',
-            buttonArc: '2px',
-            buttonColor: 'red',
-            color: 'green',
-            font: 'Times New Roman',
-            fontSize: '12px',
-            labelBackground: 'gray',
-        }))
+        onSuccessCallback(
+            JSON.stringify({
+                isDarkTheme: true,
+                backgroundColor: 'blue',
+                buttonArc: '2px',
+                buttonColor: 'red',
+                color: 'green',
+                font: 'Times New Roman',
+                fontSize: '12px',
+                labelBackground: 'gray',
+            })
+        )
     } else {
         onFailureCallback(2, `Unknown action: ${request.action}`)
     }
