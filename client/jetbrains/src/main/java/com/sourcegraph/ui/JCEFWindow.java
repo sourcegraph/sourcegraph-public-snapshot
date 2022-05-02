@@ -7,6 +7,7 @@ import com.intellij.ui.jcef.JBCefBrowser;
 import com.intellij.ui.jcef.JBCefBrowserBase;
 import com.sourcegraph.bridge.JSToJavaBridge;
 import com.sourcegraph.bridge.JSToJavaBridgeRequestHandler;
+import com.sourcegraph.bridge.JavaToJSBridge;
 import com.sourcegraph.scheme.SchemeHandlerFactory;
 import org.cef.CefApp;
 import org.cef.browser.CefBrowser;
@@ -39,10 +40,11 @@ public class JCEFWindow {
         /* Add browser to panel */
         panel.add(Objects.requireNonNull(browser.getComponent()), BorderLayout.CENTER);
 
-        /* Create bridge, set up handlers, then run init function */
+        /* Create bridges, set up handlers, then run init function */
         String initJSCode = "window.initializeSourcegraph(" + (ThemeService.isDarkTheme() ? "true" : "false") + ");";
-        JSToJavaBridge bridge = new JSToJavaBridge(browser, new JSToJavaBridgeRequestHandler(), initJSCode);
-        Disposer.register(browser, bridge);
+        JSToJavaBridge jsToJavaBridge = new JSToJavaBridge(browser, new JSToJavaBridgeRequestHandler(), initJSCode);
+        Disposer.register(browser, jsToJavaBridge);
+        JavaToJSBridge javaToJSBridge = new JavaToJSBridge(browser);
     }
 
     public JPanel getContent() {
