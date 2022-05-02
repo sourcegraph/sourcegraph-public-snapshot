@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { Button, Input, InputProps, Label } from '@sourcegraph/wildcard'
 
-import { TruncatedText } from '../../../../../../trancated-text/TrancatedText'
+import { TruncatedText } from '../../../../../../trancated-text/TruncatedText'
 
 import styles from './DrillDownInput.module.scss'
 

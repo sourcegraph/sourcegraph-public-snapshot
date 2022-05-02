@@ -6,7 +6,7 @@ import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { Button, Collapse, CollapseHeader, CollapsePanel, Icon } from '@sourcegraph/wildcard'
 
-import { TruncatedText } from '../../../../../../trancated-text/TrancatedText'
+import { TruncatedText } from '../../../../../../trancated-text/TruncatedText'
 
 import styles from './FilterCollapseSection.module.scss'
 

@@ -10,7 +10,7 @@ import { isDefined } from '@sourcegraph/common'
 import { InputProps, Link, LoadingSpinner, useDebounce } from '@sourcegraph/wildcard'
 
 import { GetSearchContextsResult } from '../../../../../../../../../graphql-operations'
-import { TruncatedText } from '../../../../../../trancated-text/TrancatedText'
+import { TruncatedText } from '../../../../../../trancated-text/TruncatedText'
 import { DrillDownInput } from '../drill-down-input/DrillDownInput'
 
 import styles from './DrillDownSearchContextFilter.module.scss'
@@ -60,7 +60,11 @@ export const DrillDownSearchContextFilter: FunctionComponent<DrillDownSearchCont
                 onChange={handleChange}
             />
 
-            {showSuggest && <SuggestPanel query={debouncedQuery.toString()} />}
+            {showSuggest && (
+                <ComboboxList className={styles.suggestionList}>
+                    <SuggestPanel query={debouncedQuery.toString()} />
+                </ComboboxList>
+            )}
         </Combobox>
     )
 }
@@ -80,34 +84,38 @@ const SuggestPanel: FunctionComponent<SuggestPanelProps> = memo(props => {
     const queryBasedContexts =
         data?.searchContexts.nodes.filter(node => isDefined(node.query) && node.query !== '') ?? []
 
-    return (
-        <ComboboxList className={styles.suggestionList}>
-            {loading ? (
-                <LoadingSpinner />
-            ) : error ? (
-                <ErrorAlert error={error} />
-            ) : data ? (
-                queryBasedContexts.length === 0 ? (
-                    <span className={styles.suggestNoDataFound}>
-                        No query-based search contexts found.{' '}
-                        <Link to="/contexts/new" rel="noreferrer noopener" target="_blank">
-                            Create search context
-                        </Link>
-                    </span>
-                ) : (
-                    queryBasedContexts.map(context => (
-                        <ComboboxOption key={context.id} value={context.spec} className={styles.suggestItem}>
-                            <TruncatedText as="small" className={styles.suggestItemName}>
-                                <ComboboxOptionText />
-                            </TruncatedText>
+    if (loading) {
+        return <LoadingSpinner />
+    }
 
-                            <TruncatedText as="small" className={styles.suggestItemDescription}>
-                                {context.description}
-                            </TruncatedText>
-                        </ComboboxOption>
-                    ))
-                )
-            ) : null}
-        </ComboboxList>
-    )
+    if (error) {
+        return <ErrorAlert error={error} />
+    }
+
+    if (!data) {
+        return null
+    }
+
+    if (queryBasedContexts.length === 0) {
+        return (
+            <span className={styles.suggestNoDataFound}>
+                No query-based search contexts found.{' '}
+                <Link to="/contexts/new" rel="noreferrer noopener" target="_blank">
+                    Create search context
+                </Link>
+            </span>
+        )
+    }
+
+    return queryBasedContexts.map(context => (
+        <ComboboxOption key={context.id} value={context.spec} className={styles.suggestItem}>
+            <TruncatedText as="small" className={styles.suggestItemName}>
+                <ComboboxOptionText />
+            </TruncatedText>
+
+            <TruncatedText as="small" className={styles.suggestItemDescription}>
+                {context.description}
+            </TruncatedText>
+        </ComboboxOption>
+    ))
 })
