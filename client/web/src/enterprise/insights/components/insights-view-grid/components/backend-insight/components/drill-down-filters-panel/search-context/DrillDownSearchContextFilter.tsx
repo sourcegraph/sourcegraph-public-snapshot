@@ -73,7 +73,7 @@ interface SuggestPanelProps {
     query: string
 }
 
-const SuggestPanel: FunctionComponent<SuggestPanelProps> = memo(props => {
+const SuggestPanel = memo<SuggestPanelProps>(props => {
     const { query } = props
 
     const { data, loading, error } = useQuery<GetSearchContextsResult>(SEARCH_CONTEXT_GQL, {
@@ -107,15 +107,19 @@ const SuggestPanel: FunctionComponent<SuggestPanelProps> = memo(props => {
         )
     }
 
-    return queryBasedContexts.map(context => (
-        <ComboboxOption key={context.id} value={context.spec} className={styles.suggestItem}>
-            <TruncatedText as="small" className={styles.suggestItemName}>
-                <ComboboxOptionText />
-            </TruncatedText>
+    return (
+        <>
+            {queryBasedContexts.map(context => (
+                <ComboboxOption key={context.id} value={context.spec} className={styles.suggestItem}>
+                    <TruncatedText as="small" className={styles.suggestItemName}>
+                        <ComboboxOptionText />
+                    </TruncatedText>
 
-            <TruncatedText as="small" className={styles.suggestItemDescription}>
-                {context.description}
-            </TruncatedText>
-        </ComboboxOption>
-    ))
+                    <TruncatedText as="small" className={styles.suggestItemDescription}>
+                        {context.description}
+                    </TruncatedText>
+                </ComboboxOption>
+            ))}
+        </>
+    )
 })
