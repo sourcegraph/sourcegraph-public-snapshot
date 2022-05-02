@@ -10,6 +10,7 @@ import { ContentMatch, getFileMatchUrl } from '@sourcegraph/shared/src/search/st
 import { formatRepositoryStarCount } from '@sourcegraph/shared/src/util/stars'
 import { Icon } from '@sourcegraph/wildcard'
 
+import { TrimmedCodeLineWithHighlights } from './TrimmedCodeLineWithHighlights'
 import { getIdForLine } from './utils'
 
 interface Props {
@@ -46,8 +47,10 @@ export const FileSearchResult: React.FunctionComponent<Props> = ({
                 onClick={onClick}
                 key={key}
             >
-                <div className={styles.lineCode}>{line.line}</div>
-                <div className={styles.lineLineNumber}>{line.lineNumber}</div>
+                <div className={styles.lineCode}>
+                    <TrimmedCodeLineWithHighlights line={line} />
+                </div>
+                <div className={classNames(styles.lineLineNumber, 'text-muted')}>{line.lineNumber}</div>
             </div>
         )
     })

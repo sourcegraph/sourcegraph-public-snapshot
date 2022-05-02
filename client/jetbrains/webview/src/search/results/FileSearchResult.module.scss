@@ -4,6 +4,9 @@
     cursor: pointer;
     user-select: none;
     background-color: var(--code-bg);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 
     &-active {
         background-color: var(--code-selection-bg);
@@ -11,10 +14,22 @@
 
     &-code {
         color: var(--body-color);
+        flex-shrink: 1;
+        // Ensure we only render one line but keep the whitespace
+        white-space: pre;
+
+        text-overflow: ellipsis;
+        overflow-x: hidden;
+
+        &-highlight{
+            background-color: var(--hl-dark-yellow);
+            color: var(--hl-gray-4);
+            border-radius: 2px;
+        }
     }
 
     &-line-number {
-        color: red;
+        padding-left: 1rem;
         font-size: 0.8rem;
     }
 }
