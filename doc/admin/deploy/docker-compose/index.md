@@ -16,7 +16,7 @@ Not sure if the Docker Compose deployment type is the right for you? Learn more 
 
 ## Requirements
 
-The Docker Compose installation requires a minimum of 8 CPU cores (logical) on the host machine in order to complete successfully. If using the Docker for Windows app, the default CPU count is limited to 2 which will result in errors during installation. You can go into the Docker app Settings->Resources window to increase the CPU count to > 8 to resolve this issue.
+The Docker Compose installation requires a minimum of 8 CPU cores (logical) on the host machine in order to complete successfully. Using the default Docker for Desktop app, the default CPU count is limited to 2, which will result in errors during installation. You can go into the Docker app Settings->Resources window to increase the CPU count to > 8 to resolve this issue.
 
 Our Docker Compose support also has the following requirements:
 
