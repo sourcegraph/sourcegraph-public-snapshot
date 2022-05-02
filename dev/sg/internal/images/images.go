@@ -250,7 +250,7 @@ func (image ImageReference) String() string {
 	case image.Tag == "" && image.Digest != "":
 		return fmt.Sprintf("%s/%s@%s", image.Registry, image.Name, image.Digest)
 
-	case image.Tag != "" && image.Digest != "":
+	case image.Tag != "" && image.Digest == "":
 		return fmt.Sprintf("%s/%s:%s", image.Registry, image.Name, image.Tag)
 
 	default:
