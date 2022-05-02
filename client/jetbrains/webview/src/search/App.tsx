@@ -5,7 +5,12 @@ import { EMPTY, NEVER, of } from 'rxjs'
 
 import { SearchPatternType, QueryState } from '@sourcegraph/search'
 import { SearchBox } from '@sourcegraph/search-ui'
-import { aggregateStreamingSearch, LATEST_VERSION, SearchMatch } from '@sourcegraph/shared/src/search/stream'
+import {
+    aggregateStreamingSearch,
+    ContentMatch,
+    LATEST_VERSION,
+    SearchMatch,
+} from '@sourcegraph/shared/src/search/stream'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { WildcardThemeContext } from '@sourcegraph/wildcard'
@@ -15,11 +20,12 @@ import { SearchResultList } from './results/SearchResultList'
 import styles from './App.module.scss'
 
 interface Props {
-    onPreviewChange: (result: string) => void
-    onOpen: (result: string) => void
+    onPreviewChange: (match: ContentMatch, lineIndex: number) => void
+    onPreviewClear: () => void
+    onOpen: (match: ContentMatch, lineIndex: number) => void
 }
 
-export const App: React.FunctionComponent<Props> = ({ onPreviewChange, onOpen }: Props) => {
+export const App: React.FunctionComponent<Props> = ({ onPreviewChange, onPreviewClear, onOpen }: Props) => {
     const [caseSensitive, setCaseSensitivity] = useState(false)
     const [patternType, setPatternType] = useState(SearchPatternType.literal)
     const [results, setResults] = useState<SearchMatch[]>([])
@@ -110,6 +116,7 @@ export const App: React.FunctionComponent<Props> = ({ onPreviewChange, onOpen }:
                     results={results}
                     key={lastSearchedQuery}
                     onPreviewChange={onPreviewChange}
+                    onPreviewClear={onPreviewClear}
                     onOpen={onOpen}
                 />
             </div>

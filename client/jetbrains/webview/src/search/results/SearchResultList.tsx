@@ -1,33 +1,60 @@
-import React, { createRef, useCallback, useEffect, useState } from 'react'
+import React, { createRef, useCallback, useEffect, useMemo, useState } from 'react'
 
-import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
+import { ContentMatch, SearchMatch } from '@sourcegraph/shared/src/search/stream'
 
 import { FileSearchResult } from './FileSearchResult'
-import { getElementFromId, getFirstResultId, getNextResult, getPreviousResult } from './utils'
+import {
+    decodeLineId,
+    getElementFromId,
+    getFirstResultId,
+    getIdForMatch,
+    getNextResult,
+    getPreviousResult,
+} from './utils'
 
 import styles from './SearchResultList.module.scss'
 
 interface Props {
-    onPreviewChange: (result: string) => void
-    onOpen: (result: string) => void
+    onPreviewChange: (result: ContentMatch, lineIndex: number) => void
+    onPreviewClear: () => void
+    onOpen: (result: ContentMatch, lineIndex: number) => void
     results: SearchMatch[]
 }
 
-export const SearchResultList: React.FunctionComponent<Props> = ({ results, onPreviewChange, onOpen }) => {
+export const SearchResultList: React.FunctionComponent<Props> = ({
+    results,
+    onPreviewChange,
+    onPreviewClear,
+    onOpen,
+}) => {
     const scrollViewReference = createRef<HTMLDivElement>()
     const [selectedResult, setSelectedResult] = useState<null | string>(null)
+
+    const resultMap = useMemo((): Map<string, ContentMatch> => {
+        const map = new Map<string, ContentMatch>()
+        for (const result of results) {
+            if (result.type === 'content') {
+                map.set(getIdForMatch(result), result)
+            }
+        }
+        return map
+    }, [results])
 
     const selectResultFromId = useCallback(
         (id: null | string) => {
             if (id !== null) {
                 getElementFromId(id)?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
-                onPreviewChange(id)
+                const [matchId, lineNumber] = decodeLineId(id)
+                const match = resultMap.get(matchId)
+                if (match) {
+                    onPreviewChange(match, lineNumber)
+                }
             } else {
-                onPreviewChange('')
+                onPreviewClear()
             }
             setSelectedResult(id)
         },
-        [onPreviewChange]
+        [onPreviewChange, onPreviewClear, resultMap]
     )
 
     useEffect(() => {
@@ -64,7 +91,11 @@ export const SearchResultList: React.FunctionComponent<Props> = ({ results, onPr
             }
 
             if (event.key === 'Enter' && event.ctrlKey === true) {
-                onOpen(selectedResult)
+                const [matchId, lineNumber] = decodeLineId(selectedResult)
+                const match = resultMap.get(matchId)
+                if (match) {
+                    onOpen(match, lineNumber)
+                }
                 return
             }
 
@@ -92,7 +123,7 @@ export const SearchResultList: React.FunctionComponent<Props> = ({ results, onPr
                 return
             }
         },
-        [selectedResult, onOpen, selectResultFromId, scrollViewReference]
+        [selectedResult, resultMap, onOpen, selectResultFromId, scrollViewReference]
     )
 
     useEffect(() => {

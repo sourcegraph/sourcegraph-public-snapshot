@@ -10,8 +10,17 @@ export function getFirstResultId(results: SearchMatch[]): string | null {
     return null
 }
 
+export function getIdForMatch(match: ContentMatch): string {
+    return `${match.repository}-${match.path}`
+}
+
 export function getIdForLine(match: ContentMatch, line: ContentMatch['lineMatches'][0]): string {
-    return `${match.repository}-${match.path}-${match.lineMatches.indexOf(line)}`
+    return `${getIdForMatch(match)}-#-${match.lineMatches.indexOf(line)}`
+}
+
+export function decodeLineId(id: string): [matchId: string, lineNumber: number] {
+    const [matchId, lineId] = id.split('-#-')
+    return [matchId, parseInt(lineId, 10)]
 }
 
 export function getElementFromId(id: string): null | Element {
