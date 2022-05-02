@@ -126,12 +126,13 @@ export const FileDiffNode: React.FunctionComponent<FileDiffNodeProps> = ({
                                 data-tooltip="View file at revision"
                                 variant="link"
                                 as={Link}
+                                className="pr-0"
                             >
                                 {path}
                             </Button>
                         ) : (
                             <span className="ml-2">{path}</span>
-                        )}{' '}
+                        )}
                         <Link to={{ ...location, hash: anchor }} className={classNames('ml-2', styles.headerPath)}>
                             #
                         </Link>
