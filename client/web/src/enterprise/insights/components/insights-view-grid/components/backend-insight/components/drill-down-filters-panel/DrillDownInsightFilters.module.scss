@@ -1,17 +1,13 @@
-.form {
-    display: flex;
-    flex-direction: column;
-    padding: 1rem;
-}
-
 .header {
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.25rem;
+    border-bottom: 1px solid var(--border-color);
 }
 
 .heading {
-    font-weight: normal;
     margin: 0;
 }
 
@@ -20,26 +16,25 @@
     padding: 0;
 }
 
-.description {
-    display: inline-block;
-    color: var(--text-muted);
-    margin-bottom: 0.75rem;
+.input {
+    font-size: 0.75rem;
+    width: 100%;
 }
 
-.separator {
-    flex: 1;
-    border-color: var(--dropdown-border-color);
-    margin: 1rem -1rem;
-
-    &--small {
-        margin: 0.75rem -1rem;
-    }
+.section-description {
+    margin-bottom: 1rem;
+    display: block;
 }
 
-.fieldset {
+.panel {
+    padding-right: 1rem;
+}
+
+.reg-exp-filters {
     display: flex;
     flex-direction: column;
     gap: 1rem;
+    margin-bottom: 1rem;
 }
 
 .footer {
@@ -47,6 +42,9 @@
     flex-wrap: wrap;
     align-items: center;
     gap: 1rem;
+
+    margin-top: -0.25rem;
+    padding: 0.75rem 1rem;
 }
 
 .buttons {

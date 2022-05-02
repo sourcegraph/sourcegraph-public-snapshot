@@ -5,12 +5,12 @@ import classNames from 'classnames'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Button, Input } from '@sourcegraph/wildcard'
 
-import { LoaderButton } from '../../../../../../../../../../components/LoaderButton'
-import { getDefaultInputProps } from '../../../../../../../form/getDefaultInputProps'
-import { useAsyncInsightTitleValidator } from '../../../../../../../form/hooks/use-async-insight-title-validator'
-import { useField } from '../../../../../../../form/hooks/useField'
-import { FORM_ERROR, SubmissionResult, useForm } from '../../../../../../../form/hooks/useForm'
-import { createRequiredValidator } from '../../../../../../../form/validators'
+import { LoaderButton } from '../../../../../../../../components/LoaderButton'
+import { getDefaultInputProps } from '../../../../../form/getDefaultInputProps'
+import { useAsyncInsightTitleValidator } from '../../../../../form/hooks/use-async-insight-title-validator'
+import { useField } from '../../../../../form/hooks/useField'
+import { FORM_ERROR, SubmissionResult, useForm } from '../../../../../form/hooks/useForm'
+import { createRequiredValidator } from '../../../../../form/validators'
 
 export interface DrillDownInsightCreationFormValues {
     insightName: string

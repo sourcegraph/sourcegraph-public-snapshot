@@ -76,8 +76,6 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
         insightCardReference
     )
 
-    // Handle insight delete and remove actions
-
     const handleFilterSave = async (filters: InsightFilters): Promise<SubmissionErrors> => {
         try {
             const insightWithNewFilters = { ...insight, filters }
