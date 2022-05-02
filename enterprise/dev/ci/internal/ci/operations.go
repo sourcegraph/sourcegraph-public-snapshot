@@ -243,11 +243,11 @@ func addVsceIntegrationTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(
 		":vscode: Puppeteer tests for VS Code extension",
 		withYarnCache(),
-		bk.Parallelism(50),
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("yarn generate"),
 		bk.Cmd("yarn --cwd client/vscode -s build:test"),
 		bk.Cmd("yarn --cwd client/vscode -s test-integration --verbose"),
+		bk.AutomaticRetry(1),
 	)
 }
 
