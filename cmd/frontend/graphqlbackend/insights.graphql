@@ -201,6 +201,7 @@ extend type Query {
         id: ID
         isFrozen: Boolean
         filters: InsightViewFiltersInput
+        seriesDisplayOptions: SeriesDisplayOptions
     ): InsightViewConnection!
 
     """
@@ -617,21 +618,34 @@ input InsightViewControlsInput {
     """
     Input for series' sort order.
     """
-    sortSeriesBy: SeriesSortOrder
-    """
-    Input for the number of series to display.
-    """
-    displayNumSeries: Int
+    seriesDisplayOptions: SeriesDisplayOptions!
+}
+
+input SeriesDisplayOptions {
+    sortOptions: SeriesSortOptions
+    limit: Int
 }
 
 """
-Sort order for series.
+Sort mode for series.
 """
-enum SeriesSortOrder {
-    HIGHEST_RESULT_COUNT
-    LOWEST_RESULT_COUNT
-    ASC_LEXICOGRAPHICAL
-    DESC_LEXICOGRAPHICAL
+enum SeriesSortMode {
+    RESULT_COUNT
+    LEXICOGRAPHICAL
+    DATE_ADDED
+}
+
+"""
+Sort direction for series.
+"""
+enum SeriesSortDirection {
+    ASC
+    DESC
+}
+
+input SeriesSortOptions {
+    mode: SeriesSortMode!
+    direction: SeriesSortDirection!
 }
 
 """

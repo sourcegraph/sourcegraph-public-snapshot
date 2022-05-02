@@ -39,9 +39,10 @@ var _ graphqlbackend.InsightDataSeriesDefinition = &insightDataSeriesDefinitionU
 var _ graphqlbackend.InsightViewConnectionResolver = &InsightViewQueryConnectionResolver{}
 
 type insightViewResolver struct {
-	view                *types.Insight
-	overrideFilters     *types.InsightViewFilters
-	dataSeriesGenerator insightSeriesResolverGenerator
+	view                  *types.Insight
+	overrideFilters       *types.InsightViewFilters
+	overrideSeriesOptions *types.SeriesDisplayOptions
+	dataSeriesGenerator   insightSeriesResolverGenerator
 
 	baseInsightResolver
 }
@@ -142,8 +143,15 @@ func (i *insightViewResolver) DataSeries(ctx context.Context) ([]graphqlbackend.
 		filters = &i.view.Filters
 	}
 
+	var seriesOptions *types.SeriesDisplayOptions
+	if i.overrideSeriesOptions != nil {
+		seriesOptions = i.overrideSeriesOptions
+	} else {
+		seriesOptions = &i.view.SeriesOptions
+	}
+
 	for _, current := range i.view.Series {
-		seriesResolvers, err := i.dataSeriesGenerator.Generate(ctx, current, i.baseInsightResolver, *filters)
+		seriesResolvers, err := i.dataSeriesGenerator.Generate(ctx, current, i.baseInsightResolver, *filters, *seriesOptions)
 		if err != nil {
 			return nil, errors.Wrapf(err, "generate for seriesID: %s", current.SeriesID)
 		}
@@ -463,13 +471,21 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 		return nil, errors.New("No insight view found with this id")
 	}
 
+	var seriesSortMode types.SeriesSortMode
+	var seriesSortDirection types.SeriesSortDirection
+	if args.Input.ViewControls.SeriesDisplayOptions.SortOptions != nil {
+		seriesSortMode = types.SeriesSortMode(args.Input.ViewControls.SeriesDisplayOptions.SortOptions.Mode)
+		seriesSortDirection = types.SeriesSortDirection(args.Input.ViewControls.SeriesDisplayOptions.SortOptions.Direction)
+	}
+
 	view, err := tx.UpdateView(ctx, types.InsightView{
-		UniqueID:         insightViewId,
-		Title:            emptyIfNil(args.Input.PresentationOptions.Title),
-		Filters:          filtersFromInput(&args.Input.ViewControls.Filters),
-		PresentationType: types.Line,
-		SortSeriesBy:     sortSeriesByDefaultIfNil(args.Input.ViewControls.SortSeriesBy),
-		DisplayNumSeries: displayNumSeriesDefaultIfNil(args.Input.ViewControls.DisplayNumSeries),
+		UniqueID:            insightViewId,
+		Title:               emptyIfNil(args.Input.PresentationOptions.Title),
+		Filters:             filtersFromInput(&args.Input.ViewControls.Filters),
+		PresentationType:    types.Line,
+		SeriesSortMode:      &seriesSortMode,
+		SeriesSortDirection: &seriesSortDirection,
+		SeriesLimit:         args.Input.ViewControls.SeriesDisplayOptions.Limit,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "UpdateView")
@@ -783,6 +799,19 @@ func (d *InsightViewQueryConnectionResolver) Nodes(ctx context.Context) ([]graph
 				SearchContexts:   scs,
 			}
 		}
+		if d.args.SeriesDisplayOptions != nil {
+			var sortOptions *types.SeriesSortOptions
+			if d.args.SeriesDisplayOptions != nil {
+				sortOptions = &types.SeriesSortOptions{
+					Mode:      types.SeriesSortMode(d.args.SeriesDisplayOptions.SortOptions.Mode),
+					Direction: types.SeriesSortDirection(d.args.SeriesDisplayOptions.SortOptions.Direction),
+				}
+			}
+			resolver.overrideSeriesOptions = &types.SeriesDisplayOptions{
+				SortOptions: sortOptions,
+				Limit:       d.args.SeriesDisplayOptions.Limit,
+			}
+		}
 		resolvers = append(resolvers, resolver)
 	}
 	return resolvers, nil
@@ -1026,13 +1055,6 @@ func filtersFromInput(input *graphqlbackend.InsightViewFiltersInput) types.Insig
 		}
 	}
 	return filters
-}
-
-func sortSeriesByDefaultIfNil(sortSeriesByString *string) types.SortSeriesBy {
-	if sortSeriesByString == nil {
-		return types.HighestResultCount
-	}
-	return types.SortSeriesBy(*sortSeriesByString)
 }
 
 func displayNumSeriesDefaultIfNil(displayNumSeries *int32) int32 {

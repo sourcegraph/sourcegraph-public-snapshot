@@ -34,8 +34,9 @@ type InsightViewSeries struct {
 	JustInTime                    bool
 	GenerationMethod              GenerationMethod
 	IsFrozen                      bool
-	SortSeriesBy                  SortSeriesBy
-	DisplayNumSeries              int32
+	SeriesSortMode                *SeriesSortMode
+	SeriesSortDirection           *SeriesSortDirection
+	SeriesLimit                   *int32
 }
 
 type Insight struct {
@@ -49,6 +50,7 @@ type Insight struct {
 	OtherThreshold   *float64
 	PresentationType PresentationType
 	IsFrozen         bool
+	SeriesOptions    SeriesDisplayOptions
 }
 
 type InsightViewFilters struct {
@@ -65,16 +67,17 @@ type InsightViewSeriesMetadata struct {
 
 // InsightView is a single insight view that may or may not have any associated series.
 type InsightView struct {
-	ID               int
-	Title            string
-	Description      string
-	UniqueID         string
-	Filters          InsightViewFilters
-	OtherThreshold   *float64
-	PresentationType PresentationType
-	IsFrozen         bool
-	SortSeriesBy     SortSeriesBy
-	DisplayNumSeries int32
+	ID                  int
+	Title               string
+	Description         string
+	UniqueID            string
+	Filters             InsightViewFilters
+	OtherThreshold      *float64
+	PresentationType    PresentationType
+	IsFrozen            bool
+	SeriesSortMode      *SeriesSortMode
+	SeriesSortDirection *SeriesSortDirection
+	SeriesLimit         *int32
 }
 
 // InsightSeries is a single data series for a Code Insight. This contains some metadata about the data series, as well
@@ -167,11 +170,28 @@ type Frame struct {
 	Commit string
 }
 
-type SortSeriesBy string
+type SeriesSortMode string
 
 const (
-	HighestResultCount  SortSeriesBy = "HIGHEST_RESULT_COUNT"
-	LowestResultCount   SortSeriesBy = "LOWEST_RESULT_COUNT"
-	AscLexicographical  SortSeriesBy = "ASC_LEXICOGRAPHICAL"
-	DescLexicographical SortSeriesBy = "DESC_LEXICOGRAPHICAL"
+	None            SeriesSortMode = "NONE"
+	ResultCount     SeriesSortMode = "RESULT_COUNT"
+	DateAdded       SeriesSortMode = "DATE_ADDED"
+	Lexicographical SeriesSortMode = "LEXICOGRAPHICAL"
 )
+
+type SeriesSortDirection string
+
+const (
+	Asc  SeriesSortDirection = "ASC"
+	Desc SeriesSortDirection = "DESC"
+)
+
+type SeriesDisplayOptions struct {
+	SortOptions *SeriesSortOptions
+	Limit       *int32
+}
+
+type SeriesSortOptions struct {
+	Mode      SeriesSortMode
+	Direction SeriesSortDirection
+}

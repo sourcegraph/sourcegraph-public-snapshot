@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Masterminds/semver"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -264,13 +265,13 @@ func (p *precalculatedInsightSeriesResolver) DirtyMetadata(ctx context.Context) 
 }
 
 type insightSeriesResolverGenerator interface {
-	Generate(ctx context.Context, series types.InsightViewSeries, baseResolver baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error)
+	Generate(ctx context.Context, series types.InsightViewSeries, baseResolver baseInsightResolver, filters types.InsightViewFilters, seriesOptions types.SeriesDisplayOptions) ([]graphqlbackend.InsightSeriesResolver, error)
 	handles(series types.InsightViewSeries) bool
 	SetNext(nextGenerator insightSeriesResolverGenerator)
 }
 
 type handleSeriesFunc func(series types.InsightViewSeries) bool
-type resolverGenerator func(ctx context.Context, series types.InsightViewSeries, baseResolver baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error)
+type resolverGenerator func(ctx context.Context, series types.InsightViewSeries, baseResolver baseInsightResolver, filters types.InsightViewFilters, seriesOptions types.SeriesDisplayOptions) ([]graphqlbackend.InsightSeriesResolver, error)
 
 type seriesResolverGenerator struct {
 	next             insightSeriesResolverGenerator
@@ -289,12 +290,12 @@ func (j *seriesResolverGenerator) SetNext(nextGenerator insightSeriesResolverGen
 	j.next = nextGenerator
 }
 
-func (j *seriesResolverGenerator) Generate(ctx context.Context, series types.InsightViewSeries, baseResolver baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {
+func (j *seriesResolverGenerator) Generate(ctx context.Context, series types.InsightViewSeries, baseResolver baseInsightResolver, filters types.InsightViewFilters, seriesOptions types.SeriesDisplayOptions) ([]graphqlbackend.InsightSeriesResolver, error) {
 	if j.handles(series) {
-		return j.generateResolver(ctx, series, baseResolver, filters)
+		return j.generateResolver(ctx, series, baseResolver, filters, seriesOptions)
 	}
 	if j.next != nil {
-		return j.next.Generate(ctx, series, baseResolver, filters)
+		return j.next.Generate(ctx, series, baseResolver, filters, seriesOptions)
 	} else {
 		log15.Error("no generator for insight series", "seriesID", series.SeriesID)
 		return nil, errors.New("no resolvers for insights series")
@@ -308,7 +309,7 @@ func newSeriesResolverGenerator(handels handleSeriesFunc, generate resolverGener
 	}
 }
 
-func recordedSeries(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {
+func recordedSeries(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters, seriesOptions types.SeriesDisplayOptions) ([]graphqlbackend.InsightSeriesResolver, error) {
 	return []graphqlbackend.InsightSeriesResolver{&insightSeriesResolver{
 		insightsStore:   r.timeSeriesStore,
 		workerBaseStore: r.workerBaseStore,
@@ -318,7 +319,7 @@ func recordedSeries(ctx context.Context, definition types.InsightViewSeries, r b
 	}}, nil
 }
 
-func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {
+func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters, seriesOptions types.SeriesDisplayOptions) ([]graphqlbackend.InsightSeriesResolver, error) {
 	var opts store.SeriesPointsOpts
 
 	// Query data points only for the series we are representing.
@@ -383,8 +384,34 @@ func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.Insi
 
 	var resolvers []graphqlbackend.InsightSeriesResolver
 
-	sortedCaptureGroups := getSortedCaptureGroups(definition.SortSeriesBy, groupedByCapture)
-	for _, capturedValue := range sortedCaptureGroups[0:definition.DisplayNumSeries] {
+	var sortMode types.SeriesSortMode
+	var sortDirection types.SeriesSortDirection
+	var limit int32
+	if seriesOptions.SortOptions != nil {
+		sortMode = seriesOptions.SortOptions.Mode
+		sortDirection = seriesOptions.SortOptions.Direction
+	} else {
+		if definition.SeriesSortMode != nil {
+			sortMode = *definition.SeriesSortMode
+		} else {
+			sortMode = types.ResultCount
+		}
+		if definition.SeriesSortDirection != nil {
+			sortDirection = *definition.SeriesSortDirection
+		} else {
+			sortDirection = types.Asc
+		}
+	}
+	sortedCaptureGroups := getSortedCaptureGroups(sortMode, sortDirection, groupedByCapture)
+	if seriesOptions.Limit != nil {
+		limit = *seriesOptions.Limit
+	} else if definition.SeriesLimit != nil {
+		limit = *definition.SeriesLimit
+	} else {
+		limit = minInt(20, len(sortedCaptureGroups))
+	}
+
+	for _, capturedValue := range sortedCaptureGroups[0:limit] {
 		points := groupedByCapture[capturedValue]
 		sort.Slice(points, func(i, j int) bool {
 			return points[i].Time.Before(points[j].Time)
@@ -424,38 +451,67 @@ func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.Insi
 	return resolvers, nil
 }
 
-func getSortedCaptureGroups(sortBy types.SortSeriesBy, captureGroups map[string][]store.SeriesPoint) []string {
+func getSortedCaptureGroups(sortMode types.SeriesSortMode, sortDirection types.SeriesSortDirection, captureGroups map[string][]store.SeriesPoint) []string {
 	orderedCaptureGroups := make([][]store.SeriesPoint, 0, len(captureGroups))
 	for _, value := range captureGroups {
 		orderedCaptureGroups = append(orderedCaptureGroups, value)
 	}
 
-	sumPoints := func(points []store.SeriesPoint) float64 {
-		var sum float64
-		for _, point := range points {
-			sum += point.Value
-		}
-		return sum
+	getMostRecentValue := func(points []store.SeriesPoint) float64 {
+		return points[len(points)-1].Value
 	}
 
 	// First sort lexicographically (ascending) to make sure the ordering is consistent even if some result counts are equal.
 	sort.SliceStable(orderedCaptureGroups, func(i, j int) bool {
+		version1, err1 := semver.NewVersion(*orderedCaptureGroups[i][0].Capture)
+		version2, err2 := semver.NewVersion(*orderedCaptureGroups[j][0].Capture)
+		if err1 == nil && err2 == nil {
+			return version1.Compare(version2) < 0
+		}
 		return strings.Compare(*orderedCaptureGroups[i][0].Capture, *orderedCaptureGroups[j][0].Capture) < 0
 	})
 
-	switch sortBy {
-	case types.HighestResultCount:
-		sort.SliceStable(orderedCaptureGroups, func(i, j int) bool {
-			return sumPoints(orderedCaptureGroups[i]) > sumPoints(orderedCaptureGroups[j])
-		})
-	case types.LowestResultCount:
-		sort.SliceStable(orderedCaptureGroups, func(i, j int) bool {
-			return sumPoints(orderedCaptureGroups[i]) < sumPoints(orderedCaptureGroups[j])
-		})
-	case types.DescLexicographical:
-		sort.SliceStable(orderedCaptureGroups, func(i, j int) bool {
-			return strings.Compare(*orderedCaptureGroups[i][0].Capture, *orderedCaptureGroups[j][0].Capture) > 0
-		})
+	switch sortMode {
+	case types.ResultCount:
+		if sortDirection == types.Asc {
+			sort.SliceStable(orderedCaptureGroups, func(i, j int) bool {
+				return getMostRecentValue(orderedCaptureGroups[i]) < getMostRecentValue(orderedCaptureGroups[j])
+			})
+		} else {
+			sort.SliceStable(orderedCaptureGroups, func(i, j int) bool {
+				return getMostRecentValue(orderedCaptureGroups[i]) > getMostRecentValue(orderedCaptureGroups[j])
+			})
+		}
+	case types.Lexicographical:
+		if sortDirection == types.Asc {
+			sort.SliceStable(orderedCaptureGroups, func(i, j int) bool {
+				version1, err1 := semver.NewVersion(*orderedCaptureGroups[i][0].Capture)
+				version2, err2 := semver.NewVersion(*orderedCaptureGroups[j][0].Capture)
+				if err1 == nil && err2 == nil {
+					return version1.Compare(version2) < 0
+				}
+				return strings.Compare(*orderedCaptureGroups[i][0].Capture, *orderedCaptureGroups[j][0].Capture) < 0
+			})
+		} else {
+			sort.SliceStable(orderedCaptureGroups, func(i, j int) bool {
+				version1, err1 := semver.NewVersion(*orderedCaptureGroups[i][0].Capture)
+				version2, err2 := semver.NewVersion(*orderedCaptureGroups[j][0].Capture)
+				if err1 == nil && err2 == nil {
+					return version1.Compare(version2) < 0
+				}
+				return strings.Compare(*orderedCaptureGroups[i][0].Capture, *orderedCaptureGroups[j][0].Capture) > 0
+			})
+		}
+	case types.DateAdded:
+		if sortDirection == types.Asc {
+			sort.SliceStable(orderedCaptureGroups, func(i, j int) bool {
+				return orderedCaptureGroups[i][0].Time.Before(orderedCaptureGroups[j][0].Time)
+			})
+		} else {
+			sort.SliceStable(orderedCaptureGroups, func(i, j int) bool {
+				return orderedCaptureGroups[i][0].Time.After(orderedCaptureGroups[j][0].Time)
+			})
+		}
 	}
 
 	groupNames := []string{}
@@ -465,7 +521,7 @@ func getSortedCaptureGroups(sortBy types.SortSeriesBy, captureGroups map[string]
 	return groupNames
 }
 
-func expandCaptureGroupSeriesJustInTime(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {
+func expandCaptureGroupSeriesJustInTime(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters, seriesOptions types.SeriesDisplayOptions) ([]graphqlbackend.InsightSeriesResolver, error) {
 	executor := query.NewCaptureGroupExecutor(r.postgresDB, r.insightsDB, time.Now)
 	interval := timeseries.TimeInterval{
 		Unit:  types.IntervalUnit(definition.SampleIntervalUnit),
@@ -491,7 +547,7 @@ func expandCaptureGroupSeriesJustInTime(ctx context.Context, definition types.In
 	return resolvers, nil
 }
 
-func streamingSeriesJustInTime(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {
+func streamingSeriesJustInTime(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters, seriesOptions types.SeriesDisplayOptions) ([]graphqlbackend.InsightSeriesResolver, error) {
 	executor := query.NewStreamingExecutor(r.postgresDB, r.insightsDB, time.Now)
 	interval := timeseries.TimeInterval{
 		Unit:  types.IntervalUnit(definition.SampleIntervalUnit),
@@ -515,4 +571,11 @@ func streamingSeriesJustInTime(ctx context.Context, definition types.InsightView
 	}
 
 	return resolvers, nil
+}
+
+func minInt(a, b int) int32 {
+	if a < b {
+		return int32(a)
+	}
+	return int32(b)
 }

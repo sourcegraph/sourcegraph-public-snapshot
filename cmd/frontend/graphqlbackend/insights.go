@@ -332,9 +332,18 @@ type PieChartOptionsInput struct {
 }
 
 type InsightViewControlsInput struct {
-	Filters          InsightViewFiltersInput
-	SortSeriesBy     *string
-	DisplayNumSeries *int32
+	Filters              InsightViewFiltersInput
+	SeriesDisplayOptions SeriesDisplayOptions
+}
+
+type SeriesDisplayOptions struct {
+	SortOptions *SeriesSortOptions
+	Limit       *int32
+}
+
+type SeriesSortOptions struct {
+	Mode      string // enum
+	Direction string // enum
 }
 
 type InsightViewFiltersInput struct {
@@ -379,11 +388,12 @@ type InsightViewPayloadResolver interface {
 }
 
 type InsightViewQueryArgs struct {
-	First    *int32
-	After    *string
-	Id       *graphql.ID
-	IsFrozen *bool
-	Filters  *InsightViewFiltersInput
+	First                *int32
+	After                *string
+	Id                   *graphql.ID
+	IsFrozen             *bool
+	Filters              *InsightViewFiltersInput
+	SeriesDisplayOptions *SeriesDisplayOptions
 }
 
 type DeleteInsightViewArgs struct {
