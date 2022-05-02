@@ -13,7 +13,7 @@ import (
 // poetry.lock
 //
 
-func ParsePoetryLockFile(r io.Reader) ([]reposource.PackageDependency, error) {
+func parsePoetryLockFile(r io.Reader) ([]reposource.PackageDependency, error) {
 	var lockfile struct {
 		Packages []struct {
 			Name    string `toml:"name"`
