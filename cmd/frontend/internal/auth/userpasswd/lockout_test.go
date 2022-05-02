@@ -100,7 +100,7 @@ func TestLockoutStore(t *testing.T) {
 
 		path, _, err := s.GenerateUnlockAccountURL(1)
 
-		assert.EqualError(t, err, "signing key not provided, cannot validate JWT on unlock account URL. Please add AuthUnlockAccountLinkSigningKey to site configuration.")
+		assert.EqualError(t, err, `signing key not provided, cannot validate JWT on unlock account URL. Please add "auth.unlockAccountLinkSigningKey" to site configuration.`)
 		assert.Empty(t, path)
 
 	})

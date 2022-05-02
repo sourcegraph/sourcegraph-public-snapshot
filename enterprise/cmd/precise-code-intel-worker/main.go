@@ -130,6 +130,7 @@ func main() {
 		config.WorkerPollInterval,
 		config.WorkerConcurrency,
 		config.WorkerBudget,
+		config.MaximumRuntimePerJob,
 		makeWorkerMetrics(observationContext),
 	)
 

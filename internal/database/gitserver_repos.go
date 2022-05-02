@@ -167,6 +167,9 @@ WHERE gr.last_error != '' AND repo.deleted_at is NULL AND es.cloud_default IS Tr
 type IterateRepoGitserverStatusOptions struct {
 	// If set, will only iterate over repos that have not been assigned to a shard
 	OnlyWithoutShard bool
+	// If true, also include deleted repos. Note that their repo name will start with
+	// 'DELETED-'
+	IncludeDeleted bool
 }
 
 // IterateRepoGitserverStatus iterates over the status of all repos by joining
@@ -178,14 +181,19 @@ func (s *gitserverRepoStore) IterateRepoGitserverStatus(ctx context.Context, opt
 		return errors.New("nil repoFn")
 	}
 
-	var q string
-	if options.OnlyWithoutShard {
-		q = iterateRepoGitserverStatusWithoutShardQuery
-	} else {
-		q = iterateRepoGitserverQuery
+	deletedClause := sqlf.Sprintf("repo.deleted_at is null")
+	if options.IncludeDeleted {
+		deletedClause = sqlf.Sprintf("TRUE")
 	}
 
-	rows, err := s.Query(ctx, sqlf.Sprintf(q))
+	var q *sqlf.Query
+	if options.OnlyWithoutShard {
+		q = sqlf.Sprintf(iterateRepoGitserverStatusWithoutShardQuery, deletedClause, deletedClause)
+	} else {
+		q = sqlf.Sprintf(iterateRepoGitserverQuery, deletedClause)
+	}
+
+	rows, err := s.Query(ctx, q)
 	if err != nil {
 		return errors.Wrap(err, "fetching gitserver status")
 	}
@@ -246,7 +254,7 @@ SELECT
 	gr.updated_at
 FROM repo
 LEFT JOIN gitserver_repos gr ON gr.repo_id = repo.id
-WHERE repo.deleted_at IS NULL
+WHERE %s
 `
 
 const iterateRepoGitserverStatusWithoutShardQuery = `
@@ -263,7 +271,7 @@ const iterateRepoGitserverStatusWithoutShardQuery = `
 		NULL AS repo_size_bytes,
 		NULL AS updated_at
 	FROM repo
-	WHERE repo.deleted_at IS NULL AND NOT EXISTS (SELECT 1 FROM gitserver_repos gr WHERE gr.repo_id = repo.id)
+	WHERE %s AND NOT EXISTS (SELECT 1 FROM gitserver_repos gr WHERE gr.repo_id = repo.id)
 ) UNION ALL (
 	SELECT
 		repo.id,
@@ -277,7 +285,7 @@ const iterateRepoGitserverStatusWithoutShardQuery = `
 		gr.updated_at
 	FROM repo
 	JOIN gitserver_repos gr ON gr.repo_id = repo.id
-	WHERE repo.deleted_at IS NULL AND gr.shard_id = ''
+	WHERE %s AND gr.shard_id = ''
 )
 `
 

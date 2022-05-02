@@ -16,6 +16,7 @@
     "eslint": "eslint --cache '**/*.[jt]s?(x)'",
     "task:gulp": "cross-env NODE_OPTIONS=\"--max_old_space_size=8192\" gulp",
     "build": "yarn task:gulp webpack",
-    "watch": "yarn task:gulp watchWebpack"
+    "watch": "yarn task:gulp watchWebpack",
+    "standalone": "ts-node standalone/src/server.ts"
   }
 }

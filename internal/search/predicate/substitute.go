@@ -158,11 +158,7 @@ func Substitute(q query.Basic, evaluate func(query.Plan) (result.Matches, error)
 	if topErr != nil || !success {
 		return nil, topErr
 	}
-	plan, err := query.ToPlan(query.Dnf(newQ))
-	if err != nil {
-		return nil, err
-	}
-	return plan, nil
+	return query.BuildPlan(newQ), nil
 }
 
 // searchResultsToRepoNodes converts a set of search results into repository nodes
