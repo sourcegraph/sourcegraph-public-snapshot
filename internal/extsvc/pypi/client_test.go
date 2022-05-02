@@ -72,7 +72,7 @@ func TestDownload(t *testing.T) {
 
 	err = filepath.WalkDir(tmp, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
-			return filepath.SkipDir
+			return err
 		}
 		if d.IsDir() {
 			return nil
