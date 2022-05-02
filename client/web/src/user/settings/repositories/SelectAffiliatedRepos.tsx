@@ -492,19 +492,19 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
                         checked={areAllReposSelected()}
                         onChange={selectAll}
                         label={
-                            <label
+                            <small
                                 className={classNames({
                                     'text-muted': selectionState.repos.size === 0,
                                     'text-body': selectionState.repos.size !== 0,
                                     'mb-0': true,
                                 })}
                             >
-                                {(selectionState.repos.size > 0 && (
-                                    <small>{`${selectionState.repos.size} ${
-                                        selectionState.repos.size === 1 ? 'repository' : 'repositories'
-                                    } selected`}</small>
-                                )) || <small>Select all</small>}
-                            </label>
+                                {selectionState.repos.size === 0
+                                    ? 'Select all'
+                                    : `${selectionState.repos.size} ${
+                                          selectionState.repos.size === 1 ? 'repository' : 'repositories'
+                                      } selected`}
+                            </small>
                         }
                     />
                 </RepositoryNodeContainer>

@@ -101,7 +101,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
                     {...allReposMode.input}
                     wrapperClassName="mb-1 mt-3 font-weight-normal"
                     id="RunInsightsOnAllRepoInput"
-                    type={undefined}
+                    type="checkbox"
                     value="all-repos-mode"
                     checked={allReposMode.input.value}
                     label="Run your insight over all your repositories"

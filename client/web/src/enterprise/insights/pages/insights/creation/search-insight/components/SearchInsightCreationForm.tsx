@@ -126,7 +126,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
 
                 <Checkbox
                     {...allReposMode.input}
-                    type={undefined}
+                    type="checkbox"
                     id="RunInsightsOnAllRepoCheck"
                     wrapperClassName="mb-1 mt-3 font-weight-normal"
                     value="all-repos-mode"
