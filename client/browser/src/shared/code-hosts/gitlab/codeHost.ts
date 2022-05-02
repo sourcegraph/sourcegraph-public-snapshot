@@ -168,7 +168,7 @@ export const isPrivateRepository = (repoName: string, fetchCache = background.fe
         })
 }
 
-const parseHash = (hash: string): LineOrPositionOrRange => {
+export const parseHash = (hash: string): LineOrPositionOrRange => {
     if (hash.startsWith('#')) {
         hash = hash.slice(1)
     }
