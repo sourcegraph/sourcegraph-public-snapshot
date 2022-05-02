@@ -17,6 +17,9 @@ func NewPoetryDependency(name, version string) *PoetryDependency {
 type PoetryDependency struct {
 	Name    string
 	Version string
+
+	// The URL of the package to download. Possibly empty.
+	PackageURL string
 }
 
 func (p *PoetryDependency) Scheme() string {
