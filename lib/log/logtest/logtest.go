@@ -100,3 +100,17 @@ func Captured(t testing.TB) (logger log.Logger, exportLogs func() []CapturedLog)
 		return logs
 	}
 }
+
+// NoOp returns a no-op Logger, useful for silencing all output in a specific test.
+func NoOp() log.Logger {
+	return &noopAdapter{zap.NewNop()}
+}
+
+type noopAdapter struct{ *zap.Logger }
+
+var _ log.Logger = &noopAdapter{}
+
+func (n *noopAdapter) Scoped(string, string) log.Logger      { return n }
+func (n *noopAdapter) With(...log.Field) log.Logger          { return n }
+func (n *noopAdapter) WithTrace(log.TraceContext) log.Logger { return n }
+func (n *noopAdapter) AddCallerSkip(skip int) log.Logger     { return n }
