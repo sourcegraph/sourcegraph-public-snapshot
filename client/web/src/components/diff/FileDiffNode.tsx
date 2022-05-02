@@ -125,7 +125,6 @@ export const FileDiffNode: React.FunctionComponent<FileDiffNodeProps> = ({
                                 to={node.mostRelevantFile.url}
                                 data-tooltip="View file at revision"
                                 variant="link"
-                                size="sm"
                                 as={Link}
                             >
                                 {path}
