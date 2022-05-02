@@ -7,6 +7,7 @@ import { AnchorLink, setLinkComponent } from '@sourcegraph/wildcard'
 import { getAuthenticatedUser } from '../sourcegraph-api-access/api-gateway'
 
 import { App } from './App'
+import { handleRequest } from './java-to-js-bridge'
 import {
     getConfig,
     getTheme,
@@ -50,7 +51,9 @@ window.initializeSourcegraph = async () => {
     await indicateFinishedLoading()
 }
 
-function renderReactApp(): void {
+window.callJS = handleRequest
+
+export function renderReactApp(): void {
     const node = document.querySelector('#main') as HTMLDivElement
     render(
         <App
@@ -68,13 +71,13 @@ function renderReactApp(): void {
     )
 }
 
-function applyConfig(config: PluginConfig): void {
+export function applyConfig(config: PluginConfig): void {
     instanceURL = config.instanceURL
     isGlobbingEnabled = config.isGlobbingEnabled || false
     accessToken = config.accessToken || null
 }
 
-function applyTheme(theme: Theme): void {
+export function applyTheme(theme: Theme): void {
     // Dark/light theme
     document.documentElement.classList.add('theme')
     document.documentElement.classList.remove(theme.isDarkTheme ? 'theme-light' : 'theme-dark')
