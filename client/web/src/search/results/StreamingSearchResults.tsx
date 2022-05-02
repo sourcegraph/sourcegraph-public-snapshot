@@ -115,9 +115,6 @@ function useCtaAlert(
     const tourQueryParameters = useTourQueryParameters()
 
     const ctaToDisplay = useMemo<CtaToDisplay | undefined>((): CtaToDisplay | undefined => {
-        if (!areResultsFound) {
-            return
-        }
         if (tourQueryParameters?.isTour) {
             return
         }
@@ -127,25 +124,20 @@ function useCtaAlert(
         }
 
         if (
-            hasDismissedBrowserExtensionAlert === false &&
+            !hasDismissedBrowserExtensionAlert &&
             isAuthenticated &&
-            isBrowserExtensionActiveUser === false &&
+            !isBrowserExtensionActiveUser &&
             displaySignupAndBrowserExtensionCTAsBasedOnCadence
         ) {
             return 'browser'
         }
 
-        if (
-            isUsingIdeIntegration === false &&
-            displayIDEExtensionCTABasedOnCadence &&
-            hasDismissedIDEExtensionAlert === false
-        ) {
+        if (!isUsingIdeIntegration && displayIDEExtensionCTABasedOnCadence && !hasDismissedIDEExtensionAlert) {
             return 'ide'
         }
 
         return
     }, [
-        areResultsFound,
         tourQueryParameters?.isTour,
         hasDismissedSignupAlert,
         isAuthenticated,
