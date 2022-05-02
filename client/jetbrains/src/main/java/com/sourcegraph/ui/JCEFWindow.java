@@ -5,9 +5,9 @@ import com.intellij.openapi.util.Disposer;
 import com.intellij.ui.jcef.JBCefApp;
 import com.intellij.ui.jcef.JBCefBrowser;
 import com.intellij.ui.jcef.JBCefBrowserBase;
+import com.sourcegraph.bridge.JSToJavaBridge;
+import com.sourcegraph.bridge.JSToJavaBridgeRequestHandler;
 import com.sourcegraph.scheme.SchemeHandlerFactory;
-import com.sourcegraph.service.JSToJavaBridge;
-import com.sourcegraph.service.JSToJavaBridgeRequestHandler;
 import org.cef.CefApp;
 import org.cef.browser.CefBrowser;
 

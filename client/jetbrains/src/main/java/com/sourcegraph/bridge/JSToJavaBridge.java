@@ -1,4 +1,4 @@
-package com.sourcegraph.service;
+package com.sourcegraph.bridge;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
