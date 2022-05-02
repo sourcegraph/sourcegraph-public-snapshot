@@ -2291,6 +2291,7 @@ enum ExternalServiceKind {
     PAGURE
     PERFORCE
     PHABRICATOR
+    PYTHONPACKAGES
 }
 
 """
