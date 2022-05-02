@@ -8,6 +8,7 @@ extend type Query {
         """
         ids: [ID!]
     ): InsightConnection
+        @deprecated(reason: "Use insightViews instead. This is deprecated and will be removed in a future release.")
 }
 
 """
