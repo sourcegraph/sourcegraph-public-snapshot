@@ -16,7 +16,7 @@ type frankenResolver struct {
 func (r *frankenResolver) getPoliciesServiceResolver() gql.PoliciesServiceResolver {
 	return r.Resolver
 
-	// TODO(efritz) - https://github.com/sourcegraph/sourcegraph/issues/33376
+	// Uncomment after https://github.com/sourcegraph/sourcegraph/issues/33376
 	// return r.PoliciesServiceResolver
 }
 
