@@ -4,6 +4,7 @@ import { ContentMatch } from '@sourcegraph/shared/src/search/stream'
 import { setLinkComponent, AnchorLink } from '@sourcegraph/wildcard'
 
 import { App } from './App'
+import { loadContent } from './lib/blob'
 import { callJava } from './mockJavaInterface'
 
 setLinkComponent(AnchorLink)
@@ -21,21 +22,16 @@ declare global {
     }
 }
 
-// @TODO: We need a mechanism for fetching the whole file for the follwoing two functions and make
-// sure to cache the result (so that any given file is only ever downloaded once). A simple Map
-// should do the trick.
-//
-// When we have this, these callbacks should just link through to our Java bridge.
-function onOpen(match: ContentMatch, lineIndex: number): void {
-    const line = match.lineMatches[lineIndex]
-    console.log('open', match, line)
+async function onOpen(match: ContentMatch, lineIndex: number): Promise<void> {
+    console.log('open', await loadContent(match), match.lineMatches[lineIndex])
 }
-function onPreviewChange(match: ContentMatch, lineIndex: number): void {
-    const line = match.lineMatches[lineIndex]
-    console.log('preview', match, line)
+
+async function onPreviewChange(match: ContentMatch, lineIndex: number): Promise<void> {
+    console.log('preview', await loadContent(match), match.lineMatches[lineIndex])
 }
+
 function onPreviewClear(): void {
-    // nothing
+    console.log('clear preview')
 }
 
 function renderReactApp(): void {
