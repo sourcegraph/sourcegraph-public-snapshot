@@ -1,8 +1,10 @@
 import * as Sentry from '@sentry/browser'
 import classNames from 'classnames'
+import { fromEvent } from 'rxjs'
+import { filter, map } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 
-import { subtypeOf } from '@sourcegraph/common'
+import { LineOrPositionOrRange, subtypeOf } from '@sourcegraph/common'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { toAbsoluteBlobURL } from '@sourcegraph/shared/src/util/url'
 
@@ -166,6 +168,26 @@ export const isPrivateRepository = (repoName: string, fetchCache = background.fe
         })
 }
 
+const parseHash = (hash: string): LineOrPositionOrRange => {
+    if (hash.startsWith('#')) {
+        hash = hash.slice(1)
+    }
+
+    if (!/^L\d+(-\d+)?$/.test(hash)) {
+        return {}
+    }
+
+    const lpr = {} as LineOrPositionOrRange
+    const [startString, endString] = hash.slice(1).split('-')
+
+    lpr.line = parseInt(startString, 10)
+    if (endString) {
+        lpr.endLine = parseInt(endString, 10)
+    }
+
+    return lpr
+}
+
 export const gitlabCodeHost = subtypeOf<CodeHost>()({
     type: 'gitlab',
     name: 'GitLab',
@@ -254,4 +276,8 @@ export const gitlabCodeHost = subtypeOf<CodeHost>()({
         }
         return null
     },
+    observeLineSelection: fromEvent(document, 'click').pipe(
+        filter(event => (event.target as HTMLElement).matches('a[data-line-number]')),
+        map(() => parseHash(window.location.hash))
+    ),
 })
