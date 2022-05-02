@@ -81,73 +81,40 @@ func (c *Client) Project(ctx context.Context, project string) ([]File, error) {
 
 // Version returns the File of a project at a specific version from
 // the simple-API /<project>/ endpoint.
-func (c *Client) Version(ctx context.Context, project, version string) (*File, error) {
+func (c *Client) Version(ctx context.Context, project, version string) (File, error) {
 	files, err := c.Project(ctx, project)
 	if err != nil {
-		return nil, err
+		return File{}, err
 	}
 
-	// Return the first source distribution we can find for the version.
-	wheelAtVersion := files[:0]
-	for _, file := range files {
-		wheel, err := ToWheel(file.Name)
-		if err != nil {
-			// source distribution or unsupported other format.
-			ext, ok := isSDIST(file.Name)
-			if !ok {
-				continue
-			}
+	f, err := FindVersion(version, files)
+	if err != nil {
+		return File{}, errors.Wrapf(err, "project: %q", project)
+	}
 
-			// For source distributions we expect the pattern <package>-<version>.<ext>,
-			// where <package> might include "-". We determine the package version on a best
-			// effort basis by assuming the version is the string between the last "-" and
-			// the extension.
-			i := strings.LastIndexByte(file.Name, '-')
-			if i == -1 || i == len(file.Name)-len(ext)-1 {
-				continue
+	return f, nil
+}
+
+// FindVersion finds the File for the given version amongst files from a project.
+func FindVersion(version string, files []File) (File, error) {
+	// Return the first source distribution we can find for the version.
+	var wheelAtVersion *File
+	for i, f := range files {
+		if wheel, err := ToWheel(f); err != nil {
+			if sdist, err := ToSDist(f); err == nil && sdist.Version == version {
+				return f, nil
 			}
-			if file.Name[i+1:len(file.Name)-len(ext)] == version {
-				return &file, nil
-			}
-		} else {
-			if wheel.Version == version {
-				wheelAtVersion = append(wheelAtVersion, file)
-			}
+		} else if wheel.Version == version && wheelAtVersion == nil {
+			wheelAtVersion = &files[i]
 		}
 	}
 
 	// We didn't find a source distribution. Return the first wheel.
-	if len(wheelAtVersion) > 0 {
-		return &wheelAtVersion[0], nil
+	if wheelAtVersion != nil {
+		return *wheelAtVersion, nil
 	}
 
-	return nil, errors.Errorf("could not find a wheel or source distribution for %s==%s", project, version)
-}
-
-// isSDIST returns true if filename belongs to a source distribution. If isSDIST
-// is true then the first return value is the full extension.
-//
-// Examples:
-//   request-1.12.2.tar.gz -> .tar.gz, true
-//   request-1.12.2.foo -> "", false
-//
-func isSDIST(filename string) (string, bool) {
-	extOrEmpty := func(path, ext string) (string, bool) {
-		if filepath.Ext(path[:len(path)-len(ext)]) == ".tar" {
-			return ".tar" + ext, true
-		}
-		return "", false
-
-	}
-	ext := filepath.Ext(filename)
-	switch ext {
-	case ".zip", ".tar":
-		return ext, true
-	case ".gz", ".bz2", ".xz", ".Z":
-		return extOrEmpty(filename, ext)
-	default:
-		return "", false
-	}
+	return File{}, errors.Errorf("could not find a wheel or source distribution for version %s", version)
 }
 
 // File represents one anchor element in the response from /<project>/.
@@ -278,8 +245,69 @@ func (c *Client) Download(ctx context.Context, url string) ([]byte, error) {
 	return b, nil
 }
 
+// A SDist is a Python source distribution.
+type SDist struct {
+	File
+	Distribution string
+	Version      string
+}
+
+func ToSDist(f File) (*SDist, error) {
+	name := f.Name
+
+	// source distribution or unsupported other format.
+	ext, ok := isSDIST(name)
+	if !ok {
+		return nil, errors.Errorf("%q is not a sdist", name)
+	}
+
+	name = strings.TrimSuffix(name, ext)
+
+	// For source distributions we expect the pattern <package>-<version>.<ext>,
+	// where <package> might include "-". We determine the package version on a best
+	// effort basis by assuming the version is the string between the last "-" and
+	// the extension.
+	i := strings.LastIndexByte(name, '-')
+	if i == -1 {
+		return nil, errors.Errorf("%q has an invalid sdist format", name)
+	}
+
+	return &SDist{
+		File:         f,
+		Distribution: name[:i],
+		Version:      name[i+1:],
+	}, nil
+}
+
+// isSDIST returns true if filename belongs to a source distribution. If isSDIST
+// is true then the first return value is the full extension.
+//
+// Examples:
+//   request-1.12.2.tar.gz -> .tar.gz, true
+//   request-1.12.2.foo -> "", false
+//
+func isSDIST(filename string) (string, bool) {
+	extOrEmpty := func(path, ext string) (string, bool) {
+		if filepath.Ext(path[:len(path)-len(ext)]) == ".tar" {
+			return ".tar" + ext, true
+		}
+		return "", false
+	}
+
+	ext := filepath.Ext(filename)
+	switch ext {
+	case ".zip", ".tar":
+		return ext, true
+	case ".gz", ".bz2", ".xz", ".Z":
+		return extOrEmpty(filename, ext)
+	default:
+		return "", false
+	}
+}
+
 // https://peps.python.org/pep-0491/#file-format
 type Wheel struct {
+	File
 	Distribution string
 	Version      string
 	BuildTag     string
@@ -290,16 +318,20 @@ type Wheel struct {
 
 // ToWheel parses a filename of a wheel according to the format specified in
 // https://peps.python.org/pep-0491/#file-format
-func ToWheel(name string) (*Wheel, error) {
+func ToWheel(f File) (*Wheel, error) {
+	name := f.Name
+
 	if e := path.Ext(name); e != ".whl" {
 		return nil, errors.Errorf("%s does not conform to pep 491", name)
 	} else {
 		name = name[:len(name)-len(e)]
 	}
+
 	pcs := strings.Split(name, "-")
 	switch len(pcs) {
 	case 5:
 		return &Wheel{
+			File:         f,
 			Distribution: pcs[0],
 			Version:      pcs[1],
 			BuildTag:     "",
@@ -309,6 +341,7 @@ func ToWheel(name string) (*Wheel, error) {
 		}, nil
 	case 6:
 		return &Wheel{
+			File:         f,
 			Distribution: pcs[0],
 			Version:      pcs[1],
 			BuildTag:     pcs[2],
