@@ -510,7 +510,7 @@ const queryByIdOrCreate = (id: string, className = ''): HTMLElement => {
     return element
 }
 
-const parseHash = (hash: string): LineOrPositionOrRange => {
+export const parseHash = (hash: string): LineOrPositionOrRange => {
     const matches = hash.match(/(L\d+)/g)
 
     if (!matches || matches.length > 2) {
