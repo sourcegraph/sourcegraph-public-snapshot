@@ -3,13 +3,12 @@ package queryrunner
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.uber.org/zap"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
@@ -58,7 +57,7 @@ func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore
 
 	go conf.Watch(func() {
 		val := getRateLimit()
-		logger.Info(fmt.Sprintf("Updating insights/query-worker rate limit value=%v", val))
+		logger.Info("Updating insights/query-worker rate limit", zap.Int("value", int(val)))
 		limiter.SetLimit(val)
 	})
 
@@ -70,7 +69,7 @@ func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore
 	}, func() float64 {
 		count, err := workerStore.QueuedCount(context.Background(), false, nil)
 		if err != nil {
-			log15.Error("Failed to get queued job count", "error", err)
+			logger.Error("Failed to get queued job count", log.Error(err))
 		}
 
 		return float64(count)
