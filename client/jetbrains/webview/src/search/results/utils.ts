@@ -28,24 +28,13 @@ export function getElementFromId(id: string): null | Element {
     return document.getElementById(`search-result-list-item-${id}`)
 }
 
-export function getNextResult(currentElement: Element): null | string {
-    const next = currentElement.nextElementSibling
-    if (next) {
-        if (next.id) {
-            return next.id.replace('search-result-list-item-', '')
+export function getSiblingResult(currentElement: Element, direction: 'previous' | 'next'): null | string {
+    const sibling = direction === 'previous' ? currentElement.previousElementSibling : currentElement.nextElementSibling
+    if (sibling) {
+        if (sibling.id) {
+            return sibling.id.replace('search-result-list-item-', '')
         }
-        return getNextResult(next)
-    }
-    return null
-}
-
-export function getPreviousResult(currentElement: Element): null | string {
-    const previous = currentElement.previousElementSibling
-    if (previous) {
-        if (previous.id) {
-            return previous.id.replace('search-result-list-item-', '')
-        }
-        return getPreviousResult(previous)
+        return getSiblingResult(sibling, direction)
     }
     return null
 }

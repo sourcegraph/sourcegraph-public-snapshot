@@ -3,14 +3,7 @@ import React, { createRef, useCallback, useEffect, useMemo, useState } from 'rea
 import { ContentMatch, SearchMatch } from '@sourcegraph/shared/src/search/stream'
 
 import { FileSearchResult } from './FileSearchResult'
-import {
-    decodeLineId,
-    getElementFromId,
-    getFirstResultId,
-    getIdForMatch,
-    getNextResult,
-    getPreviousResult,
-} from './utils'
+import { decodeLineId, getElementFromId, getFirstResultId, getIdForMatch, getSiblingResult } from './utils'
 
 import styles from './SearchResultList.module.scss'
 
@@ -100,7 +93,7 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
             }
 
             if (event.key === 'ArrowDown') {
-                const next = getNextResult(currentElement)
+                const next = getSiblingResult(currentElement, 'next')
                 if (next) {
                     selectResultFromId(next)
                 }
@@ -110,7 +103,7 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
             }
 
             if (event.key === 'ArrowUp') {
-                const previous = getPreviousResult(currentElement)
+                const previous = getSiblingResult(currentElement, 'previous')
                 if (previous) {
                     selectResultFromId(previous)
                 } else if (scrollViewReference.current) {
