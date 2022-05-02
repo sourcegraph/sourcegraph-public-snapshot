@@ -18,8 +18,8 @@ Reference Materials
 
 
 
-* [Docs: Configure custom Redis](../deploy/kubernetes/configure#configure-custom-redis)
-* [Docs: Using your own Redis server](https://docs.sourcegraph.com/admin/external_services/redis)
+* [Docs: Configure custom Redis](../deploy/kubernetes/configure.md#configure-custom-redis)
+* [Docs: Using your own Redis server](../external_service/how-to/../../external_services/redis.md)
 
 
 ## Conventions

@@ -4,7 +4,7 @@ This tutorial shows you how to deploy Sourcegraph via [Docker Compose](https://d
 
 > NOTE: Trying to decide how to deploy Sourcegraph? See [our recommendations](../index.md) for how to choose a deployment type that suits your needs.
 
-> WARNING: To configure your Sourcegraph instance, you must create and use a fork of the reference repository - refer to the [Configuration section](index.md#reference-repository) of the [Docker Compose deployment docs](index.med) for more details.
+> WARNING: To configure your Sourcegraph instance, you must create and use a fork of the reference repository - refer to the [Configuration section](index.md#reference-repository) of the [Docker Compose deployment docs](index.md) for more details.
 ---
 
 ## Deploy to EC2

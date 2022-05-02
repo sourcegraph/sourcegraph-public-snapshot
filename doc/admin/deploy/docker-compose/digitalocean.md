@@ -15,10 +15,10 @@ This tutorial shows you how to deploy Sourcegraph via [Docker Compose](https://d
   * (**optional, recommended**) Set up SSH access (Authentication > SSH keys) for convenient access to the droplet.
   * (**optional, recommended**) Check the "Enable backups" checkbox to enable weekly backups of all your data.
 
-> WARNING: To configure your Sourcegraph instance, you must create and use a fork of the reference repository - refer to the [Configuration section](index.md#configuration) of the [Docker Compose deployment docs](index.med) for more details. Then update the following variables in the script below:
+> WARNING: To configure your Sourcegraph instance, you must create and use a fork of the reference repository - refer to the [Configuration section](index.md#configuration) of the [Docker Compose deployment docs](index.md) for more details. Then update the following variables in the script below:
 >
 > * `DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL`: Your fork's git clone URL
-> * `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION`: The git revision containing your fork's customizations to the base Sourcegraph Docker Compose YAML. Most likely, `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='release'` if you followed our branching recommendations in the [Configuration section](index.md#configuration) of the [Docker Compose deployment docs](index.med)
+> * `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION`: The git revision containing your fork's customizations to the base Sourcegraph Docker Compose YAML. Most likely, `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='release'` if you followed our branching recommendations in the [Configuration section](index.md#configuration) of the [Docker Compose deployment docs](index.md)
 
 * In the "Select additional options" section of the Droplet creation page, select the "User Data" and "Monitoring" boxes,
    and paste the following script in the "`Enter user data here...`" text box:

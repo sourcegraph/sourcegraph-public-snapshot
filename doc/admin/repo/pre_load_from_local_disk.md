@@ -8,7 +8,7 @@ You can use repositories that are already cloned to disk on the host machine to 
 
 The steps documented here are intended for [single-container Sourcegraph instances](../deploy/docker-single-container/index.md). The general process also applies for other deployment methods, with some differences:
 
-- [Docker Compose](../deploy/docker-compose/index.md): you need to perform these steps on the relevant [Docker Compose volumes](../deploy/docker-compose/operations.md#manage-storage).
+- [Docker Compose](../deploy/docker-compose/index.md): you need to perform these steps on the relevant [Docker Compose volumes](../deploy/docker-compose/index.md#manage-storage).
 - [Kubernetes](../deploy/kubernetes/index.md): you need to perform these steps on the underlying node hosting the `gitserver` pod, or on the persistent volume used by the `gitserver` deployment.
 
 > WARNING: For [single-container Sourcegraph instances](../deploy/docker/index.md), Sourcegraph will alter the contents and structure of files under `/var/opt/sourcegraph` (Sourcegraph’s data volume inside the container), so do not mount repositories in use by other processes under that directory.

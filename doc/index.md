@@ -72,7 +72,7 @@ You can quickly try out Sourcegraph locally using Docker, which takes only a few
 
 For next steps, visit the [Docker installation documentation](admin/deploy/docker-single-container/index.md).
 
-> NOTE: Due to the Windows enviroment, using Sourcegraph with Windows currently isn't fully supported. Testing instructions for running Sourcegraph locally on a Windows machine can be found [here](admin/deploy/docker/index.md#testing-sourcegraph-on-windows)
+> NOTE: Due to the Windows enviroment, using Sourcegraph with Windows currently isn't fully supported. Testing instructions for running Sourcegraph locally on a Windows machine can be found [here](admin/deploy/docker-single-container/index.md#testing-sourcegraph-on-windows)
 
 > WARNING: **We *do not* recommend using this method for a production instance** - see [Getting started](#getting-started) for more options.
 

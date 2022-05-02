@@ -21,7 +21,7 @@ The Docker Compose installation requires a minimum of 8 CPU cores (logical) on t
 Our Docker Compose support also has the following requirements:
 
 - Minimum Docker version: [v20.10.0](https://docs.docker.com/engine/release-notes/#20100)
-- Minimum version of Docker Compose: [v1.22.0](https://docs.docker.com/compose/release-notes/#1220) (this is first version that supports Docker Compose format `2.4`)
+- Minimum version of Docker Compose: [v1.29.0](https://docs.docker.com/compose/release-notes/#1220) (this is first version that supports Docker Compose format `2.4`)
 - Docker Compose deployments should only be deployed with [one of our supported installation methods](#installation), and *not* Docker Swarm
 
 
@@ -39,13 +39,13 @@ The sections below cover the process to [create a fork](#create-a-fork), [clone]
 
 [Create a fork](https://docs.github.com/en/get-started/quickstart/fork-a-repo#forking-a-repository) of the [sourcegraph/deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/) [reference repository](#reference-repository).
 
-    > WARNING: Set your fork to **private** if you plan to store secrets (SSL certificates, external Postgres credentials, etc.) within the repository.
+> WARNING: Set your fork to **private** if you plan to store secrets (SSL certificates, external Postgres credentials, etc.) within the repository.
 
 #### Clone your fork
 
 Clone your fork using the repository's URL.
 
-    > NOTE: The `docker-compose.yaml` file currently depends on configuration files which live in the repository, so you must have the entire repository cloned onto your server.
+> NOTE: The `docker-compose.yaml` file currently depends on configuration files which live in the repository, so you must have the entire repository cloned onto your server.
 
   ```bash
   git clone $FORK_URL
@@ -63,7 +63,7 @@ Create a `release` branch to track all of your customizations to Sourcegraph. Th
 
   ```bash
   # Specify the version you want to install
-  export SOURCEGRAPH_VERSION="v3.36.2"
+  export SOURCEGRAPH_VERSION="v3.39.1"
   # Check out the selected version for use, in a new branch called "release"
   git checkout $SOURCEGRAPH_VERSION -b release
   ```
@@ -124,7 +124,7 @@ The easiest way to specify HTTP(S) authentication for repositories is to include
 
 Otherwise, follow the steps above for mounting SSH configuration to mount a host directory containing the desired `.netrc` file to `/home/sourcegraph/` in the `gitserver` container.
 
-#### Expose debug port
+### Expose debug port
 
 To [generate pprof profiling data](../../pprof.md), you must configure your deployment to expose port 6060 on one of your frontend containers, for example:
 
@@ -138,7 +138,7 @@ To [generate pprof profiling data](../../pprof.md), you must configure your depl
 
 For specific ports that can be exposed, see the [debug ports section](../../pprof.md#debug-ports) of Sourcegraphs's [generate pprof profiling data](../../pprof.md) docs.
 
-#### Use an external database
+### Use an external database
 
 The Docker Compose configuration has its own internal PostgreSQL and Redis databases. 
 
