@@ -22,9 +22,19 @@ function renderReactApp(): void {
 }
 
 window.initializeSourcegraph = (isDarkTheme: boolean) => {
+    window
+        .callJava({ action: 'getTheme', arguments: {} })
+        .then(response => {
+            const root = document.querySelector(':root') as HTMLElement
+            root.style.setProperty('--primary', (response as { buttonColor: string }).buttonColor)
+            renderReactApp()
+        })
+        .catch((error: Error) => {
+            console.error(`Failed to get theme: ${error.message}`)
+            renderReactApp()
+        })
     document.documentElement.classList.add('theme')
     document.documentElement.classList.add(isDarkTheme ? 'theme-dark' : 'theme-light')
-    renderReactApp()
 }
 
 /* Initialize app for standalone server */

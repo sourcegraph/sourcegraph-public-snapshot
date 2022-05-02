@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useState } from 'react'
 
 import { EMPTY, NEVER, of } from 'rxjs'
 
@@ -20,18 +20,6 @@ export const App: React.FunctionComponent = () => {
     const [userQueryState, setUserQueryState] = useState<QueryState>({
         query: '',
     })
-
-    useEffect(() => {
-        window
-            .callJava({ action: 'getTheme', arguments: {} })
-            .then(response => {
-                const root = document.querySelector(':root') as HTMLElement
-                root.style.setProperty('--primary', (response as { buttonColor: string }).buttonColor)
-            })
-            .catch((error: Error) => {
-                console.error(`Failed to get theme: ${error.message}`)
-            })
-    }, [])
 
     const onSubmit = useCallback(() => {
         aggregateStreamingSearch(of(userQueryState.query), {
