@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react'
 
 import { EMPTY, NEVER, of } from 'rxjs'
 
-import { SearchPatternType, QueryState } from '@sourcegraph/search'
+import { QueryState, SearchPatternType } from '@sourcegraph/search'
 import { SearchBox } from '@sourcegraph/search-ui'
 import { aggregateStreamingSearch, LATEST_VERSION, SearchMatch } from '@sourcegraph/shared/src/search/stream'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
