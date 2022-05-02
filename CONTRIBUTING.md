@@ -39,7 +39,7 @@ All open issues are not yet solved. If the task is interesting to you, take it a
 
 ### Getting applications up and running
 
-- [Getting Started Guide](https://docs.sourcegraph.com/dev/getting-started)
+- [Getting Started Guide](https://docs.sourcegraph.com/dev/setup/quickstart)
 - [Troubleshooting section](https://docs.sourcegraph.com/dev/how-to/troubleshooting_local_development)
 
 ### How to write tests
