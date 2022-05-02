@@ -15,7 +15,6 @@ Administration is usually handled by site administrators are the admins responsi
 - [Best practices](deployment_best_practices.md)
 - [Deploying workers](workers.md)
 - [PostgreSQL configuration](config/postgres-conf.md)
-- [Upgrading PostgreSQL](postgres.md)
 - [Using external services (PostgreSQL, Redis, S3/GCS)](external_services/index.md)
 - <span class="badge badge-experimental">Experimental</span> [Validation](validation.md)
 - <span class="badge badge-experimental">Experimental</span> [Executors](executors.md)
@@ -24,6 +23,7 @@ Administration is usually handled by site administrators are the admins responsi
 ## [Upgrade Sourcegraph](updates/index.md)
 
 - [Migrations](migration/index.md)
+- [Upgrading PostgreSQL](postgres.md)
 
 ## [Configuration](config/index.md)
 

@@ -42,7 +42,7 @@ docker container run \
 
 ### Sourcegraph Cluster (Kubernetes)
 
-We use the [ingress-nginx](https://kubernetes.github.io/ingress-nginx/) for Sourcegraph Cluster running on Kubernetes. Refer to the [deploy-sourcegraph Configuration](deploy/kubernetes/configure) documentation for more information.
+We use the [ingress-nginx](https://kubernetes.github.io/ingress-nginx/) for Sourcegraph Cluster running on Kubernetes. Refer to the [deploy-sourcegraph Configuration](deploy/kubernetes/configure.md) documentation for more information.
 
 ### NGINX SSL/HTTPS configuration
 

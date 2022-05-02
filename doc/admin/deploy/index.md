@@ -16,7 +16,7 @@ Or, if you don't want to bother with setup and configuration [try Sourcegraph Cl
 
 Sourcegraph has provided the [Resource Estimator](resource_estimator.md) as a starting point to determine necessary resources based on the size of your deployment. 
 
-We recommend the Kubernetes deployment type if your deployment scenario includes a large codebase and many users. The [Kubernetes docs](kubernetes/index) provide additional information for [scaling Kubernetes deployments](kubernetes/scale).
+We recommend the Kubernetes deployment type if your deployment scenario includes a large codebase and many users. The [Kubernetes docs](kubernetes/index.md) provide additional information for [scaling Kubernetes deployments](kubernetes/scale.md).
 
 ## Deployment types
 
@@ -47,15 +47,19 @@ It does not provide multi-machine capability such as high availability, but will
 
 If you are unable to use Helm to deploy, but still want to use Kubernetes, follow our [Kubernetes deployment documentation](kubernetes/index.md). 
 
-More advanced customizations and use of Kubernetes without Helm both make it **necessary to have a team familiar with operating Kubernetes clusters**, including but not limited to the use of persistent storage. 
+However, when using this option you will lose key advantages associated with our Helm deployment, including:
 
+- easier upgrade experience
+- -minimized surface area (generally less erro prone compared to making customizations)
+- a more curate admin experience
+  
 If there is any doubt about your team's ability to support this, please speak to your Sourcegraph contact about using Docker Compose instead.
 
 ### [Docker Single Container](docker-single-container/index.md) 
 
 The Docker Single container option is provided for **local proof-of-concept only** and is **not intended for testing or deployment at a pre-production/production level**. 
 
-Some features, such as Code Insights, are not available when using this deployment type. 
+Some features, such as [Code Insights](../../code_insights/index.md), are not available when using this deployment type. 
 
 If you're just starting out and want the absolute quickest setup time, [try Sourcegraph Cloud](https://sourcegraph.com).
 

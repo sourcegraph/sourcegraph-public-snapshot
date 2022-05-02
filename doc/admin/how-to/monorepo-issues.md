@@ -44,7 +44,7 @@ Here's an example of a diff to improve symbols performance in a k8s deployment:
 +           memory: 8G
 ```
 
-_Learn more about managing resources in [docker-compose](../deploy/docker-compose#operations) and [kubernetes](../deploy/kubernetes/operations)_
+_Learn more about managing resources in [docker-compose](../deploy/docker-compose/index.md#operations) and [kubernetes](../deploy/kubernetes/operations.md)_
 
 ## Slow hover tooltip results
 
