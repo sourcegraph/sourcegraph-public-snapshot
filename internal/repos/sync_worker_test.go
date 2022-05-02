@@ -13,11 +13,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/log"
+	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 func testSyncWorkerPlumbing(repoStore *repos.Store) func(t *testing.T) {
 	return func(t *testing.T) {
 		ctx := context.Background()
+
 		testSvc := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "TestService",
@@ -49,7 +51,7 @@ func testSyncWorkerPlumbing(repoStore *repos.Store) func(t *testing.T) {
 		h := &fakeRepoSyncHandler{
 			jobChan: jobChan,
 		}
-		worker, resetter := repos.NewSyncWorker(ctx, logger log.Logger, repoStore.Handle().DB(), h, repos.SyncWorkerOptions{
+		worker, resetter := repos.NewSyncWorker(ctx, logtest.Scoped(t), repoStore.Handle().DB(), h, repos.SyncWorkerOptions{
 			NumHandlers:    1,
 			WorkerInterval: 1 * time.Millisecond,
 		})
