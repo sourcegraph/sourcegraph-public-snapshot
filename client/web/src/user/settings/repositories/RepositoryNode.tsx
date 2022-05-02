@@ -10,7 +10,7 @@ import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import TickIcon from 'mdi-react/TickIcon'
 
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
-import { Badge, LoadingSpinner, Link, Icon } from '@sourcegraph/wildcard'
+import { Badge, LoadingSpinner, Link, Icon, Checkbox } from '@sourcegraph/wildcard'
 
 import { ExternalServiceKind } from '../../../graphql-operations'
 
@@ -184,9 +184,8 @@ export const CheckboxRepositoryNode: React.FunctionComponent<CheckboxRepositoryN
                 onClick={onClick}
             >
                 <div className="d-flex align-items-center">
-                    <input
+                    <Checkbox
                         className="mr-3"
-                        type="checkbox"
                         aria-label={`select ${name} repository`}
                         onChange={onClick}
                         checked={checked}

@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react'
 
 import { gql, useMutation } from '@apollo/client'
 
-import { Link, Alert, AnchorLink } from '@sourcegraph/wildcard'
+import { Link, Alert, AnchorLink, Checkbox } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../components/LoaderButton'
 
@@ -53,20 +53,23 @@ export const TosConsentModal: React.FunctionComponent<{ afterTosAccepted: () => 
                 {/* eslint-disable-next-line react/forbid-elements */}
                 <form onSubmit={onSubmit}>
                     <div className="form-group">
-                        <div className="form-check">
-                            <label className="form-check-label">
-                                <input type="checkbox" className="form-check-input" onChange={onAgreeChanged} /> I agree
-                                to Sourcegraph's{' '}
-                                <Link to="https://about.sourcegraph.com/terms" target="_blank" rel="noopener">
-                                    Terms of Service
-                                </Link>{' '}
-                                and{' '}
-                                <Link to="https://about.sourcegraph.com/privacy" target="_blank" rel="noopener">
-                                    Privacy Policy
-                                </Link>{' '}
-                                (required)
-                            </label>
-                        </div>
+                        <Checkbox
+                            onChange={onAgreeChanged}
+                            id="terms-and-services-checkbox"
+                            label={
+                                <>
+                                    I agree to Sourcegraph's{' '}
+                                    <Link to="https://about.sourcegraph.com/terms" target="_blank" rel="noopener">
+                                        Terms of Service
+                                    </Link>{' '}
+                                    and{' '}
+                                    <Link to="https://about.sourcegraph.com/privacy" target="_blank" rel="noopener">
+                                        Privacy Policy
+                                    </Link>{' '}
+                                    (required)
+                                </>
+                            }
+                        />
                     </div>
                     <LoaderButton
                         loading={loading}

@@ -18,6 +18,7 @@ import {
     Button,
     Alert,
     Link,
+    Checkbox,
 } from '@sourcegraph/wildcard'
 
 import { ALLOW_NAVIGATION, AwayPrompt } from '../../../components/AwayPrompt'
@@ -714,28 +715,28 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     as="td"
                     className="p-2 w-100 d-flex align-items-center border-top-0 border-bottom"
                 >
-                    <input
+                    <Checkbox
                         id="select-all-repos"
                         className="mr-3"
-                        type="checkbox"
                         checked={areAllFilteredReposSelected()}
                         onChange={toggleAll}
                         disabled={filteredRepos.length === 0}
+                        label={
+                            <label
+                                className={classNames({
+                                    'text-muted': selectionState.repos.size === 0,
+                                    'text-body': selectionState.repos.size !== 0,
+                                    'mb-0': true,
+                                })}
+                            >
+                                {(selectionState.repos.size > 0 && (
+                                    <small>{`${selectionState.repos.size} ${
+                                        selectionState.repos.size === 1 ? 'repository' : 'repositories'
+                                    } selected`}</small>
+                                )) || <small>Select all</small>}
+                            </label>
+                        }
                     />
-                    <label
-                        htmlFor="select-all-repos"
-                        className={classNames({
-                            'text-muted': selectionState.repos.size === 0,
-                            'text-body': selectionState.repos.size !== 0,
-                            'mb-0': true,
-                        })}
-                    >
-                        {(selectionState.repos.size > 0 && (
-                            <small>{`${selectionState.repos.size} ${
-                                selectionState.repos.size === 1 ? 'repository' : 'repositories'
-                            } selected`}</small>
-                        )) || <small>Select all</small>}
-                    </label>
                 </RepositoryNodeContainer>
             </tr>
             {filteredRepos.map((repo, index) => {
@@ -872,14 +873,13 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                             <div>
                                 <h3>Other public repositories</h3>
                                 <p className="text-muted">Public repositories on GitHub and GitLab</p>
-                                <input
+                                <Checkbox
                                     id="add-public-repos"
                                     className="mr-2 mt-2"
-                                    type="checkbox"
+                                    label="Sync specific public repositories by URL"
                                     onChange={toggleTextArea}
                                     checked={publicRepoState.enabled}
                                 />
-                                <label htmlFor="add-public-repos">Sync specific public repositories by URL</label>
 
                                 {publicRepoState.enabled && (
                                     <div className="form-group ml-4 mt-3">

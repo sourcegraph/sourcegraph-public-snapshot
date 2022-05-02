@@ -4,7 +4,17 @@ import classNames from 'classnames'
 import { noop } from 'lodash'
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 
-import { Link, Menu, MenuButton, MenuDivider, MenuItem, MenuLink, MenuList, Position } from '@sourcegraph/wildcard'
+import {
+    Checkbox,
+    Link,
+    Menu,
+    MenuButton,
+    MenuDivider,
+    MenuItem,
+    MenuLink,
+    MenuList,
+    Position,
+} from '@sourcegraph/wildcard'
 
 import { Insight, InsightDashboard, isVirtualDashboard } from '../../../../core'
 import { useUiFeatures } from '../../../../hooks/use-ui-features'
@@ -78,14 +88,14 @@ export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> =
                                     onSelect={onToggleZeroYAxisMin}
                                     aria-checked={zeroYAxisMin}
                                 >
-                                    <input
-                                        type="checkbox"
+                                    <Checkbox
                                         aria-hidden="true"
                                         checked={zeroYAxisMin}
                                         onChange={noop}
                                         tabIndex={-1}
+                                        id="InsightContextMenuEditInput"
+                                        label="Start Y Axis at 0"
                                     />
-                                    <span>Start Y Axis at 0</span>
                                 </MenuItem>
                             )}
 

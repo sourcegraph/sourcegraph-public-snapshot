@@ -6,7 +6,7 @@ import { isEqual } from 'lodash'
 
 import { ErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Container, PageSelector, RadioButton, Select, Link } from '@sourcegraph/wildcard'
+import { Container, PageSelector, RadioButton, Select, Link, Checkbox } from '@sourcegraph/wildcard'
 
 import { RepoSelectionMode } from '../../../auth/PostSignUpPage'
 import { useSteps } from '../../../auth/Steps'
@@ -486,27 +486,27 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
                     as="td"
                     className="p-2 w-100 d-flex align-items-center border-top-0 border-bottom"
                 >
-                    <input
+                    <Checkbox
                         id="select-all-repos"
                         className="mr-3"
-                        type="checkbox"
                         checked={areAllReposSelected()}
                         onChange={selectAll}
+                        label={
+                            <label
+                                className={classNames({
+                                    'text-muted': selectionState.repos.size === 0,
+                                    'text-body': selectionState.repos.size !== 0,
+                                    'mb-0': true,
+                                })}
+                            >
+                                {(selectionState.repos.size > 0 && (
+                                    <small>{`${selectionState.repos.size} ${
+                                        selectionState.repos.size === 1 ? 'repository' : 'repositories'
+                                    } selected`}</small>
+                                )) || <small>Select all</small>}
+                            </label>
+                        }
                     />
-                    <label
-                        htmlFor="select-all-repos"
-                        className={classNames({
-                            'text-muted': selectionState.repos.size === 0,
-                            'text-body': selectionState.repos.size !== 0,
-                            'mb-0': true,
-                        })}
-                    >
-                        {(selectionState.repos.size > 0 && (
-                            <small>{`${selectionState.repos.size} ${
-                                selectionState.repos.size === 1 ? 'repository' : 'repositories'
-                            } selected`}</small>
-                        )) || <small>Select all</small>}
-                    </label>
                 </RepositoryNodeContainer>
             </tr>
             {filteredRepos.map((repo, index) => {
