@@ -1,12 +1,12 @@
 import { RequestToJava } from '.'
 
-export async function callJava(request: RequestToJava): Promise<object> {
+export function callJava(request: RequestToJava): Promise<object> {
     return new Promise((resolve, reject) => {
         const requestAsString = JSON.stringify(request)
-        const onSuccessCallback = function (responseAsString: string): void {
+        const onSuccessCallback = (responseAsString: string): void => {
             resolve(JSON.parse(responseAsString))
         }
-        const onFailureCallback = function (errorCode: number, errorMessage: string): void {
+        const onFailureCallback = (errorCode: number, errorMessage: string): void => {
             reject(new Error(`${errorCode} - ${errorMessage}`))
         }
         console.log(`Got this request: ${requestAsString}`)

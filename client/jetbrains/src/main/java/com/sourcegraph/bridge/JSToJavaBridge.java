@@ -41,13 +41,13 @@ public class JSToJavaBridge implements Disposable {
                 /* In case of a failure, Java returns two arguments, so must use an intermediate function.
                 (source: https://dploeger.github.io/intellij-api-doc/com/intellij/ui/jcef/JBCefJSQuery.html#:~:text=onFailureCallback%20%2D%20JS%20callback%20in%20format%3A%20function(error_code%2C%20error_message)%20%7B%7D) */
                 cefBrowser.executeJavaScript(
-                    "window.callJava = async function(request) {" +
+                    "window.callJava = function(request) {" +
                         "    return new Promise((resolve, reject) => { " +
                         "        const requestAsString = JSON.stringify(request);" +
-                        "        const onSuccessCallback = function(responseAsString) {" +
+                        "        const onSuccessCallback = responseAsString => {" +
                         "            resolve(JSON.parse(responseAsString));" +
                         "        };" +
-                        "        const onFailureCallback = function(errorCode, errorMessage) {" +
+                        "        const onFailureCallback = (errorCode, errorMessage) => {" +
                         "            reject(new Error(`${errorCode} - ${errorMessage}`));" +
                         "        };" +
                         "        " + jsToJavaBridge.inject("requestAsString", "onSuccessCallback", "onFailureCallback") +
