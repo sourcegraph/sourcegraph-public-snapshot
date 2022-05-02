@@ -3309,7 +3309,7 @@ type Location {
     """
     The range inside the file that this location refers to.
     """
-    range: Range
+    range: Range!
     """
     The URL to this location (using the input revision specifier, which may not be immutable).
     """

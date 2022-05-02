@@ -9,7 +9,7 @@ export interface Location {
     file: string
     content: string
     commitID: string
-    range?: Range
+    range: Range
     url: string
     lines: string[]
     precise: boolean
@@ -58,11 +58,9 @@ export const buildPreciseLocation = (node: LocationFields): Location => {
         repo: node.resource.repository.name,
         file: node.resource.path,
         url: node.url,
+        range: node.range,
         lines: [],
         precise: true,
-    }
-    if (node.range !== null) {
-        location.range = node.range
     }
     location.lines = location.content.split(/\r?\n/)
     return location

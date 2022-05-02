@@ -832,10 +832,8 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                                         <code>{locationLine.prePostToken.post}</code>
                                     )}
                                 </>
-                            ) : locationLine.line ? (
-                                <code>{locationLine.line}</code>
                             ) : (
-                                ''
+                                <code>{locationLine.line}</code>
                             )
 
                             return (
@@ -853,7 +851,7 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                                         className={styles.locationLink}
                                     >
                                         <span className={styles.locationLinkLineNumber}>
-                                            {(reference.range?.start?.line ?? 0) + 1}
+                                            {(reference.range.start?.line ?? 0) + 1}
                                             {': '}
                                         </span>
                                         {lineWithHighlightedToken}
@@ -870,29 +868,26 @@ const CollapsibleLocationGroup: React.FunctionComponent<
 
 interface LocationLine {
     prePostToken?: { pre: string; post: string }
-    line?: string
+    line: string
 }
 
 const getPrePostLineContent = (location: Location): LocationLine => {
     const range = location.range
-    if (range !== undefined) {
-        const line = location.lines[range.start.line]
+    const line = location.lines[range.start.line]
 
-        if (range.end.line === range.start.line) {
-            return {
-                prePostToken: {
-                    pre: line.slice(0, range.start.character).trimStart(),
-                    post: line.slice(range.end.character),
-                },
-                line: line.trimStart(),
-            }
-        }
+    if (range.end.line === range.start.line) {
         return {
-            prePostToken: { pre: line.slice(0, range.start.character).trim(), post: '' },
+            prePostToken: {
+                pre: line.slice(0, range.start.character).trimStart(),
+                post: line.slice(range.end.character),
+            },
             line: line.trimStart(),
         }
     }
-    return {}
+    return {
+        prePostToken: { pre: line.slice(0, range.start.character).trim(), post: '' },
+        line: line.trimStart(),
+    }
 }
 
 const LoadingCodeIntel: React.FunctionComponent<{}> = () => (
