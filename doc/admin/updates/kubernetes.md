@@ -6,7 +6,7 @@
 2. Find the relevant entry for your update in the update notes on this page.
 3. After checking the relevant update notes, to upgrade your instance refer to either:
     * [Kubernetes with Helm upgrade guide](../deploy/kubernetes/helm.md#upgrading-sourcegraph)
-    * [Kubernetes without Helm upgrade guide](../deplou/kubernetes/update.md)
+    * [Kubernetes without Helm upgrade guide](../deploy/kubernetes/update.md)
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 

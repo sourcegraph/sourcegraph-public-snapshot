@@ -65,9 +65,11 @@ If you're just starting out and want the absolute quickest setup time, [try Sour
 
 ## Reference repositories
 
-For [Docker Compose](https://github.com/sourcegraph/deploy-sourcegraph-docker/) and [Kubernetes](https://github.com/sourcegraph/deploy-sourcegraph/) deployments, Sourcegraph provides reference repositories with branches corresponding to the version of Sourcegraph you wish to deploy. The reference repository contains everything you need to spin up and configure your instance depending on your deployment type, which also assists in your upgrade process going forward. 
+For [Docker Compose](https://github.com/sourcegraph/deploy-sourcegraph-docker/) and [Kubernetes](https://github.com/sourcegraph/deploy-sourcegraph/) deployments, Sourcegraph provides reference repositories with branches corresponding to the version of Sourcegraph you wish to deploy. The reference repository contains everything you need to spin up and configure your instance depending on your deployment type, which also assists in your upgrade process going forward.
 
-For more information, follow the install and configuration docs for your specific deployment type: [Docker Compose](docker-compose/index.md) or [Kubernetes](kubernetes/index.md).
+Before starting, you will need to decide your employment type, including if you would like to use Kubernetes with Helm (vs. a more manual customization path). In the case of Kubernetes once you choose Helm (or not), it **can't be changed afterwards**. 
+
+For more information, follow the install and configuration docs for your specific deployment type: [Docker Compose](docker-compose/index.md) or [Kubernetes with Helm](kubernetes/helm.md).
 
 ## Federation
 

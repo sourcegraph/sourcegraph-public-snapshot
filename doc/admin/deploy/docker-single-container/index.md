@@ -134,7 +134,7 @@ SELECT * FROM users;
 
 ## Upgrade
 
-Before upgrading, refer to the [update notes for single-container Sourcegraph with Docker](../../deploy/upgrade/server.md).
+Before upgrading, refer to the [update notes for single-container Sourcegraph with Docker](../../updates/server.md).
 
 To update, just use the newer `sourcegraph/server:N.N.N` Docker image (where `N.N.N` is the version number) in place of the older one, using the same Docker volumes. Your server's data will be migrated automatically if needed.
 

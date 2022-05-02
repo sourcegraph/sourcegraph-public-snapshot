@@ -11,7 +11,7 @@ The steps documented here are intended for [single-container Sourcegraph instanc
 - [Docker Compose](../deploy/docker-compose/index.md): you need to perform these steps on the relevant [Docker Compose volumes](../deploy/docker-compose/index.md#manage-storage).
 - [Kubernetes](../deploy/kubernetes/index.md): you need to perform these steps on the underlying node hosting the `gitserver` pod, or on the persistent volume used by the `gitserver` deployment.
 
-> WARNING: For [single-container Sourcegraph instances](../deploy/docker/index.md), Sourcegraph will alter the contents and structure of files under `/var/opt/sourcegraph` (Sourcegraph’s data volume inside the container), so do not mount repositories in use by other processes under that directory.
+> WARNING: For [single-container Sourcegraph instances](../deploy/docker-single-container/index.md), Sourcegraph will alter the contents and structure of files under `/var/opt/sourcegraph` (Sourcegraph’s data volume inside the container), so do not mount repositories in use by other processes under that directory.
 
 If you're using the default `--volume $HOME/.sourcegraph/data:/var/opt/sourcegraph` argument to run the `sourcegraph/server` Docker image, and the repository you want to add is named `github.com/my/repo`, then follow these steps:
 

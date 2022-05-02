@@ -99,7 +99,7 @@ If you want to _allow_ edits to be made through the web UI (which will be overwr
 Set `GLOBAL_SETTINGS_FILE=global-settings.json` on:
 
 - [Docker Compose](../deploy/docker-compose/index.md) and [Kubernetes](../deploy/kubernetes/index.md): all `frontend` containers
-- [Single-container](../deploy/docker/index.md): the `sourcegraph/server` container
+- [Single-container](../deploy/docker-single-container/index.md): the `sourcegraph/server` container
 
 Where `global-settings.json` contains the global settings, which you would otherwise edit through the in-app global settings editor.
 
