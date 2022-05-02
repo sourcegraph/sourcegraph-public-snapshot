@@ -5,7 +5,7 @@
     "showMultilineSearchConsole": true,
     "codeMonitoring": true,
     "codeInsights": true,
-    "codeIntelRepositoryBadge": {"enabled": true},
+    "codeIntelRepositoryBadge": { "enabled": true },
     "coolCodeIntel": true
   },
   "insights": [
