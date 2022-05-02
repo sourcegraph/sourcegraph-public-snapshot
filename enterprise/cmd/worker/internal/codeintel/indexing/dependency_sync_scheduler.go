@@ -5,8 +5,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
@@ -146,7 +144,7 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.
 			}
 		}
 	} else {
-		log15.Info("no package schema kinds to sync external services for", "upload", job.UploadID, "job", job.ID)
+		logger.Info("no package schema kinds to sync external services for", log.Int("upload", job.UploadID), log.Int("job", job.ID))
 	}
 
 	shouldIndex, err := h.shouldIndexDependencies(ctx, h.dbStore, job.UploadID)
