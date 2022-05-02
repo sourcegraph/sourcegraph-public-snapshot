@@ -823,9 +823,9 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                                     ) : (
                                         <code>{locationLine.prePostToken.pre}</code>
                                     )}
-                                    <span className="selection-highlight sourcegraph-document-highlight">
+                                    <mark className="p-0 selection-highlight sourcegraph-document-highlight">
                                         <code>{searchToken}</code>
-                                    </span>
+                                    </mark>
                                     {locationLine.prePostToken.post === '' ? (
                                         <></>
                                     ) : (
@@ -881,15 +881,15 @@ const getPrePostLineContent = (location: Location): LocationLine => {
         if (range.end.line === range.start.line) {
             return {
                 prePostToken: {
-                    pre: line.slice(0, range.start.character).trim(),
+                    pre: line.slice(0, range.start.character).trimStart(),
                     post: line.slice(range.end.character),
                 },
-                line: line.trim(),
+                line: line.trimStart(),
             }
         }
         return {
             prePostToken: { pre: line.slice(0, range.start.character).trim(), post: '' },
-            line: line.trim(),
+            line: line.trimStart(),
         }
     }
     return {}
