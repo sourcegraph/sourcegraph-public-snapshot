@@ -1,8 +1,10 @@
-import React, { useContext } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 
 import { ListboxGroup, ListboxGroupLabel, ListboxInput, ListboxList, ListboxPopover } from '@reach/listbox'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
+
+import { Input } from '@sourcegraph/wildcard'
 
 import {
     CodeInsightsBackendContext,
@@ -30,7 +32,9 @@ export interface DashboardSelectProps {
  * Renders dashboard select component for the code insights dashboard page selection UI.
  */
 export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = props => {
-    const { value, dashboards, onSelect, className } = props
+    const { value, dashboards: rawDashboards, onSelect, className } = props
+    const [filter, setFilter] = useState('')
+    const [dashboards, setDashboards] = useState(rawDashboards)
     const {
         UIFeatures: { licensed },
     } = useContext(CodeInsightsBackendContext)
@@ -39,9 +43,23 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
         const dashboard = dashboards.find(dashboard => dashboard.id === value)
 
         if (dashboard) {
+            setFilter('')
+            setDashboards(rawDashboards)
             onSelect(dashboard)
         }
     }
+
+    const handleFilter: React.ChangeEventHandler<HTMLInputElement> = event => {
+        setFilter(event.target.value)
+    }
+
+    useEffect(() => {
+        if (filter === '') {
+            setDashboards(rawDashboards)
+            return
+        }
+        setDashboards(rawDashboards.filter(({ title }) => title.toLowerCase().includes(filter.toLowerCase())))
+    }, [filter, rawDashboards])
 
     const customDashboards = dashboards.filter(isCustomDashboard)
     const organizationGroups = getDashboardOrganizationsGroups(customDashboards)
@@ -55,15 +73,23 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
                 value={value ?? 'unknown'}
                 onChange={handleChange}
             >
-                <MenuButton dashboards={dashboards} />
+                <MenuButton dashboards={rawDashboards} />
 
                 <ListboxPopover className={classNames(styles.popover)} portal={true}>
                     <ListboxList className={classNames(styles.list, 'dropdown-menu')}>
+                        <Input
+                            name="filter"
+                            value={filter}
+                            placeholder="Find dashboard..."
+                            className="mx-1"
+                            onChange={handleFilter}
+                        />
                         {dashboards.filter(isVirtualDashboard).map(dashboard => (
                             <SelectOption
                                 key={dashboard.id}
                                 value={dashboard.id}
                                 label={dashboard.title}
+                                filter={filter}
                                 className={styles.option}
                             />
                         ))}
@@ -78,6 +104,7 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
                                     <SelectDashboardOption
                                         key={dashboard.id}
                                         dashboard={dashboard}
+                                        filter={filter}
                                         className={styles.option}
                                     />
                                 ))}
@@ -94,6 +121,7 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
                                     <SelectDashboardOption
                                         key={dashboard.id}
                                         dashboard={dashboard}
+                                        filter={filter}
                                         className={styles.option}
                                     />
                                 ))}
@@ -110,6 +138,7 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
                                     <SelectDashboardOption
                                         key={dashboard.id}
                                         dashboard={dashboard}
+                                        filter={filter}
                                         className={styles.option}
                                     />
                                 ))}
