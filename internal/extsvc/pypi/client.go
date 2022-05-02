@@ -62,24 +62,34 @@ type Client struct {
 	limiter *rate.Limiter
 }
 
-func NewClient(urn string, urls []string) *Client {
+func NewClient(urn string, urls []string, cli httpcli.Doer) *Client {
 	return &Client{
-		urls: urls,
-
-		// ExternalDoer sets the user-agent as suggested by PyPI
-		// https://warehouse.pypa.io/api-reference/.
-		cli:     httpcli.ExternalDoer,
+		urls:    urls,
+		cli:     cli,
 		limiter: ratelimit.DefaultRegistry.Get(urn),
 	}
 }
 
-// Project returns the content of the simple-API /<project>/ endpoint.
-func (c *Client) Project(ctx context.Context, project string) ([]byte, error) {
+// Project returns the Files of the simple-API /<project>/ endpoint.
+func (c *Client) Project(ctx context.Context, project string) ([]File, error) {
 	data, err := c.get(ctx, normalize(project))
 	if err != nil {
 		return nil, errors.Wrap(err, "PyPI")
 	}
-	return data, nil
+	return parse(data)
+}
+
+// Version returns the File of a project at a specific version from
+// the simple-API /<project>/ endpoint.
+func (c *Client) Version(ctx context.Context, project, version string) (*File, error) {
+	files, err := c.Project(ctx, project)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, file := range files {
+
+	}
 }
 
 // File represents one anchor element in the response from /<project>/.
@@ -107,9 +117,9 @@ type File struct {
 	DataRequiresPython string
 }
 
-// Parse parses the output of Client.Project into a list of files. Anchor tags
+// parse parses the output of Client.Project into a list of files. Anchor tags
 // without href are ignored.
-func Parse(b []byte) ([]File, error) {
+func parse(b []byte) ([]File, error) {
 	var files []File
 
 	z := html.NewTokenizer(bytes.NewReader(b))
@@ -134,7 +144,7 @@ OUTER:
 	for nextAnchor() {
 		cur := File{}
 
-		// Parse attributes.
+		// parse attributes.
 		for {
 			k, v, more := z.TagAttr()
 			switch string(k) {

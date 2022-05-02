@@ -37,12 +37,7 @@ func TestDownload(t *testing.T) {
 	ctx := context.Background()
 	cli := newTestClient(t, "Download", update(t.Name()))
 
-	b, err := cli.Project(ctx, "requests")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	files, err := Parse(b)
+	files, err := cli.Project(ctx, "requests")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -103,13 +98,9 @@ func TestDownload(t *testing.T) {
 	})
 }
 
-func TestParse(t *testing.T) {
-	cli := newTestClient(t, "Parse", update(t.Name()))
-	b, err := cli.Project(context.Background(), "gpg-vault")
-	if err != nil {
-		t.Fatal(err)
-	}
-	files, err := Parse(b)
+func TestProject(t *testing.T) {
+	cli := newTestClient(t, "parse", update(t.Name()))
+	files, err := cli.Project(context.Background(), "gpg-vault")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -125,7 +116,7 @@ func TestParse_empty(t *testing.T) {
 </html>
 `)
 
-	_, err := Parse(b)
+	_, err := parse(b)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -164,7 +155,7 @@ func TestParse_broken(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			_, err := Parse(buf.Bytes())
+			_, err := parse(buf.Bytes())
 			if err == nil {
 				t.Fatal("expected error")
 			}
@@ -194,7 +185,7 @@ func TestParse_PEP503(t *testing.T) {
 </html>
 `)
 
-	got, err := Parse(b)
+	got, err := parse(b)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -215,25 +206,6 @@ func TestParse_PEP503(t *testing.T) {
 
 	if d := cmp.Diff(want, got); d != "" {
 		t.Fatalf("-want, +got\n%s", d)
-	}
-}
-
-// goos: darwin
-// goarch: arm64
-// pkg: github.com/sourcegraph/sourcegraph/internal/extsvc/pypi
-// BenchmarkParse-10           5180            229265 ns/op
-func BenchmarkParse(b *testing.B) {
-	cli := newTestClient(b, "Download", update("TestDownload"))
-	data, err := cli.Project(context.Background(), "requests")
-	if err != nil {
-		b.Fatal(err)
-	}
-	b.ResetTimer()
-	for n := 0; n < b.N; n++ {
-		_, err := Parse(data)
-		if err != nil {
-			b.Fatal(err)
-		}
 	}
 }
 
@@ -295,7 +267,6 @@ func newTestClient(t testing.TB, name string, update bool) *Client {
 		t.Fatal(err)
 	}
 
-	c := NewClient("urn", []string{"https://pypi.org/simple"})
-	c.cli = doer
+	c := NewClient("urn", []string{"https://pypi.org/simple"}, doer)
 	return c
 }
