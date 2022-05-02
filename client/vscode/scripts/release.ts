@@ -33,7 +33,7 @@ if (isReleaseType) {
             childProcess.execSync(
                 // Use vsce package command for testing this script without publishing the extension
                 // 'yarn vsce package $VSCODE_RELEASE_TYPE --yarn --allow-star-activation',
-                'yarn vsce publish $VSCODE_RELEASE_TYPE --pat $VSCODE_MARKETPLACE_TOKEN --yarn --allow-star-activation',
+                'yarn build && yarn vsce publish $VSCODE_RELEASE_TYPE --pat $VSCODE_MARKETPLACE_TOKEN --yarn --allow-star-activation',
                 {
                     stdio: 'inherit',
                 }

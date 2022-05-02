@@ -155,9 +155,7 @@
           "description": "The file path on the machine to the folder that is expected to contain all repositories.",
           "type": "string",
           "default": null,
-          "examples": ["/Users/USERNAME/Documents/"],
-          "format": "regex",
-          "pattern": "^[^~]+\/"
+          "examples": ["/Users/USERNAME/Documents/"]
         }
       }
     },
