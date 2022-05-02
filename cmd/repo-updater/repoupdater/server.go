@@ -23,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // Server is a repoupdater server.
@@ -72,11 +71,10 @@ func (s *Server) Handler() http.Handler {
 
 // TODO(tsenart): Reuse this function in all handlers.
 func respond(w http.ResponseWriter, code int, v interface{}) {
-	logger := log.Scoped("respond", "Write http responses. ")
 	switch val := v.(type) {
 	case error:
 		if val != nil {
-			logger.Error(val.Error())
+			log15.Error(val.Error())
 			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 			w.WriteHeader(code)
 			fmt.Fprintf(w, "%v", val)
@@ -91,7 +89,7 @@ func respond(w http.ResponseWriter, code int, v interface{}) {
 
 		w.WriteHeader(code)
 		if _, err = w.Write(bs); err != nil {
-			logger.Error("failed to write response", log.Error(err))
+			log15.Error("failed to write response", "error", err)
 		}
 	}
 }

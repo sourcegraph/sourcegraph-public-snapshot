@@ -165,12 +165,12 @@ func Main(enterpriseInit EnterpriseInit) {
 		// We always want to listen on the Synced channel since external service syncing
 		// happens on both Cloud and non Cloud instances.
 		Synced:     make(chan repos.Diff),
-		Logger:     log.Scoped("repo-updater", "Repo-updater tracks the state of repos."),
+		Logger:     logger,
 		Now:        clock,
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	go watchSyncer(ctx, logger, syncer, updateScheduler, server.PermsSyncer)
+	go watchSyncer(ctx, syncer, updateScheduler, server.PermsSyncer)
 	go func() {
 		log.Fatal(syncer.Run(ctx, logger, store, repos.RunOptions{
 			EnqueueInterval: repos.ConfRepoListUpdateInterval,
@@ -420,12 +420,11 @@ type permsSyncer interface {
 
 func watchSyncer(
 	ctx context.Context,
-	logger log.Logger,
 	syncer *repos.Syncer,
 	sched *repos.UpdateScheduler,
 	permsSyncer permsSyncer,
 ) {
-	logger.Debug("started new repo syncer updates scheduler relay thread")
+	log15.Debug("started new repo syncer updates scheduler relay thread")
 
 	for {
 		select {
