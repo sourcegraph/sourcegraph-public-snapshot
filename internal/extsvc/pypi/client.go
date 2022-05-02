@@ -87,8 +87,66 @@ func (c *Client) Version(ctx context.Context, project, version string) (*File, e
 		return nil, err
 	}
 
+	// Return the first source distribution we can find for the version.
+	wheelAtVersion := files[:0]
 	for _, file := range files {
+		wheel, err := ToWheel(file.Name)
+		if err != nil {
+			// source distribution or unsupported other format.
+			ext, ok := isSDIST(file.Name)
+			if !ok {
+				continue
+			}
 
+			// For source distributions we expect the pattern <package>-<version>.<ext>,
+			// where <package> might include "-". We determine the package version on a best
+			// effort basis by assuming the version is the string between the last "-" and
+			// the extension.
+			i := strings.LastIndexByte(file.Name, '-')
+			if i == -1 || i == len(file.Name)-len(ext)-1 {
+				continue
+			}
+			if file.Name[i+1:len(file.Name)-len(ext)] == version {
+				return &file, nil
+			}
+		} else {
+			if wheel.Version == version {
+				wheelAtVersion = append(wheelAtVersion, file)
+			}
+		}
+	}
+
+	// We didn't find a source distribution. Return the first wheel.
+	if len(wheelAtVersion) > 0 {
+		return &wheelAtVersion[0], nil
+	}
+
+	return nil, errors.Errorf("could not find a wheel or source distribution for %s==%s", project, version)
+}
+
+// isSDIST returns true if filename belongs to a source distribution. If isSDIST
+// is true then the first return value is the full extension.
+//
+// Examples:
+//   request-1.12.2.tar.gz -> .tar.gz, true
+//   request-1.12.2.foo -> "", false
+//
+func isSDIST(filename string) (string, bool) {
+	extOrEmpty := func(path, ext string) (string, bool) {
+		if filepath.Ext(path[:len(path)-len(ext)]) == ".tar" {
+			return ".tar" + ext, true
+		}
+		return "", false
+
+	}
+	ext := filepath.Ext(filename)
+	switch ext {
+	case ".zip", ".tar":
+		return ext, true
+	case ".gz", ".bz2", ".xz", ".Z":
+		return extOrEmpty(filename, ext)
+	default:
+		return "", false
 	}
 }
 

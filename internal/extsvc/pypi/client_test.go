@@ -107,6 +107,17 @@ func TestProject(t *testing.T) {
 	testutil.AssertGolden(t, "testdata/golden/gpg-vault", update(t.Name()), files)
 }
 
+func TestVersion(t *testing.T) {
+	cli := newTestClient(t, "parse", update(t.Name()))
+	f, err := cli.Version(context.Background(), "gpg-vault", "1.4")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := "gpg-vault-1.4.tar.gz"; want != f.Name {
+		t.Fatalf("want %s, got %s", want, f.Name)
+	}
+}
+
 func TestParse_empty(t *testing.T) {
 	b := []byte(`
 <!DOCTYPE html>
