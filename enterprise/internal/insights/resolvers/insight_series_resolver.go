@@ -32,8 +32,9 @@ import (
 	searchquery "github.com/sourcegraph/sourcegraph/internal/search/query"
 )
 
-var _ graphqlbackend.InsightSeriesResolver = &insightSeriesResolver{}
+var _ graphqlbackend.InsightSeriesResolver = &precalculatedInsightSeriesResolver{}
 
+// TODOL(insights): remove insightSeriesResolver when `insights` is removed from graphql query schema
 type insightSeriesResolver struct {
 	insightsStore   store.Interface
 	workerBaseStore *basestore.Store
@@ -290,24 +291,13 @@ func newSeriesResolverGenerator(handels handleSeriesFunc, generate resolverGener
 	}
 }
 
-func recordedSeries(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {
-	return []graphqlbackend.InsightSeriesResolver{&insightSeriesResolver{
-		insightsStore:   r.timeSeriesStore,
-		workerBaseStore: r.workerBaseStore,
-		series:          definition,
-		metadataStore:   r.insightStore,
-		filters:         filters,
-	}}, nil
-}
-
-func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {
-	var opts store.SeriesPointsOpts
-
+func getRecordedSeriesPointOpts(ctx context.Context, db dbutil.DB, definition types.InsightViewSeries, filters types.InsightViewFilters) (*store.SeriesPointsOpts, error) {
+	opts := &store.SeriesPointsOpts{}
 	// Query data points only for the series we are representing.
 	seriesID := definition.SeriesID
 	opts.SeriesID = &seriesID
 
-	// Default to last 12mo of data
+	// Default to last 12 points of data
 	frames := query.BuildFrames(12, timeseries.TimeInterval{
 		Unit:  types.IntervalUnit(definition.SampleIntervalUnit),
 		Value: definition.SampleIntervalValue,
@@ -320,7 +310,6 @@ func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.Insi
 		}
 	}
 	opts.From = &oldest
-
 	includeRepo := func(regex ...string) {
 		opts.IncludeRepoRegex = append(opts.IncludeRepoRegex, regex...)
 	}
@@ -334,16 +323,60 @@ func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.Insi
 	if filters.ExcludeRepoRegex != nil {
 		excludeRepo(*filters.ExcludeRepoRegex)
 	}
-	scLoader := &scLoader{primary: r.workerBaseStore.Handle().DB()}
+
+	scLoader := &scLoader{primary: db}
 	inc, exc, err := unwrapSearchContexts(ctx, scLoader, filters.SearchContexts)
 	if err != nil {
 		return nil, errors.Wrap(err, "unwrapSearchContexts")
 	}
 	includeRepo(inc...)
 	excludeRepo(exc...)
+	return opts, nil
+}
+
+func recordedSeries(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {
+
+	opts, err := getRecordedSeriesPointOpts(ctx, r.workerBaseStore.Handle().DB(), definition, filters)
+	if err != nil {
+		return nil, errors.Wrap(err, "getRecordedSeriesPointOpts")
+	}
+
+	points, err := r.timeSeriesStore.SeriesPoints(ctx, *opts)
+	if err != nil {
+		return nil, err
+	}
+
+	status, err := queryrunner.QueryJobsStatus(ctx, r.workerBaseStore, definition.SeriesID)
+	if err != nil {
+		return nil, errors.Wrap(err, "QueryJobsStatus")
+	}
+	statusResolver := NewStatusResolver(status, definition.BackfillQueuedAt)
+
+	var resolvers []graphqlbackend.InsightSeriesResolver
+
+	resolvers = append(resolvers, &precalculatedInsightSeriesResolver{
+		insightsStore:   r.timeSeriesStore,
+		workerBaseStore: r.workerBaseStore,
+		series:          definition,
+		metadataStore:   r.insightStore,
+		points:          points,
+		label:           definition.Label,
+		filters:         filters,
+		seriesId:        definition.SeriesID,
+		statusResolver:  statusResolver,
+	})
+	return resolvers, nil
+
+}
+
+func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {
+	opts, err := getRecordedSeriesPointOpts(ctx, r.workerBaseStore.Handle().DB(), definition, filters)
+	if err != nil {
+		return nil, errors.Wrap(err, "getRecordedSeriesPointOpts")
+	}
 
 	groupedByCapture := make(map[string][]store.SeriesPoint)
-	allPoints, err := r.timeSeriesStore.SeriesPoints(ctx, opts)
+	allPoints, err := r.timeSeriesStore.SeriesPoints(ctx, *opts)
 	if err != nil {
 		return nil, err
 	}
@@ -357,7 +390,7 @@ func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.Insi
 		groupedByCapture[*point.Capture] = append(groupedByCapture[*point.Capture], point)
 	}
 
-	status, err := queryrunner.QueryJobsStatus(ctx, r.workerBaseStore, seriesID)
+	status, err := queryrunner.QueryJobsStatus(ctx, r.workerBaseStore, definition.SeriesID)
 	if err != nil {
 		return nil, errors.Wrap(err, "QueryJobsStatus")
 	}
@@ -376,7 +409,7 @@ func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.Insi
 			points:          points,
 			label:           capturedValue,
 			filters:         filters,
-			seriesId:        fmt.Sprintf("%s-%s", seriesID, capturedValue),
+			seriesId:        fmt.Sprintf("%s-%s", definition.SeriesID, capturedValue),
 			statusResolver:  statusResolver,
 		})
 	}
