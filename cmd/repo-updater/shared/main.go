@@ -97,7 +97,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	go debugServerRoutine.Start()
 
 	clock := func() time.Time { return time.Now().UTC() }
-	logger := log.Scoped("repo-updater", "Repo-updater tracks the state of repos.")
+	logger := log.Scoped("repo-updater", "repo-updater tracks the state of repos")
 	if err := keyring.Init(ctx); err != nil {
 		logger.Fatal("error initialising encryption keyring", log.Error(err))
 	}
