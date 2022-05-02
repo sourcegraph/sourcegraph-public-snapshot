@@ -144,32 +144,25 @@ func TestToSearchInputs(t *testing.T) {
 
 	// Priority jobs for Batched search.
 	autogold.Want("Batched: file or commit", `
-(PRIORITY
-  (REQUIRED
-    (PARALLEL
-      ZoektGlobalSearch
-      ComputeExcludedRepos))
-  (OPTIONAL
-    Commit))
+(PARALLEL
+  ZoektGlobalSearch
+  Commit
+  ComputeExcludedRepos)
 `).Equal(t, test("type:file type:commit test", search.Batch, query.ParseRegexp))
 
 	autogold.Want("Batched: many types", `
-(PRIORITY
-  (REQUIRED
+(PARALLEL
+  REPOPAGER
     (PARALLEL
-      REPOPAGER
-        (PARALLEL
-          ZoektRepoSubset
-          Searcher))
-      RepoSearch
-      ComputeExcludedRepos))
-  (OPTIONAL
+      ZoektRepoSubset
+      Searcher))
+  REPOPAGER
     (PARALLEL
-      REPOPAGER
-        (PARALLEL
-          ZoektSymbolSearch
-          SymbolSearcher))
-      Commit)))
+      ZoektSymbolSearch
+      SymbolSearcher))
+  Commit
+  RepoSearch
+  ComputeExcludedRepos)
 `).Equal(t, test("type:file type:path type:repo type:commit type:symbol repo:test test", search.Batch, query.ParseRegexp))
 }
 
