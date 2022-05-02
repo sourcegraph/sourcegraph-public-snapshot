@@ -10,7 +10,7 @@ import { renderWithBrandedContext } from '../testing'
 import { HIGHLIGHTED_FILE_LINES_REQUEST, NOOP_SETTINGS_CASCADE, RESULT } from '../testing/searchTestHelpers'
 
 import { MockVisibilitySensor } from './CodeExcerpt.test'
-import { FileMatch, limitGroup } from './FileMatch'
+import { FileSearchResult, limitGroup } from './FileSearchResult'
 import { MatchGroup } from './ranking/PerFileResultRanking'
 
 jest.mock('react-visibility-sensor', (): typeof _VisibilitySensor => ({ children, onChange }) => (
@@ -19,7 +19,7 @@ jest.mock('react-visibility-sensor', (): typeof _VisibilitySensor => ({ children
     </>
 ))
 
-describe('FileMatch', () => {
+describe('FileSearchResult', () => {
     afterAll(cleanup)
     const history = createBrowserHistory()
     history.replace({ pathname: '/search' })
@@ -36,7 +36,7 @@ describe('FileMatch', () => {
     }
 
     it('renders one result container', () => {
-        const { container } = renderWithBrandedContext(<FileMatch {...defaultProps} />)
+        const { container } = renderWithBrandedContext(<FileSearchResult {...defaultProps} />)
         expect(getByTestId(container, 'result-container')).toBeVisible()
         expect(getAllByTestId(container, 'result-container').length).toBe(1)
     })
@@ -73,7 +73,7 @@ describe('FileMatch', () => {
             ],
         }
         const { container } = renderWithBrandedContext(
-            <FileMatch {...defaultProps} result={result} settingsCascade={settingsCascade} />
+            <FileSearchResult {...defaultProps} result={result} settingsCascade={settingsCascade} />
         )
         const tableRows = container.querySelectorAll('[data-testid="code-excerpt"] tr')
         expect(tableRows.length).toBe(7)
