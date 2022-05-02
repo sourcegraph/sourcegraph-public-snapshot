@@ -13,6 +13,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/log"
+	"github.com/sourcegraph/sourcegraph/lib/logtest"
+
 )
 
 type TestRecord struct {
@@ -634,7 +636,7 @@ func TestWorkerStopDrainsDequeueLoopOnly(t *testing.T) {
 
 	dequeued := make(chan struct{})
 	block := make(chan struct{})
-	handler.HandleFunc.defaultHook = func(ctx context.Context, r Record) error {
+	handler.HandleFunc.defaultHook = func(ctx context.Context, logtest.Scoped(t), r Record) error {
 		close(dequeued)
 		<-block
 		return ctx.Err()
