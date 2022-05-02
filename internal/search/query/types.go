@@ -99,7 +99,7 @@ func (b Basic) MapParameters(parameters []Parameter) Basic {
 
 // MapCount returns a copy of a basic query with a count parameter set.
 func (b Basic) MapCount(count int) Basic {
-	parameters := MapParameter(ToNodes(b.Parameters), func(field, value string, negated bool, annotation Annotation) Node {
+	parameters := MapParameter(toNodes(b.Parameters), func(field, value string, negated bool, annotation Annotation) Node {
 		if field == "count" {
 			value = strconv.FormatInt(int64(count), 10)
 		}
@@ -109,11 +109,11 @@ func (b Basic) MapCount(count int) Basic {
 }
 
 func (b Basic) String() string {
-	return fmt.Sprintf("%s %s", Q(ToNodes(b.Parameters)).String(), Q([]Node{b.Pattern}).String())
+	return fmt.Sprintf("%s %s", Q(toNodes(b.Parameters)).String(), Q([]Node{b.Pattern}).String())
 }
 
 func (b Basic) StringHuman() string {
-	return fmt.Sprintf("%s %s", StringHuman(ToNodes(b.Parameters)), StringHuman([]Node{b.Pattern}))
+	return fmt.Sprintf("%s %s", StringHuman(toNodes(b.Parameters)), StringHuman([]Node{b.Pattern}))
 }
 
 // HasPatternLabel returns whether a pattern atom has a specified label.
@@ -170,7 +170,7 @@ type Parameters []Parameter
 // IncludeExcludeValues partitions multiple values of a field into positive
 // (include) and negated (exclude) values.
 func (p Parameters) IncludeExcludeValues(field string) (include, exclude []string) {
-	VisitField(ToNodes(p), field, func(v string, negated bool, _ Annotation) {
+	VisitField(toNodes(p), field, func(v string, negated bool, _ Annotation) {
 		if negated {
 			exclude = append(exclude, v)
 		} else {
@@ -183,14 +183,14 @@ func (p Parameters) IncludeExcludeValues(field string) (include, exclude []strin
 // Exists returns whether a parameter exists in the query (whether negated or not).
 func (p Parameters) Exists(field string) bool {
 	found := false
-	VisitField(ToNodes(p), field, func(_ string, _ bool, _ Annotation) {
+	VisitField(toNodes(p), field, func(_ string, _ bool, _ Annotation) {
 		found = true
 	})
 	return found
 }
 
 func (p Parameters) Dependencies() (dependencies []string) {
-	VisitPredicate(ToNodes(p), func(field, name, value string) {
+	VisitPredicate(toNodes(p), func(field, name, value string) {
 		if field == FieldRepo && (name == "dependencies" || name == "deps") {
 			dependencies = append(dependencies, value)
 		}
@@ -212,7 +212,7 @@ func (p Parameters) MaxResults(defaultLimit int) int {
 
 // Count returns the string value of the "count:" field. Returns empty string if none.
 func (p Parameters) Count() (count *int) {
-	VisitField(ToNodes(p), FieldCount, func(value string, _ bool, _ Annotation) {
+	VisitField(toNodes(p), FieldCount, func(value string, _ bool, _ Annotation) {
 		c, err := strconv.Atoi(value)
 		if err != nil {
 			panic(fmt.Sprintf("Value %q for count cannot be parsed as an int", value))
@@ -225,7 +225,7 @@ func (p Parameters) Count() (count *int) {
 // GetTimeout returns the time.Duration value from the `timeout:` field.
 func (p Parameters) GetTimeout() *time.Duration {
 	var timeout *time.Duration
-	VisitField(ToNodes(p), FieldTimeout, func(value string, _ bool, _ Annotation) {
+	VisitField(toNodes(p), FieldTimeout, func(value string, _ bool, _ Annotation) {
 		t, err := time.ParseDuration(value)
 		if err != nil {
 			panic(fmt.Sprintf("Value %q for timeout cannot be parsed as an duration: %s", value, err))
@@ -245,7 +245,7 @@ func (p Parameters) VisitParameter(field string, f func(value string, negated bo
 
 func (p Parameters) boolValue(field string) bool {
 	result := false
-	VisitField(ToNodes(p), field, func(value string, _ bool, _ Annotation) {
+	VisitField(toNodes(p), field, func(value string, _ bool, _ Annotation) {
 		result, _ = parseBool(value) // err was checked during parsing and validation.
 	})
 	return result
@@ -257,8 +257,8 @@ func (p Parameters) IsCaseSensitive() bool {
 
 func (p Parameters) yesNoOnlyValue(field string) *YesNoOnly {
 	var res *YesNoOnly
-	VisitField(ToNodes(p), field, func(value string, _ bool, _ Annotation) {
-		yno := ParseYesNoOnly(value)
+	VisitField(toNodes(p), field, func(value string, _ bool, _ Annotation) {
+		yno := parseYesNoOnly(value)
 		if yno == Invalid {
 			panic(fmt.Sprintf("Invalid value %q for field %q", value, field))
 		}
@@ -284,7 +284,7 @@ func (p Parameters) Archived() *YesNoOnly {
 }
 
 func (p Parameters) Repositories() (repos []string, negatedRepos []string) {
-	VisitField(ToNodes(p), FieldRepo, func(value string, negated bool, a Annotation) {
+	VisitField(toNodes(p), FieldRepo, func(value string, negated bool, a Annotation) {
 		if a.Labels.IsSet(IsPredicate) {
 			return
 		}
@@ -330,17 +330,6 @@ func (q Q) String() string {
 	return toString(q)
 }
 
-func (q Q) RegexpPatterns(field string) (values, negatedValues []string) {
-	VisitField(q, field, func(visitedValue string, negated bool, _ Annotation) {
-		if negated {
-			negatedValues = append(negatedValues, visitedValue)
-		} else {
-			values = append(values, visitedValue)
-		}
-	})
-	return values, negatedValues
-}
-
 func (q Q) StringValues(field string) (values, negatedValues []string) {
 	VisitField(q, field, func(visitedValue string, negated bool, _ Annotation) {
 		if negated {
@@ -361,14 +350,6 @@ func (q Q) StringValue(field string) (value, negatedValue string) {
 		}
 	})
 	return value, negatedValue
-}
-
-func (q Q) Index() YesNoOnly {
-	v := q.yesNoOnlyValue(FieldIndex)
-	if v == nil {
-		return Yes
-	}
-	return *v
 }
 
 func (q Q) Exists(field string) bool {
@@ -410,25 +391,13 @@ func (q Q) Fork() *YesNoOnly {
 func (q Q) yesNoOnlyValue(field string) *YesNoOnly {
 	var res *YesNoOnly
 	VisitField(q, field, func(value string, _ bool, _ Annotation) {
-		yno := ParseYesNoOnly(value)
+		yno := parseYesNoOnly(value)
 		if yno == Invalid {
 			panic(fmt.Sprintf("Invalid value %q for field %q", value, field))
 		}
 		res = &yno
 	})
 	return res
-}
-
-func (q Q) Timeout() *time.Duration {
-	var timeout *time.Duration
-	VisitField(q, FieldTimeout, func(value string, _ bool, _ Annotation) {
-		t, err := time.ParseDuration(value)
-		if err != nil {
-			panic(fmt.Sprintf("Value %q for timeout cannot be parsed as an duration: %s", value, err))
-		}
-		timeout = &t
-	})
-	return timeout
 }
 
 func (q Q) IsCaseSensitive() bool {
