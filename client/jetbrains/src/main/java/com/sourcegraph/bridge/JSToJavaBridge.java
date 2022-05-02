@@ -12,13 +12,13 @@ import org.cef.handler.CefLoadHandler;
 import org.cef.network.CefRequest;
 
 public class JSToJavaBridge implements Disposable {
-    JBCefJSQuery jsToJavaBridge;
+    JBCefJSQuery query;
 
     public JSToJavaBridge(JBCefBrowserBase browser,
                           JSToJavaBridgeRequestHandler requestHandler,
                           String jsCodeToRunAfterBridgeInit) {
-        jsToJavaBridge = JBCefJSQuery.create(browser);
-        jsToJavaBridge.addHandler((String requestAsString) -> {
+        query = JBCefJSQuery.create(browser);
+        query.addHandler((String requestAsString) -> {
             try {
                 JsonObject requestAsJson = JsonParser.parseString(requestAsString).getAsJsonObject();
                 return requestHandler.handle(requestAsJson);
@@ -50,7 +50,7 @@ public class JSToJavaBridge implements Disposable {
                         "        const onFailureCallback = (errorCode, errorMessage) => {" +
                         "            reject(new Error(`${errorCode} - ${errorMessage}`));" +
                         "        };" +
-                        "        " + jsToJavaBridge.inject("requestAsString", "onSuccessCallback", "onFailureCallback") +
+                        "        " + query.inject("requestAsString", "onSuccessCallback", "onFailureCallback") +
                         "    });" +
                         "};",
                     cefBrowser.getURL(), 0);
@@ -66,6 +66,6 @@ public class JSToJavaBridge implements Disposable {
 
     @Override
     public void dispose() {
-        jsToJavaBridge.dispose();
+        query.dispose();
     }
 }
