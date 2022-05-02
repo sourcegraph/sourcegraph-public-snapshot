@@ -227,6 +227,7 @@ func TestToWheel(t *testing.T) {
 	}
 	want := []Wheel{
 		{
+			File:         File{Name: have[0]},
 			Distribution: "requests",
 			Version:      "2.16.2",
 			BuildTag:     "",
@@ -235,6 +236,7 @@ func TestToWheel(t *testing.T) {
 			PlatformTag:  "any",
 		},
 		{
+			File:         File{Name: have[1]},
 			Distribution: "grpcio",
 			Version:      "1.46.0rc2",
 			BuildTag:     "",
@@ -246,7 +248,7 @@ func TestToWheel(t *testing.T) {
 
 	var got []Wheel
 	for _, h := range have {
-		g, err := ToWheel(h)
+		g, err := ToWheel(File{Name: h})
 		if err != nil {
 			t.Fatal(err)
 		}
