@@ -25,7 +25,7 @@ func parsePoetryLockFile(r io.Reader) ([]reposource.PackageDependency, error) {
 		return nil, errors.Errorf("error decoding poetry lockfile: %w", err)
 	}
 
-	var libs []reposource.PackageDependency
+	libs := make([]reposource.PackageDependency, 0, len(lockfile.Packages))
 	for _, pkg := range lockfile.Packages {
 		libs = append(libs, reposource.NewPythonDependency(pkg.Name, pkg.Version))
 	}
