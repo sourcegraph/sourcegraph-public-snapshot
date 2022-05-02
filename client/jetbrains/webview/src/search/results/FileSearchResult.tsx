@@ -30,10 +30,6 @@ export const FileSearchResult: React.FunctionComponent<Props> = ({
         const key = getIdForLine(result, line)
         const onClick = (): void => selectResultFromId(key)
 
-        // if (key === selectedResult) {
-        //     console.log(result, line)
-        // }
-
         return (
             // The below element's accessibility is handled via a document level event listener.
             //
