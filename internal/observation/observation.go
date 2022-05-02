@@ -1,64 +1,6 @@
 // Package observation provides a unified way to wrap an operation with logging, tracing, and metrics.
 //
-// High-level ideas:
-//
-//     - Each service creates an observation Context that carries a root logger, tracer,
-//       and a metrics registerer as its context.
-//
-//     - An observation Context can create an observation Operation which represents a
-//       section of code that can be invoked many times. An observation Operation is
-//       configured with state that applies to all invocation of the code.
-//
-//     - An observation Operation can wrap a an invocation of a section of code by calling its
-//       With method. This prepares a trace and some state to be reconciled after the invocation
-//       has completed. The With method returns a function that, when deferred, will emit metrics,
-//       additional logs, and finalize the trace span.
-//
-// Sample usage:
-//
-//     observationContext := observation.Context{
-//         Logger:     log.Scoped("my-scope", "a simple description"),
-//         Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
-//         Registerer: prometheus.DefaultRegisterer,
-//     }
-//
-//     metrics := metrics.NewREDMetrics(
-//         observationContext.Registerer,
-//         "thing",
-//         metrics.WithLabels("op"),
-//     )
-//
-//     operation := observationContext.Operation(observation.Op{
-//         Name:         "Thing.SomeOperation",
-//         MetricLabels: []string{"some_operation"},
-//         Metrics:      metrics,
-//     })
-//
-//     // You can log some logs directly using operation - these logs will be structured
-//     // with context about your operation.
-//     operation.Info("something happened!", log.String("additional", "context"))
-//
-//     function SomeOperation(ctx context.Context) (err error) {
-//         // logs and metrics may be available before or after the operation, so they
-//         // can be supplied either at the start of the operation, or after in the
-//         // defer of endObservation.
-//
-//         ctx, trace, endObservation := operation.With(ctx, &err, observation.Args{ /* logs and metrics */ })
-//         defer func() { endObservation(1, observation.Args{ /* additional logs and metrics */ }) }()
-//
-//         // ...
-//
-//         // You can log some logs directly from the returned trace - these logs will be
-//         // structured with the trace ID, trace fields, and observation context.
-//         trace.Info("I did the thing!", log.Int("things", 3))
-//
-//         // ...
-//     }
-//
-// Log fields and metric labels can be supplied at construction of an Operation, at invocation
-// of an operation (the With function), or after the invocation completes but before the observation
-// has terminated (the endObservation function). Log fields and metric labels are concatenated
-// together in the order they are attached to an operation.
+// To learn more, refer to "How to add observability": https://docs.sourcegraph.com/dev/how-to/add_observability
 package observation
 
 import (

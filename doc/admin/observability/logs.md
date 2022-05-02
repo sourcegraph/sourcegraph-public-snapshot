@@ -22,11 +22,11 @@ A Sourcegraph service's log output format is configured via the environment vari
 * `json`: Machine-readable JSON format.
   * For certain services and log entries, Sourcegraph exports a [OpenTelemetry-compliant log data model](#opentelemetry).
 * `logfmt`: The [logfmt](https://github.com/kr/logfmt) format.
-  * Note that `logfmt` is no longer supported with [Sourcegraph's new internal logging standards](../../dev/how-to/add_and_use_logging.md) - if you need structured logs, we recommend using `json` instead. If set to `logfmt`, log output from new loggers will be in `condensed` format.
+  * Note that `logfmt` is no longer supported with [Sourcegraph's new internal logging standards](../../dev/how-to/add_logging.md) - if you need structured logs, we recommend using `json` instead. If set to `logfmt`, log output from new loggers will be in `condensed` format.
 
 ### OpenTelemetry
 
-When [configured to export JSON logs](#log-format), Sourcegraph services that have migrated to the [new internal logging standard](../../dev/how-to/add_and_use_logging.md) that will export a JSON log format compliant with [OpenTelemetry's log data model](https://opentelemetry.io/docs/reference/specification/logs/data-model/):
+When [configured to export JSON logs](#log-format), Sourcegraph services that have migrated to the [new internal logging standard](../../dev/how-to/add_logging.md) that will export a JSON log format compliant with [OpenTelemetry's log data model](https://opentelemetry.io/docs/reference/specification/logs/data-model/):
 
 ```json
 {
