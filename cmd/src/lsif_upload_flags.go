@@ -184,7 +184,9 @@ func handleLSIFTyped(out *output.Output) error {
 // Reads the LSIF Typed encoded input file and writes the corresponding LSIF
 // Graph encoded output file.
 func convertLSIFTypedToLSIFGraph(out *output.Output, inputFile, outputFile string) error {
-	out.Writef("%s  Converting %s into %s", output.EmojiInfo, inputFile, outputFile)
+	if out != nil {
+		out.Writef("%s  Converting %s into %s", output.EmojiInfo, inputFile, outputFile)
+	}
 	tmp, err := os.Create(outputFile)
 	if err != nil {
 		return err
