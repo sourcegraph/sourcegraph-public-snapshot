@@ -121,12 +121,8 @@ func TestHoist(t *testing.T) {
 			want:  `"repo:foo" (or "a" "b")`,
 		},
 		{
-			input: `repo:foo a or b file:bar`,
-			want:  `"repo:foo" "file:bar" (or "a" "b")`,
-		},
-		{
-			input: `repo:foo a or b or c file:bar`,
-			want:  `"repo:foo" "file:bar" (or "a" "b" "c")`,
+			input: `repo:foo file:bar a and b or c`,
+			want:  `"repo:foo" "file:bar" (or (and "a" "b") "c")`,
 		},
 		{
 			input: "repo:foo bar { and baz {",
@@ -137,32 +133,45 @@ func TestHoist(t *testing.T) {
 			want:  `"repo:foo" (and (concat "bar" "{") (concat "baz" "{") (concat "qux" "{"))`,
 		},
 		{
+			input: `repo:foo a or b file:bar`,
+			want:  `"repo:foo" "file:bar" (or "a" "b")`,
+		},
+		{
+			input: `repo:foo a or b or c file:bar`,
+			want:  `"repo:foo" "file:bar" (or "a" "b" "c")`,
+		},
+		{
 			input: `repo:foo a and b or c and d or e file:bar`,
 			want:  `"repo:foo" "file:bar" (or (and "a" "b") (and "c" "d") "e")`,
 		},
-		// This next pattern is valid for the heuristic, even though the ordering of the
-		// patterns 'a' and 'c' in the first and last position are not ordered next to the
-		// 'or' keyword. This because no ordering is assumed for patterns vs. field:value
-		// parameters in the grammar. To preserve relative ordering and check this would
-		// impose significant complexity to PartitionParameters function during parsing, and
-		// the PartitionSearchPattern helper function that the heurstic relies on. So: we
-		// accept this heuristic behavior here.
-		{
-			input: `a repo:foo or b or file:bar c`,
-			want:  `"repo:foo" "file:bar" (or "a" "b" "c")`,
-		},
 		// Errors.
 		{
+			input:      "a repo:foo or b",
+			wantErrMsg: "unnatural order: patterns not followed by parameter",
+		},
+		{
+			input:      "a repo:foo q or b",
+			wantErrMsg: "unnatural order: patterns not followed by parameter",
+		},
+		{
+			input:      "repo:bar a repo:foo or b",
+			wantErrMsg: "unnatural order: patterns not followed by parameter",
+		},
+		{
+			input:      `a repo:foo or b or file:bar c`,
+			wantErrMsg: "unnatural order: patterns not followed by parameter",
+		},
+		{
 			input:      "repo:foo or a",
-			wantErrMsg: "could not partition first or last expression",
+			wantErrMsg: "could not partition first expression",
 		},
 		{
 			input:      "a or repo:foo",
-			wantErrMsg: "could not partition first or last expression",
+			wantErrMsg: "unnatural order: patterns not followed by parameter",
 		},
 		{
 			input:      "repo:foo or repo:bar",
-			wantErrMsg: "could not partition first or last expression",
+			wantErrMsg: "could not partition first expression",
 		},
 		{
 			input:      "a b",
@@ -171,6 +180,10 @@ func TestHoist(t *testing.T) {
 		{
 			input:      "repo:foo a or repo:foobar b or c file:bar",
 			wantErrMsg: `inner expression (and "repo:foobar" "b") is not a pure pattern expression`,
+		},
+		{
+			input:      "repo:a b or c repo:b d or e",
+			wantErrMsg: `inner expression (and "repo:b" (concat "c" "d")) is not a pure pattern expression`,
 		},
 	}
 	for _, c := range cases {

@@ -2,6 +2,7 @@ package query
 
 import (
 	"fmt"
+	"math"
 	"strings"
 
 	"github.com/grafana/regexp"
@@ -307,6 +308,44 @@ func toParameters(nodes []Node) []Parameter {
 	return parameters
 }
 
+// naturallyOrdered returns true if, reading the query from left to right,
+// patterns only appear after parameters. When reverse is true it returns true,
+// if, reading from right to left, patterns only appear after parameters.
+func naturallyOrdered(node Node, reverse bool) bool {
+	// This function looks at the position of the rightmost Parameter and
+	// leftmost Pattern range to check ordering (reverse respectively
+	// reverses the position tracking). This because term order in the tree
+	// structure is not guaranteed at all, even under a consistent traversal
+	// (like post-order DFS).
+	rightmostParameterPos := 0
+	rightmostPatternPos := 0
+	leftmostParameterPos := math.MaxInt
+	leftmostPatternPos := math.MaxInt
+	v := &Visitor{
+		Parameter: func(_, _ string, _ bool, a Annotation) {
+			if a.Range.Start.Column > rightmostParameterPos {
+				rightmostParameterPos = a.Range.Start.Column
+			}
+			if a.Range.Start.Column < leftmostParameterPos {
+				leftmostParameterPos = a.Range.Start.Column
+			}
+		},
+		Pattern: func(_ string, _ bool, a Annotation) {
+			if a.Range.Start.Column > rightmostPatternPos {
+				rightmostPatternPos = a.Range.Start.Column
+			}
+			if a.Range.Start.Column < leftmostPatternPos {
+				leftmostPatternPos = a.Range.Start.Column
+			}
+		},
+	}
+	v.Visit(node)
+	if reverse {
+		return leftmostParameterPos > rightmostPatternPos
+	}
+	return rightmostParameterPos < leftmostPatternPos
+}
+
 // Hoist is a heuristic that rewrites simple but possibly ambiguous queries. It
 // changes certain expressions in a way that some consider to be more natural.
 // For example, the following query without parentheses is interpreted as
@@ -318,11 +357,25 @@ func toParameters(nodes []Node) []Parameter {
 //
 // repo:foo a or b and c => repo:foo (a or b and c)
 //
-// Any number of field:value parameters may occur before and after the pattern
-// expression separated by or- or and-operators, and these are hoisted out. The
-// pattern expression must be contiguous. If not, we want to preserve the
-// default interpretation, which corresponds more naturally to groupings with
-// field parameters, i.e.,
+// For this heuristic to apply, reading the query from left to right, a query
+// must start with a contiguous sequence of parameters, followed by contiguous
+// sequence of pattern expressions, followed by a contiquous sequence of
+// parameters. When this shape holds, the pattern expressions are hoisted out.
+//
+// Valid example and interpretation:
+//
+// - repo:foo file:bar a or b and c => repo:foo file:bar (a or b and c)
+// - repo:foo a or b file:bar => repo:foo (a or b) file:bar
+// - a or b file:bar => file:bar (a or b)
+//
+// Invalid examples:
+//
+// - a or repo:foo b => Reading left to right, a parameter is interpolated between patterns
+// - a repo:foo or b => As above.
+// - repo:foo a or file:bar b => As above.
+//
+// In invalid cases, we want preserve the default interpretation, which
+// corresponds to groupings around `or` expressions, i.e.,
 //
 // repo:foo a or b or repo:bar c => (repo:foo a) or (b) or (repo:bar c)
 func Hoist(nodes []Node) ([]Node, error) {
@@ -339,10 +392,25 @@ func Hoist(nodes []Node) ([]Node, error) {
 	var pattern []Node
 	var scopeParameters []Parameter
 	for i, node := range expression.Operands {
-		if i == 0 || i == n-1 {
+		if i == 0 {
 			scopePart, patternPart, err := PartitionSearchPattern([]Node{node})
 			if err != nil || patternPart == nil {
-				return nil, errors.New("could not partition first or last expression")
+				return nil, errors.New("could not partition first expression")
+			}
+			if !naturallyOrdered(node, false) {
+				return nil, errors.New("unnatural order: patterns not followed by parameter")
+			}
+			pattern = append(pattern, patternPart)
+			scopeParameters = append(scopeParameters, scopePart...)
+			continue
+		}
+		if i == n-1 {
+			scopePart, patternPart, err := PartitionSearchPattern([]Node{node})
+			if err != nil || patternPart == nil {
+				return nil, errors.New("could not partition first expression")
+			}
+			if !naturallyOrdered(node, true) {
+				return nil, errors.New("unnatural order: patterns not followed by parameter")
 			}
 			pattern = append(pattern, patternPart)
 			scopeParameters = append(scopeParameters, scopePart...)
