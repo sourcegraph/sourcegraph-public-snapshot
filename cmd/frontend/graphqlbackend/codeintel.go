@@ -31,6 +31,7 @@ type CodeIntelResolver interface {
 
 	AutoindexingServiceResolver
 	ExecutorResolver
+	UploadsServiceResolver
 	PoliciesServiceResolver
 }
 
@@ -48,6 +49,13 @@ type ExecutorResolver interface {
 	ExecutorResolver() executor.Resolver
 }
 
+type UploadsServiceResolver interface {
+	CommitGraph(ctx context.Context, id graphql.ID) (CodeIntelligenceCommitGraphResolver, error)
+	DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error)
+	LSIFUploadByID(ctx context.Context, id graphql.ID) (LSIFUploadResolver, error)
+	LSIFUploads(ctx context.Context, args *LSIFUploadsQueryArgs) (LSIFUploadConnectionResolver, error)
+	LSIFUploadsByRepo(ctx context.Context, args *LSIFRepositoryUploadsQueryArgs) (LSIFUploadConnectionResolver, error)
+}
 type PoliciesServiceResolver interface {
 	CodeIntelligenceConfigurationPolicies(ctx context.Context, args *CodeIntelligenceConfigurationPoliciesArgs) (CodeIntelligenceConfigurationPolicyConnectionResolver, error)
 	ConfigurationPolicyByID(ctx context.Context, id graphql.ID) (CodeIntelligenceConfigurationPolicyResolver, error)
