@@ -36,6 +36,7 @@ public class JCEFWindow {
         CefApp.getInstance().registerSchemeHandlerFactory("http", "sourcegraph", new SchemeHandlerFactory());
         browser.setPageBackgroundColor(ThemeService.getPanelBackgroundColorHexString());
         Disposer.register(project, browser);
+        // browser.getJBCefClient().setProperty("JS_QUERY_POOL_SIZE", "10");
 
         /* Add browser to panel */
         panel.add(Objects.requireNonNull(browser.getComponent()), BorderLayout.CENTER);
@@ -45,6 +46,13 @@ public class JCEFWindow {
         JSToJavaBridge jsToJavaBridge = new JSToJavaBridge(browser, new JSToJavaBridgeRequestHandler(), initJSCode);
         Disposer.register(browser, jsToJavaBridge);
         JavaToJSBridge javaToJSBridge = new JavaToJSBridge(browser);
+
+        UIManager.addPropertyChangeListener(propertyChangeEvent -> {
+            if (propertyChangeEvent.getPropertyName().equals("lookAndFeel")) {
+                System.out.println("Look and feel changed");
+                javaToJSBridge.callJS("themeChanged", "green");
+            }
+        });
     }
 
     public JPanel getContent() {
