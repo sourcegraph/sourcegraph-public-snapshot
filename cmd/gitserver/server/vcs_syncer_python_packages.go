@@ -1,14 +1,21 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io/fs"
 	"net/url"
 	"path"
+	"strings"
+
+	"github.com/davecgh/go-spew/spew"
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/pypi"
+	"github.com/sourcegraph/sourcegraph/internal/unpack"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -46,16 +53,19 @@ func (pythonPackagesSyncer) ParseDependencyFromRepoName(repoName string) (reposo
 }
 
 func (s *pythonPackagesSyncer) Get(ctx context.Context, name, version string) (reposource.PackageDependency, error) {
-	_, err := s.client.Version(ctx, name, version)
+	f, err := s.client.Version(ctx, name, version)
 	if err != nil {
 		return nil, err
 	}
-	return reposource.NewPythonDependency(name, version), nil
+	dep := reposource.NewPythonDependency(name, version)
+	dep.PackageURL = f.URL
+	return dep, nil
 }
 
 func (s *pythonPackagesSyncer) Download(ctx context.Context, dir string, dep reposource.PackageDependency) error {
 	packageURL := dep.(*reposource.PythonDependency).PackageURL
 
+	spew.Dump("###########", packageURL)
 	pkg, err := s.client.Download(ctx, packageURL)
 	if err != nil {
 		return errors.Wrap(err, "download")
@@ -78,6 +88,35 @@ func unpackPythonPackage(pkg []byte, packageURL, workDir string) error {
 	}
 
 	filename := path.Base(u.Path)
-	switch filename
 
+	r := bytes.NewReader(pkg)
+	opts := unpack.Opts{
+		SkipInvalid: true,
+		Filter: func(path string, file fs.FileInfo) bool {
+			size := file.Size()
+
+			const sizeLimit = 15 * 1024 * 1024
+			if size >= sizeLimit {
+				log15.Warn("skipping large file in npm package",
+					"path", file.Name(),
+					"size", size,
+					"limit", sizeLimit,
+				)
+				return false
+			}
+
+			_, malicious := isPotentiallyMaliciousFilepathInArchive(path, workDir)
+			return !malicious
+		},
+	}
+
+	switch {
+	case strings.HasSuffix(filename, ".tar.gz"), strings.HasSuffix(filename, ".tgz"):
+		return unpack.Tgz(r, workDir, opts)
+	case strings.HasSuffix(filename, ".whl"), strings.HasSuffix(filename, ".zip"):
+		return unpack.Zip(r, int64(len(pkg)), workDir, opts)
+	case strings.HasSuffix(filename, ".tar"):
+		return unpack.Tar(r, workDir, opts)
+	}
+	return nil
 }

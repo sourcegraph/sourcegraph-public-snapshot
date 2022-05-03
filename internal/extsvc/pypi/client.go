@@ -29,6 +29,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"path"
 	"path/filepath"
 	"strconv"
@@ -290,8 +291,8 @@ func ToSDist(f File) (*SDist, error) {
 	name := f.Name
 
 	// source distribution or unsupported other format.
-	ext, ok := isSDIST(name)
-	if !ok {
+	ext := isSDIST(name)
+	if ext == "" {
 		return nil, errors.Errorf("%q is not a sdist", name)
 	}
 
@@ -320,23 +321,37 @@ func ToSDist(f File) (*SDist, error) {
 //   request-1.12.2.tar.gz -> .tar.gz, true
 //   request-1.12.2.foo -> "", false
 //
-func isSDIST(filename string) (string, bool) {
-	extOrEmpty := func(path, ext string) (string, bool) {
-		if filepath.Ext(path[:len(path)-len(ext)]) == ".tar" {
-			return ".tar" + ext, true
-		}
-		return "", false
+func isSDIST(filename string) string {
+	switch ext := filepath.Ext(filename); ext {
+	case "zip", "tar":
+		return ext
 	}
 
-	ext := filepath.Ext(filename)
-	switch ext {
-	case ".zip", ".tar":
-		return ext, true
-	case ".gz", ".bz2", ".xz", ".Z":
-		return extOrEmpty(filename, ext)
+	switch ext := ExtN(filename, 2); ext {
+	case ".tar.gz", ".tar.bz2", ".tar.xz", ".tar.Z":
+		return ext
 	default:
-		return "", false
+		return ""
 	}
+}
+
+func ExtN(path string, n int) (ext string) {
+	if n == -1 {
+		i := strings.Index(path, ".")
+		if i == -1 {
+			return ""
+		}
+		return path[i:]
+	}
+	for i := len(path) - 1; i >= 0 && !os.IsPathSeparator(path[i]); i-- {
+		if path[i] == '.' {
+			n--
+			if n == 0 {
+				return path[i:]
+			}
+		}
+	}
+	return ""
 }
 
 // https://peps.python.org/pep-0491/#file-format
