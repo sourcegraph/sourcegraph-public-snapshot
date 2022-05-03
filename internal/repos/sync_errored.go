@@ -7,6 +7,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"golang.org/x/time/rate"
+	"gorm.io/gorm/logger"
 
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -44,8 +45,8 @@ func (s *Syncer) RunSyncReposWithLastErrorsWorker(ctx context.Context, logger lo
 // Dot com mode.
 func (s *Syncer) SyncReposWithLastErrors(ctx context.Context, logger log.Logger, rateLimiter *rate.Limiter) error {
 	erroredRepoGauge.Set(0)
-	s.setTotalErroredRepos(ctx, logger)
-	err := s.Store.GitserverReposStore.IterateWithNonemptyLastError(ctx, func(repo types.RepoGitserverStatus) error {
+	s.setTotalErroredRepos(ctx)
+	err := s.Store.GitserverReposStore().IterateWithNonemptyLastError(ctx, func(repo types.RepoGitserverStatus) error {
 		err := rateLimiter.Wait(ctx)
 		if err != nil {
 			return errors.Errorf("error waiting for rate limiter: %s", err)
@@ -62,8 +63,8 @@ func (s *Syncer) SyncReposWithLastErrors(ctx context.Context, logger log.Logger,
 	return err
 }
 
-func (s *Syncer) setTotalErroredRepos(ctx context.Context, logger log.Logger) {
-	totalErrored, err := s.Store.GitserverReposStore.TotalErroredCloudDefaultRepos(ctx)
+func (s *Syncer) setTotalErroredRepos(ctx context.Context) {
+	totalErrored, err := s.Store.GitserverReposStore().TotalErroredCloudDefaultRepos(ctx)
 	if err != nil {
 		logger.Error("error fetching count of total errored repos", log.Error(err))
 		return

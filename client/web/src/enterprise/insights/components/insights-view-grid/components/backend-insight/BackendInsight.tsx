@@ -4,6 +4,8 @@ import classNames from 'classnames'
 import { useMergeRefs } from 'use-callback-ref'
 
 import { asError } from '@sourcegraph/common'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useDebounce, useDeepMemo } from '@sourcegraph/wildcard'
 
@@ -27,6 +29,7 @@ import styles from './BackendInsight.module.scss'
 
 interface BackendInsightProps
     extends TelemetryProps,
+        SettingsCascadeProps<Settings>,
         React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> {
     insight: BackendInsight
 
@@ -152,6 +155,7 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
                             onVisibilityChange={setIsFiltersOpen}
                         />
                         <InsightContextMenu
+                            settingsCascade={props.settingsCascade}
                             insight={insight}
                             dashboard={dashboard}
                             menuButtonClassName="ml-1 d-inline-flex"

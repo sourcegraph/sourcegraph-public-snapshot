@@ -28,7 +28,6 @@ var allJobs = []job.Job{
 
 	&AndJob{},
 	&OrJob{},
-	&PriorityJob{},
 	&ParallelJob{},
 	&SequentialJob{},
 
