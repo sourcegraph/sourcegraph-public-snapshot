@@ -15,6 +15,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## Unreleased
 
+- Code Insights: Fixed incorrect Line Chart size calculation in FireFox
+
 ### Added
 
 - Code Insights: Added fuzzy search filter for dashboard select drop down

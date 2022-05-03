@@ -4,6 +4,8 @@ import PlusIcon from 'mdi-react/PlusIcon'
 import { matchPath, useHistory } from 'react-router'
 import { useLocation } from 'react-router-dom'
 
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
@@ -36,7 +38,7 @@ function useQuery(): URLSearchParams {
     return React.useMemo(() => new URLSearchParams(search), [search])
 }
 
-interface CodeInsightsRootPageProps extends TelemetryProps {
+interface CodeInsightsRootPageProps extends TelemetryProps, SettingsCascadeProps<Settings> {
     activeView: CodeInsightsRootPageTab
 }
 
@@ -101,10 +103,17 @@ export const CodeInsightsRootPage: React.FunctionComponent<CodeInsightsRootPageP
                 </TabList>
                 <TabPanels className="mt-3">
                     <TabPanel>
-                        <DashboardsContentPage telemetryService={telemetryService} dashboardID={params?.dashboardId} />
+                        <DashboardsContentPage
+                            settingsCascade={props.settingsCascade}
+                            telemetryService={telemetryService}
+                            dashboardID={params?.dashboardId}
+                        />
                     </TabPanel>
                     <TabPanel>
-                        <LazyCodeInsightsGettingStartedPage telemetryService={telemetryService} />
+                        <LazyCodeInsightsGettingStartedPage
+                            settingsCascade={props.settingsCascade}
+                            telemetryService={telemetryService}
+                        />
                     </TabPanel>
                 </TabPanels>
             </Tabs>

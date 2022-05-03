@@ -16,6 +16,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
+	autoindexinggraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
 	policiesgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -58,8 +60,9 @@ func NewResolver(db database.DB, gitserver GitserverClient, resolver resolvers.R
 	}
 
 	return &frankenResolver{
-		Resolver:                baseResolver,
-		PoliciesServiceResolver: policiesgraphql.GetResolver(policies.GetService(db)),
+		Resolver:                    baseResolver,
+		AutoindexingServiceResolver: autoindexinggraphql.GetResolver(autoindexing.GetService(db)),
+		PoliciesServiceResolver:     policiesgraphql.GetResolver(policies.GetService(db)),
 	}
 }
 
