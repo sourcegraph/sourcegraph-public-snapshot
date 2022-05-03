@@ -49,8 +49,10 @@ RUN apk add --no-cache --verbose \
     # from our *Minimum Supported Version* which alone dictates
     # the features we can depend on. See this link for more information:
     # https://github.com/sourcegraph/sourcegraph/blob/main/doc/dev/postgresql.md#version-requirements
+    # You can't just bump the major version since that requires pgupgrade
+    # between Sourcegraph releases.
     && apk add --no-cache --verbose \
-    postgresql>=12.10-r0 \
+    postgresql=~12 \
     postgresql-contrib \
     --repository=http://dl-cdn.alpinelinux.org/alpine/v3.12/main  \
     && apk add --no-cache --verbose \
