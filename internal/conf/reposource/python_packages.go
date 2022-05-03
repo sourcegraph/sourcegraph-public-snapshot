@@ -29,8 +29,8 @@ func ParsePythonDependency(dependency string) (*PythonDependency, error) {
 	if i := strings.LastIndex(dependency, "=="); i == -1 {
 		dep.Name = dependency
 	} else {
-		dep.Name = dependency[:i]
-		dep.Version = dependency[i+1:]
+		dep.Name = strings.TrimSpace(dependency[:i])
+		dep.Version = strings.TrimSpace(dependency[i+2:])
 	}
 	return &dep, nil
 }
