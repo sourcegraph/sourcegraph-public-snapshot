@@ -66,7 +66,7 @@ func (s *PythonPackagesSource) ListRepos(ctx context.Context, results chan Sourc
 			continue
 		}
 
-		_, err := s.client.Project(ctx, dep.PackageSyntax())
+		_, err := s.client.Version(ctx, dep.PackageSyntax(), dep.PackageVersion())
 		if err != nil {
 			results <- SourceResult{Source: s, Err: err}
 			continue
@@ -117,7 +117,7 @@ func (s *PythonPackagesSource) ListRepos(ctx context.Context, results chan Sourc
 			g.Go(func() error {
 				defer sem.Release(1)
 
-				_, err := s.client.Project(ctx, depRepo.Name)
+				_, err := s.client.Version(ctx, depRepo.Name, depRepo.Version)
 				if err != nil {
 					if errcode.IsNotFound(err) {
 						return nil
