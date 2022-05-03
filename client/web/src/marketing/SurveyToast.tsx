@@ -134,6 +134,6 @@ export const SurveyToast: React.FunctionComponent<SurveyToastProps> = ({ forceVi
                 />
             )
         default:
-            return null
+            throw new Error('Invalid survey step!')
     }
 }
