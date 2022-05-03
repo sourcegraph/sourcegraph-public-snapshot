@@ -1,11 +1,15 @@
 // eslint-disable-next-line unicorn/prevent-abbreviations
 export interface HasGetBoundingClientRect {
-    getBoundingClientRect: () => DOMRect
+    getBoundingClientRect: () => { left: number; top: number; bottom: number; height: number }
 }
 
 export interface CalculateOverlayPositionOptions {
     /** The closest parent element that is `position: relative` */
-    relativeElement: HasGetBoundingClientRect & { scrollLeft: number; scrollTop: number }
+    relativeElement?: HasGetBoundingClientRect & { scrollLeft: number; scrollTop: number }
+    /** window.innerHeight */
+    windowInnerHeight: number
+    /** window.scrollY */
+    windowScrollY: number
     /** The DOM Node that was hovered */
     target: HasGetBoundingClientRect
     /** The DOM Node of the tooltip */
@@ -22,10 +26,30 @@ export const calculateOverlayPosition = ({
     relativeElement,
     target,
     hoverOverlayElement,
+    windowInnerHeight,
+    windowScrollY,
 }: CalculateOverlayPositionOptions): CSSOffsets => {
-    const relativeElementBounds = relativeElement.getBoundingClientRect()
     const targetBounds = target.getBoundingClientRect()
     const hoverOverlayBounds = hoverOverlayElement.getBoundingClientRect()
+
+    if (!relativeElement) {
+        // Check if the top of the hover overlay would be outside of the viewport
+        if (targetBounds.top - hoverOverlayBounds.height < 0) {
+            // Position it below the target
+            return {
+                left: targetBounds.left,
+                top: windowScrollY + targetBounds.bottom,
+            }
+        }
+
+        // Else position it above the target
+        return {
+            left: targetBounds.left,
+            bottom: windowInnerHeight - targetBounds.top - windowScrollY,
+        }
+    }
+
+    const relativeElementBounds = relativeElement.getBoundingClientRect()
 
     // If the relativeElement is scrolled horizontally, we need to account for the offset (if not scrollLeft will be 0)
     const relativeHoverOverlayLeft = targetBounds.left + relativeElement.scrollLeft - relativeElementBounds.left
