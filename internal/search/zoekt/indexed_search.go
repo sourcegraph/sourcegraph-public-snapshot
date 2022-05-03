@@ -549,13 +549,13 @@ func (*ZoektRepoSubsetSearchJob) Name() string {
 	return "ZoektRepoSubsetSearchJob"
 }
 
-type GlobalSearch struct {
+type GlobalSearchJob struct {
 	GlobalZoektQuery *GlobalZoektQuery
 	ZoektArgs        *search.ZoektParameters
 	RepoOptions      search.RepoOptions
 }
 
-func (t *GlobalSearch) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+func (t *GlobalSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, t)
 	defer func() { finish(alert, err) }()
 
@@ -566,6 +566,6 @@ func (t *GlobalSearch) Run(ctx context.Context, clients job.RuntimeClients, stre
 	return nil, DoZoektSearchGlobal(ctx, clients.Zoekt, t.ZoektArgs, stream)
 }
 
-func (*GlobalSearch) Name() string {
-	return "ZoektGlobalSearch"
+func (*GlobalSearchJob) Name() string {
+	return "ZoektGlobalSearchJob"
 }
