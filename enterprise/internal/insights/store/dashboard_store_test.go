@@ -26,21 +26,18 @@ func TestGetDashboard(t *testing.T) {
 	ctx := context.Background()
 
 	// assign some global grants just so the test can immediately fetch the created dashboard
-	_, err = insightsDB.Exec(`INSERT INTO dashboard_grants (dashboard_id, global)
-									VALUES (1, true)`)
+	_, err = insightsDB.Exec(`INSERT INTO dashboard_grants (dashboard_id, global) VALUES (1, true)`)
 	if err != nil {
 		t.Fatal(err)
 	}
 	// assign a private user grant
-	_, err = insightsDB.Exec(`INSERT INTO dashboard_grants (dashboard_id, user_id)
-									VALUES (2, 3)`)
+	_, err = insightsDB.Exec(`INSERT INTO dashboard_grants (dashboard_id, user_id) VALUES (2, 3)`)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// assign a private org grant
-	_, err = insightsDB.Exec(`INSERT INTO dashboard_grants (dashboard_id, org_id)
-									VALUES (3, 1)`)
+	_, err = insightsDB.Exec(`INSERT INTO dashboard_grants (dashboard_id, org_id) VALUES (3, 1)`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -62,7 +59,7 @@ func TestGetDashboard(t *testing.T) {
 										(1, 3),
 										(2, 2),
 										(2, 3),
-									    (3, 3)`)
+										(3, 3)`)
 	if err != nil {
 		t.Fatal(err)
 	}
