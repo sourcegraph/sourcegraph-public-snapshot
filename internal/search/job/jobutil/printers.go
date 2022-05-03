@@ -80,25 +80,6 @@ func SexpFormat(j job.Job, sep, indent string) string {
 			}
 			b.WriteString(")")
 			depth--
-		case *PriorityJob:
-			b.WriteString("(PRIORITY")
-			depth++
-			writeSep(b, sep, indent, depth)
-			b.WriteString("(REQUIRED")
-			depth++
-			writeSep(b, sep, indent, depth)
-			writeSexp(j.required)
-			b.WriteString(")")
-			depth--
-			writeSep(b, sep, indent, depth)
-			b.WriteString("(OPTIONAL")
-			depth++
-			writeSep(b, sep, indent, depth)
-			writeSexp(j.optional)
-			b.WriteString(")")
-			depth--
-			b.WriteString(")")
-			depth--
 		case *ParallelJob:
 			b.WriteString("(PARALLEL")
 			depth++
@@ -258,23 +239,6 @@ func PrettyMermaid(j job.Job) string {
 				writeMermaid(child)
 			}
 			depth--
-		case *PriorityJob:
-			srcId := id
-			depth++
-			writeNode(b, depth, RoundedStyle, &id, "PRIORITY")
-
-			requiredId := id
-			writeEdge(b, depth, srcId, requiredId)
-			writeNode(b, depth, RoundedStyle, &id, "REQUIRED")
-			writeEdge(b, depth, requiredId, id)
-			writeMermaid(j.required)
-
-			optionalId := id
-			writeEdge(b, depth, srcId, optionalId)
-			writeNode(b, depth, RoundedStyle, &id, "OPTIONAL")
-			writeEdge(b, depth, optionalId, id)
-			writeMermaid(j.optional)
-			depth--
 		case *ParallelJob:
 			srcId := id
 			depth++
@@ -398,20 +362,6 @@ func toJSON(j job.Job, verbose bool) interface{} {
 				Or []interface{} `json:"OR"`
 			}{
 				Or: children,
-			}
-
-		case *PriorityJob:
-			priority := struct {
-				Required interface{} `json:"REQUIRED"`
-				Optional interface{} `json:"OPTIONAL"`
-			}{
-				Required: emitJSON(j.required),
-				Optional: emitJSON(j.optional),
-			}
-			return struct {
-				Priority interface{} `json:"PRIORITY"`
-			}{
-				Priority: priority,
 			}
 
 		case *ParallelJob:

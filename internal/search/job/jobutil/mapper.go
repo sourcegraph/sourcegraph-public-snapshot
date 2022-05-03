@@ -40,7 +40,6 @@ type Mapper struct {
 	// Combinator Jobs
 	MapParallelJob   func(children []job.Job) []job.Job
 	MapSequentialJob func(children []job.Job) []job.Job
-	MapPriorityJob   func(required, optional job.Job) (job.Job, job.Job)
 	MapTimeoutJob    func(timeout time.Duration, child job.Job) (time.Duration, job.Job)
 	MapLimitJob      func(limit int, child job.Job) (int, job.Job)
 	MapSelectJob     func(path filter.SelectPath, child job.Job) (filter.SelectPath, job.Job)
@@ -167,14 +166,6 @@ func (m *Mapper) Map(j job.Job) job.Job {
 			children = m.MapSequentialJob(children)
 		}
 		return NewSequentialJob(children...)
-
-	case *PriorityJob:
-		required := m.Map(j.required)
-		optional := m.Map(j.optional)
-		if m.MapPriorityJob != nil {
-			required, optional = m.MapPriorityJob(required, optional)
-		}
-		return NewPriorityJob(required, optional)
 
 	case *TimeoutJob:
 		child := m.Map(j.child)

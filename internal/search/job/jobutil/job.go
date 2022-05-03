@@ -66,13 +66,9 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 
 	repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos := jobMode(b, resultTypes, searchInputs.PatternType, searchInputs.OnSourcegraphDotCom)
 
-	var requiredJobs, optionalJobs []job.Job
-	addJob := func(required bool, job job.Job) {
-		if required {
-			requiredJobs = append(requiredJobs, job)
-		} else {
-			optionalJobs = append(optionalJobs, job)
-		}
+	var allJobs []job.Job
+	addJob := func(job job.Job) {
+		allJobs = append(allJobs, job)
 	}
 
 	{
@@ -90,7 +86,7 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 				if err != nil {
 					return nil, err
 				}
-				addJob(true, job)
+				addJob(job)
 			}
 
 			// Create Text Search jobs over repo set.
@@ -110,7 +106,7 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 					UseFullDeadline: useFullDeadline,
 				})
 
-				addJob(true, &repoPagerJob{
+				addJob(&repoPagerJob{
 					child:            NewParallelJob(textSearchJobs...),
 					repoOptions:      repoOptions,
 					useIndex:         b.Index(),
@@ -127,7 +123,7 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 				if err != nil {
 					return nil, err
 				}
-				addJob(true, job)
+				addJob(job)
 			}
 
 			// Create Symbol Search jobs over repo set.
@@ -147,8 +143,7 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 					Limit:       maxResults,
 				})
 
-				required := useFullDeadline || resultTypes.Without(result.TypeSymbol) == 0
-				addJob(required, &repoPagerJob{
+				addJob(&repoPagerJob{
 					child:            NewParallelJob(symbolSearchJobs...),
 					repoOptions:      repoOptions,
 					useIndex:         b.Index(),
@@ -159,15 +154,7 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 
 		if resultTypes.Has(result.TypeCommit) || resultTypes.Has(result.TypeDiff) {
 			diff := resultTypes.Has(result.TypeDiff)
-			var required bool
-			if useFullDeadline {
-				required = true
-			} else if diff {
-				required = resultTypes.Without(result.TypeDiff) == 0
-			} else {
-				required = resultTypes.Without(result.TypeCommit) == 0
-			}
-			addJob(required, &commit.CommitSearch{
+			addJob(&commit.CommitSearch{
 				Query:                commit.QueryToGitQuery(b, diff),
 				RepoOpts:             repoOptions,
 				Diff:                 diff,
@@ -195,7 +182,7 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 				UseFullDeadline: useFullDeadline,
 			}
 
-			addJob(true, &structural.StructuralSearch{
+			addJob(&structural.StructuralSearch{
 				ZoektArgs:        zoektArgs,
 				SearcherArgs:     searcherArgs,
 				UseIndex:         b.Index(),
@@ -287,7 +274,7 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 					if skipRepoSubsetSearch {
 						mode = search.SkipUnindexed
 					}
-					addJob(true, &run.RepoSearch{
+					addJob(&run.RepoSearch{
 						RepoOptions:                  repoOptions,
 						Features:                     features,
 						FilePatternsReposMustInclude: patternInfo.FilePatternsReposMustInclude,
@@ -299,14 +286,11 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 		}
 	}
 
-	addJob(true, &searchrepos.ComputeExcludedRepos{
+	addJob(&searchrepos.ComputeExcludedRepos{
 		Options: repoOptions,
 	})
 
-	job := NewPriorityJob(
-		NewParallelJob(requiredJobs...),
-		NewParallelJob(optionalJobs...),
-	)
+	job := NewParallelJob(allJobs...)
 
 	checker := authz.DefaultSubRepoPermsChecker
 	if authz.SubRepoEnabled(checker) {
