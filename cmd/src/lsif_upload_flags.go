@@ -71,7 +71,7 @@ func init() {
 
 	// Codehost authorization secrets
 	lsifUploadFlagSet.StringVar(&lsifUploadFlags.gitHubToken, "github-token", "", `A GitHub access token with 'public_repo' scope that Sourcegraph uses to verify you have access to the repository.`)
-	lsifUploadFlagSet.StringVar(&lsifUploadFlags.gitLabToken, "gitlab-token", "", `A GitLab access token with TODO that Sourcegraph uses to verify you have access to the repository.`)
+	lsifUploadFlagSet.StringVar(&lsifUploadFlags.gitLabToken, "gitlab-token", "", `A GitLab access token with 'read_api' scope that Sourcegraph uses to verify you have access to the repository.`)
 
 	// Output and error behavior
 	lsifUploadFlagSet.BoolVar(&lsifUploadFlags.ignoreUploadFailures, "ignore-upload-failure", false, `Exit with status code zero on upload failure.`)
