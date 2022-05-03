@@ -315,7 +315,7 @@ select count(*) from
 gitserver_repos
 where clone_status = 'cloned'
 and exists
-  (select from repo where id = repo_id and deleted_at is not null)
+  (select from repo where id = repo_id and (deleted_at is not null or blocked is not null))
 `)
 		if err != nil {
 			log15.Error("Failed to count purgeable repos", "err", err)

@@ -4,7 +4,9 @@
     "showRepogroupHomepage": true,
     "showMultilineSearchConsole": true,
     "codeMonitoring": true,
-    "codeInsights": true
+    "codeInsights": true,
+    "codeIntelRepositoryBadge": { "enabled": true },
+    "coolCodeIntel": true
   },
   "insights": [
     {
