@@ -20,8 +20,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// A PythonPackagesSource creates git repositories from go module zip files of
-// published go dependencies from the Go ecosystem.
+// A PythonPackagesSource creates git repositories from python files of
+// published python dependencies.
 type PythonPackagesSource struct {
 	svc     *types.ExternalService
 	config  *schema.PythonPackagesConnection
@@ -66,11 +66,13 @@ func (s *PythonPackagesSource) ListRepos(ctx context.Context, results chan Sourc
 			continue
 		}
 
-		_, err := s.client.Project(ctx, dep.PackageSyntax())
+		f, err := s.client.Version(ctx, dep.PackageSyntax(), dep.PackageVersion())
 		if err != nil {
 			results <- SourceResult{Source: s, Err: err}
 			continue
 		}
+
+		dep.PackageURL = f.URL
 
 		repo := s.makeRepo(dep)
 		results <- SourceResult{Source: s, Repo: repo}
@@ -117,7 +119,7 @@ func (s *PythonPackagesSource) ListRepos(ctx context.Context, results chan Sourc
 			g.Go(func() error {
 				defer sem.Release(1)
 
-				files, err := s.client.Project(ctx, depRepo.Name)
+				f, err := s.client.Version(ctx, depRepo.Name, depRepo.Version)
 				if err != nil {
 					if errcode.IsNotFound(err) {
 						return nil
@@ -129,7 +131,10 @@ func (s *PythonPackagesSource) ListRepos(ctx context.Context, results chan Sourc
 				if _, ok := set[depRepo.Name]; !ok {
 					set[depRepo.Name] = struct{}{}
 					mu.Unlock()
-					dep := reposource.NewGoDependency(*mod)
+					dep := reposource.NewPythonDependency(depRepo.Name, depRepo.Version)
+
+					dep.PackageURL = f.URL
+
 					repo := s.makeRepo(dep)
 					results <- SourceResult{Source: s, Repo: repo}
 				} else {
@@ -171,7 +176,7 @@ func (s *PythonPackagesSource) makeRepo(dep *reposource.PythonDependency) *types
 		Sources: map[string]*types.SourceInfo{
 			urn: {
 				ID:       urn,
-				CloneURL: string(repoName),
+				CloneURL: dep.PackageURL,
 			},
 		},
 		Metadata: &struct{}{},
