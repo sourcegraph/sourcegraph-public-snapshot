@@ -1064,9 +1064,17 @@ func (i *InsightViewDashboardConnectionResolver) PageInfo(ctx context.Context) (
 
 func (i *InsightViewDashboardConnectionResolver) computeDashboards(ctx context.Context) ([]*types.Dashboard, string, error) {
 	i.once.Do(func() {
-		args := store.DashboardQueryArgs{WithViewUniqueID: &i.view.UniqueID}
-		if i.args.After != nil {
+		var err error
 
+		orgStore := database.Orgs(i.postgresDB)
+		args := store.DashboardQueryArgs{WithViewUniqueID: &i.view.UniqueID}
+		args.UserID, args.OrgID, err = getUserPermissions(ctx, orgStore)
+		if err != nil {
+			i.err = err
+			return
+		}
+
+		if i.args.After != nil {
 			afterID, err := unmarshalDashboardID(graphql.ID(*i.args.After))
 			if err != nil {
 				i.err = errors.Wrap(err, "unable to unmarshal dashboard id")
@@ -1078,13 +1086,7 @@ func (i *InsightViewDashboardConnectionResolver) computeDashboards(ctx context.C
 		if i.args.First != nil {
 			args.Limit = int(*i.args.First)
 		}
-		var err error
-		orgStore := database.Orgs(i.postgresDB)
-		args.UserID, args.OrgID, err = getUserPermissions(ctx, orgStore)
-		if err != nil {
-			i.err = err
-			return
-		}
+
 		dashboards, err := i.dashboardStore.GetDashboards(ctx, args)
 		if err != nil {
 			i.err = err
