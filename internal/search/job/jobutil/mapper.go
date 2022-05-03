@@ -20,7 +20,7 @@ type Mapper struct {
 
 	// Search Jobs (leaf nodes)
 	MapZoektRepoSubsetSearchJob    func(*zoekt.ZoektRepoSubsetSearchJob) *zoekt.ZoektRepoSubsetSearchJob
-	MapZoektSymbolSearchJob        func(*zoekt.ZoektSymbolSearch) *zoekt.ZoektSymbolSearch
+	MapZoektSymbolSearchJob        func(*zoekt.ZoektSymbolSearchJob) *zoekt.ZoektSymbolSearchJob
 	MapSearcherJob                 func(*searcher.SearcherJob) *searcher.SearcherJob
 	MapSymbolSearcherJob           func(*searcher.SymbolSearcherJob) *searcher.SymbolSearcherJob
 	MapRepoSearchJob               func(*run.RepoSearchJob) *run.RepoSearchJob
@@ -65,7 +65,7 @@ func (m *Mapper) Map(j job.Job) job.Job {
 		}
 		return j
 
-	case *zoekt.ZoektSymbolSearch:
+	case *zoekt.ZoektSymbolSearchJob:
 		if m.MapZoektSymbolSearchJob != nil {
 			j = m.MapZoektSymbolSearchJob(j)
 		}
@@ -220,7 +220,7 @@ func MapAtom(j job.Job, f func(job.Job) job.Job) job.Job {
 			switch typedJob := currentJob.(type) {
 			case
 				*zoekt.ZoektRepoSubsetSearchJob,
-				*zoekt.ZoektSymbolSearch,
+				*zoekt.ZoektSymbolSearchJob,
 				*searcher.SearcherJob,
 				*searcher.SymbolSearcherJob,
 				*run.RepoSearchJob,
