@@ -6,9 +6,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
 
-func TestRecognizersRust(t *testing.T) {
-	testRecognizers(t,
-		recognizerTestCase{
+func TestRustGenerator(t *testing.T) {
+	testGenerators(t,
+		generatorTestCase{
 			description: "rust-analyzer",
 			repositoryContents: map[string]string{
 				"foo/bar/Cargo.toml": "",

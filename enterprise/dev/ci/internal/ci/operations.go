@@ -72,7 +72,6 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 			frontendTests,                // ~4.5m
 			addWebApp,                    // ~5.5m
 			addBrowserExtensionUnitTests, // ~4.5m
-			addVsceIntegrationTests,      // ~5.5m
 			addTypescriptCheck,           // ~4m
 		)
 
