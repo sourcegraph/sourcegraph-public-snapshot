@@ -10,14 +10,14 @@ import (
 
 // IndexJobsFromTable decodes a single index job or slice of index jobs from the given Lua
 // value.
-func IndexJobsFromTable(value lua.LValue) (patterns []config.IndexJob, err error) {
+func IndexJobsFromTable(value lua.LValue) (jobs []config.IndexJob, err error) {
 	err = util.UnwrapSliceOrSingleton(value, func(value lua.LValue) error {
 		job, err := indexJobFromTable(value)
 		if err != nil {
 			return err
 		}
 
-		patterns = append(patterns, job)
+		jobs = append(jobs, job)
 		return nil
 	})
 
