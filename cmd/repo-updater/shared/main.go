@@ -60,7 +60,7 @@ var stateHTMLTemplate string
 
 // EnterpriseInit is a function that allows enterprise code to be triggered when dependencies
 // created in Main are ready for use.
-type EnterpriseInit func(db database.DB, store *repos.Store, keyring keyring.Ring, cf *httpcli.Factory, server *repoupdater.Server) []debugserver.Dumper
+type EnterpriseInit func(db database.DB, store repos.Store, keyring keyring.Ring, cf *httpcli.Factory, server *repoupdater.Server) []debugserver.Dumper
 
 type LazyDebugserverEndpoint struct {
 	repoUpdaterStateEndpoint     http.HandlerFunc
@@ -124,7 +124,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	{
 		m := repos.NewStoreMetrics()
 		m.MustRegister(prometheus.DefaultRegisterer)
-		store.Metrics = m
+		store.SetMetrics(m)
 	}
 
 	cf := httpcli.ExternalClientFactory
@@ -144,7 +144,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		Scheduler:             updateScheduler,
 		GitserverClient:       gitserver.NewClient(db),
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
-		RateLimitSyncer:       repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, store.ExternalServiceStore, repos.RateLimitSyncerOpts{}),
+		RateLimitSyncer:       repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, store.ExternalServiceStore(), repos.RateLimitSyncerOpts{}),
 	}
 
 	// Attempt to perform an initial sync with all external services
@@ -466,7 +466,7 @@ func getPrivateAddedOrModifiedRepos(diff repos.Diff) []api.RepoID {
 // syncScheduler will periodically list the cloned repositories on gitserver and
 // update the scheduler with the list. It also ensures that if any of our default
 // repos are missing from the cloned list they will be added for cloning ASAP.
-func syncScheduler(ctx context.Context, sched *repos.UpdateScheduler, store *repos.Store) {
+func syncScheduler(ctx context.Context, sched *repos.UpdateScheduler, store repos.Store) {
 	baseRepoStore := database.ReposWith(store)
 
 	doSync := func() {
