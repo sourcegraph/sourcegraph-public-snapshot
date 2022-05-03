@@ -8,7 +8,7 @@ export PATH="$GOBIN:$PATH"
 export GO111MODULE=on
 
 # Keep this in sync with go.mod
-REQUIRED_VERSION='1.1.5'
+REQUIRED_VERSION='1.2.0'
 
 set +o pipefail
 INSTALLED_VERSION="$(go-mockgen --version || :)"

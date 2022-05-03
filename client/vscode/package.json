@@ -2,7 +2,7 @@
   "private": true,
   "name": "@sourcegraph/vscode",
   "displayName": "Sourcegraph",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "description": "Sourcegraph for VS Code",
   "publisher": "sourcegraph",
   "sideEffects": false,
@@ -14,7 +14,7 @@
     "directory": "client/vscode"
   },
   "bugs": {
-    "url": "https://github.com/sourcegraph/sourcegraph/issues"
+    "url": "https://github.com/sourcegraph/sourcegraph/issues/new?labels=team/integrations,vscode-extension&title=VSCode+Bug+report:+&projects=Integrations%20Project%20Board"
   },
   "engines": {
     "vscode": "^1.63.2"

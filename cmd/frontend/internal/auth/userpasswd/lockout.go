@@ -83,7 +83,7 @@ type unlockAccountClaims struct {
 func (s *lockoutStore) GenerateUnlockAccountURL(userID int32) (string, string, error) {
 	signingKey := conf.SiteConfig().AuthUnlockAccountLinkSigningKey
 	if signingKey == "" {
-		return "", "", errors.Newf("signing key not provided, cannot validate JWT on unlock account URL. Please add AuthUnlockAccountLinkSigningKey to site configuration.")
+		return "", "", errors.Newf(`signing key not provided, cannot validate JWT on unlock account URL. Please add "auth.unlockAccountLinkSigningKey" to site configuration.`)
 	}
 
 	defaultExpiryMinutes := 30

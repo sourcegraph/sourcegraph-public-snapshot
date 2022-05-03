@@ -91,11 +91,16 @@ describe('ReferencesPanel', () => {
 
         expect(result.getByText('Definitions')).toBeVisible()
 
-        const definitions = ['OrigName string']
+        const definitions = [['', 'string']]
 
         const definitionsList = result.getByTestId('definitions')
         for (const line of definitions) {
-            expect(within(definitionsList).getByText(line)).toBeVisible()
+            for (const surrounding of line) {
+                if (surrounding === '') {
+                    continue
+                }
+                expect(within(definitionsList).getByText(surrounding)).toBeVisible()
+            }
         }
     })
 
@@ -105,14 +110,19 @@ describe('ReferencesPanel', () => {
         expect(result.getByText('References')).toBeVisible()
 
         const references = [
-            'OrigName string',
-            'label = fmt.Sprintf("orig(%s) new(%s)", fdiff.OrigName, fdiff.NewName)',
-            'if err := printFileHeader(&buf, "--- ", d.OrigName, d.OrigTime); err != nil {',
+            ['', 'string'],
+            ['label = fmt.Sprintf("orig(%s) new(%s)", fdiff.', ', fdiff.NewName)'],
+            ['if err := printFileHeader(&buf, "--- ", d.', ', d.OrigTime); err != nil {'],
         ]
 
         const referencesList = result.getByTestId('references')
         for (const line of references) {
-            expect(within(referencesList).getByText(line)).toBeVisible()
+            for (const surrounding of line) {
+                if (surrounding === '') {
+                    continue
+                }
+                expect(within(referencesList).getByText(surrounding)).toBeVisible()
+            }
         }
     })
 

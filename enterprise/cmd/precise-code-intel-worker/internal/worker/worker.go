@@ -28,6 +28,7 @@ func NewWorker(
 	pollInterval time.Duration,
 	numProcessorRoutines int,
 	budgetMax int64,
+	maximumRuntimePerJob time.Duration,
 	workerMetrics workerutil.WorkerMetrics,
 ) *workerutil.Worker {
 	rootContext := actor.WithActor(context.Background(), &actor.Actor{Internal: true})
@@ -58,10 +59,11 @@ func NewWorker(
 	}
 
 	return dbworker.NewWorker(rootContext, workerStore, handler, workerutil.WorkerOptions{
-		Name:              "precise_code_intel_upload_worker",
-		NumHandlers:       numProcessorRoutines,
-		Interval:          pollInterval,
-		HeartbeatInterval: UploadHeartbeatInterval,
-		Metrics:           workerMetrics,
+		Name:                 "precise_code_intel_upload_worker",
+		NumHandlers:          numProcessorRoutines,
+		Interval:             pollInterval,
+		HeartbeatInterval:    UploadHeartbeatInterval,
+		Metrics:              workerMetrics,
+		MaximumRuntimePerJob: maximumRuntimePerJob,
 	})
 }

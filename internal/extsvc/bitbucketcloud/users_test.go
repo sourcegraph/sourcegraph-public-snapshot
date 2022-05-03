@@ -15,9 +15,7 @@ func TestClient_CurrentUser(t *testing.T) {
 	// fine.
 
 	ctx := context.Background()
-
-	c, save := newTestClient(t)
-	defer save()
+	c := newTestClient(t)
 
 	t.Run("valid token", func(t *testing.T) {
 		user, err := c.CurrentUser(ctx)
