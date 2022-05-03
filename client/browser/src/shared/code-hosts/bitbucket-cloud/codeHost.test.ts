@@ -6,7 +6,6 @@ describe('parseHash', () => {
     const entries: [string, LineOrPositionOrRange][] = [
         ['#lines-1', { line: 1 }],
         ['#lines-1:5', { line: 1, endLine: 5 }],
-        ['#lines-5:1', { line: 1, endLine: 5 }],
     ]
 
     for (const [hash, expectedValue] of entries) {
