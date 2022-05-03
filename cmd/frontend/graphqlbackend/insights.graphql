@@ -201,7 +201,7 @@ extend type Query {
         id: ID
         isFrozen: Boolean
         filters: InsightViewFiltersInput
-        seriesDisplayOptions: SeriesDisplayOptions
+        seriesDisplayOptions: SeriesDisplayOptionsInput
     ): InsightViewConnection!
 
     """
@@ -618,11 +618,16 @@ input InsightViewControlsInput {
     """
     Input for series' sort order.
     """
-    seriesDisplayOptions: SeriesDisplayOptions!
+    seriesDisplayOptions: SeriesDisplayOptionsInput!
 }
 
-input SeriesDisplayOptions {
-    sortOptions: SeriesSortOptions
+type SeriesDisplayOptions {
+    sortOptions: SeriesSortOptions!
+    limit: Int
+}
+
+input SeriesDisplayOptionsInput {
+    sortOptions: SeriesSortOptionsInput
     limit: Int
 }
 
@@ -643,9 +648,14 @@ enum SeriesSortDirection {
     DESC
 }
 
-input SeriesSortOptions {
+input SeriesSortOptionsInput {
     mode: SeriesSortMode!
     direction: SeriesSortDirection!
+}
+
+type SeriesSortOptions {
+    mode: SeriesSortMode
+    direction: SeriesSortDirection
 }
 
 """
@@ -858,6 +868,16 @@ type InsightView implements Node {
     The total number of series on this insight.
     """
     seriesCount: Int!
+
+    """
+    The default series display options saved on the insight. This will differ from the applied options if they are overwritten but not saved.
+    """
+    defaultSeriesDisplayOptions: SeriesDisplayOptions!
+
+    """
+    The series display options currently applied to the insight.
+    """
+    appliedSeriesDisplayOptions: SeriesDisplayOptions!
 }
 
 """

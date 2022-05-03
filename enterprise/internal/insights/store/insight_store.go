@@ -221,6 +221,16 @@ func (s *InsightStore) GroupByView(ctx context.Context, viewSeries []types.Insig
 
 	results := make([]types.Insight, 0, len(mapped))
 	for _, seriesSet := range mapped {
+		var sortOptions *types.SeriesSortOptions
+		// TODO what only one of these is set? I think the idea is that they have to be set together, but it's not enforced
+		// in the database..
+		if seriesSet[0].SeriesSortMode != nil && seriesSet[0].SeriesSortDirection != nil {
+			sortOptions = &types.SeriesSortOptions{
+				Mode:      *seriesSet[0].SeriesSortMode,
+				Direction: *seriesSet[0].SeriesSortDirection,
+			}
+		}
+
 		results = append(results, types.Insight{
 			ViewID:          seriesSet[0].ViewID,
 			DashboardViewId: seriesSet[0].DashboardViewID,
@@ -236,6 +246,10 @@ func (s *InsightStore) GroupByView(ctx context.Context, viewSeries []types.Insig
 			OtherThreshold:   seriesSet[0].OtherThreshold,
 			PresentationType: seriesSet[0].PresentationType,
 			IsFrozen:         seriesSet[0].IsFrozen,
+			SeriesOptions: types.SeriesDisplayOptions{
+				SortOptions: sortOptions,
+				Limit:       seriesSet[0].SeriesLimit,
+			},
 		})
 	}
 

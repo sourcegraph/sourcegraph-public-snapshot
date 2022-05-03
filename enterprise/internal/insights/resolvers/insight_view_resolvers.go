@@ -37,6 +37,8 @@ var _ graphqlbackend.InsightTimeScope = &insightTimeScopeUnionResolver{}
 var _ graphqlbackend.InsightPresentation = &insightPresentationUnionResolver{}
 var _ graphqlbackend.InsightDataSeriesDefinition = &insightDataSeriesDefinitionUnionResolver{}
 var _ graphqlbackend.InsightViewConnectionResolver = &InsightViewQueryConnectionResolver{}
+var _ graphqlbackend.InsightViewSeriesDisplayOptionsResolver = &insightViewSeriesDisplayOptionsResolver{}
+var _ graphqlbackend.InsightViewSeriesSortOptionsResolver = &insightViewSeriesSortOptionsResolver{}
 
 type insightViewResolver struct {
 	view                  *types.Insight
@@ -78,6 +80,44 @@ func (i *insightViewResolver) AppliedFilters(ctx context.Context) (graphqlbacken
 		return &insightViewFiltersResolver{filters: i.overrideFilters}, nil
 	}
 	return &insightViewFiltersResolver{filters: &i.view.Filters}, nil
+}
+
+type insightViewSeriesDisplayOptionsResolver struct {
+	seriesDisplayOptions *types.SeriesDisplayOptions
+}
+
+func (i *insightViewSeriesDisplayOptionsResolver) Limit(ctx context.Context) (*int32, error) {
+	return i.seriesDisplayOptions.Limit, nil
+}
+
+func (i *insightViewSeriesDisplayOptionsResolver) SortOptions(ctx context.Context) (graphqlbackend.InsightViewSeriesSortOptionsResolver, error) {
+	if i.seriesDisplayOptions.SortOptions != nil {
+		return &insightViewSeriesSortOptionsResolver{seriesSortOptions: i.seriesDisplayOptions.SortOptions}, nil
+	}
+	return nil, nil
+}
+
+type insightViewSeriesSortOptionsResolver struct {
+	seriesSortOptions *types.SeriesSortOptions
+}
+
+func (i *insightViewSeriesSortOptionsResolver) Mode(ctx context.Context) (*string, error) {
+	return (*string)(&i.seriesSortOptions.Mode), nil
+}
+
+func (i *insightViewSeriesSortOptionsResolver) Direction(ctx context.Context) (*string, error) {
+	return (*string)(&i.seriesSortOptions.Direction), nil
+}
+
+func (i *insightViewResolver) DefaultSeriesDisplayOptions(ctx context.Context) (graphqlbackend.InsightViewSeriesDisplayOptionsResolver, error) {
+	return &insightViewSeriesDisplayOptionsResolver{seriesDisplayOptions: &i.view.SeriesOptions}, nil
+}
+
+func (i *insightViewResolver) AppliedSeriesDisplayOptions(ctx context.Context) (graphqlbackend.InsightViewSeriesDisplayOptionsResolver, error) {
+	if i.overrideSeriesOptions != nil {
+		return &insightViewSeriesDisplayOptionsResolver{seriesDisplayOptions: i.overrideSeriesOptions}, nil
+	}
+	return &insightViewSeriesDisplayOptionsResolver{seriesDisplayOptions: &i.view.SeriesOptions}, nil
 }
 
 // registerDataSeriesGenerators if the generators that create resolvers for DataSeries haven't been generated then loadthem
