@@ -2,9 +2,6 @@
 <html lang="en" class="base">
 
 <head>
-    <script>
-        console.log('wakka2')
-    </script>
 	{{.Injected.HeadTop}}
 	<meta charset="utf-8">
 	<meta http-equiv="x-ua-compatible" content="ie=edge">
@@ -90,7 +87,6 @@
         <script>
             function canRunSourceGraph() {
                 "use strict";
-
                 if (typeof Symbol == "undefined") return false;
                 try {
                     eval("class Foo {}");

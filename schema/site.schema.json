@@ -70,6 +70,11 @@
           "type": "integer",
           "default": 500
         },
+        "RedirectEs5": {
+          "description": "Prompts user to install new browser for non es5",
+          "type": "boolean",
+          "default": false
+        },
         "eventLogging": {
           "description": "Enables user event logging inside of the Sourcegraph instance. This will allow admins to have greater visibility of user activity, such as frequently viewed pages, frequent searches, and more. These event logs (and any specific user actions) are only stored locally, and never leave this Sourcegraph instance.",
           "type": "string",
@@ -1438,13 +1443,6 @@
       "type": "integer",
       "default": 2000,
       "group": "Misc."
-    },
-    "RedirectEs5": {
-      "description": "Prompts user to install new browser for non es5",
-      "type": "boolean",
-      "!go": { "pointer": true },
-      "group": "Misc.",
-      "default": false
     },
     "productResearchPage.enabled": {
       "description": "Enables users access to the product research page in their settings.",
