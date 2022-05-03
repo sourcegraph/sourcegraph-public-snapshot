@@ -84,7 +84,7 @@
 	{{ end }}
 	{{.Injected.BodyTop}}
 	<div id="root">
-        <script>
+        <script ignore-csp>
             if (window.context.experimentalFeatures.RedirectEs5) {
                 function canRunSourceGraph(){"use strict";if("undefined"==typeof Symbol)return!1;try{eval("class Foo {}"),eval("var bar = (x) => x+1")}catch(r){return!1}return!0}
                 if (!canRunSourceGraph()) {
