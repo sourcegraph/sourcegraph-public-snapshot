@@ -152,6 +152,10 @@ func (i *insightViewResolver) DataSeries(ctx context.Context) ([]graphqlbackend.
 	return resolvers, nil
 }
 
+func (i *insightViewResolver) Dashboards(ctx context.Context, args graphqlbackend.InsightViewDashboardsConnectionArgs) graphqlbackend.InsightsDashboardConnectionResolver {
+	return &InsightViewDashboardConnectionResolver{view: i.view, baseInsightResolver: i.baseInsightResolver, args: args}
+}
+
 func filterRepositories(ctx context.Context, filters types.InsightViewFilters, repositories []string, scLoader SearchContextLoader) ([]string, error) {
 	matches := make(map[string]interface{})
 
@@ -1026,4 +1030,71 @@ func filtersFromInput(input *graphqlbackend.InsightViewFiltersInput) types.Insig
 		}
 	}
 	return filters
+}
+
+type InsightViewDashboardConnectionResolver struct {
+	baseInsightResolver
+
+	args graphqlbackend.InsightViewDashboardsConnectionArgs
+
+	view *types.Insight
+
+	once       sync.Once
+	dashboards []*types.Dashboard
+	next       string
+	err        error
+}
+
+func (i *InsightViewDashboardConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.InsightsDashboardResolver, error) {
+	resolvers := make([]graphqlbackend.InsightsDashboardResolver, 0, 2)
+	dashboards, _, err := i.computeDashboards(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for index := range dashboards {
+		id := newRealDashboardID(int64(dashboards[index].ID))
+		resolvers = append(resolvers, &insightsDashboardResolver{dashboard: dashboards[index], id: &id, baseInsightResolver: i.baseInsightResolver})
+	}
+	return resolvers, nil
+}
+
+func (i *InsightViewDashboardConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+	return graphqlutil.HasNextPage(false), nil
+}
+
+func (i *InsightViewDashboardConnectionResolver) computeDashboards(ctx context.Context) ([]*types.Dashboard, string, error) {
+	i.once.Do(func() {
+		args := store.DashboardQueryArgs{WithViewUniqueID: &i.view.UniqueID}
+		if i.args.After != nil {
+
+			afterID, err := unmarshalDashboardID(graphql.ID(*i.args.After))
+			if err != nil {
+				i.err = errors.Wrap(err, "unable to unmarshal dashboard id")
+				return
+			}
+
+			args.After = int(afterID.Arg)
+		}
+		if i.args.First != nil {
+			args.Limit = int(*i.args.First)
+		}
+		var err error
+		orgStore := database.Orgs(i.postgresDB)
+		args.UserID, args.OrgID, err = getUserPermissions(ctx, orgStore)
+		if err != nil {
+			i.err = err
+			return
+		}
+		dashboards, err := i.dashboardStore.GetDashboards(ctx, args)
+		if err != nil {
+			i.err = err
+			return
+		}
+
+		i.dashboards = dashboards
+		if len(i.dashboards) > 0 {
+			i.next = string(newRealDashboardID(int64(i.dashboards[len(i.dashboards)-1].ID)).marshal())
+		}
+	})
+	return i.dashboards, i.next, i.err
 }

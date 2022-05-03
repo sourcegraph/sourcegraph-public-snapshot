@@ -50,12 +50,13 @@ const (
 )
 
 type DashboardQueryArgs struct {
-	UserID  []int
-	OrgID   []int
-	ID      []int
-	Deleted bool
-	Limit   int
-	After   int
+	UserID           []int
+	OrgID            []int
+	ID               []int
+	WithViewUniqueID *string
+	Deleted          bool
+	Limit            int
+	After            int
 
 	// This field will disable user level authorization checks on the dashboards. This should only be used interally,
 	// and not to return dashboards to users.
@@ -78,6 +79,9 @@ func (s *DBDashboardStore) GetDashboards(ctx context.Context, args DashboardQuer
 	}
 	if args.After > 0 {
 		preds = append(preds, sqlf.Sprintf("db.id > %s", args.After))
+	}
+	if args.WithViewUniqueID != nil {
+		preds = append(preds, sqlf.Sprintf("%s = ANY(t.uuid_array)", *args.WithViewUniqueID))
 	}
 
 	if !args.WithoutAuthorization {
