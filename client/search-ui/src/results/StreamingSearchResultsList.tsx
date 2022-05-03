@@ -15,7 +15,7 @@ import { CommitSearchResult, RepoSearchResult } from '@sourcegraph/search-ui'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
-import { FileMatch } from '@sourcegraph/shared/src/components/FileMatch'
+import { FileSearchResult } from '@sourcegraph/shared/src/components/FileSearchResult'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
@@ -112,7 +112,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                 case 'path':
                 case 'symbol':
                     return (
-                        <FileMatch
+                        <FileSearchResult
                             location={location}
                             telemetryService={telemetryService}
                             icon={getFileMatchIcon(result)}
