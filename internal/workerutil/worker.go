@@ -37,8 +37,6 @@ type Worker struct {
 	wg               sync.WaitGroup  // tracks active handler routines
 	finished         chan struct{}   // signals that Start has finished
 	runningIDSet     *IDSet          // tracks the running job IDs to heartbeat
-
-	logger log.Logger
 }
 
 type WorkerOptions struct {
@@ -93,11 +91,15 @@ func newWorker(ctx context.Context, store Store, handler Handler, options Worker
 	if options.Name == "" {
 		panic("no name supplied to github.com/sourcegraph/sourcegraph/internal/workerutil:newWorker")
 	}
-	logger := log.Scoped("worker."+options.Name, "a worker process for "+options.WorkerHostname).With(log.String("name", options.Name))
-
 	if options.WorkerHostname == "" {
 		options.WorkerHostname = hostname.Get()
 	}
+
+	// Initialize the logger
+	if options.Metrics.logger == nil {
+		options.Metrics.logger = log.Scoped("worker."+options.Name, "a worker process for "+options.WorkerHostname)
+	}
+	options.Metrics.logger = options.Metrics.logger.With(log.String("name", options.Name))
 
 	dequeueContext, cancel := context.WithCancel(ctx)
 
@@ -119,7 +121,6 @@ func newWorker(ctx context.Context, store Store, handler Handler, options Worker
 		dequeueCancel:    cancel,
 		finished:         make(chan struct{}),
 		runningIDSet:     newIDSet(),
-		logger:           logger,
 	}
 }
 
@@ -142,7 +143,7 @@ func (w *Worker) Start() {
 			ids := w.runningIDSet.Slice()
 			knownIDs, err := w.store.Heartbeat(w.rootCtx, ids)
 			if err != nil {
-				w.logger.Error("Failed to refresh heartbeats",
+				w.options.Metrics.logger.Error("Failed to refresh heartbeats",
 					log.Ints("ids", ids),
 					log.Error(err))
 			}
@@ -153,7 +154,7 @@ func (w *Worker) Start() {
 
 			for _, id := range ids {
 				if _, ok := knownIDsMap[id]; !ok {
-					w.logger.Error("Removed unknown job from running set",
+					w.options.Metrics.logger.Error("Removed unknown job from running set",
 						log.Int("id", id))
 					w.runningIDSet.Remove(id)
 				}
@@ -187,7 +188,7 @@ loop:
 				break loop
 			}
 
-			w.logger.Error("Failed to dequeue and handle record",
+			w.options.Metrics.logger.Error("Failed to dequeue and handle record",
 				log.String("name", w.options.Name),
 				log.Error(err))
 		}
@@ -216,7 +217,7 @@ loop:
 		}
 	}
 
-	w.logger.Info("Shutting down dequeue loop", log.String("reason", reason))
+	w.options.Metrics.logger.Info("Shutting down dequeue loop", log.String("reason", reason))
 	w.wg.Wait()
 }
 
@@ -282,6 +283,7 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 	// Create context and span based on the root context
 	workerSpan, workerCtxWithSpan := ot.StartSpanFromContext(ot.WithShouldTrace(w.rootCtx, true), w.options.Name)
 	handleCtx, cancel := context.WithCancel(workerCtxWithSpan)
+	processLog := w.options.Metrics.logger.WithTrace(log.TraceContext{TraceID: trace.IDFromSpan(workerSpan)})
 
 	// Register the record as running so it is included in heartbeat updates.
 	if !w.runningIDSet.Add(record.RecordID(), cancel) {
@@ -290,16 +292,17 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 		return false, ErrJobAlreadyExists
 	}
 
+	// Set up observability
 	w.options.Metrics.numJobs.Inc()
-	processLog := w.logger.WithTrace(log.TraceContext{
-		TraceID: trace.IDFromSpan(workerSpan),
-	})
 	processLog.Info("Dequeued record for processing", log.Int("id", record.RecordID()))
+	processArgs := observation.Args{
+		LogFields: []otlog.Field{otlog.Int("record.id", record.RecordID())},
+	}
 
 	if hook, ok := w.handler.(WithHooks); ok {
-		preCtx, _, endObservation := w.options.Metrics.operations.preHandle.With(handleCtx, nil, observation.Args{})
+		preCtx, prehandleLogger, endObservation := w.options.Metrics.operations.preHandle.With(handleCtx, nil, processArgs)
 		// Open namespace for logger to avoid key collisions on fields
-		hook.PreHandle(preCtx, processLog.With(log.Namespace("prehandle")), record)
+		hook.PreHandle(preCtx, prehandleLogger.With(log.Namespace("prehandle")), record)
 		endObservation(1, observation.Args{})
 	}
 
@@ -312,10 +315,10 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 				// this worker anymore at this point. Tracing hierarchy is still correct,
 				// as handleCtx used in preHandle/handle is at the same level as
 				// workerCtxWithSpan
-				postCtx, _, endObservation := w.options.Metrics.operations.postHandle.With(workerCtxWithSpan, nil, observation.Args{})
+				postCtx, posthandleLogger, endObservation := w.options.Metrics.operations.postHandle.With(workerCtxWithSpan, nil, processArgs)
 				defer endObservation(1, observation.Args{})
 				// Open namespace for logger to avoid key collisions on fields
-				hook.PostHandle(postCtx, processLog.With(log.Namespace("posthandle")), record)
+				hook.PostHandle(postCtx, posthandleLogger.With(log.Namespace("posthandle")), record)
 			}
 
 			// Remove the record from the set of running jobs, so it is not included
@@ -327,7 +330,7 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 			workerSpan.Finish()
 		}()
 
-		if err := w.handle(handleCtx, workerCtxWithSpan, processLog, record); err != nil {
+		if err := w.handle(handleCtx, workerCtxWithSpan, record); err != nil {
 			processLog.Error("Failed to finalize record", log.Error(err))
 		}
 	}()
@@ -337,11 +340,9 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 
 // handle processes the given record. This method returns an error only if there is an issue updating
 // the record to a terminal state - no handler errors will bubble up.
-func (w *Worker) handle(ctx, workerContext context.Context, processLog log.Logger, record Record) (err error) {
-	ctx, _, endOperation := w.options.Metrics.operations.handle.With(ctx, &err, observation.Args{})
+func (w *Worker) handle(ctx, workerContext context.Context, record Record) (err error) {
+	ctx, handleLog, endOperation := w.options.Metrics.operations.handle.With(ctx, &err, observation.Args{})
 	defer endOperation(1, observation.Args{})
-
-	recordLog := processLog.With(log.Int("record.id", record.RecordID()))
 
 	// If a maximum runtime is configured, set a deadline on the handle context.
 	if w.options.MaximumRuntimePerJob > 0 {
@@ -351,7 +352,7 @@ func (w *Worker) handle(ctx, workerContext context.Context, processLog log.Logge
 	}
 
 	// Open namespace for logger to avoid key collisions on fields
-	handleErr := w.handler.Handle(ctx, recordLog.With(log.Namespace("handle")), record)
+	handleErr := w.handler.Handle(ctx, handleLog.With(log.Namespace("handle")), record)
 
 	if w.options.MaximumRuntimePerJob > 0 && errors.Is(handleErr, context.DeadlineExceeded) {
 		handleErr = errors.Wrap(handleErr, fmt.Sprintf("job exceeded maximum execution time of %s", w.options.MaximumRuntimePerJob))
@@ -361,23 +362,23 @@ func (w *Worker) handle(ctx, workerContext context.Context, processLog log.Logge
 		if marked, markErr := w.store.MarkFailed(workerContext, record.RecordID(), handleErr.Error()); markErr != nil {
 			return errors.Wrap(markErr, "store.MarkFailed")
 		} else if marked {
-			recordLog.Warn("Marked record as failed", log.Error(handleErr))
+			handleLog.Warn("Marked record as failed", log.Error(handleErr))
 		}
 	} else if handleErr != nil {
 		if marked, markErr := w.store.MarkErrored(workerContext, record.RecordID(), handleErr.Error()); markErr != nil {
 			return errors.Wrap(markErr, "store.MarkErrored")
 		} else if marked {
-			recordLog.Warn("Marked record as errored", log.Error(handleErr))
+			handleLog.Warn("Marked record as errored", log.Error(handleErr))
 		}
 	} else {
 		if marked, markErr := w.store.MarkComplete(workerContext, record.RecordID()); markErr != nil {
 			return errors.Wrap(markErr, "store.MarkComplete")
 		} else if marked {
-			recordLog.Debug("Marked record as complete")
+			handleLog.Debug("Marked record as complete")
 		}
 	}
 
-	recordLog.Debug("Handled record")
+	handleLog.Debug("Handled record")
 	return nil
 }
 
@@ -391,7 +392,7 @@ func (w *Worker) isJobCanceled(id int, handleErr, ctxErr error) bool {
 // preDequeueHook invokes the handler's pre-dequeue hook if it exists.
 func (w *Worker) preDequeueHook(ctx context.Context) (dequeueable bool, extraDequeueArguments interface{}, err error) {
 	if o, ok := w.handler.(WithPreDequeue); ok {
-		return o.PreDequeue(ctx, w.logger)
+		return o.PreDequeue(ctx, w.options.Metrics.logger)
 	}
 
 	return true, nil, nil
