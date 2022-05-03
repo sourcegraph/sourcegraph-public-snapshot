@@ -1,11 +1,11 @@
 package images
 
 import (
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"reflect"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestParseTag(t *testing.T) {

@@ -298,10 +298,7 @@ func parseImgString(rawImg string) (*ImageReference, error) {
 
 func isImageRepoSupported(ref ImageReference) bool {
 	name := ref.Org()
-	if name != "sourcegraph" {
-		return false
-	}
-	return true
+	return name == "sourcegraph"
 }
 
 func isInList(s string, list []*ImageReference) bool {
@@ -499,7 +496,7 @@ var ErrUnsupportedTag = errors.New("unsupported tag format")
 
 // findLatestTag finds the latest tag in the format of SgImageTag
 func findLatestTag(tags []string) (string, error) {
-	if tags == nil || len(tags) == 0 {
+	if len(tags) == 0 {
 		return "", errors.New("no tags found")
 	}
 	maxBuildID := 0
@@ -540,7 +537,7 @@ func (i *imageRepository) checkLegacy(rawImage string) bool {
 //
 func (i *imageRepository) fetchDigest(tag string) (digest.Digest, error) {
 	if tag == "" {
-		return "", fmt.Errorf("tag is empty for %s", i.imageRef.String())
+		return "", errors.Newf("tag is empty for %s", i.imageRef.String())
 	}
 	req, err := http.NewRequest("GET", fmt.Sprintf("https://index.docker.io/v2/%s/manifests/%s", i.name, tag), nil)
 	if err != nil {
