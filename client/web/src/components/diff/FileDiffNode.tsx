@@ -65,8 +65,8 @@ export const FileDiffNode: React.FunctionComponent<FileDiffNodeProps> = ({
         path = <span title={node.newPath}>{node.newPath}</span>
     } else if (node.newPath && node.oldPath && node.newPath !== node.oldPath) {
         path = (
-            <span title={`${node.oldPath} ⟶ ${node.newPath}`}>
-                {node.oldPath} ⟶ {node.newPath}
+            <span title={`${node.oldPath} → ${node.newPath}`}>
+                {node.oldPath} → {node.newPath}
             </span>
         )
     } else {
@@ -121,19 +121,22 @@ export const FileDiffNode: React.FunctionComponent<FileDiffNodeProps> = ({
                         )}
                         {stat}
                         {node.mostRelevantFile.__typename === 'GitBlob' ? (
-                            <Button
+                            <Link
                                 to={node.mostRelevantFile.url}
                                 data-tooltip="View file at revision"
-                                variant="link"
-                                as={Link}
-                                className="pr-0"
+                                className="pr-0 pl-2 fw-bold"
                             >
-                                {path}
-                            </Button>
+                                <strong>{path}</strong>
+                            </Link>
                         ) : (
                             <span className="ml-2">{path}</span>
                         )}
-                        <Link to={{ ...location, hash: anchor }} className={classNames('ml-2', styles.headerPath)}>
+                        <Link
+                            to={{ ...location, hash: anchor }}
+                            className={classNames('ml-2', styles.headerPath)}
+                            data-tooltip="View diff"
+                            aria-label="View diff"
+                        >
                             #
                         </Link>
                     </div>
