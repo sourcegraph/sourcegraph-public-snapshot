@@ -100,7 +100,7 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 					textSearchJobs = append(textSearchJobs, job)
 				}
 
-				textSearchJobs = append(textSearchJobs, &searcher.Searcher{
+				textSearchJobs = append(textSearchJobs, &searcher.SearcherJob{
 					PatternInfo:     patternInfo,
 					Indexed:         false,
 					UseFullDeadline: useFullDeadline,

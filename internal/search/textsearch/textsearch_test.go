@@ -479,7 +479,7 @@ func RunRepoSubsetTextSearch(
 
 	// Concurrently run searcher for all unindexed repos regardless whether text or regexp.
 	g.Go(func() error {
-		searcherJob := &searcher.Searcher{
+		searcherJob := &searcher.SearcherJob{
 			PatternInfo:     searcherArgs.PatternInfo,
 			Repos:           unindexed,
 			Indexed:         false,

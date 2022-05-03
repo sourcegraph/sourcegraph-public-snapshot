@@ -14,7 +14,7 @@ import (
 var allJobs = []job.Job{
 	&zoekt.ZoektRepoSubsetSearch{},
 	&zoekt.ZoektSymbolSearch{},
-	&searcher.Searcher{},
+	&searcher.SearcherJob{},
 	&searcher.SymbolSearcher{},
 	&run.RepoSearchJob{},
 	&zoekt.GlobalSearch{},
