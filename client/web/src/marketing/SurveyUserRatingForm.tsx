@@ -8,17 +8,17 @@ import { Toast } from './Toast'
 export interface SurveyUserRatingFormProps {
     onChange?: (score: number) => void
     toggleErrorMessage: boolean
-    handleContinue: () => void
-    handleDismiss: () => void
+    onContinue: () => void
+    onDismiss: () => void
     shouldPermanentlyDismiss: boolean
     toggleShouldPermanentlyDismiss: (value: boolean) => void
 }
 
-const SurveyUserRatingForm: React.FunctionComponent<SurveyUserRatingFormProps> = ({
+export const SurveyUserRatingForm: React.FunctionComponent<SurveyUserRatingFormProps> = ({
     onChange,
     toggleErrorMessage,
-    handleDismiss,
-    handleContinue,
+    onDismiss,
+    onContinue,
     shouldPermanentlyDismiss,
     toggleShouldPermanentlyDismiss,
 }) => (
@@ -41,13 +41,11 @@ const SurveyUserRatingForm: React.FunctionComponent<SurveyUserRatingFormProps> =
                     checked={shouldPermanentlyDismiss}
                     onChange={event => toggleShouldPermanentlyDismiss(event.target.checked)}
                 />
-                <Button variant="secondary" size="sm" onClick={handleContinue}>
+                <Button variant="secondary" size="sm" onClick={onContinue}>
                     Continue
                 </Button>
             </div>
         }
-        onDismiss={handleDismiss}
+        onDismiss={onDismiss}
     />
 )
-
-export { SurveyUserRatingForm }

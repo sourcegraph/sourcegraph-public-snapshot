@@ -7,8 +7,8 @@ import { Button, ButtonProps } from '@sourcegraph/wildcard'
 import styles from './SurveyUseCaseCheckbox.module.scss'
 
 export interface SurveyUseCaseCheckboxProps extends Omit<ButtonProps, 'onChange'> {
-    label: string
-    onChange?: (isChecked: boolean) => void
+    label: React.ReactNode
+    onChange: (isChecked: boolean) => void
 }
 
 export const SurveyUseCaseCheckbox: React.FunctionComponent<SurveyUseCaseCheckboxProps> = ({
@@ -24,14 +24,14 @@ export const SurveyUseCaseCheckbox: React.FunctionComponent<SurveyUseCaseCheckbo
             variant="secondary"
             size="sm"
             onClick={() => {
-                onChange?.(!checked)
+                onChange(!checked)
                 setChecked(current => !current)
             }}
             className={classNames('d-flex align-items-center', styles.checkButton, checked && styles.checkButtonActive)}
             {...props}
         >
             <span className={classNames(styles.checkbox, checked ? styles.checkmark : styles.checkboxDefault)} />
-            <span className="ml-1">{label}</span>
+            {label}
         </Button>
     )
 }

@@ -7,7 +7,7 @@ import { Toast } from './Toast'
 import styles from './SurveySuccess.module.scss'
 
 interface SurveySuccessProps {
-    handleDismiss: () => void
+    onDismiss: () => void
 }
 
 const LINKS = [
@@ -16,7 +16,7 @@ const LINKS = [
     { label: 'How to link to multiple lines of code', link: 'ebay.com' },
 ]
 
-export const SurveySuccess: React.FunctionComponent<SurveySuccessProps> = ({ handleDismiss }) => (
+export const SurveySuccess: React.FunctionComponent<SurveySuccessProps> = ({ onDismiss }) => (
     <Toast
         subtitle={<span className={styles.toastSubtitle}>Thank you for your feedback!</span>}
         cta={
@@ -35,11 +35,11 @@ export const SurveySuccess: React.FunctionComponent<SurveySuccessProps> = ({ han
         }
         footer={
             <div className="d-flex justify-content-end">
-                <Button variant="primary" size="sm" onClick={handleDismiss}>
+                <Button variant="primary" size="sm" onClick={onDismiss}>
                     Done
                 </Button>
             </div>
         }
-        onDismiss={handleDismiss}
+        onDismiss={onDismiss}
     />
 )

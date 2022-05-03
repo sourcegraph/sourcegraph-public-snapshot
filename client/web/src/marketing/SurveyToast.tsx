@@ -15,8 +15,8 @@ interface SurveyToastProps {
     forceVisible?: boolean
 }
 
-export interface userFeedbackProps {
-    score: number | string
+interface UserFeedbackProps {
+    score: number
     useCases: string[]
     moreSharedInfo: string
     otherUseCase: string
@@ -49,21 +49,22 @@ export const SurveyToast: React.FunctionComponent<SurveyToastProps> = ({ forceVi
         temporarilyDismissed === undefined || permanentlyDismissed === undefined || daysActiveCount === undefined
 
     const [toggleErrorMessage, setToggleErrorMessage] = useState<boolean>(false)
-    const [activeStep, setActiveStep] = useState(ToastSteps.rate)
-    const [userFeedback, setUserFeedback] = useState<userFeedbackProps>({
-        score: '',
+    const [activeStep, setActiveStep] = useState<ToastSteps>(ToastSteps.rate)
+    const [userFeedback, setUserFeedback] = useState<UserFeedbackProps>({
+        score: -1,
         useCases: [],
         otherUseCase: '',
         moreSharedInfo: '',
     })
 
     const handleContinue = (): void => {
-        if (userFeedback.score !== '') {
+        if (userFeedback.score !== -1) {
             setActiveStep(current => current + 1)
         } else {
             setToggleErrorMessage(true)
         }
     }
+
     const toggleShouldPermanentlyDismiss = (value: boolean): void => setShouldPermanentlyDismiss(value)
 
     /**
@@ -90,7 +91,7 @@ export const SurveyToast: React.FunctionComponent<SurveyToastProps> = ({ forceVi
         }
     }, [loadingTemporarySettings, daysActiveCount, setTemporarilyDismissed])
 
-    const handleDismiss = (): void => {
+    const onDismiss = (): void => {
         if (activeStep === ToastSteps.useCase) {
             // TODO: Send userFeedback to backend.
             handleSubmit()
@@ -111,22 +112,22 @@ export const SurveyToast: React.FunctionComponent<SurveyToastProps> = ({ forceVi
         case ToastSteps.useCase:
             return (
                 <SurveyUseCaseForm
-                    handleDone={props => {
-                        setUserFeedback(current => ({ ...current, ...props }))
+                    handleDone={formState => {
+                        setUserFeedback(current => ({ ...current, ...formState }))
                         handleSubmit()
                         handleContinue()
                     }}
-                    handleDismiss={handleDismiss}
+                    onDismiss={onDismiss}
                 />
             )
         case ToastSteps.thankYou:
-            return <SurveySuccess handleDismiss={handleDismiss} />
+            return <SurveySuccess onDismiss={onDismiss} />
         case ToastSteps.rate:
             return (
                 <SurveyUserRatingForm
                     onChange={score => setUserFeedback(current => ({ ...current, score }))}
-                    handleDismiss={handleDismiss}
-                    handleContinue={handleContinue}
+                    onDismiss={onDismiss}
+                    onContinue={handleContinue}
                     toggleShouldPermanentlyDismiss={toggleShouldPermanentlyDismiss}
                     shouldPermanentlyDismiss={shouldPermanentlyDismiss}
                     toggleErrorMessage={toggleErrorMessage}

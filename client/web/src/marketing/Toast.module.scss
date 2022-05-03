@@ -10,17 +10,6 @@
     max-width: 520px;
 }
 
-.header {
-    display: flex;
-    align-items: center;
-    margin-bottom: 0.25rem;
-
-    h2 {
-        font-weight: 600;
-        font-size: 1rem;
-    }
-}
-
 .contents {
     flex: 1 1 auto;
     margin: 0 0.5rem;
@@ -39,12 +28,12 @@
 
 .close-button-wrap {
     margin-bottom: 0.438rem;
+}
 
-    svg {
-        fill: var(--icon-color);
-        height: 0.875rem;
-        width: 0.875rem;
-    }
+svg.close-button-icon {
+    fill: var(--icon-color);
+    height: 0.875rem;
+    width: 0.875rem;
 }
 
 .footer {

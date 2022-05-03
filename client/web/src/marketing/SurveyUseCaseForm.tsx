@@ -43,11 +43,11 @@ interface FormStateType {
 }
 
 interface SurveyUseCaseFormProps {
-    handleDismiss: () => void
+    onDismiss: () => void
     handleDone: (props: FormStateType) => void
 }
 
-export const SurveyUseCaseForm: React.FunctionComponent<SurveyUseCaseFormProps> = ({ handleDismiss, handleDone }) => {
+export const SurveyUseCaseForm: React.FunctionComponent<SurveyUseCaseFormProps> = ({ onDismiss, handleDone }) => {
     const [useCases, setUseCases] = useState<string[]>([])
     const [otherUseCase, setOtherUseCase] = useState<string>('')
     const [moreSharedInfo, setMoreSharedInfo] = useState<string>('')
@@ -70,7 +70,7 @@ export const SurveyUseCaseForm: React.FunctionComponent<SurveyUseCaseFormProps> 
 
     return (
         <Toast
-            className={styles.toast}
+            toastBodyClassName={styles.toastBody}
             subtitle={<span className={styles.toastSubtitle}>You are using sourcegraph to...</span>}
             cta={
                 <div className="mb-2">
@@ -79,14 +79,16 @@ export const SurveyUseCaseForm: React.FunctionComponent<SurveyUseCaseFormProps> 
                             <SurveyUseCaseCheckbox
                                 onChange={() => handleSelectUseCase(id)}
                                 key={id}
-                                label={labelValue}
+                                label={<span className={classNames('ml-1', styles.checkboxLabel)}>{labelValue}</span>}
                             />
                         ))}
                     </div>
                     {useCases.includes('other') && (
                         <FlexTextArea
-                            containerClassName={classNames('mt-3', styles.textarea)}
-                            label="What else are you using sourcegraph to do?"
+                            containerClassName="mt-3"
+                            label={
+                                <span className={styles.textareaLabel}>What else are you using sourcegraph to do?</span>
+                            }
                             name="other"
                             placeholder="Find..."
                             onChange={event => setOtherUseCase(event.target.value)}
@@ -94,22 +96,25 @@ export const SurveyUseCaseForm: React.FunctionComponent<SurveyUseCaseFormProps> 
                         />
                     )}
                     <TextArea
-                        className={classNames('mt-3', styles.textarea)}
+                        className="mt-3"
+                        size="small"
                         name="more"
                         onChange={event => setMoreSharedInfo(event.target.value)}
                         value={moreSharedInfo}
-                        label="Anything else you would like to share with us?"
+                        label={
+                            <span className={styles.textareaLabel}>Anything else you would like to share with us?</span>
+                        }
                     />
                 </div>
             }
             footer={
                 <div className="d-flex justify-content-end">
-                    <Button variant="primary" size="sm" onClick={() => handleSubmit()}>
+                    <Button variant="primary" size="sm" onClick={handleSubmit}>
                         Done
                     </Button>
                 </div>
             }
-            onDismiss={() => handleDismiss()}
+            onDismiss={onDismiss}
         />
     )
 }

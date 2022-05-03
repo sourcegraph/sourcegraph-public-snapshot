@@ -3,7 +3,7 @@ import * as React from 'react'
 import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 
-import { Button, CardTitle, CardBody, Card, Icon } from '@sourcegraph/wildcard'
+import { Button, CardTitle, CardBody, Card, Icon, H3 } from '@sourcegraph/wildcard'
 
 import styles from './Toast.module.scss'
 
@@ -14,18 +14,19 @@ interface ToastProps {
     footer?: JSX.Element
     onDismiss: () => void
     className?: string
+    toastBodyClassName?: string
 }
 
 export const Toast: React.FunctionComponent<ToastProps> = props => (
     <Card className={classNames(styles.toast, props.className)}>
-        <CardBody className={styles.toastBody}>
+        <CardBody className={classNames(styles.toastBody, props.toastBodyClassName)}>
             <div className={classNames('d-flex justify-content-end', styles.closeButtonWrap)}>
                 <Button onClick={props.onDismiss} variant="icon" className="test-close-toast" aria-label="Close">
-                    <Icon as={CloseIcon} />
+                    <Icon as={CloseIcon} className={styles.closeButtonIcon} />
                 </Button>
             </div>
-            <CardTitle as="header" className={styles.header}>
-                {props.title && <h2 className="mb-0">{props.title}</h2>}
+            <CardTitle as="header" className="d-flex align-items-center mb-1">
+                {props.title && <H3 className="mb-0">{props.title}</H3>}
             </CardTitle>
             {props.subtitle}
             {props.cta && <div className={styles.contentsCta}>{props.cta}</div>}

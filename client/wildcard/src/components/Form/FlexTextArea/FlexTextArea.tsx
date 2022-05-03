@@ -18,7 +18,7 @@ export type FlexTextAreaProps = {
     maxRows?: number
     className?: string
     containerClassName?: string
-    label?: string
+    label?: React.ReactNode
 } & InputHTMLAttributes<HTMLInputElement>
 
 /**
