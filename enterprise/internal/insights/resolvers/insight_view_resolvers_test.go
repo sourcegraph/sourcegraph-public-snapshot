@@ -327,7 +327,7 @@ func TestInsightViewDashboardConnections(t *testing.T) {
 
 		wantedDashboards := []types.Dashboard{dashboard1}
 		for i, dash := range wantedDashboards {
-			if diff := cmp.Diff(dash.Title, dashboardResolvers[i].Title()); diff != "" {
+			if diff := cmp.Diff(newRealDashboardID(int64(dash.ID)).marshal(), dashboardResolvers[i].ID()); diff != "" {
 				t.Errorf("unexpected dashboard title (want/got): %v", diff)
 			}
 		}
@@ -346,7 +346,7 @@ func TestInsightViewDashboardConnections(t *testing.T) {
 
 		wantedDashboards := []types.Dashboard{dashboard2}
 		for i, dash := range wantedDashboards {
-			if diff := cmp.Diff(dash.Title, dashboardResolvers[i].Title()); diff != "" {
+			if diff := cmp.Diff(newRealDashboardID(int64(dash.ID)).marshal(), dashboardResolvers[i].ID()); diff != "" {
 				t.Errorf("unexpected dashboard title (want/got): %v", diff)
 			}
 		}
