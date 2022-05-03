@@ -100,14 +100,13 @@ func FindVersion(version string, files []File) (File, error) {
 	if len(files) == 0 {
 		return File{}, errors.Errorf("no files")
 	}
+
 	if version == "" {
 		for i := len(files) - 1; i >= 0; i-- {
 			if w, err := ToWheel(files[i]); err != nil {
 				version = w.Version
 				break
-			} else if s, err := ToSDist(files[i]); err != nil {
-				continue
-			} else {
+			} else if s, err := ToSDist(files[i]); err == nil {
 				version = s.Version
 				break
 			}
@@ -115,7 +114,10 @@ func FindVersion(version string, files []File) (File, error) {
 	}
 
 	if version == "" {
-		return File{}, NotFoundError{errors.New("could not find a wheel or source distribution to determine the latest version")}
+		return File{}, &Error{
+			code:    404,
+			message: "could not find a wheel or source distribution to determine the latest version",
+		}
 	}
 
 	// Return the first source distribution we can find for the version.
@@ -135,7 +137,10 @@ func FindVersion(version string, files []File) (File, error) {
 		return *wheelAtVersion, nil
 	}
 
-	return File{}, NotFoundError{errors.Errorf("could not find a wheel or source distribution for version %s", version)}
+	return File{}, &Error{
+		code:    404,
+		message: fmt.Sprintf("could not find a wheel or source distribution for version %s", version),
+	}
 }
 
 type NotFoundError struct {
@@ -452,7 +457,7 @@ type Error struct {
 }
 
 func (e *Error) Error() string {
-	return fmt.Sprintf("bad proxy response with status code %d for %s: %s", e.code, e.path, e.message)
+	return fmt.Sprintf("bad response with status code %d for %s: %s", e.code, e.path, e.message)
 }
 
 func (e *Error) NotFound() bool {

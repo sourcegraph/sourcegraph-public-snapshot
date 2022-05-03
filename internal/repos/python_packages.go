@@ -66,13 +66,11 @@ func (s *PythonPackagesSource) ListRepos(ctx context.Context, results chan Sourc
 			continue
 		}
 
-		f, err := s.client.Version(ctx, dep.PackageSyntax(), dep.PackageVersion())
+		_, err := s.client.Project(ctx, dep.PackageSyntax())
 		if err != nil {
 			results <- SourceResult{Source: s, Err: err}
 			continue
 		}
-
-		dep.PackageURL = f.URL
 
 		repo := s.makeRepo(dep)
 		results <- SourceResult{Source: s, Repo: repo}
@@ -119,7 +117,7 @@ func (s *PythonPackagesSource) ListRepos(ctx context.Context, results chan Sourc
 			g.Go(func() error {
 				defer sem.Release(1)
 
-				f, err := s.client.Version(ctx, depRepo.Name, depRepo.Version)
+				_, err := s.client.Project(ctx, depRepo.Name)
 				if err != nil {
 					if errcode.IsNotFound(err) {
 						return nil
@@ -132,8 +130,6 @@ func (s *PythonPackagesSource) ListRepos(ctx context.Context, results chan Sourc
 					set[depRepo.Name] = struct{}{}
 					mu.Unlock()
 					dep := reposource.NewPythonDependency(depRepo.Name, depRepo.Version)
-
-					dep.PackageURL = f.URL
 
 					repo := s.makeRepo(dep)
 					results <- SourceResult{Source: s, Repo: repo}
@@ -176,7 +172,7 @@ func (s *PythonPackagesSource) makeRepo(dep *reposource.PythonDependency) *types
 		Sources: map[string]*types.SourceInfo{
 			urn: {
 				ID:       urn,
-				CloneURL: dep.PackageURL,
+				CloneURL: dep.Name,
 			},
 		},
 		Metadata: &struct{}{},
