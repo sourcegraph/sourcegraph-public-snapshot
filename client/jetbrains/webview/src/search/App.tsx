@@ -2,7 +2,13 @@ import React, { useCallback, useState } from 'react'
 
 import { EMPTY, NEVER, of } from 'rxjs'
 
-import { QueryState, SearchPatternType } from '@sourcegraph/search'
+import {
+    fetchAutoDefinedSearchContexts,
+    fetchSearchContexts,
+    getUserSearchContextNamespaces,
+    QueryState,
+    SearchPatternType,
+} from '@sourcegraph/search'
 import { SearchBox } from '@sourcegraph/search-ui'
 import {
     aggregateStreamingSearch,
@@ -42,7 +48,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
 
         // When we submit a search that is already the last search, do nothing. This prevents the
         // search results from being reloaded and reapplied in a different order when a user
-        // accidently hits enter thinking that this would open the file
+        // accidentally hits enter thinking that this would open the file
         if (query === lastSearchedQuery) {
             return
         }
@@ -78,34 +84,32 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                     >
                         <SearchBox
                             caseSensitive={caseSensitive}
-                            setCaseSensitivity={setCaseSensitivity}
+                            setCaseSensitivity={setCaseSensitivity} // TODO: Run query when this is changed
                             patternType={patternType}
-                            setPatternType={setPatternType}
-                            isSourcegraphDotCom={true}
+                            setPatternType={setPatternType} // TODO: Run query when this is changed
+                            isSourcegraphDotCom={true} // TODO: Make this dynamic. See VS Code's SearchResultsView.tsx
                             hasUserAddedExternalServices={false}
-                            hasUserAddedRepositories={true}
+                            hasUserAddedRepositories={true} // Used for search context CTA, which we won't show here.
                             structuralSearchDisabled={false}
                             queryState={userQueryState}
                             onChange={setUserQueryState}
                             onSubmit={onSubmit}
-                            authenticatedUser={null}
-                            searchContextsEnabled={false}
+                            authenticatedUser={null} // TODO: Add authenticated user once we have authentication
+                            searchContextsEnabled={true}
                             showSearchContext={true}
                             showSearchContextManagement={false}
                             defaultSearchContextSpec="global"
-                            setSelectedSearchContextSpec={setSelectedSearchContextSpec}
-                            selectedSearchContextSpec={undefined}
-                            fetchSearchContexts={() => {
-                                throw new Error('fetchSearchContexts')
-                            }}
-                            fetchAutoDefinedSearchContexts={() => NEVER}
-                            getUserSearchContextNamespaces={() => []}
-                            fetchStreamSuggestions={() => NEVER}
-                            settingsCascade={EMPTY_SETTINGS_CASCADE}
-                            globbing={false}
-                            isLightTheme={false}
-                            telemetryService={NOOP_TELEMETRY_SERVICE}
-                            platformContext={{ requestGraphQL: () => EMPTY }}
+                            setSelectedSearchContextSpec={setSelectedSearchContextSpec} // TODO: Fix this, see VS Code's SearchResultsView.tsx
+                            selectedSearchContextSpec="global" // TODO: Fix this, see VS Code's SearchResultsView.tsx
+                            fetchSearchContexts={fetchSearchContexts}
+                            fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
+                            getUserSearchContextNamespaces={getUserSearchContextNamespaces}
+                            fetchStreamSuggestions={() => NEVER} // TODO: Implement this. See VS Code's SearchResultsView.tsx
+                            settingsCascade={EMPTY_SETTINGS_CASCADE} // TODO: Implement this. See VS Code's SearchResultsView.tsx
+                            globbing={false} // TODO: Wire it up to plugin settings
+                            isLightTheme={false} // TODO: Wire it up with the current theme setting
+                            telemetryService={NOOP_TELEMETRY_SERVICE} // TODO: Fix this, see VS Code's SearchResultsView.tsx
+                            platformContext={{ requestGraphQL: () => EMPTY }} // TODO: Fix this, see VS Code's SearchResultsView.tsx
                             className=""
                             containerClassName=""
                             autoFocus={true}
