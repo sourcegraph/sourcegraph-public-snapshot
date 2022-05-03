@@ -172,7 +172,6 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	go watchSyncer(ctx, syncer, updateScheduler, server.PermsSyncer)
 	go func() {
-		// TODO: fix log here.
 		log.Fatal(syncer.Run(ctx, logger, store, repos.RunOptions{
 			EnqueueInterval: repos.ConfRepoListUpdateInterval,
 			IsCloud:         envvar.SourcegraphDotComMode(),

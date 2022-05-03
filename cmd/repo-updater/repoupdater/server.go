@@ -314,8 +314,8 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 	if mockRepoLookup != nil {
 		return mockRepoLookup(args)
 	}
-	// TODO: fix call to sync repo
-	repo, err := s.Syncer.SyncRepo(ctx, logger, args.Repo, true)
+
+	repo, err := s.Syncer.SyncRepo(ctx, args.Repo, true)
 
 	switch {
 	case err == nil:
