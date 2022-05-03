@@ -3519,6 +3519,28 @@ Query: `sum by(name) (rate(container_fs_reads_total{name=~"^(frontend|sourcegrap
 
 <br />
 
+#### frontend: container_oomkill_events_total
+
+<p class="subtitle">Container OOMKILL events total by instance</p>
+
+This value indicates the total number of times the container main process or child processes were terminated by OOM killer.
+When it occurs frequently, it is an indicator of underprovisioning.
+
+Refer to the [alert solutions reference](./alert_solutions.md#frontend-container-oomkill-events-total) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102310` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max by (name) (container_oom_events_total{name=~"^(frontend|sourcegraph-frontend).*"})`
+
+</details>
+
+<br />
+
 ### Frontend: Provisioning indicators (not available on server)
 
 #### frontend: provisioning_container_cpu_usage_long_term
@@ -5494,6 +5516,28 @@ Query: `sum by(name) (rate(container_fs_reads_total{name=~"^gitserver.*"}[1h]) +
 
 <br />
 
+#### gitserver: container_oomkill_events_total
+
+<p class="subtitle">Container OOMKILL events total by instance</p>
+
+This value indicates the total number of times the container main process or child processes were terminated by OOM killer.
+When it occurs frequently, it is an indicator of underprovisioning.
+
+Refer to the [alert solutions reference](./alert_solutions.md#gitserver-container-oomkill-events-total) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100910` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max by (name) (container_oom_events_total{name=~"^gitserver.*"})`
+
+</details>
+
+<br />
+
 ### Git Server: Provisioning indicators (not available on server)
 
 #### gitserver: provisioning_container_cpu_usage_long_term
@@ -5752,6 +5796,28 @@ To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel
 <summary>Technical details</summary>
 
 Query: `sum by(name) (rate(container_fs_reads_total{name=~"^github-proxy.*"}[1h]) + rate(container_fs_writes_total{name=~"^github-proxy.*"}[1h]))`
+
+</details>
+
+<br />
+
+#### github-proxy: container_oomkill_events_total
+
+<p class="subtitle">Container OOMKILL events total by instance</p>
+
+This value indicates the total number of times the container main process or child processes were terminated by OOM killer.
+When it occurs frequently, it is an indicator of underprovisioning.
+
+Refer to the [alert solutions reference](./alert_solutions.md#github-proxy-container-oomkill-events-total) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel=100110` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max by (name) (container_oom_events_total{name=~"^github-proxy.*"})`
 
 </details>
 
@@ -7355,6 +7421,28 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <summary>Technical details</summary>
 
 Query: `sum by(name) (rate(container_fs_reads_total{name=~"^precise-code-intel-worker.*"}[1h]) + rate(container_fs_writes_total{name=~"^precise-code-intel-worker.*"}[1h]))`
+
+</details>
+
+<br />
+
+#### precise-code-intel-worker: container_oomkill_events_total
+
+<p class="subtitle">Container OOMKILL events total by instance</p>
+
+This value indicates the total number of times the container main process or child processes were terminated by OOM killer.
+When it occurs frequently, it is an indicator of underprovisioning.
+
+Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel-worker-container-oomkill-events-total) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-code-intel-worker?viewPanel=100910` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max by (name) (container_oom_events_total{name=~"^precise-code-intel-worker.*"})`
 
 </details>
 
@@ -10640,6 +10728,28 @@ Query: `sum by(name) (rate(container_fs_reads_total{name=~"^worker.*"}[1h]) + ra
 
 <br />
 
+#### worker: container_oomkill_events_total
+
+<p class="subtitle">Container OOMKILL events total by instance</p>
+
+This value indicates the total number of times the container main process or child processes were terminated by OOM killer.
+When it occurs frequently, it is an indicator of underprovisioning.
+
+Refer to the [alert solutions reference](./alert_solutions.md#worker-container-oomkill-events-total) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102610` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max by (name) (container_oom_events_total{name=~"^worker.*"})`
+
+</details>
+
+<br />
+
 ### Worker: Provisioning indicators (not available on server)
 
 #### worker: provisioning_container_cpu_usage_long_term
@@ -12414,6 +12524,28 @@ Query: `sum by(name) (rate(container_fs_reads_total{name=~"^repo-updater.*"}[1h]
 
 <br />
 
+#### repo-updater: container_oomkill_events_total
+
+<p class="subtitle">Container OOMKILL events total by instance</p>
+
+This value indicates the total number of times the container main process or child processes were terminated by OOM killer.
+When it occurs frequently, it is an indicator of underprovisioning.
+
+Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-container-oomkill-events-total) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100910` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max by (name) (container_oom_events_total{name=~"^repo-updater.*"})`
+
+</details>
+
+<br />
+
 ### Repo Updater: Provisioning indicators (not available on server)
 
 #### repo-updater: provisioning_container_cpu_usage_long_term
@@ -12860,6 +12992,28 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100303`
 <summary>Technical details</summary>
 
 Query: `sum by(name) (rate(container_fs_reads_total{name=~"^searcher.*"}[1h]) + rate(container_fs_writes_total{name=~"^searcher.*"}[1h]))`
+
+</details>
+
+<br />
+
+#### searcher: container_oomkill_events_total
+
+<p class="subtitle">Container OOMKILL events total by instance</p>
+
+This value indicates the total number of times the container main process or child processes were terminated by OOM killer.
+When it occurs frequently, it is an indicator of underprovisioning.
+
+Refer to the [alert solutions reference](./alert_solutions.md#searcher-container-oomkill-events-total) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100310` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max by (name) (container_oom_events_total{name=~"^searcher.*"})`
 
 </details>
 
@@ -13919,6 +14073,28 @@ Query: `sum by(name) (rate(container_fs_reads_total{name=~"^symbols.*"}[1h]) + r
 
 <br />
 
+#### symbols: container_oomkill_events_total
+
+<p class="subtitle">Container OOMKILL events total by instance</p>
+
+This value indicates the total number of times the container main process or child processes were terminated by OOM killer.
+When it occurs frequently, it is an indicator of underprovisioning.
+
+Refer to the [alert solutions reference](./alert_solutions.md#symbols-container-oomkill-events-total) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100610` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max by (name) (container_oom_events_total{name=~"^symbols.*"})`
+
+</details>
+
+<br />
+
 ### Symbols: Provisioning indicators (not available on server)
 
 #### symbols: provisioning_container_cpu_usage_long_term
@@ -14228,6 +14404,28 @@ To see this panel, visit `/-/debug/grafana/d/syntect-server/syntect-server?viewP
 <summary>Technical details</summary>
 
 Query: `sum by(name) (rate(container_fs_reads_total{name=~"^syntect-server.*"}[1h]) + rate(container_fs_writes_total{name=~"^syntect-server.*"}[1h]))`
+
+</details>
+
+<br />
+
+#### syntect-server: container_oomkill_events_total
+
+<p class="subtitle">Container OOMKILL events total by instance</p>
+
+This value indicates the total number of times the container main process or child processes were terminated by OOM killer.
+When it occurs frequently, it is an indicator of underprovisioning.
+
+Refer to the [alert solutions reference](./alert_solutions.md#syntect-server-container-oomkill-events-total) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/syntect-server/syntect-server?viewPanel=100110` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max by (name) (container_oom_events_total{name=~"^syntect-server.*"})`
 
 </details>
 
@@ -15604,6 +15802,28 @@ Query: `sum by(name) (rate(container_fs_reads_total{name=~"^zoekt-indexserver.*"
 
 <br />
 
+#### zoekt: container_oomkill_events_total
+
+<p class="subtitle">Container OOMKILL events total by instance</p>
+
+This value indicates the total number of times the container main process or child processes were terminated by OOM killer.
+When it occurs frequently, it is an indicator of underprovisioning.
+
+Refer to the [alert solutions reference](./alert_solutions.md#zoekt-container-oomkill-events-total) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100710` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max by (name) (container_oom_events_total{name=~"^zoekt-indexserver.*"})`
+
+</details>
+
+<br />
+
 ### Zoekt: [zoekt-webserver] Container monitoring (not available on server)
 
 #### zoekt: container_missing
@@ -15690,6 +15910,28 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100803` on yo
 <summary>Technical details</summary>
 
 Query: `sum by(name) (rate(container_fs_reads_total{name=~"^zoekt-webserver.*"}[1h]) + rate(container_fs_writes_total{name=~"^zoekt-webserver.*"}[1h]))`
+
+</details>
+
+<br />
+
+#### zoekt: container_oomkill_events_total
+
+<p class="subtitle">Container OOMKILL events total by instance</p>
+
+This value indicates the total number of times the container main process or child processes were terminated by OOM killer.
+When it occurs frequently, it is an indicator of underprovisioning.
+
+Refer to the [alert solutions reference](./alert_solutions.md#zoekt-container-oomkill-events-total) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100810` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max by (name) (container_oom_events_total{name=~"^zoekt-webserver.*"})`
 
 </details>
 
@@ -16152,6 +16394,28 @@ To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100
 <summary>Technical details</summary>
 
 Query: `sum by(name) (rate(container_fs_reads_total{name=~"^prometheus.*"}[1h]) + rate(container_fs_writes_total{name=~"^prometheus.*"}[1h]))`
+
+</details>
+
+<br />
+
+#### prometheus: container_oomkill_events_total
+
+<p class="subtitle">Container OOMKILL events total by instance</p>
+
+This value indicates the total number of times the container main process or child processes were terminated by OOM killer.
+When it occurs frequently, it is an indicator of underprovisioning.
+
+Refer to the [alert solutions reference](./alert_solutions.md#prometheus-container-oomkill-events-total) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100310` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max by (name) (container_oom_events_total{name=~"^prometheus.*"})`
 
 </details>
 
@@ -17685,6 +17949,229 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100901`
 <summary>Technical details</summary>
 
 Query: `max by(instance) (go_gc_duration_seconds{job=~".*(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors)"})`
+
+</details>
+
+<br />
+
+## Global Containers Resource Usage
+
+<p class="subtitle">Container usage and provisioning indicators of all services.</p>
+
+To see this dashboard, visit `/-/debug/grafana/d/containers/containers` on your Sourcegraph instance.
+
+### Global Containers Resource Usage: Container monitoring (not available on server)
+
+#### containers: container_missing
+
+<p class="subtitle">Container missing</p>
+
+Alerts are enabled in service-specific dashboard.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100000` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `count by(name) ((time() - container_last_seen{name=~"^(alpine-3.12|alpine-3.14|cadvisor|codeinsights-db|codeintel-db|frontend|github-proxy|gitserver|grafana|indexed-searcher|jaeger-agent|jaeger-all-in-one|minio|postgres-12-alpine|postgres_exporter|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis_exporter|repo-updater|search-indexer|searcher|symbols|syntax-highlighter|worker|migrator).*"}) > 60)`
+
+</details>
+
+<br />
+
+#### containers: container_cpu_usage
+
+<p class="subtitle">Container cpu usage total (1m average) across all cores by instance</p>
+
+Alerts are enabled in service-specific dashboard.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100001` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^(alpine-3.12|alpine-3.14|cadvisor|codeinsights-db|codeintel-db|frontend|github-proxy|gitserver|grafana|indexed-searcher|jaeger-agent|jaeger-all-in-one|minio|postgres-12-alpine|postgres_exporter|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis_exporter|repo-updater|search-indexer|searcher|symbols|syntax-highlighter|worker|migrator).*"}`
+
+</details>
+
+<br />
+
+#### containers: container_memory_usage
+
+<p class="subtitle">Container memory usage by instance</p>
+
+Alerts are enabled in service-specific dashboard.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100002` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `cadvisor_container_memory_usage_percentage_total{name=~"^(alpine-3.12|alpine-3.14|cadvisor|codeinsights-db|codeintel-db|frontend|github-proxy|gitserver|grafana|indexed-searcher|jaeger-agent|jaeger-all-in-one|minio|postgres-12-alpine|postgres_exporter|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis_exporter|repo-updater|search-indexer|searcher|symbols|syntax-highlighter|worker|migrator).*"}`
+
+</details>
+
+<br />
+
+#### containers: fs_io_operations
+
+<p class="subtitle">Filesystem reads and writes rate by instance over 1h</p>
+
+Alerts are enabled in service-specific dashboard.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100003` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by(name) (rate(container_fs_reads_total{name=~"^(alpine-3.12|alpine-3.14|cadvisor|codeinsights-db|codeintel-db|frontend|github-proxy|gitserver|grafana|indexed-searcher|jaeger-agent|jaeger-all-in-one|minio|postgres-12-alpine|postgres_exporter|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis_exporter|repo-updater|search-indexer|searcher|symbols|syntax-highlighter|worker|migrator).*"}[1h]) + rate(container_fs_writes_total{name=~"^(alpine-3.12|alpine-3.14|cadvisor|codeinsights-db|codeintel-db|frontend|github-proxy|gitserver|grafana|indexed-searcher|jaeger-agent|jaeger-all-in-one|minio|postgres-12-alpine|postgres_exporter|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis_exporter|repo-updater|search-indexer|searcher|symbols|syntax-highlighter|worker|migrator).*"}[1h]))`
+
+</details>
+
+<br />
+
+#### containers: container_oomkill_events_total
+
+<p class="subtitle">Container OOMKILL events total by instance</p>
+
+This value indicates the total number of times the container main process or child processes were terminated by OOM killer.
+When it occurs frequently, it is an indicator of underprovisioning.
+
+Refer to the [alert solutions reference](./alert_solutions.md#containers-container-oomkill-events-total) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100010` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max by (name) (container_oom_events_total{name=~"^(alpine-3.12|alpine-3.14|cadvisor|codeinsights-db|codeintel-db|frontend|github-proxy|gitserver|grafana|indexed-searcher|jaeger-agent|jaeger-all-in-one|minio|postgres-12-alpine|postgres_exporter|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis_exporter|repo-updater|search-indexer|searcher|symbols|syntax-highlighter|worker|migrator).*"})`
+
+</details>
+
+<br />
+
+### Global Containers Resource Usage: Provisioning indicators (not available on server)
+
+#### containers: provisioning_container_cpu_usage_long_term
+
+<p class="subtitle">Container cpu usage total (90th percentile over 1d) across all cores by instance</p>
+
+Alerts are enabled in service-specific dashboard.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100100` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{name=~"^(alpine-3.12|alpine-3.14|cadvisor|codeinsights-db|codeintel-db|frontend|github-proxy|gitserver|grafana|indexed-searcher|jaeger-agent|jaeger-all-in-one|minio|postgres-12-alpine|postgres_exporter|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis_exporter|repo-updater|search-indexer|searcher|symbols|syntax-highlighter|worker|migrator).*"}[1d])`
+
+</details>
+
+<br />
+
+#### containers: provisioning_container_memory_usage_long_term
+
+<p class="subtitle">Container memory usage (1d maximum) by instance</p>
+
+Alerts are enabled in service-specific dashboard.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100101` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^(alpine-3.12|alpine-3.14|cadvisor|codeinsights-db|codeintel-db|frontend|github-proxy|gitserver|grafana|indexed-searcher|jaeger-agent|jaeger-all-in-one|minio|postgres-12-alpine|postgres_exporter|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis_exporter|repo-updater|search-indexer|searcher|symbols|syntax-highlighter|worker|migrator).*"}[1d])`
+
+</details>
+
+<br />
+
+#### containers: provisioning_container_cpu_usage_short_term
+
+<p class="subtitle">Container cpu usage total (5m maximum) across all cores by instance</p>
+
+Alerts are enabled in service-specific dashboard.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100110` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^(alpine-3.12|alpine-3.14|cadvisor|codeinsights-db|codeintel-db|frontend|github-proxy|gitserver|grafana|indexed-searcher|jaeger-agent|jaeger-all-in-one|minio|postgres-12-alpine|postgres_exporter|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis_exporter|repo-updater|search-indexer|searcher|symbols|syntax-highlighter|worker|migrator).*"}[5m])`
+
+</details>
+
+<br />
+
+#### containers: provisioning_container_memory_usage_short_term
+
+<p class="subtitle">Container memory usage (5m maximum) by instance</p>
+
+Alerts are enabled in service-specific dashboard.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100111` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^(alpine-3.12|alpine-3.14|cadvisor|codeinsights-db|codeintel-db|frontend|github-proxy|gitserver|grafana|indexed-searcher|jaeger-agent|jaeger-all-in-one|minio|postgres-12-alpine|postgres_exporter|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis_exporter|repo-updater|search-indexer|searcher|symbols|syntax-highlighter|worker|migrator).*"}[5m])`
+
+</details>
+
+<br />
+
+### Global Containers Resource Usage: Kubernetes monitoring (only available on Kubernetes)
+
+#### containers: pods_available_percentage
+
+<p class="subtitle">Percentage pods available</p>
+
+Alerts are enabled in service-specific dashboard.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100200` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by(app) (up{app=~".*(alpine-3.12|alpine-3.14|cadvisor|codeinsights-db|codeintel-db|frontend|github-proxy|gitserver|grafana|indexed-searcher|jaeger-agent|jaeger-all-in-one|minio|postgres-12-alpine|postgres_exporter|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis_exporter|repo-updater|search-indexer|searcher|symbols|syntax-highlighter|worker|migrator)"}) / count by (app) (up{app=~".*(alpine-3.12|alpine-3.14|cadvisor|codeinsights-db|codeintel-db|frontend|github-proxy|gitserver|grafana|indexed-searcher|jaeger-agent|jaeger-all-in-one|minio|postgres-12-alpine|postgres_exporter|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis_exporter|repo-updater|search-indexer|searcher|symbols|syntax-highlighter|worker|migrator)"}) * 100`
 
 </details>
 
