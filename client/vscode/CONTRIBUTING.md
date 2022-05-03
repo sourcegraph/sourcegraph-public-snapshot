@@ -53,3 +53,9 @@ If you need guidance or have any questions regarding Sourcegraph or the extensio
 ## License
 
 Apache
+
+## Release
+
+The extension is released to the VS Code Marketplace automatically whenever the `vsce/release` branch is updated.
+
+- Commit made for the release to the release branch must start with: `patch release vsce`, `minor release vsce`, or `major release vsce`
