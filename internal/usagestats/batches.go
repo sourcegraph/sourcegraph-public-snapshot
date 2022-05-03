@@ -333,6 +333,7 @@ SELECT
 FROM changeset_jobs
 GROUP BY date_trunc('week', created_at)::date, job_type;
 `
+
 	rows, err = db.QueryContext(ctx, weeklyBulkOperationsStatQuery)
 	if err != nil {
 		return nil, err
@@ -356,26 +357,6 @@ GROUP BY date_trunc('week', created_at)::date, job_type;
 			Count:         count,
 		})
 	}
-
-	// const bulkOperationsCountQuery = `SELECT job_type, count(id) FROM changeset_jobs GROUP BY job_type;`
-
-	// rows, err := db.QueryContext(ctx, bulkOperationsCountQuery)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// defer rows.Close()
-
-	// stats.BulkOperationsCount = make(map[string]int32)
-
-	// for rows.Next() {
-	// 	var jobType string
-	// 	var count int32
-	// 	if err = rows.Scan(&jobType, &count); err != nil {
-	// 		return nil, err
-	// 	}
-
-	// 	stats.BulkOperationsCount[jobType] = count
-	// }
 
 	return &stats, nil
 }
