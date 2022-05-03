@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
 
 type DBStore interface {
@@ -77,4 +78,9 @@ func (c gitClient) FileExists(ctx context.Context, file string) (bool, error) {
 
 func (c gitClient) RawContents(ctx context.Context, file string) ([]byte, error) {
 	return c.client.RawContents(ctx, c.repositoryID, c.commit, file)
+}
+
+type InferenceService interface {
+	InferIndexJobs(ctx context.Context, repo api.RepoName, commit, overrideScript string) ([]config.IndexJob, error)
+	InferIndexJobHints(ctx context.Context, repo api.RepoName, commit, overrideScript string) ([]config.IndexJobHint, error)
 }

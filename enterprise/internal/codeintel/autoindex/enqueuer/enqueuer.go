@@ -22,6 +22,7 @@ type IndexEnqueuer struct {
 	dbStore            DBStore
 	gitserverClient    GitserverClient
 	repoUpdater        RepoUpdaterClient
+	inferenceService   InferenceService
 	config             *Config
 	gitserverLimiter   *rate.Limiter
 	repoUpdaterLimiter *rate.Limiter
@@ -32,6 +33,25 @@ func NewIndexEnqueuer(
 	dbStore DBStore,
 	gitClient GitserverClient,
 	repoUpdater RepoUpdaterClient,
+	inferenceService InferenceService,
+	config *Config,
+	observationContext *observation.Context,
+) *IndexEnqueuer {
+	return newIndexEnqueuer(
+		dbStore,
+		gitClient,
+		repoUpdater,
+		autoindexing.GetInferenceService(database.NewDB(dbStore.Handle().DB())),
+		config,
+		observationContext,
+	)
+}
+
+func newIndexEnqueuer(
+	dbStore DBStore,
+	gitClient GitserverClient,
+	repoUpdater RepoUpdaterClient,
+	inferenceService InferenceService,
 	config *Config,
 	observationContext *observation.Context,
 ) *IndexEnqueuer {
@@ -39,6 +59,7 @@ func NewIndexEnqueuer(
 		dbStore:            dbStore,
 		gitserverClient:    gitClient,
 		repoUpdater:        repoUpdater,
+		inferenceService:   inferenceService,
 		config:             config,
 		gitserverLimiter:   rate.NewLimiter(config.MaximumRepositoriesInspectedPerSecond, 1),
 		repoUpdaterLimiter: rate.NewLimiter(config.MaximumRepositoriesUpdatedPerSecond, 1),
@@ -205,8 +226,7 @@ func (s *IndexEnqueuer) inferIndexJobsFromRepositoryStructure(ctx context.Contex
 		return nil, err
 	}
 
-	inferenceService := autoindexing.GetInferenceService(database.NewDB(s.dbStore.Handle().DB()))
-	indexes, err := inferenceService.InferIndexJobs(ctx, api.RepoName(repoName), commit, "")
+	indexes, err := s.inferenceService.InferIndexJobs(ctx, api.RepoName(repoName), commit, "")
 	if err != nil {
 		return nil, err
 	}
@@ -230,8 +250,7 @@ func (s *IndexEnqueuer) inferIndexJobHintsFromRepositoryStructure(ctx context.Co
 		return nil, err
 	}
 
-	inferenceService := autoindexing.GetInferenceService(database.NewDB(s.dbStore.Handle().DB()))
-	indexes, err := inferenceService.InferIndexJobHints(ctx, api.RepoName(repoName), commit, "")
+	indexes, err := s.inferenceService.InferIndexJobHints(ctx, api.RepoName(repoName), commit, "")
 	if err != nil {
 		return nil, err
 	}

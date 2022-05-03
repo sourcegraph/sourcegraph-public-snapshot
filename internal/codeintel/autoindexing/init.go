@@ -47,5 +47,8 @@ func TestService(db database.DB) *Service {
 	)
 }
 
-// Temporary
+// To be removed after https://github.com/sourcegraph/sourcegraph/issues/33377
+
+type InferenceService = inference.Service
+
 var GetInferenceService = inference.GetService
