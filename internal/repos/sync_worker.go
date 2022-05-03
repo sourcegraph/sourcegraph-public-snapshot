@@ -5,12 +5,11 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus/promauto"
-
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
