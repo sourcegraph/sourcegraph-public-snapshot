@@ -88,7 +88,7 @@
             if (window.context.experimentalFeatures.RedirectEs5) {
                 function canRunSourceGraph(){"use strict";if("undefined"==typeof Symbol)return!1;try{eval("class Foo {}"),eval("var bar = (x) => x+1")}catch(r){return!1}return!0}
                 if (!canRunSourceGraph()) {
-                    document.write("<h1>It looks like your current browser does not support Sourcegraph, Please upgrade to a modern browser such as <a href=\"https://www.google.com/chrome/downloads\">Chrome</a> or <a href=\"https://www.mozilla.org/en-US/firefox/new/\">Firefox</a></h1>")
+                    document.write("<h1>It looks like your current browser does not support Sourcegraph. Please upgrade to a modern browser such as <a href=\"https://www.google.com/chrome/downloads\">Chrome</a> or <a href=\"https://www.mozilla.org/en-US/firefox/new/\">Firefox</a></h1>")
                     // makes everything below disabled so no crashes
                     document.write('<!--');
                 }
