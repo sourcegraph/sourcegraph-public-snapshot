@@ -9,7 +9,6 @@ import (
 	"path"
 	"strings"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
@@ -65,7 +64,6 @@ func (s *pythonPackagesSyncer) Get(ctx context.Context, name, version string) (r
 func (s *pythonPackagesSyncer) Download(ctx context.Context, dir string, dep reposource.PackageDependency) error {
 	packageURL := dep.(*reposource.PythonDependency).PackageURL
 
-	spew.Dump("###########", packageURL)
 	pkg, err := s.client.Download(ctx, packageURL)
 	if err != nil {
 		return errors.Wrap(err, "download")
@@ -112,11 +110,18 @@ func unpackPythonPackage(pkg []byte, packageURL, workDir string) error {
 
 	switch {
 	case strings.HasSuffix(filename, ".tar.gz"), strings.HasSuffix(filename, ".tgz"):
-		return unpack.Tgz(r, workDir, opts)
+		err = unpack.Tgz(r, workDir, opts)
 	case strings.HasSuffix(filename, ".whl"), strings.HasSuffix(filename, ".zip"):
-		return unpack.Zip(r, int64(len(pkg)), workDir, opts)
+		err = unpack.Zip(r, int64(len(pkg)), workDir, opts)
 	case strings.HasSuffix(filename, ".tar"):
-		return unpack.Tar(r, workDir, opts)
+		err = unpack.Tar(r, workDir, opts)
+	default:
+		return errors.Errorf("unsupported python package type %q", filename)
 	}
-	return nil
+
+	if err != nil {
+		return err
+	}
+
+	return stripSingleOutermostDirectory(workDir)
 }
