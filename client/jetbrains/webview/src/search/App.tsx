@@ -114,7 +114,6 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                         />
                     </form>
                 </div>
-                <button type="button" onClick={setPrimaryColorToBlack}>Paint it black</button>
                 {/* We reset the search result list whenever a new search is started using key={lastSearchedQuery} */}
                 <SearchResultList
                     results={results}
@@ -127,9 +126,3 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
         </WildcardThemeContext.Provider>
     )
 }
-
-function setPrimaryColorToBlack(): void {
-    const root = document.querySelector(':root') as HTMLElement
-    root.style.setProperty('--primary', 'black')
-}
-
