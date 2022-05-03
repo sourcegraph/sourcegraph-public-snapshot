@@ -138,7 +138,7 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 					symbolSearchJobs = append(symbolSearchJobs, job)
 				}
 
-				symbolSearchJobs = append(symbolSearchJobs, &searcher.SymbolSearcher{
+				symbolSearchJobs = append(symbolSearchJobs, &searcher.SymbolSearcherJob{
 					PatternInfo: patternInfo,
 					Limit:       maxResults,
 				})

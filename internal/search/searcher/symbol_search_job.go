@@ -22,14 +22,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-type SymbolSearcher struct {
+type SymbolSearcherJob struct {
 	PatternInfo *search.TextPatternInfo
 	Repos       []*search.RepositoryRevisions // the set of repositories to search with searcher.
 	Limit       int
 }
 
 // Run calls the searcher service to search symbols.
-func (s *SymbolSearcher) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+func (s *SymbolSearcherJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
@@ -73,8 +73,8 @@ func (s *SymbolSearcher) Run(ctx context.Context, clients job.RuntimeClients, st
 	return nil, run.Wait()
 }
 
-func (s *SymbolSearcher) Name() string {
-	return "SymbolSearcher"
+func (s *SymbolSearcherJob) Name() string {
+	return "SymbolSearcherJob"
 }
 
 func searchInRepo(ctx context.Context, db database.DB, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []result.Match, err error) {
