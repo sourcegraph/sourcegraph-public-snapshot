@@ -5,13 +5,14 @@ import AlphaSBoxIcon from 'mdi-react/AlphaSBoxIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import FileIcon from 'mdi-react/FileIcon'
 import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
+import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import { useLocation } from 'react-router'
 import { Observable } from 'rxjs'
 
 import { HoverMerged } from '@sourcegraph/client-api'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import { SearchContextProps } from '@sourcegraph/search'
-import { CommitSearchResult, RepoSearchResult } from '@sourcegraph/search-ui'
+import { SearchResult } from '@sourcegraph/search-ui'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
@@ -132,7 +133,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                     )
                 case 'commit':
                     return (
-                        <CommitSearchResult
+                        <SearchResult
                             icon={SourceCommitIcon}
                             result={result}
                             repoName={result.repository}
@@ -144,9 +145,11 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                     )
                 case 'repo':
                     return (
-                        <RepoSearchResult
+                        <SearchResult
+                            icon={SourceRepositoryIcon}
                             result={result}
                             repoName={result.repository}
+                            platformContext={platformContext}
                             onSelect={() => logSearchResultClicked(index, 'repo')}
                             containerClassName={resultClassName}
                         />
