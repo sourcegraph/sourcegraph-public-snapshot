@@ -297,7 +297,7 @@ func TestInsightViewDashboardConnections(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	t.Run("resolves global and users private dashboard", func(t *testing.T) {
+	t.Run("resolves global dasboard and users private dashboard", func(t *testing.T) {
 
 		ivr := insightViewResolver{view: &insight[0], baseInsightResolver: base}
 		connectionResolver := ivr.Dashboards(ctx, graphqlbackend.InsightViewDashboardsConnectionArgs{})
@@ -315,7 +315,7 @@ func TestInsightViewDashboardConnections(t *testing.T) {
 
 	})
 
-	t.Run("resolves dashboard with limit 1", func(t *testing.T) {
+	t.Run("resolves dashboards with limit 1", func(t *testing.T) {
 
 		ivr := insightViewResolver{view: &insight[0], baseInsightResolver: base}
 		var first int32 = 1
@@ -353,7 +353,7 @@ func TestInsightViewDashboardConnections(t *testing.T) {
 
 	})
 
-	t.Run("resolves no dashboards", func(t *testing.T) {
+	t.Run("no resolvers when no dashboards", func(t *testing.T) {
 
 		nodashInsight := types.Insight{UniqueID: "nodash1234"}
 		ivr := insightViewResolver{view: &nodashInsight, baseInsightResolver: base}
