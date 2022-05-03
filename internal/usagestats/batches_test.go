@@ -58,15 +58,42 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Create batch specs 1, 2.
+	// Create another user.
+	user2, err := database.Users(db).Create(ctx, database.NewUser{Username: "test-2"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	pastBatchSpecCreationDate := now.AddDate(0, -1, 2)
+
+	// Create batch specs 1, 2, 3
 	_, err = db.ExecContext(context.Background(), `
 		INSERT INTO batch_specs
-			(id, rand_id, raw_spec, namespace_user_id, created_from_raw)
+			(id, rand_id, raw_spec, namespace_user_id, created_from_raw, created_at)
 		VALUES
-			(1, '123', '{}', $1, FALSE),
-			(2, '456', '{}', $1, FALSE),
-			(3, '789', '{}', $1, TRUE)
-	`, user.ID)
+			(1, '123', '{}', $1, FALSE, $3::timestamp),
+			(2, '456', '{}', $1, FALSE, $4::timestamp),
+			(3, '789', '{}', $1, TRUE, $4::timestamp),
+			(4, '157', '{}', $2, TRUE, $3::timestamp),
+			(5, 'U93', '{}', $2, TRUE, $3::timestamp),
+			(6, 'C80', '{}', $2, TRUE, $4::timestamp)
+	`, user.ID, user2.ID, now, pastBatchSpecCreationDate)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Create batch specs resolution jobs
+	_, err = db.ExecContext(context.Background(), `
+		INSERT INTO batch_spec_resolution_jobs
+			(id, batch_spec_id, initiator_id, worker_hostname)
+		VALUES
+			(1, 3, $1, 'test-worker.host'),
+			(2, 2, $1, 'test-worker.host'),
+			(3, 1, $2, 'test-worker.host'),
+			(4, 6, $2, 'test-worker.host'),
+			(5, 4, $2, 'test-worker.host'),
+			(6, 5, $2, 'test-worker.host')
+	`, user.ID, user2.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -221,6 +248,10 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	currentYear, currentMonth, _ := now.Date()
+	pastYear, pastMonth, _ := pastBatchSpecCreationDate.Date()
+
 	want := &types.BatchChangesUsageStatistics{
 		ViewBatchChangeApplyPageCount:               2,
 		ViewBatchChangeDetailsPageAfterCreateCount:  2,
@@ -278,6 +309,10 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 		BatchChangeStatsBySource: []*types.BatchChangeStatsBySource{
 			{Source: "local", PublishedChangesetsCount: 6, BatchChangesCount: 2},
 			{Source: "executor", PublishedChangesetsCount: 2, BatchChangesCount: 1},
+		},
+		MonthlyBatchChangesExecutorUsage: []*types.MonthlyBatchChangesExecutorUsage{
+			{Month: fmt.Sprintf("%d-%02d-01T00:00:00Z", pastYear, pastMonth), Count: 2},
+			{Month: fmt.Sprintf("%d-%02d-01T00:00:00Z", currentYear, currentMonth), Count: 1},
 		},
 	}
 	if diff := cmp.Diff(want, have); diff != "" {

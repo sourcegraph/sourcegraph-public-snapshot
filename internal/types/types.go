@@ -869,6 +869,16 @@ type BatchChangesUsageStatistics struct {
 	// BatchChangeStatsBySource is the distribution of batch change x changesets statistics
 	// across multiple sources
 	BatchChangeStatsBySource []*BatchChangeStatsBySource
+
+	// this refers to the number of users who ran a job on an executor in a given month
+	MonthlyBatchChangesExecutorUsage []*MonthlyBatchChangesExecutorUsage
+}
+
+type MonthlyBatchChangesExecutorUsage struct {
+	Month string
+
+	// number of unique users who ran a job on an executor
+	Count int32
 }
 
 type BatchChangeStatsBySource struct {

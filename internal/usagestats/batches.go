@@ -315,5 +315,36 @@ GROUP BY batch_specs.created_from_raw;
 		})
 	}
 
+	monthlyExecutorUsageQuery := `
+SELECT
+	DATE_TRUNC('month', batch_specs.created_at)::date as month,
+	COUNT(DISTINCT batch_spec_resolution_jobs.initiator_id)
+FROM batch_specs
+INNER JOIN batch_spec_resolution_jobs ON batch_spec_resolution_jobs.batch_spec_id = batch_specs.id
+WHERE batch_specs.created_from_raw IS TRUE
+GROUP BY date_trunc('month', batch_specs.created_at)::date
+ORDER BY date_trunc('month', batch_specs.created_at)::date;
+`
+
+	rows, err = db.QueryContext(ctx, monthlyExecutorUsageQuery)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var month string
+		var usersCount int32
+
+		if err = rows.Scan(&month, &usersCount); err != nil {
+			return nil, err
+		}
+
+		stats.MonthlyBatchChangesExecutorUsage = append(stats.MonthlyBatchChangesExecutorUsage, &types.MonthlyBatchChangesExecutorUsage{
+			Month: month,
+			Count: usersCount,
+		})
+	}
+
 	return &stats, nil
 }
