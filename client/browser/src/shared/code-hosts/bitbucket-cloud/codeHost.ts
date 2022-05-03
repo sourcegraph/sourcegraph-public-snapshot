@@ -2,6 +2,7 @@ import { fromEvent } from 'rxjs'
 import { map, startWith } from 'rxjs/operators'
 
 import { LineOrPositionOrRange } from '@sourcegraph/common'
+
 import { querySelectorOrSelf } from '../../util/dom'
 import { CodeHost } from '../shared/codeHost'
 import { CodeView } from '../shared/codeViews'
