@@ -45,6 +45,18 @@ export const KEYBOARD_SHORTCUT_COPY_FULL_QUERY: KeyboardShortcut = {
     keybindings: [{ held: [isMacPlatform() ? 'Meta' : 'Control', 'Shift'], ordered: ['c'] }],
 }
 
+export const KEYBOARD_SHORTCUT_NEXT_LOCATION: KeyboardShortcut = {
+    id: 'nextLocation',
+    title: 'Go to next location (when reference panel is open)',
+    keybindings: [{ ordered: ['n'] }],
+}
+
+export const KEYBOARD_SHORTCUT_PREV_LOCATION: KeyboardShortcut = {
+    id: 'prevLocation',
+    title: 'Go to previous location (when reference panel is open)',
+    keybindings: [{ ordered: ['p'] }],
+}
+
 /**
  * Global keyboard shortcuts. React components should access these via {@link KeybindingsProps}, not
  * globally.
@@ -57,6 +69,8 @@ export const KEYBOARD_SHORTCUTS: KeyboardShortcut[] = [
     KEYBOARD_SHORTCUT_FUZZY_FINDER,
     KEYBOARD_SHORTCUT_CLOSE_FUZZY_FINDER,
     KEYBOARD_SHORTCUT_COPY_FULL_QUERY,
+    KEYBOARD_SHORTCUT_NEXT_LOCATION,
+    KEYBOARD_SHORTCUT_PREV_LOCATION,
 ]
 
 /** A partial React props type for components that use or propagate keyboard shortcuts. */

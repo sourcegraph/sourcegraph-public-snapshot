@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { Shortcut } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'
 import * as H from 'history'
 import { capitalize } from 'lodash'
@@ -22,6 +23,10 @@ import {
 import { useQuery } from '@sourcegraph/http-client'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import {
+    KEYBOARD_SHORTCUT_NEXT_LOCATION,
+    KEYBOARD_SHORTCUT_PREV_LOCATION,
+} from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -265,6 +270,36 @@ export const ReferencesList: React.FunctionComponent<
     const definitions = useMemo(() => data?.definitions.nodes ?? [], [data])
     const implementations = useMemo(() => data?.implementations.nodes ?? [], [data])
 
+    const { locationsByNumber, numbersByLocation } = useMemo(() => {
+        const locationsByNumber: Record<number, Location> = {}
+        const numbersByLocation: Record<string, number> = {}
+
+        let count = 0
+
+        for (const location of definitions) {
+            locationsByNumber[count] = location
+            numbersByLocation[location.url] = count
+            count += 1
+        }
+
+        for (const location of references) {
+            locationsByNumber[count] = location
+            numbersByLocation[location.url] = count
+            count += 1
+        }
+
+        for (const location of implementations) {
+            locationsByNumber[count] = location
+            numbersByLocation[location.url] = count
+            count += 1
+        }
+
+        return {
+            locationsByNumber,
+            numbersByLocation,
+        }
+    }, [references, definitions, implementations])
+
     // activeLocation is the location that is selected/clicked in the list of
     // definitions/references/implementations.
     const [activeLocation, setActiveLocation] = useState<Location>()
@@ -297,12 +332,47 @@ export const ReferencesList: React.FunctionComponent<
     // When a user clicks on an item in the list of references, we push it to
     // the memory history for the code blob on the right, so it will jump to &
     // highlight the correct line.
-    const onReferenceClick = (location: Location | undefined): void => {
-        if (location) {
-            blobMemoryHistory.push(location.url)
+    const onReferenceClick = useCallback(
+        (location: Location | undefined): void => {
+            if (location) {
+                blobMemoryHistory.push(location.url)
+            }
+            setActiveLocation(location)
+        },
+        [blobMemoryHistory, setActiveLocation]
+    )
+
+    const onNextLocation = useCallback((): void => {
+        console.log('next location, activeLocation', activeLocation)
+        let number = 0
+        if (activeLocation !== undefined) {
+            number = numbersByLocation[activeLocation.url]
         }
-        setActiveLocation(location)
-    }
+
+        const nextLocation = locationsByNumber[number + 1]
+        if (nextLocation === undefined) {
+            console.log('no next location found')
+            return
+        }
+        console.log('setting next location', number, nextLocation)
+        onReferenceClick(nextLocation)
+    }, [onReferenceClick, locationsByNumber, numbersByLocation, activeLocation])
+
+    const onPrevLocation = useCallback((): void => {
+        console.log('prev location, activeLocation', activeLocation)
+        let number = 0
+        if (activeLocation !== undefined) {
+            number = numbersByLocation[activeLocation.url]
+        }
+
+        const nextLocation = locationsByNumber[number - 1]
+        if (nextLocation === undefined) {
+            console.log('no prev location found')
+            return
+        }
+        console.log('setting prev location', number, nextLocation)
+        onReferenceClick(nextLocation)
+    }, [onReferenceClick, locationsByNumber, numbersByLocation, activeLocation])
 
     // This is the history of the panel, that is inside a memory router
     const panelHistory = useHistory()
@@ -465,6 +535,8 @@ export const ReferencesList: React.FunctionComponent<
                     />
                 </div>
             )}
+            <Shortcut {...KEYBOARD_SHORTCUT_NEXT_LOCATION.keybindings[0]} onMatch={onNextLocation} />
+            <Shortcut {...KEYBOARD_SHORTCUT_PREV_LOCATION.keybindings[0]} onMatch={onPrevLocation} />
         </div>
     )
 }
