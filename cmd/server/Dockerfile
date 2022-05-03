@@ -50,13 +50,15 @@ RUN apk add --no-cache --verbose \
     # the features we can depend on. See this link for more information:
     # https://github.com/sourcegraph/sourcegraph/blob/main/doc/dev/postgresql.md#version-requirements
     && apk add --no-cache --verbose \
+    postgresql>=12.10-r0 \
+    postgresql-contrib \
+    --repository=http://dl-cdn.alpinelinux.org/alpine/v3.12/main  \
+    && apk add --no-cache --verbose \
     'bash>=5.0.17' \
     'redis>=5.0' \
     python2 \
     python3 \
     'nginx>=1.18.0' openssh-client pcre sqlite-libs su-exec 'nodejs-current>=14.5.0' \
-    postgresql>=12.10-r0 \
-    postgresql-contrib \
     # We require libstdc++ for p4-fusion
     libstdc++
 
