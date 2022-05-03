@@ -168,7 +168,7 @@ func (j *CommitSearch) ExpandUsernames(ctx context.Context, db database.DB) (err
 			return n
 		}
 
-		*expr = "(" + strings.Join(expanded, ")|(") + ")"
+		*expr = "(?:" + strings.Join(expanded, ")|(?:") + ")"
 		return n
 	})
 	return err
@@ -313,7 +313,7 @@ func queryParameterToPredicate(parameter query.Parameter, caseSensitive, diff bo
 	case query.FieldFile:
 		newPred = &gitprotocol.DiffModifiesFile{Expr: parameter.Value, IgnoreCase: !caseSensitive}
 	case query.FieldLang:
-		newPred = &gitprotocol.DiffModifiesFile{Expr: search.LangToFileRegexp(parameter.Value), IgnoreCase: true}
+		newPred = &gitprotocol.DiffModifiesFile{Expr: query.LangToFileRegexp(parameter.Value), IgnoreCase: true}
 	}
 
 	if parameter.Negated && newPred != nil {

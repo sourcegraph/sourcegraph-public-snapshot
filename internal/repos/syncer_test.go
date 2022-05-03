@@ -2209,3 +2209,63 @@ func setupSyncErroredTest(ctx context.Context, s *repos.Store, t *testing.T,
 	}
 	return syncer, dbRepos
 }
+
+func testSyncDoesNotOverwriteUpdatedConfig(store *repos.Store) func(*testing.T) {
+	return func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		now := time.Now()
+
+		svc := &types.ExternalService{
+			Kind:        extsvc.KindGitHub,
+			DisplayName: "Github - SyncDoesNotOverwriteUpdatedConfig",
+			Config:      `{"url": "https://github.com"}`,
+			CreatedAt:   now,
+			UpdatedAt:   now,
+		}
+
+		// setup service
+		if err := store.ExternalServiceStore.Upsert(ctx, svc); err != nil {
+			t.Fatal(err)
+		}
+
+		const updatedConfig = `{"url": "https://ghe.sgdev.org"}`
+
+		syncer := &repos.Syncer{
+			Sourcer: func(service *types.ExternalService) (repos.Source, error) {
+				// Update the config while the sync is running, emulating what a user
+				// could do via the UI.
+				svc.Config = updatedConfig
+				err := store.ExternalServiceStore.Upsert(ctx, svc)
+				if err != nil {
+					t.Fatal(err)
+				}
+				return repos.NewFakeSource(svc, nil), nil
+			},
+			Store: store,
+			Now:   time.Now,
+		}
+
+		if err := syncer.SyncExternalService(ctx, svc.ID, 10*time.Second); err != nil {
+			t.Fatal("Error occurred. Should not happen because neither site nor user/org limit is exceeded.")
+		}
+
+		syncedSvc, err := store.ExternalServiceStore.GetByID(ctx, svc.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if diff := cmp.Diff(updatedConfig, syncedSvc.Config); diff != "" {
+			t.Fatalf("config mismatch: (+want, -have): %s", diff)
+		}
+
+		if !syncedSvc.NextSyncAt.After(svc.NextSyncAt) {
+			t.Fatalf("NextSyncAt %s not after previous %s", syncedSvc.NextSyncAt, svc.NextSyncAt)
+		}
+
+		if !syncedSvc.NextSyncAt.After(svc.NextSyncAt) {
+			t.Fatalf("LastSyncAt %s not after previous %s", syncedSvc.LastSyncAt, svc.LastSyncAt)
+		}
+	}
+}

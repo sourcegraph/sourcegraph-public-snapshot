@@ -71,9 +71,9 @@ export const UserFacingCodeIntelligenceBadgeContent: React.FunctionComponent<Use
                             indexer: allIndexers.find(candidate => candidate.name === name),
                         }}
                         className={className}
+                        now={now}
                         useRequestedLanguageSupportQuery={useRequestedLanguageSupportQuery}
                         useRequestLanguageSupportQuery={useRequestLanguageSupportQuery}
-                        now={now}
                     />
                 </React.Fragment>
             ))}

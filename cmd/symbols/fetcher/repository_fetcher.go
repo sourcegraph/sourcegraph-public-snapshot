@@ -4,7 +4,6 @@ import (
 	"archive/tar"
 	"context"
 	"io"
-	"strings"
 
 	"github.com/opentracing/opentracing-go/log"
 
@@ -63,7 +62,6 @@ func (f *repositoryFetcher) fetchRepositoryArchive(ctx context.Context, args typ
 		log.String("repo", string(args.Repo)),
 		log.String("commitID", string(args.CommitID)),
 		log.Int("paths", len(paths)),
-		log.String("paths", strings.Join(paths, ":")),
 	}})
 	defer endObservation(1, observation.Args{})
 

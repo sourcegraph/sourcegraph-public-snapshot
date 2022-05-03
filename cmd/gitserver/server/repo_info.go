@@ -155,7 +155,9 @@ func (s *Server) handleRepoDelete(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) deleteRepo(ctx context.Context, repo api.RepoName) error {
-	err := s.removeRepoDirectory(s.dir(repo))
+	// The repo may be deleted in the database, in this case we need to get the
+	// original name in order to find it on disk
+	err := s.removeRepoDirectory(s.dir(api.UndeletedRepoName(repo)))
 	if err != nil {
 		return errors.Wrap(err, "removing repo directory")
 	}

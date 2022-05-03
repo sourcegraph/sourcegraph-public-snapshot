@@ -28,10 +28,8 @@ var runCommand = &cli.Command{
 	Usage:     "Run the given commands",
 	ArgsUsage: "[command]",
 	Category:  CategoryDev,
-	Flags: []cli.Flag{
-		addToMacOSFirewallFlag,
-	},
-	Action: execAdapter(runExec),
+	Flags:     []cli.Flag{},
+	Action:    execAdapter(runExec),
 	BashComplete: completeOptions(func() (options []string) {
 		config, _ := sgconf.Get(configFile, configOverwriteFile)
 		if config == nil {
@@ -66,7 +64,7 @@ func runExec(ctx context.Context, args []string) error {
 		cmds = append(cmds, cmd)
 	}
 
-	return run.Commands(ctx, config.Env, addToMacOSFirewall, verbose, cmds...)
+	return run.Commands(ctx, config.Env, verbose, cmds...)
 }
 
 func constructRunCmdLongHelp() string {
