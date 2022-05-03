@@ -26,7 +26,7 @@ const (
 	eventRetentionInDays int = 7
 )
 
-func newTriggerQueryRunner(ctx context.Context, logger log.Logger, db edb.EnterpriseDB, metrics codeMonitorsMetrics) *workerutil.Worker {
+func newTriggerQueryRunner(ctx context.Context, db edb.EnterpriseDB, metrics codeMonitorsMetrics) *workerutil.Worker {
 	options := workerutil.WorkerOptions{
 		Name:              "code_monitors_trigger_jobs_worker",
 		NumHandlers:       1,

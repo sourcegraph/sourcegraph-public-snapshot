@@ -40,7 +40,7 @@ type workHandler struct {
 	computeSearch func(context.Context, string) ([]query.ComputeResult, error)
 }
 
-func (r *workHandler) getSeries(ctx context.Context, logger log.Logger, seriesID string) (*types.InsightSeries, error) {
+func (r *workHandler) getSeries(ctx context.Context, seriesID string) (*types.InsightSeries, error) {
 	var val *types.InsightSeries
 	var ok bool
 
@@ -364,7 +364,7 @@ func (r *workHandler) Handle(ctx context.Context, logger log.Logger, record work
 		return errors.Wrap(err, "dequeueJob")
 	}
 
-	series, err := r.getSeries(ctx, logger, job.SeriesID)
+	series, err := r.getSeries(ctx, job.SeriesID)
 	if err != nil {
 		return errors.Wrap(err, "getSeries")
 	}

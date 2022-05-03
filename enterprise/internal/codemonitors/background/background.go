@@ -5,10 +5,9 @@ import (
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
-func NewBackgroundJobs(logger log.Logger, db edb.EnterpriseDB) []goroutine.BackgroundRoutine {
+func NewBackgroundJobs(db edb.EnterpriseDB) []goroutine.BackgroundRoutine {
 	codeMonitorsStore := db.CodeMonitors()
 
 	triggerMetrics := newMetricsForTriggerQueries()
@@ -20,7 +19,7 @@ func NewBackgroundJobs(logger log.Logger, db edb.EnterpriseDB) []goroutine.Backg
 	return []goroutine.BackgroundRoutine{
 		newTriggerQueryEnqueuer(ctx, codeMonitorsStore),
 		newTriggerJobsLogDeleter(ctx, codeMonitorsStore),
-		newTriggerQueryRunner(ctx, logger, db, triggerMetrics),
+		newTriggerQueryRunner(ctx, db, triggerMetrics),
 		newTriggerQueryResetter(ctx, codeMonitorsStore, triggerMetrics),
 		newActionRunner(ctx, codeMonitorsStore, actionMetrics),
 		newActionJobResetter(ctx, codeMonitorsStore, actionMetrics),
