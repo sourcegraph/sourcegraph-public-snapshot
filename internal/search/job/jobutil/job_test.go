@@ -104,7 +104,7 @@ func TestToSearchInputs(t *testing.T) {
 	// Job generation for other types of search
 	autogold.Want("symbol", `
 (PARALLEL
-  RepoUniverseSymbolSearch
+  RepoUniverseSymbolSearchJob
   ComputeExcludedReposJob)
 `).Equal(t, test("type:symbol test", search.Streaming, query.ParseRegexp))
 
