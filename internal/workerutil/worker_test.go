@@ -13,8 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/log"
-	"github.com/sourcegraph/sourcegraph/lib/logtest"
-
 )
 
 type TestRecord struct {
@@ -636,14 +634,14 @@ func TestWorkerStopDrainsDequeueLoopOnly(t *testing.T) {
 
 	dequeued := make(chan struct{})
 	block := make(chan struct{})
-	handler.HandleFunc.defaultHook = func(ctx context.Context, logtest.Scoped(t), r Record) error {
+	handler.HandleFunc.defaultHook = func(ctx context.Context, l log.Logger, r Record) error {
 		close(dequeued)
 		<-block
 		return ctx.Err()
 	}
 
 	var dequeueContext context.Context
-	handler.PreDequeueFunc.SetDefaultHook(func(ctx context.Context) (bool, interface{}, error) {
+	handler.PreDequeueFunc.SetDefaultHook(func(ctx context.Context, l log.Logger) (bool, interface{}, error) {
 		// Store dequeueContext in outer function so we can tell when Stop has
 		// reliably been called. Unfortunately we need to peek a bit into the
 		// internals here so we're not dependent on time-based unit tests.
