@@ -17690,3 +17690,141 @@ Query: `max by(instance) (go_gc_duration_seconds{job=~".*(executor|sourcegraph-c
 
 <br />
 
+## Global Containers Resource Usage
+
+<p class="subtitle">Container usage and provisioning indicators of all services.</p>
+
+To see this dashboard, visit `/-/debug/grafana/d/containers/containers` on your Sourcegraph instance.
+
+### Global Containers Resource Usage: Containers (not available on server)
+
+#### containers: container_memory_usage
+
+<p class="subtitle">Container memory usage of all services</p>
+
+This value indicates the memory usage of all containers.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100000` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `cadvisor_container_memory_usage_percentage_total{name=~"(alpine-3.12|alpine-3.14|cadvisor|codeinsights-db|codeintel-db|frontend|github-proxy|gitserver|grafana|indexed-searcher|jaeger-agent|jaeger-all-in-one|minio|postgres-12-alpine|postgres_exporter|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis_exporter|repo-updater|search-indexer|searcher|symbols|syntax-highlighter|worker|migrator|pgsql|codeinsights|codeintel).*"}`
+
+</details>
+
+<br />
+
+#### containers: container_cpu_usage
+
+<p class="subtitle">Container cpu usage total (1m average) across all cores by instance</p>
+
+This value indicates the CPU usage of all containers.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100010` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `cadvisor_container_cpu_usage_percentage_total{name=~"(alpine-3.12|alpine-3.14|cadvisor|codeinsights-db|codeintel-db|frontend|github-proxy|gitserver|grafana|indexed-searcher|jaeger-agent|jaeger-all-in-one|minio|postgres-12-alpine|postgres_exporter|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis_exporter|repo-updater|search-indexer|searcher|symbols|syntax-highlighter|worker|migrator|pgsql|codeinsights|codeintel).*"}`
+
+</details>
+
+<br />
+
+### Global Containers Resource Usage: Containers: Provisioning Indicators (not available on server)
+
+#### containers: container_memory_usage_provisioning
+
+<p class="subtitle">Container memory usage (5m maximum) of services that exceed 80% memory limit</p>
+
+Containers that exceed 80% memory limit. The value indicates potential underprovisioned resources.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100100` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"(alpine-3.12|alpine-3.14|cadvisor|codeinsights-db|codeintel-db|frontend|github-proxy|gitserver|grafana|indexed-searcher|jaeger-agent|jaeger-all-in-one|minio|postgres-12-alpine|postgres_exporter|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis_exporter|repo-updater|search-indexer|searcher|symbols|syntax-highlighter|worker|migrator|pgsql|codeinsights|codeintel).*"}[5m]) >= 80`
+
+</details>
+
+<br />
+
+#### containers: container_cpu_usage_provisioning
+
+<p class="subtitle">Container cpu usage total (5m maximum) across all cores of services that exceed 80% cpu limit</p>
+
+Containers that exceed 80% CPU limit. The value indicates potential underprovisioned resources.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100110` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"(alpine-3.12|alpine-3.14|cadvisor|codeinsights-db|codeintel-db|frontend|github-proxy|gitserver|grafana|indexed-searcher|jaeger-agent|jaeger-all-in-one|minio|postgres-12-alpine|postgres_exporter|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis_exporter|repo-updater|search-indexer|searcher|symbols|syntax-highlighter|worker|migrator|pgsql|codeinsights|codeintel).*"}[5m]) >= 80`
+
+</details>
+
+<br />
+
+#### containers: container_oomkill_events_total
+
+<p class="subtitle">Container OOMKILL events total</p>
+
+This value indicates the total number of times the container main process or child processes were terminated by OOM killer.
+When it occurs frequently, it is an indicator of underprovisioning.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100120` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max by (name) (container_oom_events_total{name=~"(alpine-3.12|alpine-3.14|cadvisor|codeinsights-db|codeintel-db|frontend|github-proxy|gitserver|grafana|indexed-searcher|jaeger-agent|jaeger-all-in-one|minio|postgres-12-alpine|postgres_exporter|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis_exporter|repo-updater|search-indexer|searcher|symbols|syntax-highlighter|worker|migrator|pgsql|codeinsights|codeintel).*"}) >= 1`
+
+</details>
+
+<br />
+
+#### containers: container_missing
+
+<p class="subtitle">Container missing</p>
+
+This value is the number of times a container has not been seen for more than one minute. If you observe this
+value change independent of deployment events (such as an upgrade), it could indicate pods are being OOM killed or terminated for some other reasons.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100130` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `count by(name) ((time() - container_last_seen{name=~"(alpine-3.12|alpine-3.14|cadvisor|codeinsights-db|codeintel-db|frontend|github-proxy|gitserver|grafana|indexed-searcher|jaeger-agent|jaeger-all-in-one|minio|postgres-12-alpine|postgres_exporter|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis_exporter|repo-updater|search-indexer|searcher|symbols|syntax-highlighter|worker|migrator|pgsql|codeinsights|codeintel).*"}) > 60)`
+
+</details>
+
+<br />
+
