@@ -1439,6 +1439,13 @@
       "default": 2000,
       "group": "Misc."
     },
+    "RedirectEs5": {
+      "description": "Prompts user to install new browser for non es5",
+      "type": "boolean",
+      "!go": { "pointer": true },
+      "group": "Misc.",
+      "default": false
+    },
     "productResearchPage.enabled": {
       "description": "Enables users access to the product research page in their settings.",
       "type": "boolean",
