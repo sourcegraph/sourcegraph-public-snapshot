@@ -184,7 +184,6 @@ require (
 )
 
 require (
-	bitbucket.org/creachadair/shell v0.0.7 // indirect
 	cloud.google.com/go/compute v1.5.0 // indirect
 	cloud.google.com/go/iam v0.1.1 // indirect
 	github.com/DataDog/datadog-agent/pkg/obfuscate v0.35.1 // indirect
@@ -195,7 +194,6 @@ require (
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/sprig v2.22.0+incompatible // indirect
 	github.com/alecthomas/chroma v0.10.0 // indirect
-	github.com/bitfield/script v0.20.0 // indirect
 	github.com/cockroachdb/errors v1.8.9 // indirect
 	github.com/containerd/typeurl v1.0.2 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.1 // indirect
@@ -206,8 +204,6 @@ require (
 	github.com/envoyproxy/protoc-gen-validate v0.6.3 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/huandu/xstrings v1.3.2 // indirect
-	github.com/itchyny/gojq v0.12.7 // indirect
-	github.com/itchyny/timefmt-go v0.1.3 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
