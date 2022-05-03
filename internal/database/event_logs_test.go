@@ -688,6 +688,82 @@ func TestEventLogs_AggregatedSparseCodeIntelEvents(t *testing.T) {
 	}
 }
 
+func TestEventLogs_AggregatedCodeIntelInvestigationEvents(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	db := dbtest.NewDB(t)
+	ctx := context.Background()
+
+	names := []string{
+		"CodeIntelligenceIndexerSetupInvestigated",
+		"CodeIntelligenceIndexerSetupInvestigated", // duplicate
+		"CodeIntelligenceUploadErrorInvestigated",
+		"CodeIntelligenceIndexErrorInvestigated",
+		"unknown event"}
+	users := []uint32{1, 2}
+
+	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to
+	// be a consistent value so that the tests don't fail when someone runs it at some particular
+	// time that falls too near the edge of a week.
+	now := time.Unix(1589581800, 0).UTC()
+
+	days := []time.Time{
+		now,                           // Today
+		now.Add(-time.Hour * 24 * 3),  // This week
+		now.Add(-time.Hour * 24 * 4),  // This week
+		now.Add(-time.Hour * 24 * 6),  // This month
+		now.Add(-time.Hour * 24 * 12), // This month
+		now.Add(-time.Hour * 24 * 40), // Previous month
+	}
+
+	g, gctx := errgroup.WithContext(ctx)
+
+	for _, user := range users {
+		for _, name := range names {
+			for _, day := range days {
+				for i := 0; i < 25; i++ {
+					e := &Event{
+						UserID: user,
+						Name:   name,
+						URL:    "http://sourcegraph.com",
+						Source: "test",
+						// Jitter current time +/- 30 minutes
+						Timestamp: day.Add(time.Minute * time.Duration(rand.Intn(60)-30)),
+					}
+
+					g.Go(func() error {
+						return EventLogs(db).Insert(gctx, e)
+					})
+				}
+			}
+		}
+	}
+
+	if err := g.Wait(); err != nil {
+		t.Fatal(err)
+	}
+
+	el := &eventLogStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+	events, err := el.aggregatedCodeIntelInvestigationEvents(ctx, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// the previous Sunday
+	week := now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5)
+
+	expectedEvents := []types.CodeIntelAggregatedInvestigationEvent{
+		{Name: "CodeIntelligenceIndexErrorInvestigated", Week: week, TotalWeek: 150, UniquesWeek: 2},
+		{Name: "CodeIntelligenceIndexerSetupInvestigated", Week: week, TotalWeek: 300, UniquesWeek: 2},
+		{Name: "CodeIntelligenceUploadErrorInvestigated", Week: week, TotalWeek: 150, UniquesWeek: 2},
+	}
+	if diff := cmp.Diff(expectedEvents, events); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
 func TestEventLogs_AggregatedSparseSearchEvents(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -1061,5 +1137,43 @@ func assertUsageValue(t *testing.T, v UsageValue, start time.Time, count int) {
 	}
 	if v.Count != count {
 		t.Errorf("got Count %d, want %d", v.Count, count)
+	}
+}
+
+func TestEventLogs_RequestsByLanguage(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	db := dbtest.NewDB(t)
+	ctx := context.Background()
+
+	if _, err := db.Exec(`
+		INSERT INTO codeintel_langugage_support_requests (language_id, user_id)
+		VALUES
+			('foo', 1),
+			('bar', 1),
+			('bar', 2),
+			('bar', 3),
+			('baz', 1),
+			('baz', 2),
+			('baz', 3),
+			('baz', 4)
+	`); err != nil {
+		t.Fatal(err)
+	}
+
+	requests, err := EventLogs(db).RequestsByLanguage(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expectedRequests := map[string]int{
+		"foo": 1,
+		"bar": 3,
+		"baz": 4,
+	}
+	if diff := cmp.Diff(expectedRequests, requests); diff != "" {
+		t.Fatal(diff)
 	}
 }
