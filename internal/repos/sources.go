@@ -69,6 +69,8 @@ func NewSource(db database.DB, svc *types.ExternalService, cf *httpcli.Factory) 
 		return NewPagureSource(svc, cf)
 	case extsvc.KindNpmPackages:
 		return NewNpmPackagesSource(svc)
+	case extsvc.KindPythonPackages:
+		return NewPythonPackagesSource(svc, cf)
 	case extsvc.KindOther:
 		return NewOtherSource(svc, cf)
 	default:
