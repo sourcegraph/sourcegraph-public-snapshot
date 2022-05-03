@@ -516,7 +516,7 @@ func zoektIndexedRepos(indexedSet map[uint32]*zoekt.MinimalRepoListEntry, revs [
 	return indexed, unindexed
 }
 
-type ZoektRepoSubsetSearch struct {
+type ZoektRepoSubsetSearchJob struct {
 	Repos          *IndexedRepoRevs // the set of indexed repository revisions to search.
 	Query          zoektquery.Q
 	Typ            search.IndexedRequestType
@@ -526,7 +526,7 @@ type ZoektRepoSubsetSearch struct {
 }
 
 // ZoektSearch is a job that searches repositories using zoekt.
-func (z *ZoektRepoSubsetSearch) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+func (z *ZoektRepoSubsetSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, z)
 	defer func() { finish(alert, err) }()
 
@@ -545,8 +545,8 @@ func (z *ZoektRepoSubsetSearch) Run(ctx context.Context, clients job.RuntimeClie
 	return nil, zoektSearch(ctx, z.Repos, z.Query, z.Typ, clients.Zoekt, z.FileMatchLimit, z.Select, since, stream)
 }
 
-func (*ZoektRepoSubsetSearch) Name() string {
-	return "ZoektRepoSubset"
+func (*ZoektRepoSubsetSearchJob) Name() string {
+	return "ZoektRepoSubsetSearchJob"
 }
 
 type GlobalSearch struct {
