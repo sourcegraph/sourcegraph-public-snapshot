@@ -131,7 +131,6 @@ func (sc *startedCmd) CapturedStderr() string {
 }
 
 func getSecrets(ctx context.Context, cmd Command) (map[string]string, error) {
-	fmt.Println("getSecrets")
 	secretsEnv := map[string]string{}
 
 	client, err := secretmanager.NewClient(ctx)
