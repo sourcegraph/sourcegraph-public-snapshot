@@ -49,7 +49,7 @@ export interface CodeInsightsAppRouter extends SettingsCascadeProps<Settings>, T
  * Main Insight routing component. Main entry point to code insights UI.
  */
 export const CodeInsightsAppRouter = withAuthenticatedUser<CodeInsightsAppRouter>(props => {
-    const { telemetryService, authenticatedUser } = props
+    const { telemetryService, authenticatedUser, settingsCascade } = props
 
     const match = useRouteMatch()
     return (
@@ -98,6 +98,7 @@ export const CodeInsightsAppRouter = withAuthenticatedUser<CodeInsightsAppRouter
                                     ? CodeInsightsRootPageTab.CodeInsights
                                     : CodeInsightsRootPageTab.GettingStarted
                             }
+                            settingsCascade={settingsCascade}
                             telemetryService={telemetryService}
                         />
                     )}

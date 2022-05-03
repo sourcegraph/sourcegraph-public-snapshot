@@ -1,9 +1,9 @@
 package com.sourcegraph.project;
 
 public class RepoInfo {
-    public String fileRel;
-    public String remoteURL;
-    public String branch;
+    public final String fileRel;
+    public final String remoteURL;
+    public final String branch;
 
     public RepoInfo(String sFileRel, String sRemoteURL, String sBranch) {
         fileRel = sFileRel;

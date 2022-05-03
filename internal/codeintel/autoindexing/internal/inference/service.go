@@ -6,6 +6,11 @@ import (
 	"context"
 	"io"
 	"strings"
+	"time"
+
+	"golang.org/x/time/rate"
+
+	otelog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference/lua"
@@ -20,6 +25,7 @@ import (
 type Service struct {
 	sandboxService SandboxService
 	gitService     GitService
+	limiter        *rate.Limiter
 	operations     *operations
 }
 
@@ -33,11 +39,13 @@ type invocationContext struct {
 func newService(
 	sandboxService SandboxService,
 	gitService GitService,
+	limiter *rate.Limiter,
 	observationContext *observation.Context,
 ) *Service {
 	return &Service{
 		sandboxService: sandboxService,
 		gitService:     gitService,
+		limiter:        limiter,
 		operations:     newOperations(observationContext),
 	}
 }
@@ -46,7 +54,7 @@ func newService(
 // is assumed to be a table of recognizer instances. Keys conflicting with the default recognizers
 // will overwrite them (to disable or change default behavior).
 func (s *Service) InferIndexJobs(ctx context.Context, repo api.RepoName, commit, overrideScript string) (_ []config.IndexJob, err error) {
-	ctx, endObservation := s.operations.inferIndexJobs.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.inferIndexJobs.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	sandbox, err := s.createSandbox(ctx)
@@ -71,7 +79,7 @@ func (s *Service) InferIndexJobs(ctx context.Context, repo api.RepoName, commit,
 
 // createSandbox creates a Lua sandbox wih the modules loaded for use with auto indexing inference.
 func (s *Service) createSandbox(ctx context.Context) (_ *luasandbox.Sandbox, err error) {
-	ctx, endObservation := s.operations.createSandbox.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.createSandbox.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	opts := luasandbox.CreateOptions{
@@ -88,7 +96,7 @@ func (s *Service) createSandbox(ctx context.Context) (_ *luasandbox.Sandbox, err
 // setupRecognizers runs the given default and override scripts in the given sandbox and converts the
 // script return values to a list of recognizer instances.
 func (s *Service) setupRecognizers(ctx context.Context, sandbox *luasandbox.Sandbox, overrideScript string) (_ []*luatypes.Recognizer, err error) {
-	ctx, endObservation := s.operations.setupRecognizers.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.setupRecognizers.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	opts := luasandbox.RunOptions{}
@@ -120,7 +128,7 @@ func (s *Service) invokeRecognizers(
 	invocationContext *invocationContext,
 	recognizers []*luatypes.Recognizer,
 ) (_ []config.IndexJob, err error) {
-	ctx, endObservation := s.operations.invokeRecognizers.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.invokeRecognizers.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	patternsForPaths, patternsForContent := partitionPatterns(recognizers)
@@ -155,11 +163,18 @@ func (s *Service) resolvePaths(
 	invocationContext *invocationContext,
 	patternsForPaths []*luatypes.PathPattern,
 ) (_ []string, err error) {
-	ctx, endObservation := s.operations.resolvePaths.With(ctx, &err, observation.Args{})
+	ctx, traceLogger, endObservation := s.operations.resolvePaths.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	pathPattern, err := flattenPatterns(patternsForPaths, false)
 	if err != nil {
+		return nil, err
+	}
+
+	start := time.Now()
+	rateLimitErr := s.limiter.Wait(ctx)
+	traceLogger.Log(otelog.Int("wait_duration_ms", int(time.Since(start).Milliseconds())))
+	if rateLimitErr != nil {
 		return nil, err
 	}
 
@@ -171,7 +186,7 @@ func (s *Service) resolvePaths(
 	return paths, err
 }
 
-// resolveFileContents requests the content of the paths that match teh given combined regular expression.
+// resolveFileContents requests the content of the paths that match the given combined regular expression.
 // The contents are fetched via a single git archive call.
 func (s *Service) resolveFileContents(
 	ctx context.Context,
@@ -179,7 +194,7 @@ func (s *Service) resolveFileContents(
 	paths []string,
 	patternsForContent []*luatypes.PathPattern,
 ) (_ map[string]string, err error) {
-	ctx, endObservation := s.operations.resolveFileContents.With(ctx, &err, observation.Args{})
+	ctx, traceLogger, endObservation := s.operations.resolveFileContents.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	relevantPaths, err := filterPathsByPatterns(paths, patternsForContent)
@@ -189,6 +204,13 @@ func (s *Service) resolveFileContents(
 	pathspecs := make([]gitserver.Pathspec, 0, len(relevantPaths))
 	for _, p := range relevantPaths {
 		pathspecs = append(pathspecs, gitserver.PathspecLiteral(p))
+	}
+
+	start := time.Now()
+	rateLimitErr := s.limiter.Wait(ctx)
+	traceLogger.Log(otelog.Int("wait_duration_ms", int(time.Since(start).Milliseconds())))
+	if rateLimitErr != nil {
+		return nil, err
 	}
 
 	opts := gitserver.ArchiveOptions{
@@ -312,7 +334,7 @@ func (s *Service) invokeLinearizedRecognizer(
 	paths []string,
 	contentsByPath map[string]string,
 ) (_ []config.IndexJob, err error) {
-	ctx, endObservation := s.operations.invokeLinearizedRecognizer.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.invokeLinearizedRecognizer.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	callPaths, callContentsByPath, err := s.filterPathsForRecognizer(recognizer, paths, contentsByPath)

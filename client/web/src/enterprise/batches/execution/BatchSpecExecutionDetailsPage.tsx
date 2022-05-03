@@ -34,6 +34,7 @@ import {
 import { AuthenticatedUser } from '../../../auth'
 import { BatchChangesIcon } from '../../../batches/icons'
 import { HeroPage } from '../../../components/HeroPage'
+import { LoaderButton } from '../../../components/LoaderButton'
 import { PageTitle } from '../../../components/PageTitle'
 import { Duration } from '../../../components/time/Duration'
 import { Timestamp } from '../../../components/time/Timestamp'
@@ -261,14 +262,15 @@ const BatchSpecActions: React.FunctionComponent<BatchSpecActionsProps> = ({ batc
             <span>
                 <ButtonGroup direction="vertical" className="ml-2">
                     {(batchSpec.state === BatchSpecState.QUEUED || batchSpec.state === BatchSpecState.PROCESSING) && (
-                        <Button
+                        <LoaderButton
                             onClick={() => cancelBatchSpecExecution()}
                             disabled={isCancelLoading}
                             outline={true}
                             variant="danger"
-                        >
-                            {isCancelLoading && <LoadingSpinner />}Cancel
-                        </Button>
+                            loading={isCancelLoading}
+                            alwaysShowLabel={true}
+                            label="Cancel"
+                        />
                     )}
                     {!location.pathname.endsWith('preview') &&
                         batchSpec.applyURL &&
@@ -280,15 +282,16 @@ const BatchSpecActions: React.FunctionComponent<BatchSpecActionsProps> = ({ batc
                     {batchSpec.viewerCanRetry && batchSpec.state !== BatchSpecState.COMPLETED && (
                         // TODO: Add a second button to allow retrying an entire batch spec,
                         // including completed jobs.
-                        <Button
+                        <LoaderButton
                             onClick={() => retryBatchSpecExecution()}
                             disabled={isRetryLoading}
                             data-tooltip={isRetryLoading ? undefined : 'Retry all failed workspaces'}
                             outline={true}
                             variant="secondary"
-                        >
-                            {isRetryLoading && <LoadingSpinner />}Retry
-                        </Button>
+                            loading={isRetryLoading}
+                            alwaysShowLabel={true}
+                            label="Retry"
+                        />
                     )}
                     {!location.pathname.endsWith('preview') &&
                         batchSpec.applyURL &&

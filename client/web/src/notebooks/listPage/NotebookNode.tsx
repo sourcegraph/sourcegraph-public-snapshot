@@ -37,7 +37,7 @@ function getNotebookDescription(blocks: NotebookBlock[]): string {
 export const NotebookNode: React.FunctionComponent<NotebookNodeProps> = ({ node }: NotebookNodeProps) => {
     const description = useMemo(() => getNotebookDescription(node.blocks), [node.blocks])
     return (
-        <div className={classNames('py-3', styles.notebookNode)}>
+        <li className={classNames('py-3', styles.notebookNode)}>
             <div className="d-flex align-items-center">
                 <Link to={PageRoutes.Notebook.replace(':id', node.id)} className={styles.notebookLink}>
                     <strong>{node.title}</strong>
@@ -74,6 +74,6 @@ export const NotebookNode: React.FunctionComponent<NotebookNodeProps> = ({ node 
                     Created <Timestamp date={node.createdAt} noAbout={true} />
                 </span>
             </div>
-        </div>
+        </li>
     )
 }

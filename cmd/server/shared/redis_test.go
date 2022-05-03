@@ -17,12 +17,7 @@ func TestRedisFixAOF(t *testing.T) {
 	if _, err := exec.LookPath("redis-check-aof"); err != nil {
 		t.Skip("redis-check-aof not on path: ", err)
 	}
-
-	dataDir, err := os.MkdirTemp("", t.Name())
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(dataDir)
+	dataDir := t.TempDir()
 
 	var b bytes.Buffer
 	redisCmd(&b, "PUT", "foo", "bar")

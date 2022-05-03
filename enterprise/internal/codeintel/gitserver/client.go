@@ -35,7 +35,7 @@ func New(db database.DB, dbStore DBStore, observationContext *observation.Contex
 
 // CommitExists determines if the given commit exists in the given repository.
 func (c *Client) CommitExists(ctx context.Context, repositoryID int, commit string) (_ bool, err error) {
-	ctx, endObservation := c.operations.commitExists.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := c.operations.commitExists.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 		log.String("commit", commit),
 	}})
@@ -56,7 +56,7 @@ type RepositoryCommit struct {
 // CommitsExist determines if the given commits exists in the given repositories. This method returns a
 // slice of the same size as the input slice, true indicating that the commit at the symmetric index exists.
 func (c *Client) CommitsExist(ctx context.Context, commits []RepositoryCommit) (_ []bool, err error) {
-	ctx, endObservation := c.operations.commitsExist.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := c.operations.commitsExist.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("numCommits", len(commits)),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -126,7 +126,7 @@ func (c *Client) CommitsExist(ctx context.Context, commits []RepositoryCommit) (
 // for the given repository (which occurs with empty repositories), a false-valued flag is returned along with
 // a nil error and empty revision.
 func (c *Client) Head(ctx context.Context, repositoryID int) (_ string, revisionExists bool, err error) {
-	ctx, endObservation := c.operations.head.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := c.operations.head.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -142,7 +142,7 @@ func (c *Client) Head(ctx context.Context, repositoryID int) (_ string, revision
 // CommitDate returns the time that the given commit was committed. If the given revision does not exist,
 // a false-valued flag is returned along with a nil error and zero-valued time.
 func (c *Client) CommitDate(ctx context.Context, repositoryID int, commit string) (_ string, _ time.Time, revisionExists bool, err error) {
-	ctx, endObservation := c.operations.commitDate.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := c.operations.commitDate.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 		log.String("commit", commit),
 	}})
@@ -176,7 +176,7 @@ func (c *Client) CommitDate(ctx context.Context, repositoryID int, commit string
 }
 
 func (c *Client) RepoInfo(ctx context.Context, repos ...api.RepoName) (_ map[api.RepoName]*protocol.RepoInfo, err error) {
-	ctx, endObservation := c.operations.repoInfo.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := c.operations.repoInfo.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("numRepos", len(repos)),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -193,7 +193,7 @@ func (c *Client) RepoInfo(ctx context.Context, repos ...api.RepoName) (_ map[api
 // to its parents. If a commit is supplied, the returned graph will be rooted at the given
 // commit. If a non-zero limit is supplied, at most that many commits will be returned.
 func (c *Client) CommitGraph(ctx context.Context, repositoryID int, opts gitserver.CommitGraphOptions) (_ *gitdomain.CommitGraph, err error) {
-	ctx, endObservation := c.operations.commitGraph.With(ctx, &err, observation.Args{
+	ctx, _, endObservation := c.operations.commitGraph.With(ctx, &err, observation.Args{
 		LogFields: append([]log.Field{log.Int("repositoryID", repositoryID)}, opts.LogFields()...),
 	})
 	defer endObservation(1, observation.Args{})
@@ -228,7 +228,7 @@ func (c *Client) CommitGraph(ctx context.Context, repositoryID int, opts gitserv
 // branch and tag of the given repository. If any git objects are provided, it will
 // only populate entries for descriptions pointing at the given git objects.
 func (c *Client) RefDescriptions(ctx context.Context, repositoryID int, pointedAt ...string) (_ map[string][]gitdomain.RefDescription, err error) {
-	ctx, endObservation := c.operations.refDescriptions.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := c.operations.refDescriptions.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -246,7 +246,7 @@ func (c *Client) RefDescriptions(ctx context.Context, repositoryID int, pointedA
 // as: all commits on {branchName} not also on the tip of the default branch. If the supplied branch name is the
 // default branch, then this method instead returns all commits reachable from HEAD.
 func (c *Client) CommitsUniqueToBranch(ctx context.Context, repositoryID int, branchName string, isDefaultBranch bool, maxAge *time.Time) (_ map[string]time.Time, err error) {
-	ctx, endObservation := c.operations.commitsUniqueToBranch.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := c.operations.commitsUniqueToBranch.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 		log.String("branchName", branchName),
 		log.Bool("isDefaultBranch", isDefaultBranch),
@@ -306,7 +306,7 @@ func (c *Client) DefaultBranchContains(ctx context.Context, repositoryID int, co
 
 // RawContents returns the contents of a file in a particular commit of a repository.
 func (c *Client) RawContents(ctx context.Context, repositoryID int, commit, file string) (_ []byte, err error) {
-	ctx, endObservation := c.operations.rawContents.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := c.operations.rawContents.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 		log.String("commit", commit),
 		log.String("file", file),
@@ -344,7 +344,7 @@ func (c *Client) RawContents(ctx context.Context, repositoryID int, commit, file
 // of git ls-tree. The keys of the resulting map are the input (unsanitized) dirnames, and the value of
 // that key are the files nested under that directory.
 func (c *Client) DirectoryChildren(ctx context.Context, repositoryID int, commit string, dirnames []string) (_ map[string][]string, err error) {
-	ctx, endObservation := c.operations.directoryChildren.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := c.operations.directoryChildren.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 		log.String("commit", commit),
 	}})
@@ -378,7 +378,7 @@ func (c *Client) DirectoryChildren(ctx context.Context, repositoryID int, commit
 
 // FileExists determines whether a file exists in a particular commit of a repository.
 func (c *Client) FileExists(ctx context.Context, repositoryID int, commit, file string) (_ bool, err error) {
-	ctx, endObservation := c.operations.fileExists.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := c.operations.fileExists.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 		log.String("commit", commit),
 		log.String("file", file),
@@ -409,7 +409,7 @@ func (c *Client) FileExists(ctx context.Context, repositoryID int, commit, file 
 // ListFiles returns a list of root-relative file paths matching the given pattern in a particular
 // commit of a repository.
 func (c *Client) ListFiles(ctx context.Context, repositoryID int, commit string, pattern *regexp.Regexp) (_ []string, err error) {
-	ctx, endObservation := c.operations.listFiles.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := c.operations.listFiles.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 		log.String("commit", commit),
 		log.String("pattern", pattern.String()),
@@ -444,7 +444,7 @@ func (c *Client) ListFiles(ctx context.Context, repositoryID int, commit string,
 
 // ResolveRevision returns the absolute commit for a commit-ish spec.
 func (c *Client) ResolveRevision(ctx context.Context, repositoryID int, versionString string) (commitID api.CommitID, err error) {
-	ctx, endObservation := c.operations.resolveRevision.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := c.operations.resolveRevision.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 		log.String("versionString", versionString),
 	}})

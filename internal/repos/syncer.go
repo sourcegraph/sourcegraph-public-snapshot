@@ -616,10 +616,27 @@ func (s *Syncer) SyncExternalService(
 	interval := calcSyncInterval(now, svc.LastSyncAt, minSyncInterval, modified, errs)
 
 	s.log().Debug("Synced external service", "id", externalServiceID, "backoff duration", interval)
+
+	// Re-load the service from the DB and update the sync timestamps. We do this
+	// because a sync can take a long time and we'd potentially over-write changes to
+	// other fields like the config that happened during the sync by re-using the same `svc`
+	// loaded at the beginning of the sync.
+	tx, err := s.Store.ExternalServiceStore.Transact(ctx)
+	if err != nil {
+		return errors.Append(errs, errors.Wrap(err, "failed to start tx"))
+	}
+
+	defer func() { errs = errors.Append(errs, tx.Done(err)) }()
+
+	svc, err = tx.GetByID(ctx, svc.ID)
+	if err != nil {
+		return errors.Append(errs, errors.Wrap(err, "failed to load extsvc"))
+	}
+
 	svc.NextSyncAt = now.Add(interval)
 	svc.LastSyncAt = now
 
-	err = s.Store.ExternalServiceStore.Upsert(ctx, svc)
+	err = tx.Upsert(ctx, svc)
 	if err != nil {
 		errs = errors.Append(errs, errors.Wrap(err, "upserting external service"))
 	}

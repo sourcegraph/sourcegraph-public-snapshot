@@ -10,7 +10,7 @@ Your feedback is important to us and is greatly appreciated. Please do not hesit
 
 ## Issues / Bugs
 
-New issues and feature requests can be filed through our [issue tracker](https://github.com/sourcegraph/sourcegraph/issues/new/choose) using the `vscode-extension` label.
+New issues and feature requests can be filed through our [issue tracker](https://github.com/sourcegraph/sourcegraph/issues/new?labels=team/integrations,vscode-extension&title=VSCode+Bug+report:+&projects=Integrations%20Project%20Board) using the `vscode-extension` & `team/integrations` label.
 
 ## Development
 
@@ -48,6 +48,7 @@ If you need guidance or have any questions regarding Sourcegraph or the extensio
 - [Developing the web clients](https://docs.sourcegraph.com/dev/background-information/web)
 - [Issue Tracker](https://github.com/sourcegraph/sourcegraph/labels/vscode-extension)
 - [Troubleshooting docs](https://docs.sourcegraph.com/admin/how-to/troubleshoot-sg-extension#vs-code-extension)
+- [Report a bug](https://github.com/sourcegraph/sourcegraph/issues/new?labels=team/integrations,vscode-extension&title=VSCode+Bug+report:+&projects=Integrations%20Project%20Board)
 
 ## License
 

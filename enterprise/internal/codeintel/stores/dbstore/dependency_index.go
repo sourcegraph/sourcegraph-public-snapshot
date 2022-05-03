@@ -177,7 +177,7 @@ func scanFirstDependencyIndexingJobRecord(rows *sql.Rows, err error) (workerutil
 
 // InsertDependencySyncingJob inserts a new dependency syncing job and returns its identifier.
 func (s *Store) InsertDependencySyncingJob(ctx context.Context, uploadID int) (id int, err error) {
-	ctx, endObservation := s.operations.insertDependencySyncingJob.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.insertDependencySyncingJob.With(ctx, &err, observation.Args{})
 	defer func() {
 		endObservation(1, observation.Args{LogFields: []log.Field{
 			log.Int("id", id),
@@ -195,7 +195,7 @@ RETURNING id
 `
 
 func (s *Store) InsertCloneableDependencyRepo(ctx context.Context, dependency precise.Package) (new bool, err error) {
-	ctx, endObservation := s.operations.insertCloneableDependencyRepo.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.insertCloneableDependencyRepo.With(ctx, &err, observation.Args{})
 	defer func() {
 		endObservation(1, observation.Args{LogFields: []log.Field{
 			log.Bool("new", new),
@@ -216,7 +216,7 @@ RETURNING 1
 `
 
 func (s *Store) InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (id int, err error) {
-	ctx, endObservation := s.operations.insertDependencyIndexingJob.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.insertDependencyIndexingJob.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("uploadId", uploadID),
 		log.String("extSvcKind", externalServiceKind),
 	}})

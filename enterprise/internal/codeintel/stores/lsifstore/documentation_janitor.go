@@ -21,7 +21,7 @@ func (s *Store) DeleteOldPrivateSearchRecords(ctx context.Context, minimumTimeSi
 }
 
 func (s *Store) deleteOldSearchRecords(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, tableSuffix string, now time.Time) (_ int, err error) {
-	ctx, endObservation := s.operations.deleteOldSearchRecords.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.deleteOldSearchRecords.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	now = now.UTC()
