@@ -399,7 +399,7 @@ func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.Insi
 		if definition.SeriesSortDirection != nil {
 			sortDirection = *definition.SeriesSortDirection
 		} else {
-			sortDirection = types.Asc
+			sortDirection = types.Desc
 		}
 	}
 	sortedCaptureGroups := getSortedCaptureGroups(sortMode, sortDirection, groupedByCapture)

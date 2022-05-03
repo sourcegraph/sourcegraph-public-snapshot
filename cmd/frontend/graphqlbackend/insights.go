@@ -175,6 +175,7 @@ type InsightViewResolver interface {
 	DataSeriesDefinitions(ctx context.Context) ([]InsightDataSeriesDefinition, error)
 	DashboardReferenceCount(ctx context.Context) (int32, error)
 	IsFrozen(ctx context.Context) (bool, error)
+	SeriesCount(ctx context.Context) (int32, error)
 }
 
 type InsightDataSeriesDefinition interface {

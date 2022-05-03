@@ -550,3 +550,21 @@ func scanAll(rows *sql.Rows, scan scanFunc) (err error) {
 	}
 	return rows.Err()
 }
+
+func (s *Store) CountCaptureGroupsForSeries(ctx context.Context, seriesId string) (int, error) {
+	count, _, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(countCapturedGroupsForSeriesSql, seriesId)))
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+const countCapturedGroupsForSeriesSql = `
+-- source: enterprise/internal/insights/store/store.go:CountCaptureGroupsForSeries
+SELECT COUNT(DISTINCT(capture))
+FROM (  select * from series_points
+	union
+	select * from series_points_snapshots
+) AS sp
+WHERE series_id = %s;
+`

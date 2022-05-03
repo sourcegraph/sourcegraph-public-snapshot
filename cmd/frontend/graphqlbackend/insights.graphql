@@ -853,6 +853,11 @@ type InsightView implements Node {
     Represents if this insight is in a frozen state or not. A frozen state is relevant when a license is downgraded and the number of insights exceed the free plan limits.
     """
     isFrozen: Boolean!
+
+    """
+    The total number of series on this insight.
+    """
+    seriesCount: Int!
 }
 
 """

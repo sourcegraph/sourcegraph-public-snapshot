@@ -1,3 +1,5 @@
+import { SeriesDisplayOptions } from '@sourcegraph/shared/src/graphql-operations'
+
 import {
     InsightViewFiltersInput,
     LineChartSearchInsightDataSeriesInput,
@@ -23,6 +25,7 @@ export function getSearchInsightUpdateInput(insight: MinimalSearchBasedInsightDa
                   searchContexts: insight.filters.contexts,
               }
             : {}
+    const seriesDisplayOptions: SeriesDisplayOptions = {} // TODO fill this in.
 
     return {
         dataSeries: insight.series.map<LineChartSearchInsightDataSeriesInput>(series => ({
@@ -38,7 +41,7 @@ export function getSearchInsightUpdateInput(insight: MinimalSearchBasedInsightDa
         presentationOptions: {
             title: insight.title,
         },
-        viewControls: { filters },
+        viewControls: { filters, seriesDisplayOptions },
     }
 }
 

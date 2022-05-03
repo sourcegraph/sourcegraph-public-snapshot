@@ -275,6 +275,23 @@ func (i *insightViewResolver) IsFrozen(ctx context.Context) (bool, error) {
 	return i.view.IsFrozen, nil
 }
 
+func (i *insightViewResolver) SeriesCount(ctx context.Context) (int32, error) {
+	count := 0
+	for _, series := range i.view.Series {
+		if series.GeneratedFromCaptureGroups {
+			addCount, err := i.timeSeriesStore.CountCaptureGroupsForSeries(ctx, series.SeriesID)
+			if err != nil {
+				return 0, errors.Wrap(err, "CountCaptureGroupsForSeries")
+			}
+
+			count += addCount
+		} else {
+			count++
+		}
+	}
+	return int32(count), nil
+}
+
 type searchInsightDataSeriesDefinitionResolver struct {
 	series *types.InsightViewSeries
 }
@@ -471,11 +488,13 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 		return nil, errors.New("No insight view found with this id")
 	}
 
-	var seriesSortMode types.SeriesSortMode
-	var seriesSortDirection types.SeriesSortDirection
+	var seriesSortMode *types.SeriesSortMode
+	var seriesSortDirection *types.SeriesSortDirection
 	if args.Input.ViewControls.SeriesDisplayOptions.SortOptions != nil {
-		seriesSortMode = types.SeriesSortMode(args.Input.ViewControls.SeriesDisplayOptions.SortOptions.Mode)
-		seriesSortDirection = types.SeriesSortDirection(args.Input.ViewControls.SeriesDisplayOptions.SortOptions.Direction)
+		mode := types.SeriesSortMode(args.Input.ViewControls.SeriesDisplayOptions.SortOptions.Mode)
+		seriesSortMode = &mode
+		direction := types.SeriesSortDirection(args.Input.ViewControls.SeriesDisplayOptions.SortOptions.Direction)
+		seriesSortDirection = &direction
 	}
 
 	view, err := tx.UpdateView(ctx, types.InsightView{
@@ -483,8 +502,8 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 		Title:               emptyIfNil(args.Input.PresentationOptions.Title),
 		Filters:             filtersFromInput(&args.Input.ViewControls.Filters),
 		PresentationType:    types.Line,
-		SeriesSortMode:      &seriesSortMode,
-		SeriesSortDirection: &seriesSortDirection,
+		SeriesSortMode:      seriesSortMode,
+		SeriesSortDirection: seriesSortDirection,
 		SeriesLimit:         args.Input.ViewControls.SeriesDisplayOptions.Limit,
 	})
 	if err != nil {
