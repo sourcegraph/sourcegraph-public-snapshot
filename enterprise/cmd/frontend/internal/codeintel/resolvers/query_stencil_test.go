@@ -52,6 +52,7 @@ func TestStencil(t *testing.T) {
 		uploads,
 		newOperations(&observation.TestContext),
 		authz.NewMockSubRepoPermissionChecker(),
+		50,
 	)
 	ranges, err := resolver.Stencil(context.Background())
 	if err != nil {

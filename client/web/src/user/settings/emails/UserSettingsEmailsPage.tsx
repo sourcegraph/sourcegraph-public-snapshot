@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useEffect, useState, useCallback } from 'react'
+import { FunctionComponent, useEffect, useState, useCallback } from 'react'
 
 import classNames from 'classnames'
 
@@ -73,12 +73,8 @@ export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user }) => {
         return <LoadingSpinner />
     }
 
-    if (isErrorLike(statusOrError)) {
-        return <ErrorAlert className="mt-2" error={statusOrError} />
-    }
-
     return (
-        <div className={styles.userSettingsEmailsPage}>
+        <div className={styles.userSettingsEmailsPage} data-testid="user-settings-emails-page">
             <PageTitle title="Emails" />
             <PageHeader headingElement="h2" path={[{ text: 'Emails' }]} className="mb-3" />
 
@@ -89,6 +85,7 @@ export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user }) => {
                 </Alert>
             )}
 
+            {isErrorLike(statusOrError) && <ErrorAlert className="mt-2" error={statusOrError} />}
             {isErrorLike(emailActionError) && <ErrorAlert className="mt-2" error={emailActionError} />}
 
             <Container>

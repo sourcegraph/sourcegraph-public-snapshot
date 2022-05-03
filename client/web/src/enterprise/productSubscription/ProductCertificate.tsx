@@ -36,7 +36,7 @@ export const ProductCertificate: React.FunctionComponent<Props> = ({
     footer,
     className = '',
 }) => (
-    <Card className={classNames(className, 'test-product-certificate')}>
+    <Card className={className} data-testid="product-certificate">
         <CardBody className="d-flex align-items-center">
             <img
                 className={classNames(styles.logo, 'mr-1', 'p-2')}

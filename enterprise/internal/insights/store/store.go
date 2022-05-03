@@ -107,8 +107,8 @@ type SeriesPointsOpts struct {
 	// TODO(slimsag): Add ability to filter based on repo name, original name.
 	// TODO(slimsag): Add ability to do limited filtering based on metadata.
 
-	IncludeRepoRegex string
-	ExcludeRepoRegex string
+	IncludeRepoRegex []string
+	ExcludeRepoRegex []string
 
 	// Time ranges to query from/to, if non-nil, in UTC.
 	From, To *time.Time
@@ -205,7 +205,7 @@ SELECT sub.series_id, sub.interval_time, SUM(sub.value) as value, sub.metadata, 
 	ORDER BY sp.series_id, interval_time, sp.repo_name_id
 ) sub
 GROUP BY sub.series_id, sub.interval_time, sub.metadata, sub.capture
-ORDER BY sub.series_id, sub.interval_time DESC
+ORDER BY sub.series_id, sub.interval_time ASC
 `
 
 // Note that the series_points table may contain duplicate points, or points recorded at irregular
@@ -246,10 +246,20 @@ func seriesPointsQuery(opts SeriesPointsOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf(s))
 	}
 	if len(opts.IncludeRepoRegex) > 0 {
-		preds = append(preds, sqlf.Sprintf("rn.name ~ %s", opts.IncludeRepoRegex))
+		for _, regex := range opts.IncludeRepoRegex {
+			if len(regex) == 0 {
+				continue
+			}
+			preds = append(preds, sqlf.Sprintf("rn.name ~ %s", regex))
+		}
 	}
 	if len(opts.ExcludeRepoRegex) > 0 {
-		preds = append(preds, sqlf.Sprintf("rn.name !~ %s", opts.ExcludeRepoRegex))
+		for _, regex := range opts.ExcludeRepoRegex {
+			if len(regex) == 0 {
+				continue
+			}
+			preds = append(preds, sqlf.Sprintf("rn.name !~ %s", regex))
+		}
 	}
 
 	if len(preds) == 0 {

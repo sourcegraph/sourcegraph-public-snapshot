@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/bloomfilter"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 func TestReferences(t *testing.T) {
@@ -56,6 +57,7 @@ func TestReferences(t *testing.T) {
 		uploads,
 		newOperations(&observation.TestContext),
 		authz.NewMockSubRepoPermissionChecker(),
+		50,
 	)
 	adjustedLocations, _, err := resolver.References(context.Background(), 10, 20, 50, "")
 	if err != nil {
@@ -127,6 +129,7 @@ func TestReferencesWithSubRepoPermissions(t *testing.T) {
 		uploads,
 		newOperations(&observation.TestContext),
 		checker,
+		50,
 	)
 
 	ctx := context.Background()
@@ -249,6 +252,7 @@ func TestReferencesRemote(t *testing.T) {
 		uploads,
 		newOperations(&observation.TestContext),
 		authz.NewMockSubRepoPermissionChecker(),
+		50,
 	)
 	adjustedLocations, _, err := resolver.References(context.Background(), 10, 20, 50, "")
 	if err != nil {
@@ -436,6 +440,7 @@ func TestReferencesRemoteWithSubRepoPermissions(t *testing.T) {
 		uploads,
 		newOperations(&observation.TestContext),
 		checker,
+		50,
 	)
 
 	ctx := context.Background()
@@ -514,6 +519,7 @@ func TestIgnoredIDs(t *testing.T) {
 		[]dbstore.Dump{},
 		newOperations(&observation.TestContext),
 		authz.NewMockSubRepoPermissionChecker(),
+		50,
 	)
 
 	refDumpID := 50
@@ -533,7 +539,7 @@ func TestIgnoredIDs(t *testing.T) {
 			ignoreIDs,
 			10,
 			0,
-			observation.TestTraceLogger,
+			observation.TestTraceLogger(logtest.Scoped(t)),
 		)
 		if err != nil {
 			t.Fatalf("uploadIDsWithReferences: %s", err)

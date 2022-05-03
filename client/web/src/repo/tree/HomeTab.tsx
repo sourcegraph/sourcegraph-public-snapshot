@@ -10,8 +10,11 @@ import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, pluralize, encodeURIPathComponent } from '@sourcegraph/common'
 import { gql, useQuery } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { Button, Link, Badge, useEventObservable, Alert, LoadingSpinner } from '@sourcegraph/wildcard'
 
+import { BatchChangesProps } from '../../batches'
+import { CodeIntelligenceProps } from '../../codeintel'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import {
     GetRepoBatchChangesSummaryResult,
@@ -28,13 +31,11 @@ import { fetchTreeCommits } from './TreePageContent'
 
 import styles from './HomeTab.module.scss'
 
-interface Props {
+interface Props extends SettingsCascadeProps, CodeIntelligenceProps, BatchChangesProps {
     repo: TreePageRepositoryFields
     filePath: string
     commitID: string
     revision: string
-    codeIntelligenceEnabled: boolean
-    batchChangesEnabled: boolean
     location: H.Location
     history?: H.History
     globbing?: boolean
@@ -56,6 +57,7 @@ export const HomeTab: React.FunctionComponent<Props> = ({
     revision,
     filePath,
     codeIntelligenceEnabled,
+    codeIntelligenceBadgeContent: CodeIntelligenceBadge,
     batchChangesEnabled,
     ...props
 }) => {
@@ -228,21 +230,21 @@ export const HomeTab: React.FunctionComponent<Props> = ({
         </div>
     )
 
-    const ReadmeFile: React.FunctionComponent = () => (
+    const READMEFile: React.FunctionComponent = () => (
         <div>
             {richHTML && richHTML !== 'loading' && (
                 <RenderedFile className="pt-0 pl-3" dangerousInnerHTML={richHTML} location={props.location} />
             )}
             {!richHTML && richHTML !== 'loading' && (
-                <div className="text-center">
-                    <img src="https://i.ibb.co/tztztYB/eric.png" alt="loser" className="mb-3 w-50" />
-                    <h2>No README available, loser.</h2>
+                <div className="text-center mt-5">
+                    <img src="https://i.ibb.co/tztztYB/eric.png" alt="winner" className="mb-3 w-25" />
+                    <h2>No README available :)</h2>
                 </div>
             )}
             {blobInfoOrError && richHTML && aborted && (
                 <div>
                     <Alert variant="info">
-                        Syntax-highlighting this file took too long. &nbsp;
+                        Rendering this file took too long. &nbsp;
                         <Button onClick={onExtendTimeoutClick} variant="primary" size="sm">
                             Try again
                         </Button>
@@ -258,15 +260,7 @@ export const HomeTab: React.FunctionComponent<Props> = ({
             <div className="container mw-100">
                 <RecentCommits isSidebar={false} />
                 <h2 className="mt-5">README.md</h2>
-                {richHTML && richHTML !== 'loading' && (
-                    <RenderedFile dangerousInnerHTML={richHTML} location={props.location} />
-                )}
-                {!richHTML && richHTML !== 'loading' && (
-                    <div className="text-center">
-                        <img src="https://i.ibb.co/tztztYB/eric.png" alt="loser" className="mb-3 w-50" />
-                        <h2>No README available, loser.</h2>
-                    </div>
-                )}
+                <READMEFile />
             </div>
         )
     }
@@ -276,7 +270,7 @@ export const HomeTab: React.FunctionComponent<Props> = ({
             <div className="row">
                 {/* RENDER README */}
                 <div className="col-sm m-0 pl-0 pt-0">
-                    <ReadmeFile />
+                    <READMEFile />
                 </div>
                 {/* SIDE MENU*/}
                 <div className="col-sm col-lg-4 m-0">
@@ -285,27 +279,14 @@ export const HomeTab: React.FunctionComponent<Props> = ({
                         {/* CODE-INTEL */}
                         <div className="mb-3">
                             <h2>Code intel</h2>
-                            <div className={styles.item}>
-                                <Badge
-                                    variant={codeIntelligenceEnabled ? 'secondary' : 'danger'}
-                                    className={classNames('text-uppercase col-4', styles.itemBadge)}
-                                >
-                                    {codeIntelligenceEnabled ? 'CONFIGURABLE' : 'DISABLED'}
-                                </Badge>
-                                <div className="col">
-                                    <div>Precise code intelligence</div>
-                                </div>
-                            </div>
-                            <div className="text-right">
-                                <Link
-                                    className="btn btn-sm btn-link mr-0 pr-0"
-                                    to={`/${encodeURIPathComponent(repo.name)}/-/code-intelligence`}
-                                >
-                                    {codeIntelligenceEnabled
-                                        ? 'Set up for this repository'
-                                        : 'Manage code intelligence'}
-                                </Link>
-                            </div>
+                            {CodeIntelligenceBadge && (
+                                <CodeIntelligenceBadge
+                                    repoName={repo.name}
+                                    revision={revision}
+                                    filePath={filePath}
+                                    {...props}
+                                />
+                            )}
                         </div>
                         {/* BATCH CHANGES */}
                         <div className="mb-3">

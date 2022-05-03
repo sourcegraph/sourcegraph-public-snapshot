@@ -17,9 +17,15 @@ export enum InsightType {
     CaptureGroup = 'CaptureGroup',
 }
 
+export enum InsightContentType {
+    Categorical,
+    Series,
+}
+
 export interface InsightFilters {
     includeRepoRegexp: string
     excludeRepoRegexp: string
+    context: string
     repositories?: string[]
 }
 

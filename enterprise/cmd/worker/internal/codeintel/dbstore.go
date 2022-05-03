@@ -1,7 +1,6 @@
 package codeintel
 
 import (
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -11,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // InitDBStore initializes and returns a db store instance.
@@ -25,7 +25,7 @@ func InitDBStore() (*dbstore.Store, error) {
 
 var initDBStore = memo.NewMemoizedConstructor(func() (interface{}, error) {
 	observationContext := &observation.Context{
-		Logger:     log15.Root(),
+		Logger:     log.Scoped("store", "codeintel db store"),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
@@ -50,7 +50,7 @@ func InitDependencySyncingStore() (dbworkerstore.Store, error) {
 
 var initDependencySyncStore = memo.NewMemoizedConstructor(func() (interface{}, error) {
 	observationContext := &observation.Context{
-		Logger:     log15.Root(),
+		Logger:     log.Scoped("store.dependency_sync", "dependency sync store"),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
@@ -74,7 +74,7 @@ func InitDependencyIndexingStore() (dbworkerstore.Store, error) {
 
 var initDependenyIndexStore = memo.NewMemoizedConstructor(func() (interface{}, error) {
 	observationContext := &observation.Context{
-		Logger:     log15.Root(),
+		Logger:     log.Scoped("store.dependency_index", "dependency index store"),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}

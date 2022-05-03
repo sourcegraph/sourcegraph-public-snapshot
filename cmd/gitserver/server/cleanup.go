@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -629,7 +630,7 @@ func (s *Server) removeRepoDirectory(gitDir GitDir) error {
 		return err
 	}
 	defer os.RemoveAll(tmp)
-	if err := renameAndSync(dir, filepath.Join(tmp, "repo")); err != nil {
+	if err := fileutil.RenameAndSync(dir, filepath.Join(tmp, "repo")); err != nil {
 		return err
 	}
 

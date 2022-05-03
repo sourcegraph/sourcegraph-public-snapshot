@@ -11,8 +11,6 @@ import {
     CaseSensitivityProps,
     SearchPatternTypeProps,
     SearchContextProps,
-    useQueryIntelligence,
-    useQueryDiagnostics,
 } from '@sourcegraph/search'
 import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
@@ -23,6 +21,7 @@ import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@source
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { IEditor } from './LazyMonacoQueryInput'
+import { useQueryDiagnostics, useQueryIntelligence } from './useQueryIntelligence'
 
 import styles from './MonacoQueryInput.module.scss'
 

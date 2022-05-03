@@ -4,6 +4,17 @@
 const path = require('path')
 
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
+const webpack = require('webpack')
+
+const {
+  getMonacoWebpackPlugin,
+  getCSSModulesLoader,
+  getBasicCSSLoader,
+  getMonacoCSSRule,
+  getCSSLoaders,
+} = require('@sourcegraph/build-config')
+
+const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development'
 
 /**
  * The VS Code extension core needs to be built for two targets:
@@ -13,10 +24,15 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin')
  * @param {*} targetType See https://webpack.js.org/configuration/target/
  */
 function getExtensionCoreConfiguration(targetType) {
+  if (typeof targetType !== 'string') {
+    return
+  }
   return {
+    context: __dirname, // needed when running `gulp` from the root dir
+    mode,
     name: `extension:${targetType}`,
     target: targetType,
-    entry: './src/extension.ts', // the entry point of this extension, 📖 -> https://webpack.js.org/configuration/entry-context/
+    entry: path.resolve(__dirname, 'src', 'extension.ts'), // the entry point of this extension, 📖 -> https://webpack.js.org/configuration/entry-context/
     output: {
       // the bundle is stored in the 'dist' folder (check package.json), 📖 -> https://webpack.js.org/configuration/output/
       path: path.resolve(__dirname, 'dist', `${targetType}`),
@@ -35,7 +51,15 @@ function getExtensionCoreConfiguration(targetType) {
     resolve: {
       // support reading TypeScript and JavaScript files, 📖 -> https://github.com/TypeStrong/ts-loader
       extensions: ['.ts', '.tsx', '.js', '.jsx'],
-      alias: {},
+      alias:
+        targetType === 'webworker'
+          ? {
+              path: require.resolve('path-browserify'),
+              './browserActionsNode': path.resolve(__dirname, 'src', 'link-commands', 'browserActionsWeb'),
+            }
+          : {
+              path: require.resolve('path-browserify'),
+            },
       fallback:
         targetType === 'webworker'
           ? {
@@ -43,6 +67,8 @@ function getExtensionCoreConfiguration(targetType) {
               path: require.resolve('path-browserify'),
               assert: require.resolve('assert'),
               util: require.resolve('util'),
+              http: require.resolve('stream-http'),
+              https: require.resolve('https-browserify'),
             }
           : {},
     },
@@ -60,6 +86,21 @@ function getExtensionCoreConfiguration(targetType) {
         },
       ],
     },
+    plugins: [
+      new webpack.ProvidePlugin({
+        Buffer: ['buffer', 'Buffer'],
+        process: 'process/browser', // provide a shim for the global `process` variable
+      }),
+      ...(process.env.IS_TEST
+        ? [
+            new webpack.DefinePlugin({
+              'process.env': {
+                IS_TEST: true,
+              },
+            }),
+          ]
+        : []),
+    ],
   }
 }
 
@@ -68,35 +109,25 @@ const vscodeWorkspacePath = path.resolve(rootPath, 'client', 'vscode')
 const vscodeSourcePath = path.resolve(vscodeWorkspacePath, 'src')
 const webviewSourcePath = path.resolve(vscodeSourcePath, 'webview')
 
-const getCSSLoaders = (...loaders) => [
-  MiniCssExtractPlugin.loader,
-  ...loaders,
-  {
-    loader: 'postcss-loader',
-  },
-  {
-    loader: 'sass-loader',
-    options: {
-      sassOptions: {
-        includePaths: [path.resolve(rootPath, 'node_modules'), path.resolve(rootPath, 'client')],
-      },
-    },
-  },
-]
-
 const searchPanelWebviewPath = path.resolve(webviewSourcePath, 'search-panel')
-const searchSidebarWebviewPath = path.resolve(webviewSourcePath, 'search-sidebar')
+const searchSidebarWebviewPath = path.resolve(webviewSourcePath, 'sidebars', 'search')
+const helpSidebarWebviewPath = path.resolve(webviewSourcePath, 'sidebars', 'help')
 
 const extensionHostWorker = /main\.worker\.ts$/
+
+const MONACO_EDITOR_PATH = path.resolve(rootPath, 'node_modules', 'monaco-editor')
 
 /** @type {import('webpack').Configuration}*/
 
 const webviewConfig = {
+  context: __dirname, // needed when running `gulp` from the root dir
+  mode,
   name: 'webviews',
   target: 'web',
   entry: {
     searchPanel: [path.resolve(searchPanelWebviewPath, 'index.tsx')],
     searchSidebar: [path.resolve(searchSidebarWebviewPath, 'index.tsx')],
+    helpSidebar: [path.resolve(helpSidebarWebviewPath, 'index.tsx')],
     style: path.join(webviewSourcePath, 'index.scss'),
   },
   devtool: 'source-map',
@@ -104,18 +135,35 @@ const webviewConfig = {
     path: path.resolve(__dirname, 'dist/webview'),
     filename: '[name].js',
   },
-  plugins: [new MiniCssExtractPlugin()],
+  plugins: [
+    new MiniCssExtractPlugin(),
+    getMonacoWebpackPlugin(),
+    new webpack.ProvidePlugin({
+      Buffer: ['buffer', 'Buffer'],
+      process: 'process/browser', // provide a shim for the global `process` variable
+    }),
+  ],
   externals: {
     // the vscode-module is created on-the-fly and must be excluded. Add other modules that cannot be webpack'ed, 📖 -> https://webpack.js.org/configuration/externals/
     vscode: 'commonjs vscode',
   },
   resolve: {
-    alias: {},
+    alias: {
+      path: require.resolve('path-browserify'),
+      './Link': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'alias', 'Link'), // Replace web app Link component from @sourcegraph/wildcard with the Link component built for VSCE
+      './RepoSearchResult': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'alias', 'RepoSearchResult'),
+      './CommitSearchResult': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'alias', 'CommitSearchResult'),
+      './FileMatchChildren': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'alias', 'FileMatchChildren'),
+      './RepoFileLink': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'alias', 'RepoFileLink'),
+      '../documentation/ModalVideo': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'alias', 'ModalVideo'),
+    },
     // support reading TypeScript and JavaScript files, 📖 -> https://github.com/TypeStrong/ts-loader
     extensions: ['.ts', '.tsx', '.js', '.jsx'],
     fallback: {
       path: require.resolve('path-browserify'),
       process: require.resolve('process/browser'),
+      http: require.resolve('stream-http'), // for stream search - event source polyfills
+      https: require.resolve('https-browserify'), // for stream search - event source polyfills
     },
   },
   module: {
@@ -129,28 +177,6 @@ const webviewConfig = {
           },
         ],
       },
-      // SCSS rule for our own styles and Bootstrap
-      {
-        test: /\.(css|sass|scss)$/,
-        exclude: /\.module\.(sass|scss)$/,
-        use: getCSSLoaders({ loader: 'css-loader', options: { url: false } }),
-      },
-      // For CSS modules
-      {
-        test: /\.(css|sass|scss)$/,
-        include: /\.module\.(sass|scss)$/,
-        use: getCSSLoaders({
-          loader: 'css-loader',
-          options: {
-            sourceMap: false,
-            modules: {
-              exportLocalsConvention: 'camelCase',
-              localIdentName: '[name]__[local]_[hash:base64:5]',
-            },
-            url: false,
-          },
-        }),
-      },
       {
         test: extensionHostWorker,
         use: [
@@ -161,10 +187,37 @@ const webviewConfig = {
           'ts-loader',
         ],
       },
+      {
+        test: /\.(sass|scss)$/,
+        // CSS Modules loaders are only applied when the file is explicitly named as CSS module stylesheet using the extension `.module.scss`.
+        include: /\.module\.(sass|scss)$/,
+        use: getCSSLoaders(MiniCssExtractPlugin.loader, getCSSModulesLoader({})),
+      },
+      {
+        test: /\.(sass|scss)$/,
+        exclude: /\.module\.(sass|scss)$/,
+        use: getCSSLoaders(MiniCssExtractPlugin.loader, getBasicCSSLoader()),
+      },
+      getMonacoCSSRule(),
+      // Don't use shared getMonacoTFFRule(); we want to retain its name
+      // to reference path in the extension when we load the font ourselves.
+      {
+        test: /\.ttf$/,
+        include: [MONACO_EDITOR_PATH],
+        type: 'asset/resource',
+        generator: {
+          filename: '[name][ext]',
+        },
+      },
     ],
   },
 }
 
 module.exports = function () {
+  if (process.env.TARGET_TYPE) {
+    return Promise.all([getExtensionCoreConfiguration(process.env.TARGET_TYPE), webviewConfig])
+  }
+
+  // If target type isn't specified, build both.
   return Promise.all([getExtensionCoreConfiguration('node'), getExtensionCoreConfiguration('webworker'), webviewConfig])
 }

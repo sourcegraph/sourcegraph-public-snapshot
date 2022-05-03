@@ -90,9 +90,9 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			testDB := dbtest.NewDB(t)
 			ctx := actor.WithInternalActor(context.Background())
 
-			reposStore := repos.NewStore(testDB, sql.TxOptions{})
+			reposStore := repos.NewStore(database.NewDB(testDB), sql.TxOptions{})
 
-			err = reposStore.ExternalServiceStore.Upsert(ctx, &svc)
+			err = reposStore.ExternalServiceStore().Upsert(ctx, &svc)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -122,7 +122,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 					},
 				},
 			}
-			err = reposStore.RepoStore.Create(ctx, &repo)
+			err = reposStore.RepoStore().Create(ctx, &repo)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -151,8 +151,8 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			wantIDs := []uint32{1}
-			if diff := cmp.Diff(wantIDs, p.IDs.ToArray()); diff != "" {
+			wantIDs := []int32{1}
+			if diff := cmp.Diff(wantIDs, p.GenerateSortedIDsSlice()); diff != "" {
 				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
 			}
 		})
@@ -171,9 +171,9 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			testDB := dbtest.NewDB(t)
 			ctx := actor.WithInternalActor(context.Background())
 
-			reposStore := repos.NewStore(testDB, sql.TxOptions{})
+			reposStore := repos.NewStore(database.NewDB(testDB), sql.TxOptions{})
 
-			err = reposStore.ExternalServiceStore.Upsert(ctx, &svc)
+			err = reposStore.ExternalServiceStore().Upsert(ctx, &svc)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -203,7 +203,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 					},
 				},
 			}
-			err = reposStore.RepoStore.Create(ctx, &repo)
+			err = reposStore.RepoStore().Create(ctx, &repo)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -232,8 +232,8 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			wantIDs := []uint32{1}
-			if diff := cmp.Diff(wantIDs, p.IDs.ToArray()); diff != "" {
+			wantIDs := []int32{1}
+			if diff := cmp.Diff(wantIDs, p.GenerateSortedIDsSlice()); diff != "" {
 				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
 			}
 
@@ -246,7 +246,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if diff := cmp.Diff(wantIDs, p.IDs.ToArray()); diff != "" {
+			if diff := cmp.Diff(wantIDs, p.GenerateSortedIDsSlice()); diff != "" {
 				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
 			}
 		})
@@ -275,9 +275,9 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			testDB := dbtest.NewDB(t)
 			ctx := actor.WithInternalActor(context.Background())
 
-			reposStore := repos.NewStore(testDB, sql.TxOptions{})
+			reposStore := repos.NewStore(database.NewDB(testDB), sql.TxOptions{})
 
-			err = reposStore.ExternalServiceStore.Upsert(ctx, &svc)
+			err = reposStore.ExternalServiceStore().Upsert(ctx, &svc)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -307,7 +307,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 					},
 				},
 			}
-			err = reposStore.RepoStore.Create(ctx, &repo)
+			err = reposStore.RepoStore().Create(ctx, &repo)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -339,8 +339,8 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			wantIDs := []uint32{1}
-			if diff := cmp.Diff(wantIDs, p.IDs.ToArray()); diff != "" {
+			wantIDs := []int32{1}
+			if diff := cmp.Diff(wantIDs, p.GenerateSortedIDsSlice()); diff != "" {
 				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
 			}
 		})
@@ -359,9 +359,9 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			testDB := dbtest.NewDB(t)
 			ctx := actor.WithInternalActor(context.Background())
 
-			reposStore := repos.NewStore(testDB, sql.TxOptions{})
+			reposStore := repos.NewStore(database.NewDB(testDB), sql.TxOptions{})
 
-			err = reposStore.ExternalServiceStore.Upsert(ctx, &svc)
+			err = reposStore.ExternalServiceStore().Upsert(ctx, &svc)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -391,7 +391,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 					},
 				},
 			}
-			err = reposStore.RepoStore.Create(ctx, &repo)
+			err = reposStore.RepoStore().Create(ctx, &repo)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -423,8 +423,8 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			wantIDs := []uint32{1}
-			if diff := cmp.Diff(wantIDs, p.IDs.ToArray()); diff != "" {
+			wantIDs := []int32{1}
+			if diff := cmp.Diff(wantIDs, p.GenerateSortedIDsSlice()); diff != "" {
 				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
 			}
 
@@ -437,7 +437,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if diff := cmp.Diff(wantIDs, p.IDs.ToArray()); diff != "" {
+			if diff := cmp.Diff(wantIDs, p.GenerateSortedIDsSlice()); diff != "" {
 				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
 			}
 		})

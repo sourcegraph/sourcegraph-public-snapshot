@@ -1388,7 +1388,27 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 			t.Fatal(err)
 		}
 
-		err = client.WaitForReposToBeCloned("npm/urql", "go/github.com/oklog/ulid/v2")
+		_, err = client.AddExternalService(gqltestutil.AddExternalServiceInput{
+			Kind:        extsvc.KindJVMPackages,
+			DisplayName: "gqltest-jvm-search",
+			Config: mustMarshalJSONString(&schema.JVMPackagesConnection{
+				Maven: &schema.Maven{
+					Dependencies: []string{
+						"com.google.guava:guava:19",
+						"com.google.guava:guava:21",
+					},
+				},
+			}),
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = client.WaitForReposToBeCloned(
+			"npm/urql",
+			"go/github.com/oklog/ulid/v2",
+			"maven/com.google.guava/guava",
+		)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1455,7 +1475,7 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 				require.Zero(t, results.MatchCount)
 				require.Equal(t, results.Alert, &gqltestutil.SearchAlert{
 					Title:       "No dependency repositories found",
-					Description: "Dependency repos are cloned on-demand when first searched. Try again in a few seconds if you know the given repositories have dependencies.\n\nOnly npm dependencies from `package-lock.json` and `yarn.lock` files are currently supported.",
+					Description: "Dependency repos are cloned on-demand when first searched. Try again in a few seconds if you know the given repositories have dependencies.\n\nRead more about dependencies search [here](https://docs.sourcegraph.com/code_search/how-to/dependencies_search).",
 				})
 			})
 		}

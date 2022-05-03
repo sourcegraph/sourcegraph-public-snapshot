@@ -126,7 +126,7 @@ func (m *migrator) performBatchMigration(ctx context.Context, jobType store.Sett
 	for _, job := range jobs {
 		err := m.performMigrationForRow(ctx, jobStoreTx, *job)
 		if err != nil {
-			errs = errors.Append(err)
+			errs = errors.Append(errs, err)
 		}
 	}
 

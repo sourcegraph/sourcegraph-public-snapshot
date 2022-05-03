@@ -3,18 +3,24 @@ package npm
 import (
 	"fmt"
 	"strings"
+	"sync"
+
+	"github.com/opentracing/opentracing-go"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
-type Operations struct {
+type operations struct {
 	fetchSources *observation.Operation
 	exists       *observation.Operation
 	runCommand   *observation.Operation
 }
 
-func NewOperations(observationContext *observation.Context) *Operations {
+func newOperations(observationContext *observation.Context) *operations {
 	redMetrics := metrics.NewREDMetrics(
 		observationContext.Registerer,
 		"codeintel_npm",
@@ -36,9 +42,28 @@ func NewOperations(observationContext *observation.Context) *Operations {
 		})
 	}
 
-	return &Operations{
+	return &operations{
 		fetchSources: op("FetchSources"),
 		exists:       op("Exists"),
 		runCommand:   op("RunCommand"),
 	}
+}
+
+var (
+	ops     *operations
+	opsOnce sync.Once
+)
+
+func getOperations() *operations {
+	opsOnce.Do(func() {
+		observationContext := &observation.Context{
+			Logger:     log.Scoped("npm", ""),
+			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+			Registerer: prometheus.DefaultRegisterer,
+		}
+
+		ops = newOperations(observationContext)
+	})
+
+	return ops
 }

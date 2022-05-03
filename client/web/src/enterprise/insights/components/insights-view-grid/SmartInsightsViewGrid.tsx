@@ -3,21 +3,24 @@ import React, { memo, useCallback, useEffect, useState } from 'react'
 import { isEqual } from 'lodash'
 import { Layout, Layouts } from 'react-grid-layout'
 
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { ViewGrid } from '../../../../views'
-import { Insight } from '../../core/types'
+import { Insight } from '../../core'
 import { getTrackingTypeByInsightType } from '../../pings'
 
-import { SmartInsight } from './components/smart-insight/SmartInsight'
+import { SmartInsight } from './components/SmartInsight'
 import { insightLayoutGenerator, recalculateGridLayout } from './utils/grid-layout-generator'
 
-interface SmartInsightsViewGridProps extends TelemetryProps {
+interface SmartInsightsViewGridProps extends TelemetryProps, SettingsCascadeProps<Settings> {
     /**
      * List of built-in insights such as backend insight, FE search and code-stats
      * insights.
      */
     insights: Insight[]
+    className?: string
 }
 
 /**
@@ -25,7 +28,7 @@ interface SmartInsightsViewGridProps extends TelemetryProps {
  * the insights settings (settings cascade subjects).
  */
 export const SmartInsightsViewGrid: React.FunctionComponent<SmartInsightsViewGridProps> = memo(props => {
-    const { telemetryService, insights } = props
+    const { telemetryService, insights, className } = props
 
     const [layouts, setLayouts] = useState<Layouts>({})
     const [resizingView, setResizeView] = useState<Layout | null>(null)
@@ -73,6 +76,7 @@ export const SmartInsightsViewGrid: React.FunctionComponent<SmartInsightsViewGri
     return (
         <ViewGrid
             layouts={layouts}
+            className={className}
             onResizeStart={handleResizeStart}
             onResizeStop={handleResizeStop}
             onDragStart={trackUICustomization}
@@ -80,6 +84,7 @@ export const SmartInsightsViewGrid: React.FunctionComponent<SmartInsightsViewGri
         >
             {insights.map(insight => (
                 <SmartInsight
+                    settingsCascade={props.settingsCascade}
                     key={insight.id}
                     insight={insight}
                     telemetryService={telemetryService}

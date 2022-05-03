@@ -21,7 +21,7 @@ const slowReferencesRequestThreshold = time.Second
 
 // References returns the list of source locations that reference the symbol at the given position.
 func (r *queryResolver) References(ctx context.Context, line, character, limit int, rawCursor string) (_ []AdjustedLocation, _ string, err error) {
-	ctx, trace, endObservation := observeResolver(ctx, &err, "References", r.operations.references, slowReferencesRequestThreshold, observation.Args{
+	ctx, trace, endObservation := observeResolver(ctx, &err, r.operations.references, slowReferencesRequestThreshold, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", r.repositoryID),
 			log.String("commit", r.commit),
@@ -255,10 +255,6 @@ func (r *queryResolver) pageLocalLocations(
 	return allLocations, cursor.UploadOffset < len(adjustedUploads), nil
 }
 
-// maximumIndexesPerMonikerSearch configures the maximum number of reference upload identifiers
-// that can be passed to a single moniker search query.
-const maximumIndexesPerMonikerSearch = 50
-
 // pageRemoteLocations returns a slice of the (remote) result set denoted by the given cursor fulfilled by
 // performing a moniker search over a group of indexes. The given cursor will be adjusted to reflect the
 // offsets required to resolve the next page of results. If there are no more pages left in the result set,
@@ -288,7 +284,7 @@ func (r *queryResolver) pageRemoteLocations(
 			ctx,
 			orderedMonikers,
 			ignoreIDs,
-			maximumIndexesPerMonikerSearch,
+			r.maximumIndexesPerMonikerSearch,
 			cursor.UploadOffset,
 			trace,
 		)

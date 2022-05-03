@@ -13,7 +13,7 @@ import (
 )
 
 func (s *Store) Describe(ctx context.Context) (_ map[string]schemas.SchemaDescription, err error) {
-	ctx, endObservation := s.operations.describe.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.describe.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	descriptions := map[string]schemas.SchemaDescription{}

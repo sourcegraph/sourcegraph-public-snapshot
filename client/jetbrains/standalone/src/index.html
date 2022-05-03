@@ -1,0 +1,62 @@
+<html lang="en">
+<head>
+    <title>Sourcegraph for JetBrains</title>
+    <style>
+        html, body {
+            margin: 0;
+            background-color: #3c3f41;
+            color: #bbbbbb;
+            font-size: 13px;
+            font-family: 'DejaVu Sans', sans-serif;
+        }
+
+        #modal {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 20px 0;
+        }
+
+        #webview {
+            width: 960px;
+            max-width: 100%;
+            border: 1px solid #616161;
+            height: 400px;
+            margin: 0;
+            border-top: 0;
+        }
+
+        #title {
+            text-align: center;
+            background-color: #4a4e52;
+            border: 1px solid #616161;
+            width: 960px;
+            padding: 2px 0;
+        }
+
+        #code-details {
+            width: calc(960px - 10px);
+            max-width: 100%;
+            border: 1px solid #616161;
+            border-top: 0;
+            background-color: #2b2b2b;
+            height: 320px;
+            margin: 0;
+            padding: 5px;
+        }
+    </style>
+</head>
+<body>
+<div id="modal">
+    <div id="title">Sourcegraph for JetBrains</div>
+    <iframe height="100%" id="webview" src="/html/index.html?standalone=true" width="100%"></iframe>
+    <pre id="code-details">let message: string = 'Hello, TypeScript!';
+
+let heading = document.createElement('h1');
+heading.textContent = message;
+
+document.body.appendChild(heading);</pre>
+</div>
+</body>
+</html>
+

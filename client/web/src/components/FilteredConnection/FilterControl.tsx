@@ -91,7 +91,7 @@ export const FilterControl: React.FunctionComponent<FilterControlProps> = ({
                             <div className="d-inline-flex flex-row mr-3 align-items-baseline">
                                 <p className="text-xl-center text-nowrap mr-2">{filter.label}:</p>
                                 <Select
-                                    aria-label=""
+                                    aria-label="Sort notebooks"
                                     id=""
                                     name={filter.id}
                                     onChange={event => onChange(filter, event.currentTarget.value)}

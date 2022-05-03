@@ -10,6 +10,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 	"unicode/utf8"
 
@@ -17,13 +18,13 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gosyntect"
-	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsiftyped"
@@ -33,24 +34,34 @@ import (
 var (
 	syntectServer = env.Get("SRC_SYNTECT_SERVER", "http://syntect-server:9238", "syntect_server HTTP(s) address")
 	client        *gosyntect.Client
-
-	highlightOp *observation.Operation
 )
+
+var (
+	highlightOpOnce sync.Once
+	highlightOp     *observation.Operation
+)
+
+func getHighlightOp() *observation.Operation {
+	highlightOpOnce.Do(func() {
+		obsvCtx := observation.Context{
+			HoneyDataset: &honey.Dataset{
+				Name:       "codeintel-syntax-highlighting",
+				SampleRate: 10, // 1 in 10
+			},
+		}
+
+		highlightOp = obsvCtx.Operation(observation.Op{
+			Name:        "codeintel.syntax-highlight.Code",
+			LogFields:   []otlog.Field{},
+			ErrorFilter: func(err error) observation.ErrorFilterBehaviour { return observation.EmitForHoney },
+		})
+	})
+
+	return highlightOp
+}
 
 func init() {
 	client = gosyntect.New(syntectServer)
-
-	obsvCtx := observation.Context{
-		HoneyDataset: &honey.Dataset{
-			Name:       "codeintel-syntax-highlighting",
-			SampleRate: 10, // 1 in 10
-		},
-	}
-	highlightOp = obsvCtx.Operation(observation.Op{
-		Name:        "codeintel.syntax-highlight.Code",
-		LogFields:   []otlog.Field{},
-		ErrorFilter: func(err error) observation.ErrorFilterBehaviour { return observation.EmitForHoney },
-	})
 }
 
 // IsBinary is a helper to tell if the content of a file is binary or not.
@@ -288,6 +299,21 @@ func (h *HighlightedCode) LinesForRanges(ranges []LineRange) ([][]string, error)
 	return lineRanges, nil
 }
 
+/// identifyError returns true + the problem code if err matches a known error.
+func identifyError(err error) (bool, string) {
+	var problem string
+	if errors.Is(err, gosyntect.ErrRequestTooLarge) {
+		problem = "request_too_large"
+	} else if errors.Is(err, gosyntect.ErrPanic) {
+		problem = "panic"
+	} else if errors.Is(err, gosyntect.ErrHSSWorkerTimeout) {
+		problem = "hss_worker_timeout"
+	} else if strings.Contains(err.Error(), "broken pipe") {
+		problem = "broken pipe"
+	}
+	return problem != "", problem
+}
+
 // Code highlights the given file content with the given filepath (must contain
 // at least the file name + extension) and returns the properly escaped HTML
 // table representing the highlighted code.
@@ -313,7 +339,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		filetypeQuery.Engine = EngineSyntect
 	}
 
-	ctx, errCollector, trace, endObservation := highlightOp.WithErrorsAndLogger(ctx, &err, observation.Args{LogFields: []otlog.Field{
+	ctx, errCollector, trace, endObservation := getHighlightOp().WithErrorsAndLogger(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("revision", p.Metadata.Revision),
 		otlog.String("repo", p.Metadata.RepoName),
 		otlog.String("fileExtension", filepath.Ext(p.Filepath)),
@@ -424,21 +450,8 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 			"snippet", fmt.Sprintf("%q…", firstCharacters(code, 80)),
 			"error", err,
 		)
-		var problem string
-		switch errors.Cause(err) {
-		case gosyntect.ErrRequestTooLarge:
-			problem = "request_too_large"
-		case gosyntect.ErrPanic:
-			problem = "panic"
-		case gosyntect.ErrHSSWorkerTimeout:
-			problem = "hss_worker_timeout"
-		}
 
-		if problem == "" && strings.Contains(err.Error(), "broken pipe") {
-			problem = "broken pipe"
-		}
-
-		if problem != "" {
+		if known, problem := identifyError(err); known {
 			// A problem that can sometimes be expected has occurred. We will
 			// identify such problems through metrics/logs and resolve them on
 			// a case-by-case basis, but they are frequent enough that we want

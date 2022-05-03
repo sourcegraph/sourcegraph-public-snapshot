@@ -77,7 +77,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 
 	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
-	const minimumUpgradeableVersion = "3.38.0"
+	const minimumUpgradeableVersion = "3.39.0"
 
 	// Set up operations that add steps to a pipeline.
 	ops := operations.NewSet()
@@ -99,7 +99,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				ops.Append(prPreview())
 			}
 		}
-		ops.Merge(CoreTestOperations(c.Diff, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
+		ops.Merge(CoreTestOperations(c.Diff, CoreTestOperationsOptions{
+			MinimumUpgradeableVersion:  minimumUpgradeableVersion,
+			ClientLintOnlyChangedFiles: c.RunType.Is(runtype.PullRequest),
+		}))
 
 	case runtype.ReleaseNightly:
 		ops.Append(triggerReleaseBranchHealthchecks(minimumUpgradeableVersion))
@@ -120,21 +123,37 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// If this is a browser extension release branch, run the browser-extension tests and
 		// builds.
 		ops = operations.NewSet(
-			addClientLinters,
-			addBrowserExt,
+			addClientLintersForAllFiles,
+			addBrowserExtensionUnitTests,
+			addBrowserExtensionIntegrationTests(0), // we pass 0 here as we don't have other pipeline steps to contribute to the resulting Percy build
 			frontendTests,
 			wait,
 			addBrowserExtensionReleaseSteps)
+
+	case runtype.VsceReleaseBranch:
+		// If this is a vs code extension release branch, run the vscode-extension tests and release
+		ops = operations.NewSet(
+			addClientLintersForAllFiles,
+			addVsceIntegrationTests,
+			wait,
+			addVsceReleaseSteps(buildOptions))
 
 	case runtype.BextNightly:
 		// If this is a browser extension nightly build, run the browser-extension tests and
 		// e2e tests.
 		ops = operations.NewSet(
-			addClientLinters,
-			addBrowserExt,
+			addClientLintersForAllFiles,
+			addBrowserExtensionUnitTests,
+			recordBrowserExtensionIntegrationTests,
 			frontendTests,
 			wait,
 			addBrowserExtensionE2ESteps)
+
+	case runtype.VsceNightly:
+		// If this is a VS Code extension nightly build, run the vsce-extension integration tests
+		ops = operations.NewSet(
+			addClientLintersForAllFiles,
+			addVsceIntegrationTests)
 
 	case runtype.ImagePatch:
 		// only build image for the specified image in the branch name
@@ -260,6 +279,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		AfterEveryStepOpts: []bk.StepOpt{
 			withDefaultTimeout,
 			withAgentQueueDefaults,
+			withAgentLostRetries,
 		},
 	}
 	// Toggle profiling of each step
@@ -271,7 +291,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	ops.Apply(pipeline)
 
 	// Validate generated pipeline have unique keys
-	if err := pipeline.EnsureUniqueKeys(); err != nil {
+	if err := pipeline.EnsureUniqueKeys(make(map[string]int)); err != nil {
 		return nil, err
 	}
 
@@ -323,12 +343,6 @@ func withAgentQueueDefaults(s *bk.Step) {
 	if len(s.Agents) == 0 || s.Agents["queue"] == "" {
 		s.Agents["queue"] = bk.AgentQueueStateless
 	}
-
-	if s.Agents["queue"] != bk.AgentQueueBaremetal {
-		// Use athens proxy for go modules downloads, falling back to direct
-		// https://github.com/sourcegraph/infrastructure/blob/main/buildkite/kubernetes/athens-proxy/athens-athens-proxy.Deployment.yaml
-		s.Env["GOPROXY"] = "http://athens-athens-proxy,direct"
-	}
 }
 
 // withProfiling wraps "time -v" around each command for CPU/RAM utilization information
@@ -338,4 +352,23 @@ func withProfiling(s *bk.Step) {
 		prefixed = append(prefixed, fmt.Sprintf("env time -v %s", cmd))
 	}
 	s.Command = prefixed
+}
+
+// withAgentLostRetries insert automatic retries when the job has failed because it lost its agent.
+//
+// If the step has been marked as not retryable, the retry will be skipped.
+func withAgentLostRetries(s *bk.Step) {
+	if s.Retry != nil && s.Retry.Manual != nil && !s.Retry.Manual.Allowed {
+		return
+	}
+	if s.Retry == nil {
+		s.Retry = &bk.RetryOptions{}
+	}
+	if s.Retry.Automatic == nil {
+		s.Retry.Automatic = []bk.AutomaticRetryOptions{}
+	}
+	s.Retry.Automatic = append(s.Retry.Automatic, bk.AutomaticRetryOptions{
+		Limit:      1,
+		ExitStatus: -1,
+	})
 }

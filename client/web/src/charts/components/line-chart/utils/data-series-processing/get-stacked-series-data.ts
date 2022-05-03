@@ -6,12 +6,6 @@ import { isValidNumber } from '../data-guards'
 import { getFilteredSeriesData } from './helpers'
 import { SeriesType, StackedSeries, StackedSeriesDatum } from './types'
 
-interface Input<Datum> {
-    data: Datum[]
-    series: ChartSeries<Datum>[]
-    getXValue: (datum: Datum) => Date
-}
-
 /**
  * Iterate over data and series and tries to "stack" series values on each other. So basically
  * this implements sum operation over series data.
@@ -28,8 +22,8 @@ interface Input<Datum> {
  * ──┼──────────────────────────────▶      ──┼──────────────────────────────▶
  * ```
  */
-export function getStackedSeriesData<Datum>(input: Input<Datum>): StackedSeries<Datum>[] {
-    const stackedSeriesData = generateStackedData(input)
+export function getStackedSeriesData<Datum>(series: ChartSeries<Datum>[]): StackedSeries<Datum>[] {
+    const stackedSeriesData = generateStackedData(series)
 
     return (
         stackedSeriesData
@@ -42,16 +36,16 @@ export function getStackedSeriesData<Datum>(input: Input<Datum>): StackedSeries<
     )
 }
 
-function generateStackedData<Datum>(input: Input<Datum>): StackedSeries<Datum>[] {
-    const { data, series, getXValue } = input
+function generateStackedData<Datum>(series: ChartSeries<Datum>[]): StackedSeries<Datum>[] {
     const stack: StackedSeries<Datum>[] = []
 
     // eslint-disable-next-line ban/ban
     series.forEach(line => {
+        const { data, getXValue, getYValue } = line
         const stackedData: StackedSeriesDatum<Datum>[] = []
 
         for (const [index, datum] of data.entries()) {
-            const value = datum[line.dataKey]
+            const value = getYValue(datum)
 
             if (isValidNumber(value)) {
                 const previousValue = findPreviousValueOnStack(stack, getXValue(datum), index)

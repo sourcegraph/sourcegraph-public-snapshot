@@ -27,7 +27,7 @@ func RunRepositoryPurgeWorker(ctx context.Context, db database.DB) {
 	}
 
 	for {
-		// We only run in a 1 hour period on the weekend. During normal
+		// We only run in a 1-hour period on the weekend. During normal
 		// working hours a migration or admin could accidentally remove all
 		// repositories. Recloning all of them is slow, so we drastically
 		// reduce the chance of this happening by only purging at a weird time
@@ -44,7 +44,7 @@ func RunRepositoryPurgeWorker(ctx context.Context, db database.DB) {
 
 func purge(ctx context.Context, db database.DB, log log15.Logger) error {
 	start := time.Now()
-	// If we fetched enabled first we have the following race condition:
+	// If we fetch enabled first we have the following race condition:
 	//
 	// 1. Fetched enabled list without repo X.
 	// 2. repo X is enabled and cloned.
@@ -53,7 +53,8 @@ func purge(ctx context.Context, db database.DB, log log15.Logger) error {
 	// However, if we fetch cloned first the only race is we may miss a
 	// repository that got disabled. The next time purge runs we will remove
 	// it though.
-	cloned, err := gitserver.NewClient(db).ListCloned(ctx)
+	gitserverClient := gitserver.NewClient(db)
+	cloned, err := gitserverClient.ListCloned(ctx)
 	if err != nil {
 		return err
 	}
@@ -80,7 +81,7 @@ func purge(ctx context.Context, db database.DB, log log15.Logger) error {
 		// Race condition: A repo can be re-enabled between our listing and
 		// now. This should be very rare, so we ignore it since it will get
 		// cloned again.
-		if err = gitserver.NewClient(db).Remove(ctx, repo); err != nil {
+		if err = gitserverClient.Remove(ctx, repo); err != nil {
 			// Do not fail at this point, just log so we can remove other
 			// repos.
 			log.Error("failed to remove disabled repository", "repo", repo, "error", err)
@@ -88,7 +89,6 @@ func purge(ctx context.Context, db database.DB, log log15.Logger) error {
 			failed++
 			continue
 		}
-		log.Info("removed disabled repository clone", "repo", repo)
 		success++
 		purgeSuccess.Inc()
 	}

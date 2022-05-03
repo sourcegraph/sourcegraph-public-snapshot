@@ -1,6 +1,9 @@
 # Configure Sourcegraph with Kubernetes
 
-Configuring a [Sourcegraph Kubernetes cluster](./index.md) is done by applying manifest files and with simple
+> WARNING: This guide applies exclusively to a Kubernetes deployment **without** Helm. If using Helm, please go to [Configuration in the Helm guide](helm.md#configuration). 
+> If you have not deployed Sourcegraph yet, it is higly recommended to use Helm as it simplifies the configuration and greatly simplifies the later upgrade process. See our [Helm guide](helm.md) for more information.
+
+Configuring a [Sourcegraph Kubernetes cluster](./index.md) without Helm is done by applying manifest files and with simple
 `kubectl` commands. You can configure Sourcegraph as flexibly as you need to meet the requirements
 of your deployment environment.
 
@@ -56,7 +59,7 @@ We **strongly** recommend you fork the [Sourcegraph with Kubernetes reference re
 - Create a `release` branch to track all of your customizations to Sourcegraph. This branch will be used to [upgrade Sourcegraph](update.md) and [install your Sourcegraph instance](./index.md#installation).
 
   ```bash
-  export SOURCEGRAPH_VERSION="v3.38.1"
+  export SOURCEGRAPH_VERSION="v3.39.1"
   git checkout $SOURCEGRAPH_VERSION -b release
   ```
 

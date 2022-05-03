@@ -9,21 +9,20 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-
 	"github.com/felixge/httpsnoop"
 	"github.com/gorilla/mux"
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/repotrackutil"
 	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type key int
@@ -137,14 +136,17 @@ var (
 // 🚨 SECURITY: This handler is served to all clients, even on private servers to clients who have
 // not authenticated. It must not reveal any sensitive information.
 func HTTPMiddleware(next http.Handler, siteConfig conftypes.SiteConfigQuerier) http.Handler {
+	logger := log.Scoped("http", "http tracing middleware")
+
 	return sentry.Recoverer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
+		// extract propagated span
 		wireContext, err := ot.GetTracer(ctx).Extract(
 			opentracing.HTTPHeaders,
 			opentracing.HTTPHeadersCarrier(r.Header))
 		if err != nil && err != opentracing.ErrSpanContextNotFound {
-			log15.Error("extracting parent span failed", "error", err)
+			logger.Warn("extracting parent span failed", log.Error(err))
 		}
 
 		// start new span
@@ -154,12 +156,25 @@ func HTTPMiddleware(next http.Handler, siteConfig conftypes.SiteConfigQuerier) h
 		span.SetTag("http.referer", r.Header.Get("referer"))
 		defer span.Finish()
 
-		traceID := IDFromSpan(span)
-		traceURL := URL(traceID, siteConfig.SiteConfig().ExternalURL)
+		// get trace ID
+		trace := ContextFromSpan(span)
+		var traceURL string
+		if trace != nil && trace.TraceID != "" {
+			var traceType string
+			if ob := siteConfig.SiteConfig().ObservabilityTracing; ob == nil {
+				traceType = ""
+			} else {
+				traceType = ob.Type
+			}
 
-		rw.Header().Set("X-Trace", traceURL)
+			traceURL = URL(trace.TraceID, siteConfig.SiteConfig().ExternalURL, traceType)
+			rw.Header().Set("X-Trace", traceURL)
+			logger = logger.WithTrace(*trace)
+		}
+
 		ctx = opentracing.ContextWithSpan(ctx, span)
 
+		// route name is only known after the request has been handled
 		routeName := "unknown"
 		ctx = context.WithValue(ctx, routeNameKey, &routeName)
 
@@ -175,8 +190,10 @@ func HTTPMiddleware(next http.Handler, siteConfig conftypes.SiteConfigQuerier) h
 		}
 		ctx = WithRequestOrigin(ctx, origin)
 
+		// handle request
 		m := httpsnoop.CaptureMetrics(next, rw, r.WithContext(ctx))
 
+		// get root name, which is set after request is handled
 		if routeName == "graphql" {
 			// We use the query to denote the type of a GraphQL request, e.g. /.api/graphql?Repositories
 			if r.URL.RawQuery != "" {
@@ -185,10 +202,9 @@ func HTTPMiddleware(next http.Handler, siteConfig conftypes.SiteConfigQuerier) h
 				routeName = "graphql: unknown"
 			}
 		}
-
-		// route name is only known after the request has been handled
 		span.SetOperationName("Serve: " + routeName)
 		span.SetTag("Route", routeName)
+
 		ext.HTTPStatusCode.Set(span, uint16(m.Code))
 
 		labels := prometheus.Labels{
@@ -215,28 +231,25 @@ func HTTPMiddleware(next http.Handler, siteConfig conftypes.SiteConfigQuerier) h
 		}
 
 		if m.Duration >= minDuration || m.Code >= minCode {
-			kvs := make([]interface{}, 0, 20)
-			kvs = append(kvs,
-				"method", r.Method,
-				"url", truncate(r.URL.String(), 100),
-				"code", m.Code,
-				"duration", m.Duration,
+			fields := make([]log.Field, 0, 20)
+			fields = append(fields,
+				log.String("route_name", routeName),
+				log.String("method", r.Method),
+				log.String("url", truncate(r.URL.String(), 100)),
+				log.Int("code", m.Code),
+				log.Duration("duration", m.Duration),
 			)
 
-			if traceID != "" {
-				kvs = append(kvs, "traceID", traceID)
-			}
-
 			if v := r.Header.Get("X-Forwarded-For"); v != "" {
-				kvs = append(kvs, "x_forwarded_for", v)
+				fields = append(fields, log.String("x_forwarded_for", v))
 			}
 
 			if userID != 0 {
-				kvs = append(kvs, "user", userID)
+				fields = append(fields, log.Int("user", int(userID)))
 			}
 
 			if gqlErr {
-				kvs = append(kvs, "graphql_error", gqlErr)
+				fields = append(fields, log.Bool("graphql_error", gqlErr))
 			}
 			var parts []string
 			if m.Duration >= minDuration {
@@ -245,7 +258,7 @@ func HTTPMiddleware(next http.Handler, siteConfig conftypes.SiteConfigQuerier) h
 			if m.Code >= minCode {
 				parts = append(parts, "unexpected status code")
 			}
-			log15.Warn(strings.Join(parts, ", "), kvs...)
+			logger.Warn(strings.Join(parts, ", "), fields...)
 		}
 
 		// Notify sentry if the status code indicates our system had an error (e.g. 5xx).

@@ -73,10 +73,6 @@ func (fm *FileMatchResolver) ToCommitSearchResult() (*CommitSearchResultResolver
 	return nil, false
 }
 
-func (fm *FileMatchResolver) ResultCount() int32 {
-	return int32(fm.FileMatch.ResultCount())
-}
-
 type lineMatchResolver struct {
 	*result.LineMatch
 }

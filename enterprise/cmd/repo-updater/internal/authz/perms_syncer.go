@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/RoaringBitmap/roaring"
 	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
@@ -48,7 +47,7 @@ type PermsSyncer struct {
 	// The generic database handle.
 	db database.DB
 	// The database interface for any repos and external services operations.
-	reposStore *repos.Store
+	reposStore repos.Store
 	// The database interface for any permissions operations.
 	permsStore edb.PermsStore
 	// The mockable function to return the current time.
@@ -62,7 +61,7 @@ type PermsSyncer struct {
 // NewPermsSyncer returns a new permissions syncing manager.
 func NewPermsSyncer(
 	db database.DB,
-	reposStore *repos.Store,
+	reposStore repos.Store,
 	permsStore edb.PermsStore,
 	clock func() time.Time,
 	rateLimiterRegistry *ratelimit.Registry,
@@ -211,7 +210,7 @@ func (s *PermsSyncer) listPrivateRepoNamesBySpecs(ctx context.Context, repoSpecs
 
 	repoNames := make([]types.MinimalRepo, 0, len(repoSpecs))
 	for nextCut > 0 {
-		rs, err := s.reposStore.RepoStore.ListMinimalRepos(ctx,
+		rs, err := s.reposStore.RepoStore().ListMinimalRepos(ctx,
 			database.ReposListOptions{
 				ExternalRepos: remaining[:nextCut],
 				OnlyPrivate:   true,
@@ -421,7 +420,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 	// Exclusions are relative to inclusions, so if there is no inclusion, exclusion
 	// are meaningless and no need to trigger a DB query.
 	if len(includeContainsSpecs) > 0 {
-		rs, err := s.reposStore.RepoStore.ListMinimalRepos(ctx,
+		rs, err := s.reposStore.RepoStore().ListMinimalRepos(ctx,
 			database.ReposListOptions{
 				ExternalRepoIncludeContains: includeContainsSpecs,
 				ExternalRepoExcludeContains: excludeContainsSpecs,
@@ -572,7 +571,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalServices(ctx context.Context, use
 	// Exclusions are relative to inclusions, so if there is no inclusion, exclusion
 	// are meaningless and no need to trigger a DB query.
 	if len(includeContainsSpecs) > 0 {
-		rs, err := s.reposStore.RepoStore.ListMinimalRepos(ctx,
+		rs, err := s.reposStore.RepoStore().ListMinimalRepos(ctx,
 			database.ReposListOptions{
 				ExternalRepoIncludeContains: includeContainsSpecs,
 				ExternalRepoExcludeContains: excludeContainsSpecs,
@@ -625,14 +624,19 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		UserID: user.ID,
 		Perm:   authz.Read, // Note: We currently only support read for repository permissions.
 		Type:   authz.PermRepos,
-		IDs:    roaring.NewBitmap(),
+		IDs:    map[int32]struct{}{},
 	}
 	for i := range repoIDs {
-		p.IDs.Add(uint32(repoIDs[i]))
+		p.IDs[int32(repoIDs[i])] = struct{}{}
 	}
-	p.IDs.AddMany(externalAccountsRepoIDs)
-	p.IDs.AddMany(externalServicesRepoIDs)
 
+	// Looping over two slices individually in order to avoid unnecessary memory allocation.
+	for i := range externalAccountsRepoIDs {
+		p.IDs[int32(externalAccountsRepoIDs[i])] = struct{}{}
+	}
+	for i := range externalServicesRepoIDs {
+		p.IDs[int32(externalServicesRepoIDs[i])] = struct{}{}
+	}
 	err = s.permsStore.SetUserPermissions(ctx, p)
 	if err != nil {
 		return errors.Wrap(err, "set user permissions")
@@ -640,7 +644,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 
 	log15.Debug("PermsSyncer.syncUserPerms.synced",
 		"userID", user.ID,
-		"count", p.IDs.GetCardinality(),
+		"count", len(p.IDs),
 		"fetchOpts.invalidateCaches", fetchOpts.InvalidateCaches,
 	)
 
@@ -669,7 +673,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	ctx, save := s.observe(ctx, "PermsSyncer.syncRepoPerms", "")
 	defer save(requestTypeRepo, int32(repoID), &err)
 
-	rs, err := s.reposStore.RepoStore.List(ctx, database.ReposListOptions{
+	rs, err := s.reposStore.RepoStore().List(ctx, database.ReposListOptions{
 		IDs: []api.RepoID{repoID},
 	})
 	if err != nil {
@@ -793,15 +797,15 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	p := &authz.RepoPermissions{
 		RepoID:  int32(repoID),
 		Perm:    authz.Read, // Note: We currently only support read for repository permissions.
-		UserIDs: roaring.NewBitmap(),
+		UserIDs: map[int32]struct{}{},
 	}
 
 	for i := range userIDs {
-		p.UserIDs.Add(uint32(userIDs[i]))
+		p.UserIDs[userIDs[i]] = struct{}{}
 	}
 	for aid, uid := range accountIDsToUserIDs {
 		// Add existing user to permissions
-		p.UserIDs.Add(uint32(uid))
+		p.UserIDs[uid] = struct{}{}
 
 		// Remove existing user from the set of pending users
 		delete(pendingAccountIDsSet, aid)
@@ -837,7 +841,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	log15.Debug("PermsSyncer.syncRepoPerms.synced",
 		"repoID", repo.ID,
 		"name", repo.Name,
-		"count", p.UserIDs.GetCardinality(),
+		"count", len(p.UserIDs),
 		"fetchOpts.invalidateCaches", fetchOpts.InvalidateCaches,
 	)
 	return nil

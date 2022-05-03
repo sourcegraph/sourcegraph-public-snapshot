@@ -1,4 +1,4 @@
-import React, { forwardRef, memo } from 'react'
+import { forwardRef, memo } from 'react'
 
 import { AxisLeft as VisxAxisLeft, AxisBottom as VisxAsixBottom } from '@visx/axis'
 import { AxisScale } from '@visx/axis/lib/types'
@@ -29,7 +29,7 @@ export const AxisLeft = memo(
                 <GridRows
                     top={top}
                     left={left}
-                    width={width - left}
+                    width={width}
                     height={height}
                     scale={scale}
                     tickValues={getYScaleTicks({ scale, space: height })}

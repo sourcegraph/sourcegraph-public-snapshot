@@ -15,6 +15,9 @@ export interface TemporarySettingsSchema {
     'search.sidebar.revisions.tab': number
     'search.onboarding.tourCancelled': boolean
     'search.contexts.ctaDismissed': boolean
+    'search.notepad.enabled': boolean
+    'search.notepad.ctaSeen': boolean
+    'search.notebooks.gettingStartedTabSeen': boolean
     'insights.freeGaAccepted': boolean
     'insights.freeGaExpiredAccepted': boolean
     'insights.wasMainPageOpen': boolean
@@ -31,10 +34,11 @@ export interface TemporarySettingsSchema {
     'cta.ideExtensionAlertDismissed': boolean
     'batches.defaultListFilters': MultiSelectState<BatchChangeState>
     'batches.downloadSpecModalDismissed': boolean
+    'codeintel.badge.used': boolean
 }
 
 /**
- * All temporary setttings are possibly undefined. This is the actual schema that
+ * All temporary settings are possibly undefined. This is the actual schema that
  * should be used to force the consumer to check for undefined values.
  */
 export type TemporarySettings = Optional<TemporarySettingsSchema>

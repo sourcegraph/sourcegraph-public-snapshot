@@ -244,6 +244,11 @@ func substituteMetaVariables(pattern string, env *MetaEnvironment) (string, erro
 // metavariables can be referenced and substituted for in an output template.
 func NewMetaEnvironment(r result.Match, content string) *MetaEnvironment {
 	switch m := r.(type) {
+	case *result.RepoMatch:
+		return &MetaEnvironment{
+			Repo:    string(m.Name),
+			Content: string(m.Name),
+		}
 	case *result.FileMatch:
 		lang, _ := enry.GetLanguageByExtension(m.Path)
 		return &MetaEnvironment{

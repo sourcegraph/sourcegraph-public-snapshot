@@ -1,4 +1,4 @@
-import { InsightType } from '../core/types'
+import { InsightType } from '../core'
 
 export enum CodeInsightTrackType {
     SearchBasedInsight = 'SearchBased',

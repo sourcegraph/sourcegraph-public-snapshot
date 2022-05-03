@@ -1,10 +1,9 @@
 import React from 'react'
 
 import { throwError } from 'rxjs'
-import { LineChartContent, PieChartContent } from 'sourcegraph'
 
 import { CodeInsightsBackend } from './code-insights-backend'
-import { RepositorySuggestionData } from './code-insights-backend-types'
+import { SeriesChartContent, CategoricalChartContent, RepositorySuggestionData } from './code-insights-backend-types'
 
 const errorMockMethod = (methodName: string) => () => throwError(new Error(`Implement ${methodName} method first`))
 
@@ -17,6 +16,7 @@ export class FakeDefaultCodeInsightsBackend implements CodeInsightsBackend {
     public getInsightById = errorMockMethod('getInsightById')
     public findInsightByName = errorMockMethod('findInsightByName')
     public hasInsights = errorMockMethod('hasInsight')
+    public getActiveInsightsCount = errorMockMethod('getNonFrozenInsightsCount')
     public getAccessibleInsightsList = errorMockMethod('getReachableInsights')
     public getBackendInsightData = errorMockMethod('getBackendInsightData')
     public getBuiltInInsightData = errorMockMethod('getBuiltInInsightData')
@@ -39,12 +39,12 @@ export class FakeDefaultCodeInsightsBackend implements CodeInsightsBackend {
     public assignInsightsToDashboard = errorMockMethod('assignInsightsToDashboard')
 
     // Live preview fetchers
-    public getSearchInsightContent = (): Promise<LineChartContent<any, string>> =>
+    public getSearchInsightContent = (): Promise<SeriesChartContent<unknown>> =>
         errorMockMethod('getSearchInsightContent')().toPromise()
-    public getLangStatsInsightContent = (): Promise<PieChartContent<any>> =>
+    public getLangStatsInsightContent = (): Promise<CategoricalChartContent<unknown>> =>
         errorMockMethod('getLangStatsInsightContent')().toPromise()
 
-    public getCaptureInsightContent = (): Promise<LineChartContent<any, string>> =>
+    public getCaptureInsightContent = (): Promise<SeriesChartContent<unknown>> =>
         errorMockMethod('getCaptureInsightContent')().toPromise()
 
     // Repositories API

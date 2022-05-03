@@ -154,7 +154,7 @@
         "showSearchNotebook": {
           "description": "Enables the search notebook at search/notebook",
           "type": "boolean",
-          "default": false,
+          "default": true,
           "!go": {
             "pointer": true
           }
@@ -223,7 +223,7 @@
           }
         },
         "enableSearchStack": {
-          "description": "Enables search stack",
+          "description": "REMOVED: This feature can now be enabled/disabled via the notepad button on the notebooks list page.",
           "type": "boolean",
           "default": false,
           "!go": {
@@ -299,6 +299,14 @@
           "type": "string",
           "default": "monaco",
           "enum": ["monaco", "codemirror6"],
+          "!go": {
+            "pointer": true
+          }
+        },
+        "goCodeCheckerTemplates": {
+          "description": "Shows a panel with code insights templates for go code checker results.",
+          "type": "boolean",
+          "default": false,
           "!go": {
             "pointer": true
           }

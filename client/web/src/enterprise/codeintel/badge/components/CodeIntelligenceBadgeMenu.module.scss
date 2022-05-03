@@ -1,0 +1,26 @@
+.dropdown-menu {
+    min-width: 20rem;
+}
+
+.braindot {
+    position: relative;
+}
+
+.braindot::after {
+    content: '';
+    position: absolute;
+    bottom: 0.2rem;
+    right: 0.25rem;
+    border-radius: 1rem;
+    width: 0.75rem;
+    height: 0.75rem;
+    border: 2px solid var(--body-bg);
+}
+
+.braindot-error::after {
+    background-color: var(--red);
+}
+
+.braindot-attention::after {
+    background-color: var(--purple);
+}

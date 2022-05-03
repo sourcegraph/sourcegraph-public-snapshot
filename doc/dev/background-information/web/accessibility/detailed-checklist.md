@@ -154,6 +154,7 @@
   - Tip: Use `aria-describedby` to quickly link any relevant labels to the input.
 - It is possible to identify error, warning and success states of the form through text.
   - We cannot assume that a user can identify these through color alone.
+  - Note: Sometimes certain states can be implied (like seeing your form submission appear on the page). We still need to support users who won't be able to identify this. In this case, we should use `screenReaderAnnounce` to communicate messages to screen readers.
 
 **Note:** Forms can be complex! We heavily encourage you to to seek further information using the [W3 forms guide](https://www.w3.org/WAI/tutorials/forms/). Accessibility guidelines can differ depending on the type of form.
 

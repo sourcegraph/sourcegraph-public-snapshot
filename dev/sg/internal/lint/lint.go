@@ -2,7 +2,6 @@ package lint
 
 import (
 	"context"
-	"flag"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
@@ -30,7 +29,6 @@ type Report struct {
 type Target struct {
 	Name    string
 	Help    string
-	FlagSet *flag.FlagSet
 	Linters []Runner
 }
 

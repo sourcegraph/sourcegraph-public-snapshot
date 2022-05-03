@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -54,7 +55,10 @@ func fileMatch(content string) result.Match {
 		return []byte(content), nil
 	}
 	return &result.FileMatch{
-		File: result.File{Path: "my/awesome/path.ml"},
+		File: result.File{
+			Repo: types.MinimalRepo{Name: "my/awesome/repo"},
+			Path: "my/awesome/path.ml",
+		},
 	}
 }
 
@@ -83,6 +87,16 @@ func TestRun(t *testing.T) {
 		"template substitution regexp",
 		"(1)\n(2)\n(3)\n").
 		Equal(t, test(`content:output((\d) -> ($1))`, fileMatch("a 1 b 2 c 3")))
+
+	autogold.Want(
+		"handles repo match via select on file match",
+		"my/awesome/repo").
+		Equal(t, test(`lang:ocaml content:output((\d) -> $repo) select:repo`, fileMatch("a 1 b 2 c 3")))
+
+	autogold.Want(
+		"honor type:path efficiently (don't hydrate file content when type:path is set)",
+		"my/awesome/path.ml content is my/awesome/path.ml with extension: ml\n").
+		Equal(t, test(`content:output(awesome/.+\.(\w+) -> $path content is $content with extension: $1) type:path`, fileMatch("a 1 b 2 c 3")))
 
 	autogold.Want(
 		"template substitution regexp with commit author",

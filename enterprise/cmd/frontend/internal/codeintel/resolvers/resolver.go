@@ -61,6 +61,9 @@ type Resolver interface {
 	QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataArgs) (QueryResolver, error)
 	RepositorySummary(ctx context.Context, repositoryID int) (RepositorySummary, error)
 
+	RequestLanguageSupport(ctx context.Context, userID int, language string) error
+	RequestedLanguageSupport(ctx context.Context, userID int) ([]string, error)
+
 	ExecutorResolver() executor.Resolver
 }
 
@@ -82,6 +85,9 @@ type resolver struct {
 	operations       *operations
 	executorResolver executor.Resolver
 	symbolsClient    *symbols.Client
+
+	// See the same field on the QueryResolver struct
+	maximumIndexesPerMonikerSearch int
 }
 
 // NewResolver creates a new resolver with the given services.
@@ -93,10 +99,11 @@ func NewResolver(
 	indexEnqueuer IndexEnqueuer,
 	hunkCache HunkCache,
 	symbolsClient *symbols.Client,
+	maximumIndexesPerMonikerSearch int,
 	observationContext *observation.Context,
 	dbConn database.DB,
 ) Resolver {
-	return newResolver(dbStore, lsifStore, gitserverClient, policyMatcher, indexEnqueuer, hunkCache, symbolsClient, observationContext, dbConn)
+	return newResolver(dbStore, lsifStore, gitserverClient, policyMatcher, indexEnqueuer, hunkCache, symbolsClient, maximumIndexesPerMonikerSearch, observationContext, dbConn)
 }
 
 func newResolver(
@@ -107,20 +114,22 @@ func newResolver(
 	indexEnqueuer IndexEnqueuer,
 	hunkCache HunkCache,
 	symbolsClient *symbols.Client,
+	maximumIndexesPerMonikerSearch int,
 	observationContext *observation.Context,
 	dbConn database.DB,
 ) *resolver {
 	return &resolver{
-		db:               dbConn,
-		dbStore:          dbStore,
-		lsifStore:        lsifStore,
-		gitserverClient:  gitserverClient,
-		policyMatcher:    policyMatcher,
-		indexEnqueuer:    indexEnqueuer,
-		hunkCache:        hunkCache,
-		symbolsClient:    symbolsClient,
-		operations:       newOperations(observationContext),
-		executorResolver: executor.New(dbConn),
+		db:                             dbConn,
+		dbStore:                        dbStore,
+		lsifStore:                      lsifStore,
+		gitserverClient:                gitserverClient,
+		policyMatcher:                  policyMatcher,
+		indexEnqueuer:                  indexEnqueuer,
+		hunkCache:                      hunkCache,
+		symbolsClient:                  symbolsClient,
+		maximumIndexesPerMonikerSearch: maximumIndexesPerMonikerSearch,
+		operations:                     newOperations(observationContext),
+		executorResolver:               executor.New(dbConn),
 	}
 }
 
@@ -181,7 +190,7 @@ const slowQueryResolverRequestThreshold = time.Second
 // given repository, commit, and path, then constructs a new query resolver instance which
 // can be used to answer subsequent queries.
 func (r *resolver) QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataArgs) (_ QueryResolver, err error) {
-	ctx, _, endObservation := observeResolver(ctx, &err, "QueryResolver", r.operations.queryResolver, slowQueryResolverRequestThreshold, observation.Args{
+	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.queryResolver, slowQueryResolverRequestThreshold, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", int(args.Repo.ID)),
 			log.String("commit", string(args.Commit)),
@@ -220,6 +229,7 @@ func (r *resolver) QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataA
 		dumps,
 		r.operations,
 		authz.DefaultSubRepoPermsChecker,
+		r.maximumIndexesPerMonikerSearch,
 	), nil
 }
 

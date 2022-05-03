@@ -21,6 +21,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/inconshreveable/log15"
+	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -295,11 +296,7 @@ func TestServer_handleP4Exec(t *testing.T) {
 }
 
 func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_packed_refs(b *testing.B) {
-	tmp, err := os.MkdirTemp("", "gitserver_test")
-	if err != nil {
-		b.Fatal(err)
-	}
-	defer os.RemoveAll(tmp)
+	tmp := b.TempDir()
 
 	dir := filepath.Join(tmp, ".git")
 	gitDir := GitDir(dir)
@@ -311,7 +308,7 @@ func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_packed_refs(b *testing.B) {
 	// This simulates the most amount of work quickRevParseHead has to do, and
 	// is also the most common in prod. That is where the final rev is in
 	// packed-refs.
-	err = os.WriteFile(filepath.Join(dir, "HEAD"), []byte(fmt.Sprintf("ref: %s\n", masterRef)), 0600)
+	err := os.WriteFile(filepath.Join(dir, "HEAD"), []byte(fmt.Sprintf("ref: %s\n", masterRef)), 0600)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -373,11 +370,7 @@ func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_packed_refs(b *testing.B) {
 }
 
 func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_unpacked_refs(b *testing.B) {
-	tmp, err := os.MkdirTemp("", "gitserver_test")
-	if err != nil {
-		b.Fatal(err)
-	}
-	defer os.RemoveAll(tmp)
+	tmp := b.TempDir()
 
 	dir := filepath.Join(tmp, ".git")
 	gitDir := GitDir(dir)
@@ -630,6 +623,133 @@ func TestCloneRepo(t *testing.T) {
 	gotCommit = cmd("git", "rev-parse", "HEAD")
 	if wantCommit != gotCommit {
 		t.Fatal("failed to clone:", gotCommit)
+	}
+}
+
+func TestHandleRepoDelete(t *testing.T) {
+	testHandleRepoDelete(t, false)
+}
+
+func TestHandleRepoDeleteWhenDeleteInDB(t *testing.T) {
+	// We also want to ensure that we can delete repo data on disk for a repo that
+	// has already been deleted in the DB.
+	testHandleRepoDelete(t, true)
+}
+
+func testHandleRepoDelete(t *testing.T, deletedInDB bool) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	remote := t.TempDir()
+	repoName := api.RepoName("example.com/foo/bar")
+	db := database.NewDB(dbtest.NewDB(t))
+
+	dbRepo := &types.Repo{
+		Name:        repoName,
+		Description: "Test",
+	}
+
+	// Insert the repo into our database
+	if err := database.Repos(db).Create(ctx, dbRepo); err != nil {
+		t.Fatal(err)
+	}
+
+	repo := remote
+	cmd := func(name string, arg ...string) string {
+		t.Helper()
+		return runCmd(t, repo, name, arg...)
+	}
+	_ = makeSingleCommitRepo(cmd)
+	// Add a bad tag
+	cmd("git", "tag", "HEAD")
+
+	reposDir := t.TempDir()
+
+	s := makeTestServer(ctx, reposDir, remote, db)
+
+	// We need some of the side effects here
+	_ = s.Handler()
+
+	rr := httptest.NewRecorder()
+
+	updateReq := protocol.RepoUpdateRequest{
+		Repo: repoName,
+	}
+	body, err := json.Marshal(updateReq)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// This will perform an initial clone
+	req := httptest.NewRequest("GET", "/repo-update", bytes.NewReader(body))
+	s.handleRepoUpdate(rr, req)
+
+	size := dirSize(s.dir(repoName).Path("."))
+	want := &types.GitserverRepo{
+		RepoID:        dbRepo.ID,
+		ShardID:       "",
+		CloneStatus:   types.CloneStatusCloned,
+		RepoSizeBytes: size,
+	}
+	fromDB, err := database.GitserverRepos(db).GetByID(ctx, dbRepo.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cmpIgnored := cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "LastChanged", "RepoSizeBytes", "UpdatedAt")
+
+	// We don't expect an error
+	if diff := cmp.Diff(want, fromDB, cmpIgnored); diff != "" {
+		t.Fatal(diff)
+	}
+
+	if deletedInDB {
+		if err := database.Repos(db).Delete(ctx, dbRepo.ID); err != nil {
+			t.Fatal(err)
+		}
+		repos, err := database.Repos(db).List(ctx, database.ReposListOptions{IncludeDeleted: true, IDs: []api.RepoID{dbRepo.ID}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(repos) != 1 {
+			t.Fatalf("Expected 1 repo, got %d", len(repos))
+		}
+		dbRepo = repos[0]
+	}
+
+	// Now we can delete it
+	deleteReq := protocol.RepoDeleteRequest{
+		Repo: dbRepo.Name,
+	}
+	body, err = json.Marshal(deleteReq)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req = httptest.NewRequest("GET", "/delete", bytes.NewReader(body))
+	s.handleRepoDelete(rr, req)
+
+	size = dirSize(s.dir(repoName).Path("."))
+	if size != 0 {
+		t.Fatalf("Size should be 0, got %d", size)
+	}
+
+	// Check status in gitserver_repos
+	want = &types.GitserverRepo{
+		RepoID:        dbRepo.ID,
+		ShardID:       "",
+		CloneStatus:   types.CloneStatusNotCloned,
+		RepoSizeBytes: size,
+	}
+	fromDB, err = database.GitserverRepos(db).GetByID(ctx, dbRepo.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cmpIgnored = cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "LastChanged", "RepoSizeBytes", "UpdatedAt")
+
+	// We don't expect an error
+	if diff := cmp.Diff(want, fromDB, cmpIgnored); diff != "" {
+		t.Fatal(diff)
 	}
 }
 
@@ -1133,6 +1253,32 @@ func TestSyncRepoState(t *testing.T) {
 	if gr.CloneStatus != types.CloneStatusCloned {
 		t.Fatalf("Want %v, got %v", types.CloneStatusCloned, gr.CloneStatus)
 	}
+
+	t.Run("sync deleted repo", func(t *testing.T) {
+		// Fake setting an incorrect status
+		if err := database.GitserverRepos(db).SetCloneStatus(ctx, dbRepo.Name, types.CloneStatusUnknown, hostname); err != nil {
+			t.Fatal(err)
+		}
+
+		// We should continue to sync deleted repos
+		if err := database.Repos(db).Delete(ctx, dbRepo.ID); err != nil {
+			t.Fatal(err)
+		}
+
+		err = s.syncRepoState(gitserver.GitServerAddresses{Addresses: []string{hostname}}, 10, 10, true)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		gr, err := database.GitserverRepos(db).GetByID(ctx, dbRepo.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if gr.CloneStatus != types.CloneStatusCloned {
+			t.Fatalf("Want %v, got %v", types.CloneStatusCloned, gr.CloneStatus)
+		}
+	})
 }
 
 type BatchLogTest struct {
@@ -1245,7 +1391,9 @@ func TestHandleBatchLog(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
-			server := &Server{}
+			server := &Server{
+				GlobalBatchLogSemaphore: semaphore.NewWeighted(8),
+			}
 			h := server.Handler()
 
 			w := httptest.ResponseRecorder{Body: new(bytes.Buffer)}

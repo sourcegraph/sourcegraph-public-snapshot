@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -22,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func Commands(ctx context.Context, globalEnv map[string]string, addToMacOSFirewall bool, verbose bool, cmds ...Command) error {
+func Commands(ctx context.Context, globalEnv map[string]string, verbose bool, cmds ...Command) error {
 	chs := make([]<-chan struct{}, 0, len(cmds))
 	monitor := &changeMonitor{}
 	for _, cmd := range cmds {
@@ -77,8 +76,7 @@ func Commands(ctx context.Context, globalEnv map[string]string, addToMacOSFirewa
 		}(cmd, chs[i])
 	}
 
-	postInstall := newPostInstall(ctx, cmds, addToMacOSFirewall)
-	err = waitForInstallation(cmdNames, installed, failures, okayToStart, postInstall)
+	err = waitForInstallation(cmdNames, installed, failures, okayToStart)
 	if err != nil {
 		return err
 	}
@@ -94,43 +92,7 @@ func Commands(ctx context.Context, globalEnv map[string]string, addToMacOSFirewa
 	}
 }
 
-func newPostInstall(ctx context.Context, cmds []Command, addToMacOSFirewall bool) func() error {
-	if !addToMacOSFirewall || runtime.GOOS != "darwin" {
-		return func() error { return nil }
-	}
-
-	return func() error {
-		root, err := root.RepositoryRoot()
-		if err != nil {
-			return err
-		}
-
-		fwCmdPath := "/usr/libexec/ApplicationFirewall/socketfilterfw"
-		stdout.Out.WriteLine(output.Linef(output.EmojiWarningSign, output.StyleWarning, "You may be prompted to enter your password to add exceptions to the firewall."))
-		fcmd := exec.CommandContext(ctx, "sudo", fwCmdPath, "--setglobalstate", "off")
-		err = fcmd.Run()
-		if err != nil {
-			return err
-		}
-		for _, cmd := range cmds {
-			if strings.HasPrefix(cmd.Cmd, ".bin/") {
-				fcmd = exec.CommandContext(ctx, "sudo", fwCmdPath, "--add", filepath.Join(root, cmd.Cmd))
-				err = fcmd.Run()
-				if err != nil {
-					return err
-				}
-			}
-		}
-		fcmd = exec.CommandContext(ctx, "sudo", fwCmdPath, "--setglobalstate", "on")
-		err = fcmd.Run()
-		if err != nil {
-			return err
-		}
-		return nil
-	}
-}
-
-func waitForInstallation(cmdNames map[string]struct{}, installed chan string, failures chan failedRun, okayToStart chan struct{}, postInstallCallback func() error) error {
+func waitForInstallation(cmdNames map[string]struct{}, installed chan string, failures chan failedRun, okayToStart chan struct{}) error {
 	stdout.Out.Write("")
 	stdout.Out.WriteLine(output.Linef(output.EmojiLightbulb, output.StyleBold, "Installing %d commands...", len(cmdNames)))
 	stdout.Out.Write("")
@@ -172,13 +134,11 @@ func waitForInstallation(cmdNames map[string]struct{}, installed chan string, fa
 			// Everything installed!
 			if len(cmdNames) == 0 {
 				progress.Complete()
+
 				stdout.Out.Write("")
 				stdout.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Everything installed! Booting up the system!"))
 				stdout.Out.Write("")
-				err := postInstallCallback()
-				if err != nil {
-					return err
-				}
+
 				close(okayToStart)
 				return nil
 			}

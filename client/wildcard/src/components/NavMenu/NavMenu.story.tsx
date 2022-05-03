@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { Meta, Story } from '@storybook/react'
 import { noop } from 'lodash'
 import AntennaIcon from 'mdi-react/AntennaIcon'
@@ -49,7 +47,7 @@ const themeItemContent = (
             aria-label=""
             isCustomStyle={true}
             selectSize="sm"
-            selectClassName="test-theme-toggle"
+            data-testid="theme-toggle"
             onChange={noop}
             value="light"
             className="mb-0 flex-1"

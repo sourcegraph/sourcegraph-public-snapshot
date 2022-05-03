@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -19,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
@@ -39,6 +41,7 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 		namespaceOrgID       int32
 		kinds                []string
 		afterID              int64
+		updatedAfter         time.Time
 		wantQuery            string
 		onlyCloudDefault     bool
 		noCachedWebhooks     bool
@@ -91,6 +94,12 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 			wantArgs:  []interface{}{int64(10)},
 		},
 		{
+			name:         "has after updated_at",
+			updatedAfter: time.Date(2013, 04, 19, 0, 0, 0, 0, time.UTC),
+			wantQuery:    "deleted_at IS NULL AND updated_at > $1",
+			wantArgs:     []interface{}{time.Date(2013, 04, 19, 0, 0, 0, 0, time.UTC)},
+		},
+		{
 			name:             "has OnlyCloudDefault",
 			onlyCloudDefault: true,
 			wantQuery:        "deleted_at IS NULL AND cloud_default = true",
@@ -110,6 +119,7 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 				NamespaceOrgID:       test.namespaceOrgID,
 				Kinds:                test.kinds,
 				AfterID:              test.afterID,
+				UpdatedAfter:         test.updatedAfter,
 				OnlyCloudDefault:     test.onlyCloudDefault,
 				NoCachedWebhooks:     test.noCachedWebhooks,
 			}
@@ -925,6 +935,146 @@ VALUES (%d, 1, ''), (%d, 2, '')
 	}
 }
 
+// reposNumber is a number of repos created in one batch.
+// TestExternalServicesStore_DeleteExtServiceWithManyRepos does 5 such batches
+const reposNumber = 1000
+
+// TestExternalServicesStore_DeleteExtServiceWithManyRepos can be used locally
+// with increased number of repos to see how fast/slow deletion of external
+// services works.
+func TestExternalServicesStore_DeleteExtServiceWithManyRepos(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	db := dbtest.NewDB(t)
+	ctx := actor.WithInternalActor(context.Background())
+
+	// Create a new external service
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	extSvc := &types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "GITHUB #1",
+		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+	}
+	servicesStore := ExternalServices(db)
+	err := servicesStore.Create(ctx, confGet, extSvc)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	createRepo := func(offset int, c chan<- int) {
+		inserter := func(inserter *batch.Inserter) error {
+			for i := 0 + offset; i < reposNumber+offset; i++ {
+				if err := inserter.Insert(ctx, i, "repo"+strconv.Itoa(i)); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+
+		if err := batch.WithInserter(
+			ctx,
+			db,
+			"repo",
+			batch.MaxNumPostgresParameters,
+			[]string{"id", "name"},
+			inserter,
+		); err != nil {
+			t.Error(err)
+			c <- 1
+			return
+		}
+		c <- 0
+	}
+
+	ready := make(chan int, 5)
+	defer close(ready)
+	offsets := []int{0, reposNumber, reposNumber * 2, reposNumber * 3, reposNumber * 4}
+
+	for _, offset := range offsets {
+		go createRepo(offset, ready)
+	}
+
+	for i := 0; i < 5; i++ {
+		if status := <-ready; status != 0 {
+			t.Fatal("Error during repo creation")
+		}
+	}
+
+	ready2 := make(chan int, 5)
+	defer close(ready2)
+
+	extSvcId := extSvc.ID
+
+	createExtSvc := func(offset int, c chan<- int) {
+		inserter := func(inserter *batch.Inserter) error {
+			for i := 0 + offset; i < reposNumber+offset; i++ {
+				if err := inserter.Insert(ctx, extSvcId, i, ""); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+
+		if err := batch.WithInserter(
+			ctx,
+			db,
+			"external_service_repos",
+			batch.MaxNumPostgresParameters,
+			[]string{"external_service_id", "repo_id", "clone_url"},
+			inserter,
+		); err != nil {
+			t.Error(err)
+			c <- 1
+			return
+		}
+		c <- 0
+	}
+
+	for _, offset := range offsets {
+		go createExtSvc(offset, ready2)
+	}
+
+	for i := 0; i < 5; i++ {
+		if status := <-ready2; status != 0 {
+			t.Fatal("Error during external service repo creation")
+		}
+	}
+
+	// Delete this external service
+	start := time.Now()
+	err = servicesStore.Delete(ctx, extSvcId)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("Deleting of an external service with %d repos took %s", reposNumber*5, time.Since(start))
+
+	count, err := servicesStore.RepoCount(ctx, extSvcId)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 0 {
+		t.Fatal("External service repos are not deleted")
+	}
+
+	// Should throw not found error
+	_, err = servicesStore.GetByID(ctx, extSvcId)
+	if err == nil {
+		t.Fatal("External service is not deleted")
+	}
+
+	rows, err := db.Query(`select * from repo where deleted_at is null`)
+	if err != nil {
+		t.Fatal("Error during fetching repos from the DB")
+	}
+	if rows.Next() {
+		t.Fatal("Repos of external service are not deleted")
+	}
+}
+
 func TestExternalServicesStore_GetByID(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -1362,12 +1512,14 @@ func TestExternalServicesStore_List(t *testing.T) {
 			NamespaceOrgID: org.ID,
 		},
 	}
+
 	for _, es := range ess {
 		err := ExternalServices(db).Create(ctx, confGet, es)
 		if err != nil {
 			t.Fatal(err)
 		}
 	}
+	createdAt := time.Now()
 
 	t.Run("list all external services", func(t *testing.T) {
 		got, err := ExternalServices(db).List(ctx, ExternalServicesListOptions{})
@@ -1488,6 +1640,32 @@ func TestExternalServicesStore_List(t *testing.T) {
 		}
 
 		if len(ess) != 0 {
+			t.Fatalf("Want 0 external service but got %d", len(ess))
+		}
+	})
+
+	t.Run("list services updated after a certain date, expect 0", func(t *testing.T) {
+		ess, err := ExternalServices(db).List(ctx, ExternalServicesListOptions{
+			UpdatedAfter: createdAt,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		// We expect zero services to have been updated after they were created
+		if len(ess) != 0 {
+			t.Fatalf("Want 0 external service but got %d", len(ess))
+		}
+	})
+
+	t.Run("list services updated after a certain date, expect 3", func(t *testing.T) {
+		ess, err := ExternalServices(db).List(ctx, ExternalServicesListOptions{
+			UpdatedAfter: createdAt.Add(-5 * time.Minute),
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		// We should find all services were updated after a time in the past
+		if len(ess) != 3 {
 			t.Fatalf("Want 0 external service but got %d", len(ess))
 		}
 	})

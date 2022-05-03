@@ -1,14 +1,14 @@
 import React from 'react'
 
 import { Meta, Story } from '@storybook/react'
-import { of, throwError } from 'rxjs'
+import { Observable, of, throwError } from 'rxjs'
 import { delay } from 'rxjs/operators'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../../../../components/WebStory'
-import { LINE_CHART_CONTENT_MOCK, LINE_CHART_CONTENT_MOCK_EMPTY } from '../../../../../../views/mocks/charts-content'
 import { CodeInsightsBackendStoryMock } from '../../../../CodeInsightsBackendStoryMock'
+import { BackendInsightData, SearchBackendBasedInsight, SeriesChartContent } from '../../../../core'
 import { InsightInProcessError } from '../../../../core/backend/utils/errors'
 import {
     BackendInsight as BackendInsightType,
@@ -16,7 +16,6 @@ import {
     InsightType,
     isCaptureGroupInsight,
 } from '../../../../core/types'
-import { SearchBackendBasedInsight } from '../../../../core/types/insight/types/search-insight'
 
 import { BackendInsightView } from './BackendInsight'
 
@@ -28,15 +27,81 @@ const defaultStory: Meta = {
 export default defaultStory
 
 const INSIGHT_CONFIGURATION_MOCK: SearchBackendBasedInsight = {
-    title: 'Mock Backend Insight',
-    series: [],
-    executionType: InsightExecutionType.Backend,
-    type: InsightType.SearchBased,
     id: 'searchInsights.insight.mock_backend_insight_id',
+    title: 'Backend Insight Mock',
+    series: [],
+    type: InsightType.SearchBased,
+    executionType: InsightExecutionType.Backend,
     step: { weeks: 2 },
-    filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
+    filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
     dashboardReferenceCount: 0,
     isFrozen: false,
+}
+
+interface BackendInsightDatum {
+    x: number
+    value: number
+    link?: string
+}
+
+const getXValue = (datum: BackendInsightDatum): Date => new Date(datum.x)
+const getYValue = (datum: BackendInsightDatum): number => datum.value
+const getLinkURL = (datum: BackendInsightDatum): string | undefined => datum.link
+
+const LINE_CHART_CONTENT_MOCK: SeriesChartContent<BackendInsightDatum> = {
+    series: [
+        {
+            id: 'series_001',
+            data: [
+                { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: 4000, link: '#A:1st_data_point' },
+                { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: 4000, link: '#A:2st_data_point' },
+                { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 5600, link: '#A:3rd_data_point' },
+                { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, value: 9800, link: '#A:4th_data_point' },
+                { x: 1588965700286, value: 12300, link: '#A:5th_data_point' },
+            ],
+            name: 'A metric',
+            color: 'var(--warning)',
+            getXValue,
+            getYValue,
+            getLinkURL,
+        },
+        {
+            id: 'series_002',
+            data: [
+                { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: 15000 },
+                { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: 26000 },
+                { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 20000 },
+                { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, value: 19000 },
+                { x: 1588965700286, value: 17000 },
+            ],
+            name: 'B metric',
+            color: 'var(--warning)',
+            getXValue,
+            getYValue,
+            getLinkURL,
+        },
+    ],
+}
+
+const LINE_CHART_CONTENT_MOCK_EMPTY: SeriesChartContent<BackendInsightDatum> = {
+    series: [
+        {
+            id: 'series_001',
+            data: [],
+            name: 'A metric',
+            color: 'var(--warning)',
+            getXValue,
+            getYValue,
+        },
+        {
+            id: 'series_002',
+            data: [],
+            name: 'B metric',
+            color: 'var(--warning)',
+            getXValue,
+            getYValue,
+        },
+    ],
 }
 
 const mockInsightAPI = ({
@@ -45,7 +110,7 @@ const mockInsightAPI = ({
     throwProcessingError = false,
     hasData = true,
 } = {}) => ({
-    getBackendInsightData: (insight: BackendInsightType) => {
+    getBackendInsightData: (insight: BackendInsightType): Observable<BackendInsightData> => {
         if (isCaptureGroupInsight(insight)) {
             throw new Error('This demo does not support capture group insight')
         }
@@ -55,13 +120,8 @@ const mockInsightAPI = ({
         }
 
         return of({
-            id: insight.id,
-            view: {
-                title: 'Backend Insight Mock',
-                subtitle: 'Backend insight description text',
-                content: [hasData ? LINE_CHART_CONTENT_MOCK : LINE_CHART_CONTENT_MOCK_EMPTY],
-                isFetchingHistoricalData,
-            },
+            content: hasData ? LINE_CHART_CONTENT_MOCK : LINE_CHART_CONTENT_MOCK_EMPTY,
+            isFetchingHistoricalData,
         }).pipe(delay(delayAmount))
     },
 })
@@ -72,6 +132,7 @@ const TestBackendInsight: React.FunctionComponent = () => (
         insight={INSIGHT_CONFIGURATION_MOCK}
         telemetryService={NOOP_TELEMETRY_SERVICE}
         innerRef={() => {}}
+        settingsCascade={{ final: null, subjects: null }}
     />
 )
 
@@ -105,6 +166,18 @@ export const BackendInsight: Story = () => (
             <h2>Card insight syncing</h2>
             <CodeInsightsBackendStoryMock mocks={mockInsightAPI({ throwProcessingError: true })}>
                 <TestBackendInsight />
+            </CodeInsightsBackendStoryMock>
+        </article>
+        <article className="mt-3">
+            <h2>Locked Card insight</h2>
+            <CodeInsightsBackendStoryMock mocks={mockInsightAPI()}>
+                <BackendInsightView
+                    settingsCascade={{ final: null, subjects: null }}
+                    style={{ width: 400, height: 400 }}
+                    insight={{ ...INSIGHT_CONFIGURATION_MOCK, isFrozen: true }}
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
+                    innerRef={() => {}}
+                />
             </CodeInsightsBackendStoryMock>
         </article>
     </section>

@@ -1,2 +1,5 @@
 export { CodeInsightsIcon } from '../../../insights/Icons'
-export { InsightsNavItem } from './insights-nav-link/InsightsNavLink'
+
+export * from './insights-view-grid'
+export * from './views'
+export * from './trancated-text/TruncatedText'
