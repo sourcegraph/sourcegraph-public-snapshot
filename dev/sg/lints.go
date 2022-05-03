@@ -77,34 +77,51 @@ var allLintTargets = lintTargets{
 	},
 }
 
+// lintLoggingLibraries enforces that only usages of lib/log are added
 func lintLoggingLibraries() lint.Runner {
 	const header = "Logging library linter"
 
-	return func(ctx context.Context, state *repo.State) *lint.Report {
-		start := time.Now()
-
-		banList := []string{
+	var (
+		bannedImports = []string{
+			// No standard log library
 			`"log"`,
-
+			// No log15
 			`"github.com/inconshreveable/log15"`,
 			`log15.`,
-
+			// No zap - we re-rexport everything via lib/log
 			`"go.uber.org/zap"`,
 			`"go.uber.org/zap/zapcore"`,
-			`zap.`,
 		}
 
-		checkHunk := func(file string, hunk repo.DiffHunk) error {
-			for _, l := range hunk.AddedLines {
-				for _, banned := range banList {
-					if strings.Contains(l, banned) {
-						return errors.Newf("%s:%d: banned usage '%s': use github.com/sourcegraph/sourcegraph/lib/log instead",
-							file, hunk.StartLine, banned)
-					}
-				}
-			}
+		allowedFiles = map[string]struct{}{
+			// Banned imports will match on the linter here
+			"dev/sg/lints.go": {},
+			// We re-export things here
+			"lib/log": {},
+			// We allow one usage of a direct zap import here
+			"internal/observation/fields.go": {},
+		}
+	)
+
+	// checkHunk returns an error if a banned library is used
+	checkHunk := func(file string, hunk repo.DiffHunk) error {
+		if _, allowed := allowedFiles[file]; allowed {
 			return nil
 		}
+
+		for _, l := range hunk.AddedLines {
+			for _, banned := range bannedImports {
+				if strings.Contains(l, banned) {
+					return errors.Newf(`%s:%d: banned usage of '%s': use "github.com/sourcegraph/sourcegraph/lib/log" instead`,
+						file, hunk.StartLine, banned)
+				}
+			}
+		}
+		return nil
+	}
+
+	return func(ctx context.Context, state *repo.State) *lint.Report {
+		start := time.Now()
 
 		diffs, err := state.GetDiff("**/*.go")
 		if err != nil {
@@ -128,7 +145,8 @@ func lintLoggingLibraries() lint.Runner {
 			Header:   header,
 			Output: func() string {
 				if errs != nil {
-					return strings.TrimSpace(errs.Error())
+					return strings.TrimSpace(errs.Error()) +
+						"\n\nLearn more: https://docs.sourcegraph.com/dev/how-to/add_logging"
 				}
 				return ""
 			}(),
