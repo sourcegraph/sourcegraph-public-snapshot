@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/time/rate"
-
 	otelog "github.com/opentracing/opentracing-go/log"
+	baselua "github.com/yuin/gopher-lua"
+	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference/lua"
@@ -29,11 +29,23 @@ type Service struct {
 	operations     *operations
 }
 
+type indexJobOrHint struct {
+	indexJob     *config.IndexJob
+	indexJobHint *config.IndexJobHint
+}
+
 type invocationContext struct {
 	sandbox    *luasandbox.Sandbox
 	gitService GitService
 	repo       api.RepoName
 	commit     string
+	invocationFunctionTable
+}
+
+type invocationFunctionTable struct {
+	linearize    func(recognizer *luatypes.Recognizer) []*luatypes.Recognizer
+	callback     func(recognizer *luatypes.Recognizer) *baselua.LFunction
+	scanLuaValue func(value baselua.LValue) ([]indexJobOrHint, error)
 }
 
 func newService(
@@ -52,11 +64,104 @@ func newService(
 
 // InferIndexJobs invokes the given script in a fresh Lua sandbox. The return value of this script
 // is assumed to be a table of recognizer instances. Keys conflicting with the default recognizers
-// will overwrite them (to disable or change default behavior).
+// will overwrite them (to disable or change default behavior). Each recognizer's generate function
+// is invoked and the resulting index jobs are combined into a flattened list.
 func (s *Service) InferIndexJobs(ctx context.Context, repo api.RepoName, commit, overrideScript string) (_ []config.IndexJob, err error) {
 	ctx, _, endObservation := s.operations.inferIndexJobs.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
+	functionTable := invocationFunctionTable{
+		linearize: luatypes.LinearizeGenerator,
+		callback:  func(recognizer *luatypes.Recognizer) *baselua.LFunction { return recognizer.Generator() },
+		scanLuaValue: func(value baselua.LValue) ([]indexJobOrHint, error) {
+			jobs, err := luatypes.IndexJobsFromTable(value)
+			if err != nil {
+				return nil, err
+			}
+
+			jobOrHints := make([]indexJobOrHint, 0, len(jobs))
+			for _, job := range jobs {
+				job := job // prevent loop capture
+				jobOrHints = append(jobOrHints, indexJobOrHint{indexJob: &job})
+			}
+
+			return jobOrHints, err
+		},
+	}
+
+	jobOrHints, err := s.inferIndexJobOrHints(ctx, repo, commit, overrideScript, functionTable)
+	if err != nil {
+		return nil, err
+	}
+
+	jobs := make([]config.IndexJob, 0, len(jobOrHints))
+	for _, jobOrHint := range jobOrHints {
+		if jobOrHint.indexJob == nil {
+			return nil, errors.New("unexpected nil index job")
+		}
+
+		jobs = append(jobs, *jobOrHint.indexJob)
+	}
+
+	return jobs, nil
+}
+
+// InferIndexJobHints invokes the given script in a fresh Lua sandbox. The return value of this script
+// is assumed to be a table of recognizer instances. Keys conflicting with the default recognizers
+// will overwrite them (to disable or change default behavior). Each recognizer's hints function is
+// invoked and the resulting index job hints are combined into a flattened list.
+func (s *Service) InferIndexJobHints(ctx context.Context, repo api.RepoName, commit, overrideScript string) (_ []config.IndexJobHint, err error) {
+	ctx, _, endObservation := s.operations.inferIndexJobHints.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	functionTable := invocationFunctionTable{
+		linearize: luatypes.LinearizeHinter,
+		callback:  func(recognizer *luatypes.Recognizer) *baselua.LFunction { return recognizer.Hinter() },
+		scanLuaValue: func(value baselua.LValue) ([]indexJobOrHint, error) {
+			jobHints, err := luatypes.IndexJobHintsFromTable(value)
+			if err != nil {
+				return nil, err
+			}
+
+			jobOrHints := make([]indexJobOrHint, 0, len(jobHints))
+			for _, jobHint := range jobHints {
+				jobHint := jobHint // prevent loop capture
+				jobOrHints = append(jobOrHints, indexJobOrHint{indexJobHint: &jobHint})
+			}
+
+			return jobOrHints, err
+		},
+	}
+
+	jobOrHints, err := s.inferIndexJobOrHints(ctx, repo, commit, overrideScript, functionTable)
+	if err != nil {
+		return nil, err
+	}
+
+	jobHints := make([]config.IndexJobHint, 0, len(jobOrHints))
+	for _, jobOrHint := range jobOrHints {
+		if jobOrHint.indexJobHint == nil {
+			return nil, errors.New("unexpected nil index job hint")
+		}
+
+		jobHints = append(jobHints, *jobOrHint.indexJobHint)
+	}
+
+	return jobHints, nil
+}
+
+// inferIndexJobOrHints invokes the given script in a fresh Lua sandbox. The return value of this script
+// is assumed to be a table of recognizer instances. Keys conflicting with the default recognizers will
+// overwrite them (to disable or change default behavior). Each recognizer's callback function is invoked
+// and the resulting values are combined into a flattened list. See InferIndexJobs and InferIndexJobHints
+// for concrete implementations of the given function table.
+func (s *Service) inferIndexJobOrHints(
+	ctx context.Context,
+	repo api.RepoName,
+	commit string,
+	overrideScript string,
+	invocationContextMethods invocationFunctionTable,
+) ([]indexJobOrHint, error) {
 	sandbox, err := s.createSandbox(ctx)
 	if err != nil {
 		return nil, err
@@ -68,11 +173,12 @@ func (s *Service) InferIndexJobs(ctx context.Context, repo api.RepoName, commit,
 		return nil, err
 	}
 
-	invocationContext := &invocationContext{
-		sandbox:    sandbox,
-		gitService: s.gitService,
-		repo:       repo,
-		commit:     commit,
+	invocationContext := invocationContext{
+		sandbox:                 sandbox,
+		gitService:              s.gitService,
+		repo:                    repo,
+		commit:                  commit,
+		invocationFunctionTable: invocationContextMethods,
 	}
 	return s.invokeRecognizers(ctx, invocationContext, recognizers)
 }
@@ -119,19 +225,20 @@ func (s *Service) setupRecognizers(ctx context.Context, sandbox *luasandbox.Sand
 	return recognizers, nil
 }
 
-// invokeRecognizers invokes each generator function associated with one of the given recognizers
-// and returns the resulting index job values. This function is called iteratively with recognizers
-// registered by a previous invocation of a recognizer. Calls to gitserver are made in as few
-// batches across all recognizer invocations as possible.
+// invokeRecognizers invokes each of the given recognizer's callback function and returns the resulting
+// index job or hint values. This function is called iteratively with recognizers registered by a previous
+// invocation of a recognizer. Calls to gitserver are made in as few batches across all recognizer invocations
+// as possible.
 func (s *Service) invokeRecognizers(
 	ctx context.Context,
-	invocationContext *invocationContext,
+	invocationContext invocationContext,
 	recognizers []*luatypes.Recognizer,
-) (_ []config.IndexJob, err error) {
+) (_ []indexJobOrHint, err error) {
 	ctx, _, endObservation := s.operations.invokeRecognizers.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	patternsForPaths, patternsForContent := partitionPatterns(recognizers)
+	patternsForPaths := luatypes.FlattenRecognizerPatterns(recognizers, false)
+	patternsForContent := luatypes.FlattenRecognizerPatterns(recognizers, true)
 
 	// Find the list of paths that match either of the partitioned pattern sets. We will feed the
 	// concrete paths from this call into the archive call that follows, at least for the concrete
@@ -146,21 +253,21 @@ func (s *Service) invokeRecognizers(
 		return nil, err
 	}
 
-	jobs, err := s.invokeRecognizerChains(ctx, invocationContext, recognizers, paths, contentsByPath)
+	jobOrHints, err := s.invokeRecognizerChains(ctx, invocationContext, recognizers, paths, contentsByPath)
 	if err != nil {
 		return nil, err
 	}
 
-	return jobs, err
+	return jobOrHints, err
 }
 
 // resolvePaths requests all paths matching the given combined regular expression from gitserver. This
-// list will likely be a superset of any one recognizer, so we'll need to filter the data before each
-// individual recognizer invocation so that we only pass in what matches the set of patterns specific to
-// that recognizer instance.
+// list will likely be a superset of any one recognizer's expected set of paths, so we'll need to filter
+// the data before each individual recognizer invocation so that we only pass in what matches the set of
+// patterns specific to that recognizer instance.
 func (s *Service) resolvePaths(
 	ctx context.Context,
-	invocationContext *invocationContext,
+	invocationContext invocationContext,
 	patternsForPaths []*luatypes.PathPattern,
 ) (_ []string, err error) {
 	ctx, traceLogger, endObservation := s.operations.resolvePaths.With(ctx, &err, observation.Args{})
@@ -190,7 +297,7 @@ func (s *Service) resolvePaths(
 // The contents are fetched via a single git archive call.
 func (s *Service) resolveFileContents(
 	ctx context.Context,
-	invocationContext *invocationContext,
+	invocationContext invocationContext,
 	paths []string,
 	patternsForContent []*luatypes.PathPattern,
 ) (_ map[string]string, err error) {
@@ -255,19 +362,20 @@ func (api *registrationAPI) Register(recognizer *luatypes.Recognizer) {
 	api.recognizers = append(api.recognizers, recognizer)
 }
 
-// invokeRecognizerChains invokes each of the recognizers and combines their complete output.
+// invokeRecognizerChains invokes each of the given recognizer's callback function and combines
+// their complete output.
 func (s *Service) invokeRecognizerChains(
 	ctx context.Context,
-	invocationContext *invocationContext,
+	invocationContext invocationContext,
 	recognizers []*luatypes.Recognizer,
 	paths []string,
 	contentsByPath map[string]string,
-) (jobs []config.IndexJob, _ error) {
+) (jobOrHints []indexJobOrHint, _ error) {
 	registrationAPI := &registrationAPI{}
 
-	// Invoke the recognizers and gather the resulting jobs
+	// Invoke the recognizers and gather the resulting jobs or hints
 	for _, recognizer := range recognizers {
-		additionalJobs, err := s.invokeRecognizerChainUntilResults(
+		additionalJobOrHints, err := s.invokeRecognizerChainUntilResults(
 			ctx,
 			invocationContext,
 			recognizer,
@@ -279,7 +387,7 @@ func (s *Service) invokeRecognizerChains(
 			return nil, err
 		}
 
-		jobs = append(jobs, additionalJobs...)
+		jobOrHints = append(jobOrHints, additionalJobOrHints...)
 	}
 
 	if len(registrationAPI.recognizers) != 0 {
@@ -287,53 +395,53 @@ func (s *Service) invokeRecognizerChains(
 		// of recognizers. This allows users to have control over conditional execution so that
 		// gitserver data requests re minimal when requested with the expected query patterns.
 
-		additionalJobs, err := s.invokeRecognizers(ctx, invocationContext, registrationAPI.recognizers)
+		additionalJobOrHints, err := s.invokeRecognizers(ctx, invocationContext, registrationAPI.recognizers)
 		if err != nil {
 			return nil, err
 		}
-		jobs = append(jobs, additionalJobs...)
+		jobOrHints = append(jobOrHints, additionalJobOrHints...)
 	}
 
-	return jobs, nil
+	return jobOrHints, nil
 }
 
-// invokeRecognizerChainUntilResults invokes each of the linearized recognizers from the given
-// recognizer root in sequence until a non-nil error or non-empty set of results are returned.
-// Any remaining recognizers in the chain are not invoked.
+// invokeRecognizerChainUntilResults invokes the callback function from each recognizer reachable
+// from the given root recognizer. Once a non-nil error or non-empty set of results are returned
+// from a recognizer, the chain invocation halts and the recognizer's index job or hint values
+// are returned.
 func (s *Service) invokeRecognizerChainUntilResults(
 	ctx context.Context,
-	invocationContext *invocationContext,
+	invocationContext invocationContext,
 	recognizer *luatypes.Recognizer,
 	registrationAPI *registrationAPI,
 	paths []string,
 	contentsByPath map[string]string,
-) ([]config.IndexJob, error) {
-	for _, recognizer := range luatypes.LinearizeRecognizer(recognizer) {
-		if values, err := s.invokeLinearizedRecognizer(
+) ([]indexJobOrHint, error) {
+	for _, recognizer := range invocationContext.linearize(recognizer) {
+		if jobOrHints, err := s.invokeLinearizedRecognizer(
 			ctx,
 			invocationContext,
 			recognizer,
 			registrationAPI,
 			paths,
 			contentsByPath,
-		); err != nil || len(values) > 0 {
-			return values, err
+		); err != nil || len(jobOrHints) > 0 {
+			return jobOrHints, err
 		}
 	}
 
 	return nil, nil
 }
 
-// invokeLinearizedRecognizer invokes a single recognizer callback and converts the return
-// value to a slice of index jobs.
+// invokeLinearizedRecognizer invokes a single recognizer callback.
 func (s *Service) invokeLinearizedRecognizer(
 	ctx context.Context,
-	invocationContext *invocationContext,
+	invocationContext invocationContext,
 	recognizer *luatypes.Recognizer,
 	registrationAPI *registrationAPI,
 	paths []string,
 	contentsByPath map[string]string,
-) (_ []config.IndexJob, err error) {
+) (_ []indexJobOrHint, err error) {
 	ctx, _, endObservation := s.operations.invokeLinearizedRecognizer.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
@@ -347,17 +455,17 @@ func (s *Service) invokeLinearizedRecognizer(
 
 	opts := luasandbox.RunOptions{}
 	args := []interface{}{registrationAPI, callPaths, callContentsByPath}
-	value, err := invocationContext.sandbox.Call(ctx, opts, recognizer.Generator(), args...)
+	value, err := invocationContext.sandbox.Call(ctx, opts, invocationContext.callback(recognizer), args...)
 	if err != nil {
 		return nil, err
 	}
 
-	jobs, err := luatypes.IndexJobsFromTable(value)
+	jobOrHints, err := invocationContext.scanLuaValue(value)
 	if err != nil {
 		return nil, err
 	}
 
-	return jobs, nil
+	return jobOrHints, nil
 }
 
 // filterPathsForRecognizer creates a copy of the the given path slice and file content map
