@@ -231,11 +231,11 @@ func (t *traceLogger) Log(fields ...otlog.Field) {
 	}
 	if t.trace != nil {
 		t.trace.LogFields(fields...)
-	}
-	if enableTraceLog {
-		t.Logger.
-			AddCallerSkip(1). // Log() -> Logger
-			Info("trace.log", toLogFields(fields)...)
+		if enableTraceLog {
+			t.Logger.
+				AddCallerSkip(1). // Log() -> Logger
+				Info("trace.log", toLogFields(fields)...)
+		}
 	}
 }
 
