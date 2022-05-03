@@ -276,6 +276,9 @@ export const gitlabCodeHost = subtypeOf<CodeHost>()({
         }
         return null
     },
+    // We listen to links clicks instead of 'hashchange' event as GitLab uses anchor links
+    // to scroll to the selected line. Link click doesn't trigger 'hashchange' event
+    // despite the URL hash is updated.
     observeLineSelection: fromEvent(document, 'click').pipe(
         filter(event => (event.target as HTMLElement).matches('a[data-line-number]')),
         map(() => parseHash(window.location.hash))

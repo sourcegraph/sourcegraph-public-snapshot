@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import { trimStart } from 'lodash'
 import { render } from 'react-dom'
 import { defer, fromEvent, of } from 'rxjs'
-import { distinctUntilChanged, filter, map } from 'rxjs/operators'
+import { distinctUntilChanged, filter, map, startWith } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 
 import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellify'
@@ -805,6 +805,9 @@ export const githubCodeHost: GithubCodeHost = {
             : ''
         return `https://${target.rawRepoName}/blob/${revision}/${target.filePath}${fragment}`
     },
-    observeLineSelection: fromEvent(window, 'hashchange').pipe(map(() => parseHash(window.location.hash))),
+    observeLineSelection: fromEvent(window, 'hashchange').pipe(
+        startWith(undefined), // capture intital value
+        map(() => parseHash(window.location.hash))
+    ),
     codeViewsRequireTokenization: true,
 }
