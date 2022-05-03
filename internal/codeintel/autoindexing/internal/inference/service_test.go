@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/regexp"
+	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -67,7 +68,7 @@ func testRecognizer(t *testing.T, testCase recognizerTestCase) {
 			return unpacktest.CreateZipArchive(t, files)
 		})
 
-		jobs, err := newService(sandboxService, gitService, &observation.TestContext).InferIndexJobs(
+		jobs, err := newService(sandboxService, gitService, rate.NewLimiter(rate.Limit(100), 1), &observation.TestContext).InferIndexJobs(
 			context.Background(),
 			api.RepoName("github.com/test/test"),
 			"HEAD",

@@ -425,16 +425,28 @@ func TestFindClosestDumpsIndexerName(t *testing.T) {
 			{UploadID: 5, Distance: 0},
 		},
 		makeCommit(2): {
-			{UploadID: 1, Distance: 1}, {UploadID: 2, Distance: 0},
-			{UploadID: 5, Distance: 1}, {UploadID: 6, Distance: 0},
+			{UploadID: 1, Distance: 1},
+			{UploadID: 2, Distance: 0},
+			{UploadID: 5, Distance: 1},
+			{UploadID: 6, Distance: 0},
 		},
 		makeCommit(3): {
-			{UploadID: 1, Distance: 2}, {UploadID: 2, Distance: 1}, {UploadID: 3, Distance: 0},
-			{UploadID: 5, Distance: 2}, {UploadID: 6, Distance: 1}, {UploadID: 7, Distance: 0},
+			{UploadID: 1, Distance: 2},
+			{UploadID: 2, Distance: 1},
+			{UploadID: 3, Distance: 0},
+			{UploadID: 5, Distance: 2},
+			{UploadID: 6, Distance: 1},
+			{UploadID: 7, Distance: 0},
 		},
 		makeCommit(4): {
-			{UploadID: 1, Distance: 3}, {UploadID: 2, Distance: 2}, {UploadID: 3, Distance: 1}, {UploadID: 4, Distance: 0},
-			{UploadID: 5, Distance: 3}, {UploadID: 6, Distance: 2}, {UploadID: 7, Distance: 1}, {UploadID: 8, Distance: 0},
+			{UploadID: 1, Distance: 3},
+			{UploadID: 2, Distance: 2},
+			{UploadID: 3, Distance: 1},
+			{UploadID: 4, Distance: 0},
+			{UploadID: 5, Distance: 3},
+			{UploadID: 6, Distance: 2},
+			{UploadID: 7, Distance: 1},
+			{UploadID: 8, Distance: 0},
 		},
 	}
 	if diff := cmp.Diff(expectedVisibleUploads, normalizeVisibleUploads(visibleUploads)); diff != "" {
@@ -662,7 +674,6 @@ func testAllOf(t *testing.T, dumps []Dump, expectedIDs []int) {
 			return
 		}
 	}
-
 }
 
 func testPresence(needle int, haystack []int) bool {

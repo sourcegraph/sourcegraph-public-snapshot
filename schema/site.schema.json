@@ -1247,7 +1247,7 @@
     "insights.compute.graphql": {
       "description": "Force GraphQL mode for insights compute searches. This will overwrite the default streaming behavior and force search clients to use the GraphQL API",
       "type": "boolean",
-      "!go": {"pointer":  true},
+      "!go": { "pointer": true },
       "group": "CodeInsights",
       "default": false
     },

@@ -216,6 +216,8 @@ func (s *Store) DeleteSourcedCommits(ctx context.Context, repositoryID int, comm
 	now = now.UTC()
 	interval := int(maximumCommitLag / time.Second)
 
+	unset, _ := s.Store.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "upload associated with unknown commit")
+	defer unset(ctx)
 	uploadsUpdated, uploadsDeleted, indexesDeleted, err = scanTripleOfCounts(s.Query(ctx, sqlf.Sprintf(
 		deleteSourcedCommitsQuery,
 		repositoryID, commit, // candidate_uploads

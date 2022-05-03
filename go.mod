@@ -3,12 +3,12 @@ module github.com/sourcegraph/sourcegraph
 go 1.17
 
 require (
-	bitbucket.org/creachadair/shell v0.0.7
 	cloud.google.com/go/kms v1.1.0
 	cloud.google.com/go/monitoring v1.2.0
 	cloud.google.com/go/profiler v0.2.0
 	cloud.google.com/go/pubsub v1.17.1
 	cloud.google.com/go/storage v1.19.0
+	github.com/BurntSushi/toml v0.4.1
 	github.com/Masterminds/semver v1.5.0
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/PuerkitoBio/rehttp v1.1.0
@@ -24,7 +24,6 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.24.1
 	github.com/aws/smithy-go v1.11.0
 	github.com/beevik/etree v1.1.0
-	github.com/bitfield/script v0.20.0
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
 	github.com/buildkite/go-buildkite/v3 v3.0.1
 	github.com/cespare/xxhash v1.1.0
@@ -187,7 +186,6 @@ require (
 require (
 	cloud.google.com/go/compute v1.5.0 // indirect
 	cloud.google.com/go/iam v0.1.1 // indirect
-	github.com/BurntSushi/toml v0.4.1 // indirect
 	github.com/DataDog/datadog-agent/pkg/obfuscate v0.35.1 // indirect
 	github.com/DataDog/datadog-go v4.8.3+incompatible // indirect
 	github.com/DataDog/datadog-go/v5 v5.1.0 // indirect
@@ -206,8 +204,6 @@ require (
 	github.com/envoyproxy/protoc-gen-validate v0.6.3 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/huandu/xstrings v1.3.2 // indirect
-	github.com/itchyny/gojq v0.12.7 // indirect
-	github.com/itchyny/timefmt-go v0.1.3 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect

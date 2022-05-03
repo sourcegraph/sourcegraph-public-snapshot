@@ -5,7 +5,8 @@ import com.intellij.openapi.util.Disposer;
 import com.intellij.ui.jcef.JBCefApp;
 import com.intellij.ui.jcef.JBCefBrowser;
 import com.intellij.ui.jcef.JBCefBrowserBase;
-import com.intellij.util.ui.UIUtil;
+import com.sourcegraph.bridge.JSToJavaBridge;
+import com.sourcegraph.bridge.JSToJavaBridgeRequestHandler;
 import com.sourcegraph.scheme.SchemeHandlerFactory;
 import org.cef.CefApp;
 import org.cef.browser.CefBrowser;
@@ -21,24 +22,27 @@ public class JCEFWindow {
     public JCEFWindow(Project project) {
         panel = new JPanel(new BorderLayout());
 
+        /* Make sure JCEF is supported */
         if (!JBCefApp.isSupported()) {
             JLabel warningLabel = new JLabel("Unfortunately, the browser is not available on your system. Try running the IDE with the default OpenJDK.");
             panel.add(warningLabel);
             return;
         }
 
+        /* Create and set up JCEF browser */
         JBCefBrowserBase browser = new JBCefBrowser("http://sourcegraph/html/index.html");
         this.cefBrowser = browser.getCefBrowser();
-
         CefApp.getInstance().registerSchemeHandlerFactory("http", "sourcegraph", new SchemeHandlerFactory());
+        browser.setPageBackgroundColor(ThemeService.getPanelBackgroundColorHexString());
+        Disposer.register(project, browser);
 
+        /* Add browser to panel */
         panel.add(Objects.requireNonNull(browser.getComponent()), BorderLayout.CENTER);
 
-
-        String backgroundColor = "#" + Integer.toHexString(UIUtil.getPanelBackground().getRGB()).substring(2);
-        browser.setPageBackgroundColor(backgroundColor);
-
-        Disposer.register(project, browser);
+        /* Create bridge, set up handlers, then run init function */
+        String initJSCode = "window.initializeSourcegraph(" + (ThemeService.isDarkTheme() ? "true" : "false") + ");";
+        JSToJavaBridge bridge = new JSToJavaBridge(browser, new JSToJavaBridgeRequestHandler(), initJSCode);
+        Disposer.register(browser, bridge);
     }
 
     public JPanel getContent() {
