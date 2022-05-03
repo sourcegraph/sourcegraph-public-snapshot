@@ -97,6 +97,27 @@ func (c *Client) Version(ctx context.Context, project, version string) (File, er
 
 // FindVersion finds the File for the given version amongst files from a project.
 func FindVersion(version string, files []File) (File, error) {
+	if len(files) == 0 {
+		return File{}, errors.Errorf("no files")
+	}
+	if version == "" {
+		for i := len(files) - 1; i >= 0; i-- {
+			if w, err := ToWheel(files[i]); err != nil {
+				version = w.Version
+				break
+			} else if s, err := ToSDist(files[i]); err != nil {
+				continue
+			} else {
+				version = s.Version
+				break
+			}
+		}
+	}
+
+	if version == "" {
+		return File{}, NotFoundError{errors.New("could not find a wheel or source distribution to determine the latest version")}
+	}
+
 	// Return the first source distribution we can find for the version.
 	var wheelAtVersion *File
 	for i, f := range files {
@@ -114,7 +135,15 @@ func FindVersion(version string, files []File) (File, error) {
 		return *wheelAtVersion, nil
 	}
 
-	return File{}, errors.Errorf("could not find a wheel or source distribution for version %s", version)
+	return File{}, NotFoundError{errors.Errorf("could not find a wheel or source distribution for version %s", version)}
+}
+
+type NotFoundError struct {
+	error
+}
+
+func (e NotFoundError) NotFound() bool {
+	return true
 }
 
 // File represents one anchor element in the response from /<project>/.
