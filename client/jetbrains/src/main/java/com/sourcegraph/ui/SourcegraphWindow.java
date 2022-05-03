@@ -38,7 +38,7 @@ public class SourcegraphWindow implements Disposable {
         JBPanel<JBPanelWithEmptyText> editorPanel = new JBPanelWithEmptyText(new BorderLayout());
 
         JCEFService service = project.getService(JCEFService.class);
-        this.jcefWindow = service.getWindow();
+        this.jcefWindow = service.getJcefWindow();
 
         JPanel topPanel = new JPanel(new BorderLayout());
         topPanel.add(this.jcefWindow.getContent());
