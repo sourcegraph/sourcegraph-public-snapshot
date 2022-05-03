@@ -271,26 +271,26 @@ export const ReferencesList: React.FunctionComponent<
     const implementations = useMemo(() => data?.implementations.nodes ?? [], [data])
 
     const { locationsByNumber, numbersByLocation } = useMemo(() => {
-        const locationsByNumber: Record<number, Location> = {}
-        const numbersByLocation: Record<string, number> = {}
+        const locationsByNumber: Map<number, Location> = new Map()
+        const numbersByLocation: Map<string, number> = new Map()
 
         let count = 0
 
         for (const location of definitions) {
-            locationsByNumber[count] = location
-            numbersByLocation[location.url] = count
+            locationsByNumber.set(count, location)
+            numbersByLocation.set(location.url, count)
             count += 1
         }
 
         for (const location of references) {
-            locationsByNumber[count] = location
-            numbersByLocation[location.url] = count
+            locationsByNumber.set(count, location)
+            numbersByLocation.set(location.url, count)
             count += 1
         }
 
         for (const location of implementations) {
-            locationsByNumber[count] = location
-            numbersByLocation[location.url] = count
+            locationsByNumber.set(count, location)
+            numbersByLocation.set(location.url, count)
             count += 1
         }
 
@@ -342,37 +342,45 @@ export const ReferencesList: React.FunctionComponent<
         [blobMemoryHistory, setActiveLocation]
     )
 
-    const onNextLocation = useCallback((): void => {
-        console.log('next location, activeLocation', activeLocation)
-        let number = 0
-        if (activeLocation !== undefined) {
-            number = numbersByLocation[activeLocation.url]
-        }
+    const onNextLocation = (): void => {
+        setActiveLocation(activeLocation => {
+            let number = 0
+            if (activeLocation !== undefined) {
+                const activeLocationNumber = numbersByLocation.get(activeLocation.url)
+                if (activeLocationNumber !== undefined) {
+                    number = activeLocationNumber
+                }
+            }
 
-        const nextLocation = locationsByNumber[number + 1]
-        if (nextLocation === undefined) {
-            console.log('no next location found')
-            return
-        }
-        console.log('setting next location', number, nextLocation)
-        onReferenceClick(nextLocation)
-    }, [onReferenceClick, locationsByNumber, numbersByLocation, activeLocation])
+            const nextLocation = locationsByNumber.get(number + 1)
+            if (nextLocation === undefined) {
+                return
+            }
 
-    const onPrevLocation = useCallback((): void => {
-        console.log('prev location, activeLocation', activeLocation)
-        let number = 0
-        if (activeLocation !== undefined) {
-            number = numbersByLocation[activeLocation.url]
-        }
+            blobMemoryHistory.push(nextLocation.url)
+            return nextLocation
+        })
+    }
 
-        const nextLocation = locationsByNumber[number - 1]
-        if (nextLocation === undefined) {
-            console.log('no prev location found')
-            return
-        }
-        console.log('setting prev location', number, nextLocation)
-        onReferenceClick(nextLocation)
-    }, [onReferenceClick, locationsByNumber, numbersByLocation, activeLocation])
+    const onPreviousLocation = (): void => {
+        setActiveLocation(activeLocation => {
+            let number = 0
+            if (activeLocation !== undefined) {
+                const activeLocationNumber = numbersByLocation.get(activeLocation.url)
+                if (activeLocationNumber !== undefined) {
+                    number = activeLocationNumber
+                }
+            }
+
+            const nextLocation = locationsByNumber.get(number - 1)
+            if (nextLocation === undefined) {
+                return
+            }
+
+            blobMemoryHistory.push(nextLocation.url)
+            return nextLocation
+        })
+    }
 
     // This is the history of the panel, that is inside a memory router
     const panelHistory = useHistory()
@@ -536,7 +544,7 @@ export const ReferencesList: React.FunctionComponent<
                 </div>
             )}
             <Shortcut {...KEYBOARD_SHORTCUT_NEXT_LOCATION.keybindings[0]} onMatch={onNextLocation} />
-            <Shortcut {...KEYBOARD_SHORTCUT_PREV_LOCATION.keybindings[0]} onMatch={onPrevLocation} />
+            <Shortcut {...KEYBOARD_SHORTCUT_PREV_LOCATION.keybindings[0]} onMatch={onPreviousLocation} />
         </div>
     )
 }
