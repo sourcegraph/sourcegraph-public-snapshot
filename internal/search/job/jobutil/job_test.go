@@ -110,20 +110,20 @@ func TestToSearchInputs(t *testing.T) {
 
 	autogold.Want("commit", `
 (PARALLEL
-  Commit
+  CommitSearchJob
   ComputeExcludedRepos)
 `).Equal(t, test("type:commit test", search.Streaming, query.ParseRegexp))
 
 	autogold.Want("diff", `
 (PARALLEL
-  Diff
+  DiffSearchJob
   ComputeExcludedRepos)
 `).Equal(t, test("type:diff test", search.Streaming, query.ParseRegexp))
 
 	autogold.Want("Streaming: file or commit", `
 (PARALLEL
   ZoektGlobalSearch
-  Commit
+  CommitSearchJob
   ComputeExcludedRepos)
 `).Equal(t, test("type:file type:commit test", search.Streaming, query.ParseRegexp))
 
@@ -137,7 +137,7 @@ func TestToSearchInputs(t *testing.T) {
     (PARALLEL
       ZoektSymbolSearch
       SymbolSearcher))
-  Commit
+  CommitSearchJob
   RepoSearch
   ComputeExcludedRepos)
 `).Equal(t, test("type:file type:path type:repo type:commit type:symbol repo:test test", search.Streaming, query.ParseRegexp))
@@ -146,7 +146,7 @@ func TestToSearchInputs(t *testing.T) {
 	autogold.Want("Batched: file or commit", `
 (PARALLEL
   ZoektGlobalSearch
-  Commit
+  CommitSearchJob
   ComputeExcludedRepos)
 `).Equal(t, test("type:file type:commit test", search.Batch, query.ParseRegexp))
 
@@ -160,7 +160,7 @@ func TestToSearchInputs(t *testing.T) {
     (PARALLEL
       ZoektSymbolSearch
       SymbolSearcher))
-  Commit
+  CommitSearchJob
   RepoSearch
   ComputeExcludedRepos)
 `).Equal(t, test("type:file type:path type:repo type:commit type:symbol repo:test test", search.Batch, query.ParseRegexp))

@@ -763,7 +763,7 @@ func optimizeJobs(baseJob job.Job, inputs *run.SearchInputs, q query.Basic) (job
 				return currentJob
 
 			case *commit.CommitSearchJob:
-				if exists("Commit") || exists("Diff") {
+				if exists("CommitSearchJob") || exists("DiffSearchJob") {
 					return &noopJob{}
 				}
 				return currentJob
