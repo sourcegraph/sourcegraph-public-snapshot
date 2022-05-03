@@ -122,6 +122,15 @@ func TestParseRawImgString(t *testing.T) {
 			},
 		},
 		{
+			"only tag",
+			"index.docker.io/prom/prometheus:v2.35.0",
+			&ImageReference{
+				Registry: "docker.io",
+				Name:     "prom/prometheus",
+				Tag:      "v2.35.0",
+			},
+		},
+		{
 			"only digest",
 			"index.docker.io/sourcegraph/server@sha256:07d7407fdc656d7513aa54cdffeeecb33aa4e284eea2fd82e27342411430e5f2",
 			&ImageReference{
