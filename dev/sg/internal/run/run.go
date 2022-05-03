@@ -584,9 +584,18 @@ func Test(ctx context.Context, cmd Command, args []string, parentEnv map[string]
 		cmdArgs = append(cmdArgs, cmd.DefaultArgs)
 	}
 
+	secretsEnv, err := getSecrets(ctx, cmd)
+	if err != nil {
+		return errors.Wrapf(err, "cannot fetch secrets")
+	}
+
+	if cmd.Preamble != "" {
+		stdout.Out.WriteLine(output.Linef("", output.StyleOrange, "[%s] %s %s", cmd.Name, output.EmojiInfo, cmd.Preamble))
+	}
+
 	c := exec.CommandContext(commandCtx, "bash", "-c", strings.Join(cmdArgs, " "))
 	c.Dir = root
-	c.Env = makeEnv(parentEnv, cmd.Env)
+	c.Env = makeEnv(parentEnv, secretsEnv, cmd.Env)
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
 
