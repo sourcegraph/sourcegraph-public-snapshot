@@ -314,6 +314,14 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 			{Month: fmt.Sprintf("%d-%02d-01T00:00:00Z", pastYear, pastMonth), Count: 2},
 			{Month: fmt.Sprintf("%d-%02d-01T00:00:00Z", currentYear, currentMonth), Count: 1},
 		},
+		WeeklyBulkOperationStats: []*types.WeeklyBulkOperationStats{
+			{Week: "2022-03-21T00:00:00Z", Count: 1, BulkOperation: "reenqueue"},
+			{Week: "2022-03-21T00:00:00Z", Count: 1, BulkOperation: "merge"},
+			{Week: "2022-03-21T00:00:00Z", Count: 2, BulkOperation: "commentatore"},
+			{Week: "2022-03-21T00:00:00Z", Count: 2, BulkOperation: "publish"},
+			{Week: "2022-03-21T00:00:00Z", Count: 1, BulkOperation: "close"},
+			{Week: "2022-03-21T00:00:00Z", Count: 1, BulkOperation: "detach"},
+		},
 	}
 	if diff := cmp.Diff(want, have); diff != "" {
 		t.Fatal(diff)

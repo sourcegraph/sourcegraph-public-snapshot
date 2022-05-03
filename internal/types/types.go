@@ -872,27 +872,51 @@ type BatchChangesUsageStatistics struct {
 
 	// this refers to the number of users who ran a job on an executor in a given month
 	MonthlyBatchChangesExecutorUsage []*MonthlyBatchChangesExecutorUsage
+
+	WeeklyBulkOperationStats []*WeeklyBulkOperationStats
+}
+
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
+type WeeklyBulkOperationStats struct {
+	// Week is the week of this cohort and is used to group batch changes by
+	// their creation date.
+	Week string
+
+	// Count is the number of bulk operations carried out in a particular week.
+	Count int32
+
+	BulkOperation string
 }
 
 type MonthlyBatchChangesExecutorUsage struct {
+	// Month is the month of this in which we check the amount of unique users
+	// that ran a job using an executor.
 	Month string
 
-	// number of unique users who ran a job on an executor
+	// number of unique users who ran a job on an executor.
 	Count int32
 }
 
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
 type BatchChangeStatsBySource struct {
 	// the source of the changesets belonging to the batch changes
-	// indicating whether the changeset was created via an executor or locally
+	// indicating whether the changeset was created via an executor or locally.
 	Source BatchChangeSource
 
-	// the amount of changesets published using this batch change source
+	// the amount of changesets published using this batch change source.
 	PublishedChangesetsCount int32
 
-	// the amount of batch changes created from this source
+	// the amount of batch changes created from this source.
 	BatchChangesCount int32
 }
 
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
 type ChangesetDistribution struct {
 	// the source of the changesets belonging to the batch changes
 	// indicating whether the changeset was created via an executor or locally

@@ -88,27 +88,7 @@ WHERE name IN ('BatchSpecCreated', 'ViewBatchChangeApplyPage', 'ViewBatchChangeD
 		return nil, err
 	}
 
-	const bulkOperationsCountQuery = `SELECT job_type, count(id) FROM changeset_jobs GROUP BY job_type;`
-
-	rows, err := db.QueryContext(ctx, bulkOperationsCountQuery)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	stats.BulkOperationsCount = make(map[string]int32)
-
-	for rows.Next() {
-		var jobType string
-		var count int32
-		if err = rows.Scan(&jobType, &count); err != nil {
-			return nil, err
-		}
-
-		stats.BulkOperationsCount[jobType] = count
-	}
-
-	changesetDistributionQuery := `
+	const changesetDistributionQuery = `
 SELECT
 	COUNT(*),
 	batch_changes_range.range,
@@ -132,7 +112,7 @@ FROM (
 GROUP BY batch_changes_range.range, created_from_raw;
 `
 
-	rows, err = db.QueryContext(ctx, changesetDistributionQuery)
+	rows, err := db.QueryContext(ctx, changesetDistributionQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -276,7 +256,7 @@ ORDER BY batch_change_counts.creation_week ASC
 		stats.BatchChangesCohorts = append(stats.BatchChangesCohorts, &cohort)
 	}
 
-	batchChangeSourceStatQuery := `
+	const batchChangeSourceStatQuery = `
 SELECT
 	batch_specs.created_from_raw,
 	COUNT(changesets.id) AS published_changesets_count,
@@ -315,15 +295,14 @@ GROUP BY batch_specs.created_from_raw;
 		})
 	}
 
-	monthlyExecutorUsageQuery := `
+	const monthlyExecutorUsageQuery = `
 SELECT
 	DATE_TRUNC('month', batch_specs.created_at)::date as month,
 	COUNT(DISTINCT batch_spec_resolution_jobs.initiator_id)
 FROM batch_specs
 INNER JOIN batch_spec_resolution_jobs ON batch_spec_resolution_jobs.batch_spec_id = batch_specs.id
 WHERE batch_specs.created_from_raw IS TRUE
-GROUP BY date_trunc('month', batch_specs.created_at)::date
-ORDER BY date_trunc('month', batch_specs.created_at)::date;
+GROUP BY date_trunc('month', batch_specs.created_at)::date;
 `
 
 	rows, err = db.QueryContext(ctx, monthlyExecutorUsageQuery)
@@ -345,6 +324,58 @@ ORDER BY date_trunc('month', batch_specs.created_at)::date;
 			Count: usersCount,
 		})
 	}
+
+	const weeklyBulkOperationsStatQuery = `
+SELECT
+	job_type,
+	count(id),
+	date_trunc('week', created_at)::date
+FROM changeset_jobs
+GROUP BY date_trunc('week', created_at)::date, job_type;
+`
+	rows, err = db.QueryContext(ctx, weeklyBulkOperationsStatQuery)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	stats.BulkOperationsCount = make(map[string]int32)
+	for rows.Next() {
+		var bulkOperaton, week string
+		var count int32
+
+		if err = rows.Scan(&bulkOperaton, &count, &week); err != nil {
+			return nil, err
+		}
+
+		stats.BulkOperationsCount[bulkOperaton] += count
+
+		stats.WeeklyBulkOperationStats = append(stats.WeeklyBulkOperationStats, &types.WeeklyBulkOperationStats{
+			BulkOperation: bulkOperaton,
+			Week:          week,
+			Count:         count,
+		})
+	}
+
+	// const bulkOperationsCountQuery = `SELECT job_type, count(id) FROM changeset_jobs GROUP BY job_type;`
+
+	// rows, err := db.QueryContext(ctx, bulkOperationsCountQuery)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// defer rows.Close()
+
+	// stats.BulkOperationsCount = make(map[string]int32)
+
+	// for rows.Next() {
+	// 	var jobType string
+	// 	var count int32
+	// 	if err = rows.Scan(&jobType, &count); err != nil {
+	// 		return nil, err
+	// 	}
+
+	// 	stats.BulkOperationsCount[jobType] = count
+	// }
 
 	return &stats, nil
 }
