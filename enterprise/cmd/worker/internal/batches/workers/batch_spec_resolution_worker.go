@@ -31,6 +31,6 @@ func NewBatchSpecResolutionWorker(
 		Metrics:           workerutil.NewMetrics(observationContext, "batch_changes_batch_spec_resolution_worker"),
 	}
 
-	worker := dbworker.NewWorker(ctx, logger, workerStore, e.HandlerFunc(), options)
+	worker := dbworker.NewWorker(ctx, workerStore, e.HandlerFunc(), options)
 	return worker
 }

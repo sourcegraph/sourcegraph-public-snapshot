@@ -22,7 +22,7 @@ func NewBackgroundJobs(logger log.Logger, db edb.EnterpriseDB) []goroutine.Backg
 		newTriggerJobsLogDeleter(ctx, codeMonitorsStore),
 		newTriggerQueryRunner(ctx, logger, db, triggerMetrics),
 		newTriggerQueryResetter(ctx, codeMonitorsStore, triggerMetrics),
-		newActionRunner(ctx, logger, codeMonitorsStore, actionMetrics),
+		newActionRunner(ctx, codeMonitorsStore, actionMetrics),
 		newActionJobResetter(ctx, codeMonitorsStore, actionMetrics),
 	}
 }

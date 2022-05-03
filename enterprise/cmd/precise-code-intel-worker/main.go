@@ -122,7 +122,6 @@ func main() {
 	// Initialize worker
 	worker := worker.NewWorker(
 		&worker.DBStoreShim{Store: dbStore},
-		logger,
 		workerStore,
 		&worker.LSIFStoreShim{Store: lsifStore},
 		uploadStore,

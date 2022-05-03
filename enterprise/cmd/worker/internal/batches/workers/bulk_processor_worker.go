@@ -35,7 +35,7 @@ func NewBulkOperationWorker(
 		Metrics:           workerutil.NewMetrics(observationContext, "batch_changes_bulk_processor"),
 	}
 
-	worker := dbworker.NewWorker(ctx, logger, workerStore, r.HandlerFunc(), options)
+	worker := dbworker.NewWorker(ctx, workerStore, r.HandlerFunc(), options)
 	return worker
 }
 

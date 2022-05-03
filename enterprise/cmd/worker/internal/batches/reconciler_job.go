@@ -53,7 +53,6 @@ func (j *reconcilerJob) Routines(_ context.Context, logger log.Logger) ([]gorout
 
 	reconcilerWorker := workers.NewReconcilerWorker(
 		workCtx,
-		logger,
 		bstore,
 		reconcilerStore,
 		gitserver.NewClient(bstore.DatabaseDB()),

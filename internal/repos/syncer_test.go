@@ -30,7 +30,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -690,7 +689,6 @@ func testSyncRepo(s repos.Store) func(*testing.T) {
 		for _, tc := range testCases {
 			tc := tc
 			ctx := context.Background()
-			log := logtest.Scoped(t)
 
 			t.Run(tc.name, func(t *testing.T) {
 				q := sqlf.Sprintf("DELETE FROM repo")
@@ -714,7 +712,7 @@ func testSyncRepo(s repos.Store) func(*testing.T) {
 					),
 				}
 
-				have, err := syncer.SyncRepo(ctx, log, tc.repo, tc.background)
+				have, err := syncer.SyncRepo(ctx, tc.repo, tc.background)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -746,7 +744,6 @@ func testSyncRepo(s repos.Store) func(*testing.T) {
 func testSyncRun(store repos.Store) func(t *testing.T) {
 	return func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
-		log := logtest.Scoped(t)
 		defer cancel()
 
 		svc := &types.ExternalService{
@@ -791,7 +788,7 @@ func testSyncRun(store repos.Store) func(t *testing.T) {
 
 		done := make(chan error)
 		go func() {
-			done <- syncer.Run(ctx, log, store, repos.RunOptions{
+			done <- syncer.Run(ctx, store, repos.RunOptions{
 				EnqueueInterval: func() time.Duration { return time.Second },
 				IsCloud:         false,
 				MinSyncInterval: func() time.Duration { return 1 * time.Millisecond },
@@ -844,7 +841,6 @@ func testSyncRun(store repos.Store) func(t *testing.T) {
 func testSyncerMultipleServices(store repos.Store) func(t *testing.T) {
 	return func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
-		log := logtest.Scoped(t)
 
 		defer cancel()
 
@@ -933,7 +929,7 @@ func testSyncerMultipleServices(store repos.Store) func(t *testing.T) {
 
 		done := make(chan error)
 		go func() {
-			done <- syncer.Run(ctx, log, store, repos.RunOptions{
+			done <- syncer.Run(ctx, store, repos.RunOptions{
 				EnqueueInterval: func() time.Duration { return time.Second },
 				IsCloud:         false,
 				MinSyncInterval: func() time.Duration { return 1 * time.Minute },
@@ -1320,7 +1316,6 @@ func testConflictingSyncers(store repos.Store) func(*testing.T) {
 func testSyncRepoMaintainsOtherSources(store repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
-		log := logtest.Scoped(t)
 		defer cancel()
 
 		now := time.Now()
@@ -1394,7 +1389,7 @@ func testSyncRepoMaintainsOtherSources(store repos.Store) func(*testing.T) {
 				CloneURL: "cloneURL",
 			},
 		}
-		_, err := syncer.SyncRepo(ctx, log, githubRepo.Name, true)
+		_, err := syncer.SyncRepo(ctx, githubRepo.Name, true)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -2066,7 +2061,6 @@ func assertDeletedRepoCount(ctx context.Context, t *testing.T, store repos.Store
 func testSyncReposWithLastErrors(s repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
 		ctx := context.Background()
-		log := logtest.Scoped(t)
 		testCases := []struct {
 			label     string
 			svcKind   string
@@ -2102,7 +2096,7 @@ func testSyncReposWithLastErrors(s repos.Store) func(*testing.T) {
 				}
 
 				// Run the syncer, which should find the repo with non-empty last_error and delete it
-				err := syncer.SyncReposWithLastErrors(ctx, log, rate.NewLimiter(200, 1))
+				err := syncer.SyncReposWithLastErrors(ctx, rate.NewLimiter(200, 1))
 				if err != nil {
 					t.Fatalf("unexpected error running SyncReposWithLastErrors: %s", err)
 				}
@@ -2135,7 +2129,6 @@ func testSyncReposWithLastErrors(s repos.Store) func(*testing.T) {
 func testSyncReposWithLastErrorsHitsRateLimiter(s repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
 		ctx := context.Background()
-		log := logtest.Scoped(t)
 		repoNames := []api.RepoName{
 			"github.com/asdf/jkl",
 			"github.com/foo/bar",
@@ -2145,7 +2138,7 @@ func testSyncReposWithLastErrorsHitsRateLimiter(s repos.Store) func(*testing.T) 
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 		// Run the syncer, which should return an error due to hitting the rate limit
-		err := syncer.SyncReposWithLastErrors(ctx, log, rate.NewLimiter(1, 1))
+		err := syncer.SyncReposWithLastErrors(ctx, rate.NewLimiter(1, 1))
 		if err == nil {
 			t.Fatal("SyncReposWithLastErrors should've returned an error due to hitting rate limit")
 		}

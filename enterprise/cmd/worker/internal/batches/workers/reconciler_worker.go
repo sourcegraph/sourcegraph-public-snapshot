@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // NewReconcilerWorker creates a dbworker.newWorker that fetches enqueued changesets
@@ -19,7 +18,6 @@ import (
 // processing.
 func NewReconcilerWorker(
 	ctx context.Context,
-	logger log.Logger,
 	s *store.Store,
 	workerStore dbworkerstore.Store,
 	gitClient reconciler.GitserverClient,
@@ -36,6 +34,6 @@ func NewReconcilerWorker(
 		Metrics:           workerutil.NewMetrics(observationContext, "batch_changes_reconciler"),
 	}
 
-	worker := dbworker.NewWorker(ctx, logger, workerStore, r.HandlerFunc(), options)
+	worker := dbworker.NewWorker(ctx, workerStore, r.HandlerFunc(), options)
 	return worker
 }

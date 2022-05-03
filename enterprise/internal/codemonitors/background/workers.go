@@ -34,7 +34,7 @@ func newTriggerQueryRunner(ctx context.Context, logger log.Logger, db edb.Enterp
 		HeartbeatInterval: 15 * time.Second,
 		Metrics:           metrics.workerMetrics,
 	}
-	worker := dbworker.NewWorker(ctx, logger, createDBWorkerStoreForTriggerJobs(db), &queryRunner{db: db}, options)
+	worker := dbworker.NewWorker(ctx, createDBWorkerStoreForTriggerJobs(db), &queryRunner{db: db}, options)
 	return worker
 }
 
@@ -82,7 +82,7 @@ func newTriggerJobsLogDeleter(ctx context.Context, store edb.CodeMonitorStore) g
 	return goroutine.NewPeriodicGoroutine(ctx, 60*time.Minute, deleteLogs)
 }
 
-func newActionRunner(ctx context.Context, logger log.Logger, s edb.CodeMonitorStore, metrics codeMonitorsMetrics) *workerutil.Worker {
+func newActionRunner(ctx context.Context, s edb.CodeMonitorStore, metrics codeMonitorsMetrics) *workerutil.Worker {
 	options := workerutil.WorkerOptions{
 		Name:              "code_monitors_action_jobs_worker",
 		NumHandlers:       1,
@@ -90,7 +90,7 @@ func newActionRunner(ctx context.Context, logger log.Logger, s edb.CodeMonitorSt
 		HeartbeatInterval: 15 * time.Second,
 		Metrics:           metrics.workerMetrics,
 	}
-	worker := dbworker.NewWorker(ctx, logger, createDBWorkerStoreForActionJobs(s), &actionRunner{s}, options)
+	worker := dbworker.NewWorker(ctx, createDBWorkerStoreForActionJobs(s), &actionRunner{s}, options)
 	return worker
 }
 

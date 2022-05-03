@@ -75,7 +75,7 @@ func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore
 		return float64(count)
 	}))
 
-	return dbworker.NewWorker(ctx, logger, workerStore, &workHandler{
+	return dbworker.NewWorker(ctx, workerStore, &workHandler{
 		baseWorkerStore: basestore.NewWithDB(workerStore.Handle().DB(), sql.TxOptions{}),
 		insightsStore:   insightsStore,
 		limiter:         limiter,
