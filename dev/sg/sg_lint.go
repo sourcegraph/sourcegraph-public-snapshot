@@ -32,6 +32,10 @@ var lintCommand = &cli.Command{
 			Usage:       "Write helpful output to annotations directory",
 			Destination: &lintGenerateAnnotations,
 		},
+		&cli.StringFlag{
+			Name:  "diff.target",
+			Usage: "Write helpful output to annotations directory",
+		},
 	},
 	Action: func(cmd *cli.Context) error {
 		if cmd.NArg() > 0 {
@@ -127,6 +131,7 @@ type lintTargets []lint.Target
 // Commands converts all lint targets to CLI commands
 func (lt lintTargets) Commands() (cmds []*cli.Command) {
 	for _, c := range lt {
+		c := c // local reference
 		cmds = append(cmds, &cli.Command{
 			Name:  c.Name,
 			Usage: c.Help,

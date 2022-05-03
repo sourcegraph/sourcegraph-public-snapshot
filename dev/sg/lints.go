@@ -5,8 +5,11 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
+
+	"github.com/bitfield/script"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/docker"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/generate/golang"
@@ -32,6 +35,13 @@ var allLintTargets = lintTargets{
 			lint.RunScript("Go lint", "dev/check/go-lint.sh"),
 			lint.RunScript("Go pkg/database/dbconn", "dev/check/go-dbconn-import.sh"),
 			lint.RunScript("Go enterprise imports in OSS", "dev/check/go-enterprise-import.sh"),
+		},
+	},
+	{
+		Name: "logger-migration",
+		Help: "Run linter that enforces the new logger library",
+		Linters: []lint.Runner{
+			lintLoggingLibraries(),
 		},
 	},
 	{
@@ -67,6 +77,82 @@ var allLintTargets = lintTargets{
 			lint.RunScript("Shell lint", "dev/check/shellcheck.sh"),
 		},
 	},
+}
+
+func lintLoggingLibraries() lint.Runner {
+	const header = "Logging library linter"
+
+	return func(ctx context.Context) *lint.Report {
+		start := time.Now()
+
+		// Diffing against origin/main means that this check doesn't do much in CI, but
+		// Robert can't come up with a better paradigm for this so... maybe eventually
+		// we'll introduce a parameter. But for now introducing a paremeter seems more
+		// confusing because it would work inconsistently across the various linters.
+		diffOutput, err := script.Exec("git diff origin/main -- **/*.go").
+			MatchRegexp(regexp.MustCompile(`^\+.*`)).
+			String()
+		if err != nil {
+			return &lint.Report{
+				Duration: time.Since(start),
+				Header:   header,
+				Output:   err.Error(),
+				Err:      err,
+			}
+		}
+
+		diffs := map[string][]string{}
+		var currentFile string
+		for _, line := range strings.Split(diffOutput, "\n") {
+			if strings.HasPrefix(line, "+++") {
+				currentFile = strings.Split(line, " ")[1]
+			} else if len(line) > 0 {
+				diffs[currentFile] = append(diffs[currentFile], strings.TrimPrefix(line, "+"))
+			}
+		}
+
+		banList := []string{
+			`"log"`,
+
+			`"github.com/inconshreveable/log15"`,
+			`log15.`,
+
+			`"go.uber.org/zap"`,
+			`"go.uber.org/zap/zapcore"`,
+			`zap.`,
+		}
+
+		checkFile := func(f string, ls []string) error {
+			for _, l := range ls {
+				for _, banned := range banList {
+					if strings.Contains(l, banned) {
+						return errors.Newf("%s: banned usage '%s': use github.com/sourcegraph/sourcegraph/lib/log instead",
+							f, banned)
+					}
+				}
+			}
+			return nil
+		}
+
+		var errs error
+		for file, lines := range diffs {
+			if err := checkFile(file, lines); err != nil {
+				errs = errors.Append(errs, err)
+			}
+		}
+
+		return &lint.Report{
+			Duration: time.Since(start),
+			Header:   header,
+			Output: func() string {
+				if errs != nil {
+					return strings.TrimSpace(errs.Error())
+				}
+				return ""
+			}(),
+			Err: errs,
+		}
+	}
 }
 
 // lintDockerfiles runs custom Sourcegraph Dockerfile linters
