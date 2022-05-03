@@ -154,7 +154,7 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 
 		if resultTypes.Has(result.TypeCommit) || resultTypes.Has(result.TypeDiff) {
 			diff := resultTypes.Has(result.TypeDiff)
-			addJob(&commit.CommitSearch{
+			addJob(&commit.CommitSearchJob{
 				Query:                commit.QueryToGitQuery(b, diff),
 				RepoOpts:             repoOptions,
 				Diff:                 diff,
@@ -710,7 +710,7 @@ func optimizeJobs(baseJob job.Job, inputs *run.SearchInputs, q query.Basic) (job
 				*symbol.RepoUniverseSymbolSearch,
 				*zoekt.ZoektRepoSubsetSearch,
 				*zoekt.ZoektSymbolSearch,
-				*commit.CommitSearch:
+				*commit.CommitSearchJob:
 				optimizedJobs = append(optimizedJobs, currentJob)
 				return currentJob
 			default:
@@ -762,7 +762,7 @@ func optimizeJobs(baseJob job.Job, inputs *run.SearchInputs, q query.Basic) (job
 				}
 				return currentJob
 
-			case *commit.CommitSearch:
+			case *commit.CommitSearchJob:
 				if exists("Commit") || exists("Diff") {
 					return &noopJob{}
 				}
