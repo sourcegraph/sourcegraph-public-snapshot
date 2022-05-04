@@ -4,8 +4,10 @@ import classNames from 'classnames'
 import { noop } from 'lodash'
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 
+import { isErrorLike } from '@sourcegraph/common'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import {
-    Checkbox,
     Link,
     Menu,
     MenuButton,
@@ -14,9 +16,10 @@ import {
     MenuLink,
     MenuList,
     Position,
+    Checkbox,
 } from '@sourcegraph/wildcard'
 
-import { Insight, InsightDashboard, isVirtualDashboard } from '../../../../core'
+import { Insight, InsightDashboard, InsightType, isVirtualDashboard } from '../../../../core'
 import { useUiFeatures } from '../../../../hooks/use-ui-features'
 
 import { ConfirmDeleteModal } from './ConfirmDeleteModal'
@@ -24,7 +27,7 @@ import { ConfirmRemoveModal } from './ConfirmRemoveModal'
 
 import styles from './InsightContextMenu.module.scss'
 
-export interface InsightCardMenuProps {
+export interface InsightCardMenuProps extends SettingsCascadeProps<Settings> {
     insight: Insight
     dashboard: InsightDashboard | null
     zeroYAxisMin: boolean
@@ -48,6 +51,15 @@ export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> =
     const editUrl = dashboard?.id
         ? `/insights/edit/${insightID}?dashboardId=${dashboard.id}`
         : `/insights/edit/${insightID}`
+    const showQuickFix =
+        insight.title.includes('[quickfix]') &&
+        props.settingsCascade.final !== null &&
+        !isErrorLike(props.settingsCascade.final) &&
+        props.settingsCascade.final.experimentalFeatures?.goCodeCheckerTemplates
+    const quickFixUrl =
+        insight.type === InsightType.SearchBased
+            ? `/batch-changes/create?kind=goChecker${insight.series[0]?.name}&title=${insight.title}`
+            : undefined
 
     const withinVirtualDashboard = !!dashboard && isVirtualDashboard(dashboard)
 
@@ -97,6 +109,12 @@ export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> =
                                         label="Start Y Axis at 0"
                                     />
                                 </MenuItem>
+                            )}
+
+                            {quickFixUrl && showQuickFix && (
+                                <MenuLink as={Link} className={styles.item} to={quickFixUrl}>
+                                    Golang quick fixes
+                                </MenuLink>
                             )}
 
                             {dashboard && (

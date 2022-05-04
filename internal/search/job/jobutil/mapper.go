@@ -26,7 +26,7 @@ type Mapper struct {
 	MapRepoSearchJob               func(*run.RepoSearch) *run.RepoSearch
 	MapRepoUniverseTextSearchJob   func(*zoekt.GlobalSearch) *zoekt.GlobalSearch
 	MapStructuralSearchJob         func(*structural.StructuralSearch) *structural.StructuralSearch
-	MapCommitSearchJob             func(*commit.CommitSearch) *commit.CommitSearch
+	MapCommitSearchJob             func(*commit.CommitSearchJob) *commit.CommitSearchJob
 	MapRepoUniverseSymbolSearchJob func(*symbol.RepoUniverseSymbolSearch) *symbol.RepoUniverseSymbolSearch
 	MapComputeExcludedReposJob     func(*repos.ComputeExcludedRepos) *repos.ComputeExcludedRepos
 
@@ -40,7 +40,6 @@ type Mapper struct {
 	// Combinator Jobs
 	MapParallelJob   func(children []job.Job) []job.Job
 	MapSequentialJob func(children []job.Job) []job.Job
-	MapPriorityJob   func(required, optional job.Job) (job.Job, job.Job)
 	MapTimeoutJob    func(timeout time.Duration, child job.Job) (time.Duration, job.Job)
 	MapLimitJob      func(limit int, child job.Job) (int, job.Job)
 	MapSelectJob     func(path filter.SelectPath, child job.Job) (filter.SelectPath, job.Job)
@@ -102,7 +101,7 @@ func (m *Mapper) Map(j job.Job) job.Job {
 		}
 		return j
 
-	case *commit.CommitSearch:
+	case *commit.CommitSearchJob:
 		if m.MapCommitSearchJob != nil {
 			j = m.MapCommitSearchJob(j)
 		}
@@ -168,14 +167,6 @@ func (m *Mapper) Map(j job.Job) job.Job {
 		}
 		return NewSequentialJob(children...)
 
-	case *PriorityJob:
-		required := m.Map(j.required)
-		optional := m.Map(j.optional)
-		if m.MapPriorityJob != nil {
-			required, optional = m.MapPriorityJob(required, optional)
-		}
-		return NewPriorityJob(required, optional)
-
 	case *TimeoutJob:
 		child := m.Map(j.child)
 		timeout := j.timeout
@@ -234,7 +225,7 @@ func MapAtom(j job.Job, f func(job.Job) job.Job) job.Job {
 				*searcher.SymbolSearcher,
 				*run.RepoSearch,
 				*structural.StructuralSearch,
-				*commit.CommitSearch,
+				*commit.CommitSearchJob,
 				*symbol.RepoUniverseSymbolSearch,
 				*repos.ComputeExcludedRepos,
 				*noopJob:

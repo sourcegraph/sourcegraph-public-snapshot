@@ -4,6 +4,8 @@ import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { useHistory } from 'react-router-dom'
 
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button } from '@sourcegraph/wildcard'
 
@@ -23,7 +25,7 @@ import { isDashboardConfigurable } from './utils/is-dashboard-configurable'
 
 import styles from './DashboardsContent.module.scss'
 
-export interface DashboardsContentProps extends TelemetryProps {
+export interface DashboardsContentProps extends TelemetryProps, SettingsCascadeProps<Settings> {
     /**
      * Possible dashboard id. All insights on the page will be get from
      * dashboard's info from the user or org settings by the dashboard id.
@@ -137,6 +139,7 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
 
             {currentDashboard ? (
                 <DashboardInsights
+                    settingsCascade={props.settingsCascade}
                     dashboard={currentDashboard}
                     telemetryService={telemetryService}
                     className={styles.insights}

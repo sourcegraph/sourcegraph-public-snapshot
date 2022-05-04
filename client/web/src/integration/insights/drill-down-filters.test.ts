@@ -59,6 +59,17 @@ describe('Backend insight drill down filters', () => {
                     },
                 }),
 
+                GetSearchContexts: () => ({
+                    __typename: 'Query',
+                    searchContexts: {
+                        __typename: 'SearchContextConnection',
+                        nodes: [],
+                        pageInfo: {
+                            hasNextPage: false,
+                        },
+                    },
+                }),
+
                 UpdateLineChartSearchInsight: () => ({
                     __typename: 'Mutation',
                     updateLineChartSearchInsight: {
@@ -76,6 +87,9 @@ describe('Backend insight drill down filters', () => {
         await driver.page.waitForSelector('[role="dialog"][aria-label="Drill-down filters panel"]')
         await driver.page.type('[name="excludeRepoRegexp"]', 'github.com/sourcegraph/sourcegraph')
 
+        // Wait until async validation of the search context field is passed
+        await delay(500)
+
         // Close the drill-down filter panel
         await driver.page.keyboard.press(Key.Escape)
         await driver.page.waitForSelector('[role="dialog"][aria-label="Drill-down filters panel"]', {
@@ -84,6 +98,9 @@ describe('Backend insight drill down filters', () => {
 
         // In this time we should see active button state (filter dot should appear if we've got some filters)
         await driver.page.click('button[aria-label="Active filters"]')
+
+        // Wait until async validation of the search context field is passed
+        await delay(500)
 
         const variables = await testContext.waitForGraphQLRequest(async () => {
             await driver.page.click('[role="dialog"][aria-label="Drill-down filters panel"] button[type="submit"]')
@@ -130,6 +147,17 @@ describe('Backend insight drill down filters', () => {
                     },
                 }),
 
+                GetSearchContexts: () => ({
+                    __typename: 'Query',
+                    searchContexts: {
+                        __typename: 'SearchContextConnection',
+                        nodes: [],
+                        pageInfo: {
+                            hasNextPage: false,
+                        },
+                    },
+                }),
+
                 FirstStepCreateSearchBasedInsight: () => ({
                     __typename: 'Mutation',
                     createLineChartSearchInsight: {
@@ -155,6 +183,9 @@ describe('Backend insight drill down filters', () => {
         await driver.page.waitForSelector('[role="dialog"][aria-label="Drill-down filters panel"]')
 
         await driver.page.type('[name="includeRepoRegexp"]', 'github.com/sourcegraph/sourcegraph')
+
+        // Wait until async validation of the search context field is passed
+        await delay(500)
 
         await driver.page.click(
             '[role="dialog"][aria-label="Drill-down filters panel"] button[data-testid="save-as-new-view-button"]'
