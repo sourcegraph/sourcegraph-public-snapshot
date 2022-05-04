@@ -141,8 +141,19 @@ GROUP BY batch_changes_range.range, created_from_raw;
 	}
 
 	queryUniqueEventLogUsersCurrentMonth := func(events []*sqlf.Query) *sql.Row {
-		q := sqlf.Sprintf(
-			`SELECT COUNT(DISTINCT user_id) FROM event_logs WHERE name IN (%s) AND timestamp >= date_trunc('month', CURRENT_DATE);`,
+		q := sqlf.Sprintf(`
+SELECT
+	COUNT(*)
+FROM (
+	SELECT
+		DISTINCT user_id
+	FROM event_logs
+	WHERE name IN (%s) AND timestamp >= date_trunc('month', CURRENT_DATE)
+		UNION
+	SELECT
+		DISTINCT user_id
+	FROM changeset_jobs
+) AS contributor_activities_union;`,
 			sqlf.Join(events, ","),
 		)
 
