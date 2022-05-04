@@ -23,7 +23,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
--
+- Sourcegraph's docker images are now based on Alpine Linux 3.14. [#34508](https://github.com/sourcegraph/sourcegraph/pull/34508)
 
 ### Fixed
 
