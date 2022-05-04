@@ -50,8 +50,8 @@ If you are unable to use Helm to deploy, but still want to use Kubernetes, follo
 However, when using this option you will lose key advantages associated with our Helm deployment, including:
 
 - easier upgrade experience
-- -minimized surface area (generally less erro prone compared to making customizations)
-- a more curate admin experience
+- -minimized surface area (generally less error prone compared to making customizations)
+- a more curated admin experience
   
 If there is any doubt about your team's ability to support this, please speak to your Sourcegraph contact about using Docker Compose instead.
 
@@ -71,13 +71,6 @@ Before starting, you will need to decide your deployment type, including if you 
 
 For more information, follow the install and configuration docs for your specific deployment type: [Docker Compose](docker-compose/index.md), [Kubernetes with Helm](kubernetes/helm.md), or [Kubernetes without Helm](kubernetes/index.md).
 
-## Federation
-
-Federation refers to using multiple Sourcegraph servers together, each of which is responsible for a subset of repositories.
-
-Currently the only supported federation use case is [redirecting your Sourcegraph instance's users to Sourcegraph.com for _public_ repositories](../federation/public_repositories.md) (instead of mirroring, analyzing, and indexing public repositories on your Sourcegraph instance).
-
-> NOTE: We plan to enhance federation in the future to support merging data (such as cross-references) from multiple Sourcegraph instances, sharing user accounts, etc. [Post an issue](https://github.com/sourcegraph/sourcegraph/issues) if you have a specific feature request for federation.
 
 ## External services
 
@@ -127,5 +120,5 @@ Sourcegraph provides a number of options to monitor the health and usage of your
 
 A new version of Sourcegraph is released every month (with patch releases in between as needed). We actively maintain the two most recent monthly releases of Sourcegraph. The [changelog](../../CHANGELOG.md) provides all information related to any changes that are/were in a release.
 
-Depending on your current version and the version you are looking to upgrade rules, there may be specific upgrade instruction and requirements. Checkout the [Upgrade docs](../updates/index.md) for additional information and instructions.
+Depending on your current version and the version you are looking to upgrade, there may be specific upgrade instruction and requirements. Checkout the [Upgrade docs](../updates/index.md) for additional information and instructions.
 

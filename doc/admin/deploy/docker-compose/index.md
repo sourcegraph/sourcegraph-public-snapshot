@@ -12,7 +12,15 @@ Not sure if the Docker Compose deployment type is the right for you? Learn more 
 - Use the [resource estimator](../resource_estimator.md) to ensure your machine has sufficient capacity.
 - [Sourcegraph license](https://about.sourcegraph.com/pricing/). You can run through these instructions without one, but you must obtain a license for instances of more than 10 users.
 
+### Windows support
+
 > WARNING: Running Sourcegraph on Windows is not supported for production deployments.
+
+### ARM / ARM64 support
+
+> WARNING: Running Sourcegraph on ARM / ARM64 images is not supported for production deployments.
+
+The Docker Compose installation requires a minimum of 8 CPU cores (logical) on the host machine in order to complete successfully. If using the Docker for Windows app, the default CPU count is limited to 2 which will result in errors during installation. You can go into the Docker app Settings->Resources window to increase the CPU count to > 8 to resolve this issue.
 
 ## Requirements
 
@@ -21,7 +29,7 @@ The Docker Compose installation requires a minimum of 8 CPU cores (logical) on t
 Our Docker Compose support also has the following requirements:
 
 - Minimum Docker version: [v20.10.0](https://docs.docker.com/engine/release-notes/#20100)
-- Minimum version of Docker Compose: [v1.29.0](https://docs.docker.com/compose/release-notes/#1220) (this is first version that supports Docker Compose format `2.4`)
+- Minimum version of Docker Compose: [v1.29.0](https://docs.docker.com/compose/release-notes/#1290) (this is the first version that supports the `service_completed_successfully` dependency condition)
 - Docker Compose deployments should only be deployed with [one of our supported installation methods](#installation), and *not* Docker Swarm
 
 
@@ -33,7 +41,7 @@ We **strongly** recommend that you create and run Sourcegraph from your own fork
 
 This repository contains everything you need to install and [configure](#configuration) a Docker Compose Sourcegraph instance, and will make [upgrades](#upgrade-and-migration) far easier.
 
-The sections below cover the process to [create a fork](#create-a-fork), [clone](#clone-your-fork), [configure a release branch](#configure-release-branch), and [make YAML customizations](#make-yaml-customizations). Once completed you'll be ready to [run](#run-sourcegraph) Sourcegrah
+The sections below cover the process to [create a fork](#create-a-fork), [clone](#clone-your-fork), [configure a release branch](#configure-release-branch), and [make YAML customizations](#make-yaml-customizations). Once completed you'll be ready to [run](#run-sourcegraph) Sourcegraph.
 
 #### Create a fork
 
