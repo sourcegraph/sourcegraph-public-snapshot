@@ -20,6 +20,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - Code Insights: Added fuzzy search filter for dashboard select drop down
+- Search: `path:` is now a valid filter. It is an alias for the existing `file:` filter. [#34947](https://github.com/sourcegraph/sourcegraph/pull/34947)
 
 ### Changed
 
