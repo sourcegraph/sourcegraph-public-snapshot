@@ -58,7 +58,7 @@ func main() {
 
 ### Attaching context
 
-When your service starts logging, get a `log.Logger` instance, attach some relevant context, and start propagating your logger for use.
+When your service starts logging, obtain a `log.Logger` instance, attach some relevant context, and start propagating your logger for use.
 Attached context from `logger.With` and `logger.WithTrace` will be present on all log entries logged by `logger`.
 This allows you to easily trace, for example, the execution of an event or a particular execution type by looking for shared log fields.
 For example:
