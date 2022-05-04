@@ -201,7 +201,7 @@ export const RegistryExtensionNewReleasePage = withAuthenticatedUser<Props>(
                                     </div>
                                 </div>
                             </div>
-                            <div className="d-flex align-items-center">
+                            <div aria-live="polite" className="d-flex align-items-center">
                                 <Button
                                     type="submit"
                                     disabled={updateOrError === LOADING || isErrorLike(bundleOrError)}

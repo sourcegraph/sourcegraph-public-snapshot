@@ -66,13 +66,9 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 
 	repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos := jobMode(b, resultTypes, searchInputs.PatternType, searchInputs.OnSourcegraphDotCom)
 
-	var requiredJobs, optionalJobs []job.Job
-	addJob := func(required bool, job job.Job) {
-		if required {
-			requiredJobs = append(requiredJobs, job)
-		} else {
-			optionalJobs = append(optionalJobs, job)
-		}
+	var allJobs []job.Job
+	addJob := func(job job.Job) {
+		allJobs = append(allJobs, job)
 	}
 
 	{
@@ -90,7 +86,7 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 				if err != nil {
 					return nil, err
 				}
-				addJob(true, job)
+				addJob(job)
 			}
 
 			// Create Text Search jobs over repo set.
@@ -110,7 +106,7 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 					UseFullDeadline: useFullDeadline,
 				})
 
-				addJob(true, &repoPagerJob{
+				addJob(&repoPagerJob{
 					child:            NewParallelJob(textSearchJobs...),
 					repoOptions:      repoOptions,
 					useIndex:         b.Index(),
@@ -127,7 +123,7 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 				if err != nil {
 					return nil, err
 				}
-				addJob(true, job)
+				addJob(job)
 			}
 
 			// Create Symbol Search jobs over repo set.
@@ -147,8 +143,7 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 					Limit:       maxResults,
 				})
 
-				required := useFullDeadline || resultTypes.Without(result.TypeSymbol) == 0
-				addJob(required, &repoPagerJob{
+				addJob(&repoPagerJob{
 					child:            NewParallelJob(symbolSearchJobs...),
 					repoOptions:      repoOptions,
 					useIndex:         b.Index(),
@@ -159,16 +154,8 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 
 		if resultTypes.Has(result.TypeCommit) || resultTypes.Has(result.TypeDiff) {
 			diff := resultTypes.Has(result.TypeDiff)
-			var required bool
-			if useFullDeadline {
-				required = true
-			} else if diff {
-				required = resultTypes.Without(result.TypeDiff) == 0
-			} else {
-				required = resultTypes.Without(result.TypeCommit) == 0
-			}
-			addJob(required, &commit.CommitSearch{
-				Query:                commit.QueryToGitQuery(b.ToParseTree(), diff),
+			addJob(&commit.CommitSearchJob{
+				Query:                commit.QueryToGitQuery(b, diff),
 				RepoOpts:             repoOptions,
 				Diff:                 diff,
 				HasTimeFilter:        b.Exists("after") || b.Exists("before"),
@@ -195,7 +182,7 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 				UseFullDeadline: useFullDeadline,
 			}
 
-			addJob(true, &structural.StructuralSearch{
+			addJob(&structural.StructuralSearch{
 				ZoektArgs:        zoektArgs,
 				SearcherArgs:     searcherArgs,
 				UseIndex:         b.Index(),
@@ -287,7 +274,7 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 					if skipRepoSubsetSearch {
 						mode = search.SkipUnindexed
 					}
-					addJob(true, &run.RepoSearch{
+					addJob(&run.RepoSearch{
 						RepoOptions:                  repoOptions,
 						Features:                     features,
 						FilePatternsReposMustInclude: patternInfo.FilePatternsReposMustInclude,
@@ -299,14 +286,11 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 		}
 	}
 
-	addJob(true, &searchrepos.ComputeExcludedRepos{
+	addJob(&searchrepos.ComputeExcludedRepos{
 		Options: repoOptions,
 	})
 
-	job := NewPriorityJob(
-		NewParallelJob(requiredJobs...),
-		NewParallelJob(optionalJobs...),
-	)
+	job := NewParallelJob(allJobs...)
 
 	checker := authz.DefaultSubRepoPermsChecker
 	if authz.SubRepoEnabled(checker) {
@@ -351,8 +335,8 @@ func toTextPatternInfo(q query.Basic, resultTypes result.Types, p search.Protoco
 	filesInclude, filesExclude := q.IncludeExcludeValues(query.FieldFile)
 	// Handle lang: and -lang: filters.
 	langInclude, langExclude := q.IncludeExcludeValues(query.FieldLang)
-	filesInclude = append(filesInclude, mapSlice(langInclude, search.LangToFileRegexp)...)
-	filesExclude = append(filesExclude, mapSlice(langExclude, search.LangToFileRegexp)...)
+	filesInclude = append(filesInclude, mapSlice(langInclude, query.LangToFileRegexp)...)
+	filesExclude = append(filesExclude, mapSlice(langExclude, query.LangToFileRegexp)...)
 	filesReposMustInclude, filesReposMustExclude := q.IncludeExcludeValues(query.FieldRepoHasFile)
 	selector, _ := filter.SelectPathFromString(q.FindValue(query.FieldSelect)) // Invariant: select is validated
 	count := count(q, p)
@@ -384,7 +368,7 @@ func toTextPatternInfo(q query.Basic, resultTypes result.Types, p search.Protoco
 
 		// Values dependent on parameters.
 		IncludePatterns:              filesInclude,
-		ExcludePattern:               search.UnionRegExps(filesExclude),
+		ExcludePattern:               query.UnionRegExps(filesExclude),
 		FilePatternsReposMustInclude: filesReposMustInclude,
 		FilePatternsReposMustExclude: filesReposMustExclude,
 		PatternMatchesPath:           resultTypes.Has(result.TypePath),
@@ -694,20 +678,11 @@ func toPatternExpressionJob(inputs *run.SearchInputs, q query.Basic) (job.Job, e
 }
 
 func ToEvaluateJob(inputs *run.SearchInputs, q query.Basic) (job.Job, error) {
-	var (
-		job job.Job
-		err error
-	)
 	if q.Pattern == nil {
-		job, err = ToSearchJob(inputs, q)
+		return ToSearchJob(inputs, q)
 	} else {
-		job, err = toPatternExpressionJob(inputs, q)
+		return toPatternExpressionJob(inputs, q)
 	}
-	if err != nil {
-		return nil, err
-	}
-
-	return job, nil
 }
 
 // optimizeJobs optimizes a baseJob query with respect to an incoming basic
@@ -735,7 +710,7 @@ func optimizeJobs(baseJob job.Job, inputs *run.SearchInputs, q query.Basic) (job
 				*symbol.RepoUniverseSymbolSearch,
 				*zoekt.ZoektRepoSubsetSearch,
 				*zoekt.ZoektSymbolSearch,
-				*commit.CommitSearch:
+				*commit.CommitSearchJob:
 				optimizedJobs = append(optimizedJobs, currentJob)
 				return currentJob
 			default:
@@ -787,8 +762,8 @@ func optimizeJobs(baseJob job.Job, inputs *run.SearchInputs, q query.Basic) (job
 				}
 				return currentJob
 
-			case *commit.CommitSearch:
-				if exists("Commit") || exists("Diff") {
+			case *commit.CommitSearchJob:
+				if exists("CommitSearchJob") || exists("DiffSearchJob") {
 					return &noopJob{}
 				}
 				return currentJob

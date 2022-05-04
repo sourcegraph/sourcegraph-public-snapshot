@@ -31,8 +31,8 @@ func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *search.Fea
 	filesInclude, filesExclude := b.IncludeExcludeValues(query.FieldFile)
 	// Handle lang: and -lang: filters.
 	langInclude, langExclude := b.IncludeExcludeValues(query.FieldLang)
-	filesInclude = append(filesInclude, mapSlice(langInclude, search.LangToFileRegexp)...)
-	filesExclude = append(filesExclude, mapSlice(langExclude, search.LangToFileRegexp)...)
+	filesInclude = append(filesInclude, mapSlice(langInclude, query.LangToFileRegexp)...)
+	filesExclude = append(filesExclude, mapSlice(langExclude, query.LangToFileRegexp)...)
 	filesReposMustInclude, filesReposMustExclude := b.IncludeExcludeValues(query.FieldRepoHasFile)
 
 	if typ == search.SymbolRequest && q != nil {
@@ -58,7 +58,7 @@ func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *search.Fea
 		and = append(and, q)
 	}
 	if len(filesExclude) > 0 {
-		q, err := FileRe(search.UnionRegExps(filesExclude), isCaseSensitive)
+		q, err := FileRe(query.UnionRegExps(filesExclude), isCaseSensitive)
 		if err != nil {
 			return nil, err
 		}

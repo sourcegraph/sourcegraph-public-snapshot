@@ -30,8 +30,10 @@ describe('overlay_position', () => {
                             },
                             target: rectangle(128, 220, 60, 16),
                             hoverOverlayElement: rectangle(28, 38, 350, 150),
+                            windowInnerHeight: 500,
+                            windowScrollY: 0,
                         }),
-                        { left: 100, top: 50 }
+                        { left: 100, bottom: 400 }
                     )
                 })
 
@@ -45,6 +47,8 @@ describe('overlay_position', () => {
                             },
                             target: rectangle(128, 120, 60, 16),
                             hoverOverlayElement: rectangle(28, 38, 350, 150),
+                            windowInnerHeight: 500,
+                            windowScrollY: 0,
                         }),
                         { left: 100, top: 116 }
                     )
@@ -61,8 +65,10 @@ describe('overlay_position', () => {
                             },
                             target: rectangle(128, 220, 60, 16),
                             hoverOverlayElement: rectangle(28, -362, 350, 150),
+                            windowInnerHeight: 500,
+                            windowScrollY: 0,
                         }),
-                        { left: 100, top: 450 }
+                        { left: 100, bottom: 2400 }
                     )
                 })
 
@@ -76,6 +82,8 @@ describe('overlay_position', () => {
                             },
                             target: rectangle(128, 70, 60, 16),
                             hoverOverlayElement: rectangle(28, -362, 350, 150),
+                            windowInnerHeight: 500,
+                            windowScrollY: 0,
                         }),
                         { left: 100, top: 466 }
                     )
@@ -95,8 +103,10 @@ describe('overlay_position', () => {
                             },
                             target: rectangle(128, 220, 60, 16),
                             hoverOverlayElement: rectangle(28, 38, 350, 150),
+                            windowInnerHeight: 500,
+                            windowScrollY: 0,
                         }),
-                        { left: 100, top: 50 }
+                        { left: 100, bottom: 400 }
                     )
                 })
 
@@ -110,6 +120,8 @@ describe('overlay_position', () => {
                             },
                             target: rectangle(128, 160, 60, 16),
                             hoverOverlayElement: rectangle(28, 38, 350, 150),
+                            windowInnerHeight: 500,
+                            windowScrollY: 0,
                         }),
                         { left: 100, top: 156 }
                     )
@@ -126,8 +138,10 @@ describe('overlay_position', () => {
                             },
                             target: rectangle(128, 220, 60, 16),
                             hoverOverlayElement: rectangle(-172, -362, 350, 150),
+                            windowInnerHeight: 500,
+                            windowScrollY: 0,
                         }),
-                        { left: 300, top: 450 }
+                        { left: 300, bottom: 0 }
                     )
                 })
 
@@ -141,10 +155,40 @@ describe('overlay_position', () => {
                             },
                             target: rectangle(128, 70, 60, 16),
                             hoverOverlayElement: rectangle(-172, -362, 350, 150),
+                            windowInnerHeight: 500,
+                            windowScrollY: 0,
                         }),
                         { left: 300, top: 466 }
                     )
                 })
+            })
+        })
+
+        describe('without a relativeElement', () => {
+            it('should return a position above the given target if the overlay fits above', () => {
+                assert.deepStrictEqual(
+                    calculateOverlayPosition({
+                        relativeElement: undefined,
+                        target: rectangle(128, 220, 60, 16),
+                        hoverOverlayElement: rectangle(-172, -362, 350, 150),
+                        windowInnerHeight: 500,
+                        windowScrollY: 0,
+                    }),
+                    { left: 128, bottom: 280 }
+                )
+            })
+
+            it('should return a position below the a given target if the overlay does not fit above', () => {
+                assert.deepStrictEqual(
+                    calculateOverlayPosition({
+                        relativeElement: undefined,
+                        target: rectangle(128, 70, 60, 16),
+                        hoverOverlayElement: rectangle(-172, -362, 350, 150),
+                        windowInnerHeight: 500,
+                        windowScrollY: 0,
+                    }),
+                    { left: 128, top: 86 }
+                )
             })
         })
     })

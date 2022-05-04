@@ -28,8 +28,11 @@ const (
 )
 
 type EventLogStore interface {
-	// AggregatedCodeIntelEvents calculates CodeIntelAggregatedEvent for each every unique event type related to code intel.
+	// AggregatedCodeIntelEvents calculates CodeIntelAggregatedEvent for each unique event type related to code intel.
 	AggregatedCodeIntelEvents(ctx context.Context) ([]types.CodeIntelAggregatedEvent, error)
+
+	// AggregatedCodeIntelInvestigationEvents calculates CodeIntelAggregatedInvestigationEvent for each unique investigation type.
+	AggregatedCodeIntelInvestigationEvents(ctx context.Context) ([]types.CodeIntelAggregatedInvestigationEvent, error)
 
 	// AggregatedSearchEvents calculates SearchAggregatedEvent for each every unique event type related to search.
 	AggregatedSearchEvents(ctx context.Context, now time.Time) ([]types.SearchAggregatedEvent, error)
@@ -63,6 +66,9 @@ type EventLogStore interface {
 	// CodeIntelligenceSettingsPageViewCount returns the number of view of pages related code intelligence
 	// administration (upload, index records, index configuration, etc) in the past week.
 	CodeIntelligenceSettingsPageViewCount(ctx context.Context) (int, error)
+
+	// RequestsByLanguage returns a map of language names to the number of requests of precise support for that language.
+	RequestsByLanguage(ctx context.Context) (map[string]int, error)
 
 	// CodeIntelligenceWAUs returns the WAU (current week) with any (precise or search-based) code intelligence event.
 	CodeIntelligenceWAUs(ctx context.Context) (int, error)
@@ -1041,7 +1047,7 @@ func (l *eventLogStore) aggregatedCodeIntelEvents(ctx context.Context, now time.
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { err = basestore.CloseRows(rows, err) }()
 
 	for rows.Next() {
 		var event types.CodeIntelAggregatedEvent
@@ -1057,10 +1063,6 @@ func (l *eventLogStore) aggregatedCodeIntelEvents(ctx context.Context, now time.
 		}
 
 		events = append(events, event)
-	}
-
-	if err = rows.Err(); err != nil {
-		return nil, err
 	}
 
 	return events, nil
@@ -1085,7 +1087,73 @@ SELECT
   current_week,
   COUNT(*) AS total_week,
   COUNT(DISTINCT user_id) AS uniques_week
-FROM events GROUP BY name, current_week, language_id;
+FROM events
+GROUP BY name, current_week, language_id
+ORDER BY name;
+`
+
+func (l *eventLogStore) AggregatedCodeIntelInvestigationEvents(ctx context.Context) ([]types.CodeIntelAggregatedInvestigationEvent, error) {
+	return l.aggregatedCodeIntelInvestigationEvents(ctx, time.Now().UTC())
+}
+
+func (l *eventLogStore) aggregatedCodeIntelInvestigationEvents(ctx context.Context, now time.Time) (events []types.CodeIntelAggregatedInvestigationEvent, err error) {
+	var eventNames = []string{
+		"CodeIntelligenceIndexerSetupInvestigated",
+		"CodeIntelligenceUploadErrorInvestigated",
+		"CodeIntelligenceIndexErrorInvestigated",
+	}
+
+	var eventNameQueries []*sqlf.Query
+	for _, name := range eventNames {
+		eventNameQueries = append(eventNameQueries, sqlf.Sprintf("%s", name))
+	}
+
+	query := sqlf.Sprintf(aggregatedCodeIntelInvestigationEventsQuery, now, now, sqlf.Join(eventNameQueries, ", "))
+
+	rows, err := l.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	for rows.Next() {
+		var event types.CodeIntelAggregatedInvestigationEvent
+		err := rows.Scan(
+			&event.Name,
+			&event.Week,
+			&event.TotalWeek,
+			&event.UniquesWeek,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		events = append(events, event)
+	}
+
+	return events, nil
+}
+
+var aggregatedCodeIntelInvestigationEventsQuery = `
+-- source: internal/database/event_logs.go:aggregatedCodeIntelInvestigationEvents
+WITH events AS (
+  SELECT
+    name,
+    ` + aggregatedUserIDQueryFragment + ` AS user_id,
+    ` + makeDateTruncExpression("week", "%s::timestamp") + ` as current_week
+  FROM event_logs
+  WHERE
+    timestamp >= ` + makeDateTruncExpression("week", "%s::timestamp") + `
+    AND name IN (%s)
+)
+SELECT
+  name,
+  current_week,
+  COUNT(*) AS total_week,
+  COUNT(DISTINCT user_id) AS uniques_week
+FROM events
+GROUP BY name, current_week
+ORDER BY name;
 `
 
 func (l *eventLogStore) AggregatedSearchEvents(ctx context.Context, now time.Time) ([]types.SearchAggregatedEvent, error) {
@@ -1276,3 +1344,36 @@ func makeDateTruncExpression(unit, expr string) string {
 
 	return fmt.Sprintf(`DATE_TRUNC('%s', TIMEZONE('UTC', %s))`, unit, expr)
 }
+
+// RequestsByLanguage returns a map of language names to the number of requests of precise support for that language.
+func (l *eventLogStore) RequestsByLanguage(ctx context.Context) (_ map[string]int, err error) {
+	rows, err := l.Query(ctx, sqlf.Sprintf(requestsByLanguageQuery))
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	requestsByLanguage := map[string]int{}
+	for rows.Next() {
+		var (
+			language string
+			count    int
+		)
+		if err := rows.Scan(&language, &count); err != nil {
+			return nil, err
+		}
+
+		requestsByLanguage[language] = count
+	}
+
+	return requestsByLanguage, nil
+}
+
+var requestsByLanguageQuery = `
+-- source: internal/database/event_logs.go:RequestsByLanguage
+SELECT
+	language_id,
+	COUNT(*) as count
+FROM codeintel_langugage_support_requests
+GROUP BY language_id
+`
