@@ -111,6 +111,8 @@ type ComputeTabulationResult struct {
 	RepoCounts map[string]*ComputeMatch
 }
 
+const capturedValueMaxLength = 100
+
 func ComputeDecoder() (client.ComputeMatchContextStreamDecoder, *ComputeTabulationResult) {
 	byRepo := make(map[string]*ComputeMatch)
 	getRepoCounts := func(matchContext compute.MatchContext) *ComputeMatch {
@@ -129,7 +131,11 @@ func ComputeDecoder() (client.ComputeMatchContextStreamDecoder, *ComputeTabulati
 					current := getRepoCounts(result)
 					for _, match := range result.Matches {
 						for _, data := range match.Environment {
-							current.ValueCounts[data.Value] += 1
+							value := data.Value
+							if len(value) > capturedValueMaxLength {
+								value = value[:capturedValueMaxLength]
+							}
+							current.ValueCounts[value] += 1
 						}
 					}
 				}

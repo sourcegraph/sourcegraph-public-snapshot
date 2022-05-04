@@ -38,7 +38,7 @@ type workHandler struct {
 	seriesCache map[string]*types.InsightSeries
 
 	computeSearch       func(context.Context, string) ([]query.ComputeResult, error)
-	computeSearchStream func(ctx context.Context, query string) (*streaming.ComputeTabulationResult, error) // this is hacky, I admit. I don't really have time at the moment to fix this mess of weird types across GQL and stream.
+	computeSearchStream func(ctx context.Context, query string) (*streaming.ComputeTabulationResult, error)
 }
 
 func (r *workHandler) getSeries(ctx context.Context, seriesID string) (*types.InsightSeries, error) {
