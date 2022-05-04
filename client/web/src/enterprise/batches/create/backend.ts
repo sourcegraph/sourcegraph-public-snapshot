@@ -19,11 +19,13 @@ export const GET_BATCH_CHANGE_TO_EDIT = gql`
                 username
                 displayName
                 viewerCanAdminister
+                url
             }
             ... on Org {
                 name
                 displayName
                 viewerCanAdminister
+                url
             }
         }
         description
