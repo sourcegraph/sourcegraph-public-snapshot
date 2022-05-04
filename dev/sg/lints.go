@@ -87,6 +87,12 @@ func goModGuards() lint.Runner {
 		"github.com/prometheus/common": semver.MustParse("v0.32.1"),
 	}
 
+	if len(maxVersions) == 0 {
+		return func(ctx context.Context, s *repo.State) *lint.Report {
+			return &lint.Report{Header: header, Output: "No guards currently defined"}
+		}
+	}
+
 	return func(ctx context.Context, s *repo.State) *lint.Report {
 		start := time.Now()
 
