@@ -3,14 +3,35 @@ package server
 import (
 	"archive/zip"
 	"bytes"
+	"context"
+	"crypto/sha1"
+	"encoding/hex"
+	"flag"
+	"io"
 	"io/fs"
+	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/grafana/regexp"
+
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/pypi"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
+
+var updateRegex = flag.String("update", "", "Update testdata of tests matching the given regex")
+
+func update(name string) bool {
+	if updateRegex == nil || *updateRegex == "" {
+		return false
+	}
+	return regexp.MustCompile(*updateRegex).MatchString(name)
+}
 
 func TestUnpackPythonPackage_TGZ(t *testing.T) {
 	files := []fileInfo{
@@ -44,9 +65,11 @@ func TestUnpackPythonPackage_TGZ(t *testing.T) {
 		if err != nil {
 			return err
 		}
+
 		if info.IsDir() {
 			return nil
 		}
+
 		got = append(got, strings.TrimPrefix(path, tmp))
 		return nil
 	}); err != nil {
@@ -112,9 +135,11 @@ func TestUnpackPythonPackage_ZIP(t *testing.T) {
 		if err != nil {
 			return err
 		}
+
 		if info.IsDir() {
 			return nil
 		}
+
 		got = append(got, strings.TrimPrefix(path, tmp))
 		return nil
 	}); err != nil {
@@ -154,4 +179,96 @@ func TestUnpackPythonPackage_UnsupportedFormat(t *testing.T) {
 	if err := unpackPythonPackage([]byte{}, "https://some.where/pckg.exe", ""); err == nil {
 		t.Fatal()
 	}
+}
+
+func TestUnpackPythonPackage_Wheel(t *testing.T) {
+	ctx := context.Background()
+
+	cl := newTestClient(t, "requests", true)
+	f, err := cl.Project(ctx, "requests")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Pick a specific wheel.
+	var wheelURL string
+	for i := len(f) - 1; i >= 0; i-- {
+		if f[i].Name == "requests-2.27.1-py2.py3-none-any.whl" {
+			wheelURL = f[i].URL
+			break
+		}
+	}
+	if wheelURL == "" {
+		t.Fatalf("could not find wheel")
+	}
+
+	b, err := cl.Download(ctx, wheelURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tmp := t.TempDir()
+	if err := unpackPythonPackage(b, wheelURL, tmp); err != nil {
+		t.Fatal(err)
+	}
+
+	var files []string
+	hasher := sha1.New()
+	if err := filepath.Walk(tmp, func(path string, info fs.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			return nil
+		}
+
+		f, lErr := os.Open(path)
+		if lErr != nil {
+			return lErr
+		}
+		defer f.Close()
+
+		b, lErr := io.ReadAll(f)
+		if lErr != nil {
+			return lErr
+		}
+		hasher.Write(b)
+
+		files = append(files, strings.TrimPrefix(path, tmp))
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	testutil.AssertGolden(t, "testdata/golden/requests.json", update(t.Name()), struct {
+		hash  string
+		Files []string
+	}{
+		hash:  hex.EncodeToString(hasher.Sum(nil)),
+		Files: files,
+	})
+}
+
+// newTestClient returns a pypi Client that records its interactions
+// to testdata/vcr/.
+func newTestClient(t testing.TB, name string, update bool) *pypi.Client {
+	cassete := filepath.Join("testdata/vcr/", name)
+	rec, err := httptestutil.NewRecorder(cassete, update)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() {
+		if err := rec.Stop(); err != nil {
+			t.Errorf("failed to update test data: %s", err)
+		}
+	})
+
+	doer, err := httpcli.NewFactory(nil, httptestutil.NewRecorderOpt(rec)).Doer()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	c := pypi.NewClient("urn", []string{"https://pypi.org/simple"}, doer)
+	return c
 }
