@@ -39,10 +39,7 @@ export const CodeInsightsRouter: React.FunctionComponent<CodeInsightsRouterProps
     return (
         <CodeInsightsBackendContext.Provider value={api}>
             {props.isSourcegraphDotCom ? (
-                <CodeInsightsDotComGetStartedLazy
-                    settingsCascade={props.settingsCascade}
-                    telemetryService={props.telemetryService}
-                />
+                <CodeInsightsDotComGetStartedLazy telemetryService={props.telemetryService} />
             ) : (
                 <CodeInsightsAppLazyRouter {...props} />
             )}
