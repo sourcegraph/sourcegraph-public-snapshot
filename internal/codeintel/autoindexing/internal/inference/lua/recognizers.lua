@@ -1,4 +1,5 @@
 local languages = {
+    "clang",
     "go",
     "java",
     "rust",

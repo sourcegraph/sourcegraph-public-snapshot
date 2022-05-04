@@ -10,19 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference/luatypes"
 )
 
-// partitionPatterns flattens the given recognizers, then extracts and categorizes the path
-// patterns each recognizer has a registered interest in. Recognizers may be curious about
-// only the existence of a path, not its contents, so we categorize patterns that require
-// contents as distinct.
-func partitionPatterns(recognizers []*luatypes.Recognizer) (patternsForPaths, patternsForContent []*luatypes.PathPattern) {
-	for _, recognizer := range luatypes.LinearizeRecognizers(recognizers) {
-		patternsForPaths = append(patternsForPaths, recognizer.Patterns(false)...)
-		patternsForContent = append(patternsForContent, recognizer.Patterns(true)...)
-	}
-
-	return
-}
-
 // filterPathsByPatterns returns a slice containing all of the input paths that match
 // any of the given path patterns. Both patterns and inverted patterns are considered
 // when a path is matched.

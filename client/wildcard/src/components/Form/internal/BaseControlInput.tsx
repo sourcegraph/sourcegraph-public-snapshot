@@ -17,11 +17,15 @@ export type ControlInputProps = AccessibleFieldProps<React.InputHTMLAttributes<H
          * The <input> type. Use one of the currently supported types.
          */
         type?: typeof BASE_CONTROL_TYPES[number]
+        /**
+         * CSS class name for the wrapper
+         */
+        wrapperClassName?: string
     }
 
 export const BaseControlInput: React.FunctionComponent<ControlInputProps> = React.forwardRef(
-    ({ children, className, message, isValid, type, ...props }, reference) => (
-        <div className="form-check">
+    ({ children, className, message, isValid, type, wrapperClassName, ...props }, reference) => (
+        <div className={classNames('form-check', wrapperClassName)}>
             <input
                 ref={reference}
                 type={type}

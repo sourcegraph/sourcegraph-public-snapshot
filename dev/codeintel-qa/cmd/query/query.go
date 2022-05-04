@@ -6,6 +6,55 @@ import (
 	"strings"
 )
 
+const uploadsQuery = `
+	query Uploads {
+		lsifUploads(state: COMPLETED) {
+			nodes {
+				projectRoot {
+					repository {
+						name
+					}
+					commit {
+						oid
+					}
+				}
+			}
+		}
+	}
+`
+
+func queryUploads(ctx context.Context) (_ map[string][]string, err error) {
+	var payload struct {
+		Data struct {
+			LSIFUploads struct {
+				Nodes []struct {
+					ProjectRoot struct {
+						Repository struct {
+							Name string `json:"name"`
+						} `json:"repository"`
+						Commit struct {
+							OID string `json:"oid"`
+						} `json:"commit"`
+					} `json:"projectRoot"`
+				} `json:"nodes"`
+			} `json:"lsifUploads"`
+		} `json:"data"`
+	}
+	if err := queryGraphQL(ctx, "CodeIntelTesterUploads", uploadsQuery, map[string]interface{}{}, &payload); err != nil {
+		return nil, err
+	}
+
+	commitsByRepo := map[string][]string{}
+	for _, node := range payload.Data.LSIFUploads.Nodes {
+		projectRoot := node.ProjectRoot
+		name := projectRoot.Repository.Name
+		commit := projectRoot.Commit.OID
+		commitsByRepo[name] = append(commitsByRepo[name], commit)
+	}
+
+	return commitsByRepo, nil
+}
+
 const definitionsQuery = `
 	query Definitions($repository: String!, $commit: String!, $path: String!, $line: Int!, $character: Int!) {
 		repository(name: $repository) {

@@ -13,12 +13,12 @@ BASE:
         (LIMIT
           40000
           (PARALLEL
-            Diff
+            DiffSearchJob
             ComputeExcludedRepos))
         (LIMIT
           40000
           (PARALLEL
-            Diff
+            DiffSearchJob
             ComputeExcludedRepos))))))
 
 OPTIMIZED:
@@ -29,7 +29,7 @@ OPTIMIZED:
     (LIMIT
       500
       (PARALLEL
-        Diff
+        DiffSearchJob
         (AND
           (LIMIT
             40000

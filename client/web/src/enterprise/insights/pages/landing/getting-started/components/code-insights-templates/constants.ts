@@ -1,3 +1,7 @@
+import { isErrorLike } from '@sourcegraph/common'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+
 import { InsightType } from '../../../../../core/types'
 import { CaptureInsightUrlValues } from '../../../../insights/creation/capture-group'
 import { DATA_SERIES_COLORS, SearchInsightURLValues } from '../../../../insights/creation/search-insight'
@@ -5,6 +9,7 @@ import { DATA_SERIES_COLORS, SearchInsightURLValues } from '../../../../insights
 export interface TemplateSection {
     title: string
     templates: Template[]
+    experimental?: boolean
 }
 
 export type Template = SearchTemplate | CaptureGroupTemplate
@@ -809,88 +814,574 @@ const DATA_FETCHING_GQL: Template = {
     },
 }
 
-export const TEMPLATE_SECTIONS: TemplateSection[] = [
-    {
-        title: 'Popular',
-        templates: [
-            TERRAFORM_VERSIONS,
-            CSS_MODULES_MIGRATION,
-            LOG4J_FIXED_VERSIONS,
-            YARN_ADOPTION,
-            JAVA_VERSIONS,
-            LINTER_OVERRIDE_RULES,
-            TS_JS_USAGE,
+const GO_STATIC_CHECK_SA6005: Template = {
+    type: InsightType.SearchBased,
+    title: '[quickfix] - Inefficient string comparison with strings.ToLower or strings.ToUpper',
+    description: 'Code search turned code checker',
+    templateValues: {
+        title: '[quickfix] - Inefficient string comparison with strings.ToLower or strings.ToUpper',
+        allRepos: true,
+        series: [
+            {
+                name: 'SA6005',
+                query:
+                    'if strings.ToLower(:[1]) == strings.ToLower(:[2]) or if strings.ToUpper(:[1]) == strings.ToUpper(:[2]) or if strings.ToLower(:[1]) != strings.ToLower(:[2]) or if strings.ToUpper(:[1]) != strings.ToUpper(:[2]) patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+            {
+                name: 'SA6005 - fixed',
+                query:
+                    'if strings.EqualFold(:[1], :[2]) or if !strings.EqualFold(:[1], :[2]) or if strings.EqualFold(:[1], :[2]) or if !strings.EqualFold(:[1], :[2]) patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GREEN,
+            },
         ],
     },
-    {
-        title: 'Migration',
-        templates: [
-            CONFIG_OR_DOC_FILE,
-            ALLOW_DENY_LIST_TRACKING,
-            CSS_MODULES_MIGRATION,
-            PYTHON_2_3,
-            REACT_FUNCTION_CLASS,
+}
+
+const GO_STATIC_CHECK_S1002: Template = {
+    type: InsightType.SearchBased,
+    title: '[quickfix] - Omit comparison with boolean constant',
+    description: 'Code search turned code checker',
+    templateValues: {
+        title: '[quickfix] - Omit comparison with boolean constant',
+        allRepos: true,
+        series: [
+            {
+                name: 'S1002',
+                query: 'if :[1:e] == false or if :[1:e] == true patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
         ],
     },
-    {
-        title: 'Adoption',
-        templates: [
-            NEW_API_USAGE,
-            YARN_ADOPTION,
-            FREQUENTLY_USED_DATABASE,
-            LARGE_PACKAGE_USAGE,
-            REACT_COMPONENT_LIB_USAGE,
-            CI_TOOLING,
+}
+
+const GO_STATIC_CHECK_S1003: Template = {
+    type: InsightType.SearchBased,
+    title: 'Replace call to strings.Index with strings.Contains',
+    description: 'Code search turned code checker',
+    templateValues: {
+        title: '[quickfix] - Replace call to strings.Index with strings.Contains',
+        allRepos: true,
+        series: [
+            {
+                name: 'S1003',
+                query:
+                    'strings.Index(:[1], :[2]) < 0  or strings.Index(:[1], :[2]) == -1 or strings.Index(:[1], :[2]) != -1 or strings.Index(:[1], :[2]) >= 0 or strings.Index(:[1], :[2]) > -1 or strings.IndexAny(:[1], :[2]) < 0 or strings.IndexAny(:[1], :[2]) == -1 or strings.IndexAny(:[1], :[2]) != -1 or strings.IndexAny(:[1], :[2]) >= 0 or strings.IndexAny(:[1], :[2]) > -1 or strings.IndexRune(:[1], :[2]) < 0 or strings.IndexRune(:[1], :[2]) == -1 or strings.IndexRune(:[1], :[2]) != -1 or strings.IndexRune(:[1], :[2]) >= 0 or strings.IndexRune(:[1], :[2]) > -1 patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+            {
+                name: 'S1003 - fixed',
+                query:
+                    'strings.ContainsRune(:[1], :[2]) or strings.ContainsRune(:[1], :[2]) or strings.ContainsRune(:[1], :[2]) or !strings.ContainsRune(:[1], :[2]) or !strings.ContainsRune(:[1], :[2]) or strings.ContainsAny(:[1], :[2]) or strings.ContainsAny(:[1], :[2]) or strings.ContainsAny(:[1], :[2]) or !strings.ContainsAny(:[1], :[2]) or !strings.ContainsAny(:[1], :[2]) or strings.Contains(:[1], :[2]) or !strings.Contains(:[1], :[2]) or !strings.Contains(:[1], :[2]) patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GREEN,
+            },
         ],
     },
-    {
-        title: 'Deprecation',
-        templates: [
-            CSS_CLASS,
-            ICON_OR_IMAGE,
-            STRUCTURAL_CODE_PATTERN,
-            TOOLING_MIGRATION,
-            VAR_KEYWORDS,
-            TESTING_LIBRARIES,
+}
+
+const GO_STATIC_CHECK_S1004: Template = {
+    type: InsightType.SearchBased,
+    title: '[quickfix] - Replace call to bytes.Compare with bytes.Equal',
+    description: 'Code search turned code checker',
+    templateValues: {
+        title: '[quickfix] - Replace call to bytes.Compare with bytes.Equal',
+        allRepos: true,
+        series: [
+            {
+                name: 'S1004',
+                query:
+                    'bytes.Compare(:[1], :[2]) != 0 or bytes.Compare(:[1], :[2]) == 0 patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+            {
+                name: 'S1004 - fixed',
+                query: '!bytes.Equal(:[1], :[2]) or bytes.Equal(:[1], :[2]) patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GREEN,
+            },
         ],
     },
-    {
-        title: 'Versions and patterns',
-        templates: [
-            JAVA_VERSIONS,
-            LICENSE_TYPES,
-            ALL_LOG4J_VERSIONS,
-            PYTHON_VERSIONS,
-            NODEJS_VERSIONS,
-            CSS_COLORS,
-            CHECKOV_SKIP_TYPES,
+}
+
+const GO_STATIC_CHECK_S1005: Template = {
+    type: InsightType.SearchBased,
+    title: '[quickfix] - Drop unnecessary use of the blank identifier',
+    description: 'Code search turned code checker',
+    templateValues: {
+        title: '[quickfix] - Drop unnecessary use of the blank identifier',
+        allRepos: true,
+        series: [
+            {
+                name: 'S1005',
+                query:
+                    'for :[1:e], :[~_] := range or for :[1:e], :[~_] = range or for :[~_] = range or for :[~_], :[~_] = range patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+            {
+                name: 'S1005 - fixed',
+                query: 'for range or for :[1] := range or for :[1] = range patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GREEN,
+            },
         ],
     },
-    {
-        title: 'Code health',
-        templates: [
-            TODOS,
-            LINTER_OVERRIDE_RULES,
-            REVERT_COMMITS,
-            DEPRECATED_CALLS,
-            STORYBOOK_TESTS,
-            REPOS_WITH_README,
-            OWNERSHIP_TRACKING,
-            CI_TOOLING,
+}
+
+const GO_STATIC_CHECK_S1006: Template = {
+    type: InsightType.SearchBased,
+    title: '[quickfix] - Use for { ... } for infinite loops',
+    description: 'Code search turned code checker',
+    templateValues: {
+        title: '[quickfix] - Use for { ... } for infinite loops',
+        allRepos: true,
+        series: [
+            {
+                name: 'S1006',
+                query: 'for true {:[x]} patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+            {
+                name: 'S1006 - fixed',
+                query: 'for {:[x]} patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GREEN,
+            },
         ],
     },
-    {
-        title: 'Security',
-        templates: [
-            VULNERABLE_OPEN_SOURCE,
-            API_KEYS_DETECTION,
-            LOG4J_FIXED_VERSIONS,
-            SKIPPED_TESTS,
-            TEST_AMOUNT_AND_TYPES,
+}
+
+const GO_STATIC_CHECK_S1010: Template = {
+    type: InsightType.SearchBased,
+    title: '[quickfix] - Omit default slice index',
+    description: 'Code search turned code checker',
+    templateValues: {
+        title: '[quickfix] - Omit default slice index',
+        allRepos: true,
+        series: [
+            {
+                name: 'S10010',
+                query: ':[s.][:len(:[s])] patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+            {
+                name: 'S1010 - fixed',
+                query: ':[s.][:] patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GREEN,
+            },
         ],
     },
-    {
-        title: 'Other',
-        templates: [TS_VS_GO, IOS_APP_SCREENS, ADOPTING_NEW_API, PROBLEMATIC_API_BY_TEAM, DATA_FETCHING_GQL],
+}
+
+const GO_STATIC_CHECK_S1012: Template = {
+    type: InsightType.SearchBased,
+    title: '[quickfix] - Replace time.Now().Sub(x) with time.Since(x)',
+    description: 'Code search turned code checker',
+    templateValues: {
+        title: '[quickfix] - Replace time.Now().Sub(x) with time.Since(x)',
+        allRepos: true,
+        series: [
+            {
+                name: 'S10012',
+                query: 'time.Now().Sub(:[x]) patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+            {
+                name: 'S1012 - fixed',
+                query: 'time.Since(:[x]) patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GREEN,
+            },
+        ],
     },
-]
+}
+
+// const GO_STATIC_CHECK_S1017: skipped
+// const GO_STATIC_CHECK_S1018: skipped
+
+const GO_STATIC_CHECK_S1019: Template = {
+    type: InsightType.SearchBased,
+    title: '[quickfix] - Simplify make call by omitting redundant arguments',
+    description: 'Code search turned code checker',
+    templateValues: {
+        title: '[quickfix] - Simplify make call by omitting redundant arguments',
+        allRepos: true,
+        series: [
+            {
+                name: 'S10019',
+                query:
+                    'make(chan int, 0) or make(map[:[[1]]]:[[1]], 0) or make(:[1], :[2], :[2]) patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+            {
+                name: 'S1019 - fixed',
+                query:
+                    'make(chan int) or make(map[:[[1]]]:[[1]]) or make(:[1], :[2]) patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GREEN,
+            },
+        ],
+    },
+}
+
+const GO_STATIC_CHECK_S1020: Template = {
+    type: InsightType.SearchBased,
+    title: '[quickfix] - Omit redundant nil check in type assertion',
+    description: 'Code search turned code checker',
+    templateValues: {
+        title: '[quickfix] - Omit redundant nil check in type assertion',
+        allRepos: true,
+        series: [
+            {
+                name: 'S1020',
+                query:
+                    'if :[_.], ok := :[i.].(:[T]); :[i.] != nil && ok {:[body]} or if :[_.], ok := :[i.].(:[T]); ok && :[i.] != nil {:[body]} or if :[i.] != nil {  if :[_.], ok := :[i.].(:[T]); ok {:[body]}} patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+            {
+                name: 'S1020 - fixed',
+                query: 'if :[_.], ok := :[i.].(:[T]); ok {:[body]} patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GREEN,
+            },
+        ],
+    },
+}
+
+const GO_STATIC_CHECK_S1023: Template = {
+    type: InsightType.SearchBased,
+    title: '[quickfix] - Omit redundant control flow',
+    description: 'Code search turned code checker',
+    templateValues: {
+        title: '[quickfix] - Omit redundant control flow',
+        allRepos: true,
+        series: [
+            {
+                name: 'S1023',
+                query:
+                    'func() {:[body] return } or func :[fn.](:[args]) {:[body] return } patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+            {
+                name: 'S1023 - fixed',
+                query: 'func() {:[body]} or func :[fn.](:[args]) {:[body]} patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GREEN,
+            },
+        ],
+    },
+}
+
+const GO_STATIC_CHECK_S1024: Template = {
+    type: InsightType.SearchBased,
+    title: '[quickfix] - Replace x.Sub(time.Now()) with time.Until(x)',
+    description: 'Code search turned code checker',
+    templateValues: {
+        title: '[quickfix] - Replace x.Sub(time.Now()) with time.Until(x)',
+        allRepos: true,
+        series: [
+            {
+                name: 'S1024',
+                query: ':[x.].Sub(time.Now()) patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+            {
+                name: 'S1024 - fixed',
+                query: 'func() {:[body]} or func :[fn.](:[args]) {:[body]} patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GREEN,
+            },
+        ],
+    },
+}
+
+const GO_STATIC_CHECK_S1025: Template = {
+    type: InsightType.SearchBased,
+    title: '[quickfix] - Don’t use fmt.Sprintf("%s", x) unnecessarily',
+    description: 'Code search turned code checker',
+    templateValues: {
+        title: '[quickfix] - Don’t use fmt.Sprintf("%s", x) unnecessarily',
+        allRepos: true,
+        series: [
+            {
+                name: 'S1025',
+                query: 'fmt.Println("%s", ":[s]") patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+            {
+                name: 'S1025 - fixed',
+                query: 'fmt.Println(":[s]") patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GREEN,
+            },
+        ],
+    },
+}
+
+const GO_STATIC_CHECK_S1028: Template = {
+    type: InsightType.SearchBased,
+    title: '[quickfix] - Simplify error construction with fmt.Errorf',
+    description: 'Code search turned code checker',
+    templateValues: {
+        title: '[quickfix] - Simplify error construction with fmt.Errorf',
+        allRepos: true,
+        series: [
+            {
+                name: 'S1028',
+                query: 'errors.New(fmt.Sprintf(:[1])) patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+            {
+                name: 'S1028 - fixed',
+                query: 'fmt.Errorf(:[1]) patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GREEN,
+            },
+        ],
+    },
+}
+
+const GO_STATIC_CHECK_S1029: Template = {
+    type: InsightType.SearchBased,
+    title: '[quickfix] - Range over the string directly',
+    description: 'Code search turned code checker',
+    templateValues: {
+        title: '[quickfix] - Range over the string directly',
+        allRepos: true,
+        series: [
+            {
+                name: 'S1029',
+                query: 'for :[~_], :[r.] := range []rune(:[s.]) patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+            {
+                name: 'S1029 - fixed',
+                query: 'for _, :[r] := range :[s] patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GREEN,
+            },
+        ],
+    },
+}
+
+const GO_STATIC_CHECK_S1032: Template = {
+    type: InsightType.SearchBased,
+    title: '[quickfix] - Use sort.Ints(x), sort.Float64s(x), and sort.Strings(x)',
+    description: 'Code search turned code checker',
+    templateValues: {
+        title: '[quickfix] - Use sort.Ints(x), sort.Float64s(x), and sort.Strings(x)',
+        allRepos: true,
+        series: [
+            {
+                name: 'S1032',
+                query:
+                    'sort.Float64s(:[1]) or sort.Strings(:[1]) or sort.Ints(:[1]) patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+        ],
+    },
+}
+
+const GO_STATIC_CHECK_S1035: Template = {
+    type: InsightType.SearchBased,
+    title: '[quickfix] - Redundant call to net/http.CanonicalHeaderKey in method call on net/http.Header',
+    description: 'Code search turned code checker',
+    templateValues: {
+        title: '[quickfix] - Redundant call to net/http.CanonicalHeaderKey in method call on net/http.Header',
+        allRepos: true,
+        series: [
+            {
+                name: 'S1035',
+                query:
+                    'headers.Set(http.CanonicalHeaderKey(:[1])) or headers.Get(http.CanonicalHeaderKey(:[1])) or headers.Del(http.CanonicalHeaderKey(:[1])) or headers.Add(http.CanonicalHeaderKey(:[1]), :[1]) patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+            {
+                name: 'S1035 - fixed',
+                query:
+                    'headers.Set(:[1]) or headers.Get(:[1]) or headers.Del(:[1]) or headers.Add(:[1], :[1]) patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GREEN,
+            },
+        ],
+    },
+}
+
+// const GO_STATIC_CHECK_S1036: skipped
+
+const GO_STATIC_CHECK_S1037: Template = {
+    type: InsightType.SearchBased,
+    title: '[quickfix] - Redundant call to net/http.CanonicalHeaderKey in method call on net/http.Header',
+    description: 'Code search turned code checker',
+    templateValues: {
+        title: '[quickfix] - Redundant call to net/http.CanonicalHeaderKey in method call on net/http.Header',
+        allRepos: true,
+        series: [
+            {
+                name: 'S1035',
+                query:
+                    'headers.Set(http.CanonicalHeaderKey(:[1])) or headers.Get(http.CanonicalHeaderKey(:[1])) or headers.Del(http.CanonicalHeaderKey(:[1])) or headers.Add(http.CanonicalHeaderKey(:[1]), :[1]) patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+            {
+                name: 'S1037 - fixed',
+                query: 'time.Sleep(:[t]) patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GREEN,
+            },
+        ],
+    },
+}
+
+const GO_STATIC_CHECK_S1038: Template = {
+    type: InsightType.SearchBased,
+    title: '[quickfix] - Unnecessarily complex way of printing formatted string',
+    description: 'Code search turned code checker',
+    templateValues: {
+        title: '[quickfix] - Unnecessarily complex way of printing formatted string',
+        allRepos: true,
+        series: [
+            {
+                name: 'S1038',
+                query: 'select {	case <-time.After(:[t]):} patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+            {
+                name: 'S1038 - fixed',
+                query: 'time.Sleep(:[t]) patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GREEN,
+            },
+        ],
+    },
+}
+
+const GO_STATIC_CHECK_S1039: Template = {
+    type: InsightType.SearchBased,
+    title: '[quickfix] - Unnecessary use of fmt.Sprint',
+    description: 'Code search turned code checker',
+    templateValues: {
+        title: '[quickfix] Unnecessary use of fmt.Sprint',
+        allRepos: true,
+        series: [
+            {
+                name: 'S1039',
+                query: 'fmt.Sprintf("%s", ":[s]") patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GRAPE,
+            },
+            {
+                name: 'S1025 - fixed',
+                query: '":[s]" patternType:structural archived:no',
+                stroke: DATA_SERIES_COLORS.GREEN,
+            },
+        ],
+    },
+}
+
+export const getTemplateSections = (props: SettingsCascadeProps<Settings>): TemplateSection[] => {
+    const allButGoChecker: TemplateSection[] = [
+        {
+            title: 'Popular',
+            templates: [
+                TERRAFORM_VERSIONS,
+                CSS_MODULES_MIGRATION,
+                LOG4J_FIXED_VERSIONS,
+                YARN_ADOPTION,
+                JAVA_VERSIONS,
+                LINTER_OVERRIDE_RULES,
+                TS_JS_USAGE,
+            ],
+        },
+        {
+            title: 'Migration',
+            templates: [
+                CONFIG_OR_DOC_FILE,
+                ALLOW_DENY_LIST_TRACKING,
+                CSS_MODULES_MIGRATION,
+                PYTHON_2_3,
+                REACT_FUNCTION_CLASS,
+            ],
+        },
+        {
+            title: 'Adoption',
+            templates: [
+                NEW_API_USAGE,
+                YARN_ADOPTION,
+                FREQUENTLY_USED_DATABASE,
+                LARGE_PACKAGE_USAGE,
+                REACT_COMPONENT_LIB_USAGE,
+                CI_TOOLING,
+            ],
+        },
+        {
+            title: 'Deprecation',
+            templates: [
+                CSS_CLASS,
+                ICON_OR_IMAGE,
+                STRUCTURAL_CODE_PATTERN,
+                TOOLING_MIGRATION,
+                VAR_KEYWORDS,
+                TESTING_LIBRARIES,
+            ],
+        },
+        {
+            title: 'Versions and patterns',
+            templates: [
+                JAVA_VERSIONS,
+                LICENSE_TYPES,
+                ALL_LOG4J_VERSIONS,
+                PYTHON_VERSIONS,
+                NODEJS_VERSIONS,
+                CSS_COLORS,
+                CHECKOV_SKIP_TYPES,
+            ],
+        },
+        {
+            title: 'Code health',
+            templates: [
+                TODOS,
+                LINTER_OVERRIDE_RULES,
+                REVERT_COMMITS,
+                DEPRECATED_CALLS,
+                STORYBOOK_TESTS,
+                REPOS_WITH_README,
+                OWNERSHIP_TRACKING,
+                CI_TOOLING,
+            ],
+        },
+        {
+            title: 'Security',
+            templates: [
+                VULNERABLE_OPEN_SOURCE,
+                API_KEYS_DETECTION,
+                LOG4J_FIXED_VERSIONS,
+                SKIPPED_TESTS,
+                TEST_AMOUNT_AND_TYPES,
+            ],
+        },
+        {
+            title: 'Other',
+            templates: [TS_VS_GO, IOS_APP_SCREENS, ADOPTING_NEW_API, PROBLEMATIC_API_BY_TEAM, DATA_FETCHING_GQL],
+        },
+    ]
+    if (
+        props.settingsCascade.final !== null &&
+        !isErrorLike(props.settingsCascade.final) &&
+        !props.settingsCascade.final.experimentalFeatures?.goCodeCheckerTemplates
+    ) {
+        return allButGoChecker
+    }
+    const all = [...allButGoChecker]
+    all.splice(-1, 0, {
+        title: 'Go code checker',
+        experimental: true,
+        templates: [
+            GO_STATIC_CHECK_SA6005,
+            GO_STATIC_CHECK_S1002,
+            GO_STATIC_CHECK_S1003,
+            GO_STATIC_CHECK_S1004,
+            GO_STATIC_CHECK_S1005,
+            GO_STATIC_CHECK_S1006,
+            GO_STATIC_CHECK_S1010,
+            GO_STATIC_CHECK_S1012,
+            GO_STATIC_CHECK_S1019,
+            GO_STATIC_CHECK_S1020,
+            GO_STATIC_CHECK_S1023,
+            GO_STATIC_CHECK_S1024,
+            GO_STATIC_CHECK_S1025,
+            GO_STATIC_CHECK_S1028,
+            GO_STATIC_CHECK_S1029,
+            GO_STATIC_CHECK_S1032,
+            GO_STATIC_CHECK_S1035,
+            GO_STATIC_CHECK_S1037,
+            GO_STATIC_CHECK_S1038,
+            GO_STATIC_CHECK_S1039,
+        ],
+    })
+    return all
+}

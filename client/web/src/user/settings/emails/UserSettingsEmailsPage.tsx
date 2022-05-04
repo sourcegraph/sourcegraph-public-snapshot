@@ -74,7 +74,7 @@ export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user }) => {
     }
 
     return (
-        <div className={styles.userSettingsEmailsPage}>
+        <div className={styles.userSettingsEmailsPage} data-testid="user-settings-emails-page">
             <PageTitle title="Emails" />
             <PageHeader headingElement="h2" path={[{ text: 'Emails' }]} className="mb-3" />
 

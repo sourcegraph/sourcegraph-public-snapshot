@@ -61,6 +61,10 @@
         }
     }
 
+    .tab-nowrap {
+        white-space: nowrap;
+    }
+
     [data-reach-tab-list] {
         background: transparent;
     }
@@ -77,6 +81,11 @@
         display: flex;
         flex-wrap: wrap;
         gap: 0.75rem;
+    }
+
+    .tab-list-scroll {
+        flex-wrap: nowrap;
+        overflow-y: scroll;
     }
 
     .small {

@@ -27,7 +27,7 @@ import (
 
 // Server is a repoupdater server.
 type Server struct {
-	*repos.Store
+	repos.Store
 	*repos.Syncer
 	SourcegraphDotComMode bool
 	Scheduler             interface {
@@ -162,7 +162,7 @@ func (s *Server) enqueueRepoUpdate(ctx context.Context, req *protocol.RepoUpdate
 		tr.Finish()
 	}()
 
-	rs, err := s.Store.RepoStore.List(ctx, database.ReposListOptions{Names: []string{string(req.Repo)}})
+	rs, err := s.Store.RepoStore().List(ctx, database.ReposListOptions{Names: []string{string(req.Repo)}})
 	if err != nil {
 		return nil, http.StatusInternalServerError, errors.Wrap(err, "store.list-repos")
 	}

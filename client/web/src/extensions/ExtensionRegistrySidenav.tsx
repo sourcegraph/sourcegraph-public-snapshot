@@ -4,7 +4,19 @@ import classNames from 'classnames'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 
 import { EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
-import { Button, Link, Menu, MenuButton, MenuDivider, MenuItem, MenuList, Icon, H3, H4 } from '@sourcegraph/wildcard'
+import {
+    Button,
+    Link,
+    Menu,
+    MenuButton,
+    MenuDivider,
+    MenuItem,
+    MenuList,
+    Icon,
+    H3,
+    H4,
+    Checkbox,
+} from '@sourcegraph/wildcard'
 
 import { SidebarGroup, SidebarGroupHeader } from '../components/Sidebar'
 
@@ -91,8 +103,7 @@ export const ExtensionRegistrySidenav: React.FunctionComponent<
                         onSelect={toggleExperimentalExtensions}
                     >
                         <div className="d-flex align-items-center">
-                            <input
-                                type="checkbox"
+                            <Checkbox
                                 checked={showExperimentalExtensions}
                                 onChange={toggleExperimentalExtensions}
                                 className=""
