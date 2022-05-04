@@ -2,6 +2,8 @@ package com.sourcegraph.action;
 
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.application.ApplicationInfo;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.SelectionModel;
@@ -9,14 +11,12 @@ import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.application.ApplicationInfo;
 import com.sourcegraph.project.RepoInfo;
 import com.sourcegraph.util.SourcegraphUtil;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.*;
-import java.awt.Desktop;
+import java.awt.*;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -62,8 +62,8 @@ public abstract class SearchActionBase extends AnAction {
                 + "&search=" + URLEncoder.encode(q, StandardCharsets.UTF_8);
 
         if (mode.equals("search.repository")) {
-            uri += "&search_remote_url=" + URLEncoder.encode(repoInfo.remoteURL, StandardCharsets.UTF_8)
-                    + "&search_branch=" + URLEncoder.encode(repoInfo.branch, StandardCharsets.UTF_8);
+            uri += "&search_remote_url=" + URLEncoder.encode(repoInfo.remoteUrl, StandardCharsets.UTF_8)
+                + "&search_branch=" + URLEncoder.encode(repoInfo.branchName, StandardCharsets.UTF_8);
         }
 
         // Open the URL in the browser.

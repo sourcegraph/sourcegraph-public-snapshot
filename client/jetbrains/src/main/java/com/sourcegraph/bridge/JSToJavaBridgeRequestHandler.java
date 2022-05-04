@@ -2,7 +2,7 @@ package com.sourcegraph.bridge;
 
 import com.google.gson.JsonObject;
 import com.intellij.ui.jcef.JBCefJSQuery;
-import com.sourcegraph.ui.ThemeService;
+import com.sourcegraph.util.ThemeUtil;
 
 import javax.annotation.Nullable;
 
@@ -11,7 +11,7 @@ public class JSToJavaBridgeRequestHandler {
         String action = request.get("action").getAsString();
         // JsonObject arguments = request.getAsJsonObject("arguments");
         if (action.equals("getTheme")) {
-            JsonObject currentThemeAsJson = ThemeService.getCurrentThemeAsJson();
+            JsonObject currentThemeAsJson = ThemeUtil.getCurrentThemeAsJson();
             return createResponse(currentThemeAsJson);
         } else {
             return createResponse(2, "Unknown action: " + action, null);

@@ -1,13 +1,13 @@
 package com.sourcegraph.project;
 
 public class RepoInfo {
-    public final String fileRel;
-    public final String remoteURL;
-    public final String branch;
+    public final String relativePath;
+    public final String remoteUrl;
+    public final String branchName;
 
-    public RepoInfo(String sFileRel, String sRemoteURL, String sBranch) {
-        fileRel = sFileRel;
-        remoteURL = sRemoteURL;
-        branch = sBranch;
+    public RepoInfo(String relativePath, String remoteUrl, String branchName) {
+        this.relativePath = relativePath;
+        this.remoteUrl = remoteUrl;
+        this.branchName = branchName;
     }
 }

@@ -14,48 +14,6 @@ import java.util.Properties;
 public class SourcegraphUtil {
     public static final String VERSION = "v1.2.2";
 
-    // gitRemoteURL returns the remote URL for the given remote name.
-    // e.g. "origin" -> "git@github.com:foo/bar"
-    public static String gitRemoteURL(String repoDir, String remoteName) throws Exception {
-        String result = exec("git remote get-url " + remoteName, repoDir).trim();
-        if (result.isEmpty()) {
-            throw new Exception("no such remote");
-        }
-        return result;
-    }
-
-    // configuredGitRemoteURL returns the URL of the "sourcegraph" remote, if
-    // configured, or else the URL of the "origin" remote. An exception is
-    // thrown if neither exists.
-    public static String configuredGitRemoteURL(String repoDir) throws Exception {
-        try {
-            return gitRemoteURL(repoDir, "sourcegraph");
-        } catch (Exception err) {
-            try {
-                return gitRemoteURL(repoDir, "origin");
-            } catch (Exception err2) {
-                throw new Exception("no configured git remote \"sourcegraph\" or \"origin\"");
-            }
-        }
-    }
-
-    // gitRootDir returns the repository root directory for any directory
-    // within the repository.
-    public static String gitRootDir(String repoDir) throws IOException {
-        return exec("git rev-parse --show-toplevel", repoDir).trim();
-    }
-
-    // gitBranch returns either the current branch name of the repository OR in
-    // all other cases (e.g. detached HEAD state), it returns "HEAD".
-    public static String gitBranch(String repoDir) throws IOException {
-        return exec("git rev-parse --abbrev-ref HEAD", repoDir).trim();
-    }
-
-    // verify that provided branch exists on remote
-    public static boolean isRemoteBranch(String branch, String repoDir) throws IOException {
-        return exec("git show-branch remotes/origin/" + branch, repoDir).length() > 0;
-    }
-
     public static String sourcegraphURL(Project project) {
         String url = Objects.requireNonNull(SourcegraphConfig.getInstance(project)).getUrl();
         if (url == null || url.length() == 0) {
@@ -66,7 +24,7 @@ public class SourcegraphUtil {
     }
 
     // get defaultBranch configuration option
-    public static String setDefaultBranch(Project project) {
+    public static String getDefaultBranchNameSetting(Project project) {
         String defaultBranch = Objects.requireNonNull(SourcegraphConfig.getInstance(project)).getDefaultBranch();
         if (defaultBranch == null || defaultBranch.length() == 0) {
             Properties props = readProps();
@@ -118,25 +76,24 @@ public class SourcegraphUtil {
     // repoInfo returns the Sourcegraph repository URI, and the file path
     // relative to the repository root. If the repository URI cannot be
     // determined, a RepoInfo with empty strings is returned.
-    public static RepoInfo repoInfo(String fileName, Project project) {
-        String fileRel = "";
-        String remoteURL = "";
-        String branch = "";
+    public static RepoInfo repoInfo(String filePath, Project project) {
+        String relativePath = "";
+        String remoteUrl = "";
+        String branchName = "";
         try {
-            // Determine repository root directory.
-            String fileDir = fileName.substring(0, fileName.lastIndexOf("/"));
-            String repoRoot = gitRootDir(fileDir);
+            String defaultBranchNameSetting = SourcegraphUtil.getDefaultBranchNameSetting(project);
+            String repoRootPath = GitUtil.getRepoRootPath(filePath);
 
             // Determine file path, relative to repository root.
-            fileRel = fileName.substring(repoRoot.length() + 1);
-            remoteURL = configuredGitRemoteURL(repoRoot);
-            branch = SourcegraphUtil.setDefaultBranch(project) != null ? SourcegraphUtil.setDefaultBranch(project) : gitBranch(repoRoot);
+            relativePath = filePath.substring(repoRootPath.length() + 1);
+            remoteUrl = GitUtil.getConfiguredRemoteUrl(repoRootPath);
+            branchName = defaultBranchNameSetting != null ? defaultBranchNameSetting : GitUtil.getCurrentBranchName(repoRootPath);
 
             // If on a branch that does not exist on the remote and no defaultBranch is configured
             // use "master" instead.
             // This allows users to check out a branch that does not exist in origin remote by setting defaultBranch
-            if (!isRemoteBranch(branch, repoRoot) && SourcegraphUtil.setDefaultBranch(project) == null) {
-                branch = "master";
+            if (!GitUtil.doesRemoteBranchExist(branchName, repoRootPath) && defaultBranchNameSetting == null) {
+                branchName = "master"; // TODO:
             }
 
             // replace remoteURL if config option is not null
@@ -145,23 +102,23 @@ public class SourcegraphUtil {
                 String[] replacements = r.trim().split("\\s*,\\s*");
                 // Check if the entered values are pairs
                 for (int i = 0; i < replacements.length && replacements.length % 2 == 0; i += 2) {
-                    remoteURL = remoteURL.replace(replacements[i], replacements[i + 1]);
+                    remoteUrl = remoteUrl.replace(replacements[i], replacements[i + 1]);
                 }
             }
         } catch (Exception err) {
             Logger.getInstance(SourcegraphUtil.class).info(err);
             err.printStackTrace();
         }
-        return new RepoInfo(fileRel, remoteURL, branch);
+        return new RepoInfo(relativePath, remoteUrl, branchName);
     }
 
     // exec executes the given command in the specified directory and returns
     // its stdout. Any stderr output is logged.
-    public static String exec(String cmd, String dir) throws IOException {
-        Logger.getInstance(SourcegraphUtil.class).debug("exec cmd='" + cmd + "' dir=" + dir);
+    public static String exec(String command, String directoryPath) throws IOException {
+        Logger.getInstance(SourcegraphUtil.class).debug("exec cmd='" + command + "' dir=" + directoryPath);
 
         // Create the process.
-        Process p = Runtime.getRuntime().exec(cmd, null, new File(dir));
+        Process p = Runtime.getRuntime().exec(command, null, new File(directoryPath));
         BufferedReader stdout = new BufferedReader(new InputStreamReader(p.getInputStream()));
         BufferedReader stderr = new BufferedReader(new InputStreamReader(p.getErrorStream()));
 

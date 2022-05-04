@@ -1,4 +1,4 @@
-package com.sourcegraph.ui;
+package com.sourcegraph.util;
 
 import com.google.gson.JsonObject;
 import com.intellij.util.ui.UIUtil;
@@ -8,7 +8,7 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.*;
 import java.awt.*;
 
-public class ThemeService {
+public class ThemeUtil {
     @NotNull
     public static JsonObject getCurrentThemeAsJson() {
         // Find the name of properties here: https://plugins.jetbrains.com/docs/intellij/themes-metadata.html#key-naming-scheme

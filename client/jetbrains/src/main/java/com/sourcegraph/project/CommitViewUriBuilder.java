@@ -14,14 +14,14 @@ public class CommitViewUriBuilder {
             throw new RuntimeException("Missing sourcegraph URI for commit uri.");
         } else if (Strings.isNullOrEmpty(revisionNumber)) {
             throw new RuntimeException("Missing revision number for commit uri.");
-        } else if (repoInfo == null || Strings.isNullOrEmpty(repoInfo.remoteURL)) {
+        } else if (repoInfo == null || Strings.isNullOrEmpty(repoInfo.remoteUrl)) {
             throw new RuntimeException("Missing remote URL for commit uri.");
         }
 
         // this is pretty hacky but to try to build the repo string we will just try to naively parse the git remote uri. Worst case scenario this 404s
-        String remoteURL = repoInfo.remoteURL;
+        String remoteURL = repoInfo.remoteUrl;
         if (remoteURL.startsWith("git")) {
-            remoteURL = repoInfo.remoteURL.replace(".git", "").replaceFirst(":", "/").replace("git@", "https://");
+            remoteURL = repoInfo.remoteUrl.replace(".git", "").replaceFirst(":", "/").replace("git@", "https://");
         }
         URI remote = URI.create(remoteURL);
         String path = remote.getPath();
