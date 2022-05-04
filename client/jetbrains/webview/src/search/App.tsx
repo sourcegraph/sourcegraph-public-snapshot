@@ -1,7 +1,8 @@
 import React, { useCallback, useState } from 'react'
 
-import { EMPTY, NEVER, of } from 'rxjs'
+import { NEVER, of } from 'rxjs'
 
+import { requestGraphQLCommon } from '@sourcegraph/http-client'
 import {
     fetchAutoDefinedSearchContexts,
     fetchSearchContexts,
@@ -10,6 +11,7 @@ import {
     SearchPatternType,
 } from '@sourcegraph/search'
 import { SearchBox } from '@sourcegraph/search-ui'
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import {
     aggregateStreamingSearch,
     ContentMatch,
@@ -28,6 +30,16 @@ interface Props {
     onPreviewChange: (match: ContentMatch, lineIndex: number) => void
     onPreviewClear: () => void
     onOpen: (match: ContentMatch, lineIndex: number) => void
+}
+
+const requestGraphQL: PlatformContext['requestGraphQL'] = args =>
+    requestGraphQLCommon({
+        ...args,
+        baseUrl: 'https://sourcegraph.com',
+    })
+
+const platformContext = {
+    requestGraphQL,
 }
 
 export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
@@ -109,7 +121,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                             globbing={false} // TODO: Wire it up to plugin settings
                             isLightTheme={false} // TODO: Wire it up with the current theme setting
                             telemetryService={NOOP_TELEMETRY_SERVICE} // TODO: Fix this, see VS Code's SearchResultsView.tsx
-                            platformContext={{ requestGraphQL: () => EMPTY }} // TODO: Fix this, see VS Code's SearchResultsView.tsx
+                            platformContext={platformContext} // TODO: Fix this, see VS Code's SearchResultsView.tsx
                             className=""
                             containerClassName=""
                             autoFocus={true}
