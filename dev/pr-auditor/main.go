@@ -173,7 +173,7 @@ func preMergeAudit(ctx context.Context, ghc *github.Client, payload *EventPayloa
 	}
 
 	owner, repo := payload.Repository.GetOwnerAndName()
-	_, _, err := ghc.Repositories.CreateStatus(ctx, owner, repo, payload.PullRequest.Head.SHA, &github.RepoStatus{
+	_, _, err := ghc.Repositories.CreateStatus(ctx, owner, repo, payload.PullRequest.Head.Ref, &github.RepoStatus{
 		Context:     github.String(commitStatusPreMerge),
 		State:       github.String(prState),
 		Description: github.String(stateDescription),
