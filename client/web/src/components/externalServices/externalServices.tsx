@@ -24,12 +24,12 @@ import gitlabSchemaJSON from '../../../../../schema/gitlab.schema.json'
 import gitoliteSchemaJSON from '../../../../../schema/gitolite.schema.json'
 import goModulesSchemaJSON from '../../../../../schema/go-modules.schema.json'
 import jvmPackagesSchemaJSON from '../../../../../schema/jvm-packages.schema.json'
-import pythonPackagesJSON from '../../../../../schema/python-packages.schema.json'
 import npmPackagesSchemaJSON from '../../../../../schema/npm-packages.schema.json'
 import otherExternalServiceSchemaJSON from '../../../../../schema/other_external_service.schema.json'
 import pagureSchemaJSON from '../../../../../schema/pagure.schema.json'
 import perforceSchemaJSON from '../../../../../schema/perforce.schema.json'
 import phabricatorSchemaJSON from '../../../../../schema/phabricator.schema.json'
+import pythonPackagesJSON from '../../../../../schema/python-packages.schema.json'
 import { ExternalServiceKind } from '../../graphql-operations'
 import { EditorAction } from '../../site-admin/configHelpers'
 import { PerforceIcon } from '../PerforceIcon'
@@ -1346,7 +1346,8 @@ const PYTHON_PACKAGES = {
             <ol>
                 <li>
                     In the configuration below, set <Field>urls</Field> to the simple repository APIs you want to sync
-                    dependency repositories from. For example, <code>"https://user:pass@artifactory.mycompany.com/simple"</code> or{' '}
+                    dependency repositories from. For example,{' '}
+                    <code>"https://user:pass@artifactory.mycompany.com/simple"</code> or{' '}
                     <code>"https://pypi.org/simple"</code>. A package will be synced from the first API that has it,
                     trying the next when it's not found.
                 </li>
