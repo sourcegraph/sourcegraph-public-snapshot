@@ -1,0 +1,7 @@
+.nav-link-disabled{
+    opacity: 0.25;
+
+    &:hover {
+        border-bottom: 2px solid transparent !important;
+    }
+}
