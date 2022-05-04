@@ -6,8 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/shared"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -20,6 +18,7 @@ import (
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 var schemeToExternalService = map[string]string{
@@ -58,7 +57,7 @@ type dependencySyncSchedulerHandler struct {
 	extsvcStore ExternalServiceStore
 }
 
-func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, record workerutil.Record) error {
+func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
 	if !autoIndexingEnabled() {
 		return nil
 	}
@@ -112,11 +111,12 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, record work
 	}
 
 	var nextSync time.Time
+	kindsArray := kindsToArray(kinds)
 	// If len == 0, it will return all external services, which we definitely don't want.
-	if len(kindsToArray(kinds)) > 0 {
+	if len(kindsArray) > 0 {
 		nextSync = time.Now()
 		externalServices, err := h.extsvcStore.List(ctx, database.ExternalServicesListOptions{
-			Kinds: kindsToArray(kinds),
+			Kinds: kindsArray,
 		})
 		if err != nil {
 			if len(errs) == 0 {
@@ -126,9 +126,12 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, record work
 			}
 		}
 
-		log15.Info("syncing external services",
-			"upload", job.UploadID, "numExtSvc", len(externalServices), "job", job.ID, "schemaKinds", kinds,
-			"newRepos", newDependencyReposInserted, "existingInserts", oldDependencyReposInserted)
+		logger.Info("syncing external services",
+			log.Int("upload", job.UploadID),
+			log.Int("numExtSvc", len(externalServices)),
+			log.Strings("schemaKinds", kindsArray),
+			log.Int("newRepos", newDependencyReposInserted),
+			log.Int("existingInserts", oldDependencyReposInserted))
 
 		for _, externalService := range externalServices {
 			externalService.NextSyncAt = nextSync
@@ -138,7 +141,7 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, record work
 			}
 		}
 	} else {
-		log15.Info("no package schema kinds to sync external services for", "upload", job.UploadID, "job", job.ID)
+		logger.Info("no package schema kinds to sync external services for", log.Int("upload", job.UploadID), log.Int("job", job.ID))
 	}
 
 	shouldIndex, err := h.shouldIndexDependencies(ctx, h.dbStore, job.UploadID)

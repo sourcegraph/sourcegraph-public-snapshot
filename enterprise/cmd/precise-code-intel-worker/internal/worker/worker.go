@@ -32,7 +32,6 @@ func NewWorker(
 	workerMetrics workerutil.WorkerMetrics,
 ) *workerutil.Worker {
 	rootContext := actor.WithActor(context.Background(), &actor.Actor{Internal: true})
-
 	observationContext := observation.Context{
 		Tracer: &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		HoneyDataset: &honey.Dataset{

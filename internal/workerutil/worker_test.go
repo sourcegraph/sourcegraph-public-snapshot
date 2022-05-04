@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type TestRecord struct {
@@ -48,7 +49,7 @@ func TestWorkerHandlerSuccess(t *testing.T) {
 
 	if callCount := len(handler.HandleFunc.History()); callCount != 1 {
 		t.Errorf("unexpected handle call count. want=%d have=%d", 1, callCount)
-	} else if arg := handler.HandleFunc.History()[0].Arg1; arg.RecordID() != 42 {
+	} else if arg := handler.HandleFunc.History()[0].Arg2; arg.RecordID() != 42 {
 		t.Errorf("unexpected record. want=%d have=%d", 42, arg.RecordID())
 	}
 
@@ -85,7 +86,7 @@ func TestWorkerHandlerFailure(t *testing.T) {
 
 	if callCount := len(handler.HandleFunc.History()); callCount != 1 {
 		t.Errorf("unexpected handle call count. want=%d have=%d", 1, callCount)
-	} else if arg := handler.HandleFunc.History()[0].Arg1; arg.RecordID() != 42 {
+	} else if arg := handler.HandleFunc.History()[0].Arg2; arg.RecordID() != 42 {
 		t.Errorf("unexpected record. want=%d have=%d", 42, arg.RecordID())
 	}
 
@@ -131,7 +132,7 @@ func TestWorkerHandlerNonRetryableFailure(t *testing.T) {
 
 	if callCount := len(handler.HandleFunc.History()); callCount != 1 {
 		t.Errorf("unexpected handle call count. want=%d have=%d", 1, callCount)
-	} else if arg := handler.HandleFunc.History()[0].Arg1; arg.RecordID() != 42 {
+	} else if arg := handler.HandleFunc.History()[0].Arg2; arg.RecordID() != 42 {
 		t.Errorf("unexpected record. want=%d have=%d", 42, arg.RecordID())
 	}
 
@@ -182,9 +183,9 @@ func TestWorkerConcurrent(t *testing.T) {
 				m.Unlock()
 			}
 
-			handler.PreHandleFunc.SetDefaultHook(func(ctx context.Context, record Record) { markTime(record.RecordID(), 0) })
-			handler.PostHandleFunc.SetDefaultHook(func(ctx context.Context, record Record) { markTime(record.RecordID(), 1) })
-			handler.HandleFunc.SetDefaultHook(func(context.Context, Record) error {
+			handler.PreHandleFunc.SetDefaultHook(func(ctx context.Context, _ log.Logger, record Record) { markTime(record.RecordID(), 0) })
+			handler.PostHandleFunc.SetDefaultHook(func(ctx context.Context, _ log.Logger, record Record) { markTime(record.RecordID(), 1) })
+			handler.HandleFunc.SetDefaultHook(func(context.Context, log.Logger, Record) error {
 				// Do a _very_ small sleep to make it very unlikely that the scheduler
 				// will happen to invoke all of the handlers sequentially.
 				<-time.After(time.Millisecond * 10)
@@ -363,7 +364,7 @@ func TestWorkerDequeueHeartbeat(t *testing.T) {
 
 	dequeued := make(chan struct{})
 	doneHandling := make(chan struct{})
-	handler.HandleFunc.defaultHook = func(c context.Context, r Record) error {
+	handler.HandleFunc.defaultHook = func(c context.Context, l log.Logger, r Record) error {
 		close(dequeued)
 		<-doneHandling
 		return nil
@@ -511,7 +512,7 @@ func TestWorkerCancel(t *testing.T) {
 
 	dequeued := make(chan struct{})
 	doneHandling := make(chan struct{})
-	handler.HandleFunc.defaultHook = func(ctx context.Context, r Record) error {
+	handler.HandleFunc.defaultHook = func(ctx context.Context, l log.Logger, r Record) error {
 		close(dequeued)
 		select {
 		case <-ctx.Done():
@@ -579,7 +580,7 @@ func TestWorkerDeadline(t *testing.T) {
 
 	dequeued := make(chan struct{})
 	doneHandling := make(chan struct{})
-	handler.HandleFunc.defaultHook = func(ctx context.Context, r Record) error {
+	handler.HandleFunc.defaultHook = func(ctx context.Context, l log.Logger, r Record) error {
 		close(dequeued)
 		select {
 		case <-ctx.Done():
@@ -633,14 +634,14 @@ func TestWorkerStopDrainsDequeueLoopOnly(t *testing.T) {
 
 	dequeued := make(chan struct{})
 	block := make(chan struct{})
-	handler.HandleFunc.defaultHook = func(ctx context.Context, r Record) error {
+	handler.HandleFunc.defaultHook = func(ctx context.Context, l log.Logger, r Record) error {
 		close(dequeued)
 		<-block
 		return ctx.Err()
 	}
 
 	var dequeueContext context.Context
-	handler.PreDequeueFunc.SetDefaultHook(func(ctx context.Context) (bool, interface{}, error) {
+	handler.PreDequeueFunc.SetDefaultHook(func(ctx context.Context, l log.Logger) (bool, interface{}, error) {
 		// Store dequeueContext in outer function so we can tell when Stop has
 		// reliably been called. Unfortunately we need to peek a bit into the
 		// internals here so we're not dependent on time-based unit tests.

@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 func TestHandle(t *testing.T) {
@@ -77,7 +78,7 @@ func TestHandle(t *testing.T) {
 		},
 	}
 
-	if err := handler.Handle(context.Background(), job); err != nil {
+	if err := handler.Handle(context.Background(), logtest.Scoped(t), job); err != nil {
 		t.Fatalf("unexpected error handling record: %s", err)
 	}
 
