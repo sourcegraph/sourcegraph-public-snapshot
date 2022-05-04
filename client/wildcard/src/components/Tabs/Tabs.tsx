@@ -44,6 +44,12 @@ export interface TabsSettings {
      * Default is "forceRender"
      */
     behavior?: 'memoize' | 'forceRender'
+
+    /**
+     * Controls the behavior in case tab list doesn't fit into a container.
+     * Default is "wrap"
+     */
+    longTabList?: 'wrap' | 'scroll'
 }
 
 export interface TabsProps extends ReachTabsProps, TabsSettings {
@@ -72,9 +78,17 @@ export interface TabPanelProps extends ReachTabPanelProps {}
  * See: https://reach.tech/tabs/
  */
 export const Tabs = React.forwardRef((props, reference) => {
-    const { lazy = false, size, behavior = 'forceRender', className, as = 'div', ...reachProps } = props
+    const {
+        lazy = false,
+        size = 'small',
+        behavior = 'forceRender',
+        className,
+        as = 'div',
+        longTabList = 'wrap',
+        ...reachProps
+    } = props
     return (
-        <TabsSettingsContext.Provider value={{ lazy, size, behavior }}>
+        <TabsSettingsContext.Provider value={{ lazy, size, behavior, longTabList }}>
             <ReachTabs
                 className={classNames(styles.wildcardTabs, className)}
                 data-testid="wildcard-tabs"
@@ -88,13 +102,15 @@ export const Tabs = React.forwardRef((props, reference) => {
 
 export const TabList = React.forwardRef((props, reference) => {
     const { actions, as = 'div', wrapperClassName, className, ...reachProps } = props
+    const { longTabList } = useTabsSettings()
+
     return (
         <div className={classNames(styles.tablistWrapper, wrapperClassName)}>
             <ReachTabList
                 data-testid="wildcard-tab-list"
                 as={as}
                 ref={reference}
-                className={classNames(className, styles.tabList)}
+                className={classNames(className, styles.tabList, longTabList === 'scroll' && styles.tabListScroll)}
                 {...reachProps}
             />
             {actions}
@@ -104,9 +120,17 @@ export const TabList = React.forwardRef((props, reference) => {
 
 export const Tab = React.forwardRef((props, reference) => {
     const { as = 'button', ...reachProps } = props
-    const { size = 'small' } = useTabsSettings()
+    const { size } = useTabsSettings()
+    const { longTabList } = useTabsSettings()
+
     return (
-        <ReachTab className={styles[size]} data-testid="wildcard-tab" as={as} ref={reference} {...reachProps}>
+        <ReachTab
+            className={classNames(styles[size], longTabList === 'scroll' && styles.tabNowrap)}
+            data-testid="wildcard-tab"
+            as={as}
+            ref={reference}
+            {...reachProps}
+        >
             <span className={styles.tabLabel}>{props.children}</span>
         </ReachTab>
     )
