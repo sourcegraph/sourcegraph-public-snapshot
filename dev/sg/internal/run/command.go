@@ -172,7 +172,8 @@ func startCmd(ctx context.Context, dir string, cmd Command, parentEnv map[string
 
 	secretsEnv, err := getSecrets(ctx, cmd)
 	if err != nil {
-		return nil, errors.Wrapf(err, "cannot fetch secrets")
+		stdout.Out.WriteLine(output.Linef(output.EmojiWarningSign, output.StyleBold, errors.Wrapf(err, "cannot fetch secrets").Error()))
+		return nil, nil
 	}
 
 	sc.Cmd.Env = makeEnv(cmd.Env, secretsEnv, parentEnv)

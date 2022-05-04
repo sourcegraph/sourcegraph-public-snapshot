@@ -585,7 +585,8 @@ func Test(ctx context.Context, cmd Command, args []string, parentEnv map[string]
 
 	secretsEnv, err := getSecrets(ctx, cmd)
 	if err != nil {
-		return errors.Wrapf(err, "cannot fetch secrets")
+		stdout.Out.WriteLine(output.Linef(output.EmojiWarningSign, output.StyleBold, errors.Wrapf(err, "cannot fetch secrets").Error()))
+		return nil
 	}
 
 	if cmd.Preamble != "" {
