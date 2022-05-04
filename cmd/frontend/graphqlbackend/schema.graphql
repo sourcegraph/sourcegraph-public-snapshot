@@ -1427,6 +1427,16 @@ type Query {
     viewerFeatureFlags: [EvaluatedFeatureFlag!]!
 
     """
+    TODO:
+    """
+    allEnabledFeatureFlags: [String!]!
+
+    """
+    TODO:
+    """
+    featureFlagEnabled(name: String!, defaultValue: Boolean): [String!]!
+
+    """
     Retrieve the value of a feature flag for the organization
     """
     organizationFeatureFlagValue(orgID: ID!, flagName: String!): Boolean!
