@@ -316,8 +316,8 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 		ImportedChangesetsMergedCount:               1,
 		BatchSpecsCreatedCount:                      4,
 		ChangesetSpecsCreatedCount:                  4,
-		CurrentMonthContributorsCount:               1,
-		CurrentMonthUsersCount:                      2,
+		CurrentMonthContributorsCount:               2,
+		CurrentMonthUsersCount:                      3,
 		BatchChangesCohorts: []*types.BatchChangesCohort{
 			{
 				Week:                     batchChangeCreationDate1.Truncate(24 * 7 * time.Hour).Format("2006-01-02"),
