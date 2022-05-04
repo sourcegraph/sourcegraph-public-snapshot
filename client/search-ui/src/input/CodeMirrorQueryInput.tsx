@@ -271,6 +271,10 @@ const CodeMirrorQueryInput: React.FunctionComponent<CodeMirrorQueryInputProps> =
                     highlightFocusedFilter,
                     ...extensions,
                 ],
+                // patternType and interpretComments are updated via a
+                // transaction since there is no need to re-initialize all
+                // extensions
+                // eslint-disable-next-line react-hooks/exhaustive-deps
                 [isLightTheme, extensions]
             )
         )
