@@ -17,22 +17,13 @@ import {
     createFileExternalLinksResult,
     createBlobContentResult,
     createTreeEntriesResult,
+    createFileNamesResult,
 } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults } from './graphQlResults'
 
 const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations & SearchGraphQlOperations> = {
     ...commonWebGraphQlResults,
-    FileNames: () => ({
-        repository: {
-            id: 'repo-123',
-            __typename: 'Repository',
-            commit: {
-                id: 'c0ff33',
-                __typename: 'GitCommit',
-                fileNames: ['README.md'],
-            },
-        },
-    }),
+    FileNames: () => createFileNamesResult(),
     RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
     ResolveRev: () => createResolveRevisionResult('/github.com/sourcegraph/sourcegraph'),
     FileExternalLinks: ({ filePath, repoName, revision }) =>

@@ -8,6 +8,7 @@ import {
     ResolveRevResult,
     ExternalServiceKind,
     RepoChangesetsStatsResult,
+    FileNamesResult,
 } from '../graphql-operations'
 
 export const createTreeEntriesResult = (url: string, toplevelFiles: string[]): TreeEntriesResult => ({
@@ -95,5 +96,13 @@ export const createResolveRevisionResult = (treeUrl: string, oid = '1'.repeat(40
             tree: { url: '/' + treeUrl },
         },
         defaultBranch: { abbrevName: 'master' },
+    },
+})
+
+export const createFileNamesResult = (): FileNamesResult => ({
+    repository: {
+        id: 'repo-123',
+        __typename: 'Repository',
+        commit: { id: 'c0ff33', __typename: 'GitCommit', fileNames: ['README.md'] },
     },
 })
