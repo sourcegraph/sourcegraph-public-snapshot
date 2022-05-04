@@ -1,5 +1,6 @@
 package com.sourcegraph.scheme;
 
+import com.google.common.collect.ImmutableMap;
 import org.cef.callback.CefCallback;
 import org.cef.handler.CefResourceHandlerAdapter;
 import org.cef.misc.IntRef;
@@ -10,6 +11,8 @@ import org.cef.network.CefResponse;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
+import java.util.Optional;
 
 public class SchemeHandler extends CefResourceHandlerAdapter {
     private byte[] data;
@@ -18,83 +21,90 @@ public class SchemeHandler extends CefResourceHandlerAdapter {
     private int offset = 0;
 
     public synchronized boolean processRequest(CefRequest request, CefCallback callback) {
-        boolean handled = false;
+        String extension = getExtension(request.getURL());
+        mimeType = getMimeType(extension);
         String url = request.getURL();
         String path = url.replace("http://sourcegraph", "");
 
-        if (url.endsWith(".html")) {
-            handled = loadContent(path);
-            this.mimeType = "text/html";
-            if (!handled) {
-                String html = "<html><head><title>Error 404</title></head>" +
-                    "<body>" +
-                    "<h1>Error 404</h1>" +
-                    "File " + path + "  does not exist." +
-                    "</body></html>";
-                this.data = html.getBytes();
-                this.responseHeader = 404;
-                handled = true;
+        if (mimeType != null) {
+            data = loadResource(path);
+            responseHeader = data != null ? 200 : 404;
+            if (data == null) {
+                data = getDefaultContent(extension, path).getBytes();
             }
-        }
-
-        if (path.endsWith(".js") || path.endsWith(".css")) {
-            handled = loadContent(path);
-            this.mimeType = url.endsWith(".js") ? "text/javascript" : "text/css";
-            if (!handled) {
-                this.data = "".getBytes();
-                this.responseHeader = 404;
-                handled = true;
-            }
-        }
-
-        if (handled) {
-            this.responseHeader = 200;
             callback.Continue();
             return true;
+        } else {
+            return false;
         }
-
-        return false;
     }
 
     public void getResponseHeaders(
         CefResponse response, IntRef responseLength, StringRef redirectUrl) {
-        response.setMimeType(this.mimeType);
-        response.setStatus(this.responseHeader);
-        responseLength.set(this.data.length);
+        response.setMimeType(mimeType);
+        response.setStatus(responseHeader);
+        responseLength.set(data.length);
     }
 
     public synchronized boolean readResponse(
         byte[] dataOut, int bytesToRead, IntRef bytesRead, CefCallback callback) {
         boolean hasData = false;
 
-        if (this.offset < this.data.length) {
-            int transferSize = Math.min(bytesToRead, (this.data.length - this.offset));
-            System.arraycopy(this.data, this.offset, dataOut, 0, transferSize);
-            this.offset += transferSize;
+        if (offset < data.length) {
+            int transferSize = Math.min(bytesToRead, (data.length - offset));
+            System.arraycopy(data, offset, dataOut, 0, transferSize);
+            offset += transferSize;
             bytesRead.set(transferSize);
             hasData = true;
         } else {
-            this.offset = 0;
+            offset = 0;
             bytesRead.set(0);
         }
 
         return hasData;
     }
 
-    private boolean loadContent(String resName) {
+    private byte[] loadResource(String resourceName) {
         try (
-            InputStream inStream = getClass().getResourceAsStream(resName)
+            InputStream inStream = getClass().getResourceAsStream(resourceName)
         ) {
             if (inStream != null) {
                 ByteArrayOutputStream outFile = new ByteArrayOutputStream();
                 int readByte;
                 while ((readByte = inStream.read()) >= 0) outFile.write(readByte);
-                this.data = outFile.toByteArray();
-                return true;
+                return outFile.toByteArray();
             }
         } catch (IOException e) {
-            return false;
+            return null;
         }
-        return false;
+        return null;
+    }
+
+    public String getExtension(String filename) {
+        return Optional.ofNullable(filename)
+            .filter(f -> f.contains("."))
+            .map(f -> f.substring(filename.lastIndexOf(".") + 1)).orElse(null);
+    }
+
+    public String getDefaultContent(String extension, String path) {
+        final Map<String, String> extensionToDefaultContent = ImmutableMap.of(
+            "html", "<html><head><title>Error 404</title></head>" +
+                "<body>" +
+                "<h1>Error 404</h1>" +
+                "File " + path + "  does not exist." +
+                "</body></html>",
+            "js", "",
+            "css", ""
+        );
+        return extensionToDefaultContent.get(extension);
+    }
+
+    public String getMimeType(String extension) {
+        final Map<String, String> extensionToMimeType = ImmutableMap.of(
+            "html", "text/html",
+            "js", "text/javascript",
+            "css", "text/css"
+        );
+        return extensionToMimeType.get(extension);
     }
 }
