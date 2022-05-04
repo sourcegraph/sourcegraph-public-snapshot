@@ -967,7 +967,11 @@ tests:
     cmd: yarn run jest --testPathIgnorePatterns end-to-end regression integration storybook
 
   frontend-e2e:
-    preamble: "sg start enterprise-e2e must be already running for these tests to work."
+    preamble: |
+      sg start enterprise-e2e must be already running for these tests to work.
+
+      If you run into authentication issues, you can run the following commands to fix them:
+      sg db reset-pg && sg db add-user -name test@sourcegraph.com -password supersecurepassword
     cmd: |
       yarn run test-e2e
     env:
