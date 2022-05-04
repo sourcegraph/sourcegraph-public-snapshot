@@ -2,16 +2,22 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
+	"github.com/bitfield/script"
+
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/docker"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/download"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/generate/golang"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/lint"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -53,8 +59,8 @@ var allLintTargets = lintTargets{
 		Name: "docker",
 		Help: "Check Dockerfiles for Sourcegraph best practices",
 		Linters: []lint.Runner{
-			lint.RunScript("Docker lint", "dev/check/docker-lint.sh"),
-			lintDockerfiles(),
+			hadolint(),
+			customDockerfileLinters(),
 		},
 	},
 	{
@@ -155,8 +161,84 @@ func lintLoggingLibraries() lint.Runner {
 	}
 }
 
-// lintDockerfiles runs custom Sourcegraph Dockerfile linters
-func lintDockerfiles() lint.Runner {
+func hadolint() lint.Runner {
+	const header = "Hadolint"
+	const hadolintVersion = "v2.10.0"
+	hadolintBinary := fmt.Sprintf("./.bin/hadolint-%s", hadolintVersion)
+
+	runHadolint := func(start time.Time, files []string) *lint.Report {
+		out, err := script.NewPipe().
+			WithReader(strings.NewReader(strings.Join(files, "\n"))).
+			Exec("xargs " + hadolintBinary).
+			String()
+		return &lint.Report{
+			Header:   header,
+			Output:   out,
+			Err:      err,
+			Duration: time.Since(start),
+		}
+	}
+
+	return func(ctx context.Context, s *repo.State) *lint.Report {
+		start := time.Now()
+		diff, err := s.GetDiff("**/*Dockerfile*")
+		if err != nil {
+			return &lint.Report{Header: header, Err: err}
+		}
+		var dockerfiles []string
+		for f := range diff {
+			dockerfiles = append(dockerfiles, f)
+		}
+		if len(dockerfiles) == 0 {
+			return &lint.Report{
+				Header:   header,
+				Output:   "No Dockerfiles changed",
+				Duration: time.Since(start),
+			}
+		}
+
+		// If our binary is already here, just go!
+		if _, err := os.Stat(hadolintBinary); err == nil {
+			return runHadolint(start, dockerfiles)
+		}
+
+		// https://github.com/hadolint/hadolint/releases for downloads
+		var distro, arch string
+		switch runtime.GOARCH {
+		case "arm64":
+			arch = "arm64"
+		default:
+			arch = "x86_64"
+		}
+		switch runtime.GOOS {
+		case "darwin":
+			distro = "Darwin"
+			arch = "x86_64"
+		case "windows":
+			distro = "Windows"
+		default:
+			distro = "Linux"
+		}
+		url := fmt.Sprintf("https://github.com/hadolint/hadolint/releases/download/%s/hadolint-%s-%s",
+			hadolintVersion, distro, arch)
+
+		// Download
+		os.MkdirAll("./.bin", os.ModePerm)
+		stdout.Out.WriteLine(output.Linef(output.EmojiHourglass, nil, "Downloading hadolint from %s", url))
+		if err := download.Exeuctable(url, hadolintBinary); err != nil {
+			return &lint.Report{
+				Header:   header,
+				Err:      errors.Wrap(err, "downloading hadolint"),
+				Duration: time.Since(start),
+			}
+		}
+
+		return runHadolint(start, dockerfiles)
+	}
+}
+
+// customDockerfileLinters runs custom Sourcegraph Dockerfile linters
+func customDockerfileLinters() lint.Runner {
 	return func(ctx context.Context, _ *repo.State) *lint.Report {
 		start := time.Now()
 		var combinedErrors error
