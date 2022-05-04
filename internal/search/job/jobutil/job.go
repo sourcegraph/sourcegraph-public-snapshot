@@ -507,7 +507,7 @@ func (b *jobBuilder) newZoektGlobalSearch(typ search.IndexedRequestType) (job.Jo
 			RepoOptions:      b.repoOptions,
 		}, nil
 	case search.TextRequest:
-		return &zoekt.GlobalSearchJob{
+		return &zoekt.ZoektGlobalSearchJob{
 			GlobalZoektQuery: globalZoektQuery,
 			ZoektArgs:        zoektArgs,
 			RepoOptions:      b.repoOptions,
@@ -706,7 +706,7 @@ func optimizeJobs(baseJob job.Job, inputs *run.SearchInputs, q query.Basic) (job
 		MapJob: func(currentJob job.Job) job.Job {
 			switch currentJob.(type) {
 			case
-				*zoekt.GlobalSearchJob,
+				*zoekt.ZoektGlobalSearchJob,
 				*symbol.RepoUniverseSymbolSearchJob,
 				*zoekt.ZoektRepoSubsetSearchJob,
 				*zoekt.ZoektSymbolSearchJob,
@@ -738,7 +738,7 @@ func optimizeJobs(baseJob job.Job, inputs *run.SearchInputs, q query.Basic) (job
 	trimmer := Mapper{
 		MapJob: func(currentJob job.Job) job.Job {
 			switch currentJob.(type) {
-			case *zoekt.GlobalSearchJob:
+			case *zoekt.ZoektGlobalSearchJob:
 				if exists("ZoektGlobalSearchJob") {
 					return &noopJob{}
 				}
