@@ -364,11 +364,10 @@ func runWatch(
 			stdout.Out.WriteLine(output.Linef("", output.StylePending, "Running %s...", cmd.Name))
 
 			sc, err := startCmd(ctx, root, cmd, parentEnv)
-			defer sc.cancel()
-
 			if err != nil {
 				return err
 			}
+			defer sc.cancel()
 
 			cancelFuncs = append(cancelFuncs, sc.cancel)
 
