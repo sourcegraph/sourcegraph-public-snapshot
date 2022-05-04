@@ -39,18 +39,21 @@ export const decoratedTokens = Facet.define<DecoratedToken[], DecoratedToken[]>(
     },
 })
 
+interface ParseOptions {
+    patternType: SearchPatternType
+    interpretComments?: boolean
+}
+
 /**
  * Creates an extension that parses the input as search query and stores the
  * result in the {@link parsedQuery} facet.
  */
-export function parseInputAsQuery(): Extension {
+export function parseInputAsQuery(initialParseOptions: ParseOptions): Extension {
     // Editor state to keep information about how to parse the query. Can be updated
     // with the `setQueryParseOptions` effect.
-    return StateField.define<{ patternType: SearchPatternType; interpretComments?: boolean }>({
+    return StateField.define<ParseOptions>({
         create() {
-            return {
-                patternType: SearchPatternType.literal,
-            }
+            return initialParseOptions
         },
         update(value, transaction) {
             for (const effect of transaction.effects) {

@@ -264,7 +264,7 @@ const CodeMirrorQueryInput: React.FunctionComponent<CodeMirrorQueryInputProps> =
             useMemo(
                 () => [
                     EditorView.darkTheme.of(isLightTheme === false),
-                    parseInputAsQuery(),
+                    parseInputAsQuery({ patternType, interpretComments }),
                     tokenHighlight,
                     queryDiagnostic,
                     tokenInfo(),
