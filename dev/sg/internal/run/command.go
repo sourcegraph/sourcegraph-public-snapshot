@@ -2,14 +2,12 @@ package run
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"os/exec"
 
-	secretmanager "cloud.google.com/go/secretmanager/apiv1"
 	"golang.org/x/sync/errgroup"
-	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -27,18 +25,13 @@ type Command struct {
 	IgnoreStderr        bool              `yaml:"ignoreStderr"`
 	DefaultArgs         string            `yaml:"defaultArgs"`
 	ContinueWatchOnExit bool              `yaml:"continueWatchOnExit"`
-	Secrets             map[string]Secret `yaml:"secrets"`
 	// Preamble is a short and visible message, displayed when the command is launched.
 	Preamble string `yaml:"preamble"`
 
+	Secrets map[string]secrets.ExternalSecret `yaml:"secrets"`
+
 	// ATTENTION: If you add a new field here, be sure to also handle that
 	// field in `Merge` (below).
-}
-
-type Secret struct {
-	Provider string `yaml:"provider"`
-	Project  string `yaml:"project"`
-	Name     string `yaml:"name"`
 }
 
 func (c Command) Merge(other Command) Command {
@@ -137,23 +130,15 @@ func getSecrets(ctx context.Context, cmd Command) (map[string]string, error) {
 		return secretsEnv, nil
 	}
 
-	client, err := secretmanager.NewClient(ctx)
+	secretsStore, err := secrets.FromContext(ctx)
 	if err != nil {
 		return nil, errors.Errorf("failed to create secretmanager client: %v", err)
 	}
 	for envName, secret := range cmd.Secrets {
-		if secret.Provider != "gcloud" {
-			errors.Newf("Unknown secrets provider %s", secret.Provider)
-		}
-		path := fmt.Sprintf("projects/%s/secrets/%s/versions/latest", secret.Project, secret.Name)
-		req := &secretmanagerpb.AccessSecretVersionRequest{
-			Name: path,
-		}
-		result, err := client.AccessSecretVersion(ctx, req)
+		secretsEnv[envName], err = secretsStore.GetExternal(ctx, secret)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to access secret %s from %s", secret.Name, secret.Project)
+			return nil, errors.Wrapf(err, "failed to access secret %1 for command %q", secret.Name, cmd.Name)
 		}
-		secretsEnv[envName] = string(result.Payload.Data)
 	}
 	return secretsEnv, nil
 }
