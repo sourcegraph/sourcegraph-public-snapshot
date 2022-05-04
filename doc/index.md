@@ -10,7 +10,7 @@ title: 'Sourcegraph docs'
 Find and fix things across all of your code faster with Sourcegraph. Onboard to a new codebase, make large-scale refactors, increase efficiency, address security risks, root-cause incidents, and more.
 </p>
 
-This website is home to Sourcegraph's feature, installation, administration, and development documentation.
+This website is home to Sourcegraph's feature, administration (including deployment and configuration), and development documentation.
 
 <div class="cta-group">
 <a class="btn btn-primary" href="#getting-started">★ Try Sourcegraph now</a>
@@ -57,7 +57,7 @@ This website is home to Sourcegraph's feature, installation, administration, and
 
 > NOTE: Unsure where to start, or need help? [Reach out to us](#get-help)!
 
-### Quick install
+### Try Sourcegraph locally
 
 You can quickly try out Sourcegraph locally using Docker, which takes only a few minutes and lets you try out all of its features:
 
@@ -70,7 +70,7 @@ You can quickly try out Sourcegraph locally using Docker, which takes only a few
 <pre class="pre-wrap start-sourcegraph-command" id="dockerInstall"><code>docker run -d<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.39.1<span class="iconify copy-text" data-icon="mdi:clipboard-arrow-left-outline" data-inline="false"></span></code>
 </pre>
 
-For next steps, visit the [Docker installation documentation](admin/deploy/docker-single-container/index.md).
+For next steps, visit the [Docker deployment documentation](admin/deploy/docker-single-container/index.md).
 
 > NOTE: Due to the Windows enviroment, using Sourcegraph with Windows currently isn't fully supported. Testing instructions for running Sourcegraph locally on a Windows machine can be found [here](admin/deploy/docker-single-container/index.md#testing-sourcegraph-on-windows)
 
@@ -102,7 +102,7 @@ For next steps, visit the [Docker installation documentation](admin/deploy/docke
 
 ## Self-hosted documentation
 
-- [Install](#getting-started) or [update](admin/updates/index.md) Sourcegraph
+- [Deploy](admin/deploy/index.md) or [update](admin/updates/index.md) Sourcegraph
 - [Administration](admin/index.md)
 
 ## Other links
