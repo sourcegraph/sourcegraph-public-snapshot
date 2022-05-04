@@ -20,6 +20,7 @@ type InsightsResolver interface {
 	InsightViews(ctx context.Context, args *InsightViewQueryArgs) (InsightViewConnectionResolver, error)
 
 	SearchInsightLivePreview(ctx context.Context, args SearchInsightLivePreviewArgs) ([]SearchInsightLivePreviewSeriesResolver, error)
+	InsightLivePreview(ctx context.Context, args InsightLivePreviewArgs) ([]SearchInsightLivePreviewSeriesResolver, error)
 
 	// Mutations
 	CreateInsightsDashboard(ctx context.Context, args *CreateInsightsDashboardArgs) (InsightsDashboardPayloadResolver, error)
@@ -42,6 +43,22 @@ type InsightsResolver interface {
 
 type SearchInsightLivePreviewArgs struct {
 	Input SearchInsightLivePreviewInput
+}
+
+type InsightLivePreviewArgs struct {
+	Input InsightLivePreviewInput
+}
+
+type InsightLivePreviewInput struct {
+	RepositoryScope RepositoryScopeInput
+	TimeScope       TimeScopeInput
+	Series          []SeriesLivePreviewInput
+}
+
+type SeriesLivePreviewInput struct {
+	Query                      string
+	Label                      string
+	GeneratedFromCaptureGroups bool
 }
 
 type SearchInsightLivePreviewInput struct {

@@ -78,3 +78,7 @@ func (r *disabledResolver) DeleteInsightView(ctx context.Context, args *graphqlb
 func (r *disabledResolver) SearchInsightLivePreview(ctx context.Context, args graphqlbackend.SearchInsightLivePreviewArgs) ([]graphqlbackend.SearchInsightLivePreviewSeriesResolver, error) {
 	return nil, errors.New(r.reason)
 }
+
+func (r *disabledResolver) InsightLivePreview(ctx context.Context, args graphqlbackend.InsightLivePreviewArgs) ([]graphqlbackend.SearchInsightLivePreviewSeriesResolver, error) {
+	return nil, errors.New(r.reason)
+}

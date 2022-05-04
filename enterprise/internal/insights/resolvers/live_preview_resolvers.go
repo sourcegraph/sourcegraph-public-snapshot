@@ -37,6 +37,52 @@ func (r *Resolver) SearchInsightLivePreview(ctx context.Context, args graphqlbac
 	return resolvers, nil
 }
 
+func (r *Resolver) InsightLivePreview(ctx context.Context, args graphqlbackend.InsightLivePreviewArgs) ([]graphqlbackend.SearchInsightLivePreviewSeriesResolver, error) {
+
+	if args.Input.TimeScope.StepInterval == nil {
+		return nil, errors.New("live preview currently only supports a time interval time scope")
+	}
+	var resolvers []graphqlbackend.SearchInsightLivePreviewSeriesResolver
+	var generatedSeries []query.GeneratedTimeSeries
+
+	// get a consistent time to use across all preview series
+	previewTime := time.Now().UTC()
+	clock := func() time.Time {
+		return previewTime
+	}
+	interval := timeseries.TimeInterval{
+		Unit:  types.IntervalUnit(args.Input.TimeScope.StepInterval.Unit),
+		Value: int(args.Input.TimeScope.StepInterval.Value),
+	}
+	repos := args.Input.RepositoryScope.Repositories
+	for _, seriesArgs := range args.Input.Series {
+
+		var series []query.GeneratedTimeSeries
+		var err error
+
+		if seriesArgs.GeneratedFromCaptureGroups {
+			executor := query.NewCaptureGroupExecutor(r.postgresDB, r.insightsDB, clock)
+			series, err = executor.Execute(ctx, seriesArgs.Query, repos, interval)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			executor := query.NewStreamingExecutor(r.postgresDB, r.insightsDB, clock)
+			series, err = executor.Execute(ctx, seriesArgs.Query, seriesArgs.Label, seriesArgs.Label, repos, interval)
+			if err != nil {
+				return nil, err
+			}
+		}
+		generatedSeries = append(generatedSeries, series...)
+	}
+
+	for i := range generatedSeries {
+		resolvers = append(resolvers, &searchInsightLivePreviewSeriesResolver{series: &generatedSeries[i]})
+	}
+
+	return resolvers, nil
+}
+
 type searchInsightLivePreviewSeriesResolver struct {
 	series *query.GeneratedTimeSeries
 }
