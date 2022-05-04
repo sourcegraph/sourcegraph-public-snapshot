@@ -31,6 +31,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Unverified primary emails no longer breaks the Emails-page for users and Users-page for Site Admin. [#34312](https://github.com/sourcegraph/sourcegraph/pull/34312)
 - Button to download raw file in blob page is now working correctly. [#34558](https://github.com/sourcegraph/sourcegraph/pull/34558)
 - Searches containing `or` expressions are now optimized to evaluate natively on the backends that support it ([#34382](https://github.com/sourcegraph/sourcegraph/pull/34382)), and both commit and diff search have been updated to run optimized `and`, `or`, and `not` queries. [#34595](https://github.com/sourcegraph/sourcegraph/pull/34595)
+- Carets in textareas in Firefox are now visible. [#34888](https://github.com/sourcegraph/sourcegraph/pull/34888)
 
 ### Removed
 
