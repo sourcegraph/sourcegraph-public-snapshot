@@ -14,34 +14,46 @@ import com.intellij.ui.OnePixelSplitter;
 import com.intellij.ui.PopupBorder;
 import com.intellij.ui.components.JBPanel;
 import com.intellij.ui.components.JBPanelWithEmptyText;
+import com.intellij.ui.jcef.JBCefApp;
 import com.intellij.util.ui.JBUI;
 import com.sourcegraph.service.JCEFService;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.Objects;
 
 public class SourcegraphWindow implements Disposable {
     private final Project project;
-    private final JPanel panel;
-    private final JCEFWindow jcefWindow;
+    private final JPanel mainPanel;
+    private final SourcegraphJBCefBrowser sourcegraphJBCefBrowser;
     private JBPopup popup;
 
-    public SourcegraphWindow(Project project) {
+    public SourcegraphWindow(Project project, JCEFService service) {
         this.project = project;
 
-        panel = new JPanel(new BorderLayout());
-        panel.setPreferredSize(JBUI.size(1200, 800));
-        panel.setBorder(PopupBorder.Factory.create(true, true));
-        panel.setFocusCycleRoot(true);
+        mainPanel = new JPanel(new BorderLayout());
+        mainPanel.setPreferredSize(JBUI.size(1200, 800));
+        mainPanel.setBorder(PopupBorder.Factory.create(true, true));
+        mainPanel.setFocusCycleRoot(true);
 
         EditorFactory editorFactory = EditorFactory.getInstance();
         JBPanel<JBPanelWithEmptyText> editorPanel = new JBPanelWithEmptyText(new BorderLayout());
 
-        JCEFService service = project.getService(JCEFService.class);
-        this.jcefWindow = service.getJcefWindow();
+        JPanel jcefPanel = new JPanel(new BorderLayout());
+        /* Make sure JCEF is supported */
+        if (!JBCefApp.isSupported()) {
+            JLabel warningLabel = new JLabel("Unfortunately, the browser is not available on your system. Try running the IDE with the default OpenJDK.");
+            jcefPanel.add(warningLabel);
+            sourcegraphJBCefBrowser = null;
+            return;
+        }
+        sourcegraphJBCefBrowser = service.getJcefWindow();
 
         JPanel topPanel = new JPanel(new BorderLayout());
-        topPanel.add(this.jcefWindow.getContent());
+
+        /* Add browser to panels */
+        jcefPanel.add(Objects.requireNonNull(sourcegraphJBCefBrowser.getComponent()), BorderLayout.CENTER);
+        topPanel.add(jcefPanel);
 
 
         String contentTs = "let message: string = 'Hello, TypeScript!';\n" +
@@ -71,22 +83,22 @@ public class SourcegraphWindow implements Disposable {
         splitter.setFirstComponent(topPanel);
         splitter.setSecondComponent(editorPanel);
 
-        panel.add(splitter, BorderLayout.CENTER);
+        mainPanel.add(splitter, BorderLayout.CENTER);
     }
 
     synchronized public void showPopup() {
-        if (this.popup == null || this.popup.isDisposed()) {
-            this.popup = createPopup();
-            this.popup.showCenteredInCurrentWindow(this.project);
+        if (popup == null || popup.isDisposed()) {
+            popup = createPopup();
+            popup.showCenteredInCurrentWindow(project);
         }
 
         // If the popup is already shown, hitting alt + a gain should behave the same as the native find in files
         // feature and focus the search field.
-        this.jcefWindow.focus();
+        sourcegraphJBCefBrowser.focus();
     }
 
     private JBPopup createPopup() {
-        return JBPopupFactory.getInstance().createComponentPopupBuilder(panel, panel)
+        return JBPopupFactory.getInstance().createComponentPopupBuilder(mainPanel, mainPanel)
             .setTitle("Sourcegraph")
             .setCancelOnClickOutside(false)
             .setResizable(true)
@@ -103,8 +115,8 @@ public class SourcegraphWindow implements Disposable {
 
     @Override
     public void dispose() {
-        if (this.popup != null) {
-            this.popup.dispose();
+        if (popup != null) {
+            popup.dispose();
         }
     }
 }

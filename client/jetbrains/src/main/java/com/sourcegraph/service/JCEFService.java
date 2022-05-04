@@ -1,22 +1,20 @@
 package com.sourcegraph.service;
 
 import com.intellij.openapi.project.Project;
-import com.sourcegraph.ui.JCEFWindow;
+import com.sourcegraph.ui.SourcegraphJBCefBrowser;
 import com.sourcegraph.ui.SourcegraphWindow;
-
-import java.util.Objects;
 
 public class JCEFService {
     private final SourcegraphWindow sourcegraphWindow;
-    private final JCEFWindow jcefWindow;
+    private final SourcegraphJBCefBrowser sourcegraphJBCefBrowser;
 
     public JCEFService(Project project) {
-        jcefWindow = new JCEFWindow(project);
-        sourcegraphWindow = new SourcegraphWindow(Objects.requireNonNull(project));
+        sourcegraphJBCefBrowser = new SourcegraphJBCefBrowser();
+        sourcegraphWindow = new SourcegraphWindow(project, this);
     }
 
-    public JCEFWindow getJcefWindow() {
-        return jcefWindow;
+    public SourcegraphJBCefBrowser getJcefWindow() {
+        return sourcegraphJBCefBrowser;
     }
 
     public SourcegraphWindow getSourcegraphWindow() {
