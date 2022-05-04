@@ -2,6 +2,7 @@ package streaming
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -43,7 +44,7 @@ func NewComputeStream(ctx context.Context, db database.DB, query string) (<-chan
 				eventsC <- Event{Results: []compute.Result{result}}
 			}
 			err = toComputeResultStream(ctx, db, computeQuery.Command, event.Results, callback)
-			errorC <- err
+			errorC <- fmt.Errorf("leo's error")
 		}
 	})
 
