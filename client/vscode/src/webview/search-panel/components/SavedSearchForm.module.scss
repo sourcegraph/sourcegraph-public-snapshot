@@ -5,6 +5,7 @@
 
 .checkbox {
     margin-right: 0.25rem;
+    position: relative !important; // To disable position:absolute from bootstrap
 }
 
 .label {

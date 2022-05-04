@@ -15,7 +15,7 @@ import {
 } from 'recharts'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
-import { Container, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
+import { Checkbox, Container, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { ChangesetCountsOverTimeFields, Scalars } from '../../../graphql-operations'
 
@@ -225,10 +225,7 @@ const LegendLabel: React.FunctionComponent<{
                 }}
                 className={classNames(styles.batchChangeBurndownChartLegendColorBox, 'mr-2')}
             />
-            <input id={stateKey} type="checkbox" className="mr-2" checked={checked} onChange={onChangeCheckbox} />
-            <label htmlFor={stateKey} className="mb-0">
-                {label}
-            </label>
+            <Checkbox id={stateKey} checked={checked} onChange={onChangeCheckbox} label={label} />
         </div>
     )
 }

@@ -7,7 +7,17 @@ import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 import { isErrorLike } from '@sourcegraph/common'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { Link, Menu, MenuButton, MenuDivider, MenuItem, MenuLink, MenuList, Position } from '@sourcegraph/wildcard'
+import {
+    Link,
+    Menu,
+    MenuButton,
+    MenuDivider,
+    MenuItem,
+    MenuLink,
+    MenuList,
+    Position,
+    Checkbox,
+} from '@sourcegraph/wildcard'
 
 import { Insight, InsightDashboard, InsightType, isVirtualDashboard } from '../../../../core'
 import { useUiFeatures } from '../../../../hooks/use-ui-features'
@@ -90,14 +100,14 @@ export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> =
                                     onSelect={onToggleZeroYAxisMin}
                                     aria-checked={zeroYAxisMin}
                                 >
-                                    <input
-                                        type="checkbox"
+                                    <Checkbox
                                         aria-hidden="true"
                                         checked={zeroYAxisMin}
                                         onChange={noop}
                                         tabIndex={-1}
+                                        id="InsightContextMenuEditInput"
+                                        label="Start Y Axis at 0"
                                     />
-                                    <span>Start Y Axis at 0</span>
                                 </MenuItem>
                             )}
 

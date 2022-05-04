@@ -8,11 +8,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
 
-type ComputeExcludedRepos struct {
+type ComputeExcludedReposJob struct {
 	Options search.RepoOptions
 }
 
-func (c *ComputeExcludedRepos) Run(ctx context.Context, clients job.RuntimeClients, s streaming.Sender) (alert *search.Alert, err error) {
+func (c *ComputeExcludedReposJob) Run(ctx context.Context, clients job.RuntimeClients, s streaming.Sender) (alert *search.Alert, err error) {
 	_, ctx, s, finish := job.StartSpan(ctx, s, c)
 	defer func() { finish(alert, err) }()
 
@@ -31,6 +31,6 @@ func (c *ComputeExcludedRepos) Run(ctx context.Context, clients job.RuntimeClien
 	return nil, nil
 }
 
-func (c *ComputeExcludedRepos) Name() string {
-	return "ComputeExcludedRepos"
+func (c *ComputeExcludedReposJob) Name() string {
+	return "ComputeExcludedReposJob"
 }

@@ -433,6 +433,23 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 			},
 		},
 		SettingsPageViewCount: int32Ptr(1489),
+		LanguageRequests: []types.LanguageRequest{
+			{
+				LanguageID:  "frob",
+				NumRequests: 123,
+			},
+			{
+				LanguageID:  "borf",
+				NumRequests: 321,
+			},
+		},
+		InvestigationEvents: []types.CodeIntelInvestigationEvent{
+			{
+				Type:  types.CodeIntelUploadErrorInvestigationType,
+				WAUs:  25,
+				Total: 42,
+			},
+		},
 	})
 	if err != nil {
 		t.Fatalf("unexpected error %s", err)
@@ -564,7 +581,24 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 					"num_repositories_with_fresh_index_records": 45
 				}
 			],
-			"settings_page_view_count": 1489
+			"settings_page_view_count": 1489,
+			"language_requests": [
+				{
+					"language_id": "frob",
+					"num_requests": 123
+				},
+				{
+					"language_id": "borf",
+					"num_requests": 321
+				}
+			],
+			"investigation_events": [
+				{
+					"type": "CodeIntelligenceUploadErrorInvestigated",
+					"waus": 25,
+					"total": 42
+				}
+			]
 		},
 		"code_monitoring_usage": null,
 		"code_host_integration_usage": null,
@@ -730,7 +764,9 @@ func TestSerializeOldCodeIntelUsage(t *testing.T) {
 			"num_repositories_with_fresh_index_records": null,
 			"num_repositories_with_index_configuration_records": null,
 			"counts_by_language": null,
-			"settings_page_view_count": null
+			"settings_page_view_count": null,
+			"language_requests": null,
+			"investigation_events": null
 		},
 		"code_monitoring_usage": null,
 		"code_host_integration_usage": null,

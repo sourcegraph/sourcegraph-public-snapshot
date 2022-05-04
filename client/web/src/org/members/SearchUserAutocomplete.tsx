@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useLazyQuery } from '@apollo/client'
 import classNames from 'classnames'
 import { debounce } from 'lodash'
+// eslint-disable-next-line no-restricted-imports
 import { Dropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 
 import { Input } from '@sourcegraph/wildcard'

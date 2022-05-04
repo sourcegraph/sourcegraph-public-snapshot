@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import { escapeRegExp } from 'lodash'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Input, Link } from '@sourcegraph/wildcard'
+import { Button, Checkbox, Input, Link } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../../components/LoaderButton'
 import { TruncatedText } from '../../../../../../../components'
@@ -66,19 +66,18 @@ export const AddInsightModalContent: React.FunctionComponent<AddInsightModalCont
 
             <fieldset className={classNames('mt-2', styles.insightsContainer)}>
                 {filteredInsights.map(insight => (
-                    <label key={insight.id} className={styles.insightItem}>
-                        <input
-                            type="checkbox"
-                            name="insightIds"
-                            checked={isChecked(insight.id)}
-                            value={insight.id}
-                            onChange={onChange}
-                            onBlur={onBlur}
-                            className="mr-2"
-                        />
-
-                        <TruncatedText>{insight.title}</TruncatedText>
-                    </label>
+                    <Checkbox
+                        key={insight.id}
+                        id={insight.id}
+                        name="insightIds"
+                        checked={isChecked(insight.id)}
+                        value={insight.id}
+                        onChange={onChange}
+                        onBlur={onBlur}
+                        wrapperClassName={styles.insightItem}
+                        className="mr-2"
+                        label={<TruncatedText>{insight.title}</TruncatedText>}
+                    />
                 ))}
             </fieldset>
 

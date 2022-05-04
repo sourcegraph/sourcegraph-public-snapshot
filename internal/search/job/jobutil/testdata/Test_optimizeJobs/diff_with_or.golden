@@ -11,11 +11,11 @@ BASE:
       500
       (OR
         (PARALLEL
-          Diff
-          ComputeExcludedRepos)
+          DiffSearchJob
+          ComputeExcludedReposJob)
         (PARALLEL
-          Diff
-          ComputeExcludedRepos)))))
+          DiffSearchJob
+          ComputeExcludedReposJob)))))
 
 OPTIMIZED:
 
@@ -25,11 +25,11 @@ OPTIMIZED:
     (LIMIT
       500
       (PARALLEL
-        Diff
+        DiffSearchJob
         (OR
           (PARALLEL
             NoopJob
-            ComputeExcludedRepos)
+            ComputeExcludedReposJob)
           (PARALLEL
             NoopJob
-            ComputeExcludedRepos))))))
+            ComputeExcludedReposJob))))))

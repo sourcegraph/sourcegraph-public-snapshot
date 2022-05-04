@@ -23,12 +23,12 @@ type Mapper struct {
 	MapZoektSymbolSearchJob        func(*zoekt.ZoektSymbolSearch) *zoekt.ZoektSymbolSearch
 	MapSearcherJob                 func(*searcher.Searcher) *searcher.Searcher
 	MapSymbolSearcherJob           func(*searcher.SymbolSearcher) *searcher.SymbolSearcher
-	MapRepoSearchJob               func(*run.RepoSearch) *run.RepoSearch
+	MapRepoSearchJob               func(*run.RepoSearchJob) *run.RepoSearchJob
 	MapRepoUniverseTextSearchJob   func(*zoekt.GlobalSearch) *zoekt.GlobalSearch
 	MapStructuralSearchJob         func(*structural.StructuralSearch) *structural.StructuralSearch
-	MapCommitSearchJob             func(*commit.CommitSearch) *commit.CommitSearch
+	MapCommitSearchJob             func(*commit.CommitSearchJob) *commit.CommitSearchJob
 	MapRepoUniverseSymbolSearchJob func(*symbol.RepoUniverseSymbolSearch) *symbol.RepoUniverseSymbolSearch
-	MapComputeExcludedReposJob     func(*repos.ComputeExcludedRepos) *repos.ComputeExcludedRepos
+	MapComputeExcludedReposJob     func(*repos.ComputeExcludedReposJob) *repos.ComputeExcludedReposJob
 
 	// Repo pager Job (pre-step for some Search Jobs)
 	MapRepoPagerJob func(*repoPagerJob) *repoPagerJob
@@ -83,7 +83,7 @@ func (m *Mapper) Map(j job.Job) job.Job {
 		}
 		return j
 
-	case *run.RepoSearch:
+	case *run.RepoSearchJob:
 		if m.MapRepoSearchJob != nil {
 			j = m.MapRepoSearchJob(j)
 		}
@@ -101,7 +101,7 @@ func (m *Mapper) Map(j job.Job) job.Job {
 		}
 		return j
 
-	case *commit.CommitSearch:
+	case *commit.CommitSearchJob:
 		if m.MapCommitSearchJob != nil {
 			j = m.MapCommitSearchJob(j)
 		}
@@ -113,7 +113,7 @@ func (m *Mapper) Map(j job.Job) job.Job {
 		}
 		return j
 
-	case *repos.ComputeExcludedRepos:
+	case *repos.ComputeExcludedReposJob:
 		if m.MapComputeExcludedReposJob != nil {
 			j = m.MapComputeExcludedReposJob(j)
 		}
@@ -223,11 +223,11 @@ func MapAtom(j job.Job, f func(job.Job) job.Job) job.Job {
 				*zoekt.ZoektSymbolSearch,
 				*searcher.Searcher,
 				*searcher.SymbolSearcher,
-				*run.RepoSearch,
+				*run.RepoSearchJob,
 				*structural.StructuralSearch,
-				*commit.CommitSearch,
+				*commit.CommitSearchJob,
 				*symbol.RepoUniverseSymbolSearch,
-				*repos.ComputeExcludedRepos,
+				*repos.ComputeExcludedReposJob,
 				*noopJob:
 				return f(typedJob)
 			default:

@@ -82,7 +82,8 @@ const sumHighlightRanges = (count: number, item: MatchItem): number => count + i
 const BY_LINE_RANKING = 'by-line-number'
 const DEFAULT_CONTEXT = 1
 
-export const FileMatch: React.FunctionComponent<Props> = props => {
+// This is a search result for types file (content), path, or symbol.
+export const FileSearchResult: React.FunctionComponent<Props> = props => {
     const result = props.result
     const repoAtRevisionURL = getRepositoryUrl(result.repository, result.branches)
     const revisionDisplayName = getRevision(result.branches, result.commit)

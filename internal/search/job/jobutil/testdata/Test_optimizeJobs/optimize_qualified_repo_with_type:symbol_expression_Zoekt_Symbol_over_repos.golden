@@ -17,7 +17,7 @@ BASE:
               (PARALLEL
                 ZoektSymbolSearch
                 SymbolSearcher))
-            ComputeExcludedRepos))
+            ComputeExcludedReposJob))
         (LIMIT
           40000
           (PARALLEL
@@ -25,7 +25,7 @@ BASE:
               (PARALLEL
                 ZoektSymbolSearch
                 SymbolSearcher))
-            ComputeExcludedRepos))
+            ComputeExcludedReposJob))
         (LIMIT
           40000
           (PARALLEL
@@ -33,7 +33,7 @@ BASE:
               (PARALLEL
                 ZoektSymbolSearch
                 SymbolSearcher))
-            ComputeExcludedRepos))))))
+            ComputeExcludedReposJob))))))
 
 OPTIMIZED:
 
@@ -53,7 +53,7 @@ OPTIMIZED:
                 (PARALLEL
                   NoopJob
                   SymbolSearcher))
-              ComputeExcludedRepos))
+              ComputeExcludedReposJob))
           (LIMIT
             40000
             (PARALLEL
@@ -61,7 +61,7 @@ OPTIMIZED:
                 (PARALLEL
                   NoopJob
                   SymbolSearcher))
-              ComputeExcludedRepos))
+              ComputeExcludedReposJob))
           (LIMIT
             40000
             (PARALLEL
@@ -69,4 +69,4 @@ OPTIMIZED:
                 (PARALLEL
                   NoopJob
                   SymbolSearcher))
-              ComputeExcludedRepos)))))))
+              ComputeExcludedReposJob)))))))

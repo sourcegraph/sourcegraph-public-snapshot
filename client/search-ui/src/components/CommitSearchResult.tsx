@@ -24,6 +24,7 @@ interface Props extends PlatformContextProps<'requestGraphQL'> {
     containerClassName?: string
 }
 
+// This is a search result for types diff or commit.
 export const CommitSearchResult: React.FunctionComponent<Props> = ({
     result,
     icon,

@@ -2,7 +2,7 @@ import React, { ReactNode } from 'react'
 
 import classNames from 'classnames'
 
-import { RadioButton, Select, TextArea } from '@sourcegraph/wildcard'
+import { Checkbox, RadioButton, Select, TextArea } from '@sourcegraph/wildcard'
 import 'storybook-addon-designs'
 
 import styles from './FormFieldVariants.module.scss'
@@ -90,20 +90,18 @@ export const FormFieldVariants: React.FunctionComponent = () => (
                 </fieldset>
             )}
         />
-        <WithVariantsAndMessageElements
+        <WithVariants
             field={({ className, message, variant, ...props }) => (
-                <fieldset className="form-check">
-                    <input
-                        id={`inputFieldsetCheck - ${variant}`}
-                        type="checkbox"
-                        className={classNames('form-check-input', className)}
-                        {...props}
-                    />
-                    <label className="form-check-label" htmlFor={`inputFieldsetCheck - ${variant}`}>
-                        Checkbox
-                    </label>
-                    {message}
-                </fieldset>
+                <Checkbox
+                    id={`inputFieldsetCheck - ${variant}`}
+                    label="Checkbox"
+                    className={className}
+                    name={`inputFieldsetCheck - ${variant}`}
+                    isValid={variant === 'invalid' ? false : variant === 'valid' ? true : undefined}
+                    message={message}
+                    disabled={variant === 'disabled'}
+                    {...props}
+                />
             )}
         />
         <WithVariants

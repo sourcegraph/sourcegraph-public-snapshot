@@ -11,6 +11,7 @@ import (
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	protocol "github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	config "github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
 
 // MockDBStore is a mock implementation of the DBStore interface (from the
@@ -40,6 +41,9 @@ type MockDBStore struct {
 	// IsQueuedFunc is an instance of a mock function object controlling the
 	// behavior of the method IsQueued.
 	IsQueuedFunc *DBStoreIsQueuedFunc
+	// RepoNameFunc is an instance of a mock function object controlling the
+	// behavior of the method RepoName.
+	RepoNameFunc *DBStoreRepoNameFunc
 	// TransactFunc is an instance of a mock function object controlling the
 	// behavior of the method Transact.
 	TransactFunc *DBStoreTransactFunc
@@ -82,6 +86,11 @@ func NewMockDBStore() *MockDBStore {
 		IsQueuedFunc: &DBStoreIsQueuedFunc{
 			defaultHook: func(context.Context, int, string) (bool, error) {
 				return false, nil
+			},
+		},
+		RepoNameFunc: &DBStoreRepoNameFunc{
+			defaultHook: func(context.Context, int) (string, error) {
+				return "", nil
 			},
 		},
 		TransactFunc: &DBStoreTransactFunc{
@@ -131,6 +140,11 @@ func NewStrictMockDBStore() *MockDBStore {
 				panic("unexpected invocation of MockDBStore.IsQueued")
 			},
 		},
+		RepoNameFunc: &DBStoreRepoNameFunc{
+			defaultHook: func(context.Context, int) (string, error) {
+				panic("unexpected invocation of MockDBStore.RepoName")
+			},
+		},
 		TransactFunc: &DBStoreTransactFunc{
 			defaultHook: func(context.Context) (DBStore, error) {
 				panic("unexpected invocation of MockDBStore.Transact")
@@ -163,6 +177,9 @@ func NewMockDBStoreFrom(i DBStore) *MockDBStore {
 		},
 		IsQueuedFunc: &DBStoreIsQueuedFunc{
 			defaultHook: i.IsQueued,
+		},
+		RepoNameFunc: &DBStoreRepoNameFunc{
+			defaultHook: i.RepoName,
 		},
 		TransactFunc: &DBStoreTransactFunc{
 			defaultHook: i.Transact,
@@ -920,6 +937,113 @@ func (c DBStoreIsQueuedFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBStoreIsQueuedFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// DBStoreRepoNameFunc describes the behavior when the RepoName method of
+// the parent MockDBStore instance is invoked.
+type DBStoreRepoNameFunc struct {
+	defaultHook func(context.Context, int) (string, error)
+	hooks       []func(context.Context, int) (string, error)
+	history     []DBStoreRepoNameFuncCall
+	mutex       sync.Mutex
+}
+
+// RepoName delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockDBStore) RepoName(v0 context.Context, v1 int) (string, error) {
+	r0, r1 := m.RepoNameFunc.nextHook()(v0, v1)
+	m.RepoNameFunc.appendCall(DBStoreRepoNameFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the RepoName method of
+// the parent MockDBStore instance is invoked and the hook queue is empty.
+func (f *DBStoreRepoNameFunc) SetDefaultHook(hook func(context.Context, int) (string, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RepoName method of the parent MockDBStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *DBStoreRepoNameFunc) PushHook(hook func(context.Context, int) (string, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBStoreRepoNameFunc) SetDefaultReturn(r0 string, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) (string, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBStoreRepoNameFunc) PushReturn(r0 string, r1 error) {
+	f.PushHook(func(context.Context, int) (string, error) {
+		return r0, r1
+	})
+}
+
+func (f *DBStoreRepoNameFunc) nextHook() func(context.Context, int) (string, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBStoreRepoNameFunc) appendCall(r0 DBStoreRepoNameFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBStoreRepoNameFuncCall objects describing
+// the invocations of this function.
+func (f *DBStoreRepoNameFunc) History() []DBStoreRepoNameFuncCall {
+	f.mutex.Lock()
+	history := make([]DBStoreRepoNameFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBStoreRepoNameFuncCall is an object that describes an invocation of
+// method RepoName on an instance of MockDBStore.
+type DBStoreRepoNameFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 string
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBStoreRepoNameFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBStoreRepoNameFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -1828,6 +1952,301 @@ func (c GitserverClientResolveRevisionFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverClientResolveRevisionFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// MockInferenceService is a mock implementation of the InferenceService
+// interface (from the package
+// github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer)
+// used for unit testing.
+type MockInferenceService struct {
+	// InferIndexJobHintsFunc is an instance of a mock function object
+	// controlling the behavior of the method InferIndexJobHints.
+	InferIndexJobHintsFunc *InferenceServiceInferIndexJobHintsFunc
+	// InferIndexJobsFunc is an instance of a mock function object
+	// controlling the behavior of the method InferIndexJobs.
+	InferIndexJobsFunc *InferenceServiceInferIndexJobsFunc
+}
+
+// NewMockInferenceService creates a new mock of the InferenceService
+// interface. All methods return zero values for all results, unless
+// overwritten.
+func NewMockInferenceService() *MockInferenceService {
+	return &MockInferenceService{
+		InferIndexJobHintsFunc: &InferenceServiceInferIndexJobHintsFunc{
+			defaultHook: func(context.Context, api.RepoName, string, string) ([]config.IndexJobHint, error) {
+				return nil, nil
+			},
+		},
+		InferIndexJobsFunc: &InferenceServiceInferIndexJobsFunc{
+			defaultHook: func(context.Context, api.RepoName, string, string) ([]config.IndexJob, error) {
+				return nil, nil
+			},
+		},
+	}
+}
+
+// NewStrictMockInferenceService creates a new mock of the InferenceService
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockInferenceService() *MockInferenceService {
+	return &MockInferenceService{
+		InferIndexJobHintsFunc: &InferenceServiceInferIndexJobHintsFunc{
+			defaultHook: func(context.Context, api.RepoName, string, string) ([]config.IndexJobHint, error) {
+				panic("unexpected invocation of MockInferenceService.InferIndexJobHints")
+			},
+		},
+		InferIndexJobsFunc: &InferenceServiceInferIndexJobsFunc{
+			defaultHook: func(context.Context, api.RepoName, string, string) ([]config.IndexJob, error) {
+				panic("unexpected invocation of MockInferenceService.InferIndexJobs")
+			},
+		},
+	}
+}
+
+// NewMockInferenceServiceFrom creates a new mock of the
+// MockInferenceService interface. All methods delegate to the given
+// implementation, unless overwritten.
+func NewMockInferenceServiceFrom(i InferenceService) *MockInferenceService {
+	return &MockInferenceService{
+		InferIndexJobHintsFunc: &InferenceServiceInferIndexJobHintsFunc{
+			defaultHook: i.InferIndexJobHints,
+		},
+		InferIndexJobsFunc: &InferenceServiceInferIndexJobsFunc{
+			defaultHook: i.InferIndexJobs,
+		},
+	}
+}
+
+// InferenceServiceInferIndexJobHintsFunc describes the behavior when the
+// InferIndexJobHints method of the parent MockInferenceService instance is
+// invoked.
+type InferenceServiceInferIndexJobHintsFunc struct {
+	defaultHook func(context.Context, api.RepoName, string, string) ([]config.IndexJobHint, error)
+	hooks       []func(context.Context, api.RepoName, string, string) ([]config.IndexJobHint, error)
+	history     []InferenceServiceInferIndexJobHintsFuncCall
+	mutex       sync.Mutex
+}
+
+// InferIndexJobHints delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockInferenceService) InferIndexJobHints(v0 context.Context, v1 api.RepoName, v2 string, v3 string) ([]config.IndexJobHint, error) {
+	r0, r1 := m.InferIndexJobHintsFunc.nextHook()(v0, v1, v2, v3)
+	m.InferIndexJobHintsFunc.appendCall(InferenceServiceInferIndexJobHintsFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the InferIndexJobHints
+// method of the parent MockInferenceService instance is invoked and the
+// hook queue is empty.
+func (f *InferenceServiceInferIndexJobHintsFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string, string) ([]config.IndexJobHint, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// InferIndexJobHints method of the parent MockInferenceService instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *InferenceServiceInferIndexJobHintsFunc) PushHook(hook func(context.Context, api.RepoName, string, string) ([]config.IndexJobHint, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InferenceServiceInferIndexJobHintsFunc) SetDefaultReturn(r0 []config.IndexJobHint, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, string, string) ([]config.IndexJobHint, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InferenceServiceInferIndexJobHintsFunc) PushReturn(r0 []config.IndexJobHint, r1 error) {
+	f.PushHook(func(context.Context, api.RepoName, string, string) ([]config.IndexJobHint, error) {
+		return r0, r1
+	})
+}
+
+func (f *InferenceServiceInferIndexJobHintsFunc) nextHook() func(context.Context, api.RepoName, string, string) ([]config.IndexJobHint, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InferenceServiceInferIndexJobHintsFunc) appendCall(r0 InferenceServiceInferIndexJobHintsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InferenceServiceInferIndexJobHintsFuncCall
+// objects describing the invocations of this function.
+func (f *InferenceServiceInferIndexJobHintsFunc) History() []InferenceServiceInferIndexJobHintsFuncCall {
+	f.mutex.Lock()
+	history := make([]InferenceServiceInferIndexJobHintsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InferenceServiceInferIndexJobHintsFuncCall is an object that describes an
+// invocation of method InferIndexJobHints on an instance of
+// MockInferenceService.
+type InferenceServiceInferIndexJobHintsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []config.IndexJobHint
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InferenceServiceInferIndexJobHintsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InferenceServiceInferIndexJobHintsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// InferenceServiceInferIndexJobsFunc describes the behavior when the
+// InferIndexJobs method of the parent MockInferenceService instance is
+// invoked.
+type InferenceServiceInferIndexJobsFunc struct {
+	defaultHook func(context.Context, api.RepoName, string, string) ([]config.IndexJob, error)
+	hooks       []func(context.Context, api.RepoName, string, string) ([]config.IndexJob, error)
+	history     []InferenceServiceInferIndexJobsFuncCall
+	mutex       sync.Mutex
+}
+
+// InferIndexJobs delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockInferenceService) InferIndexJobs(v0 context.Context, v1 api.RepoName, v2 string, v3 string) ([]config.IndexJob, error) {
+	r0, r1 := m.InferIndexJobsFunc.nextHook()(v0, v1, v2, v3)
+	m.InferIndexJobsFunc.appendCall(InferenceServiceInferIndexJobsFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the InferIndexJobs
+// method of the parent MockInferenceService instance is invoked and the
+// hook queue is empty.
+func (f *InferenceServiceInferIndexJobsFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string, string) ([]config.IndexJob, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// InferIndexJobs method of the parent MockInferenceService instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *InferenceServiceInferIndexJobsFunc) PushHook(hook func(context.Context, api.RepoName, string, string) ([]config.IndexJob, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *InferenceServiceInferIndexJobsFunc) SetDefaultReturn(r0 []config.IndexJob, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, string, string) ([]config.IndexJob, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *InferenceServiceInferIndexJobsFunc) PushReturn(r0 []config.IndexJob, r1 error) {
+	f.PushHook(func(context.Context, api.RepoName, string, string) ([]config.IndexJob, error) {
+		return r0, r1
+	})
+}
+
+func (f *InferenceServiceInferIndexJobsFunc) nextHook() func(context.Context, api.RepoName, string, string) ([]config.IndexJob, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *InferenceServiceInferIndexJobsFunc) appendCall(r0 InferenceServiceInferIndexJobsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of InferenceServiceInferIndexJobsFuncCall
+// objects describing the invocations of this function.
+func (f *InferenceServiceInferIndexJobsFunc) History() []InferenceServiceInferIndexJobsFuncCall {
+	f.mutex.Lock()
+	history := make([]InferenceServiceInferIndexJobsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// InferenceServiceInferIndexJobsFuncCall is an object that describes an
+// invocation of method InferIndexJobs on an instance of
+// MockInferenceService.
+type InferenceServiceInferIndexJobsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []config.IndexJob
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c InferenceServiceInferIndexJobsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c InferenceServiceInferIndexJobsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

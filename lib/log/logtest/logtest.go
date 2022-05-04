@@ -36,6 +36,9 @@ func Init(_ *testing.M) {
 // InitWithLevel does the same thing as Init, but uses the provided log level to configur
 // the log level for this package's tests, which can be helpful for exceptionally noisy
 // tests.
+//
+// If your loggers are parameterized, you can also use logtest.NoOp to silence output for
+// specific tests.
 func InitWithLevel(_ *testing.M, level log.Level) {
 	initGlobal(level.Parse())
 }
@@ -100,3 +103,17 @@ func Captured(t testing.TB) (logger log.Logger, exportLogs func() []CapturedLog)
 		return logs
 	}
 }
+
+// NoOp returns a no-op Logger, useful for silencing all output in a specific test.
+func NoOp() log.Logger {
+	return &noopAdapter{zap.NewNop()}
+}
+
+type noopAdapter struct{ *zap.Logger }
+
+var _ log.Logger = &noopAdapter{}
+
+func (n *noopAdapter) Scoped(string, string) log.Logger      { return n }
+func (n *noopAdapter) With(...log.Field) log.Logger          { return n }
+func (n *noopAdapter) WithTrace(log.TraceContext) log.Logger { return n }
+func (n *noopAdapter) AddCallerSkip(int) log.Logger          { return n }

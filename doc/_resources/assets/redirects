@@ -234,3 +234,4 @@
 /admin/install/kubernetes/overlays /admin/install/kubernetes/configure 308
 
 /dev/background-information/continuous_integration /dev/background-information/ci 308
+/dev/how-to/add_and_use_logging /dev/how-to/add_logging 308
