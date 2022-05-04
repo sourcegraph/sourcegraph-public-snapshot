@@ -3,7 +3,7 @@ package com.sourcegraph.ui;
 import com.intellij.ui.jcef.JBCefBrowser;
 import com.sourcegraph.bridge.JSToJavaBridge;
 import com.sourcegraph.bridge.JSToJavaBridgeRequestHandler;
-import com.sourcegraph.scheme.SchemeHandlerFactory;
+import com.sourcegraph.scheme.HttpSchemeHandlerFactory;
 import org.cef.CefApp;
 
 public class SourcegraphJBCefBrowser extends JBCefBrowser {
@@ -12,7 +12,7 @@ public class SourcegraphJBCefBrowser extends JBCefBrowser {
     public SourcegraphJBCefBrowser() {
         super("http://sourcegraph/html/index.html");
         /* Create and set up JCEF browser */
-        CefApp.getInstance().registerSchemeHandlerFactory("http", "sourcegraph", new SchemeHandlerFactory());
+        CefApp.getInstance().registerSchemeHandlerFactory("http", "sourcegraph", new HttpSchemeHandlerFactory());
         this.setPageBackgroundColor(ThemeService.getPanelBackgroundColorHexString());
 
         /* Create bridge, set up handlers, then run init function */

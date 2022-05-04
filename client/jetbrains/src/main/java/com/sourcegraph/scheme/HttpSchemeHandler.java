@@ -14,7 +14,7 @@ import java.io.InputStream;
 import java.util.Map;
 import java.util.Optional;
 
-public class SchemeHandler extends CefResourceHandlerAdapter {
+public class HttpSchemeHandler extends CefResourceHandlerAdapter {
     private byte[] data;
     private String mimeType;
     private int responseHeader = 400;
