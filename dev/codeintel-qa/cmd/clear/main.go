@@ -55,11 +55,11 @@ func mainErr(ctx context.Context) error {
 	}
 
 	if err := clearAllIndexes(ctx); err != nil {
-		if strings.Contains(err.Error(), "not enabled") {
-			fmt.Printf("[%5s] %s Auto-indexing is not enabled on this instance\n", internal.TimeSince(start), internal.EmojiProblem)
-		} else {
+		if !strings.Contains(err.Error(), "not enabled") {
 			return err
 		}
+
+		fmt.Printf("[%5s] %s Auto-indexing is not enabled on this instance\n", internal.TimeSince(start), internal.EmojiProblem)
 	}
 
 	if err := clearAllUploads(ctx); err != nil {
