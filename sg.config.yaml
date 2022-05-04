@@ -749,6 +749,13 @@ commandsets:
       - zoekt-webserver-0
       - zoekt-webserver-1
 
+  enterprise-e2e:
+    <<: *enterprise_set
+    env:
+      # EXTSVC_CONFIG_FILE being set prevents the e2e test suite to add 
+      # additional connections.
+      EXTSVC_CONFIG_FILE: ""
+
   dotcom:
     <<: *enterprise_set
     env:
@@ -960,7 +967,23 @@ tests:
     cmd: yarn run jest --testPathIgnorePatterns end-to-end regression integration storybook
 
   frontend-e2e:
-    cmd: yarn run test-e2e
+    preamble: |
+      sg start enterprise-e2e must be already running for these tests to work.
+
+      If you run into authentication issues, you can run the following commands to fix them:
+      sg db reset-pg && sg db add-user -name test@sourcegraph.com -password supersecurepassword
+    cmd: |
+      yarn run test-e2e
+    env:
+      TEST_USER_EMAIL: test@sourcegraph.com
+      TEST_USER_PASSWORD: supersecurepassword
+      SOURCEGRAPH_BASE_URL: https://sourcegraph.test:3443
+      BROWSER: chrome
+    secrets:
+      GH_TOKEN:
+        provider: "gcloud"
+        project: "sourcegraph-ci"
+        name: "BUILDKITE_GITHUBDOTCOM_TOKEN"
 
   docsite:
     cmd: .bin/docsite_${DOCSITE_VERSION} check ./doc

@@ -21,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func Commands(ctx context.Context, globalEnv map[string]string, verbose bool, cmds ...Command) error {
+func Commands(ctx context.Context, parentEnv map[string]string, verbose bool, cmds ...Command) error {
 	chs := make([]<-chan struct{}, 0, len(cmds))
 	monitor := &changeMonitor{}
 	for _, cmd := range cmds {
@@ -58,7 +58,7 @@ func Commands(ctx context.Context, globalEnv map[string]string, verbose bool, cm
 			defer wg.Done()
 			var err error
 			for first := true; cmd.ContinueWatchOnExit || first; first = false {
-				if err = runWatch(ctx, cmd, root, globalEnv, ch, verbose, installed, okayToStart); err != nil {
+				if err = runWatch(ctx, cmd, root, parentEnv, ch, verbose, installed, okayToStart); err != nil {
 					if errors.Is(err, ctx.Err()) { // if error caused by context, terminate
 						return
 					}
@@ -275,7 +275,7 @@ func runWatch(
 	ctx context.Context,
 	cmd Command,
 	root string,
-	globalEnv map[string]string,
+	parentEnv map[string]string,
 	reload <-chan struct{},
 	verbose bool,
 	installDone chan string,
@@ -312,7 +312,7 @@ func runWatch(
 				stdout.Out.WriteLine(output.Linef("", output.StylePending, "Installing %s...", cmd.Name))
 			}
 
-			cmdOut, err := BashInRoot(ctx, cmd.Install, makeEnv(globalEnv, cmd.Env))
+			cmdOut, err := BashInRoot(ctx, cmd.Install, makeEnv(cmd.Env, parentEnv))
 			if err != nil {
 				if !startedOnce {
 					return installErr{cmdName: cmd.Name, output: cmdOut, originalErr: err}
@@ -363,7 +363,7 @@ func runWatch(
 			// Run it
 			stdout.Out.WriteLine(output.Linef("", output.StylePending, "Running %s...", cmd.Name))
 
-			sc, err := startCmd(ctx, root, cmd, globalEnv)
+			sc, err := startCmd(ctx, root, cmd, parentEnv)
 			defer sc.cancel()
 
 			if err != nil {
@@ -418,6 +418,9 @@ func runWatch(
 	}
 }
 
+// makeEnv merges environments starting from the left, meaning the first environment will be overriden by the second one, skipping
+// any key that has been explicitly defined in the current environment of this process. This enables users to manually overrides
+// environment variables explictly, i.e FOO=1 sg start will have FOO=1 set even if a command or commandset sets FOO.
 func makeEnv(envs ...map[string]string) []string {
 	combined := os.Environ()
 	expandedEnv := map[string]string{}
@@ -561,7 +564,7 @@ func watch() (<-chan string, error) {
 	return paths, nil
 }
 
-func Test(ctx context.Context, cmd Command, args []string, globalEnv map[string]string) error {
+func Test(ctx context.Context, cmd Command, args []string, parentEnv map[string]string) error {
 	root, err := root.RepositoryRoot()
 	if err != nil {
 		return err
@@ -581,9 +584,18 @@ func Test(ctx context.Context, cmd Command, args []string, globalEnv map[string]
 		cmdArgs = append(cmdArgs, cmd.DefaultArgs)
 	}
 
+	secretsEnv, err := getSecrets(ctx, cmd)
+	if err != nil {
+		return errors.Wrapf(err, "cannot fetch secrets")
+	}
+
+	if cmd.Preamble != "" {
+		stdout.Out.WriteLine(output.Linef("", output.StyleOrange, "[%s] %s %s", cmd.Name, output.EmojiInfo, cmd.Preamble))
+	}
+
 	c := exec.CommandContext(commandCtx, "bash", "-c", strings.Join(cmdArgs, " "))
 	c.Dir = root
-	c.Env = makeEnv(globalEnv, cmd.Env)
+	c.Env = makeEnv(parentEnv, secretsEnv, cmd.Env)
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
 
