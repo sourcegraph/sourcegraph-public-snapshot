@@ -5,7 +5,7 @@ import { useHistory } from 'react-router'
 
 import { Button, Link, Icon } from '@sourcegraph/wildcard'
 
-import { ConfirmDeleteModal } from '../../../../../components/insights-view-grid/components/insight-context-menu/ConfirmDeleteModal'
+import { ConfirmDeleteModal } from '../../../../../components/modals/ConfirmDeleteModal'
 import { Insight } from '../../../../../core'
 import { useCopyURLHandler } from '../../../../../hooks/use-copy-url-handler'
 

@@ -2,9 +2,10 @@ import React from 'react'
 
 import { noop } from 'lodash'
 
-import { Insight } from '../../../../core'
-import { useDeleteInsight } from '../../../../hooks/use-delete-insight'
-import { ConfirmationModal } from '../ConfirmationModal'
+import { Insight } from '../../core'
+import { useDeleteInsight } from '../../hooks/use-delete-insight'
+
+import { ConfirmationModal } from './ConfirmationModal'
 
 type MinimalInsightFields = Pick<Insight, 'title' | 'id' | 'type'>
 
