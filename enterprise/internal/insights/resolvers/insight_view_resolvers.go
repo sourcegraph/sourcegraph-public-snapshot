@@ -1118,10 +1118,3 @@ func filtersFromInput(input *graphqlbackend.InsightViewFiltersInput) types.Insig
 	}
 	return filters
 }
-
-func displayNumSeriesDefaultIfNil(displayNumSeries *int32) int32 {
-	if displayNumSeries == nil {
-		return 20
-	}
-	return *displayNumSeries
-}
