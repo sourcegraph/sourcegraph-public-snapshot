@@ -4,13 +4,8 @@ import { ApolloQueryResult } from '@apollo/client'
 import classNames from 'classnames'
 import { noop } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
-import LockIcon from 'mdi-react/LockIcon'
-import { useHistory } from 'react-router'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Form } from '@sourcegraph/branded/src/components/Form'
-import { useMutation, useQuery } from '@sourcegraph/http-client'
+import { useQuery } from '@sourcegraph/http-client'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import {
     SettingsCascadeProps,
@@ -19,38 +14,17 @@ import {
 } from '@sourcegraph/shared/src/settings/settings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import {
-    PageHeader,
-    Button,
-    Container,
-    Input,
-    LoadingSpinner,
-    FeedbackBadge,
-    Icon,
-    Panel,
-    Tabs,
-    Tab,
-    TabList,
-    TabPanel,
-    TabPanels,
-    RadioButton,
-    Typography,
-} from '@sourcegraph/wildcard'
+import { PageHeader, Button, LoadingSpinner, FeedbackBadge, Icon, Panel } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import { HeroPage } from '../../../components/HeroPage'
-import { PageTitle } from '../../../components/PageTitle'
 import {
     BatchChangeFields,
     EditBatchChangeFields,
     GetBatchChangeToEditResult,
     GetBatchChangeToEditVariables,
-    CreateEmptyBatchChangeVariables,
-    CreateEmptyBatchChangeResult,
     Scalars,
     BatchSpecWorkspaceResolutionState,
-    CreateBatchSpecFromRawVariables,
-    CreateBatchSpecFromRawResult,
 } from '../../../graphql-operations'
 import { DownloadSpecModal } from '../batch-spec/edit/DownloadSpecModal'
 import { EditorFeedbackPanel } from '../batch-spec/edit/editor/EditorFeedbackPanel'
@@ -66,11 +40,9 @@ import { WorkspacesPreview } from '../batch-spec/edit/workspaces-preview/Workspa
 import { useBatchSpecCode } from '../batch-spec/useBatchSpecCode'
 import { BatchSpecDownloadLink } from '../BatchSpec'
 
-import { GET_BATCH_CHANGE_TO_EDIT, CREATE_EMPTY_BATCH_CHANGE, CREATE_BATCH_SPEC_FROM_RAW } from './backend'
+import { GET_BATCH_CHANGE_TO_EDIT } from './backend'
 import { InsightTemplatesBanner } from './InsightTemplatesBanner'
-import { NamespaceSelector } from './NamespaceSelector'
 import { useInsightTemplates } from './useInsightTemplates'
-import { useNamespaces } from './useNamespaces'
 
 import styles from './CreateOrEditBatchChangePage.module.scss'
 
@@ -119,7 +91,7 @@ export const CreateOrEditBatchChangePage: React.FunctionComponent<
     )
 
     if (!batchChangeName) {
-        return <CreatePage isReadOnly={false} namespaceID={initialNamespaceID} {...props} />
+        return null
     }
 
     if (loading && !data) {
@@ -135,247 +107,10 @@ export const CreateOrEditBatchChangePage: React.FunctionComponent<
     }
 
     if (props.isReadOnly) {
-        return (
-            <CreatePage
-                isReadOnly={props.isReadOnly}
-                batchChangeName={data?.batchChange.name}
-                namespaceID={data?.batchChange.namespace.id}
-                {...props}
-            />
-        )
+        return null
     }
 
     return <EditPage batchChange={data.batchChange} refetchBatchChange={refetchBatchChange} {...props} />
-}
-
-interface CreatePageProps extends SettingsCascadeProps<Settings> {
-    /**
-     * The namespace the batch change should be created in. If none is provided, it will
-     * default to the user's own namespace.
-     */
-    namespaceID?: Scalars['ID']
-    /** Display configuration in read-only mode */
-    isReadOnly?: boolean
-    /** Name of batch change when in read-only mode */
-    batchChangeName?: string
-}
-
-const CreatePage: React.FunctionComponent<React.PropsWithChildren<CreatePageProps>> = props => {
-    const isNewBatchChange = props.batchChangeName === undefined && !props.isReadOnly
-
-    const { renderTemplate, insightTitle } = useInsightTemplates(props.settingsCascade)
-
-    return (
-        <div className="w-100 p-4">
-            <PageTitle title="Create new batch change" />
-            {insightTitle && <InsightTemplatesBanner insightTitle={insightTitle} type="create" className="mb-5" />}
-            <PageHeader
-                path={[{ icon: BatchChangesIcon, to: '.' }, { text: 'Create batch change' }]}
-                className="flex-1 pb-2"
-                description="Run custom code over hundreds of repositories and manage the resulting changesets."
-                annotation={<FeedbackBadge status="experimental" feedback={{ mailto: 'support@sourcegraph.com' }} />}
-            />
-            <Tabs>
-                <TabList>
-                    <Tab className="text-content py-2 px-3">1. Configuration</Tab>
-                    <Tab className="text-content py-2 px-3" disabled={isNewBatchChange}>
-                        2. Batch spec
-                    </Tab>
-                    <Tab className="text-content py-2 px-3" disabled={isNewBatchChange}>
-                        3. Execution
-                    </Tab>
-                    <Tab className="text-content py-2 px-3" disabled={isNewBatchChange}>
-                        4. Preview
-                    </Tab>
-                </TabList>
-                <TabPanels>
-                    <TabPanel>
-                        <BatchConfigurationPage {...props} renderTemplate={renderTemplate} insightName={insightTitle} />
-                    </TabPanel>
-
-                    <TabPanel>
-                        <div>Batch spec</div>
-                    </TabPanel>
-
-                    <TabPanel>
-                        <div>Execution</div>
-                    </TabPanel>
-
-                    <TabPanel>
-                        <div>Preview</div>
-                    </TabPanel>
-                </TabPanels>
-            </Tabs>
-        </div>
-    )
-}
-
-interface BatchConfigurationPageProps extends SettingsCascadeProps<Settings> {
-    /**
-     * The namespace the batch change should be created in. If none is provided, it will
-     * default to the user's own namespace.
-     */
-    namespaceID?: Scalars['ID']
-    /** Display configuration in read-only mode */
-    isReadOnly?: boolean
-    /** Batch change when in read-only mode */
-    batchChangeName?: string
-
-    /**
-     * When set, apply a template to the batch spec before redirecting to the edit page.
-     */
-    renderTemplate?: (name: string) => string
-
-    /** The name of the insight this was created from, if any. */
-    insightName?: string
-}
-
-const BatchConfigurationPage: React.FunctionComponent<React.PropsWithChildren<BatchConfigurationPageProps>> = ({
-    namespaceID,
-    settingsCascade,
-    isReadOnly,
-    batchChangeName,
-    renderTemplate,
-    insightName,
-}) => {
-    const [createEmptyBatchChange, { loading: batchChangeLoading, error: batchChangeError }] = useMutation<
-        CreateEmptyBatchChangeResult,
-        CreateEmptyBatchChangeVariables
-    >(CREATE_EMPTY_BATCH_CHANGE)
-    const [createBatchSpecFromRaw, { loading: batchSpecLoading, error: batchSpecError }] = useMutation<
-        CreateBatchSpecFromRawResult,
-        CreateBatchSpecFromRawVariables
-    >(CREATE_BATCH_SPEC_FROM_RAW)
-
-    const loading = batchChangeLoading || batchSpecLoading
-    const error = batchChangeError || batchSpecError
-
-    const { namespaces, defaultSelectedNamespace } = useNamespaces(settingsCascade, namespaceID)
-
-    // The namespace selected for creating the new batch change under.
-    const [selectedNamespace, setSelectedNamespace] = useState<SettingsUserSubject | SettingsOrgSubject>(
-        defaultSelectedNamespace
-    )
-
-    const [nameInput, setNameInput] = useState(batchChangeName || '')
-    const [isNameValid, setIsNameValid] = useState<boolean>()
-
-    const onNameChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
-        setNameInput(event.target.value)
-        setIsNameValid(NAME_PATTERN.test(event.target.value))
-    }, [])
-
-    const history = useHistory()
-    const handleCancel = (): void => history.goBack()
-    const handleCreate = (): void => {
-        const redirectSearchParameters = new URLSearchParams()
-        if (insightName) {
-            redirectSearchParameters.set('title', insightName)
-        }
-        let serializedRedirectSearchParameters = redirectSearchParameters.toString()
-        if (serializedRedirectSearchParameters.length > 0) {
-            serializedRedirectSearchParameters = '?' + serializedRedirectSearchParameters
-        }
-        createEmptyBatchChange({
-            variables: { namespace: selectedNamespace.id, name: nameInput },
-        })
-            .then(args => {
-                if (!renderTemplate) {
-                    return Promise.resolve(args)
-                }
-
-                const template = renderTemplate(nameInput)
-
-                return args.data?.createEmptyBatchChange.id && template
-                    ? createBatchSpecFromRaw({
-                          variables: { namespace: selectedNamespace.id, spec: template, noCache: false },
-                      }).then(() => Promise.resolve(args))
-                    : Promise.resolve(args)
-            })
-            .then(({ data }) =>
-                data
-                    ? history.push(`${data.createEmptyBatchChange.url}/edit${serializedRedirectSearchParameters}`)
-                    : noop()
-            )
-            // We destructure and surface the error from `useMutation` instead.
-            .catch(noop)
-    }
-
-    return (
-        <Form className={styles.batchConfigForm} onSubmit={handleCreate}>
-            <Container className="mb-4">
-                {error && <ErrorAlert error={error} />}
-                <NamespaceSelector
-                    namespaces={namespaces}
-                    selectedNamespace={selectedNamespace.id}
-                    onSelect={setSelectedNamespace}
-                    disabled={isReadOnly}
-                />
-                <Input
-                    label="Batch change name"
-                    value={nameInput}
-                    onChange={onNameChange}
-                    pattern={String(NAME_PATTERN)}
-                    required={true}
-                    status={isNameValid === undefined ? undefined : isNameValid ? 'valid' : 'error'}
-                    placeholder="My batch change name"
-                    disabled={isReadOnly}
-                />
-                <small className="text-muted">
-                    Give it a short, descriptive name to reference the batch change on Sourcegraph. Do not include
-                    confidential information.{' '}
-                    <span className={classNames(isNameValid === false && 'text-danger')}>
-                        Only regular characters, _ and - are allowed.
-                    </span>
-                </small>
-                <hr className="my-3" />
-                <Typography.H3 className="text-muted">
-                    Visibility <Icon data-tooltip="Coming soon" as={InfoCircleOutlineIcon} />
-                </Typography.H3>
-                <div className="form-group mb-1">
-                    <RadioButton
-                        name="visibility"
-                        value="public"
-                        className="mr-2"
-                        checked={true}
-                        disabled={true}
-                        label="Public"
-                        aria-label="Public"
-                    />
-                </div>
-                <div className="form-group mb-0">
-                    <RadioButton
-                        name="visibility"
-                        value="private"
-                        className="mr-2 mb-0"
-                        disabled={true}
-                        label={
-                            <>
-                                Private <Icon className="text-warning" aria-hidden={true} as={LockIcon} />
-                            </>
-                        }
-                        aria-label="Private"
-                    />
-                </div>
-            </Container>
-
-            {!isReadOnly && (
-                <div className={styles.ctaGroup}>
-                    <Button variant="secondary" type="button" outline={true} onClick={handleCancel}>
-                        Cancel
-                    </Button>
-                    <Button
-                        variant="primary"
-                        type="submit"
-                        onClick={handleCreate}
-                        disabled={loading || nameInput === '' || !isNameValid}
-                    >
-                        Create
-                    </Button>
-                </div>
-            )}
-        </Form>
-    )
 }
 
 const INVALID_BATCH_SPEC_TOOLTIP = "There's a problem with your batch spec."
@@ -674,5 +409,3 @@ const BatchChangePage: React.FunctionComponent<React.PropsWithChildren<BatchChan
         {children}
     </div>
 )
-/* Regex pattern for a valid batch change name. Needs to match what's defined in the BatchSpec JSON schema. */
-const NAME_PATTERN = /^[\w.-]+$/
