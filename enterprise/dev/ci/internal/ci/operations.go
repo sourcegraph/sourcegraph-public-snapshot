@@ -89,7 +89,7 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 		ops.Merge(operations.NewNamedSet("Go checks",
 			addGoTests,
 			addGoBuild,
-			addGoLogMigrationLint))
+			addCustomGoChecks))
 	}
 
 	if diff.Has(changed.DatabaseSchema) {
@@ -451,10 +451,10 @@ func addGoBuild(pipeline *bk.Pipeline) {
 	)
 }
 
-// Lints the Dockerfiles.
-func addGoLogMigrationLint(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":one-does-not-simply: Logging migration linter",
-		bk.AnnotatedCmd("go run ./dev/sg lint -annotations logger-migration", bk.AnnotatedCmdOpts{
+// Add custom GO checks
+func addCustomGoChecks(pipeline *bk.Pipeline) {
+	pipeline.AddStep(":one-does-not-simply: Custom Go checks",
+		bk.AnnotatedCmd("go run ./dev/sg lint -annotations go-custom", bk.AnnotatedCmdOpts{
 			Annotations: &bk.AnnotationOpts{},
 		}))
 }
