@@ -4,8 +4,6 @@ import PlusIcon from 'mdi-react/PlusIcon'
 import { matchPath, useHistory } from 'react-router'
 import { useLocation } from 'react-router-dom'
 
-import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
@@ -13,7 +11,7 @@ import { Button, Link, PageHeader, Tabs, TabList, Tab, Icon, TabPanels, TabPanel
 
 import { CodeInsightsIcon } from '../../../insights/Icons'
 import { CodeInsightsPage } from '../components/code-insights-page/CodeInsightsPage'
-import { ALL_INSIGHTS_DASHBOARD } from '../core/constants'
+import { ALL_INSIGHTS_DASHBOARD } from '../core'
 
 import { DashboardsContentPage } from './dashboards/dashboard-page/DashboardsContentPage'
 
@@ -38,7 +36,7 @@ function useQuery(): URLSearchParams {
     return React.useMemo(() => new URLSearchParams(search), [search])
 }
 
-interface CodeInsightsRootPageProps extends TelemetryProps, SettingsCascadeProps<Settings> {
+interface CodeInsightsRootPageProps extends TelemetryProps {
     activeView: CodeInsightsRootPageTab
 }
 
@@ -103,17 +101,10 @@ export const CodeInsightsRootPage: React.FunctionComponent<CodeInsightsRootPageP
                 </TabList>
                 <TabPanels className="mt-3">
                     <TabPanel>
-                        <DashboardsContentPage
-                            settingsCascade={props.settingsCascade}
-                            telemetryService={telemetryService}
-                            dashboardID={params?.dashboardId}
-                        />
+                        <DashboardsContentPage telemetryService={telemetryService} dashboardID={params?.dashboardId} />
                     </TabPanel>
                     <TabPanel>
-                        <LazyCodeInsightsGettingStartedPage
-                            settingsCascade={props.settingsCascade}
-                            telemetryService={telemetryService}
-                        />
+                        <LazyCodeInsightsGettingStartedPage telemetryService={telemetryService} />
                     </TabPanel>
                 </TabPanels>
             </Tabs>

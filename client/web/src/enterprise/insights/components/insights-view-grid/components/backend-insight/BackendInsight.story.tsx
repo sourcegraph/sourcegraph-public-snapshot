@@ -132,7 +132,6 @@ const TestBackendInsight: React.FunctionComponent = () => (
         insight={INSIGHT_CONFIGURATION_MOCK}
         telemetryService={NOOP_TELEMETRY_SERVICE}
         innerRef={() => {}}
-        settingsCascade={{ final: null, subjects: null }}
     />
 )
 
@@ -172,7 +171,6 @@ export const BackendInsight: Story = () => (
             <h2>Locked Card insight</h2>
             <CodeInsightsBackendStoryMock mocks={mockInsightAPI()}>
                 <BackendInsightView
-                    settingsCascade={{ final: null, subjects: null }}
                     style={{ width: 400, height: 400 }}
                     insight={{ ...INSIGHT_CONFIGURATION_MOCK, isFrozen: true }}
                     telemetryService={NOOP_TELEMETRY_SERVICE}

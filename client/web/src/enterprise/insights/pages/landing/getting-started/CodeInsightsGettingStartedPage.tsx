@@ -1,7 +1,5 @@
 import React, { useEffect } from 'react'
 
-import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { PageTitle } from '../../../../../components/PageTitle'
@@ -13,7 +11,7 @@ import { DynamicCodeInsightExample } from './components/dynamic-code-insight-exa
 
 import styles from './CodeInsightsGettingStartedPage.module.scss'
 
-interface CodeInsightsGettingStartedPageProps extends TelemetryProps, SettingsCascadeProps<Settings> {}
+interface CodeInsightsGettingStartedPageProps extends TelemetryProps {}
 
 export const CodeInsightsGettingStartedPage: React.FunctionComponent<CodeInsightsGettingStartedPageProps> = props => {
     const { telemetryService } = props
@@ -27,11 +25,7 @@ export const CodeInsightsGettingStartedPage: React.FunctionComponent<CodeInsight
             <PageTitle title="Code Insights" />
             <DynamicCodeInsightExample telemetryService={telemetryService} />
             <CodeInsightsExamples telemetryService={telemetryService} className={styles.section} />
-            <CodeInsightsTemplates
-                telemetryService={telemetryService}
-                settingsCascade={props.settingsCascade}
-                className={styles.section}
-            />
+            <CodeInsightsTemplates telemetryService={telemetryService} className={styles.section} />
             <CodeInsightsLearnMore telemetryService={telemetryService} className={styles.section} />
         </main>
     )
