@@ -7,14 +7,13 @@ import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
 // eslint-disable-next-line no-restricted-imports
-import { Input } from 'reactstrap'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { renderMarkdown } from '@sourcegraph/common'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { Skipped } from '@sourcegraph/shared/src/search/stream'
-import { Button, Collapse, CollapseHeader, CollapsePanel, Icon, Label } from '@sourcegraph/wildcard'
+import { Button, Collapse, CollapseHeader, CollapsePanel, Icon, Checkbox } from '@sourcegraph/wildcard'
 
 import { StreamingProgressProps } from './StreamingProgress'
 
@@ -144,19 +143,23 @@ export const StreamingProgressSkippedPopover: React.FunctionComponent<
                         {sortedSkippedItems.map(
                             skipped =>
                                 skipped.suggested && (
-                                    <Label
-                                        className="mb-1 d-block form-check-label"
+                                    <Checkbox
                                         key={skipped.suggested.queryExpression}
-                                    >
-                                        <Input
-                                            type="checkbox"
-                                            value={skipped.suggested.queryExpression}
-                                            onChange={checkboxHandler}
-                                            data-testid="streaming-progress-skipped-suggest-check"
-                                        />{' '}
-                                        {skipped.suggested.title} (
-                                        <SyntaxHighlightedSearchQuery query={skipped.suggested.queryExpression} />)
-                                    </Label>
+                                        value={skipped.suggested.queryExpression}
+                                        onChange={checkboxHandler}
+                                        data-testid="streaming-progress-skipped-suggest-check"
+                                        id="streaming-progress-skipped-suggest-check"
+                                        wrapperClassName="mb-1 d-block"
+                                        label={
+                                            <>
+                                                {skipped.suggested.title} (
+                                                <SyntaxHighlightedSearchQuery
+                                                    query={skipped.suggested.queryExpression}
+                                                />
+                                                )
+                                            </>
+                                        }
+                                    />
                                 )
                         )}
                     </div>

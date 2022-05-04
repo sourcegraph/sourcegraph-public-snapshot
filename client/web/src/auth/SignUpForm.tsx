@@ -17,7 +17,7 @@ import {
     ValidationOptions,
     deriveInputClassName,
 } from '@sourcegraph/shared/src/util/useInputValidation'
-import { Button, Link, Icon } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, Checkbox } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../components/LoaderButton'
 import { FeatureFlagProps } from '../featureFlags/featureFlags'
@@ -274,22 +274,21 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                 </div>
                 {!experimental && enterpriseTrial && (
                     <div className="form-group">
-                        <div className="form-check">
-                            <label className="form-check-label">
-                                <input
-                                    className="form-check-input"
-                                    type="checkbox"
-                                    onChange={onRequestTrialFieldChange}
-                                />
-                                Try Sourcegraph Enterprise free for{' '}
-                                <span className="text-nowrap">
-                                    30 days{' '}
-                                    <Link target="_blank" rel="noopener" to="https://about.sourcegraph.com/pricing">
-                                        <Icon as={HelpCircleOutlineIcon} />
-                                    </Link>
-                                </span>
-                            </label>
-                        </div>
+                        <Checkbox
+                            onChange={onRequestTrialFieldChange}
+                            id="EnterpriseTrialCheck"
+                            label={
+                                <>
+                                    Try Sourcegraph Enterprise free for
+                                    <span className="text-nowrap">
+                                        30 days{' '}
+                                        <Link target="_blank" rel="noopener" to="https://about.sourcegraph.com/pricing">
+                                            <Icon as={HelpCircleOutlineIcon} />
+                                        </Link>
+                                    </span>
+                                </>
+                            }
+                        />
                     </div>
                 )}
                 <div className="form-group mb-0">

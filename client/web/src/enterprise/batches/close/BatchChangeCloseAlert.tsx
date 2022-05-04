@@ -4,7 +4,7 @@ import * as H from 'history'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isErrorLike, asError, pluralize } from '@sourcegraph/common'
-import { Button, AlertLink, CardBody, Card, Alert } from '@sourcegraph/wildcard'
+import { Button, AlertLink, CardBody, Card, Alert, Checkbox } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
 import { Scalars } from '../../../graphql-operations'
@@ -65,25 +65,25 @@ export const BatchChangeCloseAlert: React.FunctionComponent<BatchChangeCloseAler
                     {totalCount > 0 && (
                         <>
                             <p>By default, all changesets remain untouched.</p>
-                            <div className="form-check mb-3">
-                                <input
-                                    id="closeChangesets"
-                                    type="checkbox"
-                                    checked={closeChangesets}
-                                    onChange={onChangeCloseChangesets}
-                                    className="test-batches-close-changesets-checkbox form-check-input"
-                                    disabled={isClosing === true || !viewerCanAdminister}
-                                />
-                                <label className="form-check-label" htmlFor="closeChangesets">
-                                    Also close {pluralize('the', totalCount, 'all')} {totalCount}{' '}
-                                    {pluralize(
-                                        'open changeset on the code host',
-                                        totalCount,
-                                        'open changesets on the code hosts'
-                                    )}
-                                    .
-                                </label>
-                            </div>
+                            <Checkbox
+                                wrapperClassName="mb-3"
+                                id="closeChangesets"
+                                checked={closeChangesets}
+                                onChange={onChangeCloseChangesets}
+                                className="test-batches-close-changesets-checkbox"
+                                disabled={isClosing === true || !viewerCanAdminister}
+                                label={
+                                    <>
+                                        Also close {pluralize('the', totalCount, 'all')} {totalCount}{' '}
+                                        {pluralize(
+                                            'open changeset on the code host',
+                                            totalCount,
+                                            'open changesets on the code hosts'
+                                        )}
+                                        .
+                                    </>
+                                }
+                            />
                         </>
                     )}
                     {!viewerCanAdminister && (

@@ -308,104 +308,132 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     <div
       class="form-check"
     >
-      <label
-        class="label mb-1 d-block form-check-label"
+      <div
+        class="form-check mb-1 d-block"
       >
         <input
           class="form-check-input"
           data-testid="streaming-progress-skipped-suggest-check"
+          id="streaming-progress-skipped-suggest-check"
+          label="[object Object]"
           type="checkbox"
           value="timeout:2m"
         />
-         timeout:2m (
-        <span
-          class="text-monospace search-query-link"
+        <label
+          class="label form-check-label label"
+          for="streaming-progress-skipped-suggest-check"
         >
+          timeout:2m (
           <span
-            class="search-filter-keyword"
+            class="text-monospace search-query-link"
           >
-            timeout
+            <span
+              class="search-filter-keyword"
+            >
+              timeout
+            </span>
+            <span
+              class="search-filter-separator"
+            >
+              :
+            </span>
+            2m
           </span>
-          <span
-            class="search-filter-separator"
-          >
-            :
-          </span>
-          2m
-        </span>
-        )
-      </label>
-      <label
-        class="label mb-1 d-block form-check-label"
+          )
+        </label>
+      </div>
+      <div
+        class="form-check mb-1 d-block"
       >
         <input
           class="form-check-input"
           data-testid="streaming-progress-skipped-suggest-check"
+          id="streaming-progress-skipped-suggest-check"
+          label="[object Object]"
           type="checkbox"
           value="forked:yes"
         />
-         forked:yes (
-        <span
-          class="text-monospace search-query-link"
+        <label
+          class="label form-check-label label"
+          for="streaming-progress-skipped-suggest-check"
         >
-          forked:yes
-        </span>
-        )
-      </label>
-      <label
-        class="label mb-1 d-block form-check-label"
+          forked:yes (
+          <span
+            class="text-monospace search-query-link"
+          >
+            forked:yes
+          </span>
+          )
+        </label>
+      </div>
+      <div
+        class="form-check mb-1 d-block"
       >
         <input
           class="form-check-input"
           data-testid="streaming-progress-skipped-suggest-check"
+          id="streaming-progress-skipped-suggest-check"
+          label="[object Object]"
           type="checkbox"
           value="archived:yes"
         />
-         archived:yes (
-        <span
-          class="text-monospace search-query-link"
+        <label
+          class="label form-check-label label"
+          for="streaming-progress-skipped-suggest-check"
         >
+          archived:yes (
           <span
-            class="search-filter-keyword"
+            class="text-monospace search-query-link"
           >
-            archived
+            <span
+              class="search-filter-keyword"
+            >
+              archived
+            </span>
+            <span
+              class="search-filter-separator"
+            >
+              :
+            </span>
+            yes
           </span>
-          <span
-            class="search-filter-separator"
-          >
-            :
-          </span>
-          yes
-        </span>
-        )
-      </label>
-      <label
-        class="label mb-1 d-block form-check-label"
+          )
+        </label>
+      </div>
+      <div
+        class="form-check mb-1 d-block"
       >
         <input
           class="form-check-input"
           data-testid="streaming-progress-skipped-suggest-check"
+          id="streaming-progress-skipped-suggest-check"
+          label="[object Object]"
           type="checkbox"
           value="archived:yes"
         />
-         include archived (
-        <span
-          class="text-monospace search-query-link"
+        <label
+          class="label form-check-label label"
+          for="streaming-progress-skipped-suggest-check"
         >
+          include archived (
           <span
-            class="search-filter-keyword"
+            class="text-monospace search-query-link"
           >
-            archived
+            <span
+              class="search-filter-keyword"
+            >
+              archived
+            </span>
+            <span
+              class="search-filter-separator"
+            >
+              :
+            </span>
+            yes
           </span>
-          <span
-            class="search-filter-separator"
-          >
-            :
-          </span>
-          yes
-        </span>
-        )
-      </label>
+          )
+        </label>
+      </div>
     </div>
     <button
       class="btn btnPrimary mt-2"
