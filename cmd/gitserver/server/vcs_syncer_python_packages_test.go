@@ -4,48 +4,88 @@ import (
 	"archive/zip"
 	"bytes"
 	"io/fs"
-	"os"
+	"path/filepath"
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"golang.org/x/mod/module"
-
-	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 )
 
-func TestGoModulesSyncer_unzip(t *testing.T) {
-	dep := reposource.NewGoDependency(module.Version{
-		Path:    "github.com/bad/actor",
-		Version: "v1.0.0",
-	})
-	prefix := dep.Module.String() + "/"
+func TestUnpackPythonPackage_TGZ(t *testing.T) {
+	files := []fileInfo{
+		{
+			path:     "common/file1.py",
+			contents: []byte("banana"),
+		},
+		{
+			path:     "common/setup.py",
+			contents: []byte("apple"),
+		},
+		{
+			path:     ".git/index",
+			contents: []byte("filter me"),
+		},
+		{
+			path:     "/absolute/path/are/filtered",
+			contents: []byte("filter me"),
+		},
+	}
 
+	pkg := createTgz(t, files)
+
+	tmp := t.TempDir()
+	if err := unpackPythonPackage(pkg, "https://some.where/pckg.tar.gz", tmp); err != nil {
+		t.Fatal()
+	}
+
+	got := make([]string, 0, len(files))
+	if err := filepath.Walk(tmp, func(path string, info fs.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			return nil
+		}
+		got = append(got, strings.TrimPrefix(path, tmp))
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	sort.Slice(got, func(i, j int) bool {
+		return got[i] < got[j]
+	})
+
+	// without the filtered files, the rest of the files share a common folder
+	// "common" which should also be removed.
+	want := []string{"/file1.py", "/setup.py"}
+	sort.Slice(want, func(i, j int) bool {
+		return want[i] < want[j]
+	})
+
+	if d := cmp.Diff(want, got); d != "" {
+		t.Fatalf("-want,+got\n%s", d)
+	}
+}
+
+func TestUnpackPythonPackage_ZIP(t *testing.T) {
 	var zipBuf bytes.Buffer
 	zw := zip.NewWriter(&zipBuf)
 	for _, f := range []fileInfo{
-		// Absolute paths
-		{"/sh", []byte("bad")},
-		{"/usr/bin/sh", []byte("bad")},
-		//  Paths into .git which may trigger when git runs a hook
-		{prefix + ".git/blah", []byte("terrible")},
-		{prefix + ".git/hooks/pre-commit", []byte("terrible")},
-		// Paths into a nested .git which may trigger when git runs a hook
-		{prefix + "src/.git/blah", []byte("devious")},
-		{prefix + "src/.git/hooks/pre-commit", []byte("devious")},
-		// Relative paths which stray outside
-		{"../foo/../bar", []byte("insidious")},
-		{"../../../usr/bin/sh", []byte("insidious")},
-		// Relative paths with prefix which stray outside
-		{prefix + "../foo/../bar", []byte("outrageous")},
-		{prefix + "../../../usr/bin/sh", []byte("outrageous")},
-		// Good apples
-		{prefix + "go.mod", []byte("module github.com/bad/actor\ngo 1.18")},
-		{prefix + "LICENSE", []byte("MIT baby")},
-		{prefix + "main.go", []byte("package main")},
+		{
+			path:     "src/file1.py",
+			contents: []byte("banana"),
+		},
+		{
+			path:     "src/file2.py",
+			contents: []byte("apple"),
+		},
+		{
+			path:     "setup.py",
+			contents: []byte("pear"),
+		},
 	} {
-		// Go module zip files must be prefixed by <module>@<version>/
-		// See https://pkg.go.dev/golang.org/x/mod@v0.5.1/zip
 		fw, err := zw.Create(f.path)
 		if err != nil {
 			t.Fatal(err)
@@ -62,21 +102,56 @@ func TestGoModulesSyncer_unzip(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	workDir := t.TempDir()
-	err = unzip(dep.Module, zipBuf.Bytes(), workDir)
-	if err != nil {
+	tmp := t.TempDir()
+	if err := unpackPythonPackage(zipBuf.Bytes(), "https://some.where/pckg.zip", tmp); err != nil {
+		t.Fatal()
+	}
+
+	var got []string
+	if err := filepath.Walk(tmp, func(path string, info fs.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			return nil
+		}
+		got = append(got, strings.TrimPrefix(path, tmp))
+		return nil
+	}); err != nil {
 		t.Fatal(err)
 	}
 
-	have, err := fs.Glob(os.DirFS(workDir), "*")
-	if err != nil {
-		t.Fatal(err)
+	sort.Slice(got, func(i, j int) bool {
+		return got[i] < got[j]
+	})
+
+	want := []string{"/src/file1.py", "/src/file2.py", "/setup.py"}
+	sort.Slice(want, func(i, j int) bool {
+		return want[i] < want[j]
+	})
+
+	if d := cmp.Diff(want, got); d != "" {
+		t.Fatalf("-want,+got\n%s", d)
+	}
+}
+
+func TestUnpackPythonPackage_InvalidZip(t *testing.T) {
+	files := []fileInfo{
+		{
+			path:     "file1.py",
+			contents: []byte("banana"),
+		},
 	}
 
-	sort.Strings(have)
+	pkg := createTgz(t, files)
 
-	want := []string{"LICENSE", "go.mod", "main.go"}
-	if diff := cmp.Diff(have, want); diff != "" {
-		t.Fatal(diff)
+	if err := unpackPythonPackage(pkg, "https://some.where/pckg.whl", t.TempDir()); err == nil {
+		t.Fatal()
+	}
+}
+
+func TestUnpackPythonPackage_UnsupportedFormat(t *testing.T) {
+	if err := unpackPythonPackage([]byte{}, "https://some.where/pckg.exe", ""); err == nil {
+		t.Fatal()
 	}
 }
