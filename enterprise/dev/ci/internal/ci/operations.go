@@ -88,7 +88,8 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 		// If there are any Graphql changes, they are impacting the backend as well.
 		ops.Merge(operations.NewNamedSet("Go checks",
 			addGoTests,
-			addGoBuild))
+			addGoBuild,
+			addGoLogMigrationLint))
 	}
 
 	if diff.Has(changed.DatabaseSchema) {
@@ -448,6 +449,14 @@ func addGoBuild(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":go: Build",
 		bk.Cmd("./dev/ci/go-build.sh"),
 	)
+}
+
+// Lints the Dockerfiles.
+func addGoLogMigrationLint(pipeline *bk.Pipeline) {
+	pipeline.AddStep(":one-does-not-simply: Logging migration linter",
+		bk.AnnotatedCmd("go run ./dev/sg lint -annotations logger-migration", bk.AnnotatedCmdOpts{
+			Annotations: &bk.AnnotationOpts{},
+		}))
 }
 
 // Lints the Dockerfiles.

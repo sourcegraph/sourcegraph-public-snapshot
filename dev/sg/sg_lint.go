@@ -13,6 +13,8 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/lint"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -55,6 +57,13 @@ func runCheckScriptsAndReport(ctx context.Context, fns ...lint.Runner) error {
 		return err
 	}
 
+	// Get currently checked out branch so linters can optimize
+	branch, err := run.TrimResult(run.GitCmd("branch", "--show-current"))
+	if err != nil {
+		return err
+	}
+	repoState := &repo.State{Branch: branch}
+
 	// We need the Verbose flag to print above the pending indicator.
 	out := output.NewOutput(os.Stdout, output.OutputOpts{
 		ForceColor: true,
@@ -70,8 +79,8 @@ func runCheckScriptsAndReport(ctx context.Context, fns ...lint.Runner) error {
 	reportsCh := make(chan *lint.Report)
 	wg.Add(total)
 	for _, fn := range fns {
-		go func(fn func(context.Context) *lint.Report) {
-			reportsCh <- fn(ctx)
+		go func(fn lint.Runner) {
+			reportsCh <- fn(ctx, repoState)
 			wg.Done()
 		}(fn)
 	}
@@ -127,6 +136,7 @@ type lintTargets []lint.Target
 // Commands converts all lint targets to CLI commands
 func (lt lintTargets) Commands() (cmds []*cli.Command) {
 	for _, c := range lt {
+		c := c // local reference
 		cmds = append(cmds, &cli.Command{
 			Name:  c.Name,
 			Usage: c.Help,
