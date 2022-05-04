@@ -1,7 +1,5 @@
 import React, { useState } from 'react'
 
-import classNames from 'classnames'
-
 import { Button, FlexTextArea, TextArea } from '@sourcegraph/wildcard'
 
 import { SurveyUseCaseCheckbox } from './SurveyUseCaseCheckbox'
@@ -71,7 +69,11 @@ export const SurveyUseCaseForm: React.FunctionComponent<SurveyUseCaseFormProps> 
     return (
         <Toast
             toastBodyClassName={styles.toastBody}
-            subtitle={<span className={styles.toastSubtitle}>You are using sourcegraph to...</span>}
+            subtitle={
+                <span id="usecase-group" className={styles.toastSubtitle}>
+                    You are using sourcegraph to...
+                </span>
+            }
             cta={
                 <div className="mb-2">
                     <div className={styles.checkWrap}>
@@ -79,7 +81,10 @@ export const SurveyUseCaseForm: React.FunctionComponent<SurveyUseCaseFormProps> 
                             <SurveyUseCaseCheckbox
                                 onChange={() => handleSelectUseCase(id)}
                                 key={id}
-                                label={<span className={classNames('ml-1', styles.checkboxLabel)}>{labelValue}</span>}
+                                id={id}
+                                checked={useCases.includes(id)}
+                                label={labelValue}
+                                aria-labelledby={`usecase-group ${id}`}
                             />
                         ))}
                     </div>

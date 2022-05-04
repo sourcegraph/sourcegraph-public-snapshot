@@ -17,12 +17,15 @@ interface SurveyRatingRadio {
 }
 
 export const SurveyRatingRadio: React.FunctionComponent<SurveyRatingRadio> = props => {
-    const [selectedIndex, setSelectedIndexIndex] = useState<number | null>(null)
+    const [focusedIndex, setFocusedIndex] = useState<number | null>(null)
 
-    const handleClick = (score: number): void => {
+    const handleFocus = (index: number): void => {
+        setFocusedIndex(index)
+    }
+
+    const handleChange = (score: number): void => {
         eventLogger.log('SurveyButtonClicked', { score }, { score })
 
-        setSelectedIndexIndex(score)
         if (props.onChange) {
             props.onChange(score)
         }
@@ -35,16 +38,28 @@ export const SurveyRatingRadio: React.FunctionComponent<SurveyRatingRadio> = pro
             className={radioStyles.scores}
         >
             {range(0, 11).map(score => {
-                const selected = score === selectedIndex
+                const pressed = score === props.score
+                const focused = score === focusedIndex
 
                 return (
                     <Button
                         key={score}
-                        className={classNames(radioStyles.ratingBtn, !selected && radioStyles.ratingBtnDefault)}
-                        variant={score === selectedIndex ? 'primary' : 'secondary'}
-                        outline={score !== selectedIndex}
-                        onClick={() => handleClick(score)}
+                        variant={score === focusedIndex ? 'primary' : 'secondary'}
+                        className={classNames(radioStyles.ratingBtn, !focused && radioStyles.ratingBtnDefault, {
+                            active: pressed,
+                            focus: focused,
+                        })}
+                        as="label"
+                        outline={score !== focusedIndex}
                     >
+                        <input
+                            type="radio"
+                            name="survey-score"
+                            value={score}
+                            onChange={() => handleChange(score)}
+                            onFocus={() => handleFocus(score)}
+                            className={radioStyles.ratingRadio}
+                        />
                         {score}
                     </Button>
                 )

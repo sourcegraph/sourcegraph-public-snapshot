@@ -65,8 +65,6 @@ export const SurveyToast: React.FunctionComponent<SurveyToastProps> = ({ forceVi
         }
     }
 
-    const toggleShouldPermanentlyDismiss = (value: boolean): void => setShouldPermanentlyDismiss(value)
-
     /**
      * We show a toast notification if:
      * 1. User has not recently dismissed the notification
@@ -128,7 +126,7 @@ export const SurveyToast: React.FunctionComponent<SurveyToastProps> = ({ forceVi
                     onChange={score => setUserFeedback(current => ({ ...current, score }))}
                     onDismiss={onDismiss}
                     onContinue={handleContinue}
-                    toggleShouldPermanentlyDismiss={toggleShouldPermanentlyDismiss}
+                    toggleShouldPermanentlyDismiss={setShouldPermanentlyDismiss}
                     shouldPermanentlyDismiss={shouldPermanentlyDismiss}
                     toggleErrorMessage={toggleErrorMessage}
                 />

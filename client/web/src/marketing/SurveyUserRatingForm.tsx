@@ -5,6 +5,8 @@ import { Button, Checkbox } from '@sourcegraph/wildcard'
 import { SurveyRatingRadio } from './SurveyRatingRadio'
 import { Toast } from './Toast'
 
+import styles from './SurveyUserRatingForm.module.scss'
+
 export interface SurveyUserRatingFormProps {
     onChange?: (score: number) => void
     toggleErrorMessage: boolean
@@ -30,7 +32,11 @@ export const SurveyUserRatingForm: React.FunctionComponent<SurveyUserRatingFormP
         cta={
             <>
                 <SurveyRatingRadio ariaLabelledby="survey-form-scores" onChange={onChange} />
-                {toggleErrorMessage && <div>Please select a score between 0 to 10</div>}
+                {toggleErrorMessage && (
+                    <div className={styles.alertDanger} role="alert">
+                        Please select a score between 0 to 10
+                    </div>
+                )}
             </>
         }
         footer={

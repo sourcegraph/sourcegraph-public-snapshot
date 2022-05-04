@@ -20,7 +20,7 @@ export const SurveySuccess: React.FunctionComponent<SurveySuccessProps> = ({ onD
     <Toast
         subtitle={<span className={styles.toastSubtitle}>Thank you for your feedback!</span>}
         cta={
-            <div className={styles.thankyouToastContent}>
+            <div>
                 <div className="mb-4">
                     You can learn more about using Sourcegraph to onboard to a new code base with these resources:{' '}
                 </div>

@@ -1,6 +1,7 @@
 .check-button {
     border-radius: 2rem;
     font-weight: 400;
+    padding: 0.375rem 0.75rem;
 }
 
 .checkbox {
@@ -10,22 +11,19 @@
 }
 
 .checkbox-default {
-    background: var(--white);
     border: 2px solid var(--text-muted);
     box-sizing: border-box;
     border-radius: 0.152rem;
 }
 
 .check-button-active {
-    display: flex;
-    align-items: center;
     border: 1px solid var(--primary);
 
     &:not(:disabled):not(:global(.disabled)) {
         background-color: var(--primary);
         color: var(--white);
 
-        &:hover:not(:focus),
+        &:hover,
         &:focus,
         &:active {
             color: var(--white) !important; // Overides default button psudo state color
@@ -43,4 +41,26 @@
         transform: rotate(45deg);
         margin-left: 0.25rem;
     }
+}
+
+.usecase-check {
+    position: absolute;
+    clip: rect(0, 0, 0, 0);
+    pointer-events: none;
+}
+
+.checkbox-form-check {
+    padding-left: 0;
+}
+
+.checkbox-label {
+    font-weight: 400;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    letter-spacing: -0.25px;
+    color: var(--body-color);
+}
+
+.checkbox-label-active {
+    color: var(--white);
 }

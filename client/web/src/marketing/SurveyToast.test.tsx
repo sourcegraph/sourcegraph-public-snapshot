@@ -93,7 +93,7 @@ describe('SurveyToast', () => {
                     'How likely is it that you would recommend Sourcegraph to a friend?'
                 )
                 expect(recommendRadioGroup).toBeVisible()
-                const score10 = renderResult.getByRole('button', { name: String(mockScore) })
+                const score10 = renderResult.getByLabelText(mockScore)
                 fireEvent.click(score10)
 
                 const continueButton = renderResult.getByRole('button', { name: 'Continue' })
@@ -186,7 +186,7 @@ describe('SurveyToast', () => {
         const moveToUseCaseForm = () => {
             const mockScore = 10
             renderResult = renderwithTemporarySettings({ 'user.daysActiveCount': 3 })
-            const score10 = renderResult.getByRole('button', { name: String(mockScore) })
+            const score10 = renderResult.getByLabelText(mockScore)
             fireEvent.click(score10)
 
             const continueButton = renderResult.getByRole('button', { name: 'Continue' })
@@ -199,13 +199,13 @@ describe('SurveyToast', () => {
         it('Should render use case form correctly', () => {
             {
                 OPTIONS.map(({ labelValue }) => {
-                    expect(renderResult.getByRole('button', { name: labelValue })).toBeVisible()
+                    expect(renderResult.getByLabelText(labelValue)).toBeVisible()
                 })
             }
             expect(renderResult.getByLabelText('Anything else you would like to share with us?')).toBeVisible()
         })
         it('Should allow user to provide arbitrary use case', () => {
-            const otherUseCaseElement = renderResult.getByRole('button', { name: 'Other' })
+            const otherUseCaseElement = renderResult.getByLabelText('Other')
             fireEvent.click(otherUseCaseElement)
 
             expect(renderResult.getByLabelText('What else are you using sourcegraph to do?')).toBeVisible()
