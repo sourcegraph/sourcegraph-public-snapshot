@@ -151,7 +151,7 @@ func getSecrets(ctx context.Context, cmd Command) (map[string]string, error) {
 		}
 		secretsEnv[envName] = string(result.Payload.Data)
 	}
-	return nil, nil
+	return secretsEnv, nil
 }
 
 func startCmd(ctx context.Context, dir string, cmd Command, parentEnv map[string]string) (*startedCmd, error) {
