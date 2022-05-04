@@ -816,56 +816,20 @@ func newV3TestEnterpriseClient(t testing.TB, name string) (*V3Client, func()) {
 func strPtr(s string) *string { return &s }
 
 func TestClient_ListRepositoriesForSearch(t *testing.T) {
-	mock := mockHTTPResponseBody{
-		responseBody: `
-{
-  "total_count": 2,
-  "incomplete_results": false,
-  "items": [
-    {
-      "node_id": "i",
-      "full_name": "o/r",
-      "description": "d",
-      "html_url": "https://github.example.com/o/r",
-      "fork": true
-    },
-    {
-      "node_id": "j",
-      "full_name": "a/b",
-      "description": "c",
-      "html_url": "https://github.example.com/a/b",
-      "fork": false
-    }
-  ]
-}
-`,
-	}
-	c := newTestClient(t, &mock)
+	cli, save := newV3TestClient(t, "ListRepositoriesForSearch")
+	defer save()
 
-	wantRepos := []*Repository{
-		{
-			ID:            "i",
-			NameWithOwner: "o/r",
-			Description:   "d",
-			URL:           "https://github.example.com/o/r",
-			IsFork:        true,
-		},
-		{
-			ID:            "j",
-			NameWithOwner: "a/b",
-			Description:   "c",
-			URL:           "https://github.example.com/a/b",
-			IsFork:        false,
-		},
-	}
+	t.Run("list repos", func(t *testing.T) {
+		rcache.SetupForTest(t)
+		reposPage, err := cli.ListRepositoriesForSearch(context.Background(), "org:sourcegraph", 1)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	reposPage, err := c.ListRepositoriesForSearch(context.Background(), "org:sourcegraph", 1)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !repoListsAreEqual(reposPage.Repos, wantRepos) {
-		t.Errorf("got repositories:\n%s\nwant:\n%s", stringForRepoList(reposPage.Repos), stringForRepoList(wantRepos))
-	}
+		fmt.Println(reposPage)
+
+	})
+
 }
 
 func TestClient_ListRepositoriesForSearch_incomplete(t *testing.T) {
