@@ -16,8 +16,8 @@ func GetBatchChangesUsageStatistics(ctx context.Context, db database.DB) (*types
 
 	const batchChangesCountsQuery = `
 SELECT
-    COUNT(*)                                      					AS batch_changes_count,
-    COUNT(*) FILTER (WHERE batch_changes.closed_at IS NOT NULL) 	AS batch_changes_closed_count
+    COUNT(*)                                      	AS batch_changes_count,
+    COUNT(*) FILTER (WHERE closed_at IS NOT NULL) 	AS batch_changes_closed_count
 FROM batch_changes;
 `
 
