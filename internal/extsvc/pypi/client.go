@@ -104,7 +104,7 @@ func FindVersion(version string, files []File) (File, error) {
 
 	if version == "" {
 		for i := len(files) - 1; i >= 0; i-- {
-			if w, err := ToWheel(files[i]); err != nil {
+			if w, err := ToWheel(files[i]); err == nil {
 				version = w.Version
 				break
 			} else if s, err := ToSDist(files[i]); err == nil {
@@ -314,20 +314,16 @@ func ToSDist(f File) (*SDist, error) {
 	}, nil
 }
 
-// isSDIST returns true if filename belongs to a source distribution. If isSDIST
-// is true then the first return value is the full extension.
-//
-// Examples:
-//   request-1.12.2.tar.gz -> .tar.gz, true
-//   request-1.12.2.foo -> "", false
-//
+// isSDIST returns the file extension if filename has one of the supported sdist
+// formats. If the file extension is not supported, isSDIST returns the empty
+// string.
 func isSDIST(filename string) string {
 	switch ext := filepath.Ext(filename); ext {
-	case "zip", "tar":
+	case ".zip", ".tar":
 		return ext
 	}
 
-	switch ext := ExtN(filename, 2); ext {
+	switch ext := extN(filename, 2); ext {
 	case ".tar.gz", ".tar.bz2", ".tar.xz", ".tar.Z":
 		return ext
 	default:
@@ -335,7 +331,7 @@ func isSDIST(filename string) string {
 	}
 }
 
-func ExtN(path string, n int) (ext string) {
+func extN(path string, n int) (ext string) {
 	if n == -1 {
 		i := strings.Index(path, ".")
 		if i == -1 {

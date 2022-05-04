@@ -260,6 +260,157 @@ func TestToWheel(t *testing.T) {
 	}
 }
 
+func TestFindVersion(t *testing.T) {
+	mkTarball := func(version string) File {
+		n := "request" + "-" + version + ".tar.gz"
+		return File{
+			Name: n,
+			URL:  "https://cdn/" + n,
+		}
+	}
+
+	mkWheel := func(version string) File {
+		n := "request" + "-" + version + "-" + "py2.py3-none-any.whl"
+		return File{
+			Name: n,
+			URL:  "https://cdn/" + n,
+		}
+	}
+
+	tc := []struct {
+		name        string
+		files       []File
+		wantVersion string
+		want        File
+	}{
+		{
+			name: "only tarballs",
+			files: []File{
+				mkTarball("1.2.2"),
+				mkTarball("1.2.3"),
+				mkTarball("1.2.4"),
+			},
+			wantVersion: "1.2.3",
+			want:        mkTarball("1.2.3"),
+		},
+		{
+			name: "tarballs and wheels",
+			files: []File{
+				mkTarball("1.2.2"),
+				mkWheel("1.2.2"),
+				mkTarball("1.2.3"),
+				mkWheel("1.2.3"),
+				mkTarball("1.2.4"),
+				mkWheel("1.2.4"),
+			},
+			wantVersion: "1.2.3",
+			want:        mkTarball("1.2.3"),
+		},
+		{
+			name: "only wheels",
+			files: []File{
+				mkWheel("1.2.2"),
+				mkWheel("1.2.3"),
+				mkWheel("1.2.4"),
+			},
+			wantVersion: "1.2.3",
+			want:        mkWheel("1.2.3"),
+		},
+		{
+			name: "no tarball for target version",
+			files: []File{
+				mkTarball("1.2.2"),
+				mkWheel("1.2.2"),
+				mkWheel("1.2.3"),
+				mkTarball("1.2.4"),
+				mkWheel("1.2.4"),
+			},
+			wantVersion: "1.2.3",
+			want:        mkWheel("1.2.3"),
+		},
+		{
+			name: "pick latest version",
+			files: []File{
+				mkTarball("1.2.2"),
+				mkWheel("1.2.2"),
+				mkWheel("1.2.3"),
+				mkTarball("1.2.4"),
+				mkWheel("1.2.4"),
+			},
+			wantVersion: "",
+			want:        mkTarball("1.2.4"),
+		},
+	}
+
+	for _, c := range tc {
+		t.Run(c.name, func(t *testing.T) {
+			got, err := FindVersion(c.wantVersion, c.files)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if d := cmp.Diff(c.want, got); d != "" {
+				t.Fatalf("-want,+got:\n%s", d)
+			}
+		})
+	}
+}
+
+func TestIsSDIST(t *testing.T) {
+	tc := []struct {
+		have string
+		want string
+	}{
+		{
+			have: "file.tar.gz",
+			want: ".tar.gz",
+		},
+		{
+			have: "file.tar",
+			want: ".tar",
+		},
+		{
+			have: "file.tar.Z",
+			want: ".tar.Z",
+		},
+		{
+			have: "file.zip",
+			want: ".zip",
+		},
+		{
+			have: "file.tar.xz",
+			want: ".tar.xz",
+		},
+		{
+			have: "file.tar.bz2",
+			want: ".tar.bz2",
+		},
+		{
+			have: "file.foo",
+			want: "",
+		},
+		{
+			have: "file.foo.bz",
+			want: "",
+		},
+		{
+			have: "",
+			want: "",
+		},
+		{
+			have: "foo",
+			want: "",
+		},
+	}
+
+	for _, c := range tc {
+		t.Run(c.have, func(t *testing.T) {
+			if got := isSDIST(c.have); got != c.want {
+				t.Fatalf("want %q, got %q", c.want, got)
+			}
+		})
+	}
+}
+
 // newTestClient returns a pypi Client that records its interactions
 // to testdata/vcr/.
 func newTestClient(t testing.TB, name string, update bool) *Client {
