@@ -179,7 +179,7 @@ func makeRepoStateQuery(repoNames, uploadIDs []string) string {
 		fragments = append(fragments, fmt.Sprintf(uploadQueryFragment, i, id))
 	}
 
-	return fmt.Sprintf("query CodeIntelQA_Upload {%s}", strings.Join(fragments, "\n"))
+	return fmt.Sprintf("query CodeIntelQA_Upload_RepositoryState {%s}", strings.Join(fragments, "\n"))
 }
 
 const repositoryQueryFragment = `
