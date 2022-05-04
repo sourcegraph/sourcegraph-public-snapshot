@@ -15,7 +15,7 @@ import { ImportingChangesetFields } from './useImportingChangesets'
 import { WorkspacesPreview } from './WorkspacesPreview'
 import { mockImportingChangesets, mockWorkspaces } from './WorkspacesPreview.mock'
 
-const { add } = storiesOf('web/batches/CreateBatchChangePage/WorkspacesPreview', module)
+const { add } = storiesOf('web/batches/create/WorkspacesPreview', module)
     .addDecorator(story => <div className="p-3 container d-flex flex-column align-items-center">{story()}</div>)
     .addParameters({ chromatic: { disableSnapshot: true } })
 
