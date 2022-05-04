@@ -507,7 +507,7 @@ func (b *jobBuilder) newZoektGlobalSearch(typ search.IndexedRequestType) (job.Jo
 			RepoOptions:      b.repoOptions,
 		}, nil
 	case search.TextRequest:
-		return &zoekt.GlobalSearch{
+		return &zoekt.ZoektGlobalSearchJob{
 			GlobalZoektQuery: globalZoektQuery,
 			ZoektArgs:        zoektArgs,
 			RepoOptions:      b.repoOptions,
@@ -524,13 +524,13 @@ func (b *jobBuilder) newZoektSearch(typ search.IndexedRequestType) (job.Job, err
 
 	switch typ {
 	case search.SymbolRequest:
-		return &zoekt.ZoektSymbolSearch{
+		return &zoekt.ZoektSymbolSearchJob{
 			Query:          zoektQuery,
 			FileMatchLimit: b.fileMatchLimit,
 			Select:         b.selector,
 		}, nil
 	case search.TextRequest:
-		return &zoekt.ZoektRepoSubsetSearch{
+		return &zoekt.ZoektRepoSubsetSearchJob{
 			Query:          zoektQuery,
 			Typ:            typ,
 			FileMatchLimit: b.fileMatchLimit,
@@ -706,10 +706,10 @@ func optimizeJobs(baseJob job.Job, inputs *run.SearchInputs, q query.Basic) (job
 		MapJob: func(currentJob job.Job) job.Job {
 			switch currentJob.(type) {
 			case
-				*zoekt.GlobalSearch,
+				*zoekt.ZoektGlobalSearchJob,
 				*symbol.RepoUniverseSymbolSearchJob,
-				*zoekt.ZoektRepoSubsetSearch,
-				*zoekt.ZoektSymbolSearch,
+				*zoekt.ZoektRepoSubsetSearchJob,
+				*zoekt.ZoektSymbolSearchJob,
 				*commit.CommitSearchJob:
 				optimizedJobs = append(optimizedJobs, currentJob)
 				return currentJob
@@ -738,20 +738,20 @@ func optimizeJobs(baseJob job.Job, inputs *run.SearchInputs, q query.Basic) (job
 	trimmer := Mapper{
 		MapJob: func(currentJob job.Job) job.Job {
 			switch currentJob.(type) {
-			case *zoekt.GlobalSearch:
-				if exists("ZoektGlobalSearch") {
+			case *zoekt.ZoektGlobalSearchJob:
+				if exists("ZoektGlobalSearchJob") {
 					return &noopJob{}
 				}
 				return currentJob
 
-			case *zoekt.ZoektRepoSubsetSearch:
-				if exists("ZoektRepoSubset") {
+			case *zoekt.ZoektRepoSubsetSearchJob:
+				if exists("ZoektRepoSubsetSearchJob") {
 					return &noopJob{}
 				}
 				return currentJob
 
-			case *zoekt.ZoektSymbolSearch:
-				if exists("ZoektSymbolSearch") {
+			case *zoekt.ZoektSymbolSearchJob:
+				if exists("ZoektSymbolSearchJob") {
 					return &noopJob{}
 				}
 				return currentJob
@@ -780,8 +780,8 @@ func optimizeJobs(baseJob job.Job, inputs *run.SearchInputs, q query.Basic) (job
 	for i, job := range optimizedJobs {
 		switch job.(type) {
 		case
-			*zoekt.ZoektRepoSubsetSearch,
-			*zoekt.ZoektSymbolSearch:
+			*zoekt.ZoektRepoSubsetSearchJob,
+			*zoekt.ZoektSymbolSearchJob:
 			optimizedJobs[i] = &repoPagerJob{
 				child:            job,
 				repoOptions:      toRepoOptions(q, inputs.UserSettings),

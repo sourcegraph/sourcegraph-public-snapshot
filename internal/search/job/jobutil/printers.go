@@ -41,12 +41,12 @@ func SexpFormat(j job.Job, sep, indent string) string {
 		}
 		switch j := j.(type) {
 		case
-			*zoekt.ZoektRepoSubsetSearch,
-			*zoekt.ZoektSymbolSearch,
+			*zoekt.ZoektRepoSubsetSearchJob,
+			*zoekt.ZoektSymbolSearchJob,
 			*searcher.SearcherJob,
 			*searcher.SymbolSearcherJob,
 			*run.RepoSearchJob,
-			*zoekt.GlobalSearch,
+			*zoekt.ZoektGlobalSearchJob,
 			*structural.StructuralSearchJob,
 			*commit.CommitSearchJob,
 			*symbol.RepoUniverseSymbolSearchJob,
@@ -201,12 +201,12 @@ func PrettyMermaid(j job.Job) string {
 		}
 		switch j := j.(type) {
 		case
-			*zoekt.ZoektRepoSubsetSearch,
-			*zoekt.ZoektSymbolSearch,
+			*zoekt.ZoektRepoSubsetSearchJob,
+			*zoekt.ZoektSymbolSearchJob,
 			*searcher.SearcherJob,
 			*searcher.SymbolSearcherJob,
 			*run.RepoSearchJob,
-			*zoekt.GlobalSearch,
+			*zoekt.ZoektGlobalSearchJob,
 			*structural.StructuralSearchJob,
 			*commit.CommitSearchJob,
 			*symbol.RepoUniverseSymbolSearchJob,
@@ -319,12 +319,12 @@ func toJSON(j job.Job, verbose bool) interface{} {
 		}
 		switch j := j.(type) {
 		case
-			*zoekt.ZoektRepoSubsetSearch,
-			*zoekt.ZoektSymbolSearch,
+			*zoekt.ZoektRepoSubsetSearchJob,
+			*zoekt.ZoektSymbolSearchJob,
 			*searcher.SearcherJob,
 			*searcher.SymbolSearcherJob,
 			*run.RepoSearchJob,
-			*zoekt.GlobalSearch,
+			*zoekt.ZoektGlobalSearchJob,
 			*structural.StructuralSearchJob,
 			*commit.CommitSearchJob,
 			*symbol.RepoUniverseSymbolSearchJob,

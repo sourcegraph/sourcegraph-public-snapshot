@@ -15,7 +15,7 @@ BASE:
           (PARALLEL
             REPOPAGER
               (PARALLEL
-                ZoektSymbolSearch
+                ZoektSymbolSearchJob
                 SymbolSearcherJob))
             ComputeExcludedReposJob))
         (LIMIT
@@ -23,7 +23,7 @@ BASE:
           (PARALLEL
             REPOPAGER
               (PARALLEL
-                ZoektSymbolSearch
+                ZoektSymbolSearchJob
                 SymbolSearcherJob))
             ComputeExcludedReposJob))
         (LIMIT
@@ -31,7 +31,7 @@ BASE:
           (PARALLEL
             REPOPAGER
               (PARALLEL
-                ZoektSymbolSearch
+                ZoektSymbolSearchJob
                 SymbolSearcherJob))
             ComputeExcludedReposJob))))))
 
@@ -44,7 +44,7 @@ OPTIMIZED:
       500
       (PARALLEL
         REPOPAGER
-          ZoektSymbolSearch)
+          ZoektSymbolSearchJob)
         (AND
           (LIMIT
             40000

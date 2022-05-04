@@ -19,12 +19,12 @@ type Mapper struct {
 	MapJob func(job job.Job) job.Job
 
 	// Search Jobs (leaf nodes)
-	MapZoektRepoSubsetSearchJob    func(*zoekt.ZoektRepoSubsetSearch) *zoekt.ZoektRepoSubsetSearch
-	MapZoektSymbolSearchJob        func(*zoekt.ZoektSymbolSearch) *zoekt.ZoektSymbolSearch
+	MapZoektRepoSubsetSearchJob    func(*zoekt.ZoektRepoSubsetSearchJob) *zoekt.ZoektRepoSubsetSearchJob
+	MapZoektSymbolSearchJob        func(*zoekt.ZoektSymbolSearchJob) *zoekt.ZoektSymbolSearchJob
 	MapSearcherJob                 func(*searcher.SearcherJob) *searcher.SearcherJob
 	MapSymbolSearcherJob           func(*searcher.SymbolSearcherJob) *searcher.SymbolSearcherJob
 	MapRepoSearchJob               func(*run.RepoSearchJob) *run.RepoSearchJob
-	MapRepoUniverseTextSearchJob   func(*zoekt.GlobalSearch) *zoekt.GlobalSearch
+	MapRepoUniverseTextSearchJob   func(*zoekt.ZoektGlobalSearchJob) *zoekt.ZoektGlobalSearchJob
 	MapStructuralSearchJob         func(*structural.StructuralSearchJob) *structural.StructuralSearchJob
 	MapCommitSearchJob             func(*commit.CommitSearchJob) *commit.CommitSearchJob
 	MapRepoUniverseSymbolSearchJob func(*symbol.RepoUniverseSymbolSearchJob) *symbol.RepoUniverseSymbolSearchJob
@@ -59,13 +59,13 @@ func (m *Mapper) Map(j job.Job) job.Job {
 	}
 
 	switch j := j.(type) {
-	case *zoekt.ZoektRepoSubsetSearch:
+	case *zoekt.ZoektRepoSubsetSearchJob:
 		if m.MapZoektRepoSubsetSearchJob != nil {
 			j = m.MapZoektRepoSubsetSearchJob(j)
 		}
 		return j
 
-	case *zoekt.ZoektSymbolSearch:
+	case *zoekt.ZoektSymbolSearchJob:
 		if m.MapZoektSymbolSearchJob != nil {
 			j = m.MapZoektSymbolSearchJob(j)
 		}
@@ -89,7 +89,7 @@ func (m *Mapper) Map(j job.Job) job.Job {
 		}
 		return j
 
-	case *zoekt.GlobalSearch:
+	case *zoekt.ZoektGlobalSearchJob:
 		if m.MapRepoUniverseTextSearchJob != nil {
 			j = m.MapRepoUniverseTextSearchJob(j)
 		}
@@ -219,8 +219,8 @@ func MapAtom(j job.Job, f func(job.Job) job.Job) job.Job {
 		MapJob: func(currentJob job.Job) job.Job {
 			switch typedJob := currentJob.(type) {
 			case
-				*zoekt.ZoektRepoSubsetSearch,
-				*zoekt.ZoektSymbolSearch,
+				*zoekt.ZoektRepoSubsetSearchJob,
+				*zoekt.ZoektSymbolSearchJob,
 				*searcher.SearcherJob,
 				*searcher.SymbolSearcherJob,
 				*run.RepoSearchJob,

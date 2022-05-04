@@ -15,7 +15,7 @@ BASE:
           (PARALLEL
             REPOPAGER
               (PARALLEL
-                ZoektRepoSubset
+                ZoektRepoSubsetSearchJob
                 SearcherJob))
             RepoSearchJob
             ComputeExcludedReposJob))
@@ -24,7 +24,7 @@ BASE:
           (PARALLEL
             REPOPAGER
               (PARALLEL
-                ZoektRepoSubset
+                ZoektRepoSubsetSearchJob
                 SearcherJob))
             RepoSearchJob
             ComputeExcludedReposJob))
@@ -33,7 +33,7 @@ BASE:
           (PARALLEL
             REPOPAGER
               (PARALLEL
-                ZoektRepoSubset
+                ZoektRepoSubsetSearchJob
                 SearcherJob))
             RepoSearchJob
             ComputeExcludedReposJob))))))
@@ -47,7 +47,7 @@ OPTIMIZED:
       500
       (PARALLEL
         REPOPAGER
-          ZoektRepoSubset)
+          ZoektRepoSubsetSearchJob)
         (AND
           (LIMIT
             40000
