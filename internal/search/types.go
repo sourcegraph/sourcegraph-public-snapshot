@@ -236,7 +236,7 @@ type RepoOptions struct {
 	Limit       int
 	Cursors     []*types.Cursor
 
-	// Explicit forks indicates whether `fork:` was set explicitly in the query,
+	// ForkSet indicates whether `fork:` was set explicitly in the query,
 	// or whether the values were set from defaults.
 	ForkSet   bool
 	NoForks   bool
@@ -251,42 +251,34 @@ type RepoOptions struct {
 
 func (op *RepoOptions) String() string {
 	var b strings.Builder
-	if len(op.RepoFilters) == 0 {
-		b.WriteString("r=[]")
-	}
-	for i, r := range op.RepoFilters {
-		if i != 0 {
-			b.WriteByte(' ')
+	b.WriteString("RepoFilters: ")
+	if len(op.RepoFilters) > 0 {
+		for i, r := range op.RepoFilters {
+			if i != 0 {
+				b.WriteByte(' ')
+			}
+			b.WriteString(strconv.Quote(r))
 		}
-		b.WriteString(strconv.Quote(r))
+	} else {
+		b.WriteString("[]")
 	}
+	b.WriteString("\n")
 
 	if len(op.MinusRepoFilters) > 0 {
-		_, _ = fmt.Fprintf(&b, " -r=%v", op.MinusRepoFilters)
-	}
-	if op.CommitAfter != "" {
-		_, _ = fmt.Fprintf(&b, " CommitAfter=%q", op.CommitAfter)
-	}
-
-	if op.CaseSensitiveRepoFilters {
-		b.WriteString(" CaseSensitiveRepoFilters")
+		_, _ = fmt.Fprintf(&b, "MinusRepoFilters: %v\n", op.MinusRepoFilters)
+	} else {
+		b.WriteString("MinusRepoFilters: []\n")
 	}
 
-	if op.NoForks {
-		b.WriteString(" NoForks")
-	}
-	if op.OnlyForks {
-		b.WriteString(" OnlyForks")
-	}
-	if op.NoArchived {
-		b.WriteString(" NoArchived")
-	}
-	if op.OnlyArchived {
-		b.WriteString(" OnlyArchived")
-	}
-	if op.Visibility != query.Any {
-		b.WriteString(" Visibility" + string(op.Visibility))
-	}
+	_, _ = fmt.Fprintf(&b, "CommitAfter: %s\n", op.CommitAfter)
+	_, _ = fmt.Fprintf(&b, "CaseSensitiveRepoFilters: %t\n", op.CaseSensitiveRepoFilters)
+	_, _ = fmt.Fprintf(&b, "ForkSet: %t\n", op.ForkSet)
+	_, _ = fmt.Fprintf(&b, "NoForks: %t\n", op.NoForks)
+	_, _ = fmt.Fprintf(&b, "OnlyForks: %t\n", op.OnlyForks)
+	_, _ = fmt.Fprintf(&b, "ArchivedSet: %t\n", op.ArchivedSet)
+	_, _ = fmt.Fprintf(&b, "NoArchived: %t\n", op.NoArchived)
+	_, _ = fmt.Fprintf(&b, "OnlyArchived: %t\n", op.OnlyArchived)
+	_, _ = fmt.Fprintf(&b, "Visibility: %s\n", string(op.Visibility))
 
 	return b.String()
 }
