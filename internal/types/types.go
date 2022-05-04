@@ -870,7 +870,8 @@ type BatchChangesUsageStatistics struct {
 	// across multiple sources
 	BatchChangeStatsBySource []*BatchChangeStatsBySource
 
-	// this refers to the number of users who ran a job on an executor in a given month
+	// MonthlyBatchChangesExecutorUsage is the number of users who ran a job on an
+	// executor in a given month
 	MonthlyBatchChangesExecutorUsage []*MonthlyBatchChangesExecutorUsage
 
 	WeeklyBulkOperationStats []*WeeklyBulkOperationStats
@@ -891,12 +892,14 @@ type WeeklyBulkOperationStats struct {
 }
 
 type MonthlyBatchChangesExecutorUsage struct {
-	// Month is the month of this in which we check the amount of unique users
-	// that ran a job using an executor.
+	// Month of the year corresponding to this executor usage data.
 	Month string
 
-	// number of unique users who ran a job on an executor.
+	// The number of unique users who ran a job on an executor this month.
 	Count int32
+
+	// The cumulative number of minutes of executor usage for batch changes this month.
+	Minutes int64
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change

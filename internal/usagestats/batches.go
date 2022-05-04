@@ -298,9 +298,13 @@ GROUP BY batch_specs.created_from_raw;
 	const monthlyExecutorUsageQuery = `
 SELECT
 	DATE_TRUNC('month', batch_specs.created_at)::date as month,
-	COUNT(DISTINCT batch_spec_resolution_jobs.initiator_id)
+	COUNT(DISTINCT res_jobs.initiator_id),
+	-- Sum of the durations of every resolution job and every execution job, rounded up to the nearest minute
+	CEIL((COALESCE(SUM(EXTRACT(EPOCH FROM (res_jobs.finished_at - res_jobs.started_at))), 0) + COALESCE(SUM(EXTRACT(EPOCH FROM (exec_jobs.finished_at - exec_jobs.started_at))), 0)) / 60) AS minutes
 FROM batch_specs
-INNER JOIN batch_spec_resolution_jobs ON batch_spec_resolution_jobs.batch_spec_id = batch_specs.id
+INNER JOIN batch_spec_resolution_jobs AS res_jobs ON res_jobs.batch_spec_id = batch_specs.id
+LEFT JOIN batch_spec_workspaces AS ws ON ws.batch_spec_id = batch_specs.id
+LEFT JOIN batch_spec_workspace_execution_jobs AS exec_jobs ON exec_jobs.batch_spec_workspace_id = ws.id
 WHERE batch_specs.created_from_raw IS TRUE
 GROUP BY date_trunc('month', batch_specs.created_at)::date;
 `
@@ -314,14 +318,16 @@ GROUP BY date_trunc('month', batch_specs.created_at)::date;
 	for rows.Next() {
 		var month string
 		var usersCount int32
+		var minutes int64
 
-		if err = rows.Scan(&month, &usersCount); err != nil {
+		if err = rows.Scan(&month, &usersCount, &minutes); err != nil {
 			return nil, err
 		}
 
 		stats.MonthlyBatchChangesExecutorUsage = append(stats.MonthlyBatchChangesExecutorUsage, &types.MonthlyBatchChangesExecutorUsage{
-			Month: month,
-			Count: usersCount,
+			Month:   month,
+			Count:   usersCount,
+			Minutes: minutes,
 		})
 	}
 

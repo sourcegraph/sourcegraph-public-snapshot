@@ -64,20 +64,25 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	pastBatchSpecCreationDate := now.AddDate(0, -1, 2)
+	lastMonthCreationDate := now.AddDate(0, -1, 2)
+	twoMonthsAgoCreationDate := now.AddDate(0, -2, 2)
 
-	// Create batch specs 1, 2, 3
+	// Create batch specs
 	_, err = db.ExecContext(context.Background(), `
 		INSERT INTO batch_specs
 			(id, rand_id, raw_spec, namespace_user_id, created_from_raw, created_at)
 		VALUES
+		    -- 3 from this month, 2 from executors by the same user
 			(1, '123', '{}', $1, FALSE, $3::timestamp),
-			(2, '456', '{}', $1, FALSE, $4::timestamp),
-			(3, '789', '{}', $1, TRUE, $4::timestamp),
-			(4, '157', '{}', $2, TRUE, $3::timestamp),
-			(5, 'U93', '{}', $2, TRUE, $3::timestamp),
-			(6, 'C80', '{}', $2, TRUE, $4::timestamp)
-	`, user.ID, user2.ID, now, pastBatchSpecCreationDate)
+			(2, '157', '{}', $2, TRUE, $3::timestamp),
+			(3, 'U93', '{}', $2, TRUE, $3::timestamp),
+			-- 3 from last month, 2 from executors by different users
+			(4, '456', '{}', $1, FALSE, $4::timestamp),
+			(5, '789', '{}', $1, TRUE, $4::timestamp),
+			(6, 'C80', '{}', $2, TRUE, $4::timestamp),
+			-- 1 from two months ago, from executors
+			(7, 'KEK', '{}', $2, TRUE, $5::timestamp)
+	`, user.ID, user2.ID, now, lastMonthCreationDate, twoMonthsAgoCreationDate)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -85,15 +90,55 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 	// Create batch specs resolution jobs
 	_, err = db.ExecContext(context.Background(), `
 		INSERT INTO batch_spec_resolution_jobs
-			(id, batch_spec_id, initiator_id, worker_hostname)
+			(id, batch_spec_id, initiator_id, worker_hostname, started_at, finished_at)
 		VALUES
-			(1, 3, $1, 'test-worker.host'),
-			(2, 2, $1, 'test-worker.host'),
-			(3, 1, $2, 'test-worker.host'),
-			(4, 6, $2, 'test-worker.host'),
-			(5, 4, $2, 'test-worker.host'),
-			(6, 5, $2, 'test-worker.host')
-	`, user.ID, user2.ID)
+			(1, 2, $2, 'test-worker.host', $3::timestamp, $3::timestamp),
+			(2, 3, $2, 'test-worker.host', $3::timestamp, $3::timestamp),
+			(3, 5, $1, 'test-worker.host', $3::timestamp, $3::timestamp),
+			(4, 6, $2, 'test-worker.host', $3::timestamp, NULL),
+			(5, 7, $2, 'test-worker.host', NULL, NULL)
+	`, user.ID, user2.ID, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Create batch spec workspaces
+	_, err = db.ExecContext(context.Background(), `
+		INSERT INTO batch_spec_workspaces
+			(id, batch_spec_id, branch, commit, path, file_matches)
+		VALUES
+			(1, 2, 'refs/heads/main', 'some-commit', '', '{README.md}'),
+			(2, 2, 'refs/heads/main', 'some-commit', '', '{README.md}'),
+			(3, 3, 'refs/heads/main', 'some-commit', '', '{README.md}'),
+			(4, 5, 'refs/heads/main', 'some-commit', '', '{README.md}'),
+			(5, 7, 'refs/heads/main', 'some-commit', '', '{README.md}')
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	workspaceExecutionStartedDate := now.Add(-10 * time.Minute) // 10 minutes ago
+
+	lastMonthWorkspaceExecutionStartedDate := now.AddDate(0, -1, 2)                                         // Over a month ago
+	lastMonthWorkspaceExecutionFinishedDate := lastMonthWorkspaceExecutionStartedDate.Add(10 * time.Minute) // 10 minutes later
+
+	// Create batch spec workspace execution jobs
+	_, err = db.ExecContext(context.Background(), `
+		INSERT INTO batch_spec_workspace_execution_jobs
+			(id, batch_spec_workspace_id, started_at, finished_at)
+		VALUES
+			-- Finished this month
+			(1, 1, $4::timestamp, $3::timestamp),
+			(2, 2, $4::timestamp, $3::timestamp),
+			(3, 3, $4::timestamp, $3::timestamp),
+			-- Finished last month
+			(4, 4, $1::timestamp, $2::timestamp),
+			-- Processing: has been started but not finished
+			(5, 3, $4::timestamp, NULL),
+			-- Queued: has not been started or finished
+			(6, 3, NULL, NULL),
+			(7, 3, NULL, NULL)
+	`, lastMonthWorkspaceExecutionStartedDate, lastMonthWorkspaceExecutionFinishedDate, now, workspaceExecutionStartedDate)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -137,14 +182,14 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 	batchChangeCreationDate2 := now.Add(-24 * 3 * time.Hour)      // 3 days ago
 	batchChangeCreationDate3 := now.Add(-24 * 7 * 60 * time.Hour) // 60 weeks ago
 
-	// Create batch changes 1, 2
+	// Create batch changes
 	_, err = db.ExecContext(context.Background(), `
 		INSERT INTO batch_changes
 			(id, name, batch_spec_id, created_at, last_applied_at, namespace_user_id, closed_at)
 		VALUES
 			(1, 'test',   1, $2::timestamp, $5::timestamp, $1, NULL),
-			(2, 'test-2', 2, $3::timestamp, $5::timestamp, $1, $5::timestamp),
-			(3, 'test-3', 3, $4::timestamp, $5::timestamp, $1, NULL)
+			(2, 'test-2', 4, $3::timestamp, $5::timestamp, $1, $5::timestamp),
+			(3, 'test-3', 5, $4::timestamp, $5::timestamp, $1, NULL)
 	`, user.ID, batchChangeCreationDate1, batchChangeCreationDate2, batchChangeCreationDate3, now)
 	if err != nil {
 		t.Fatal(err)
@@ -243,14 +288,14 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// It was a typo... ::facepalm::
 	have, err := GetBatchChangesUsageStatistics(ctx, db)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	currentYear, currentMonth, _ := now.Date()
-	pastYear, pastMonth, _ := pastBatchSpecCreationDate.Date()
+	pastYear, pastMonth, _ := lastMonthCreationDate.Date()
+	pastYear2, pastMonth2, _ := twoMonthsAgoCreationDate.Date()
 
 	want := &types.BatchChangesUsageStatistics{
 		ViewBatchChangeApplyPageCount:               2,
@@ -311,8 +356,9 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 			{Source: "executor", PublishedChangesetsCount: 2, BatchChangesCount: 1},
 		},
 		MonthlyBatchChangesExecutorUsage: []*types.MonthlyBatchChangesExecutorUsage{
-			{Month: fmt.Sprintf("%d-%02d-01T00:00:00Z", pastYear, pastMonth), Count: 2},
-			{Month: fmt.Sprintf("%d-%02d-01T00:00:00Z", currentYear, currentMonth), Count: 1},
+			{Month: fmt.Sprintf("%d-%02d-01T00:00:00Z", pastYear2, pastMonth2), Count: 1, Minutes: 0},
+			{Month: fmt.Sprintf("%d-%02d-01T00:00:00Z", pastYear, pastMonth), Count: 2, Minutes: 10},
+			{Month: fmt.Sprintf("%d-%02d-01T00:00:00Z", currentYear, currentMonth), Count: 1, Minutes: 30},
 		},
 		WeeklyBulkOperationStats: []*types.WeeklyBulkOperationStats{
 			{Week: "2022-03-21T00:00:00Z", Count: 1, BulkOperation: "reenqueue"},
