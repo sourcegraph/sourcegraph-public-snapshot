@@ -81,6 +81,7 @@ export const AuthenticatedEditSearchContextPage: React.FunctionComponent<EditSea
                             {
                                 icon: MagnifyIcon,
                                 to: '/search',
+                                ariaLabel: 'Code Search',
                             },
                             {
                                 to: '/contexts',

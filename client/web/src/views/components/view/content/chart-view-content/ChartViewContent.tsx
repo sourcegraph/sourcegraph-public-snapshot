@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useCallback } from 'react'
+import { FunctionComponent, useCallback } from 'react'
 
 import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'

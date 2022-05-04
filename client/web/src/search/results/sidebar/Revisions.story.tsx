@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { MockedProviderProps } from '@apollo/client/testing'
 import { Meta } from '@storybook/react'
 

@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { radios } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
 

@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 
+import { version } from '../../../../package.json'
 import { WebviewPageProps } from '../../platform/context'
 import { AuthSidebarView } from '../auth/AuthSidebarView'
 
@@ -47,7 +48,7 @@ export const HelpSidebarView: React.FunctionComponent<HelpSidebarViewProps> = ({
                 type="button"
                 onClick={() =>
                     onHelpItemClick(
-                        'https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=&template=bug_report.md&title=',
+                        'https://github.com/sourcegraph/sourcegraph/issues/new?labels=team/integrations,vscode-extension&title=VSCode+Bug+report:+&projects=Integrations%20Project%20Board',
                         'Issues'
                     )
                 }
@@ -94,7 +95,6 @@ export const HelpSidebarView: React.FunctionComponent<HelpSidebarViewProps> = ({
                 <i className="codicon codicon-account" />
                 <span>Authenticate account</span>
             </button>
-
             {hasAccount && (
                 <div className="ml-3 mt-1">
                     {!authenticatedUser ? (
@@ -111,6 +111,10 @@ export const HelpSidebarView: React.FunctionComponent<HelpSidebarViewProps> = ({
                     )}
                 </div>
             )}
+            <button type="button" className={classNames(styles.itemContainer, 'btn btn-text text-left')}>
+                <i className="codicon codicon-calendar" />
+                <span>Version v{version}</span>
+            </button>
         </div>
     )
 }

@@ -19,6 +19,7 @@ type Recognizer struct {
 	patterns           []*PathPattern
 	patternsForContent []*PathPattern
 	generate           *lua.LFunction
+	hints              *lua.LFunction
 	fallback           []*Recognizer
 }
 
@@ -34,9 +35,14 @@ func (r *Recognizer) Patterns(forContent bool) []*PathPattern {
 	return r.patterns
 }
 
-// Generator returns the registered Lua callback and its suspended environment.
+// Generator returns the registered Lua generate callback and its suspended environment.
 func (r *Recognizer) Generator() *lua.LFunction {
 	return r.generate
+}
+
+// Hinter returns the registered Lua hints callback and its suspended environment.
+func (r *Recognizer) Hinter() *lua.LFunction {
+	return r.hints
 }
 
 // NewFallback returns a new fallback recognizer.
@@ -44,27 +50,74 @@ func NewFallback(fallback []*Recognizer) *Recognizer {
 	return &Recognizer{fallback: fallback}
 }
 
-// LinearizeRecognizers returns a concatenation of results from calling the function
-// LinearizeRecognizer on each of the inputs.
-func LinearizeRecognizers(recognizers []*Recognizer) (linearized []*Recognizer) {
+// FlattenRecognizerPatterns returns a concatenation of results from calling the function
+// FlattenRecognizerPattern on each of the inputs.
+func FlattenRecognizerPatterns(recognizers []*Recognizer, forContent bool) (flatten []*PathPattern) {
 	for _, recognizer := range recognizers {
-		linearized = append(linearized, LinearizeRecognizer(recognizer)...)
+		flatten = append(flatten, FlattenRecognizerPattern(recognizer, forContent)...)
 	}
 
 	return
 }
 
-// LinearizeRecognizer returns the depth-first ordering of recognizers that should be
-// invoked in order of fallback. If this is not a fallback recognizer, it should invoke
+// FlattenRecognizerPattern flattens all patterns reachable from the given recognizer.
+func FlattenRecognizerPattern(recognizer *Recognizer, forContent bool) (patterns []*PathPattern) {
+	patterns = append(patterns, recognizer.Patterns(forContent)...)
+
+	for _, recognizer := range recognizer.fallback {
+		patterns = append(patterns, FlattenRecognizerPattern(recognizer, forContent)...)
+	}
+
+	return
+}
+
+// LinearizeGenerators returns a concatenation of results from calling the function
+// LinearizeRecognizer on each of the inputs.
+func LinearizeGenerators(recognizers []*Recognizer) (linearized []*Recognizer) {
+	for _, recognizer := range recognizers {
+		linearized = append(linearized, LinearizeGenerator(recognizer)...)
+	}
+
+	return
+}
+
+// LinearizeGenerator returns the depth-first ordering of recognizers whose generate functions
+// should be invoked in order of fallback. If this is not a fallback recognizer, it should invoke
 // only itself. All recognizers returned by this function should have an associated non-nil
 // generate function.
-func LinearizeRecognizer(recognizer *Recognizer) (recognizers []*Recognizer) {
+func LinearizeGenerator(recognizer *Recognizer) (recognizers []*Recognizer) {
 	if recognizer.generate != nil {
 		recognizers = append(recognizers, recognizer)
 	}
 
 	for _, recognizer := range recognizer.fallback {
-		recognizers = append(recognizers, LinearizeRecognizer(recognizer)...)
+		recognizers = append(recognizers, LinearizeGenerator(recognizer)...)
+	}
+
+	return
+}
+
+// LinearizeHinters returns a concatenation of results from calling the function
+// LinearizeHinter on each of the inputs.
+func LinearizeHinters(recognizers []*Recognizer) (linearized []*Recognizer) {
+	for _, recognizer := range recognizers {
+		linearized = append(linearized, LinearizeHinter(recognizer)...)
+	}
+
+	return
+}
+
+// LinearizeHinter returns the depth-first ordering of recognizers whose hints functions
+// should be invoked in order of fallback. If this is not a fallback recognizer, it should invoke
+// only itself. All recognizers returned by this function should have an associated non-nil
+// hints function.
+func LinearizeHinter(recognizer *Recognizer) (recognizers []*Recognizer) {
+	if recognizer.hints != nil {
+		recognizers = append(recognizers, recognizer)
+	}
+
+	for _, recognizer := range recognizer.fallback {
+		recognizers = append(recognizers, LinearizeHinter(recognizer)...)
 	}
 
 	return
@@ -111,12 +164,13 @@ func RecognizerFromTable(table *lua.LTable) (*Recognizer, error) {
 		"patterns":             setPathPatterns(&recognizer.patterns),
 		"patterns_for_content": setPathPatterns(&recognizer.patternsForContent),
 		"generate":             util.SetLuaFunction(&recognizer.generate),
+		"hints":                util.SetLuaFunction(&recognizer.hints),
 	}); err != nil {
 		return nil, err
 	}
 
-	if recognizer.generate == nil {
-		return nil, errors.Newf("no generate function supplied")
+	if recognizer.generate == nil && recognizer.hints == nil {
+		return nil, errors.Newf("no generate or hints function supplied - at least one is required")
 	}
 	if recognizer.patterns == nil && recognizer.patternsForContent == nil {
 		return nil, errors.Newf("no patterns supplied")

@@ -31,7 +31,7 @@ func newService(gitSvc GitService, observationContext *observation.Context) *Ser
 }
 
 func (s *Service) ListDependencies(ctx context.Context, repo api.RepoName, rev string) (deps []reposource.PackageDependency, err error) {
-	ctx, endObservation := s.operations.listDependencies.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.listDependencies.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repo", string(repo)),
 		log.String("rev", rev),
 	}})
@@ -46,7 +46,7 @@ func (s *Service) ListDependencies(ctx context.Context, repo api.RepoName, rev s
 }
 
 func (s *Service) StreamDependencies(ctx context.Context, repo api.RepoName, rev string, cb func(reposource.PackageDependency) error) (err error) {
-	ctx, endObservation := s.operations.streamDependencies.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.streamDependencies.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repo", string(repo)),
 		log.String("rev", rev),
 	}})

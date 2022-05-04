@@ -28,11 +28,13 @@ func Get(safe bool) *zap.Logger {
 	return globalLogger
 }
 
-// Init initializes the global logger once. Subsequent calls are no-op.
-func Init(r otfields.Resource, level zap.AtomicLevel, format encoders.OutputFormat, development bool) {
+// Init initializes the global logger once. Subsequent calls are no-op. Returns the
+// callback to sync the root core.
+func Init(r otfields.Resource, level zap.AtomicLevel, format encoders.OutputFormat, development bool) func() error {
 	globalLoggerInit.Do(func() {
 		globalLogger = initLogger(r, level, format, development)
 	})
+	return globalLogger.Sync
 }
 
 // IsInitialized indicates if the global logger is initialized.
@@ -69,8 +71,8 @@ func initLogger(r otfields.Resource, level zap.AtomicLevel, format encoders.Outp
 	// to uniquely identify this resource.
 	//
 	// See examples: https://opentelemetry.io/docs/reference/specification/logs/data-model/#example-log-records
-	return logger.With(zap.Object("Resource", &encoders.ResourceEncoder{
-		Resource:   r,
-		InstanceID: uuid.New().String(),
-	}))
+	if r.InstanceID == "" {
+		r.InstanceID = uuid.New().String()
+	}
+	return logger.With(zap.Object("Resource", &encoders.ResourceEncoder{Resource: r}))
 }

@@ -8,11 +8,6 @@ import (
 
 type ResourceEncoder struct {
 	otfields.Resource
-
-	// InstanceID is a UUID generated on initialization, as part of the OpenTelemetry log
-	// spec:
-	// https://opentelemetry.io/docs/reference/specification/resource/semantic_conventions/#service
-	InstanceID string
 }
 
 var _ zapcore.ObjectMarshaler = &ResourceEncoder{}
@@ -46,6 +41,17 @@ func (t *TraceContextEncoder) MarshalLogObject(enc zapcore.ObjectEncoder) error 
 	}
 	if len(t.SpanID) > 0 {
 		enc.AddString("SpanId", t.SpanID)
+	}
+	return nil
+}
+
+type FieldsObjectEncoder []zapcore.Field
+
+var _ zapcore.ObjectMarshaler = &FieldsObjectEncoder{}
+
+func (fields FieldsObjectEncoder) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	for _, f := range fields {
+		f.AddTo(enc)
 	}
 	return nil
 }

@@ -12,6 +12,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
+type Protocol int
+
+const (
+	Streaming Protocol = iota
+	Batch
+)
+
 type SymbolsParameters struct {
 	// Repo is the name of the repository to search in.
 	Repo api.RepoName `json:"repo"`

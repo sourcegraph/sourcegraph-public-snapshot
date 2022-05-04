@@ -6,7 +6,7 @@
     "rootDir": ".",
     "outDir": "./out",
     "baseUrl": "./src",
-    "jsx": "react",
+    "jsx": "react-jsx",
   },
   "references": [{ "path": "../shared" }, { "path": "../build-config" }, { "path": "../http-client" }],
   "include": ["./src/**/*", "./*.ts"],

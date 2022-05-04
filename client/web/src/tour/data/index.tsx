@@ -1,5 +1,3 @@
-import React from 'react'
-
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import CursorPointerIcon from 'mdi-react/CursorPointerIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'

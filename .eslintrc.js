@@ -71,6 +71,11 @@ const config = {
             message:
               'Our Zustand stores should be created in a single place. Create this store in client/web/src/stores',
           },
+          {
+            name: 'reactstrap',
+            message:
+              'Please use components from the Wildcard component library instead. We work on removing `reactstrap` dependency.',
+          },
         ],
         patterns: [
           {
@@ -140,6 +145,9 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
           'Consider using useTemporarySetting instead of useLocalStorage so settings are synced when users log in elsewhere. More info at https://docs.sourcegraph.com/dev/background-information/web/temporary_settings',
       },
     ],
+    // https://reactjs.org/blog/2020/09/22/introducing-the-new-jsx-transform.html#eslint
+    'react/jsx-uses-react': 'off',
+    'react/react-in-jsx-scope': 'off',
   },
   overrides: [
     {

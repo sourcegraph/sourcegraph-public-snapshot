@@ -1,4 +1,4 @@
-import React, { DOMAttributes, useRef } from 'react'
+import React, { DOMAttributes, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
@@ -6,10 +6,16 @@ import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
 import { Button, createRectangle, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
 
 import { InsightFilters } from '../../../../../../core'
-import { SubmissionResult } from '../../../../../form/hooks/useForm'
-import { hasActiveFilters } from '../drill-down-filters-panel/components/drill-down-filters-form/DrillDownFiltersForm'
-import { DrillDownInsightCreationFormValues } from '../drill-down-filters-panel/components/drill-down-insight-creation-form/DrillDownInsightCreationForm'
-import { DrillDownFiltersPanel } from '../drill-down-filters-panel/DrillDownFiltersPanel'
+import { FormChangeEvent, SubmissionResult } from '../../../../../form/hooks/useForm'
+import {
+    DrillDownInsightCreationForm,
+    DrillDownInsightCreationFormValues,
+} from '../drill-down-filters-panel/DrillDownInsightCreationForm'
+import {
+    DrillDownFiltersFormValues,
+    DrillDownInsightFilters,
+    hasActiveFilters,
+} from '../drill-down-filters-panel/DrillDownInsightFilters'
 
 import styles from './DrillDownFiltersPopover.module.scss'
 
@@ -29,6 +35,16 @@ interface DrillDownFiltersPopoverProps {
 // the filter panel should not trigger react-grid-layout events.
 const handleMouseDown: DOMAttributes<HTMLElement>['onMouseDown'] = event => event.stopPropagation()
 
+enum DrillDownFiltersStep {
+    Filters = 'filters',
+    ViewCreation = 'view-creation',
+}
+
+const STEP_STYLES = {
+    [DrillDownFiltersStep.Filters]: styles.popoverWithFilters,
+    [DrillDownFiltersStep.ViewCreation]: styles.popoverWithViewCreation,
+}
+
 export const DrillDownFiltersPopover: React.FunctionComponent<DrillDownFiltersPopoverProps> = props => {
     const {
         isOpen,
@@ -41,8 +57,16 @@ export const DrillDownFiltersPopover: React.FunctionComponent<DrillDownFiltersPo
         onInsightCreate,
     } = props
 
+    // By default always render filters mode
+    const [step, setStep] = useState(DrillDownFiltersStep.Filters)
     const targetButtonReference = useRef<HTMLButtonElement>(null)
     const isFiltered = hasActiveFilters(initialFiltersValue)
+
+    const handleFilterChange = (event: FormChangeEvent<DrillDownFiltersFormValues>): void => {
+        if (event.valid) {
+            onFilterChange(event.values)
+        }
+    }
 
     return (
         <Popover isOpen={isOpen} anchor={anchor} onOpenChange={event => onVisibilityChange(event.isOpen)}>
@@ -66,15 +90,24 @@ export const DrillDownFiltersPopover: React.FunctionComponent<DrillDownFiltersPo
                 position={Position.rightStart}
                 aria-label="Drill-down filters panel"
                 onMouseDown={handleMouseDown}
-                className={styles.popover}
+                className={classNames(styles.popover, STEP_STYLES[step])}
             >
-                <DrillDownFiltersPanel
-                    initialFiltersValue={initialFiltersValue}
-                    originalFiltersValue={originalFiltersValue}
-                    onFiltersChange={onFilterChange}
-                    onFilterSave={onFilterSave}
-                    onInsightCreate={onInsightCreate}
-                />
+                {step === DrillDownFiltersStep.Filters && (
+                    <DrillDownInsightFilters
+                        initialValues={initialFiltersValue}
+                        originalValues={originalFiltersValue}
+                        onFiltersChange={handleFilterChange}
+                        onFilterSave={onFilterSave}
+                        onCreateInsightRequest={() => setStep(DrillDownFiltersStep.ViewCreation)}
+                    />
+                )}
+
+                {step === DrillDownFiltersStep.ViewCreation && (
+                    <DrillDownInsightCreationForm
+                        onCreateInsight={onInsightCreate}
+                        onCancel={() => setStep(DrillDownFiltersStep.Filters)}
+                    />
+                )}
             </PopoverContent>
         </Popover>
     )

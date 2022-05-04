@@ -390,7 +390,7 @@ const UnauthenticatedNotebooksSection: React.FunctionComponent<UnauthenticatedMy
     )
 }
 
-const NOTEPAD_ENABLED_EVENT = 'SearchNotepadEnabled'
+export const NOTEPAD_ENABLED_EVENT = 'SearchNotepadEnabled'
 const NOTEPAD_DISABLED_EVENT = 'SearchNotepadDisabled'
 
 const ToggleNotepadButton: React.FunctionComponent<TelemetryProps> = ({ telemetryService }) => {

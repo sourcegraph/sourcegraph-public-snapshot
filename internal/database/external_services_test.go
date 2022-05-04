@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -19,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
@@ -930,6 +932,146 @@ VALUES (%d, 1, ''), (%d, 2, '')
 	})
 	if diff := cmp.Diff(want, repos); diff != "" {
 		t.Fatalf("Repos mismatch (-want +got):\n%s", diff)
+	}
+}
+
+// reposNumber is a number of repos created in one batch.
+// TestExternalServicesStore_DeleteExtServiceWithManyRepos does 5 such batches
+const reposNumber = 1000
+
+// TestExternalServicesStore_DeleteExtServiceWithManyRepos can be used locally
+// with increased number of repos to see how fast/slow deletion of external
+// services works.
+func TestExternalServicesStore_DeleteExtServiceWithManyRepos(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	db := dbtest.NewDB(t)
+	ctx := actor.WithInternalActor(context.Background())
+
+	// Create a new external service
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	extSvc := &types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "GITHUB #1",
+		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+	}
+	servicesStore := ExternalServices(db)
+	err := servicesStore.Create(ctx, confGet, extSvc)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	createRepo := func(offset int, c chan<- int) {
+		inserter := func(inserter *batch.Inserter) error {
+			for i := 0 + offset; i < reposNumber+offset; i++ {
+				if err := inserter.Insert(ctx, i, "repo"+strconv.Itoa(i)); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+
+		if err := batch.WithInserter(
+			ctx,
+			db,
+			"repo",
+			batch.MaxNumPostgresParameters,
+			[]string{"id", "name"},
+			inserter,
+		); err != nil {
+			t.Error(err)
+			c <- 1
+			return
+		}
+		c <- 0
+	}
+
+	ready := make(chan int, 5)
+	defer close(ready)
+	offsets := []int{0, reposNumber, reposNumber * 2, reposNumber * 3, reposNumber * 4}
+
+	for _, offset := range offsets {
+		go createRepo(offset, ready)
+	}
+
+	for i := 0; i < 5; i++ {
+		if status := <-ready; status != 0 {
+			t.Fatal("Error during repo creation")
+		}
+	}
+
+	ready2 := make(chan int, 5)
+	defer close(ready2)
+
+	extSvcId := extSvc.ID
+
+	createExtSvc := func(offset int, c chan<- int) {
+		inserter := func(inserter *batch.Inserter) error {
+			for i := 0 + offset; i < reposNumber+offset; i++ {
+				if err := inserter.Insert(ctx, extSvcId, i, ""); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+
+		if err := batch.WithInserter(
+			ctx,
+			db,
+			"external_service_repos",
+			batch.MaxNumPostgresParameters,
+			[]string{"external_service_id", "repo_id", "clone_url"},
+			inserter,
+		); err != nil {
+			t.Error(err)
+			c <- 1
+			return
+		}
+		c <- 0
+	}
+
+	for _, offset := range offsets {
+		go createExtSvc(offset, ready2)
+	}
+
+	for i := 0; i < 5; i++ {
+		if status := <-ready2; status != 0 {
+			t.Fatal("Error during external service repo creation")
+		}
+	}
+
+	// Delete this external service
+	start := time.Now()
+	err = servicesStore.Delete(ctx, extSvcId)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("Deleting of an external service with %d repos took %s", reposNumber*5, time.Since(start))
+
+	count, err := servicesStore.RepoCount(ctx, extSvcId)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 0 {
+		t.Fatal("External service repos are not deleted")
+	}
+
+	// Should throw not found error
+	_, err = servicesStore.GetByID(ctx, extSvcId)
+	if err == nil {
+		t.Fatal("External service is not deleted")
+	}
+
+	rows, err := db.Query(`select * from repo where deleted_at is null`)
+	if err != nil {
+		t.Fatal("Error during fetching repos from the DB")
+	}
+	if rows.Next() {
+		t.Fatal("Repos of external service are not deleted")
 	}
 }
 

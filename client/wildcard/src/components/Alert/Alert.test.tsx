@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { render } from '@testing-library/react'
 
 import { Alert } from './Alert'
@@ -11,6 +9,7 @@ describe('Alert', () => {
         expect(container.firstChild).toMatchInlineSnapshot(`
             <div
               class=""
+              role="alert"
             >
               Simple Alert
             </div>

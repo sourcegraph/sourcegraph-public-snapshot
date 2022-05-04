@@ -6,10 +6,12 @@ env:
   PGDATABASE: sourcegraph
   PGSSLMODE: disable
   SG_DEV_MIGRATE_ON_APPLICATION_STARTUP: 'true'
+  INSECURE_DEV: true
 
   SRC_REPOS_DIR: $HOME/.sourcegraph/repos
   SRC_LOG_LEVEL: info
   SRC_LOG_FORMAT: condensed
+  SRC_TRACE_LOG: false
   # Set this to true to show an iTerm link to the file:line where the log message came from
   SRC_LOG_SOURCE_LINK: false
   SRC_GIT_SERVER_1: 127.0.0.1:3178
@@ -299,7 +301,7 @@ commands:
   caddy:
     ignoreStdout: true
     ignoreStderr: true
-    cmd: .bin/caddy_${CADDY_VERSION}_$([[ "$(go env GOOS)" = "darwin" ]] && echo "mac" || echo "$(go env GOOS)")_$(go env GOARCH) run --watch --config=dev/Caddyfile
+    cmd: .bin/caddy_${CADDY_VERSION} run --watch --config=dev/Caddyfile
     install: |
       case "$(go env GOOS)" in
         linux)
@@ -310,7 +312,7 @@ commands:
           ;;
       esac
       name="caddy_${CADDY_VERSION}_${os}_$(go env GOARCH)"
-      target="$PWD/.bin/$name"
+      target="$PWD/.bin/caddy_${CADDY_VERSION}"
       url="https://github.com/caddyserver/caddy/releases/download/v${CADDY_VERSION}/${name}.tar.gz"
 
       if [ ! -f "${target}" ]; then
@@ -531,13 +533,12 @@ commands:
 
   jaeger:
     cmd: |
-      .bin/jaeger-all-in-one-${JAEGER_VERSION}-$(go env GOOS)-$(go env GOARCH) --log-level ${JAEGER_LOG_LEVEL}
+      .bin/jaeger-all-in-one-${JAEGER_VERSION} --log-level ${JAEGER_LOG_LEVEL}
     install: |
       set -e
       mkdir -p "${JAEGER_DISK}"
-
       suffix="${JAEGER_VERSION}-$(go env GOOS)-$(go env GOARCH)"
-      target="$PWD/.bin/jaeger-all-in-one-${suffix}"
+      target="$PWD/.bin/jaeger-all-in-one-${JAEGER_VERSION}"
       url="https://github.com/jaegertracing/jaeger/releases/download/v${JAEGER_VERSION}/jaeger-${suffix}.tar.gz"
 
       if [ ! -f "${target}" ]; then
@@ -747,6 +748,13 @@ commandsets:
       - zoekt-indexserver-1
       - zoekt-webserver-0
       - zoekt-webserver-1
+
+  enterprise-e2e:
+    <<: *enterprise_set
+    env:
+      # EXTSVC_CONFIG_FILE being set prevents the e2e test suite to add 
+      # additional connections.
+      EXTSVC_CONFIG_FILE: ""
 
   dotcom:
     <<: *enterprise_set
@@ -959,7 +967,23 @@ tests:
     cmd: yarn run jest --testPathIgnorePatterns end-to-end regression integration storybook
 
   frontend-e2e:
-    cmd: yarn run test-e2e
+    preamble: |
+      sg start enterprise-e2e must be already running for these tests to work.
+
+      If you run into authentication issues, you can run the following commands to fix them:
+      sg db reset-pg && sg db add-user -name test@sourcegraph.com -password supersecurepassword
+    cmd: |
+      yarn run test-e2e
+    env:
+      TEST_USER_EMAIL: test@sourcegraph.com
+      TEST_USER_PASSWORD: supersecurepassword
+      SOURCEGRAPH_BASE_URL: https://sourcegraph.test:3443
+      BROWSER: chrome
+    secrets:
+      GH_TOKEN:
+        provider: "gcloud"
+        project: "sourcegraph-ci"
+        name: "BUILDKITE_GITHUBDOTCOM_TOKEN"
 
   docsite:
     cmd: .bin/docsite_${DOCSITE_VERSION} check ./doc

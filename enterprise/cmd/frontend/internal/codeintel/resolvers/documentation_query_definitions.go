@@ -12,7 +12,7 @@ import (
 // DocumentationDefinitions returns the list of source locations that define the symbol found at
 // the given documentation path ID, if any.
 func (r *queryResolver) DocumentationDefinitions(ctx context.Context, pathID string) (_ []AdjustedLocation, err error) {
-	ctx, trace, endObservation := observeResolver(ctx, &err, "DocumentationDefinitions", r.operations.definitions, slowDefinitionsRequestThreshold, observation.Args{
+	ctx, trace, endObservation := observeResolver(ctx, &err, r.operations.definitions, slowDefinitionsRequestThreshold, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", r.repositoryID),
 			log.String("commit", r.commit),

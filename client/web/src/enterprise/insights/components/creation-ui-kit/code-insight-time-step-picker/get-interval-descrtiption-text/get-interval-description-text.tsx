@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react'
+import { ReactNode } from 'react'
 
 import { InsightStep } from '../../../../pages/insights/creation/search-insight/types'
 

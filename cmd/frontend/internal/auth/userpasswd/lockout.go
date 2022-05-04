@@ -61,6 +61,8 @@ func (s *lockoutStore) IsLockedOut(userID int32) (reason string, locked bool) {
 }
 
 func (s *lockoutStore) IncreaseFailedAttempt(userID int32) {
+	metricsAccountFailedSignInAttempts.Inc()
+
 	key := strconv.Itoa(int(userID))
 	s.failedAttempts.Increase(key)
 
@@ -68,6 +70,7 @@ func (s *lockoutStore) IncreaseFailedAttempt(userID int32) {
 	v, _ := s.failedAttempts.Get(key)
 	count, _ := strconv.Atoi(string(v))
 	if count >= s.failedThreshold {
+		metricsAccountLockouts.Inc()
 		s.lockouts.Set(key, []byte("too many failed attempts"))
 	}
 }
@@ -80,7 +83,7 @@ type unlockAccountClaims struct {
 func (s *lockoutStore) GenerateUnlockAccountURL(userID int32) (string, string, error) {
 	signingKey := conf.SiteConfig().AuthUnlockAccountLinkSigningKey
 	if signingKey == "" {
-		return "", "", errors.Newf("signing key not provided, cannot validate JWT on unlock account URL. Please add AuthUnlockAccountLinkSigningKey to site configuration.")
+		return "", "", errors.Newf(`signing key not provided, cannot validate JWT on unlock account URL. Please add "auth.unlockAccountLinkSigningKey" to site configuration.`)
 	}
 
 	defaultExpiryMinutes := 30

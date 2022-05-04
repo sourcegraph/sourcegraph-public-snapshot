@@ -4,6 +4,8 @@ import copy from 'copy-to-clipboard'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
@@ -19,6 +21,7 @@ import {
     TooltipController,
     Icon,
     Link,
+    ProductStatusBadge,
 } from '@sourcegraph/wildcard'
 
 import { CodeInsightsBackendContext, InsightType } from '../../../../../core'
@@ -31,7 +34,7 @@ import {
 } from '../../../CodeInsightsLandingPageContext'
 import { CodeInsightsQueryBlock } from '../code-insights-query-block/CodeInsightsQueryBlock'
 
-import { Template, TEMPLATE_SECTIONS } from './constants'
+import { Template, getTemplateSections } from './constants'
 
 import styles from './CodeInsightsTemplates.module.scss'
 
@@ -44,14 +47,19 @@ function getTemplateURL(template: Template): string {
     }
 }
 
-interface CodeInsightsTemplates extends TelemetryProps, React.HTMLAttributes<HTMLElement> {}
+interface CodeInsightsTemplates
+    extends TelemetryProps,
+        React.HTMLAttributes<HTMLElement>,
+        SettingsCascadeProps<Settings> {}
 
 export const CodeInsightsTemplates: React.FunctionComponent<CodeInsightsTemplates> = props => {
     const { telemetryService, ...otherProps } = props
     const tabChangePingName = useLogEventName('InsightsGetStartedTabClick')
 
+    const templateSections = getTemplateSections(props)
+
     const handleTabChange = (index: number): void => {
-        const template = TEMPLATE_SECTIONS[index]
+        const template = templateSections[index]
 
         telemetryService.log(tabChangePingName, { tabName: template.title }, { tabName: template.title })
     }
@@ -69,12 +77,15 @@ export const CodeInsightsTemplates: React.FunctionComponent<CodeInsightsTemplate
 
             <Tabs size="medium" className="mt-3" onChange={handleTabChange}>
                 <TabList wrapperClassName={styles.tabList}>
-                    {TEMPLATE_SECTIONS.map(section => (
-                        <Tab key={section.title}>{section.title}</Tab>
+                    {templateSections.map(section => (
+                        <Tab key={section.title}>
+                            {section.title}
+                            {section.experimental && <ProductStatusBadge className="ml-1" status="experimental" />}
+                        </Tab>
                     ))}
                 </TabList>
                 <TabPanels>
-                    {TEMPLATE_SECTIONS.map(section => (
+                    {templateSections.map(section => (
                         <TemplatesPanel
                             key={section.title}
                             sectionTitle={section.title}

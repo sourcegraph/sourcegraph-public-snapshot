@@ -45,6 +45,13 @@ func TestIterateRepoGitserverStatus(t *testing.T) {
 			ExternalRepo: api.ExternalRepoSpec{},
 			Sources:      nil,
 		},
+		&types.Repo{
+			Name:         "github.com/sourcegraph/repo3",
+			URI:          "github.com/sourcegraph/repo3",
+			Description:  "",
+			ExternalRepo: api.ExternalRepoSpec{},
+			Sources:      nil,
+		},
 	}
 	createTestRepos(ctx, t, db, repos)
 
@@ -60,48 +67,50 @@ func TestIterateRepoGitserverStatus(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var repoCount int
-	var statusCount int
+	// Soft delete one of the repos
+	if err := Repos(db).Delete(ctx, repos[2].ID); err != nil {
+		t.Fatal(err)
+	}
 
-	// Iterate
-	err := GitserverRepos(db).IterateRepoGitserverStatus(ctx, IterateRepoGitserverStatusOptions{}, func(repo types.RepoGitserverStatus) error {
-		repoCount++
-		if repo.GitserverRepo != nil {
-			statusCount++
-			if repo.GitserverRepo.RepoID == 0 {
-				t.Fatal("GitServerRepo has zero id")
+	assert := func(t *testing.T, wantRepoCount, wantStatusCount int, options IterateRepoGitserverStatusOptions) {
+		var statusCount int
+		var seen []api.RepoName
+		err := GitserverRepos(db).IterateRepoGitserverStatus(ctx, options, func(repo types.RepoGitserverStatus) error {
+			seen = append(seen, repo.Name)
+			if repo.GitserverRepo != nil {
+				statusCount++
+				if repo.GitserverRepo.RepoID == 0 {
+					t.Fatal("GitServerRepo has zero id")
+				}
 			}
+			return nil
+		})
+		if err != nil {
+			t.Fatal(err)
 		}
-		return nil
+
+		t.Logf("Seen: %v", seen)
+		if len(seen) != wantRepoCount {
+			t.Fatalf("Expected %d repos, got %d", wantRepoCount, len(seen))
+		}
+
+		if statusCount != wantStatusCount {
+			t.Fatalf("Expected %d statuses, got %d", wantStatusCount, statusCount)
+		}
+	}
+
+	t.Run("iterate with default options", func(t *testing.T) {
+		assert(t, 2, 1, IterateRepoGitserverStatusOptions{})
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	wantRepoCount := 2
-	if repoCount != wantRepoCount {
-		t.Fatalf("Expected %d repos, got %d", wantRepoCount, repoCount)
-	}
-
-	wantStatusCount := 1
-	if statusCount != wantStatusCount {
-		t.Fatalf("Expected %d statuses, got %d", wantStatusCount, statusCount)
-	}
-
-	var noShardCount int
-	// Iterate again against repos with no shard
-	err = GitserverRepos(db).IterateRepoGitserverStatus(ctx, IterateRepoGitserverStatusOptions{OnlyWithoutShard: true}, func(_ types.RepoGitserverStatus) error {
-		noShardCount++
-		return nil
+	t.Run("iterate only repos without shard", func(t *testing.T) {
+		assert(t, 1, 0, IterateRepoGitserverStatusOptions{OnlyWithoutShard: true})
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	wantNoShardCount := 1
-	if noShardCount != wantNoShardCount {
-		t.Fatalf("Want %d, got %d", wantNoShardCount, noShardCount)
-	}
+	t.Run("include deleted", func(t *testing.T) {
+		assert(t, 3, 1, IterateRepoGitserverStatusOptions{IncludeDeleted: true})
+	})
+	t.Run("include deleted and without shard", func(t *testing.T) {
+		assert(t, 2, 0, IterateRepoGitserverStatusOptions{OnlyWithoutShard: true, IncludeDeleted: true})
+	})
 }
 
 func TestIterateWithNonemptyLastError(t *testing.T) {

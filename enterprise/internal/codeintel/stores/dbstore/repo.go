@@ -20,7 +20,7 @@ var ErrUnknownRepository = errors.New("unknown repository")
 
 // RepoName returns the name for the repo with the given identifier.
 func (s *Store) RepoName(ctx context.Context, repositoryID int) (_ string, err error) {
-	ctx, endObservation := s.operations.repoName.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.repoName.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -65,7 +65,7 @@ func scanRepoNames(rows *sql.Rows, queryErr error) (_ map[int]string, err error)
 
 // RepoNames returns a map from repository id to names.
 func (s *Store) RepoNames(ctx context.Context, repositoryIDs ...int) (_ map[int]string, err error) {
-	ctx, endObservation := s.operations.repoName.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.repoName.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("numRepositories", len(repositoryIDs)),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -81,7 +81,7 @@ SELECT id, name FROM repo WHERE id = ANY(%s)
 // RepoIDsByGlobPatterns returns a page of repository identifiers and a total count of repositories matching
 // one of the given patterns.
 func (s *Store) RepoIDsByGlobPatterns(ctx context.Context, patterns []string, limit, offset int) (_ []int, _ int, err error) {
-	ctx, endObservation := s.operations.repoIDsByGlobPatterns.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.repoIDsByGlobPatterns.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("patterns", strings.Join(patterns, ", ")),
 		log.Int("limit", limit),
 		log.Int("offset", offset),
@@ -152,7 +152,7 @@ LIMIT %s OFFSET %s
 // matches exceeds the given limit (if supplied), then only top ranked repositories by star count
 // will be associated to the policy in the database and the remainder will be dropped.
 func (s *Store) UpdateReposMatchingPatterns(ctx context.Context, patterns []string, policyID int, repositoryMatchLimit *int) (err error) {
-	ctx, endObservation := s.operations.updateReposMatchingPatterns.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.updateReposMatchingPatterns.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("pattern", strings.Join(patterns, ",")),
 		log.Int("policyID", policyID),
 	}})

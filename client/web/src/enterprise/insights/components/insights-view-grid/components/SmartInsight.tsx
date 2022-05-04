@@ -1,5 +1,7 @@
 import React, { forwardRef } from 'react'
 
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { Insight, isBackendInsight } from '../../../core'
@@ -7,7 +9,10 @@ import { Insight, isBackendInsight } from '../../../core'
 import { BackendInsightView } from './backend-insight/BackendInsight'
 import { BuiltInInsight } from './BuiltInInsight'
 
-export interface SmartInsightProps extends TelemetryProps, React.HTMLAttributes<HTMLElement> {
+export interface SmartInsightProps
+    extends TelemetryProps,
+        SettingsCascadeProps<Settings>,
+        React.HTMLAttributes<HTMLElement> {
     insight: Insight
     resizing?: boolean
 }

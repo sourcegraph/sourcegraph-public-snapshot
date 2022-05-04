@@ -3,8 +3,6 @@ package reposource
 import (
 	"encoding/json"
 	"fmt"
-	"sort"
-	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -125,12 +123,6 @@ func (pkg *NpmPackage) CloneURL() string {
 	return string(pkg.RepoName())
 }
 
-// MatchesDependencyString checks if a dependency (= package + version pair)
-// refers to the same package as pkg.
-func (pkg *NpmPackage) MatchesDependencyString(depPackageSyntax string) bool {
-	return strings.HasPrefix(depPackageSyntax, pkg.PackageSyntax()+"@")
-}
-
 // Format a package using (@scope/)?name syntax.
 //
 // This is largely for "lower-level" code interacting with the npm API.
@@ -157,6 +149,9 @@ type NpmDependency struct {
 	// See https://docs.npmjs.com/cli/v8/using-npm/config#tag for more details
 	// about tags.
 	Version string
+
+	// The URL of the tarball to download. Possibly empty.
+	TarballURL string
 }
 
 // ParseNpmDependency parses a string in a '(@scope/)?module@version' format into an NpmDependency.
@@ -187,7 +182,7 @@ func ParseNpmDependency(dependency string) (*NpmDependency, error) {
 		}
 	}
 	scope, name, version := result["scope"], result["name"], result["version"]
-	return &NpmDependency{&NpmPackage{scope, name}, version}, nil
+	return &NpmDependency{NpmPackage: &NpmPackage{scope, name}, Version: version}, nil
 }
 
 // PackageManagerSyntax returns the dependency in npm/Yarn syntax. The returned
@@ -208,24 +203,25 @@ func (d *NpmDependency) GitTagFromVersion() string {
 	return "v" + d.Version
 }
 
-func (d *NpmDependency) Equal(other *NpmDependency) bool {
-	return d == other || (d != nil && other != nil &&
-		d.NpmPackage.Equal(other.NpmPackage) &&
-		d.Version == other.Version)
+func (d *NpmDependency) Equal(o *NpmDependency) bool {
+	return d == o || (d != nil && o != nil &&
+		d.NpmPackage.Equal(o.NpmPackage) &&
+		d.Version == o.Version)
 }
 
-// SortDependencies sorts the dependencies by the semantic version in descending
-// order. The latest version of a dependency becomes the first element of the
-// slice.
-func SortNpmDependencies(dependencies []*NpmDependency) {
-	sort.Slice(dependencies, func(i, j int) bool {
-		iPkg, jPkg := dependencies[i].NpmPackage, dependencies[j].NpmPackage
-		if iPkg.Equal(jPkg) {
-			return versionGreaterThan(dependencies[i].Version, dependencies[j].Version)
-		}
-		if iPkg.scope == jPkg.scope {
-			return iPkg.name > jPkg.name
-		}
-		return iPkg.scope > jPkg.scope
-	})
+// Less implements the Less method of the sort.Interface. It sorts
+// dependencies by the semantic version in descending order.
+// The latest version of a dependency becomes the first element of the slice.
+func (d *NpmDependency) Less(other PackageDependency) bool {
+	o := other.(*NpmDependency)
+
+	if d.NpmPackage.Equal(o.NpmPackage) {
+		return versionGreaterThan(d.Version, o.Version)
+	}
+
+	if d.scope == o.scope {
+		return d.name > o.name
+	}
+
+	return d.scope > o.scope
 }

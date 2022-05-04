@@ -155,17 +155,17 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "bar",
 			ServiceType: extsvc.TypeGitHub,
-			ServiceID:   "http://github.com",
+			ServiceID:   "https://github.com",
 		},
 		Metadata: new(github.Repository),
 	}
 
-	initStore := func(db database.DB) *repos.Store {
+	initStore := func(db database.DB) repos.Store {
 		store := repos.NewStore(db, sql.TxOptions{})
-		if err := store.ExternalServiceStore.Upsert(ctx, &svc); err != nil {
+		if err := store.ExternalServiceStore().Upsert(ctx, &svc); err != nil {
 			t.Fatal(err)
 		}
-		if err := store.RepoStore.Create(ctx, &repo); err != nil {
+		if err := store.RepoStore().Create(ctx, &repo); err != nil {
 			t.Fatal(err)
 		}
 		return store
@@ -176,17 +176,17 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 		repo api.RepoName
 		res  *protocol.RepoUpdateResponse
 		err  string
-		init func(database.DB) *repos.Store
+		init func(database.DB) repos.Store
 	}
 
 	testCases := []testCase{{
 		name: "returns an error on store failure",
-		init: func(realDB database.DB) *repos.Store {
-			repos := database.NewMockRepoStoreFrom(realDB.Repos())
+		init: func(realDB database.DB) repos.Store {
+			repos := database.NewMockRepoStore()
 			repos.ListFunc.SetDefaultReturn(nil, errors.New("boom"))
-			store := initStore(realDB)
-			store.RepoStore = repos
-			return store
+			db := database.NewMockDBFrom(realDB)
+			db.ReposFunc.SetDefaultReturn(repos)
+			return initStore(db)
 		},
 		err: `store.list-repos: boom`,
 	}, {
@@ -234,7 +234,7 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 
 func TestServer_RepoLookup(t *testing.T) {
 	db := dbtest.NewDB(t)
-	store := repos.NewStore(db, sql.TxOptions{})
+	store := repos.NewStore(database.NewDB(db), sql.TxOptions{})
 	ctx := context.Background()
 	clock := timeutil.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
@@ -259,7 +259,7 @@ func TestServer_RepoLookup(t *testing.T) {
 		Config: `{}`,
 	}
 
-	if err := store.ExternalServiceStore.Upsert(ctx, &githubSource, &awsSource, &gitlabSource, &npmSource); err != nil {
+	if err := store.ExternalServiceStore().Upsert(ctx, &githubSource, &awsSource, &gitlabSource, &npmSource); err != nil {
 		t.Fatal(err)
 	}
 
@@ -609,7 +609,7 @@ func TestServer_RepoLookup(t *testing.T) {
 			}
 
 			rs := tc.stored.Clone()
-			err = store.RepoStore.Create(ctx, rs...)
+			err = store.RepoStore().Create(ctx, rs...)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -658,7 +658,7 @@ func TestServer_RepoLookup(t *testing.T) {
 				if tc.assertDelay != 0 {
 					time.Sleep(tc.assertDelay)
 				}
-				rs, err := store.RepoStore.List(ctx, database.ReposListOptions{})
+				rs, err := store.RepoStore().List(ctx, database.ReposListOptions{})
 				if err != nil {
 					t.Fatal(err)
 				}

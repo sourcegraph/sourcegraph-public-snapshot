@@ -63,6 +63,7 @@ Benefits:
 
 - To the extent that fewer systems are under test compared to e2e tests, they are faster to run, easier to debug, have clearer ownership, and less vulnerable to [flakiness](#flaky-tests).
 - They only need to run on changes that touch code which could make the test fail, which makes CI faster and minimizes the impact of any [flakiness](#flaky-tests).
+- For UI behavior, they run in an actual browser - rather than a JSDOM environment.
 
 Tradeoffs:
 
@@ -72,11 +73,15 @@ Tradeoffs:
 Examples:
 
 - Tests that call our search API to test the behavior of our entire search system.
+- Tests that validate UI styles, through [visual testing](#visual-testing).
 - Tests that validate UI behavior in the browser while mocking out all network requests so no backend is required.
+  - Note: We still typically prefer unit tests here, only fall back to integration tests if you need to test some very specific behavior that cannot be covered in a unit test.
 
 #### End-to-end tests (e2e)
 
 E2e tests test our entire product from the perspective of a user. We try to use them sparingly. Instead, we prefer to get as much confidence as possible from our [unit tests](#unit-tests) and [integration tests](#integration-tests).
+
+> WARNING: You should generally avoid writing e2e tests. If required, they should be as simple as possible and only aim for basic tests on core behavior (e.g. check homepage loads, check sign-in works).
 
 Benefits:
 

@@ -1,7 +1,6 @@
 package codeintel
 
 import (
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -10,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // InitLSIFStore initializes and returns an LSIF store instance.
@@ -24,7 +24,7 @@ func InitLSIFStore() (*lsifstore.Store, error) {
 
 var initLSFIStore = memo.NewMemoizedConstructor(func() (interface{}, error) {
 	observationContext := &observation.Context{
-		Logger:     log15.Root(),
+		Logger:     log.Scoped("store.lsif", "lsif store"),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}

@@ -75,6 +75,11 @@ extend type Mutation {
     Deletes an LSIF index.
     """
     deleteLSIFIndex(id: ID!): EmptyResponse
+
+    """
+    Request support for a particular language.
+    """
+    requestLanguageSupport(language: String!): EmptyResponse
 }
 
 extend type Query {
@@ -241,6 +246,11 @@ extend type Query {
         """
         repos: [String!]
     ): DocumentationSearchResults!
+
+    """
+    Return the languages that this user has requested support for.
+    """
+    requestedLanguageSupport: [String!]!
 }
 
 """

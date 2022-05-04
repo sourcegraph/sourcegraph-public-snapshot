@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react'
+import { ReactElement } from 'react'
 
 import classNames from 'classnames'
 import Select, { Props as SelectProps, StylesConfig, GroupBase } from 'react-select'

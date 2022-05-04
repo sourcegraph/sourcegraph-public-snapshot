@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { select } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'

@@ -21,7 +21,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
@@ -34,6 +33,7 @@ import (
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	sglog "github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 const (
@@ -46,7 +46,7 @@ const (
 // Service is the search service. It is an http.Handler.
 type Service struct {
 	Store *Store
-	Log   log15.Logger
+	Log   sglog.Logger
 }
 
 // ServeHTTP handles HTTP based search requests
@@ -166,7 +166,22 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 		span.SetTag("limitHit", sender.LimitHit())
 		span.Finish()
 		if s.Log != nil {
-			s.Log.Debug("search request", "repo", p.Repo, "commit", p.Commit, "pattern", p.Pattern, "isRegExp", p.IsRegExp, "isStructuralPat", p.IsStructuralPat, "languages", p.Languages, "isWordMatch", p.IsWordMatch, "isCaseSensitive", p.IsCaseSensitive, "patternMatchesContent", p.PatternMatchesContent, "patternMatchesPath", p.PatternMatchesPath, "matches", sender.SentCount(), "code", code, "duration", time.Since(start), "indexerEndpoints", p.IndexerEndpoints, "err", err)
+			s.Log.Debug("search request",
+				sglog.String("repo", string(p.Repo)),
+				sglog.String("commit", string(p.Commit)),
+				sglog.String("pattern", p.Pattern),
+				sglog.Bool("isRegExp", p.IsRegExp),
+				sglog.Bool("isStructuralPat", p.IsStructuralPat),
+				sglog.Strings("languages", p.Languages),
+				sglog.Bool("isWordMatch", p.IsWordMatch),
+				sglog.Bool("isCaseSensitive", p.IsCaseSensitive),
+				sglog.Bool("patternMatchesContent", p.PatternMatchesContent),
+				sglog.Bool("patternMatchesPath", p.PatternMatchesPath),
+				sglog.Int("matches", sender.SentCount()),
+				sglog.String("code", code),
+				sglog.Duration("duration", time.Since(start)),
+				sglog.Strings("indexerEndpoints", p.IndexerEndpoints),
+				sglog.Error(err))
 		}
 	}(time.Now())
 

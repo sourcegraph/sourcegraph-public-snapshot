@@ -62,6 +62,7 @@ export const AuthenticatedCreateSearchContextPage: React.FunctionComponent<Creat
                             {
                                 icon: MagnifyIcon,
                                 to: '/search',
+                                ariaLabel: 'Code Search',
                             },
                             {
                                 to: '/contexts',

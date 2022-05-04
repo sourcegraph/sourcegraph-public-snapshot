@@ -10,7 +10,7 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { Container, Icon, PageHeader } from '@sourcegraph/wildcard'
+import { Checkbox, Container, Icon, PageHeader } from '@sourcegraph/wildcard'
 
 import { CreateSavedSearchResult, CreateSavedSearchVariables, SavedSearchFields } from '../../../graphql-operations'
 import { WebviewPageProps } from '../../platform/context'
@@ -215,16 +215,15 @@ const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = props => 
                                 Email notifications
                             </label>
                             <div aria-labelledby="saved-search-form-email-notifications">
-                                <label>
-                                    <input
-                                        type="checkbox"
-                                        name="Notify owner"
-                                        className={styles.checkbox}
-                                        defaultChecked={notify}
-                                        onChange={createInputChangeHandler('notify')}
-                                    />{' '}
-                                    <span>Send email notifications to my email</span>
-                                </label>
+                                <Checkbox
+                                    name="Notify owner"
+                                    id="SendEmailNotificationsCheck"
+                                    wrapperClassName="mb-2"
+                                    className={classNames(styles.checkbox, 'mr-0')}
+                                    defaultChecked={notify}
+                                    onChange={createInputChangeHandler('notify')}
+                                    label={<span className="ml-2">Send email notifications to my email</span>}
+                                />
                             </div>
                         </div>
                     )}

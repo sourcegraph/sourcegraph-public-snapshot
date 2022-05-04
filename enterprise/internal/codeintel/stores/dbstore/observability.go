@@ -49,6 +49,7 @@ type operations struct {
 	insertIndex                                 *observation.Operation
 	insertUpload                                *observation.Operation
 	isQueued                                    *observation.Operation
+	languagesRequestedBy                        *observation.Operation
 	lastIndexScanForRepository                  *observation.Operation
 	lastUploadRetentionScanForRepository        *observation.Operation
 	markComplete                                *observation.Operation
@@ -67,6 +68,7 @@ type operations struct {
 	refreshCommitResolvability                  *observation.Operation
 	repoIDsByGlobPatterns                       *observation.Operation
 	repoName                                    *observation.Operation
+	requestLanguageSupport                      *observation.Operation
 	requeue                                     *observation.Operation
 	requeueIndex                                *observation.Operation
 	selectPoliciesForRepositoryMembershipUpdate *observation.Operation
@@ -153,6 +155,7 @@ func newOperations(observationContext *observation.Context, metrics *metrics.RED
 		insertIndex:                          op("InsertIndex"),
 		insertUpload:                         op("InsertUpload"),
 		isQueued:                             op("IsQueued"),
+		languagesRequestedBy:                 op("LanguagesRequestedBy"),
 		lastIndexScanForRepository:           op("LastIndexScanForRepository"),
 		lastUploadRetentionScanForRepository: op("LastUploadRetentionScanForRepository"),
 		markComplete:                         op("MarkComplete"),
@@ -171,6 +174,7 @@ func newOperations(observationContext *observation.Context, metrics *metrics.RED
 		refreshCommitResolvability:           op("RefreshCommitResolvability"),
 		repoIDsByGlobPatterns:                op("repoIDsByGlobPatterns"),
 		repoName:                             op("RepoName"),
+		requestLanguageSupport:               op("RequestLanguageSupport"),
 		requeue:                              op("Requeue"),
 		requeueIndex:                         op("RequeueIndex"),
 

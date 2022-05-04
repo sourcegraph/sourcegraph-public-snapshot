@@ -2,7 +2,6 @@ package repos
 
 import (
 	"context"
-	"os"
 	"sort"
 	"testing"
 
@@ -47,7 +46,7 @@ func TestGetNpmDependencyRepos(t *testing.T) {
 			pkg, err := reposource.ParseNpmPackageFromPackageSyntax(dep.Name)
 			require.Nil(t, err)
 			depStrs = append(depStrs,
-				(&reposource.NpmDependency{pkg, dep.Version}).PackageManagerSyntax(),
+				(&reposource.NpmDependency{NpmPackage: pkg, Version: dep.Version}).PackageManagerSyntax(),
 			)
 		}
 		sort.Strings(depStrs)
@@ -69,7 +68,7 @@ func TestGetNpmDependencyRepos(t *testing.T) {
 			require.Equal(t, len(deps), 1)
 			pkg, err := reposource.ParseNpmPackageFromPackageSyntax(deps[0].Name)
 			require.Nil(t, err)
-			depStrs = append(depStrs, (&reposource.NpmDependency{pkg, deps[0].Version}).PackageManagerSyntax())
+			depStrs = append(depStrs, (&reposource.NpmDependency{NpmPackage: pkg, Version: deps[0].Version}).PackageManagerSyntax())
 			lastID = deps[0].ID
 		}
 		sort.Strings(depStrs)
@@ -121,10 +120,6 @@ var testDependencyRepos = func() []dependencies.Repo {
 func TestListRepos(t *testing.T) {
 	ctx := context.Background()
 	depsSvc := testDependenciesService(ctx, t, testDependencyRepos)
-
-	dir, err := os.MkdirTemp("", "")
-	require.Nil(t, err)
-	defer os.RemoveAll(dir)
 
 	svc := types.ExternalService{
 		Kind:   extsvc.KindNpmPackages,

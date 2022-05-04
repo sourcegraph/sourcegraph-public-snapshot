@@ -29,14 +29,14 @@ type ListOpts struct {
 }
 
 func (s *Service) List(ctx context.Context, opts ListOpts) (policies []Policy, err error) {
-	ctx, endObservation := s.operations.list.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.list.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	return s.policiesStore.List(ctx, store.ListOpts(opts))
 }
 
 func (s *Service) Get(ctx context.Context, id int) (policy Policy, ok bool, err error) {
-	ctx, endObservation := s.operations.get.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.get.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	// To be implemented in https://github.com/sourcegraph/sourcegraph/issues/33376
@@ -45,7 +45,7 @@ func (s *Service) Get(ctx context.Context, id int) (policy Policy, ok bool, err 
 }
 
 func (s *Service) Create(ctx context.Context, policy Policy) (hydratedPolicy Policy, err error) {
-	ctx, endObservation := s.operations.create.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.create.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	// To be implemented in https://github.com/sourcegraph/sourcegraph/issues/33376
@@ -54,7 +54,7 @@ func (s *Service) Create(ctx context.Context, policy Policy) (hydratedPolicy Pol
 }
 
 func (s *Service) Update(ctx context.Context, policy Policy) (hydratedPolicy Policy, err error) {
-	ctx, endObservation := s.operations.update.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.update.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	// To be implemented in https://github.com/sourcegraph/sourcegraph/issues/33376
@@ -63,7 +63,7 @@ func (s *Service) Update(ctx context.Context, policy Policy) (hydratedPolicy Pol
 }
 
 func (s *Service) Delete(ctx context.Context, id int) (err error) {
-	ctx, endObservation := s.operations.delete.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.delete.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	// To be implemented in https://github.com/sourcegraph/sourcegraph/issues/33376
@@ -72,7 +72,7 @@ func (s *Service) Delete(ctx context.Context, id int) (err error) {
 }
 
 func (s *Service) CommitsMatchingRetentionPolicies(ctx context.Context, repoID int, policies []Policy, instant time.Time, commitSubset ...string) (commitsToPolicies map[string][]Policy, err error) {
-	ctx, endObservation := s.operations.commitsMatchingRetentionPolicies.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.commitsMatchingRetentionPolicies.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	// To be implemented in https://github.com/sourcegraph/sourcegraph/issues/33376
@@ -81,7 +81,7 @@ func (s *Service) CommitsMatchingRetentionPolicies(ctx context.Context, repoID i
 }
 
 func (s *Service) CommitsMatchingIndexingPolicies(ctx context.Context, repoID int, policies []Policy, instant time.Time) (commitsToPolicies map[string][]Policy, err error) {
-	ctx, endObservation := s.operations.commitsMatchingIndexingPolicies.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.commitsMatchingIndexingPolicies.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	// To be implemented in https://github.com/sourcegraph/sourcegraph/issues/33376

@@ -93,6 +93,12 @@ type MockResolver struct {
 	// RepositorySummaryFunc is an instance of a mock function object
 	// controlling the behavior of the method RepositorySummary.
 	RepositorySummaryFunc *ResolverRepositorySummaryFunc
+	// RequestLanguageSupportFunc is an instance of a mock function object
+	// controlling the behavior of the method RequestLanguageSupport.
+	RequestLanguageSupportFunc *ResolverRequestLanguageSupportFunc
+	// RequestedLanguageSupportFunc is an instance of a mock function object
+	// controlling the behavior of the method RequestedLanguageSupport.
+	RequestedLanguageSupportFunc *ResolverRequestedLanguageSupportFunc
 	// RetentionPolicyOverviewFunc is an instance of a mock function object
 	// controlling the behavior of the method RetentionPolicyOverview.
 	RetentionPolicyOverviewFunc *ResolverRetentionPolicyOverviewFunc
@@ -224,6 +230,16 @@ func NewMockResolver() *MockResolver {
 		RepositorySummaryFunc: &ResolverRepositorySummaryFunc{
 			defaultHook: func(context.Context, int) (resolvers.RepositorySummary, error) {
 				return resolvers.RepositorySummary{}, nil
+			},
+		},
+		RequestLanguageSupportFunc: &ResolverRequestLanguageSupportFunc{
+			defaultHook: func(context.Context, int, string) error {
+				return nil
+			},
+		},
+		RequestedLanguageSupportFunc: &ResolverRequestedLanguageSupportFunc{
+			defaultHook: func(context.Context, int) ([]string, error) {
+				return nil, nil
 			},
 		},
 		RetentionPolicyOverviewFunc: &ResolverRetentionPolicyOverviewFunc{
@@ -368,6 +384,16 @@ func NewStrictMockResolver() *MockResolver {
 				panic("unexpected invocation of MockResolver.RepositorySummary")
 			},
 		},
+		RequestLanguageSupportFunc: &ResolverRequestLanguageSupportFunc{
+			defaultHook: func(context.Context, int, string) error {
+				panic("unexpected invocation of MockResolver.RequestLanguageSupport")
+			},
+		},
+		RequestedLanguageSupportFunc: &ResolverRequestedLanguageSupportFunc{
+			defaultHook: func(context.Context, int) ([]string, error) {
+				panic("unexpected invocation of MockResolver.RequestedLanguageSupport")
+			},
+		},
 		RetentionPolicyOverviewFunc: &ResolverRetentionPolicyOverviewFunc{
 			defaultHook: func(context.Context, dbstore.Upload, bool, int, int64, string, time.Time) ([]resolvers.RetentionPolicyMatchCandidate, int, error) {
 				panic("unexpected invocation of MockResolver.RetentionPolicyOverview")
@@ -465,6 +491,12 @@ func NewMockResolverFrom(i resolvers.Resolver) *MockResolver {
 		},
 		RepositorySummaryFunc: &ResolverRepositorySummaryFunc{
 			defaultHook: i.RepositorySummary,
+		},
+		RequestLanguageSupportFunc: &ResolverRequestLanguageSupportFunc{
+			defaultHook: i.RequestLanguageSupport,
+		},
+		RequestedLanguageSupportFunc: &ResolverRequestedLanguageSupportFunc{
+			defaultHook: i.RequestedLanguageSupport,
 		},
 		RetentionPolicyOverviewFunc: &ResolverRetentionPolicyOverviewFunc{
 			defaultHook: i.RetentionPolicyOverview,
@@ -2930,6 +2962,227 @@ func (c ResolverRepositorySummaryFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ResolverRepositorySummaryFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// ResolverRequestLanguageSupportFunc describes the behavior when the
+// RequestLanguageSupport method of the parent MockResolver instance is
+// invoked.
+type ResolverRequestLanguageSupportFunc struct {
+	defaultHook func(context.Context, int, string) error
+	hooks       []func(context.Context, int, string) error
+	history     []ResolverRequestLanguageSupportFuncCall
+	mutex       sync.Mutex
+}
+
+// RequestLanguageSupport delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockResolver) RequestLanguageSupport(v0 context.Context, v1 int, v2 string) error {
+	r0 := m.RequestLanguageSupportFunc.nextHook()(v0, v1, v2)
+	m.RequestLanguageSupportFunc.appendCall(ResolverRequestLanguageSupportFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// RequestLanguageSupport method of the parent MockResolver instance is
+// invoked and the hook queue is empty.
+func (f *ResolverRequestLanguageSupportFunc) SetDefaultHook(hook func(context.Context, int, string) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RequestLanguageSupport method of the parent MockResolver instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *ResolverRequestLanguageSupportFunc) PushHook(hook func(context.Context, int, string) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ResolverRequestLanguageSupportFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int, string) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ResolverRequestLanguageSupportFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int, string) error {
+		return r0
+	})
+}
+
+func (f *ResolverRequestLanguageSupportFunc) nextHook() func(context.Context, int, string) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ResolverRequestLanguageSupportFunc) appendCall(r0 ResolverRequestLanguageSupportFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ResolverRequestLanguageSupportFuncCall
+// objects describing the invocations of this function.
+func (f *ResolverRequestLanguageSupportFunc) History() []ResolverRequestLanguageSupportFuncCall {
+	f.mutex.Lock()
+	history := make([]ResolverRequestLanguageSupportFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ResolverRequestLanguageSupportFuncCall is an object that describes an
+// invocation of method RequestLanguageSupport on an instance of
+// MockResolver.
+type ResolverRequestLanguageSupportFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ResolverRequestLanguageSupportFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ResolverRequestLanguageSupportFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// ResolverRequestedLanguageSupportFunc describes the behavior when the
+// RequestedLanguageSupport method of the parent MockResolver instance is
+// invoked.
+type ResolverRequestedLanguageSupportFunc struct {
+	defaultHook func(context.Context, int) ([]string, error)
+	hooks       []func(context.Context, int) ([]string, error)
+	history     []ResolverRequestedLanguageSupportFuncCall
+	mutex       sync.Mutex
+}
+
+// RequestedLanguageSupport delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockResolver) RequestedLanguageSupport(v0 context.Context, v1 int) ([]string, error) {
+	r0, r1 := m.RequestedLanguageSupportFunc.nextHook()(v0, v1)
+	m.RequestedLanguageSupportFunc.appendCall(ResolverRequestedLanguageSupportFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// RequestedLanguageSupport method of the parent MockResolver instance is
+// invoked and the hook queue is empty.
+func (f *ResolverRequestedLanguageSupportFunc) SetDefaultHook(hook func(context.Context, int) ([]string, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RequestedLanguageSupport method of the parent MockResolver instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *ResolverRequestedLanguageSupportFunc) PushHook(hook func(context.Context, int) ([]string, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ResolverRequestedLanguageSupportFunc) SetDefaultReturn(r0 []string, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) ([]string, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ResolverRequestedLanguageSupportFunc) PushReturn(r0 []string, r1 error) {
+	f.PushHook(func(context.Context, int) ([]string, error) {
+		return r0, r1
+	})
+}
+
+func (f *ResolverRequestedLanguageSupportFunc) nextHook() func(context.Context, int) ([]string, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ResolverRequestedLanguageSupportFunc) appendCall(r0 ResolverRequestedLanguageSupportFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ResolverRequestedLanguageSupportFuncCall
+// objects describing the invocations of this function.
+func (f *ResolverRequestedLanguageSupportFunc) History() []ResolverRequestedLanguageSupportFuncCall {
+	f.mutex.Lock()
+	history := make([]ResolverRequestedLanguageSupportFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ResolverRequestedLanguageSupportFuncCall is an object that describes an
+// invocation of method RequestedLanguageSupport on an instance of
+// MockResolver.
+type ResolverRequestedLanguageSupportFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []string
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ResolverRequestedLanguageSupportFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ResolverRequestedLanguageSupportFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

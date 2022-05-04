@@ -68,7 +68,7 @@ var BatchSpecWorkspaceColums = SQLColumns{
 
 // CreateBatchSpecWorkspace creates the given batch spec workspace jobs.
 func (s *Store) CreateBatchSpecWorkspace(ctx context.Context, ws ...*btypes.BatchSpecWorkspace) (err error) {
-	ctx, endObservation := s.operations.createBatchSpecWorkspace.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.createBatchSpecWorkspace.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("count", len(ws)),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -150,7 +150,7 @@ type GetBatchSpecWorkspaceOpts struct {
 
 // GetBatchSpecWorkspace gets a BatchSpecWorkspace matching the given options.
 func (s *Store) GetBatchSpecWorkspace(ctx context.Context, opts GetBatchSpecWorkspaceOpts) (job *btypes.BatchSpecWorkspace, err error) {
-	ctx, endObservation := s.operations.getBatchSpecWorkspace.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.getBatchSpecWorkspace.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("ID", int(opts.ID)),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -273,7 +273,7 @@ func (opts ListBatchSpecWorkspacesOpts) SQLConds(ctx context.Context, db databas
 
 // ListBatchSpecWorkspaces lists batch spec workspaces with the given filters.
 func (s *Store) ListBatchSpecWorkspaces(ctx context.Context, opts ListBatchSpecWorkspacesOpts) (cs []*btypes.BatchSpecWorkspace, next int64, err error) {
-	ctx, endObservation := s.operations.listBatchSpecWorkspaces.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.listBatchSpecWorkspaces.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	q, err := listBatchSpecWorkspacesQuery(ctx, s.DatabaseDB(), opts)
@@ -323,7 +323,7 @@ func listBatchSpecWorkspacesQuery(ctx context.Context, db database.DB, opts List
 
 // CountBatchSpecWorkspaces counts batch spec workspaces with the given filters.
 func (s *Store) CountBatchSpecWorkspaces(ctx context.Context, opts ListBatchSpecWorkspacesOpts) (count int64, err error) {
-	ctx, endObservation := s.operations.countBatchSpecWorkspaces.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.countBatchSpecWorkspaces.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	q, err := countBatchSpecWorkspacesQuery(ctx, s.DatabaseDB(), opts)
@@ -375,7 +375,7 @@ AND NOT %s
 // MarkSkippedBatchSpecWorkspaces marks the workspace that were skipped in
 // CreateBatchSpecWorkspaceExecutionJobs as skipped.
 func (s *Store) MarkSkippedBatchSpecWorkspaces(ctx context.Context, batchSpecID int64) (err error) {
-	ctx, endObservation := s.operations.markSkippedBatchSpecWorkspaces.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.markSkippedBatchSpecWorkspaces.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("batchSpecID", int(batchSpecID)),
 	}})
 	defer endObservation(1, observation.Args{})

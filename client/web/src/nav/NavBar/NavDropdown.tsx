@@ -18,21 +18,33 @@ export interface NavDropdownItem {
 }
 
 interface NavDropdownProps {
-    toggleItem: NavDropdownItem & { icon: React.ComponentType<{ className?: string }> }
+    toggleItem: NavDropdownItem & {
+        icon: React.ComponentType<{ className?: string }>
+        // Alternative path to match against if item is active
+        altPath?: string
+    }
     // An extra item on mobile devices in the dropdown menu that serves as the "home" item instead of the toggle item.
     // It uses the path from the toggleItem.
     mobileHomeItem: Omit<NavDropdownItem, 'path'>
     // Items to display in the dropdown.
     items: NavDropdownItem[]
+    // A current react router route match
+    routeMatch?: string
 }
 
-export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleItem, mobileHomeItem, items }) => {
+export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({
+    toggleItem,
+    mobileHomeItem,
+    items,
+    routeMatch,
+}) => {
     const location = useLocation()
     const isItemSelected = useMemo(
         () =>
             items.some(item => location.pathname.startsWith(item.path)) ||
-            location.pathname.startsWith(toggleItem.path),
-        [items, toggleItem, location.pathname]
+            location.pathname.startsWith(toggleItem.path) ||
+            routeMatch === toggleItem.altPath,
+        [items, location.pathname, toggleItem.path, toggleItem.altPath, routeMatch]
     )
 
     const menuButtonReference = useRef<HTMLButtonElement>(null)
@@ -106,6 +118,8 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
                                     'align-items-center',
                                     'p-0'
                                 )}
+                                data-test-id={toggleItem.path}
+                                data-test-active={isItemSelected}
                                 onMouseEnter={() => setIsOverButton(true)}
                                 onMouseLeave={() => setIsOverButton(false)}
                             >

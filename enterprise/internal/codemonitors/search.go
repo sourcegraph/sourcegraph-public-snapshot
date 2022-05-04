@@ -192,7 +192,7 @@ func addCodeMonitorHook(in job.Job, hook commit.CodeMonitorHook) (_ job.Job, err
 	commitSearchJobCount := 0
 	return jobutil.MapAtom(in, func(atom job.Job) job.Job {
 		switch typedAtom := atom.(type) {
-		case *commit.CommitSearch:
+		case *commit.CommitSearchJob:
 			commitSearchJobCount++
 			if commitSearchJobCount > 1 {
 				err = errors.Append(err, ErrInvalidMonitorQuery)
@@ -200,8 +200,8 @@ func addCodeMonitorHook(in job.Job, hook commit.CodeMonitorHook) (_ job.Job, err
 			jobCopy := *typedAtom
 			jobCopy.CodeMonitorSearchWrapper = hook
 			return &jobCopy
-		case *repos.ComputeExcludedRepos:
-			// ComputeExcludedRepos is fine for code monitor jobs
+		case *repos.ComputeExcludedReposJob:
+			// ComputeExcludedReposJob is fine for code monitor jobs
 			return atom
 		default:
 			err = errors.Append(err, errors.Errorf("found invalid atom job type %T for code monitor search", atom))

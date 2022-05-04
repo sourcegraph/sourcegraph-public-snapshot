@@ -1,5 +1,3 @@
-import React from 'react'
-
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 

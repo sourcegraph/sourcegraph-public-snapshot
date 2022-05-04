@@ -44,7 +44,7 @@ func NewClient(observationContext *observation.Context) GitserverClient {
 }
 
 func (c *gitserverClient) FetchTar(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (_ io.ReadCloser, err error) {
-	ctx, endObservation := c.operations.fetchTar.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := c.operations.fetchTar.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repo", string(repo)),
 		log.String("commit", string(commit)),
 		log.Int("paths", len(paths)),
@@ -67,7 +67,7 @@ func (c *gitserverClient) FetchTar(ctx context.Context, repo api.RepoName, commi
 }
 
 func (c *gitserverClient) GitDiff(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) (_ Changes, err error) {
-	ctx, endObservation := c.operations.gitDiff.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := c.operations.gitDiff.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repo", string(repo)),
 		log.String("commitA", string(commitA)),
 		log.String("commitB", string(commitB)),

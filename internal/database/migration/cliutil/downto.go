@@ -83,7 +83,7 @@ func DownTo(commandName string, factory RunnerFactory, out *output.Output, devel
 	return &cli.Command{
 		Name:        "downto",
 		UsageText:   fmt.Sprintf("%s downto -db=<schema> -target=<target>,<target>,...", commandName),
-		Usage:       `Revert any applied migrations that are children of the given targets - this effectively "resets" the schmea to the target version`,
+		Usage:       `Revert any applied migrations that are children of the given targets - this effectively "resets" the schema to the target version`,
 		Description: ConstructLongHelp(),
 		Flags:       flags,
 		Action:      action,

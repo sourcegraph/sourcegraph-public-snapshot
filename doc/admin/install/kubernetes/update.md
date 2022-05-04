@@ -1,5 +1,8 @@
 # Updating Sourcegraph with Kubernetes
 
+> WARNING: This guide applies exclusively to a Kubernetes deployment **without** Helm. If using Helm, please go to [Updating Sourcegraph in the Helm guide](helm.md#upgrading-sourcegraph). 
+> If you have not deployed Sourcegraph yet, it is higly recommended to use Helm as it simplifies the configuration and greatly simplifies the upgrade process. See our [Helm guide](helm.md) for more information.
+
 A new version of Sourcegraph is released every month (with patch releases in between, released as needed). Check the [Sourcegraph blog](https://about.sourcegraph.com/blog) for release announcements.
 
 > WARNING: Please check the [Kubernetes update notes](../../updates/kubernetes.md) before upgrading to any particular version of Sourcegraph to check if any manual migrations are necessary.

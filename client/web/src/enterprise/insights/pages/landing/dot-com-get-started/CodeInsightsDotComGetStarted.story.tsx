@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { Meta } from '@storybook/react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -14,5 +12,8 @@ export default {
 } as Meta
 
 export const CodeInsightsDotComGetStartedStory = () => (
-    <CodeInsightsDotComGetStarted telemetryService={NOOP_TELEMETRY_SERVICE} />
+    <CodeInsightsDotComGetStarted
+        telemetryService={NOOP_TELEMETRY_SERVICE}
+        settingsCascade={{ subjects: null, final: null }}
+    />
 )

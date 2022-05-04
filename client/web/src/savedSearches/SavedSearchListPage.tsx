@@ -96,6 +96,7 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
                         data-tooltip="Delete saved search"
                         variant="danger"
                         size="sm"
+                        aria-label="Delete saved search"
                     >
                         <Icon as={DeleteIcon} />
                     </Button>

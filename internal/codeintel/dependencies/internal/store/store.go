@@ -55,7 +55,7 @@ type ListDependencyReposOpts struct {
 }
 
 func (s *Store) ListDependencyRepos(ctx context.Context, opts ListDependencyReposOpts) (dependencyRepos []shared.Repo, err error) {
-	ctx, endObservation := s.operations.listDependencyRepos.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.listDependencyRepos.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("scheme", opts.Scheme),
 	}})
 	defer func() {
@@ -115,7 +115,7 @@ func makeLimit(limit int) *sqlf.Query {
 // UpsertDependencyRepos creates the given dependency repos if they doesn't yet exist. The values that
 // did not exist previously are returned.
 func (s *Store) UpsertDependencyRepos(ctx context.Context, deps []shared.Repo) (newDeps []shared.Repo, err error) {
-	ctx, endObservation := s.operations.upsertDependencyRepos.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.upsertDependencyRepos.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("numDeps", len(deps)),
 	}})
 	defer func() {
@@ -165,7 +165,7 @@ func (s *Store) UpsertDependencyRepos(ctx context.Context, deps []shared.Repo) (
 
 // DeleteDependencyReposByID removes the dependency repos with the given ids, if they exist.
 func (s *Store) DeleteDependencyReposByID(ctx context.Context, ids ...int) (err error) {
-	ctx, endObservation := s.operations.deleteDependencyReposByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.deleteDependencyReposByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("numIDs", len(ids)),
 	}})
 	defer endObservation(1, observation.Args{})

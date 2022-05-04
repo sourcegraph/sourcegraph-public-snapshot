@@ -3,8 +3,9 @@ import React, { useCallback, useState } from 'react'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Button, LoadingSpinner, Modal } from '@sourcegraph/wildcard'
+import { Button, Checkbox, Modal } from '@sourcegraph/wildcard'
 
+import { LoaderButton } from '../../../../components/LoaderButton'
 import { Scalars } from '../../../../graphql-operations'
 import { mergeChangesets as _mergeChangesets } from '../backend'
 
@@ -48,19 +49,13 @@ export const MergeChangesetsModal: React.FunctionComponent<MergeChangesetsModalP
             <p className="mb-4">Are you sure you want to attempt to merge all the selected changesets?</p>
             <Form>
                 <div className="form-group">
-                    <div className="form-check">
-                        <input
-                            id={CHECKBOX_ID}
-                            type="checkbox"
-                            checked={squash}
-                            onChange={onToggleSquash}
-                            className="form-check-input"
-                            disabled={isLoading === true}
-                        />
-                        <label className="form-check-label" htmlFor={CHECKBOX_ID}>
-                            Squash merge all selected changesets.
-                        </label>
-                    </div>
+                    <Checkbox
+                        id={CHECKBOX_ID}
+                        checked={squash}
+                        onChange={onToggleSquash}
+                        disabled={isLoading === true}
+                        label="Squash merge all selected changesets."
+                    />
                 </div>
             </Form>
             {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
@@ -74,10 +69,14 @@ export const MergeChangesetsModal: React.FunctionComponent<MergeChangesetsModalP
                 >
                     Cancel
                 </Button>
-                <Button onClick={onSubmit} disabled={isLoading === true} variant="primary">
-                    {isLoading === true && <LoadingSpinner />}
-                    Merge
-                </Button>
+                <LoaderButton
+                    onClick={onSubmit}
+                    disabled={isLoading === true}
+                    variant="primary"
+                    loading={isLoading === true}
+                    alwaysShowLabel={true}
+                    label="Merge"
+                />
             </div>
         </Modal>
     )

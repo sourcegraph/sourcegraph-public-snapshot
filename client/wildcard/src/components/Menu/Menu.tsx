@@ -1,4 +1,4 @@
-import React, { ComponentType, forwardRef, useMemo } from 'react'
+import { ComponentType, forwardRef, useMemo } from 'react'
 
 import { Menu as ReachMenu, MenuProps as ReachMenuProps } from '@reach/menu-button'
 import { isFunction, noop, uniqueId } from 'lodash'

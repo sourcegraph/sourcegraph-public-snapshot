@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import { useCallback, useState } from 'react'
 
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'

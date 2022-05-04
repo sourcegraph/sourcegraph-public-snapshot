@@ -5,6 +5,8 @@ package workerutil
 import (
 	"context"
 	"sync"
+
+	log "github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // MockWithHooks is a mock implementation of the WithHooks interface (from
@@ -24,12 +26,12 @@ type MockWithHooks struct {
 func NewMockWithHooks() *MockWithHooks {
 	return &MockWithHooks{
 		PostHandleFunc: &WithHooksPostHandleFunc{
-			defaultHook: func(context.Context, Record) {
+			defaultHook: func(context.Context, log.Logger, Record) {
 				return
 			},
 		},
 		PreHandleFunc: &WithHooksPreHandleFunc{
-			defaultHook: func(context.Context, Record) {
+			defaultHook: func(context.Context, log.Logger, Record) {
 				return
 			},
 		},
@@ -41,12 +43,12 @@ func NewMockWithHooks() *MockWithHooks {
 func NewStrictMockWithHooks() *MockWithHooks {
 	return &MockWithHooks{
 		PostHandleFunc: &WithHooksPostHandleFunc{
-			defaultHook: func(context.Context, Record) {
+			defaultHook: func(context.Context, log.Logger, Record) {
 				panic("unexpected invocation of MockWithHooks.PostHandle")
 			},
 		},
 		PreHandleFunc: &WithHooksPreHandleFunc{
-			defaultHook: func(context.Context, Record) {
+			defaultHook: func(context.Context, log.Logger, Record) {
 				panic("unexpected invocation of MockWithHooks.PreHandle")
 			},
 		},
@@ -69,23 +71,23 @@ func NewMockWithHooksFrom(i WithHooks) *MockWithHooks {
 // WithHooksPostHandleFunc describes the behavior when the PostHandle method
 // of the parent MockWithHooks instance is invoked.
 type WithHooksPostHandleFunc struct {
-	defaultHook func(context.Context, Record)
-	hooks       []func(context.Context, Record)
+	defaultHook func(context.Context, log.Logger, Record)
+	hooks       []func(context.Context, log.Logger, Record)
 	history     []WithHooksPostHandleFuncCall
 	mutex       sync.Mutex
 }
 
 // PostHandle delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockWithHooks) PostHandle(v0 context.Context, v1 Record) {
-	m.PostHandleFunc.nextHook()(v0, v1)
-	m.PostHandleFunc.appendCall(WithHooksPostHandleFuncCall{v0, v1})
+func (m *MockWithHooks) PostHandle(v0 context.Context, v1 log.Logger, v2 Record) {
+	m.PostHandleFunc.nextHook()(v0, v1, v2)
+	m.PostHandleFunc.appendCall(WithHooksPostHandleFuncCall{v0, v1, v2})
 	return
 }
 
 // SetDefaultHook sets function that is called when the PostHandle method of
 // the parent MockWithHooks instance is invoked and the hook queue is empty.
-func (f *WithHooksPostHandleFunc) SetDefaultHook(hook func(context.Context, Record)) {
+func (f *WithHooksPostHandleFunc) SetDefaultHook(hook func(context.Context, log.Logger, Record)) {
 	f.defaultHook = hook
 }
 
@@ -93,7 +95,7 @@ func (f *WithHooksPostHandleFunc) SetDefaultHook(hook func(context.Context, Reco
 // PostHandle method of the parent MockWithHooks instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *WithHooksPostHandleFunc) PushHook(hook func(context.Context, Record)) {
+func (f *WithHooksPostHandleFunc) PushHook(hook func(context.Context, log.Logger, Record)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -102,19 +104,19 @@ func (f *WithHooksPostHandleFunc) PushHook(hook func(context.Context, Record)) {
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *WithHooksPostHandleFunc) SetDefaultReturn() {
-	f.SetDefaultHook(func(context.Context, Record) {
+	f.SetDefaultHook(func(context.Context, log.Logger, Record) {
 		return
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *WithHooksPostHandleFunc) PushReturn() {
-	f.PushHook(func(context.Context, Record) {
+	f.PushHook(func(context.Context, log.Logger, Record) {
 		return
 	})
 }
 
-func (f *WithHooksPostHandleFunc) nextHook() func(context.Context, Record) {
+func (f *WithHooksPostHandleFunc) nextHook() func(context.Context, log.Logger, Record) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -152,13 +154,16 @@ type WithHooksPostHandleFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 Record
+	Arg1 log.Logger
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 Record
 }
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c WithHooksPostHandleFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
@@ -170,23 +175,23 @@ func (c WithHooksPostHandleFuncCall) Results() []interface{} {
 // WithHooksPreHandleFunc describes the behavior when the PreHandle method
 // of the parent MockWithHooks instance is invoked.
 type WithHooksPreHandleFunc struct {
-	defaultHook func(context.Context, Record)
-	hooks       []func(context.Context, Record)
+	defaultHook func(context.Context, log.Logger, Record)
+	hooks       []func(context.Context, log.Logger, Record)
 	history     []WithHooksPreHandleFuncCall
 	mutex       sync.Mutex
 }
 
 // PreHandle delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockWithHooks) PreHandle(v0 context.Context, v1 Record) {
-	m.PreHandleFunc.nextHook()(v0, v1)
-	m.PreHandleFunc.appendCall(WithHooksPreHandleFuncCall{v0, v1})
+func (m *MockWithHooks) PreHandle(v0 context.Context, v1 log.Logger, v2 Record) {
+	m.PreHandleFunc.nextHook()(v0, v1, v2)
+	m.PreHandleFunc.appendCall(WithHooksPreHandleFuncCall{v0, v1, v2})
 	return
 }
 
 // SetDefaultHook sets function that is called when the PreHandle method of
 // the parent MockWithHooks instance is invoked and the hook queue is empty.
-func (f *WithHooksPreHandleFunc) SetDefaultHook(hook func(context.Context, Record)) {
+func (f *WithHooksPreHandleFunc) SetDefaultHook(hook func(context.Context, log.Logger, Record)) {
 	f.defaultHook = hook
 }
 
@@ -194,7 +199,7 @@ func (f *WithHooksPreHandleFunc) SetDefaultHook(hook func(context.Context, Recor
 // PreHandle method of the parent MockWithHooks instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *WithHooksPreHandleFunc) PushHook(hook func(context.Context, Record)) {
+func (f *WithHooksPreHandleFunc) PushHook(hook func(context.Context, log.Logger, Record)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -203,19 +208,19 @@ func (f *WithHooksPreHandleFunc) PushHook(hook func(context.Context, Record)) {
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *WithHooksPreHandleFunc) SetDefaultReturn() {
-	f.SetDefaultHook(func(context.Context, Record) {
+	f.SetDefaultHook(func(context.Context, log.Logger, Record) {
 		return
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *WithHooksPreHandleFunc) PushReturn() {
-	f.PushHook(func(context.Context, Record) {
+	f.PushHook(func(context.Context, log.Logger, Record) {
 		return
 	})
 }
 
-func (f *WithHooksPreHandleFunc) nextHook() func(context.Context, Record) {
+func (f *WithHooksPreHandleFunc) nextHook() func(context.Context, log.Logger, Record) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -253,13 +258,16 @@ type WithHooksPreHandleFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 Record
+	Arg1 log.Logger
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 Record
 }
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c WithHooksPreHandleFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this

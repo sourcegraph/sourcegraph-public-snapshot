@@ -8,6 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/regexp"
 	"github.com/hexops/autogold"
+	"github.com/stretchr/testify/require"
 )
 
 func toJSON(node Node) interface{} {
@@ -208,31 +209,31 @@ func TestSubstituteOrForRegexp(t *testing.T) {
 	}{
 		{
 			input: "foo or bar",
-			want:  `"(foo)|(bar)"`,
+			want:  `"(?:foo)|(?:bar)"`,
 		},
 		{
 			input: "(foo or (bar or baz))",
-			want:  `"(foo)|(bar)|(baz)"`,
+			want:  `"(?:foo)|(?:bar)|(?:baz)"`,
 		},
 		{
 			input: "repo:foobar foo or (bar or baz)",
-			want:  `(or "(bar)|(baz)" (and "repo:foobar" "foo"))`,
+			want:  `(or "(?:bar)|(?:baz)" (and "repo:foobar" "foo"))`,
 		},
 		{
 			input: "(foo or (bar or baz)) and foobar",
-			want:  `(and "(foo)|(bar)|(baz)" "foobar")`,
+			want:  `(and "(?:foo)|(?:bar)|(?:baz)" "foobar")`,
 		},
 		{
 			input: "(foo or (bar and baz))",
-			want:  `(or "(foo)" (and "bar" "baz"))`,
+			want:  `(or "(?:foo)" (and "bar" "baz"))`,
 		},
 		{
 			input: "foo or (bar and baz) or foobar",
-			want:  `(or "(foo)|(foobar)" (and "bar" "baz"))`,
+			want:  `(or "(?:foo)|(?:foobar)" (and "bar" "baz"))`,
 		},
 		{
 			input: "repo:foo a or b",
-			want:  `(and "repo:foo" "(a)|(b)")`,
+			want:  `(and "repo:foo" "(?:a)|(?:b)")`,
 		},
 	}
 	for _, c := range cases {
@@ -382,53 +383,65 @@ func TestConvertEmptyGroupsToLiteral(t *testing.T) {
 	}
 }
 
-func TestExpandOr(t *testing.T) {
+func TestPipeline(t *testing.T) {
 	cases := []struct {
 		input string
 		want  string
-	}{
-		{
-			input: `a or b`,
-			want:  `("a") OR ("b")`,
-		},
-		{
-			input: `a and b AND c OR d`,
-			want:  `("a" "b" "c") OR ("d")`,
-		},
-		{
-			input: "(repo:a (file:b or file:c))",
-			want:  `("repo:a" "file:b") OR ("repo:a" "file:c")`,
-		},
-		{
-			input: "(repo:a (file:b or file:c) (file:d or file:e))",
-			want:  `("repo:a" "file:b" "file:d") OR ("repo:a" "file:c" "file:d") OR ("repo:a" "file:b" "file:e") OR ("repo:a" "file:c" "file:e")`,
-		},
-		{
-			input: "(repo:a (file:b or file:c) (a b) (x z))",
-			want:  `("repo:a" "file:b" "(a b)" "(x z)") OR ("repo:a" "file:c" "(a b)" "(x z)")`,
-		},
-		{
-			input: `a and b AND c or d and (e OR f) g h i or j`,
-			want:  `("a" "b" "c") OR ("d" "e" "g" "h" "i") OR ("d" "f" "g" "h" "i") OR ("j")`,
-		},
-		{
-			input: "(repo:a (file:b (file:c or file:d) (file:e or file:f)))",
-			want:  `("repo:a" "file:b" "file:c" "file:e") OR ("repo:a" "file:b" "file:d" "file:e") OR ("repo:a" "file:b" "file:c" "file:f") OR ("repo:a" "file:b" "file:d" "file:f")`,
-		},
-		{
-			input: "(repo:a (file:b (file:c or file:d) file:q (file:e or file:f)))",
-			want:  `("repo:a" "file:b" "file:c" "file:q" "file:e") OR ("repo:a" "file:b" "file:d" "file:q" "file:e") OR ("repo:a" "file:b" "file:c" "file:q" "file:f") OR ("repo:a" "file:b" "file:d" "file:q" "file:f")`,
-		},
-	}
+	}{{
+		input: `a or b`,
+		want:  `(or "a" "b")`,
+	}, {
+		input: `a and b AND c OR d`,
+		want:  `(or (and "a" "b" "c") "d")`,
+	}, {
+		input: `(repo:a (file:b or file:c))`,
+		want:  `(or (and "repo:a" "file:b") (and "repo:a" "file:c"))`,
+	}, {
+		input: `(repo:a (file:b or file:c) (file:d or file:e))`,
+		want:  `(or (and "repo:a" "file:b" "file:d") (and "repo:a" "file:c" "file:d") (and "repo:a" "file:b" "file:e") (and "repo:a" "file:c" "file:e"))`,
+	}, {
+		input: `(repo:a (file:b or file:c) (a b) (x z))`,
+		want:  `(or (and "repo:a" "file:b" "(a b) (x z)") (and "repo:a" "file:c" "(a b) (x z)"))`,
+	}, {
+		input: `a and b AND c or d and (e OR f) and g h i or j`,
+		want:  `(or (and "a" "b" "c") (and "d" (or "e" "f") "g h i") "j")`,
+	}, {
+		input: `(a or b) and c`,
+		want:  `(and (or "a" "b") "c")`,
+	}, {
+		input: `(repo:a (file:b (file:c or file:d) (file:e or file:f)))`,
+		want:  `(or (and "repo:a" "file:b" "file:c" "file:e") (and "repo:a" "file:b" "file:d" "file:e") (and "repo:a" "file:b" "file:c" "file:f") (and "repo:a" "file:b" "file:d" "file:f"))`,
+	}, {
+		input: `(repo:a (file:b (file:c or file:d) file:q (file:e or file:f)))`,
+		want:  `(or (and "repo:a" "file:b" "file:c" "file:q" "file:e") (and "repo:a" "file:b" "file:d" "file:q" "file:e") (and "repo:a" "file:b" "file:c" "file:q" "file:f") (and "repo:a" "file:b" "file:d" "file:q" "file:f"))`,
+	}, {
+		input: `(repo:a b) or (repo:c d)`,
+		want:  `(or (and "repo:a" "b") (and "repo:c" "d"))`,
+		// Bug. See: https://github.com/sourcegraph/sourcegraph/issues/34018
+		// }, {
+		// 	input: `repo:a b or repo:c d`,
+		// 	want:  `(or (and "repo:a" "b") (and "repo:c" "d"))`,
+	}, {
+		input: `(repo:a b) and (repo:c d)`,
+		want:  `(and "repo:a" "repo:c" "b" "d")`,
+	}, {
+		input: `(repo:a or repo:b) (c or d)`,
+		want:  `(or (and "repo:a" (or "c" "d")) (and "repo:b" (or "c" "d")))`,
+	}, {
+		input: `(repo:a (b or c)) or (repo:d e f)`,
+		want:  `(or (and "repo:a" (or "b" "c")) (and "repo:d" "e f"))`,
+	}, {
+		input: `((repo:a b) or c) or (repo:d e f)`,
+		want:  `(or (and "repo:a" "b") "c" (and "repo:d" "e f"))`,
+	}, {
+		input: `(repo:a or repo:b) (c and (d or e))`,
+		want:  `(or (and "repo:a" "c" (or "d" "e")) (and "repo:b" "c" (or "d" "e")))`,
+	}}
 	for _, c := range cases {
 		t.Run("Map query", func(t *testing.T) {
-			query, _ := Parse(c.input, SearchTypeRegex)
-			queries := Dnf(query)
-			var queriesStr []string
-			for _, q := range queries {
-				queriesStr = append(queriesStr, toString(q))
-			}
-			got := "(" + strings.Join(queriesStr, ") OR (") + ")"
+			plan, err := Pipeline(Init(c.input, SearchTypeLiteral))
+			require.NoError(t, err)
+			got := plan.ToParseTree().String()
 			if diff := cmp.Diff(c.want, got); diff != "" {
 				t.Fatal(diff)
 			}
@@ -873,8 +886,7 @@ func TestConcatRevFilters(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.input, func(t *testing.T) {
-			query, _ := Parse(c.input, SearchTypeRegex)
-			plan, _ := ToPlan(Dnf(query))
+			plan, _ := Pipeline(InitRegexp(c.input))
 
 			var queriesStr []string
 			for _, basic := range plan {
@@ -909,8 +921,7 @@ func TestConcatRevFiltersTopLevelAnd(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.input, func(t *testing.T) {
-			query, _ := Parse(c.input, SearchTypeRegex)
-			plan, _ := ToPlan(Dnf(query))
+			plan, _ := Pipeline(InitRegexp(c.input))
 			p := MapPlan(plan, ConcatRevFilters)
 			if diff := cmp.Diff(c.want, toString(p.ToParseTree())); diff != "" {
 				t.Error(diff)

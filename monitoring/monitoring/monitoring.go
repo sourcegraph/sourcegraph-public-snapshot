@@ -3,6 +3,7 @@ package monitoring
 import (
 	"fmt"
 	"math/rand"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -315,7 +316,7 @@ func (c *Container) renderRules() (*promRulesFile, error) {
 						"level":        level,
 						"service_name": c.Name,
 						"description":  description,
-						"owner":        string(o.Owner),
+						"owner":        o.Owner.identifier,
 
 						// in the corresponding dashboard, this label should indicate
 						// the panel associated with this rule
@@ -540,49 +541,80 @@ func (r Row) validate() error {
 
 // ObservableOwner denotes a team that owns an Observable. The current teams are described in
 // the handbook: https://handbook.sourcegraph.com/engineering/eng_org#current-organization
-type ObservableOwner string
+type ObservableOwner struct {
+	// identifier is the team's name on OpsGenie and is used for routing alerts.
+	identifier       string
+	handbookSlug     string
+	handbookTeamName string
+}
 
-const (
-	ObservableOwnerSearch          ObservableOwner = "search"
-	ObservableOwnerSearchCore      ObservableOwner = "search-core"
-	ObservableOwnerBatches         ObservableOwner = "batches"
-	ObservableOwnerCodeIntel       ObservableOwner = "code-intel"
-	ObservableOwnerSecurity        ObservableOwner = "security"
-	ObservableOwnerWeb             ObservableOwner = "web"
-	ObservableOwnerCoreApplication ObservableOwner = "core application"
-	ObservableOwnerCodeInsights    ObservableOwner = "code-insights"
-	ObservableOwnerDevOps          ObservableOwner = "devops"
-	ObservableOwnerCloudSaaS       ObservableOwner = "cloud-saas"
+// identifer must be all lowercase, and optionally  hyphenated.
+//
+// Some examples of valid identifiers:
+// foo
+// foo-bar
+// foo-bar-baz
+//
+// Some examples of invalid identifiers:
+// Foo
+// FOO
+// Foo-Bar
+// foo_bar
+var identifierPattern = regexp.MustCompile("^([a-z]+)(-[a-z]+)*?$")
+
+var (
+	ObservableOwnerSearch = ObservableOwner{
+		identifier:       "search",
+		handbookSlug:     "code-graph/search/product",
+		handbookTeamName: "Search",
+	}
+	ObservableOwnerSearchCore = ObservableOwner{
+		identifier:       "search-core",
+		handbookSlug:     "code-graph/search/core",
+		handbookTeamName: "Search Core",
+	}
+	ObservableOwnerBatches = ObservableOwner{
+		identifier:       "batch-changes",
+		handbookSlug:     "code-graph/batch-changes",
+		handbookTeamName: "Batch Changes",
+	}
+	ObservableOwnerCodeIntel = ObservableOwner{
+		identifier:       "code-intel",
+		handbookSlug:     "code-graph/code-intelligence",
+		handbookTeamName: "Code intelligence",
+	}
+	ObservableOwnerSecurity = ObservableOwner{
+		identifier:       "security",
+		handbookSlug:     "cloud/security",
+		handbookTeamName: "Security",
+	}
+	ObservableOwnerRepoManagement = ObservableOwner{
+		identifier:       "repo-management",
+		handbookSlug:     "enablement/repo-management",
+		handbookTeamName: "Repo Management",
+	}
+	ObservableOwnerCodeInsights = ObservableOwner{
+		identifier:       "code-insights",
+		handbookSlug:     "code-graph/code-insights",
+		handbookTeamName: "Code Insights",
+	}
+	ObservableOwnerDevOps = ObservableOwner{
+		identifier:       "devops",
+		handbookSlug:     "cloud/devops",
+		handbookTeamName: "Cloud DevOps",
+	}
+	ObservableOwnerCloudSaaS = ObservableOwner{
+		identifier:       "cloud-saas",
+		handbookSlug:     "cloud/saas",
+		handbookTeamName: "Cloud Software-as-a-Service",
+	}
 )
 
-// toMarkdown returns a Markdown string that also links to the owner's team page
+// toMarkdown returns a Markdown string that also links to the owner's team page in the handbook.
 func (o ObservableOwner) toMarkdown() string {
-	var slug string
-
-	team := upperFirst(string(o))
-
-	// special cases for differences in how a team is named in ObservableOwner and how
-	// they are named in the handbook.
-	// see https://handbook.sourcegraph.com/engineering/eng_org#current-organization
-	switch o {
-	case ObservableOwnerCodeIntel:
-		slug = "code-intelligence"
-	case ObservableOwnerCodeInsights:
-		slug = "developer-insights/code-insights"
-	case ObservableOwnerDevOps:
-		slug = "cloud/devops"
-	case ObservableOwnerSearchCore:
-		slug = "search/core"
-	case ObservableOwnerCloudSaaS:
-		slug = "cloud/saas"
-		team = "Cloud Software-as-a-Service"
-	default:
-		slug = strings.ReplaceAll(string(o), " ", "-")
-	}
-
 	return fmt.Sprintf(
-		"[Sourcegraph %s team](https://handbook.sourcegraph.com/engineering/%s)",
-		team, slug,
+		"[Sourcegraph %s team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/%s)",
+		o.handbookTeamName, o.handbookSlug,
 	)
 }
 
@@ -716,9 +748,15 @@ func (o Observable) validate() error {
 	if first, second := string([]rune(o.Description)[0]), string([]rune(o.Description)[1]); first != strings.ToLower(first) && second == strings.ToLower(second) {
 		return errors.Errorf("Description must be lowercase except for acronyms; found \"%s\"", o.Description)
 	}
-	if o.Owner == "" && !o.NoAlert {
-		return errors.New("Owner must be defined for observables with alerts")
+	if o.Owner.identifier == "" && !o.NoAlert {
+		return errors.New("Owner.identifier must be defined for observables with alerts")
 	}
+
+	// In some cases, the identifier is an empty string. We don't want to run it through the regex.
+	if o.Owner.identifier != "" && !identifierPattern.Match([]byte(o.Owner.identifier)) {
+		return errors.Errorf(`Owner.identifier has invalid format: "%v"`, []byte(o.Owner.identifier))
+	}
+
 	if !o.Panel.panelType.validate() {
 		return errors.New(`Panel.panelType must be "graph" or "heatmap"`)
 	}

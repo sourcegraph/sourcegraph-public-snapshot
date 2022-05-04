@@ -210,7 +210,7 @@ func (i *Inserter) Flush(ctx context.Context) (err error) {
 		log.Int("payloadSize", payloadSize),
 	}
 	combinedLogFields := append(operationlogFields, i.commonLogFields...)
-	ctx, endObservation := i.operations.flush.With(ctx, &err, observation.Args{LogFields: combinedLogFields})
+	ctx, _, endObservation := i.operations.flush.With(ctx, &err, observation.Args{LogFields: combinedLogFields})
 	defer endObservation(1, observation.Args{})
 
 	// Create a query with enough placeholders to match the current batch size. This should

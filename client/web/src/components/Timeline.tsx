@@ -1,4 +1,4 @@
-import React, { FunctionComponent, ReactNode } from 'react'
+import { FunctionComponent, ReactNode } from 'react'
 
 import classNames from 'classnames'
 import { formatDistance } from 'date-fns/esm'

@@ -18,7 +18,6 @@ import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import { useHistory } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
     Badge,
@@ -51,10 +50,14 @@ import {
     Scalars,
     VisibleBatchSpecWorkspaceFields,
 } from '../../../graphql-operations'
-import { queryChangesetSpecFileDiffs } from '../preview/list/backend'
+import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from '../preview/list/backend'
 import { ChangesetSpecFileDiffConnection } from '../preview/list/ChangesetSpecFileDiffConnection'
 
-import { queryBatchSpecWorkspaceStepFileDiffs, retryWorkspaceExecution, useBatchSpecWorkspace } from './backend'
+import {
+    useBatchSpecWorkspace,
+    useRetryWorkspaceExecution,
+    queryBatchSpecWorkspaceStepFileDiffs as _queryBatchSpecWorkspaceStepFileDiffs,
+} from './backend'
 import { TimelineModal } from './TimelineModal'
 import { WorkspaceStateIcon } from './WorkspaceStateIcon'
 
@@ -64,46 +67,34 @@ export interface WorkspaceDetailsProps extends ThemeProps {
     id: Scalars['ID']
     /** Handler to deselect the current workspace, i.e. close the details panel. */
     deselectWorkspace?: () => void
+    /** For testing purposes only */
+    queryBatchSpecWorkspaceStepFileDiffs?: typeof _queryBatchSpecWorkspaceStepFileDiffs
+    queryChangesetSpecFileDiffs?: typeof _queryChangesetSpecFileDiffs
 }
 
-export const WorkspaceDetails: React.FunctionComponent<WorkspaceDetailsProps> = ({
-    id,
-    isLightTheme,
-    deselectWorkspace,
-}) => {
+export const WorkspaceDetails: React.FunctionComponent<WorkspaceDetailsProps> = ({ id, ...props }) => {
     // Fetch and poll latest workspace information.
     const { loading, error, data } = useBatchSpecWorkspace(id)
 
-    if ((loading && data === undefined) || data === undefined) {
+    // If we're loading and haven't received any data yet
+    if (loading && !data) {
         return <LoadingSpinner />
     }
-
-    if (data === null) {
-        return <NotFoundPage />
-    }
-
-    if (error) {
+    // If we received an error before we had received any data
+    if (error && !data) {
         return <ErrorAlert error={error} />
+    }
+    // If there weren't any errors and we just didn't receive any data
+    if (!data) {
+        return <HeroPage icon={MapSearchIcon} title="404: Not Found" />
     }
 
     const workspace = data
 
     if (workspace.__typename === 'HiddenBatchSpecWorkspace') {
-        return (
-            <HiddenWorkspaceDetails
-                deselectWorkspace={deselectWorkspace}
-                isLightTheme={isLightTheme}
-                workspace={workspace}
-            />
-        )
+        return <HiddenWorkspaceDetails {...props} workspace={workspace} />
     }
-    return (
-        <VisibleWorkspaceDetails
-            deselectWorkspace={deselectWorkspace}
-            isLightTheme={isLightTheme}
-            workspace={workspace}
-        />
-    )
+    return <VisibleWorkspaceDetails {...props} workspace={workspace} />
 }
 
 interface WorkspaceHeaderProps extends Pick<WorkspaceDetailsProps, 'deselectWorkspace'> {
@@ -166,11 +157,11 @@ const WorkspaceHeader: React.FunctionComponent<WorkspaceHeaderProps> = ({
                 </Button>
             )}
         </div>
-        <hr />
+        <hr className="mb-3" />
     </>
 )
 
-interface HiddenWorkspaceDetailsProps extends Omit<WorkspaceDetailsProps, 'id'> {
+interface HiddenWorkspaceDetailsProps extends Pick<WorkspaceDetailsProps, 'deselectWorkspace'> {
     workspace: HiddenBatchSpecWorkspaceFields
 }
 
@@ -180,8 +171,6 @@ const HiddenWorkspaceDetails: React.FunctionComponent<HiddenWorkspaceDetailsProp
 }) => (
     <>
         <WorkspaceHeader deselectWorkspace={deselectWorkspace} workspace={workspace} />
-        <IgnoredBanner workspace={workspace} />
-        <UnsupportedBanner workspace={workspace} />
         <h1 className="text-center text-muted mt-5">
             <Icon as={EyeOffOutlineIcon} />
             <VisuallyHidden>Hidden Workspace</VisuallyHidden>
@@ -199,17 +188,12 @@ const VisibleWorkspaceDetails: React.FunctionComponent<VisibleWorkspaceDetailsPr
     isLightTheme,
     workspace,
     deselectWorkspace,
+    queryBatchSpecWorkspaceStepFileDiffs,
+    queryChangesetSpecFileDiffs,
 }) => {
-    const [retrying, setRetrying] = useState<boolean | ErrorLike>(false)
-    const onRetry = useCallback(async () => {
-        setRetrying(true)
-        try {
-            await retryWorkspaceExecution(workspace.id)
-            setRetrying(false)
-        } catch (error) {
-            setRetrying(asError(error))
-        }
-    }, [workspace.id])
+    const [retryWorkspaceExecution, { loading: retryLoading, error: retryError }] = useRetryWorkspaceExecution(
+        workspace.id
+    )
 
     const [showTimeline, setShowTimeline] = useState<boolean>(false)
     const toggleShowTimeline = useCallback(() => {
@@ -218,6 +202,14 @@ const VisibleWorkspaceDetails: React.FunctionComponent<VisibleWorkspaceDetailsPr
     const onDismissTimeline = useCallback(() => {
         setShowTimeline(false)
     }, [])
+
+    if (workspace.state === BatchSpecWorkspaceState.SKIPPED && workspace.ignored) {
+        return <IgnoredWorkspaceDetails workspace={workspace} deselectWorkspace={deselectWorkspace} />
+    }
+
+    if (workspace.state === BatchSpecWorkspaceState.SKIPPED && workspace.unsupported) {
+        return <UnsupportedWorkspaceDetails workspace={workspace} deselectWorkspace={deselectWorkspace} />
+    }
 
     return (
         <>
@@ -233,29 +225,30 @@ const VisibleWorkspaceDetails: React.FunctionComponent<VisibleWorkspaceDetailsPr
                         <ErrorAlert error={workspace.failureMessage} className="flex-grow-1 mb-0" />
                         <Button
                             className="ml-2"
-                            onClick={onRetry}
-                            disabled={retrying === true}
+                            onClick={() => retryWorkspaceExecution()}
+                            disabled={retryLoading}
                             outline={true}
                             variant="danger"
                         >
                             <Icon as={SyncIcon} /> Retry
                         </Button>
                     </div>
-                    {isErrorLike(retrying) && <ErrorAlert error={retrying} />}
+                    {retryError && <ErrorAlert error={retryError} />}
                 </>
             )}
 
-            <IgnoredBanner workspace={workspace} />
-            <UnsupportedBanner workspace={workspace} />
-
             {workspace.changesetSpecs && workspace.state === BatchSpecWorkspaceState.COMPLETED && (
-                <div className="my-3">
+                <div className="mb-3">
                     {workspace.changesetSpecs.length === 0 && (
                         <p className="mb-0 text-muted">This workspace generated no changeset specs.</p>
                     )}
                     {workspace.changesetSpecs.map((changesetSpec, index) => (
                         <React.Fragment key={changesetSpec.id}>
-                            <ChangesetSpecNode node={changesetSpec} isLightTheme={isLightTheme} />
+                            <ChangesetSpecNode
+                                node={changesetSpec}
+                                isLightTheme={isLightTheme}
+                                queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
+                            />
                             {index !== workspace.changesetSpecs!.length - 1 && <hr className="m-0" />}
                         </React.Fragment>
                     ))}
@@ -269,47 +262,55 @@ const VisibleWorkspaceDetails: React.FunctionComponent<VisibleWorkspaceDetailsPr
                         cachedResultFound={workspace.cachedResultFound}
                         workspaceID={workspace.id}
                         isLightTheme={isLightTheme}
+                        queryBatchSpecWorkspaceStepFileDiffs={queryBatchSpecWorkspaceStepFileDiffs}
                     />
-                    {index !== workspace.steps.length - 1 && <hr className="m-0" />}
+                    {index !== workspace.steps.length - 1 && <hr className="my-2" />}
                 </React.Fragment>
             ))}
         </>
     )
 }
 
-const IgnoredBanner: React.FunctionComponent<{
-    workspace: HiddenBatchSpecWorkspaceFields | VisibleBatchSpecWorkspaceFields
-}> = ({ workspace }) => {
-    if (workspace.state !== BatchSpecWorkspaceState.SKIPPED || !workspace.ignored) {
-        return null
-    }
-    return (
-        <p className="text-muted text-center py-3 mb-0">
-            <strong>
-                <Icon as={LinkVariantRemoveIcon} /> This workspace has been skipped because a <code>.batchignore</code>{' '}
-                file was found.
-            </strong>
-        </p>
-    )
+interface IgnoredWorkspaceDetailsProps extends Pick<WorkspaceDetailsProps, 'deselectWorkspace'> {
+    workspace: VisibleBatchSpecWorkspaceFields
 }
 
-const UnsupportedBanner: React.FunctionComponent<{
-    workspace: HiddenBatchSpecWorkspaceFields | VisibleBatchSpecWorkspaceFields
-}> = ({ workspace }) => {
-    if (workspace.state !== BatchSpecWorkspaceState.SKIPPED || !workspace.unsupported) {
-        return null
-    }
-    return (
-        <p className="text-muted text-center py-3 mb-0">
-            <strong>
-                <Icon as={LinkVariantRemoveIcon} /> This workspace has been skipped because it is on an unsupported code
-                host.
-            </strong>
+const IgnoredWorkspaceDetails: React.FunctionComponent<IgnoredWorkspaceDetailsProps> = ({
+    workspace,
+    deselectWorkspace,
+}) => (
+    <>
+        <WorkspaceHeader deselectWorkspace={deselectWorkspace} workspace={workspace} />
+        <h1 className="text-center text-muted mt-5">
+            <Icon as={LinkVariantRemoveIcon} />
+            <VisuallyHidden>Ignored Workspace</VisuallyHidden>
+        </h1>
+        <p className="text-center">
+            This workspace has been skipped because a <code>.batchignore</code> file is present in the workspace
+            repository.
         </p>
-    )
+        <p className="text-center">Enable the execution option to "allow ignored" to override.</p>
+    </>
+)
+
+interface UnsupportedWorkspaceDetailsProps extends Pick<WorkspaceDetailsProps, 'deselectWorkspace'> {
+    workspace: VisibleBatchSpecWorkspaceFields
 }
 
-const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
+const UnsupportedWorkspaceDetails: React.FunctionComponent<UnsupportedWorkspaceDetailsProps> = ({
+    workspace,
+    deselectWorkspace,
+}) => (
+    <>
+        <WorkspaceHeader deselectWorkspace={deselectWorkspace} workspace={workspace} />
+        <h1 className="text-center text-muted mt-5">
+            <Icon as={LinkVariantRemoveIcon} />
+            <VisuallyHidden>Unsupported Workspace</VisuallyHidden>
+        </h1>
+        <p className="text-center">This workspace has been skipped because it is from an unsupported codehost.</p>
+        <p className="text-center">Enable the execution option to "allow unsupported" to override.</p>
+    </>
+)
 
 const NumberInQueue: React.FunctionComponent<{ number: number }> = ({ number }) => {
     let suffix: string
@@ -335,9 +336,15 @@ const NumberInQueue: React.FunctionComponent<{ number: number }> = ({ number }) 
     )
 }
 
-const ChangesetSpecNode: React.FunctionComponent<{ node: BatchSpecWorkspaceChangesetSpecFields } & ThemeProps> = ({
+interface ChangesetSpecNodeProps extends ThemeProps {
+    node: BatchSpecWorkspaceChangesetSpecFields
+    queryChangesetSpecFileDiffs?: typeof _queryChangesetSpecFileDiffs
+}
+
+const ChangesetSpecNode: React.FunctionComponent<ChangesetSpecNodeProps> = ({
     node,
     isLightTheme,
+    queryChangesetSpecFileDiffs = _queryChangesetSpecFileDiffs,
 }) => {
     const history = useHistory()
 
@@ -433,6 +440,8 @@ interface WorkspaceStepProps extends ThemeProps {
     cachedResultFound: boolean
     step: BatchSpecWorkspaceStepFields
     workspaceID: Scalars['ID']
+    /** For testing purposes only */
+    queryBatchSpecWorkspaceStepFileDiffs?: typeof _queryBatchSpecWorkspaceStepFileDiffs
 }
 
 const WorkspaceStep: React.FunctionComponent<WorkspaceStepProps> = ({
@@ -440,6 +449,7 @@ const WorkspaceStep: React.FunctionComponent<WorkspaceStepProps> = ({
     isLightTheme,
     workspaceID,
     cachedResultFound,
+    queryBatchSpecWorkspaceStepFileDiffs,
 }) => {
     const outputLines = useMemo(() => {
         const outputLines = cloneDeep(step.outputLines)
@@ -517,6 +527,7 @@ const WorkspaceStep: React.FunctionComponent<WorkspaceStepProps> = ({
                                             isLightTheme={isLightTheme}
                                             step={step.number}
                                             workspaceID={workspaceID}
+                                            queryBatchSpecWorkspaceStepFileDiffs={queryBatchSpecWorkspaceStepFileDiffs}
                                         />
                                     )}
                                 </TabPanel>
@@ -602,12 +613,18 @@ const StepTimer: React.FunctionComponent<{ step: BatchSpecWorkspaceStepFields }>
     return <Duration start={step.startedAt} end={step.finishedAt ?? undefined} />
 }
 
-const WorkspaceStepFileDiffConnection: React.FunctionComponent<
-    {
-        workspaceID: Scalars['ID']
-        step: number
-    } & ThemeProps
-> = ({ workspaceID, step, isLightTheme }) => {
+interface WorkspaceStepFileDiffConnectionProps extends ThemeProps {
+    workspaceID: Scalars['ID']
+    step: number
+    queryBatchSpecWorkspaceStepFileDiffs?: typeof _queryBatchSpecWorkspaceStepFileDiffs
+}
+
+const WorkspaceStepFileDiffConnection: React.FunctionComponent<WorkspaceStepFileDiffConnectionProps> = ({
+    workspaceID,
+    step,
+    isLightTheme,
+    queryBatchSpecWorkspaceStepFileDiffs = _queryBatchSpecWorkspaceStepFileDiffs,
+}) => {
     const queryFileDiffs = useCallback(
         (args: FilteredConnectionQueryArguments) =>
             queryBatchSpecWorkspaceStepFileDiffs({
@@ -616,7 +633,7 @@ const WorkspaceStepFileDiffConnection: React.FunctionComponent<
                 node: workspaceID,
                 step,
             }),
-        [workspaceID, step]
+        [workspaceID, step, queryBatchSpecWorkspaceStepFileDiffs]
     )
     const history = useHistory()
     return (

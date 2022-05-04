@@ -287,13 +287,8 @@ func TestRecordSeriesPoints(t *testing.T) {
 	want := []SeriesPoint{
 		{
 			SeriesID: "one",
-			Time:     current,
-			Value:    1.1,
-		},
-		{
-			SeriesID: "one",
-			Time:     current.Add(-time.Hour * 24 * 14),
-			Value:    2.2,
+			Time:     current.Add(-time.Hour * 24 * 42),
+			Value:    3.3,
 		},
 		{
 			SeriesID: "one",
@@ -302,8 +297,13 @@ func TestRecordSeriesPoints(t *testing.T) {
 		},
 		{
 			SeriesID: "one",
-			Time:     current.Add(-time.Hour * 24 * 42),
-			Value:    3.3,
+			Time:     current.Add(-time.Hour * 24 * 14),
+			Value:    2.2,
+		},
+		{
+			SeriesID: "one",
+			Time:     current,
+			Value:    1.1,
 		},
 	}
 

@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { Meta } from '@storybook/react'
 import { Observable, of } from 'rxjs'
 
@@ -40,7 +38,7 @@ const insightsWithManyLines: Insight[] = [
         title: 'Backend insight #2',
         series: [{ id: '', query: '', stroke: '', name: '' }],
         step: { weeks: 2 },
-        filters: { excludeRepoRegexp: '', includeRepoRegexp: '', contexts: [] },
+        filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
         dashboardReferenceCount: 0,
         isFrozen: false,
     },
@@ -51,7 +49,7 @@ const insightsWithManyLines: Insight[] = [
         title: 'Backend insight #3',
         series: [],
         step: { weeks: 2 },
-        filters: { excludeRepoRegexp: '', includeRepoRegexp: '', contexts: [] },
+        filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
         dashboardReferenceCount: 0,
         isFrozen: false,
     },
@@ -69,7 +67,7 @@ const insightsWithManyLines: Insight[] = [
             { id: '', query: '', stroke: '', name: '' },
         ],
         step: { weeks: 2 },
-        filters: { excludeRepoRegexp: '', includeRepoRegexp: '', contexts: [] },
+        filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
         dashboardReferenceCount: 0,
         isFrozen: false,
     },
@@ -80,7 +78,7 @@ const insightsWithManyLines: Insight[] = [
         title: 'Backend insight #2',
         series: [{ id: '', query: '', stroke: '', name: '' }],
         step: { weeks: 2 },
-        filters: { excludeRepoRegexp: '', includeRepoRegexp: '', contexts: [] },
+        filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
         dashboardReferenceCount: 0,
         isFrozen: false,
     },
@@ -112,7 +110,7 @@ const insightsWithManyLines: Insight[] = [
             { id: '', query: '', stroke: '', name: '' },
         ],
         step: { weeks: 2 },
-        filters: { excludeRepoRegexp: '', includeRepoRegexp: '', contexts: [] },
+        filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
         dashboardReferenceCount: 0,
         isFrozen: false,
     },
@@ -123,7 +121,7 @@ const insightsWithManyLines: Insight[] = [
         title: 'Backend insight #2',
         series: [{ id: '', query: '', stroke: '', name: '' }],
         step: { weeks: 2 },
-        filters: { excludeRepoRegexp: '', includeRepoRegexp: '', contexts: [] },
+        filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
         dashboardReferenceCount: 0,
         isFrozen: false,
     },
@@ -134,7 +132,7 @@ const insightsWithManyLines: Insight[] = [
         title: 'Backend insight #2',
         series: [{ id: '', query: '', stroke: '', name: '' }],
         step: { weeks: 2 },
-        filters: { excludeRepoRegexp: '', includeRepoRegexp: '', contexts: [] },
+        filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
         dashboardReferenceCount: 0,
         isFrozen: false,
     },
@@ -575,6 +573,10 @@ const codeInsightsApiWithManyLines = {
 
 export const SmartInsightsViewGridExample = (): JSX.Element => (
     <CodeInsightsBackendStoryMock mocks={codeInsightsApiWithManyLines}>
-        <SmartInsightsViewGrid insights={insightsWithManyLines} telemetryService={NOOP_TELEMETRY_SERVICE} />
+        <SmartInsightsViewGrid
+            settingsCascade={{ final: null, subjects: null }}
+            insights={insightsWithManyLines}
+            telemetryService={NOOP_TELEMETRY_SERVICE}
+        />
     </CodeInsightsBackendStoryMock>
 )

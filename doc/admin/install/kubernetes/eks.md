@@ -1,5 +1,8 @@
 # Sourcegraph with Kubernetes on Amazon EKS
 
+> WARNING: This guide applies exclusively to a Kubernetes deployment **without** Helm.
+> If you have not deployed Sourcegraph yet, it is higly recommended to use Helm as it simplifies the configuration and greatly simplifies the later upgrade process. See our guidance on [using Helm to deploy to Amazon EKS](helm.md#configure-sourcegraph-on-elastic-kubernetes-service-eks).
+
 [Amazon EKS](https://aws.amazon.com/eks/) is Amazon's managed Kubernetes offering, similar to how Google Cloud offers managed Kubernetes clusters (GKE).
 
 If your preferred cloud provider is Amazon, we strongly recommend using EKS instead of plain EC2. By using EKS, you will not need to manage your own Kubernetes control plane (complex). Instead, Amazon will provide it for you and you will only be responsible for managing the [NodeGroups](https://docs.aws.amazon.com/eks/latest/userguide/managed-node-groups.html) and the Sourcegraph deployment running on the Kubernetes cluster.

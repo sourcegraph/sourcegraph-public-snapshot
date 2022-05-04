@@ -30,9 +30,7 @@ func TestClient_CreatePullRequest_Fork(t *testing.T) {
 	branch := "branch-fork-00"
 	fork := "aharvey-sg/src-cli-testing"
 	ctx := context.Background()
-
-	c, save := newTestClient(t)
-	defer save()
+	c := newTestClient(t)
 
 	repo := &Repo{
 		FullName: "sourcegraph-testing/src-cli",
@@ -104,9 +102,7 @@ func TestClient_CreatePullRequest_SameOrigin(t *testing.T) {
 
 	branch := "branch-00"
 	ctx := context.Background()
-
-	c, save := newTestClient(t)
-	defer save()
+	c := newTestClient(t)
 
 	repo := &Repo{
 		FullName: "sourcegraph-testing/src-cli",
@@ -169,9 +165,7 @@ func TestClient_CreatePullRequestComment(t *testing.T) {
 	// to be open.
 
 	ctx := context.Background()
-
-	c, save := newTestClient(t)
-	defer save()
+	c := newTestClient(t)
 
 	repo := &Repo{
 		FullName: "sourcegraph-testing/src-cli",
@@ -205,9 +199,7 @@ func TestClient_DeclinePullRequest(t *testing.T) {
 
 	var id int64 = 2
 	ctx := context.Background()
-
-	c, save := newTestClient(t)
-	defer save()
+	c := newTestClient(t)
 
 	repo := &Repo{
 		FullName: "sourcegraph-testing/src-cli",
@@ -244,9 +236,7 @@ func TestClient_GetPullRequest(t *testing.T) {
 	// to be open.
 
 	ctx := context.Background()
-
-	c, save := newTestClient(t)
-	defer save()
+	c := newTestClient(t)
 
 	repo := &Repo{
 		FullName: "sourcegraph-testing/src-cli",
@@ -275,9 +265,7 @@ func TestClient_GetPullRequestStatuses(t *testing.T) {
 	// open and have no builds. This shouldn't require any action on your part.
 
 	ctx := context.Background()
-
-	c, save := newTestClient(t)
-	defer save()
+	c := newTestClient(t)
 
 	repo := &Repo{
 		FullName: "sourcegraph-testing/src-cli",
@@ -330,9 +318,7 @@ func TestClient_MergePullRequest(t *testing.T) {
 	// onto master was squashed, and that the source branch was deleted.
 	var id int64 = 4
 	ctx := context.Background()
-
-	c, save := newTestClient(t)
-	defer save()
+	c := newTestClient(t)
 
 	repo := &Repo{
 		FullName: "sourcegraph-testing/src-cli",
@@ -374,9 +360,7 @@ func TestClient_UpdatePullRequest(t *testing.T) {
 	// to be open.
 
 	ctx := context.Background()
-
-	c, save := newTestClient(t)
-	defer save()
+	c := newTestClient(t)
 
 	repo := &Repo{
 		FullName: "sourcegraph-testing/src-cli",

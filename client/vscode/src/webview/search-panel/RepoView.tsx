@@ -84,7 +84,7 @@ export const RepoView: React.FunctionComponent<RepoViewProps> = ({
             <button
                 type="button"
                 onClick={onBackToSearchResults}
-                className="btn btn-sm btn-link btn-outline-secondary text-decoration-none border-0"
+                className="test-back-to-search-view-btn btn btn-sm btn-link btn-outline-secondary text-decoration-none border-0"
             >
                 <Icon className="mr-1" as={ArrowLeftIcon} />
                 Back to search view

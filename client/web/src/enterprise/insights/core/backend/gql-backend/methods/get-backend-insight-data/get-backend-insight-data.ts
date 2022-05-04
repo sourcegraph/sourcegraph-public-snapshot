@@ -16,11 +16,11 @@ export const getBackendInsightData = (
     client: ApolloClient<unknown>,
     insight: BackendInsight
 ): Observable<BackendInsightData> => {
-    const { excludeRepoRegexp, includeRepoRegexp, contexts } = insight.filters
+    const { excludeRepoRegexp, includeRepoRegexp, context } = insight.filters
     const filters: InsightViewFiltersInput = {
         includeRepoRegex: includeRepoRegexp,
         excludeRepoRegex: excludeRepoRegexp,
-        searchContexts: contexts,
+        searchContexts: [context],
     }
 
     return fromObservableQuery(

@@ -218,7 +218,13 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
             >
                 <NavGroup>
                     <NavDropdown
-                        toggleItem={{ path: '/search', icon: MagnifyIcon, content: 'Code Search' }}
+                        toggleItem={{
+                            path: PageRoutes.Search,
+                            altPath: PageRoutes.RepoContainer,
+                            icon: MagnifyIcon,
+                            content: 'Code Search',
+                        }}
+                        routeMatch={routeMatch}
                         mobileHomeItem={{ content: 'Search home' }}
                         items={searchNavBarItems}
                     />

@@ -3,7 +3,7 @@ import React, { useCallback, useMemo, useEffect } from 'react'
 import classNames from 'classnames'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Modal, Button } from '@sourcegraph/wildcard'
+import { Modal, Button, Checkbox } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 
@@ -74,25 +74,20 @@ export const ShareNotebookModal: React.FunctionComponent<ShareNotebookModalProps
                     <small>{description}</small>
                 </div>
                 {selectedShareOption.namespaceType === 'Org' && (
-                    <div className="form-check mt-2">
-                        <input
-                            className="form-check-input"
-                            type="checkbox"
-                            id="org-namespace-visibility"
-                            checked={selectedShareOption.isPublic}
-                            onChange={event =>
-                                setSelectedShareOption({
-                                    ...selectedShareOption,
-                                    isPublic: event.target.checked,
-                                })
-                            }
-                        />
-                        <label className="form-check-label" htmlFor="org-namespace-visibility">
-                            Everyone{' '}
-                            {isSourcegraphDotCom ? 'on Sourcegraph Cloud' : 'with access to the Sourcegraph instance'}{' '}
-                            can view the notebook
-                        </label>
-                    </div>
+                    <Checkbox
+                        id="org-namespace-visibility"
+                        checked={selectedShareOption.isPublic}
+                        wrapperClassName="mt-2"
+                        onChange={event =>
+                            setSelectedShareOption({
+                                ...selectedShareOption,
+                                isPublic: event.target.checked,
+                            })
+                        }
+                        label={`Everyone ${
+                            isSourcegraphDotCom ? 'on Sourcegraph Cloud' : 'with access to the Sourcegraph instance'
+                        } can view the notebook`}
+                    />
                 )}
             </div>
             <div className="text-right">

@@ -22,6 +22,7 @@ const (
 	githubClientSecret                = "githubClientSecret"
 	dotcomGitHubAppCloudClientSecret  = "dotcomGitHubAppCloudClientSecret"
 	dotcomGitHubAppCloudPrivateKey    = "dotcomGitHubAppCloudPrivateKey"
+	authUnlockAccountLinkSigningKey   = "authUnlockAccountLinkSigningKey"
 )
 
 func TestValidate(t *testing.T) {
@@ -151,6 +152,7 @@ func TestRedactSecrets(t *testing.T) {
 				githubClientSecret,
 				dotcomGitHubAppCloudClientSecret,
 				dotcomGitHubAppCloudPrivateKey,
+				authUnlockAccountLinkSigningKey,
 			),
 		},
 	)
@@ -169,6 +171,7 @@ func TestUnredactSecrets(t *testing.T) {
 		githubClientSecret,
 		dotcomGitHubAppCloudClientSecret,
 		dotcomGitHubAppCloudPrivateKey,
+		authUnlockAccountLinkSigningKey,
 	)
 
 	t.Run("replaces REDACTED with corresponding secret", func(t *testing.T) {
@@ -188,6 +191,7 @@ func TestUnredactSecrets(t *testing.T) {
 			RedactedSecret,
 			RedactedSecret,
 			RedactedSecret,
+			RedactedSecret,
 		)
 		unredactedSite, err := UnredactSecrets(input, conftypes.RawUnified{Site: previousSite})
 		require.NoError(t, err)
@@ -201,6 +205,7 @@ func TestUnredactSecrets(t *testing.T) {
 			githubClientSecret,
 			dotcomGitHubAppCloudClientSecret,
 			dotcomGitHubAppCloudPrivateKey,
+			authUnlockAccountLinkSigningKey,
 		)
 		assert.Equal(t, want, unredactedSite)
 	})
@@ -210,6 +215,7 @@ func TestUnredactSecrets(t *testing.T) {
 		input := getTestSiteWithSecrets(
 			"new"+executorsAccessToken,
 			RedactedSecret, "new"+authGitLabClientSecret, RedactedSecret,
+			RedactedSecret,
 			RedactedSecret,
 			RedactedSecret,
 			RedactedSecret,
@@ -229,6 +235,7 @@ func TestUnredactSecrets(t *testing.T) {
 			githubClientSecret,
 			dotcomGitHubAppCloudClientSecret,
 			dotcomGitHubAppCloudPrivateKey,
+			authUnlockAccountLinkSigningKey,
 			newEmail,
 		)
 		assert.Equal(t, want, unredactedSite)
@@ -236,7 +243,7 @@ func TestUnredactSecrets(t *testing.T) {
 }
 
 func getTestSiteWithRedactedSecrets() string {
-	return getTestSiteWithSecrets(RedactedSecret, RedactedSecret, RedactedSecret, RedactedSecret, RedactedSecret, RedactedSecret, RedactedSecret, RedactedSecret, RedactedSecret)
+	return getTestSiteWithSecrets(RedactedSecret, RedactedSecret, RedactedSecret, RedactedSecret, RedactedSecret, RedactedSecret, RedactedSecret, RedactedSecret, RedactedSecret, RedactedSecret)
 }
 
 func getTestSiteWithSecrets(
@@ -245,7 +252,8 @@ func getTestSiteWithSecrets(
 	emailSMTPPassword,
 	organizationInvitationsSigningKey,
 	githubClientSecret,
-	dotcomGitHubAppCloudClientSecret, dotcomGitHubAppCloudPrivateKey string,
+	dotcomGitHubAppCloudClientSecret, dotcomGitHubAppCloudPrivateKey,
+	authUnlockAccountLinkSigningKey string,
 	optionalEdit ...string,
 ) string {
 	email := "noreply+dev@sourcegraph.com"
@@ -302,7 +310,8 @@ func getTestSiteWithSecrets(
       "clientSecret": "%s",
       "privateKey": "%s"
     }
-  }
+  },
+  "auth.unlockAccountLinkSigningKey": "%s",
 }
 `,
 		email,
@@ -312,6 +321,7 @@ func getTestSiteWithSecrets(
 		organizationInvitationsSigningKey,
 		githubClientSecret,
 		dotcomGitHubAppCloudClientSecret, dotcomGitHubAppCloudPrivateKey,
+		authUnlockAccountLinkSigningKey,
 	)
 
 }

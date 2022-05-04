@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -22,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func Commands(ctx context.Context, globalEnv map[string]string, addToMacOSFirewall bool, verbose bool, cmds ...Command) error {
+func Commands(ctx context.Context, parentEnv map[string]string, verbose bool, cmds ...Command) error {
 	chs := make([]<-chan struct{}, 0, len(cmds))
 	monitor := &changeMonitor{}
 	for _, cmd := range cmds {
@@ -59,7 +58,7 @@ func Commands(ctx context.Context, globalEnv map[string]string, addToMacOSFirewa
 			defer wg.Done()
 			var err error
 			for first := true; cmd.ContinueWatchOnExit || first; first = false {
-				if err = runWatch(ctx, cmd, root, globalEnv, ch, verbose, installed, okayToStart); err != nil {
+				if err = runWatch(ctx, cmd, root, parentEnv, ch, verbose, installed, okayToStart); err != nil {
 					if errors.Is(err, ctx.Err()) { // if error caused by context, terminate
 						return
 					}
@@ -77,8 +76,7 @@ func Commands(ctx context.Context, globalEnv map[string]string, addToMacOSFirewa
 		}(cmd, chs[i])
 	}
 
-	postInstall := newPostInstall(ctx, cmds, addToMacOSFirewall)
-	err = waitForInstallation(cmdNames, installed, failures, okayToStart, postInstall)
+	err = waitForInstallation(cmdNames, installed, failures, okayToStart)
 	if err != nil {
 		return err
 	}
@@ -94,43 +92,7 @@ func Commands(ctx context.Context, globalEnv map[string]string, addToMacOSFirewa
 	}
 }
 
-func newPostInstall(ctx context.Context, cmds []Command, addToMacOSFirewall bool) func() error {
-	if !addToMacOSFirewall || runtime.GOOS != "darwin" {
-		return func() error { return nil }
-	}
-
-	return func() error {
-		root, err := root.RepositoryRoot()
-		if err != nil {
-			return err
-		}
-
-		fwCmdPath := "/usr/libexec/ApplicationFirewall/socketfilterfw"
-		stdout.Out.WriteLine(output.Linef(output.EmojiWarningSign, output.StyleWarning, "You may be prompted to enter your password to add exceptions to the firewall."))
-		fcmd := exec.CommandContext(ctx, "sudo", fwCmdPath, "--setglobalstate", "off")
-		err = fcmd.Run()
-		if err != nil {
-			return err
-		}
-		for _, cmd := range cmds {
-			if strings.HasPrefix(cmd.Cmd, ".bin/") {
-				fcmd = exec.CommandContext(ctx, "sudo", fwCmdPath, "--add", filepath.Join(root, cmd.Cmd))
-				err = fcmd.Run()
-				if err != nil {
-					return err
-				}
-			}
-		}
-		fcmd = exec.CommandContext(ctx, "sudo", fwCmdPath, "--setglobalstate", "on")
-		err = fcmd.Run()
-		if err != nil {
-			return err
-		}
-		return nil
-	}
-}
-
-func waitForInstallation(cmdNames map[string]struct{}, installed chan string, failures chan failedRun, okayToStart chan struct{}, postInstallCallback func() error) error {
+func waitForInstallation(cmdNames map[string]struct{}, installed chan string, failures chan failedRun, okayToStart chan struct{}) error {
 	stdout.Out.Write("")
 	stdout.Out.WriteLine(output.Linef(output.EmojiLightbulb, output.StyleBold, "Installing %d commands...", len(cmdNames)))
 	stdout.Out.Write("")
@@ -172,13 +134,11 @@ func waitForInstallation(cmdNames map[string]struct{}, installed chan string, fa
 			// Everything installed!
 			if len(cmdNames) == 0 {
 				progress.Complete()
+
 				stdout.Out.Write("")
 				stdout.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Everything installed! Booting up the system!"))
 				stdout.Out.Write("")
-				err := postInstallCallback()
-				if err != nil {
-					return err
-				}
+
 				close(okayToStart)
 				return nil
 			}
@@ -315,7 +275,7 @@ func runWatch(
 	ctx context.Context,
 	cmd Command,
 	root string,
-	globalEnv map[string]string,
+	parentEnv map[string]string,
 	reload <-chan struct{},
 	verbose bool,
 	installDone chan string,
@@ -352,7 +312,7 @@ func runWatch(
 				stdout.Out.WriteLine(output.Linef("", output.StylePending, "Installing %s...", cmd.Name))
 			}
 
-			cmdOut, err := BashInRoot(ctx, cmd.Install, makeEnv(globalEnv, cmd.Env))
+			cmdOut, err := BashInRoot(ctx, cmd.Install, makeEnv(parentEnv, cmd.Env))
 			if err != nil {
 				if !startedOnce {
 					return installErr{cmdName: cmd.Name, output: cmdOut, originalErr: err}
@@ -403,12 +363,11 @@ func runWatch(
 			// Run it
 			stdout.Out.WriteLine(output.Linef("", output.StylePending, "Running %s...", cmd.Name))
 
-			sc, err := startCmd(ctx, root, cmd, globalEnv)
-			defer sc.cancel()
-
+			sc, err := startCmd(ctx, root, cmd, parentEnv)
 			if err != nil {
 				return err
 			}
+			defer sc.cancel()
 
 			cancelFuncs = append(cancelFuncs, sc.cancel)
 
@@ -458,6 +417,9 @@ func runWatch(
 	}
 }
 
+// makeEnv merges environments starting from the left, meaning the first environment will be overriden by the second one, skipping
+// any key that has been explicitly defined in the current environment of this process. This enables users to manually overrides
+// environment variables explictly, i.e FOO=1 sg start will have FOO=1 set even if a command or commandset sets FOO.
 func makeEnv(envs ...map[string]string) []string {
 	combined := os.Environ()
 	expandedEnv := map[string]string{}
@@ -601,7 +563,7 @@ func watch() (<-chan string, error) {
 	return paths, nil
 }
 
-func Test(ctx context.Context, cmd Command, args []string, globalEnv map[string]string) error {
+func Test(ctx context.Context, cmd Command, args []string, parentEnv map[string]string) error {
 	root, err := root.RepositoryRoot()
 	if err != nil {
 		return err
@@ -621,9 +583,18 @@ func Test(ctx context.Context, cmd Command, args []string, globalEnv map[string]
 		cmdArgs = append(cmdArgs, cmd.DefaultArgs)
 	}
 
+	secretsEnv, err := getSecrets(ctx, cmd)
+	if err != nil {
+		return errors.Wrapf(err, "cannot fetch secrets")
+	}
+
+	if cmd.Preamble != "" {
+		stdout.Out.WriteLine(output.Linef("", output.StyleOrange, "[%s] %s %s", cmd.Name, output.EmojiInfo, cmd.Preamble))
+	}
+
 	c := exec.CommandContext(commandCtx, "bash", "-c", strings.Join(cmdArgs, " "))
 	c.Dir = root
-	c.Env = makeEnv(globalEnv, cmd.Env)
+	c.Env = makeEnv(parentEnv, secretsEnv, cmd.Env)
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
 

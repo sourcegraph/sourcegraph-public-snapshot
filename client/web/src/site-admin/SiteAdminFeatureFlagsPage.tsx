@@ -138,18 +138,20 @@ export const SiteAdminFeatureFlagsPage: React.FunctionComponent<SiteAdminFeature
                 // T => Observable<T[]>
                 map(flags =>
                     // Observable<T>[] => Observable<T[]>
-                    forkJoin(
-                        flags.map(flag =>
-                            getFeatureFlagReferences(flag.name, productGitVersion).pipe(
-                                map(
-                                    (references): FeatureFlagAndReferences => ({
-                                        ...flag,
-                                        references,
-                                    })
-                                )
-                            )
-                        )
-                    )
+                    flags.length > 0
+                        ? forkJoin(
+                              flags.map(flag =>
+                                  getFeatureFlagReferences(flag.name, productGitVersion).pipe(
+                                      map(
+                                          (references): FeatureFlagAndReferences => ({
+                                              ...flag,
+                                              references,
+                                          })
+                                      )
+                                  )
+                              )
+                          )
+                        : of([])
                 ),
                 // Observable<T[]> => T[]
                 mergeMap(flags => flags),

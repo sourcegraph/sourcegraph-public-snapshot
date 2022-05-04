@@ -55,7 +55,17 @@
 }
 
 .popover {
+    width: 100%;
     border-radius: 0;
+
+    &--with-filters {
+        max-width: 34.375rem;
+        min-width: 15rem;
+    }
+
+    &--with-view-creation {
+        max-width: 24rem;
+    }
 
     &::-webkit-scrollbar {
         width: 0.25rem;

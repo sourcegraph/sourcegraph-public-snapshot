@@ -198,7 +198,7 @@ func (i *CommitIndexer) indexNextWindow(name string, id api.RepoID, windowDurati
 
 // getCommits fetches the commits from the remote gitserver for a repository after a certain time.
 func getCommits(ctx context.Context, db database.DB, name api.RepoName, after time.Time, until *time.Time, operation *observation.Operation) (_ []*gitdomain.Commit, err error) {
-	ctx, endObservation := operation.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := operation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	before := ""

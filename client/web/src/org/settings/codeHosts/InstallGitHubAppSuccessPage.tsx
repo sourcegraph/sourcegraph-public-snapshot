@@ -3,7 +3,6 @@ import React, { useEffect, useState } from 'react'
 import classNames from 'classnames'
 import GithubIcon from 'mdi-react/GithubIcon'
 import PlusIcon from 'mdi-react/PlusIcon'
-import { Media } from 'reactstrap'
 
 import { SourcegraphIcon, Card, CardBody, Link } from '@sourcegraph/wildcard'
 
@@ -47,7 +46,11 @@ export const InstallGitHubAppSuccessPage: React.FunctionComponent<{}> = () => {
                         <SourcegraphIcon className={classNames(styles.appLogo)} />
                         <PlusIcon />
                         {data ? (
-                            <Media src={data?.account.avatar_url} className={classNames(styles.appLogo)} />
+                            <img
+                                alt="Organization logo"
+                                src={data?.account.avatar_url}
+                                className={classNames('media', styles.appLogo)}
+                            />
                         ) : (
                             <GithubIcon className={classNames(styles.appLogo)} />
                         )}

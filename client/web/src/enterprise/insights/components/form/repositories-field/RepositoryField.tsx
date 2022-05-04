@@ -1,4 +1,4 @@
-import React, { ChangeEvent, forwardRef, Ref, useImperativeHandle, useRef } from 'react'
+import { ChangeEvent, forwardRef, Ref, useImperativeHandle, useRef } from 'react'
 
 import { Combobox, ComboboxInput, ComboboxPopover } from '@reach/combobox'
 

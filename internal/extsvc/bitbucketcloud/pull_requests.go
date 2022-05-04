@@ -28,7 +28,7 @@ type PullRequestInput struct {
 // Invoking CreatePullRequest with the same repo and options will succeed: the
 // same PR will be returned each time, and will be updated accordingly on
 // Bitbucket with any changed information in the options.
-func (c *Client) CreatePullRequest(ctx context.Context, repo *Repo, input PullRequestInput) (*PullRequest, error) {
+func (c *client) CreatePullRequest(ctx context.Context, repo *Repo, input PullRequestInput) (*PullRequest, error) {
 	data, err := json.Marshal(&input)
 	if err != nil {
 		return nil, errors.Wrap(err, "marshalling request")
@@ -50,7 +50,7 @@ func (c *Client) CreatePullRequest(ctx context.Context, repo *Repo, input PullRe
 // DeclinePullRequest declines (closes without merging) a pull request.
 //
 // Invoking DeclinePullRequest on an already declined PR will error.
-func (c *Client) DeclinePullRequest(ctx context.Context, repo *Repo, id int64) (*PullRequest, error) {
+func (c *client) DeclinePullRequest(ctx context.Context, repo *Repo, id int64) (*PullRequest, error) {
 	req, err := http.NewRequest("POST", fmt.Sprintf("/2.0/repositories/%s/pullrequests/%d/decline", repo.FullName, id), nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating request")
@@ -65,7 +65,7 @@ func (c *Client) DeclinePullRequest(ctx context.Context, repo *Repo, id int64) (
 }
 
 // GetPullRequest retrieves a single pull request.
-func (c *Client) GetPullRequest(ctx context.Context, repo *Repo, id int64) (*PullRequest, error) {
+func (c *client) GetPullRequest(ctx context.Context, repo *Repo, id int64) (*PullRequest, error) {
 	req, err := http.NewRequest("GET", fmt.Sprintf("/2.0/repositories/%s/pullrequests/%d", repo.FullName, id), nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating request")
@@ -82,7 +82,7 @@ func (c *Client) GetPullRequest(ctx context.Context, repo *Repo, id int64) (*Pul
 // GetPullRequestStatuses retrieves the statuses for a pull request.
 //
 // Each item in the result set is a *PullRequestStatus.
-func (c *Client) GetPullRequestStatuses(repo *Repo, id int64) (*PaginatedResultSet, error) {
+func (c *client) GetPullRequestStatuses(repo *Repo, id int64) (*PaginatedResultSet, error) {
 	u, err := url.Parse(fmt.Sprintf("/2.0/repositories/%s/pullrequests/%d/statuses", repo.FullName, id))
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing URL")
@@ -108,7 +108,7 @@ func (c *Client) GetPullRequestStatuses(repo *Repo, id int64) (*PaginatedResultS
 }
 
 // UpdatePullRequest updates a pull request.
-func (c *Client) UpdatePullRequest(ctx context.Context, repo *Repo, id int64, input PullRequestInput) (*PullRequest, error) {
+func (c *client) UpdatePullRequest(ctx context.Context, repo *Repo, id int64, input PullRequestInput) (*PullRequest, error) {
 	data, err := json.Marshal(&input)
 	if err != nil {
 		return nil, errors.Wrap(err, "marshalling request")
@@ -133,7 +133,7 @@ type CommentInput struct {
 }
 
 // CreatePullRequestComment adds a comment to a pull request.
-func (c *Client) CreatePullRequestComment(ctx context.Context, repo *Repo, id int64, input CommentInput) (*Comment, error) {
+func (c *client) CreatePullRequestComment(ctx context.Context, repo *Repo, id int64, input CommentInput) (*Comment, error) {
 	data, err := json.Marshal(&input)
 	if err != nil {
 		return nil, errors.Wrap(err, "marshalling request")
@@ -162,7 +162,7 @@ type MergePullRequestOpts struct {
 }
 
 // MergePullRequest merges the given pull request.
-func (c *Client) MergePullRequest(ctx context.Context, repo *Repo, id int64, opts MergePullRequestOpts) (*PullRequest, error) {
+func (c *client) MergePullRequest(ctx context.Context, repo *Repo, id int64, opts MergePullRequestOpts) (*PullRequest, error) {
 	data, err := json.Marshal(&opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "marshalling request")

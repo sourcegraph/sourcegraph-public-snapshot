@@ -13,16 +13,13 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -43,46 +40,20 @@ type Client interface {
 	FetchTarball(ctx context.Context, dep *reposource.NpmDependency) (io.ReadCloser, error)
 }
 
-var (
-	observationContext *observation.Context
-	operations         *Operations
-)
-
 func init() {
-	observationContext = &observation.Context{
-		Logger:     log15.Root(),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
-	operations = NewOperations(observationContext)
-
 	// The HTTP client will transparently handle caching,
 	// so we don't need to set up any on-disk caching here.
 }
 
 func FetchSources(ctx context.Context, client Client, dependency *reposource.NpmDependency) (tarball io.ReadCloser, err error) {
-	ctx, endObservation := operations.fetchSources.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+	operations := getOperations()
+
+	ctx, _, endObservation := operations.fetchSources.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("dependency", dependency.PackageManagerSyntax()),
 	}})
 	defer endObservation(1, observation.Args{})
 
 	return client.FetchTarball(ctx, dependency)
-}
-
-func Exists(ctx context.Context, client Client, dependency *reposource.NpmDependency) (exists bool, err error) {
-	ctx, endObservation := operations.exists.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.Bool("exists", exists),
-		otlog.String("dependency", dependency.PackageManagerSyntax()),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	if _, err = client.GetDependencyInfo(ctx, dependency); err != nil {
-		if errors.HasType(err, npmError{}) {
-			return false, nil
-		}
-		return false, err
-	}
-	return true, nil
 }
 
 type HTTPClient struct {
@@ -166,6 +137,10 @@ func (n npmError) Error() string {
 	return n.err.Error()
 }
 
+func (n npmError) NotFound() bool {
+	return n.statusCode == http.StatusNotFound
+}
+
 func (client *HTTPClient) makeGetRequest(ctx context.Context, url string) (io.ReadCloser, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
@@ -208,11 +183,10 @@ func (client *HTTPClient) GetDependencyInfo(ctx context.Context, dep *reposource
 }
 
 func (client *HTTPClient) FetchTarball(ctx context.Context, dep *reposource.NpmDependency) (io.ReadCloser, error) {
-	info, err := client.GetDependencyInfo(ctx, dep)
-	if err != nil {
-		return nil, err
+	if dep.TarballURL == "" {
+		return nil, errors.New("empty TarballURL")
 	}
-	return client.makeGetRequest(ctx, info.Dist.TarballURL)
+	return client.makeGetRequest(ctx, dep.TarballURL)
 }
 
 var _ Client = &HTTPClient{}

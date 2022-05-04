@@ -2,6 +2,7 @@ import React, { ReactNode, useMemo } from 'react'
 
 import classNames from 'classnames'
 import Popper from 'popper.js'
+// eslint-disable-next-line no-restricted-imports
 import { Tooltip as BootstrapTooltip } from 'reactstrap'
 
 import { useTooltipState } from './useTooltipState'

@@ -1,4 +1,4 @@
-import React, { ReactElement, useMemo, useState, SVGProps } from 'react'
+import { ReactElement, useMemo, useState, SVGProps } from 'react'
 
 import { curveLinear } from '@visx/curve'
 import { Group } from '@visx/group'
@@ -63,8 +63,8 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
                 margin: {
                     top: 10,
                     right: 20,
-                    left: yAxisElement?.getBoundingClientRect().width,
-                    bottom: xAxisReference?.getBoundingClientRect().height,
+                    left: yAxisElement?.getBBox().width,
+                    bottom: xAxisReference?.getBBox().height,
                 },
             }),
         [yAxisElement, xAxisReference, outerWidth, outerHeight]

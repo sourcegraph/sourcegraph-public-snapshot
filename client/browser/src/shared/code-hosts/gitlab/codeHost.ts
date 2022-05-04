@@ -7,7 +7,7 @@ import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensio
 import { toAbsoluteBlobURL } from '@sourcegraph/shared/src/util/url'
 
 import { background } from '../../../browser-extension/web-extension-api/runtime'
-import { CodeHost } from '../shared/codeHost'
+import { CodeHost, OverlayPosition } from '../shared/codeHost'
 import { CodeView } from '../shared/codeViews'
 import { createNotificationClassNameGetter } from '../shared/getNotificationClassName'
 import { getSelectionsFromHash, observeSelectionsFromHash } from '../shared/util/selections'
@@ -24,21 +24,26 @@ export function checkIsGitlab(): boolean {
     return !!document.head.querySelector('meta[content="GitLab"]')
 }
 
-const adjustOverlayPosition: CodeHost['adjustOverlayPosition'] = ({ top, left }) => {
+const adjustOverlayPosition: CodeHost['adjustOverlayPosition'] = args => {
+    const topOrBottom = 'top' in args ? 'top' : 'bottom'
+    let topOrBottomValue = 'top' in args ? args.top : args.bottom
+
     const header = document.querySelector('header')
     if (header) {
-        top += header.getBoundingClientRect().height
+        topOrBottomValue += header.getBoundingClientRect().height
     }
     // When running GitLab from source, we also need to take into account
     // the debug header shown at the top of the page.
     const debugHeader = document.querySelector('#js-peek.development')
     if (debugHeader) {
-        top += debugHeader.getBoundingClientRect().height
+        topOrBottomValue += debugHeader.getBoundingClientRect().height
     }
+
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     return {
-        top,
-        left,
-    }
+        [topOrBottom]: topOrBottomValue,
+        left: args.left,
+    } as OverlayPosition
 }
 
 export const getToolbarMount = (codeView: HTMLElement, pageKind?: GitLabPageKind): HTMLElement => {

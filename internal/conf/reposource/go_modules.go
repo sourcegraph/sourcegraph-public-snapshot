@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"golang.org/x/mod/module"
+	"golang.org/x/mod/semver"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -87,6 +88,34 @@ func (d *GoDependency) GitTagFromVersion() string {
 	return d.Module.Version
 }
 
-func (d *GoDependency) Equal(other *GoDependency) bool {
-	return d == other || (d != nil && other != nil && d.Module == other.Module)
+func (d *GoDependency) Equal(o *GoDependency) bool {
+	return d == o || (d != nil && o != nil && d.Module == o.Module)
+}
+
+// Less sorts d against other by Path, breaking ties by comparing Version fields.
+// The Version fields are interpreted as semantic versions (using semver.Compare)
+// optionally followed by a tie-breaking suffix introduced by a slash character,
+// like in "v0.0.1/go.mod". Copied from golang.org/x/mod.
+func (d *GoDependency) Less(other PackageDependency) bool {
+	o := other.(*GoDependency)
+
+	if d.Module.Path != o.Module.Path {
+		return d.Module.Path > o.Module.Path
+	}
+	// To help go.sum formatting, allow version/file.
+	// Compare semver prefix by semver rules,
+	// file by string order.
+	vi := d.Module.Version
+	vj := o.Module.Version
+	var fi, fj string
+	if k := strings.Index(vi, "/"); k >= 0 {
+		vi, fi = vi[:k], vi[k:]
+	}
+	if k := strings.Index(vj, "/"); k >= 0 {
+		vj, fj = vj[:k], vj[k:]
+	}
+	if vi != vj {
+		return semver.Compare(vi, vj) > 0
+	}
+	return fi > fj
 }

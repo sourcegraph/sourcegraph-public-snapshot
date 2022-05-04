@@ -64,7 +64,7 @@ var (
 						Usage: "Username for user",
 					},
 					&cli.StringFlag{
-						Name:  "username",
+						Name:  "password",
 						Value: "sourcegraphsourcegraph",
 						Usage: "Password for user",
 					},

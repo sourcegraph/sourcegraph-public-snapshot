@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { renderWithBrandedContext } from '../testing'
 
 import { RepoFileLink } from './RepoFileLink'

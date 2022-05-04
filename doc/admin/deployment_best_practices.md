@@ -14,6 +14,8 @@ _To get a better idea of your resource requirements for your instance use our_ [
 
 ## Deployment Best Practices
 
+A comparison table of supported self-hosted deployment methodologies can be [found here](install/index.md).
+
 ### Docker Compose
 
 - Docker Compose Sourcegraph may be customized using our [configuration guide](install/docker-compose/operations.md#configure), and should follow our [configuration best practices](install/docker-compose/operations.md#configuration-best-practices).
@@ -23,8 +25,9 @@ _To get a better idea of your resource requirements for your instance use our_ [
 
 Kubernetes deployments may be customized in a variety of ways, we consider the following best practice:
 
-- Users should use our [standard deployment](https://github.com/sourcegraph/deploy-sourcegraph) as a base, users may customize deployments via:
-  - Kustomize - [overlays](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/overlays), [guide](install/kubernetes/kustomize.md)
+- Users should configure and deploy using Helm, as covered in our guide to [using Helm with Sourcegraph](./install/kubernetes/helm.md).
+  -  If Helm cannot be used, [Kustomize can be used to apply configuration changes](./install/kubernetes/kustomize.md).
+  -  As a last resort, the [manifests can be edited in a forked copy of the Sourcegraph repository](./install/kubernetes/index.md).
 - The suggested Kubernetes version is the current [GKE Stable release version](https://cloud.google.com/kubernetes-engine/docs/release-notes-stable)
 - We attempt to support new versions of Kubernetes 2-3 months after their release.
 - Users are expected to run a compliant Kubernetes version ([a CNCF certified Kubernetes distribution](https://github.com/cncf/k8s-conformance))

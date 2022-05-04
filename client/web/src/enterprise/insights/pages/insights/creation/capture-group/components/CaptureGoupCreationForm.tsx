@@ -3,7 +3,7 @@ import React, { useMemo } from 'react'
 import classNames from 'classnames'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Card, Input, Label, Link, useObservable } from '@sourcegraph/wildcard'
+import { Button, Card, Checkbox, Input, Label, Link, useObservable } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../components/LoaderButton'
 import { CodeInsightTimeStepPicker, CodeInsightDashboardsVisibility } from '../../../../../components/creation-ui-kit'
@@ -97,27 +97,26 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
                     className="mb-0 d-flex flex-column"
                 />
 
-                <label className="d-flex flex-wrap align-items-center mb-2 mt-3 font-weight-normal">
-                    <input
-                        type="checkbox"
-                        {...allReposMode.input}
-                        value="all-repos-mode"
-                        checked={allReposMode.input.value}
-                    />
+                <Checkbox
+                    {...allReposMode.input}
+                    wrapperClassName="mb-1 mt-3 font-weight-normal"
+                    id="RunInsightsOnAllRepoInput"
+                    type="checkbox"
+                    value="all-repos-mode"
+                    checked={allReposMode.input.value}
+                    label="Run your insight over all your repositories"
+                />
 
-                    <span className="pl-2">Run your insight over all your repositories</span>
-
-                    <small className="w-100 mt-2 text-muted">
-                        This feature is actively in development. Read about the{' '}
-                        <Link
-                            to="/help/code_insights/explanations/current_limitations_of_code_insights"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
-                            limitations here.
-                        </Link>
-                    </small>
-                </label>
+                <small className="w-100 mt-2 text-muted">
+                    This feature is actively in development. Read about the{' '}
+                    <Link
+                        to="/help/code_insights/explanations/current_limitations_of_code_insights"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        limitations here.
+                    </Link>
+                </small>
             </FormGroup>
 
             <hr className="my-4 w-100" />

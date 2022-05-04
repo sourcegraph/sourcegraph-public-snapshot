@@ -426,6 +426,18 @@
           "type": "boolean",
           "default": true
         },
+        "enableGitserverClientLookupTable": {
+          "description": "Enable getting repository location from the database. Works only on Cloud.",
+          "type": "boolean",
+          "default": false
+        },
+        "gitserverClientLookupTable.Rate": {
+          "description": "Percentage of calls to AddrFromRepo that read from the database. Only used if enableGitserverClientLookupTable is true.",
+          "type": "integer",
+          "default": 0,
+          "minimum": 0,
+          "maximum": 100
+        },
         "gitServerPinnedRepos": {
           "description": "List of repositories pinned to specific gitserver instances. The specified repositories will remain at their pinned servers on scaling the cluster. If the specified pinned server differs from the current server that stores the repository, then it must be re-cloned to the specified server.",
           "type": "object",
@@ -1063,6 +1075,47 @@
       "type": "string",
       "examples": ["https://sourcegraph.example.com"]
     },
+    "observability.logging": {
+      "description": "Configuration for logging to external services.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "datadog": {
+          "description": "Datadog configuration",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "RUM": {
+              "description": "Datadog RUM configuration",
+              "type": "object",
+              "required": ["clientToken", "applicationId"],
+              "additionalProperties": false,
+              "properties": {
+                "clientToken": {
+                  "description": "Datadog client token required RUM (https://docs.datadoghq.com/real_user_monitoring/browser/#setup).",
+                  "type": "string"
+                },
+                "applicationId": {
+                  "description": "Datadog application ID required RUM (https://docs.datadoghq.com/real_user_monitoring/browser/#setup).",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "examples": [
+        {
+          "datadog": {
+            "RUM": {
+              "clientToken": "aaa1111a1a11a1aa11a1aa1a111aaa111aa",
+              "applicationId": "a11aa111-a1aa-1a11-aaa1-a11a111a111a"
+            }
+          }
+        }
+      ],
+      "group": "Debug"
+    },
     "observability.tracing": {
       "description": "Controls the settings for distributed tracing.",
       "type": "object",
@@ -1190,6 +1243,13 @@
       "default": 2,
       "examples": [10.0, 0.5],
       "!go": { "pointer": true }
+    },
+    "insights.compute.graphql": {
+      "description": "Force GraphQL mode for insights compute searches. This will overwrite the default streaming behavior and force search clients to use the GraphQL API",
+      "type": "boolean",
+      "!go": { "pointer": true },
+      "group": "CodeInsights",
+      "default": false
     },
     "insights.historical.worker.rateLimit": {
       "description": "Maximum number of historical Code Insights data frames that may be analyzed per second.",
@@ -1356,7 +1416,7 @@
       "group": "Authentication"
     },
     "auth.unlockAccountLinkSigningKey": {
-      "description": "Base64 encoded HMAC Signing key to sign a JWT token, which is attached to each invitation URL.",
+      "description": "Base64-encoded HMAC signing key to sign the JWT token for account unlock URLs",
       "type": "string",
       "group": "Authentication"
     },

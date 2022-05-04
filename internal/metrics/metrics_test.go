@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"os"
 	"sort"
 	"strings"
 	"testing"
@@ -87,14 +86,7 @@ func TestMustRegisterDiskMonitor(t *testing.T) {
 
 	want := []string{}
 	for i := 0; i <= 2; i++ {
-		path, err := os.MkdirTemp("", "")
-		if err != nil {
-			t.Fatal(err)
-		}
-		t.Cleanup(func() {
-			path := path
-			_ = os.RemoveAll(path)
-		})
+		path := t.TempDir()
 		// Register twice to ensure we don't panic and we don't collect twice.
 		MustRegisterDiskMonitor(path)
 		MustRegisterDiskMonitor(path)

@@ -72,6 +72,7 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
                         {
                             icon: MagnifyIcon,
                             to: '/search',
+                            ariaLabel: 'Code Search',
                         },
                         {
                             text: 'Contexts',

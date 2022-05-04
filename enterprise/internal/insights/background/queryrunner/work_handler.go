@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 var _ workerutil.Handler = &workHandler{}
@@ -237,7 +238,7 @@ func (r *workHandler) searchHandler(ctx context.Context, job *Job, series *types
 	}
 	defer func() { err = tx.Done(err) }()
 
-	if job.PersistMode == string(store.SnapshotMode) {
+	if store.PersistMode(job.PersistMode) == store.SnapshotMode {
 		// The purpose of the snapshot is for low fidelity but recently updated data points.
 		// We store one snapshot of an insight at any time, so we prune the table whenever adding a new series.
 		if err := tx.DeleteSnapshots(ctx, series); err != nil {
@@ -271,28 +272,46 @@ func (r *workHandler) computeHandler(ctx context.Context, job *Job, series *type
 	if series.JustInTime {
 		return errors.Newf("just in time series are not eligible for background processing, series_id: %s", series.ID)
 	}
-	if store.PersistMode(job.PersistMode) != store.RecordMode {
-		return nil
+
+	tx, err := r.insightsStore.Transact(ctx)
+	if err != nil {
+		return err
 	}
+	defer func() { err = tx.Done(err) }()
+
+	if store.PersistMode(job.PersistMode) == store.SnapshotMode {
+		// The purpose of the snapshot is for low fidelity but recently updated data points.
+		// We store one snapshot of an insight at any time, so we prune the table whenever adding a new series.
+		if err := tx.DeleteSnapshots(ctx, series); err != nil {
+			return err
+		}
+	}
+
 	recordings, err := r.generateComputeRecordings(ctx, job, recordTime)
 	if err != nil {
 		return err
 	}
-	if recordErr := r.insightsStore.RecordSeriesPoints(ctx, recordings); recordErr != nil {
+	if recordErr := tx.RecordSeriesPoints(ctx, recordings); recordErr != nil {
 		err = errors.Append(err, errors.Wrap(recordErr, "RecordSeriesPointsCapture"))
 	}
 	return err
 }
 
 func (r *workHandler) searchStreamHandler(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) (err error) {
-	decoder, countPtr, streamRepoCounts, streamErrs := streaming.TabulationDecoder()
+	decoder, tabulationResult := streaming.TabulationDecoder()
 	err = streaming.Search(ctx, job.SearchQuery, decoder)
 	if err != nil {
 		return errors.Wrap(err, "streaming.Search")
 	}
-	log15.Info("Search Counts", "streaming", *countPtr)
-	if len(streamErrs) > 0 {
-		log15.Error("streaming errors", "errors", streamErrs)
+
+	tr := *tabulationResult
+
+	log15.Info("Search Counts", "streaming", tr.TotalCount)
+	if len(tr.SkippedReasons) > 0 {
+		log15.Error("insights query issue", "reasons", tr.SkippedReasons, "query", job.SearchQuery)
+	}
+	if len(tr.Errors) > 0 {
+		log15.Error("streaming errors", "errors", tr.Errors)
 	}
 
 	tx, err := r.insightsStore.Transact(ctx)
@@ -301,7 +320,7 @@ func (r *workHandler) searchStreamHandler(ctx context.Context, job *Job, series 
 	}
 	defer func() { err = tx.Done(err) }()
 
-	if job.PersistMode == string(store.SnapshotMode) {
+	if store.PersistMode(job.PersistMode) == store.SnapshotMode {
 		// The purpose of the snapshot is for low fidelity but recently updated data points.
 		// We store one snapshot of an insight at any time, so we prune the table whenever adding a new series.
 		if err := tx.DeleteSnapshots(ctx, series); err != nil {
@@ -310,7 +329,7 @@ func (r *workHandler) searchStreamHandler(ctx context.Context, job *Job, series 
 	}
 
 	checker := authz.DefaultSubRepoPermsChecker
-	for _, match := range streamRepoCounts {
+	for _, match := range tr.RepoCounts {
 		// sub-repo permissions filtering. If the repo supports it, then it should be excluded from search results
 		var subRepoEnabled bool
 		repoID := api.RepoID(match.RepositoryID)
@@ -326,7 +345,7 @@ func (r *workHandler) searchStreamHandler(ctx context.Context, job *Job, series 
 	return err
 }
 
-func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err error) {
+func (r *workHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
 	// 🚨 SECURITY: The request is performed without authentication, we get back results from every
 	// repository on Sourcegraph - results will be filtered when users query for insight data based on the
 	// repositories they can see.

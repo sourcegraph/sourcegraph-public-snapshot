@@ -10,8 +10,11 @@ import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, pluralize, encodeURIPathComponent } from '@sourcegraph/common'
 import { gql, useQuery } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { Button, Link, Badge, useEventObservable, Alert, LoadingSpinner } from '@sourcegraph/wildcard'
 
+import { BatchChangesProps } from '../../batches'
+import { CodeIntelligenceProps } from '../../codeintel'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import {
     GetRepoBatchChangesSummaryResult,
@@ -28,13 +31,11 @@ import { fetchTreeCommits } from './TreePageContent'
 
 import styles from './HomeTab.module.scss'
 
-interface Props {
+interface Props extends SettingsCascadeProps, CodeIntelligenceProps, BatchChangesProps {
     repo: TreePageRepositoryFields
     filePath: string
     commitID: string
     revision: string
-    codeIntelligenceEnabled: boolean
-    batchChangesEnabled: boolean
     location: H.Location
     history?: H.History
     globbing?: boolean
@@ -56,6 +57,7 @@ export const HomeTab: React.FunctionComponent<Props> = ({
     revision,
     filePath,
     codeIntelligenceEnabled,
+    codeIntelligenceBadgeContent: CodeIntelligenceBadge,
     batchChangesEnabled,
     ...props
 }) => {
@@ -277,27 +279,14 @@ export const HomeTab: React.FunctionComponent<Props> = ({
                         {/* CODE-INTEL */}
                         <div className="mb-3">
                             <h2>Code intel</h2>
-                            <div className={styles.item}>
-                                <Badge
-                                    variant={codeIntelligenceEnabled ? 'secondary' : 'danger'}
-                                    className={classNames('text-uppercase col-4', styles.itemBadge)}
-                                >
-                                    {codeIntelligenceEnabled ? 'CONFIGURABLE' : 'DISABLED'}
-                                </Badge>
-                                <div className="col">
-                                    <div>Precise code intelligence</div>
-                                </div>
-                            </div>
-                            <div className="text-right">
-                                <Link
-                                    className="btn btn-sm btn-link mr-0 pr-0"
-                                    to={`/${encodeURIPathComponent(repo.name)}/-/code-intelligence`}
-                                >
-                                    {codeIntelligenceEnabled
-                                        ? 'Set up for this repository'
-                                        : 'Manage code intelligence'}
-                                </Link>
-                            </div>
+                            {CodeIntelligenceBadge && (
+                                <CodeIntelligenceBadge
+                                    repoName={repo.name}
+                                    revision={revision}
+                                    filePath={filePath}
+                                    {...props}
+                                />
+                            )}
                         </div>
                         {/* BATCH CHANGES */}
                         <div className="mb-3">

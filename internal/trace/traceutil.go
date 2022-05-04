@@ -19,9 +19,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log/otfields"
 )
 
-// ID returns a trace ID, if any, found in the given context.
+// ID returns a trace ID, if any, found in the given context. If you need both trace and
+// span ID, use trace.Context.
 func ID(ctx context.Context) string {
 	span := opentracing.SpanFromContext(ctx)
 	if span == nil {
@@ -32,15 +34,43 @@ func ID(ctx context.Context) string {
 
 // IDFromSpan returns a trace ID, if any, found in the given span.
 func IDFromSpan(span opentracing.Span) string {
+	traceCtx := ContextFromSpan(span)
+	if traceCtx == nil {
+		return ""
+	}
+	return traceCtx.TraceID
+}
+
+// Context retrieves the full trace context, if any, from context - this includes
+// both TraceID and SpanID.
+func Context(ctx context.Context) *otfields.TraceContext {
+	span := opentracing.SpanFromContext(ctx)
+	if span == nil {
+		return nil
+	}
+	return ContextFromSpan(span)
+}
+
+// Context retrieves the full trace context, if any, from the span - this includes
+// both TraceID and SpanID.
+func ContextFromSpan(span opentracing.Span) *otfields.TraceContext {
 	ddctx, ok := span.Context().(ddtrace.SpanContext)
 	if ok {
-		return strconv.FormatUint(ddctx.TraceID(), 10)
+		return &otfields.TraceContext{
+			TraceID: strconv.FormatUint(ddctx.TraceID(), 10),
+			SpanID:  strconv.FormatUint(ddctx.SpanID(), 10),
+		}
 	}
+
 	spanCtx, ok := span.Context().(jaeger.SpanContext)
 	if ok {
-		return spanCtx.TraceID().String()
+		return &otfields.TraceContext{
+			TraceID: spanCtx.TraceID().String(),
+			SpanID:  spanCtx.SpanID().String(),
+		}
 	}
-	return ""
+
+	return nil
 }
 
 // URL returns a trace URL for the given trace ID at the given external URL.

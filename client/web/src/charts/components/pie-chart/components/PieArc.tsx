@@ -1,4 +1,4 @@
-import React, { PointerEventHandler, ReactElement } from 'react'
+import { PointerEventHandler, ReactElement } from 'react'
 
 import { Annotation, HtmlLabel, Connector } from '@visx/annotation'
 import { Group } from '@visx/group'

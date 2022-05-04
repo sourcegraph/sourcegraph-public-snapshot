@@ -47,8 +47,7 @@ func TestProvider_ValidateConnection(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			cli, save := newClient(t, "Validate/"+tc.name)
-			defer save()
+			cli := newClient(t, "Validate/"+tc.name)
 
 			p := newProvider(cli)
 
@@ -486,8 +485,8 @@ func (h codeHost) externalAccount(userID int32, u *bitbucketserver.User) *extsvc
 	}
 }
 
-func newClient(t *testing.T, name string) (*bitbucketserver.Client, func()) {
-	cli, save := bitbucketserver.NewTestClient(t, name, *update)
+func newClient(t *testing.T, name string) *bitbucketserver.Client {
+	cli := bitbucketserver.NewTestClient(t, name, *update)
 
 	signingKey := os.Getenv("BITBUCKET_SERVER_SIGNING_KEY")
 	if signingKey == "" {
@@ -504,7 +503,7 @@ func newClient(t *testing.T, name string) (*bitbucketserver.Client, func()) {
 		t.Fatal(err)
 	}
 
-	return cli, save
+	return cli
 }
 
 func newProvider(cli *bitbucketserver.Client) *Provider {

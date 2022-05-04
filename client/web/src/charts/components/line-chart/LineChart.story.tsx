@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 
 import { Meta, Story } from '@storybook/react'
 import { ParentSize } from '@visx/responsive'

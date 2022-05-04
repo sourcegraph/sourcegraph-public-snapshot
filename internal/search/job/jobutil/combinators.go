@@ -10,72 +10,42 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// NewPriorityJob creates a combinator job from a required job and an
-// optional job. When run, PriorityJob runs the required job and the
-// optional job in parallel, waits for the required job to complete, then gives
-// the optional job a short additional amount of time (currently 100ms) before
-// canceling the optional job.
-func NewPriorityJob(required job.Job, optional job.Job) job.Job {
-	if _, ok := optional.(*noopJob); ok {
-		return required
+// NewSequentialJob will create a job that sequentially runs a list of jobs.
+// This is used to implement logic where we might like to order independent
+// search operations, favoring results returns by jobs earlier in the list to
+// those appearing later in the list. If this job sees a cancellation for a
+// child job, it stops executing additional jobs and returns.
+func NewSequentialJob(children ...job.Job) job.Job {
+	if len(children) == 0 {
+		return &noopJob{}
 	}
-	return &PriorityJob{
-		required: required,
-		optional: optional,
+	if len(children) == 1 {
+		return children[0]
 	}
+	return &SequentialJob{children: children}
 }
 
-type PriorityJob struct {
-	required job.Job
-	optional job.Job
+type SequentialJob struct {
+	children []job.Job
 }
 
-func (r *PriorityJob) Name() string {
-	return "PriorityJob"
+func (s *SequentialJob) Name() string {
+	return "SequentialJob"
 }
 
-func (r *PriorityJob) Run(ctx context.Context, clients job.RuntimeClients, s streaming.Sender) (alert *search.Alert, err error) {
-	tr, ctx, s, finish := job.StartSpan(ctx, s, r)
-	defer func() { finish(alert, err) }()
+func (s *SequentialJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+	var maxAlerter search.MaxAlerter
+	var errs errors.MultiError
 
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	start := time.Now()
-
-	var (
-		maxAlerter    search.MaxAlerter
-		optionalGroup errors.Group
-		requiredGroup errors.Group
-	)
-	requiredGroup.Go(func() error {
-		alert, err := r.required.Run(ctx, clients, s)
+	for _, child := range s.children {
+		alert, err := child.Run(ctx, clients, stream)
+		if ctx.Err() != nil {
+			// Cancellation or Deadline hit implies it's time to stop running jobs.
+			return maxAlerter.Alert, errs
+		}
 		maxAlerter.Add(alert)
-		return err
-	})
-	optionalGroup.Go(func() error {
-		alert, err := r.optional.Run(ctx, clients, s)
-		maxAlerter.Add(alert)
-		return err
-	})
-
-	var errs error
-	if err := requiredGroup.Wait(); err != nil {
 		errs = errors.Append(errs, err)
 	}
-	tr.LazyPrintf("required group completed")
-
-	// Give optional searches some minimum budget in case required searches return quickly.
-	// Cancel all remaining searches after this minimum budget.
-	budget := 100 * time.Millisecond
-	elapsed := time.Since(start)
-	time.AfterFunc(budget-elapsed, cancel)
-
-	if err := optionalGroup.Wait(); err != nil {
-		errs = errors.Append(errs, err)
-	}
-	tr.LazyPrintf("optional group completed")
-
 	return maxAlerter.Alert, errs
 }
 
