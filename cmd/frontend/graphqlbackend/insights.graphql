@@ -621,13 +621,31 @@ input InsightViewControlsInput {
     seriesDisplayOptions: SeriesDisplayOptionsInput!
 }
 
+"""
+Options that affect which series to display for an insight.
+"""
 type SeriesDisplayOptions {
+    """
+    Sort options for the series.
+    """
     sortOptions: SeriesSortOptions!
+    """
+    Max number of series to return.
+    """
     limit: Int
 }
 
+"""
+Input type for series display options.
+"""
 input SeriesDisplayOptionsInput {
+    """
+    Sort options for the series.
+    """
     sortOptions: SeriesSortOptionsInput
+    """
+    Max number of series to return.
+    """
     limit: Int
 }
 
@@ -648,14 +666,32 @@ enum SeriesSortDirection {
     DESC
 }
 
-input SeriesSortOptionsInput {
-    mode: SeriesSortMode!
-    direction: SeriesSortDirection!
+"""
+Series sort options.
+"""
+type SeriesSortOptions {
+    """
+    Sort mode for series.
+    """
+    mode: SeriesSortMode
+    """
+    Sort direction for series.
+    """
+    direction: SeriesSortDirection
 }
 
-type SeriesSortOptions {
-    mode: SeriesSortMode
-    direction: SeriesSortDirection
+"""
+Input type for series sort options.
+"""
+input SeriesSortOptionsInput {
+    """
+    Sort mode for series.
+    """
+    mode: SeriesSortMode!
+    """
+    Sort direction for series.
+    """
+    direction: SeriesSortDirection!
 }
 
 """
