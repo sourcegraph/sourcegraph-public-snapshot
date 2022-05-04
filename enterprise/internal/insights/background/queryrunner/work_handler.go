@@ -6,8 +6,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
 	"golang.org/x/time/rate"
@@ -20,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -128,48 +127,14 @@ func (r *workHandler) generateComputeRecordings(ctx context.Context, job *Job, r
 }
 
 func (r *workHandler) generateComputeRecordingsStream(ctx context.Context, job *Job, recordTime time.Time) (_ []store.RecordSeriesPointArgs, err error) {
-	log15.Info("we streamin now")
 	streamResults, err := r.computeSearchStream(ctx, job.SearchQuery)
 	if err != nil {
 		return nil, err
 	}
 	checker := authz.DefaultSubRepoPermsChecker
-	log15.Info("REE", "results", streamResults.RepoCounts)
-
 	var recordings []store.RecordSeriesPointArgs
 
-	type repoCaptureCounts struct {
-		repoCaptureCounts map[string]int
-		repoID            int32
-		repoName          string
-	}
-
-	// byRepo := make(map[int32]repoCaptureCounts)
-	// getForRepo := func(m *streaming.ComputeMatch) *repoCaptureCounts {
-	// 	log15.Info("grouping")
-	// 	if v, ok := byRepo[m.RepositoryID]; ok {
-	// 		return &v
-	// 	}
-	// 	return &repoCaptureCounts{
-	// 		repoCaptureCounts: make(map[string]int),
-	// 		repoID:            m.RepositoryID,
-	// 		repoName:          m.RepositoryName,
-	// 	}
-	// }
-
-	// // first group by repository because the compute matches are grouped per file
-	// for _, match := range streamResults.RepoCounts {
-	// 	log15.Info("match", "match", match)
-	// 	current := getForRepo(match)
-	// 	for capture, count := range match.ValueCounts {
-	// 		current.repoCaptureCounts[capture] += count
-	// 	}
-	// }
-
-	// then build recordings for each repository, capture pair
 	for _, match := range streamResults.RepoCounts {
-		// log15.Info("repoCount", "rc", repoCount)
-
 		var subRepoEnabled bool
 		subRepoEnabled, err = checkSubRepoPermissions(ctx, checker, match.RepositoryID, err)
 		if subRepoEnabled {
@@ -177,8 +142,8 @@ func (r *workHandler) generateComputeRecordingsStream(ctx context.Context, job *
 		}
 
 		for capturedValue, count := range match.ValueCounts {
-			capture := &capturedValue
-			recordings = append(recordings, ToRecording(job, float64(count), recordTime, match.RepositoryName, api.RepoID(match.RepositoryID), capture)...)
+			capture := capturedValue
+			recordings = append(recordings, ToRecording(job, float64(count), recordTime, match.RepositoryName, api.RepoID(match.RepositoryID), &capture)...)
 		}
 	}
 	return recordings, nil

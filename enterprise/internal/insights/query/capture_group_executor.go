@@ -10,6 +10,7 @@ import (
 
 	"github.com/grafana/regexp"
 	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
@@ -61,6 +62,7 @@ func streamCompute(ctx context.Context, query string) ([]GroupedResults, error) 
 	if err != nil {
 		return nil, err
 	}
+	// todo(leonore): this is redundant.
 	return groupComputeStreamByMatch(streamResults), nil
 }
 
