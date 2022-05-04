@@ -182,7 +182,7 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 				UseFullDeadline: useFullDeadline,
 			}
 
-			addJob(&structural.StructuralSearch{
+			addJob(&structural.StructuralSearchJob{
 				ZoektArgs:        zoektArgs,
 				SearcherArgs:     searcherArgs,
 				UseIndex:         b.Index(),
