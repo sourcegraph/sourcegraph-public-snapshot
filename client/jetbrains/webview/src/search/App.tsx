@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react'
 
-import { NEVER, of } from 'rxjs'
+import { Observable, of } from 'rxjs'
 
 import { requestGraphQLCommon } from '@sourcegraph/http-client'
 import {
@@ -18,6 +18,7 @@ import {
     LATEST_VERSION,
     SearchMatch,
 } from '@sourcegraph/shared/src/search/stream'
+import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { WildcardThemeContext } from '@sourcegraph/wildcard'
@@ -37,6 +38,10 @@ const requestGraphQL: PlatformContext['requestGraphQL'] = args =>
         ...args,
         baseUrl: 'https://sourcegraph.com',
     })
+
+function fetchStreamSuggestionsWithStaticUrl(query: string): Observable<SearchMatch[]> {
+    return fetchStreamSuggestions(query, 'https://sourcegraph.com/.api')
+}
 
 const platformContext = {
     requestGraphQL,
@@ -116,12 +121,12 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                             fetchSearchContexts={fetchSearchContexts}
                             fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
                             getUserSearchContextNamespaces={getUserSearchContextNamespaces}
-                            fetchStreamSuggestions={() => NEVER} // TODO: Implement this. See VS Code's SearchResultsView.tsx
+                            fetchStreamSuggestions={fetchStreamSuggestionsWithStaticUrl}
                             settingsCascade={EMPTY_SETTINGS_CASCADE} // TODO: Implement this. See VS Code's SearchResultsView.tsx
                             globbing={false} // TODO: Wire it up to plugin settings
                             isLightTheme={false} // TODO: Wire it up with the current theme setting
                             telemetryService={NOOP_TELEMETRY_SERVICE} // TODO: Fix this, see VS Code's SearchResultsView.tsx
-                            platformContext={platformContext} // TODO: Fix this, see VS Code's SearchResultsView.tsx
+                            platformContext={platformContext}
                             className=""
                             containerClassName=""
                             autoFocus={true}
