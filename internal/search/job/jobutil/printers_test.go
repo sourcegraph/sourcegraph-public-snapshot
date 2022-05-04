@@ -199,7 +199,7 @@ func TestPrettyJSON(t *testing.T) {
             }
           },
           {
-            "Searcher": {
+            "SearcherJob": {
               "PatternInfo": {
                 "Pattern": "bar",
                 "IsNegated": false,

@@ -43,8 +43,8 @@ func SexpFormat(j job.Job, sep, indent string) string {
 		case
 			*zoekt.ZoektRepoSubsetSearch,
 			*zoekt.ZoektSymbolSearch,
-			*searcher.Searcher,
-			*searcher.SymbolSearcher,
+			*searcher.SearcherJob,
+			*searcher.SymbolSearcherJob,
 			*run.RepoSearchJob,
 			*zoekt.GlobalSearch,
 			*structural.StructuralSearch,
@@ -203,8 +203,8 @@ func PrettyMermaid(j job.Job) string {
 		case
 			*zoekt.ZoektRepoSubsetSearch,
 			*zoekt.ZoektSymbolSearch,
-			*searcher.Searcher,
-			*searcher.SymbolSearcher,
+			*searcher.SearcherJob,
+			*searcher.SymbolSearcherJob,
 			*run.RepoSearchJob,
 			*zoekt.GlobalSearch,
 			*structural.StructuralSearch,
@@ -321,8 +321,8 @@ func toJSON(j job.Job, verbose bool) interface{} {
 		case
 			*zoekt.ZoektRepoSubsetSearch,
 			*zoekt.ZoektSymbolSearch,
-			*searcher.Searcher,
-			*searcher.SymbolSearcher,
+			*searcher.SearcherJob,
+			*searcher.SymbolSearcherJob,
 			*run.RepoSearchJob,
 			*zoekt.GlobalSearch,
 			*structural.StructuralSearch,
