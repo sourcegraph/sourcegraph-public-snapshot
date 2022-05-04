@@ -136,31 +136,23 @@ If you want to learn more about code insights:
 
 <small>Last updated: 2021-08-12</small>
 
-- [Sourcegraph architecture overview](#sourcegraph-architecture-overview)
-  - [Diagram](#diagram)
-  - [Repository syncing](#repository-syncing)
-  - [Permission syncing](#permission-syncing)
-  - [Settings cascade](#settings-cascade)
-  - [Search](#search)
-  - [Code intelligence](#code-intelligence)
-    - [Dependencies](#dependencies)
-  - [Batch Changes](#batch-changes)
-    - [Dependencies](#dependencies-1)
-  - [Code insights](#code-insights)
-    - [Dependencies](#dependencies-2)
-  - [Code monitoring](#code-monitoring)
-    - [Dependencies](#dependencies-3)
-  - [Browser extensions](#browser-extensions)
-  - [Native integrations (for code hosts)](#native-integrations-for-code-hosts)
-    - [Dependencies](#dependencies-4)
-  - [Sourcegraph extension API](#sourcegraph-extension-api)
-    - [Dependencies](#dependencies-5)
-  - [src-cli](#src-cli)
-    - [Dependencies](#dependencies-6)
-  - [Editor extensions](#editor-extensions)
-  - [Deployment](#deployment)
-  - [Observability](#observability)
-  - [Other resources](#other-resources)
+- [Search](#search)
+  - GraphQL API for text search, in particular `search()`, `matchCount`, `stats.languages`
+  - Query syntax: Code insights "construct" search queries programmatically
+  - Exhaustive search (with `count:all`/`count:999999` operator)
+  - Historical search (= unindexed search, currently)
+  - Commit search to find historical commits to search over
+- [Repository Syncing](#repository-syncing)
+  - The code insights backend has direct dependencies on `gitserver` and `repo-updater`
+- [Permission syncing](#permission-syncing)
+  - The code insights backend depends on synced repository permissions for access control.
+- [Settings cascade](#settings-cascade)
+  - Insights and dashboard configuration is currently stored in user, organization and global settings. This will change in the future and is planned to be moved to the database.
+  - Insights contributed by extensions are configured through settings (this will stay the same).
+- Future: [Batch Changes](#batch-changes)
+  - "Create a batch change from a code insight" flow
+- Future: [Code monitoring](#code-monitoring)
+  - "Create a code monitor from a code insight" flow
 
 ## Code monitoring
 
