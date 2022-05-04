@@ -30,12 +30,14 @@ interface AutocompleteSearchUsersProps {
     orgId: string
 }
 
-const UserResultItem: React.FunctionComponent<{
-    onSelectUser: (user: IUserItem) => void
-    onKeyDown: (key: string, index: number) => void
-    index: number
-    user: IUserItem
-}> = ({ user, onSelectUser, onKeyDown, index }) => {
+const UserResultItem: React.FunctionComponent<
+    React.PropsWithChildren<{
+        onSelectUser: (user: IUserItem) => void
+        onKeyDown: (key: string, index: number) => void
+        index: number
+        user: IUserItem
+    }>
+> = ({ user, onSelectUser, onKeyDown, index }) => {
     const selectUser = useCallback(() => {
         onSelectUser(user)
     }, [onSelectUser, user])
@@ -78,9 +80,11 @@ const UserResultItem: React.FunctionComponent<{
     )
 }
 
-const EmptyResultsItem: React.FunctionComponent<{
-    userNameOrEmail: string
-}> = ({ userNameOrEmail }) => (
+const EmptyResultsItem: React.FunctionComponent<
+    React.PropsWithChildren<{
+        userNameOrEmail: string
+    }>
+> = ({ userNameOrEmail }) => (
     <DropdownItem data-testid="search-context-menu-item" role="menuitem">
         <div className={classNames('d-flex', 'flex-column', styles.emptyResults)}>
             <span>
@@ -98,7 +102,9 @@ const EmptyResultsItem: React.FunctionComponent<{
 const getUserSearchResultItem = (userId: string): HTMLButtonElement | null =>
     document.querySelector(`[data-res-user-id="${userId}"]`)
 
-export const AutocompleteSearchUsers: React.FunctionComponent<AutocompleteSearchUsersProps> = props => {
+export const AutocompleteSearchUsers: React.FunctionComponent<
+    React.PropsWithChildren<AutocompleteSearchUsersProps>
+> = props => {
     const { disabled, onValueChanged, orgId } = props
     const MinSearchLength = 3
     const emailPattern = useRef(new RegExp(/^[\w!#$%&'*+./=?^`{|}~-]+@[A-Z_a-z]+?\.[A-Za-z]{2,3}$/))

@@ -29,7 +29,7 @@ export interface BatchChangeStatePillProps {
     latestSpecID?: Scalars['ID']
 }
 
-export const BatchChangeStatePill: React.FunctionComponent<BatchChangeStatePillProps> = ({
+export const BatchChangeStatePill: React.FunctionComponent<React.PropsWithChildren<BatchChangeStatePillProps>> = ({
     className,
     state,
     latestExecutionState,
@@ -68,7 +68,9 @@ export const BatchChangeStatePill: React.FunctionComponent<BatchChangeStatePillP
     )
 }
 
-const StatePill: React.FunctionComponent<Pick<BatchChangeStatePillProps, 'state'>> = ({ state }) => {
+const StatePill: React.FunctionComponent<React.PropsWithChildren<Pick<BatchChangeStatePillProps, 'state'>>> = ({
+    state,
+}) => {
     switch (state) {
         case BatchChangeState.OPEN:
             return (
@@ -92,9 +94,9 @@ const StatePill: React.FunctionComponent<Pick<BatchChangeStatePillProps, 'state'
     }
 }
 
-const ExecutionStatePill: React.FunctionComponent<{ latestExecutionState: ActionableBatchSpecState }> = ({
-    latestExecutionState,
-}) => {
+const ExecutionStatePill: React.FunctionComponent<
+    React.PropsWithChildren<{ latestExecutionState: ActionableBatchSpecState }>
+> = ({ latestExecutionState }) => {
     switch (latestExecutionState) {
         case BatchSpecState.PROCESSING:
         case BatchSpecState.QUEUED:

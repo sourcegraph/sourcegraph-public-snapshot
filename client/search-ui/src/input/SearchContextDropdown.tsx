@@ -31,7 +31,9 @@ export interface SearchContextDropdownProps
     isExternalServicesUserModeAll?: boolean
 }
 
-export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdownProps> = props => {
+export const SearchContextDropdown: React.FunctionComponent<
+    React.PropsWithChildren<SearchContextDropdownProps>
+> = props => {
     const {
         isSourcegraphDotCom,
         authenticatedUser,

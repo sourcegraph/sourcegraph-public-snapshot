@@ -20,7 +20,10 @@ interface ToggledRenderedFileModeProps {
  * A repository header action that toggles between showing a rendered file and the file's original
  * source, for files that can be rendered (such as Markdown files).
  */
-export const ToggleRenderedFileMode: React.FunctionComponent<ToggledRenderedFileModeProps> = ({ mode, actionType }) => {
+export const ToggleRenderedFileMode: React.FunctionComponent<React.PropsWithChildren<ToggledRenderedFileModeProps>> = ({
+    mode,
+    actionType,
+}) => {
     /**
      * The opposite mode of the current mode.
      * Used to enable switching between modes.

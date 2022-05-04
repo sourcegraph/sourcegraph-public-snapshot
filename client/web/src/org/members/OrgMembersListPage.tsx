@@ -70,7 +70,7 @@ interface MemberItemProps {
     onMemberRemoved: (username: string, isSelf: boolean) => void
 }
 
-const MemberItem: React.FunctionComponent<MemberItemProps> = ({
+const MemberItem: React.FunctionComponent<React.PropsWithChildren<MemberItemProps>> = ({
     member,
     orgId,
     viewerCanAdminister,
@@ -159,7 +159,10 @@ const MemberItem: React.FunctionComponent<MemberItemProps> = ({
     )
 }
 
-const MembersResultHeader: React.FunctionComponent<{ total: number; orgName: string }> = ({ total, orgName }) => (
+const MembersResultHeader: React.FunctionComponent<React.PropsWithChildren<{ total: number; orgName: string }>> = ({
+    total,
+    orgName,
+}) => (
     <li data-test-membersheader="memberslist-header">
         <div className="d-flex align-items-center justify-content-between">
             <div
@@ -179,7 +182,7 @@ const MembersResultHeader: React.FunctionComponent<{ total: number; orgName: str
 /**
  * The organization members list page.
  */
-export const OrgMembersListPage: React.FunctionComponent<Props> = ({
+export const OrgMembersListPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     org,
     authenticatedUser,
     onOrgGetStartedRefresh,

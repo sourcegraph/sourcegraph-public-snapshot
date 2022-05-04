@@ -28,7 +28,7 @@ export interface WorkspacesListProps {
     executionURL: string
 }
 
-export const WorkspacesList: React.FunctionComponent<WorkspacesListProps> = ({
+export const WorkspacesList: React.FunctionComponent<React.PropsWithChildren<WorkspacesListProps>> = ({
     workspacesConnection: { connection, error, loading, hasNextPage, fetchMore },
     selectedNode,
     executionURL,

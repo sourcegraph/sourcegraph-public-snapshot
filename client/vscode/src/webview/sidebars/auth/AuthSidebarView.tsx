@@ -22,7 +22,7 @@ interface AuthSidebarCtaProps extends Pick<WebviewPageProps, 'platformContext'> 
 /**
  * Rendered by sidebar in search-home state when user doesn't have a valid access token.
  */
-export const AuthSidebarView: React.FunctionComponent<AuthSidebarViewProps> = ({
+export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<AuthSidebarViewProps>> = ({
     instanceURL,
     extensionCoreAPI,
     platformContext,
@@ -214,7 +214,9 @@ export const AuthSidebarView: React.FunctionComponent<AuthSidebarViewProps> = ({
     )
 }
 
-export const AuthSidebarCta: React.FunctionComponent<AuthSidebarCtaProps> = ({ platformContext }) => {
+export const AuthSidebarCta: React.FunctionComponent<React.PropsWithChildren<AuthSidebarCtaProps>> = ({
+    platformContext,
+}) => {
     const onLinkClick = (type: 'Sourcegraph' | 'Extension'): void =>
         platformContext.telemetryService.log(`VSCESidebarLearn${type}Click`)
 

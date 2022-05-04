@@ -41,7 +41,9 @@ interface CaptureGroupCreationFormProps {
     onFormReset: () => void
 }
 
-export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreationFormProps> = props => {
+export const CaptureGroupCreationForm: React.FunctionComponent<
+    React.PropsWithChildren<CaptureGroupCreationFormProps>
+> = props => {
     const {
         form,
         title,
@@ -253,7 +255,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
     )
 }
 
-const QueryFieldSubtitle: React.FunctionComponent<{ className?: string }> = props => (
+const QueryFieldSubtitle: React.FunctionComponent<React.PropsWithChildren<{ className?: string }>> = props => (
     <small className={classNames(props.className, 'text-muted', 'd-block', 'font-weight-normal')}>
         Search query must contain a properly formatted regular expression with at least one{' '}
         <Link

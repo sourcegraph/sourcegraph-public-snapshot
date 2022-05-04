@@ -25,7 +25,7 @@ interface TreeNavigationProps {
     batchChangesEnabled: boolean
 }
 
-export const TreeNavigation: React.FunctionComponent<TreeNavigationProps> = ({
+export const TreeNavigation: React.FunctionComponent<React.PropsWithChildren<TreeNavigationProps>> = ({
     repo,
     revision,
     tree,

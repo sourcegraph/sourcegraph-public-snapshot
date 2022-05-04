@@ -42,7 +42,7 @@ export interface ActionEditorProps {
     _testStartOpen?: boolean
 }
 
-export const ActionEditor: React.FunctionComponent<ActionEditorProps> = ({
+export const ActionEditor: React.FunctionComponent<React.PropsWithChildren<ActionEditorProps>> = ({
     title,
     label,
     subtitle,

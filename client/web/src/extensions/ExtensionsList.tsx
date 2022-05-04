@@ -47,7 +47,7 @@ const ORDERED_EXTENSION_CATEGORIES: ExtensionCategory[] = [
 /**
  * Displays a list of extensions.
  */
-export const ExtensionsList: React.FunctionComponent<Props> = ({
+export const ExtensionsList: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     subject,
     settingsCascade,
     platformContext,

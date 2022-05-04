@@ -18,7 +18,7 @@ interface Props extends RouteComponentProps, ThemeProps {}
 /**
  * A page displaying information about telemetry pings for the site.
  */
-export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
+export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
     const latestPing = useObservable(
         useMemo(
             () => fromFetch<{}>('/site-admin/pings/latest', { selector: response => checkOk(response).json() }),

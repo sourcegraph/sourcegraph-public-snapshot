@@ -5,11 +5,13 @@ import { ButtonLink } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
 
-export const CodeMonitorSignUpLink: React.FunctionComponent<{
-    className?: string
-    text: string
-    eventName: string
-}> = ({ className, text, eventName }) => {
+export const CodeMonitorSignUpLink: React.FunctionComponent<
+    React.PropsWithChildren<{
+        className?: string
+        text: string
+        eventName: string
+    }>
+> = ({ className, text, eventName }) => {
     const onClick = (): void => {
         eventLogger.log(eventName)
     }

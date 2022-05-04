@@ -36,7 +36,7 @@ export const getTickXProps: TickLabelProps<Date> = (value, index, values): Parti
 })
 
 /** Tick component displays tick label for each axis line of chart */
-export const Tick: React.FunctionComponent<TickRendererProps> = props => {
+export const Tick: React.FunctionComponent<React.PropsWithChildren<TickRendererProps>> = props => {
     const { to, formattedValue, x: xPosition, y: yPosition, ...tickLabelProps } = props
 
     // Hack with Group + Text (aria hidden)

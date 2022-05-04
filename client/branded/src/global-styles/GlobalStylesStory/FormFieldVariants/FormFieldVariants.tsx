@@ -10,22 +10,26 @@ import styles from './FormFieldVariants.module.scss'
 type FieldVariants = 'standard' | 'invalid' | 'valid' | 'disabled'
 
 interface WithVariantsProps {
-    field: React.ComponentType<{
-        className?: string
-        disabled?: boolean
-        message?: ReactNode
-        variant: FieldVariants
-    }>
+    field: React.ComponentType<
+        React.PropsWithChildren<{
+            className?: string
+            disabled?: boolean
+            message?: ReactNode
+            variant: FieldVariants
+        }>
+    >
 }
 
 const FieldMessageText = 'Helper text'
 
-const FieldMessage: React.FunctionComponent<{ className?: string }> = ({ className }) => (
+const FieldMessage: React.FunctionComponent<React.PropsWithChildren<{ className?: string }>> = ({ className }) => (
     <small className={className}>{FieldMessageText}</small>
 )
 
 // Use this temporarily for form components which ones we haven't implemented in wilcard package yet
-const WithVariantsAndMessageElements: React.FunctionComponent<WithVariantsProps> = ({ field: Field }) => (
+const WithVariantsAndMessageElements: React.FunctionComponent<React.PropsWithChildren<WithVariantsProps>> = ({
+    field: Field,
+}) => (
     <>
         <Field variant="standard" message={<FieldMessage className="field-message" />} />
         <Field variant="invalid" className="is-invalid" message={<FieldMessage className="invalid-feedback" />} />
@@ -34,7 +38,7 @@ const WithVariantsAndMessageElements: React.FunctionComponent<WithVariantsProps>
     </>
 )
 
-const WithVariants: React.FunctionComponent<WithVariantsProps> = ({ field: Field }) => (
+const WithVariants: React.FunctionComponent<React.PropsWithChildren<WithVariantsProps>> = ({ field: Field }) => (
     <>
         <Field variant="standard" message={FieldMessageText} />
         <Field variant="invalid" message={FieldMessageText} />
@@ -43,7 +47,7 @@ const WithVariants: React.FunctionComponent<WithVariantsProps> = ({ field: Field
     </>
 )
 
-export const FormFieldVariants: React.FunctionComponent = () => (
+export const FormFieldVariants: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <div className={styles.grid}>
         <WithVariantsAndMessageElements
             field={({ className, message, ...props }) => (

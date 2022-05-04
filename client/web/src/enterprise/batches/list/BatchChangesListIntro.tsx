@@ -14,7 +14,9 @@ export interface BatchChangesListIntroProps {
     isLicensed: boolean | undefined
 }
 
-export const BatchChangesListIntro: React.FunctionComponent<BatchChangesListIntroProps> = ({ isLicensed }) => {
+export const BatchChangesListIntro: React.FunctionComponent<React.PropsWithChildren<BatchChangesListIntroProps>> = ({
+    isLicensed,
+}) => {
     if (isLicensed === undefined) {
         return null
     }
@@ -39,7 +41,7 @@ export const BatchChangesListIntro: React.FunctionComponent<BatchChangesListIntr
     )
 }
 
-const BatchChangesUnlicensedAlert: React.FunctionComponent = () => (
+const BatchChangesUnlicensedAlert: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <div className={classNames(styles.batchChangesListIntroAlert, 'h-100')}>
         <Card className={classNames(styles.batchChangesListIntroCard, 'h-100')}>
             <CardBody className="d-flex align-items-start">

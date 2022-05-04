@@ -32,7 +32,7 @@ interface Props extends ThemeProps {
 /**
  * A list of batch changes affecting a particular repo.
  */
-export const RepoBatchChanges: React.FunctionComponent<Props> = ({
+export const RepoBatchChanges: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     viewerCanAdminister,
     history,
     location,
@@ -84,7 +84,7 @@ export const RepoBatchChanges: React.FunctionComponent<Props> = ({
     )
 }
 
-export const RepoBatchChangesHeader: React.FunctionComponent = () => (
+export const RepoBatchChangesHeader: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <>
         {/* Empty filler elements for the spaces in the grid that don't need headers */}
         <span />

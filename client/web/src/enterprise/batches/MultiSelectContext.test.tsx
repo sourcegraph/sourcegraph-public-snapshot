@@ -260,7 +260,9 @@ const repeat = (times: number, test: () => void) => {
     }
 }
 
-const Reflektor: React.FunctionComponent<{ onContext: (inner: MultiSelectContextState) => void }> = ({ onContext }) => {
+const Reflektor: React.FunctionComponent<
+    React.PropsWithChildren<{ onContext: (inner: MultiSelectContextState) => void }>
+> = ({ onContext }) => {
     const context = useContext(MultiSelectContext)
     useEffect(() => {
         onContext(context)

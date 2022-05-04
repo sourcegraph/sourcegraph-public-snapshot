@@ -9,10 +9,9 @@ export interface CodeIntelUploadOrIndexCommitProps {
     abbreviated?: boolean
 }
 
-export const CodeIntelUploadOrIndexCommit: FunctionComponent<CodeIntelUploadOrIndexCommitProps> = ({
-    node,
-    abbreviated = true,
-}) => (
+export const CodeIntelUploadOrIndexCommit: FunctionComponent<
+    React.PropsWithChildren<CodeIntelUploadOrIndexCommitProps>
+> = ({ node, abbreviated = true }) => (
     <code>
         {node.projectRoot ? (
             <Link to={node.projectRoot.commit.url}>

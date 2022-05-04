@@ -34,7 +34,7 @@ interface Props extends ActivationProps, TelemetryProps {
 /**
  * A page displaying the external services on this site.
  */
-export const ExternalServicesPage: React.FunctionComponent<Props> = ({
+export const ExternalServicesPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     afterDeleteRoute,
     history,
     location,

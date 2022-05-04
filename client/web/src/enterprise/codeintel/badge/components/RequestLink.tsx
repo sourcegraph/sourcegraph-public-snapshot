@@ -19,7 +19,7 @@ export interface RequestLinkProps {
     useRequestLanguageSupportQuery: typeof defaultUseRequestLanguageSupportQuery
 }
 
-export const RequestLink: React.FunctionComponent<RequestLinkProps> = ({
+export const RequestLink: React.FunctionComponent<React.PropsWithChildren<RequestLinkProps>> = ({
     indexerName,
     useRequestedLanguageSupportQuery,
     useRequestLanguageSupportQuery,

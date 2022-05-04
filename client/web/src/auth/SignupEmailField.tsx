@@ -15,7 +15,7 @@ interface SignupEmailFieldProps {
     emailInputReference: React.Ref<HTMLInputElement>
 }
 
-export const SignupEmailField: React.FunctionComponent<SignupEmailFieldProps> = ({
+export const SignupEmailField: React.FunctionComponent<React.PropsWithChildren<SignupEmailFieldProps>> = ({
     emailState,
     loading,
     label,

@@ -20,7 +20,7 @@ interface CodeSnippetProps {
     className?: string
 }
 
-export const CodeSnippet: React.FunctionComponent<CodeSnippetProps> = ({
+export const CodeSnippet: React.FunctionComponent<React.PropsWithChildren<CodeSnippetProps>> = ({
     code,
     language,
     className,

@@ -31,7 +31,7 @@ const cloudSupportedServices = {
     gitlabcom: codeHostExternalServices.gitlabcom,
 }
 
-export const UserCodeHosts: React.FunctionComponent<UserCodeHosts> = ({
+export const UserCodeHosts: React.FunctionComponent<React.PropsWithChildren<UserCodeHosts>> = ({
     user,
     externalServices,
     context,

@@ -25,7 +25,7 @@ export interface FilterLinkProps {
     onFilterChosen: (value: string) => void
 }
 
-export const FilterLink: React.FunctionComponent<FilterLinkProps> = ({
+export const FilterLink: React.FunctionComponent<React.PropsWithChildren<FilterLinkProps>> = ({
     label,
     value,
     count,

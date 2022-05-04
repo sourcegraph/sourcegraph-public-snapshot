@@ -29,7 +29,7 @@ interface NotebookShareOptionsDropdownProps extends TelemetryProps {
 }
 
 const ShareOptionComponent: React.FunctionComponent<
-    Omit<ShareOption, 'namespaceId'> & { isSourcegraphDotCom: boolean }
+    React.PropsWithChildren<Omit<ShareOption, 'namespaceId'> & { isSourcegraphDotCom: boolean }>
 > = ({ isSourcegraphDotCom, namespaceType, namespaceName, isPublic }) => {
     if (namespaceType === 'User') {
         if (isPublic) {
@@ -54,13 +54,9 @@ const ShareOptionComponent: React.FunctionComponent<
     )
 }
 
-export const NotebookShareOptionsDropdown: React.FunctionComponent<NotebookShareOptionsDropdownProps> = ({
-    isSourcegraphDotCom,
-    telemetryService,
-    authenticatedUser,
-    selectedShareOption,
-    onSelectShareOption,
-}) => {
+export const NotebookShareOptionsDropdown: React.FunctionComponent<
+    React.PropsWithChildren<NotebookShareOptionsDropdownProps>
+> = ({ isSourcegraphDotCom, telemetryService, authenticatedUser, selectedShareOption, onSelectShareOption }) => {
     const handleToggle = useCallback(() => {
         telemetryService.log('NotebookVisibilitySettingsDropdownToggled')
     }, [telemetryService])

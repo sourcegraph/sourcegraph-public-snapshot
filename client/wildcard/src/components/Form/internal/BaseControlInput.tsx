@@ -23,7 +23,7 @@ export type ControlInputProps = AccessibleFieldProps<React.InputHTMLAttributes<H
         wrapperClassName?: string
     }
 
-export const BaseControlInput: React.FunctionComponent<ControlInputProps> = React.forwardRef(
+export const BaseControlInput: React.FunctionComponent<React.PropsWithChildren<ControlInputProps>> = React.forwardRef(
     ({ children, className, message, isValid, type, wrapperClassName, ...props }, reference) => (
         <div className={classNames('form-check', wrapperClassName)}>
             <input

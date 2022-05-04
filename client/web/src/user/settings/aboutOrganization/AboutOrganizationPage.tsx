@@ -9,7 +9,9 @@ import { SelfHostedCta } from '../../../components/SelfHostedCta'
 import styles from './AboutOrganizationPage.module.scss'
 interface AboutOrganizationPageProps extends TelemetryProps {}
 
-export const AboutOrganizationPage: React.FunctionComponent<AboutOrganizationPageProps> = ({ telemetryService }) => {
+export const AboutOrganizationPage: React.FunctionComponent<React.PropsWithChildren<AboutOrganizationPageProps>> = ({
+    telemetryService,
+}) => {
     useEffect(() => {
         telemetryService.logViewEvent('AboutOrg')
     }, [telemetryService])

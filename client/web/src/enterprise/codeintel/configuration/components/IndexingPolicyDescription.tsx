@@ -5,9 +5,9 @@ import { formatDurationValue } from '../shared'
 
 import { GitObjectTargetDescription } from './GitObjectTargetDescription'
 
-export const IndexingPolicyDescription: FunctionComponent<{ policy: CodeIntelligenceConfigurationPolicyFields }> = ({
-    policy,
-}) =>
+export const IndexingPolicyDescription: FunctionComponent<
+    React.PropsWithChildren<{ policy: CodeIntelligenceConfigurationPolicyFields }>
+> = ({ policy }) =>
     policy.indexingEnabled ? (
         <>
             <strong>Indexing policy:</strong> Auto-index <GitObjectTargetDescription policy={policy} />

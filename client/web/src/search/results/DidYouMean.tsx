@@ -122,7 +122,7 @@ interface DidYouMeanProps
     query: string
 }
 
-export const DidYouMean: React.FunctionComponent<DidYouMeanProps> = ({
+export const DidYouMean: React.FunctionComponent<React.PropsWithChildren<DidYouMeanProps>> = ({
     telemetryService,
     query,
     patternType,

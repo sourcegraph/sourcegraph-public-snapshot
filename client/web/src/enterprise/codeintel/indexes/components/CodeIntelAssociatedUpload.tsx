@@ -17,7 +17,10 @@ export interface CodeIntelAssociatedUploadProps {
     now?: () => Date
 }
 
-export const CodeIntelAssociatedUpload: FunctionComponent<CodeIntelAssociatedUploadProps> = ({ node, now }) =>
+export const CodeIntelAssociatedUpload: FunctionComponent<React.PropsWithChildren<CodeIntelAssociatedUploadProps>> = ({
+    node,
+    now,
+}) =>
     node.associatedUpload && node.projectRoot ? (
         <>
             <div className="list-group position-relative">

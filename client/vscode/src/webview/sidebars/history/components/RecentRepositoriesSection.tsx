@@ -16,7 +16,7 @@ import { HistorySidebarProps } from '../HistorySidebarView'
 
 import styles from '../../search/SearchSidebarView.module.scss'
 
-export const RecentRepositoriesSection: React.FunctionComponent<HistorySidebarProps> = ({
+export const RecentRepositoriesSection: React.FunctionComponent<React.PropsWithChildren<HistorySidebarProps>> = ({
     platformContext,
     authenticatedUser,
     extensionCoreAPI,

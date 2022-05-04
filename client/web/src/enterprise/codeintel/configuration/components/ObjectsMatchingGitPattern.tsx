@@ -16,7 +16,7 @@ export interface ObjectsMatchingGitPatternProps {
     disabled: boolean
 }
 
-export const ObjectsMatchingGitPattern: FunctionComponent<ObjectsMatchingGitPatternProps> = ({
+export const ObjectsMatchingGitPattern: FunctionComponent<React.PropsWithChildren<ObjectsMatchingGitPatternProps>> = ({
     repoId,
     type,
     pattern,

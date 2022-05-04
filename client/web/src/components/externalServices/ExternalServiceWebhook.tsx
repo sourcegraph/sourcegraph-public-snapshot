@@ -9,7 +9,9 @@ interface Props {
     externalService: Pick<ExternalServiceFields, 'kind' | 'webhookURL'>
 }
 
-export const ExternalServiceWebhook: React.FunctionComponent<Props> = ({ externalService: { kind, webhookURL } }) => {
+export const ExternalServiceWebhook: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    externalService: { kind, webhookURL },
+}) => {
     if (!webhookURL) {
         return <></>
     }

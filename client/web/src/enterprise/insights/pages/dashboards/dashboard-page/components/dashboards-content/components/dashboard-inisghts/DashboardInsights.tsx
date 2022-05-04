@@ -15,7 +15,7 @@ interface DashboardInsightsProps extends TelemetryProps, SettingsCascadeProps<Se
     onAddInsightRequest: () => void
 }
 
-export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> = props => {
+export const DashboardInsights: React.FunctionComponent<React.PropsWithChildren<DashboardInsightsProps>> = props => {
     const { telemetryService, dashboard, className, onAddInsightRequest } = props
 
     const { getInsights } = useContext(CodeInsightsBackendContext)

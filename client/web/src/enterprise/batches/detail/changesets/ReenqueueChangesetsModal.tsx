@@ -18,13 +18,9 @@ export interface ReenqueueChangesetsModalProps {
     reenqueueChangesets?: typeof _reenqueueChangesets
 }
 
-export const ReenqueueChangesetsModal: React.FunctionComponent<ReenqueueChangesetsModalProps> = ({
-    onCancel,
-    afterCreate,
-    batchChangeID,
-    changesetIDs,
-    reenqueueChangesets = _reenqueueChangesets,
-}) => {
+export const ReenqueueChangesetsModal: React.FunctionComponent<
+    React.PropsWithChildren<ReenqueueChangesetsModalProps>
+> = ({ onCancel, afterCreate, batchChangeID, changesetIDs, reenqueueChangesets = _reenqueueChangesets }) => {
     const [isLoading, setIsLoading] = useState<boolean | Error>(false)
 
     const onSubmit = useCallback<React.FormEventHandler>(async () => {

@@ -33,7 +33,9 @@ const hideRepoRevisionContent = localStorage.getItem('hideRepoRevContent')
 
 /** A page that shows a file or a directory (tree view) in a repository at the
  * current revision. */
-export const RepositoryFileTreePage: React.FunctionComponent<RepositoryFileTreePageProps> = props => {
+export const RepositoryFileTreePage: React.FunctionComponent<
+    React.PropsWithChildren<RepositoryFileTreePageProps>
+> = props => {
     const {
         repo,
         resolvedRev: { commitID, defaultBranch },

@@ -53,7 +53,7 @@ export type FinishWelcomeFlow = (event: React.MouseEvent<HTMLElement>, payload: 
 
 export const getPostSignUpEvent = (action?: string): string => `PostSignUp${action ? '_' + action : ''}`
 
-export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
+export const PostSignUpPage: FunctionComponent<React.PropsWithChildren<PostSignUpPage>> = ({
     authenticatedUser: user,
     context,
     telemetryService,

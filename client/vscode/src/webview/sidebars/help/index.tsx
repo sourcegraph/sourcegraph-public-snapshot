@@ -29,7 +29,7 @@ Comlink.expose(helpSidebarAPI, expose)
 
 setLinkComponent(AnchorLink)
 
-const Main: React.FC = () => {
+const Main: React.FC<React.PropsWithChildren<unknown>> = () => {
     const authenticatedUser = useObservable(
         useMemo(() => wrapRemoteObservable(extensionCoreAPI.getAuthenticatedUser()), [])
     )

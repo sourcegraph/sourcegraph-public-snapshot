@@ -51,10 +51,9 @@ const config: Meta = {
 
 export default config
 
-const PanelBodyContent: React.FunctionComponent<{ position: typeof PANEL_POSITIONS[number] }> = ({
-    position,
-    children,
-}) => (
+const PanelBodyContent: React.FunctionComponent<
+    React.PropsWithChildren<{ position: typeof PANEL_POSITIONS[number] }>
+> = ({ position, children }) => (
     <div
         className={classNames(
             'p-2',

@@ -23,7 +23,7 @@ import { NewOrganizationPage } from './new/NewOrganizationPage'
 import { JoinOpenBetaPage } from './openBeta/JoinOpenBetaPage'
 import { NewOrgOpenBetaPage } from './openBeta/NewOrganizationPage'
 
-const NotFoundPage: React.FunctionComponent = () => (
+const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <HeroPage
         icon={MapSearchIcon}
         title="404: Not Found"
@@ -52,7 +52,7 @@ export interface Props
 /**
  * Renders a layout of a sidebar and a content area to display organization-related pages.
  */
-const AuthenticatedOrgsArea: React.FunctionComponent<Props> = props => (
+const AuthenticatedOrgsArea: React.FunctionComponent<React.PropsWithChildren<Props>> = props => (
     <Switch>
         {(!props.isSourcegraphDotCom || props.authenticatedUser.siteAdmin) && (
             <Route path={`${props.match.url}/new`} component={NewOrganizationPage} exact={true} />

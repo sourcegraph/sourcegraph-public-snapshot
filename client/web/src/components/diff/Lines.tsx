@@ -55,14 +55,14 @@ const lineType = (kind: DiffHunkLineType): LineType => {
     }
 }
 
-export const EmptyLine: React.FunctionComponent = () => (
+export const EmptyLine: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <>
         <td data-hunk-num={true} className={classNames(diffHunkStyles.numEmpty, diffHunkStyles.num)} />
         <td data-hunk-content-empty={true} className={diffHunkStyles.contentEmpty} />
     </>
 )
 
-export const Line: React.FunctionComponent<Line> = ({
+export const Line: React.FunctionComponent<React.PropsWithChildren<Line>> = ({
     persistLines,
     kind,
     lineNumber,

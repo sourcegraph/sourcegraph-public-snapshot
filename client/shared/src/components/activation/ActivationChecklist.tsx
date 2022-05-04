@@ -21,10 +21,9 @@ interface ActivationChecklistItemProps extends ActivationStep {
 /**
  * A single item in the activation checklist.
  */
-export const ActivationChecklistItem: React.FunctionComponent<ActivationChecklistItemProps> = ({
-    className = '',
-    ...props
-}: ActivationChecklistItemProps) => (
+export const ActivationChecklistItem: React.FunctionComponent<
+    React.PropsWithChildren<ActivationChecklistItemProps>
+> = ({ className = '', ...props }: ActivationChecklistItemProps) => (
     <div className={classNames('d-flex justify-content-between', styles.activationChecklistItem, className)}>
         <div className="d-flex align-items-center">
             <Icon className={classNames(styles.iconContainer, styles.iconDown)} as="span">
@@ -55,7 +54,7 @@ export interface ActivationChecklistProps {
 /**
  * Renders an activation checklist.
  */
-export const ActivationChecklist: React.FunctionComponent<ActivationChecklistProps> = ({
+export const ActivationChecklist: React.FunctionComponent<React.PropsWithChildren<ActivationChecklistProps>> = ({
     className,
     steps,
     completed,

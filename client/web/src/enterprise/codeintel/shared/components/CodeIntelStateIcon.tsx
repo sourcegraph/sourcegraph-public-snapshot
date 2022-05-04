@@ -15,7 +15,10 @@ export interface CodeIntelStateIconProps {
     className?: string
 }
 
-export const CodeIntelStateIcon: FunctionComponent<CodeIntelStateIconProps> = ({ state, className }) =>
+export const CodeIntelStateIcon: FunctionComponent<React.PropsWithChildren<CodeIntelStateIconProps>> = ({
+    state,
+    className,
+}) =>
     state === LSIFUploadState.UPLOADING ? (
         <FileUploadIcon className={className} />
     ) : state === LSIFUploadState.DELETING ? (

@@ -44,7 +44,10 @@ interface LibraryPaneProps {
     onReplaceItem: (item: string) => void
 }
 
-export const LibraryPane: React.FunctionComponent<LibraryPaneProps> = ({ name, onReplaceItem }) => {
+export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<LibraryPaneProps>> = ({
+    name,
+    onReplaceItem,
+}) => {
     // Remember the last collapsed state of the pane
     const [defaultCollapsed, setDefaultCollapsed] = useLocalStorage(LIBRARY_PANE_DEFAULT_COLLAPSED, false)
     const [collapsed, setCollapsed] = useState(defaultCollapsed)

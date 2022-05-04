@@ -35,7 +35,7 @@ const KEY_TO_NAMES: { [P in Key | ModifierKey]?: string } = {
 
 const MODAL_LABEL_ID = 'keyboard-shortcuts-help-modal-title'
 
-export const KeyboardShortcutsHelp: React.FunctionComponent<Props> = ({
+export const KeyboardShortcutsHelp: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     keyboardShortcutForShow,
     keyboardShortcuts,
 }) => {

@@ -31,7 +31,7 @@ interface Props extends TelemetryProps {
 
 const emailEnabled = window.context?.emailEnabled ?? false
 
-export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
+export const CollaboratorsPanel: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     className,
     authenticatedUser,
     collaboratorsFragment,
@@ -154,10 +154,9 @@ export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
     )
 }
 
-const CollaboratorsPanelNullState: React.FunctionComponent<{ username: string; isSiteAdmin: boolean }> = ({
-    username,
-    isSiteAdmin,
-}) => {
+const CollaboratorsPanelNullState: React.FunctionComponent<
+    React.PropsWithChildren<{ username: string; isSiteAdmin: boolean }>
+> = ({ username, isSiteAdmin }) => {
     const inviteURL = `${window.context.externalURL}/sign-up?invitedBy=${username}`
 
     useEffect(() => {
@@ -200,7 +199,9 @@ const CollaboratorsPanelNullState: React.FunctionComponent<{ username: string; i
     )
 }
 
-const CollaboratorsPanelInfo: React.FunctionComponent<{ isSiteAdmin: boolean }> = ({ isSiteAdmin }) => {
+const CollaboratorsPanelInfo: React.FunctionComponent<React.PropsWithChildren<{ isSiteAdmin: boolean }>> = ({
+    isSiteAdmin,
+}) => {
     const [infoShown, setInfoShown] = useState<boolean>(false)
 
     if (infoShown) {

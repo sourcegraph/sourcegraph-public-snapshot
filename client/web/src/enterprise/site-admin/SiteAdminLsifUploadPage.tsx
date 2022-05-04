@@ -17,7 +17,7 @@ interface Props extends RouteComponentProps<{ id: string }> {}
 /**
  * A page displaying metadata about an LSIF upload.
  */
-export const SiteAdminLsifUploadPage: FunctionComponent<Props> = ({
+export const SiteAdminLsifUploadPage: FunctionComponent<React.PropsWithChildren<Props>> = ({
     match: {
         params: { id },
     },

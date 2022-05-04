@@ -13,7 +13,10 @@ interface NotepadCTAProps {
     onCancel: () => void
 }
 
-export const NotepadCTA: React.FunctionComponent<NotepadCTAProps> = ({ onEnable, onCancel }) => {
+export const NotepadCTA: React.FunctionComponent<React.PropsWithChildren<NotepadCTAProps>> = ({
+    onEnable,
+    onCancel,
+}) => {
     const assetsRoot = window.context?.assetsRoot || ''
     const isLightTheme = useTheme().enhancedThemePreference === ThemePreference.Light
 

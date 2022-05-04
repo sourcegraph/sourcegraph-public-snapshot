@@ -93,7 +93,7 @@ const initialSelectionState = {
 /**
  * A page to manage the repositories a user syncs from their connected code hosts.
  */
-export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
+export const SelectAffiliatedRepos: FunctionComponent<React.PropsWithChildren<Props>> = ({
     authenticatedUser,
     onRepoSelectionModeChange,
     repoSelectionMode,

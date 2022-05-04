@@ -8,7 +8,7 @@ interface ConfirmDeleteModalProps extends Pick<ConfirmationModalProps, 'showModa
     insight: Insight
 }
 
-export const ConfirmDeleteModal: React.FunctionComponent<ConfirmDeleteModalProps> = ({
+export const ConfirmDeleteModal: React.FunctionComponent<React.PropsWithChildren<ConfirmDeleteModalProps>> = ({
     insight,
     showModal,
     onCancel,

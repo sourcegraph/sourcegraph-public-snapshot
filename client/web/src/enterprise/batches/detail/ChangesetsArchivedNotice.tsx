@@ -13,10 +13,9 @@ export interface ChangesetsArchivedNoticeProps {
     location: H.Location
 }
 
-export const ChangesetsArchivedNotice: React.FunctionComponent<ChangesetsArchivedNoticeProps> = ({
-    history,
-    location,
-}) => {
+export const ChangesetsArchivedNotice: React.FunctionComponent<
+    React.PropsWithChildren<ChangesetsArchivedNoticeProps>
+> = ({ history, location }) => {
     const [archivedCount, setArchivedCount] = useState<number | undefined>()
     const [archivedBy, setArchivedBy] = useState<string | undefined>()
     useEffect(() => {

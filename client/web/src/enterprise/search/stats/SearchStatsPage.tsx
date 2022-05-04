@@ -23,7 +23,7 @@ interface Props {
 /**
  * Shows statistics about the results for a search query.
  */
-export const SearchStatsPage: React.FunctionComponent<Props> = ({
+export const SearchStatsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     location,
     history,
     _querySearchResultsStats = querySearchResultsStats,

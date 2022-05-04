@@ -10,7 +10,9 @@ interface Props {
     node: VisibleChangesetApplyPreviewFields
 }
 
-export const GitBranchChangesetDescriptionInfo: React.FunctionComponent<Props> = ({ node }) => {
+export const GitBranchChangesetDescriptionInfo: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    node,
+}) => {
     if (node.targets.__typename === 'VisibleApplyPreviewTargetsDetach') {
         return <></>
     }
@@ -78,11 +80,9 @@ export const GitBranchChangesetDescriptionInfo: React.FunctionComponent<Props> =
     )
 }
 
-const DeletedEntry: React.FunctionComponent<{ children: React.ReactNode; deleted: boolean; className?: string }> = ({
-    children,
-    deleted,
-    className,
-}) => {
+const DeletedEntry: React.FunctionComponent<
+    React.PropsWithChildren<{ children: React.ReactNode; deleted: boolean; className?: string }>
+> = ({ children, deleted, className }) => {
     if (deleted) {
         return <del className={className}>{children}</del>
     }

@@ -20,7 +20,7 @@ interface Props {
     insideTabPanel?: boolean
 }
 
-export const PanelContainer: React.FunctionComponent<Props> = ({
+export const PanelContainer: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     title,
     state,
     loadingContent = <></>,

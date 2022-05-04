@@ -24,7 +24,9 @@ import styles from './InsightsDashboardCreationPage.module.scss'
 
 interface InsightsDashboardCreationPageProps extends TelemetryProps {}
 
-export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDashboardCreationPageProps> = props => {
+export const InsightsDashboardCreationPage: React.FunctionComponent<
+    React.PropsWithChildren<InsightsDashboardCreationPageProps>
+> = props => {
     const { telemetryService } = props
     const history = useHistory()
     const { dashboard } = useUiFeatures()

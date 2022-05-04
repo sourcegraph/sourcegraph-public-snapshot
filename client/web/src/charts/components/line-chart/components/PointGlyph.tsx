@@ -15,7 +15,7 @@ interface PointGlyphProps {
     onBlur: FocusEventHandler<Element>
 }
 
-export const PointGlyph: React.FunctionComponent<PointGlyphProps> = props => {
+export const PointGlyph: React.FunctionComponent<React.PropsWithChildren<PointGlyphProps>> = props => {
     const { top, left, color, active, linkURL, onFocus, onBlur, onClick } = props
 
     return (

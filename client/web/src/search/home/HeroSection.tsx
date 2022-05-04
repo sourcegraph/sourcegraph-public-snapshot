@@ -8,7 +8,7 @@ import { Link } from '@sourcegraph/wildcard'
 
 import styles from './HeroSection.module.scss'
 
-export const HeroSection: React.FunctionComponent<ThemeProps & TelemetryProps> = ({
+export const HeroSection: React.FunctionComponent<React.PropsWithChildren<ThemeProps & TelemetryProps>> = ({
     isLightTheme,
     telemetryService,
 }) => {

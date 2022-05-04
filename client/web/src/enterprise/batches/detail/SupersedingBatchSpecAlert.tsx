@@ -12,7 +12,9 @@ export interface SupersedingBatchSpecAlertProps {
     spec: SupersedingBatchSpecFields | null
 }
 
-export const SupersedingBatchSpecAlert: React.FunctionComponent<SupersedingBatchSpecAlertProps> = ({ spec }) => {
+export const SupersedingBatchSpecAlert: React.FunctionComponent<
+    React.PropsWithChildren<SupersedingBatchSpecAlertProps>
+> = ({ spec }) => {
     if (!spec) {
         return <></>
     }

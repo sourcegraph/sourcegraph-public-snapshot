@@ -29,7 +29,7 @@ import styles from './index.module.scss'
 export interface ExtensionsDevelopmentToolsProps
     extends ExtensionsControllerProps,
         PlatformContextProps<'sideloadedExtensionURL' | 'settings'> {
-    link: React.ComponentType<{ id: string }>
+    link: React.ComponentType<React.PropsWithChildren<{ id: string }>>
 }
 
 const LAST_TAB_STORAGE_KEY = 'ExtensionDevTools.lastTab'
@@ -39,14 +39,16 @@ type ExtensionDevelopmentToolsTabID = 'activeExtensions' | 'loggers'
 interface ExtensionDevelopmentToolsTab {
     id: ExtensionDevelopmentToolsTabID
     label: string
-    component: React.ComponentType<ExtensionsDevelopmentToolsProps>
+    component: React.ComponentType<React.PropsWithChildren<ExtensionsDevelopmentToolsProps>>
 }
 
 const TABS: ExtensionDevelopmentToolsTab[] = [
     { id: 'activeExtensions', label: 'Active extensions', component: ActiveExtensionsPanel },
 ]
 
-const ExtensionDevelopmentTools: React.FunctionComponent<ExtensionsDevelopmentToolsProps> = props => {
+const ExtensionDevelopmentTools: React.FunctionComponent<
+    React.PropsWithChildren<ExtensionsDevelopmentToolsProps>
+> = props => {
     const [tabIndex, setTabIndex] = useLocalStorage(LAST_TAB_STORAGE_KEY, 0)
     const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
 

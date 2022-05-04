@@ -18,7 +18,7 @@ export interface DownloadSpecModalProps {
     setDownloadSpecModalDismissed: (condition: boolean) => void
 }
 
-export const DownloadSpecModal: React.FunctionComponent<DownloadSpecModalProps> = ({
+export const DownloadSpecModal: React.FunctionComponent<React.PropsWithChildren<DownloadSpecModalProps>> = ({
     name,
     originalInput,
     isLightTheme,

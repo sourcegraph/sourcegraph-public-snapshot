@@ -12,7 +12,7 @@ interface Props {
     className?: string
 }
 
-export const ExtensionBanner: React.FunctionComponent<Props> = ({ className }) => (
+export const ExtensionBanner: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ className }) => (
     <CtaBanner
         className={classNames('border-0 shadow-none', styles.extensionBanner, className)}
         icon={<img className={styles.icon} src={extensionBannerIconURL} alt="" />}

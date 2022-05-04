@@ -22,11 +22,13 @@ import { CollapsibleDetailsWithStatus } from './CollapsibleDetailsWithStatus'
 
 import styles from './TriggerEvent.module.scss'
 
-export const TriggerEvent: React.FunctionComponent<{
-    triggerEvent: MonitorTriggerEventWithActions
-    startOpen?: boolean
-    now?: () => Date
-}> = ({ triggerEvent, startOpen = false, now }) => {
+export const TriggerEvent: React.FunctionComponent<
+    React.PropsWithChildren<{
+        triggerEvent: MonitorTriggerEventWithActions
+        startOpen?: boolean
+        now?: () => Date
+    }>
+> = ({ triggerEvent, startOpen = false, now }) => {
     const [expanded, setExpanded] = useState(startOpen)
 
     const toggleExpanded = useCallback(() => setExpanded(expanded => !expanded), [])

@@ -19,7 +19,9 @@ import { getPlatformName } from '../../shared/util/context'
 import styles from './AfterInstallPageContent.module.scss'
 
 const Video: React.FunctionComponent<
-    { name: string } & Pick<VideoHTMLAttributes<HTMLVideoElement>, 'width' | 'height'> & ThemeProps
+    React.PropsWithChildren<
+        { name: string } & Pick<VideoHTMLAttributes<HTMLVideoElement>, 'width' | 'height'> & ThemeProps
+    >
 > = ({ name, isLightTheme, width, height }) => {
     const suffix = isLightTheme ? 'Light' : 'Dark'
     return (
@@ -47,7 +49,7 @@ const Video: React.FunctionComponent<
     )
 }
 
-export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = props => {
+export const AfterInstallPageContent: React.FunctionComponent<React.PropsWithChildren<ThemeProps>> = props => {
     // Safari does not support the search shortcut. So don't show the feature.
     const isSafari = getPlatformName() === 'safari-extension'
     const showSearchShortcut = !isSafari

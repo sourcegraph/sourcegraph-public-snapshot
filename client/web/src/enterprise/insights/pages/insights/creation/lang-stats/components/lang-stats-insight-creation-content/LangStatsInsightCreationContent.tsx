@@ -42,7 +42,9 @@ export interface LangStatsInsightCreationContentProps {
     onChange?: (event: FormChangeEvent<LangStatsCreationFormFields>) => void
 }
 
-export const LangStatsInsightCreationContent: React.FunctionComponent<LangStatsInsightCreationContentProps> = props => {
+export const LangStatsInsightCreationContent: React.FunctionComponent<
+    React.PropsWithChildren<LangStatsInsightCreationContentProps>
+> = props => {
     const {
         mode = 'creation',
         initialValues = {},

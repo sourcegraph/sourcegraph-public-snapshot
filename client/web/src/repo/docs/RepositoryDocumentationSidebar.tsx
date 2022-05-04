@@ -57,7 +57,7 @@ function nonIndexPathIDs(depth: number, pathInfo: GQLDocumentationPathInfo): str
     return paths
 }
 
-const SubpagesList: React.FunctionComponent<Props> = ({ ...props }) => {
+const SubpagesList: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ ...props }) => {
     const childPagePathIDs = nonIndexPathIDs(0, props.pathInfo)
 
     const max = 10
@@ -105,7 +105,7 @@ const SubpagesList: React.FunctionComponent<Props> = ({ ...props }) => {
 /**
  * The sidebar for a specific repo revision that shows the index of all documentation.
  */
-export const RepositoryDocumentationSidebar: React.FunctionComponent<Props> = ({
+export const RepositoryDocumentationSidebar: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     onToggle,
     node,
     activePathID,

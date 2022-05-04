@@ -6,7 +6,7 @@ import { Link } from '@sourcegraph/wildcard'
 
 import styles from './EmptyDraftChangesetListElement.module.scss'
 
-export const EmptyDraftChangesetListElement: React.FunctionComponent<{}> = () => {
+export const EmptyDraftChangesetListElement: React.FunctionComponent<React.PropsWithChildren<{}>> = () => {
     const location = useLocation()
     return (
         <div className={styles.emptyDraftChangesetListElementBody}>

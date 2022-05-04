@@ -14,7 +14,11 @@ interface Props {
 /**
  * Renders repository's tags.
  */
-export const RepositoryTagTab: React.FunctionComponent<Props> = ({ repo, history, location }) => (
+export const RepositoryTagTab: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    repo,
+    history,
+    location,
+}) => (
     <div className="repository-graph-area">
         <div className="container">
             <div className="container-inner">

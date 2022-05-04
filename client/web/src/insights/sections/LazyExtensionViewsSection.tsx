@@ -9,7 +9,9 @@ const ExtensionViewsSection = lazyComponent(() => import('./ExtensionViewsSectio
 /**
  * A lazily-loaded {@link ExtensionViewsSection}.
  */
-export const LazyExtensionViewsSection: React.FunctionComponent<ExtensionViewsSectionProps> = props => (
+export const LazyExtensionViewsSection: React.FunctionComponent<
+    React.PropsWithChildren<ExtensionViewsSectionProps>
+> = props => (
     <Suspense fallback={null}>
         <ExtensionViewsSection {...props} />
     </Suspense>

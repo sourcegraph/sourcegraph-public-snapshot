@@ -3,9 +3,11 @@ import React from 'react'
 import * as GQL from '@sourcegraph/shared/src/schema'
 
 /** Displays the price of a tiered plan. */
-export const ProductPlanTiered: React.FunctionComponent<{
-    plan: Pick<GQL.IProductPlan, 'planTiers' | 'tiersMode' | 'minQuantity'>
-}> = ({ plan: { planTiers, tiersMode, minQuantity } }) => (
+export const ProductPlanTiered: React.FunctionComponent<
+    React.PropsWithChildren<{
+        plan: Pick<GQL.IProductPlan, 'planTiers' | 'tiersMode' | 'minQuantity'>
+    }>
+> = ({ plan: { planTiers, tiersMode, minQuantity } }) => (
     <>
         {planTiers.map((tier, index) => (
             <div key={index}>

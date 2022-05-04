@@ -50,7 +50,7 @@ interface Props<T extends object>
 
     customSaveToolbar?: {
         propsGenerator: SaveToolbarPropsGenerator<T & { children?: React.ReactNode }>
-        saveToolbar: React.FunctionComponent<SaveToolbarProps & T>
+        saveToolbar: React.FunctionComponent<React.PropsWithChildren<SaveToolbarProps & T>>
     }
 
     history: H.History

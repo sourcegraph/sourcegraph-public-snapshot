@@ -22,7 +22,7 @@ import styles from './LoggedOutHomepage.module.scss'
 
 export interface LoggedOutHomepageProps extends TelemetryProps, ThemeProps, FeatureFlagProps {}
 
-export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> = props => (
+export const LoggedOutHomepage: React.FunctionComponent<React.PropsWithChildren<LoggedOutHomepageProps>> = props => (
     <DynamicWebFonts fonts={fonts}>
         <div className={styles.loggedOutHomepage}>
             <div className={styles.content}>

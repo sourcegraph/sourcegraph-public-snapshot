@@ -34,7 +34,9 @@ function getNotebookDescription(blocks: NotebookBlock[]): string {
     return renderedPlainTextMarkdown.split('\n')[0]
 }
 
-export const NotebookNode: React.FunctionComponent<NotebookNodeProps> = ({ node }: NotebookNodeProps) => {
+export const NotebookNode: React.FunctionComponent<React.PropsWithChildren<NotebookNodeProps>> = ({
+    node,
+}: NotebookNodeProps) => {
     const description = useMemo(() => getNotebookDescription(node.blocks), [node.blocks])
     return (
         <li className={classNames('py-3', styles.notebookNode)}>

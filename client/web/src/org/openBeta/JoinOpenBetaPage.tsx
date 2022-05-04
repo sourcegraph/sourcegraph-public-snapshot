@@ -54,7 +54,10 @@ const SEND_STATS_MUTATION = gql`
     }
 `
 
-export const JoinOpenBetaPage: React.FunctionComponent<Props> = ({ authenticatedUser, history }) => {
+export const JoinOpenBetaPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    authenticatedUser,
+    history,
+}) => {
     const [sendJoinBetaStats, { loading, error }] = useMutation<SendJoinBetaStatsResult, SendJoinBetaStatsVariables>(
         SEND_STATS_MUTATION
     )

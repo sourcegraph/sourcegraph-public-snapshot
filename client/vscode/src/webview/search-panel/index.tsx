@@ -50,7 +50,7 @@ const platformContext = createPlatformContext(extensionCoreAPI)
 
 setLinkComponent(AnchorLink)
 
-const Main: React.FC = () => {
+const Main: React.FC<React.PropsWithChildren<unknown>> = () => {
     const state = useObservable(useMemo(() => wrapRemoteObservable(extensionCoreAPI.observeState()), []))
 
     const authenticatedUser = useObservable(

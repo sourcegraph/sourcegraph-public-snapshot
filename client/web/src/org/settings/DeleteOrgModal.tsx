@@ -23,7 +23,7 @@ const HARD_DELETE_ORG_MUTATION = gql`
     }
 `
 
-export const DeleteOrgModal: React.FunctionComponent<DeleteOrgModalProps> = props => {
+export const DeleteOrgModal: React.FunctionComponent<React.PropsWithChildren<DeleteOrgModalProps>> = props => {
     const { org, isOpen, toggleDeleteModal } = props
     const deleteLabelId = 'deleteOrgId'
     const [orgNameInput, setOrgNameInput] = useState('')

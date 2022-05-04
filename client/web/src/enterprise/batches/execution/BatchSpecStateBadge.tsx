@@ -8,7 +8,9 @@ export interface BatchSpecStateBadgeProps {
     state: BatchSpecState
 }
 
-export const BatchSpecStateBadge: React.FunctionComponent<BatchSpecStateBadgeProps> = ({ state }) => {
+export const BatchSpecStateBadge: React.FunctionComponent<React.PropsWithChildren<BatchSpecStateBadgeProps>> = ({
+    state,
+}) => {
     switch (state) {
         case BatchSpecState.PENDING:
             return (

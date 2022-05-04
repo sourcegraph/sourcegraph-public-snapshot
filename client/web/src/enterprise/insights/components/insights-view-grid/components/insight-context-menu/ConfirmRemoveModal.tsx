@@ -9,7 +9,7 @@ interface ConfirmRemoveModalProps extends Pick<ConfirmationModalProps, 'showModa
     dashboard: InsightDashboard | null
 }
 
-export const ConfirmRemoveModal: React.FunctionComponent<ConfirmRemoveModalProps> = ({
+export const ConfirmRemoveModal: React.FunctionComponent<React.PropsWithChildren<ConfirmRemoveModalProps>> = ({
     insight,
     dashboard,
     showModal,

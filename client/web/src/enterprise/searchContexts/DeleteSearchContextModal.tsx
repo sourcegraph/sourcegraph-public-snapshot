@@ -20,13 +20,9 @@ interface DeleteSearchContextModalProps
     toggleDeleteModal: () => void
 }
 
-export const DeleteSearchContextModal: React.FunctionComponent<DeleteSearchContextModalProps> = ({
-    isOpen,
-    deleteSearchContext,
-    toggleDeleteModal,
-    searchContext,
-    platformContext,
-}) => {
+export const DeleteSearchContextModal: React.FunctionComponent<
+    React.PropsWithChildren<DeleteSearchContextModalProps>
+> = ({ isOpen, deleteSearchContext, toggleDeleteModal, searchContext, platformContext }) => {
     const LOADING = 'loading' as const
     const deleteLabelId = 'deleteSearchContextId'
     const history = useHistory()

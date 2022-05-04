@@ -19,7 +19,10 @@ export interface RetentionSettingsProps {
     ) => void
 }
 
-export const RetentionSettings: FunctionComponent<RetentionSettingsProps> = ({ policy, setPolicy }) => {
+export const RetentionSettings: FunctionComponent<React.PropsWithChildren<RetentionSettingsProps>> = ({
+    policy,
+    setPolicy,
+}) => {
     const updatePolicy = <K extends keyof CodeIntelligenceConfigurationPolicyFields>(
         updates: { [P in K]: CodeIntelligenceConfigurationPolicyFields[P] }
     ): void => {

@@ -26,7 +26,7 @@ interface FormGroupProps {
 }
 
 /** Displays fieldset (group) of fields for code insight creation form with error message. */
-export const FormGroup: React.FunctionComponent<PropsWithChildren<FormGroupProps>> = props => {
+export const FormGroup: React.FunctionComponent<React.PropsWithChildren<PropsWithChildren<FormGroupProps>>> = props => {
     const {
         innerRef,
         className,

@@ -39,7 +39,7 @@ const LOADING = 'loading' as const
  * view it at /subscriptions/new and are allowed to price out a subscription, but they must sign in
  * to buy the subscription.
  */
-export const UserSubscriptionsNewProductSubscriptionPage: React.FunctionComponent<Props> = ({
+export const UserSubscriptionsNewProductSubscriptionPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     user,
     location,
     history,

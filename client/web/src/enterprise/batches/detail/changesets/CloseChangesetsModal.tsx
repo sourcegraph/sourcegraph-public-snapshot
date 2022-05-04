@@ -18,7 +18,7 @@ export interface CloseChangesetsModalProps {
     closeChangesets?: typeof _closeChangesets
 }
 
-export const CloseChangesetsModal: React.FunctionComponent<CloseChangesetsModalProps> = ({
+export const CloseChangesetsModal: React.FunctionComponent<React.PropsWithChildren<CloseChangesetsModalProps>> = ({
     onCancel,
     afterCreate,
     batchChangeID,

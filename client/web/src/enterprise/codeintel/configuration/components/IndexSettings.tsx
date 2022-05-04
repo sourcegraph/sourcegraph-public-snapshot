@@ -23,7 +23,7 @@ export interface IndexingSettingsProps {
     allowGlobalPolicies?: boolean
 }
 
-export const IndexingSettings: FunctionComponent<IndexingSettingsProps> = ({
+export const IndexingSettings: FunctionComponent<React.PropsWithChildren<IndexingSettingsProps>> = ({
     policy,
     repo,
     setPolicy,

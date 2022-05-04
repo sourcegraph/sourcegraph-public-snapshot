@@ -104,7 +104,11 @@ const allConfigSchema = {
 
 interface Props extends RouteComponentProps, ThemeProps, TelemetryProps {}
 
-export const SiteAdminReportBugPage: React.FunctionComponent<Props> = ({ isLightTheme, telemetryService, history }) => {
+export const SiteAdminReportBugPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    isLightTheme,
+    telemetryService,
+    history,
+}) => {
     const monitoringDaysBack = 7
     const monitoringStats = useObservable(useMemo(() => fetchMonitoringStats(monitoringDaysBack), []))
     const allConfig = useObservable(useMemo(fetchAllConfigAndSettings, []))

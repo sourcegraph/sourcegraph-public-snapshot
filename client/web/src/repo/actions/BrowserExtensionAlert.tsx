@@ -23,7 +23,11 @@ const BROWSER_NAME_TO_URL = {
     other: LEARN_MORE_URL,
 }
 
-export const BrowserExtensionAlert: React.FunctionComponent<Props> = ({ className, page, onAlertDismissed }) => {
+export const BrowserExtensionAlert: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    className,
+    page,
+    onAlertDismissed,
+}) => {
     const args = useMemo(() => ({ page, browser: BROWSER_NAME }), [page])
 
     useEffect(() => {

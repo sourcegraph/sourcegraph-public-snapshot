@@ -34,7 +34,10 @@ interface SiteAdminCustomerNodeProps {
 /**
  * Displays a customer in a connection in the site admin area.
  */
-const SiteAdminCustomerNode: React.FunctionComponent<SiteAdminCustomerNodeProps> = ({ node, onDidUpdate }) => (
+const SiteAdminCustomerNode: React.FunctionComponent<React.PropsWithChildren<SiteAdminCustomerNodeProps>> = ({
+    node,
+    onDidUpdate,
+}) => (
     <li className="list-group-item py-2">
         <div className="d-flex align-items-center justify-content-between">
             <span className="mr-3">
@@ -55,7 +58,7 @@ class FilteredSiteAdminCustomerConnection extends FilteredConnection<
 /**
  * Displays a list of customers associated with user accounts on Sourcegraph.com.
  */
-export const SiteAdminProductCustomersPage: React.FunctionComponent<Props> = props => {
+export const SiteAdminProductCustomersPage: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
     useEffect(() => eventLogger.logViewEvent('SiteAdminProductCustomers'), [])
 
     const updates = useMemo(() => new Subject<void>(), [])

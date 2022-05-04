@@ -24,7 +24,7 @@ interface Props extends SettingsCascadeProps {
     count: number
 }
 
-export const DocumentationExamples: React.FunctionComponent<Props> = props => {
+export const DocumentationExamples: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
     const [visible, setVisible] = useState(false)
     const onVisibilityChange = (isVisible: boolean): void => {
         if (isVisible) {

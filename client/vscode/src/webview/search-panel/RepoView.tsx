@@ -26,7 +26,7 @@ interface RepoViewProps extends Pick<WebviewPageProps, 'extensionCoreAPI' | 'pla
     setQueryState: (query: QueryState) => void
 }
 
-export const RepoView: React.FunctionComponent<RepoViewProps> = ({
+export const RepoView: React.FunctionComponent<React.PropsWithChildren<RepoViewProps>> = ({
     extensionCoreAPI,
     platformContext,
     repositoryMatch,

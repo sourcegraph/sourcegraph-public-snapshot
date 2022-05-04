@@ -19,7 +19,7 @@ interface BatchChangeListFiltersProps
     isExecutionEnabled: boolean
 }
 
-export const BatchChangeListFilters: React.FunctionComponent<BatchChangeListFiltersProps> = ({
+export const BatchChangeListFilters: React.FunctionComponent<React.PropsWithChildren<BatchChangeListFiltersProps>> = ({
     isExecutionEnabled,
     ...props
 }) => (

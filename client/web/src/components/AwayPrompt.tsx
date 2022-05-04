@@ -16,7 +16,7 @@ interface Props {
 
 export const ALLOW_NAVIGATION = 'allow'
 
-export const AwayPrompt: React.FunctionComponent<Props> = props => {
+export const AwayPrompt: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
     const { message, when, header = 'Navigate away?', button_ok_text = 'OK', button_cancel_text = 'Cancel' } = props
 
     const history = useHistory()

@@ -9,7 +9,7 @@ import { FourLineChart, LangStatsInsightChart, ThreeLineChart } from './componen
 
 import styles from './GaConfirmationModal.module.scss'
 
-export const GaConfirmationModal: React.FunctionComponent = () => {
+export const GaConfirmationModal: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => {
     const [isGaAccepted, setGaAccepted] = useTemporarySetting('insights.freeGaExpiredAccepted', false)
     const {
         UIFeatures: { licensed },
@@ -41,7 +41,9 @@ interface GaConfirmationModalContentProps {
  * Exported especially for storybook story component cause chromatic has a problem of rendering modals
  * on CI.
  */
-export const GaConfirmationModalContent: React.FunctionComponent<GaConfirmationModalContentProps> = props => {
+export const GaConfirmationModalContent: React.FunctionComponent<
+    React.PropsWithChildren<GaConfirmationModalContentProps>
+> = props => {
     const { onAccept } = props
 
     return (

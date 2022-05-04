@@ -39,7 +39,7 @@ interface DiffHunkProps extends ThemeProps {
     persistLines?: boolean
 }
 
-export const DiffHunk: React.FunctionComponent<DiffHunkProps> = ({
+export const DiffHunk: React.FunctionComponent<React.PropsWithChildren<DiffHunkProps>> = ({
     fileDiffAnchor,
     decorations,
     hunk,

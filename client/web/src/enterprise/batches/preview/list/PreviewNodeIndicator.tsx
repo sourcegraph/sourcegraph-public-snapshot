@@ -16,7 +16,9 @@ export interface PreviewNodeIndicatorProps {
     node: ChangesetApplyPreviewFields
 }
 
-export const PreviewNodeIndicator: React.FunctionComponent<PreviewNodeIndicatorProps> = ({ node }) => {
+export const PreviewNodeIndicator: React.FunctionComponent<React.PropsWithChildren<PreviewNodeIndicatorProps>> = ({
+    node,
+}) => {
     switch (node.targets.__typename) {
         case 'HiddenApplyPreviewTargetsAttach':
         case 'VisibleApplyPreviewTargetsAttach':

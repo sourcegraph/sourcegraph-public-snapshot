@@ -34,7 +34,9 @@ export interface LangStatsInsightLivePreviewProps {
  * Displays live preview chart for creation UI with the latest insights settings
  * from creation UI form.
  */
-export const LangStatsInsightLivePreview: React.FunctionComponent<LangStatsInsightLivePreviewProps> = props => {
+export const LangStatsInsightLivePreview: React.FunctionComponent<
+    React.PropsWithChildren<LangStatsInsightLivePreviewProps>
+> = props => {
     const { repository = '', threshold, disabled = false, className } = props
     const { getLangStatsInsightContent } = useContext(CodeInsightsBackendContext)
 

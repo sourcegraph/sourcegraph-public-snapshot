@@ -36,17 +36,19 @@ const getWarningMessage = (serviceName: string, orgName: string, repoCount: numb
     } ${membersWillNoLongerSearchAcross} ${repoCount === 1 ? 'this' : adjective} ${repoNoun} on Sourcegraph.`
 }
 
-export const RemoveCodeHostConnectionModal: React.FunctionComponent<{
-    serviceID: Scalars['ID']
-    serviceName: string
-    orgName: string
-    serviceKind: ExternalServiceKind
-    repoCount: number | undefined
+export const RemoveCodeHostConnectionModal: React.FunctionComponent<
+    React.PropsWithChildren<{
+        serviceID: Scalars['ID']
+        serviceName: string
+        orgName: string
+        serviceKind: ExternalServiceKind
+        repoCount: number | undefined
 
-    onDidRemove: () => void
-    onDidCancel: () => void
-    onDidError: (error: ErrorLike) => void
-}> = ({ serviceID, serviceName, orgName, repoCount, onDidRemove, onDidCancel, onDidError }) => {
+        onDidRemove: () => void
+        onDidCancel: () => void
+        onDidError: (error: ErrorLike) => void
+    }>
+> = ({ serviceID, serviceName, orgName, repoCount, onDidRemove, onDidCancel, onDidError }) => {
     const [isLoading, setIsLoading] = useState(false)
 
     const onConnectionRemove = useCallback<React.FormEventHandler<HTMLFormElement>>(

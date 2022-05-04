@@ -116,7 +116,7 @@ const extensionRegistryQuery = gql`
 export type ConfiguredExtensionCache = Map<string, MinimalConfiguredRegistryExtension>
 
 /** A page that displays overview information about the available extensions. */
-export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
+export const ExtensionRegistry: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
     useEffect(() => eventLogger.logViewEvent('ExtensionsOverview'), [])
 
     const { history, location, settingsCascade, platformContext, authenticatedUser } = props

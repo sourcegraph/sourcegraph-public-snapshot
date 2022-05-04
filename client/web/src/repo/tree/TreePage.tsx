@@ -97,7 +97,7 @@ export const treePageRepositoryFragment = gql`
     }
 `
 
-export const TreePage: React.FunctionComponent<Props> = ({
+export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     repo,
     commitID,
     revision,

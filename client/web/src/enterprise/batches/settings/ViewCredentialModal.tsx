@@ -14,7 +14,7 @@ interface ViewCredentialModalProps {
     onClose: () => void
 }
 
-export const ViewCredentialModal: React.FunctionComponent<ViewCredentialModalProps> = ({
+export const ViewCredentialModal: React.FunctionComponent<React.PropsWithChildren<ViewCredentialModalProps>> = ({
     credential,
     codeHost,
     onClose,

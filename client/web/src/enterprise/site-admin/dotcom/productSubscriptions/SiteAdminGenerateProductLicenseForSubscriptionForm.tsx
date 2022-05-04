@@ -52,10 +52,9 @@ const DURATION_LINKS = [
  *
  * For use on Sourcegraph.com by Sourcegraph teammates only.
  */
-export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionComponent<Props> = ({
-    subscriptionID,
-    onGenerate,
-}) => {
+export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionComponent<
+    React.PropsWithChildren<Props>
+> = ({ subscriptionID, onGenerate }) => {
     const [formData, setFormData] = useState<FormData>(EMPTY_FORM_DATA)
 
     const onPlanChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(

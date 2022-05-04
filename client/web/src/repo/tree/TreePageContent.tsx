@@ -88,7 +88,7 @@ interface TreePageContentProps extends ExtensionsControllerProps, ThemeProps, Te
     revision: string
 }
 
-export const TreePageContent: React.FunctionComponent<TreePageContentProps> = ({
+export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<TreePageContentProps>> = ({
     filePath,
     tree,
     repo,
@@ -151,7 +151,9 @@ export const TreePageContent: React.FunctionComponent<TreePageContentProps> = ({
         </div>
     )
 
-    const TotalCountSummary: React.FunctionComponent<{ totalCount: number }> = ({ totalCount }) => (
+    const TotalCountSummary: React.FunctionComponent<React.PropsWithChildren<{ totalCount: number }>> = ({
+        totalCount,
+    }) => (
         <div className="mt-2">
             {showOlderCommits ? (
                 <>

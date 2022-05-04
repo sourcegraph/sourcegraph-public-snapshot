@@ -15,7 +15,7 @@ interface CodeHostsConnection extends Omit<UserCodeHosts, 'onDidRemove' | 'onDid
     externalServices: ListExternalServiceFields[] | undefined
 }
 
-export const CodeHostsConnection: React.FunctionComponent<CodeHostsConnection> = ({
+export const CodeHostsConnection: React.FunctionComponent<React.PropsWithChildren<CodeHostsConnection>> = ({
     user,
     context,
     refetch,

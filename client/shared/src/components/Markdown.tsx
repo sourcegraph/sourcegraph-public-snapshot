@@ -16,7 +16,7 @@ interface Props {
     testId?: string
 }
 
-export const Markdown: React.FunctionComponent<Props> = ({
+export const Markdown: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     wrapper: RootComponent = 'div',
     refFn,
     className,

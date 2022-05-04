@@ -59,7 +59,7 @@ export const getFullQuery = (
 /**
  * The toggles displayed in the query input.
  */
-export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesProps) => {
+export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesProps>> = (props: TogglesProps) => {
     const {
         navbarSearchQuery,
         patternType,

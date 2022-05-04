@@ -25,7 +25,7 @@ import { RepoSettingsSidebar, RepoSettingsSideBarGroups } from './RepoSettingsSi
 
 import styles from './RepoSettingsArea.module.scss'
 
-const NotFoundPage: React.FunctionComponent = () => (
+const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <HeroPage
         icon={MapSearchIcon}
         title="404: Not Found"
@@ -50,7 +50,7 @@ interface Props extends RouteComponentProps<{}>, BreadcrumbSetters, ThemeProps, 
  * Renders a layout of a sidebar and a content area to display pages related to
  * a repository's settings.
  */
-export const RepoSettingsArea: React.FunctionComponent<Props> = ({
+export const RepoSettingsArea: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     useBreadcrumb,
 
     ...props

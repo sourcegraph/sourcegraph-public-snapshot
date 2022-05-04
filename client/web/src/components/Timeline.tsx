@@ -23,7 +23,7 @@ export interface TimelineProps {
     className?: string
 }
 
-export const Timeline: FunctionComponent<TimelineProps> = ({ stages, now, className }) => (
+export const Timeline: FunctionComponent<React.PropsWithChildren<TimelineProps>> = ({ stages, now, className }) => (
     <div className={className}>
         {stages.map((stage, stageIndex) => {
             if (!stage.date) {
@@ -81,7 +81,7 @@ export interface TimelineMetaProps {
     now?: () => Date
 }
 
-export const TimelineMeta: FunctionComponent<TimelineMetaProps> = ({ stage, now }) => (
+export const TimelineMeta: FunctionComponent<React.PropsWithChildren<TimelineMetaProps>> = ({ stage, now }) => (
     <>
         <div className="d-flex align-items-center">
             <div className="flex-0 m-2">

@@ -28,7 +28,9 @@ export interface AddInsightFormValues {
     insightIds: string[]
 }
 
-export const AddInsightModalContent: React.FunctionComponent<AddInsightModalContentProps> = props => {
+export const AddInsightModalContent: React.FunctionComponent<
+    React.PropsWithChildren<AddInsightModalContentProps>
+> = props => {
     const { initialValues, insights, dashboardID, onSubmit, onCancel } = props
 
     const { formAPI, ref, handleSubmit } = useForm({

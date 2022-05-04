@@ -73,10 +73,12 @@ function fetchRepositoryTextSearchIndex(id: Scalars['ID']): Observable<GQL.IRepo
     )
 }
 
-const TextSearchIndexedReference: React.FunctionComponent<{
-    repo: SettingsAreaRepositoryFields
-    indexedRef: GQL.IRepositoryTextSearchIndexedRef
-}> = ({ repo, indexedRef }) => {
+const TextSearchIndexedReference: React.FunctionComponent<
+    React.PropsWithChildren<{
+        repo: SettingsAreaRepositoryFields
+        indexedRef: GQL.IRepositoryTextSearchIndexedRef
+    }>
+> = ({ repo, indexedRef }) => {
     const isCurrent = indexedRef.indexed && indexedRef.current
 
     return (

@@ -10,7 +10,9 @@ import styles from './CodeInsightsLearnMore.module.scss'
 
 interface CodeInsightsLearnMoreProps extends TelemetryProps, React.HTMLAttributes<HTMLElement> {}
 
-export const CodeInsightsLearnMore: React.FunctionComponent<CodeInsightsLearnMoreProps> = props => {
+export const CodeInsightsLearnMore: React.FunctionComponent<
+    React.PropsWithChildren<CodeInsightsLearnMoreProps>
+> = props => {
     const { telemetryService, ...otherProps } = props
     const textDocumentClickPingName = useLogEventName('InsightsGetStartedDocsClicks')
 

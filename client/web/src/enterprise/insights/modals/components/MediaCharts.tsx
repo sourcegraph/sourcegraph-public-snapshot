@@ -4,7 +4,9 @@ import classNames from 'classnames'
 
 import styles from './MediaCharts.module.scss'
 
-export const ThreeLineChart: React.FunctionComponent<React.SVGProps<SVGSVGElement>> = props => (
+export const ThreeLineChart: React.FunctionComponent<
+    React.PropsWithChildren<React.SVGProps<SVGSVGElement>>
+> = props => (
     <svg
         width="169"
         height="158"
@@ -64,7 +66,7 @@ export const ThreeLineChart: React.FunctionComponent<React.SVGProps<SVGSVGElemen
     </svg>
 )
 
-export const FourLineChart: React.FunctionComponent<React.SVGProps<SVGSVGElement>> = props => (
+export const FourLineChart: React.FunctionComponent<React.PropsWithChildren<React.SVGProps<SVGSVGElement>>> = props => (
     <svg
         width="169"
         height="158"
@@ -133,7 +135,9 @@ export const FourLineChart: React.FunctionComponent<React.SVGProps<SVGSVGElement
     </svg>
 )
 
-export const LangStatsInsightChart: React.FunctionComponent<React.SVGProps<SVGSVGElement>> = props => (
+export const LangStatsInsightChart: React.FunctionComponent<
+    React.PropsWithChildren<React.SVGProps<SVGSVGElement>>
+> = props => (
     <svg
         width="169"
         height="158"
@@ -175,7 +179,9 @@ export const LangStatsInsightChart: React.FunctionComponent<React.SVGProps<SVGSV
     </svg>
 )
 
-export const SearchBasedInsightChart: React.FunctionComponent<React.SVGProps<SVGSVGElement>> = props => (
+export const SearchBasedInsightChart: React.FunctionComponent<
+    React.PropsWithChildren<React.SVGProps<SVGSVGElement>>
+> = props => (
     <svg
         width="185"
         height="126"
@@ -236,7 +242,9 @@ export const SearchBasedInsightChart: React.FunctionComponent<React.SVGProps<SVG
     </svg>
 )
 
-export const CaptureGroupInsightChart: React.FunctionComponent<React.SVGProps<SVGSVGElement>> = props => (
+export const CaptureGroupInsightChart: React.FunctionComponent<
+    React.PropsWithChildren<React.SVGProps<SVGSVGElement>>
+> = props => (
     <svg
         width="185"
         height="126"

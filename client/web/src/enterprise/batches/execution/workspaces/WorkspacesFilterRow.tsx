@@ -18,7 +18,9 @@ interface WorkspaceFilterRowProps {
     onFiltersChange: (newFilters: WorkspaceFilters) => void
 }
 
-export const WorkspaceFilterRow: React.FunctionComponent<WorkspaceFilterRowProps> = ({ onFiltersChange }) => {
+export const WorkspaceFilterRow: React.FunctionComponent<React.PropsWithChildren<WorkspaceFilterRowProps>> = ({
+    onFiltersChange,
+}) => {
     const history = useHistory()
     const searchElement = useRef<HTMLInputElement | null>(null)
     const [state, setState] = useState<BatchSpecWorkspaceState | undefined>(() => {

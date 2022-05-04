@@ -32,7 +32,7 @@ interface Props extends Pick<AddExternalServiceOptions, 'jsonSchema' | 'editorAc
 /**
  * Form for submitting a new or updated external service.
  */
-export const ExternalServiceForm: React.FunctionComponent<Props> = ({
+export const ExternalServiceForm: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     history,
     isLightTheme,
     telemetryService,

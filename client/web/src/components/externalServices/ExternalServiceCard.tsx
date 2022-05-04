@@ -18,7 +18,7 @@ interface ExternalServiceCardProps {
     /**
      * Icon to show in the external service "button"
      */
-    icon: React.ComponentType<{ className?: string }>
+    icon: React.ComponentType<React.PropsWithChildren<{ className?: string }>>
 
     /**
      * A short description that will appear in the external service "button" under the title
@@ -33,7 +33,7 @@ interface ExternalServiceCardProps {
     className?: string
 }
 
-export const ExternalServiceCard: React.FunctionComponent<ExternalServiceCardProps> = ({
+export const ExternalServiceCard: React.FunctionComponent<React.PropsWithChildren<ExternalServiceCardProps>> = ({
     title,
     icon: CardIcon,
     shortDescription,

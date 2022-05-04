@@ -7,12 +7,12 @@ import { ErrorBoundary } from './ErrorBoundary'
 jest.mock('mdi-react/AlertCircleIcon', () => 'AlertCircleIcon')
 jest.mock('mdi-react/ReloadIcon', () => 'ReloadIcon')
 
-const ThrowError: React.FunctionComponent = () => {
+const ThrowError: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => {
     throw new Error('x')
 }
 
 /** Throws an error that resembles the Webpack error when chunk loading fails.  */
-const ThrowChunkError: React.FunctionComponent = () => {
+const ThrowChunkError: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => {
     const ChunkError = new Error('Loading chunk 123 failed.')
     ChunkError.name = 'ChunkLoadError'
     throw ChunkError

@@ -48,7 +48,9 @@ export interface VisibleChangesetApplyPreviewNodeProps extends ThemeProps {
     expandChangesetDescriptions?: boolean
 }
 
-export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleChangesetApplyPreviewNodeProps> = ({
+export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<
+    React.PropsWithChildren<VisibleChangesetApplyPreviewNodeProps>
+> = ({
     node,
     isLightTheme,
     history,
@@ -205,13 +207,15 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
     )
 }
 
-const SelectBox: React.FunctionComponent<{
-    node: VisibleChangesetApplyPreviewFields
-    selectable: {
-        onSelect: (id: string) => void
-        isSelected: (id: string) => boolean
-    }
-}> = ({ node, selectable }) => {
+const SelectBox: React.FunctionComponent<
+    React.PropsWithChildren<{
+        node: VisibleChangesetApplyPreviewFields
+        selectable: {
+            onSelect: (id: string) => void
+            isSelected: (id: string) => boolean
+        }
+    }>
+> = ({ node, selectable }) => {
     const isPublishableResult = useMemo(() => checkPublishability(node), [node])
 
     const toggleSelected = useCallback((): void => {
@@ -253,15 +257,17 @@ const SelectBox: React.FunctionComponent<{
 type SelectedTab = 'diff' | 'description' | 'commits'
 
 const ExpandedSection: React.FunctionComponent<
-    {
-        node: VisibleChangesetApplyPreviewFields
-        history: H.History
-        location: H.Location
-        authenticatedUser: PreviewPageAuthenticatedUser
+    React.PropsWithChildren<
+        {
+            node: VisibleChangesetApplyPreviewFields
+            history: H.History
+            location: H.Location
+            authenticatedUser: PreviewPageAuthenticatedUser
 
-        /** Used for testing. **/
-        queryChangesetSpecFileDiffs?: typeof _queryChangesetSpecFileDiffs
-    } & ThemeProps
+            /** Used for testing. **/
+            queryChangesetSpecFileDiffs?: typeof _queryChangesetSpecFileDiffs
+        } & ThemeProps
+    >
 > = ({ node, history, isLightTheme, location, authenticatedUser, queryChangesetSpecFileDiffs }) => {
     const [selectedTab, setSelectedTab] = useState<SelectedTab>('diff')
     const onSelectDiff = useCallback<React.MouseEventHandler>(event => {
@@ -433,7 +439,9 @@ const ExpandedSection: React.FunctionComponent<
     )
 }
 
-const ChangesetSpecTitle: React.FunctionComponent<{ spec: VisibleChangesetApplyPreviewFields }> = ({ spec }) => {
+const ChangesetSpecTitle: React.FunctionComponent<
+    React.PropsWithChildren<{ spec: VisibleChangesetApplyPreviewFields }>
+> = ({ spec }) => {
     // Identify the title and external ID/URL, if the changeset spec has them, depending on the type
     let externalID: Maybe<string> = null
     let externalURL: Maybe<{ url: string }> = null
@@ -481,7 +489,9 @@ const ChangesetSpecTitle: React.FunctionComponent<{ spec: VisibleChangesetApplyP
     )
 }
 
-const RepoLink: React.FunctionComponent<{ spec: VisibleChangesetApplyPreviewFields }> = ({ spec }) => {
+const RepoLink: React.FunctionComponent<React.PropsWithChildren<{ spec: VisibleChangesetApplyPreviewFields }>> = ({
+    spec,
+}) => {
     let to: string
     let name: string
     if (
@@ -501,7 +511,9 @@ const RepoLink: React.FunctionComponent<{ spec: VisibleChangesetApplyPreviewFiel
     )
 }
 
-const References: React.FunctionComponent<{ spec: VisibleChangesetApplyPreviewFields }> = ({ spec }) => {
+const References: React.FunctionComponent<React.PropsWithChildren<{ spec: VisibleChangesetApplyPreviewFields }>> = ({
+    spec,
+}) => {
     if (spec.targets.__typename === 'VisibleApplyPreviewTargetsDetach') {
         return null
     }
@@ -528,7 +540,9 @@ const References: React.FunctionComponent<{ spec: VisibleChangesetApplyPreviewFi
     )
 }
 
-const ApplyDiffStat: React.FunctionComponent<{ spec: VisibleChangesetApplyPreviewFields }> = ({ spec }) => {
+const ApplyDiffStat: React.FunctionComponent<React.PropsWithChildren<{ spec: VisibleChangesetApplyPreviewFields }>> = ({
+    spec,
+}) => {
     let diffStat: { added: number; changed: number; deleted: number }
     if (spec.targets.__typename === 'VisibleApplyPreviewTargetsDetach') {
         if (!spec.targets.changeset.diffStat) {
@@ -544,7 +558,7 @@ const ApplyDiffStat: React.FunctionComponent<{ spec: VisibleChangesetApplyPrevie
 }
 
 const VisibleChangesetApplyPreviewNodeStatusCell: React.FunctionComponent<
-    Pick<VisibleChangesetApplyPreviewNodeProps, 'node'> & { className?: string }
+    React.PropsWithChildren<Pick<VisibleChangesetApplyPreviewNodeProps, 'node'> & { className?: string }>
 > = ({ node, className }) => {
     if (node.targets.__typename === 'VisibleApplyPreviewTargetsAttach') {
         return <ChangesetStatusCell state={ChangesetState.UNPUBLISHED} className={className} />

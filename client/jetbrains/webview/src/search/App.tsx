@@ -24,7 +24,11 @@ interface Props {
     onOpen: (match: ContentMatch, lineIndex: number) => void
 }
 
-export const App: React.FunctionComponent<Props> = ({ onPreviewChange, onPreviewClear, onOpen }: Props) => {
+export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    onPreviewChange,
+    onPreviewClear,
+    onOpen,
+}: Props) => {
     const [caseSensitive, setCaseSensitivity] = useState(false)
     const [patternType, setPatternType] = useState(SearchPatternType.literal)
     const [results, setResults] = useState<SearchMatch[]>([])

@@ -10,7 +10,10 @@ export interface Props {
     externalServiceKind: ExternalServiceKind
 }
 
-export const CodeHost: React.FunctionComponent<Props> = ({ externalServiceURL, externalServiceKind }) => {
+export const CodeHost: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    externalServiceURL,
+    externalServiceKind,
+}) => {
     const ExternalServiceIcon = defaultExternalServices[externalServiceKind].icon
     return (
         <li>

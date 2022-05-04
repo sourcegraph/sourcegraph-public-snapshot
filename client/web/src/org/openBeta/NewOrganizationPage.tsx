@@ -82,7 +82,7 @@ const getError = (error: ApolloError): ApolloError => {
     return error
 }
 
-export const NewOrgOpenBetaPage: React.FunctionComponent<Props> = ({
+export const NewOrgOpenBetaPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     match,
     history,
     authenticatedUser,

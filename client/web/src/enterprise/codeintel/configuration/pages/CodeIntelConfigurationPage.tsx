@@ -66,7 +66,9 @@ export interface CodeIntelConfigurationPageProps extends RouteComponentProps<{}>
     telemetryService: TelemetryService
 }
 
-export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfigurationPageProps> = ({
+export const CodeIntelConfigurationPage: FunctionComponent<
+    React.PropsWithChildren<CodeIntelConfigurationPageProps>
+> = ({
     authenticatedUser,
     queryPolicies = defaultQueryPolicies,
     repo,
@@ -138,7 +140,10 @@ export interface PoliciesNodeProps {
     indexingEnabled?: boolean
 }
 
-export const PoliciesNode: FunctionComponent<PoliciesNodeProps> = ({ node: policy, indexingEnabled = false }) => (
+export const PoliciesNode: FunctionComponent<React.PropsWithChildren<PoliciesNodeProps>> = ({
+    node: policy,
+    indexingEnabled = false,
+}) => (
     <>
         <span className={styles.separator} />
 

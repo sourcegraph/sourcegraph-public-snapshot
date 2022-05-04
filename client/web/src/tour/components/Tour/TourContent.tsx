@@ -22,7 +22,7 @@ interface TourContentProps {
     className?: string
 }
 
-const Header: React.FunctionComponent<{ onClose: () => void }> = ({ children, onClose }) => (
+const Header: React.FunctionComponent<React.PropsWithChildren<{ onClose: () => void }>> = ({ children, onClose }) => (
     <div className="d-flex justify-content-between align-items-start">
         <p className={styles.title}>Quick start</p>
         <Button variant="icon" data-testid="tour-close-btn" onClick={onClose}>
@@ -31,7 +31,7 @@ const Header: React.FunctionComponent<{ onClose: () => void }> = ({ children, on
     </div>
 )
 
-const Footer: React.FunctionComponent<{ completedCount: number; totalCount: number }> = ({
+const Footer: React.FunctionComponent<React.PropsWithChildren<{ completedCount: number; totalCount: number }>> = ({
     completedCount,
     totalCount,
 }) => (
@@ -44,14 +44,14 @@ const Footer: React.FunctionComponent<{ completedCount: number; totalCount: numb
     </p>
 )
 
-const CompletedItem: React.FunctionComponent = ({ children }) => (
+const CompletedItem: React.FunctionComponent<React.PropsWithChildren<unknown>> = ({ children }) => (
     <li className="d-flex align-items-start">
         <Icon as={CheckCircleIcon} size="sm" className={classNames('text-success mr-1', styles.completedCheckIcon)} />
         <span className="flex-1">{children}</span>
     </li>
 )
 
-export const TourContent: React.FunctionComponent<TourContentProps> = ({
+export const TourContent: React.FunctionComponent<React.PropsWithChildren<TourContentProps>> = ({
     onClose,
     tasks,
     variant,

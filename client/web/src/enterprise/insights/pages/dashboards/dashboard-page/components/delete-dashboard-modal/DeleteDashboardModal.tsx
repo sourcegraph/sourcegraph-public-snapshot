@@ -20,7 +20,9 @@ export interface DeleteDashboardModalProps {
     onClose: () => void
 }
 
-export const DeleteDashboardModal: React.FunctionComponent<DeleteDashboardModalProps> = props => {
+export const DeleteDashboardModal: React.FunctionComponent<
+    React.PropsWithChildren<DeleteDashboardModalProps>
+> = props => {
     const { dashboard, onClose } = props
     const history = useHistory()
 

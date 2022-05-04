@@ -38,7 +38,7 @@ export interface LinkProps
  *
  * @see setLinkComponent
  */
-export let Link: React.FunctionComponent<LinkProps> = ({ to, children, ...props }) => (
+export let Link: React.FunctionComponent<React.PropsWithChildren<LinkProps>> = ({ to, children, ...props }) => (
     <a
         href={checkLink(to && typeof to !== 'string' ? H.createPath(to) : to)}
         id={to && typeof to !== 'string' ? H.createPath(to) : to}
@@ -69,9 +69,9 @@ export type AnchorLinkProps = LinkProps & {
     as?: LinkComponent
 }
 
-export type LinkComponent = React.FunctionComponent<LinkProps>
+export type LinkComponent = React.FunctionComponent<React.PropsWithChildren<LinkProps>>
 
-export const AnchorLink: React.FunctionComponent<AnchorLinkProps> = React.forwardRef(
+export const AnchorLink: React.FunctionComponent<React.PropsWithChildren<AnchorLinkProps>> = React.forwardRef(
     ({ to, as: Component, children, className, ...rest }: AnchorLinkProps, reference) => {
         const { isBranded } = useWildcardTheme()
 
@@ -101,7 +101,7 @@ export const AnchorLink: React.FunctionComponent<AnchorLinkProps> = React.forwar
  * absolute URL to <Link> will create an (almost certainly invalid) URL where the absolute URL is resolved to the
  * current URL, such as https://example.com/a/b/https://example.com/c/d.
  */
-export const RouterLink: React.FunctionComponent<AnchorLinkProps> = React.forwardRef(
+export const RouterLink: React.FunctionComponent<React.PropsWithChildren<AnchorLinkProps>> = React.forwardRef(
     ({ to, children, ...rest }: AnchorLinkProps, reference) => (
         <AnchorLink
             to={checkLink(to && typeof to !== 'string' ? H.createPath(to) : to)}

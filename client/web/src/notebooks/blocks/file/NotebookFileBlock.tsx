@@ -48,7 +48,7 @@ interface NotebookFileBlockProps
 
 const LOADING = 'loading' as const
 
-export const NotebookFileBlock: React.FunctionComponent<NotebookFileBlockProps> = React.memo(
+export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<NotebookFileBlockProps>> = React.memo(
     ({
         id,
         input,
@@ -234,13 +234,9 @@ export const NotebookFileBlock: React.FunctionComponent<NotebookFileBlockProps> 
     }
 )
 
-const NotebookFileBlockHeader: React.FunctionComponent<FileBlockInput & { fileURL: string }> = ({
-    repositoryName,
-    filePath,
-    revision,
-    lineRange,
-    fileURL,
-}) => (
+const NotebookFileBlockHeader: React.FunctionComponent<
+    React.PropsWithChildren<FileBlockInput & { fileURL: string }>
+> = ({ repositoryName, filePath, revision, lineRange, fileURL }) => (
     <>
         <div className="mr-2">
             <Icon as={FileDocumentIcon} />

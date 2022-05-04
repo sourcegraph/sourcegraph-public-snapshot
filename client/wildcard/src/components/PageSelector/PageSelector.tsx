@@ -18,7 +18,11 @@ interface PageButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> 
     active?: boolean
 }
 
-const PageButton: React.FunctionComponent<PageButtonProps> = ({ children, active, ...props }) => (
+const PageButton: React.FunctionComponent<React.PropsWithChildren<PageButtonProps>> = ({
+    children,
+    active,
+    ...props
+}) => (
     <Button
         className={classNames('mx-1', styles.button)}
         variant={active ? 'primary' : 'link'}
@@ -67,7 +71,7 @@ const validateProps = (props: PageSelectorProps): void => {
  * PageSelector should be used to render offset-pagination controls.
  * It is a controlled-component, the `currentPage` should be controlled by the consumer.
  */
-export const PageSelector: React.FunctionComponent<PageSelectorProps> = props => {
+export const PageSelector: React.FunctionComponent<React.PropsWithChildren<PageSelectorProps>> = props => {
     validateProps(props)
 
     const { totalPages, currentPage, className, onPageChange } = props

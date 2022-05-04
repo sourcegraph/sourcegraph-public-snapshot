@@ -31,7 +31,9 @@ import { UserFacingCodeIntelligenceBadgeContent } from './UserFacingCodeIntellig
 
 import styles from './CodeIntelligenceBadgeMenu.module.scss'
 
-export const CodeIntelligenceBadgeMenu: React.FunctionComponent<CodeIntelligenceBadgeContentProps> = ({
+export const CodeIntelligenceBadgeMenu: React.FunctionComponent<
+    React.PropsWithChildren<CodeIntelligenceBadgeContentProps>
+> = ({
     isStorybook,
     now,
     useCodeIntelStatus = defaultUseCodeIntelStatus,

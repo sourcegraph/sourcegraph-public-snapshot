@@ -19,7 +19,7 @@ interface Props extends RouteComponentProps<{}> {
 /**
  * Sidebar for repository settings pages.
  */
-export const RepoSettingsSidebar: React.FunctionComponent<Props> = ({
+export const RepoSettingsSidebar: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     repoSettingsSidebarGroups,
     className,
     repo,

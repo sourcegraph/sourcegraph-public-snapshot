@@ -26,7 +26,12 @@ export interface UserAreaHeaderNavItem extends NavItemWithIconDescriptor<UserAre
 /**
  * Header for the user area.
  */
-export const UserAreaHeader: React.FunctionComponent<Props> = ({ url, navItems, className = '', ...props }) => {
+export const UserAreaHeader: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    url,
+    navItems,
+    className = '',
+    ...props
+}) => {
     /*
      * The path segment would always be recreated on rerenders, thus invalidating the loop over it in PageHeader.
      * As a result, the UserAvatar was always reinstanciated and rendered again, whenever the header rerenders

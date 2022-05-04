@@ -6,7 +6,9 @@ export interface CodeInsightDashboardsVisibilityProps extends React.HTMLAttribut
     dashboardCount: number
 }
 
-export const CodeInsightDashboardsVisibility: React.FunctionComponent<CodeInsightDashboardsVisibilityProps> = props => {
+export const CodeInsightDashboardsVisibility: React.FunctionComponent<
+    React.PropsWithChildren<CodeInsightDashboardsVisibilityProps>
+> = props => {
     const { dashboardCount, ...attributes } = props
 
     return (

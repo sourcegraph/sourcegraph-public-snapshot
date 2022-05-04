@@ -17,7 +17,7 @@ interface SurveyRatingRadio {
     openSurveyInNewTab?: boolean
 }
 
-export const SurveyRatingRadio: React.FunctionComponent<SurveyRatingRadio> = props => {
+export const SurveyRatingRadio: React.FunctionComponent<React.PropsWithChildren<SurveyRatingRadio>> = props => {
     const history = useHistory()
     const [focusedIndex, setFocusedIndex] = useState<number | null>(null)
 

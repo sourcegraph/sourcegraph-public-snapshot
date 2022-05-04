@@ -17,7 +17,7 @@ export interface SelfHostedCtaProps extends TelemetryProps {
     page: string
 }
 
-export const SelfHostedCta: React.FunctionComponent<SelfHostedCtaProps> = ({
+export const SelfHostedCta: React.FunctionComponent<React.PropsWithChildren<SelfHostedCtaProps>> = ({
     className,
     contentClassName,
     telemetryService,

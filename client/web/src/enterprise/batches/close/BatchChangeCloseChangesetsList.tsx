@@ -60,7 +60,7 @@ interface Props
 /**
  * A list of a batch change's changesets that may be closed.
  */
-export const BatchChangeCloseChangesetsList: React.FunctionComponent<Props> = ({
+export const BatchChangeCloseChangesetsList: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     batchChangeID,
     viewerCanAdminister,
     history,

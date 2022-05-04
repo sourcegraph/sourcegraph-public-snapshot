@@ -43,12 +43,9 @@ export interface SearchContextOwnerDropdownProps {
     setSelectedNamespace: (selectedNamespace: SelectedNamespace) => void
 }
 
-export const SearchContextOwnerDropdown: React.FunctionComponent<SearchContextOwnerDropdownProps> = ({
-    isDisabled,
-    authenticatedUser,
-    selectedNamespace,
-    setSelectedNamespace,
-}) => {
+export const SearchContextOwnerDropdown: React.FunctionComponent<
+    React.PropsWithChildren<SearchContextOwnerDropdownProps>
+> = ({ isDisabled, authenticatedUser, selectedNamespace, setSelectedNamespace }) => {
     const selectedUserNamespace = useMemo(() => getSelectedNamespaceFromUser(authenticatedUser), [authenticatedUser])
     return (
         <Menu>

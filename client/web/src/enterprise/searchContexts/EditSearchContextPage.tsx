@@ -35,7 +35,9 @@ export interface EditSearchContextPageProps
     isSourcegraphDotCom: boolean
 }
 
-export const AuthenticatedEditSearchContextPage: React.FunctionComponent<EditSearchContextPageProps> = props => {
+export const AuthenticatedEditSearchContextPage: React.FunctionComponent<
+    React.PropsWithChildren<EditSearchContextPageProps>
+> = props => {
     const LOADING = 'loading' as const
 
     const { match, updateSearchContext, fetchSearchContextBySpec, platformContext } = props

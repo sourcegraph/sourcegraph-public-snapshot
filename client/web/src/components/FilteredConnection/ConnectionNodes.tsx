@@ -15,16 +15,16 @@ import { hasID, hasNextPage } from './utils'
  */
 export interface ConnectionProps<N, NP = {}, HP = {}> extends ConnectionNodesDisplayProps {
     /** Header row to appear above all nodes. */
-    headComponent?: React.ComponentType<{ nodes: N[]; totalCount?: number | null } & HP>
+    headComponent?: React.ComponentType<React.PropsWithChildren<{ nodes: N[]; totalCount?: number | null } & HP>>
 
     /** Props to pass to each headComponent in addition to `{ nodes: N[]; totalCount?: number | null }`. */
     headComponentProps?: HP
 
     /** Footer row to appear below all nodes. */
-    footComponent?: React.ComponentType<{ nodes: N[] }>
+    footComponent?: React.ComponentType<React.PropsWithChildren<{ nodes: N[] }>>
 
     /** The component type to use to display each node. */
-    nodeComponent: React.ComponentType<{ node: N } & NP>
+    nodeComponent: React.ComponentType<React.PropsWithChildren<{ node: N } & NP>>
 
     /** Props to pass to each nodeComponent in addition to `{ node: N }`. */
     nodeComponentProps?: NP
@@ -77,7 +77,7 @@ export interface ConnectionNodesDisplayProps {
     emptyElement?: JSX.Element | null
 
     /** The component displayed when all nodes have been fetched. */
-    totalCountSummaryComponent?: React.ComponentType<{ totalCount: number }>
+    totalCountSummaryComponent?: React.ComponentType<React.PropsWithChildren<{ totalCount: number }>>
 
     compact?: boolean
 

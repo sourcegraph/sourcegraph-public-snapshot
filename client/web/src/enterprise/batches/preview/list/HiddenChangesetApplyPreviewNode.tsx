@@ -19,9 +19,9 @@ export interface HiddenChangesetApplyPreviewNodeProps {
     node: HiddenChangesetApplyPreviewFields
 }
 
-export const HiddenChangesetApplyPreviewNode: React.FunctionComponent<HiddenChangesetApplyPreviewNodeProps> = ({
-    node,
-}) => (
+export const HiddenChangesetApplyPreviewNode: React.FunctionComponent<
+    React.PropsWithChildren<HiddenChangesetApplyPreviewNodeProps>
+> = ({ node }) => (
     <>
         <span className={classNames(styles.hiddenChangesetApplyPreviewNodeListCell, 'd-none d-sm-block')} />
         <div className="p-2">
@@ -82,7 +82,7 @@ export const HiddenChangesetApplyPreviewNode: React.FunctionComponent<HiddenChan
 )
 
 const HiddenChangesetApplyPreviewNodeStatusCell: React.FunctionComponent<
-    HiddenChangesetApplyPreviewNodeProps & { className?: string }
+    React.PropsWithChildren<HiddenChangesetApplyPreviewNodeProps & { className?: string }>
 > = ({ node, className }) => {
     if (node.targets.__typename === 'HiddenApplyPreviewTargetsAttach') {
         return <ChangesetStatusCell state={ChangesetState.UNPUBLISHED} className={className} />

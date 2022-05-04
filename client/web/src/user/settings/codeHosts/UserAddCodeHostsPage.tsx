@@ -97,7 +97,7 @@ const checkGithubOutage = async (): Promise<boolean> => {
     return false
 }
 
-export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageProps> = ({
+export const UserAddCodeHostsPage: React.FunctionComponent<React.PropsWithChildren<UserAddCodeHostsPageProps>> = ({
     owner,
     codeHostExternalServices,
     routingPrefix,

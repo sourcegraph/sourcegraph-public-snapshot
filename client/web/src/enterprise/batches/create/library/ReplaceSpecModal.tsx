@@ -8,7 +8,7 @@ export interface ReplaceSpecModalProps {
     onConfirm: () => void
 }
 
-export const ReplaceSpecModal: React.FunctionComponent<ReplaceSpecModalProps> = ({
+export const ReplaceSpecModal: React.FunctionComponent<React.PropsWithChildren<ReplaceSpecModalProps>> = ({
     libraryItemName,
     onCancel,
     onConfirm,

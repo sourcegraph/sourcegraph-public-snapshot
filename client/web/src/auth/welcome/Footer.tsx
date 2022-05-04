@@ -11,7 +11,7 @@ interface Props {
     isSkippable?: boolean
 }
 
-export const Footer: React.FunctionComponent<Props> = ({ onFinish, isSkippable }) => {
+export const Footer: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ onFinish, isSkippable }) => {
     const { setStep, currentIndex, currentStep } = useSteps()
 
     return (

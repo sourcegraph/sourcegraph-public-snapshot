@@ -54,7 +54,7 @@ const trackBannerClick = (): void => {
     eventLogger.log(getPostSignUpEvent('SlowCloneBanner_Clicked'))
 }
 
-export const ActivityPane: React.FunctionComponent<Props> = ({
+export const ActivityPane: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     className,
     statusSummary,
     isDoneCloning,

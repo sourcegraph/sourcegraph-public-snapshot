@@ -15,7 +15,7 @@ interface SummaryContainerProps {
  * Should wrap typically wrap <ConnectionSummary>.
  * May also be used to wrap <ShowMoreButton />.
  */
-export const SummaryContainer: React.FunctionComponent<SummaryContainerProps> = ({
+export const SummaryContainer: React.FunctionComponent<React.PropsWithChildren<SummaryContainerProps>> = ({
     children,
     className,
     centered,

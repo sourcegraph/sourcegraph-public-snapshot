@@ -14,7 +14,7 @@ export interface NotebookTitleProps extends TelemetryProps {
     onUpdateTitle: (title: string) => void
 }
 
-export const NotebookTitle: React.FunctionComponent<NotebookTitleProps> = ({
+export const NotebookTitle: React.FunctionComponent<React.PropsWithChildren<NotebookTitleProps>> = ({
     title: initialTitle,
     viewerCanManage,
     onUpdateTitle,

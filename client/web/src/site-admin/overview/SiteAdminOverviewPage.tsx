@@ -21,7 +21,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { UsageChart } from '../SiteAdminUsageStatisticsPage'
 
 interface Props extends ActivationProps, ThemeProps {
-    overviewComponents: readonly React.ComponentType[]
+    overviewComponents: readonly React.ComponentType<React.PropsWithChildren<unknown>>[]
 
     /** For testing only */
     _fetchOverview?: () => Observable<{
@@ -107,7 +107,7 @@ const fetchWeeklyActiveUsers = (): Observable<GQL.ISiteUsageStatistics> =>
 /**
  * A page displaying an overview of site admin information.
  */
-export const SiteAdminOverviewPage: React.FunctionComponent<Props> = ({
+export const SiteAdminOverviewPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     isLightTheme,
     activation,
     overviewComponents,

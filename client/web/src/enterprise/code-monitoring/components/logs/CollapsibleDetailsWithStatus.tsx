@@ -10,12 +10,14 @@ import { EventStatus } from '../../../../graphql-operations'
 
 import styles from './CollapsibleDetailsWithStatus.module.scss'
 
-export const CollapsibleDetailsWithStatus: React.FunctionComponent<{
-    title: string
-    status: EventStatus | 'skipped'
-    message: string
-    startOpen?: boolean
-}> = ({ title, status, message, startOpen = false }) => {
+export const CollapsibleDetailsWithStatus: React.FunctionComponent<
+    React.PropsWithChildren<{
+        title: string
+        status: EventStatus | 'skipped'
+        message: string
+        startOpen?: boolean
+    }>
+> = ({ title, status, message, startOpen = false }) => {
     const [expanded, setExpanded] = useState(startOpen)
 
     const toggleExpanded = useCallback(() => setExpanded(expanded => !expanded), [])

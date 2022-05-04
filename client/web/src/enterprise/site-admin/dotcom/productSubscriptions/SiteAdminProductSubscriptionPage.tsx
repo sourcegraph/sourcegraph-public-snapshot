@@ -62,7 +62,7 @@ const LOADING = 'loading' as const
 /**
  * Displays a product subscription in the site admin area.
  */
-export const SiteAdminProductSubscriptionPage: React.FunctionComponent<Props> = ({
+export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     history,
     location,
     match: {

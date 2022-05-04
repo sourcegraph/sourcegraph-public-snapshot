@@ -29,7 +29,7 @@ export interface SearchHomeViewProps extends WebviewPageProps {
     context: SearchHomeState['context']
 }
 
-export const SearchHomeView: React.FunctionComponent<SearchHomeViewProps> = ({
+export const SearchHomeView: React.FunctionComponent<React.PropsWithChildren<SearchHomeViewProps>> = ({
     extensionCoreAPI,
     authenticatedUser,
     platformContext,

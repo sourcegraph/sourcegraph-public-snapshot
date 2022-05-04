@@ -41,7 +41,9 @@ export interface SearchInsightLivePreviewProps {
  * Displays live preview chart for creation UI with the latest insights settings
  * from creation UI form.
  */
-export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLivePreviewProps> = props => {
+export const SearchInsightLivePreview: React.FunctionComponent<
+    React.PropsWithChildren<SearchInsightLivePreviewProps>
+> = props => {
     const { series, repositories, step, stepValue, disabled = false, isAllReposMode, className } = props
 
     const { getSearchInsightContent } = useContext(CodeInsightsBackendContext)

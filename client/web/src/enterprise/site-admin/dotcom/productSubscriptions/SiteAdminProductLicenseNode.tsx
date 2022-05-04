@@ -46,10 +46,9 @@ export interface SiteAdminProductLicenseNodeProps {
 /**
  * Displays a product license in a connection in the site admin area.
  */
-export const SiteAdminProductLicenseNode: React.FunctionComponent<SiteAdminProductLicenseNodeProps> = ({
-    node,
-    showSubscription,
-}) => (
+export const SiteAdminProductLicenseNode: React.FunctionComponent<
+    React.PropsWithChildren<SiteAdminProductLicenseNodeProps>
+> = ({ node, showSubscription }) => (
     <li className="list-group-item py-2">
         <div className="d-flex align-items-center justify-content-between">
             {showSubscription && (

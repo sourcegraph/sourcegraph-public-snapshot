@@ -34,7 +34,7 @@ export const RepositoryCloningInProgressPage: React.FunctionComponent<{ repoName
     />
 )
 
-export const EmptyRepositoryPage: React.FunctionComponent = () => (
+export const EmptyRepositoryPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <HeroPage icon={RepoQuestionIcon} title="Empty repository" />
 )
 

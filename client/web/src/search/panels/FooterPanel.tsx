@@ -8,6 +8,7 @@ interface FooterPanelProps {
     className?: string
 }
 
-export const FooterPanel: React.FunctionComponent<FooterPanelProps> = ({ children, className }) => (
-    <div className={classNames(className, styles.footer)}>{children}</div>
-)
+export const FooterPanel: React.FunctionComponent<React.PropsWithChildren<FooterPanelProps>> = ({
+    children,
+    className,
+}) => <div className={classNames(className, styles.footer)}>{children}</div>

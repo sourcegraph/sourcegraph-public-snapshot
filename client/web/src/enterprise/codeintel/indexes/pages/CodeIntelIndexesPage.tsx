@@ -73,7 +73,7 @@ const filters: FilteredConnectionFilter[] = [
     },
 ]
 
-export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> = ({
+export const CodeIntelIndexesPage: FunctionComponent<React.PropsWithChildren<CodeIntelIndexesPageProps>> = ({
     authenticatedUser,
     repo,
     queryLsifIndexListByRepository = defaultQueryLsifIndexListByRepository,

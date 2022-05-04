@@ -53,7 +53,7 @@ export const recentSearchesPanelFragment = gql`
     }
 `
 
-export const RecentSearchesPanel: React.FunctionComponent<Props> = ({
+export const RecentSearchesPanel: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     className,
     now,
     telemetryService,

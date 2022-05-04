@@ -26,7 +26,7 @@ const config: Meta = {
 
 export default config
 
-const OptionsPageWrapper: React.FunctionComponent<Partial<OptionsPageProps>> = props => (
+const OptionsPageWrapper: React.FunctionComponent<React.PropsWithChildren<Partial<OptionsPageProps>>> = props => (
     <OptionsPage
         isFullPage={false}
         isActivated={true}

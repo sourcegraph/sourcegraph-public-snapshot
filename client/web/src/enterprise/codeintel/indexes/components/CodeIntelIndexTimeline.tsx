@@ -20,7 +20,11 @@ export interface CodeIntelIndexTimelineProps {
     className?: string
 }
 
-export const CodeIntelIndexTimeline: FunctionComponent<CodeIntelIndexTimelineProps> = ({ index, now, className }) => {
+export const CodeIntelIndexTimeline: FunctionComponent<React.PropsWithChildren<CodeIntelIndexTimelineProps>> = ({
+    index,
+    now,
+    className,
+}) => {
     const stages = useMemo(
         () => [
             { icon: <TimerSandIcon />, text: 'Queued', date: index.queuedAt, className: 'bg-success' },

@@ -18,7 +18,7 @@ export type TourProps = TelemetryProps & {
     extraTask?: TourTaskType
 } & Pick<React.ComponentProps<typeof TourContent>, 'variant' | 'className' | 'height'>
 
-export const Tour: React.FunctionComponent<TourProps> = ({
+export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> = ({
     id: tourId,
     tasks,
     extraTask,

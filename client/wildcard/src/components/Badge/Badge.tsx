@@ -40,7 +40,7 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 /**
  * An abstract UI component which renders a small "badge" with specific styles to help annotate content.
  */
-export const Badge: React.FunctionComponent<BadgeProps> = ({
+export const Badge: React.FunctionComponent<React.PropsWithChildren<BadgeProps>> = ({
     children,
     variant,
     small,

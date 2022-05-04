@@ -9,9 +9,11 @@ import { AuthenticatedUser } from '../auth'
  * the sign-in flow.
  */
 export const withAuthenticatedUser = <P extends object & { authenticatedUser: AuthenticatedUser }>(
-    Component: React.ComponentType<P>
+    Component: React.ComponentType<React.PropsWithChildren<P>>
 ): React.ComponentType<
-    Pick<P, Exclude<keyof P, 'authenticatedUser'>> & { authenticatedUser: AuthenticatedUser | null }
+    React.PropsWithChildren<
+        Pick<P, Exclude<keyof P, 'authenticatedUser'>> & { authenticatedUser: AuthenticatedUser | null }
+    >
 > =>
     // It's important to add names to all components to avoid full reload on hot-update.
     // https://github.com/pmmmwh/react-refresh-webpack-plugin/blob/main/docs/TROUBLESHOOTING.md#edits-always-lead-to-full-reload

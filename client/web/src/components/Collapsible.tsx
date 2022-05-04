@@ -51,7 +51,7 @@ interface Props {
  * Collapsible is an element with a title that is always displayed and children that are displayed
  * only when expanded.
  */
-export const Collapsible: React.FunctionComponent<Props> = ({
+export const Collapsible: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     title,
     detail,
     children,

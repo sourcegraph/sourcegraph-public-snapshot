@@ -18,7 +18,7 @@ interface RecentFile {
     url: string
 }
 
-export const RecentFilesSection: React.FunctionComponent<HistorySidebarProps> = ({
+export const RecentFilesSection: React.FunctionComponent<React.PropsWithChildren<HistorySidebarProps>> = ({
     platformContext,
     authenticatedUser,
     extensionCoreAPI,

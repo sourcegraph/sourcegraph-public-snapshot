@@ -19,7 +19,7 @@ export interface CreateCommentModalProps {
     createChangesetComments?: typeof _createChangesetComments
 }
 
-export const CreateCommentModal: React.FunctionComponent<CreateCommentModalProps> = ({
+export const CreateCommentModal: React.FunctionComponent<React.PropsWithChildren<CreateCommentModalProps>> = ({
     onCancel,
     afterCreate,
     batchChangeID,

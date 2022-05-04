@@ -14,7 +14,10 @@ interface Props {
 
 const SIGN_UP_FORM_URL = 'https://info.sourcegraph.com/product-research'
 
-export const ProductResearchPage: React.FunctionComponent<Props> = ({ telemetryService, authenticatedUser }) => {
+export const ProductResearchPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    telemetryService,
+    authenticatedUser,
+}) => {
     useEffect(() => {
         telemetryService.logViewEvent('UserSettingsProductResearch')
     }, [telemetryService])

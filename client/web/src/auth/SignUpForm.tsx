@@ -96,7 +96,7 @@ export function getPasswordRequirements(
 /**
  * The form for creating an account
  */
-export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
+export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpFormProps>> = ({
     onSignUp,
     buttonLabel,
     className,

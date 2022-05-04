@@ -21,7 +21,7 @@ export interface RetentionMatchNodeProps {
 export const retentionByUploadTitle = 'Retention by reference'
 export const retentionByBranchTipTitle = 'Retention by tip of default branch'
 
-export const RetentionMatchNode: FunctionComponent<RetentionMatchNodeProps> = ({ node }) => {
+export const RetentionMatchNode: FunctionComponent<React.PropsWithChildren<RetentionMatchNodeProps>> = ({ node }) => {
     if (node.matchType === 'RetentionPolicy') {
         return <RetentionPolicyRetentionMatchNode match={node} />
     }
@@ -32,7 +32,9 @@ export const RetentionMatchNode: FunctionComponent<RetentionMatchNodeProps> = ({
     throw new Error(`invalid node type ${JSON.stringify(node as object)}`)
 }
 
-const RetentionPolicyRetentionMatchNode: FunctionComponent<{ match: RetentionPolicyMatch }> = ({ match }) => (
+const RetentionPolicyRetentionMatchNode: FunctionComponent<
+    React.PropsWithChildren<{ match: RetentionPolicyMatch }>
+> = ({ match }) => (
     <>
         <span className={styles.separator} />
 
@@ -75,7 +77,9 @@ const RetentionPolicyRetentionMatchNode: FunctionComponent<{ match: RetentionPol
     </>
 )
 
-const UploadReferenceRetentionMatchNode: FunctionComponent<{ match: UploadReferenceMatch }> = ({ match }) => (
+const UploadReferenceRetentionMatchNode: FunctionComponent<
+    React.PropsWithChildren<{ match: UploadReferenceMatch }>
+> = ({ match }) => (
     <>
         <span className={styles.separator} />
 

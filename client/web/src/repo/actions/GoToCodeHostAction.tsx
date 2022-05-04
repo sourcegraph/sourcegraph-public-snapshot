@@ -54,7 +54,9 @@ const HAS_PERMANENTLY_DISMISSED_POPUP_KEY = 'has-dismissed-browser-ext-popup'
 /**
  * A repository header action that goes to the corresponding URL on an external code host.
  */
-export const GoToCodeHostAction: React.FunctionComponent<Props & RepoHeaderContext> = props => {
+export const GoToCodeHostAction: React.FunctionComponent<
+    React.PropsWithChildren<Props & RepoHeaderContext>
+> = props => {
     const [isPopoverOpen, setIsPopoverOpen] = useState(false)
 
     const showPopover = useCallback(() => {

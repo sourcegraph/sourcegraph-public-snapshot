@@ -24,7 +24,7 @@ interface Props extends RepositoryReleasesAreaPageProps {
 }
 
 /** A page that shows all of a repository's tags. */
-export const RepositoryReleasesTagsPage: React.FunctionComponent<Props> = ({
+export const RepositoryReleasesTagsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     repo,
     history,
     location,

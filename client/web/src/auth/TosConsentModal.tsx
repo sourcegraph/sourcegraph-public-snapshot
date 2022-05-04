@@ -18,7 +18,9 @@ export const SET_TOS_ACCEPTED_MUTATION = gql`
     }
 `
 
-export const TosConsentModal: React.FunctionComponent<{ afterTosAccepted: () => void }> = ({ afterTosAccepted }) => {
+export const TosConsentModal: React.FunctionComponent<React.PropsWithChildren<{ afterTosAccepted: () => void }>> = ({
+    afterTosAccepted,
+}) => {
     const [agree, setAgree] = useState(false)
 
     const onAgreeChanged = useCallback((event: React.ChangeEvent<HTMLInputElement>): void => {

@@ -26,7 +26,7 @@ export interface DashboardMenuProps {
     className?: string
 }
 
-export const DashboardMenu: React.FunctionComponent<DashboardMenuProps> = props => {
+export const DashboardMenu: React.FunctionComponent<React.PropsWithChildren<DashboardMenuProps>> = props => {
     const { innerRef, dashboard, onSelect = () => {}, tooltipText, className } = props
 
     const { dashboard: dashboardPermission } = useUiFeatures()

@@ -20,10 +20,9 @@ interface NotebookAddBlockButtonsProps {
     index: number
 }
 
-export const NotebookAddBlockButtons: React.FunctionComponent<NotebookAddBlockButtonsProps> = ({
-    index,
-    onAddBlock,
-}) => {
+export const NotebookAddBlockButtons: React.FunctionComponent<
+    React.PropsWithChildren<NotebookAddBlockButtonsProps>
+> = ({ index, onAddBlock }) => {
     const showComputeComponent = useExperimentalFeatures(features => features.showComputeComponent)
     const addBlock = useCallback((blockInput: BlockInput) => onAddBlock(index, blockInput), [index, onAddBlock])
     return (

@@ -26,7 +26,7 @@ export interface BulkOperationsAlertsProps {
  * If neither of the two above, and at least one completed operation is in the list and the alert has not yet been dismissed, a
  * "something recently completed" alert is shown.
  */
-export const BulkOperationsAlerts: React.FunctionComponent<BulkOperationsAlertsProps> = ({
+export const BulkOperationsAlerts: React.FunctionComponent<React.PropsWithChildren<BulkOperationsAlertsProps>> = ({
     bulkOperations,
     location,
 }) => {

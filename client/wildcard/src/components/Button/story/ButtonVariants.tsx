@@ -14,7 +14,7 @@ interface ButtonVariantsProps extends Pick<ButtonProps, 'size' | 'outline'> {
     icon?: React.ComponentType<{ className?: string }>
 }
 
-export const ButtonVariants: React.FunctionComponent<ButtonVariantsProps> = ({
+export const ButtonVariants: React.FunctionComponent<React.PropsWithChildren<ButtonVariantsProps>> = ({
     variants,
     size,
     outline,

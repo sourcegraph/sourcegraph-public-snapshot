@@ -48,7 +48,7 @@ interface ExtensionsEnablementDropdownProps {
  * Includes category filter buttons and enablement filter dropdown.
  */
 export const ExtensionRegistrySidenav: React.FunctionComponent<
-    ExtensionsCategoryFiltersProps & ExtensionsEnablementDropdownProps
+    React.PropsWithChildren<ExtensionsCategoryFiltersProps & ExtensionsEnablementDropdownProps>
 > = ({
     selectedCategory,
     onSelectCategory,
@@ -122,7 +122,7 @@ export const ExtensionRegistrySidenav: React.FunctionComponent<
     )
 }
 
-const ExtensionSidenavBanner: React.FunctionComponent = () => (
+const ExtensionSidenavBanner: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <div className={classNames(styles.banner, 'mx-2')}>
         <img className={classNames(styles.bannerIcon, 'mb-2')} src={extensionBannerIconURL} alt="" />
         {/* Override h4 font-weight */}

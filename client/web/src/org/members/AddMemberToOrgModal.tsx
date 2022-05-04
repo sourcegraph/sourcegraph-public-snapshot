@@ -22,7 +22,9 @@ export interface AddMemberToOrgModalProps {
     onMemberAdded: (username: string) => void
 }
 
-export const AddMemberToOrgModal: React.FunctionComponent<AddMemberToOrgModalProps> = props => {
+export const AddMemberToOrgModal: React.FunctionComponent<
+    React.PropsWithChildren<AddMemberToOrgModalProps>
+> = props => {
     const { orgName, orgId, onMemberAdded } = props
 
     const [username, setUsername] = useState('')

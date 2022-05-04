@@ -43,7 +43,9 @@ export interface UserSettingsSidebarProps
 }
 
 /** Sidebar for user account pages. */
-export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarProps> = props => {
+export const UserSettingsSidebar: React.FunctionComponent<
+    React.PropsWithChildren<UserSettingsSidebarProps>
+> = props => {
     const [, setHasCancelledTour] = useTemporarySetting('search.onboarding.tourCancelled')
     const showOnboardingTour = useExperimentalFeatures(features => features.showOnboardingTour ?? false)
     const openBetaEnabled = !!props.featureFlags.get('open-beta-enabled')

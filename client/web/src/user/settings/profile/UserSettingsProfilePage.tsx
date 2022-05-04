@@ -30,7 +30,10 @@ interface Props extends Pick<UserSettingsAreaRouteContext, 'activation'> {
     user: EditUserProfilePageFragment
 }
 
-export const UserSettingsProfilePage: React.FunctionComponent<Props> = ({ user, ...props }) => {
+export const UserSettingsProfilePage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    user,
+    ...props
+}) => {
     useEffect(() => eventLogger.logViewEvent('UserProfile'), [])
 
     return (

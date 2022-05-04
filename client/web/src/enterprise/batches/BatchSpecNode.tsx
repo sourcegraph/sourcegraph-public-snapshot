@@ -29,7 +29,7 @@ export interface BatchSpecNodeProps extends ThemeProps {
     now?: () => Date
 }
 
-export const BatchSpecNode: React.FunctionComponent<BatchSpecNodeProps> = ({
+export const BatchSpecNode: React.FunctionComponent<React.PropsWithChildren<BatchSpecNodeProps>> = ({
     node,
     currentSpecID,
     isLightTheme,
@@ -110,7 +110,7 @@ export const BatchSpecNode: React.FunctionComponent<BatchSpecNodeProps> = ({
     )
 }
 
-const StateIcon: React.FunctionComponent<{ state: BatchSpecState }> = ({ state }) => {
+const StateIcon: React.FunctionComponent<React.PropsWithChildren<{ state: BatchSpecState }>> = ({ state }) => {
     switch (state) {
         case BatchSpecState.COMPLETED:
             return <Icon className={classNames(styles.nodeStateIcon, 'text-success mb-1')} as={CheckCircleIcon} />
@@ -129,7 +129,7 @@ const StateIcon: React.FunctionComponent<{ state: BatchSpecState }> = ({ state }
     }
 }
 
-const Duration: React.FunctionComponent<{ start: Date; end: Date }> = ({ start, end }) => {
+const Duration: React.FunctionComponent<React.PropsWithChildren<{ start: Date; end: Date }>> = ({ start, end }) => {
     // The duration in seconds.
     let duration = (end.getTime() - start.getTime()) / 1000
     const hours = Math.floor(duration / (60 * 60))

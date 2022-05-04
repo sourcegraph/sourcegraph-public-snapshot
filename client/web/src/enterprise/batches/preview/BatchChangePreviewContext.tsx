@@ -50,7 +50,9 @@ export const defaultState = (): BatchChangePreviewContextState => ({
  */
 export const BatchChangePreviewContext = React.createContext<BatchChangePreviewContextState>(defaultState())
 
-export const BatchChangePreviewContextProvider: React.FunctionComponent<{}> = ({ children }) => {
+export const BatchChangePreviewContextProvider: React.FunctionComponent<React.PropsWithChildren<{}>> = ({
+    children,
+}) => {
     const urlParameters = new URLSearchParams(location.search)
 
     const [filters, setFilters] = useState<BatchChangePreviewFilters>(() => {

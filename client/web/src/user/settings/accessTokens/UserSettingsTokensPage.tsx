@@ -42,7 +42,7 @@ interface Props
 /**
  * Displays access tokens whose subject is a specific user.
  */
-export const UserSettingsTokensPage: React.FunctionComponent<Props> = ({
+export const UserSettingsTokensPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     telemetryService,
     history,
     location,

@@ -39,7 +39,9 @@ export interface AddExternalServicesPageProps extends ThemeProps, TelemetryProps
 /**
  * Page for choosing a service kind and variant to add, among the available options.
  */
-export const AddExternalServicesPage: React.FunctionComponent<AddExternalServicesPageProps> = ({
+export const AddExternalServicesPage: React.FunctionComponent<
+    React.PropsWithChildren<AddExternalServicesPageProps>
+> = ({
     afterCreateRoute,
     codeHostExternalServices,
     history,

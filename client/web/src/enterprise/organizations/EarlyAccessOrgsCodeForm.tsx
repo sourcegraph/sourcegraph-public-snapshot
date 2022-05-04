@@ -51,7 +51,7 @@ export const CREATE_FEATURE_FLAG_OVERRIDE = gql`
  * This implementation is a quick hack for making our lives easier while in early access
  * stage. IMO it's not worth a lot of effort as it is throwaway work once we are in GA.
  */
-export const EarlyAccessOrgsCodeForm: FunctionComponent<any> = () => {
+export const EarlyAccessOrgsCodeForm: FunctionComponent<React.PropsWithChildren<any>> = () => {
     const [name, setName] = useState<string>('')
 
     const [updateFeatureFlag, { data, loading: flagLoading, error: flagError }] = useMutation<

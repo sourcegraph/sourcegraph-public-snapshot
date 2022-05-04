@@ -52,7 +52,7 @@ interface FormCompletionSteps {
     actionCompleted: boolean
 }
 
-export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
+export const CodeMonitorForm: React.FunctionComponent<React.PropsWithChildren<CodeMonitorFormProps>> = ({
     authenticatedUser,
     onSubmit,
     history,

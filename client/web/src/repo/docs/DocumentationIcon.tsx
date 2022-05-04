@@ -129,7 +129,7 @@ function getDocumentationIconClassName(tag: Tag): string | undefined {
 /**
  * Renders an Icon for a given documentation tag
  */
-export const DocumentationIcon: React.FunctionComponent<Props> = ({ tag, className = '' }) => {
+export const DocumentationIcon: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ tag, className = '' }) => {
     const Icon = getDocumentationIconComponent(tag)
     return (
         <Icon

@@ -29,7 +29,7 @@ export interface SelectOptionProps {
 /**
  * Displays simple text (label) list select (list-box) option.
  */
-export const SelectOption: React.FunctionComponent<SelectOptionProps> = props => {
+export const SelectOption: React.FunctionComponent<React.PropsWithChildren<SelectOptionProps>> = props => {
     const { value, label, badge, className, filter = '' } = props
 
     return (
@@ -51,7 +51,9 @@ interface SelectDashboardOptionProps {
 /**
  * Displays select dashboard list-box options.
  */
-export const SelectDashboardOption: React.FunctionComponent<SelectDashboardOptionProps> = props => {
+export const SelectDashboardOption: React.FunctionComponent<
+    React.PropsWithChildren<SelectDashboardOptionProps>
+> = props => {
     const { dashboard, className, filter = '' } = props
 
     return (

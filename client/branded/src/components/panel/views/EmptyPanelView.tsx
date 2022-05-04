@@ -11,7 +11,7 @@ interface EmptyPanelViewProps {
     className?: string
 }
 
-export const EmptyPanelView: React.FunctionComponent<EmptyPanelViewProps> = props => {
+export const EmptyPanelView: React.FunctionComponent<React.PropsWithChildren<EmptyPanelViewProps>> = props => {
     const { className, children } = props
 
     return (

@@ -10,7 +10,9 @@ interface ExtensionsLoadingPanelViewProps {
     className?: string
 }
 
-export const ExtensionsLoadingPanelView: React.FunctionComponent<ExtensionsLoadingPanelViewProps> = props => {
+export const ExtensionsLoadingPanelView: React.FunctionComponent<
+    React.PropsWithChildren<ExtensionsLoadingPanelViewProps>
+> = props => {
     const { className } = props
 
     return (

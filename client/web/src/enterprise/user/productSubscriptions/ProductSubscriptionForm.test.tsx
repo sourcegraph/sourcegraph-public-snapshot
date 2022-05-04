@@ -11,7 +11,7 @@ jest.mock('../../dotcom/billing/StripeWrapper', () => ({
         component: Component,
         ...props
     }: {
-        component: React.ComponentType<{ stripe: unknown }>
+        component: React.ComponentType<React.PropsWithChildren<{ stripe: unknown }>>
         [name: string]: unknown
     }) => <Component {...props} stripe={{}} />,
 }))

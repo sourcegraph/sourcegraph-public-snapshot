@@ -20,7 +20,7 @@ interface MenuButtonProps {
 /**
  * Renders ListBox menu button for dashboard select component.
  */
-export const MenuButton: React.FunctionComponent<MenuButtonProps> = props => {
+export const MenuButton: React.FunctionComponent<React.PropsWithChildren<MenuButtonProps>> = props => {
     const { dashboards, className } = props
 
     return (
@@ -50,7 +50,7 @@ interface MenuButtonContentProps {
     badge?: string
 }
 
-const MenuButtonContent: React.FunctionComponent<MenuButtonContentProps> = props => {
+const MenuButtonContent: React.FunctionComponent<React.PropsWithChildren<MenuButtonContentProps>> = props => {
     const { title, isExpanded, badge } = props
     const ListboxButtonIcon = isExpanded ? ChevronUpIcon : ChevronDownIcon
 

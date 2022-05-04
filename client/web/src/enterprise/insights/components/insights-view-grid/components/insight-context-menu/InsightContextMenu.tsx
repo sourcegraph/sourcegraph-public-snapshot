@@ -38,7 +38,7 @@ export interface InsightCardMenuProps extends SettingsCascadeProps<Settings> {
 /**
  * Renders context menu (three dots menu) for particular insight card.
  */
-export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> = props => {
+export const InsightContextMenu: React.FunctionComponent<React.PropsWithChildren<InsightCardMenuProps>> = props => {
     const { insight, dashboard, zeroYAxisMin, menuButtonClassName, onToggleZeroYAxisMin = noop } = props
 
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)

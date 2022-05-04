@@ -14,7 +14,10 @@ export interface CodeIntelIndexMetaProps {
     now?: () => Date
 }
 
-export const CodeIntelIndexMeta: FunctionComponent<CodeIntelIndexMetaProps> = ({ node, now }) => (
+export const CodeIntelIndexMeta: FunctionComponent<React.PropsWithChildren<CodeIntelIndexMetaProps>> = ({
+    node,
+    now,
+}) => (
     <Card>
         <CardBody>
             <CardTitle>

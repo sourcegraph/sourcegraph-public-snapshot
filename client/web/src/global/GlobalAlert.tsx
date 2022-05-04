@@ -13,10 +13,12 @@ import { DismissibleAlert, DismissibleAlertProps } from '../components/Dismissib
 /**
  * A global alert that is shown at the top of the viewport.
  */
-export const GlobalAlert: React.FunctionComponent<{
-    alert: Pick<GQL.IAlert, 'message' | 'isDismissibleWithKey' | 'type'>
-    className?: string
-}> = ({ alert, className: commonClassName }) => {
+export const GlobalAlert: React.FunctionComponent<
+    React.PropsWithChildren<{
+        alert: Pick<GQL.IAlert, 'message' | 'isDismissibleWithKey' | 'type'>
+        className?: string
+    }>
+> = ({ alert, className: commonClassName }) => {
     const content = <Markdown dangerousInnerHTML={renderMarkdown(alert.message)} />
     const className = classNames(commonClassName, 'd-flex')
 

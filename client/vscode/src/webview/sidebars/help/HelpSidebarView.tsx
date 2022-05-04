@@ -14,7 +14,7 @@ interface HelpSidebarViewProps
 /**
  * Rendered by sidebar in search-home state when user doesn't have a valid access token.
  */
-export const HelpSidebarView: React.FunctionComponent<HelpSidebarViewProps> = ({
+export const HelpSidebarView: React.FunctionComponent<React.PropsWithChildren<HelpSidebarViewProps>> = ({
     platformContext,
     extensionCoreAPI,
     authenticatedUser,

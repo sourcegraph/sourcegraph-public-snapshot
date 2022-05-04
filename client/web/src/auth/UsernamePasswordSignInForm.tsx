@@ -26,7 +26,7 @@ interface Props {
 /**
  * The form for signing in with a username and password.
  */
-export const UsernamePasswordSignInForm: React.FunctionComponent<Props> = ({
+export const UsernamePasswordSignInForm: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     location,
     onAuthError,
     noThirdPartyProviders,

@@ -14,7 +14,9 @@ interface EditCaptureGroupInsightProps {
     onCancel: () => void
 }
 
-export const EditCaptureGroupInsight: React.FunctionComponent<EditCaptureGroupInsightProps> = props => {
+export const EditCaptureGroupInsight: React.FunctionComponent<
+    React.PropsWithChildren<EditCaptureGroupInsightProps>
+> = props => {
     const { insight, onSubmit, onCancel } = props
 
     const insightFormValues = useMemo<CaptureGroupFormFields>(

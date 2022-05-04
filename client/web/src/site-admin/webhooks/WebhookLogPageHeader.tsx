@@ -21,7 +21,7 @@ export interface Props {
     onSetOnlyErrors: (onlyErrors: boolean) => void
 }
 
-export const WebhookLogPageHeader: React.FunctionComponent<Props> = ({
+export const WebhookLogPageHeader: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     externalService,
     onlyErrors,
     onSelectExternalService: onExternalServiceSelected,

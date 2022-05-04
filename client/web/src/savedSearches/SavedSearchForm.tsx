@@ -32,7 +32,7 @@ export interface SavedSearchFormProps extends NamespaceProps {
     error?: any
 }
 
-export const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = props => {
+export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<SavedSearchFormProps>> = props => {
     const [values, setValues] = useState<Omit<SavedQueryFields, 'id'>>(() => ({
         description: props.defaultValues?.description || '',
         query: props.defaultValues?.query || '',

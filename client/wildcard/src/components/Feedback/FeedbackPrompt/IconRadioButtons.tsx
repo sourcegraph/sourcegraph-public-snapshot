@@ -9,7 +9,7 @@ import styles from './IconRadioButtons.module.scss'
 interface Icon {
     name: string
     value: number
-    icon: React.ComponentType
+    icon: React.ComponentType<React.PropsWithChildren<unknown>>
 }
 
 interface Props {
@@ -24,7 +24,7 @@ interface Props {
 /**
  * Used to render a list of icons with <input type="radio" />
  */
-export const IconRadioButtons: React.FunctionComponent<Props> = ({
+export const IconRadioButtons: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     name,
     icons,
     selected,

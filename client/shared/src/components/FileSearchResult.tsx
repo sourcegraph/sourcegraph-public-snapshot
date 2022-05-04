@@ -83,7 +83,7 @@ const BY_LINE_RANKING = 'by-line-number'
 const DEFAULT_CONTEXT = 1
 
 // This is a search result for types file (content), path, or symbol.
-export const FileSearchResult: React.FunctionComponent<Props> = props => {
+export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
     const result = props.result
     const repoAtRevisionURL = getRepositoryUrl(result.repository, result.branches)
     const revisionDisplayName = getRevision(result.branches, result.commit)

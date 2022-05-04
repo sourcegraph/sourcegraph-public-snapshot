@@ -21,7 +21,7 @@ interface NamespaceSelectorProps {
     onSelect: (namespace: SettingsUserSubject | SettingsOrgSubject) => void
 }
 
-export const NamespaceSelector: React.FunctionComponent<NamespaceSelectorProps> = ({
+export const NamespaceSelector: React.FunctionComponent<React.PropsWithChildren<NamespaceSelectorProps>> = ({
     namespaces,
     disabled,
     selectedNamespace,

@@ -31,7 +31,9 @@ interface CaptureGroupCreationLivePreviewProps {
     className?: string
 }
 
-export const CaptureGroupCreationLivePreview: React.FunctionComponent<CaptureGroupCreationLivePreviewProps> = props => {
+export const CaptureGroupCreationLivePreview: React.FunctionComponent<
+    React.PropsWithChildren<CaptureGroupCreationLivePreviewProps>
+> = props => {
     const { disabled, repositories, query, stepValue, step, isAllReposMode, className } = props
     const { getCaptureInsightContent } = useContext(CodeInsightsBackendContext)
 

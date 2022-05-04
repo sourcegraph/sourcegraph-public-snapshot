@@ -160,7 +160,7 @@ const displayAffiliateRepoProblems = (
 /**
  * A page to manage the repositories a user syncs from their connected code hosts.
  */
-export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> = ({
+export const UserSettingsManageRepositoriesPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     owner,
     routingPrefix,
     telemetryService,

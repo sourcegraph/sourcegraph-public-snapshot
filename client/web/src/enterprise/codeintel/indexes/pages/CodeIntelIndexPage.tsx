@@ -32,7 +32,7 @@ const variantByState = new Map<LSIFIndexState, CodeIntelStateBannerProps['varian
     [LSIFIndexState.ERRORED, 'danger'],
 ])
 
-export const CodeIntelIndexPage: FunctionComponent<CodeIntelIndexPageProps> = ({
+export const CodeIntelIndexPage: FunctionComponent<React.PropsWithChildren<CodeIntelIndexPageProps>> = ({
     match: {
         params: { id },
     },

@@ -44,7 +44,9 @@ interface CaptureGroupCreationContentProps {
     onCancel: () => void
 }
 
-export const CaptureGroupCreationContent: React.FunctionComponent<CaptureGroupCreationContentProps> = props => {
+export const CaptureGroupCreationContent: React.FunctionComponent<
+    React.PropsWithChildren<CaptureGroupCreationContentProps>
+> = props => {
     const { mode, className, initialValues = {}, onSubmit, onChange = noop, onCancel, insight } = props
 
     // Search query validators

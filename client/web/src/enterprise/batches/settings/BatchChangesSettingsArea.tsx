@@ -12,7 +12,9 @@ export interface BatchChangesSettingsAreaProps {
 }
 
 /** The page area for all batch changes settings. It's shown in the user settings sidebar. */
-export const BatchChangesSettingsArea: React.FunctionComponent<BatchChangesSettingsAreaProps> = props => (
+export const BatchChangesSettingsArea: React.FunctionComponent<
+    React.PropsWithChildren<BatchChangesSettingsAreaProps>
+> = props => (
     <div className="test-batches-settings-page">
         <PageTitle title="Batch changes settings" />
         <PageHeader headingElement="h2" path={[{ text: 'Batch Changes settings' }]} className="mb-3" />

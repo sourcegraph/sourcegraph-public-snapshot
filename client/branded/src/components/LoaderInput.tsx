@@ -14,7 +14,11 @@ interface Props {
     className?: string
 }
 
-export const LoaderInput: React.FunctionComponent<Props> = ({ loading, children, className }) => (
+export const LoaderInput: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    loading,
+    children,
+    className,
+}) => (
     <div className={classNames(styles.container, className)}>
         {children}
         {loading && <LoadingSpinner inline={false} className={styles.spinner} />}

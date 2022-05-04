@@ -47,7 +47,7 @@ export interface ExecutorsListPageProps extends RouteComponentProps<{}> {
     queryExecutors?: typeof defaultQueryExecutors
 }
 
-export const ExecutorsListPage: FunctionComponent<ExecutorsListPageProps> = ({
+export const ExecutorsListPage: FunctionComponent<React.PropsWithChildren<ExecutorsListPageProps>> = ({
     queryExecutors = defaultQueryExecutors,
     ...props
 }) => {
@@ -121,7 +121,7 @@ export interface ExecutorNodeProps {
     node: ExecutorFields
 }
 
-export const ExecutorNode: FunctionComponent<ExecutorNodeProps> = ({ node }) => (
+export const ExecutorNode: FunctionComponent<React.PropsWithChildren<ExecutorNodeProps>> = ({ node }) => (
     <li className="list-group-item">
         <Collapsible
             wholeTitleClickable={false}
@@ -204,7 +204,7 @@ export const ExecutorNode: FunctionComponent<ExecutorNodeProps> = ({ node }) => 
     </li>
 )
 
-export const NoExecutors: React.FunctionComponent = () => (
+export const NoExecutors: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <p className="text-muted text-center w-100 mb-0 mt-1">
         <MapSearchIcon className="mb-2" />
         <br />
@@ -212,7 +212,7 @@ export const NoExecutors: React.FunctionComponent = () => (
     </p>
 )
 
-const TelemetryData: React.FunctionComponent<{ data: string }> = ({ data }) => {
+const TelemetryData: React.FunctionComponent<React.PropsWithChildren<{ data: string }>> = ({ data }) => {
     if (data) {
         return <>{data}</>
     }

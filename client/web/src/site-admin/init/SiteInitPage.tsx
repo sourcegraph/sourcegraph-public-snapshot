@@ -62,7 +62,7 @@ interface Props extends ThemeProps, FeatureFlagProps {
  * A page that is shown when the Sourcegraph instance has not yet been initialized.
  * Only the person who first accesses the instance will see this.
  */
-export const SiteInitPage: React.FunctionComponent<Props> = ({
+export const SiteInitPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     authenticatedUser,
     isLightTheme,
     needsSiteInit = window.context.needsSiteInit,

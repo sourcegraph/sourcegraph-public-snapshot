@@ -26,10 +26,9 @@ interface ContributionGroup {
     rows: (React.ReactFragment | null)[][]
 }
 
-const ContributionsTable: React.FunctionComponent<{ contributionGroups: ContributionGroup[]; history: H.History }> = ({
-    contributionGroups,
-    history,
-}) => (
+const ContributionsTable: React.FunctionComponent<
+    React.PropsWithChildren<{ contributionGroups: ContributionGroup[]; history: H.History }>
+> = ({ contributionGroups, history }) => (
     <div>
         {contributionGroups.length === 0 && (
             <p>This extension doesn't define any settings or actions. No configuration is required to use it.</p>

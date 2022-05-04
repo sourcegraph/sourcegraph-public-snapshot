@@ -14,7 +14,7 @@ interface Props extends SourcegraphIconButtonProps {
     openProps: OpenInSourcegraphProps
 }
 
-export const OpenOnSourcegraph: React.FunctionComponent<Props> = ({
+export const OpenOnSourcegraph: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     openProps: { sourcegraphURL, repoName, revision, filePath },
     className,
     ...props

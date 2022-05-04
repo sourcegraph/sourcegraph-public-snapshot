@@ -14,7 +14,10 @@ interface Props {
     sourcegraphURL: string
 }
 
-export const EmptyCommandList: React.FunctionComponent<Props> = ({ settingsCascade, sourcegraphURL }) => {
+export const EmptyCommandList: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    settingsCascade,
+    sourcegraphURL,
+}) => {
     // if no settings cascade, default to 'no active extensions'
     const onlyDefault = settingsCascade ? onlyDefaultExtensionsAdded(settingsCascade) : false
 

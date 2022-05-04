@@ -11,7 +11,7 @@ import { RepoContainerContext } from '../RepoContainer'
 
 import { RepositoryReleasesTagsPage } from './RepositoryReleasesTagsPage'
 
-const NotFoundPage: React.FunctionComponent = () => (
+const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <HeroPage
         icon={MapSearchIcon}
         title="404: Not Found"
@@ -40,7 +40,11 @@ export interface RepositoryReleasesAreaPageProps {
 /**
  * Renders pages related to repository branches.
  */
-export const RepositoryReleasesArea: React.FunctionComponent<Props> = ({ useBreadcrumb, repo, routePrefix }) => {
+export const RepositoryReleasesArea: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    useBreadcrumb,
+    repo,
+    routePrefix,
+}) => {
     useBreadcrumb(useMemo(() => ({ key: 'tags', element: 'Tags' }), []))
 
     const transferProps: { repo: RepositoryFields } = {

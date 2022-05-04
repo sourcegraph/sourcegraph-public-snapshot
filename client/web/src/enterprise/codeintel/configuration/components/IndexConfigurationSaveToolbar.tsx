@@ -11,7 +11,7 @@ export interface IndexConfigurationSaveToolbarProps {
 }
 
 export const IndexConfigurationSaveToolbar: React.FunctionComponent<
-    SaveToolbarProps & IndexConfigurationSaveToolbarProps
+    React.PropsWithChildren<SaveToolbarProps & IndexConfigurationSaveToolbarProps>
 > = ({ dirty, loading, saving, error, onSave, onDiscard, inferEnabled, onInfer, saveDiscardDisabled }) => (
     <SaveToolbar
         dirty={dirty}

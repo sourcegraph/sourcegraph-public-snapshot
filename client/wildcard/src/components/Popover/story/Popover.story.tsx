@@ -512,7 +512,7 @@ interface ScrollCenterBoxProps extends React.HTMLAttributes<HTMLDivElement> {
     title: string
 }
 
-const ScrollCenterBox: React.FunctionComponent<ScrollCenterBoxProps> = props => {
+const ScrollCenterBox: React.FunctionComponent<React.PropsWithChildren<ScrollCenterBoxProps>> = props => {
     const { children, title, ...otherProps } = props
     const reference = useRef<HTMLDivElement>(null)
 

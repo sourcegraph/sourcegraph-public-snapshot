@@ -17,7 +17,11 @@ export interface WorkspacesProps {
     executionURL: string
 }
 
-export const Workspaces: React.FunctionComponent<WorkspacesProps> = ({ batchSpecID, selectedNode, executionURL }) => {
+export const Workspaces: React.FunctionComponent<React.PropsWithChildren<WorkspacesProps>> = ({
+    batchSpecID,
+    selectedNode,
+    executionURL,
+}) => {
     const [filters, setFilters] = useState<WorkspaceFilters>()
     const workspacesConnection = useWorkspacesListConnection(
         batchSpecID,

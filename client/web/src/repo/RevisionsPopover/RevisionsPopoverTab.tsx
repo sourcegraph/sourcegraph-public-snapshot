@@ -17,7 +17,7 @@ interface RevisionsPopoverTabProps extends UseConnectionResult<unknown> {
     summary?: JSX.Element
 }
 
-export const RevisionsPopoverTab: React.FunctionComponent<RevisionsPopoverTabProps> = ({
+export const RevisionsPopoverTab: React.FunctionComponent<React.PropsWithChildren<RevisionsPopoverTabProps>> = ({
     children,
     inputValue,
     onInputChange,

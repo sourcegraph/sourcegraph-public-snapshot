@@ -12,7 +12,9 @@ export interface SiteAdminAddExternalServicesPageProps
         'routingPrefix' | 'afterCreateRoute' | 'codeHostExternalServices' | 'nonCodeHostExternalServices'
     > {}
 
-export const SiteAdminAddExternalServicesPage: React.FunctionComponent<SiteAdminAddExternalServicesPageProps> = props => (
+export const SiteAdminAddExternalServicesPage: React.FunctionComponent<
+    React.PropsWithChildren<SiteAdminAddExternalServicesPageProps>
+> = props => (
     <AddExternalServicesPage
         {...props}
         routingPrefix="/site-admin"

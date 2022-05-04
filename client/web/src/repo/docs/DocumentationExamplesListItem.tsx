@@ -35,7 +35,7 @@ const contextLines = 1
 
 const LOADING = 'loading' as const
 
-export const DocumentationExamplesListItem: React.FunctionComponent<Props> = ({
+export const DocumentationExamplesListItem: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     fetchHighlightedFileLineRanges,
     repo,
     commitID,

@@ -31,7 +31,7 @@ function getSelectedShareOptionDescription(shareOption: ShareOption, isSourcegra
     return `Only members of the ${shareOption.namespaceName} organization can edit the notebook`
 }
 
-export const ShareNotebookModal: React.FunctionComponent<ShareNotebookModalProps> = ({
+export const ShareNotebookModal: React.FunctionComponent<React.PropsWithChildren<ShareNotebookModalProps>> = ({
     isOpen,
     isSourcegraphDotCom,
     selectedShareOption,

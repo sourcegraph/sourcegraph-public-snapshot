@@ -21,10 +21,9 @@ export interface RepoSettingsPermissionsPageProps {
 /**
  * The repository settings permissions page.
  */
-export const RepoSettingsPermissionsPage: React.FunctionComponent<RepoSettingsPermissionsPageProps> = ({
-    repo,
-    history,
-}) => {
+export const RepoSettingsPermissionsPage: React.FunctionComponent<
+    React.PropsWithChildren<RepoSettingsPermissionsPageProps>
+> = ({ repo, history }) => {
     useEffect(() => eventLogger.logViewEvent('RepoSettingsPermissions'))
     const permissionsInfo = useObservable(useMemo(() => repoPermissionsInfo(repo.id), [repo.id]))
 

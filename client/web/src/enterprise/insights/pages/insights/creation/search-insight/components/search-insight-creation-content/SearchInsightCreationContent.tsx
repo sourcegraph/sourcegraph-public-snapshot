@@ -29,7 +29,9 @@ export interface SearchInsightCreationContentProps {
     onChange?: (event: FormChangeEvent<CreateInsightFormFields>) => void
 }
 
-export const SearchInsightCreationContent: React.FunctionComponent<SearchInsightCreationContentProps> = props => {
+export const SearchInsightCreationContent: React.FunctionComponent<
+    React.PropsWithChildren<SearchInsightCreationContentProps>
+> = props => {
     const {
         mode = 'creation',
         initialValue,

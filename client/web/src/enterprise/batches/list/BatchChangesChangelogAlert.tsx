@@ -8,7 +8,7 @@ import { DismissibleAlert } from '../../../components/DismissibleAlert'
 
 import styles from './BatchChangesListIntro.module.scss'
 
-export const BatchChangesChangelogAlert: React.FunctionComponent = () => (
+export const BatchChangesChangelogAlert: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <DismissibleAlert
         className={styles.batchChangesListIntroAlert}
         partialStorageKey="batch-changes-list-intro-changelog-3.39"

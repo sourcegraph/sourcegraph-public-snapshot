@@ -46,7 +46,7 @@ export const recentlySearchedRepositoriesFragment = gql`
     }
 `
 
-export const RepositoriesPanel: React.FunctionComponent<Props> = ({
+export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     className,
     telemetryService,
     recentlySearchedRepositories,

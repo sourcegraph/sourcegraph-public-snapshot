@@ -17,7 +17,10 @@ interface Props extends Pick<OrgAreaPageProps, 'org' | 'onOrganizationUpdate'> {
 /**
  * The organization profile settings page.
  */
-export const OrgSettingsProfilePage: React.FunctionComponent<Props> = ({ org, onOrganizationUpdate }) => {
+export const OrgSettingsProfilePage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    org,
+    onOrganizationUpdate,
+}) => {
     useEffect(() => {
         eventLogger.logViewEvent('OrgSettingsProfile')
     }, [org.id])

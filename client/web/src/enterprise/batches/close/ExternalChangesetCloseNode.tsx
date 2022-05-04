@@ -39,7 +39,9 @@ export interface ExternalChangesetCloseNodeProps extends ThemeProps {
     queryExternalChangesetWithFileDiffs?: typeof _queryExternalChangesetWithFileDiffs
 }
 
-export const ExternalChangesetCloseNode: React.FunctionComponent<ExternalChangesetCloseNodeProps> = ({
+export const ExternalChangesetCloseNode: React.FunctionComponent<
+    React.PropsWithChildren<ExternalChangesetCloseNodeProps>
+> = ({
     node,
     willClose,
     viewerCanAdminister,

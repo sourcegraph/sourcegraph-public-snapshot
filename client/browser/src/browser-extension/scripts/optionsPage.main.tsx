@@ -167,7 +167,7 @@ const fetchCurrentUser = (sourcegraphURL: string): Observable<Pick<GQL.IUser, 's
 const uniqURLs = (urls: (string | undefined)[]): string[] =>
     uniq(urls.filter(value => !!value).map(value => trimEnd(value, '/')))
 
-const Options: React.FunctionComponent = () => {
+const Options: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => {
     const sourcegraphUrl = useObservable(observingSourcegraphUrl)
     const [previousSourcegraphUrl, setPreviousSourcegraphUrl] = useState(sourcegraphUrl)
     const telemetryService = useTelemetryService(sourcegraphUrl)

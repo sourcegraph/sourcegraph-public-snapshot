@@ -39,7 +39,7 @@ export interface IndexerSummaryProps {
     useRequestLanguageSupportQuery: typeof defaultUseRequestLanguageSupportQuery
 }
 
-export const IndexerSummary: React.FunctionComponent<IndexerSummaryProps> = ({
+export const IndexerSummary: React.FunctionComponent<React.PropsWithChildren<IndexerSummaryProps>> = ({
     repoName,
     summary,
     className,

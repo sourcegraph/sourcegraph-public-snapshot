@@ -20,7 +20,10 @@ export interface CodeIntelUploadNodeProps {
     now?: () => Date
 }
 
-export const CodeIntelUploadNode: FunctionComponent<CodeIntelUploadNodeProps> = ({ node, now }) => (
+export const CodeIntelUploadNode: FunctionComponent<React.PropsWithChildren<CodeIntelUploadNodeProps>> = ({
+    node,
+    now,
+}) => (
     <>
         <span className={styles.separator} />
 

@@ -15,7 +15,9 @@ import styles from './CodeInsightsGettingStartedPage.module.scss'
 
 interface CodeInsightsGettingStartedPageProps extends TelemetryProps, SettingsCascadeProps<Settings> {}
 
-export const CodeInsightsGettingStartedPage: React.FunctionComponent<CodeInsightsGettingStartedPageProps> = props => {
+export const CodeInsightsGettingStartedPage: React.FunctionComponent<
+    React.PropsWithChildren<CodeInsightsGettingStartedPageProps>
+> = props => {
     const { telemetryService } = props
 
     useEffect(() => {

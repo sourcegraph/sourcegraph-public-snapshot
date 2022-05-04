@@ -40,7 +40,7 @@ interface StatusBarProps extends ExtensionsControllerProps<'extHostAPI' | 'execu
     badgeText?: string
 }
 
-export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
+export const StatusBar: React.FunctionComponent<React.PropsWithChildren<StatusBarProps>> = ({
     getStatusBarItems,
     className,
     statusBarItemClassName,
@@ -154,12 +154,14 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
 }
 
 const StatusBarItem: React.FunctionComponent<
-    {
-        statusBarItem: StatusBarItemWithKey
-        className?: string
-        component?: JSX.Element
-        location: H.Location
-    } & ExtensionsControllerProps<'extHostAPI' | 'executeCommand'>
+    React.PropsWithChildren<
+        {
+            statusBarItem: StatusBarItemWithKey
+            className?: string
+            component?: JSX.Element
+            location: H.Location
+        } & ExtensionsControllerProps<'extHostAPI' | 'executeCommand'>
+    >
 > = ({ statusBarItem, className, component, extensionsController, location }) => {
     const [commandState, setCommandState] = useState<'loading' | null>(null)
 

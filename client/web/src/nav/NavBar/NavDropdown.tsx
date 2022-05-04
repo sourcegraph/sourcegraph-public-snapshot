@@ -32,7 +32,7 @@ interface NavDropdownProps {
     routeMatch?: string
 }
 
-export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({
+export const NavDropdown: React.FunctionComponent<React.PropsWithChildren<NavDropdownProps>> = ({
     toggleItem,
     mobileHomeItem,
     items,

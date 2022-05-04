@@ -14,7 +14,7 @@ import { GitHubAppInstallation } from './ConnectGitHubAppPage'
 
 import styles from './AppLogo.module.scss'
 
-export const InstallGitHubAppSuccessPage: React.FunctionComponent<{}> = () => {
+export const InstallGitHubAppSuccessPage: React.FunctionComponent<React.PropsWithChildren<{}>> = () => {
     const [data, setData] = useState<GitHubAppInstallation | null>()
 
     const installationID = useQueryStringParameters().get('installation_id')

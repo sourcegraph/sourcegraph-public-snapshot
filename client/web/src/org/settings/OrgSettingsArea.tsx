@@ -26,7 +26,7 @@ import { OrgSettingsMembersPage } from './members-v1/OrgSettingsMembersPage'
 import { OrgSettingsSidebar } from './OrgSettingsSidebar'
 import { OrgSettingsProfilePage } from './profile/OrgSettingsProfilePage'
 
-const NotFoundPage: React.FunctionComponent = () => (
+const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <HeroPage
         icon={MapSearchIcon}
         title="404: Not Found"
@@ -34,7 +34,9 @@ const NotFoundPage: React.FunctionComponent = () => (
     />
 )
 
-const LoadingComponent: React.FunctionComponent = () => <LoadingSpinner className="m-2" />
+const LoadingComponent: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
+    <LoadingSpinner className="m-2" />
+)
 
 interface Props extends OrgAreaPageProps, RouteComponentProps<{}>, ThemeProps {
     location: H.Location
@@ -45,7 +47,7 @@ interface Props extends OrgAreaPageProps, RouteComponentProps<{}>, ThemeProps {
  * Renders a layout of a sidebar and a content area to display pages related to
  * an organization's settings.
  */
-export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
+export const OrgSettingsArea: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
     const emitter = useEventBus()
     // we can ignore the error states in this case
     // if there is an error, we will not show the code host connections and repository screens

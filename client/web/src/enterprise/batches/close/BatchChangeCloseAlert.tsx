@@ -24,7 +24,7 @@ export interface BatchChangeCloseAlertProps {
     closeBatchChange?: typeof _closeBatchChange
 }
 
-export const BatchChangeCloseAlert: React.FunctionComponent<BatchChangeCloseAlertProps> = ({
+export const BatchChangeCloseAlert: React.FunctionComponent<React.PropsWithChildren<BatchChangeCloseAlertProps>> = ({
     batchChangeID,
     batchChangeURL,
     closeChangesets,

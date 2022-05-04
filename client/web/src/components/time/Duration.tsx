@@ -13,7 +13,7 @@ export interface DurationProps {
  * Prints a duration between two given timestamps or one given one and now.
  * Formats as hh:mm:ss.
  */
-export const Duration: React.FunctionComponent<DurationProps> = ({ start, end }) => {
+export const Duration: React.FunctionComponent<React.PropsWithChildren<DurationProps>> = ({ start, end }) => {
     // Parse the start date.
     const startDate = typeof start === 'string' ? parseISO(start) : start
     // Parse the end date.

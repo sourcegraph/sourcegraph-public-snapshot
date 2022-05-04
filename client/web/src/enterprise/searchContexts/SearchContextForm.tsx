@@ -139,7 +139,7 @@ type RepositoriesParseResult =
           repositories: ISearchContextRepositoryRevisionsInput[]
       }
 
-export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> = props => {
+export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<SearchContextFormProps>> = props => {
     const {
         authenticatedUser,
         onSubmit,

@@ -47,7 +47,7 @@ export interface Props {
     tooltip?: string
 }
 
-export const DropdownButton: React.FunctionComponent<Props> = ({
+export const DropdownButton: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     actions,
     defaultAction,
     disabled,
@@ -165,7 +165,10 @@ interface DropdownItemProps {
     action: Action
 }
 
-const DropdownItem: React.FunctionComponent<DropdownItemProps> = ({ action, setSelectedType }) => {
+const DropdownItem: React.FunctionComponent<React.PropsWithChildren<DropdownItemProps>> = ({
+    action,
+    setSelectedType,
+}) => {
     const onSelect = useCallback(() => {
         setSelectedType(action.type)
     }, [setSelectedType, action.type])

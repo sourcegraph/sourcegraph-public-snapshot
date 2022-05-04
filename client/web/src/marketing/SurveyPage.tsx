@@ -25,7 +25,7 @@ interface SurveyPageProps {
 const getScoreFromString = (score?: string): number | undefined =>
     score ? Math.max(0, Math.min(10, Math.round(+score))) : undefined
 
-export const SurveyPage: React.FunctionComponent<SurveyPageProps> = props => {
+export const SurveyPage: React.FunctionComponent<React.PropsWithChildren<SurveyPageProps>> = props => {
     const location = useLocation<SurveyFormLocationState>()
     const matchParameters = useParams<{ score?: string }>()
     const score = props.forceScore || matchParameters.score

@@ -23,13 +23,16 @@ export interface GitHubAppInstallation {
 
 type GitHubOrgListItemProps = HTMLAttributes<HTMLLIElement>
 
-export const GitHubOrgListItem: React.FunctionComponent<GitHubOrgListItemProps> = ({ children, ...rest }) => (
+export const GitHubOrgListItem: React.FunctionComponent<React.PropsWithChildren<GitHubOrgListItemProps>> = ({
+    children,
+    ...rest
+}) => (
     <li className={classNames('list-group-item', styles.ghOrgItem)} {...rest}>
         {children}
     </li>
 )
 
-export const ConnectGitHubAppPage: React.FunctionComponent<TelemetryProps> = () => {
+export const ConnectGitHubAppPage: React.FunctionComponent<React.PropsWithChildren<TelemetryProps>> = () => {
     const [data, setData] = useState<GitHubAppInstallation[]>([])
     const [error, setError] = useState<boolean>(false)
     const [loading, setLoading] = useState<boolean>(true)

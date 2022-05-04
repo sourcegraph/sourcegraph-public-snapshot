@@ -14,7 +14,9 @@ export interface HiddenExternalChangesetNodeProps {
     node: Pick<HiddenExternalChangesetFields, 'id' | 'nextSyncAt' | 'updatedAt' | 'state' | '__typename'>
 }
 
-export const HiddenExternalChangesetNode: React.FunctionComponent<HiddenExternalChangesetNodeProps> = ({ node }) => (
+export const HiddenExternalChangesetNode: React.FunctionComponent<
+    React.PropsWithChildren<HiddenExternalChangesetNodeProps>
+> = ({ node }) => (
     <>
         <span className="d-none d-sm-block" />
         <div className="p-2">

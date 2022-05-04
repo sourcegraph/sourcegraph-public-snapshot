@@ -23,7 +23,10 @@ interface Props {
     authenticatedUser: { id: string; tags: string[] } | null
 }
 
-export const CodeHostScopeProvider: FunctionComponent<Props> = ({ children, authenticatedUser }) => {
+export const CodeHostScopeProvider: FunctionComponent<React.PropsWithChildren<Props>> = ({
+    children,
+    authenticatedUser,
+}) => {
     const [scopes, setScopes] = useState<Scopes>({})
 
     const fetchCodeHostScope = useCallback(async (): Promise<void> => {

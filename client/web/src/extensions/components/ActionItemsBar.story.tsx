@@ -83,7 +83,7 @@ const config: Meta = {
 
 export default config
 
-export const Default: React.FunctionComponent = () => {
+export const Default: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => {
     const { useActionItemsBar } = useWebActionItems()
 
     return (

@@ -19,7 +19,7 @@ interface FeedbackBadgeProps extends BaseProductStatusBadgeProps {
 /**
  * An abstract UI component which renders a badge with specific status for feedback.
  */
-export const FeedbackBadge: React.FunctionComponent<FeedbackBadgeProps> = ({
+export const FeedbackBadge: React.FunctionComponent<React.PropsWithChildren<FeedbackBadgeProps>> = ({
     className,
     status,
     tooltip,

@@ -22,7 +22,11 @@ interface ExecutionLogEntryProps extends React.PropsWithChildren<{}> {
     now?: () => Date
 }
 
-export const ExecutionLogEntry: React.FunctionComponent<ExecutionLogEntryProps> = ({ logEntry, children, now }) => (
+export const ExecutionLogEntry: React.FunctionComponent<React.PropsWithChildren<ExecutionLogEntryProps>> = ({
+    logEntry,
+    children,
+    now,
+}) => (
     <Card className="mb-3">
         <CardBody>
             {logEntry.command.length > 0 ? (

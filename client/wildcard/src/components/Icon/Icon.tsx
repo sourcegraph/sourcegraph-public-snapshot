@@ -34,4 +34,7 @@ export const Icon = React.forwardRef((props, reference) => {
             {children}
         </Component>
     )
-}) as ForwardReferenceComponent<ComponentType<MdiReactIconProps> | ElementType, PropsWithChildren<IconProps>>
+}) as ForwardReferenceComponent<
+    ComponentType<React.PropsWithChildren<MdiReactIconProps>> | ElementType,
+    PropsWithChildren<IconProps>
+>

@@ -19,7 +19,7 @@ interface DeleteNotebookModalProps extends TelemetryProps {
 
 const LOADING = 'loading' as const
 
-export const DeleteNotebookModal: React.FunctionComponent<DeleteNotebookModalProps> = ({
+export const DeleteNotebookModal: React.FunctionComponent<React.PropsWithChildren<DeleteNotebookModalProps>> = ({
     notebookId,
     deleteNotebook,
     isOpen,

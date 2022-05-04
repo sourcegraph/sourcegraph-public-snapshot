@@ -19,7 +19,7 @@ interface Props {
     disabled?: boolean
 }
 
-export const UserProfileFormFields: React.FunctionComponent<Props> = ({
+export const UserProfileFormFields: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     value,
     onChange,
     usernameFieldDisabled,

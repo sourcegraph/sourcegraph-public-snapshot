@@ -9,7 +9,10 @@ export interface UploadOrIndexMetaTableProps {
     nodes: (LsifUploadFields | LsifIndexFields)[]
 }
 
-export const UploadOrIndexMetaTable: React.FunctionComponent<UploadOrIndexMetaTableProps> = ({ nodes, prefix }) => (
+export const UploadOrIndexMetaTable: React.FunctionComponent<React.PropsWithChildren<UploadOrIndexMetaTableProps>> = ({
+    nodes,
+    prefix,
+}) => (
     <table className="table">
         <thead>
             <tr>

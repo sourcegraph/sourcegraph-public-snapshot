@@ -22,7 +22,7 @@ interface NotebookBlockProps extends Pick<BlockProps, 'isSelected' | 'isOtherBlo
     focusInput?: () => void
 }
 
-export const NotebookBlock: React.FunctionComponent<NotebookBlockProps> = ({
+export const NotebookBlock: React.FunctionComponent<React.PropsWithChildren<NotebookBlockProps>> = ({
     children,
     id,
     className,

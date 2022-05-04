@@ -69,7 +69,7 @@ interface Props
 /**
  * A page with a form to create an access token for a user.
  */
-export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<Props> = ({
+export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     telemetryService,
     onDidCreateAccessToken,
     authenticatedUser,

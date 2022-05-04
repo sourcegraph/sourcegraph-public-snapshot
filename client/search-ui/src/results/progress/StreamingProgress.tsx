@@ -12,7 +12,7 @@ export interface StreamingProgressProps {
     onSearchAgain: (additionalFilters: string[]) => void
 }
 
-export const StreamingProgress: React.FunctionComponent<StreamingProgressProps> = props => (
+export const StreamingProgress: React.FunctionComponent<React.PropsWithChildren<StreamingProgressProps>> = props => (
     <>
         <StreamingProgressCount {...props} />
         <StreamingProgressSkippedButton {...props} />

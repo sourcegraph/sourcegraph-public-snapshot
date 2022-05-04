@@ -8,7 +8,7 @@ import styles from './ConnectionPopover.module.scss'
 
 type ConnectionPopoverProps = HTMLAttributes<HTMLDivElement>
 
-export const ConnectionPopover: React.FunctionComponent<ConnectionPopoverProps> = ({
+export const ConnectionPopover: React.FunctionComponent<React.PropsWithChildren<ConnectionPopoverProps>> = ({
     className,
     children,
     ...rest
@@ -22,7 +22,7 @@ type ConnectionPopoverTabsProps = TabsProps & {
     className?: string
 }
 
-export const ConnectionPopoverTabs: React.FunctionComponent<ConnectionPopoverTabsProps> = ({
+export const ConnectionPopoverTabs: React.FunctionComponent<React.PropsWithChildren<ConnectionPopoverTabsProps>> = ({
     children,
     className,
     ...rest

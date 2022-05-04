@@ -64,7 +64,7 @@ const NEW_TAB_LINK_PROPS: Pick<React.AnchorHTMLAttributes<HTMLAnchorElement>, 'r
     rel: 'noopener noreferrer',
 }
 
-export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
+export const OptionsPage: React.FunctionComponent<React.PropsWithChildren<OptionsPageProps>> = ({
     version,
     sourcegraphUrl,
     validateSourcegraphUrl,
@@ -175,12 +175,12 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
 }
 
 interface PermissionAlertProps {
-    icon?: React.ComponentType<{ className?: string }>
+    icon?: React.ComponentType<React.PropsWithChildren<{ className?: string }>>
     name: string
     onClickGrantPermissions?: React.MouseEventHandler
 }
 
-const PermissionAlert: React.FunctionComponent<PermissionAlertProps> = ({
+const PermissionAlert: React.FunctionComponent<React.PropsWithChildren<PermissionAlertProps>> = ({
     name,
     icon: AlertIcon,
     onClickGrantPermissions,
@@ -198,10 +198,12 @@ const PermissionAlert: React.FunctionComponent<PermissionAlertProps> = ({
     </section>
 )
 
-const RepoSyncErrorAlert: React.FunctionComponent<{
-    sourcegraphUrl: OptionsPageProps['sourcegraphUrl']
-    currentUser: NonNullable<OptionsPageProps['currentUser']>
-}> = ({ sourcegraphUrl, currentUser }) => {
+const RepoSyncErrorAlert: React.FunctionComponent<
+    React.PropsWithChildren<{
+        sourcegraphUrl: OptionsPageProps['sourcegraphUrl']
+        currentUser: NonNullable<OptionsPageProps['currentUser']>
+    }>
+> = ({ sourcegraphUrl, currentUser }) => {
     const isDefaultURL = isDefaultSourcegraphUrl(sourcegraphUrl)
 
     if (isDefaultURL && !currentUser.settingsURL) {
@@ -258,7 +260,7 @@ const RepoSyncErrorAlert: React.FunctionComponent<{
     )
 }
 
-const SourcegraphCloudAlert: React.FunctionComponent = () => (
+const SourcegraphCloudAlert: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <section className={classNames('bg-2', styles.section)}>
         <h4>
             <Icon className="mr-2" as={CheckCircleOutlineIcon} />
@@ -279,7 +281,7 @@ interface SourcegraphURLFormProps {
     suggestions: OptionsPageProps['sourcegraphUrl'][]
 }
 
-export const SourcegraphURLForm: React.FunctionComponent<SourcegraphURLFormProps> = ({
+export const SourcegraphURLForm: React.FunctionComponent<React.PropsWithChildren<SourcegraphURLFormProps>> = ({
     value,
     validate,
     suggestions,

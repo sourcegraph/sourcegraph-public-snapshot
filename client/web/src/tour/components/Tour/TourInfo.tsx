@@ -9,7 +9,10 @@ export interface TourInfoProps {
     isSourcegraphDotCom: boolean
 }
 
-export const TourInfo: React.FunctionComponent<TourInfoProps> = ({ className, isSourcegraphDotCom }) => {
+export const TourInfo: React.FunctionComponent<React.PropsWithChildren<TourInfoProps>> = ({
+    className,
+    isSourcegraphDotCom,
+}) => {
     if (!isSourcegraphDotCom) {
         return null
     }

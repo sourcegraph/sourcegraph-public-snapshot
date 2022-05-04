@@ -15,7 +15,7 @@ export interface CodeIntelStateDescriptionProps {
     className?: string
 }
 
-export const CodeIntelStateDescription: FunctionComponent<CodeIntelStateDescriptionProps> = ({
+export const CodeIntelStateDescription: FunctionComponent<React.PropsWithChildren<CodeIntelStateDescriptionProps>> = ({
     typeName,
     pluralTypeName,
     state,
@@ -49,7 +49,8 @@ export interface CodeIntelStateDescriptionPlaceInQueueProps {
     pluralTypeName: string
 }
 
-const CodeIntelStateDescriptionPlaceInQueue: FunctionComponent<CodeIntelStateDescriptionPlaceInQueueProps> = ({
-    placeInQueue,
-    pluralTypeName,
-}) => <>{placeInQueue ? `There are ${placeInQueue} ${pluralTypeName} ahead of this one.` : ''}</>
+const CodeIntelStateDescriptionPlaceInQueue: FunctionComponent<
+    React.PropsWithChildren<CodeIntelStateDescriptionPlaceInQueueProps>
+> = ({ placeInQueue, pluralTypeName }) => (
+    <>{placeInQueue ? `There are ${placeInQueue} ${pluralTypeName} ahead of this one.` : ''}</>
+)

@@ -120,11 +120,9 @@ const filters: FilteredConnectionFilter[] = [
     },
 ]
 
-export const SiteAdminFeatureFlagsPage: React.FunctionComponent<SiteAdminFeatureFlagsPageProps> = ({
-    fetchFeatureFlags = defaultFetchFeatureFlags,
-    productVersion = window.context.version,
-    ...props
-}) => {
+export const SiteAdminFeatureFlagsPage: React.FunctionComponent<
+    React.PropsWithChildren<SiteAdminFeatureFlagsPageProps>
+> = ({ fetchFeatureFlags = defaultFetchFeatureFlags, productVersion = window.context.version, ...props }) => {
     const history = useHistory()
 
     // Try to parse out a git rev based on the product version, otherwise just fall back
@@ -235,7 +233,7 @@ interface FeatureFlagNodeProps {
     node: FeatureFlagAndReferences
 }
 
-const FeatureFlagNode: React.FunctionComponent<FeatureFlagNodeProps> = ({ node }) => {
+const FeatureFlagNode: React.FunctionComponent<React.PropsWithChildren<FeatureFlagNodeProps>> = ({ node }) => {
     const { name, overrides, references } = node
     const hasOverridesOrReferences = overrides.length > 0 || references.length > 0
     return (

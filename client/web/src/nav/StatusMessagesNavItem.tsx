@@ -126,7 +126,7 @@ const getBorderClassname = (entryType: EntryType): string => {
     }
 }
 
-const StatusMessagesNavItemEntry: React.FunctionComponent<StatusMessageEntryProps> = props => {
+const StatusMessagesNavItemEntry: React.FunctionComponent<React.PropsWithChildren<StatusMessageEntryProps>> = props => {
     const onLinkClick = (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>): void => {
         const payload = { notificationType: props.entryType }
         eventLogger.log('UserNotificationsLinkClicked', payload, payload)

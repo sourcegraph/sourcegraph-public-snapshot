@@ -35,12 +35,9 @@ interface RepositoryComparePopoverProps {
     repo: RepositoryCompareHeaderProps['repo']
 }
 
-export const RepositoryComparePopover: React.FunctionComponent<RepositoryComparePopoverProps> = ({
-    id,
-    comparison,
-    repo,
-    type,
-}) => {
+export const RepositoryComparePopover: React.FunctionComponent<
+    React.PropsWithChildren<RepositoryComparePopoverProps>
+> = ({ id, comparison, repo, type }) => {
     const [popoverOpen, setPopoverOpen] = useState(false)
     const togglePopover = (): void => setPopoverOpen(previous => !previous)
 

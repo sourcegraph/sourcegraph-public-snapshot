@@ -26,7 +26,9 @@ export interface BatchChangeDetailsActionSectionProps extends SettingsCascadePro
     deleteBatchChange?: typeof _deleteBatchChange
 }
 
-export const BatchChangeDetailsActionSection: React.FunctionComponent<BatchChangeDetailsActionSectionProps> = ({
+export const BatchChangeDetailsActionSection: React.FunctionComponent<
+    React.PropsWithChildren<BatchChangeDetailsActionSectionProps>
+> = ({
     batchChangeID,
     batchChangeClosed,
     batchChangeNamespaceURL,

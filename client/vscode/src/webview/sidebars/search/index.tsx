@@ -41,7 +41,7 @@ setLinkComponent(AnchorLink)
 
 const themes = adaptSourcegraphThemeToEditorTheme()
 
-const Main: React.FC = () => {
+const Main: React.FC<React.PropsWithChildren<unknown>> = () => {
     // Debt: make sure we only rerender on necessary changes
     const state = useObservable(useMemo(() => wrapRemoteObservable(extensionCoreAPI.observeState()), []))
 

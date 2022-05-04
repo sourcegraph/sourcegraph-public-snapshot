@@ -91,7 +91,7 @@ const filters: FilteredConnectionFilter[] = [
     },
 ]
 
-export const CodeIntelUploadsPage: FunctionComponent<CodeIntelUploadsPageProps> = ({
+export const CodeIntelUploadsPage: FunctionComponent<React.PropsWithChildren<CodeIntelUploadsPageProps>> = ({
     repo,
     queryLsifUploadsByRepository = defaultQueryLsifUploadsByRepository,
     queryLsifUploadsList = defaultQueryLsifUploadsList,

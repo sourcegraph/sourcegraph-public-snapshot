@@ -35,7 +35,7 @@ export interface SearchContextsListTabProps
     authenticatedUser: AuthenticatedUser | null
 }
 
-export const SearchContextsListTab: React.FunctionComponent<SearchContextsListTabProps> = ({
+export const SearchContextsListTab: React.FunctionComponent<React.PropsWithChildren<SearchContextsListTabProps>> = ({
     isSourcegraphDotCom,
     authenticatedUser,
     getUserSearchContextNamespaces,

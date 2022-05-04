@@ -30,10 +30,9 @@ interface ImportingChangesetsPreviewListProps {
 
 const CHANGESETS_PER_PAGE_COUNT = 100
 
-export const ImportingChangesetsPreviewList: React.FunctionComponent<ImportingChangesetsPreviewListProps> = ({
-    importingChangesetsConnection: { connection, hasNextPage, fetchMore, loading },
-    isStale,
-}) => (
+export const ImportingChangesetsPreviewList: React.FunctionComponent<
+    React.PropsWithChildren<ImportingChangesetsPreviewListProps>
+> = ({ importingChangesetsConnection: { connection, hasNextPage, fetchMore, loading }, isStale }) => (
     <ConnectionContainer className="w-100">
         <h4 className="align-self-start w-100 mt-4">Importing changesets</h4>
         <ConnectionList className="list-group list-group-flush w-100">

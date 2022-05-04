@@ -16,7 +16,12 @@ interface Props {
     onDidError: (error: ErrorLike) => void
 }
 
-export const ExternalAccount: React.FunctionComponent<Props> = ({ account, authProvider, onDidRemove, onDidError }) => {
+export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    account,
+    authProvider,
+    onDidRemove,
+    onDidError,
+}) => {
     const [isLoading, setIsLoading] = useState(false)
     const [isRemoveAccountModalOpen, setIsRemoveAccountModalOpen] = useState(false)
     const toggleRemoveAccountModal = useCallback(() => setIsRemoveAccountModalOpen(!isRemoveAccountModalOpen), [

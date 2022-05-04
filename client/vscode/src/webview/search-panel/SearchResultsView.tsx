@@ -43,7 +43,7 @@ export interface SearchResultsViewProps extends WebviewPageProps {
     context: SearchResultsState['context']
 }
 
-export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> = ({
+export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<SearchResultsViewProps>> = ({
     extensionCoreAPI,
     authenticatedUser,
     platformContext,

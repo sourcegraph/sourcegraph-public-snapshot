@@ -9,7 +9,7 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
     inputRef?: React.Ref<HTMLInputElement>
 }
 
-export const PasswordInput: React.FunctionComponent<InputProps> = props => {
+export const PasswordInput: React.FunctionComponent<React.PropsWithChildren<InputProps>> = props => {
     const { inputRef, ...other } = props
     return (
         <input
@@ -25,7 +25,7 @@ export const PasswordInput: React.FunctionComponent<InputProps> = props => {
     )
 }
 
-export const EmailInput: React.FunctionComponent<InputProps> = props => {
+export const EmailInput: React.FunctionComponent<React.PropsWithChildren<InputProps>> = props => {
     const { inputRef, ...other } = props
     return (
         <input
@@ -42,7 +42,7 @@ export const EmailInput: React.FunctionComponent<InputProps> = props => {
     )
 }
 
-export const UsernameInput: React.FunctionComponent<InputProps> = props => {
+export const UsernameInput: React.FunctionComponent<React.PropsWithChildren<InputProps>> = props => {
     const { inputRef, ...other } = props
     return (
         <input

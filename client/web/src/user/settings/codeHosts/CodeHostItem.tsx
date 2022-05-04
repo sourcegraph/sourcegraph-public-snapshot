@@ -24,7 +24,7 @@ interface CodeHostItemProps {
     kind: ExternalServiceKind
     owner: Owner
     name: string
-    icon: React.ComponentType<{ className?: string }>
+    icon: React.ComponentType<React.PropsWithChildren<{ className?: string }>>
     navigateToAuthProvider: (kind: ExternalServiceKind) => void
     isTokenUpdateRequired: boolean | undefined
     // optional service object fields when the code host connection is active
@@ -43,7 +43,7 @@ export interface ParentWindow extends Window {
     onSuccess?: (reason: string | null) => void
 }
 
-export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
+export const CodeHostItem: React.FunctionComponent<React.PropsWithChildren<CodeHostItemProps>> = ({
     owner,
     service,
     kind,

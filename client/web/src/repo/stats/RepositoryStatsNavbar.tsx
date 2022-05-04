@@ -3,10 +3,9 @@ import * as React from 'react'
 import classNames from 'classnames'
 import { NavLink } from 'react-router-dom'
 
-export const RepositoryStatsNavbar: React.FunctionComponent<{ repo: string; className: string }> = ({
-    repo,
-    className,
-}) => (
+export const RepositoryStatsNavbar: React.FunctionComponent<
+    React.PropsWithChildren<{ repo: string; className: string }>
+> = ({ repo, className }) => (
     <ul className={classNames('nav', className)}>
         <li className="nav-item">
             <NavLink

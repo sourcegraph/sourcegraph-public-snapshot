@@ -14,7 +14,7 @@ interface Props {
     className?: string
 }
 
-export const QuickLinks: React.FunctionComponent<Props> = ({ quickLinks, className = '' }) =>
+export const QuickLinks: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ quickLinks, className = '' }) =>
     quickLinks && quickLinks.length > 0 ? (
         <div className={className}>
             {quickLinks.map((quickLink, index) => (

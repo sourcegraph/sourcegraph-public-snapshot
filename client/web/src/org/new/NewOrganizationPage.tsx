@@ -19,7 +19,7 @@ interface Props {
     history: H.History
 }
 
-export const NewOrganizationPage: React.FunctionComponent<Props> = ({ history }) => {
+export const NewOrganizationPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ history }) => {
     useEffect(() => {
         eventLogger.logViewEvent('NewOrg')
     }, [])

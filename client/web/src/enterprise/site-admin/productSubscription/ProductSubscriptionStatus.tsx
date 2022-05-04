@@ -62,7 +62,10 @@ interface Props {
 /**
  * A component displaying information about and the status of the product subscription.
  */
-export const ProductSubscriptionStatus: React.FunctionComponent<Props> = ({ className, showTrueUpStatus }) => {
+export const ProductSubscriptionStatus: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    className,
+    showTrueUpStatus,
+}) => {
     /** The product subscription status, or an error, or undefined while loading. */
     const statusOrError = useObservable(
         useMemo(() => queryProductLicenseInfo().pipe(catchError((error): [ErrorLike] => [asError(error)])), [])

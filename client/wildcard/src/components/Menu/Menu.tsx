@@ -7,7 +7,7 @@ import { ForwardReferenceComponent } from '../..'
 import { Popover } from '../Popover'
 
 export type MenuProps = ReachMenuProps & {
-    as?: ComponentType
+    as?: ComponentType<React.PropsWithChildren<unknown>>
 }
 
 /**

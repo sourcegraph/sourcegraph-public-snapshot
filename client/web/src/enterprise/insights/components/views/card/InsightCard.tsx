@@ -63,14 +63,14 @@ const InsightCardHeader = forwardRef((props, reference) => {
     )
 }) as ForwardReferenceComponent<'header', InsightCardTitleProps>
 
-const InsightCardLoading: React.FunctionComponent = props => (
+const InsightCardLoading: React.FunctionComponent<React.PropsWithChildren<unknown>> = props => (
     <InsightCardBanner>
         <LoadingSpinner />
         {props.children}
     </InsightCardBanner>
 )
 
-const InsightCardBanner: React.FunctionComponent<HTMLAttributes<HTMLDivElement>> = props => (
+const InsightCardBanner: React.FunctionComponent<React.PropsWithChildren<HTMLAttributes<HTMLDivElement>>> = props => (
     <div {...props} className={classNames(styles.loadingContent, props.className)}>
         {props.children}
     </div>
@@ -80,7 +80,7 @@ interface InsightCardLegendProps extends React.HTMLAttributes<HTMLUListElement> 
     series: Series<any>[]
 }
 
-const InsightCardLegend: React.FunctionComponent<InsightCardLegendProps> = props => {
+const InsightCardLegend: React.FunctionComponent<React.PropsWithChildren<InsightCardLegendProps>> = props => {
     const { series, ...attributes } = props
 
     return (

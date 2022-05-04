@@ -17,7 +17,9 @@ const config: Meta = {
 
 export default config
 
-export const Basic: React.FunctionComponent<Partial<SelfHostedCtaProps>> = (props): JSX.Element => (
+export const Basic: React.FunctionComponent<React.PropsWithChildren<Partial<SelfHostedCtaProps>>> = (
+    props
+): JSX.Element => (
     <SelfHostedCta telemetryService={NOOP_TELEMETRY_SERVICE} page="storybook" {...props}>
         <p className="mb-2">
             <strong>Run Sourcegraph self-hosted for more enterprise features</strong>

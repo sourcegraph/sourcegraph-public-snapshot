@@ -13,7 +13,7 @@ import styles from './LivePreviewCard.module.scss'
 
 interface LivePreviewCardProps extends HTMLAttributes<HTMLElement> {}
 
-const LivePreviewCard: React.FunctionComponent<LivePreviewCardProps> = props => (
+const LivePreviewCard: React.FunctionComponent<React.PropsWithChildren<LivePreviewCardProps>> = props => (
     <InsightCard {...props} className={classNames(styles.insightCard, props.className)} />
 )
 
@@ -22,7 +22,9 @@ export interface LivePreviewUpdateButtonProps {
     onClick: () => void
 }
 
-const LivePreviewUpdateButton: React.FunctionComponent<LivePreviewUpdateButtonProps> = props => {
+const LivePreviewUpdateButton: React.FunctionComponent<
+    React.PropsWithChildren<LivePreviewUpdateButtonProps>
+> = props => {
     const { disabled, onClick } = props
 
     return (
@@ -41,13 +43,13 @@ const LivePreviewBlurBackdrop = forwardRef((props, reference) => {
     return <Component ref={reference} className={classNames(styles.chartWithMock, className)} {...attributes} />
 }) as ForwardReferenceComponent<'svg', {}>
 
-const LivePreviewBanner: React.FunctionComponent = props => (
+const LivePreviewBanner: React.FunctionComponent<React.PropsWithChildren<unknown>> = props => (
     <InsightCardBanner className={styles.disableBanner}>{props.children}</InsightCardBanner>
 )
 
 interface LivePreviewChartProps extends React.ComponentProps<typeof ParentSize> {}
 
-const LivePreviewChart: React.FunctionComponent<LivePreviewChartProps> = props => (
+const LivePreviewChart: React.FunctionComponent<React.PropsWithChildren<LivePreviewChartProps>> = props => (
     <ParentSize {...props} className={classNames(styles.chartBlock, props.className)} />
 )
 
@@ -55,7 +57,7 @@ interface LivePreviewLegendProps {
     series: Series<unknown>[]
 }
 
-const LivePreviewLegend: React.FunctionComponent<LivePreviewLegendProps> = props => {
+const LivePreviewLegend: React.FunctionComponent<React.PropsWithChildren<LivePreviewLegendProps>> = props => {
     const { series } = props
 
     return (

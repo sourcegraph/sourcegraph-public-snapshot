@@ -54,8 +54,8 @@ const NavMenuContent = forwardRef(({ sections = [], position, children, ...rest 
 )) as ForwardReferenceComponent<'div', NavMenuContentProps>
 
 interface NavItemProps extends Omit<MenuItemProps, 'children' | 'onSelect'> {
-    prefixIcon?: React.ComponentType<MdiReactIconProps>
-    suffixIcon?: React.ComponentType<MdiReactIconProps>
+    prefixIcon?: React.ComponentType<React.PropsWithChildren<MdiReactIconProps>>
+    suffixIcon?: React.ComponentType<React.PropsWithChildren<MdiReactIconProps>>
     content: string | ReactNode
     itemAs?: any
     to?: string | H.LocationDescriptor<any>

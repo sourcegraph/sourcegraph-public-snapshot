@@ -18,7 +18,7 @@ export const SEND_TEST_WEBHOOK = gql`
     }
 `
 
-export const WebhookAction: React.FunctionComponent<ActionProps> = ({
+export const WebhookAction: React.FunctionComponent<React.PropsWithChildren<ActionProps>> = ({
     action,
     setAction,
     disabled,

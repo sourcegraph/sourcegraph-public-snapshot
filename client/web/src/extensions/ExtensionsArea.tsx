@@ -21,7 +21,9 @@ import { ExtensionsAreaHeader, ExtensionsAreaHeaderActionButton } from './Extens
 
 import styles from './ExtensionsArea.module.scss'
 
-const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
+const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
+    <HeroPage icon={MapSearchIcon} title="404: Not Found" />
+)
 
 export interface ExtensionsAreaRoute extends RouteDescriptor<ExtensionsAreaRouteContext> {}
 
@@ -67,7 +69,7 @@ interface ExtensionsAreaProps
 /**
  * The extensions area.
  */
-export const ExtensionsArea: React.FunctionComponent<ExtensionsAreaProps> = props => {
+export const ExtensionsArea: React.FunctionComponent<React.PropsWithChildren<ExtensionsAreaProps>> = props => {
     const { breadcrumbs, ...rootBreadcrumbSetters } = useBreadcrumbs()
 
     const childBreadcrumbSetters = rootBreadcrumbSetters.useBreadcrumb(

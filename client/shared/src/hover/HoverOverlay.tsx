@@ -81,7 +81,7 @@ const getOverlayStyle = (overlayPosition: HoverOverlayProps['overlayPosition']):
     }
 }
 
-export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props => {
+export const HoverOverlay: React.FunctionComponent<React.PropsWithChildren<HoverOverlayProps>> = props => {
     const {
         hoverOrError,
         hoverRef,

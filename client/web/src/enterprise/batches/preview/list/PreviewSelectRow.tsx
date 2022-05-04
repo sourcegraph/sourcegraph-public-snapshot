@@ -61,7 +61,7 @@ export interface PreviewSelectRowProps {
  * Renders the top bar of the PreviewList with the publication state dropdown selector and
  * the X selected label. Provides select ALL functionality.
  */
-export const PreviewSelectRow: React.FunctionComponent<PreviewSelectRowProps> = ({
+export const PreviewSelectRow: React.FunctionComponent<React.PropsWithChildren<PreviewSelectRowProps>> = ({
     queryPublishableChangesetSpecIDs = _queryPublishableChangesetSpecIDs,
     queryArguments,
 }) => {
@@ -138,7 +138,7 @@ export const PreviewSelectRow: React.FunctionComponent<PreviewSelectRowProps> = 
     )
 }
 
-const AllSelectedLabel: React.FunctionComponent<{ count?: number }> = ({ count }) => {
+const AllSelectedLabel: React.FunctionComponent<React.PropsWithChildren<{ count?: number }>> = ({ count }) => {
     if (count === undefined) {
         return <>All changesets selected</>
     }

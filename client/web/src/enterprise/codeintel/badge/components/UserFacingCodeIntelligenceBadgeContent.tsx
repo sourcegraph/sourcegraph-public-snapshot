@@ -28,7 +28,9 @@ export interface UserFacingCodeIntelligenceBadgeContentProps
     onClose?: () => void
 }
 
-export const UserFacingCodeIntelligenceBadgeContent: React.FunctionComponent<UserFacingCodeIntelligenceBadgeContentProps> = ({
+export const UserFacingCodeIntelligenceBadgeContent: React.FunctionComponent<
+    React.PropsWithChildren<UserFacingCodeIntelligenceBadgeContentProps>
+> = ({
     repoName,
     indexerSupportMetadata: { allIndexers, indexerNames, uploadsByIndexerName, indexesByIndexerName },
     onClose,

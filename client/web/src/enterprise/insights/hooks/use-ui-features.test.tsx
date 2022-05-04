@@ -10,7 +10,10 @@ interface UiFeatureWrapperProps {
     mockApi: Partial<CodeInsightsBackend>
 }
 
-const UiFeatureWrapper: React.FunctionComponent<UiFeatureWrapperProps> = ({ mockApi, children }) => {
+const UiFeatureWrapper: React.FunctionComponent<React.PropsWithChildren<UiFeatureWrapperProps>> = ({
+    mockApi,
+    children,
+}) => {
     const api: CodeInsightsBackend = {
         ...new CodeInsightsGqlBackend({} as any),
         ...mockApi,
@@ -23,7 +26,7 @@ describe('useUiFeatures', () => {
         const mockApi: Partial<CodeInsightsBackend> = {
             UIFeatures: { licensed, insightsLimit: 2 },
         }
-        const wrapper: React.FunctionComponent = ({ children }) => (
+        const wrapper: React.FunctionComponent<React.PropsWithChildren<unknown>> = ({ children }) => (
             <UiFeatureWrapper mockApi={mockApi}>{children}</UiFeatureWrapper>
         )
         const { result } = renderHook(() => useUiFeatures(), { wrapper })

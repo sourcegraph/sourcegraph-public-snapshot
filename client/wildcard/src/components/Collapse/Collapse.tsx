@@ -13,7 +13,7 @@ type CollapseControlledProps =
     | { isOpen: boolean; onOpenChange: (opened: boolean) => void; openByDefault?: boolean }
 
 interface CollapseCommonProps {
-    children: React.FunctionComponent<{ isOpen?: boolean }> | ReactNode
+    children: React.FunctionComponent<React.PropsWithChildren<{ isOpen?: boolean }>> | ReactNode
 }
 
 export type CollapseProps = CollapseControlledProps & CollapseCommonProps
@@ -29,7 +29,7 @@ const DEFAULT_CONTEXT_VALUE: CollapseContextData = {
 
 const CollapseContext = createContext<CollapseContextData>(DEFAULT_CONTEXT_VALUE)
 
-export const Collapse: React.FunctionComponent<CollapseProps> = React.memo(props => {
+export const Collapse: React.FunctionComponent<React.PropsWithChildren<CollapseProps>> = React.memo(props => {
     const { children, isOpen, openByDefault, onOpenChange = noop } = props
     const [isInternalOpen, setInternalOpen] = useState<boolean>(Boolean(openByDefault))
     const isControlled = isOpen !== undefined

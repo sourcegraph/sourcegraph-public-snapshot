@@ -172,7 +172,7 @@ interface SavedSearchListPageContentProps extends Props, State {
     onDelete: () => void
 }
 
-const SavedSearchListPageContent: React.FunctionComponent<SavedSearchListPageContentProps> = ({
+const SavedSearchListPageContent: React.FunctionComponent<React.PropsWithChildren<SavedSearchListPageContentProps>> = ({
     namespace,
     savedSearchesOrError,
     ...props

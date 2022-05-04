@@ -8,12 +8,17 @@ import styles from './RepoRevision.module.scss'
 
 type RepoRevisionProps = HTMLAttributes<HTMLDivElement>
 
-export const RepoRevisionWrapper: React.FunctionComponent<RepoRevisionProps> = ({ children, className, ...rest }) => (
+export const RepoRevisionWrapper: React.FunctionComponent<React.PropsWithChildren<RepoRevisionProps>> = ({
+    children,
+    className,
+    ...rest
+}) => (
     <div className={classNames(styles.repoRevisionContainer, className)} {...rest}>
         {children}
     </div>
 )
 
-export const RepoRevisionChevronDownIcon: React.FunctionComponent<MdiReactIconProps> = ({ className, ...rest }) => (
-    <ChevronDownIcon className={classNames(styles.breadcrumbIcon, className)} {...rest} />
-)
+export const RepoRevisionChevronDownIcon: React.FunctionComponent<React.PropsWithChildren<MdiReactIconProps>> = ({
+    className,
+    ...rest
+}) => <ChevronDownIcon className={classNames(styles.breadcrumbIcon, className)} {...rest} />

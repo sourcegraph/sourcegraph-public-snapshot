@@ -44,7 +44,7 @@ interface Props {
     onOrganizationUpdate: () => void
 }
 
-export const InviteForm: React.FunctionComponent<Props> = ({
+export const InviteForm: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     orgID,
     authenticatedUser,
     onDidUpdateOrganizationMembers,
@@ -253,7 +253,7 @@ interface InvitedNotificationProps {
     className?: string
 }
 
-const InvitedNotification: React.FunctionComponent<InvitedNotificationProps> = ({
+const InvitedNotification: React.FunctionComponent<React.PropsWithChildren<InvitedNotificationProps>> = ({
     className,
     username,
     sentInvitationEmail,

@@ -31,7 +31,7 @@ export interface InviteMemberModalProps {
     showBetaBanner?: boolean
 }
 
-export const InviteMemberModal: React.FunctionComponent<InviteMemberModalProps> = props => {
+export const InviteMemberModal: React.FunctionComponent<React.PropsWithChildren<InviteMemberModalProps>> = props => {
     const { orgName, orgId, onInviteSent, onDismiss, showBetaBanner } = props
     const [userNameOrEmail, setUsernameOrEmail] = useState('')
     const [isEmail, setIsEmail] = useState<boolean>(false)
@@ -127,7 +127,7 @@ interface InvitedNotificationProps {
     className?: string
 }
 
-export const InvitedNotification: React.FunctionComponent<InvitedNotificationProps> = ({
+export const InvitedNotification: React.FunctionComponent<React.PropsWithChildren<InvitedNotificationProps>> = ({
     className,
     username,
     orgName,
@@ -151,13 +151,13 @@ export interface InviteMemberModalButtonProps extends ButtonProps {
     orgId: string
     onInviteSent: (result: IModalInviteResult) => void
     triggerLabel?: string
-    as?: keyof JSX.IntrinsicElements | Component | FunctionComponent
+    as?: keyof JSX.IntrinsicElements | Component | FunctionComponent<React.PropsWithChildren<unknown>>
     initiallyOpened?: boolean
     eventLoggerEventName?: string
 }
-export const InviteMemberModalHandler: React.FunctionComponent<InviteMemberModalButtonProps> = (
-    props: InviteMemberModalButtonProps
-) => {
+export const InviteMemberModalHandler: React.FunctionComponent<
+    React.PropsWithChildren<InviteMemberModalButtonProps>
+> = (props: InviteMemberModalButtonProps) => {
     const query = useQueryStringParameters()
     const showBetaBanner = !!query.get('openBetaBanner')
     const { orgName, orgId, onInviteSent, triggerLabel, as, initiallyOpened, eventLoggerEventName, ...rest } = props

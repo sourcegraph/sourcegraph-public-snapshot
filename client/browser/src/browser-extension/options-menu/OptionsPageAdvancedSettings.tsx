@@ -11,10 +11,9 @@ interface OptionsPageAdvancedSettingsProps {
     onChangeOptionFlag: (key: string, value: boolean) => void
 }
 
-export const OptionsPageAdvancedSettings: React.FunctionComponent<OptionsPageAdvancedSettingsProps> = ({
-    optionFlags,
-    onChangeOptionFlag,
-}) => (
+export const OptionsPageAdvancedSettings: React.FunctionComponent<
+    React.PropsWithChildren<OptionsPageAdvancedSettingsProps>
+> = ({ optionFlags, onChangeOptionFlag }) => (
     <section className="mt-2">
         <ul className={classNames(styles.list, 'p-0 m-0')}>
             {optionFlags.map(({ label, key, value }, index) => (

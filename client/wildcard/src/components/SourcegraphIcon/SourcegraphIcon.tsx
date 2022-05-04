@@ -1,6 +1,8 @@
 import * as React from 'react'
 
-export const SourcegraphIcon: React.FunctionComponent<React.SVGAttributes<SVGSVGElement>> = props => (
+export const SourcegraphIcon: React.FunctionComponent<
+    React.PropsWithChildren<React.SVGAttributes<SVGSVGElement>>
+> = props => (
     <svg viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
         <path
             d="M30.8 51.8c-2.8.5-5.5-1.3-6-4.1L17.2 6.2c-.5-2.8 1.3-5.5 4.1-6s5.5 1.3 6 4.1l7.6 41.5c.5 2.8-1.4 5.5-4.1 6z"

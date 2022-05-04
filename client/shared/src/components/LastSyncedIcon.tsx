@@ -13,7 +13,7 @@ export interface Props {
     className?: string
 }
 
-export const LastSyncedIcon: React.FunctionComponent<Props> = props => {
+export const LastSyncedIcon: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
     const formattedTime = format(Date.parse(props.lastSyncedTime), "yyyy-MM-dd'T'HH:mm:ss")
 
     return (

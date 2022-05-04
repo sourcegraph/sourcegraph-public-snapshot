@@ -64,7 +64,7 @@ export interface FormSeriesProps {
 /**
  * Renders form series (sub-form) for series (chart lines) creation code insight form.
  */
-export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
+export const FormSeries: React.FunctionComponent<React.PropsWithChildren<FormSeriesProps>> = props => {
     const {
         series = [],
         showValidationErrorsOnMount,

@@ -80,13 +80,9 @@ export interface SearchContextRepositoriesFormAreaProps extends ThemeProps, Tele
     onChange: (config: string, isInitialValue?: boolean) => void
 }
 
-export const SearchContextRepositoriesFormArea: React.FunctionComponent<SearchContextRepositoriesFormAreaProps> = ({
-    isLightTheme,
-    telemetryService,
-    repositories,
-    onChange,
-    validateRepositories,
-}) => {
+export const SearchContextRepositoriesFormArea: React.FunctionComponent<
+    React.PropsWithChildren<SearchContextRepositoriesFormAreaProps>
+> = ({ isLightTheme, telemetryService, repositories, onChange, validateRepositories }) => {
     const [hasTestedConfig, setHasTestedConfig] = useState(false)
     const [triggerTestConfig, triggerTestConfigErrors] = useEventObservable(
         useCallback(

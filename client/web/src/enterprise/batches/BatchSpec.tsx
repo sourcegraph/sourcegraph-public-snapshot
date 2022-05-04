@@ -29,7 +29,7 @@ export interface BatchSpecProps extends ThemeProps {
     className?: string
 }
 
-export const BatchSpec: React.FunctionComponent<BatchSpecProps> = ({
+export const BatchSpec: React.FunctionComponent<React.PropsWithChildren<BatchSpecProps>> = ({
     originalInput,
     isLightTheme,
     className,
@@ -59,23 +59,23 @@ interface BatchSpecDownloadLinkProps extends BatchSpecProps, Pick<BatchChangeFie
     className?: string
 }
 
-export const BatchSpecDownloadLink: React.FunctionComponent<BatchSpecDownloadLinkProps> = React.memo(
-    function BatchSpecDownloadLink({ children, className, name, originalInput }) {
-        return (
-            <Link
-                download={getFileName(name)}
-                to={'data:text/plain;charset=utf-8,' + encodeURIComponent(originalInput)}
-                className={className}
-                data-tooltip={`Download ${getFileName(name)}`}
-            >
-                {children}
-            </Link>
-        )
-    }
-)
+export const BatchSpecDownloadLink: React.FunctionComponent<
+    React.PropsWithChildren<BatchSpecDownloadLinkProps>
+> = React.memo(function BatchSpecDownloadLink({ children, className, name, originalInput }) {
+    return (
+        <Link
+            download={getFileName(name)}
+            to={'data:text/plain;charset=utf-8,' + encodeURIComponent(originalInput)}
+            className={className}
+            data-tooltip={`Download ${getFileName(name)}`}
+        >
+            {children}
+        </Link>
+    )
+})
 
 export const BatchSpecDownloadButton: React.FunctionComponent<
-    BatchSpecProps & Pick<BatchChangeFields, 'name'>
+    React.PropsWithChildren<BatchSpecProps & Pick<BatchChangeFields, 'name'>>
 > = React.memo(function BatchSpecDownloadButton(props) {
     return (
         <Button
@@ -92,7 +92,7 @@ export const BatchSpecDownloadButton: React.FunctionComponent<
 
 type BatchSpecMetaProps = Pick<BatchChangeFields, 'createdAt' | 'lastApplier' | 'lastAppliedAt'>
 
-export const BatchSpecMeta: React.FunctionComponent<BatchSpecMetaProps> = ({
+export const BatchSpecMeta: React.FunctionComponent<React.PropsWithChildren<BatchSpecMetaProps>> = ({
     createdAt,
     lastApplier,
     lastAppliedAt,

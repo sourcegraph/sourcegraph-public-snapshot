@@ -11,10 +11,9 @@ export interface CodeIntelUploadOrIndexLastActivityProps {
     now?: () => Date
 }
 
-export const CodeIntelUploadOrIndexLastActivity: FunctionComponent<CodeIntelUploadOrIndexLastActivityProps> = ({
-    node,
-    now,
-}) =>
+export const CodeIntelUploadOrIndexLastActivity: FunctionComponent<
+    React.PropsWithChildren<CodeIntelUploadOrIndexLastActivityProps>
+> = ({ node, now }) =>
     node.finishedAt ? (
         <span>
             Completed <Timestamp date={node.finishedAt} now={now} noAbout={true} />

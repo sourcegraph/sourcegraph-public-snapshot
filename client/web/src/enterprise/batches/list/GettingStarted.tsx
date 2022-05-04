@@ -11,7 +11,10 @@ export interface GettingStartedProps {
     className?: string
 }
 
-export const GettingStarted: React.FunctionComponent<GettingStartedProps> = ({ footer, className }) => (
+export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<GettingStartedProps>> = ({
+    footer,
+    className,
+}) => (
     <div className={className} data-testid="test-getting-started">
         <Container className="mb-4">
             <div className={classNames(styles.videoRow, 'row')}>
@@ -182,7 +185,7 @@ export const GettingStarted: React.FunctionComponent<GettingStartedProps> = ({ f
     </div>
 )
 
-const FindReplaceIcon: React.FunctionComponent<{ className?: string }> = ({ className }) => (
+const FindReplaceIcon: React.FunctionComponent<React.PropsWithChildren<{ className?: string }>> = ({ className }) => (
     <svg
         width="103"
         height="60"
@@ -229,7 +232,7 @@ const FindReplaceIcon: React.FunctionComponent<{ className?: string }> = ({ clas
     </svg>
 )
 
-const RefactorCombyIcon: React.FunctionComponent<{ className?: string }> = ({ className }) => (
+const RefactorCombyIcon: React.FunctionComponent<React.PropsWithChildren<{ className?: string }>> = ({ className }) => (
     <svg
         width="111"
         height="60"

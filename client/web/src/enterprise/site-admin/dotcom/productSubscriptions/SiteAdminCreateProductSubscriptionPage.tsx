@@ -49,7 +49,7 @@ const createProductSubscription = (
         map(data => data.dotcom.createProductSubscription)
     )
 
-const UserCreateSubscriptionNode: React.FunctionComponent<UserCreateSubscriptionNodeProps> = (
+const UserCreateSubscriptionNode: React.FunctionComponent<React.PropsWithChildren<UserCreateSubscriptionNodeProps>> = (
     props: UserCreateSubscriptionNodeProps
 ) => {
     const [onSubmit, createdSubscription] = useEventObservable(
@@ -123,7 +123,9 @@ interface Props extends RouteComponentProps<{}> {
  *
  * For use on Sourcegraph.com by Sourcegraph teammates only.
  */
-export const SiteAdminCreateProductSubscriptionPage: React.FunctionComponent<Props> = props => {
+export const SiteAdminCreateProductSubscriptionPage: React.FunctionComponent<
+    React.PropsWithChildren<Props>
+> = props => {
     useEffect(() => {
         eventLogger.logViewEvent('SiteAdminCreateProductSubscription')
     })

@@ -33,7 +33,7 @@ interface SignInPageProps {
     >
 }
 
-export const SignInPage: React.FunctionComponent<SignInPageProps> = props => {
+export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInPageProps>> = props => {
     useEffect(() => eventLogger.logViewEvent('SignIn', null, false))
 
     const [error, setError] = useState<Error | null>(null)

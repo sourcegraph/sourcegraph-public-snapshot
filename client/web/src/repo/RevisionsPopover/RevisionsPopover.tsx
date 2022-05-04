@@ -65,7 +65,7 @@ const TABS: RevisionsPopoverTab[] = [
  * A popover that displays a searchable list of revisions (grouped by type) for
  * the current repository.
  */
-export const RevisionsPopover: React.FunctionComponent<RevisionsPopoverProps> = props => {
+export const RevisionsPopover: React.FunctionComponent<React.PropsWithChildren<RevisionsPopoverProps>> = props => {
     const { getPathFromRevision = replaceRevisionInURL } = props
 
     useEffect(() => {

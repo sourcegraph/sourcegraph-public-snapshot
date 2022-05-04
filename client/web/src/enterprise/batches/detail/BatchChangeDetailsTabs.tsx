@@ -72,7 +72,7 @@ interface BatchChangeDetailsTabsProps extends BatchChangeDetailsProps, SettingsC
     refetchBatchChange: () => void
 }
 
-export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsTabsProps> = ({
+export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChildren<BatchChangeDetailsTabsProps>> = ({
     batchChange,
     extensionsController,
     history,

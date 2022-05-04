@@ -68,7 +68,7 @@ export interface AccessTokenNodeProps {
     afterDelete: () => void
 }
 
-export const AccessTokenNode: React.FunctionComponent<AccessTokenNodeProps> = ({
+export const AccessTokenNode: React.FunctionComponent<React.PropsWithChildren<AccessTokenNodeProps>> = ({
     node,
     showSubject,
     newToken,

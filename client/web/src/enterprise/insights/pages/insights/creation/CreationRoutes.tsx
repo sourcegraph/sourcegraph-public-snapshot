@@ -24,7 +24,7 @@ interface CreationRoutesProps extends TelemetryProps {
  * Code insight sub-router for the creation area/routes.
  * Renders code insights creation routes (insight creation UI pages, creation intro page)
  */
-export const CreationRoutes: React.FunctionComponent<CreationRoutesProps> = props => {
+export const CreationRoutes: React.FunctionComponent<React.PropsWithChildren<CreationRoutesProps>> = props => {
     const { telemetryService } = props
 
     const match = useRouteMatch()

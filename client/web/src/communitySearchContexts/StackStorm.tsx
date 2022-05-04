@@ -42,5 +42,5 @@ export const stackStorm: CommunitySearchContextMetadata = {
 }
 
 export const StackStormCommunitySearchContextPage: React.FunctionComponent<
-    Omit<CommunitySearchContextPageProps, 'communitySearchContextMetadata'>
+    React.PropsWithChildren<Omit<CommunitySearchContextPageProps, 'communitySearchContextMetadata'>>
 > = props => <CommunitySearchContextPage {...props} communitySearchContextMetadata={stackStorm} />

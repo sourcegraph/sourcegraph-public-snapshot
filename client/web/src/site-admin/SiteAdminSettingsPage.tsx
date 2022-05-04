@@ -22,7 +22,7 @@ interface Props
     site: Pick<GQL.ISite, '__typename' | 'id'>
 }
 
-export const SiteAdminSettingsPage: React.FunctionComponent<Props> = props => (
+export const SiteAdminSettingsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = props => (
     <>
         <PageTitle title="Global settings" />
         <SettingsArea

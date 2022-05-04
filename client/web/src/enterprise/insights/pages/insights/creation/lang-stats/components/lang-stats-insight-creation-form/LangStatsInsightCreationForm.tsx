@@ -37,7 +37,9 @@ export interface LangStatsInsightCreationFormProps {
     onFormReset: () => void
 }
 
-export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsightCreationFormProps> = props => {
+export const LangStatsInsightCreationForm: React.FunctionComponent<
+    React.PropsWithChildren<LangStatsInsightCreationFormProps>
+> = props => {
     const {
         mode = 'creation',
         innerRef,

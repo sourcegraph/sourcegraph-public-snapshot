@@ -52,7 +52,7 @@ export interface FuzzyModalProps {
  *
  * Similar to "Go to file" in VS Code or the "t" keyboard shortcut on github.com
  */
-export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
+export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyModalProps>> = props => {
     // NOTE: the query is cached in local storage to mimic the file pickers in
     // IntelliJ (by default) and VS Code (when "Workbench > Quick Open >
     // Preserve Input" is enabled).
@@ -299,7 +299,7 @@ interface FuzzyResultsSummaryProps {
     totalFileCount: number
 }
 
-const FuzzyResultsSummary: React.FunctionComponent<FuzzyResultsSummaryProps> = ({
+const FuzzyResultsSummary: React.FunctionComponent<React.PropsWithChildren<FuzzyResultsSummaryProps>> = ({
     fsm,
     resultsCount,
     isComplete,

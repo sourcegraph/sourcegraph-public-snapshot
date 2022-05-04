@@ -93,7 +93,9 @@ interface NotebookMarkdownBlockProps extends BlockProps<MarkdownBlock>, ThemePro
     isEmbedded?: boolean
 }
 
-export const NotebookMarkdownBlock: React.FunctionComponent<NotebookMarkdownBlockProps> = React.memo(
+export const NotebookMarkdownBlock: React.FunctionComponent<
+    React.PropsWithChildren<NotebookMarkdownBlockProps>
+> = React.memo(
     ({
         id,
         input,

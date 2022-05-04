@@ -32,7 +32,7 @@ interface SearchInputExampleProps {
     onRun: () => void
 }
 
-const SearchInputExample: React.FunctionComponent<SearchInputExampleProps> = ({
+const SearchInputExample: React.FunctionComponent<React.PropsWithChildren<SearchInputExampleProps>> = ({
     showSearchContext,
     query,
     patternType = SearchPatternType.literal,
@@ -129,7 +129,7 @@ interface ContainerProps {
     onClose?: (sectionID: SectionID) => void
 }
 
-const Container: React.FunctionComponent<ContainerProps> = ({
+const Container: React.FunctionComponent<React.PropsWithChildren<ContainerProps>> = ({
     sectionID,
     title,
     children,
@@ -179,7 +179,7 @@ interface NoResultsPageProps extends ThemeProps, TelemetryProps, Pick<SearchCont
     assetsRoot?: string
 }
 
-export const NoResultsPage: React.FunctionComponent<NoResultsPageProps> = ({
+export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoResultsPageProps>> = ({
     searchContextsEnabled,
     isLightTheme,
     telemetryService,

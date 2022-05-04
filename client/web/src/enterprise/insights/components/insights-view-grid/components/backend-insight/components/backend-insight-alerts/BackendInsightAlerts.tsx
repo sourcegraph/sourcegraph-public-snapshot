@@ -17,7 +17,9 @@ interface BackendAlertOverLayProps {
     className?: string
 }
 
-export const BackendAlertOverlay: React.FunctionComponent<BackendAlertOverLayProps> = props => {
+export const BackendAlertOverlay: React.FunctionComponent<
+    React.PropsWithChildren<BackendAlertOverLayProps>
+> = props => {
     const { isFetchingHistoricalData, hasNoData, className } = props
 
     if (isFetchingHistoricalData) {
@@ -51,7 +53,7 @@ export interface AlertOverlayProps {
     className?: string
 }
 
-const AlertOverlay: React.FunctionComponent<AlertOverlayProps> = props => {
+const AlertOverlay: React.FunctionComponent<React.PropsWithChildren<AlertOverlayProps>> = props => {
     const { title, description, icon, className } = props
 
     return (
@@ -69,7 +71,9 @@ interface BackendInsightErrorAlertProps {
     error: ErrorLike
 }
 
-export const BackendInsightErrorAlert: React.FunctionComponent<BackendInsightErrorAlertProps> = props =>
+export const BackendInsightErrorAlert: React.FunctionComponent<
+    React.PropsWithChildren<BackendInsightErrorAlertProps>
+> = props =>
     props.error instanceof InsightInProcessError ? (
         <Alert variant="info">{props.error.message}</Alert>
     ) : (

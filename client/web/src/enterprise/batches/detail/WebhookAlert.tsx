@@ -19,7 +19,7 @@ export interface Props {
     isSiteAdmin?: boolean
 }
 
-export const WebhookAlert: React.FunctionComponent<Props> = ({
+export const WebhookAlert: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     batchChange: {
         id,
         currentSpec: {
