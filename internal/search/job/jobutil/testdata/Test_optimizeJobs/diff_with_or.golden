@@ -12,10 +12,10 @@ BASE:
       (OR
         (PARALLEL
           DiffSearchJob
-          ComputeExcludedRepos)
+          ComputeExcludedReposJob)
         (PARALLEL
           DiffSearchJob
-          ComputeExcludedRepos)))))
+          ComputeExcludedReposJob)))))
 
 OPTIMIZED:
 
@@ -29,7 +29,7 @@ OPTIMIZED:
         (OR
           (PARALLEL
             NoopJob
-            ComputeExcludedRepos)
+            ComputeExcludedReposJob)
           (PARALLEL
             NoopJob
-            ComputeExcludedRepos))))))
+            ComputeExcludedReposJob))))))
