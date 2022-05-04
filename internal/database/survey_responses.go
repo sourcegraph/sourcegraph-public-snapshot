@@ -42,16 +42,16 @@ func (s *SurveyResponseStore) Transact(ctx context.Context) (*SurveyResponseStor
 }
 
 // Create creates a survey response.
-func (s *SurveyResponseStore) Create(ctx context.Context, userID *int32, email *string, score int, reason *string, better *string) (id int64, err error) {
+func (s *SurveyResponseStore) Create(ctx context.Context, userID *int32, email *string, score int, useCases *[]string, additionalInformation *string) (id int64, err error) {
 	err = s.Handle().DB().QueryRowContext(ctx,
-		"INSERT INTO survey_responses(user_id, email, score, reason, better) VALUES($1, $2, $3, $4, $5) RETURNING id",
-		userID, email, score, reason, better,
+		"INSERT INTO survey_responses(user_id, email, score, use_cases, additional_information) VALUES($1, $2, $3, $4, $5) RETURNING id",
+		userID, email, score, useCases, additionalInformation,
 	).Scan(&id)
 	return id, err
 }
 
 func (s *SurveyResponseStore) getBySQL(ctx context.Context, query string, args ...any) ([]*types.SurveyResponse, error) {
-	rows, err := s.Handle().DB().QueryContext(ctx, "SELECT id, user_id, email, score, reason, better, created_at FROM survey_responses "+query, args...)
+	rows, err := s.Handle().DB().QueryContext(ctx, "SELECT id, user_id, email, score, reason, better, use_cases, additional_information created_at FROM survey_responses "+query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +59,7 @@ func (s *SurveyResponseStore) getBySQL(ctx context.Context, query string, args .
 	defer rows.Close()
 	for rows.Next() {
 		r := types.SurveyResponse{}
-		err := rows.Scan(&r.ID, &r.UserID, &r.Email, &r.Score, &r.Reason, &r.Better, &r.CreatedAt)
+		err := rows.Scan(&r.ID, &r.UserID, &r.Email, &r.Score, &r.Reason, &r.Better, &r.UseCases, &r.AdditionalInformation, &r.CreatedAt)
 		if err != nil {
 			return nil, err
 		}

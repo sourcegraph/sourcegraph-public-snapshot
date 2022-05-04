@@ -1071,13 +1071,13 @@ input SurveySubmissionInput {
     """
     score: Int!
     """
-    The answer to "What is the most important reason for the score you gave".
+    The answer to "You are using Sourcegraph to...".
     """
-    reason: String
+    useCases: [String!]
     """
-    The answer to "What can Sourcegraph do to provide a better product"
+    The answer to "Anything else you’d like to share with us?".
     """
-    better: String
+    additionalInformation: String
 }
 
 """
@@ -5893,6 +5893,14 @@ type SurveyResponse {
     The answer to "What can Sourcegraph do to provide a better product"
     """
     better: String
+    """
+    The answer to "You are using Sourcegraph to...".
+    """
+    useCases: [String!]
+    """
+    The answer to "Anything else you’d like to share with us?".
+    """
+    additionalInformation: String
     """
     The time when this response was created.
     """

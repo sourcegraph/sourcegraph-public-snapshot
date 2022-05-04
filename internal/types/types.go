@@ -1131,13 +1131,15 @@ type SearchAggregatedEvent struct {
 }
 
 type SurveyResponse struct {
-	ID        int32
-	UserID    *int32
-	Email     *string
-	Score     int32
-	Reason    *string
-	Better    *string
-	CreatedAt time.Time
+	ID                    int32
+	UserID                *int32
+	Email                 *string
+	Score                 int32
+	Reason                *string
+	Better                *string
+	UseCases              *[]string
+	AdditionalInformation *string
+	CreatedAt             time.Time
 }
 
 type Event struct {
