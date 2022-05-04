@@ -89,6 +89,10 @@ func goModGuards() lint.Runner {
 	const header = "go.mod version guards"
 
 	var maxVersions = map[string]*semver.Version{
+		// Any version past this version is not yet released in any version of Alertmanager,
+		// and causes incompatibility in prom-wrapper.
+		//
+		// https://github.com/sourcegraph/zoekt/pull/330#issuecomment-1116857568
 		"github.com/prometheus/common": semver.MustParse("v0.32.1"),
 	}
 
