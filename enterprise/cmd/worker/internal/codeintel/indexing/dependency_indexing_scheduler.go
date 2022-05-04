@@ -30,7 +30,6 @@ var disableIndexScheduler, _ = strconv.ParseBool(os.Getenv("CODEINTEL_DEPENDENCY
 // records from lsif_dependency_indexing_jobs.
 func NewDependencyIndexingScheduler(
 	dbStore DBStore,
-	logger log.Logger,
 	workerStore dbworkerstore.Store,
 	externalServiceStore ExternalServiceStore,
 	repoUpdaterClient RepoUpdaterClient,

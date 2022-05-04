@@ -8,7 +8,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/prometheus/client_golang/prometheus"
-	"go.uber.org/zap"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
@@ -57,7 +56,7 @@ func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore
 
 	go conf.Watch(func() {
 		val := getRateLimit()
-		logger.Info("Updating insights/query-worker rate limit", zap.Int("value", int(val)))
+		logger.Info("Updating insights/query-worker rate limit", log.Int("value", int(val)))
 		limiter.SetLimit(val)
 	})
 

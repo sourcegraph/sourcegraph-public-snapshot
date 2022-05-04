@@ -19,7 +19,6 @@ import (
 // from the database and passes them to the bulk executor for processing.
 func NewBulkOperationWorker(
 	ctx context.Context,
-	logger log.Logger,
 	s *store.Store,
 	workerStore dbworkerstore.Store,
 	sourcer sources.Sourcer,

@@ -40,7 +40,7 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB *sql.DB
 
 	// Create basic metrics for recording information about background jobs.
 	observationContext := &observation.Context{
-		Logger:     log.Scoped("background", "insights background jobs"),
+		Logger:     logger.Scoped("background", "insights background jobs"),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
@@ -70,7 +70,7 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB *sql.DB
 	// should not be published as an option externally, and will be deprecated as soon as possible.
 	enableSync, _ := strconv.ParseBool(os.Getenv("ENABLE_CODE_INSIGHTS_SETTINGS_STORAGE"))
 	if enableSync {
-		logger.Info("Enabling Code Insights Settings Storage - This is a deprecated functionality!")
+		observationContext.Logger.Info("Enabling Code Insights Settings Storage - This is a deprecated functionality!")
 		routines = append(routines, discovery.NewMigrateSettingInsightsJob(ctx, mainAppDB, insightsDB))
 	}
 	routines = append(
@@ -95,7 +95,7 @@ func GetBackgroundQueryRunnerJob(ctx context.Context, logger log.Logger, mainApp
 
 	// Create basic metrics for recording information about background jobs.
 	observationContext := &observation.Context{
-		Logger:     log.Scoped("background.query", "background query runner job"),
+		Logger:     logger.Scoped("background", "background query runner job"),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}

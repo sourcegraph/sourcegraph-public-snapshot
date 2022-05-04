@@ -41,7 +41,6 @@ func TestActionRunner(t *testing.T) {
 			db := dbtest.NewDB(t)
 			testQuery := "test patternType:literal"
 			externalURL := "https://www.sourcegraph.com"
-			log := logtest.Scoped(t)
 
 			// Mocks.
 			got := TemplateDataNewSearchResults{}
@@ -77,7 +76,7 @@ func TestActionRunner(t *testing.T) {
 			require.NoError(t, err)
 
 			a := actionRunner{s}
-			err = a.Handle(ctx, log, record)
+			err = a.Handle(ctx, logtest.Scoped(t), record)
 			require.NoError(t, err)
 
 			wantResultsPluralized := "results"

@@ -21,7 +21,6 @@ const UploadHeartbeatInterval = time.Second
 
 func NewWorker(
 	dbStore DBStore,
-	// logger log.Logger,
 	workerStore dbworkerstore.Store,
 	lsifStore LSIFStore,
 	uploadStore uploadstore.Store,

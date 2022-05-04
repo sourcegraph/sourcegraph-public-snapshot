@@ -30,7 +30,6 @@ var schemeToExternalService = map[string]string{
 // records from lsif_dependency_syncing_jobs.
 func NewDependencySyncScheduler(
 	dbStore DBStore,
-	logger log.Logger,
 	workerStore dbworkerstore.Store,
 	externalServiceStore ExternalServiceStore,
 	metrics workerutil.WorkerMetrics,
