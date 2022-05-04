@@ -306,7 +306,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       Search again:
     </div>
     <div
-      class="pl-0 form-check"
+      class="form-check"
     >
       <div
         class="form-check mb-1 d-block"

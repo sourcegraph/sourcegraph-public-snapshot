@@ -10,6 +10,7 @@ import React, {
 
 import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
+// eslint-disable-next-line no-restricted-imports
 import { DropdownItem } from 'reactstrap'
 import { BehaviorSubject, combineLatest, of, timer } from 'rxjs'
 import { catchError, debounce, switchMap, tap } from 'rxjs/operators'
