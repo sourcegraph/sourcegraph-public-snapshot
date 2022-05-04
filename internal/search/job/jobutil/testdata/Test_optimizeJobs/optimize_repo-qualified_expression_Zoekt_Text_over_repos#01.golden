@@ -18,7 +18,7 @@ BASE:
                 ZoektRepoSubset
                 Searcher))
             RepoSearch
-            ComputeExcludedRepos))
+            ComputeExcludedReposJob))
         (LIMIT
           40000
           (PARALLEL
@@ -27,7 +27,7 @@ BASE:
                 ZoektRepoSubset
                 Searcher))
             RepoSearch
-            ComputeExcludedRepos))
+            ComputeExcludedReposJob))
         (LIMIT
           40000
           (PARALLEL
@@ -36,7 +36,7 @@ BASE:
                 ZoektRepoSubset
                 Searcher))
             RepoSearch
-            ComputeExcludedRepos))))))
+            ComputeExcludedReposJob))))))
 
 OPTIMIZED:
 
@@ -57,7 +57,7 @@ OPTIMIZED:
                   NoopJob
                   Searcher))
               RepoSearch
-              ComputeExcludedRepos))
+              ComputeExcludedReposJob))
           (LIMIT
             40000
             (PARALLEL
@@ -66,7 +66,7 @@ OPTIMIZED:
                   NoopJob
                   Searcher))
               RepoSearch
-              ComputeExcludedRepos))
+              ComputeExcludedReposJob))
           (LIMIT
             40000
             (PARALLEL
@@ -75,4 +75,4 @@ OPTIMIZED:
                   NoopJob
                   Searcher))
               RepoSearch
-              ComputeExcludedRepos)))))))
+              ComputeExcludedReposJob)))))))

@@ -37,21 +37,21 @@ func TestToSearchInputs(t *testing.T) {
       ZoektRepoSubset
       Searcher))
   RepoSearch
-  ComputeExcludedRepos)
+  ComputeExcludedReposJob)
 `).Equal(t, test(`foo context:@userA`, search.Streaming, query.ParseLiteral))
 
 	autogold.Want("universal (AKA global) search context", `
 (PARALLEL
   ZoektGlobalSearch
   RepoSearch
-  ComputeExcludedRepos)
+  ComputeExcludedReposJob)
 `).Equal(t, test(`foo context:global`, search.Streaming, query.ParseLiteral))
 
 	autogold.Want("universal (AKA global) search", `
 (PARALLEL
   ZoektGlobalSearch
   RepoSearch
-  ComputeExcludedRepos)
+  ComputeExcludedReposJob)
 `).Equal(t, test(`foo`, search.Streaming, query.ParseLiteral))
 
 	autogold.Want("nonglobal repo", `
@@ -61,7 +61,7 @@ func TestToSearchInputs(t *testing.T) {
       ZoektRepoSubset
       Searcher))
   RepoSearch
-  ComputeExcludedRepos)
+  ComputeExcludedReposJob)
 `).Equal(t, test(`foo repo:sourcegraph/sourcegraph`, search.Streaming, query.ParseLiteral))
 
 	autogold.Want("nonglobal repo contains", `
@@ -71,7 +71,7 @@ func TestToSearchInputs(t *testing.T) {
       ZoektRepoSubset
       Searcher))
   RepoSearch
-  ComputeExcludedRepos)
+  ComputeExcludedReposJob)
 `).Equal(t, test(`foo repo:contains(bar)`, search.Streaming, query.ParseLiteral))
 
 	// Job generation support for implied `type:repo` queries.
@@ -79,52 +79,52 @@ func TestToSearchInputs(t *testing.T) {
 (PARALLEL
   ZoektGlobalSearch
   RepoSearch
-  ComputeExcludedRepos)
+  ComputeExcludedReposJob)
 `).Equal(t, test("ok ok", search.Streaming, query.ParseRegexp))
 
 	autogold.Want("supportedRepo job literal", `
 (PARALLEL
   ZoektGlobalSearch
   RepoSearch
-  ComputeExcludedRepos)
+  ComputeExcludedReposJob)
 `).Equal(t, test("ok @thing", search.Streaming, query.ParseLiteral))
 
 	autogold.Want("unsupported Repo job prefix", `
 (PARALLEL
   ZoektGlobalSearch
-  ComputeExcludedRepos)
+  ComputeExcludedReposJob)
 `).Equal(t, test("@nope", search.Streaming, query.ParseRegexp))
 
 	autogold.Want("unsupported Repo job regexp", `
 (PARALLEL
   ZoektGlobalSearch
-  ComputeExcludedRepos)
+  ComputeExcludedReposJob)
 `).Equal(t, test("foo @bar", search.Streaming, query.ParseRegexp))
 
 	// Job generation for other types of search
 	autogold.Want("symbol", `
 (PARALLEL
   RepoUniverseSymbolSearch
-  ComputeExcludedRepos)
+  ComputeExcludedReposJob)
 `).Equal(t, test("type:symbol test", search.Streaming, query.ParseRegexp))
 
 	autogold.Want("commit", `
 (PARALLEL
   CommitSearchJob
-  ComputeExcludedRepos)
+  ComputeExcludedReposJob)
 `).Equal(t, test("type:commit test", search.Streaming, query.ParseRegexp))
 
 	autogold.Want("diff", `
 (PARALLEL
   DiffSearchJob
-  ComputeExcludedRepos)
+  ComputeExcludedReposJob)
 `).Equal(t, test("type:diff test", search.Streaming, query.ParseRegexp))
 
 	autogold.Want("Streaming: file or commit", `
 (PARALLEL
   ZoektGlobalSearch
   CommitSearchJob
-  ComputeExcludedRepos)
+  ComputeExcludedReposJob)
 `).Equal(t, test("type:file type:commit test", search.Streaming, query.ParseRegexp))
 
 	autogold.Want("Streaming: many types", `
@@ -139,7 +139,7 @@ func TestToSearchInputs(t *testing.T) {
       SymbolSearcher))
   CommitSearchJob
   RepoSearch
-  ComputeExcludedRepos)
+  ComputeExcludedReposJob)
 `).Equal(t, test("type:file type:path type:repo type:commit type:symbol repo:test test", search.Streaming, query.ParseRegexp))
 
 	// Priority jobs for Batched search.
@@ -147,7 +147,7 @@ func TestToSearchInputs(t *testing.T) {
 (PARALLEL
   ZoektGlobalSearch
   CommitSearchJob
-  ComputeExcludedRepos)
+  ComputeExcludedReposJob)
 `).Equal(t, test("type:file type:commit test", search.Batch, query.ParseRegexp))
 
 	autogold.Want("Batched: many types", `
@@ -162,7 +162,7 @@ func TestToSearchInputs(t *testing.T) {
       SymbolSearcher))
   CommitSearchJob
   RepoSearch
-  ComputeExcludedRepos)
+  ComputeExcludedReposJob)
 `).Equal(t, test("type:file type:path type:repo type:commit type:symbol repo:test test", search.Batch, query.ParseRegexp))
 }
 
@@ -185,14 +185,14 @@ func TestToEvaluateJob(t *testing.T) {
 (PARALLEL
   ZoektGlobalSearch
   RepoSearch
-  ComputeExcludedRepos)
+  ComputeExcludedReposJob)
 `).Equal(t, test("foo", search.Streaming))
 
 	autogold.Want("root limit for batch search", `
 (PARALLEL
   ZoektGlobalSearch
   RepoSearch
-  ComputeExcludedRepos)
+  ComputeExcludedReposJob)
 `).Equal(t, test("foo", search.Batch))
 }
 

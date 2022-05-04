@@ -21,7 +21,7 @@ var allJobs = []job.Job{
 	&structural.StructuralSearch{},
 	&commit.CommitSearchJob{},
 	&symbol.RepoUniverseSymbolSearch{},
-	&repos.ComputeExcludedRepos{},
+	&repos.ComputeExcludedReposJob{},
 	&noopJob{},
 
 	&repoPagerJob{},

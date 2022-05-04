@@ -14,12 +14,12 @@ BASE:
           40000
           (PARALLEL
             DiffSearchJob
-            ComputeExcludedRepos))
+            ComputeExcludedReposJob))
         (LIMIT
           40000
           (PARALLEL
             DiffSearchJob
-            ComputeExcludedRepos))))))
+            ComputeExcludedReposJob))))))
 
 OPTIMIZED:
 
@@ -35,9 +35,9 @@ OPTIMIZED:
             40000
             (PARALLEL
               NoopJob
-              ComputeExcludedRepos))
+              ComputeExcludedReposJob))
           (LIMIT
             40000
             (PARALLEL
               NoopJob
-              ComputeExcludedRepos)))))))
+              ComputeExcludedReposJob)))))))

@@ -286,7 +286,7 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 		}
 	}
 
-	addJob(&searchrepos.ComputeExcludedRepos{
+	addJob(&searchrepos.ComputeExcludedReposJob{
 		Options: repoOptions,
 	})
 
