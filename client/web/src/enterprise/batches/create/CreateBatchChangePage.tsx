@@ -26,7 +26,7 @@ export interface CreateBatchChangePageProps extends SettingsCascadeProps<Setting
 
 /**
  * CreateBatchChangePage is a wrapper around the create batch change page that determines
- * if we should display the original create page or the new SSBC page.
+ * if we should display the original create page or the new server-side flow page.
  */
 export const CreateBatchChangePage: React.FunctionComponent<React.PropsWithChildren<CreateBatchChangePageProps>> = ({
     settingsCascade,
