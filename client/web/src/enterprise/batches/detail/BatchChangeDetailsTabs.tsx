@@ -110,7 +110,8 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
         <BatchChangeTabs history={history} location={location} initialTab={initialTab}>
             <BatchChangeTabList>
                 <BatchChangeTab index={0} name={TabName.Changesets}>
-                    <span aria-label={`${changesetCount} ${pluralize('changeset', changesetCount)}`}>
+                    <span className="sr-only">{`${changesetCount} ${pluralize('changeset', changesetCount)}`}</span>
+                    <span aria-hidden={true}>
                         <Icon className="text-muted mr-1" as={SourceBranchIcon} />
                         <span className="text-content" data-tab-content="Changesets">
                             Changesets
@@ -140,7 +141,8 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                 )}
                 {isExecutionEnabled && (
                     <BatchChangeTab index={2} name={TabName.Executions} customPath="/executions">
-                        <span aria-label={`${executingCount} ${pluralize('execution', executingCount)}`}>
+                        <span className="sr-only">{`${executingCount} ${pluralize('execution', executingCount)}`}</span>
+                        <span aria-hidden={true}>
                             <Icon className="text-muted mr-1" as={FileDocumentIcon} />{' '}
                             <span className="text-content" data-tab-content="Executions">
                                 Executions
@@ -156,12 +158,11 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                     </BatchChangeTab>
                 )}
                 <BatchChangeTab index={3} name={TabName.Archived}>
-                    <span
-                        aria-label={`${batchChange.changesetsStats.archived} ${pluralize(
-                            'archived changeset',
-                            batchChange.changesetsStats.archived
-                        )}`}
-                    >
+                    <span className="sr-only">{`${batchChange.changesetsStats.archived} ${pluralize(
+                        'archived changeset',
+                        batchChange.changesetsStats.archived
+                    )}`}</span>
+                    <span aria-hidden={true}>
                         <Icon className="text-muted mr-1" as={ArchiveIcon} />{' '}
                         <span className="text-content" data-tab-content="Archived">
                             Archived
@@ -172,12 +173,11 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                     </span>
                 </BatchChangeTab>
                 <BatchChangeTab index={4} name={TabName.BulkOperations}>
-                    <span
-                        aria-label={`${batchChange.bulkOperations.totalCount} ${pluralize(
-                            'bulk operation',
-                            batchChange.bulkOperations.totalCount
-                        )}`}
-                    >
+                    <span className="sr-only">{`${batchChange.bulkOperations.totalCount} ${pluralize(
+                        'bulk operation',
+                        batchChange.bulkOperations.totalCount
+                    )}`}</span>
+                    <span aria-hidden={true}>
                         <Icon className="text-muted mr-1" as={MonitorStarIcon} />{' '}
                         <span className="text-content" data-tab-content="Bulk operations">
                             Bulk operations

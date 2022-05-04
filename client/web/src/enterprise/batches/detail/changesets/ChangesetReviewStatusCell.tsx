@@ -39,7 +39,7 @@ export const ChangesetReviewStatusPending: React.FunctionComponent<{ className?:
             className
         )}
     >
-        <TimerSandIcon aria-hidden={true} />
+        <TimerSandIcon aria-hidden={true} role="presentation" />
         <span className="text-muted">Pending</span>
     </div>
 )
@@ -50,7 +50,7 @@ export const ChangesetReviewStatusDismissed: React.FunctionComponent<{ className
             className
         )}
     >
-        <GateArrowRightIcon aria-hidden={true} />
+        <GateArrowRightIcon aria-hidden={true} role="presentation" />
         <span className="text-muted">Dismissed</span>
     </div>
 )
@@ -61,7 +61,7 @@ export const ChangesetReviewStatusCommented: React.FunctionComponent<{ className
             className
         )}
     >
-        <CommentOutlineIcon aria-hidden={true} />
+        <CommentOutlineIcon aria-hidden={true} role="presentation" />
         <span className="text-muted">Commented</span>
     </div>
 )
@@ -74,7 +74,7 @@ export const ChangesetReviewStatusChangesRequested: React.FunctionComponent<{ cl
             className
         )}
     >
-        <DeltaIcon aria-hidden={true} />
+        <DeltaIcon aria-hidden={true} role="presentation" />
         <span className="text-muted">Changes requested</span>
     </div>
 )
@@ -85,7 +85,7 @@ export const ChangesetReviewStatusApproved: React.FunctionComponent<{ className?
             className
         )}
     >
-        <CheckCircleIcon aria-hidden={true} />
+        <CheckCircleIcon aria-hidden={true} role="presentation" />
         <span className="text-muted">Approved</span>
     </div>
 )

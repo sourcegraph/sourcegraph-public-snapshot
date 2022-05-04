@@ -47,31 +47,33 @@ export const DiffStat: React.FunctionComponent<DiffStatProps> = React.memo(funct
         labels.push(`${numberWithCommas(deleted)} ${pluralize('deletion', deleted)}`)
     }
     return (
-        <div
-            className={classNames(styles.diffStat, className)}
-            data-tooltip={labels.join(', ')}
-            aria-label={`Diff stat: added ${added} ${pluralize('line', added)}, changed ${changed} ${pluralize(
+        <>
+            <div className="sr-only">{`Diff stat: added ${added} ${pluralize(
                 'line',
-                changed
-            )}, deleted ${deleted} ${pluralize('line', deleted)}`}
-        >
-            {expandedCounts ? (
-                <div aria-hidden={true}>
-                    {/*
+                added
+            )}, changed ${changed} ${pluralize('line', changed)}, deleted ${deleted} ${pluralize(
+                'line',
+                deleted
+            )}`}</div>
+            <div className={classNames(styles.diffStat, className)} data-tooltip={labels.join(', ')} aria-hidden={true}>
+                {expandedCounts ? (
+                    <div>
+                        {/*
                         a11y-ignore
                         Rule: "color-contrast" (Elements must have sufficient color contrast)
                         GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
                     */}
-                    <strong className="a11y-ignore text-success mr-1">+{numberWithCommas(added)}</strong>
-                    {changed > 0 && (
-                        <strong className="a11y-ignore text-warning mr-1">&bull;{numberWithCommas(changed)}</strong>
-                    )}
-                    <strong className="a11y-ignore text-danger">&minus;{numberWithCommas(deleted)}</strong>
-                </div>
-            ) : (
-                <small>{numberWithCommas(total + changed)}</small>
-            )}
-        </div>
+                        <strong className="a11y-ignore text-success mr-1">+{numberWithCommas(added)}</strong>
+                        {changed > 0 && (
+                            <strong className="a11y-ignore text-warning mr-1">&bull;{numberWithCommas(changed)}</strong>
+                        )}
+                        <strong className="a11y-ignore text-danger">&minus;{numberWithCommas(deleted)}</strong>
+                    </div>
+                ) : (
+                    <small>{numberWithCommas(total + changed)}</small>
+                )}
+            </div>
+        </>
     )
 })
 

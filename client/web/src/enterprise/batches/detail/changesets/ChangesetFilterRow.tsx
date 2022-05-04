@@ -96,6 +96,7 @@ export const ChangesetFilterRow: React.FunctionComponent<ChangesetFilterRowProps
                             ref={searchElement}
                             defaultValue={search}
                             placeholder="Search title and repository name"
+                            aria-label="Search title and repository name"
                         />
                     </Form>
                 </div>
