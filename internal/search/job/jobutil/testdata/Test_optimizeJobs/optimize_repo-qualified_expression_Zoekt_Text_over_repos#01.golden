@@ -16,7 +16,7 @@ BASE:
             REPOPAGER
               (PARALLEL
                 ZoektRepoSubset
-                Searcher))
+                SearcherJob))
             RepoSearchJob
             ComputeExcludedReposJob))
         (LIMIT
@@ -25,7 +25,7 @@ BASE:
             REPOPAGER
               (PARALLEL
                 ZoektRepoSubset
-                Searcher))
+                SearcherJob))
             RepoSearchJob
             ComputeExcludedReposJob))
         (LIMIT
@@ -34,7 +34,7 @@ BASE:
             REPOPAGER
               (PARALLEL
                 ZoektRepoSubset
-                Searcher))
+                SearcherJob))
             RepoSearchJob
             ComputeExcludedReposJob))))))
 
@@ -55,7 +55,7 @@ OPTIMIZED:
               REPOPAGER
                 (PARALLEL
                   NoopJob
-                  Searcher))
+                  SearcherJob))
               RepoSearchJob
               ComputeExcludedReposJob))
           (LIMIT
@@ -64,7 +64,7 @@ OPTIMIZED:
               REPOPAGER
                 (PARALLEL
                   NoopJob
-                  Searcher))
+                  SearcherJob))
               RepoSearchJob
               ComputeExcludedReposJob))
           (LIMIT
@@ -73,6 +73,6 @@ OPTIMIZED:
               REPOPAGER
                 (PARALLEL
                   NoopJob
-                  Searcher))
+                  SearcherJob))
               RepoSearchJob
               ComputeExcludedReposJob)))))))
