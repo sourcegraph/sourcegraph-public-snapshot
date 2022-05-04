@@ -7,7 +7,7 @@ import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import MonitorStarIcon from 'mdi-react/MonitorStarIcon'
 import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 
-import { isErrorLike } from '@sourcegraph/common'
+import { isErrorLike, pluralize } from '@sourcegraph/common'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -101,17 +101,22 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
         [batchChange.batchSpecs.nodes]
     )
 
+    const changesetCount = useMemo(() => batchChange.changesetsStats.total - batchChange.changesetsStats.archived, [
+        batchChange.changesetsStats.archived,
+        batchChange.changesetsStats.total,
+    ])
+
     return (
         <BatchChangeTabs history={history} location={location} initialTab={initialTab}>
             <BatchChangeTabList>
                 <BatchChangeTab index={0} name={TabName.Changesets}>
-                    <span>
+                    <span aria-label={`${changesetCount} ${pluralize('changeset', changesetCount)}`}>
                         <Icon className="text-muted mr-1" as={SourceBranchIcon} />
                         <span className="text-content" data-tab-content="Changesets">
                             Changesets
                         </span>{' '}
                         <Badge variant="secondary" pill={true} className="ml-1">
-                            {batchChange.changesetsStats.total - batchChange.changesetsStats.archived}
+                            {changesetCount}
                         </Badge>
                     </span>
                 </BatchChangeTab>
@@ -135,7 +140,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                 )}
                 {isExecutionEnabled && (
                     <BatchChangeTab index={2} name={TabName.Executions} customPath="/executions">
-                        <span>
+                        <span aria-label={`${executingCount} ${pluralize('execution', executingCount)}`}>
                             <Icon className="text-muted mr-1" as={FileDocumentIcon} />{' '}
                             <span className="text-content" data-tab-content="Executions">
                                 Executions
@@ -151,7 +156,12 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                     </BatchChangeTab>
                 )}
                 <BatchChangeTab index={3} name={TabName.Archived}>
-                    <span>
+                    <span
+                        aria-label={`${batchChange.changesetsStats.archived} ${pluralize(
+                            'archived changeset',
+                            batchChange.changesetsStats.archived
+                        )}`}
+                    >
                         <Icon className="text-muted mr-1" as={ArchiveIcon} />{' '}
                         <span className="text-content" data-tab-content="Archived">
                             Archived
@@ -162,7 +172,12 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                     </span>
                 </BatchChangeTab>
                 <BatchChangeTab index={4} name={TabName.BulkOperations}>
-                    <span>
+                    <span
+                        aria-label={`${batchChange.bulkOperations.totalCount} ${pluralize(
+                            'bulk operation',
+                            batchChange.bulkOperations.totalCount
+                        )}`}
+                    >
                         <Icon className="text-muted mr-1" as={MonitorStarIcon} />{' '}
                         <span className="text-content" data-tab-content="Bulk operations">
                             Bulk operations

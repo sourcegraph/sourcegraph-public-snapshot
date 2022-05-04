@@ -47,9 +47,16 @@ export const DiffStat: React.FunctionComponent<DiffStatProps> = React.memo(funct
         labels.push(`${numberWithCommas(deleted)} ${pluralize('deletion', deleted)}`)
     }
     return (
-        <div className={classNames(styles.diffStat, className)} data-tooltip={labels.join(', ')}>
+        <div
+            className={classNames(styles.diffStat, className)}
+            data-tooltip={labels.join(', ')}
+            aria-label={`Diff stat: added ${added} ${pluralize('line', added)}, changed ${changed} ${pluralize(
+                'line',
+                changed
+            )}, deleted ${deleted} ${pluralize('line', deleted)}`}
+        >
             {expandedCounts ? (
-                <>
+                <div aria-hidden={true}>
                     {/*
                         a11y-ignore
                         Rule: "color-contrast" (Elements must have sufficient color contrast)
@@ -60,7 +67,7 @@ export const DiffStat: React.FunctionComponent<DiffStatProps> = React.memo(funct
                         <strong className="a11y-ignore text-warning mr-1">&bull;{numberWithCommas(changed)}</strong>
                     )}
                     <strong className="a11y-ignore text-danger">&minus;{numberWithCommas(deleted)}</strong>
-                </>
+                </div>
             ) : (
                 <small>{numberWithCommas(total + changed)}</small>
             )}
@@ -110,7 +117,7 @@ export const DiffStatSquares: React.FunctionComponent<DiffProps> = React.memo(fu
         )
 
     return (
-        <div className={styles.squares}>
+        <div className={styles.squares} aria-hidden={true}>
             {squares.map((className, index) => (
                 // eslint-disable-next-line react/no-array-index-key
                 <div key={index} className={classNames(styles.square, className)} />

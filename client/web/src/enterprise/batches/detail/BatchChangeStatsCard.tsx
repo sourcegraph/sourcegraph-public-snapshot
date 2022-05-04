@@ -61,14 +61,15 @@ export const BatchChangeStatsCard: React.FunctionComponent<BatchChangeStatsCardP
                 </h2>
                 <div className={classNames(styles.batchChangeStatsCardDivider, 'mx-3')} />
                 <div className="d-flex align-items-center">
-                    <h1 className="d-inline mb-0" aria-label="Batch Change Status">
+                    <span className="d-inline mb-0 h1" aria-label="Batch Change Status" role="paragraph">
                         <Icon
                             className={classNames('mr-2', isCompleted ? 'text-success' : 'text-muted')}
                             as={BatchChangeStatusIcon}
+                            aria-hidden={true}
                         />
-                    </h1>{' '}
+                    </span>{' '}
                     <span className={classNames(styles.batchChangeStatsCardCompleteness, 'lead text-nowrap')}>
-                        {formatDisplayPercent(percentComplete)} complete
+                        {`${formatDisplayPercent(percentComplete)} complete`}
                     </span>
                 </div>
                 <div className={classNames(styles.batchChangeStatsCardDivider, 'd-none d-md-block mx-3')} />
@@ -111,12 +112,15 @@ export const BatchChangeStatsTotalAction: React.FunctionComponent<{ count: numbe
             styles.batchChangeStatsCardStat,
             'm-0 flex-grow-0 pr-2 text-truncate text-nowrap d-flex flex-column align-items-center justify-content-center'
         )}
+        aria-label={`${count} ${pluralize('Changeset', count)}`}
     >
-        <span className={styles.batchChangeStatsCardChangesetsPill}>
+        <span className={styles.batchChangeStatsCardChangesetsPill} aria-hidden={true}>
             <Badge variant="secondary" pill={true}>
                 {count}
             </Badge>
         </span>
-        <span className="text-muted">{pluralize('Changeset', count)}</span>
+        <span className="text-muted" aria-hidden={true}>
+            {pluralize('Changeset', count)}
+        </span>
     </div>
 )

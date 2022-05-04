@@ -137,10 +137,13 @@ export const BatchChangeNode: React.FunctionComponent<BatchChangeNodeProps> = ({
                                 <Link
                                     className="text-muted test-batches-namespace-link"
                                     to={`${node.namespace.url}/batch-changes`}
+                                    aria-label={`Namespace ${node.namespace.namespaceName}`}
                                 >
                                     {node.namespace.namespaceName}
                                 </Link>
-                                <span className="text-muted d-inline-block mx-1">/</span>
+                                <span className="text-muted d-inline-block mx-1" aria-hidden={true}>
+                                    /
+                                </span>
                             </div>
                         )}
                         <Link className="test-batches-link mr-2" to={nodeLink}>

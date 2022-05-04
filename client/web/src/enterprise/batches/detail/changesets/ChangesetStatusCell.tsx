@@ -61,7 +61,7 @@ export const ChangesetStatusUnpublished: React.FunctionComponent<ChangesetStatus
     className,
 }) => (
     <div className={classNames(iconClassNames, className)}>
-        <SourceBranchIcon />
+        <SourceBranchIcon aria-hidden={true} />
         {label}
     </div>
 )
@@ -70,7 +70,7 @@ export const ChangesetStatusClosed: React.FunctionComponent<ChangesetStatusIconP
     className,
 }) => (
     <div className={classNames(iconClassNames, className)}>
-        <SourcePullIcon className="text-danger" />
+        <SourcePullIcon className="text-danger" aria-hidden={true} />
         {label}
     </div>
 )
@@ -79,7 +79,7 @@ export const ChangesetStatusMerged: React.FunctionComponent<ChangesetStatusIconP
     className,
 }) => (
     <div className={classNames(iconClassNames, className)}>
-        <SourceMergeIcon className="text-merged" />
+        <SourceMergeIcon className="text-merged" aria-hidden={true} />
         {label}
     </div>
 )
@@ -88,7 +88,7 @@ export const ChangesetStatusOpen: React.FunctionComponent<ChangesetStatusIconPro
     className,
 }) => (
     <div className={classNames(iconClassNames, className)}>
-        <SourcePullIcon className="text-success" />
+        <SourcePullIcon className="text-success" aria-hidden={true} />
         {label}
     </div>
 )
@@ -97,7 +97,7 @@ export const ChangesetStatusDraft: React.FunctionComponent<ChangesetStatusIconPr
     className,
 }) => (
     <div className={classNames(iconClassNames, className)}>
-        <SourcePullIcon />
+        <SourcePullIcon aria-hidden={true} />
         {label}
     </div>
 )
@@ -106,7 +106,7 @@ export const ChangesetStatusDeleted: React.FunctionComponent<ChangesetStatusIcon
     className,
 }) => (
     <div className={classNames(iconClassNames, className)}>
-        <DeleteIcon />
+        <DeleteIcon aria-hidden={true} />
         {label}
     </div>
 )
@@ -115,7 +115,7 @@ export const ChangesetStatusError: React.FunctionComponent<ChangesetStatusIconPr
     className,
 }) => (
     <div className={classNames(iconClassNames, className)}>
-        <AlertCircleIcon className="text-danger" />
+        <AlertCircleIcon className="text-danger" aria-hidden={true} />
         {label}
     </div>
 )
@@ -124,7 +124,7 @@ export const ChangesetStatusRetrying: React.FunctionComponent<ChangesetStatusIco
     className,
 }) => (
     <div className={classNames(iconClassNames, className)}>
-        <AutorenewIcon />
+        <AutorenewIcon aria-hidden={true} />
         {label}
     </div>
 )
@@ -134,7 +134,7 @@ export const ChangesetStatusProcessing: React.FunctionComponent<ChangesetStatusI
     className,
 }) => (
     <div className={classNames(iconClassNames, className)}>
-        <TimerSandIcon />
+        <TimerSandIcon aria-hidden={true} />
         {label}
     </div>
 )
@@ -144,7 +144,7 @@ export const ChangesetStatusArchived: React.FunctionComponent<ChangesetStatusIco
     className,
 }) => (
     <div className={classNames(iconClassNames, className)}>
-        <ArchiveIcon />
+        <ArchiveIcon aria-hidden={true} />
         {label}
     </div>
 )

@@ -3,6 +3,7 @@ import React, { useEffect, useCallback, useState, useMemo } from 'react'
 import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router'
 
+import { pluralize } from '@sourcegraph/common'
 import { dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -154,7 +155,7 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
                         <div className={styles.filtersRow}>
                             {(licenseAndUsageInfo?.allBatchChanges.totalCount || 0) > 0 && (
                                 <H3 as={H2} className="align-self-end flex-1">
-                                    {lastTotalCount} batch changes
+                                    {`${lastTotalCount} ${pluralize('batch change', lastTotalCount)}`}
                                 </H3>
                             )}
                             <H4 as={H3} className="mb-0 mr-2">

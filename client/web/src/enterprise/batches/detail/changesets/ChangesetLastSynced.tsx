@@ -74,7 +74,7 @@ export const ChangesetLastSynced: React.FunctionComponent<Props> = ({ changeset,
                     <Icon className="text-danger" as={AlertCircleIcon} /> Syncing from code host failed.
                 </span>
             ) : (
-                <>Last synced {formatDistance(parseISO(changeset.updatedAt), _now ?? new Date())} ago.</>
+                <span>{`Last synced ${formatDistance(parseISO(changeset.updatedAt), _now ?? new Date())} ago.`}</span>
             )}{' '}
             {isErrorLike(lastUpdatedAt) && (
                 <Icon data-tooltip={lastUpdatedAt.message} className="ml-2 small" as={AlertCircleIcon} />
@@ -102,7 +102,15 @@ const UpdateLoaderIcon: React.FunctionComponent<{
     }
 
     if (viewerCanAdminister) {
-        return <Icon className="cursor-pointer" onClick={onEnqueueChangeset} role="button" as={SyncIcon} />
+        return (
+            <Icon
+                className="cursor-pointer"
+                onClick={onEnqueueChangeset}
+                role="button"
+                as={SyncIcon}
+                aria-label="Sync now"
+            />
+        )
     }
 
     return <Icon as={InfoCircleOutlineIcon} />

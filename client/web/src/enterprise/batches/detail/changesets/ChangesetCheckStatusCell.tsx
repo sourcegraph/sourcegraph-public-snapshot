@@ -33,7 +33,7 @@ export const ChangesetCheckStatusPending: React.FunctionComponent<{ className?: 
             className
         )}
     >
-        <TimerSandIcon data-tooltip="Check state is pending" />
+        <TimerSandIcon data-tooltip="Check state is pending" aria-hidden={true} />
         <span className="text-muted">Pending</span>
     </div>
 )
@@ -44,7 +44,7 @@ export const ChangesetCheckStatusPassed: React.FunctionComponent<{ className?: s
             className
         )}
     >
-        <CheckCircleIcon data-tooltip="All checks complete" />
+        <CheckCircleIcon data-tooltip="All checks complete" aria-hidden={true} />
         <span className="text-muted">Passed</span>
     </div>
 )
@@ -55,7 +55,7 @@ export const ChangesetCheckStatusFailed: React.FunctionComponent<{ className?: s
             className
         )}
     >
-        <CloseCircleIcon data-tooltip="Some checks failed" />
+        <CloseCircleIcon data-tooltip="Some checks failed" aria-hidden={true} />
         <span className="text-muted">Failed</span>
     </div>
 )

@@ -56,7 +56,12 @@ export const WebhookAlert: React.FunctionComponent<Props> = ({
                 <h4>Changeset information may not be up to date</h4>
                 <p className={styles.blurb}>
                     Sourcegraph will poll for updates because{' '}
-                    <Button className={classNames(styles.openLink, 'p-0')} onClick={toggleOpen} variant="link">
+                    <Button
+                        className={classNames(styles.openLink, 'p-0')}
+                        onClick={toggleOpen}
+                        variant="link"
+                        role="link"
+                    >
                         {totalCount}{' '}
                         {pluralize('code host is not configured', totalCount, 'code hosts are not configured')}
                     </Button>{' '}
