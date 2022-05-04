@@ -4,7 +4,6 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { userAreaRoutes } from '../../user/area/routes'
 import { UserAreaRoute, UserAreaRouteContext } from '../../user/area/UserArea'
-import { CreateBatchChangePageProps } from '../batches/create/CreateBatchChangePage'
 import { CreateOrEditBatchChangePageProps } from '../batches/create/CreateOrEditBatchChangePage'
 import { ExecutionAreaProps, NamespaceBatchChangesAreaProps } from '../batches/global/GlobalBatchChangesArea'
 import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
@@ -25,11 +24,6 @@ const CreateOrEditBatchChangePage = lazyComponent<CreateOrEditBatchChangePagePro
     'CreateOrEditBatchChangePage'
 )
 
-const CreateBatchChangePage = lazyComponent<CreateBatchChangePageProps, 'CreateBatchChangePage'>(
-    () => import('../batches/create/CreateBatchChangePage'),
-    'CreateBatchChangePage'
-)
-
 export const enterpriseUserAreaRoutes: readonly UserAreaRoute[] = [
     ...userAreaRoutes,
     ...enterpriseNamespaceAreaRoutes,
@@ -45,12 +39,6 @@ export const enterpriseUserAreaRoutes: readonly UserAreaRoute[] = [
             />
         ),
         condition: () => SHOW_BUSINESS_FEATURES,
-    },
-    {
-        path: '/batch-changes/create',
-        render: props => <CreateBatchChangePage headingElement="h1" {...props} initialNamespaceID={props.user.id} />,
-        condition: ({ batchChangesEnabled }) => batchChangesEnabled,
-        fullPage: true,
     },
     {
         path: '/batch-changes/:batchChangeName/edit',

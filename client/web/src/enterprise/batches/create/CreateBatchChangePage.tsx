@@ -20,7 +20,7 @@ import { useInsightTemplates } from './useInsightTemplates'
 import layoutStyles from '../batch-spec/Layout.module.scss'
 
 export interface CreateBatchChangePageProps extends SettingsCascadeProps<Settings>, ThemeProps {
-    // TODO: This can go away once we only have the new SSBC create page
+    // TODO: This can go away once we remove OldBatchChangePageContent.
     headingElement: 'h1' | 'h2'
 }
 

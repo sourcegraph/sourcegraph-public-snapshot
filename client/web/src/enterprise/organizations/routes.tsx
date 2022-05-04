@@ -4,7 +4,6 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { OrgAreaPageProps, OrgAreaRoute } from '../../org/area/OrgArea'
 import { orgAreaRoutes } from '../../org/area/routes'
-import { CreateBatchChangePageProps } from '../batches/create/CreateBatchChangePage'
 import { CreateOrEditBatchChangePageProps } from '../batches/create/CreateOrEditBatchChangePage'
 import { NamespaceBatchChangesAreaProps, ExecutionAreaProps } from '../batches/global/GlobalBatchChangesArea'
 import { enterpriseNamespaceAreaRoutes } from '../namespaces/routes'
@@ -24,20 +23,9 @@ const CreateOrEditBatchChangePage = lazyComponent<CreateOrEditBatchChangePagePro
     'CreateOrEditBatchChangePage'
 )
 
-const CreateBatchChangePage = lazyComponent<CreateBatchChangePageProps, 'CreateBatchChangePage'>(
-    () => import('../batches/create/CreateBatchChangePage'),
-    'CreateBatchChangePage'
-)
-
 export const enterpriseOrganizationAreaRoutes: readonly OrgAreaRoute[] = [
     ...orgAreaRoutes,
     ...enterpriseNamespaceAreaRoutes,
-    {
-        path: '/batch-changes/create',
-        render: props => <CreateBatchChangePage headingElement="h1" {...props} initialNamespaceID={props.org.id} />,
-        condition: ({ batchChangesEnabled }) => batchChangesEnabled,
-        fullPage: true,
-    },
     {
         path: '/batch-changes/:batchChangeName/edit',
         render: ({ match, ...props }: OrgAreaPageProps & RouteComponentProps<{ batchChangeName: string }>) => (

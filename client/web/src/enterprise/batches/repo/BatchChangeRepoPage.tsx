@@ -57,7 +57,7 @@ export const BatchChangeRepoPage: React.FunctionComponent<React.PropsWithChildre
             <PageHeader
                 path={[{ icon: BatchChangesIcon, text: 'Batch Changes' }]}
                 headingElement="h1"
-                actions={hasChangesets ? undefined : <NewBatchChangeButton to="/batch-changes/create" />}
+                actions={hasChangesets ? undefined : <NewBatchChangeButton />}
                 description={
                     hasChangesets
                         ? undefined
