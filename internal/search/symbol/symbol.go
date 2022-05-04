@@ -231,13 +231,13 @@ func limitOrDefault(first *int32) int {
 	return int(*first)
 }
 
-type RepoUniverseSymbolSearch struct {
+type RepoUniverseSymbolSearchJob struct {
 	GlobalZoektQuery *zoektutil.GlobalZoektQuery
 	ZoektArgs        *search.ZoektParameters
 	RepoOptions      search.RepoOptions
 }
 
-func (s *RepoUniverseSymbolSearch) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+func (s *RepoUniverseSymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
@@ -258,6 +258,6 @@ func (s *RepoUniverseSymbolSearch) Run(ctx context.Context, clients job.RuntimeC
 	return nil, nil
 }
 
-func (*RepoUniverseSymbolSearch) Name() string {
-	return "RepoUniverseSymbolSearch"
+func (*RepoUniverseSymbolSearchJob) Name() string {
+	return "RepoUniverseSymbolSearchJob"
 }

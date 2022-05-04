@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 func TestReconcilerProcess_IntegrationTest(t *testing.T) {
@@ -26,6 +27,7 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 	sqlDB := dbtest.NewDB(t)
 	db := database.NewDB(sqlDB)
+	log := logtest.Scoped(t)
 
 	store := store.New(db, &observation.TestContext, nil)
 
@@ -146,7 +148,7 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 				sourcer:           sourcer,
 				store:             store,
 			}
-			err := rec.process(ctx, store, changeset)
+			err := rec.process(ctx, log, store, changeset)
 			if err != nil {
 				t.Fatalf("reconciler process failed: %s", err)
 			}

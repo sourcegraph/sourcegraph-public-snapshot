@@ -13,19 +13,19 @@ BASE:
         (LIMIT
           40000
           (PARALLEL
-            ZoektGlobalSearch
+            ZoektGlobalSearchJob
             RepoSearchJob
             ComputeExcludedReposJob))
         (LIMIT
           40000
           (PARALLEL
-            ZoektGlobalSearch
+            ZoektGlobalSearchJob
             RepoSearchJob
             ComputeExcludedReposJob))
         (LIMIT
           40000
           (PARALLEL
-            ZoektGlobalSearch
+            ZoektGlobalSearchJob
             RepoSearchJob
             ComputeExcludedReposJob))))))
 
@@ -37,7 +37,7 @@ OPTIMIZED:
     (LIMIT
       500
       (PARALLEL
-        ZoektGlobalSearch
+        ZoektGlobalSearchJob
         (AND
           (LIMIT
             40000

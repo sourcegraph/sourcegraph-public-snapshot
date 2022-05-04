@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 func TestDependencySyncSchedulerJVM(t *testing.T) {
@@ -31,10 +32,11 @@ func TestDependencySyncSchedulerJVM(t *testing.T) {
 		extsvcStore: mockExtsvcStore,
 	}
 
+	logger := logtest.Scoped(t)
 	job := enterprisedbstore.DependencySyncingJob{
 		UploadID: 42,
 	}
-	if err := handler.Handle(context.Background(), job); err != nil {
+	if err := handler.Handle(context.Background(), logger, job); err != nil {
 		t.Fatalf("unexpected error performing update: %s", err)
 	}
 
@@ -78,10 +80,11 @@ func TestDependencySyncSchedulerGomod(t *testing.T) {
 		extsvcStore: mockExtsvcStore,
 	}
 
+	logger := logtest.Scoped(t)
 	job := enterprisedbstore.DependencySyncingJob{
 		UploadID: 42,
 	}
-	if err := handler.Handle(context.Background(), job); err != nil {
+	if err := handler.Handle(context.Background(), logger, job); err != nil {
 		t.Fatalf("unexpected error performing update: %s", err)
 	}
 

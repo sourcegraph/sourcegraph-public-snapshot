@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"database/sql"
-	"log"
 	"net/http"
 	"time"
 
@@ -40,7 +39,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	sglog "github.com/sourcegraph/sourcegraph/lib/log"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 const addr = ":3188"
@@ -53,7 +52,7 @@ func main() {
 	env.HandleHelpFlag()
 	conf.Init()
 	logging.Init()
-	syncLogs := sglog.Init(sglog.Resource{
+	syncLogs := log.Init(log.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
@@ -64,13 +63,15 @@ func main() {
 	trace.Init()
 	profiler.Init()
 
+	logger := log.Scoped("worker", "The precise-code-intel-worker service converts LSIF upload file into Postgres data.")
+
 	if err := config.Validate(); err != nil {
-		log.Fatalf("Failed to load config: %s", err)
+		logger.Error("Failed for load config", log.Error(err))
 	}
 
 	// Initialize tracing/metrics
 	observationContext := &observation.Context{
-		Logger:     sglog.Scoped("worker", "the precise codeintel worker"),
+		Logger:     log.Scoped("worker", "the precise codeintel worker"),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 		HoneyDataset: &honey.Dataset{
@@ -83,7 +84,7 @@ func main() {
 	go debugserver.NewServerRoutine(ready).Start()
 
 	if err := keyring.Init(context.Background()); err != nil {
-		log.Fatalf("Failed to intialise keyring: %v", err)
+		logger.Fatal("Failed to intialise keyring", log.Error(err))
 	}
 
 	// Connect to databases
@@ -103,16 +104,16 @@ func main() {
 
 	uploadStore, err := lsifuploadstore.New(context.Background(), config.LSIFUploadStoreConfig, observationContext)
 	if err != nil {
-		log.Fatalf("Failed to create upload store: %s", err)
+		logger.Fatal("Failed to create upload store", log.Error(err))
 	}
 	if err := initializeUploadStore(context.Background(), uploadStore); err != nil {
-		log.Fatalf("Failed to initialize upload store: %s", err)
+		logger.Fatal("Failed to initialize upload store", log.Error(err))
 	}
 
 	// Initialize sub-repo permissions client
 	authz.DefaultSubRepoPermsChecker, err = authz.NewSubRepoPermsClient(database.SubRepoPerms(db))
 	if err != nil {
-		log.Fatalf("Failed to create sub-repo client: %v", err)
+		logger.Fatal("Failed to create sub-repo client", log.Error(err))
 	}
 
 	// Initialize metrics
@@ -147,9 +148,10 @@ func mustInitializeDB() *sql.DB {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
+	logger := log.Scoped("init db", "Initialize fontend database")
 	sqlDB, err := connections.EnsureNewFrontendDB(dsn, "precise-code-intel-worker", &observation.TestContext)
 	if err != nil {
-		log.Fatalf("Failed to connect to frontend database: %s", err)
+		logger.Fatal("Failed to connect to frontend database", log.Error(err))
 	}
 
 	//
@@ -173,9 +175,10 @@ func mustInitializeCodeIntelDB() *sql.DB {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.CodeIntelPostgresDSN
 	})
+	logger := log.Scoped("init db", "Initialize codeintel database.")
 	db, err := connections.EnsureNewCodeIntelDB(dsn, "precise-code-intel-worker", &observation.TestContext)
 	if err != nil {
-		log.Fatalf("Failed to connect to codeintel database: %s", err)
+		logger.Fatal("Failed to connect to codeintel database", log.Error(err))
 	}
 
 	return db
