@@ -126,3 +126,11 @@ func (r *UploadResolver) Indexer() gql.CodeIntelIndexerResolver {
 
 	return &codeIntelIndexerResolver{name: r.upload.Indexer}
 }
+
+func (r *UploadResolver) DocumentPaths(ctx context.Context, args *struct{ Pattern string }) (gql.LSIFUploadDocumentsConnectionResolver, error) {
+	documents, totalCount, err := r.resolver.GetUploadDocumentsForPath(ctx, r.upload.ID, args.Pattern)
+	return &uploadDocumentsConnectionResolver{
+		totalCount: totalCount,
+		documents:  documents,
+	}, err
+}
