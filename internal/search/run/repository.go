@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type RepoSearch struct {
+type RepoSearchJob struct {
 	RepoOptions                  search.RepoOptions
 	FilePatternsReposMustInclude []string
 	FilePatternsReposMustExclude []string
@@ -23,7 +23,7 @@ type RepoSearch struct {
 	Mode search.GlobalSearchMode
 }
 
-func (s *RepoSearch) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+func (s *RepoSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
@@ -54,8 +54,8 @@ func (s *RepoSearch) Run(ctx context.Context, clients job.RuntimeClients, stream
 
 }
 
-func (*RepoSearch) Name() string {
-	return "RepoSearch"
+func (*RepoSearchJob) Name() string {
+	return "RepoSearchJob"
 }
 
 func repoRevsToRepoMatches(ctx context.Context, db database.DB, repos []*search.RepositoryRevisions) []result.Match {

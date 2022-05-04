@@ -274,7 +274,7 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 					if skipRepoSubsetSearch {
 						mode = search.SkipUnindexed
 					}
-					addJob(&run.RepoSearch{
+					addJob(&run.RepoSearchJob{
 						RepoOptions:                  repoOptions,
 						Features:                     features,
 						FilePatternsReposMustInclude: patternInfo.FilePatternsReposMustInclude,
