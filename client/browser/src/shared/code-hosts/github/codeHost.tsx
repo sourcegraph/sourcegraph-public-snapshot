@@ -511,8 +511,15 @@ const queryByIdOrCreate = (id: string, className = ''): HTMLElement => {
 }
 
 export const parseHash = (hash: string): LineOrPositionOrRange => {
-    const matches = hash.match(/(L\d+)/g)
+    if (hash.includes('diff')) {
+        const match = hash.match(/(R\d+)$/)
 
+        if (match) {
+            return { line: parseInt(match[0].slice(1), 10) }
+        }
+    }
+
+    const matches = hash.match(/(L\d+)/g)
     if (!matches || matches.length > 2) {
         return {}
     }

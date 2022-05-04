@@ -1245,6 +1245,8 @@ export async function handleCodeHost({
                         addRootReference(rootURI, fileInfo.revision),
                     ])
 
+                    console.log('HELLO')
+
                     if (codeHost.observeLineSelection) {
                         codeViewEvent.subscriptions.add(
                             codeHost.observeLineSelection
