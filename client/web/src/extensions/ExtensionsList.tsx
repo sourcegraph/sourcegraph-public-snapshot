@@ -276,7 +276,7 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
     return (
         <>
             {error && <ErrorAlert className="mb-2" error={error} />}
-            {featuredExtensionsSection}
+            {enablementFilter === 'all' && featuredExtensionsSection}
             {categorySections.length > 0 ? (
                 categorySections
             ) : (

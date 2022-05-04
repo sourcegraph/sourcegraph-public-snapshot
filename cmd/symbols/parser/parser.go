@@ -51,7 +51,7 @@ func NewParser(
 }
 
 func (p *parser) Parse(ctx context.Context, args types.SearchArgs, paths []string) (_ <-chan SymbolOrError, err error) {
-	ctx, endObservation := p.operations.parse.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := p.operations.parse.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repo", string(args.Repo)),
 		log.String("commitID", string(args.CommitID)),
 		log.Int("paths", len(paths)),
@@ -131,7 +131,7 @@ func min(a, b int) int {
 }
 
 func (p *parser) handleParseRequest(ctx context.Context, symbolOrErrors chan<- SymbolOrError, parseRequest fetcher.ParseRequest, totalSymbols *uint32) (err error) {
-	ctx, trace, endObservation := p.operations.handleParseRequest.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := p.operations.handleParseRequest.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("path", parseRequest.Path),
 		log.Int("fileSize", len(parseRequest.Data)),
 	}})

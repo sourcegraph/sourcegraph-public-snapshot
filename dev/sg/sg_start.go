@@ -69,8 +69,6 @@ var (
 				Usage:       "Services to set at info crit level.",
 				Destination: &critStartServices,
 			},
-
-			addToMacOSFirewallFlag,
 		},
 		BashComplete: completeOptions(func() (options []string) {
 			config, _ := sgconf.Get(configFile, configOverwriteFile)
@@ -185,10 +183,10 @@ func startExec(ctx context.Context, args []string) error {
 		}
 	}
 
-	return startCommandSet(ctx, set, config, addToMacOSFirewall)
+	return startCommandSet(ctx, set, config)
 }
 
-func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.Config, addToMacOSFirewall bool) error {
+func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.Config) error {
 	if err := runChecksWithName(ctx, set.Checks); err != nil {
 		return err
 	}
@@ -218,12 +216,13 @@ func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.C
 		env[k] = v
 	}
 
-	return run.Commands(ctx, env, addToMacOSFirewall, verbose, cmds...)
+	return run.Commands(ctx, env, verbose, cmds...)
 }
 
 // logLevelOverrides builds a map of commands -> log level that should be overridden in the environment.
 func logLevelOverrides() map[string]string {
 	levelServices := make(map[string][]string)
+	levelServices["debug"] = parseCsvs(debugStartServices.Value())
 	levelServices["info"] = parseCsvs(infoStartServices.Value())
 	levelServices["warn"] = parseCsvs(warnStartServices.Value())
 	levelServices["error"] = parseCsvs(errorStartServices.Value())

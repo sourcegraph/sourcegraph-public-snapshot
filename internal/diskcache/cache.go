@@ -128,7 +128,7 @@ func (s *store) Open(ctx context.Context, key []string, fetcher Fetcher) (file *
 }
 
 func (s *store) OpenWithPath(ctx context.Context, key []string, fetcher FetcherWithPath) (file *File, err error) {
-	ctx, trace, endObservation := s.observe.cachedFetch.WithAndLogger(ctx, &err, observation.Args{LogFields: []otelog.Field{
+	ctx, trace, endObservation := s.observe.cachedFetch.With(ctx, &err, observation.Args{LogFields: []otelog.Field{
 		otelog.String(string(ext.Component), s.component),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -172,7 +172,7 @@ func (s *store) OpenWithPath(ctx context.Context, key []string, fetcher FetcherW
 	go func(ctx context.Context) {
 		var err error
 		var f *File
-		ctx, trace, endObservation := s.observe.backgroundFetch.WithAndLogger(ctx, &err, observation.Args{LogFields: []otelog.Field{
+		ctx, trace, endObservation := s.observe.backgroundFetch.With(ctx, &err, observation.Args{LogFields: []otelog.Field{
 			otelog.Bool("withBackgroundTimeout", s.backgroundTimeout != 0),
 		}})
 		defer endObservation(1, observation.Args{})
@@ -296,7 +296,7 @@ type EvictStats struct {
 }
 
 func (s *store) Evict(maxCacheSizeBytes int64) (stats EvictStats, err error) {
-	_, trace, endObservation := s.observe.evict.WithAndLogger(context.Background(), &err, observation.Args{LogFields: []otelog.Field{
+	_, trace, endObservation := s.observe.evict.With(context.Background(), &err, observation.Args{LogFields: []otelog.Field{
 		otelog.Int64("maxCacheSizeBytes", maxCacheSizeBytes),
 	}})
 	endObservation(1, observation.Args{})

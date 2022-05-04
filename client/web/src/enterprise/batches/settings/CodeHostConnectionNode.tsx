@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 import CheckboxBlankCircleOutlineIcon from 'mdi-react/CheckboxBlankCircleOutlineIcon'
@@ -29,6 +29,9 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
     userID,
 }) => {
     const ExternalServiceIcon = defaultExternalServices[node.externalServiceKind].icon
+    const codeHostDisplayName = defaultExternalServices[node.externalServiceKind].defaultDisplayName
+
+    const buttonReference = useRef<HTMLButtonElement | null>(null)
 
     const [openModal, setOpenModal] = useState<OpenModal | undefined>()
     const onClickAdd = useCallback(() => {
@@ -47,10 +50,19 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
     }, [])
     const afterAction = useCallback(() => {
         setOpenModal(undefined)
+        buttonReference.current?.focus()
         refetchAll()
-    }, [refetchAll])
+    }, [refetchAll, buttonReference])
 
     const isEnabled = node.credential !== null && (userID === null || !node.credential.isSiteCredential)
+
+    const headingAriaLabel = `Sourcegraph ${
+        isEnabled ? 'has credentials configured' : 'does not have credentials configured'
+    } for ${codeHostDisplayName} (${node.externalServiceURL}).${
+        !isEnabled && node.credential?.isSiteCredential
+            ? ' Changesets on this code host will be created with a global token until a personal access token is added.'
+            : ''
+    }`
 
     return (
         <>
@@ -66,26 +78,33 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
                         'd-flex justify-content-between align-items-center flex-wrap mb-0'
                     )}
                 >
-                    <h3 className="text-nowrap mb-0">
+                    <h3 className="text-nowrap mb-0" aria-label={headingAriaLabel}>
                         {isEnabled && (
                             <Icon
                                 className="text-success test-code-host-connection-node-enabled"
-                                data-tooltip="Connected"
+                                data-tooltip="This code host has credentials connected."
+                                aria-label="This code host has credentials connected."
                                 as={CheckCircleOutlineIcon}
+                                role="img"
                             />
                         )}
                         {!isEnabled && (
                             <Icon
                                 className="text-danger test-code-host-connection-node-disabled"
-                                data-tooltip="No token set"
+                                data-tooltip="This code host does not have credentials configured."
+                                aria-label="This code host does not have credentials configured."
                                 as={CheckboxBlankCircleOutlineIcon}
+                                role="img"
                             />
                         )}
-                        <Icon className="mx-2" as={ExternalServiceIcon} /> {node.externalServiceURL}{' '}
+                        <Icon className="mx-2" role="img" aria-hidden={true} as={ExternalServiceIcon} />{' '}
+                        {node.externalServiceURL}{' '}
                         {!isEnabled && node.credential?.isSiteCredential && (
                             <Badge
                                 variant="secondary"
                                 tooltip="Changesets on this code host will
+                            be created with a global token until a personal access token is added."
+                                aria-label="Changesets on this code host will
                             be created with a global token until a personal access token is added."
                             >
                                 Global token
@@ -93,12 +112,14 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
                         )}
                     </h3>
                     <div className="mb-0 d-flex justify-content-end flex-grow-1">
-                        {isEnabled && (
+                        {isEnabled ? (
                             <>
                                 <Button
                                     className="text-danger text-nowrap test-code-host-connection-node-btn-remove"
                                     onClick={onClickRemove}
                                     variant="link"
+                                    aria-label={`Remove credentials for ${codeHostDisplayName}`}
+                                    ref={buttonReference}
                                 >
                                     Remove
                                 </Button>
@@ -108,8 +129,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
                                     </Button>
                                 )}
                             </>
-                        )}
-                        {!isEnabled && (
+                        ) : (
                             /*
                                 a11y-ignore
                                 Rule: "color-contrast" (Elements must have sufficient color contrast)
@@ -118,7 +138,9 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
                             <Button
                                 className="a11y-ignore text-nowrap test-code-host-connection-node-btn-add"
                                 onClick={onClickAdd}
+                                aria-label={`Add credentials for ${codeHostDisplayName}`}
                                 variant="success"
+                                ref={buttonReference}
                             >
                                 Add credentials
                             </Button>

@@ -1,0 +1,22 @@
+{
+  "private": true,
+  "name": "@sourcegraph/jetbrains",
+  "displayName": "Sourcegraph",
+  "version": "1.2.4",
+  "description": "Sourcegraph for JetBrains",
+  "publisher": "sourcegraph",
+  "sideEffects": false,
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sourcegraph/sourcegraph.git",
+    "directory": "client/jetbrains"
+  },
+  "scripts": {
+    "eslint": "eslint --cache '**/*.[jt]s?(x)'",
+    "task:gulp": "cross-env NODE_OPTIONS=\"--max_old_space_size=8192\" gulp",
+    "build": "yarn task:gulp webpack",
+    "watch": "yarn task:gulp watchWebpack",
+    "standalone": "ts-node standalone/src/server.ts"
+  }
+}

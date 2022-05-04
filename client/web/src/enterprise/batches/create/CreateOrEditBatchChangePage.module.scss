@@ -22,11 +22,13 @@
 
 .workspaces-preview-container {
     display: flex;
+    flex: 1;
     flex-direction: column;
     align-items: center;
     margin-left: 1rem;
     background: none;
     border: none;
+    width: 100%;
 }
 
 // Should mostly match WorkspacesPreview header and LibraryPane header
@@ -63,4 +65,8 @@
     @media (--sm-breakpoint-down) {
         width: 100%;
     }
+}
+
+.code-insights-banner {
+    box-shadow: var(--box-shadow);
 }

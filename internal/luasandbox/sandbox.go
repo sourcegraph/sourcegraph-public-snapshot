@@ -32,7 +32,7 @@ func (s *Sandbox) Close() {
 
 // RunScript runs the given Lua script text in the sandbox.
 func (s *Sandbox) RunScript(ctx context.Context, opts RunOptions, script string) (retValue lua.LValue, err error) {
-	ctx, endObservation := s.operations.runScript.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.runScript.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	return s.RunScriptNamed(ctx, opts, singleScriptFS{script}, "main.lua")
@@ -58,7 +58,7 @@ func (fs singleScriptFS) ReadFile(name string) ([]byte, error) {
 // This method will set the global `loadfile` function so that Lua scripts relative
 // to the given filesystem can be imported modularly.
 func (s *Sandbox) RunScriptNamed(ctx context.Context, opts RunOptions, fs FS, name string) (retValue lua.LValue, err error) {
-	ctx, endObservation := s.operations.runScriptNamed.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.runScriptNamed.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	contents, err := fs.ReadFile(name)
@@ -105,7 +105,7 @@ func makeScopedLoadfile(state *lua.LState, fs FS) *lua.LFunction {
 
 // Call invokes the given function bound to this sandbox within the sandbox.
 func (s *Sandbox) Call(ctx context.Context, opts RunOptions, luaFunction *lua.LFunction, args ...interface{}) (retValue lua.LValue, err error) {
-	ctx, endObservation := s.operations.call.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.call.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	f := func(ctx context.Context, state *lua.LState) error {
@@ -130,7 +130,7 @@ func (s *Sandbox) Call(ctx context.Context, opts RunOptions, luaFunction *lua.LF
 // the caller. This method does not pass values back into the coroutine when resuming
 // execution.
 func (s *Sandbox) CallGenerator(ctx context.Context, opts RunOptions, luaFunction *lua.LFunction, args ...interface{}) (retValues []lua.LValue, err error) {
-	ctx, endObservation := s.operations.callGenerator.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.callGenerator.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	f := func(ctx context.Context, state *lua.LState) error {
@@ -173,7 +173,7 @@ const DefaultTimeout = time.Millisecond * 200
 // RunGoCallback invokes the given Go callback with exclusive access to the state of the
 // sandbox.
 func (s *Sandbox) RunGoCallback(ctx context.Context, opts RunOptions, f func(ctx context.Context, state *lua.LState) error) (err error) {
-	ctx, endObservation := s.operations.runGoCallback.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.runGoCallback.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	s.m.Lock()

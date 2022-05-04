@@ -1,5 +1,9 @@
 @import 'bootstrap/scss/type';
 
+:root {
+    --monospace-font-family: SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+}
+
 h1 {
     font-size: 1.625rem; // 26px
     font-weight: 600;

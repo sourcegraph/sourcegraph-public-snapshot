@@ -129,15 +129,19 @@ export const RepositoriesPanel: React.FunctionComponent<Props> = ({
             <div className="d-flex mb-1">
                 <small>Search</small>
             </div>
-            {repoFilterValues?.map((repoFilterValue, index) => (
-                <dd key={`${repoFilterValue}-${index}`} className="text-monospace text-break">
-                    <small>
-                        <Link to={`/search?q=repo:${repoFilterValue}`} onClick={logRepoClicked}>
-                            <SyntaxHighlightedSearchQuery query={`repo:${repoFilterValue}`} />
-                        </Link>
-                    </small>
-                </dd>
-            ))}
+            {repoFilterValues?.length && (
+                <ul className="list-group">
+                    {repoFilterValues.map((repoFilterValue, index) => (
+                        <li key={`${repoFilterValue}-${index}`} className="text-monospace text-break mb-2">
+                            <small>
+                                <Link to={`/search?q=repo:${repoFilterValue}`} onClick={logRepoClicked}>
+                                    <SyntaxHighlightedSearchQuery query={`repo:${repoFilterValue}`} />
+                                </Link>
+                            </small>
+                        </li>
+                    ))}
+                </ul>
+            )}
             {searchEventLogs?.pageInfo.hasNextPage && (
                 <ShowMoreButton className="test-repositories-panel-show-more" onClick={loadMoreItems} />
             )}
@@ -170,10 +174,8 @@ function processRepositories(eventLogResult: EventLogResult): string[] | null {
             const scannedQuery = scanSearchQuery(queryFromURL || '')
             if (scannedQuery.type === 'success') {
                 for (const token of scannedQuery.term) {
-                    if (isRepoFilter(token)) {
-                        if (token.value && !recentlySearchedRepos.includes(token.value.value)) {
-                            recentlySearchedRepos.push(token.value.value)
-                        }
+                    if (isRepoFilter(token) && token.value && !recentlySearchedRepos.includes(token.value.value)) {
+                        recentlySearchedRepos.push(token.value.value)
                     }
                 }
             }

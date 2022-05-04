@@ -6,7 +6,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/base64"
-	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -20,7 +19,9 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/tidwall/gjson"
+	"go.uber.org/zap"
 	"golang.org/x/sync/semaphore"
+	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
@@ -47,13 +48,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -65,6 +69,9 @@ var (
 	syncRepoStateBatchSize         = env.MustGetInt("SRC_REPOS_SYNC_STATE_BATCH_SIZE", 500, "Number of upserts to perform per batch")
 	syncRepoStateUpsertPerSecond   = env.MustGetInt("SRC_REPOS_SYNC_STATE_UPSERT_PER_SEC", 500, "The number of upserted rows allowed per second across all gitserver instances")
 	batchLogGlobalConcurrencyLimit = env.MustGetInt("SRC_BATCH_LOG_GLOBAL_CONCURRENCY_LIMIT", 256, "The maximum number of in-flight Git commands from all /batch-log requests combined")
+
+	// 80 per second (4800 per minute) is well below our alert threshold of 30k per minute.
+	rateLimitSyncerLimitPerSecond = env.MustGetInt("SRC_REPOS_SYNC_RATE_LIMIT_RATE_PER_SECOND", 80, "Rate limit applied to rate limit syncing")
 )
 
 func main() {
@@ -75,26 +82,34 @@ func main() {
 
 	conf.Init()
 	logging.Init()
+	syncLogs := log.Init(log.Resource{
+		Name:       env.MyName,
+		Version:    version.Version(),
+		InstanceID: hostname.Get(),
+	})
+	defer syncLogs()
 	tracer.Init(conf.DefaultClient())
 	sentry.Init(conf.DefaultClient())
 	trace.Init()
 	profiler.Init()
 
+	logger := log.Scoped("server", "the gitserver service")
+
 	if reposDir == "" {
-		log.Fatal("git-server: SRC_REPOS_DIR is required")
+		logger.Fatal("SRC_REPOS_DIR is required")
 	}
 	if err := os.MkdirAll(reposDir, os.ModePerm); err != nil {
-		log.Fatalf("failed to create SRC_REPOS_DIR: %s", err)
+		logger.Fatal("failed to create SRC_REPOS_DIR", zap.Error(err))
 	}
 
 	wantPctFree2, err := getPercent(wantPctFree)
 	if err != nil {
-		log.Fatalf("SRC_REPOS_DESIRED_PERCENT_FREE is out of range: %v", err)
+		logger.Fatal("SRC_REPOS_DESIRED_PERCENT_FREE is out of range", zap.Error(err))
 	}
 
 	sqlDB, err := getDB()
 	if err != nil {
-		log.Fatalf("failed to initialize database stores: %v", err)
+		logger.Fatal("failed to initialize database stores", zap.Error(err))
 	}
 	db := database.NewDB(sqlDB)
 
@@ -104,7 +119,7 @@ func main() {
 
 	err = keyring.Init(ctx)
 	if err != nil {
-		log.Fatalf("failed to initialise keyring: %s", err)
+		logger.Fatal("failed to initialise keyring", zap.Error(err))
 	}
 
 	gitserver := server.Server{
@@ -123,18 +138,18 @@ func main() {
 	}
 
 	observationContext := &observation.Context{
-		Logger:     log15.Root(),
+		Logger:     logger,
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
 	gitserver.RegisterMetrics(db, observationContext)
 
 	if tmpDir, err := gitserver.SetupAndClearTmp(); err != nil {
-		log.Fatalf("failed to setup temporary directory: %s", err)
+		logger.Fatal("failed to setup temporary directory", log.Error(err))
 	} else if err := os.Setenv("TMP_DIR", tmpDir); err != nil {
 		// Additionally, set TMP_DIR so other temporary files we may accidentally
 		// create are on the faster RepoDir mount.
-		log.Fatalf("Setting TMP_DIR: %s", err)
+		logger.Fatal("Setting TMP_DIR", log.Error(err))
 	}
 
 	// Create Handler now since it also initializes state
@@ -146,12 +161,21 @@ func main() {
 	// Ready immediately
 	ready := make(chan struct{})
 	close(ready)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Best effort attempt to sync rate limiters for site level external services
+	// early on. If it fails, we'll try again in the background sync below.
+	if err := syncSiteLevelExternalServiceRateLimiters(ctx, externalServiceStore); err != nil {
+		logger.Warn("error performing initial site level rate limit sync", log.Error(err))
+	}
+
+	go syncRateLimiters(ctx, externalServiceStore, rateLimitSyncerLimitPerSecond)
 	go debugserver.NewServerRoutine(ready).Start()
 	go gitserver.Janitor(janitorInterval)
 	go gitserver.SyncRepoState(syncRepoStateInterval, syncRepoStateBatchSize, syncRepoStateUpsertPerSecond)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 	gitserver.StartClonePipeline(ctx)
 
 	addr := os.Getenv("GITSERVER_ADDR")
@@ -167,12 +191,12 @@ func main() {
 		Addr:    addr,
 		Handler: handler,
 	}
-	log15.Info("git-server: listening", "addr", srv.Addr)
+	logger.Info("git-server: listening", log.String("addr", srv.Addr))
 
 	go func() {
 		err := srv.ListenAndServe()
 		if err != http.ErrServerClosed {
-			log.Fatal(err)
+			logger.Fatal(err.Error())
 		}
 	}()
 
@@ -195,7 +219,7 @@ func main() {
 	defer cancel()
 	// Stop accepting requests.
 	if err := srv.Shutdown(ctx); err != nil {
-		log15.Error("shutting down http server", "error", err)
+		logger.Error("shutting down http server", log.Error(err))
 	}
 
 	// The most important thing this does is kill all our clones. If we just
@@ -418,7 +442,7 @@ func getVCSSyncer(
 		if _, err := extractOptions(&c); err != nil {
 			return nil, err
 		}
-		return &server.JVMPackagesSyncer{Config: &c, DepsSvc: depsSvc}, nil
+		return server.NewJVMPackagesSyncer(&c, depsSvc), nil
 	case extsvc.TypeNpmPackages:
 		var c schema.NpmPackagesConnection
 		urn, err := extractOptions(&c)
@@ -436,4 +460,55 @@ func getVCSSyncer(
 		return server.NewGoModulesSyncer(&c, depsSvc, cli), nil
 	}
 	return &server.GitRepoSyncer{}, nil
+}
+
+func syncSiteLevelExternalServiceRateLimiters(ctx context.Context, store database.ExternalServiceStore) error {
+	svcs, err := store.List(ctx, database.ExternalServicesListOptions{NoNamespace: true})
+	if err != nil {
+		return errors.Wrap(err, "listing external services")
+	}
+	syncer := repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, store, repos.RateLimitSyncerOpts{})
+	return syncer.SyncServices(svcs)
+}
+
+// Sync rate limiters from config. Since we don't have a trigger that watches for
+// changes to rate limits we'll run this periodically in the background.
+func syncRateLimiters(ctx context.Context, store database.ExternalServiceStore, perSecond int) {
+	backoff := 5 * time.Second
+	batchSize := 50
+
+	// perSecond should be spread across all gitserver instances and we want to wait
+	// until we know about at least one instance.
+	var instanceCount int
+	for {
+		instanceCount = len(conf.Get().ServiceConnectionConfig.GitServers)
+		if instanceCount > 0 {
+			break
+		}
+		log15.Warn("found zero gitserver instance, trying again in %s", backoff)
+		time.Sleep(backoff)
+	}
+
+	limiter := rate.NewLimiter(rate.Limit(float64(perSecond)/float64(instanceCount)), batchSize)
+	syncer := repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, store, repos.RateLimitSyncerOpts{
+		PageSize: batchSize,
+		Limiter:  limiter,
+	})
+
+	var lastSuccessfulSync time.Time
+	ticker := time.NewTicker(1 * time.Minute)
+	for {
+		start := time.Now()
+		if err := syncer.SyncLimitersSince(ctx, lastSuccessfulSync); err != nil {
+			log15.Warn("syncRateLimiters: error syncing rate limits", "error", err)
+		} else {
+			lastSuccessfulSync = start
+		}
+
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+		}
+	}
 }

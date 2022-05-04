@@ -19,6 +19,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/server/internal/goreman"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
+	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/hostname"
+	"github.com/sourcegraph/sourcegraph/internal/version"
+	sglog "github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // FrontendInternalHost is the value of SRC_FRONTEND_INTERNAL.
@@ -43,6 +47,7 @@ var DefaultEnv = map[string]string{
 
 	"GRAFANA_SERVER_URL": "http://127.0.0.1:3370",
 	"JAEGER_SERVER_URL":  "http://127.0.0.1:16686",
+	"PROMETHEUS_URL":     "http://127.0.0.1:9090",
 
 	// Limit our cache size to 100GB, same as prod. We should probably update
 	// searcher/symbols to ensure this value isn't larger than the volume for
@@ -71,6 +76,12 @@ var verbose = os.Getenv("SRC_LOG_LEVEL") == "dbug" || os.Getenv("SRC_LOG_LEVEL")
 func Main() {
 	flag.Parse()
 	log.SetFlags(0)
+	syncLogs := sglog.Init(sglog.Resource{
+		Name:       env.MyName,
+		Version:    version.Version(),
+		InstanceID: hostname.Get(),
+	})
+	defer syncLogs()
 
 	// Ensure CONFIG_DIR and DATA_DIR
 

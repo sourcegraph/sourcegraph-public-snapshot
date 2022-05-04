@@ -11,7 +11,7 @@
 [Executors](executors.md) provide a sandbox that can run resource-intensive or untrusted tasks on behalf of the Sourcegraph instance, such as:
 
 - [automatically indexing a repository for precise code intelligence](../code_intelligence/explanations/auto_indexing.md)
-- [computing batch changes](../batch_changes/explanations/server_side.md)
+- [running batch changes](../batch_changes/explanations/server_side.md)
 
 ## Requirements
 

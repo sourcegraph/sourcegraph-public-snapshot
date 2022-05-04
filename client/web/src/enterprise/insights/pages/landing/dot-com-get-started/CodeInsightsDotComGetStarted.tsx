@@ -2,6 +2,8 @@ import React, { useEffect } from 'react'
 
 import classNames from 'classnames'
 
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Card, CardBody, Link, PageHeader } from '@sourcegraph/wildcard'
 
@@ -19,7 +21,7 @@ import styles from './CodeInsightsDotComGetStarted.module.scss'
 
 const DOT_COM_CONTEXT = { mode: CodeInsightsLandingPageType.Cloud }
 
-export interface CodeInsightsDotComGetStartedProps extends TelemetryProps {}
+export interface CodeInsightsDotComGetStartedProps extends TelemetryProps, SettingsCascadeProps<Settings> {}
 
 export const CodeInsightsDotComGetStarted: React.FunctionComponent<CodeInsightsDotComGetStartedProps> = props => {
     const { telemetryService } = props
@@ -169,7 +171,11 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<CodeInsightsD
                         </Card>
                     </section>
 
-                    <CodeInsightsTemplates className={styles.templateSection} telemetryService={telemetryService} />
+                    <CodeInsightsTemplates
+                        className={styles.templateSection}
+                        settingsCascade={props.settingsCascade}
+                        telemetryService={telemetryService}
+                    />
 
                     <iframe
                         src="https://www.youtube.com/embed/fMCUJQHfbUA"
