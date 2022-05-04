@@ -12,7 +12,7 @@ The recommended logger at Sourcegraph is [`github.com/sourcegraph/sourcegraph/li
 2. An initialization function to be called in `func main()`, `log.Init()`, that must be called.
    1. Log level can be configured with `SRC_LOG_LEVEL` (also see: [Logging: Log levels](../../admin/observability/logs.md#log-levels))
    2. Do not use this in an `init()` function - we want to explicitly avoid tying logger instances as a compile-time dependency.
-3. A getter to retrieve a `log.Logger` instance, `log.Scoped`
+3. A getter to retrieve a `log.Logger` instance, [`log.Scoped`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+log.Scoped+-file:lib/log+lang:go&patternType=literal)
 4. [Testing utilities](#testing-usage)
 
 Logging is also available via the all-in-one `internal/observation` package: [How to add observability](add_observability.md)
@@ -137,9 +137,9 @@ Additionally, in `SRC_DEVELOPMENT=true` using `log.Scoped` without calling `log.
 
 For testing purposes, we also provide:
 
-1. An optional initialization function to be called in `func TestMain(*testing.M)`, `logtest.Init`
-2. A getter to retrieve a `log.Logger` instance and a callback to programmatically iterate log output, `logtest.Scoped`
-   1. The standard `logtest.Scoped` will also work after `logtest.Init`
+1. An optional initialization function to be called in `func TestMain(*testing.M)`, [`logtest.Init`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+logtest.Init+-file:lib/log+lang:go&patternType=literal)
+2. A getter to retrieve a `log.Logger` instance and a callback to programmatically iterate log output, [`logtest.Scoped`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+logtest.Scoped+-file:lib/log+lang:go&patternType=literal)
+   1. The standard `log.Scoped` will also work after `logtest.Init`
    2. Programatically iterable logs are available from the `logtest.Captured` logger instance
 
 In the absense of `log.Init` in `main()`, `lib/log` can be initialized using `libtest` in packages that use `log.Scoped`:
