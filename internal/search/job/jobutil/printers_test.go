@@ -28,15 +28,12 @@ func TestSexp(t *testing.T) {
     (TIMEOUT
       50ms
       (PARALLEL
-        (PRIORITY
-          (REQUIRED
-            (AND
-              NoopJob
-              NoopJob))
-          (OPTIONAL
-            (OR
-              NoopJob
-              NoopJob)))
+        (AND
+          NoopJob
+          NoopJob)
+        (OR
+          NoopJob
+          NoopJob)
         (AND
           NoopJob
           NoopJob)))))
@@ -47,14 +44,12 @@ func TestSexp(t *testing.T) {
 				NewTimeoutJob(
 					50*1_000_000,
 					NewParallelJob(
-						NewPriorityJob(
-							NewAndJob(
-								NewNoopJob(),
-								NewNoopJob()),
-							NewOrJob(
-								NewNoopJob(),
-								NewNoopJob()),
-						),
+						NewAndJob(
+							NewNoopJob(),
+							NewNoopJob()),
+						NewOrJob(
+							NewNoopJob(),
+							NewNoopJob()),
 						NewAndJob(
 							NewNoopJob(),
 							NewNoopJob()))))))))
@@ -89,29 +84,23 @@ flowchart TB
       4---6
       6([PARALLEL])
         6---7
-        7([PRIORITY])
+        7([AND])
           7---8
-          8([REQUIRED])
-          8---9
-          9([AND])
-            9---10
-            10([NoopJob])
-            9---11
-            11([NoopJob])
-            7---12
-          12([OPTIONAL])
-          12---13
-          13([OR])
-            13---14
-            14([NoopJob])
-            13---15
-            15([NoopJob])
-            6---16
-        16([AND])
-          16---17
-          17([NoopJob])
-          16---18
-          18([NoopJob])
+          8([NoopJob])
+          7---9
+          9([NoopJob])
+          6---10
+        10([OR])
+          10---11
+          11([NoopJob])
+          10---12
+          12([NoopJob])
+          6---13
+        13([AND])
+          13---14
+          14([NoopJob])
+          13---15
+          15([NoopJob])
           `).Equal(t, fmt.Sprintf("\n%s", PrettyMermaid(
 		NewFilterJob(
 			NewLimitJob(
@@ -119,14 +108,12 @@ flowchart TB
 				NewTimeoutJob(
 					50*1_000_000,
 					NewParallelJob(
-						NewPriorityJob(
-							NewAndJob(
-								NewNoopJob(),
-								NewNoopJob()),
-							NewOrJob(
-								NewNoopJob(),
-								NewNoopJob()),
-						),
+						NewAndJob(
+							NewNoopJob(),
+							NewNoopJob()),
+						NewOrJob(
+							NewNoopJob(),
+							NewNoopJob()),
 						NewAndJob(
 							NewNoopJob(),
 							NewNoopJob()))))))))
@@ -140,20 +127,16 @@ func TestPrettyJSON(t *testing.T) {
       "TIMEOUT": {
         "PARALLEL": [
           {
-            "PRIORITY": {
-              "REQUIRED": {
-                "AND": [
-                  "NoopJob",
-                  "NoopJob"
-                ]
-              },
-              "OPTIONAL": {
-                "OR": [
-                  "NoopJob",
-                  "NoopJob"
-                ]
-              }
-            }
+            "AND": [
+              "NoopJob",
+              "NoopJob"
+            ]
+          },
+          {
+            "OR": [
+              "NoopJob",
+              "NoopJob"
+            ]
           },
           {
             "AND": [
@@ -175,14 +158,12 @@ func TestPrettyJSON(t *testing.T) {
 				NewTimeoutJob(
 					50*1_000_000,
 					NewParallelJob(
-						NewPriorityJob(
-							NewAndJob(
-								NewNoopJob(),
-								NewNoopJob()),
-							NewOrJob(
-								NewNoopJob(),
-								NewNoopJob()),
-						),
+						NewAndJob(
+							NewNoopJob(),
+							NewNoopJob()),
+						NewOrJob(
+							NewNoopJob(),
+							NewNoopJob()),
 						NewAndJob(
 							NewNoopJob(),
 							NewNoopJob()))))))))

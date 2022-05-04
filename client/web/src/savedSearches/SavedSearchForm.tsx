@@ -6,7 +6,7 @@ import { Omit } from 'utility-types'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { Container, PageHeader, ProductStatusBadge, Button, Link, Alert } from '@sourcegraph/wildcard'
+import { Container, PageHeader, ProductStatusBadge, Button, Link, Alert, Checkbox } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { NamespaceProps } from '../namespaces'
@@ -127,22 +127,23 @@ export const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = pr
                                 Email notifications
                             </label>
                             <div aria-labelledby="saved-search-form-email-notifications">
-                                <label>
-                                    <input
-                                        type="checkbox"
-                                        name="Notify owner"
-                                        className={styles.checkbox}
-                                        defaultChecked={notify}
-                                        onChange={createInputChangeHandler('notify')}
-                                    />{' '}
-                                    <span>
-                                        {props.namespace.__typename === 'Org'
-                                            ? 'Send email notifications to all members of this organization'
-                                            : props.namespace.__typename === 'User'
-                                            ? 'Send email notifications to my email'
-                                            : 'Email notifications'}
-                                    </span>
-                                </label>
+                                <Checkbox
+                                    name="Notify owner"
+                                    className={classNames(styles.checkbox, 'mr-0')}
+                                    defaultChecked={notify}
+                                    wrapperClassName="mb-2"
+                                    onChange={createInputChangeHandler('notify')}
+                                    id="NotifyOrgMembersInput"
+                                    label={
+                                        <span className="ml-2">
+                                            {props.namespace.__typename === 'Org'
+                                                ? 'Send email notifications to all members of this organization'
+                                                : props.namespace.__typename === 'User'
+                                                ? 'Send email notifications to my email'
+                                                : 'Email notifications'}
+                                        </span>
+                                    }
+                                />
                             </div>
 
                             <Alert variant="primary" className={classNames(styles.codeMonitoringAlert, 'p-3 mb-0')}>

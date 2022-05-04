@@ -11,10 +11,10 @@ BASE:
       500
       (OR
         (PARALLEL
-          Commit
+          CommitSearchJob
           ComputeExcludedRepos)
         (PARALLEL
-          Commit
+          CommitSearchJob
           ComputeExcludedRepos)))))
 
 OPTIMIZED:
@@ -25,7 +25,7 @@ OPTIMIZED:
     (LIMIT
       500
       (PARALLEL
-        Commit
+        CommitSearchJob
         (OR
           (PARALLEL
             NoopJob

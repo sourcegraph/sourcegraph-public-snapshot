@@ -1244,6 +1244,13 @@
       "examples": [10.0, 0.5],
       "!go": { "pointer": true }
     },
+    "insights.compute.graphql": {
+      "description": "Force GraphQL mode for insights compute searches. This will overwrite the default streaming behavior and force search clients to use the GraphQL API",
+      "type": "boolean",
+      "!go": { "pointer": true },
+      "group": "CodeInsights",
+      "default": false
+    },
     "insights.historical.worker.rateLimit": {
       "description": "Maximum number of historical Code Insights data frames that may be analyzed per second.",
       "type": "number",

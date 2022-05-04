@@ -423,6 +423,8 @@ func (s *Store) calculateVisibleUploadsInternal(
 	// All completed uploads are now visible. Mark any uploads queued for deletion as deleted as
 	// they are no longer reachable from the commit graph and cannot be used to fulfill any API
 	// requests.
+	unset, _ := tx.Store.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "upload not reachable within the commit graph")
+	defer unset(ctx)
 	if err := tx.Store.Exec(ctx, sqlf.Sprintf(calculateVisibleUploadsDeleteUploadsQueuedForDeletionQuery, repositoryID)); err != nil {
 		return err
 	}

@@ -13,12 +13,12 @@ BASE:
         (LIMIT
           40000
           (PARALLEL
-            Commit
+            CommitSearchJob
             ComputeExcludedRepos))
         (LIMIT
           40000
           (PARALLEL
-            Commit
+            CommitSearchJob
             ComputeExcludedRepos))))))
 
 OPTIMIZED:
@@ -29,7 +29,7 @@ OPTIMIZED:
     (LIMIT
       500
       (PARALLEL
-        Commit
+        CommitSearchJob
         (AND
           (LIMIT
             40000
