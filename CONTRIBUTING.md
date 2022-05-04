@@ -55,3 +55,19 @@ All open issues are not yet solved. If the task is interesting to you, take it a
 - Git branch name convention: `[developer-initials]/short-feature-description`
 - [Examples on Github](https://github.com/sourcegraph/sourcegraph/pulls?q=is%3Apr+label%3Ateam%2Ffrontend-platform)
 - (For Sourcegraph team) [How to accept contributions](https://docs.sourcegraph.com/dev/contributing/accepting_contribution)
+
+### Release Process
+
+The release process for the VS Code Extension for Sourcegraph is currently automated.
+
+#### Release Steps:
+
+1. Make sure the main branch is up-to-date.
+2. Make a commit in the following format: `$RELEASE_TYPE release vsce`
+   - Replace $RELEASE_TYPE with one of the supporting types: `Major`, `minor`, and `patch`
+3. Run `git push origin main:vsce/release` to trigger the build pipeline for releasing the extension.
+   - The extension is built using the code from the release branch.
+   - The package name and changelog will also be updated automatically.
+   - The extension is published with the [auto-incremented](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#autoincrementing-the-extension-version) version number by running the `vsce publish $RELEASE_TYPE` command provided by the [vsce CLI tool](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#vsce)
+4. Visit the [buildkite page for the vsce/release pipeline](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=vsce%2Frelease) to watch the build process
+5. Once the build is completed with no error, you should see the new version being verified for the Sourcegraph extension in your [Marketplace Publisher Dashboard](https://marketplace.visualstudio.com/manage/publishers)
