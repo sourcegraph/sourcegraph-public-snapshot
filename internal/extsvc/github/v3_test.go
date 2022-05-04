@@ -819,16 +819,22 @@ func TestClient_ListRepositoriesForSearch(t *testing.T) {
 	cli, save := newV3TestClient(t, "ListRepositoriesForSearch")
 	defer save()
 
-	t.Run("list repos", func(t *testing.T) {
-		rcache.SetupForTest(t)
-		reposPage, err := cli.ListRepositoriesForSearch(context.Background(), "org:sourcegraph", 1)
-		if err != nil {
-			t.Fatal(err)
-		}
+	rcache.SetupForTest(t)
+	reposPage, err := cli.ListRepositoriesForSearch(context.Background(), "org:sourcegraph-vcr-repos", 1)
 
-		fmt.Println(reposPage)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	})
+	if reposPage.Repos == nil {
+		t.Fatal("expected repos but got nil")
+	}
+
+	testutil.AssertGolden(t,
+		"testdata/golden/ListRepositoriesForSearch",
+		update("ListRepositoriesForSearch"),
+		reposPage.Repos,
+	)
 
 }
 
