@@ -1,7 +1,7 @@
 import { render } from 'react-dom'
 
 import { ContentMatch } from '@sourcegraph/shared/src/search/stream'
-import { setLinkComponent, AnchorLink } from '@sourcegraph/wildcard'
+import { AnchorLink, setLinkComponent } from '@sourcegraph/wildcard'
 
 import { App } from './App'
 import { loadContent } from './lib/blob'
@@ -44,7 +44,11 @@ window.initializeSourcegraph = (isDarkTheme: boolean) => {
         .callJava({ action: 'getTheme', arguments: {} })
         .then(response => {
             const root = document.querySelector(':root') as HTMLElement
-            root.style.setProperty('--primary', (response as { buttonColor: string }).buttonColor)
+            const buttonColor = (response as { buttonColor: string }).buttonColor
+            if (buttonColor) {
+                root.style.setProperty('--button-color', buttonColor)
+            }
+            root.style.setProperty('--primary', buttonColor)
             renderReactApp()
         })
         .catch((error: Error) => {
