@@ -6,14 +6,15 @@ import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
-import { FormGroup, Input, Label } from 'reactstrap'
+// eslint-disable-next-line no-restricted-imports
+import { Input } from 'reactstrap'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { renderMarkdown } from '@sourcegraph/common'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { Skipped } from '@sourcegraph/shared/src/search/stream'
-import { Button, Collapse, CollapseHeader, CollapsePanel, Icon } from '@sourcegraph/wildcard'
+import { Button, Collapse, CollapseHeader, CollapsePanel, Icon, Label } from '@sourcegraph/wildcard'
 
 import { StreamingProgressProps } from './StreamingProgress'
 
@@ -139,13 +140,12 @@ export const StreamingProgressSkippedPopover: React.FunctionComponent<
             {sortedSkippedItems.some(skipped => skipped.suggested) && (
                 <Form className="pb-3 px-3" onSubmit={submitHandler} data-testid="popover-form">
                     <div className="mb-2 mt-3">Search again:</div>
-                    <FormGroup check={true}>
+                    <div className="form-check">
                         {sortedSkippedItems.map(
                             skipped =>
                                 skipped.suggested && (
                                     <Label
-                                        check={true}
-                                        className="mb-1 d-block"
+                                        className="mb-1 d-block form-check-label"
                                         key={skipped.suggested.queryExpression}
                                     >
                                         <Input
@@ -159,7 +159,7 @@ export const StreamingProgressSkippedPopover: React.FunctionComponent<
                                     </Label>
                                 )
                         )}
-                    </FormGroup>
+                    </div>
 
                     <Button
                         type="submit"
