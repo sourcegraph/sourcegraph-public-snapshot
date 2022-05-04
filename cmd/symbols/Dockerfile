@@ -63,6 +63,7 @@ COPY --from=ctags /usr/local/bin/universal-ctags /usr/local/bin/universal-ctags
 
 COPY --from=build /symbols /usr/local/bin/symbols
 
+# symbols is cgo, ensure we have the requisite dynamic libraries
 RUN env SANITY_CHECK=true /usr/local/bin/symbols
 
 ENV CACHE_DIR=/mnt/cache/symbols

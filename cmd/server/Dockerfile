@@ -124,6 +124,9 @@ COPY --from=sourcegraph/postgres_exporter:server /usr/local/bin/postgres_exporte
 
 RUN echo "hosts: files dns" > /etc/nsswitch.conf
 
+# symbols is cgo, ensure we have the requisite dynamic libraries
+RUN env SANITY_CHECK=true /usr/local/bin/symbols
+
 WORKDIR /
 
 ENV GO111MODULES=on LANG=en_US.utf8
