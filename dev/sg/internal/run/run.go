@@ -312,7 +312,7 @@ func runWatch(
 				stdout.Out.WriteLine(output.Linef("", output.StylePending, "Installing %s...", cmd.Name))
 			}
 
-			cmdOut, err := BashInRoot(ctx, cmd.Install, makeEnv(cmd.Env, parentEnv))
+			cmdOut, err := BashInRoot(ctx, cmd.Install, makeEnv(parentEnv, cmd.Env))
 			if err != nil {
 				if !startedOnce {
 					return installErr{cmdName: cmd.Name, output: cmdOut, originalErr: err}
