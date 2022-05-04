@@ -33,7 +33,6 @@ func NewIndexEnqueuer(
 	dbStore DBStore,
 	gitClient GitserverClient,
 	repoUpdater RepoUpdaterClient,
-	inferenceService InferenceService,
 	config *Config,
 	observationContext *observation.Context,
 ) *IndexEnqueuer {
