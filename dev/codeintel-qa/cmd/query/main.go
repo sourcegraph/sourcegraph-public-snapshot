@@ -11,9 +11,11 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/dev/codeintel-qa/internal"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var (
+	indexDir                    string
 	numConcurrentRequests       int
 	checkQueryResult            bool
 	queryReferencesOfReferences bool
@@ -23,6 +25,8 @@ var (
 )
 
 func init() {
+	// Default assumes running from the dev/codeintel-qa directory
+	flag.StringVar(&indexDir, "index-dir", "./testdata/indexes", "The location of the testdata directory")
 	flag.IntVar(&numConcurrentRequests, "num-concurrent-requests", 5, "The maximum number of concurrent requests")
 	flag.BoolVar(&checkQueryResult, "check-query-result", true, "Whether to confirm query results are correct")
 	flag.BoolVar(&queryReferencesOfReferences, "query-references-of-references", false, "Whether to perform reference operations on test case references")
@@ -43,10 +47,21 @@ func main() {
 
 type queryFunc func(ctx context.Context) error
 
-func mainErr(ctx context.Context) error {
+func mainErr(ctx context.Context) (err error) {
 	if err := internal.InitializeGraphQLClient(); err != nil {
 		return err
 	}
+
+	if err := checkInstanceState(ctx); err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			if diff, diffErr := instanceStateDiff(ctx); diffErr == nil && diff != "" {
+				err = errors.Newf("unexpected instance state: %s\n\n❌ original error: %s", diff, err)
+			}
+		}
+	}()
 
 	var wg sync.WaitGroup
 	var numRequestsFinished uint64
