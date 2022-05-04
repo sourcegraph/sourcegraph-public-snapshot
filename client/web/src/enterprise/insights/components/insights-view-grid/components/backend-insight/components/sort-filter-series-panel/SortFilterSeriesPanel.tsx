@@ -82,7 +82,13 @@ export const SortFilterSeriesPanel: React.FunctionComponent<SortFilterSeriesPane
             </section>
             <footer className={styles.footer}>
                 <span>Number of data series</span>
-                <input type="number" step="1" value={seriesCount} className="form-control" onChange={handleChange} />
+                <input
+                    type="number"
+                    step="1"
+                    value={seriesCount}
+                    className="form-control form-control-sm"
+                    onChange={handleChange}
+                />
             </footer>
         </section>
     )
