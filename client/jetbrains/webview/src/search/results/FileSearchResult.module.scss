@@ -1,0 +1,71 @@
+.line {
+    width: 100%;
+    overflow-x: hidden;
+    cursor: pointer;
+    user-select: none;
+    background-color: var(--code-bg);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    &-active {
+        background-color: var(--code-selection-bg);
+    }
+
+    &-code {
+        color: var(--body-color);
+        flex-shrink: 1;
+        // Ensure we only render one line but keep the whitespace
+        white-space: pre;
+
+        text-overflow: ellipsis;
+        overflow-x: hidden;
+
+        &-highlight {
+            background-color: var(--hl-dark-yellow);
+            color: var(--hl-gray-4);
+            border-radius: 2px;
+        }
+    }
+
+    &-line-number {
+        padding-left: 1rem;
+        font-size: 0.8rem;
+    }
+}
+
+.header {
+    padding: 0.5rem 0.5rem 0.5rem 0;
+    background-color: transparent;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+
+    &-title {
+        flex: 1 1 auto;
+        overflow: hidden;
+        display: flex;
+    }
+
+    &-divider {
+        border-right: 1px solid var(--border-color-2);
+        height: 1rem;
+    }
+
+    &-link {
+        cursor: text;
+        pointer-events: none;
+    }
+
+    p {
+        margin-bottom: 0;
+    }
+
+    &:not(:only-of-type) {
+        border-bottom: none;
+    }
+
+    &-description {
+        line-height: (14/11);
+    }
+}

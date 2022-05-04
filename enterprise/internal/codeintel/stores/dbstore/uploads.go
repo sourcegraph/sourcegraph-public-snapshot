@@ -255,6 +255,8 @@ func (s *Store) DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore 
 	}})
 	defer endObservation(1, observation.Args{})
 
+	unset, _ := s.Store.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "stuck in uploading state")
+	defer unset(ctx)
 	count, _, err := basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(deleteUploadsStuckUploadingQuery, uploadedBefore)))
 	if err != nil {
 		return 0, err
@@ -765,6 +767,8 @@ func (s *Store) DeleteUploadsWithoutRepository(ctx context.Context, now time.Tim
 	ctx, trace, endObservation := s.operations.deleteUploadsWithoutRepository.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
+	unset, _ := s.Store.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "upload associated with repository not known to this instance")
+	defer unset(ctx)
 	repositories, err := scanCounts(s.Store.Query(ctx, sqlf.Sprintf(deleteUploadsWithoutRepositoryQuery, now.UTC(), DeletedRepositoryGracePeriod/time.Second)))
 	if err != nil {
 		return nil, err
@@ -1299,6 +1303,8 @@ func (s *Store) SoftDeleteExpiredUploads(ctx context.Context) (count int, err er
 		return 0, nil
 	}
 
+	unset, _ := s.Store.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "soft-deleting expired uploads")
+	defer unset(ctx)
 	repositories, err := scanCounts(tx.Store.Query(ctx, sqlf.Sprintf(softDeleteExpiredUploadsQuery)))
 	if err != nil {
 		return 0, err

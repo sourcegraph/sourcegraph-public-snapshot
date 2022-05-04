@@ -3,11 +3,13 @@ package indexing
 import (
 	"context"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/shared"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -89,13 +91,9 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, record work
 			break
 		}
 
-		pkg := precise.Package{
-			Scheme:  packageReference.Package.Scheme,
-			Name:    packageReference.Package.Name,
-			Version: packageReference.Package.Version,
-		}
+		pkg := newPackage(packageReference.Package)
 
-		extsvcKind, ok := schemeToExternalService[packageReference.Scheme]
+		extsvcKind, ok := schemeToExternalService[pkg.Scheme]
 		// add entry for empty string/kind here so dependencies such as lsif-go ones still get
 		// an associated dependency indexing job
 		kinds[extsvcKind] = struct{}{}
@@ -166,6 +164,25 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, record work
 	}
 
 	return errors.Append(nil, errs...)
+}
+
+// newPackage constructs a precise.Package from the given shared.Package,
+// applying any normalization or necessary transformations that lsif uploads
+// require for internal consistency.
+func newPackage(pkg shared.Package) precise.Package {
+	p := precise.Package{
+		Scheme:  pkg.Scheme,
+		Name:    pkg.Name,
+		Version: pkg.Version,
+	}
+
+	switch pkg.Scheme {
+	case dependencies.JVMPackagesScheme:
+		p.Name = strings.TrimPrefix(p.Name, "maven/")
+		p.Name = strings.ReplaceAll(p.Name, "/", ":")
+	}
+
+	return p
 }
 
 func (h *dependencySyncSchedulerHandler) insertDependencyRepo(ctx context.Context, pkg precise.Package) (new bool, err error) {

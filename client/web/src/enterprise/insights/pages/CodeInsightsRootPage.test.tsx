@@ -9,6 +9,8 @@ import { Route } from 'react-router-dom'
 import { of } from 'rxjs'
 import sinon from 'sinon'
 
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
+import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
 
@@ -20,6 +22,11 @@ import {
 } from '../core'
 
 import { CodeInsightsRootPage, CodeInsightsRootPageTab } from './CodeInsightsRootPage'
+
+const mockSettingsCascade: SettingsCascadeOrError<Settings> = {
+    final: null,
+    subjects: null,
+}
 
 interface ReactRouterMock {
     useHistory: () => unknown
@@ -89,6 +96,7 @@ describe('CodeInsightsRootPage', () => {
     it('should redirect to "All insights" page if no dashboardId is provided', () => {
         const { testLocation } = renderWithBrandedContext(
             <CodeInsightsRootPage
+                settingsCascade={mockSettingsCascade}
                 activeView={CodeInsightsRootPageTab.CodeInsights}
                 telemetryService={mockTelemetryService}
             />,
@@ -107,6 +115,7 @@ describe('CodeInsightsRootPage', () => {
     it('should render dashboard not found page when id is not found', () => {
         renderWithBrandedContext(
             <CodeInsightsRootPage
+                settingsCascade={mockSettingsCascade}
                 activeView={CodeInsightsRootPageTab.CodeInsights}
                 telemetryService={mockTelemetryService}
             />,
@@ -126,6 +135,7 @@ describe('CodeInsightsRootPage', () => {
     it('should log events', () => {
         renderWithBrandedContext(
             <CodeInsightsRootPage
+                settingsCascade={mockSettingsCascade}
                 activeView={CodeInsightsRootPageTab.CodeInsights}
                 telemetryService={mockTelemetryService}
             />,

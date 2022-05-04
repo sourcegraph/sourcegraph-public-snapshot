@@ -64,6 +64,7 @@ package observation
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	otlog "github.com/opentracing/opentracing-go/log"
@@ -79,6 +80,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/log"
 )
+
+// enableTraceLog toggles whether TraceLogger.Log events should be logged at info level.
+// This is useful in dev environments, or in environments where OpenTracing/OpenTelemetry
+// logs/events are supported (i.e. not Datadog).
+var enableTraceLog = os.Getenv("SRC_TRACE_LOG") != "false"
 
 // Context carries context about where to send logs, trace spans, and register
 // metrics. It should be created once on service startup, and passed around to
@@ -226,9 +232,11 @@ func (t *traceLogger) Log(fields ...otlog.Field) {
 	if t.trace != nil {
 		t.trace.LogFields(fields...)
 	}
-	t.Logger.
-		AddCallerSkip(1). // Log() -> Logger
-		Info("trace.log", toLogFields(fields)...)
+	if enableTraceLog {
+		t.Logger.
+			AddCallerSkip(1). // Log() -> Logger
+			Info("trace.log", toLogFields(fields)...)
+	}
 }
 
 func (t *traceLogger) Tag(fields ...otlog.Field) {

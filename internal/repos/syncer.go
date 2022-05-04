@@ -29,7 +29,7 @@ import (
 type Syncer struct {
 	Sourcer Sourcer
 	Worker  *workerutil.Worker
-	Store   *Store
+	Store   Store
 
 	// Synced is sent a collection of Repos that were synced by Sync (only if Synced is non-nil)
 	Synced chan Diff
@@ -64,7 +64,7 @@ type RunOptions struct {
 }
 
 // Run runs the Sync at the specified interval.
-func (s *Syncer) Run(ctx context.Context, store *Store, opts RunOptions) error {
+func (s *Syncer) Run(ctx context.Context, store Store, opts RunOptions) error {
 	if opts.EnqueueInterval == nil {
 		opts.EnqueueInterval = func() time.Duration { return time.Minute }
 	}
@@ -111,7 +111,7 @@ func (s *Syncer) Run(ctx context.Context, store *Store, opts RunOptions) error {
 
 type syncHandler struct {
 	syncer          *Syncer
-	store           *Store
+	store           Store
 	minSyncInterval func() time.Duration
 }
 
@@ -180,12 +180,12 @@ func (e ErrAccountSuspended) AccountSuspended() bool {
 // of s.Synced will receive a list of repos. In particular this is so that the
 // git update scheduler can start working straight away on existing
 // repositories.
-func (s *Syncer) initialUnmodifiedDiffFromStore(ctx context.Context, store *Store) {
+func (s *Syncer) initialUnmodifiedDiffFromStore(ctx context.Context, store Store) {
 	if s.Synced == nil {
 		return
 	}
 
-	stored, err := store.RepoStore.List(ctx, database.ReposListOptions{})
+	stored, err := store.RepoStore().List(ctx, database.ReposListOptions{})
 	if err != nil {
 		if s.Logger != nil {
 			s.Logger.Warn("initialUnmodifiedDiffFromStore store.ListRepos", "error", err)
@@ -262,7 +262,7 @@ func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background boo
 	tr, ctx := trace.New(ctx, "Syncer.SyncRepo", string(name))
 	defer tr.Finish()
 
-	repo, err = s.Store.RepoStore.GetByName(ctx, name)
+	repo, err = s.Store.RepoStore().GetByName(ctx, name)
 	if err != nil && !errcode.IsNotFound(err) {
 		return nil, err
 	}
@@ -324,7 +324,7 @@ func (s *Syncer) syncRepo(
 	ctx, save := s.observeSync(ctx, "Syncer.syncRepo", string(name))
 	defer func() { save(svc, err) }()
 
-	svcs, err := s.Store.ExternalServiceStore.List(ctx, database.ExternalServicesListOptions{
+	svcs, err := s.Store.ExternalServiceStore().List(ctx, database.ExternalServicesListOptions{
 		Kinds: []string{extsvc.TypeToKind(codehost.ServiceType)},
 		// Since package host external services have the set of repositories to sync in
 		// the lsif_dependency_repos table, we can lazy-sync individual repos without wiping them
@@ -484,7 +484,7 @@ func (s *Syncer) SyncExternalService(
 
 	// We don't use tx here as the sourcing process below can be slow and we don't
 	// want to hold a lock on the external_services table for too long.
-	svc, err = s.Store.ExternalServiceStore.GetByID(ctx, externalServiceID)
+	svc, err = s.Store.ExternalServiceStore().GetByID(ctx, externalServiceID)
 	if err != nil {
 		return errors.Wrap(err, "fetching external services")
 	}
@@ -616,10 +616,27 @@ func (s *Syncer) SyncExternalService(
 	interval := calcSyncInterval(now, svc.LastSyncAt, minSyncInterval, modified, errs)
 
 	s.log().Debug("Synced external service", "id", externalServiceID, "backoff duration", interval)
+
+	// Re-load the service from the DB and update the sync timestamps. We do this
+	// because a sync can take a long time and we'd potentially over-write changes to
+	// other fields like the config that happened during the sync by re-using the same `svc`
+	// loaded at the beginning of the sync.
+	tx, err := s.Store.ExternalServiceStore().Transact(ctx)
+	if err != nil {
+		return errors.Append(errs, errors.Wrap(err, "failed to start tx"))
+	}
+
+	defer func() { errs = errors.Append(errs, tx.Done(err)) }()
+
+	svc, err = tx.GetByID(ctx, svc.ID)
+	if err != nil {
+		return errors.Append(errs, errors.Wrap(err, "failed to load extsvc"))
+	}
+
 	svc.NextSyncAt = now.Add(interval)
 	svc.LastSyncAt = now
 
-	err = s.Store.ExternalServiceStore.Upsert(ctx, svc)
+	err = tx.Upsert(ctx, svc)
 	if err != nil {
 		errs = errors.Append(errs, errors.Wrap(err, "upserting external service"))
 	}
@@ -665,7 +682,7 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		}
 	}()
 
-	stored, err := tx.RepoStore.List(ctx, database.ReposListOptions{
+	stored, err := tx.RepoStore().List(ctx, database.ReposListOptions{
 		Names:          []string{string(sourced.Name)},
 		ExternalRepos:  []api.ExternalRepoSpec{sourced.ExternalRepo},
 		IncludeBlocked: true,
@@ -690,7 +707,7 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		}
 
 		// invariant: conflicting can't be nil due to our database constraints
-		if err = tx.RepoStore.Delete(ctx, conflicting.ID); err != nil {
+		if err = tx.RepoStore().Delete(ctx, conflicting.ID); err != nil {
 			return Diff{}, errors.Wrap(err, "syncer: failed to delete conflicting repo")
 		}
 

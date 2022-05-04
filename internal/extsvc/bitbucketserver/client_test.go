@@ -132,8 +132,7 @@ func TestUserFilters(t *testing.T) {
 }
 
 func TestClient_Users(t *testing.T) {
-	cli, save := NewTestClient(t, "Users", *update)
-	defer save()
+	cli := NewTestClient(t, "Users", *update)
 
 	timeout, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
 	defer cancel()
@@ -309,8 +308,7 @@ func TestClient_Users(t *testing.T) {
 }
 
 func TestClient_LabeledRepos(t *testing.T) {
-	cli, save := NewTestClient(t, "LabeledRepos", *update)
-	defer save()
+	cli := NewTestClient(t, "LabeledRepos", *update)
 
 	// We have archived label on bitbucket.sgdev.org with a repo in it.
 	repos, _, err := cli.LabeledRepos(context.Background(), nil, "archived")
@@ -396,8 +394,7 @@ func TestClient_LoadPullRequest(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			name := "PullRequests-" + strings.ReplaceAll(tc.name, " ", "-")
-			cli, save := NewTestClient(t, name, *update)
-			defer save()
+			cli := NewTestClient(t, name, *update)
 
 			if tc.ctx == nil {
 				tc.ctx = context.Background()
@@ -540,9 +537,7 @@ func TestClient_CreatePullRequest(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			name := "CreatePullRequest-" + strings.ReplaceAll(tc.name, " ", "-")
-
-			cli, save := NewTestClient(t, name, *update)
-			defer save()
+			cli := NewTestClient(t, name, *update)
 
 			if tc.ctx == nil {
 				tc.ctx = context.Background()
@@ -685,9 +680,7 @@ func TestClient_FetchDefaultReviewers(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			name := "FetchDefaultReviewers-" + strings.ReplaceAll(tc.name, " ", "-")
-
-			cli, save := NewTestClient(t, name, *update)
-			defer save()
+			cli := NewTestClient(t, name, *update)
 
 			if tc.ctx == nil {
 				tc.ctx = context.Background()
@@ -769,9 +762,7 @@ func TestClient_DeclinePullRequest(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			name := "DeclinePullRequest-" + strings.ReplaceAll(tc.name, " ", "-")
-
-			cli, save := NewTestClient(t, name, *update)
-			defer save()
+			cli := NewTestClient(t, name, *update)
 
 			if tc.ctx == nil {
 				tc.ctx = context.Background()
@@ -803,8 +794,7 @@ func TestClient_LoadPullRequestActivities(t *testing.T) {
 		instanceURL = "https://bitbucket.sgdev.org"
 	}
 
-	cli, save := NewTestClient(t, "PullRequestActivities", *update)
-	defer save()
+	cli := NewTestClient(t, "PullRequestActivities", *update)
 
 	timeout, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
 	defer cancel()
@@ -926,9 +916,7 @@ func TestClient_CreatePullRequestComment(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			name := "CreatePullRequestComment-" + strings.ReplaceAll(tc.name, " ", "-")
-
-			cli, save := NewTestClient(t, name, *update)
-			defer save()
+			cli := NewTestClient(t, name, *update)
 
 			if tc.ctx == nil {
 				tc.ctx = context.Background()
@@ -1015,8 +1003,7 @@ func TestClient_MergePullRequest(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			name := "MergePullRequest-" + strings.ReplaceAll(tc.name, " ", "-")
 
-			cli, save := NewTestClient(t, name, *update)
-			defer save()
+			cli := NewTestClient(t, name, *update)
 
 			if tc.ctx == nil {
 				tc.ctx = context.Background()
@@ -1047,8 +1034,7 @@ func TestClient_MergePullRequest(t *testing.T) {
 // dependent on the user token supplied. The current golden files are generated
 // from using the account zoom@sourcegraph.com on bitbucket.sgdev.org.
 func TestClient_RepoIDs(t *testing.T) {
-	cli, save := NewTestClient(t, "RepoIDs", *update)
-	defer save()
+	cli := NewTestClient(t, "RepoIDs", *update)
 
 	ids, err := cli.RepoIDs(context.Background(), "READ")
 	if err != nil {
@@ -1254,8 +1240,7 @@ func TestClient_WithAuthenticator(t *testing.T) {
 
 func TestClient_GetVersion(t *testing.T) {
 	fixture := "GetVersion"
-	cli, save := NewTestClient(t, fixture, *update)
-	defer save()
+	cli := NewTestClient(t, fixture, *update)
 
 	have, err := cli.GetVersion(context.Background())
 	if err != nil {
@@ -1271,8 +1256,7 @@ func TestClient_CreateFork(t *testing.T) {
 	ctx := context.Background()
 
 	fixture := "CreateFork"
-	cli, save := NewTestClient(t, fixture, *update)
-	defer save()
+	cli := NewTestClient(t, fixture, *update)
 
 	have, err := cli.Fork(ctx, "SGDEMO", "go", CreateForkInput{})
 	assert.Nil(t, err)

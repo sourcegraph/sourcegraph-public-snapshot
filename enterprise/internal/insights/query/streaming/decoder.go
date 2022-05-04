@@ -3,9 +3,29 @@ package streaming
 import (
 	"fmt"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute/client"
+
 	streamapi "github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 )
+
+type StreamDecoderEvents struct {
+	SkippedReasons []string
+	Errors         []string
+}
+
+type SearchMatch struct {
+	RepositoryID   int32
+	RepositoryName string
+	MatchCount     int
+}
+
+type TabulationResult struct {
+	StreamDecoderEvents
+	RepoCounts map[string]*SearchMatch
+	TotalCount int
+}
 
 // TabulationDecoder will tabulate the result counts per repository.
 func TabulationDecoder() (streamhttp.FrontendStreamDecoder, *TabulationResult) {
@@ -69,19 +89,59 @@ func TabulationDecoder() (streamhttp.FrontendStreamDecoder, *TabulationResult) {
 	}, tr
 }
 
-type TabulationResult struct {
-	StreamDecoderEvents
-	RepoCounts map[string]*SearchMatch
-	TotalCount int
-}
-
-type StreamDecoderEvents struct {
-	SkippedReasons []string
-	Errors         []string
-}
-
-type SearchMatch struct {
+// ComputeMatch is our internal representation of a match retrieved from a Compute Streaming Search.
+// It is internally different from the `ComputeMatch` returned by the Compute GraphQL query but they
+// serve the same end goal.
+type ComputeMatch struct {
 	RepositoryID   int32
 	RepositoryName string
-	MatchCount     int
+	ValueCounts    map[string]int
+}
+
+func newComputeMatch(repoName string, repoID int32) *ComputeMatch {
+	return &ComputeMatch{
+		ValueCounts:    make(map[string]int),
+		RepositoryID:   repoID,
+		RepositoryName: repoName,
+	}
+}
+
+type ComputeTabulationResult struct {
+	StreamDecoderEvents
+	RepoCounts map[string]*ComputeMatch
+}
+
+const capturedValueMaxLength = 100
+
+func ComputeDecoder() (client.ComputeMatchContextStreamDecoder, *ComputeTabulationResult) {
+	byRepo := make(map[string]*ComputeMatch)
+	getRepoCounts := func(matchContext compute.MatchContext) *ComputeMatch {
+		var v *ComputeMatch
+		if got, ok := byRepo[matchContext.Repository]; ok {
+			return got
+		}
+		v = newComputeMatch(matchContext.Repository, matchContext.RepositoryID)
+		byRepo[matchContext.Repository] = v
+		return v
+	}
+
+	return client.ComputeMatchContextStreamDecoder{
+			OnResult: func(results []compute.MatchContext) {
+				for _, result := range results {
+					current := getRepoCounts(result)
+					for _, match := range result.Matches {
+						for _, data := range match.Environment {
+							value := data.Value
+							if len(value) > capturedValueMaxLength {
+								value = value[:capturedValueMaxLength]
+							}
+							current.ValueCounts[value] += 1
+						}
+					}
+				}
+			},
+		}, &ComputeTabulationResult{
+			StreamDecoderEvents: StreamDecoderEvents{},
+			RepoCounts:          byRepo,
+		}
 }

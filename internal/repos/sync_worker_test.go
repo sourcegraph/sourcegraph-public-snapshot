@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func testSyncWorkerPlumbing(repoStore *repos.Store) func(t *testing.T) {
+func testSyncWorkerPlumbing(repoStore repos.Store) func(t *testing.T) {
 	return func(t *testing.T) {
 		ctx := context.Background()
 		testSvc := &types.ExternalService{
@@ -24,14 +24,15 @@ func testSyncWorkerPlumbing(repoStore *repos.Store) func(t *testing.T) {
 		}
 
 		// Create external service
-		err := repoStore.ExternalServiceStore.Upsert(ctx, testSvc)
+		err := repoStore.ExternalServiceStore().Upsert(ctx, testSvc)
 		if err != nil {
 			t.Fatal(err)
 		}
 		t.Logf("Test service created, ID: %d", testSvc.ID)
 
 		// Add item to queue
-		result, err := repoStore.ExecResult(ctx, sqlf.Sprintf(`insert into external_service_sync_jobs (external_service_id) values (%s);`, testSvc.ID))
+		q := sqlf.Sprintf(`insert into external_service_sync_jobs (external_service_id) values (%s);`, testSvc.ID)
+		result, err := repoStore.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 		if err != nil {
 			t.Fatal(err)
 		}
