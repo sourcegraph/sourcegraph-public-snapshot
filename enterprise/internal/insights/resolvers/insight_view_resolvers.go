@@ -91,10 +91,7 @@ func (i *insightViewSeriesDisplayOptionsResolver) Limit(ctx context.Context) (*i
 }
 
 func (i *insightViewSeriesDisplayOptionsResolver) SortOptions(ctx context.Context) (graphqlbackend.InsightViewSeriesSortOptionsResolver, error) {
-	if i.seriesDisplayOptions.SortOptions != nil {
-		return &insightViewSeriesSortOptionsResolver{seriesSortOptions: i.seriesDisplayOptions.SortOptions}, nil
-	}
-	return nil, nil
+	return &insightViewSeriesSortOptionsResolver{seriesSortOptions: i.seriesDisplayOptions.SortOptions}, nil
 }
 
 type insightViewSeriesSortOptionsResolver struct {
@@ -102,11 +99,17 @@ type insightViewSeriesSortOptionsResolver struct {
 }
 
 func (i *insightViewSeriesSortOptionsResolver) Mode(ctx context.Context) (*string, error) {
-	return (*string)(&i.seriesSortOptions.Mode), nil
+	if i.seriesSortOptions != nil {
+		return (*string)(&i.seriesSortOptions.Mode), nil
+	}
+	return nil, nil
 }
 
 func (i *insightViewSeriesSortOptionsResolver) Direction(ctx context.Context) (*string, error) {
-	return (*string)(&i.seriesSortOptions.Direction), nil
+	if i.seriesSortOptions != nil {
+		return (*string)(&i.seriesSortOptions.Direction), nil
+	}
+	return nil, nil
 }
 
 func (i *insightViewResolver) DefaultSeriesDisplayOptions(ctx context.Context) (graphqlbackend.InsightViewSeriesDisplayOptionsResolver, error) {
@@ -860,7 +863,7 @@ func (d *InsightViewQueryConnectionResolver) Nodes(ctx context.Context) ([]graph
 		}
 		if d.args.SeriesDisplayOptions != nil {
 			var sortOptions *types.SeriesSortOptions
-			if d.args.SeriesDisplayOptions != nil {
+			if d.args.SeriesDisplayOptions != nil && d.args.SeriesDisplayOptions.SortOptions != nil {
 				sortOptions = &types.SeriesSortOptions{
 					Mode:      types.SeriesSortMode(d.args.SeriesDisplayOptions.SortOptions.Mode),
 					Direction: types.SeriesSortDirection(d.args.SeriesDisplayOptions.SortOptions.Direction),
