@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
@@ -20,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 const (
@@ -139,10 +139,10 @@ type queryRunner struct {
 	db edb.EnterpriseDB
 }
 
-func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err error) {
+func (r *queryRunner) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
 	defer func() {
 		if err != nil {
-			log15.Error("queryRunner.Handle", "error", err)
+			logger.Error("queryRunner.Handle", log.Error(err))
 		}
 	}()
 
@@ -211,11 +211,11 @@ type actionRunner struct {
 	edb.CodeMonitorStore
 }
 
-func (r *actionRunner) Handle(ctx context.Context, record workerutil.Record) (err error) {
-	log15.Info("actionRunner.Handle starting")
+func (r *actionRunner) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
+	logger.Info("actionRunner.Handle starting")
 	defer func() {
 		if err != nil {
-			log15.Error("actionRunner.Handle", "error", err)
+			logger.Error("actionRunner.Handle", log.Error(err))
 		}
 	}()
 

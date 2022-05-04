@@ -841,6 +841,7 @@ func testSyncRun(store repos.Store) func(t *testing.T) {
 func testSyncerMultipleServices(store repos.Store) func(t *testing.T) {
 	return func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
+
 		defer cancel()
 
 		services := mkExternalServices(time.Now())
@@ -2060,7 +2061,6 @@ func assertDeletedRepoCount(ctx context.Context, t *testing.T, store repos.Store
 func testSyncReposWithLastErrors(s repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
 		ctx := context.Background()
-
 		testCases := []struct {
 			label     string
 			svcKind   string

@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution/cache"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // batchSpecWorkspaceCreator takes in BatchSpecs, resolves them into
@@ -29,7 +30,7 @@ type batchSpecWorkspaceCreator struct {
 // HandlerFunc returns a workeruitl.HandlerFunc that can be passed to a
 // workerutil.Worker to process queued changesets.
 func (e *batchSpecWorkspaceCreator) HandlerFunc() workerutil.HandlerFunc {
-	return func(ctx context.Context, record workerutil.Record) (err error) {
+	return func(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
 		job := record.(*btypes.BatchSpecResolutionJob)
 
 		tx, err := e.store.Transact(ctx)

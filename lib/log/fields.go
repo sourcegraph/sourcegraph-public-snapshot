@@ -23,6 +23,8 @@ var (
 	Int = zap.Int
 	// Ints constructs a field that carries a slice of integers.
 	Ints = zap.Ints
+	// Int64 constructs a field with the given key and value.
+	Int64 = zap.Int64
 
 	// Float64 constructs a field that carries a float64. The way the floating-point value
 	// is represented is encoder-dependent, so marshaling is necessarily lazy.

@@ -60,7 +60,7 @@ type searchRepos struct {
 // getJob returns a function parameterized by ctx to search over repos.
 func (s *searchRepos) getJob(ctx context.Context) func() error {
 	return func() error {
-		searcherJob := &searcher.Searcher{
+		searcherJob := &searcher.SearcherJob{
 			PatternInfo:     s.args.PatternInfo,
 			Repos:           s.repoSet.AsList(),
 			Indexed:         s.repoSet.IsIndexed(),
@@ -137,7 +137,7 @@ func runStructuralSearch(ctx context.Context, clients job.RuntimeClients, args *
 	matches := make([]result.Match, 0, len(event.Results))
 	for _, fm := range event.Results {
 		if _, ok := fm.(*result.FileMatch); !ok {
-			return errors.Errorf("StructuralSearch failed to convert results")
+			return errors.Errorf("StructuralSearchJob failed to convert results")
 		}
 		matches = append(matches, fm)
 	}
@@ -149,7 +149,7 @@ func runStructuralSearch(ctx context.Context, clients job.RuntimeClients, args *
 	return err
 }
 
-type StructuralSearch struct {
+type StructuralSearchJob struct {
 	ZoektArgs        *search.ZoektParameters
 	SearcherArgs     *search.SearcherParameters
 	UseIndex         query.YesNoOnly
@@ -158,7 +158,7 @@ type StructuralSearch struct {
 	RepoOpts search.RepoOptions
 }
 
-func (s *StructuralSearch) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+func (s *StructuralSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
@@ -184,6 +184,6 @@ func (s *StructuralSearch) Run(ctx context.Context, clients job.RuntimeClients, 
 	})
 }
 
-func (*StructuralSearch) Name() string {
-	return "Structural"
+func (*StructuralSearchJob) Name() string {
+	return "StructuralSearchJob"
 }

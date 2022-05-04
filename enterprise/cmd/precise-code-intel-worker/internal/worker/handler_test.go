@@ -67,7 +67,7 @@ func TestHandle(t *testing.T) {
 		gitserverClient: gitserverClient,
 	}
 
-	requeued, err := handler.handle(context.Background(), upload, observation.TestTraceLogger(logtest.Scoped(t)))
+	requeued, err := handler.handle(context.Background(), logtest.Scoped(t), upload, observation.TestTraceLogger(logtest.Scoped(t)))
 	if err != nil {
 		t.Fatalf("unexpected error handling upload: %s", err)
 	} else if requeued {
@@ -201,7 +201,7 @@ func TestHandleError(t *testing.T) {
 		gitserverClient: gitserverClient,
 	}
 
-	requeued, err := handler.handle(context.Background(), upload, observation.TestTraceLogger(logtest.Scoped(t)))
+	requeued, err := handler.handle(context.Background(), logtest.Scoped(t), upload, observation.TestTraceLogger(logtest.Scoped(t)))
 	if err == nil {
 		t.Fatalf("unexpected nil error handling upload")
 	} else if !strings.Contains(err.Error(), "uh-oh!") {
@@ -256,7 +256,7 @@ func TestHandleCloneInProgress(t *testing.T) {
 		gitserverClient: gitserverClient,
 	}
 
-	requeued, err := handler.handle(context.Background(), upload, observation.TestTraceLogger(logtest.Scoped(t)))
+	requeued, err := handler.handle(context.Background(), logtest.Scoped(t), upload, observation.TestTraceLogger(logtest.Scoped(t)))
 	if err != nil {
 		t.Fatalf("unexpected error handling upload: %s", err)
 	} else if !requeued {
