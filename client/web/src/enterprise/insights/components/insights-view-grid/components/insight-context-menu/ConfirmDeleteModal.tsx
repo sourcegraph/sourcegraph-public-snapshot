@@ -1,25 +1,43 @@
 import React from 'react'
 
-import { Insight } from '../../../../core/types'
-import { useDeleteInsight } from '../../../../hooks/use-delete-insight'
-import { ConfirmationModal, ConfirmationModalProps } from '../ConfirmationModal'
+import { noop } from 'lodash'
 
-interface ConfirmDeleteModalProps extends Pick<ConfirmationModalProps, 'showModal' | 'onCancel'> {
-    insight: Insight
+import { Insight } from '../../../../core'
+import { useDeleteInsight } from '../../../../hooks/use-delete-insight'
+import { ConfirmationModal } from '../ConfirmationModal'
+
+type MinimalInsightFields = Pick<Insight, 'title' | 'id' | 'type'>
+
+interface ConfirmDeleteModalProps {
+    insight: MinimalInsightFields
+    showModal: boolean
+    onCancel?: () => void
+    onConfirm?: () => void
 }
 
 export const ConfirmDeleteModal: React.FunctionComponent<ConfirmDeleteModalProps> = ({
     insight,
     showModal,
-    onCancel,
+    onCancel = noop,
+    onConfirm = noop,
 }) => {
     const { delete: handleDelete, loading } = useDeleteInsight()
+
+    const handleConfirm = async (): Promise<void> => {
+        if (loading) {
+            return
+        }
+
+        // TODO [VK] Handle error properly in this modal
+        await handleDelete(insight)
+        onConfirm()
+    }
 
     return (
         <ConfirmationModal
             showModal={showModal}
             onCancel={onCancel}
-            onConfirm={() => !loading && handleDelete(insight)}
+            onConfirm={handleConfirm}
             ariaLabel="Delete insight modal"
             disabled={loading}
             variant="danger"
