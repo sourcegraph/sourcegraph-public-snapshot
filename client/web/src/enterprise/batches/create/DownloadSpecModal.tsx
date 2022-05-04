@@ -3,9 +3,9 @@ import React from 'react'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import CloseIcon from 'mdi-react/CloseIcon'
 
+import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
 import { Button, Link, Modal } from '@sourcegraph/wildcard'
 
-import { CodeSnippet } from '../../../../../branded/src/components/CodeSnippet'
 import { BatchSpecDownloadLink, getFileName } from '../BatchSpec'
 
 import styles from './DownloadSpecModal.module.scss'

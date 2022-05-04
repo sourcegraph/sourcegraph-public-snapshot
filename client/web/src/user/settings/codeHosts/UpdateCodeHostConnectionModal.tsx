@@ -1,9 +1,9 @@
 import React, { useState, useCallback } from 'react'
 
+import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike } from '@sourcegraph/common'
 import { Button, Modal, Link, Alert } from '@sourcegraph/wildcard'
 
-import { Form } from '../../../../../branded/src/components/Form'
 import { updateExternalService } from '../../../components/externalServices/backend'
 import { LoaderButton } from '../../../components/LoaderButton'
 import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
