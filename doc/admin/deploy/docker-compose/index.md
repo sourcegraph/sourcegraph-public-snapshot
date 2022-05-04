@@ -91,6 +91,26 @@ docker-compose up -d
 
 Once the server is ready (the `sourcegraph-frontend-0` service is healthy when running `docker ps`), navigate to the hostname or IP address on port `80`.  Create the admin account, then you'll be guided through setting up Sourcegraph for code searching and navigation.
 
+### Cloud installation
+
+You can also deploy Sourcegraph with Docker Compose to a cloud of your choice.
+
+You will need:
+
+- A dedicated host for use with Sourcegraph.
+  - Use the [resource estimator](../resource_estimator.md) to ensure you provision enough capacity.
+  - Sourcegraph requires SSD backed storage.
+  - The configured host must have [Docker Compose](https://docs.docker.com/compose/) (also see [Docker Compose Requirements](#docker-compose)).
+- [Sourcegraph license](https://about.sourcegraph.com/pricing/). You can run through these instructions without one, but you must obtain a license for instances of more than 10 users.
+
+We offer cloud-specific Sourcegraph installation guides:
+
+- [Deploy Sourcegraph with Docker Compose on Amazon Web Services](../../deploy/docker-compose/aws.md)
+- [Deploy Sourcegraph with Docker Compose on Google Cloud](../../deploy/docker-compose/google_cloud.md)
+- [Deploy Sourcegraph with Docker Compose on DigitalOcean](../../deploy/docker-compose/digitalocean.md)
+
+For next steps and further configuration options, visit the [site administration documentation](../../index.md).
+
 ## Configuration
 
 The following section represents a number of key configuration items for your deployment. For more detailed configuration, see Sourcegraph's [configuration](../../config/index.md) docs.
@@ -440,25 +460,3 @@ docker-compose down --remove-orphans
 ```bash
 docker-compose up -d
 ```
-
-## Reference
-
-### Cloud installation
-
-You can also deploy Sourcegraph with Docker Compose to a cloud of your choice.
-
-You will need:
-
-- A dedicated host for use with Sourcegraph.
-  - Use the [resource estimator](../resource_estimator.md) to ensure you provision enough capacity.
-  - Sourcegraph requires SSD backed storage.
-  - The configured host must have [Docker Compose](https://docs.docker.com/compose/) (also see [Docker Compose Requirements](#docker-compose)).
-- [Sourcegraph license](https://about.sourcegraph.com/pricing/). You can run through these instructions without one, but you must obtain a license for instances of more than 10 users.
-
-We offer cloud-specific Sourcegraph installation guides:
-
-- [Deploy Sourcegraph with Docker Compose on Amazon Web Services](../../deploy/docker-compose/aws.md)
-- [Deploy Sourcegraph with Docker Compose on Google Cloud](../../deploy/docker-compose/google_cloud.md)
-- [Deploy Sourcegraph with Docker Compose on DigitalOcean](../../deploy/docker-compose/digitalocean.md)
-
-For next steps and further configuration options, visit the [site administration documentation](../../index.md).
