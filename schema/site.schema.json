@@ -70,7 +70,7 @@
           "type": "integer",
           "default": 500
         },
-        "RedirectEs5": {
+        "RedirectUnsupportedBrowser": {
           "description": "Prompts user to install new browser for non es5",
           "type": "boolean",
           "default": false

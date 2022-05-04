@@ -43,10 +43,10 @@
 	<script src='https://js.sentry-cdn.com/ae2f74442b154faf90b5ff0f7cd1c618.min.js' crossorigin="anonymous"></script>
 	<!-- End Sentry -->
 	<!-- Datadog RUM -->
-    <script ignore-csp>(function(h,o,u,n,d) { h=h[d]=h[d]||{q:[],onReady:function(c){h.q.push(c)}}
-    d=o.createElement(u);d.async=1;d.src=n;n=o.getElementsByTagName(u)[0];
-    n.parentNode.insertBefore(d,n)})(window,document,'script',
-    'https://www.datadoghq-browser-agent.com/datadog-rum-v4.js','DD_RUM');</script>
+	<script ignore-csp>(function(h,o,u,n,d) { h=h[d]=h[d]||{q:[],onReady:function(c){h.q.push(c)}}
+	d=o.createElement(u);d.async=1;d.src=n;n=o.getElementsByTagName(u)[0];
+	n.parentNode.insertBefore(d,n)})(window,document,'script',
+	'https://www.datadoghq-browser-agent.com/datadog-rum-v4.js','DD_RUM');</script>
 	<!-- End Datadog RUM -->
 	{{ end }}
 	<script ignore-csp>
@@ -84,17 +84,19 @@
 	{{ end }}
 	{{.Injected.BodyTop}}
 	<div id="root">
-        <script ignore-csp>
-            if (window.context.experimentalFeatures.RedirectEs5) {
-                function canRunSourceGraph(){"use strict";if("undefined"==typeof Symbol)return!1;try{eval("class Foo {}"),eval("var bar = (x) => x+1")}catch(r){return!1}return!0}
-                if (!canRunSourceGraph()) {
-                    document.write("<h1>It looks like your current browser does not support Sourcegraph. Please upgrade to a modern browser such as <a href=\"https://www.google.com/chrome/downloads\">Chrome</a> or <a href=\"https://www.mozilla.org/en-US/firefox/new/\">Firefox</a></h1>")
-                    // makes everything below disabled so no crashes
-                    document.write('<!--');
-                }
-            }
-        </script>
-    </div>
+		{{ if .Context.experimentalFeatures.RedirectUnsupportedBrowser }}
+			 <script ignore-csp>
+				if (window.context.experimentalFeatures.RedirectUnsupportedBrowser) {
+					function canRunSourceGraph(){"use strict";if("undefined"==typeof Symbol)return!1;try{eval("class Foo {}"),eval("var bar = (x) => x+1")}catch(r){return!1}return!0}
+					if (!canRunSourceGraph()) {
+						document.write("<h1>It looks like your current browser does not support Sourcegraph. Please upgrade to a modern browser such as <a href=\"https://www.google.com/chrome/downloads\">Chrome</a> or <a href=\"https://www.mozilla.org/en-US/firefox/new/\">Firefox</a></h1>")
+						// makes everything below disabled so no crashes
+						document.write('<!--');
+					}
+			}
+			</script>
+		{{ end }}
+	</div>
 	<noscript>
 		<p>Sourcegraph is a web-based code search and navigation tool for dev teams. Search, navigate, and review code. Find answers.</p>
 
@@ -103,10 +105,10 @@
 		<br>
 		You need to enable JavaScript to run this app.
 	</noscript>
-    {{if .Manifest.AppJSRuntimeBundlePath}}<script src="{{.Manifest.AppJSRuntimeBundlePath}}"></script>{{end}}
-    <script src="{{.Manifest.ReactJSBundlePath}}" {{if .Manifest.IsModule}}type="module"{{end}}></script>
-    <script src="{{.Manifest.AppJSBundlePath}}" {{if .Manifest.IsModule}}type="module"{{end}}></script>
-    {{.Injected.BodyBottom}}
+	{{if .Manifest.AppJSRuntimeBundlePath}}<script src="{{.Manifest.AppJSRuntimeBundlePath}}"></script>{{end}}
+	<script src="{{.Manifest.ReactJSBundlePath}}" {{if .Manifest.IsModule}}type="module"{{end}}></script>
+	<script src="{{.Manifest.AppJSBundlePath}}" {{if .Manifest.IsModule}}type="module"{{end}}></script>
+	{{.Injected.BodyBottom}}
 </body>
 
 </html>

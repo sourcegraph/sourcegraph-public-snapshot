@@ -97,7 +97,7 @@ type JSContext struct {
 
 	CodeInsightsGQLApiEnabled bool `json:"codeInsightsGqlApiEnabled"`
 
-	RedirectEs5 bool `json:"RedirectEs5"`
+	RedirectEs5 bool `json:"RedirectUnsupportedBrowser"`
 
 	ProductResearchPageEnabled bool `json:"productResearchPageEnabled"`
 
