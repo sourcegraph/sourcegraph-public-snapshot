@@ -86,5 +86,5 @@ func (p *repoPagerJob) Run(ctx context.Context, clients job.RuntimeClients, stre
 }
 
 func (p *repoPagerJob) Name() string {
-	return "RepoPager"
+	return "RepoPagerJob"
 }
