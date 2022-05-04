@@ -27,12 +27,12 @@ if (isReleaseType) {
             // Changelog
             const changelogFile = originalChangelogFile.replace('Next Release', 'Latest Release')
             fs.writeFileSync('CHANGELOG.md', changelogFile)
-            // Publish the extension with the updated package name and CHANGELOG
+            // Build and publish the extension with the updated package name and CHANGELOG
             // using the token provided by the pipeline to run yarn and
             // allows all events to activate the extension
             childProcess.execSync(
                 // Use vsce package command for testing this script without publishing the extension
-                // 'yarn vsce package $VSCODE_RELEASE_TYPE --yarn --allow-star-activation',
+                // eg: 'yarn vsce package $VSCODE_RELEASE_TYPE --yarn --allow-star-activation',
                 'yarn build && yarn vsce publish $VSCODE_RELEASE_TYPE --pat $VSCODE_MARKETPLACE_TOKEN --yarn --allow-star-activation',
                 {
                     stdio: 'inherit',

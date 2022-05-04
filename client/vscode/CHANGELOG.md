@@ -4,6 +4,10 @@ The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release v
 
 ## Next Release - 2.2.3
 
+### Changes
+
+### Fixes
+
 ## 2.2.2
 
 ### Changes
