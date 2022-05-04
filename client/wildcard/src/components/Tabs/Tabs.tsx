@@ -110,11 +110,7 @@ export const TabList = React.forwardRef((props, reference) => {
                 data-testid="wildcard-tab-list"
                 as={as}
                 ref={reference}
-                className={classNames(
-                    className,
-                    styles.tabList,
-                    longTabList === 'scroll' ? styles.tabListScroll : undefined
-                )}
+                className={classNames(className, styles.tabList, longTabList === 'scroll' && styles.tabListScroll)}
                 {...reachProps}
             />
             {actions}
@@ -129,7 +125,7 @@ export const Tab = React.forwardRef((props, reference) => {
 
     return (
         <ReachTab
-            className={classNames(styles[size], longTabList === 'scroll' ? styles.tabNowrap : undefined)}
+            className={classNames(styles[size], longTabList === 'scroll' && styles.tabNowrap)}
             data-testid="wildcard-tab"
             as={as}
             ref={reference}
