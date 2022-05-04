@@ -133,6 +133,10 @@ func (sc *startedCmd) CapturedStderr() string {
 func getSecrets(ctx context.Context, cmd Command) (map[string]string, error) {
 	secretsEnv := map[string]string{}
 
+	if len(cmd.Secrets) == 0 {
+		return secretsEnv, nil
+	}
+
 	client, err := secretmanager.NewClient(ctx)
 	if err != nil {
 		return nil, errors.Errorf("failed to create secretmanager client: %v", err)
