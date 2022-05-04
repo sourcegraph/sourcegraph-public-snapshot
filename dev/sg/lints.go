@@ -146,7 +146,7 @@ func lintLoggingLibraries() lint.Runner {
 			Output: func() string {
 				if errs != nil {
 					return strings.TrimSpace(errs.Error()) +
-						"\n\nLearn more: https://docs.sourcegraph.com/dev/how-to/add_logging"
+						"\n\nLearn more about logging and why some libraries are banned: https://docs.sourcegraph.com/dev/how-to/add_logging"
 				}
 				return ""
 			}(),
