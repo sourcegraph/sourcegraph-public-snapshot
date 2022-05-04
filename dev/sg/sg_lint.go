@@ -114,7 +114,12 @@ func printLintReport(pending output.Pending, report *lint.Report) {
 	msg := fmt.Sprintf("%s (%ds)", report.Header, report.Duration/time.Second)
 	if report.Err != nil {
 		pending.VerboseLine(output.Linef(output.EmojiFailure, output.StyleWarning, msg))
-		pending.Verbose(report.Output)
+		if report.Output != "" {
+			pending.Verbose(report.Output)
+		} else {
+			pending.Verbose(report.Err.Error())
+		}
+
 		if lintGenerateAnnotations {
 			repoRoot, err := root.RepositoryRoot()
 			if err != nil {
