@@ -192,7 +192,7 @@ func addCodeMonitorHook(in job.Job, hook commit.CodeMonitorHook) (_ job.Job, err
 	commitSearchJobCount := 0
 	return jobutil.MapAtom(in, func(atom job.Job) job.Job {
 		switch typedAtom := atom.(type) {
-		case *commit.CommitSearch:
+		case *commit.CommitSearchJob:
 			commitSearchJobCount++
 			if commitSearchJobCount > 1 {
 				err = errors.Append(err, ErrInvalidMonitorQuery)

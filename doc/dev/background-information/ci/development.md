@@ -12,9 +12,17 @@ Internally, the pipeline generator determines what gets run over contributions b
 
 The above factors are then used to determine the appropriate [operations](#operations), composed of [step options](#step-options), that translate into steps in the resulting pipeline.
 
+If you are looking to modify the pipeline, some good rules of thumbs for which construct to look at for implementing something are:
+
+- Adding a new check? Try a new [operation](#operations) or additional [step options](#step-options).
+- Adding a set of changes to run when particular files are changed? Start with a new or updated [diff type](#diff-types).
+- Adding an entirely new pipeline type for the `sourcegraph/sourcegraph` repository? Take a look at how [run types](#run-types) are implemented.
+
 > WARNING: Sourcegraph's pipeline generator and its generated output are under the [Sourcegraph Enterprise license](https://github.com/sourcegraph/sourcegraph/blob/main/LICENSE.enterprise).
 
 ### Run types
+
+> NOTE: A full reference of what our existing run types do is available in the [Pipeline reference](reference.md).
 
 <div class="embed">
   <iframe src="https://sourcegraph.com/embed/notebooks/Tm90ZWJvb2s6MTU5"
@@ -49,7 +57,17 @@ For more advanced pipelines, see [Run types](#run-types).
 
 ### Step options
 
-> NOTE: Coming soon!
+Each [operation](#operations) is composed of steps that are built via step options, defined as [implementations of the `StepOpt` interface](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/dev/ci/internal/buildkite/buildkite.go?L229:6#tab=implementations_go). The core step option is `Cmd`, which defines a command to run when added to a pipeline via `AddStep`:
+
+```go
+func addGoBuild(pipeline *bk.Pipeline) {
+  pipeline.AddStep(":go: Build",
+    bk.Cmd("./dev/ci/go-build.sh"),
+  )
+}
+```
+
+> NOTE: More details coming soon!
 
 #### Creating annotations
 

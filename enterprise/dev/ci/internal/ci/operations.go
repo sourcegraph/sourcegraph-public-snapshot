@@ -713,7 +713,11 @@ func buildCandidateDockerImage(app, version, tag string) operations.Operation {
 			// Retag the local image for dev registry
 			bk.Cmd(fmt.Sprintf("docker tag %s %s", localImage, devImage)),
 			// Publish tagged image
-			bk.Cmd(fmt.Sprintf("docker push %s", devImage)),
+			bk.Cmd(fmt.Sprintf("docker push %s || exit 10", devImage)),
+			// Retry in case of flakes when pushing
+			bk.AutomaticRetryStatus(3, 10),
+			// Retry in case of flakes when pushing
+			bk.AutomaticRetryStatus(3, 222),
 		)
 
 		pipeline.AddStep(fmt.Sprintf(":docker: :construction: Build %s", app), cmds...)

@@ -48,7 +48,7 @@ func SexpFormat(j job.Job, sep, indent string) string {
 			*run.RepoSearch,
 			*zoekt.GlobalSearch,
 			*structural.StructuralSearch,
-			*commit.CommitSearch,
+			*commit.CommitSearchJob,
 			*symbol.RepoUniverseSymbolSearch,
 			*repos.ComputeExcludedRepos,
 			*noopJob:
@@ -208,7 +208,7 @@ func PrettyMermaid(j job.Job) string {
 			*run.RepoSearch,
 			*zoekt.GlobalSearch,
 			*structural.StructuralSearch,
-			*commit.CommitSearch,
+			*commit.CommitSearchJob,
 			*symbol.RepoUniverseSymbolSearch,
 			*repos.ComputeExcludedRepos,
 			*noopJob:
@@ -326,7 +326,7 @@ func toJSON(j job.Job, verbose bool) interface{} {
 			*run.RepoSearch,
 			*zoekt.GlobalSearch,
 			*structural.StructuralSearch,
-			*commit.CommitSearch,
+			*commit.CommitSearchJob,
 			*symbol.RepoUniverseSymbolSearch,
 			*repos.ComputeExcludedRepos,
 			*noopJob:
