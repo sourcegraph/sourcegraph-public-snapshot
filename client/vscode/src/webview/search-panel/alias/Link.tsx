@@ -1,10 +1,11 @@
 import React from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import isAbsoluteUrl from 'is-absolute-url'
 
+import { useWildcardTheme } from '@sourcegraph/wildcard'
 import styles from '@sourcegraph/wildcard/src/components/Link/AnchorLink/AnchorLink.module.scss'
-import { useWildcardTheme } from '@sourcegraph/wildcard/src/hooks/useWildcardTheme'
 
 // This is based off the @sourcegraph/wildcard/Link component
 // to handle links in VSCE that works differently than in our web app
