@@ -739,13 +739,13 @@ func optimizeJobs(baseJob job.Job, inputs *run.SearchInputs, q query.Basic) (job
 		MapJob: func(currentJob job.Job) job.Job {
 			switch currentJob.(type) {
 			case *zoekt.GlobalSearchJob:
-				if exists("ZoektGlobalSearch") {
+				if exists("ZoektGlobalSearchJob") {
 					return &noopJob{}
 				}
 				return currentJob
 
 			case *zoekt.ZoektRepoSubsetSearchJob:
-				if exists("ZoektRepoSubset") {
+				if exists("ZoektRepoSubsetSearchJob") {
 					return &noopJob{}
 				}
 				return currentJob

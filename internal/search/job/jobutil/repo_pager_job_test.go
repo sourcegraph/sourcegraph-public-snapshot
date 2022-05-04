@@ -33,7 +33,7 @@ func Test_setRepos(t *testing.T) {
 {
   "PARALLEL": [
     {
-      "ZoektRepoSubset": {
+      "ZoektRepoSubsetSearchJob": {
         "Repos": {
           "RepoRevs": {
             "1": {
