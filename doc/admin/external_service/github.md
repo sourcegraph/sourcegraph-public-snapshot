@@ -47,7 +47,7 @@ No [token scopes](https://docs.github.com/en/developers/apps/building-oauth-apps
 | [Sync private repositories](#private-repositories)    | `repo`                                                                                                         |
 | [Sync repository permissions][permissions]            | `repo`                                                                                                         |
 | [Repository permissions caching][permissions-caching] | `repo`, `write:org`                                                                                            |
-| [Batch changes][batch-changes]                        | `repo`, `read:org`, `user:email`, `read:discussion`, and `workflow` ([learn more][batch-changes-interactions]) |
+| [Batch changes][batch-changes]                        | `repo`, `workflow`, `read:org`, `user:email`, and `read:discussion` ([learn more][batch-changes-interactions]) |
 
 [permissions]: ../repo/permissions.md#github
 [permissions-caching]: ../repo/permissions.md#teams-and-organizations-permissions-caching
