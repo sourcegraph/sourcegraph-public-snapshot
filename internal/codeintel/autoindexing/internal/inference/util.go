@@ -1,8 +1,6 @@
 package inference
 
 import (
-	"archive/zip"
-	"io"
 	"sort"
 
 	"github.com/grafana/regexp"
@@ -64,20 +62,4 @@ func filterPaths(paths []string, pattern, invertedPattern *regexp.Regexp) []stri
 	}
 
 	return filtered
-}
-
-// readZipFile reads the given zip file contents in-full.
-func readZipFile(f *zip.File) (string, error) {
-	r, err := f.Open()
-	if err != nil {
-		return "", err
-	}
-	defer r.Close()
-
-	contents, err := io.ReadAll(r)
-	if err != nil {
-		return "", err
-	}
-
-	return string(contents), nil
 }
