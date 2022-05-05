@@ -34,7 +34,7 @@ const LOADING = 'loading' as const
 /**
  * Displays a page for editing a product subscription in the user subscriptions area.
  */
-export const UserSubscriptionsEditProductSubscriptionPage: React.FunctionComponent<Props> = ({
+export const UserSubscriptionsEditProductSubscriptionPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     user,
     match: {
         params: { subscriptionUUID },

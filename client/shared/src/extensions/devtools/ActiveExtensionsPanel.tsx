@@ -10,7 +10,9 @@ import { wrapRemoteObservable } from '../../api/client/api/common'
 
 import { ExtensionsDevelopmentToolsProps } from '.'
 
-export const ActiveExtensionsPanel: React.FunctionComponent<ExtensionsDevelopmentToolsProps> = props => {
+export const ActiveExtensionsPanel: React.FunctionComponent<
+    React.PropsWithChildren<ExtensionsDevelopmentToolsProps>
+> = props => {
     const extensionsOrError = useObservable(
         useMemo(
             () =>

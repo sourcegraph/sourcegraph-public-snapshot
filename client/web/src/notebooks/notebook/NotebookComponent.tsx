@@ -98,7 +98,7 @@ function downloadTextAsFile(text: string, fileName: string): void {
     window.URL.revokeObjectURL(blobURL)
 }
 
-export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> = React.memo(
+export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<NotebookComponentProps>> = React.memo(
     ({
         onSerializeBlocks,
         onCopyNotebook,

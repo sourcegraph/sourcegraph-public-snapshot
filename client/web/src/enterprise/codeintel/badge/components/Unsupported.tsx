@@ -4,7 +4,7 @@ import { Badge } from '@sourcegraph/wildcard'
 
 export interface UnsupportedProps {}
 
-export const Unsupported: React.FunctionComponent<UnsupportedProps> = () => (
+export const Unsupported: React.FunctionComponent<React.PropsWithChildren<UnsupportedProps>> = () => (
     <div className="px-2 py-1">
         <div className="d-flex align-items-center">
             <div className="px-2 py-1 text-uppercase">

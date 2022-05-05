@@ -14,10 +14,9 @@ interface RenderedNotebookMarkdownProps extends Omit<NotebookComponentProps, 'on
     markdown: string
 }
 
-export const RenderedNotebookMarkdown: React.FunctionComponent<RenderedNotebookMarkdownProps> = ({
-    markdown,
-    ...props
-}) => {
+export const RenderedNotebookMarkdown: React.FunctionComponent<
+    React.PropsWithChildren<RenderedNotebookMarkdownProps>
+> = ({ markdown, ...props }) => {
     // Generate fresh block IDs, since we do not store them in Markdown.
     const blocks = useMemo(() => convertMarkdownToBlocks(markdown).map(block => ({ id: uuid.v4(), ...block })), [
         markdown,

@@ -17,7 +17,7 @@ interface ToastProps {
     toastBodyClassName?: string
 }
 
-export const Toast: React.FunctionComponent<ToastProps> = props => (
+export const Toast: React.FunctionComponent<React.PropsWithChildren<ToastProps>> = props => (
     <Card className={classNames(styles.toast, props.className)}>
         <CardBody className={classNames(styles.toastBody, props.toastBodyClassName)}>
             <div className={classNames('d-flex justify-content-end', styles.closeButtonWrap)}>

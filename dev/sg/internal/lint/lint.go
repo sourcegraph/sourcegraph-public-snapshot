@@ -4,13 +4,14 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 )
 
 // Runner is a linter runner. It can make programmatic checks, call out to a bash script,
 // or anything you want, and should return a report with helpful feedback for the user to
 // act upon.
-type Runner func(context.Context) *Report
+type Runner func(context.Context, *repo.State) *Report
 
 // Report describes the result of a linter runner.
 type Report struct {
@@ -34,7 +35,7 @@ type Target struct {
 
 // RunScript runs the given script from the root of sourcegraph/sourcegraph.
 func RunScript(header string, script string) Runner {
-	return Runner(func(ctx context.Context) *Report {
+	return Runner(func(ctx context.Context, state *repo.State) *Report {
 		start := time.Now()
 		out, err := run.BashInRoot(ctx, script, nil)
 		return &Report{

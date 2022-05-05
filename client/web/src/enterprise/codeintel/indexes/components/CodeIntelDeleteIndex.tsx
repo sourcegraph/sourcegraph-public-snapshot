@@ -10,7 +10,7 @@ export interface CodeIntelDeleteIndexProps {
     deletionOrError?: 'loading' | 'deleted' | ErrorLike
 }
 
-export const CodeIntelDeleteIndex: FunctionComponent<CodeIntelDeleteIndexProps> = ({
+export const CodeIntelDeleteIndex: FunctionComponent<React.PropsWithChildren<CodeIntelDeleteIndexProps>> = ({
     deleteIndex,
     deletionOrError,
 }) => (

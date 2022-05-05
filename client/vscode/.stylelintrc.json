@@ -9,7 +9,7 @@
         "./src/webview/theming/monaco.scss"
       ],
       "rules": {
-        "filenames/match-regex": null
+        "@sourcegraph/filenames-match-regex": null
       }
     }
   ]

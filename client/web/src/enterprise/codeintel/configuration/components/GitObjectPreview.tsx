@@ -19,7 +19,11 @@ export interface GitObjectPreviewWrapperProps {
 
 const GitObjectHeader = <h3>Preview of Git object filter</h3>
 
-export const GitObjectPreviewWrapper: FunctionComponent<GitObjectPreviewWrapperProps> = ({ repoId, type, pattern }) => (
+export const GitObjectPreviewWrapper: FunctionComponent<React.PropsWithChildren<GitObjectPreviewWrapperProps>> = ({
+    repoId,
+    type,
+    pattern,
+}) => (
     <div className="form-group">
         {pattern === '' ? (
             <>
@@ -47,7 +51,7 @@ export interface GitPreviewProps {
     typeText: string
 }
 
-const createGitCommitPreview = (type: GitObjectType): FunctionComponent<GitPreviewProps> => ({
+const createGitCommitPreview = (type: GitObjectType): FunctionComponent<React.PropsWithChildren<GitPreviewProps>> => ({
     repoId,
     pattern,
     typeText,
@@ -64,9 +68,15 @@ const createGitCommitPreview = (type: GitObjectType): FunctionComponent<GitPrevi
     )
 }
 
-const GitTagPreview: FunctionComponent<GitPreviewProps> = createGitCommitPreview(GitObjectType.GIT_TAG)
-const GitBranchesPreview: FunctionComponent<GitPreviewProps> = createGitCommitPreview(GitObjectType.GIT_TREE)
-const GitCommitPreview: FunctionComponent<GitPreviewProps> = createGitCommitPreview(GitObjectType.GIT_COMMIT)
+const GitTagPreview: FunctionComponent<React.PropsWithChildren<GitPreviewProps>> = createGitCommitPreview(
+    GitObjectType.GIT_TAG
+)
+const GitBranchesPreview: FunctionComponent<React.PropsWithChildren<GitPreviewProps>> = createGitCommitPreview(
+    GitObjectType.GIT_TREE
+)
+const GitCommitPreview: FunctionComponent<React.PropsWithChildren<GitPreviewProps>> = createGitCommitPreview(
+    GitObjectType.GIT_COMMIT
+)
 
 interface GitObjectPreviewProps {
     typeText: string
@@ -75,7 +85,7 @@ interface GitObjectPreviewProps {
     previewLoading: boolean
 }
 
-const GitObjectPreview: FunctionComponent<GitObjectPreviewProps> = ({
+const GitObjectPreview: FunctionComponent<React.PropsWithChildren<GitObjectPreviewProps>> = ({
     typeText,
     preview,
     previewError,

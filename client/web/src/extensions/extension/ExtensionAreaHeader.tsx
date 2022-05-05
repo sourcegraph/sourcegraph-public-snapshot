@@ -33,7 +33,7 @@ const FEEDBACK_DELAY = 5000
 /**
  * Header for the extension area.
  */
-export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderProps> = (
+export const ExtensionAreaHeader: React.FunctionComponent<React.PropsWithChildren<ExtensionAreaHeaderProps>> = (
     props: ExtensionAreaHeaderProps
 ) => {
     const manifest: ExtensionManifest | undefined =

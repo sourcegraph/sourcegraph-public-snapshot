@@ -14,6 +14,6 @@ export type CheckboxProps = ControlInputProps
  *
  * Useful article comparing checkboxes to radio buttons: https://www.nngroup.com/articles/checkboxes-vs-radio-buttons/
  */
-export const Checkbox: React.FunctionComponent<CheckboxProps> = React.forwardRef((props, reference) => (
-    <BaseControlInput {...props} type="checkbox" ref={reference} />
-))
+export const Checkbox: React.FunctionComponent<
+    React.PropsWithChildren<CheckboxProps>
+> = React.forwardRef((props, reference) => <BaseControlInput {...props} type="checkbox" ref={reference} />)

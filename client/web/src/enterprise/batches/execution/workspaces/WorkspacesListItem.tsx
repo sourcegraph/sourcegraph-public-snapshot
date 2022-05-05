@@ -15,7 +15,7 @@ interface WorkspacesListItemProps {
     onSelect: () => void
 }
 
-export const WorkspacesListItem: React.FunctionComponent<WorkspacesListItemProps> = ({
+export const WorkspacesListItem: React.FunctionComponent<React.PropsWithChildren<WorkspacesListItemProps>> = ({
     workspace,
     isSelected,
     onSelect,

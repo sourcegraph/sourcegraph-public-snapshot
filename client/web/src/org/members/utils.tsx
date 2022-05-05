@@ -52,7 +52,7 @@ interface MembersNotificationProps {
     className?: string
 }
 
-export const OrgMemberNotification: React.FunctionComponent<MembersNotificationProps> = ({
+export const OrgMemberNotification: React.FunctionComponent<React.PropsWithChildren<MembersNotificationProps>> = ({
     className,
     message,
     onDismiss,

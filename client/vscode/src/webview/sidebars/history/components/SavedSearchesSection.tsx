@@ -35,7 +35,7 @@ const savedSearchQuery = gql`
     }
 `
 
-export const SavedSearchesSection: React.FunctionComponent<HistorySidebarProps> = ({
+export const SavedSearchesSection: React.FunctionComponent<React.PropsWithChildren<HistorySidebarProps>> = ({
     platformContext,
     extensionCoreAPI,
 }) => {

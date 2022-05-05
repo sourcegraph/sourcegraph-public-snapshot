@@ -17,7 +17,7 @@ interface BadgeProps {
  * We can't use the standard "secondary" variant here because the selected select option
  * already uses this color for the background. We use this style variant to avoid visual merging/overlapping.
  */
-export const InsightsBadge: React.FunctionComponent<BadgeProps> = props => {
+export const InsightsBadge: React.FunctionComponent<React.PropsWithChildren<BadgeProps>> = props => {
     const { value, className } = props
 
     return (

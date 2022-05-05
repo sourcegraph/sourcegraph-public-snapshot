@@ -175,7 +175,7 @@ func startCmd(ctx context.Context, dir string, cmd Command, parentEnv map[string
 		return nil, errors.Wrapf(err, "cannot fetch secrets")
 	}
 
-	sc.Cmd.Env = makeEnv(cmd.Env, secretsEnv, parentEnv)
+	sc.Cmd.Env = makeEnv(parentEnv, secretsEnv, cmd.Env)
 
 	var stdoutWriter, stderrWriter io.Writer
 	logger := newCmdLogger(commandCtx, cmd.Name, stdout.Out)

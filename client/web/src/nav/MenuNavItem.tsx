@@ -12,7 +12,7 @@ import styles from './MenuNavItem.module.scss'
 
 interface MenuNavItemProps {
     children: React.ReactNode
-    as?: ComponentType
+    as?: ComponentType<React.PropsWithChildren<unknown>>
     position?: Position
     menuButtonRef?: React.Ref<HTMLButtonElement>
 }
@@ -22,22 +22,27 @@ interface MenuNavItemProps {
  * displaiyng navigation links as menu items
  *
  */
-export const MenuNavItem: React.FunctionComponent<MenuNavItemProps> = forwardRef((props, reference) => {
-    const { children, as: Component, menuButtonRef, position = Position.bottomStart } = props
+export const MenuNavItem: React.FunctionComponent<React.PropsWithChildren<MenuNavItemProps>> = forwardRef(
+    (props, reference) => {
+        const { children, as: Component, menuButtonRef, position = Position.bottomStart } = props
 
-    return (
-        <Menu ref={reference} as={Component}>
-            {({ isExpanded }) => (
-                <>
-                    <MenuButton className={classNames('bg-transparent', styles.menuNavItem)} ref={menuButtonRef}>
-                        <Icon as={MenuIcon} />
-                        <Icon as={isExpanded ? MenuUpIcon : MenuDownIcon} />
-                    </MenuButton>
-                    <MenuList position={position}>
-                        {React.Children.map(children, child => child && <MenuItem onSelect={noop}>{child}</MenuItem>)}
-                    </MenuList>
-                </>
-            )}
-        </Menu>
-    )
-}) as ForwardReferenceComponent<'div', MenuNavItemProps>
+        return (
+            <Menu ref={reference} as={Component}>
+                {({ isExpanded }) => (
+                    <>
+                        <MenuButton className={classNames('bg-transparent', styles.menuNavItem)} ref={menuButtonRef}>
+                            <Icon as={MenuIcon} />
+                            <Icon as={isExpanded ? MenuUpIcon : MenuDownIcon} />
+                        </MenuButton>
+                        <MenuList position={position}>
+                            {React.Children.map(
+                                children,
+                                child => child && <MenuItem onSelect={noop}>{child}</MenuItem>
+                            )}
+                        </MenuList>
+                    </>
+                )}
+            </Menu>
+        )
+    }
+) as ForwardReferenceComponent<'div', MenuNavItemProps>

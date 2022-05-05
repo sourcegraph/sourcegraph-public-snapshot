@@ -30,7 +30,7 @@ const EmbeddedNotebookPage = lazyComponent(
 
 const EMPTY_SETTINGS_CASCADE = { final: {}, subjects: [] }
 
-export const EmbeddedWebApp: React.FunctionComponent = () => {
+export const EmbeddedWebApp: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => {
     const { enhancedThemePreference, setThemePreference } = useTheme()
     const isLightTheme = enhancedThemePreference === ThemePreference.Light
 

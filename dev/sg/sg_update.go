@@ -1,19 +1,17 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"net/http"
 	"os"
-	"os/exec"
 	"runtime"
 	"strings"
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/download"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
-	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -57,40 +55,12 @@ func updateToPrebuiltSG(ctx context.Context) (string, error) {
 	location = strings.ReplaceAll(location, "/tag/", "/download/")
 	downloadURL := fmt.Sprintf("%s/sg_%s_%s", location, runtime.GOOS, runtime.GOARCH)
 
-	tmpDir, err := os.MkdirTemp("", "sg")
-	if err != nil {
-		return "", err
-	}
-	defer func() {
-		os.RemoveAll(tmpDir)
-	}()
-
-	resp, err = http.Get(downloadURL)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return "", errors.Newf("downloading sg: status %d", resp.StatusCode)
-	}
-
 	currentExecPath, err := os.Executable()
 	if err != nil {
 		return "", err
 	}
-
-	content := &bytes.Buffer{}
-	content.ReadFrom(resp.Body)
-
-	ok, err := fileutil.UpdateFileIfDifferent(currentExecPath, content.Bytes())
-	if err != nil {
+	if err := download.Exeuctable(downloadURL, currentExecPath); err != nil {
 		return "", err
 	}
-	if !ok {
-		return currentExecPath, nil
-	}
-
-	err = exec.Command("chmod", "+x", currentExecPath).Run()
-	return currentExecPath, err
+	return currentExecPath, nil
 }

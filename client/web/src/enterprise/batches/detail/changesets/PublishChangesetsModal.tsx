@@ -19,7 +19,7 @@ export interface PublishChangesetsModalProps {
     publishChangesets?: typeof _publishChangesets
 }
 
-export const PublishChangesetsModal: React.FunctionComponent<PublishChangesetsModalProps> = ({
+export const PublishChangesetsModal: React.FunctionComponent<React.PropsWithChildren<PublishChangesetsModalProps>> = ({
     onCancel,
     afterCreate,
     batchChangeID,

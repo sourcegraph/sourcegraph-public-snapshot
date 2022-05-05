@@ -28,7 +28,9 @@ interface DrillDownInsightCreationFormProps {
     onCancel: () => void
 }
 
-export const DrillDownInsightCreationForm: React.FunctionComponent<DrillDownInsightCreationFormProps> = props => {
+export const DrillDownInsightCreationForm: React.FunctionComponent<
+    React.PropsWithChildren<DrillDownInsightCreationFormProps>
+> = props => {
     const { className, onCreateInsight, onCancel } = props
 
     const { formAPI, ref, handleSubmit } = useForm({

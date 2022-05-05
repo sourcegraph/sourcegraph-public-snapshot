@@ -31,7 +31,7 @@ const LOADING = 'loading' as const
  * SiteAdminProductSubscriptionBillingLink shows a link to the product subscription on the billing system, if there
  * is an associated billing record. It also supports setting or unsetting the association with the billing system.
  */
-export const SiteAdminProductSubscriptionBillingLink: React.FunctionComponent<Props> = ({
+export const SiteAdminProductSubscriptionBillingLink: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     productSubscription,
     onDidUpdate,
 }) => {

@@ -71,7 +71,9 @@ const UPGRADE_RANGE = 1
 /* How many (minor) versions we can downgrade at once. */
 const DOWNGRADE_RANGE = 1
 
-export const SiteAdminMigrationsPage: React.FunctionComponent<SiteAdminMigrationsPageProps> = ({
+export const SiteAdminMigrationsPage: React.FunctionComponent<
+    React.PropsWithChildren<SiteAdminMigrationsPageProps>
+> = ({
     fetchAllMigrations = defaultFetchAllMigrations,
     fetchSiteUpdateCheck = defaultFetchSiteUpdateCheck,
     now,
@@ -163,7 +165,7 @@ interface MigrationBannersProps {
     fetchSiteUpdateCheck?: () => Observable<{ productVersion: string }>
 }
 
-const MigrationBanners: React.FunctionComponent<MigrationBannersProps> = ({
+const MigrationBanners: React.FunctionComponent<React.PropsWithChildren<MigrationBannersProps>> = ({
     migrations,
     fetchSiteUpdateCheck = defaultFetchSiteUpdateCheck,
 }) => {
@@ -202,7 +204,9 @@ interface MigrationInvalidBannerProps {
     migrations: OutOfBandMigrationFields[]
 }
 
-const MigrationInvalidBanner: React.FunctionComponent<MigrationInvalidBannerProps> = ({ migrations }) => (
+const MigrationInvalidBanner: React.FunctionComponent<React.PropsWithChildren<MigrationInvalidBannerProps>> = ({
+    migrations,
+}) => (
     <Alert variant="danger">
         <p>
             <Icon className="mr-2" as={AlertCircleIcon} />
@@ -224,7 +228,9 @@ interface MigrationUpgradeWarningBannerProps {
     migrations: OutOfBandMigrationFields[]
 }
 
-const MigrationUpgradeWarningBanner: React.FunctionComponent<MigrationUpgradeWarningBannerProps> = ({ migrations }) => (
+const MigrationUpgradeWarningBanner: React.FunctionComponent<
+    React.PropsWithChildren<MigrationUpgradeWarningBannerProps>
+> = ({ migrations }) => (
     <Alert variant="warning">
         <p>
             The next version of Sourcegraph removes support for reading an old data format. Your Sourcegraph instance
@@ -244,9 +250,9 @@ interface MigrationDowngradeWarningBannerProps {
     migrations: OutOfBandMigrationFields[]
 }
 
-const MigrationDowngradeWarningBanner: React.FunctionComponent<MigrationDowngradeWarningBannerProps> = ({
-    migrations,
-}) => (
+const MigrationDowngradeWarningBanner: React.FunctionComponent<
+    React.PropsWithChildren<MigrationDowngradeWarningBannerProps>
+> = ({ migrations }) => (
     <Alert variant="warning">
         <p>
             <Icon className="mr-2" as={WarningIcon} />
@@ -273,7 +279,7 @@ interface MigrationNodeProps {
     now?: () => Date
 }
 
-const MigrationNode: React.FunctionComponent<MigrationNodeProps> = ({ node, now }) => (
+const MigrationNode: React.FunctionComponent<React.PropsWithChildren<MigrationNodeProps>> = ({ node, now }) => (
     <React.Fragment key={node.id}>
         <span className={styles.separator} />
 

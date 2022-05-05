@@ -17,7 +17,7 @@ import { OrgMembersListPage } from './OrgMembersListPage'
 import { OrgMembersSidebar } from './OrgMembersSidebar'
 import { OrgPendingInvitesPage } from './OrgPendingInvites'
 
-const NotFoundPage: React.FunctionComponent = () => (
+const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <HeroPage
         icon={MapSearchIcon}
         title="404: Not Found"
@@ -34,7 +34,7 @@ interface Props extends OrgAreaPageProps, RouteComponentProps<{}>, ThemeProps {
  * Renders a layout of a sidebar and a content area to display pages related to
  * an organization's settings.
  */
-export const OrgMembersArea: React.FunctionComponent<Props> = props => {
+export const OrgMembersArea: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
     const emitter = useEventBus()
     if (!props.authenticatedUser) {
         return null

@@ -17,7 +17,9 @@ interface CreateSearchContextButtonProps {
     authenticatedUser: Pick<AuthenticatedUser, 'id'> | null
 }
 
-export const CreateSearchContextButton: React.FunctionComponent<CreateSearchContextButtonProps> = props => {
+export const CreateSearchContextButton: React.FunctionComponent<
+    React.PropsWithChildren<CreateSearchContextButtonProps>
+> = props => {
     if (!props.query || !props.authenticatedUser) {
         return null
     }

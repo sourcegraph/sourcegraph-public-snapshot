@@ -19,7 +19,11 @@ interface SampleTabHeaderProps {
     setSelectedSample: (sample: Sample) => void
 }
 
-const SampleTabHeader: React.FunctionComponent<SampleTabHeaderProps> = ({ sample, active, setSelectedSample }) => {
+const SampleTabHeader: React.FunctionComponent<React.PropsWithChildren<SampleTabHeaderProps>> = ({
+    sample,
+    active,
+    setSelectedSample,
+}) => {
     const onClick = useCallback<React.MouseEventHandler>(
         event => {
             event.preventDefault()
@@ -50,7 +54,7 @@ const samples: Sample[] = [
     { name: 'Minimal', file: minimalSample },
 ]
 
-export const OldBatchChangePageContent: React.FunctionComponent<{}> = () => {
+export const OldBatchChangePageContent: React.FunctionComponent<React.PropsWithChildren<{}>> = () => {
     const [selectedSample, setSelectedSample] = useState<Sample>(samples[0])
 
     return (

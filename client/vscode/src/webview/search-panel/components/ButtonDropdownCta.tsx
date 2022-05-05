@@ -26,7 +26,7 @@ export interface ButtonDropdownCtaProps extends TelemetryProps, Pick<WebviewPage
     instanceURL?: string
 }
 
-export const ButtonDropdownCta: React.FunctionComponent<ButtonDropdownCtaProps> = ({
+export const ButtonDropdownCta: React.FunctionComponent<React.PropsWithChildren<ButtonDropdownCtaProps>> = ({
     button,
     icon,
     title,

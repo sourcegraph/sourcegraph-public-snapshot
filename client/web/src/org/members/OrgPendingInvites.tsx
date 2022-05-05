@@ -77,7 +77,7 @@ interface IPendingInvitations {
     pendingInvitations: OrganizationInvitation[]
 }
 
-const PendingInvitesHeader: React.FunctionComponent = () => (
+const PendingInvitesHeader: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <li data-test-pendinginvitesheader="pendingInviiteslist-header">
         <div className="d-flex align-items-center justify-content-between">
             <div
@@ -102,7 +102,7 @@ interface InvitationItemProps {
     onInviteResentRevoked: (recipient: string, revoked?: boolean) => void
 }
 
-const InvitationItem: React.FunctionComponent<InvitationItemProps> = ({
+const InvitationItem: React.FunctionComponent<React.PropsWithChildren<InvitationItemProps>> = ({
     orgId,
     invite,
     viewerCanAdminister,
@@ -254,7 +254,7 @@ const InvitationItem: React.FunctionComponent<InvitationItemProps> = ({
 /**
  * The organization members list page.
  */
-export const OrgPendingInvitesPage: React.FunctionComponent<Props> = ({
+export const OrgPendingInvitesPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     org,
     authenticatedUser,
     onOrgGetStartedRefresh,

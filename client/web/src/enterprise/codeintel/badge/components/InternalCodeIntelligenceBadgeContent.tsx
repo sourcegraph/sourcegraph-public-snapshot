@@ -16,11 +16,9 @@ export type InternalCodeIntelligenceBadgeContentProps = SettingsCascadeProps & {
     now?: () => Date
 }
 
-export const InternalCodeIntelligenceBadgeContent: React.FunctionComponent<InternalCodeIntelligenceBadgeContentProps> = ({
-    data,
-    now,
-    settingsCascade,
-}) => {
+export const InternalCodeIntelligenceBadgeContent: React.FunctionComponent<
+    React.PropsWithChildren<InternalCodeIntelligenceBadgeContentProps>
+> = ({ data, now, settingsCascade }) => {
     const forNerds =
         !isErrorLike(settingsCascade.final) &&
         settingsCascade.final?.experimentalFeatures?.codeIntelRepositoryBadge?.forNerds

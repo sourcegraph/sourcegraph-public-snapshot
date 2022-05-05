@@ -82,7 +82,7 @@ func makeTestFunc(name string, f testFunc, source Location, expectedLocations []
 				repositoryToGottenResults := collectRepositoryToResults(locations)
 				repositoryToWantedResults := collectRepositoryToResults(expectedLocations)
 				for repo := range allRepos {
-					e += fmt.Sprintf("    - %s: want %d got %d locations\n", repo, repositoryToWantedResults[repo], repositoryToGottenResults[repo])
+					e += fmt.Sprintf("    - %s: want %d locations, got %d locations\n", repo, repositoryToWantedResults[repo], repositoryToGottenResults[repo])
 				}
 				e += "\n"
 
