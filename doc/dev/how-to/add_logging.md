@@ -1,24 +1,21 @@
-# How to add and use logging
+# How to add logging
+
+This guide describes best practices for adding logging to Sourcegraph's backend components.
 
 > NOTE: For how to *use* Sourcegraph's observability and an overview of our observability features, refer to the [observability for site administrators documentation](../../admin/observability/index.md).
 
-The recommended logger at Sourcegraph is `github.com/sourcegraph/sourcegraph/lib/log`, which exports:
+The recommended logger at Sourcegraph is [`github.com/sourcegraph/sourcegraph/lib/log`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/lib/log), which exports:
 
-1. A standardized, strongly-typed, and structured logging interface, `log.Logger`
+1. A standardized, strongly-typed, and structured logging interface, [`log.Logger`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/lib/log/logger.go)
    1. Production output from this logger (`SRC_LOG_FORMAT=json`) complies with the [OpenTelemetry log data model](https://opentelemetry.io/docs/reference/specification/logs/data-model/) (also see: [Logging: OpenTelemetry](../../admin/observability/logs.md#opentelemetry))
    2. `log.Logger` has a variety of constructors for spawning new loggers with context, namely `Scoped`, `WithTrace`, and `WithFields`.
-2. An initialization function to be called in `func main()`, `log.Init`
-   1. Log level can be configured with `SRC_LOG_LEVEL`
-   2. Do not use this in an `init()` function
-3. A getter to retrieve a `log.Logger` instance, `log.Scoped`
-   1. In development, `log.Scoped` will panic if `log.Init` is not called. In production, a no-op logger will be returned.
+2. An initialization function to be called in `func main()`, `log.Init()`, that must be called.
+   1. Log level can be configured with `SRC_LOG_LEVEL` (also see: [Logging: Log levels](../../admin/observability/logs.md#log-levels))
+   2. Do not use this in an `init()` function - we want to explicitly avoid tying logger instances as a compile-time dependency.
+3. A getter to retrieve a `log.Logger` instance, [`log.Scoped`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+log.Scoped+-file:lib/log+lang:go&patternType=literal)
+4. [Testing utilities](#testing-usage)
 
-For testing purposes, we also provide:
-
-1. An optional initialization function to be called in `func TestMain(*testing.M)`, `logtest.Init`
-2. A getter to retrieve a `log.Logger` instance and a callback to programmatically iterate log output, `logtest.Scoped`
-   1. The standard `logtest.Scoped` will also work after `logtest.Init`
-   2. Programatically iterable logs are available from the `logtest.Captured` logger instance
+Logging is also available via the all-in-one `internal/observation` package: [How to add observability](add_observability.md)
 
 > NOTE: Sourcegraph's new logging standards are still a work in progress - please leave a comment in [this discussion](https://github.com/sourcegraph/sourcegraph/discussions/33248) if you have any feedback or ideas!
 
@@ -59,13 +56,19 @@ func main() {
 }
 ```
 
-When your service starts logging, get a `Logger` instance, attach some relevant context, and start propagating your logger for use:
+### Attaching context
+
+When your service starts logging, obtain a `log.Logger` instance, attach some relevant context, and start propagating your logger for use.
+Attached context from `logger.With` and `logger.WithTrace` will be present on all log entries logged by `logger`.
+This allows you to easily trace, for example, the execution of an event or a particular execution type by looking for shared log fields.
+For example:
 
 ```go
 import "github.com/sourcegraph/sourcegraph/lib/log"
 
 func newWorker(/* ... */) *Worker {
   logger := log.Scoped("worker", "the worker process handles ...").
+    WithTrace(/* ... */).
     With(log.String("name", options.Name))
   // ...
   return &Worker{
@@ -78,15 +81,30 @@ func newWorker(/* ... */) *Worker {
 func (w *Worker) DoSomething(params ...int) {
   _, err := doTheThing()
   if err != nil {
-    // Use the provided logger instance
     w.logger.Warn("Failed to do the thing",
       log.Ints("params", params),
       log.Error(err))
+    /**
+      {
+        "InstrumentationScope": "worker",
+        "TraceID": "...",
+        "Attributes": { "name": "...", "params": [...], "error": "..." },
+      }
+     */
+  } else {
+    w.logger.Info("thing happened successfully")
+    /**
+      {
+        "InstrumentationScope": "worker",
+        "TraceID": "...",
+        "Attributes": { "name": "..." },
+      }
+     */
   }
 }
 ```
 
-If you are kicking off a long-running process, you can spawn a child logger and use it directly:
+If you are kicking off a long-running process, you can spawn a child logger and use it directly to maintain relevant context:
 
 ```go
 func (w *Worker) DoBigThing(params ...int) {
@@ -113,7 +131,16 @@ WARN    TestInitLogger  log/logger_test.go:22   another message {"TraceId": "asd
 
 This format omits fields like OpenTelemetry Resource and renders certain field types in a more friendly manner. Levels are also coloured, and the caller link with `filename:line` should be clickable in iTerm and VS Code such that you can jump straight to the source of the log entry.
 
+Additionally, in `SRC_DEVELOPMENT=true` using `log.Scoped` without calling `log.Init` will panic (in production, a no-op logger will be returned).
+
 ## Testing usage
+
+For testing purposes, we also provide:
+
+1. An optional initialization function to be called in `func TestMain(*testing.M)`, [`logtest.Init`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+logtest.Init+-file:lib/log+lang:go&patternType=literal)
+2. A getter to retrieve a `log.Logger` instance and a callback to programmatically iterate log output, [`logtest.Scoped`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+logtest.Scoped+-file:lib/log+lang:go&patternType=literal)
+   1. The standard `log.Scoped` will also work after `logtest.Init`
+   2. Programatically iterable logs are available from the `logtest.Captured` logger instance
 
 In the absense of `log.Init` in `main()`, `lib/log` can be initialized using `libtest` in packages that use `log.Scoped`:
 

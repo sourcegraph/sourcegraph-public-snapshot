@@ -3,8 +3,6 @@ import React, { useContext, useMemo } from 'react'
 import { useRouteMatch } from 'react-router'
 import { Redirect } from 'react-router-dom'
 
-import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
@@ -13,7 +11,7 @@ import { CodeInsightsBackendContext, ALL_INSIGHTS_DASHBOARD } from '../../../cor
 
 import { DashboardsContent } from './components/dashboards-content/DashboardsContent'
 
-export interface DashboardsContentPageProps extends TelemetryProps, SettingsCascadeProps<Settings> {
+export interface DashboardsContentPageProps extends TelemetryProps {
     /**
      * Possible dashboard id. All insights on the page will be get from
      * dashboard's info from the user or org settings by the dashboard id.
@@ -26,7 +24,7 @@ export interface DashboardsContentPageProps extends TelemetryProps, SettingsCasc
 export const DashboardsContentPage: React.FunctionComponent<
     React.PropsWithChildren<DashboardsContentPageProps>
 > = props => {
-    const { dashboardID, telemetryService, settingsCascade } = props
+    const { dashboardID, telemetryService } = props
     const { url } = useRouteMatch()
 
     const { getDashboards } = useContext(CodeInsightsBackendContext)
@@ -51,12 +49,7 @@ export const DashboardsContentPage: React.FunctionComponent<
     return (
         <>
             <PageTitle title={`${currentDashboard?.title || ''} - Code Insights`} />
-            <DashboardsContent
-                settingsCascade={settingsCascade}
-                telemetryService={telemetryService}
-                dashboardID={dashboardID}
-                dashboards={dashboards}
-            />
+            <DashboardsContent telemetryService={telemetryService} dashboardID={dashboardID} dashboards={dashboards} />
         </>
     )
 }

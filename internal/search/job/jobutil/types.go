@@ -12,16 +12,16 @@ import (
 )
 
 var allJobs = []job.Job{
-	&zoekt.ZoektRepoSubsetSearch{},
-	&zoekt.ZoektSymbolSearch{},
-	&searcher.Searcher{},
-	&searcher.SymbolSearcher{},
-	&run.RepoSearch{},
-	&zoekt.GlobalSearch{},
-	&structural.StructuralSearch{},
+	&zoekt.ZoektRepoSubsetSearchJob{},
+	&zoekt.ZoektSymbolSearchJob{},
+	&searcher.SearcherJob{},
+	&searcher.SymbolSearcherJob{},
+	&run.RepoSearchJob{},
+	&zoekt.ZoektGlobalSearchJob{},
+	&structural.StructuralSearchJob{},
 	&commit.CommitSearchJob{},
-	&symbol.RepoUniverseSymbolSearch{},
-	&repos.ComputeExcludedRepos{},
+	&symbol.RepoUniverseSymbolSearchJob{},
+	&repos.ComputeExcludedReposJob{},
 	&noopJob{},
 
 	&repoPagerJob{},

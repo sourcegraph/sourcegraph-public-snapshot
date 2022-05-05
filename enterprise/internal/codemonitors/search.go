@@ -200,8 +200,8 @@ func addCodeMonitorHook(in job.Job, hook commit.CodeMonitorHook) (_ job.Job, err
 			jobCopy := *typedAtom
 			jobCopy.CodeMonitorSearchWrapper = hook
 			return &jobCopy
-		case *repos.ComputeExcludedRepos:
-			// ComputeExcludedRepos is fine for code monitor jobs
+		case *repos.ComputeExcludedReposJob:
+			// ComputeExcludedReposJob is fine for code monitor jobs
 			return atom
 		default:
 			err = errors.Append(err, errors.Errorf("found invalid atom job type %T for code monitor search", atom))

@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
 
+cd "$(dirname "${BASH_SOURCE[0]}")"/../..
+
 set -euo pipefail
+
+REPO_ROOT="$PWD"
 
 function usage {
   cat <<EOF
 Usage: go-test.sh [only|exclude package-path-1 package-path-2 ...]
 
-Run go tests, optionally restricting which ones based on the only and exclude coommands.
+Run go tests, optionally restricting which ones based on the only and exclude commands.
 
 EOF
 }
@@ -43,7 +47,7 @@ function go_test() {
     set -x
     echo "~~~ Creating test failures anotation"
     RICHGO_CONFIG="./.richstyle.yml"
-    cp "./dev/ci/go-test-failures.richstyle.yml" $RICHGO_CONFIG
+    cp "$REPO_ROOT/dev/ci/go-test-failures.richstyle.yml" $RICHGO_CONFIG
     mkdir -p ./annotations
     richgo testfilter <"$tmpfile" >>./annotations/go-test
     rm -rf $RICHGO_CONFIG
@@ -88,7 +92,7 @@ echo "--- comby install"
 # not checking out the old version when the tests with the old code against the latest
 # commit database schema.
 # TODO @jhchabran remove this when we release the next version.
-if [ "v3.38.0" == "$(git describe --tags)" ];then
+if [ "v3.38.0" == "$(git describe --tags)" ]; then
   # For code insights test
   ./dev/codeinsights-db.sh &
   export CODEINSIGHTS_PGDATASOURCE=postgres://postgres:password@127.0.0.1:5435/postgres

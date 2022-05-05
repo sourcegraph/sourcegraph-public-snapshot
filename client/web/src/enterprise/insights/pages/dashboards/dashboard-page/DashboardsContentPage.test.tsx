@@ -32,7 +32,7 @@ type UserEvent = typeof userEvent
 
 const mockCopyURL = sinon.spy()
 
-jest.mock('./components/dashboards-content/hooks/use-copy-url-handler', () => ({
+jest.mock('../../../hooks/use-copy-url-handler', () => ({
     useCopyURLHandler: () => [mockCopyURL],
 }))
 
@@ -157,11 +157,7 @@ const renderDashboardsContent = (
     ...renderWithBrandedContext(
         <MockedTestProvider mocks={mocks}>
             <Wrapper>
-                <DashboardsContentPage
-                    settingsCascade={{ final: null, subjects: null }}
-                    dashboardID={dashboardID}
-                    telemetryService={mockTelemetryService}
-                />
+                <DashboardsContentPage dashboardID={dashboardID} telemetryService={mockTelemetryService} />
             </Wrapper>
         </MockedTestProvider>
     ),

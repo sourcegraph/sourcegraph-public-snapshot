@@ -4444,6 +4444,9 @@ type MockEnqueuerDBStore struct {
 	// IsQueuedFunc is an instance of a mock function object controlling the
 	// behavior of the method IsQueued.
 	IsQueuedFunc *EnqueuerDBStoreIsQueuedFunc
+	// RepoNameFunc is an instance of a mock function object controlling the
+	// behavior of the method RepoName.
+	RepoNameFunc *EnqueuerDBStoreRepoNameFunc
 	// TransactFunc is an instance of a mock function object controlling the
 	// behavior of the method Transact.
 	TransactFunc *EnqueuerDBStoreTransactFunc
@@ -4487,6 +4490,11 @@ func NewMockEnqueuerDBStore() *MockEnqueuerDBStore {
 		IsQueuedFunc: &EnqueuerDBStoreIsQueuedFunc{
 			defaultHook: func(context.Context, int, string) (bool, error) {
 				return false, nil
+			},
+		},
+		RepoNameFunc: &EnqueuerDBStoreRepoNameFunc{
+			defaultHook: func(context.Context, int) (string, error) {
+				return "", nil
 			},
 		},
 		TransactFunc: &EnqueuerDBStoreTransactFunc{
@@ -4536,6 +4544,11 @@ func NewStrictMockEnqueuerDBStore() *MockEnqueuerDBStore {
 				panic("unexpected invocation of MockEnqueuerDBStore.IsQueued")
 			},
 		},
+		RepoNameFunc: &EnqueuerDBStoreRepoNameFunc{
+			defaultHook: func(context.Context, int) (string, error) {
+				panic("unexpected invocation of MockEnqueuerDBStore.RepoName")
+			},
+		},
 		TransactFunc: &EnqueuerDBStoreTransactFunc{
 			defaultHook: func(context.Context) (enqueuer.DBStore, error) {
 				panic("unexpected invocation of MockEnqueuerDBStore.Transact")
@@ -4569,6 +4582,9 @@ func NewMockEnqueuerDBStoreFrom(i EnqueuerDBStore) *MockEnqueuerDBStore {
 		},
 		IsQueuedFunc: &EnqueuerDBStoreIsQueuedFunc{
 			defaultHook: i.IsQueued,
+		},
+		RepoNameFunc: &EnqueuerDBStoreRepoNameFunc{
+			defaultHook: i.RepoName,
 		},
 		TransactFunc: &EnqueuerDBStoreTransactFunc{
 			defaultHook: i.Transact,
@@ -5336,6 +5352,114 @@ func (c EnqueuerDBStoreIsQueuedFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EnqueuerDBStoreIsQueuedFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// EnqueuerDBStoreRepoNameFunc describes the behavior when the RepoName
+// method of the parent MockEnqueuerDBStore instance is invoked.
+type EnqueuerDBStoreRepoNameFunc struct {
+	defaultHook func(context.Context, int) (string, error)
+	hooks       []func(context.Context, int) (string, error)
+	history     []EnqueuerDBStoreRepoNameFuncCall
+	mutex       sync.Mutex
+}
+
+// RepoName delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockEnqueuerDBStore) RepoName(v0 context.Context, v1 int) (string, error) {
+	r0, r1 := m.RepoNameFunc.nextHook()(v0, v1)
+	m.RepoNameFunc.appendCall(EnqueuerDBStoreRepoNameFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the RepoName method of
+// the parent MockEnqueuerDBStore instance is invoked and the hook queue is
+// empty.
+func (f *EnqueuerDBStoreRepoNameFunc) SetDefaultHook(hook func(context.Context, int) (string, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RepoName method of the parent MockEnqueuerDBStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *EnqueuerDBStoreRepoNameFunc) PushHook(hook func(context.Context, int) (string, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *EnqueuerDBStoreRepoNameFunc) SetDefaultReturn(r0 string, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) (string, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *EnqueuerDBStoreRepoNameFunc) PushReturn(r0 string, r1 error) {
+	f.PushHook(func(context.Context, int) (string, error) {
+		return r0, r1
+	})
+}
+
+func (f *EnqueuerDBStoreRepoNameFunc) nextHook() func(context.Context, int) (string, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnqueuerDBStoreRepoNameFunc) appendCall(r0 EnqueuerDBStoreRepoNameFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnqueuerDBStoreRepoNameFuncCall objects
+// describing the invocations of this function.
+func (f *EnqueuerDBStoreRepoNameFunc) History() []EnqueuerDBStoreRepoNameFuncCall {
+	f.mutex.Lock()
+	history := make([]EnqueuerDBStoreRepoNameFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnqueuerDBStoreRepoNameFuncCall is an object that describes an invocation
+// of method RepoName on an instance of MockEnqueuerDBStore.
+type EnqueuerDBStoreRepoNameFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 string
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnqueuerDBStoreRepoNameFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnqueuerDBStoreRepoNameFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

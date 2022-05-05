@@ -15,28 +15,28 @@ BASE:
           (PARALLEL
             REPOPAGER
               (PARALLEL
-                ZoektRepoSubset
-                Searcher))
-            RepoSearch
-            ComputeExcludedRepos))
+                ZoektRepoSubsetSearchJob
+                SearcherJob))
+            RepoSearchJob
+            ComputeExcludedReposJob))
         (LIMIT
           40000
           (PARALLEL
             REPOPAGER
               (PARALLEL
-                ZoektRepoSubset
-                Searcher))
-            RepoSearch
-            ComputeExcludedRepos))
+                ZoektRepoSubsetSearchJob
+                SearcherJob))
+            RepoSearchJob
+            ComputeExcludedReposJob))
         (LIMIT
           40000
           (PARALLEL
             REPOPAGER
               (PARALLEL
-                ZoektRepoSubset
-                Searcher))
-            RepoSearch
-            ComputeExcludedRepos))))))
+                ZoektRepoSubsetSearchJob
+                SearcherJob))
+            RepoSearchJob
+            ComputeExcludedReposJob))))))
 
 OPTIMIZED:
 
@@ -47,7 +47,7 @@ OPTIMIZED:
       500
       (PARALLEL
         REPOPAGER
-          ZoektRepoSubset)
+          ZoektRepoSubsetSearchJob)
         (AND
           (LIMIT
             40000
@@ -55,24 +55,24 @@ OPTIMIZED:
               REPOPAGER
                 (PARALLEL
                   NoopJob
-                  Searcher))
-              RepoSearch
-              ComputeExcludedRepos))
+                  SearcherJob))
+              RepoSearchJob
+              ComputeExcludedReposJob))
           (LIMIT
             40000
             (PARALLEL
               REPOPAGER
                 (PARALLEL
                   NoopJob
-                  Searcher))
-              RepoSearch
-              ComputeExcludedRepos))
+                  SearcherJob))
+              RepoSearchJob
+              ComputeExcludedReposJob))
           (LIMIT
             40000
             (PARALLEL
               REPOPAGER
                 (PARALLEL
                   NoopJob
-                  Searcher))
-              RepoSearch
-              ComputeExcludedRepos)))))))
+                  SearcherJob))
+              RepoSearchJob
+              ComputeExcludedReposJob)))))))

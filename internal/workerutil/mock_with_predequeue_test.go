@@ -5,6 +5,8 @@ package workerutil
 import (
 	"context"
 	"sync"
+
+	log "github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // MockWithPreDequeue is a mock implementation of the WithPreDequeue
@@ -22,7 +24,7 @@ type MockWithPreDequeue struct {
 func NewMockWithPreDequeue() *MockWithPreDequeue {
 	return &MockWithPreDequeue{
 		PreDequeueFunc: &WithPreDequeuePreDequeueFunc{
-			defaultHook: func(context.Context) (bool, interface{}, error) {
+			defaultHook: func(context.Context, log.Logger) (bool, interface{}, error) {
 				return false, nil, nil
 			},
 		},
@@ -34,7 +36,7 @@ func NewMockWithPreDequeue() *MockWithPreDequeue {
 func NewStrictMockWithPreDequeue() *MockWithPreDequeue {
 	return &MockWithPreDequeue{
 		PreDequeueFunc: &WithPreDequeuePreDequeueFunc{
-			defaultHook: func(context.Context) (bool, interface{}, error) {
+			defaultHook: func(context.Context, log.Logger) (bool, interface{}, error) {
 				panic("unexpected invocation of MockWithPreDequeue.PreDequeue")
 			},
 		},
@@ -55,24 +57,24 @@ func NewMockWithPreDequeueFrom(i WithPreDequeue) *MockWithPreDequeue {
 // WithPreDequeuePreDequeueFunc describes the behavior when the PreDequeue
 // method of the parent MockWithPreDequeue instance is invoked.
 type WithPreDequeuePreDequeueFunc struct {
-	defaultHook func(context.Context) (bool, interface{}, error)
-	hooks       []func(context.Context) (bool, interface{}, error)
+	defaultHook func(context.Context, log.Logger) (bool, interface{}, error)
+	hooks       []func(context.Context, log.Logger) (bool, interface{}, error)
 	history     []WithPreDequeuePreDequeueFuncCall
 	mutex       sync.Mutex
 }
 
 // PreDequeue delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockWithPreDequeue) PreDequeue(v0 context.Context) (bool, interface{}, error) {
-	r0, r1, r2 := m.PreDequeueFunc.nextHook()(v0)
-	m.PreDequeueFunc.appendCall(WithPreDequeuePreDequeueFuncCall{v0, r0, r1, r2})
+func (m *MockWithPreDequeue) PreDequeue(v0 context.Context, v1 log.Logger) (bool, interface{}, error) {
+	r0, r1, r2 := m.PreDequeueFunc.nextHook()(v0, v1)
+	m.PreDequeueFunc.appendCall(WithPreDequeuePreDequeueFuncCall{v0, v1, r0, r1, r2})
 	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the PreDequeue method of
 // the parent MockWithPreDequeue instance is invoked and the hook queue is
 // empty.
-func (f *WithPreDequeuePreDequeueFunc) SetDefaultHook(hook func(context.Context) (bool, interface{}, error)) {
+func (f *WithPreDequeuePreDequeueFunc) SetDefaultHook(hook func(context.Context, log.Logger) (bool, interface{}, error)) {
 	f.defaultHook = hook
 }
 
@@ -80,7 +82,7 @@ func (f *WithPreDequeuePreDequeueFunc) SetDefaultHook(hook func(context.Context)
 // PreDequeue method of the parent MockWithPreDequeue instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *WithPreDequeuePreDequeueFunc) PushHook(hook func(context.Context) (bool, interface{}, error)) {
+func (f *WithPreDequeuePreDequeueFunc) PushHook(hook func(context.Context, log.Logger) (bool, interface{}, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -89,19 +91,19 @@ func (f *WithPreDequeuePreDequeueFunc) PushHook(hook func(context.Context) (bool
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *WithPreDequeuePreDequeueFunc) SetDefaultReturn(r0 bool, r1 interface{}, r2 error) {
-	f.SetDefaultHook(func(context.Context) (bool, interface{}, error) {
+	f.SetDefaultHook(func(context.Context, log.Logger) (bool, interface{}, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *WithPreDequeuePreDequeueFunc) PushReturn(r0 bool, r1 interface{}, r2 error) {
-	f.PushHook(func(context.Context) (bool, interface{}, error) {
+	f.PushHook(func(context.Context, log.Logger) (bool, interface{}, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *WithPreDequeuePreDequeueFunc) nextHook() func(context.Context) (bool, interface{}, error) {
+func (f *WithPreDequeuePreDequeueFunc) nextHook() func(context.Context, log.Logger) (bool, interface{}, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -137,6 +139,9 @@ type WithPreDequeuePreDequeueFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 log.Logger
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 bool
@@ -151,7 +156,7 @@ type WithPreDequeuePreDequeueFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c WithPreDequeuePreDequeueFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
