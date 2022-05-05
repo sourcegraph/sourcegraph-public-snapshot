@@ -10,6 +10,11 @@ import { Button, Icon, Link } from '@sourcegraph/wildcard'
 import { LoaderButton } from '../../../../../../../../components/LoaderButton'
 import { useField } from '../../../../../form/hooks/useField'
 import { FORM_ERROR, FormChangeEvent, SubmissionResult, useForm } from '../../../../../form/hooks/useForm'
+import {
+    SortFilterSeriesPanel,
+    SortFilterSeriesValue,
+    SortSeriesBy,
+} from '../sort-filter-series-panel/SortFilterSeriesPanel'
 
 import { DrillDownInput, LabelWithReset } from './drill-down-input/DrillDownInput'
 import { FilterCollapseSection } from './filter-collapse-section/FilterCollapseSection'
@@ -20,6 +25,7 @@ import { createSearchContextValidator, getFilterInputStatus } from './validators
 import styles from './DrillDownInsightFilters.module.scss'
 
 enum FilterSection {
+    SortFilter,
     SearchContext,
     RegularExpressions,
 }
@@ -83,6 +89,41 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
     const hasFiltersChanged = !isEqual(originalValues, values)
     const hasAppliedFilters = hasActiveFilters(originalValues)
 
+    const [sortValue, setSortValue] = useState<SortFilterSeriesValue>({
+        selected: SortSeriesBy.CountDesc,
+        seriesCount: 20,
+    })
+
+    const getSortPreview = (): string => {
+        let sortBy
+
+        switch (sortValue.selected) {
+            case SortSeriesBy.AlphaAsc:
+                sortBy = 'A-Z'
+                break
+            case SortSeriesBy.AlphaDesc:
+                sortBy = 'Z-A'
+                break
+            case SortSeriesBy.CountAsc:
+                sortBy = 'by result count low to high'
+                break
+            case SortSeriesBy.CountDesc:
+                sortBy = ' by result count high to low'
+                break
+            case SortSeriesBy.DateAsc:
+                sortBy = 'by date oldest to newest'
+                break
+            case SortSeriesBy.DateDesc:
+                sortBy = 'by date newest to oldest'
+                break
+            default:
+                sortBy = 'ERROR: Unknown sort type.'
+                break
+        }
+
+        return `Sorted ${sortBy}, limit ${sortValue.seriesCount} series`
+    }
+
     const handleCollapseState = (section: FilterSection, opened: boolean): void => {
         if (!opened) {
             setActiveSection(null)
@@ -113,6 +154,16 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                     Clear filters
                 </Button>
             </header>
+
+            <FilterCollapseSection
+                open={activeSection === FilterSection.SortFilter}
+                title="Sort & Limit"
+                preview={getSortPreview()}
+                hasActiveFilter={false}
+                onOpenChange={opened => handleCollapseState(FilterSection.SortFilter, opened)}
+            >
+                <SortFilterSeriesPanel value={sortValue} onChange={setSortValue} />
+            </FilterCollapseSection>
 
             <FilterCollapseSection
                 open={activeSection === FilterSection.SearchContext}
