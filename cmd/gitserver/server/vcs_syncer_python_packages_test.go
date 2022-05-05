@@ -241,10 +241,10 @@ func TestUnpackPythonPackage_Wheel(t *testing.T) {
 	}
 
 	testutil.AssertGolden(t, "testdata/golden/requests.json", update(t.Name()), struct {
-		hash  string
+		Hash  string
 		Files []string
 	}{
-		hash:  hex.EncodeToString(hasher.Sum(nil)),
+		Hash:  hex.EncodeToString(hasher.Sum(nil)),
 		Files: files,
 	})
 }
