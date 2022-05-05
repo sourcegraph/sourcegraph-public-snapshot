@@ -45,15 +45,11 @@ It does not provide multi-machine capability such as high availability, but will
 
 ### [Kubernetes without Helm](kubernetes/index.md)
 
+Before making a decision to deploy via Kubernetes without Helm, checkout our [Kubernetes with Helm docs](kubernetes/helm.md) for additional information on why we [recommend using Helm](kubernetes/helm.md#why-use-helm).
+
 If you are unable to use Helm to deploy, but still want to use Kubernetes, follow our [Kubernetes deployment documentation](kubernetes/index.md). 
 
-However, when using this option you will lose key advantages associated with our Helm deployment, including:
-
-- easier upgrade experience
-- -minimized surface area (generally less error prone compared to making customizations)
-- a more curated admin experience
-  
-If there is any doubt about your team's ability to support this, please speak to your Sourcegraph contact about using Docker Compose instead.
+This path will require advanced knowledge of Kubernetes. For team's without the ability to support this, please speak to your Sourcegraph contact about using Docker Compose instead. 
 
 ### [Docker Single Container](docker-single-container/index.md) 
 
