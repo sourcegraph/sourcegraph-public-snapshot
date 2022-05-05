@@ -87,12 +87,9 @@ export const BatchChangePreviewContextProvider: React.FunctionComponent<React.Pr
     // publication states. This allows us to hide the banner for an update until the
     // requery is complete.
     const [recalculationUpdates, setRecalculationUpdates] = useState<RecalculationRecord[]>([])
-    const addRecalculationUpdate = useCallback(
-        (date: Date) => {
-            setRecalculationUpdates([...recalculationUpdates, [date.getTime(), 'pending']])
-        },
-        [recalculationUpdates]
-    )
+    const addRecalculationUpdate = useCallback((date: Date) => {
+        setRecalculationUpdates(recalculationUpdates => [...recalculationUpdates, [date.getTime(), 'pending']])
+    }, [])
 
     // Merge the new set of modified publication states with what's already been modified,
     // favoring the newest state set for a given changeset spec
