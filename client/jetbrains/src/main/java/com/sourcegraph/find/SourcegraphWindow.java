@@ -31,30 +31,36 @@ public class SourcegraphWindow implements Disposable {
     public SourcegraphWindow(Project project, JCEFService service) {
         this.project = project;
 
+        // Create main panel
         mainPanel = new JPanel(new BorderLayout());
         mainPanel.setPreferredSize(JBUI.size(1200, 800));
         mainPanel.setBorder(PopupBorder.Factory.create(true, true));
         mainPanel.setFocusCycleRoot(true);
 
-        EditorFactory editorFactory = EditorFactory.getInstance();
-        JBPanel<JBPanelWithEmptyText> editorPanel = new JBPanelWithEmptyText(new BorderLayout());
+        // Create splitter
+        Splitter splitter = new OnePixelSplitter(true, 0.5f, 0.1f, 0.9f);
+        mainPanel.add(splitter, BorderLayout.CENTER);
 
         JPanel jcefPanel = new JPanel(new BorderLayout());
-        /* Make sure JCEF is supported */
+        // Make sure JCEF is supported
         if (!JBCefApp.isSupported()) {
             JLabel warningLabel = new JLabel("Unfortunately, the browser is not available on your system. Try running the IDE with the default OpenJDK.");
             jcefPanel.add(warningLabel);
             sourcegraphJBCefBrowser = null;
+            // TODO: Handle this case gracefully, and report it via telemetry or a bug report.
             return;
         }
         sourcegraphJBCefBrowser = service.getJcefWindow();
-
-        JPanel topPanel = new JPanel(new BorderLayout());
-
-        /* Add browser to panels */
         jcefPanel.add(Objects.requireNonNull(sourcegraphJBCefBrowser.getComponent()), BorderLayout.CENTER);
-        topPanel.add(jcefPanel);
 
+        JBPanel<JBPanelWithEmptyText> editorPanel = createEditorPanel(project);
+
+        splitter.setFirstComponent(jcefPanel);
+        splitter.setSecondComponent(editorPanel);
+    }
+
+    private JBPanel<JBPanelWithEmptyText> createEditorPanel(Project project) {
+        EditorFactory editorFactory = EditorFactory.getInstance();
 
         String contentTs = "let message: string = 'Hello, TypeScript!';\n" +
             "\n" +
@@ -66,6 +72,7 @@ public class SourcegraphWindow implements Disposable {
         Document document = editorFactory.createDocument(contentTs);
 
         Editor editor = editorFactory.createEditor(document, project, virtualFile, true, EditorKind.MAIN_EDITOR);
+
         EditorSettings settings = editor.getSettings();
         settings.setLineMarkerAreaShown(true);
         settings.setFoldingOutlineShown(false);
@@ -73,17 +80,16 @@ public class SourcegraphWindow implements Disposable {
         settings.setAdditionalLinesCount(0);
         settings.setAnimatedScrolling(false);
         settings.setAutoCodeFoldingEnabled(false);
-        editorPanel.add(editor.getComponent(), BorderLayout.CENTER);
-        editorPanel.invalidate();
-        editorPanel.validate();
+
         HighlightManager highlightManager = HighlightManager.getInstance(project);
         highlightManager.addOccurrenceHighlight(editor, 23, 41, EditorColors.SEARCH_RESULT_ATTRIBUTES, 0, null);
 
-        Splitter splitter = new OnePixelSplitter(true, 0.5f, 0.1f, 0.9f);
-        splitter.setFirstComponent(topPanel);
-        splitter.setSecondComponent(editorPanel);
+        JBPanel<JBPanelWithEmptyText> editorPanel = new JBPanelWithEmptyText(new BorderLayout()).withEmptyText("Type search query to find on Sourcegraph");
+        editorPanel.add(editor.getComponent(), BorderLayout.CENTER);
+        editorPanel.invalidate();
+        editorPanel.validate();
 
-        mainPanel.add(splitter, BorderLayout.CENTER);
+        return editorPanel;
     }
 
     synchronized public void showPopup() {
