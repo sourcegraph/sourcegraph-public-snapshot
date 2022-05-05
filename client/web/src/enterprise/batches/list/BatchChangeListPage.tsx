@@ -153,7 +153,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                     <ConnectionContainer>
                         <div className={styles.filtersRow}>
                             {(licenseAndUsageInfo?.allBatchChanges.totalCount || 0) > 0 && (
-                                <H3 as={H2} className="align-self-end flex-1" aria-live="assertive" aria-atomic="true">
+                                <H3 as={H2} className="align-self-end flex-1">
                                     {`${lastTotalCount} batch changes`}
                                 </H3>
                             )}

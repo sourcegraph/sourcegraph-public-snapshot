@@ -40,7 +40,6 @@
         grid-column: 1 / -1;
         border-top: 1px solid var(--border-color-2);
         margin-top: 1rem;
-        padding-bottom: 1rem;
     }
 }
 
@@ -61,10 +60,18 @@
 
 // A wider first column for the new execution state pill.
 .wide {
-    grid-template-columns: [state] 100px [info] minmax(auto, 1fr) [open] min-content [closed] min-content [merged] min-content [end];
+    grid-template-columns: [state] 100px [info] minmax(auto, 1fr) [changesetStats] auto;
 }
 
 // A narrower first column for the original state badge.
 .narrow {
-    grid-template-columns: [state] 70px [info] minmax(auto, 1fr) [open] min-content [closed] min-content [merged] min-content [end];
+    grid-template-columns: [state] 70px [info] minmax(auto, 1fr) [changesetStats] auto;
+}
+
+.changesetStats {
+    display: grid;
+    row-gap: 1rem;
+    column-gap: 1.5rem;
+    align-items: center;
+    grid-template-columns: [open] min-content [closed] min-content [merged] min-content [end];
 }
