@@ -200,7 +200,7 @@ func (on *OnQueryOrRepository) String() string {
 	if on.RepositoriesMatchingQuery != "" {
 		return on.RepositoriesMatchingQuery
 	} else if on.Repository != "" {
-		return "r:" + on.Repository
+		return "repository:" + on.Repository
 	}
 
 	return fmt.Sprintf("%v", *on)
