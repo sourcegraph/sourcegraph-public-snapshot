@@ -278,6 +278,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                                                 }
                                                 variant="secondary"
                                                 size="sm"
+                                                aria-label="Copy full SHA"
                                             >
                                                 <Icon className="small" as={ContentCopyIcon} />
                                             </Button>
@@ -289,6 +290,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                                                 variant="secondary"
                                                 size="sm"
                                                 as={Link}
+                                                aria-label="View files at this commit"
                                             >
                                                 <Icon className="mr-1" as={FileDocumentIcon} />
                                             </Button>
