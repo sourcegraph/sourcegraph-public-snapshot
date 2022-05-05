@@ -32,7 +32,7 @@ type UserEvent = typeof userEvent
 
 const mockCopyURL = sinon.spy()
 
-jest.mock('./components/dashboards-content/hooks/use-copy-url-handler', () => ({
+jest.mock('../../../hooks/use-copy-url-handler', () => ({
     useCopyURLHandler: () => [mockCopyURL],
 }))
 
