@@ -19,6 +19,7 @@
 
 Our Helm chart has a lot of sensible defaults baked into the values.yaml. Not only does this make customizations much easier (than either using Kustomize or manually editing Sourcegraph's manifest files) it also means that, when an override file is used to make the changes, you _never_ have to deal with merge conflicts during upgrades (see more about customizations in the [configuration](#configuration) section). 
 
+> ℹ️ We do not currently recommend migrating an existing Sourcegraph deployment to Helm. Guidance to perform this migration safely will be provided soon.
 
 ## High-level overview of how to use Helm with Sourcegraph
 
