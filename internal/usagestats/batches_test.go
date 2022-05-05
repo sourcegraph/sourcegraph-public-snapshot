@@ -70,34 +70,19 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 	// Create batch specs
 	_, err = db.ExecContext(context.Background(), `
 		INSERT INTO batch_specs
-			(id, rand_id, raw_spec, namespace_user_id, created_from_raw, created_at)
+			(id, rand_id, raw_spec, namespace_user_id, user_id, created_from_raw, created_at)
 		VALUES
 		    -- 3 from this month, 2 from executors by the same user
-			(1, '123', '{}', $1, FALSE, $3::timestamp),
-			(2, '157', '{}', $2, TRUE, $3::timestamp),
-			(3, 'U93', '{}', $2, TRUE, $3::timestamp),
+			(1, '123', '{}', $1, $1, FALSE, $3::timestamp),
+			(2, '157', '{}', $2, $2, TRUE, $3::timestamp),
+			(3, 'U93', '{}', $2, $2, TRUE, $3::timestamp),
 			-- 3 from last month, 2 from executors by different users
-			(4, '456', '{}', $1, FALSE, $4::timestamp),
-			(5, '789', '{}', $1, TRUE, $4::timestamp),
-			(6, 'C80', '{}', $2, TRUE, $4::timestamp),
+			(4, '456', '{}', $1, $1, FALSE, $4::timestamp),
+			(5, '789', '{}', $1, $1, TRUE, $4::timestamp),
+			(6, 'C80', '{}', $2, $2, TRUE, $4::timestamp),
 			-- 1 from two months ago, from executors
-			(7, 'KEK', '{}', $2, TRUE, $5::timestamp)
+			(7, 'KEK', '{}', $2, $2, TRUE, $5::timestamp)
 	`, user.ID, user2.ID, now, lastMonthCreationDate, twoMonthsAgoCreationDate)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Create batch specs resolution jobs
-	_, err = db.ExecContext(context.Background(), `
-		INSERT INTO batch_spec_resolution_jobs
-			(id, batch_spec_id, initiator_id, worker_hostname, started_at, finished_at)
-		VALUES
-			(1, 2, $2, 'test-worker.host', $3::timestamp, $3::timestamp),
-			(2, 3, $2, 'test-worker.host', $3::timestamp, $3::timestamp),
-			(3, 5, $1, 'test-worker.host', $3::timestamp, $3::timestamp),
-			(4, 6, $2, 'test-worker.host', $3::timestamp, NULL),
-			(5, 7, $2, 'test-worker.host', NULL, NULL)
-	`, user.ID, user2.ID, now)
 	if err != nil {
 		t.Fatal(err)
 	}
