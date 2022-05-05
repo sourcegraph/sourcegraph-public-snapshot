@@ -1046,7 +1046,7 @@ type InsightViewDashboardConnectionResolver struct {
 }
 
 func (i *InsightViewDashboardConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.InsightsDashboardResolver, error) {
-	resolvers := make([]graphqlbackend.InsightsDashboardResolver, 0, 2)
+	resolvers := make([]graphqlbackend.InsightsDashboardResolver, 0)
 	dashboards, _, err := i.computeDashboards(ctx)
 	if err != nil {
 		return nil, err
@@ -1095,7 +1095,9 @@ func (i *InsightViewDashboardConnectionResolver) computeDashboards(ctx context.C
 
 		i.dashboards = dashboards
 		if len(i.dashboards) > 0 {
-			i.next = string(newRealDashboardID(int64(i.dashboards[len(i.dashboards)-1].ID)).marshal())
+			lastDashboard := i.dashboards[len(i.dashboards)-1]
+			dashboardID := newRealDashboardID(int64(lastDashboard.ID)).marshal()
+			i.next = string(dashboardID)
 		}
 	})
 	return i.dashboards, i.next, i.err

@@ -217,9 +217,8 @@ func TestInsightViewDashboardConnections(t *testing.T) {
 	//    2 - private to user and has insight
 	//    3 - private to another user and has insight
 
-	ctx := context.Background()
 	a := actor.FromUser(1)
-	ctx = actor.WithActor(ctx, a)
+	ctx := actor.WithActor(context.Background(), a)
 
 	insightsDB := dbtest.NewInsightsDB(t)
 	postgresDB := dbtest.NewDB(t)
