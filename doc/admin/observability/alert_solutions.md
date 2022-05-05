@@ -1868,8 +1868,8 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
-- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the (pgsql|codeintel-db|codeinsights-db) service.
-- **Docker Compose:** Consider increasing `cpus:` of the (pgsql|codeintel-db|codeinsights-db) container in `docker-compose.yml`.
+- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the (pgsql|codeintel-db|codeinsights) service.
+- **Docker Compose:** Consider increasing `cpus:` of the (pgsql|codeintel-db|codeinsights) container in `docker-compose.yml`.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#postgres-provisioning-container-cpu-usage-long-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -1893,8 +1893,8 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
-- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the (pgsql|codeintel-db|codeinsights-db) service.
-- **Docker Compose:** Consider increasing `memory:` of the (pgsql|codeintel-db|codeinsights-db) container in `docker-compose.yml`.
+- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the (pgsql|codeintel-db|codeinsights) service.
+- **Docker Compose:** Consider increasing `memory:` of the (pgsql|codeintel-db|codeinsights) container in `docker-compose.yml`.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#postgres-provisioning-container-memory-usage-long-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -1919,7 +1919,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Possible solutions**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the (pgsql|codeintel-db|codeinsights-db) container in `docker-compose.yml`.
+- **Docker Compose:** Consider increasing `cpus:` of the (pgsql|codeintel-db|codeinsights) container in `docker-compose.yml`.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#postgres-provisioning-container-cpu-usage-short-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -1944,7 +1944,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Possible solutions**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of (pgsql|codeintel-db|codeinsights-db) container in `docker-compose.yml`.
+- **Docker Compose:** Consider increasing `memory:` of (pgsql|codeintel-db|codeinsights) container in `docker-compose.yml`.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#postgres-provisioning-container-memory-usage-short-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -1969,7 +1969,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Possible solutions**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of (pgsql|codeintel-db|codeinsights-db) container in `docker-compose.yml`.
+- **Docker Compose:** Consider increasing `memory:` of (pgsql|codeintel-db|codeinsights) container in `docker-compose.yml`.
 - More help interpreting this metric is available in the [dashboards reference](./dashboards.md#postgres-container-oomkill-events-total).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
