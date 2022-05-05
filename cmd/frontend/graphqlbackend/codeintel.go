@@ -104,7 +104,7 @@ type LSIFUploadResolver interface {
 	AssociatedIndex(ctx context.Context) (LSIFIndexResolver, error)
 	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
 	RetentionPolicyOverview(ctx context.Context, args *LSIFUploadRetentionPolicyMatchesArgs) (CodeIntelligenceRetentionPolicyMatchesConnectionResolver, error)
-	DocumentPaths(ctx context.Context, args *struct{ Pattern string }) (LSIFUploadDocumentsConnectionResolver, error)
+	DocumentPaths(ctx context.Context, args *LSIFUploadDocumentPathsQueryArgs) (LSIFUploadDocumentPathsConnectionResolver, error)
 }
 
 type LSIFUploadConnectionResolver interface {
@@ -113,7 +113,11 @@ type LSIFUploadConnectionResolver interface {
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
-type LSIFUploadDocumentsConnectionResolver interface {
+type LSIFUploadDocumentPathsQueryArgs struct {
+	Pattern string
+}
+
+type LSIFUploadDocumentPathsConnectionResolver interface {
 	Nodes(ctx context.Context) ([]string, error)
 	TotalCount(ctx context.Context) (*int32, error)
 }

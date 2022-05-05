@@ -181,8 +181,8 @@ func (r *resolver) CommitGraph(ctx context.Context, repositoryID int) (gql.CodeI
 	return NewCommitGraphResolver(stale, updatedAt), nil
 }
 
-func (r *resolver) GetUploadDocumentsForPath(ctx context.Context, uploadID int, pathPrefix string) ([]string, int, error) {
-	return r.lsifStore.Documents(ctx, uploadID, pathPrefix)
+func (r *resolver) GetUploadDocumentsForPath(ctx context.Context, uploadID int, pathPattern string) ([]string, int, error) {
+	return r.lsifStore.DocumentPaths(ctx, uploadID, pathPattern)
 }
 
 func (r *resolver) QueueAutoIndexJobsForRepo(ctx context.Context, repositoryID int, rev, configuration string) ([]store.Index, error) {

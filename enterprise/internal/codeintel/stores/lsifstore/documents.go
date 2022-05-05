@@ -10,13 +10,13 @@ import (
 
 const documentsLimit = 100
 
-func (s *Store) Documents(ctx context.Context, bundleID int, path string) ([]string, int, error) {
-	totalCount, _, err := basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(documentsCountQuery, bundleID, path)))
+func (s *Store) DocumentPaths(ctx context.Context, bundleID int, pathPattern string) ([]string, int, error) {
+	totalCount, _, err := basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(documentsCountQuery, bundleID, pathPattern)))
 	if err != nil {
 		return nil, 0, err
 	}
 
-	documents, err := basestore.ScanStrings(s.Store.Query(ctx, sqlf.Sprintf(documentsQuery, bundleID, path, documentsLimit)))
+	documents, err := basestore.ScanStrings(s.Store.Query(ctx, sqlf.Sprintf(documentsQuery, bundleID, pathPattern, documentsLimit)))
 	if err != nil {
 		return nil, 0, err
 	}

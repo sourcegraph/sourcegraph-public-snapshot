@@ -1301,7 +1301,7 @@ type LSIFUpload implements Node {
     The list of documents contained in this processed upload, matching the Postgres
     pattern. Pattern type is subject to change.
     """
-    documentPaths(pattern: String!): LSIFUploadDocumentsConnection!
+    documentPaths(pattern: String!): LSIFUploadDocumentPathsConnection!
 }
 
 """
@@ -1327,10 +1327,9 @@ type LSIFUploadConnection {
 """
 A list of document paths in an LSIF upload.
 """
-type LSIFUploadDocumentsConnection {
+type LSIFUploadDocumentPathsConnection {
     """
-    The first 100 document paths. Pagination to be added
-    at a later date.
+    The first 100 document paths. Pagination to be added at a later date.
     """
     nodes: [String!]!
 
