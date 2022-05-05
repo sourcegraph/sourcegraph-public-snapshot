@@ -120,9 +120,11 @@ GROUP BY batch_changes_range.range, created_from_raw;
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
 	for rows.Next() {
-		var count int32
-		var changesetRange string
-		var createdFromRaw bool
+		var (
+			count          int32
+			changesetRange string
+			createdFromRaw bool
+		)
 		if err = rows.Scan(&count, &changesetRange, &createdFromRaw); err != nil {
 			return nil, err
 		}
