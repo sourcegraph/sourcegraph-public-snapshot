@@ -29,6 +29,8 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<
 > = ({ specID, toBeArchived, batchChange, viewerCanAdminister, history, telemetryService }) => {
     const batchChangeID = batchChange?.id
 
+    // `BatchChangePreviewContext` is responsible for managing the overrideable
+    // publication states for preview changesets on the clientside.
     const { publicationStates } = useContext(BatchChangePreviewContext)
     const { selected } = useContext(MultiSelectContext)
 
