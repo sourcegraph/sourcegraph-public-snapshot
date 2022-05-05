@@ -15,7 +15,7 @@ ENV GOARCH amd64
 ENV GOOS linux
 ENV CGO_ENABLED 1
 
-RUN apk add --no-cache go gcc g++
+RUN apk add --no-cache gcc g++
 
 COPY . /repo
 
