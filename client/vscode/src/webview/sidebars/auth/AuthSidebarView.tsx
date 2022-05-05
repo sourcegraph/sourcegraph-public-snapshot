@@ -129,7 +129,7 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
                 Sign in by entering an access token created through your user settings on {hostname}.
             </p>
             <p className={classNames(styles.ctaParagraph)}>
-                See our {/* eslint-disable-next-line react/forbid-elements */}
+                See our {/* eslint-disable-next-line react/forbid-elements */}{' '}
                 <a
                     href={`https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token?${SIDEBAR_UTM_PARAMS}`}
                     onClick={() => platformContext.telemetryService.log('VSCESidebarCreateToken')}
