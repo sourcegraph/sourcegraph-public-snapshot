@@ -4,7 +4,8 @@ import classNames from 'classnames'
 import { noop } from 'lodash'
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 
-import { Link,
+import {
+    Link,
     Menu,
     MenuButton,
     MenuDivider,
