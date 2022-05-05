@@ -287,7 +287,7 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 	}
 
 	addJob(&searchrepos.ComputeExcludedReposJob{
-		Options: repoOptions,
+		RepoOpts: repoOptions,
 	})
 
 	job := NewParallelJob(allJobs...)

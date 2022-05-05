@@ -260,7 +260,7 @@ func TestPrettyJSON(t *testing.T) {
     },
     {
       "ComputeExcludedReposJob": {
-        "Options": {
+        "RepoOpts": {
           "RepoFilters": [
             "foo"
           ],
