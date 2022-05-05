@@ -107,7 +107,7 @@ FROM (
 		batch_specs.created_from_raw
 	FROM batch_changes
 	LEFT JOIN batch_specs AS batch_specs ON batch_changes.batch_spec_id = batch_specs.id
-	LEFT JOIN changesets ON changesets.owned_by_batch_change_id = batch_changes.id
+	LEFT JOIN changesets ON changesets.batch_change_ids ? batch_changes.id::TEXT
 	GROUP BY batch_changes.id, batch_specs.created_from_raw
 ) AS batch_changes_range
 GROUP BY batch_changes_range.range, created_from_raw;
