@@ -1734,9 +1734,6 @@ type Repository struct {
 	Visibility Visibility `json:",omitempty"`
 }
 
-// GetRepositoryMock is set by tests to mock (*Client).GetRepository.
-var GetRepositoryMock func(ctx context.Context, owner, name string) (*Repository, error)
-
 type restRepositoryPermissions struct {
 	Admin bool `json:"admin"`
 	Push  bool `json:"push"`
