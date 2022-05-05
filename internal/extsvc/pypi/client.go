@@ -277,7 +277,7 @@ func (c *Client) Download(ctx context.Context, url string) ([]byte, error) {
 		return nil, err
 	}
 	if d := time.Since(startWait); d > rateLimitingWaitThreshold {
-		log15.Warn("client self-enforced API rate limit: request delayed longer than expected due to rate limit", "delay", d)
+		log15.Warn("PyPI client self-enforced API rate limit: request delayed longer than expected due to rate limit", "delay", d)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
@@ -424,7 +424,7 @@ func (c *Client) get(ctx context.Context, project string) (respBody []byte, err 
 		}
 
 		if d := time.Since(startWait); d > rateLimitingWaitThreshold {
-			log15.Warn("client self-enforced API rate limit: request delayed longer than expected due to rate limit", "delay", d)
+			log15.Warn("PyPI client self-enforced API rate limit: request delayed longer than expected due to rate limit", "delay", d)
 		}
 
 		reqURL, err = url.Parse(baseURL)

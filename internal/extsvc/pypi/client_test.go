@@ -284,7 +284,7 @@ func TestFindVersion(t *testing.T) {
 	}
 
 	tc := []struct {
-		name        string
+		name    string
 		files   []File
 		version string
 		want    File
