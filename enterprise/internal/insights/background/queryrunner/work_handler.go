@@ -131,6 +131,10 @@ func (r *workHandler) generateComputeRecordingsStream(ctx context.Context, job *
 	if err != nil {
 		return nil, err
 	}
+	if len(streamResults.Errors) > 0 {
+		log15.Error("compute streaming errors", "errors", streamResults.Errors)
+	}
+
 	checker := authz.DefaultSubRepoPermsChecker
 	var recordings []store.RecordSeriesPointArgs
 

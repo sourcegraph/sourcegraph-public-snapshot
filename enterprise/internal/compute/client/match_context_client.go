@@ -47,6 +47,8 @@ func (rr ComputeMatchContextStreamDecoder) ReadAll(r io.Reader) error {
 			}
 			rr.OnResult(d)
 		} else if bytes.Equal(event, []byte("alert")) {
+			// This decoder can handle alerts, but at the moment the only alert that is returned by
+			// the compute stream is if a query times out after 60 seconds.
 			if rr.OnAlert == nil {
 				continue
 			}
