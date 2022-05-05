@@ -133,7 +133,7 @@ func (s *Store) GetExternal(ctx context.Context, secret ExternalSecret) (string,
 		Name: fmt.Sprintf("projects/%s/secrets/%s/versions/latest", secret.Project, secret.Name),
 	})
 	if err != nil {
-		return "", errors.Wrapf(err, "failed to access secret %s from %s", secret.Name, secret.Project)
+		return "", errors.Wrapf(err, "failed to access secret %q from %q", secret.Name, secret.Project)
 	}
 
 	// cache value, but don't save - TBD if we want to persist these secrets

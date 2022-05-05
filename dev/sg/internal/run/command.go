@@ -134,13 +134,16 @@ func getSecrets(ctx context.Context, cmd Command) (map[string]string, error) {
 	if err != nil {
 		return nil, errors.Errorf("failed to create secretmanager client: %v", err)
 	}
+
+	var errs error
 	for envName, secret := range cmd.Secrets {
 		secretsEnv[envName], err = secretsStore.GetExternal(ctx, secret)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to access secret %s for command %q", secret.Name, cmd.Name)
+			errs = errors.Append(errs,
+				errors.Wrapf(err, "failed to access secret %q for command %q", envName, cmd.Name))
 		}
 	}
-	return secretsEnv, nil
+	return secretsEnv, errs
 }
 
 func startCmd(ctx context.Context, dir string, cmd Command, parentEnv map[string]string) (*startedCmd, error) {
@@ -157,7 +160,8 @@ func startCmd(ctx context.Context, dir string, cmd Command, parentEnv map[string
 
 	secretsEnv, err := getSecrets(ctx, cmd)
 	if err != nil {
-		return nil, errors.Wrapf(err, "cannot fetch secrets")
+		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "[%s] %s %s",
+			cmd.Name, output.EmojiFailure, err.Error()))
 	}
 
 	sc.Cmd.Env = makeEnv(parentEnv, secretsEnv, cmd.Env)
