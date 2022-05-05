@@ -6,26 +6,26 @@ USER root
 COPY cmd/symbols/ctags-install-alpine.sh /ctags-install-alpine.sh
 RUN /ctags-install-alpine.sh
 
-FROM sourcegraph/alpine-3.14:142406_2022-04-14_8836ac3499f4@sha256:2a2d1cbaec78882661fe1aa5b0a4af0c23a37be2ea9ff8aadc2da5b80852c233 AS build
+FROM golang:1.18.1-alpine AS symbols-build
 # hadolint ignore=DL3002
 USER root
-
-ARG VERSION="unknown"
-ENV VERSION $VERSION
-
-ARG PKG
-ENV PKG=$PKG
 
 ENV GO111MODULE on
 ENV GOARCH amd64
 ENV GOOS linux
 ENV CGO_ENABLED 1
 
-RUN apk add go gcc g++
+RUN apk add --no-cache gcc g++
 
 COPY . /repo
 
 WORKDIR /repo
+
+ARG VERSION="unknown"
+ENV VERSION $VERSION
+
+ARG PKG
+ENV PKG=$PKG
 
 RUN \
   --mount=type=cache,target=/root/.cache/go-build \
@@ -61,7 +61,7 @@ RUN apk add --no-cache bind-tools ca-certificates mailcap tini jansson libstdc++
 
 COPY --from=ctags /usr/local/bin/universal-ctags /usr/local/bin/universal-ctags
 
-COPY --from=build /symbols /usr/local/bin/symbols
+COPY --from=symbols-build /symbols /usr/local/bin/symbols
 
 # symbols is cgo, ensure we have the requisite dynamic libraries
 RUN env SANITY_CHECK=true /usr/local/bin/symbols
@@ -69,4 +69,4 @@ RUN env SANITY_CHECK=true /usr/local/bin/symbols
 ENV CACHE_DIR=/mnt/cache/symbols
 RUN mkdir -p ${CACHE_DIR}
 EXPOSE 3184
-ENTRYPOINT /sbin/tini -- /usr/local/bin/symbols
+ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/symbols"]
