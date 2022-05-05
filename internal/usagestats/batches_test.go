@@ -337,8 +337,16 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 			{Source: "executor", Range: "0-9 changesets", BatchChangesCount: 1},
 		},
 		BatchChangeStatsBySource: []*types.BatchChangeStatsBySource{
-			{Source: "local", PublishedChangesetsCount: 6, BatchChangesCount: 2},
-			{Source: "executor", PublishedChangesetsCount: 2, BatchChangesCount: 1},
+			{
+				Source:                   "local",
+				PublishedChangesetsCount: 8,
+				BatchChangesCount:        2,
+			},
+			{
+				Source:                   "executor",
+				PublishedChangesetsCount: 2,
+				BatchChangesCount:        1,
+			},
 		},
 		MonthlyBatchChangesExecutorUsage: []*types.MonthlyBatchChangesExecutorUsage{
 			{Month: fmt.Sprintf("%d-%02d-01T00:00:00Z", pastYear2, pastMonth2), Count: 1, Minutes: 0},
@@ -346,12 +354,36 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 			{Month: fmt.Sprintf("%d-%02d-01T00:00:00Z", currentYear, currentMonth), Count: 1, Minutes: 30},
 		},
 		WeeklyBulkOperationStats: []*types.WeeklyBulkOperationStats{
-			{Week: "2022-03-21T00:00:00Z", Count: 1, BulkOperation: "reenqueue"},
-			{Week: "2022-03-21T00:00:00Z", Count: 1, BulkOperation: "merge"},
-			{Week: "2022-03-21T00:00:00Z", Count: 2, BulkOperation: "commentatore"},
-			{Week: "2022-03-21T00:00:00Z", Count: 2, BulkOperation: "publish"},
-			{Week: "2022-03-21T00:00:00Z", Count: 1, BulkOperation: "close"},
-			{Week: "2022-03-21T00:00:00Z", Count: 1, BulkOperation: "detach"},
+			{
+				Week:          "2022-03-21T00:00:00Z",
+				Count:         1,
+				BulkOperation: "close",
+			},
+			{
+				Week:          "2022-03-21T00:00:00Z",
+				Count:         2,
+				BulkOperation: "commentatore",
+			},
+			{
+				Week:          "2022-03-21T00:00:00Z",
+				Count:         1,
+				BulkOperation: "detach",
+			},
+			{
+				Week:          "2022-03-21T00:00:00Z",
+				Count:         1,
+				BulkOperation: "merge",
+			},
+			{
+				Week:          "2022-03-21T00:00:00Z",
+				Count:         2,
+				BulkOperation: "publish",
+			},
+			{
+				Week:          "2022-03-21T00:00:00Z",
+				Count:         1,
+				BulkOperation: "reenqueue",
+			},
 		},
 	}
 	if diff := cmp.Diff(want, have); diff != "" {
