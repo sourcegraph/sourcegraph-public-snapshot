@@ -9,6 +9,7 @@ import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.sourcegraph.project.RepoInfo;
+import com.sourcegraph.util.ConfigUtil;
 import com.sourcegraph.util.SourcegraphUtil;
 
 import java.net.URLEncoder;
@@ -38,7 +39,7 @@ public abstract class FileAction extends AnAction {
         SelectionModel sel = editor.getSelectionModel();
 
         // Get repo information.
-        RepoInfo repoInfo = SourcegraphUtil.repoInfo(currentFile.getPath(), project);
+        RepoInfo repoInfo = SourcegraphUtil.getRepoInfo(currentFile.getPath(), project);
         if (Objects.equals(repoInfo.remoteUrl, "")) {
             return;
         }
@@ -52,7 +53,7 @@ public abstract class FileAction extends AnAction {
         VisualPosition selectionEndPosition = sel.getSelectionEndPosition();
         LogicalPosition start = selectionStartPosition != null ? editor.visualToLogicalPosition(selectionStartPosition) : null;
         LogicalPosition end = selectionEndPosition != null ? editor.visualToLogicalPosition(selectionEndPosition) : null;
-        uri = SourcegraphUtil.sourcegraphURL(project) + "-/editor"
+        uri = ConfigUtil.getSourcegraphUrl(project) + "-/editor"
             + "?remote_url=" + URLEncoder.encode(repoInfo.remoteUrl, StandardCharsets.UTF_8)
             + "&branch=" + URLEncoder.encode(repoInfo.branchName, StandardCharsets.UTF_8)
             + "&file=" + URLEncoder.encode(repoInfo.relativePath, StandardCharsets.UTF_8)

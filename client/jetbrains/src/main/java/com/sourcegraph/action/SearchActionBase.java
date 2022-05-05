@@ -12,6 +12,7 @@ import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.sourcegraph.project.RepoInfo;
+import com.sourcegraph.util.ConfigUtil;
 import com.sourcegraph.util.SourcegraphUtil;
 import org.jetbrains.annotations.Nullable;
 
@@ -42,7 +43,7 @@ public abstract class SearchActionBase extends AnAction {
         SelectionModel sel = editor.getSelectionModel();
 
         // Get repo information.
-        RepoInfo repoInfo = SourcegraphUtil.repoInfo(currentFile.getPath(), project);
+        RepoInfo repoInfo = SourcegraphUtil.getRepoInfo(currentFile.getPath(), project);
 
         String q = sel.getSelectedText();
         if (q == null || q.equals("")) {
@@ -54,12 +55,12 @@ public abstract class SearchActionBase extends AnAction {
         String productName = ApplicationInfo.getInstance().getVersionName();
         String productVersion = ApplicationInfo.getInstance().getFullVersion();
 
-        uri = SourcegraphUtil.sourcegraphURL(project)+"-/editor"
-                + "?editor=" + URLEncoder.encode("JetBrains", StandardCharsets.UTF_8)
-                + "&version=" + URLEncoder.encode(SourcegraphUtil.VERSION, StandardCharsets.UTF_8)
-                + "&utm_product_name=" + URLEncoder.encode(productName, StandardCharsets.UTF_8)
-                + "&utm_product_version=" + URLEncoder.encode(productVersion, StandardCharsets.UTF_8)
-                + "&search=" + URLEncoder.encode(q, StandardCharsets.UTF_8);
+        uri = ConfigUtil.getSourcegraphUrl(project) + "-/editor"
+            + "?editor=" + URLEncoder.encode("JetBrains", StandardCharsets.UTF_8)
+            + "&version=" + URLEncoder.encode(SourcegraphUtil.VERSION, StandardCharsets.UTF_8)
+            + "&utm_product_name=" + URLEncoder.encode(productName, StandardCharsets.UTF_8)
+            + "&utm_product_version=" + URLEncoder.encode(productVersion, StandardCharsets.UTF_8)
+            + "&search=" + URLEncoder.encode(q, StandardCharsets.UTF_8);
 
         if (mode.equals("search.repository")) {
             uri += "&search_remote_url=" + URLEncoder.encode(repoInfo.remoteUrl, StandardCharsets.UTF_8)
