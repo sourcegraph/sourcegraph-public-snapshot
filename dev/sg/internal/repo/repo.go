@@ -26,9 +26,9 @@ func (s *State) GetDiff(paths string) (map[string][]DiffHunk, error) {
 		paths = "**/*"
 	}
 
-	target := "origin/main"
+	target := "origin/main..." // compare from common ancestor
 	if s.Branch == "main" {
-		target = "@^"
+		target = "@^" // previous commit
 	}
 
 	diffOutput, err := run.TrimResult(run.GitCmd("diff", target, "--", paths))
