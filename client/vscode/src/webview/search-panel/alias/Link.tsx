@@ -5,6 +5,7 @@ import * as H from 'history'
 import isAbsoluteUrl from 'is-absolute-url'
 
 import { useWildcardTheme } from '@sourcegraph/wildcard'
+// eslint-disable-next-line no-restricted-imports
 import styles from '@sourcegraph/wildcard/src/components/Link/AnchorLink/AnchorLink.module.scss'
 
 // This is based off the @sourcegraph/wildcard/Link component
@@ -40,6 +41,7 @@ export interface LinkProps
  * @see setLinkComponent
  */
 export let Link: React.FunctionComponent<React.PropsWithChildren<LinkProps>> = ({ to, children, ...props }) => (
+    // eslint-disable-next-line react/forbid-elements
     <a
         href={checkLink(to && typeof to !== 'string' ? H.createPath(to) : to)}
         id={to && typeof to !== 'string' ? H.createPath(to) : to}
@@ -83,6 +85,7 @@ export const AnchorLink: React.FunctionComponent<React.PropsWithChildren<AnchorL
 
         if (!Component) {
             return (
+                // eslint-disable-next-line react/forbid-elements
                 <a href={checkLink(to && typeof to !== 'string' ? H.createPath(to) : to)} {...rest} {...commonProps}>
                     {children}
                 </a>

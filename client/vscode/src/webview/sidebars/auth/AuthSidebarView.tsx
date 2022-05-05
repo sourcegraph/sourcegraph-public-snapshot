@@ -129,7 +129,7 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
                 Sign in by entering an access token created through your user settings on {hostname}.
             </p>
             <p className={classNames(styles.ctaParagraph)}>
-                See our{' '}
+                See our {/* eslint-disable-next-line react/forbid-elements */}
                 <a
                     href={`https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token?${SIDEBAR_UTM_PARAMS}`}
                     onClick={() => platformContext.telemetryService.log('VSCESidebarCreateToken')}
@@ -235,6 +235,7 @@ export const AuthSidebarCta: React.FunctionComponent<React.PropsWithChildren<Aut
             </p>
             <div className={classNames(styles.ctaParagraph)}>
                 <p className="mb-0">Learn more:</p>
+                {/* eslint-disable-next-line react/forbid-elements */}
                 <a
                     href={'https://sourcegraph.com/?' + SIDEBAR_UTM_PARAMS}
                     className="my-0"
@@ -243,6 +244,7 @@ export const AuthSidebarCta: React.FunctionComponent<React.PropsWithChildren<Aut
                     Sourcegraph.com
                 </a>
                 <br />
+                {/* eslint-disable-next-line react/forbid-elements */}
                 <a
                     href="https://marketplace.visualstudio.com/items?itemName=sourcegraph.sourcegraph"
                     className="my-0"

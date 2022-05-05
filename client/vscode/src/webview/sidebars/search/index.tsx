@@ -10,6 +10,7 @@ import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
+// eslint-disable-next-line no-restricted-imports
 import { AnchorLink, setLinkComponent, useObservable, WildcardThemeContext, Tooltip } from '@sourcegraph/wildcard'
 
 import { ExtensionCoreAPI } from '../../../contract'
