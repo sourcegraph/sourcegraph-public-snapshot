@@ -163,9 +163,9 @@ func lintLoggingLibraries() lint.Runner {
 		bannedImports = []string{
 			// No standard log library
 			`"log"`,
-			// No log15
+			// No log15 - we only catch import changes for now, checking for 'log15.' is
+			// too sensitive to just code moves.
 			`"github.com/inconshreveable/log15"`,
-			`log15.`,
 			// No zap - we re-rexport everything via lib/log
 			`"go.uber.org/zap"`,
 			`"go.uber.org/zap/zapcore"`,
