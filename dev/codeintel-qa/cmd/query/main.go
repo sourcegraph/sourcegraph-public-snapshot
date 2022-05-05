@@ -18,6 +18,7 @@ var (
 	indexDir                    string
 	numConcurrentRequests       int
 	checkQueryResult            bool
+	allowDirtyInstance          bool
 	queryReferencesOfReferences bool
 	verbose                     bool
 
@@ -29,6 +30,7 @@ func init() {
 	flag.StringVar(&indexDir, "index-dir", "./testdata/indexes", "The location of the testdata directory")
 	flag.IntVar(&numConcurrentRequests, "num-concurrent-requests", 5, "The maximum number of concurrent requests")
 	flag.BoolVar(&checkQueryResult, "check-query-result", true, "Whether to confirm query results are correct")
+	flag.BoolVar(&allowDirtyInstance, "allow-dirty-instance", false, "Allow additional uploads on the test instance")
 	flag.BoolVar(&queryReferencesOfReferences, "query-references-of-references", false, "Whether to perform reference operations on test case references")
 	flag.BoolVar(&verbose, "verbose", false, "Print every request")
 }
