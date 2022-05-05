@@ -71,10 +71,10 @@ func TestGenerateExceptionIssue(t *testing.T) {
 	}, {
 		name:             "reviewed, planned but protected",
 		payload:          protectedPayload,
-		result:           checkResult{Protected: true},
+		result:           checkResult{ProtectedBranch: true},
 		wantAssignees:    []string{"robert"},
 		wantLabels:       []string{"exception/review", "exception/test-plan", "exception/protected-branch", "bobheadxi/robert"},
-		wantBodyContains: []string{"'release' is protected"},
+		wantBodyContains: []string{"\"release\" is protected"},
 	},
 	}
 	for _, tt := range tests {
@@ -84,10 +84,10 @@ func TestGenerateExceptionIssue(t *testing.T) {
 			assert.Equal(t, tt.wantAssignees, got.GetAssignees())
 			assert.Equal(t, tt.wantLabels, got.GetLabels())
 			for _, content := range tt.wantBodyContains {
-				assert.Contains(t, *got.Body, content)
+				assert.Contains(t, *got.Body, content, "body does not contain expected strings")
 			}
 			for _, content := range tt.wantBodyExcludes {
-				assert.NotContains(t, *got.Body, content)
+				assert.NotContains(t, *got.Body, content, "body contains unexpected strings")
 			}
 		})
 	}

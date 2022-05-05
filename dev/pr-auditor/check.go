@@ -14,9 +14,9 @@ type checkResult struct {
 	Reviewed bool
 	// TestPlan is the content provided after the acceptance checklist checkbox.
 	TestPlan string
-	// Protected indicates that the base branch for this PR is protected and merges
-	// are considered to be exceptional and should always log a PR audit issue.
-	Protected bool
+	// ProtectedBranch indicates that the base branch for this PR is protected and merges
+	// are considered to be exceptional and should always be justified.
+	ProtectedBranch bool
 	// Error indicating any issue that might have occured during the check.
 	Error error
 }
@@ -77,10 +77,10 @@ func checkPR(ctx context.Context, ghc *github.Client, payload *EventPayload, opt
 	mergeAgainstProtected := isProtectedBranch(payload, opts.ProtectedBranch)
 
 	return checkResult{
-		Reviewed:  reviewed,
-		TestPlan:  testPlan,
-		Protected: mergeAgainstProtected,
-		Error:     err,
+		Reviewed:        reviewed,
+		TestPlan:        testPlan,
+		ProtectedBranch: mergeAgainstProtected,
+		Error:           err,
 	}
 }
 

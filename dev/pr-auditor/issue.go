@@ -30,7 +30,7 @@ func generateExceptionIssue(payload *EventPayload, result *checkResult) *github.
 	if !result.HasTestPlan() {
 		exceptionLabels = append(exceptionLabels, "exception/test-plan")
 	}
-	if result.Protected {
+	if result.ProtectedBranch {
 		exceptionLabels = append(exceptionLabels, "exception/protected-branch")
 	}
 
@@ -48,8 +48,8 @@ func generateExceptionIssue(payload *EventPayload, result *checkResult) *github.
 		issueBody += fmt.Sprintf("\n\nLearn more about test plans in our [testing guidelines](%s).", testPlanDocs)
 	}
 
-	if result.Protected {
-		issueBody += fmt.Sprintf("\n\The base branch %q is protected and should not have direct pull requests to it.", payload.PullRequest.Base.Ref)
+	if result.ProtectedBranch {
+		issueBody += fmt.Sprintf("\n\nThe base branch %q is protected and should not have direct pull requests to it.", payload.PullRequest.Base.Ref)
 	}
 
 	user := payload.PullRequest.MergedBy.Login

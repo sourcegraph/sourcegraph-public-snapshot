@@ -33,9 +33,9 @@ func TestCheckTestPlan(t *testing.T) {
 			baseBranch:      "release",
 			protectedBranch: "release",
 			want: checkResult{
-				Reviewed:  false,
-				TestPlan:  "I have a plan!",
-				Protected: true,
+				Reviewed:        false,
+				TestPlan:        "I have a plan!",
+				ProtectedBranch: true,
 			},
 		},
 		{
@@ -44,9 +44,9 @@ func TestCheckTestPlan(t *testing.T) {
 			baseBranch:      "preprod",
 			protectedBranch: "release",
 			want: checkResult{
-				Reviewed:  false,
-				TestPlan:  "I have a plan!",
-				Protected: false,
+				Reviewed:        false,
+				TestPlan:        "I have a plan!",
+				ProtectedBranch: false,
 			},
 		},
 		{
@@ -131,7 +131,7 @@ And a little complicated; there's also the following reasons:
 				assert.True(t, strings.Contains(got.TestPlan, tt.want.TestPlan),
 					cmp.Diff(got.TestPlan, tt.want.TestPlan))
 			}
-			assert.Equal(t, tt.want.Protected, got.Protected)
+			assert.Equal(t, tt.want.ProtectedBranch, got.ProtectedBranch)
 			assert.Equal(t, tt.want.Reviewed, got.Reviewed)
 		})
 	}

@@ -111,7 +111,7 @@ func postMergeAudit(ctx context.Context, ghc *github.Client, payload *EventPaylo
 	})
 	log.Printf("checkPR: %+v\n", result)
 
-	if result.HasTestPlan() && result.Reviewed && !result.Protected {
+	if result.HasTestPlan() && result.Reviewed && !result.ProtectedBranch {
 		log.Println("Acceptance checked and PR reviewed, done")
 		// Don't create status that likely nobody will check anyway
 		return nil
@@ -181,7 +181,7 @@ func preMergeAudit(ctx context.Context, ghc *github.Client, payload *EventPayloa
 		prState = "failure"
 		stateDescription = "No test plan detected - please provide one!"
 		stateURL = "https://docs.sourcegraph.com/dev/background-information/testing_principles#test-plans"
-	case result.Protected:
+	case result.ProtectedBranch:
 
 	default:
 		prState = "success"
