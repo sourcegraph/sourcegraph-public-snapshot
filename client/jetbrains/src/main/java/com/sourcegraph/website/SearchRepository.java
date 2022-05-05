@@ -1,4 +1,4 @@
-package com.sourcegraph.action;
+package com.sourcegraph.website;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import org.jetbrains.annotations.NotNull;

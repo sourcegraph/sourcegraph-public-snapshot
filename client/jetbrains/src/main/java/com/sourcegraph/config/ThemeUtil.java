@@ -1,12 +1,15 @@
-package com.sourcegraph.ui;
+package com.sourcegraph.config;
 
 import com.google.gson.JsonObject;
 import com.intellij.util.ui.UIUtil;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
 
-public class ThemeService {
+public class ThemeUtil {
+    @NotNull
     public static JsonObject getCurrentThemeAsJson() {
         // Find the name of properties here: https://plugins.jetbrains.com/docs/intellij/themes-metadata.html#key-naming-scheme
         JsonObject theme = new JsonObject();
@@ -21,6 +24,7 @@ public class ThemeService {
         return theme;
     }
 
+    @NotNull
     public static String getPanelBackgroundColorHexString() {
         return getHexString(UIUtil.getPanelBackground());
     }
@@ -29,15 +33,20 @@ public class ThemeService {
         return getBrightnessFromColor(UIUtil.getPanelBackground()) < 128;
     }
 
-    private static String getHexString(Color color) {
-        return "#" + Integer.toHexString(color.getRGB()).substring(2);
+    @Nullable
+    private static String getHexString(@Nullable Color color) {
+        if (color != null) {
+            return "#" + Integer.toHexString(color.getRGB()).substring(2);
+        } else {
+            return null;
+        }
     }
 
     /**
      * Calculates the brightness between 0 (dark) and 255 (bright) from the given color.
      * Source: <a href="https://alienryderflex.com/hsp.html">https://alienryderflex.com/hsp.html</a>
      */
-    private static int getBrightnessFromColor(Color color) {
+    private static int getBrightnessFromColor(@NotNull Color color) {
         return (int) Math.sqrt(color.getRed() * color.getRed() * .299 + color.getGreen() * color.getGreen() * .587 + color.getBlue() * color.getBlue() * .114);
     }
 }

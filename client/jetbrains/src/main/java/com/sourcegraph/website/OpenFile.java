@@ -1,4 +1,4 @@
-package com.sourcegraph.action;
+package com.sourcegraph.website;
 
 import com.intellij.openapi.diagnostic.Logger;
 
@@ -11,11 +11,12 @@ public class OpenFile extends FileAction {
     @Override
     void handleFileUri(String uri) {
         Logger logger = Logger.getInstance(this.getClass());
+
         // Open the URL in the browser.
         try {
             Desktop.getDesktop().browse(URI.create(uri));
         } catch (IOException err) {
-            logger.debug("failed to open browser");
+            logger.debug("Failed to open browser.", err);
             err.printStackTrace();
         }
     }

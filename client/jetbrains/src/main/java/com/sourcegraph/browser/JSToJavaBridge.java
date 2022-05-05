@@ -1,4 +1,4 @@
-package com.sourcegraph.bridge;
+package com.sourcegraph.browser;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -38,8 +38,8 @@ public class JSToJavaBridge implements Disposable {
 
             @Override
             public void onLoadEnd(CefBrowser cefBrowser, CefFrame frame, int httpStatusCode) {
-                /* In case of a failure, Java returns two arguments, so must use an intermediate function.
-                (source: https://dploeger.github.io/intellij-api-doc/com/intellij/ui/jcef/JBCefJSQuery.html#:~:text=onFailureCallback%20%2D%20JS%20callback%20in%20format%3A%20function(error_code%2C%20error_message)%20%7B%7D) */
+                // In case of a failure, Java returns two arguments, so must use an intermediate function.
+                // (source: https://dploeger.github.io/intellij-api-doc/com/intellij/ui/jcef/JBCefJSQuery.html#:~:text=onFailureCallback%20%2D%20JS%20callback%20in%20format%3A%20function(error_code%2C%20error_message)%20%7B%7D)
                 cefBrowser.executeJavaScript(
                     "window.callJava = function(request) {" +
                         "    return new Promise((resolve, reject) => { " +

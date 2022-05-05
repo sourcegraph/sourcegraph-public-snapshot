@@ -1,27 +1,26 @@
-package com.sourcegraph.action;
+package com.sourcegraph.website;
 
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationInfo;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsDataKeys;
 import com.intellij.openapi.vcs.history.VcsFileRevision;
 import com.intellij.vcs.log.VcsLog;
 import com.intellij.vcs.log.VcsLogDataKeys;
+import com.sourcegraph.config.ConfigUtil;
+import com.sourcegraph.git.CommitViewUriBuilder;
+import com.sourcegraph.git.GitUtil;
+import com.sourcegraph.git.RepoInfo;
+import com.sourcegraph.git.RevisionContext;
+import org.jetbrains.annotations.NotNull;
 
-import java.awt.Desktop;
+import java.awt.*;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Optional;
-
-import com.sourcegraph.project.CommitViewUriBuilder;
-import com.sourcegraph.project.RepoInfo;
-import com.sourcegraph.project.RevisionContext;
-import com.sourcegraph.util.SourcegraphUtil;
-
-import org.jetbrains.annotations.NotNull;
-import com.intellij.openapi.diagnostic.Logger;
 
 /**
  * Jetbrains IDE action to open a selected revision in Sourcegraph.
@@ -69,15 +68,15 @@ public class OpenRevisionAction extends AnAction implements DumbAware {
         try {
             String productName = ApplicationInfo.getInstance().getVersionName();
             String productVersion = ApplicationInfo.getInstance().getFullVersion();
-            RepoInfo repoInfo = SourcegraphUtil.repoInfo(context.getProject().getProjectFilePath(), context.getProject());
+            RepoInfo repoInfo = GitUtil.getRepoInfo(context.getProject().getProjectFilePath(), context.getProject());
 
             CommitViewUriBuilder builder = new CommitViewUriBuilder();
-            URI uri = builder.build(SourcegraphUtil.sourcegraphURL(context.getProject()), context.getRevisionNumber(), repoInfo, productName, productVersion);
+            URI uri = builder.build(ConfigUtil.getSourcegraphUrl(context.getProject()), context.getRevisionNumber(), repoInfo, productName, productVersion);
 
             // Open the URL in the browser.
             Desktop.getDesktop().browse(uri);
         } catch (IOException err) {
-            logger.debug("failed to open browser");
+            logger.debug("Failed to open browser.", err);
             err.printStackTrace();
         }
     }
