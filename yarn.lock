@@ -2882,6 +2882,16 @@
     lighthouse "8.0.0"
     tree-kill "^1.2.1"
 
+"@manypkg/find-root@^1.1.0":
+  version "1.1.0"
+  resolved "https://registry.npmjs.org/@manypkg/find-root/-/find-root-1.1.0.tgz#a62d8ed1cd7e7d4c11d9d52a8397460b5d4ad29f"
+  integrity sha512-mki5uBvhHzO8kYYix/WRy2WX8S3B5wdVSc9D6KcU5lQNglP2yt58/VfLuAK49glRXChosY8ap2oJ1qgma3GUVA==
+  dependencies:
+    "@babel/runtime" "^7.5.5"
+    "@types/node" "^12.7.1"
+    find-up "^4.1.0"
+    fs-extra "^8.1.0"
+
 "@mdn/browser-compat-data@2.0.7":
   version "2.0.7"
   resolved "https://registry.npmjs.org/@mdn/browser-compat-data/-/browser-compat-data-2.0.7.tgz#72ec37b9c1e00ce0b4e0309d753be18e2da12ee3"
@@ -3976,6 +3986,15 @@
   dependencies:
     stylelint-config-prettier "^9.0.3"
     stylelint-config-standard-scss "^3.0.0"
+
+"@sourcegraph/stylelint-plugin-sourcegraph@^1.0.1":
+  version "1.0.1"
+  resolved "https://registry.npmjs.org/@sourcegraph/stylelint-plugin-sourcegraph/-/stylelint-plugin-sourcegraph-1.0.1.tgz#92c832979797e0b60e5925b3823055c83925fd1d"
+  integrity sha512-0koEJ80dWIo+pbOQWbZOpvR6ecR72uFRBFoUekqRicqjRHaDmJwYvIBynM8FddyUA3NCGukPkx0ITHuIfAtqzQ==
+  dependencies:
+    "@manypkg/find-root" "^1.1.0"
+    ignore "^5.1.8"
+    postcss-value-parser "^4.2.0"
 
 "@sourcegraph/tsconfig@^4.0.1":
   version "4.0.1"
@@ -5704,6 +5723,11 @@
   version "13.13.5"
   resolved "https://registry.npmjs.org/@types/node/-/node-13.13.5.tgz#96ec3b0afafd64a4ccea9107b75bf8489f0e5765"
   integrity sha512-3ySmiBYJPqgjiHA7oEaIo2Rzz0HrOZ7yrNO5HWyaE5q0lQ3BppDZ3N53Miz8bw2I7gh1/zir2MGVZBvpb1zq9g==
+
+"@types/node@^12.7.1":
+  version "12.20.50"
+  resolved "https://registry.npmjs.org/@types/node/-/node-12.20.50.tgz#14ba5198f1754ffd0472a2f84ab433b45ee0b65e"
+  integrity sha512-+9axpWx2b2JCVovr7Ilgt96uc6C1zBKOQMpGtRbWT9IoR/8ue32GGMfGA4woP8QyP2gBs6GQWEVM3tCybGCxDA==
 
 "@types/normalize-package-data@^2.4.0":
   version "2.4.0"
@@ -14901,7 +14925,7 @@ ignore@^4.0.3, ignore@^4.0.6:
   resolved "https://registry.npmjs.org/ignore/-/ignore-4.0.6.tgz#750e3db5862087b4737ebac8207ffd1ef27b25fc"
   integrity sha512-cyFDKrqc/YdcWFniJhzI42+AzS+gNwmUzOSFcRCQYwySuBBBy/KjuxWLZ/FHEH6Moq1NizMOBWyTcv8O4OZIMg==
 
-ignore@^5.1.4, ignore@^5.2.0:
+ignore@^5.1.4, ignore@^5.1.8, ignore@^5.2.0:
   version "5.2.0"
   resolved "https://registry.npmjs.org/ignore/-/ignore-5.2.0.tgz#6d3bac8fa7fe0d45d9f9be7bac2fc279577e345a"
   integrity sha512-CmxgYGiEPCLhfLnpPp1MoRmifwEIOgjcHXxOBjv7mY96c+eWScsOP9c112ZyLdWHi0FxHjI+4uVhKYp/gcdRmQ==
