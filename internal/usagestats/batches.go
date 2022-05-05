@@ -7,6 +7,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -116,7 +117,7 @@ GROUP BY batch_changes_range.range, created_from_raw;
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { err = basestore.CloseRows(rows, err) }()
 
 	for rows.Next() {
 		var count int32
@@ -244,7 +245,7 @@ ORDER BY batch_change_counts.creation_week ASC
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { err = basestore.CloseRows(rows, err) }()
 
 	for rows.Next() {
 		var cohort types.BatchChangesCohort
@@ -282,7 +283,7 @@ GROUP BY batch_specs.created_from_raw;
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { err = basestore.CloseRows(rows, err) }()
 
 	for rows.Next() {
 		var publishedChangesetsCount, batchChangeCount int32
@@ -324,7 +325,7 @@ GROUP BY date_trunc('month', batch_specs.created_at)::date;
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { err = basestore.CloseRows(rows, err) }()
 
 	for rows.Next() {
 		var month string
@@ -355,7 +356,7 @@ GROUP BY date_trunc('week', created_at)::date, job_type;
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { err = basestore.CloseRows(rows, err) }()
 
 	stats.BulkOperationsCount = make(map[string]int32)
 	for rows.Next() {
