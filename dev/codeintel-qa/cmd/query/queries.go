@@ -65,16 +65,13 @@ func makeTestFunc(name string, f testFunc, source Location, expectedLocations []
 				// us a superset of the expected output.
 
 				filteredLocations := locations[:0]
+			outer:
 				for _, location := range locations {
-					found := false
-					for _, l := range expectedLocations {
-						if l == location {
-							found = true
+					for _, expectedLocation := range expectedLocations {
+						if expectedLocation == location {
+							filteredLocations = append(filteredLocations, location)
+							continue outer
 						}
-					}
-
-					if found {
-						filteredLocations = append(filteredLocations, location)
 					}
 				}
 
