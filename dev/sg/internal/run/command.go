@@ -28,7 +28,7 @@ type Command struct {
 	// Preamble is a short and visible message, displayed when the command is launched.
 	Preamble string `yaml:"preamble"`
 
-	Secrets map[string]secrets.ExternalSecret `yaml:"secrets"`
+	ExternalSecrets map[string]secrets.ExternalSecret `yaml:"external_secrets"`
 
 	// ATTENTION: If you add a new field here, be sure to also handle that
 	// field in `Merge` (below).
@@ -64,8 +64,8 @@ func (c Command) Merge(other Command) Command {
 		merged.Env[k] = v
 	}
 
-	for k, v := range other.Secrets {
-		merged.Secrets[k] = v
+	for k, v := range other.ExternalSecrets {
+		merged.ExternalSecrets[k] = v
 	}
 
 	if !equal(merged.Watch, other.Watch) && len(other.Watch) != 0 {
@@ -126,7 +126,7 @@ func (sc *startedCmd) CapturedStderr() string {
 func getSecrets(ctx context.Context, cmd Command) (map[string]string, error) {
 	secretsEnv := map[string]string{}
 
-	if len(cmd.Secrets) == 0 {
+	if len(cmd.ExternalSecrets) == 0 {
 		return secretsEnv, nil
 	}
 
@@ -136,7 +136,7 @@ func getSecrets(ctx context.Context, cmd Command) (map[string]string, error) {
 	}
 
 	var errs error
-	for envName, secret := range cmd.Secrets {
+	for envName, secret := range cmd.ExternalSecrets {
 		secretsEnv[envName], err = secretsStore.GetExternal(ctx, secret)
 		if err != nil {
 			errs = errors.Append(errs,
