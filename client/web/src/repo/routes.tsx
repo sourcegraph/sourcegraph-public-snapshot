@@ -109,7 +109,7 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
 ]
 
 // eslint-disable-next-line unicorn/prevent-abbreviations
-export const RepoDocs: React.FunctionComponent<any> = ({
+export const RepoDocs: React.FunctionComponent<React.PropsWithChildren<any>> = ({
     useBreadcrumb,
     setBreadcrumb,
     settingsCascade,
@@ -146,7 +146,7 @@ export const RepoDocs: React.FunctionComponent<any> = ({
     </>
 )
 
-export const RepoContributors: React.FunctionComponent<any> = ({
+export const RepoContributors: React.FunctionComponent<React.PropsWithChildren<any>> = ({
     useBreadcrumb,
     setBreadcrumb,
     repo,
@@ -168,7 +168,7 @@ export const RepoContributors: React.FunctionComponent<any> = ({
     </>
 )
 
-export const RepoCommits: React.FunctionComponent<any> = ({
+export const RepoCommits: React.FunctionComponent<React.PropsWithChildren<any>> = ({
     resolvedRev: { commitID },
     repoHeaderContributionsLifecycleProps,
     ...context

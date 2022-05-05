@@ -13,7 +13,9 @@ interface HierarchicalLocationsViewButtonProps {
     onClick: (event: React.MouseEvent<HTMLElement>) => void
 }
 
-export const HierarchicalLocationsViewButton: React.FunctionComponent<HierarchicalLocationsViewButtonProps> = props => {
+export const HierarchicalLocationsViewButton: React.FunctionComponent<
+    React.PropsWithChildren<HierarchicalLocationsViewButtonProps>
+> = props => {
     const { groupKey, groupCount, isActive, onClick } = props
 
     return (

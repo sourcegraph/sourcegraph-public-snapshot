@@ -34,7 +34,7 @@ export interface DashboardsContentProps extends TelemetryProps {
     dashboards: InsightDashboard[]
 }
 
-export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> = props => {
+export const DashboardsContent: React.FunctionComponent<React.PropsWithChildren<DashboardsContentProps>> = props => {
     const { dashboardID, telemetryService, dashboards } = props
     const currentDashboard = dashboards.find(dashboard => dashboard.id === dashboardID)
 

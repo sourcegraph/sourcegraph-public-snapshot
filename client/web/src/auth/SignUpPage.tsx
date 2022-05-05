@@ -30,7 +30,7 @@ export interface SignUpPageProps extends ThemeProps, TelemetryProps, FeatureFlag
     >
 }
 
-export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({
+export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpPageProps>> = ({
     authenticatedUser,
     context,
     isLightTheme,

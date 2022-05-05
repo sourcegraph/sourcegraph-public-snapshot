@@ -86,7 +86,7 @@ export interface LayoutProps
     extensionsAreaHeaderActionButtons: readonly ExtensionsAreaHeaderActionButton[]
     siteAdminAreaRoutes: readonly SiteAdminAreaRoute[]
     siteAdminSideBarGroups: SiteAdminSideBarGroups
-    siteAdminOverviewComponents: readonly React.ComponentType[]
+    siteAdminOverviewComponents: readonly React.ComponentType<React.PropsWithChildren<unknown>>[]
     userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[]
     userAreaRoutes: readonly UserAreaRoute[]
     userSettingsSideBarItems: UserSettingsSidebarItems
@@ -116,7 +116,7 @@ export interface LayoutProps
     children?: never
 }
 
-export const Layout: React.FunctionComponent<LayoutProps> = props => {
+export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps>> = props => {
     const routeMatch = props.routes.find(({ path, exact }) => matchPath(props.location.pathname, { path, exact }))?.path
     const isSearchRelatedPage = (routeMatch === '/:repoRevAndRest+' || routeMatch?.startsWith('/search')) ?? false
     const minimalNavLinks = routeMatch === '/cncf'

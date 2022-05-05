@@ -25,7 +25,7 @@ interface RepositoryNodeProps {
     node: SiteAdminRepositoryFields
 }
 
-const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({ node }) => (
+const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<RepositoryNodeProps>> = ({ node }) => (
     <li
         className="repository-node list-group-item py-2"
         data-test-repository={node.name}
@@ -115,7 +115,11 @@ const FILTERS: FilteredConnectionFilter[] = [
 /**
  * A page displaying the repositories on this site.
  */
-export const SiteAdminRepositoriesPage: React.FunctionComponent<Props> = ({ history, location, telemetryService }) => {
+export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    history,
+    location,
+    telemetryService,
+}) => {
     useEffect(() => {
         telemetryService.logViewEvent('SiteAdminRepos')
     }, [telemetryService])

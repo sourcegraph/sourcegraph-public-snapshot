@@ -19,7 +19,10 @@ export interface PreviewFilterRowProps {
     location: H.Location
 }
 
-export const PreviewFilterRow: React.FunctionComponent<PreviewFilterRowProps> = ({ history, location }) => {
+export const PreviewFilterRow: React.FunctionComponent<React.PropsWithChildren<PreviewFilterRowProps>> = ({
+    history,
+    location,
+}) => {
     const searchElement = useRef<HTMLInputElement | null>(null)
 
     const { filters, setFilters } = useContext(BatchChangePreviewContext)

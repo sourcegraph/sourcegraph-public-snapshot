@@ -48,7 +48,7 @@ function getTemplateURL(template: Template): string {
 
 interface CodeInsightsTemplates extends TelemetryProps, React.HTMLAttributes<HTMLElement> {}
 
-export const CodeInsightsTemplates: React.FunctionComponent<CodeInsightsTemplates> = props => {
+export const CodeInsightsTemplates: React.FunctionComponent<React.PropsWithChildren<CodeInsightsTemplates>> = props => {
     const { telemetryService, ...otherProps } = props
     const tabChangePingName = useLogEventName('InsightsGetStartedTabClick')
     const features = useExperimentalFeatures()
@@ -100,7 +100,7 @@ interface TemplatesPanelProps extends TelemetryProps {
     templates: Template[]
 }
 
-const TemplatesPanel: React.FunctionComponent<TemplatesPanelProps> = props => {
+const TemplatesPanel: React.FunctionComponent<React.PropsWithChildren<TemplatesPanelProps>> = props => {
     const { templates, sectionTitle, telemetryService } = props
     const [allVisible, setAllVisible] = useState(false)
     const tabMoreClickPingName = useLogEventName('InsightsGetStartedTabMoreClick')
@@ -140,7 +140,7 @@ interface TemplateCardProps extends TelemetryProps {
     template: Template
 }
 
-const TemplateCard: React.FunctionComponent<TemplateCardProps> = props => {
+const TemplateCard: React.FunctionComponent<React.PropsWithChildren<TemplateCardProps>> = props => {
     const { template, telemetryService } = props
     const { mode } = useContext(CodeInsightsLandingPageContext)
 
@@ -194,7 +194,7 @@ interface QueryPanelProps extends TelemetryProps {
 const copyTooltip = 'Copy query'
 const copyCompletedTooltip = 'Copied!'
 
-const QueryPanel: React.FunctionComponent<QueryPanelProps> = props => {
+const QueryPanel: React.FunctionComponent<React.PropsWithChildren<QueryPanelProps>> = props => {
     const { query, telemetryService } = props
 
     const templateCopyClickEvenName = useLogEventName('InsightGetStartedTemplateCopyClick')

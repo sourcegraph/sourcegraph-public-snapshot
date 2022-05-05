@@ -27,7 +27,7 @@ const RERENDER_INTERVAL_MSEC = 7000
  * Displays a date's relative time ("... ago") and shows the full date on hover. Re-renders
  * periodically to ensure the relative time string is up-to-date.
  */
-export const Timestamp: React.FunctionComponent<Props> = ({
+export const Timestamp: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     date,
     noAbout = false,
     strict = false,

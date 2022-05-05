@@ -90,7 +90,9 @@ const DEFAULT_USER_COUNT = MIN_USER_COUNT
 /**
  * Displays a form for a product subscription.
  */
-const _ProductSubscriptionForm: React.FunctionComponent<Props & ReactStripeElements.InjectedStripeProps> = ({
+const _ProductSubscriptionForm: React.FunctionComponent<
+    React.PropsWithChildren<Props & ReactStripeElements.InjectedStripeProps>
+> = ({
     accountID,
     subscriptionID,
     onSubmit: parentOnSubmit,
@@ -276,6 +278,6 @@ const _ProductSubscriptionForm: React.FunctionComponent<Props & ReactStripeEleme
     )
 }
 
-export const ProductSubscriptionForm: React.FunctionComponent<Props> = props => (
+export const ProductSubscriptionForm: React.FunctionComponent<React.PropsWithChildren<Props>> = props => (
     <StripeWrapper<Props> component={_ProductSubscriptionForm} {...props} />
 )

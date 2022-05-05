@@ -29,7 +29,7 @@ interface Props {
     isLoadingCollaborators: boolean
 }
 
-export const InvitePane: React.FunctionComponent<Props> = ({
+export const InvitePane: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     user,
     className,
     invitableCollaborators,

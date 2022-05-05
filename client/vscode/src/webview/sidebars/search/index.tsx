@@ -10,6 +10,7 @@ import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
+// eslint-disable-next-line no-restricted-imports
 import { AnchorLink, setLinkComponent, useObservable, WildcardThemeContext, Tooltip } from '@sourcegraph/wildcard'
 
 import { ExtensionCoreAPI } from '../../../contract'
@@ -41,7 +42,7 @@ setLinkComponent(AnchorLink)
 
 const themes = adaptSourcegraphThemeToEditorTheme()
 
-const Main: React.FC = () => {
+const Main: React.FC<React.PropsWithChildren<unknown>> = () => {
     // Debt: make sure we only rerender on necessary changes
     const state = useObservable(useMemo(() => wrapRemoteObservable(extensionCoreAPI.observeState()), []))
 

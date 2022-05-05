@@ -9,7 +9,7 @@ export interface PreviewListHeaderProps {
     toggleSelectAll?: () => void
 }
 
-export const PreviewListHeader: React.FunctionComponent<PreviewListHeaderProps> = ({
+export const PreviewListHeader: React.FunctionComponent<React.PropsWithChildren<PreviewListHeaderProps>> = ({
     allSelected,
     toggleSelectAll,
 }) => (

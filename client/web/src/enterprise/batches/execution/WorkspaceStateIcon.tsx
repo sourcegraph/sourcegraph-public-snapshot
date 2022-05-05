@@ -16,7 +16,10 @@ export interface WorkspaceStateIconProps {
     cachedResultFound: boolean
 }
 
-export const WorkspaceStateIcon: React.FunctionComponent<WorkspaceStateIconProps> = ({ state, cachedResultFound }) => {
+export const WorkspaceStateIcon: React.FunctionComponent<React.PropsWithChildren<WorkspaceStateIconProps>> = ({
+    state,
+    cachedResultFound,
+}) => {
     switch (state) {
         case BatchSpecWorkspaceState.PENDING:
             return null

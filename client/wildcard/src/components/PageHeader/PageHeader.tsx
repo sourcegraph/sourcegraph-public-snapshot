@@ -39,7 +39,7 @@ interface Props {
     className?: string
 }
 
-export const PageHeader: React.FunctionComponent<Props> = ({
+export const PageHeader: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     annotation,
     path,
     byline,

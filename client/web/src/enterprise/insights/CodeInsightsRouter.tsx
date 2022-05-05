@@ -29,7 +29,7 @@ export interface CodeInsightsRouterProps extends TelemetryProps {
     isSourcegraphDotCom: boolean
 }
 
-export const CodeInsightsRouter: React.FunctionComponent<CodeInsightsRouterProps> = props => {
+export const CodeInsightsRouter: React.FunctionComponent<React.PropsWithChildren<CodeInsightsRouterProps>> = props => {
     const api = useApi()
 
     if (!api) {

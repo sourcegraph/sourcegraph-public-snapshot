@@ -19,7 +19,7 @@ export interface MergeChangesetsModalProps {
     mergeChangesets?: typeof _mergeChangesets
 }
 
-export const MergeChangesetsModal: React.FunctionComponent<MergeChangesetsModalProps> = ({
+export const MergeChangesetsModal: React.FunctionComponent<React.PropsWithChildren<MergeChangesetsModalProps>> = ({
     onCancel,
     afterCreate,
     batchChangeID,

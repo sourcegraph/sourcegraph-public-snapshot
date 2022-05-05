@@ -18,7 +18,7 @@ interface DiffBoundaryContentProps extends DiffBoundaryProps {
     colspan?: number
 }
 
-const DiffBoundaryContent: React.FunctionComponent<DiffBoundaryContentProps> = props => (
+const DiffBoundaryContent: React.FunctionComponent<React.PropsWithChildren<DiffBoundaryContentProps>> = props => (
     <>
         {props.lineNumbers && <td className={styles.num} data-diff-boundary-num={true} colSpan={props.colspan} />}
         <td
@@ -36,7 +36,7 @@ const DiffBoundaryContent: React.FunctionComponent<DiffBoundaryContentProps> = p
     </>
 )
 
-export const DiffBoundary: React.FunctionComponent<DiffBoundaryProps> = props => (
+export const DiffBoundary: React.FunctionComponent<React.PropsWithChildren<DiffBoundaryProps>> = props => (
     <tr>
         {props.diffMode === 'split' ? (
             <>

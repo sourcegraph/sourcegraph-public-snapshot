@@ -89,7 +89,7 @@ function setSelectedLocationTab(location: H.Location, history: H.History, select
 
 const LOADING = 'loading' as const
 
-export const NotebooksListPage: React.FunctionComponent<NotebooksListPageProps> = ({
+export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<NotebooksListPageProps>> = ({
     authenticatedUser,
     telemetryService,
     fetchNotebooks = _fetchNotebooks,
@@ -360,11 +360,9 @@ interface UnauthenticatedMyNotebooksSectionProps extends TelemetryProps {
     onSelectExploreNotebooks: () => void
 }
 
-const UnauthenticatedNotebooksSection: React.FunctionComponent<UnauthenticatedMyNotebooksSectionProps> = ({
-    telemetryService,
-    cta,
-    onSelectExploreNotebooks,
-}) => {
+const UnauthenticatedNotebooksSection: React.FunctionComponent<
+    React.PropsWithChildren<UnauthenticatedMyNotebooksSectionProps>
+> = ({ telemetryService, cta, onSelectExploreNotebooks }) => {
     const onClick = (): void => {
         telemetryService.log('SearchNotebooksSignUpToCreateNotebooksClick')
     }
@@ -393,7 +391,9 @@ const UnauthenticatedNotebooksSection: React.FunctionComponent<UnauthenticatedMy
 export const NOTEPAD_ENABLED_EVENT = 'SearchNotepadEnabled'
 const NOTEPAD_DISABLED_EVENT = 'SearchNotepadDisabled'
 
-const ToggleNotepadButton: React.FunctionComponent<TelemetryProps> = ({ telemetryService }) => {
+const ToggleNotepadButton: React.FunctionComponent<React.PropsWithChildren<TelemetryProps>> = ({
+    telemetryService,
+}) => {
     const [notepadEnabled, setNotepadEnabled] = useTemporarySetting('search.notepad.enabled')
     const [ctaSeen, setCTASeen] = useTemporarySetting('search.notepad.ctaSeen')
     const [showCTA, setShowCTA] = useState(false)

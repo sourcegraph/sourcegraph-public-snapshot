@@ -9,7 +9,9 @@ import {
 
 import styles from './WebCommandListPopoverButton.module.scss'
 
-export const WebCommandListPopoverButton: React.FunctionComponent<CommandListPopoverButtonProps> = props => (
+export const WebCommandListPopoverButton: React.FunctionComponent<
+    React.PropsWithChildren<CommandListPopoverButtonProps>
+> = props => (
     <CommandListPopoverButton
         {...props}
         variant="link"

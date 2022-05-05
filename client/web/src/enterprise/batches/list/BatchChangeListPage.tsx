@@ -62,7 +62,7 @@ const BATCH_CHANGES_PER_PAGE_COUNT = 15
 /**
  * A list of all batch changes on the Sourcegraph instance.
  */
-export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPageProps> = ({
+export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildren<BatchChangeListPageProps>> = ({
     canCreate,
     namespaceID,
     headingElement,
@@ -214,11 +214,9 @@ export interface NamespaceBatchChangeListPageProps extends Omit<BatchChangeListP
 /**
  * A list of all batch changes in a namespace.
  */
-export const NamespaceBatchChangeListPage: React.FunctionComponent<NamespaceBatchChangeListPageProps> = ({
-    authenticatedUser,
-    namespaceID,
-    ...props
-}) => {
+export const NamespaceBatchChangeListPage: React.FunctionComponent<
+    React.PropsWithChildren<NamespaceBatchChangeListPageProps>
+> = ({ authenticatedUser, namespaceID, ...props }) => {
     // A user should only see the button to create a batch change in a namespace if it is
     // their namespace (user namespace), or they belong to it (organization namespace)
     const canCreateInThisNamespace = useMemo(
@@ -233,10 +231,9 @@ export const NamespaceBatchChangeListPage: React.FunctionComponent<NamespaceBatc
 
 interface BatchChangeListEmptyElementProps extends Pick<BatchChangeListPageProps, 'location' | 'canCreate'> {}
 
-const BatchChangeListEmptyElement: React.FunctionComponent<BatchChangeListEmptyElementProps> = ({
-    canCreate,
-    location,
-}) => (
+const BatchChangeListEmptyElement: React.FunctionComponent<
+    React.PropsWithChildren<BatchChangeListEmptyElementProps>
+> = ({ canCreate, location }) => (
     <div className="w-100 py-5 text-center">
         <p>
             <strong>No batch changes have been created.</strong>
@@ -245,10 +242,12 @@ const BatchChangeListEmptyElement: React.FunctionComponent<BatchChangeListEmptyE
     </div>
 )
 
-const BatchChangeListTabHeader: React.FunctionComponent<{
-    selectedTab: SelectedTab
-    setSelectedTab: (selectedTab: SelectedTab) => void
-}> = ({ selectedTab, setSelectedTab }) => {
+const BatchChangeListTabHeader: React.FunctionComponent<
+    React.PropsWithChildren<{
+        selectedTab: SelectedTab
+        setSelectedTab: (selectedTab: SelectedTab) => void
+    }>
+> = ({ selectedTab, setSelectedTab }) => {
     const onSelectBatchChanges = useCallback<React.MouseEventHandler>(
         event => {
             event.preventDefault()
@@ -296,7 +295,7 @@ const BatchChangeListTabHeader: React.FunctionComponent<{
     )
 }
 
-const GettingStartedFooter: React.FunctionComponent<{}> = () => (
+const GettingStartedFooter: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
     <div className="row">
         <div className="col-12 col-sm-8 offset-sm-2 col-md-6 offset-md-3">
             <Card>

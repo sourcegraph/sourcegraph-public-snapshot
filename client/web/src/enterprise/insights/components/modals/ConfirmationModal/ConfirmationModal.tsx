@@ -13,7 +13,9 @@ export interface ConfirmationModalProps {
     confirmText?: string
 }
 
-export const ConfirmationModal: React.FunctionComponent<React.PropsWithChildren<ConfirmationModalProps>> = props => {
+export const ConfirmationModal: React.FunctionComponent<
+    React.PropsWithChildren<React.PropsWithChildren<ConfirmationModalProps>>
+> = props => {
     const {
         showModal,
         onCancel,

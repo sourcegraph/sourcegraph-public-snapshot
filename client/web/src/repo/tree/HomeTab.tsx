@@ -51,7 +51,7 @@ export const treePageRepositoryFragment = gql`
     }
 `
 
-export const HomeTab: React.FunctionComponent<Props> = ({
+export const HomeTab: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     repo,
     commitID,
     revision,
@@ -165,7 +165,9 @@ export const HomeTab: React.FunctionComponent<Props> = ({
         </div>
     )
 
-    const TotalCountSummary: React.FunctionComponent<{ totalCount: number }> = ({ totalCount }) => (
+    const TotalCountSummary: React.FunctionComponent<React.PropsWithChildren<{ totalCount: number }>> = ({
+        totalCount,
+    }) => (
         <div className="mt-2 w-100">
             {showOlderCommits ? (
                 <>
@@ -195,7 +197,7 @@ export const HomeTab: React.FunctionComponent<Props> = ({
         isSidebar: boolean
     }
 
-    const RecentCommits: React.FunctionComponent<RecentCommitsProps> = ({ isSidebar }) => (
+    const RecentCommits: React.FunctionComponent<React.PropsWithChildren<RecentCommitsProps>> = ({ isSidebar }) => (
         <div className="mb-3">
             <h2>Recent commits</h2>
             <FilteredConnection<
@@ -230,7 +232,7 @@ export const HomeTab: React.FunctionComponent<Props> = ({
         </div>
     )
 
-    const READMEFile: React.FunctionComponent = () => (
+    const READMEFile: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
         <div>
             {richHTML && richHTML !== 'loading' && (
                 <RenderedFile className="pt-0 pl-3" dangerousInnerHTML={richHTML} location={props.location} />
@@ -323,7 +325,9 @@ interface HomeTabBatchChangeBadgeProps {
     repoName: string
 }
 
-export const HomeTabBatchChangeBadge: React.FunctionComponent<HomeTabBatchChangeBadgeProps> = ({ repoName }) => {
+export const HomeTabBatchChangeBadge: React.FunctionComponent<
+    React.PropsWithChildren<HomeTabBatchChangeBadgeProps>
+> = ({ repoName }) => {
     const { loading, error, data } = useQuery<GetRepoBatchChangesSummaryResult, GetRepoBatchChangesSummaryVariables>(
         REPO_BATCH_CHANGES_SUMMARY,
         {

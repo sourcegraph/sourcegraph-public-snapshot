@@ -29,7 +29,9 @@ const EditInsightLazyPage = lazyComponent(
     'EditInsightPage'
 )
 
-const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
+const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
+    <HeroPage icon={MapSearchIcon} title="404: Not Found" />
+)
 
 const CODE_INSIGHT_STANDALONE_PAGE = false
 
@@ -121,7 +123,7 @@ export const CodeInsightsAppRouter = withAuthenticatedUser<CodeInsightsAppRouter
     )
 })
 
-const CodeInsightsRedirect: React.FunctionComponent = () => {
+const CodeInsightsRedirect: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => {
     const { hasInsights } = useContext(CodeInsightsBackendContext)
 
     const match = useRouteMatch()

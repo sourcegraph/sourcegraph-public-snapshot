@@ -22,7 +22,7 @@ interface Props {
     onInstall: () => void
 }
 
-export const InstallBrowserExtensionPopover: React.FunctionComponent<Props> = ({
+export const InstallBrowserExtensionPopover: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     url,
     serviceKind,
     onClose,

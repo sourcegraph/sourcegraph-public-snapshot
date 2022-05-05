@@ -45,7 +45,9 @@ const STEP_STYLES = {
     [DrillDownFiltersStep.ViewCreation]: styles.popoverWithViewCreation,
 }
 
-export const DrillDownFiltersPopover: React.FunctionComponent<DrillDownFiltersPopoverProps> = props => {
+export const DrillDownFiltersPopover: React.FunctionComponent<
+    React.PropsWithChildren<DrillDownFiltersPopoverProps>
+> = props => {
     const {
         isOpen,
         anchor,

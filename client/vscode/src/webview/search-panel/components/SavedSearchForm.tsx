@@ -76,7 +76,9 @@ const createSavedSearchQuery = gql`
     ${savedSearchFragment}
 `
 
-export const SavedSearchCreateForm: React.FunctionComponent<SavedSearchCreateFormProps> = props => {
+export const SavedSearchCreateForm: React.FunctionComponent<
+    React.PropsWithChildren<SavedSearchCreateFormProps>
+> = props => {
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<any>()
     const onSubmit: SavedSearchFormProps['onSubmit'] = fields => {
@@ -121,7 +123,7 @@ export const SavedSearchCreateForm: React.FunctionComponent<SavedSearchCreateFor
     )
 }
 
-const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = props => {
+const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<SavedSearchFormProps>> = props => {
     const [values, setValues] = useState<Omit<SavedSearchFields, 'id' | 'namespace'>>(() => ({
         description: props.defaultValues?.description || '',
         query: props.defaultValues?.query || '',
