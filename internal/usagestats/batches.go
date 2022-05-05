@@ -16,8 +16,8 @@ func GetBatchChangesUsageStatistics(ctx context.Context, db database.DB) (*types
 
 	const batchChangesCountsQuery = `
 SELECT
-    COUNT(*)                                      	AS batch_changes_count,
-    COUNT(*) FILTER (WHERE closed_at IS NOT NULL) 	AS batch_changes_closed_count
+    COUNT(*)                                      AS batch_changes_count,
+    COUNT(*) FILTER (WHERE closed_at IS NOT NULL) AS batch_changes_closed_count
 FROM batch_changes;
 `
 
@@ -83,7 +83,7 @@ WHERE name IN ('BatchSpecCreated', 'ViewBatchChangeApplyPage', 'ViewBatchChangeD
 	const activeExecutorsCountQuery = `SELECT COUNT(id) FROM executor_heartbeats WHERE last_seen_at >= (NOW() - interval '15 seconds');`
 
 	if err := db.QueryRowContext(ctx, activeExecutorsCountQuery).Scan(
-		&stats.ActiveExectutorsCount,
+		&stats.ActiveExecutorsCount,
 	); err != nil {
 		return nil, err
 	}

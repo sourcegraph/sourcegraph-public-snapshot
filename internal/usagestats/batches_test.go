@@ -338,7 +338,7 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 			},
 			// batch change 3 should be ignored because it's too old
 		},
-		ActiveExectutorsCount: 2,
+		ActiveExecutorsCount: 2,
 		BulkOperationsCount: map[string]int32{
 			"commentatore": 2,
 			"close":        1,
