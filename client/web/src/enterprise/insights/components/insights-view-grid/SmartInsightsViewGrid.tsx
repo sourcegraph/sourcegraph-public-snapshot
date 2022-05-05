@@ -3,8 +3,6 @@ import React, { memo, useCallback, useEffect, useState } from 'react'
 import { isEqual } from 'lodash'
 import { Layout, Layouts } from 'react-grid-layout'
 
-import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { ViewGrid } from '../../../../views'
@@ -14,7 +12,7 @@ import { getTrackingTypeByInsightType } from '../../pings'
 import { SmartInsight } from './components/SmartInsight'
 import { insightLayoutGenerator, recalculateGridLayout } from './utils/grid-layout-generator'
 
-interface SmartInsightsViewGridProps extends TelemetryProps, SettingsCascadeProps<Settings> {
+interface SmartInsightsViewGridProps extends TelemetryProps {
     /**
      * List of built-in insights such as backend insight, FE search and code-stats
      * insights.
@@ -84,7 +82,6 @@ export const SmartInsightsViewGrid: React.FunctionComponent<SmartInsightsViewGri
         >
             {insights.map(insight => (
                 <SmartInsight
-                    settingsCascade={props.settingsCascade}
                     key={insight.id}
                     insight={insight}
                     telemetryService={telemetryService}

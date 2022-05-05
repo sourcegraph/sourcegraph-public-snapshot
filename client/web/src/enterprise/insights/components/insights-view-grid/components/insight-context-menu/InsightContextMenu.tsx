@@ -4,9 +4,6 @@ import classNames from 'classnames'
 import { noop } from 'lodash'
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 
-import { isErrorLike } from '@sourcegraph/common'
-import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import {
     Link,
     Menu,
@@ -19,6 +16,7 @@ import {
     Checkbox,
 } from '@sourcegraph/wildcard'
 
+import { useExperimentalFeatures } from '../../../../../../stores'
 import { Insight, InsightDashboard, InsightType, isVirtualDashboard } from '../../../../core'
 import { useUiFeatures } from '../../../../hooks/use-ui-features'
 
@@ -27,7 +25,7 @@ import { ConfirmRemoveModal } from './ConfirmRemoveModal'
 
 import styles from './InsightContextMenu.module.scss'
 
-export interface InsightCardMenuProps extends SettingsCascadeProps<Settings> {
+export interface InsightCardMenuProps {
     insight: Insight
     dashboard: InsightDashboard | null
     zeroYAxisMin: boolean
@@ -51,11 +49,10 @@ export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> =
     const editUrl = dashboard?.id
         ? `/insights/edit/${insightID}?dashboardId=${dashboard.id}`
         : `/insights/edit/${insightID}`
-    const showQuickFix =
-        insight.title.includes('[quickfix]') &&
-        props.settingsCascade.final !== null &&
-        !isErrorLike(props.settingsCascade.final) &&
-        props.settingsCascade.final.experimentalFeatures?.goCodeCheckerTemplates
+
+    const features = useExperimentalFeatures()
+    const showQuickFix = insight.title.includes('[quickfix]') && features?.goCodeCheckerTemplates
+
     const quickFixUrl =
         insight.type === InsightType.SearchBased
             ? `/batch-changes/create?kind=goChecker${insight.series[0]?.name}&title=${insight.title}`
