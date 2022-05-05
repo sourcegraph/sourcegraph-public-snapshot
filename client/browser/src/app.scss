@@ -33,11 +33,13 @@ $line-height-base: (20/14);
     }
 }
 
+/* stylelint-disable @sourcegraph/no-restricted-imports */
 @import 'bootstrap/scss/functions';
 @import 'bootstrap/scss/variables';
 @import 'bootstrap/scss/mixins';
 @import 'bootstrap/scss/utilities/text';
 @import 'bootstrap/scss/utilities/screenreaders';
+/* stylelint-enable @sourcegraph/no-restricted-imports */
 @import '../../shared/src/global-styles/icons';
 @import './highlight';
 @import './shared';
