@@ -19,8 +19,8 @@ import {
 import { useExperimentalFeatures } from '../../../../../../stores'
 import { Insight, InsightDashboard, InsightType, isVirtualDashboard } from '../../../../core'
 import { useUiFeatures } from '../../../../hooks/use-ui-features'
+import { ConfirmDeleteModal } from '../../../modals/ConfirmDeleteModal'
 
-import { ConfirmDeleteModal } from './ConfirmDeleteModal'
 import { ConfirmRemoveModal } from './ConfirmRemoveModal'
 
 import styles from './InsightContextMenu.module.scss'

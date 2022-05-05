@@ -70,7 +70,7 @@ export const PageHeader: React.FunctionComponent<Props> = ({
                 {byline && <small className={styles.byline}>{byline}</small>}
                 {description && <p className={styles.description}>{description}</p>}
             </div>
-            {actions && <div className={styles.actions}>{actions}</div>}
+            {actions && <div>{actions}</div>}
         </div>
     )
 }

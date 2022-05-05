@@ -1,8 +1,8 @@
 import React from 'react'
 
-import { Insight, InsightDashboard } from '../../../../core/types'
+import { Insight, InsightDashboard } from '../../../../core'
 import { useRemoveInsightFromDashboard } from '../../../../hooks/use-remove-insight'
-import { ConfirmationModal, ConfirmationModalProps } from '../ConfirmationModal'
+import { ConfirmationModal, ConfirmationModalProps } from '../../../modals/ConfirmationModal'
 
 interface ConfirmRemoveModalProps extends Pick<ConfirmationModalProps, 'showModal' | 'onCancel'> {
     insight: Insight
