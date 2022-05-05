@@ -269,8 +269,14 @@ func TestFindVersion(t *testing.T) {
 		}
 	}
 
-	mkWheel := func(version string) File {
-		n := "request" + "-" + version + "-" + "py2.py3-none-any.whl"
+	tags1 := []string{"1", "cp38", "manylinux_2_17_x86_64.manylinux2014_x86_64"}
+	tags2 := []string{"2", "cp39", "win32"}
+
+	mkWheel := func(version string, tags ...string) File {
+		if tags == nil {
+			tags = []string{"py2.py3", "none", "any"}
+		}
+		n := "request" + "-" + version + "-" + strings.Join(tags, "-") + ".whl"
 		return File{
 			Name: n,
 			URL:  "https://cdn/" + n,
@@ -307,14 +313,28 @@ func TestFindVersion(t *testing.T) {
 			want:        mkTarball("1.2.3"),
 		},
 		{
-			name: "only wheels",
+			name: "many wheels",
 			files: []File{
 				mkWheel("1.2.2"),
 				mkWheel("1.2.3"),
+				mkWheel("1.2.3", tags1...),
+				mkWheel("1.2.3", tags2...),
 				mkWheel("1.2.4"),
 			},
 			wantVersion: "1.2.3",
-			want:        mkWheel("1.2.3"),
+			want:        mkWheel("1.2.3", tags1...),
+		},
+		{
+			name: "many wheels, random order",
+			files: []File{
+				mkWheel("1.2.3"),
+				mkWheel("1.2.3", tags2...),
+				mkWheel("1.2.4"),
+				mkWheel("1.2.3", tags1...),
+				mkWheel("1.2.2"),
+			},
+			wantVersion: "1.2.3",
+			want:        mkWheel("1.2.3", tags1...),
 		},
 		{
 			name: "no tarball for target version",

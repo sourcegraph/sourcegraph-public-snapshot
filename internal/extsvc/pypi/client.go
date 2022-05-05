@@ -102,6 +102,7 @@ func FindVersion(version string, files []File) (File, error) {
 		return File{}, errors.Errorf("no files")
 	}
 
+	// This loop should never iterate over more than a few files.
 	if version == "" {
 		for i := len(files) - 1; i >= 0; i-- {
 			if w, err := ToWheel(files[i]); err == nil {
@@ -121,21 +122,27 @@ func FindVersion(version string, files []File) (File, error) {
 		}
 	}
 
-	// Return the first source distribution we can find for the version.
-	var wheelAtVersion *File
+	// We return the first source distribution we can find for the version.
+	//
+	// In case we cannot find a source distribution, we return the first wheel in
+	// lexicographic order to guarantee that we pick the same wheel every time as
+	// long as the list of wheels doesn't change.
+	//
+	// Pep 503 does not prescribe lexicographic order of files returned from the
+	// simple API.
+	var minWheelAtVersion *File
 	for i, f := range files {
 		if wheel, err := ToWheel(f); err != nil {
 			if sdist, err := ToSDist(f); err == nil && sdist.Version == version {
 				return f, nil
 			}
-		} else if wheel.Version == version && wheelAtVersion == nil {
-			wheelAtVersion = &files[i]
+		} else if wheel.Version == version && (minWheelAtVersion == nil || f.Name < minWheelAtVersion.Name) {
+			minWheelAtVersion = &files[i]
 		}
 	}
 
-	// We didn't find a source distribution. Return the first wheel.
-	if wheelAtVersion != nil {
-		return *wheelAtVersion, nil
+	if minWheelAtVersion != nil {
+		return *minWheelAtVersion, nil
 	}
 
 	return File{}, &Error{
