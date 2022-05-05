@@ -3,19 +3,27 @@ package definitions
 import (
 	"fmt"
 
+	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
 func Containers() *monitoring.Container {
-	const (
+	var (
+		// HACK:
 		// Image names are defined in enterprise package
 		// github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images
 		// Hence we can't use the exported names in OSS here.
 		// Also, the exported names do not cover edge cases such as `pgsql`, `codeintel-db`, and `codeinsights-db`.
-		// We might as well use "wildcard" to cover all running containers. This is acceptable because:
-		// On Kubernetes, prometheus can only scrape containers within the same namespace
-		// On docker-compose, prometheus can only scrape containers from a hardcoded list.
-		containerNameQuery = `name=~"^[a-zA-Z].*"`
+		// We cannot use "wildcard" to cover all running containers:
+		// On Kubernetes, prometheus could scrape containers from other namespaces
+		// On docker-compose, prometheus could scrape non-sourcegraph containers running on the same host.
+		// Therefore, we need to explicitly define the container names and track changes using Code Monitor
+		// https://k8s.sgdev.org/code-monitoring/Q29kZU1vbml0b3I6MTQ=
+		// Whenever we're notified, we need to:
+		// - review what's changed in the commits
+		// - check if the commit contains changes to the container name query in each dashboard definition
+		// - update this container name query accordingly
+		containerNameQuery = shared.CadvisorContainerNameMatcher("(frontend|sourcegraph-frontend|gitserver|github-proxy|pgsql|codeintel-db|codeinsights-db|precise-code-intel-worker|prometheus|redis-cache|redis-store|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search)")
 	)
 
 	return &monitoring.Container{
