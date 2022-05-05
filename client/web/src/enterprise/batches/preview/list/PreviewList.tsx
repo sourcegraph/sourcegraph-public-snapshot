@@ -62,7 +62,7 @@ export const PreviewList: React.FunctionComponent<React.PropsWithChildren<Props>
     const { selected, areAllVisibleSelected, isSelected, toggleSingle, toggleVisible, setVisible } = useContext(
         MultiSelectContext
     )
-    const { filters, publicationStates, addRecalculationUpdate } = useContext(BatchChangePreviewContext)
+    const { filters, publicationStates, resolveRecalculationUpdates } = useContext(BatchChangePreviewContext)
 
     const [queryArguments, setQueryArguments] = useState<BatchSpecApplyPreviewVariables>()
 
@@ -84,6 +84,10 @@ export const PreviewList: React.FunctionComponent<React.PropsWithChildren<Props>
                     // Available changeset specs are all changesets specs that a user can
                     // modify the publication state of from the UI.
                     setVisible(filterPublishableIDs(data.nodes))
+                    // If we re-queried on account of any publication states changing, make
+                    // sure to mark the timestamp record for this recalculation event as
+                    // complete so that it produces a banner.
+                    resolveRecalculationUpdates()
                 })
             )
         },
@@ -95,18 +99,9 @@ export const PreviewList: React.FunctionComponent<React.PropsWithChildren<Props>
             queryChangesetApplyPreview,
             setVisible,
             publicationStates,
+            resolveRecalculationUpdates,
         ]
     )
-
-    // Every subsequent query after the first will have its success time recorded
-    const [isInitialQuery, setIsInitialQuery] = useState(true)
-    const onUpdate = useCallback(() => {
-        if (isInitialQuery) {
-            setIsInitialQuery(false)
-        } else {
-            addRecalculationUpdate(new Date())
-        }
-    }, [addRecalculationUpdate, isInitialQuery])
 
     const showSelectRow = selected === 'all' || selected.size > 0
 
@@ -161,7 +156,6 @@ export const PreviewList: React.FunctionComponent<React.PropsWithChildren<Props>
                         <EmptyPreviewListElement />
                     )
                 }
-                onUpdate={onUpdate}
             />
         </Container>
     )
@@ -186,11 +180,15 @@ const PublicationStatesUpdateAlerts: React.FunctionComponent<React.PropsWithChil
 
     return (
         <div className="mt-2">
-            {recalculationUpdates.map(timestamp => (
-                <DismissibleAlert variant="success" key={timestamp}>
-                    Publication state actions were recalculated.
-                </DismissibleAlert>
-            ))}
+            {recalculationUpdates.map(([timestamp, status]) =>
+                // Wait to show publication state update alerts until the connection query
+                // request resolves.
+                status === 'complete' ? (
+                    <DismissibleAlert variant="success" key={timestamp}>
+                        Publication state actions were recalculated.
+                    </DismissibleAlert>
+                ) : null
+            )}
         </div>
     )
 }
