@@ -35,7 +35,7 @@ export const SurveyUseCaseCheckbox: React.FunctionComponent<SurveyUseCaseCheckbo
                     focus: focused,
                 }
             )}
-            as="label"
+            as="div"
             {...props}
         >
             <span className={classNames(styles.checkbox, checked ? styles.checkmark : styles.checkboxDefault)} />

@@ -15,6 +15,7 @@ interface ToastProps {
     onDismiss: () => void
     className?: string
     toastBodyClassName?: string
+    toastContentClassName?: string
 }
 
 export const Toast: React.FunctionComponent<React.PropsWithChildren<ToastProps>> = props => (
@@ -25,11 +26,15 @@ export const Toast: React.FunctionComponent<React.PropsWithChildren<ToastProps>>
                     <Icon as={CloseIcon} className={styles.closeButtonIcon} />
                 </Button>
             </div>
-            <CardTitle as="header" className="d-flex align-items-center mb-1">
-                {props.title && <H3 className="mb-0">{props.title}</H3>}
-            </CardTitle>
+            {props.title && (
+                <CardTitle as="header" className="d-flex align-items-center mb-1">
+                    <H3 className="mb-0">{props.title}</H3>
+                </CardTitle>
+            )}
             {props.subtitle}
-            {props.cta && <div className={styles.contentsCta}>{props.cta}</div>}
+            {props.cta && (
+                <div className={classNames(styles.contentsCta, props.toastContentClassName)}>{props.cta}</div>
+            )}
         </CardBody>
         {props.footer && <div className={classNames(styles.footer)}>{props.footer}</div>}
     </Card>

@@ -5,7 +5,7 @@ import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/
 import { eventLogger } from '../tracking/eventLogger'
 
 import { SurveySuccess } from './SurveySuccess'
-import { SurveyUseCaseForm } from './SurveyUseCaseForm'
+import { SurveyUseCaseToast } from './SurveyUseCaseToast'
 import { SurveyUserRatingForm } from './SurveyUserRatingForm'
 
 interface SurveyToastProps {
@@ -109,7 +109,7 @@ export const SurveyToast: React.FunctionComponent<React.PropsWithChildren<Survey
     switch (activeStep) {
         case ToastSteps.useCase:
             return (
-                <SurveyUseCaseForm
+                <SurveyUseCaseToast
                     handleDone={formState => {
                         setUserFeedback(current => ({ ...current, ...formState }))
                         handleSubmit()

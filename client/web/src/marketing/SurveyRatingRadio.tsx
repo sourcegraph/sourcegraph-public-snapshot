@@ -17,7 +17,7 @@ interface SurveyRatingRadio {
 }
 
 export const SurveyRatingRadio: React.FunctionComponent<React.PropsWithChildren<SurveyRatingRadio>> = props => {
-    const [focusedIndex, setFocusedIndex] = useState<number | null>(null)
+    const [focusedIndex, setFocusedIndex] = useState<number | null>(props?.score || null)
 
     const handleFocus = (index: number): void => {
         setFocusedIndex(index)

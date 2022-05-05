@@ -4,13 +4,14 @@ import { useHistory } from 'react-router'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { useMutation, gql } from '@sourcegraph/http-client'
-import { Button, LoadingSpinner, TextArea } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { SubmitSurveyResult, SubmitSurveyVariables } from '../graphql-operations'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { SurveyRatingRadio } from './SurveyRatingRadio'
+import { SurveyUseCaseForm } from './SurveyUseCaseForm'
 
 import styles from './SurveyPage.module.scss'
 
@@ -40,10 +41,11 @@ export const SurveyForm: React.FunctionComponent<React.PropsWithChildren<SurveyF
     score,
 }) => {
     const history = useHistory<SurveyFormLocationState>()
-    const [reason, setReason] = useState('')
-    const [betterProduct, setBetterProduct] = useState('')
     const [email, setEmail] = useState('')
     const [validationError, setValidationError] = useState<Error | null>(null)
+    const [_useCases, setUseCases] = useState<string[]>([])
+    const [otherUseCase, setOtherUseCase] = useState<string>('')
+    const [moreSharedInfo, setMoreSharedInfo] = useState<string>('')
 
     const [submitSurvey, response] = useMutation<SubmitSurveyResult, SubmitSurveyVariables>(SUBMIT_SURVEY, {
         onCompleted: () => {
@@ -52,7 +54,7 @@ export const SurveyForm: React.FunctionComponent<React.PropsWithChildren<SurveyF
                 state: {
                     // Mutation is only submitted when score is defined
                     score: score!,
-                    feedback: reason,
+                    feedback: moreSharedInfo,
                 },
             })
         },
@@ -81,8 +83,13 @@ export const SurveyForm: React.FunctionComponent<React.PropsWithChildren<SurveyF
                 input: {
                     score,
                     email,
-                    reason,
-                    better: betterProduct,
+                    reason: moreSharedInfo,
+                    better: otherUseCase,
+
+                    // // TODO: Update api to recieve params
+                    // useCases,
+                    // otherUseCase
+                    // moreSharedInfo
                 },
             },
         })
@@ -111,29 +118,16 @@ export const SurveyForm: React.FunctionComponent<React.PropsWithChildren<SurveyF
                     />
                 </div>
             )}
-            <div className="form-group">
-                <TextArea
-                    id="survey-form-score-reason"
-                    onChange={event => setReason(event.target.value)}
-                    value={reason}
-                    disabled={response.loading}
-                    autoFocus={true}
-                    label={
-                        <span className={styles.label}>
-                            What is the most important reason for the score you gave Sourcegraph?
-                        </span>
-                    }
-                />
-            </div>
-            <div className="form-group">
-                <TextArea
-                    id="survey-form-better-product"
-                    onChange={event => setBetterProduct(event.target.value)}
-                    value={betterProduct}
-                    disabled={response.loading}
-                    label={<span className={styles.label}>What could Sourcegraph do to provide a better product?</span>}
-                />
-            </div>
+            <SurveyUseCaseForm
+                className="my-2"
+                formLabelClassName={styles.label}
+                title="You are using sourcegraph to..."
+                onChangeUseCases={value => setUseCases(value)}
+                otherUseCase={otherUseCase}
+                onChangeOtherUseCase={others => setOtherUseCase(others)}
+                moreSharedInfo={moreSharedInfo}
+                onChangeMoreShareInfo={moreInfo => setMoreSharedInfo(moreInfo)}
+            />
             <div className="form-group">
                 <Button display="block" variant="primary" type="submit" disabled={response.loading}>
                     Submit

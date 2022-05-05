@@ -31,7 +31,7 @@ export const SurveyUserRatingForm: React.FunctionComponent<SurveyUserRatingFormP
         }
         cta={
             <>
-                <SurveyRatingRadio ariaLabelledby="survey-form-scores" onChange={onChange} />
+                <SurveyRatingRadio ariaLabelledby="survey-toast-scores" onChange={onChange} />
                 {toggleErrorMessage && (
                     <div className={styles.alertDanger} role="alert">
                         Please select a score between 0 to 10
