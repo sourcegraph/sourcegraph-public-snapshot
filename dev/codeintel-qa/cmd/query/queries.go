@@ -58,6 +58,29 @@ func makeTestFunc(name string, f testFunc, source Location, expectedLocations []
 		if checkQueryResult {
 			sortLocations(locations)
 
+			if allowDirtyInstance {
+				// We allow other upload records to exist on the instance, so we might have
+				// additional locations. Here, we trim down the set of returned locations
+				// to only include the expected values, and check only that the instance gave
+				// us a superset of the expected output.
+
+				filteredLocations := locations[:0]
+				for _, location := range locations {
+					found := false
+					for _, l := range expectedLocations {
+						if l == location {
+							found = true
+						}
+					}
+
+					if found {
+						filteredLocations = append(filteredLocations, location)
+					}
+				}
+
+				locations = filteredLocations
+			}
+
 			if diff := cmp.Diff(expectedLocations, locations); diff != "" {
 				collectRepositoryToResults := func(locations []Location) map[string]int {
 					repositoryToResults := map[string]int{}
