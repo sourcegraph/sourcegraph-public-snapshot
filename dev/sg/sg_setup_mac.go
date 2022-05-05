@@ -7,17 +7,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 )
 
+var macosDependencyBrew = &dependency{
+	name:  "brew",
+	check: check.InPath("brew"),
+	instructionsComment: `We depend on having the Homebrew package manager available on macOS.
+
+Follow the instructions at https://brew.sh to install it, then rerun 'sg setup'.`,
+}
+
 var macOSDependencies = []dependencyCategory{
 	{
 		name: "Install homebrew",
 		dependencies: []*dependency{
-			{
-				name:  "brew",
-				check: check.InPath("brew"),
-				instructionsComment: `We depend on having the Homebrew package manager available on macOS.
-
-Follow the instructions at https://brew.sh to install it, then rerun 'sg setup'.`,
-			},
+			macosDependencyBrew,
 		},
 		autoFixing: false,
 	},
@@ -44,7 +46,8 @@ Follow the instructions at https://brew.sh to install it, then rerun 'sg setup'.
 				instructionsCommands: `brew install --cask docker`,
 			},
 		},
-		autoFixing: true,
+		autoFixing:             true,
+		autoFixingDependencies: []*dependency{macosDependencyBrew},
 	},
 	{
 		name: "Clone repositories",
@@ -189,7 +192,7 @@ asdf install rust
 		},
 	},
 	{
-		name:               "Setup PostgreSQL database",
+		name:               "Set up PostgreSQL database",
 		requiresRepository: true,
 		autoFixing:         true,
 		dependencies: []*dependency{
@@ -219,7 +222,7 @@ createdb || true
 				name:  "Connection to 'sourcegraph' database",
 				check: getCheck("sourcegraph-database"),
 				instructionsComment: `` +
-					`Once PostgreSQL is installed and running, we need to setup Sourcegraph database itself and a
+					`Once PostgreSQL is installed and running, we need to set up Sourcegraph database itself and a
 specific user.`,
 				instructionsCommands: `createuser --superuser sourcegraph || true
 psql -c "ALTER USER sourcegraph WITH PASSWORD 'sourcegraph';"
@@ -239,7 +242,7 @@ If you used another method, make sure psql is available.`,
 		},
 	},
 	{
-		name:               "Setup Redis database",
+		name:               "Set up Redis database",
 		autoFixing:         true,
 		requiresRepository: true,
 		dependencies: []*dependency{
@@ -254,7 +257,7 @@ If you used another method, make sure psql is available.`,
 		},
 	},
 	{
-		name:               "Setup proxy for local development",
+		name:               "Set up proxy for local development",
 		autoFixing:         true,
 		requiresRepository: true,
 		dependencies: []*dependency{
@@ -280,4 +283,11 @@ YOU NEED TO RESTART 'sg setup' AFTER RUNNING THIS COMMAND!`,
 		},
 	},
 	dependencyCategoryAdditionalSgConfiguration,
+	{
+		name:       "Set up cloud services",
+		autoFixing: true,
+		dependencies: []*dependency{
+			dependencyGcloud,
+		},
+	},
 }
