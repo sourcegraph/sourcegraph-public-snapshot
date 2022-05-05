@@ -14,6 +14,7 @@ import {
 import {
     DrillDownFiltersFormValues,
     DrillDownInsightFilters,
+    FilterSectionVisualMode,
     hasActiveFilters,
 } from '../drill-down-filters-panel/DrillDownInsightFilters'
 
@@ -98,6 +99,7 @@ export const DrillDownFiltersPopover: React.FunctionComponent<
                     <DrillDownInsightFilters
                         initialValues={initialFiltersValue}
                         originalValues={originalFiltersValue}
+                        visualMode={FilterSectionVisualMode.CollapseSections}
                         onFiltersChange={handleFilterChange}
                         onFilterSave={onFilterSave}
                         onCreateInsightRequest={() => setStep(DrillDownFiltersStep.ViewCreation)}
