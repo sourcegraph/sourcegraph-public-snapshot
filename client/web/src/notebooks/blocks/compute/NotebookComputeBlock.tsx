@@ -92,7 +92,7 @@ const setupPorts = (updateBlockInputWithID: (blockInput: BlockInput) => void) =>
     })
 }
 
-export const NotebookComputeBlock: React.FunctionComponent<ComputeBlockProps> = React.memo(
+export const NotebookComputeBlock: React.FunctionComponent<React.PropsWithChildren<ComputeBlockProps>> = React.memo(
     ({
         id,
         input,

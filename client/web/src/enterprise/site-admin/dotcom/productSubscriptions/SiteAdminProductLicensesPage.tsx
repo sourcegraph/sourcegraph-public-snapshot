@@ -29,7 +29,10 @@ class FilteredProductLicenseConnection extends FilteredConnection<
 /**
  * Displays the product licenses that have been created on Sourcegraph.com.
  */
-export const SiteAdminProductLicensesPage: React.FunctionComponent<Props> = ({ history, location }) => {
+export const SiteAdminProductLicensesPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    history,
+    location,
+}) => {
     useEffect(() => eventLogger.logViewEvent('SiteAdminProductLicenses'), [])
 
     const nodeProps: Pick<SiteAdminProductLicenseNodeProps, 'showSubscription'> = {

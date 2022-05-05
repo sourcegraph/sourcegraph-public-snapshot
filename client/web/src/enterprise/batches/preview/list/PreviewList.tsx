@@ -47,7 +47,7 @@ interface Props extends ThemeProps {
 /**
  * A list of a batch spec's preview nodes.
  */
-export const PreviewList: React.FunctionComponent<Props> = ({
+export const PreviewList: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     batchSpecID,
     history,
     location,
@@ -167,7 +167,7 @@ export const PreviewList: React.FunctionComponent<Props> = ({
     )
 }
 
-const EmptyPreviewSearchElement: React.FunctionComponent<{}> = () => (
+const EmptyPreviewSearchElement: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
     <div className="text-muted row w-100">
         <div className="col-12 text-center">
             <MagnifyIcon className="icon" />
@@ -181,7 +181,7 @@ const EmptyPreviewSearchElement: React.FunctionComponent<{}> = () => (
  * actions are recalculated when the user modifies the publication states for preview
  * changesets.
  */
-const PublicationStatesUpdateAlerts: React.FunctionComponent<{}> = () => {
+const PublicationStatesUpdateAlerts: React.FunctionComponent<React.PropsWithChildren<{}>> = () => {
     const { recalculationUpdates } = useContext(BatchChangePreviewContext)
 
     return (

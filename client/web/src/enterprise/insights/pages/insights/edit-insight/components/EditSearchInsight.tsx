@@ -14,7 +14,9 @@ interface EditSearchBasedInsightProps {
     onCancel: () => void
 }
 
-export const EditSearchBasedInsight: React.FunctionComponent<EditSearchBasedInsightProps> = props => {
+export const EditSearchBasedInsight: React.FunctionComponent<
+    React.PropsWithChildren<EditSearchBasedInsightProps>
+> = props => {
     const { insight, onSubmit, onCancel } = props
 
     const insightFormValues = useMemo<CreateInsightFormFields>(() => {

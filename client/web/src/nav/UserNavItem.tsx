@@ -101,7 +101,7 @@ const showKeyboardShortcutsHelp = (): void => {
  * Displays the user's avatar and/or username in the navbar and exposes a dropdown menu with more options for
  * authenticated viewers.
  */
-export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
+export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNavItemProps>> = props => {
     const {
         menuButtonRef,
         themePreference,

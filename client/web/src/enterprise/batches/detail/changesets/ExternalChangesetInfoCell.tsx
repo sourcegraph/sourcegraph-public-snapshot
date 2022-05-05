@@ -17,11 +17,9 @@ export interface ExternalChangesetInfoCellProps {
     className?: string
 }
 
-export const ExternalChangesetInfoCell: React.FunctionComponent<ExternalChangesetInfoCellProps> = ({
-    node,
-    viewerCanAdminister,
-    className,
-}) => {
+export const ExternalChangesetInfoCell: React.FunctionComponent<
+    React.PropsWithChildren<ExternalChangesetInfoCellProps>
+> = ({ node, viewerCanAdminister, className }) => {
     const changesetTitle =
         isImporting(node) || importingFailed(node) ? (
             `Importing changeset ${node.externalID ? `#${node.externalID}` : ''}`

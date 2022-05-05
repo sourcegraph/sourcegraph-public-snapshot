@@ -11,10 +11,9 @@ export interface HiddenExternalChangesetInfoCellProps {
     className?: string
 }
 
-export const HiddenExternalChangesetInfoCell: React.FunctionComponent<HiddenExternalChangesetInfoCellProps> = ({
-    node,
-    className,
-}) => (
+export const HiddenExternalChangesetInfoCell: React.FunctionComponent<
+    React.PropsWithChildren<HiddenExternalChangesetInfoCellProps>
+> = ({ node, className }) => (
     <div className={classNames('d-flex flex-column', className)}>
         <div className="m-0 mb-2">
             <h3 className="m-0 d-inline">

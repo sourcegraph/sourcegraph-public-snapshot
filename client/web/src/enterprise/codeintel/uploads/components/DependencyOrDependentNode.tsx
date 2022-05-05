@@ -19,7 +19,9 @@ export interface DependencyOrDependentNodeProps {
     now?: () => Date
 }
 
-export const DependencyOrDependentNode: FunctionComponent<DependencyOrDependentNodeProps> = ({ node }) => (
+export const DependencyOrDependentNode: FunctionComponent<React.PropsWithChildren<DependencyOrDependentNodeProps>> = ({
+    node,
+}) => (
     <>
         <span className={styles.separator} />
 

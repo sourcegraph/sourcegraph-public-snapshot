@@ -21,7 +21,9 @@ interface CaptureGroupCreationPageProps extends TelemetryProps {
     onCancel: () => void
 }
 
-export const CaptureGroupCreationPage: React.FunctionComponent<CaptureGroupCreationPageProps> = props => {
+export const CaptureGroupCreationPage: React.FunctionComponent<
+    React.PropsWithChildren<CaptureGroupCreationPageProps>
+> = props => {
     const { telemetryService, onInsightCreateRequest, onSuccessfulCreation, onCancel } = props
 
     const [initialFormValues, setInitialFormValues] = useCaptureInsightInitialValues()

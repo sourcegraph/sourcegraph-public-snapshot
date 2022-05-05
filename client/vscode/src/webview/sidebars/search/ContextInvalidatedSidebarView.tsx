@@ -6,9 +6,9 @@ import { WebviewPageProps } from '../../platform/context'
 
 export interface ContextInvalidatedSidebarViewProps extends WebviewPageProps {}
 
-export const ContextInvalidatedSidebarView: React.FunctionComponent<ContextInvalidatedSidebarViewProps> = ({
-    extensionCoreAPI,
-}) => (
+export const ContextInvalidatedSidebarView: React.FunctionComponent<
+    React.PropsWithChildren<ContextInvalidatedSidebarViewProps>
+> = ({ extensionCoreAPI }) => (
     <div>
         <h5 className="mt-3 mb-2">Your Sourcegraph instance URL has changed.</h5>
         <p>Please reload VS Code to use to Sourcegraph extension.</p>

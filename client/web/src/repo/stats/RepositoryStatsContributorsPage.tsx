@@ -39,7 +39,7 @@ interface RepositoryContributorNodeProps extends QuerySpec {
     globbing: boolean
 }
 
-const RepositoryContributorNode: React.FunctionComponent<RepositoryContributorNodeProps> = ({
+const RepositoryContributorNode: React.FunctionComponent<React.PropsWithChildren<RepositoryContributorNodeProps>> = ({
     node,
     repoName,
     revisionRange,

@@ -17,7 +17,7 @@ export interface SearchContextCtaPromptProps extends TelemetryProps {
     isExternalServicesUserModeAll?: boolean
 }
 
-export const SearchContextCtaPrompt: React.FunctionComponent<SearchContextCtaPromptProps> = ({
+export const SearchContextCtaPrompt: React.FunctionComponent<React.PropsWithChildren<SearchContextCtaPromptProps>> = ({
     authenticatedUser,
     hasUserAddedExternalServices,
     telemetryService,

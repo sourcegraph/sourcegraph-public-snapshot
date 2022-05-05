@@ -21,7 +21,9 @@ export interface GlobalCodeHostConnectionsProps {
     headerLine: JSX.Element
 }
 
-export const GlobalCodeHostConnections: React.FunctionComponent<GlobalCodeHostConnectionsProps> = props => (
+export const GlobalCodeHostConnections: React.FunctionComponent<
+    React.PropsWithChildren<GlobalCodeHostConnectionsProps>
+> = props => (
     <CodeHostConnections userID={null} connectionResult={useGlobalBatchChangesCodeHostConnection()} {...props} />
 )
 
@@ -29,16 +31,16 @@ export interface UserCodeHostConnectionsProps extends GlobalCodeHostConnectionsP
     userID: Scalars['ID']
 }
 
-export const UserCodeHostConnections: React.FunctionComponent<UserCodeHostConnectionsProps> = props => (
-    <CodeHostConnections connectionResult={useUserBatchChangesCodeHostConnection(props.userID)} {...props} />
-)
+export const UserCodeHostConnections: React.FunctionComponent<
+    React.PropsWithChildren<UserCodeHostConnectionsProps>
+> = props => <CodeHostConnections connectionResult={useUserBatchChangesCodeHostConnection(props.userID)} {...props} />
 
 interface CodeHostConnectionsProps extends GlobalCodeHostConnectionsProps {
     userID: Scalars['ID'] | null
     connectionResult: UseConnectionResult<BatchChangesCodeHostFields>
 }
 
-const CodeHostConnections: React.FunctionComponent<CodeHostConnectionsProps> = ({
+const CodeHostConnections: React.FunctionComponent<React.PropsWithChildren<CodeHostConnectionsProps>> = ({
     userID,
     headerLine,
     connectionResult,

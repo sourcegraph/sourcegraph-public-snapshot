@@ -12,7 +12,10 @@ export interface UploadOrIndexMetaProps {
     now?: () => Date
 }
 
-export const UploadOrIndexMeta: React.FunctionComponent<UploadOrIndexMetaProps> = ({ data: node, now }) => (
+export const UploadOrIndexMeta: React.FunctionComponent<React.PropsWithChildren<UploadOrIndexMetaProps>> = ({
+    data: node,
+    now,
+}) => (
     <tr>
         <td>
             <CodeIntelUploadOrIndexRoot node={node} />

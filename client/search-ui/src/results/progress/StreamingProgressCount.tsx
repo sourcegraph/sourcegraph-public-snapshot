@@ -28,7 +28,7 @@ const abbreviateNumber = (number: number): string => {
 const limitHit = (progress: Progress): boolean => progress.skipped.some(skipped => skipped.reason.indexOf('-limit') > 0)
 
 export const StreamingProgressCount: React.FunctionComponent<
-    Pick<StreamingProgressProps, 'progress' | 'state' | 'showTrace'> & { className?: string }
+    React.PropsWithChildren<Pick<StreamingProgressProps, 'progress' | 'state' | 'showTrace'> & { className?: string }>
 > = ({ progress, state, showTrace, className = '' }) => (
     <>
         <small

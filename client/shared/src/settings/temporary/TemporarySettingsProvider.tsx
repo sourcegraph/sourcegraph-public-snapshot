@@ -12,9 +12,11 @@ TemporarySettingsContext.displayName = 'TemporarySettingsContext'
  * React context provider for the temporary settings.
  * The web app needs to be wrapped around this.
  */
-export const TemporarySettingsProvider: React.FunctionComponent<{
-    temporarySettingsStorage: TemporarySettingsStorage
-}> = ({ children, temporarySettingsStorage }) => {
+export const TemporarySettingsProvider: React.FunctionComponent<
+    React.PropsWithChildren<{
+        temporarySettingsStorage: TemporarySettingsStorage
+    }>
+> = ({ children, temporarySettingsStorage }) => {
     // On first run, migrate the settings from the local storage to the temporary storage.
     useEffect(() => {
         const migrate = async (): Promise<void> => {

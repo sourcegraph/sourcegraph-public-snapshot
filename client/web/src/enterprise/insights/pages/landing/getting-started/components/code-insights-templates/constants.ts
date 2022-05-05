@@ -1,8 +1,6 @@
-import { isErrorLike } from '@sourcegraph/common'
-import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { SettingsExperimentalFeatures } from '@sourcegraph/shared/src/schema/settings.schema'
 
-import { InsightType } from '../../../../../core/types'
+import { InsightType } from '../../../../../core'
 import { CaptureInsightUrlValues } from '../../../../insights/creation/capture-group'
 import { DATA_SERIES_COLORS, SearchInsightURLValues } from '../../../../insights/creation/search-insight'
 
@@ -1263,7 +1261,7 @@ const GO_STATIC_CHECK_S1039: Template = {
     },
 }
 
-export const getTemplateSections = (props: SettingsCascadeProps<Settings>): TemplateSection[] => {
+export const getTemplateSections = (features: SettingsExperimentalFeatures): TemplateSection[] => {
     const allButGoChecker: TemplateSection[] = [
         {
             title: 'Popular',
@@ -1349,14 +1347,13 @@ export const getTemplateSections = (props: SettingsCascadeProps<Settings>): Temp
             templates: [TS_VS_GO, IOS_APP_SCREENS, ADOPTING_NEW_API, PROBLEMATIC_API_BY_TEAM, DATA_FETCHING_GQL],
         },
     ]
-    if (
-        props.settingsCascade.final !== null &&
-        !isErrorLike(props.settingsCascade.final) &&
-        !props.settingsCascade.final.experimentalFeatures?.goCodeCheckerTemplates
-    ) {
+
+    if (!features?.goCodeCheckerTemplates) {
         return allButGoChecker
     }
+
     const all = [...allButGoChecker]
+
     all.splice(-1, 0, {
         title: 'Go code checker',
         experimental: true,
@@ -1383,5 +1380,6 @@ export const getTemplateSections = (props: SettingsCascadeProps<Settings>): Temp
             GO_STATIC_CHECK_S1039,
         ],
     })
+
     return all
 }

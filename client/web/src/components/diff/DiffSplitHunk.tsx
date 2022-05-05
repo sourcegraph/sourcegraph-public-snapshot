@@ -83,7 +83,7 @@ export interface Hunk {
     newLine?: number
 }
 
-export const DiffSplitHunk: React.FunctionComponent<DiffHunkProps> = ({
+export const DiffSplitHunk: React.FunctionComponent<React.PropsWithChildren<DiffHunkProps>> = ({
     fileDiffAnchor,
     decorations,
     hunk,
