@@ -14,7 +14,6 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.git.GitUtil;
 import com.sourcegraph.git.RepoInfo;
-import com.sourcegraph.git.SourcegraphUtil;
 import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
@@ -58,7 +57,7 @@ public abstract class SearchActionBase extends AnAction {
 
         uri = ConfigUtil.getSourcegraphUrl(project) + "-/editor"
             + "?editor=" + URLEncoder.encode("JetBrains", StandardCharsets.UTF_8)
-            + "&version=" + URLEncoder.encode(SourcegraphUtil.VERSION, StandardCharsets.UTF_8)
+            + "&version=" + URLEncoder.encode(ConfigUtil.getVersion(), StandardCharsets.UTF_8)
             + "&utm_product_name=" + URLEncoder.encode(productName, StandardCharsets.UTF_8)
             + "&utm_product_version=" + URLEncoder.encode(productVersion, StandardCharsets.UTF_8)
             + "&search=" + URLEncoder.encode(q, StandardCharsets.UTF_8);

@@ -11,7 +11,6 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.git.GitUtil;
 import com.sourcegraph.git.RepoInfo;
-import com.sourcegraph.git.SourcegraphUtil;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -59,7 +58,7 @@ public abstract class FileAction extends AnAction {
             + "&branch=" + URLEncoder.encode(repoInfo.branchName, StandardCharsets.UTF_8)
             + "&file=" + URLEncoder.encode(repoInfo.relativePath, StandardCharsets.UTF_8)
             + "&editor=" + URLEncoder.encode("JetBrains", StandardCharsets.UTF_8)
-            + "&version=" + URLEncoder.encode(SourcegraphUtil.VERSION, StandardCharsets.UTF_8)
+            + "&version=" + URLEncoder.encode(ConfigUtil.getVersion(), StandardCharsets.UTF_8)
             + (start != null ? ("&start_row=" + URLEncoder.encode(Integer.toString(start.line), StandardCharsets.UTF_8)
             + "&start_col=" + URLEncoder.encode(Integer.toString(start.column), StandardCharsets.UTF_8)) : "")
             + (end != null ? ("&end_row=" + URLEncoder.encode(Integer.toString(end.line), StandardCharsets.UTF_8)

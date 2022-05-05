@@ -42,7 +42,7 @@ public class GitUtil {
                 }
             }
         } catch (Exception err) {
-            Logger.getInstance(SourcegraphUtil.class).info(err);
+            Logger.getInstance(GitUtil.class).info(err);
             err.printStackTrace();
         }
         return new RepoInfo(relativePath, remoteUrl, branchName);
@@ -101,7 +101,7 @@ public class GitUtil {
     // exec executes the given command in the specified directory and returns
     // its stdout. Any stderr output is logged.
     private static String exec(String command, String directoryPath) throws IOException {
-        Logger.getInstance(SourcegraphUtil.class).debug("exec cmd='" + command + "' dir=" + directoryPath);
+        Logger.getInstance(GitUtil.class).debug("exec cmd='" + command + "' dir=" + directoryPath);
 
         // Create the process.
         Process p = Runtime.getRuntime().exec(command, null, new File(directoryPath));
@@ -109,7 +109,7 @@ public class GitUtil {
         BufferedReader stderr = new BufferedReader(new InputStreamReader(p.getErrorStream()));
 
         // Log any stderr output.
-        Logger logger = Logger.getInstance(SourcegraphUtil.class);
+        Logger logger = Logger.getInstance(GitUtil.class);
         String s;
         while ((s = stderr.readLine()) != null) {
             logger.debug(s);

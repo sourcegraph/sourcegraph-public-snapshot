@@ -1,6 +1,7 @@
 package com.sourcegraph.git;
 
 import com.google.common.base.Strings;
+import com.sourcegraph.config.ConfigUtil;
 
 import java.net.URI;
 import java.net.URLEncoder;
@@ -28,7 +29,7 @@ public class CommitViewUriBuilder {
             String.format("/%s%s", remote.getHost(), path) +
             String.format("/-/commit/%s", revisionNumber) +
             String.format("?editor=%s", URLEncoder.encode("JetBrains", StandardCharsets.UTF_8)) +
-            String.format("&version=%s", URLEncoder.encode(SourcegraphUtil.VERSION, StandardCharsets.UTF_8)) +
+            String.format("&version=%s", URLEncoder.encode(ConfigUtil.getVersion(), StandardCharsets.UTF_8)) +
             String.format("&utm_product_name=%s", URLEncoder.encode(productName, StandardCharsets.UTF_8)) +
             String.format("&utm_product_version=%s", URLEncoder.encode(productVersion, StandardCharsets.UTF_8));
 

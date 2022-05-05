@@ -12,7 +12,6 @@ import java.util.Objects;
 import java.util.Properties;
 
 public class ConfigUtil {
-
     public static String getDefaultBranchNameSetting(Project project) {
         String defaultBranch = Objects.requireNonNull(SourcegraphConfig.getInstance(project)).getDefaultBranch();
         if (defaultBranch == null || defaultBranch.length() == 0) {
@@ -38,6 +37,10 @@ public class ConfigUtil {
             url = props.getProperty("url", "https://sourcegraph.com/");
         }
         return url.endsWith("/") ? url : url + "/";
+    }
+
+    public static String getVersion() {
+        return "v1.2.2";
     }
 
     // readProps returns the first properties file it's able to parse from the following paths:
