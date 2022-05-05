@@ -1059,7 +1059,15 @@ func (i *InsightViewDashboardConnectionResolver) Nodes(ctx context.Context) ([]g
 }
 
 func (i *InsightViewDashboardConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+	_, next, err := i.computeDashboards(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if next != "" {
+		return graphqlutil.NextPageCursor(next), nil
+	}
 	return graphqlutil.HasNextPage(false), nil
+
 }
 
 func (i *InsightViewDashboardConnectionResolver) computeDashboards(ctx context.Context) ([]*types.Dashboard, string, error) {
