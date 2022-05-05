@@ -26,9 +26,10 @@ func (r checkResult) HasTestPlan() bool {
 }
 
 var (
-	testPlanDividerRegexp       = regexp.MustCompile("(?mi)(#+ test plan)|(test plan:)")
-	noReviewNeededDividerRegexp = regexp.MustCompile("(?mi)(no review required:)")
-	markdownCommentRegexp       = regexp.MustCompile("<!--((.|\n)*?)-->(\n)*")
+	testPlanDividerRegexp       = regexp.MustCompile("(?m)(#+ Test [pP]lan)|(Test [pP]lan:)")
+	noReviewNeededDividerRegexp = regexp.MustCompile("(?m)([nN]o [rR]eview [rR]equired:)")
+
+	markdownCommentRegexp = regexp.MustCompile("<!--((.|\n)*?)-->(\n)*")
 )
 
 type checkOpts struct {
