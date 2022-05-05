@@ -752,7 +752,7 @@ commandsets:
   enterprise-e2e:
     <<: *enterprise_set
     env:
-      # EXTSVC_CONFIG_FILE being set prevents the e2e test suite to add 
+      # EXTSVC_CONFIG_FILE being set prevents the e2e test suite to add
       # additional connections.
       EXTSVC_CONFIG_FILE: ""
 
@@ -968,10 +968,15 @@ tests:
 
   frontend-e2e:
     preamble: |
-      sg start enterprise-e2e must be already running for these tests to work.
+      'sg start enterprise-e2e' must be already running for these tests to work.
 
       If you run into authentication issues, you can run the following commands to fix them:
-      sg db reset-pg && sg db add-user -name test@sourcegraph.com -password supersecurepassword
+
+        sg db reset-pg && sg db add-user --username 'test' --password 'supersecurepassword'
+
+      The above command resets the database and creates a user like so:
+
+        👉 User test (test@sourcegraph.com) has been created and its password is supersecurepassword .
     cmd: |
       yarn run test-e2e
     env:
@@ -979,7 +984,7 @@ tests:
       TEST_USER_PASSWORD: supersecurepassword
       SOURCEGRAPH_BASE_URL: https://sourcegraph.test:3443
       BROWSER: chrome
-    secrets:
+    external_secrets:
       GH_TOKEN:
         provider: "gcloud"
         project: "sourcegraph-ci"

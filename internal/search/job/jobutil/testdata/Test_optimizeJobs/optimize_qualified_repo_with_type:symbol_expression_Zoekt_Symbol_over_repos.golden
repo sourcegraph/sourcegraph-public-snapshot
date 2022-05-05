@@ -15,24 +15,24 @@ BASE:
           (PARALLEL
             REPOPAGER
               (PARALLEL
-                ZoektSymbolSearch
-                SymbolSearcher))
+                ZoektSymbolSearchJob
+                SymbolSearcherJob))
             ComputeExcludedReposJob))
         (LIMIT
           40000
           (PARALLEL
             REPOPAGER
               (PARALLEL
-                ZoektSymbolSearch
-                SymbolSearcher))
+                ZoektSymbolSearchJob
+                SymbolSearcherJob))
             ComputeExcludedReposJob))
         (LIMIT
           40000
           (PARALLEL
             REPOPAGER
               (PARALLEL
-                ZoektSymbolSearch
-                SymbolSearcher))
+                ZoektSymbolSearchJob
+                SymbolSearcherJob))
             ComputeExcludedReposJob))))))
 
 OPTIMIZED:
@@ -44,7 +44,7 @@ OPTIMIZED:
       500
       (PARALLEL
         REPOPAGER
-          ZoektSymbolSearch)
+          ZoektSymbolSearchJob)
         (AND
           (LIMIT
             40000
@@ -52,7 +52,7 @@ OPTIMIZED:
               REPOPAGER
                 (PARALLEL
                   NoopJob
-                  SymbolSearcher))
+                  SymbolSearcherJob))
               ComputeExcludedReposJob))
           (LIMIT
             40000
@@ -60,7 +60,7 @@ OPTIMIZED:
               REPOPAGER
                 (PARALLEL
                   NoopJob
-                  SymbolSearcher))
+                  SymbolSearcherJob))
               ComputeExcludedReposJob))
           (LIMIT
             40000
@@ -68,5 +68,5 @@ OPTIMIZED:
               REPOPAGER
                 (PARALLEL
                   NoopJob
-                  SymbolSearcher))
+                  SymbolSearcherJob))
               ComputeExcludedReposJob)))))))

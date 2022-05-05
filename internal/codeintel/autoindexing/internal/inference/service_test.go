@@ -32,14 +32,14 @@ func testService(t *testing.T, repositoryContents map[string]string) *Service {
 		return
 	})
 	gitService.ArchiveFunc.SetDefaultHook(func(ctx context.Context, repoName api.RepoName, opts gitserver.ArchiveOptions) (io.ReadCloser, error) {
-		files := map[string]io.Reader{}
+		files := map[string]string{}
 		for _, spec := range opts.Pathspecs {
 			if contents, ok := repositoryContents[strings.TrimPrefix(string(spec), ":(literal)")]; ok {
-				files[string(spec)] = strings.NewReader(contents)
+				files[string(spec)] = contents
 			}
 		}
 
-		return unpacktest.CreateZipArchive(t, files)
+		return unpacktest.CreateTarArchive(t, files), nil
 	})
 
 	return newService(sandboxService, gitService, rate.NewLimiter(rate.Limit(100), 1), &observation.TestContext)

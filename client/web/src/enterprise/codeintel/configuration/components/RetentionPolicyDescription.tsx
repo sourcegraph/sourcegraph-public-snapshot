@@ -5,9 +5,9 @@ import { formatDurationValue } from '../shared'
 
 import { GitObjectTargetDescription } from './GitObjectTargetDescription'
 
-export const RetentionPolicyDescription: FunctionComponent<{ policy: CodeIntelligenceConfigurationPolicyFields }> = ({
-    policy,
-}) =>
+export const RetentionPolicyDescription: FunctionComponent<
+    React.PropsWithChildren<{ policy: CodeIntelligenceConfigurationPolicyFields }>
+> = ({ policy }) =>
     policy.retentionEnabled ? (
         <>
             <strong>Retention policy:</strong>{' '}

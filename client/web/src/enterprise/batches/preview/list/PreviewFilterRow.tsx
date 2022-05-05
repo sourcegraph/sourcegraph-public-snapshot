@@ -19,9 +19,14 @@ export interface PreviewFilterRowProps {
     location: H.Location
 }
 
-export const PreviewFilterRow: React.FunctionComponent<PreviewFilterRowProps> = ({ history, location }) => {
+export const PreviewFilterRow: React.FunctionComponent<React.PropsWithChildren<PreviewFilterRowProps>> = ({
+    history,
+    location,
+}) => {
     const searchElement = useRef<HTMLInputElement | null>(null)
 
+    // `BatchChangePreviewContext` is responsible for managing the filter arguments for
+    // the `applyPreview` connection query.
     const { filters, setFilters } = useContext(BatchChangePreviewContext)
 
     const onSubmit = useCallback(

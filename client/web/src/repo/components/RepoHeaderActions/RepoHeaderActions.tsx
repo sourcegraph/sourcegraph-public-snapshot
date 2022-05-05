@@ -13,18 +13,17 @@ type RepoHeaderButtonLinkProps = ButtonLinkProps & {
     file?: boolean
 }
 
-export const RepoHeaderActionButtonLink: React.FunctionComponent<RepoHeaderButtonLinkProps> = ({
-    children,
-    className,
-    file,
-    ...rest
-}) => (
+export const RepoHeaderActionButtonLink: React.FunctionComponent<
+    React.PropsWithChildren<RepoHeaderButtonLinkProps>
+> = ({ children, className, file, ...rest }) => (
     <ButtonLink className={classNames(file ? styles.fileAction : styles.action, className)} {...rest}>
         {children}
     </ButtonLink>
 )
 
-export const RepoHeaderActionDropdownToggle: React.FunctionComponent = ({ children }) => (
+export const RepoHeaderActionDropdownToggle: React.FunctionComponent<React.PropsWithChildren<unknown>> = ({
+    children,
+}) => (
     <Button as={MenuButton} className={classNames('btn-icon', styles.action)}>
         {children}
     </Button>

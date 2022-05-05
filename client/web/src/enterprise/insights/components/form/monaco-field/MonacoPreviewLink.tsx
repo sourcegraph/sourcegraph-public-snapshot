@@ -15,7 +15,7 @@ export interface MonacoPreviewLinkProps {
     className?: string
 }
 
-export const MonacoPreviewLink: React.FunctionComponent<MonacoPreviewLinkProps> = props => {
+export const MonacoPreviewLink: React.FunctionComponent<React.PropsWithChildren<MonacoPreviewLinkProps>> = props => {
     const { query, patternType, className } = props
     const queryURL = useMemo(() => `/search?${buildSearchURLQuery(query, patternType, false)}`, [patternType, query])
 

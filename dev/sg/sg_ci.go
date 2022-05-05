@@ -238,11 +238,6 @@ Learn more about pipeline run types in https://docs.sourcegraph.com/dev/backgrou
 				Aliases: []string{"c"},
 				Usage:   "`commit` from the current branch to build (defaults to current commit)",
 			},
-			&cli.BoolFlag{
-				Name:    "force",
-				Aliases: []string{"f"},
-				Usage:   "force push to any remote branches",
-			},
 		},
 		Action: func(cmd *cli.Context) error {
 			ctx := cmd.Context
@@ -310,11 +305,7 @@ Learn more about pipeline run types in https://docs.sourcegraph.com/dev/backgrou
 
 				branch = fmt.Sprintf("%s%s", rt.Matcher().Branch, branch)
 				block := stdout.Out.Block(output.Line("", output.StylePending, fmt.Sprintf("Pushing %s to %s...", commit, branch)))
-				gitArgs := []string{"push", "origin", fmt.Sprintf("%s:refs/heads/%s", commit, branch)}
-				if cmd.Bool("force") {
-					gitArgs = append(gitArgs, "--force")
-				}
-				gitOutput, err := run.GitCmd(gitArgs...)
+				gitOutput, err := run.GitCmd("push", "origin", fmt.Sprintf("%s:refs/heads/%s", commit, branch), "--force")
 				if err != nil {
 					return err
 				}
@@ -325,7 +316,7 @@ Learn more about pipeline run types in https://docs.sourcegraph.com/dev/backgrou
 			pipeline := "sourcegraph"
 			var build *buildkite.Build
 			if rt != runtype.PullRequest {
-				updateTicker := time.NewTicker(1 * time.Second)
+				pollTicker := time.NewTicker(5 * time.Second)
 				stdout.Out.WriteLine(output.Linef("", output.StylePending, "Polling for build for branch %s at %s...", branch, commit))
 				for i := 0; i < 30; i++ {
 					// attempt to fetch the new build - it might take some time for the hooks so we will
@@ -333,7 +324,7 @@ Learn more about pipeline run types in https://docs.sourcegraph.com/dev/backgrou
 					if build != nil && build.Commit != nil && *build.Commit == commit {
 						break
 					}
-					<-updateTicker.C
+					<-pollTicker.C
 					build, err = client.GetMostRecentBuild(ctx, pipeline, branch)
 					if err != nil {
 						return errors.Wrap(err, "GetMostRecentBuild")

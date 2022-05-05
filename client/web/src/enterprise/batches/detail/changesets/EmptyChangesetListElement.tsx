@@ -2,7 +2,7 @@ import React from 'react'
 
 import styles from './EmptyChangesetListElement.module.scss'
 
-export const EmptyChangesetListElement: React.FunctionComponent<{}> = () => (
+export const EmptyChangesetListElement: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
     <div className={styles.emptyChangesetListElementBody}>
         <h2 className="text-center mb-4">This batch change does not contain changesets</h2>
         <p>This can occur for several reasons:</p>

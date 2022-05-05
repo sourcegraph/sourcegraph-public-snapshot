@@ -94,7 +94,7 @@ interface WorkspacesPreviewProps {
     setFilters: (filters: WorkspacePreviewFilters) => void
 }
 
-export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> = ({
+export const WorkspacesPreview: React.FunctionComponent<React.PropsWithChildren<WorkspacesPreviewProps>> = ({
     previewDisabled,
     preview,
     batchSpecStale,
@@ -258,7 +258,10 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
     )
 }
 
-const CTAInstruction: React.FunctionComponent<{ active: boolean }> = ({ active, children }) => {
+const CTAInstruction: React.FunctionComponent<React.PropsWithChildren<{ active: boolean }>> = ({
+    active,
+    children,
+}) => {
     // We use 3rem for the height, which is intentionally bigger than the parent (2rem) so
     // that if text is forced to wrap, it isn't cut off.
     const style = useSpring({ height: active ? '3rem' : '0rem', opacity: active ? 1 : 0 })

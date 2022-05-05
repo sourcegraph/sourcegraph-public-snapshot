@@ -35,7 +35,9 @@ const INITIAL_INSIGHT_VALUES: CodeInsightExampleFormValues = {
 
 interface DynamicCodeInsightExampleProps extends TelemetryProps, React.HTMLAttributes<HTMLDivElement> {}
 
-export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsightExampleProps> = props => {
+export const DynamicCodeInsightExample: React.FunctionComponent<
+    React.PropsWithChildren<DynamicCodeInsightExampleProps>
+> = props => {
     const { telemetryService, ...otherProps } = props
 
     const {
@@ -181,7 +183,7 @@ export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsig
     )
 }
 
-const CalloutArrow: React.FunctionComponent<{ className?: string }> = props => (
+const CalloutArrow: React.FunctionComponent<React.PropsWithChildren<{ className?: string }>> = props => (
     <p className={classNames(styles.calloutBlock, props.className)}>
         <svg
             width="59"

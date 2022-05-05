@@ -4,7 +4,16 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+type PythonDependency struct {
+	Name    string
+	Version string
+
+	// The URL of the package to download. Possibly empty.
+	PackageURL string
+}
 
 func NewPythonDependency(name, version string) *PythonDependency {
 	return &PythonDependency{
@@ -13,12 +22,27 @@ func NewPythonDependency(name, version string) *PythonDependency {
 	}
 }
 
-type PythonDependency struct {
-	Name    string
-	Version string
+// ParsePythonDependency parses a string in a '<name>(==<version>)?' format into an
+// PythonDependency.
+func ParsePythonDependency(dependency string) (*PythonDependency, error) {
+	var dep PythonDependency
+	if i := strings.LastIndex(dependency, "=="); i == -1 {
+		dep.Name = dependency
+	} else {
+		dep.Name = strings.TrimSpace(dependency[:i])
+		dep.Version = strings.TrimSpace(dependency[i+2:])
+	}
+	return &dep, nil
+}
 
-	// The URL of the package to download. Possibly empty.
-	PackageURL string
+// ParsePythonDependencyFromRepoName is a convenience function to parse a repo name in a
+// 'python/<name>(==<version>)?' format into a PythonDependency.
+func ParsePythonDependencyFromRepoName(name string) (*PythonDependency, error) {
+	dependency := strings.TrimPrefix(name, "python/")
+	if len(dependency) == len(name) {
+		return nil, errors.New("invalid python dependency repo name, missing python/ prefix")
+	}
+	return ParsePythonDependency(dependency)
 }
 
 func (p *PythonDependency) Scheme() string {

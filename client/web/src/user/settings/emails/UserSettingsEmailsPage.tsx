@@ -27,7 +27,7 @@ type UserEmail = (NonNullable<UserEmailsResult['node']> & { __typename: 'User' }
 type Status = undefined | 'loading' | 'loaded' | ErrorLike
 type EmailActionError = undefined | ErrorLike
 
-export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user }) => {
+export const UserSettingsEmailsPage: FunctionComponent<React.PropsWithChildren<Props>> = ({ user }) => {
     const [emails, setEmails] = useState<UserEmail[]>([])
     const [statusOrError, setStatusOrError] = useState<Status>()
     const [emailActionError, setEmailActionError] = useState<EmailActionError>()

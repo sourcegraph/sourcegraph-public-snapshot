@@ -15,7 +15,7 @@ export const createChromaticStory = (options: CreateChromaticStoryOptions): Stor
     const { storyFn, isDarkModeEnabled } = options
     // The `storyFn` is retrieved from the `StoryStore`, so it already has a `StoryContext`.
     // We can safely change its type to remove required props `StoryContext` props check.
-    const Story = storyFn as React.ComponentType
+    const Story = storyFn as React.ComponentType<React.PropsWithChildren<unknown>>
 
     const isDarkModeEnabledInitially = useDarkMode()
 

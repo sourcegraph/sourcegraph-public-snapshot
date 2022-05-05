@@ -34,7 +34,9 @@ export interface CreateSearchContextPageProps
     isSourcegraphDotCom: boolean
 }
 
-export const AuthenticatedCreateSearchContextPage: React.FunctionComponent<CreateSearchContextPageProps> = props => {
+export const AuthenticatedCreateSearchContextPage: React.FunctionComponent<
+    React.PropsWithChildren<CreateSearchContextPageProps>
+> = props => {
     const { authenticatedUser, createSearchContext, platformContext } = props
 
     const query = parseSearchURLQuery(props.location.search)

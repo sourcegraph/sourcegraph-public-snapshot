@@ -37,12 +37,7 @@ func TestDownload(t *testing.T) {
 	ctx := context.Background()
 	cli := newTestClient(t, "Download", update(t.Name()))
 
-	b, err := cli.Project(ctx, "requests")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	files, err := Parse(b)
+	files, err := cli.Project(ctx, "requests")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -103,17 +98,24 @@ func TestDownload(t *testing.T) {
 	})
 }
 
-func TestParse(t *testing.T) {
-	cli := newTestClient(t, "Parse", update(t.Name()))
-	b, err := cli.Project(context.Background(), "gpg-vault")
-	if err != nil {
-		t.Fatal(err)
-	}
-	files, err := Parse(b)
+func TestProject(t *testing.T) {
+	cli := newTestClient(t, "parse", update(t.Name()))
+	files, err := cli.Project(context.Background(), "gpg-vault")
 	if err != nil {
 		t.Fatal(err)
 	}
 	testutil.AssertGolden(t, "testdata/golden/gpg-vault", update(t.Name()), files)
+}
+
+func TestVersion(t *testing.T) {
+	cli := newTestClient(t, "parse", update(t.Name()))
+	f, err := cli.Version(context.Background(), "gpg-vault", "1.4")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := "gpg-vault-1.4.tar.gz"; want != f.Name {
+		t.Fatalf("want %s, got %s", want, f.Name)
+	}
 }
 
 func TestParse_empty(t *testing.T) {
@@ -125,7 +127,7 @@ func TestParse_empty(t *testing.T) {
 </html>
 `)
 
-	_, err := Parse(b)
+	_, err := parse(b)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -164,7 +166,7 @@ func TestParse_broken(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			_, err := Parse(buf.Bytes())
+			_, err := parse(buf.Bytes())
 			if err == nil {
 				t.Fatal("expected error")
 			}
@@ -194,7 +196,7 @@ func TestParse_PEP503(t *testing.T) {
 </html>
 `)
 
-	got, err := Parse(b)
+	got, err := parse(b)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -218,25 +220,6 @@ func TestParse_PEP503(t *testing.T) {
 	}
 }
 
-// goos: darwin
-// goarch: arm64
-// pkg: github.com/sourcegraph/sourcegraph/internal/extsvc/pypi
-// BenchmarkParse-10           5180            229265 ns/op
-func BenchmarkParse(b *testing.B) {
-	cli := newTestClient(b, "Download", update("TestDownload"))
-	data, err := cli.Project(context.Background(), "requests")
-	if err != nil {
-		b.Fatal(err)
-	}
-	b.ResetTimer()
-	for n := 0; n < b.N; n++ {
-		_, err := Parse(data)
-		if err != nil {
-			b.Fatal(err)
-		}
-	}
-}
-
 func TestToWheel(t *testing.T) {
 	have := []string{
 		"requests-2.16.2-py2.py3-none-any.whl",
@@ -244,6 +227,7 @@ func TestToWheel(t *testing.T) {
 	}
 	want := []Wheel{
 		{
+			File:         File{Name: have[0]},
 			Distribution: "requests",
 			Version:      "2.16.2",
 			BuildTag:     "",
@@ -252,6 +236,7 @@ func TestToWheel(t *testing.T) {
 			PlatformTag:  "any",
 		},
 		{
+			File:         File{Name: have[1]},
 			Distribution: "grpcio",
 			Version:      "1.46.0rc2",
 			BuildTag:     "",
@@ -263,7 +248,7 @@ func TestToWheel(t *testing.T) {
 
 	var got []Wheel
 	for _, h := range have {
-		g, err := ToWheel(h)
+		g, err := ToWheel(File{Name: h})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -272,6 +257,177 @@ func TestToWheel(t *testing.T) {
 
 	if d := cmp.Diff(want, got); d != "" {
 		t.Fatalf("-want, +got\n%s", d)
+	}
+}
+
+func TestFindVersion(t *testing.T) {
+	mkTarball := func(version string) File {
+		n := "request" + "-" + version + ".tar.gz"
+		return File{
+			Name: n,
+			URL:  "https://cdn/" + n,
+		}
+	}
+
+	tags1 := []string{"1", "cp38", "manylinux_2_17_x86_64.manylinux2014_x86_64"}
+	tags2 := []string{"2", "cp39", "win32"}
+
+	mkWheel := func(version string, tags ...string) File {
+		if tags == nil {
+			tags = []string{"py2.py3", "none", "any"}
+		}
+		n := "request" + "-" + version + "-" + strings.Join(tags, "-") + ".whl"
+		return File{
+			Name: n,
+			URL:  "https://cdn/" + n,
+		}
+	}
+
+	tc := []struct {
+		name    string
+		files   []File
+		version string
+		want    File
+	}{
+		{
+			name: "only tarballs",
+			files: []File{
+				mkTarball("1.2.2"),
+				mkTarball("1.2.3"),
+				mkTarball("1.2.4"),
+			},
+			version: "1.2.3",
+			want:    mkTarball("1.2.3"),
+		},
+		{
+			name: "tarballs and wheels",
+			files: []File{
+				mkTarball("1.2.2"),
+				mkWheel("1.2.2"),
+				mkTarball("1.2.3"),
+				mkWheel("1.2.3"),
+				mkTarball("1.2.4"),
+				mkWheel("1.2.4"),
+			},
+			version: "1.2.3",
+			want:    mkTarball("1.2.3"),
+		},
+		{
+			name: "many wheels",
+			files: []File{
+				mkWheel("1.2.2"),
+				mkWheel("1.2.3"),
+				mkWheel("1.2.3", tags1...),
+				mkWheel("1.2.3", tags2...),
+				mkWheel("1.2.4"),
+			},
+			version: "1.2.3",
+			want:    mkWheel("1.2.3", tags1...),
+		},
+		{
+			name: "many wheels, random order",
+			files: []File{
+				mkWheel("1.2.3"),
+				mkWheel("1.2.3", tags2...),
+				mkWheel("1.2.4"),
+				mkWheel("1.2.3", tags1...),
+				mkWheel("1.2.2"),
+			},
+			version: "1.2.3",
+			want:    mkWheel("1.2.3", tags1...),
+		},
+		{
+			name: "no tarball for target version",
+			files: []File{
+				mkTarball("1.2.2"),
+				mkWheel("1.2.2"),
+				mkWheel("1.2.3"),
+				mkTarball("1.2.4"),
+				mkWheel("1.2.4"),
+			},
+			version: "1.2.3",
+			want:    mkWheel("1.2.3"),
+		},
+		{
+			name: "pick latest version",
+			files: []File{
+				mkTarball("1.2.2"),
+				mkWheel("1.2.2"),
+				mkWheel("1.2.3"),
+				mkTarball("1.2.4"),
+				mkWheel("1.2.4"),
+			},
+			version: "",
+			want:    mkTarball("1.2.4"),
+		},
+	}
+
+	for _, c := range tc {
+		t.Run(c.name, func(t *testing.T) {
+			got, err := FindVersion(c.version, c.files)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if d := cmp.Diff(c.want, got); d != "" {
+				t.Fatalf("-want,+got:\n%s", d)
+			}
+		})
+	}
+}
+
+func TestIsSDIST(t *testing.T) {
+	tc := []struct {
+		have string
+		want string
+	}{
+		{
+			have: "file.tar.gz",
+			want: ".tar.gz",
+		},
+		{
+			have: "file.tar",
+			want: ".tar",
+		},
+		{
+			have: "file.tar.Z",
+			want: ".tar.Z",
+		},
+		{
+			have: "file.zip",
+			want: ".zip",
+		},
+		{
+			have: "file.tar.xz",
+			want: ".tar.xz",
+		},
+		{
+			have: "file.tar.bz2",
+			want: ".tar.bz2",
+		},
+		{
+			have: "file.foo",
+			want: "",
+		},
+		{
+			have: "file.foo.bz",
+			want: "",
+		},
+		{
+			have: "",
+			want: "",
+		},
+		{
+			have: "foo",
+			want: "",
+		},
+	}
+
+	for _, c := range tc {
+		t.Run(c.have, func(t *testing.T) {
+			if got := isSDIST(c.have); got != c.want {
+				t.Fatalf("want %q, got %q", c.want, got)
+			}
+		})
 	}
 }
 
@@ -295,7 +451,6 @@ func newTestClient(t testing.TB, name string, update bool) *Client {
 		t.Fatal(err)
 	}
 
-	c := NewClient("urn", []string{"https://pypi.org/simple"})
-	c.cli = doer
+	c := NewClient("urn", []string{"https://pypi.org/simple"}, doer)
 	return c
 }

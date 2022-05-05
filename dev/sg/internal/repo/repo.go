@@ -2,7 +2,6 @@ package repo
 
 import (
 	"strings"
-	"sync"
 
 	"github.com/sourcegraph/go-diff/diff"
 
@@ -13,10 +12,6 @@ import (
 type State struct {
 	// Branch is the currently checked out branch.
 	Branch string
-
-	diff     map[string][]DiffHunk
-	diffErr  error
-	diffOnce sync.Once
 }
 
 type DiffHunk struct {
@@ -26,25 +21,21 @@ type DiffHunk struct {
 	AddedLines []string
 }
 
-func (s *State) GetDiff(files string) (map[string][]DiffHunk, error) {
-	s.diffOnce.Do(func() {
-		if files == "" {
-			files = "**/*"
-		}
+func (s *State) GetDiff(paths string) (map[string][]DiffHunk, error) {
+	if paths == "" {
+		paths = "**/*"
+	}
 
-		target := "origin/main"
-		if s.Branch == "main" {
-			target = "@^"
-		}
+	target := "origin/main"
+	if s.Branch == "main" {
+		target = "@^"
+	}
 
-		diffOutput, err := run.TrimResult(run.GitCmd("diff", target, "--", files))
-		if err != nil {
-			s.diffErr = err
-			return
-		}
-		s.diff, s.diffErr = parseDiff(diffOutput)
-	})
-	return s.diff, s.diffErr
+	diffOutput, err := run.TrimResult(run.GitCmd("diff", target, "--", paths))
+	if err != nil {
+		return nil, err
+	}
+	return parseDiff(diffOutput)
 }
 
 func parseDiff(diffOutput string) (map[string][]DiffHunk, error) {

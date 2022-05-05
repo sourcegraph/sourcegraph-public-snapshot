@@ -374,7 +374,9 @@ export interface CommandListPopoverButtonProps
     keyboardShortcutForShow?: KeyboardShortcut
 }
 
-export const CommandListPopoverButton: React.FunctionComponent<CommandListPopoverButtonProps> = ({
+export const CommandListPopoverButton: React.FunctionComponent<
+    React.PropsWithChildren<CommandListPopoverButtonProps>
+> = ({
     buttonClassName,
     buttonElement = 'span',
     buttonOpenClassName,

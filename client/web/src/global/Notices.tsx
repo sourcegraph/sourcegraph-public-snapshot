@@ -21,7 +21,11 @@ interface NoticeAlertProps {
     testId?: string
 }
 
-const NoticeAlert: React.FunctionComponent<NoticeAlertProps> = ({ notice, className = '', testId }) => {
+const NoticeAlert: React.FunctionComponent<React.PropsWithChildren<NoticeAlertProps>> = ({
+    notice,
+    className = '',
+    testId,
+}) => {
     const content = <Markdown dangerousInnerHTML={renderMarkdown(notice.message)} />
 
     const sharedProps = {
@@ -52,7 +56,7 @@ interface Props extends SettingsCascadeProps {
 /**
  * Displays notices from settings for a specific location.
  */
-export const Notices: React.FunctionComponent<Props> = ({
+export const Notices: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     className = '',
     alertClassName,
     settingsCascade,

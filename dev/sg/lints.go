@@ -2,16 +2,23 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
+	"github.com/Masterminds/semver"
+	"github.com/bitfield/script"
+
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/docker"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/download"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/generate/golang"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/lint"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -36,10 +43,11 @@ var allLintTargets = lintTargets{
 		},
 	},
 	{
-		Name: "logger-migration",
-		Help: "Run linter that enforces the new logger library",
+		Name: "go-custom",
+		Help: "Custom checks for Go, will be migrated to the default go check set in the future",
 		Linters: []lint.Runner{
 			lintLoggingLibraries(),
+			goModGuards(),
 		},
 	},
 	{
@@ -53,8 +61,8 @@ var allLintTargets = lintTargets{
 		Name: "docker",
 		Help: "Check Dockerfiles for Sourcegraph best practices",
 		Linters: []lint.Runner{
-			lint.RunScript("Docker lint", "dev/check/docker-lint.sh"),
-			lintDockerfiles(),
+			hadolint(),
+			customDockerfileLinters(),
 		},
 	},
 	{
@@ -75,6 +83,76 @@ var allLintTargets = lintTargets{
 			lint.RunScript("Shell lint", "dev/check/shellcheck.sh"),
 		},
 	},
+}
+
+func goModGuards() lint.Runner {
+	const header = "go.mod version guards"
+
+	var maxVersions = map[string]*semver.Version{
+		// Any version past this version is not yet released in any version of Alertmanager,
+		// and causes incompatibility in prom-wrapper.
+		//
+		// https://github.com/sourcegraph/zoekt/pull/330#issuecomment-1116857568
+		"github.com/prometheus/common": semver.MustParse("v0.32.1"),
+	}
+
+	if len(maxVersions) == 0 {
+		return func(ctx context.Context, s *repo.State) *lint.Report {
+			return &lint.Report{Header: header, Output: "No guards currently defined"}
+		}
+	}
+
+	return func(ctx context.Context, s *repo.State) *lint.Report {
+		start := time.Now()
+
+		diff, err := s.GetDiff("go.mod")
+		if err != nil {
+			return &lint.Report{Header: header, Err: err}
+		}
+		if len(diff) == 0 {
+			return &lint.Report{Header: header, Output: "No go.mod changes detected!"}
+		}
+
+		var errs error
+		for _, hunk := range diff["go.mod"] {
+			for _, l := range hunk.AddedLines {
+				parts := strings.Split(strings.TrimSpace(l), " ")
+				if len(parts) != 2 {
+					continue
+				}
+				var (
+					lib     = parts[0]
+					version = parts[1]
+				)
+				if !strings.HasPrefix(version, "v") {
+					continue
+				}
+				if maxVersion := maxVersions[lib]; maxVersion != nil {
+					v, err := semver.NewVersion(version)
+					if err != nil {
+						errs = errors.Append(errs, errors.Wrapf(err, "dependency %s has invalid version", lib))
+						continue
+					}
+					if v.GreaterThan(maxVersion) {
+						errs = errors.Append(errs, errors.Newf("dependency %s must not exceed version %s",
+							lib, maxVersion))
+					}
+				}
+			}
+		}
+
+		return &lint.Report{
+			Duration: time.Since(start),
+			Header:   header,
+			Output: func() string {
+				if errs != nil {
+					return strings.TrimSpace(errs.Error())
+				}
+				return ""
+			}(),
+			Err: errs,
+		}
+	}
 }
 
 // lintLoggingLibraries enforces that only usages of lib/log are added
@@ -155,8 +233,84 @@ func lintLoggingLibraries() lint.Runner {
 	}
 }
 
-// lintDockerfiles runs custom Sourcegraph Dockerfile linters
-func lintDockerfiles() lint.Runner {
+func hadolint() lint.Runner {
+	const header = "Hadolint"
+	const hadolintVersion = "v2.10.0"
+	hadolintBinary := fmt.Sprintf("./.bin/hadolint-%s", hadolintVersion)
+
+	runHadolint := func(start time.Time, files []string) *lint.Report {
+		out, err := script.NewPipe().
+			WithReader(strings.NewReader(strings.Join(files, "\n"))).
+			Exec("xargs " + hadolintBinary).
+			String()
+		return &lint.Report{
+			Header:   header,
+			Output:   out,
+			Err:      err,
+			Duration: time.Since(start),
+		}
+	}
+
+	return func(ctx context.Context, s *repo.State) *lint.Report {
+		start := time.Now()
+		diff, err := s.GetDiff("**/*Dockerfile*")
+		if err != nil {
+			return &lint.Report{Header: header, Err: err}
+		}
+		var dockerfiles []string
+		for f := range diff {
+			dockerfiles = append(dockerfiles, f)
+		}
+		if len(dockerfiles) == 0 {
+			return &lint.Report{
+				Header:   header,
+				Output:   "No Dockerfiles changed",
+				Duration: time.Since(start),
+			}
+		}
+
+		// If our binary is already here, just go!
+		if _, err := os.Stat(hadolintBinary); err == nil {
+			return runHadolint(start, dockerfiles)
+		}
+
+		// https://github.com/hadolint/hadolint/releases for downloads
+		var distro, arch string
+		switch runtime.GOARCH {
+		case "arm64":
+			arch = "arm64"
+		default:
+			arch = "x86_64"
+		}
+		switch runtime.GOOS {
+		case "darwin":
+			distro = "Darwin"
+			arch = "x86_64"
+		case "windows":
+			distro = "Windows"
+		default:
+			distro = "Linux"
+		}
+		url := fmt.Sprintf("https://github.com/hadolint/hadolint/releases/download/%s/hadolint-%s-%s",
+			hadolintVersion, distro, arch)
+
+		// Download
+		os.MkdirAll("./.bin", os.ModePerm)
+		stdout.Out.WriteLine(output.Linef(output.EmojiHourglass, nil, "Downloading hadolint from %s", url))
+		if err := download.Exeuctable(url, hadolintBinary); err != nil {
+			return &lint.Report{
+				Header:   header,
+				Err:      errors.Wrap(err, "downloading hadolint"),
+				Duration: time.Since(start),
+			}
+		}
+
+		return runHadolint(start, dockerfiles)
+	}
+}
+
+// customDockerfileLinters runs custom Sourcegraph Dockerfile linters
+func customDockerfileLinters() lint.Runner {
 	return func(ctx context.Context, _ *repo.State) *lint.Report {
 		start := time.Now()
 		var combinedErrors error

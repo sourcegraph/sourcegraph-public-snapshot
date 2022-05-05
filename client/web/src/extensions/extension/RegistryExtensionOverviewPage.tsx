@@ -24,10 +24,9 @@ import styles from './RegistryExtensionOverviewPage.module.scss'
 
 interface Props extends Pick<ExtensionAreaRouteContext, 'extension' | 'telemetryService' | 'isLightTheme'> {}
 
-const RegistryExtensionOverviewIcon: React.FunctionComponent<Pick<Props, 'extension' | 'isLightTheme'>> = ({
-    extension,
-    isLightTheme,
-}) => {
+const RegistryExtensionOverviewIcon: React.FunctionComponent<
+    React.PropsWithChildren<Pick<Props, 'extension' | 'isLightTheme'>>
+> = ({ extension, isLightTheme }) => {
     const manifest: ExtensionManifest | undefined =
         extension.manifest && !isErrorLike(extension.manifest) ? extension.manifest : undefined
 
@@ -63,7 +62,7 @@ const RegistryExtensionOverviewIcon: React.FunctionComponent<Pick<Props, 'extens
 }
 
 /** A page that displays overview information about a registry extension. */
-export const RegistryExtensionOverviewPage: React.FunctionComponent<Props> = ({
+export const RegistryExtensionOverviewPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     telemetryService,
     extension,
     isLightTheme,

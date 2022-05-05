@@ -25,7 +25,7 @@ export interface ForwardReferenceComponent<
     <As = IntrinsicElementString>(
         props: As extends ''
             ? { as: keyof JSX.IntrinsicElements }
-            : As extends React.ComponentType<infer P>
+            : As extends React.ComponentType<React.PropsWithChildren<infer P>>
             ? Merge<P, OwnProps & { as: As }>
             : As extends keyof JSX.IntrinsicElements
             ? Merge<JSX.IntrinsicElements[As], OwnProps & { as: As }>
