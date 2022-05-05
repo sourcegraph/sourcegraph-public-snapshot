@@ -2,7 +2,6 @@ package streaming
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -25,15 +24,15 @@ func toComputeResultStream(ctx context.Context, db database.DB, cmd compute.Comm
 	return nil
 }
 
-func NewComputeStream(ctx context.Context, db database.DB, query string) (<-chan Event, func() error) {
+func NewComputeStream(ctx context.Context, db database.DB, query string) (<-chan Event, func() (*search.Alert, error)) {
 	computeQuery, err := compute.Parse(query)
 	if err != nil {
-		return nil, func() error { return err }
+		return nil, func() (*search.Alert, error) { return nil, err }
 	}
 
 	searchQuery, err := computeQuery.ToSearchQuery()
 	if err != nil {
-		return nil, func() error { return err }
+		return nil, func() (*search.Alert, error) { return nil, err }
 	}
 
 	eventsC := make(chan Event)
@@ -44,7 +43,7 @@ func NewComputeStream(ctx context.Context, db database.DB, query string) (<-chan
 				eventsC <- Event{Results: []compute.Result{result}}
 			}
 			err = toComputeResultStream(ctx, db, computeQuery.Command, event.Results, callback)
-			errorC <- fmt.Errorf("leo's error")
+			errorC <- err
 		}
 	})
 
@@ -52,7 +51,7 @@ func NewComputeStream(ctx context.Context, db database.DB, query string) (<-chan
 	if err != nil {
 		close(eventsC)
 		close(errorC)
-		return eventsC, func() error { return err }
+		return eventsC, func() (*search.Alert, error) { return nil, err }
 	}
 
 	patternType := "regexp"
@@ -62,11 +61,12 @@ func NewComputeStream(ctx context.Context, db database.DB, query string) (<-chan
 		close(eventsC)
 		close(errorC)
 
-		return eventsC, func() error { return err }
+		return eventsC, func() (*search.Alert, error) { return nil, err }
 	}
 
 	type finalResult struct {
-		err error
+		alert *search.Alert
+		err   error
 	}
 	final := make(chan finalResult, 1)
 	go func() {
@@ -74,16 +74,16 @@ func NewComputeStream(ctx context.Context, db database.DB, query string) (<-chan
 		defer close(eventsC)
 		defer close(errorC)
 
-		_, err := searchClient.Execute(ctx, stream, inputs)
-		final <- finalResult{err: err}
+		alert, err := searchClient.Execute(ctx, stream, inputs)
+		final <- finalResult{alert: alert, err: err}
 	}()
 
-	return eventsC, func() error {
+	return eventsC, func() (*search.Alert, error) {
 		computeErr := <-errorC
 		if computeErr != nil {
-			return computeErr
+			return nil, computeErr
 		}
 		f := <-final
-		return f.err
+		return f.alert, f.err
 	}
 }
