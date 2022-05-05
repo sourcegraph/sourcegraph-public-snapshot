@@ -94,7 +94,8 @@ func (client *HTTPClient) GetPackageInfo(ctx context.Context, pkg *reposource.Np
 }
 
 type DependencyInfo struct {
-	Dist DependencyInfoDist `json:"dist"`
+	Description string             `json:"description"`
+	Dist        DependencyInfoDist `json:"dist"`
 }
 
 type DependencyInfoDist struct {

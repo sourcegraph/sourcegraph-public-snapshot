@@ -45,6 +45,8 @@ func (m *MavenModule) LsifJavaKind() string {
 	return "maven"
 }
 
+func (m *MavenModule) Description() string { return "" }
+
 func (m *MavenModule) RepoName() api.RepoName {
 	if m.IsJDK() {
 		return "jdk"
