@@ -1,3 +1,11 @@
+// Variables are used by both Bootstrap and this file to configure typography.
+$h1-font-size: 1.625rem; // 26px
+$h2-font-size: 1.25rem; // 20px
+$h3-font-size: 1rem; // 16px
+$h4-font-size: 0.875rem; // 14px
+$h5-font-size: 0.625rem; // 10px
+$h6-font-size: 0.625rem; // 10px
+
 @import 'bootstrap/scss/type';
 
 :root {
@@ -5,32 +13,32 @@
 }
 
 h1 {
-    font-size: 1.625rem; // 26px
+    font-size: $h1-font-size;
     font-weight: 600;
     letter-spacing: (0.5/26) + em;
     margin: 0 0 1rem;
 }
 
 h2 {
-    font-size: 1.25rem; // 20px
+    font-size: $h2-font-size;
     font-weight: 600;
     letter-spacing: (0.25/20) + em;
 }
 
 h3 {
-    font-size: 1rem; // 16px
+    font-size: $h3-font-size;
     font-weight: 600;
     letter-spacing: (0.25/16) + em;
 }
 
 h4 {
-    font-size: 0.875rem; // 14px
+    font-size: $h4-font-size;
     font-weight: 500;
     letter-spacing: (0.25/14) + em;
 }
 
 h5 {
-    font-size: 0.625rem; // 10px
+    font-size: $h5-font-size;
     font-weight: 600;
     letter-spacing: (0.5/10) + em;
     text-transform: uppercase;
@@ -38,7 +46,7 @@ h5 {
 }
 
 h6 {
-    font-size: 0.625rem;
+    font-size: $h6-font-size;
     font-weight: 400;
 }
 
