@@ -14,6 +14,9 @@ type checkResult struct {
 	Reviewed bool
 	// TestPlan is the content provided after the acceptance checklist checkbox.
 	TestPlan string
+	// Protected indicates that the base branch for this PR is protected and merges
+	// are considered to be exceptional and should always be justified.
+	Protected bool
 	// Error indicating any issue that might have occured during the check.
 	Error error
 }
@@ -23,13 +26,18 @@ func (r checkResult) HasTestPlan() bool {
 }
 
 var (
-	testPlanDividerRegexp       = regexp.MustCompile("(?m)(#+ Test [pP]lan)|(Test [pP]lan:)")
-	noReviewNeededDividerRegexp = regexp.MustCompile("(?m)([nN]o [rR]eview [rR]equired:)")
+	testPlanDividerRegexp       = regexp.MustCompile("(?mi)(#+ test plan)|(test plan:)")
+	noReviewNeededDividerRegexp = regexp.MustCompile("(?mi)(no review required:)")
 	markdownCommentRegexp       = regexp.MustCompile("<!--((.|\n)*?)-->(\n)*")
 )
 
 type checkOpts struct {
 	ValidateReviews bool
+	ProtectedBranch string
+}
+
+func isProtectedBranch(payload *EventPayload, protectedBranch string) bool {
+	return protectedBranch != "" && payload.PullRequest.Base.Ref == protectedBranch
 }
 
 func checkPR(ctx context.Context, ghc *github.Client, payload *EventPayload, opts checkOpts) checkResult {
@@ -66,10 +74,13 @@ func checkPR(ctx context.Context, ghc *github.Client, payload *EventPayload, opt
 		}
 	}
 
+	mergeAgainstProtected := isProtectedBranch(payload, opts.ProtectedBranch)
+
 	return checkResult{
-		Reviewed: reviewed,
-		TestPlan: testPlan,
-		Error:    err,
+		Reviewed:  reviewed,
+		TestPlan:  testPlan,
+		Protected: mergeAgainstProtected,
+		Error:     err,
 	}
 }
 

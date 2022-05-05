@@ -18,6 +18,9 @@ func TestGenerateExceptionIssue(t *testing.T) {
 	privatePayload := payload
 	privatePayload.Repository.Private = true
 
+	protectedPayload := payload
+	protectedPayload.PullRequest.Base = RefPayload{Ref: "release"}
+
 	tests := []struct {
 		name    string
 		payload EventPayload
@@ -36,6 +39,7 @@ func TestGenerateExceptionIssue(t *testing.T) {
 		wantAssignees:    []string{"robert"},
 		wantLabels:       []string{"exception/review", "exception/test-plan", "bobheadxi/robert"},
 		wantBodyContains: []string{"some pull request", "has no test plan", "was not reviewed"},
+		wantBodyExcludes: []string{"protected"},
 	}, {
 		name:    "not reviewed, planned",
 		payload: payload,
@@ -46,6 +50,7 @@ func TestGenerateExceptionIssue(t *testing.T) {
 		wantAssignees:    []string{"robert"},
 		wantLabels:       []string{"exception/review", "bobheadxi/robert"},
 		wantBodyContains: []string{"some pull request", "has a test plan", "was not reviewed"},
+		wantBodyExcludes: []string{"protected"},
 	}, {
 		name:    "not planned, reviewed",
 		payload: payload,
@@ -55,14 +60,23 @@ func TestGenerateExceptionIssue(t *testing.T) {
 		wantAssignees:    []string{"robert"},
 		wantLabels:       []string{"exception/test-plan", "bobheadxi/robert"},
 		wantBodyContains: []string{"some pull request", "has no test plan"},
+		wantBodyExcludes: []string{"protected"},
 	}, {
-		name:             "prviate reponot planned, reviewed",
+		name:             "private repo, not planned, reviewed",
 		payload:          privatePayload,
 		result:           checkResult{},
 		wantAssignees:    []string{"robert"},
 		wantLabels:       []string{"exception/review", "exception/test-plan", "bobheadxi/robert"},
-		wantBodyExcludes: []string{"some pull request"},
-	}}
+		wantBodyExcludes: []string{"some pull request", "protected"},
+	}, {
+		name:             "reviewed, planned but protected",
+		payload:          protectedPayload,
+		result:           checkResult{Protected: true},
+		wantAssignees:    []string{"robert"},
+		wantLabels:       []string{"exception/review", "exception/test-plan", "exception/protected-branch", "bobheadxi/robert"},
+		wantBodyContains: []string{"'release' is protected"},
+	},
+	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := generateExceptionIssue(&tt.payload, &tt.result)
