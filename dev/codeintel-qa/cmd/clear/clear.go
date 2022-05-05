@@ -27,7 +27,7 @@ func clearAllIndexes(ctx context.Context) error {
 	return nil
 }
 
-func clearIndexesOnce(ctx context.Context, client *gqltestutil.Client) (requery bool, _ error) {
+func clearIndexesOnce(_ context.Context, client *gqltestutil.Client) (requery bool, _ error) {
 	var payload struct {
 		Data struct {
 			LSIFIndexes struct {
@@ -95,7 +95,7 @@ func clearAllUploads(ctx context.Context) error {
 	return nil
 }
 
-func clearUploadsOnce(ctx context.Context, client *gqltestutil.Client) (requery bool, _ error) {
+func clearUploadsOnce(_ context.Context, client *gqltestutil.Client) (requery bool, _ error) {
 	var payload struct {
 		Data struct {
 			LSIFUploads struct {
