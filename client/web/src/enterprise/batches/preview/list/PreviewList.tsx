@@ -62,6 +62,14 @@ export const PreviewList: React.FunctionComponent<React.PropsWithChildren<Props>
     const { selected, areAllVisibleSelected, isSelected, toggleSingle, toggleVisible, setVisible } = useContext(
         MultiSelectContext
     )
+    // The user can modify the desired publication states for changesets in this preview
+    // list from the UI. However, these modifications are transient and are not persisted
+    // to the backend (until the user applies the batch change and the publication states
+    // are realized, of course). Rather, they are provided as arguments to the
+    // `applyPreview` connection, and later the `applyBatchChange` mutation, in order to
+    // override the original publication states computed by the reconciler on the backend.
+    // `BatchChangePreviewContext` is responsible for managing these publication states,
+    // as well as filter arguments to the connection query, clientside.
     const { filters, publicationStates, resolveRecalculationUpdates } = useContext(BatchChangePreviewContext)
 
     const [queryArguments, setQueryArguments] = useState<BatchSpecApplyPreviewVariables>()
@@ -176,6 +184,8 @@ const EmptyPreviewSearchElement: React.FunctionComponent<React.PropsWithChildren
  * changesets.
  */
 const PublicationStatesUpdateAlerts: React.FunctionComponent<React.PropsWithChildren<{}>> = () => {
+    // `BatchChangePreviewContext` keeps a record of each time the user modifies the
+    // desired publication states for changesets in the preview list from the UI.
     const { recalculationUpdates } = useContext(BatchChangePreviewContext)
 
     return (
