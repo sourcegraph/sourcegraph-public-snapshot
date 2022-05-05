@@ -277,7 +277,7 @@ SELECT
 	COUNT(distinct batch_changes.id) AS batch_changes_count
 FROM batch_changes
 INNER JOIN batch_specs ON batch_specs.id = batch_changes.batch_spec_id
-LEFT JOIN changesets ON batch_changes.id = changesets.owned_by_batch_change_id
+LEFT JOIN changesets ON changesets.batch_change_ids ? batch_changes.id::TEXT
 WHERE changesets.publication_state = 'PUBLISHED'
 GROUP BY batch_specs.created_from_raw;
 `
