@@ -12,19 +12,9 @@ Not sure if the Docker Compose deployment type is the right for you? Learn more 
 - Use the [resource estimator](../resource_estimator.md) to ensure your machine has sufficient capacity.
 - [Sourcegraph license](https://about.sourcegraph.com/pricing/). You can run through these instructions without one, but you must obtain a license for instances of more than 10 users.
 
-### Windows support
-
-> WARNING: Running Sourcegraph on Windows is not supported for production deployments.
-
-### ARM / ARM64 support
-
-> WARNING: Running Sourcegraph on ARM / ARM64 images is not supported for production deployments.
-
-The Docker Compose installation requires a minimum of 8 CPU cores (logical) on the host machine in order to complete successfully. If using the Docker for Windows app, the default CPU count is limited to 2 which will result in errors during installation. You can go into the Docker app Settings->Resources window to increase the CPU count to > 8 to resolve this issue.
+> WARNING: Running Sourcegraph on Windows is not supported for production deployments. Running Sourcegraph on ARM / ARM64 images is not supported for production deployments.
 
 ## Requirements
-
-The Docker Compose installation requires a minimum of 8 CPU cores (logical) on the host machine in order to complete successfully. Using the default Docker for Desktop app, the default CPU count is limited to 2, which will result in errors during installation. You can go into the Docker app Settings->Resources window to increase the CPU count to > 8 to resolve this issue.
 
 Our Docker Compose support also has the following requirements:
 
