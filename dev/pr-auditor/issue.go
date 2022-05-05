@@ -49,7 +49,7 @@ func generateExceptionIssue(payload *EventPayload, result *checkResult) *github.
 	}
 
 	if result.Protected {
-		issueBody += fmt.Sprintf("\n\nThis base branch '%s' is protected and should not be targeted.", payload.PullRequest.Base.Ref)
+		issueBody += fmt.Sprintf("\n\The base branch %q is protected and should not have direct pull requests to it.", payload.PullRequest.Base.Ref)
 	}
 
 	user := payload.PullRequest.MergedBy.Login
