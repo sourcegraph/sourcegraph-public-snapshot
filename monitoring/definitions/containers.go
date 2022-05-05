@@ -2,16 +2,20 @@ package definitions
 
 import (
 	"fmt"
-	"strings"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
 func Containers() *monitoring.Container {
-	var (
-		serviceNames       = append(images.DeploySourcegraphDockerImages, "pgsql", "codeinsights", "codeintel")
-		containerNameQuery = fmt.Sprintf(`name=~"(%s).*"`, strings.Join(serviceNames, "|"))
+	const (
+		// Image names are defined in enterprise package
+		// github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images
+		// Hence we can't use the exported names in OSS here.
+		// Also, the exported names do not cover edge cases such as `pgsql`, `codeintel-db`, and `codeinsights-db`.
+		// We might as well use "wildcard" to cover all running containers. This is acceptable because:
+		// On Kubernetes, prometheus can only scrape containers within the same namespace
+		// On docker-compose, prometheus can only scrape containers from a hardcoded list.
+		containerNameQuery = `name=~"^[a-zA-Z].*"`
 	)
 
 	return &monitoring.Container{

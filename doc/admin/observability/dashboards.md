@@ -18043,7 +18043,7 @@ To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `cadvisor_container_memory_usage_percentage_total{name=~"(alpine-3.12|alpine-3.14|cadvisor|codeinsights-db|codeintel-db|frontend|github-proxy|gitserver|grafana|indexed-searcher|jaeger-agent|jaeger-all-in-one|minio|postgres-12-alpine|postgres_exporter|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis_exporter|repo-updater|search-indexer|searcher|symbols|syntax-highlighter|worker|migrator|pgsql|codeinsights|codeintel).*"}`
+Query: `cadvisor_container_memory_usage_percentage_total{name=~"^[a-zA-Z].*"}`
 
 </details>
 
@@ -18064,7 +18064,7 @@ To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `cadvisor_container_cpu_usage_percentage_total{name=~"(alpine-3.12|alpine-3.14|cadvisor|codeinsights-db|codeintel-db|frontend|github-proxy|gitserver|grafana|indexed-searcher|jaeger-agent|jaeger-all-in-one|minio|postgres-12-alpine|postgres_exporter|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis_exporter|repo-updater|search-indexer|searcher|symbols|syntax-highlighter|worker|migrator|pgsql|codeinsights|codeintel).*"}`
+Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^[a-zA-Z].*"}`
 
 </details>
 
@@ -18087,7 +18087,7 @@ To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"(alpine-3.12|alpine-3.14|cadvisor|codeinsights-db|codeintel-db|frontend|github-proxy|gitserver|grafana|indexed-searcher|jaeger-agent|jaeger-all-in-one|minio|postgres-12-alpine|postgres_exporter|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis_exporter|repo-updater|search-indexer|searcher|symbols|syntax-highlighter|worker|migrator|pgsql|codeinsights|codeintel).*"}[5m]) >= 80`
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^[a-zA-Z].*"}[5m]) >= 80`
 
 </details>
 
@@ -18108,7 +18108,7 @@ To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"(alpine-3.12|alpine-3.14|cadvisor|codeinsights-db|codeintel-db|frontend|github-proxy|gitserver|grafana|indexed-searcher|jaeger-agent|jaeger-all-in-one|minio|postgres-12-alpine|postgres_exporter|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis_exporter|repo-updater|search-indexer|searcher|symbols|syntax-highlighter|worker|migrator|pgsql|codeinsights|codeintel).*"}[5m]) >= 80`
+Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^[a-zA-Z].*"}[5m]) >= 80`
 
 </details>
 
@@ -18130,7 +18130,7 @@ To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (name) (container_oom_events_total{name=~"(alpine-3.12|alpine-3.14|cadvisor|codeinsights-db|codeintel-db|frontend|github-proxy|gitserver|grafana|indexed-searcher|jaeger-agent|jaeger-all-in-one|minio|postgres-12-alpine|postgres_exporter|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis_exporter|repo-updater|search-indexer|searcher|symbols|syntax-highlighter|worker|migrator|pgsql|codeinsights|codeintel).*"}) >= 1`
+Query: `max by (name) (container_oom_events_total{name=~"^[a-zA-Z].*"}) >= 1`
 
 </details>
 
@@ -18152,7 +18152,7 @@ To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `count by(name) ((time() - container_last_seen{name=~"(alpine-3.12|alpine-3.14|cadvisor|codeinsights-db|codeintel-db|frontend|github-proxy|gitserver|grafana|indexed-searcher|jaeger-agent|jaeger-all-in-one|minio|postgres-12-alpine|postgres_exporter|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis_exporter|repo-updater|search-indexer|searcher|symbols|syntax-highlighter|worker|migrator|pgsql|codeinsights|codeintel).*"}) > 60)`
+Query: `count by(name) ((time() - container_last_seen{name=~"^[a-zA-Z].*"}) > 60)`
 
 </details>
 
