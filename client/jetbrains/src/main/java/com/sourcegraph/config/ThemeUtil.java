@@ -1,4 +1,4 @@
-package com.sourcegraph.util;
+package com.sourcegraph.config;
 
 import com.google.gson.JsonObject;
 import com.intellij.util.ui.UIUtil;

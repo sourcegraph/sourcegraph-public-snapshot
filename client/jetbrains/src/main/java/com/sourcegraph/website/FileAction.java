@@ -1,4 +1,4 @@
-package com.sourcegraph.action;
+package com.sourcegraph.website;
 
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
@@ -8,9 +8,10 @@ import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.sourcegraph.project.RepoInfo;
-import com.sourcegraph.util.ConfigUtil;
-import com.sourcegraph.util.SourcegraphUtil;
+import com.sourcegraph.config.ConfigUtil;
+import com.sourcegraph.git.GitUtil;
+import com.sourcegraph.git.RepoInfo;
+import com.sourcegraph.git.SourcegraphUtil;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -39,7 +40,7 @@ public abstract class FileAction extends AnAction {
         SelectionModel sel = editor.getSelectionModel();
 
         // Get repo information.
-        RepoInfo repoInfo = SourcegraphUtil.getRepoInfo(currentFile.getPath(), project);
+        RepoInfo repoInfo = GitUtil.getRepoInfo(currentFile.getPath(), project);
         if (Objects.equals(repoInfo.remoteUrl, "")) {
             return;
         }

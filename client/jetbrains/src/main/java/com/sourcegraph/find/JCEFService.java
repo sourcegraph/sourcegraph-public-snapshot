@@ -1,8 +1,7 @@
-package com.sourcegraph.service;
+package com.sourcegraph.find;
 
 import com.intellij.openapi.project.Project;
-import com.sourcegraph.ui.SourcegraphJBCefBrowser;
-import com.sourcegraph.ui.SourcegraphWindow;
+import com.sourcegraph.browser.SourcegraphJBCefBrowser;
 
 public class JCEFService {
     private final SourcegraphWindow sourcegraphWindow;

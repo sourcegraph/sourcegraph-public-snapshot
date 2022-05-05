@@ -1,4 +1,4 @@
-package com.sourcegraph.project;
+package com.sourcegraph.git;
 
 public class RepoInfo {
     public final String relativePath;

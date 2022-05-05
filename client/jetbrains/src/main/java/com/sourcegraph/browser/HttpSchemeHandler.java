@@ -1,4 +1,4 @@
-package com.sourcegraph.scheme;
+package com.sourcegraph.browser;
 
 import com.google.common.collect.ImmutableMap;
 import org.cef.callback.CefCallback;

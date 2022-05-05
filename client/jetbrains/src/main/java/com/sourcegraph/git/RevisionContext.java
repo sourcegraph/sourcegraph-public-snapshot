@@ -1,4 +1,4 @@
-package com.sourcegraph.project;
+package com.sourcegraph.git;
 
 import com.intellij.openapi.project.Project;
 

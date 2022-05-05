@@ -1,10 +1,7 @@
-package com.sourcegraph.ui;
+package com.sourcegraph.browser;
 
 import com.intellij.ui.jcef.JBCefBrowser;
-import com.sourcegraph.bridge.JSToJavaBridge;
-import com.sourcegraph.bridge.JSToJavaBridgeRequestHandler;
-import com.sourcegraph.scheme.HttpSchemeHandlerFactory;
-import com.sourcegraph.util.ThemeUtil;
+import com.sourcegraph.config.ThemeUtil;
 import org.cef.CefApp;
 
 public class SourcegraphJBCefBrowser extends JBCefBrowser {

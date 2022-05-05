@@ -1,8 +1,8 @@
-package com.sourcegraph.bridge;
+package com.sourcegraph.browser;
 
 import com.google.gson.JsonObject;
 import com.intellij.ui.jcef.JBCefJSQuery;
-import com.sourcegraph.util.ThemeUtil;
+import com.sourcegraph.config.ThemeUtil;
 
 import javax.annotation.Nullable;
 

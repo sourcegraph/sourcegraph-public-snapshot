@@ -1,4 +1,4 @@
-package com.sourcegraph.ui;
+package com.sourcegraph.find;
 
 import com.intellij.codeInsight.highlighting.HighlightManager;
 import com.intellij.openapi.Disposable;
@@ -16,7 +16,7 @@ import com.intellij.ui.components.JBPanel;
 import com.intellij.ui.components.JBPanelWithEmptyText;
 import com.intellij.ui.jcef.JBCefApp;
 import com.intellij.util.ui.JBUI;
-import com.sourcegraph.service.JCEFService;
+import com.sourcegraph.browser.SourcegraphJBCefBrowser;
 
 import javax.swing.*;
 import java.awt.*;

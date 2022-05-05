@@ -1,10 +1,9 @@
-package com.sourcegraph.action;
+package com.sourcegraph.find;
 
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
-import com.sourcegraph.service.JCEFService;
 import org.jetbrains.annotations.NotNull;
 
 public class OpenSearchAction extends AnAction implements DumbAware {

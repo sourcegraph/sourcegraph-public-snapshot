@@ -1,14 +1,12 @@
-package com.sourcegraph.project;
+package com.sourcegraph.git;
 
 import com.google.common.base.Strings;
-import com.sourcegraph.util.SourcegraphUtil;
 
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
 public class CommitViewUriBuilder {
-
     public URI build(String sourcegraphBase, String revisionNumber, RepoInfo repoInfo, String productName, String productVersion) {
         if (Strings.isNullOrEmpty(sourcegraphBase)) {
             throw new RuntimeException("Missing sourcegraph URI for commit uri.");

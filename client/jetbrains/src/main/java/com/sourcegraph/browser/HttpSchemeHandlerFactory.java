@@ -1,4 +1,4 @@
-package com.sourcegraph.scheme;
+package com.sourcegraph.browser;
 
 import org.cef.browser.CefBrowser;
 import org.cef.browser.CefFrame;

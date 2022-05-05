@@ -1,7 +1,6 @@
-package com.sourcegraph.util;
+package com.sourcegraph.config;
 
 import com.intellij.openapi.project.Project;
-import com.sourcegraph.project.SourcegraphConfig;
 
 import java.io.File;
 import java.io.FileInputStream;
