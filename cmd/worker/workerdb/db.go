@@ -15,15 +15,10 @@ import (
 
 // Init initializes and returns a connection to the frontend database.
 func Init() (*sql.DB, error) {
-	conn, err := initDatabaseMemo.Init()
-	if err != nil {
-		return nil, err
-	}
-
-	return conn.(*sql.DB), nil
+	return initDatabaseMemo.Init()
 }
 
-var initDatabaseMemo = memo.NewMemoizedConstructor(func() (interface{}, error) {
+var initDatabaseMemo = memo.NewMemoizedConstructor(func() (*sql.DB, error) {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
