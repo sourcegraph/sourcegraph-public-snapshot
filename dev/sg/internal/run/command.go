@@ -137,7 +137,7 @@ func getSecrets(ctx context.Context, cmd Command) (map[string]string, error) {
 	for envName, secret := range cmd.Secrets {
 		secretsEnv[envName], err = secretsStore.GetExternal(ctx, secret)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to access secret %1 for command %q", secret.Name, cmd.Name)
+			return nil, errors.Wrapf(err, "failed to access secret %s for command %q", secret.Name, cmd.Name)
 		}
 	}
 	return secretsEnv, nil
