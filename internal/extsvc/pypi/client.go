@@ -130,6 +130,11 @@ func FindVersion(version string, files []File) (File, error) {
 	//
 	// Pep 503 does not prescribe lexicographic order of files returned from the
 	// simple API.
+	//
+	// The consequence is that we might pick a different tarball or wheel when we
+	// reclone if the list of files changes. This might break links. We consider
+	// this an edge case.
+	//
 	var minWheelAtVersion *File
 	for i, f := range files {
 		if wheel, err := ToWheel(f); err != nil {

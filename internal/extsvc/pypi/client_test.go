@@ -285,9 +285,9 @@ func TestFindVersion(t *testing.T) {
 
 	tc := []struct {
 		name        string
-		files       []File
-		wantVersion string
-		want        File
+		files   []File
+		version string
+		want    File
 	}{
 		{
 			name: "only tarballs",
@@ -296,8 +296,8 @@ func TestFindVersion(t *testing.T) {
 				mkTarball("1.2.3"),
 				mkTarball("1.2.4"),
 			},
-			wantVersion: "1.2.3",
-			want:        mkTarball("1.2.3"),
+			version: "1.2.3",
+			want:    mkTarball("1.2.3"),
 		},
 		{
 			name: "tarballs and wheels",
@@ -309,8 +309,8 @@ func TestFindVersion(t *testing.T) {
 				mkTarball("1.2.4"),
 				mkWheel("1.2.4"),
 			},
-			wantVersion: "1.2.3",
-			want:        mkTarball("1.2.3"),
+			version: "1.2.3",
+			want:    mkTarball("1.2.3"),
 		},
 		{
 			name: "many wheels",
@@ -321,8 +321,8 @@ func TestFindVersion(t *testing.T) {
 				mkWheel("1.2.3", tags2...),
 				mkWheel("1.2.4"),
 			},
-			wantVersion: "1.2.3",
-			want:        mkWheel("1.2.3", tags1...),
+			version: "1.2.3",
+			want:    mkWheel("1.2.3", tags1...),
 		},
 		{
 			name: "many wheels, random order",
@@ -333,8 +333,8 @@ func TestFindVersion(t *testing.T) {
 				mkWheel("1.2.3", tags1...),
 				mkWheel("1.2.2"),
 			},
-			wantVersion: "1.2.3",
-			want:        mkWheel("1.2.3", tags1...),
+			version: "1.2.3",
+			want:    mkWheel("1.2.3", tags1...),
 		},
 		{
 			name: "no tarball for target version",
@@ -345,8 +345,8 @@ func TestFindVersion(t *testing.T) {
 				mkTarball("1.2.4"),
 				mkWheel("1.2.4"),
 			},
-			wantVersion: "1.2.3",
-			want:        mkWheel("1.2.3"),
+			version: "1.2.3",
+			want:    mkWheel("1.2.3"),
 		},
 		{
 			name: "pick latest version",
@@ -357,14 +357,14 @@ func TestFindVersion(t *testing.T) {
 				mkTarball("1.2.4"),
 				mkWheel("1.2.4"),
 			},
-			wantVersion: "",
-			want:        mkTarball("1.2.4"),
+			version: "",
+			want:    mkTarball("1.2.4"),
 		},
 	}
 
 	for _, c := range tc {
 		t.Run(c.name, func(t *testing.T) {
-			got, err := FindVersion(c.wantVersion, c.files)
+			got, err := FindVersion(c.version, c.files)
 			if err != nil {
 				t.Fatal(err)
 			}
