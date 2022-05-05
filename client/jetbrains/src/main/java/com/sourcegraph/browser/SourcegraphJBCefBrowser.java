@@ -9,11 +9,11 @@ public class SourcegraphJBCefBrowser extends JBCefBrowser {
 
     public SourcegraphJBCefBrowser() {
         super("http://sourcegraph/html/index.html");
-        /* Create and set up JCEF browser */
+        // Create and set up JCEF browser
         CefApp.getInstance().registerSchemeHandlerFactory("http", "sourcegraph", new HttpSchemeHandlerFactory());
         this.setPageBackgroundColor(ThemeUtil.getPanelBackgroundColorHexString());
 
-        /* Create bridge, set up handlers, then run init function */
+        // Create bridge, set up handlers, then run init function
         String initJSCode = "window.initializeSourcegraph(" + (ThemeUtil.isDarkTheme() ? "true" : "false") + ");";
         jsToJavaBridge = new JSToJavaBridge(this, new JSToJavaBridgeRequestHandler(), initJSCode);
     }
