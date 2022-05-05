@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 
 import classNames from 'classnames'
 
-import { Button, ButtonProps, Checkbox } from '@sourcegraph/wildcard'
+import { Button, ButtonProps } from '@sourcegraph/wildcard'
 
 import styles from './SurveyUseCaseCheckbox.module.scss'
 
@@ -35,27 +35,22 @@ export const SurveyUseCaseCheckbox: React.FunctionComponent<SurveyUseCaseCheckbo
                     focus: focused,
                 }
             )}
-            as="div"
+            as="label"
             {...props}
         >
             <span className={classNames(styles.checkbox, checked ? styles.checkmark : styles.checkboxDefault)} />
-            <Checkbox
+            <input
                 onBlur={() => setFocused(false)}
                 onFocus={() => setFocused(true)}
-                label={
-                    <span
-                        id={id}
-                        className={classNames('ml-1', styles.checkboxLabel, checked && styles.checkboxLabelActive)}
-                    >
-                        {label}
-                    </span>
-                }
                 id={id}
+                type="checkbox"
                 checked={checked}
                 onChange={onChange}
-                wrapperClassName={styles.checkboxFormCheck}
                 className={styles.usecaseCheck}
             />
+            <span id={id} className={classNames('ml-1', styles.checkboxLabel, checked && styles.checkboxLabelActive)}>
+                {label}
+            </span>
         </Button>
     )
 }

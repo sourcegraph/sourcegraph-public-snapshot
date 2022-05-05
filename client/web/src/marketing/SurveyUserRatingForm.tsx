@@ -43,7 +43,7 @@ export const SurveyUserRatingForm: React.FunctionComponent<SurveyUserRatingFormP
             <div className="d-flex align-items-center justify-content-between">
                 <Checkbox
                     id="survey-toast-refuse"
-                    label="Don't show this again"
+                    label={<span className={styles.checkboxLabel}>Don't show this again</span>}
                     checked={shouldPermanentlyDismiss}
                     onChange={event => toggleShouldPermanentlyDismiss(event.target.checked)}
                 />

@@ -68,7 +68,8 @@ export const SurveyUseCaseForm: React.FunctionComponent<SurveyUseCaseFormProps> 
 
     useEffect(() => {
         onChangeUseCases(useCases)
-    }, [onChangeUseCases, useCases])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [useCases])
 
     return (
         <div className={classNames('mb-2', className)}>

@@ -2,6 +2,7 @@
     border-radius: 2rem;
     font-weight: 400;
     padding: 0.375rem 0.75rem;
+    cursor: pointer;
 }
 
 .checkbox {
@@ -47,10 +48,6 @@
     position: absolute;
     clip: rect(0, 0, 0, 0);
     pointer-events: none;
-}
-
-.checkbox-form-check {
-    padding-left: 0;
 }
 
 .checkbox-label {
