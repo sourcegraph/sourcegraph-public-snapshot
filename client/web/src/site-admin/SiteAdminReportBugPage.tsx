@@ -22,6 +22,7 @@ import otherExternalServiceSchemaJSON from '../../../../schema/other_external_se
 import pagureSchemaJSON from '../../../../schema/pagure.schema.json'
 import perforceSchemaJSON from '../../../../schema/perforce.schema.json'
 import phabricatorSchemaJSON from '../../../../schema/phabricator.schema.json'
+import pythonPackagesSchemaJSON from '../../../../schema/python-packages.schema.json'
 import settingsSchemaJSON from '../../../../schema/settings.schema.json'
 import siteSchemaJSON from '../../../../schema/site.schema.json'
 import { PageTitle } from '../components/PageTitle'
@@ -49,6 +50,7 @@ const externalServices: Record<ExternalServiceKind, JSONSchema> = {
     GOMODULES: goModulesSchemaJSON,
     JVMPACKAGES: jvmPackagesSchemaJSON,
     NPMPACKAGES: npmPackagesSchemaJSON,
+    PYTHONPACKAGES: pythonPackagesSchemaJSON,
     OTHER: otherExternalServiceSchemaJSON,
     PERFORCE: perforceSchemaJSON,
     PHABRICATOR: phabricatorSchemaJSON,
