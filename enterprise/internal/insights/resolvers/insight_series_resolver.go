@@ -48,34 +48,26 @@ func (r *insightSeriesResolver) SeriesId() string { return r.series.SeriesID }
 
 func (r *insightSeriesResolver) Label() string { return r.series.Label }
 
-func (r *insightSeriesResolver) Points(ctx context.Context, args *graphqlbackend.InsightsPointsArgs) ([]graphqlbackend.InsightsDataPointResolver, error) {
+func (r *insightSeriesResolver) Points(ctx context.Context, _ *graphqlbackend.InsightsPointsArgs) ([]graphqlbackend.InsightsDataPointResolver, error) {
 	var opts store.SeriesPointsOpts
 
 	// Query data points only for the series we are representing.
 	seriesID := r.series.SeriesID
 	opts.SeriesID = &seriesID
 
-	if args.From == nil {
-		// Default to last 12mo of data
-		frames := query.BuildFrames(12, timeseries.TimeInterval{
-			Unit:  types.IntervalUnit(r.series.SampleIntervalUnit),
-			Value: r.series.SampleIntervalValue,
-		}, time.Now())
-		oldest := time.Now().AddDate(-1, 0, 0)
-		if len(frames) != 0 {
-			possibleOldest := frames[0].From
-			if possibleOldest.Before(oldest) {
-				oldest = possibleOldest
-			}
+	// Default to last 12 frames of data
+	frames := query.BuildFrames(12, timeseries.TimeInterval{
+		Unit:  types.IntervalUnit(r.series.SampleIntervalUnit),
+		Value: r.series.SampleIntervalValue,
+	}, time.Now())
+	oldest := time.Now().AddDate(-1, 0, 0)
+	if len(frames) != 0 {
+		possibleOldest := frames[0].From
+		if possibleOldest.Before(oldest) {
+			oldest = possibleOldest
 		}
-		args.From = &graphqlbackend.DateTime{Time: oldest}
 	}
-	if args.From != nil {
-		opts.From = &args.From.Time
-	}
-	if args.To != nil {
-		opts.To = &args.To.Time
-	}
+	opts.From = &oldest
 
 	includeRepo := func(regex ...string) {
 		opts.IncludeRepoRegex = append(opts.IncludeRepoRegex, regex...)
@@ -84,18 +76,10 @@ func (r *insightSeriesResolver) Points(ctx context.Context, args *graphqlbackend
 		opts.ExcludeRepoRegex = append(opts.ExcludeRepoRegex, regex...)
 	}
 
-	// to preserve backwards compatibility, we are going to keep the arguments on this resolver for now. Ideally
-	// we would deprecate these in favor of passing arguments from a higher level resolver (insight view) to match
-	// the model of how we want default filters to work at the insight view level. That said, we will only inherit
-	// higher resolver filters if provided filter arguments are nil.
-	if args.IncludeRepoRegex != nil {
-		includeRepo(*args.IncludeRepoRegex)
-	} else if r.filters.IncludeRepoRegex != nil {
+	if r.filters.IncludeRepoRegex != nil {
 		includeRepo(*r.filters.IncludeRepoRegex)
 	}
-	if args.ExcludeRepoRegex != nil {
-		excludeRepo(*args.ExcludeRepoRegex)
-	} else if r.filters.ExcludeRepoRegex != nil {
+	if r.filters.ExcludeRepoRegex != nil {
 		excludeRepo(*r.filters.ExcludeRepoRegex)
 	}
 
