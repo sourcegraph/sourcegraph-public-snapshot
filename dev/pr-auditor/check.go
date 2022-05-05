@@ -15,7 +15,7 @@ type checkResult struct {
 	// TestPlan is the content provided after the acceptance checklist checkbox.
 	TestPlan string
 	// Protected indicates that the base branch for this PR is protected and merges
-	// are considered to be exceptional and should always be justified.
+	// are considered to be exceptional and should always log a PR audit issue.
 	Protected bool
 	// Error indicating any issue that might have occured during the check.
 	Error error
