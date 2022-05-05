@@ -1434,7 +1434,7 @@ type Query {
     """
     TODO:
     """
-    featureFlagEnabled(name: String!, defaultValue: Boolean): [String!]!
+    featureFlagEnabled(name: String!, defaultValue: Boolean = false): Boolean!
 
     """
     Retrieve the value of a feature flag for the organization

@@ -12,9 +12,9 @@ func (r *schemaResolver) AllEnabledFeatureFlags(ctx context.Context) []string {
 
 func (r *schemaResolver) FeatureFlagEnabled(ctx context.Context, args *struct {
 	Name         string
-	DefaultValue *bool
+	DefaultValue bool
 }) bool {
-	flag := ldfeatureflag.FeatureFlag{Name: args.Name, DefaultValue: *args.DefaultValue || false}
+	flag := ldfeatureflag.FeatureFlag{Name: args.Name, DefaultValue: args.DefaultValue}
 
 	return flag.IsEnabledFor(ctx, r.db)
 }
