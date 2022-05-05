@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { Button, Modal, Link } from '@sourcegraph/wildcard'
+import { Button, Modal, Link, screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
 import { ExternalServiceKind, Scalars } from '../../../graphql-operations'
@@ -99,6 +99,7 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
     const onSubmit = useCallback<React.FormEventHandler>(
         async event => {
             event.preventDefault()
+            screenReaderAnnounce('Checking credentials')
 
             try {
                 const { data } = await createBatchChangesCredential({
@@ -110,6 +111,8 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
                         externalServiceURL,
                     },
                 })
+
+                screenReaderAnnounce(`Credentials added for ${externalServiceKind}.`)
 
                 if (requiresSSH && data?.createBatchChangesCredential.sshPublicKey) {
                     setSSHPublicKey(data?.createBatchChangesCredential.sshPublicKey)

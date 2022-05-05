@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import CheckboxBlankCircleOutlineIcon from 'mdi-react/CheckboxBlankCircleOutlineIcon'
 import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
 
-import { Badge, Button, Icon } from '@sourcegraph/wildcard'
+import { Badge, Button, Icon, screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
 import { BatchChangesCodeHostFields, Scalars } from '../../../graphql-operations'
@@ -51,6 +51,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
     const afterAction = useCallback(() => {
         setOpenModal(undefined)
         buttonReference.current?.focus()
+        screenReaderAnnounce('After action', 'assertive')
         refetchAll()
     }, [refetchAll, buttonReference])
 
