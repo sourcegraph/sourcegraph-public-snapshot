@@ -288,8 +288,10 @@ GROUP BY batch_specs.created_from_raw;
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
 	for rows.Next() {
-		var publishedChangesetsCount, batchChangeCount int32
-		var createdFromRaw bool
+		var (
+			publishedChangesetsCount, batchChangeCount int32
+			createdFromRaw                             bool
+		)
 
 		if err = rows.Scan(&createdFromRaw, &publishedChangesetsCount, &batchChangeCount); err != nil {
 			return nil, err
@@ -329,9 +331,11 @@ GROUP BY date_trunc('month', batch_specs.created_at)::date;
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
 	for rows.Next() {
-		var month string
-		var usersCount int32
-		var minutes int64
+		var (
+			month      string
+			usersCount int32
+			minutes    int64
+		)
 
 		if err = rows.Scan(&month, &usersCount, &minutes); err != nil {
 			return nil, err
@@ -347,7 +351,7 @@ GROUP BY date_trunc('month', batch_specs.created_at)::date;
 	const weeklyBulkOperationsStatQuery = `
 SELECT
 	job_type,
-	count(id),
+	COUNT(DISTINCT bulk_group),
 	date_trunc('week', created_at)::date
 FROM changeset_jobs
 GROUP BY date_trunc('week', created_at)::date, job_type;
@@ -361,8 +365,10 @@ GROUP BY date_trunc('week', created_at)::date, job_type;
 
 	stats.BulkOperationsCount = make(map[string]int32)
 	for rows.Next() {
-		var bulkOperaton, week string
-		var count int32
+		var (
+			bulkOperaton, week string
+			count              int32
+		)
 
 		if err = rows.Scan(&bulkOperaton, &count, &week); err != nil {
 			return nil, err
