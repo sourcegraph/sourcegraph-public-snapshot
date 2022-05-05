@@ -9,7 +9,7 @@ Learn more: [Testing principles and guidelines](https://docs.sourcegraph.com/dev
 
 This action is primarily designed to run on GitHub Actions, and leverages the [pull request event payloads](https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#pull_request) extensively.
 
-The `-protected-branch` flag enables to open exceptions regardless of the outcome, when a given branch should never be the target of a pull request.
+The `-protected-branch` optional flag enables to open exceptions regardless of the outcome, when a given branch should never be the target of a pull request.
 
 ```sh
 GITHUB_EVENT_PATH="/path/to/json/payload.json"
