@@ -812,8 +812,13 @@ export const githubCodeHost: GithubCodeHost = {
             : ''
         return `https://${target.rawRepoName}/blob/${revision}/${target.filePath}${fragment}`
     },
-    observeLineSelection: fromEvent(window, 'hashchange').pipe(
-        startWith(undefined), // capture intital value
+    // observeLineSelection: fromEvent(window, 'hashchange').pipe(
+    //     startWith(undefined), // capture intital value
+    //     map(() => parseHash(window.location.hash))
+    // ),
+    observeLineSelection: fromEvent(document, 'click').pipe(
+        filter(event => (event.target as HTMLElement).matches('td.blob-num')),
+        startWith(undefined),
         map(() => parseHash(window.location.hash))
     ),
     codeViewsRequireTokenization: true,
