@@ -1,9 +1,3 @@
--- +++
--- parent: 1528395968
--- +++
-
-BEGIN;
-
 CREATE TABLE IF NOT EXISTS batch_spec_workspace_execution_maximum_concurrencies (
     user_id INTEGER NOT NULL PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE DEFERRABLE,
     concurrency INTEGER NOT NULL
@@ -100,5 +94,3 @@ CREATE VIEW batch_spec_workspace_execution_jobs_subqueues AS (
     -- Must exist in the list of candidates.
     JOIN candidates ON candidates.job_id = batch_spec_workspace_execution_jobs.id
 );
-
-COMMIT;
