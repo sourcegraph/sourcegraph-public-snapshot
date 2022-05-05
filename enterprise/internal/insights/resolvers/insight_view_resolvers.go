@@ -152,8 +152,11 @@ func (i *insightViewResolver) DataSeries(ctx context.Context) ([]graphqlbackend.
 	return resolvers, nil
 }
 
-func (i *insightViewResolver) Dashboards(ctx context.Context, args graphqlbackend.InsightViewDashboardsConnectionArgs) graphqlbackend.InsightsDashboardConnectionResolver {
-	return &InsightViewDashboardConnectionResolver{view: i.view, baseInsightResolver: i.baseInsightResolver, args: args}
+func (i *insightViewResolver) Dashboards(ctx context.Context, args *graphqlbackend.InsightsDashboardsArgs) graphqlbackend.InsightsDashboardConnectionResolver {
+	return &dashboardConnectionResolver{baseInsightResolver: i.baseInsightResolver,
+		orgStore:         database.Orgs(i.postgresDB),
+		args:             args,
+		defaultQueryArgs: store.DashboardQueryArgs{WithViewUniqueID: &i.view.UniqueID}}
 }
 
 func filterRepositories(ctx context.Context, filters types.InsightViewFilters, repositories []string, scLoader SearchContextLoader) ([]string, error) {
@@ -1030,83 +1033,4 @@ func filtersFromInput(input *graphqlbackend.InsightViewFiltersInput) types.Insig
 		}
 	}
 	return filters
-}
-
-type InsightViewDashboardConnectionResolver struct {
-	baseInsightResolver
-
-	args graphqlbackend.InsightViewDashboardsConnectionArgs
-
-	view *types.Insight
-
-	once       sync.Once
-	dashboards []*types.Dashboard
-	next       string
-	err        error
-}
-
-func (i *InsightViewDashboardConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.InsightsDashboardResolver, error) {
-	resolvers := make([]graphqlbackend.InsightsDashboardResolver, 0)
-	dashboards, _, err := i.computeDashboards(ctx)
-	if err != nil {
-		return nil, err
-	}
-	for index := range dashboards {
-		id := newRealDashboardID(int64(dashboards[index].ID))
-		resolvers = append(resolvers, &insightsDashboardResolver{dashboard: dashboards[index], id: &id, baseInsightResolver: i.baseInsightResolver})
-	}
-	return resolvers, nil
-}
-
-func (i *InsightViewDashboardConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	_, next, err := i.computeDashboards(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if next != "" {
-		return graphqlutil.NextPageCursor(next), nil
-	}
-	return graphqlutil.HasNextPage(false), nil
-
-}
-
-func (i *InsightViewDashboardConnectionResolver) computeDashboards(ctx context.Context) ([]*types.Dashboard, string, error) {
-	i.once.Do(func() {
-		var err error
-
-		orgStore := database.Orgs(i.postgresDB)
-		args := store.DashboardQueryArgs{WithViewUniqueID: &i.view.UniqueID}
-		args.UserID, args.OrgID, err = getUserPermissions(ctx, orgStore)
-		if err != nil {
-			i.err = err
-			return
-		}
-
-		if i.args.After != nil {
-			afterID, err := unmarshalDashboardID(graphql.ID(*i.args.After))
-			if err != nil {
-				i.err = errors.Wrap(err, "unable to unmarshal dashboard id")
-				return
-			}
-
-			args.After = int(afterID.Arg)
-		}
-		if i.args.First != nil {
-			args.Limit = int(*i.args.First)
-		}
-
-		dashboards, err := i.dashboardStore.GetDashboards(ctx, args)
-		if err != nil {
-			i.err = err
-			return
-		}
-
-		i.dashboards = dashboards
-		if len(i.dashboards) > 0 {
-			lastDashboard := i.dashboards[len(i.dashboards)-1]
-			dashboardID := newRealDashboardID(int64(lastDashboard.ID)).marshal()
-			i.next = string(dashboardID)
-		}
-	})
-	return i.dashboards, i.next, i.err
 }

@@ -282,9 +282,10 @@ func TestInsightViewDashboardConnections(t *testing.T) {
 	}
 	notUsersId := 2
 	privateDifferentUserGrants := []store.DashboardGrant{{&notUsersId, nil, nil}}
+	dashboard3 := types.Dashboard{ID: 3, Title: "different users private dashboard with view", InsightIDs: []string{view.UniqueID}}
 	_, err = base.dashboardStore.CreateDashboard(ctx,
 		store.CreateDashboardArgs{
-			Dashboard: types.Dashboard{ID: 3, Title: "different users private dashboard with view", InsightIDs: []string{view.UniqueID}},
+			Dashboard: dashboard3,
 			Grants:    privateDifferentUserGrants,
 		})
 	if err != nil {
@@ -297,9 +298,8 @@ func TestInsightViewDashboardConnections(t *testing.T) {
 	}
 
 	t.Run("resolves global dasboard and users private dashboard", func(t *testing.T) {
-
 		ivr := insightViewResolver{view: &insight[0], baseInsightResolver: base}
-		connectionResolver := ivr.Dashboards(ctx, graphqlbackend.InsightViewDashboardsConnectionArgs{})
+		connectionResolver := ivr.Dashboards(ctx, &graphqlbackend.InsightsDashboardsArgs{})
 		dashboardResolvers, err := connectionResolver.Nodes(ctx)
 		if err != nil || len(dashboardResolvers) != 2 {
 			t.Errorf("unexpected results from dashboardResolvers resolver")
@@ -311,14 +311,12 @@ func TestInsightViewDashboardConnections(t *testing.T) {
 				t.Errorf("unexpected dashboard title (want/got): %v", diff)
 			}
 		}
-
 	})
 
 	t.Run("resolves dashboards with limit 1", func(t *testing.T) {
-
 		ivr := insightViewResolver{view: &insight[0], baseInsightResolver: base}
 		var first int32 = 1
-		connectionResolver := ivr.Dashboards(ctx, graphqlbackend.InsightViewDashboardsConnectionArgs{First: &first})
+		connectionResolver := ivr.Dashboards(ctx, &graphqlbackend.InsightsDashboardsArgs{First: &first})
 		dashboardResolvers, err := connectionResolver.Nodes(ctx)
 		if err != nil || len(dashboardResolvers) != 1 {
 			t.Errorf("unexpected results from dashboardResolvers resolver")
@@ -330,14 +328,12 @@ func TestInsightViewDashboardConnections(t *testing.T) {
 				t.Errorf("unexpected dashboard title (want/got): %v", diff)
 			}
 		}
-
 	})
 
 	t.Run("resolves dashboards with after", func(t *testing.T) {
-
 		ivr := insightViewResolver{view: &insight[0], baseInsightResolver: base}
 		dash1ID := string(newRealDashboardID(int64(dashboard1.ID)).marshal())
-		connectionResolver := ivr.Dashboards(ctx, graphqlbackend.InsightViewDashboardsConnectionArgs{After: &dash1ID})
+		connectionResolver := ivr.Dashboards(ctx, &graphqlbackend.InsightsDashboardsArgs{After: &dash1ID})
 		dashboardResolvers, err := connectionResolver.Nodes(ctx)
 		if err != nil || len(dashboardResolvers) != 1 {
 			t.Errorf("unexpected results from dashboardResolvers resolver")
@@ -349,19 +345,26 @@ func TestInsightViewDashboardConnections(t *testing.T) {
 				t.Errorf("unexpected dashboard title (want/got): %v", diff)
 			}
 		}
-
 	})
 
 	t.Run("no resolvers when no dashboards", func(t *testing.T) {
-
 		nodashInsight := types.Insight{UniqueID: "nodash1234"}
 		ivr := insightViewResolver{view: &nodashInsight, baseInsightResolver: base}
-		connectionResolver := ivr.Dashboards(ctx, graphqlbackend.InsightViewDashboardsConnectionArgs{})
+		connectionResolver := ivr.Dashboards(ctx, &graphqlbackend.InsightsDashboardsArgs{})
 		dashboardResolvers, err := connectionResolver.Nodes(ctx)
 		if err != nil || len(dashboardResolvers) != 0 {
 			t.Errorf("unexpected results from dashboardResolvers resolver")
 		}
+	})
 
+	t.Run("no resolvers when dashID passed for dash without user permission", func(t *testing.T) {
+		ivr := insightViewResolver{view: &insight[0], baseInsightResolver: base}
+		dashWithoutPermissionID := newRealDashboardID(int64(dashboard3.ID)).marshal()
+		connectionResolver := ivr.Dashboards(ctx, &graphqlbackend.InsightsDashboardsArgs{ID: &dashWithoutPermissionID})
+		dashboardResolvers, err := connectionResolver.Nodes(ctx)
+		if err != nil || len(dashboardResolvers) != 0 {
+			t.Errorf("unexpected results from dashboardResolvers resolver")
+		}
 	})
 }
 

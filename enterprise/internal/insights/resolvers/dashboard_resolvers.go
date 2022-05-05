@@ -26,8 +26,9 @@ var _ graphqlbackend.InsightsDashboardPayloadResolver = &insightsDashboardPayloa
 var _ graphqlbackend.InsightsPermissionGrantsResolver = &insightsPermissionGrantsResolver{}
 
 type dashboardConnectionResolver struct {
-	orgStore database.OrgStore
-	args     *graphqlbackend.InsightsDashboardsArgs
+	orgStore         database.OrgStore
+	args             *graphqlbackend.InsightsDashboardsArgs
+	defaultQueryArgs store.DashboardQueryArgs
 
 	baseInsightResolver
 
@@ -40,7 +41,7 @@ type dashboardConnectionResolver struct {
 
 func (d *dashboardConnectionResolver) compute(ctx context.Context) ([]*types.Dashboard, error) {
 	d.once.Do(func() {
-		args := store.DashboardQueryArgs{}
+		args := d.defaultQueryArgs
 		if d.args.After != nil {
 			afterID, err := unmarshalDashboardID(graphql.ID(*d.args.After))
 			if err != nil {

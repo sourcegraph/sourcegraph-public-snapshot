@@ -175,12 +175,7 @@ type InsightViewResolver interface {
 	DataSeriesDefinitions(ctx context.Context) ([]InsightDataSeriesDefinition, error)
 	DashboardReferenceCount(ctx context.Context) (int32, error)
 	IsFrozen(ctx context.Context) (bool, error)
-	Dashboards(ctx context.Context, args InsightViewDashboardsConnectionArgs) InsightsDashboardConnectionResolver
-}
-
-type InsightViewDashboardsConnectionArgs struct {
-	After *string
-	First *int32
+	Dashboards(ctx context.Context, args *InsightsDashboardsArgs) InsightsDashboardConnectionResolver
 }
 
 type InsightDataSeriesDefinition interface {
