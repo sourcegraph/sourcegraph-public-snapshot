@@ -38,7 +38,7 @@ export interface FileDiffNodeProps extends ThemeProps {
 }
 
 /** A file diff. */
-export const FileDiffNode: React.FunctionComponent<FileDiffNodeProps> = ({
+export const FileDiffNode: React.FunctionComponent<React.PropsWithChildren<FileDiffNodeProps>> = ({
     history,
     isLightTheme,
     lineNumbers,

@@ -1,10 +1,12 @@
 import React from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import isAbsoluteUrl from 'is-absolute-url'
 
+import { useWildcardTheme } from '@sourcegraph/wildcard'
+// eslint-disable-next-line no-restricted-imports
 import styles from '@sourcegraph/wildcard/src/components/Link/AnchorLink/AnchorLink.module.scss'
-import { useWildcardTheme } from '@sourcegraph/wildcard/src/hooks/useWildcardTheme'
 
 // This is based off the @sourcegraph/wildcard/Link component
 // to handle links in VSCE that works differently than in our web app
@@ -38,7 +40,8 @@ export interface LinkProps
  *
  * @see setLinkComponent
  */
-export let Link: React.FunctionComponent<LinkProps> = ({ to, children, ...props }) => (
+export let Link: React.FunctionComponent<React.PropsWithChildren<LinkProps>> = ({ to, children, ...props }) => (
+    // eslint-disable-next-line react/forbid-elements
     <a
         href={checkLink(to && typeof to !== 'string' ? H.createPath(to) : to)}
         id={to && typeof to !== 'string' ? H.createPath(to) : to}
@@ -69,9 +72,9 @@ export type AnchorLinkProps = LinkProps & {
     as?: LinkComponent
 }
 
-export type LinkComponent = React.FunctionComponent<LinkProps>
+export type LinkComponent = React.FunctionComponent<React.PropsWithChildren<LinkProps>>
 
-export const AnchorLink: React.FunctionComponent<AnchorLinkProps> = React.forwardRef(
+export const AnchorLink: React.FunctionComponent<React.PropsWithChildren<AnchorLinkProps>> = React.forwardRef(
     ({ to, as: Component, children, className, ...rest }: AnchorLinkProps, reference) => {
         const { isBranded } = useWildcardTheme()
 
@@ -82,6 +85,7 @@ export const AnchorLink: React.FunctionComponent<AnchorLinkProps> = React.forwar
 
         if (!Component) {
             return (
+                // eslint-disable-next-line react/forbid-elements
                 <a href={checkLink(to && typeof to !== 'string' ? H.createPath(to) : to)} {...rest} {...commonProps}>
                     {children}
                 </a>
@@ -101,7 +105,7 @@ export const AnchorLink: React.FunctionComponent<AnchorLinkProps> = React.forwar
  * absolute URL to <Link> will create an (almost certainly invalid) URL where the absolute URL is resolved to the
  * current URL, such as https://example.com/a/b/https://example.com/c/d.
  */
-export const RouterLink: React.FunctionComponent<AnchorLinkProps> = React.forwardRef(
+export const RouterLink: React.FunctionComponent<React.PropsWithChildren<AnchorLinkProps>> = React.forwardRef(
     ({ to, children, ...rest }: AnchorLinkProps, reference) => (
         <AnchorLink
             to={checkLink(to && typeof to !== 'string' ? H.createPath(to) : to)}

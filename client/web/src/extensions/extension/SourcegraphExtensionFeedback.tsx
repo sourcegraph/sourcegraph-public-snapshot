@@ -8,9 +8,9 @@ interface SourcegraphExtensionFeedbackProps {
     extensionID: string
 }
 
-export const SourcegraphExtensionFeedback: React.FunctionComponent<SourcegraphExtensionFeedbackProps> = ({
-    extensionID,
-}) => {
+export const SourcegraphExtensionFeedback: React.FunctionComponent<
+    React.PropsWithChildren<SourcegraphExtensionFeedbackProps>
+> = ({ extensionID }) => {
     const textPrefix = `Sourcegraph extension ${extensionID}: `
     const labelId = 'sourcegraph-extension-feedback-modal'
 

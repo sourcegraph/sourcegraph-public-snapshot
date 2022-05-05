@@ -19,7 +19,7 @@ export interface DetachChangesetsModalProps extends TelemetryProps {
     detachChangesets?: typeof _detachChangesets
 }
 
-export const DetachChangesetsModal: React.FunctionComponent<DetachChangesetsModalProps> = ({
+export const DetachChangesetsModal: React.FunctionComponent<React.PropsWithChildren<DetachChangesetsModalProps>> = ({
     onCancel,
     afterCreate,
     batchChangeID,

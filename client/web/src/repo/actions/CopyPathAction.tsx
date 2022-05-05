@@ -14,7 +14,7 @@ import styles from './CopyPathAction.module.scss'
 /**
  * A repository header action that copies the current page's repository or file path to the clipboard.
  */
-export const CopyPathAction: React.FunctionComponent = () => {
+export const CopyPathAction: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => {
     const location = useLocation()
     const [copied, setCopied] = useState(false)
 

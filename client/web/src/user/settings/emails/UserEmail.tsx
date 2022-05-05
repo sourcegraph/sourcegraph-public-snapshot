@@ -28,7 +28,7 @@ interface Props {
     onEmailResendVerification?: () => void
 }
 
-export const UserEmail: FunctionComponent<Props> = ({
+export const UserEmail: FunctionComponent<React.PropsWithChildren<Props>> = ({
     user,
     email: { email, isPrimary, verified, verificationPending, viewerCanManuallyVerify },
     onError,

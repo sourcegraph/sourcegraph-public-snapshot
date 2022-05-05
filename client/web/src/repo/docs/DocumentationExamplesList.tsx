@@ -29,7 +29,7 @@ interface Props extends SettingsCascadeProps {
 
 const LOADING = 'loading' as const
 
-export const DocumentationExamplesList: React.FunctionComponent<Props> = ({
+export const DocumentationExamplesList: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     fetchHighlightedFileLineRanges,
     commitID,
     pathID,

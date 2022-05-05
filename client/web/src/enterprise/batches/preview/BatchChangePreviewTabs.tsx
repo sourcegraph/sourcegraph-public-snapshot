@@ -45,7 +45,7 @@ interface BatchChangePreviewTabsProps extends BatchChangePreviewProps {
     spec: BatchSpecFields
 }
 
-export const BatchChangePreviewTabs: React.FunctionComponent<BatchChangePreviewTabsProps> = ({
+export const BatchChangePreviewTabs: React.FunctionComponent<React.PropsWithChildren<BatchChangePreviewTabsProps>> = ({
     authenticatedUser,
     batchSpecID,
     expandChangesetDescriptions,

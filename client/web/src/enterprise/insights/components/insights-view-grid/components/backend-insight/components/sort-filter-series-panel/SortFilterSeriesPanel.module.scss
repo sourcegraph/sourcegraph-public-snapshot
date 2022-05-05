@@ -1,5 +1,5 @@
 .unselected {
-    background-color: var(--body-bg);
+    background-color: var(--color-bg-1);
 }
 
 .selected {
@@ -8,13 +8,13 @@
 
 .label {
     color: var(--text-muted);
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
 }
 
 .toggles-container {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.5rem;
     padding: 0.5rem;
 }
 
@@ -37,5 +37,5 @@
     border-radius: 5px;
     border: solid 1px var(--border-color);
     box-shadow: var(--dropdown-shadow);
-    background-color: var(--body-bg);
+    background-color: var(--color-bg-1);
 }

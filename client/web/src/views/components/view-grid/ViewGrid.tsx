@@ -84,7 +84,9 @@ interface ViewGridCommonProps {
 /**
  * Renders drag and drop and resizable views grid.
  */
-export const ViewGrid: React.FunctionComponent<PropsWithChildren<ViewGridProps & ViewGridCommonProps>> = props => {
+export const ViewGrid: React.FunctionComponent<
+    React.PropsWithChildren<PropsWithChildren<ViewGridProps & ViewGridCommonProps>>
+> = props => {
     const {
         layouts,
         viewIds = [],

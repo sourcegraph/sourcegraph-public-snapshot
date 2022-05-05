@@ -13,7 +13,9 @@ export interface EditLangStatsInsightProps {
     onCancel: () => void
 }
 
-export const EditLangStatsInsight: React.FunctionComponent<EditLangStatsInsightProps> = props => {
+export const EditLangStatsInsight: React.FunctionComponent<
+    React.PropsWithChildren<EditLangStatsInsightProps>
+> = props => {
     const { insight, onSubmit, onCancel } = props
 
     const insightFormValues = useMemo<LangStatsCreationFormFields>(

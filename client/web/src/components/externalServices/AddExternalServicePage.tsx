@@ -31,7 +31,7 @@ interface Props extends ThemeProps, TelemetryProps {
 /**
  * Page for adding a single external service.
  */
-export const AddExternalServicePage: React.FunctionComponent<Props> = ({
+export const AddExternalServicePage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     afterCreateRoute,
     externalService,
     history,

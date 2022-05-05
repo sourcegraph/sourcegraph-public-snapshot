@@ -31,7 +31,7 @@ function getHeadingStyle(depth: number): string {
     return ''
 }
 
-export const NotebookOutline: React.FunctionComponent<NotebookOutlineProps> = React.memo(
+export const NotebookOutline: React.FunctionComponent<React.PropsWithChildren<NotebookOutlineProps>> = React.memo(
     ({ notebookElement, outlineContainerElement, blocks }) => {
         const scrollableContainer = useRef<HTMLUListElement>(null)
         const [visibleHeadings, setVisibleHeadings] = useState<string[]>([])

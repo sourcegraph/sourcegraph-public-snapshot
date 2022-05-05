@@ -80,7 +80,7 @@ function isNotebookLoaded(notebook: NotebookFields | Error | typeof LOADING | un
     return notebook !== undefined && !isErrorLike(notebook) && notebook !== LOADING
 }
 
-export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
+export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<NotebookPageProps>> = ({
     fetchNotebook = _fetchNotebook,
     updateNotebook = _updateNotebook,
     deleteNotebook = _deleteNotebook,
@@ -341,7 +341,7 @@ interface NotepadCTAProps {
     onClose: () => void
 }
 
-const NotepadCTA: React.FunctionComponent<NotepadCTAProps> = ({ onEnable, onClose }) => {
+const NotepadCTA: React.FunctionComponent<React.PropsWithChildren<NotepadCTAProps>> = ({ onEnable, onClose }) => {
     const assetsRoot = window.context?.assetsRoot || ''
     const isLightTheme = useTheme().enhancedThemePreference === ThemePreference.Light
 

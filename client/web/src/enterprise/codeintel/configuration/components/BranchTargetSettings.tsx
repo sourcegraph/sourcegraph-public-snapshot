@@ -20,7 +20,7 @@ export interface BranchTargetSettingsProps {
     disabled: boolean
 }
 
-export const BranchTargetSettings: FunctionComponent<BranchTargetSettingsProps> = ({
+export const BranchTargetSettings: FunctionComponent<React.PropsWithChildren<BranchTargetSettingsProps>> = ({
     repoId,
     policy,
     setPolicy,

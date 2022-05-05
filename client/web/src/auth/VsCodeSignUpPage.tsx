@@ -30,7 +30,7 @@ interface Props extends ThemeProps, TelemetryProps, FeatureFlagProps {
 /**
  * Sign up page specifically from users via our VS Code integration
  */
-export const VsCodeSignUpPage: React.FunctionComponent<Props> = ({
+export const VsCodeSignUpPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     isLightTheme,
     showEmailForm,
     onSignUp,

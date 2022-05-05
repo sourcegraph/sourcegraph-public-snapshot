@@ -36,15 +36,9 @@ function getFileSuggestionsQuery(queryInput: string): string {
     return `${queryInput} fork:yes type:path count:50`
 }
 
-export const NotebookFileBlockInputs: React.FunctionComponent<NotebookFileBlockInputsProps> = ({
-    id,
-    lineRange,
-    editor,
-    setEditor,
-    onFileSelected,
-    onLineRangeChange,
-    ...props
-}) => {
+export const NotebookFileBlockInputs: React.FunctionComponent<
+    React.PropsWithChildren<NotebookFileBlockInputsProps>
+> = ({ id, lineRange, editor, setEditor, onFileSelected, onLineRangeChange, ...props }) => {
     useFocusMonacoEditorOnMount({ editor, isEditing: true })
 
     const [lineRangeInput, setLineRangeInput] = useState(serializeLineRange(lineRange))
@@ -132,10 +126,12 @@ export const NotebookFileBlockInputs: React.FunctionComponent<NotebookFileBlockI
     )
 }
 
-const FileSuggestions: React.FunctionComponent<{
-    suggestions: PathMatch[]
-    onFileSelected: (symbol: FileBlockInput) => void
-}> = ({ suggestions, onFileSelected }) => (
+const FileSuggestions: React.FunctionComponent<
+    React.PropsWithChildren<{
+        suggestions: PathMatch[]
+        onFileSelected: (symbol: FileBlockInput) => void
+    }>
+> = ({ suggestions, onFileSelected }) => (
     <div className={styles.fileSuggestions}>
         {suggestions.map(suggestion => (
             <Button

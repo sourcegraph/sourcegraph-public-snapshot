@@ -24,14 +24,9 @@ export interface CreateUpdateBatchChangeAlertProps extends TelemetryProps {
     history: H.History
 }
 
-export const CreateUpdateBatchChangeAlert: React.FunctionComponent<CreateUpdateBatchChangeAlertProps> = ({
-    specID,
-    toBeArchived,
-    batchChange,
-    viewerCanAdminister,
-    history,
-    telemetryService,
-}) => {
+export const CreateUpdateBatchChangeAlert: React.FunctionComponent<
+    React.PropsWithChildren<CreateUpdateBatchChangeAlertProps>
+> = ({ specID, toBeArchived, batchChange, viewerCanAdminister, history, telemetryService }) => {
     const batchChangeID = batchChange?.id
 
     const { publicationStates } = useContext(BatchChangePreviewContext)

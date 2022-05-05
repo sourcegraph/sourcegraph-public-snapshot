@@ -23,7 +23,7 @@ export interface CodeHostConnectionNodeProps {
 
 type OpenModal = 'add' | 'view' | 'delete'
 
-export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionNodeProps> = ({
+export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChildren<CodeHostConnectionNodeProps>> = ({
     node,
     refetchAll,
     userID,

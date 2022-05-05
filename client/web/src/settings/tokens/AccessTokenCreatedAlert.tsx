@@ -18,11 +18,9 @@ interface AccessTokenCreatedAlertProps {
 /**
  * Displays a message informing the user to copy and save the newly created access token.
  */
-export const AccessTokenCreatedAlert: React.FunctionComponent<AccessTokenCreatedAlertProps> = ({
-    token,
-    tokenSecret,
-    className,
-}) => {
+export const AccessTokenCreatedAlert: React.FunctionComponent<
+    React.PropsWithChildren<AccessTokenCreatedAlertProps>
+> = ({ token, tokenSecret, className }) => {
     const isSudoToken = token.scopes.includes(AccessTokenScopes.SiteAdminSudo)
     return (
         <Alert className={classNames('access-token-created-alert', className)} variant="success">

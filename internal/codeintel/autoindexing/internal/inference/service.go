@@ -1,7 +1,7 @@
 package inference
 
 import (
-	"archive/zip"
+	"archive/tar"
 	"bytes"
 	"context"
 	"io"
@@ -322,33 +322,36 @@ func (s *Service) resolveFileContents(
 
 	opts := gitserver.ArchiveOptions{
 		Treeish:   invocationContext.commit,
-		Format:    "zip",
+		Format:    "tar",
 		Pathspecs: pathspecs,
 	}
 	rc, err := invocationContext.gitService.Archive(ctx, invocationContext.repo, opts)
 	if err != nil {
 		return nil, err
 	}
+	defer rc.Close()
 
-	data, err := io.ReadAll(rc)
-	if err != nil {
-		return nil, err
-	}
-	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
-	if err != nil {
-		return nil, nil
-	}
+	contentsByPath := map[string]string{}
 
-	contentsByPath := make(map[string]string, len(zr.File))
-	for _, f := range zr.File {
-		contents, err := readZipFile(f)
+	tr := tar.NewReader(rc)
+	for {
+		header, err := tr.Next()
 		if err != nil {
+			if err != io.EOF {
+				return nil, err
+			}
+
+			break
+		}
+
+		var buf bytes.Buffer
+		if _, err := io.CopyN(&buf, tr, header.Size); err != nil {
 			return nil, err
 		}
 
 		// Since we quoted all literal path specs on entry, we need to remove it from
 		// the returned filepaths.
-		contentsByPath[strings.TrimPrefix(f.Name, ":(literal)")] = contents
+		contentsByPath[strings.TrimPrefix(header.Name, ":(literal)")] = buf.String()
 	}
 
 	return contentsByPath, nil

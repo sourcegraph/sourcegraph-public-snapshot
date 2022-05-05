@@ -48,9 +48,9 @@ const functionalityPanels = [
     },
 ]
 
-export const NotebooksGettingStartedTab: React.FunctionComponent<NotebooksGettingStartedTabProps> = ({
-    telemetryService,
-}) => {
+export const NotebooksGettingStartedTab: React.FunctionComponent<
+    React.PropsWithChildren<NotebooksGettingStartedTabProps>
+> = ({ telemetryService }) => {
     useEffect(() => telemetryService.log('NotebooksGettingStartedTabViewed'), [telemetryService])
 
     const [, setHasSeenGettingStartedTab] = useTemporarySetting('search.notebooks.gettingStartedTabSeen', false)

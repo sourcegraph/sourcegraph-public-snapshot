@@ -24,7 +24,9 @@ interface CreateCodeInsightButtonProps extends SearchPatternTypeProps {
  * prefilled repositories and data series query field according to
  * search page query.
  */
-export const CreateCodeInsightButton: React.FunctionComponent<CreateCodeInsightButtonProps> = props => {
+export const CreateCodeInsightButton: React.FunctionComponent<
+    React.PropsWithChildren<CreateCodeInsightButtonProps>
+> = props => {
     if (!props.enableCodeInsights || !props.query || !props.authenticatedUser) {
         return null
     }

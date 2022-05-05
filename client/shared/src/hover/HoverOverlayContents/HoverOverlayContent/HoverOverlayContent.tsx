@@ -33,7 +33,9 @@ function tryMarkdownRender(content: string): string | Error {
     }
 }
 
-export const HoverOverlayContent: React.FunctionComponent<HoverOverlayContentProps> = props => {
+export const HoverOverlayContent: React.FunctionComponent<
+    React.PropsWithChildren<HoverOverlayContentProps>
+> = props => {
     const { content, aggregatedBadges = [], index, errorAlertClassName, errorAlertVariant, badgeClassName } = props
 
     if (content.kind !== 'markdown') {

@@ -10,7 +10,7 @@ interface Props extends Pick<BatchChangeFields, 'createdAt' | 'creator' | 'lastA
 /**
  * The created/updated byline in the batch change header.
  */
-export const BatchChangeInfoByline: React.FunctionComponent<Props> = ({
+export const BatchChangeInfoByline: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     createdAt,
     creator,
     lastAppliedAt,

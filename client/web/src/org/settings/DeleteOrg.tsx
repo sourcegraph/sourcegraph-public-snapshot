@@ -13,7 +13,7 @@ interface DeleteOrgProps extends OrgAreaPageProps, RouteComponentProps<{}> {}
 /**
  * Deletes an organization.
  */
-export const DeleteOrg: React.FunctionComponent<DeleteOrgProps> = props => {
+export const DeleteOrg: React.FunctionComponent<React.PropsWithChildren<DeleteOrgProps>> = props => {
     const [showDeleteModal, setShowDeleteModal] = useState(false)
     const toggleDeleteModal = useCallback(() => setShowDeleteModal(!showDeleteModal), [
         setShowDeleteModal,

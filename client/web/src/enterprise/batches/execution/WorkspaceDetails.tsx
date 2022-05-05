@@ -72,7 +72,10 @@ export interface WorkspaceDetailsProps extends ThemeProps {
     queryChangesetSpecFileDiffs?: typeof _queryChangesetSpecFileDiffs
 }
 
-export const WorkspaceDetails: React.FunctionComponent<WorkspaceDetailsProps> = ({ id, ...props }) => {
+export const WorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<WorkspaceDetailsProps>> = ({
+    id,
+    ...props
+}) => {
     // Fetch and poll latest workspace information.
     const { loading, error, data } = useBatchSpecWorkspace(id)
 
@@ -102,7 +105,7 @@ interface WorkspaceHeaderProps extends Pick<WorkspaceDetailsProps, 'deselectWork
     toggleShowTimeline?: () => void
 }
 
-const WorkspaceHeader: React.FunctionComponent<WorkspaceHeaderProps> = ({
+const WorkspaceHeader: React.FunctionComponent<React.PropsWithChildren<WorkspaceHeaderProps>> = ({
     workspace,
     deselectWorkspace,
     toggleShowTimeline,
@@ -165,7 +168,7 @@ interface HiddenWorkspaceDetailsProps extends Pick<WorkspaceDetailsProps, 'desel
     workspace: HiddenBatchSpecWorkspaceFields
 }
 
-const HiddenWorkspaceDetails: React.FunctionComponent<HiddenWorkspaceDetailsProps> = ({
+const HiddenWorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<HiddenWorkspaceDetailsProps>> = ({
     workspace,
     deselectWorkspace,
 }) => (
@@ -184,7 +187,7 @@ interface VisibleWorkspaceDetailsProps extends Omit<WorkspaceDetailsProps, 'id'>
     workspace: VisibleBatchSpecWorkspaceFields
 }
 
-const VisibleWorkspaceDetails: React.FunctionComponent<VisibleWorkspaceDetailsProps> = ({
+const VisibleWorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<VisibleWorkspaceDetailsProps>> = ({
     isLightTheme,
     workspace,
     deselectWorkspace,
@@ -275,7 +278,7 @@ interface IgnoredWorkspaceDetailsProps extends Pick<WorkspaceDetailsProps, 'dese
     workspace: VisibleBatchSpecWorkspaceFields
 }
 
-const IgnoredWorkspaceDetails: React.FunctionComponent<IgnoredWorkspaceDetailsProps> = ({
+const IgnoredWorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<IgnoredWorkspaceDetailsProps>> = ({
     workspace,
     deselectWorkspace,
 }) => (
@@ -297,10 +300,9 @@ interface UnsupportedWorkspaceDetailsProps extends Pick<WorkspaceDetailsProps, '
     workspace: VisibleBatchSpecWorkspaceFields
 }
 
-const UnsupportedWorkspaceDetails: React.FunctionComponent<UnsupportedWorkspaceDetailsProps> = ({
-    workspace,
-    deselectWorkspace,
-}) => (
+const UnsupportedWorkspaceDetails: React.FunctionComponent<
+    React.PropsWithChildren<UnsupportedWorkspaceDetailsProps>
+> = ({ workspace, deselectWorkspace }) => (
     <>
         <WorkspaceHeader deselectWorkspace={deselectWorkspace} workspace={workspace} />
         <h1 className="text-center text-muted mt-5">
@@ -312,7 +314,7 @@ const UnsupportedWorkspaceDetails: React.FunctionComponent<UnsupportedWorkspaceD
     </>
 )
 
-const NumberInQueue: React.FunctionComponent<{ number: number }> = ({ number }) => {
+const NumberInQueue: React.FunctionComponent<React.PropsWithChildren<{ number: number }>> = ({ number }) => {
     let suffix: string
     console.log('NumberInQueue', number, number % 10)
     switch (number % 10) {
@@ -341,7 +343,7 @@ interface ChangesetSpecNodeProps extends ThemeProps {
     queryChangesetSpecFileDiffs?: typeof _queryChangesetSpecFileDiffs
 }
 
-const ChangesetSpecNode: React.FunctionComponent<ChangesetSpecNodeProps> = ({
+const ChangesetSpecNode: React.FunctionComponent<React.PropsWithChildren<ChangesetSpecNodeProps>> = ({
     node,
     isLightTheme,
     queryChangesetSpecFileDiffs = _queryChangesetSpecFileDiffs,
@@ -426,7 +428,9 @@ function publishBadgeLabel(state: Scalars['PublishedValue']): string {
     }
 }
 
-const PublishedValue: React.FunctionComponent<{ published: Scalars['PublishedValue'] | null }> = ({ published }) => {
+const PublishedValue: React.FunctionComponent<
+    React.PropsWithChildren<{ published: Scalars['PublishedValue'] | null }>
+> = ({ published }) => {
     if (published === null) {
         return <i>select from UI when applying</i>
     }
@@ -444,7 +448,7 @@ interface WorkspaceStepProps extends ThemeProps {
     queryBatchSpecWorkspaceStepFileDiffs?: typeof _queryBatchSpecWorkspaceStepFileDiffs
 }
 
-const WorkspaceStep: React.FunctionComponent<WorkspaceStepProps> = ({
+const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceStepProps>> = ({
     step,
     isLightTheme,
     workspaceID,
@@ -575,7 +579,7 @@ const WorkspaceStep: React.FunctionComponent<WorkspaceStepProps> = ({
 interface StepStateIconProps {
     step: BatchSpecWorkspaceStepFields
 }
-const StepStateIcon: React.FunctionComponent<StepStateIconProps> = ({ step }) => {
+const StepStateIcon: React.FunctionComponent<React.PropsWithChildren<StepStateIconProps>> = ({ step }) => {
     if (step.cachedResultFound) {
         return (
             <Icon
@@ -606,7 +610,9 @@ const StepStateIcon: React.FunctionComponent<StepStateIconProps> = ({ step }) =>
     )
 }
 
-const StepTimer: React.FunctionComponent<{ step: BatchSpecWorkspaceStepFields }> = ({ step }) => {
+const StepTimer: React.FunctionComponent<React.PropsWithChildren<{ step: BatchSpecWorkspaceStepFields }>> = ({
+    step,
+}) => {
     if (!step.startedAt) {
         return null
     }
@@ -619,7 +625,9 @@ interface WorkspaceStepFileDiffConnectionProps extends ThemeProps {
     queryBatchSpecWorkspaceStepFileDiffs?: typeof _queryBatchSpecWorkspaceStepFileDiffs
 }
 
-const WorkspaceStepFileDiffConnection: React.FunctionComponent<WorkspaceStepFileDiffConnectionProps> = ({
+const WorkspaceStepFileDiffConnection: React.FunctionComponent<
+    React.PropsWithChildren<WorkspaceStepFileDiffConnectionProps>
+> = ({
     workspaceID,
     step,
     isLightTheme,

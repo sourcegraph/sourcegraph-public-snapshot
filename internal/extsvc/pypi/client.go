@@ -29,6 +29,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"path"
 	"path/filepath"
 	"strconv"
@@ -62,24 +63,105 @@ type Client struct {
 	limiter *rate.Limiter
 }
 
-func NewClient(urn string, urls []string) *Client {
+func NewClient(urn string, urls []string, cli httpcli.Doer) *Client {
 	return &Client{
-		urls: urls,
-
-		// ExternalDoer sets the user-agent as suggested by PyPI
-		// https://warehouse.pypa.io/api-reference/.
-		cli:     httpcli.ExternalDoer,
+		urls:    urls,
+		cli:     cli,
 		limiter: ratelimit.DefaultRegistry.Get(urn),
 	}
 }
 
-// Project returns the content of the simple-API /<project>/ endpoint.
-func (c *Client) Project(ctx context.Context, project string) ([]byte, error) {
+// Project returns the Files of the simple-API /<project>/ endpoint.
+func (c *Client) Project(ctx context.Context, project string) ([]File, error) {
 	data, err := c.get(ctx, normalize(project))
 	if err != nil {
 		return nil, errors.Wrap(err, "PyPI")
 	}
-	return data, nil
+	return parse(data)
+}
+
+// Version returns the File of a project at a specific version from
+// the simple-API /<project>/ endpoint.
+func (c *Client) Version(ctx context.Context, project, version string) (File, error) {
+	files, err := c.Project(ctx, project)
+	if err != nil {
+		return File{}, err
+	}
+
+	f, err := FindVersion(version, files)
+	if err != nil {
+		return File{}, errors.Wrapf(err, "project: %q", project)
+	}
+
+	return f, nil
+}
+
+// FindVersion finds the File for the given version amongst files from a project.
+func FindVersion(version string, files []File) (File, error) {
+	if len(files) == 0 {
+		return File{}, errors.Errorf("no files")
+	}
+
+	// This loop should never iterate over more than a few files.
+	if version == "" {
+		for i := len(files) - 1; i >= 0; i-- {
+			if w, err := ToWheel(files[i]); err == nil {
+				version = w.Version
+				break
+			} else if s, err := ToSDist(files[i]); err == nil {
+				version = s.Version
+				break
+			}
+		}
+	}
+
+	if version == "" {
+		return File{}, &Error{
+			code:    404,
+			message: "could not find a wheel or source distribution to determine the latest version",
+		}
+	}
+
+	// We return the first source distribution we can find for the version.
+	//
+	// In case we cannot find a source distribution, we return the first wheel in
+	// lexicographic order to guarantee that we pick the same wheel every time as
+	// long as the list of wheels doesn't change.
+	//
+	// Pep 503 does not prescribe lexicographic order of files returned from the
+	// simple API.
+	//
+	// The consequence is that we might pick a different tarball or wheel when we
+	// reclone if the list of files changes. This might break links. We consider
+	// this an edge case.
+	//
+	var minWheelAtVersion *File
+	for i, f := range files {
+		if wheel, err := ToWheel(f); err != nil {
+			if sdist, err := ToSDist(f); err == nil && sdist.Version == version {
+				return f, nil
+			}
+		} else if wheel.Version == version && (minWheelAtVersion == nil || f.Name < minWheelAtVersion.Name) {
+			minWheelAtVersion = &files[i]
+		}
+	}
+
+	if minWheelAtVersion != nil {
+		return *minWheelAtVersion, nil
+	}
+
+	return File{}, &Error{
+		code:    404,
+		message: fmt.Sprintf("could not find a wheel or source distribution for version %s", version),
+	}
+}
+
+type NotFoundError struct {
+	error
+}
+
+func (e NotFoundError) NotFound() bool {
+	return true
 }
 
 // File represents one anchor element in the response from /<project>/.
@@ -107,9 +189,9 @@ type File struct {
 	DataRequiresPython string
 }
 
-// Parse parses the output of Client.Project into a list of files. Anchor tags
+// parse parses the output of Client.Project into a list of files. Anchor tags
 // without href are ignored.
-func Parse(b []byte) ([]File, error) {
+func parse(b []byte) ([]File, error) {
 	var files []File
 
 	z := html.NewTokenizer(bytes.NewReader(b))
@@ -134,7 +216,7 @@ OUTER:
 	for nextAnchor() {
 		cur := File{}
 
-		// Parse attributes.
+		// parse attributes.
 		for {
 			k, v, more := z.TagAttr()
 			switch string(k) {
@@ -195,7 +277,7 @@ func (c *Client) Download(ctx context.Context, url string) ([]byte, error) {
 		return nil, err
 	}
 	if d := time.Since(startWait); d > rateLimitingWaitThreshold {
-		log15.Warn("client self-enforced API rate limit: request delayed longer than expected due to rate limit", "delay", d)
+		log15.Warn("PyPI client self-enforced API rate limit: request delayed longer than expected due to rate limit", "delay", d)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
@@ -210,8 +292,79 @@ func (c *Client) Download(ctx context.Context, url string) ([]byte, error) {
 	return b, nil
 }
 
+// A SDist is a Python source distribution.
+type SDist struct {
+	File
+	Distribution string
+	Version      string
+}
+
+func ToSDist(f File) (*SDist, error) {
+	name := f.Name
+
+	// source distribution or unsupported other format.
+	ext := isSDIST(name)
+	if ext == "" {
+		return nil, errors.Errorf("%q is not a sdist", name)
+	}
+
+	name = strings.TrimSuffix(name, ext)
+
+	// For source distributions we expect the pattern <package>-<version>.<ext>,
+	// where <package> might include "-". We determine the package version on a best
+	// effort basis by assuming the version is the string between the last "-" and
+	// the extension.
+	i := strings.LastIndexByte(name, '-')
+	if i == -1 {
+		return nil, errors.Errorf("%q has an invalid sdist format", name)
+	}
+
+	return &SDist{
+		File:         f,
+		Distribution: name[:i],
+		Version:      name[i+1:],
+	}, nil
+}
+
+// isSDIST returns the file extension if filename has one of the supported sdist
+// formats. If the file extension is not supported, isSDIST returns the empty
+// string.
+func isSDIST(filename string) string {
+	switch ext := filepath.Ext(filename); ext {
+	case ".zip", ".tar":
+		return ext
+	}
+
+	switch ext := extN(filename, 2); ext {
+	case ".tar.gz", ".tar.bz2", ".tar.xz", ".tar.Z":
+		return ext
+	default:
+		return ""
+	}
+}
+
+func extN(path string, n int) (ext string) {
+	if n == -1 {
+		i := strings.Index(path, ".")
+		if i == -1 {
+			return ""
+		}
+		return path[i:]
+	}
+	for i := len(path) - 1; i >= 0 && !os.IsPathSeparator(path[i]); i-- {
+		if path[i] == '.' {
+			n--
+			if n == 0 {
+				return path[i:]
+			}
+		}
+	}
+	return ""
+}
+
 // https://peps.python.org/pep-0491/#file-format
 type Wheel struct {
+	File
 	Distribution string
 	Version      string
 	BuildTag     string
@@ -222,16 +375,20 @@ type Wheel struct {
 
 // ToWheel parses a filename of a wheel according to the format specified in
 // https://peps.python.org/pep-0491/#file-format
-func ToWheel(name string) (*Wheel, error) {
+func ToWheel(f File) (*Wheel, error) {
+	name := f.Name
+
 	if e := path.Ext(name); e != ".whl" {
 		return nil, errors.Errorf("%s does not conform to pep 491", name)
 	} else {
 		name = name[:len(name)-len(e)]
 	}
+
 	pcs := strings.Split(name, "-")
 	switch len(pcs) {
 	case 5:
 		return &Wheel{
+			File:         f,
 			Distribution: pcs[0],
 			Version:      pcs[1],
 			BuildTag:     "",
@@ -241,6 +398,7 @@ func ToWheel(name string) (*Wheel, error) {
 		}, nil
 	case 6:
 		return &Wheel{
+			File:         f,
 			Distribution: pcs[0],
 			Version:      pcs[1],
 			BuildTag:     pcs[2],
@@ -266,7 +424,7 @@ func (c *Client) get(ctx context.Context, project string) (respBody []byte, err 
 		}
 
 		if d := time.Since(startWait); d > rateLimitingWaitThreshold {
-			log15.Warn("client self-enforced API rate limit: request delayed longer than expected due to rate limit", "delay", d)
+			log15.Warn("PyPI client self-enforced API rate limit: request delayed longer than expected due to rate limit", "delay", d)
 		}
 
 		reqURL, err = url.Parse(baseURL)
@@ -322,7 +480,7 @@ type Error struct {
 }
 
 func (e *Error) Error() string {
-	return fmt.Sprintf("bad proxy response with status code %d for %s: %s", e.code, e.path, e.message)
+	return fmt.Sprintf("bad response with status code %d for %s: %s", e.code, e.path, e.message)
 }
 
 func (e *Error) NotFound() bool {
