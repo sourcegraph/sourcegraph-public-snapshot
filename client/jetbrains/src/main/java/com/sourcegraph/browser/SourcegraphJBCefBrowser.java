@@ -1,5 +1,6 @@
 package com.sourcegraph.browser;
 
+import com.intellij.openapi.util.Disposer;
 import com.intellij.ui.jcef.JBCefBrowser;
 import com.sourcegraph.config.ThemeUtil;
 import org.cef.CefApp;
@@ -16,6 +17,7 @@ public class SourcegraphJBCefBrowser extends JBCefBrowser {
         // Create bridge, set up handlers, then run init function
         String initJSCode = "window.initializeSourcegraph(" + (ThemeUtil.isDarkTheme() ? "true" : "false") + ");";
         jsToJavaBridge = new JSToJavaBridge(this, new JSToJavaBridgeRequestHandler(), initJSCode);
+        Disposer.register(this, jsToJavaBridge);
     }
 
     public JSToJavaBridge getJsToJavaBridge() {

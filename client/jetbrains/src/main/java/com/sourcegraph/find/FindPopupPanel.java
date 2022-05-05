@@ -1,6 +1,7 @@
 package com.sourcegraph.find;
 
 import com.intellij.codeInsight.highlighting.HighlightManager;
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.editor.*;
 import com.intellij.openapi.editor.colors.EditorColors;
 import com.intellij.openapi.project.Project;
@@ -22,8 +23,8 @@ import java.awt.*;
 /**
  * Inspired by <a href="https://sourcegraph.com/github.com/JetBrains/intellij-community/-/blob/platform/lang-impl/src/com/intellij/find/impl/FindPopupPanel.java">FindPopupPanel.java</a>
  */
-public class FindPopupPanel extends JBPanel<FindPopupPanel> {
-    private final SourcegraphJBCefBrowser sourcegraphJBCefBrowser;
+public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposable {
+    private final SourcegraphJBCefBrowser browser;
 
     public FindPopupPanel(Project project) {
         super(new BorderLayout());
@@ -37,9 +38,9 @@ public class FindPopupPanel extends JBPanel<FindPopupPanel> {
         add(splitter, BorderLayout.CENTER);
 
         JBPanel<JBPanelWithEmptyText> jcefPanel = new JBPanelWithEmptyText(new BorderLayout()).withEmptyText("Unfortunately, the browser is not available on your system. Try running the IDE with the default OpenJDK.");
-        sourcegraphJBCefBrowser = JBCefApp.isSupported() ? new SourcegraphJBCefBrowser() : null;
-        if (sourcegraphJBCefBrowser != null) {
-            jcefPanel.add(sourcegraphJBCefBrowser.getComponent(), BorderLayout.CENTER);
+        browser = JBCefApp.isSupported() ? new SourcegraphJBCefBrowser() : null;
+        if (browser != null) {
+            jcefPanel.add(browser.getComponent(), BorderLayout.CENTER);
         }
 
         JBPanel<JBPanelWithEmptyText> previewPanel = createPreviewPanel(project);
@@ -49,8 +50,8 @@ public class FindPopupPanel extends JBPanel<FindPopupPanel> {
     }
 
     @Nullable
-    public SourcegraphJBCefBrowser getSourcegraphJBCefBrowser() {
-        return sourcegraphJBCefBrowser;
+    public SourcegraphJBCefBrowser getBrowser() {
+        return browser;
     }
 
     @NotNull
@@ -85,5 +86,12 @@ public class FindPopupPanel extends JBPanel<FindPopupPanel> {
         editorPanel.validate();
 
         return editorPanel;
+    }
+
+    @Override
+    public void dispose() {
+        if (browser != null) {
+            browser.dispose();
+        }
     }
 }

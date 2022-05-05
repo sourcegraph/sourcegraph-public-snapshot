@@ -4,6 +4,7 @@ import com.intellij.openapi.Disposable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.popup.JBPopup;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
+import com.intellij.openapi.util.Disposer;
 
 public class SourcegraphWindow implements Disposable {
     private final Project project;
@@ -15,6 +16,8 @@ public class SourcegraphWindow implements Disposable {
 
         // Create main panel
         mainPanel = new FindPopupPanel(project);
+
+        Disposer.register(project, this);
     }
 
     synchronized public void showPopup() {
@@ -25,8 +28,8 @@ public class SourcegraphWindow implements Disposable {
 
         // If the popup is already shown, hitting alt + a gain should behave the same as the native find in files
         // feature and focus the search field.
-        if (mainPanel.getSourcegraphJBCefBrowser() != null) {
-            mainPanel.getSourcegraphJBCefBrowser().focus();
+        if (mainPanel.getBrowser() != null) {
+            mainPanel.getBrowser().focus();
         }
     }
 
