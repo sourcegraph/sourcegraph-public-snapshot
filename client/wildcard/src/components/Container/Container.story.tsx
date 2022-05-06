@@ -3,6 +3,7 @@ import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
+import { Typography } from '..'
 import { Alert } from '../Alert'
 import { Button } from '../Button'
 
@@ -41,7 +42,7 @@ export const Overview: Story = () => (
             </ul>
         </Alert>
         <hr />
-        <h1>Example 1</h1>
+        <Typography.H1>Example 1</Typography.H1>
         <h2>Some page explanation</h2>
         <p className="text-muted">Optional: Add some descriptive text about what this page does.</p>
         <Container className="mb-3">
@@ -63,7 +64,7 @@ export const Overview: Story = () => (
             <Button variant="secondary">Cancel</Button>
         </div>
         <hr />
-        <h1>Example 2</h1>
+        <Typography.H1>Example 2</Typography.H1>
         <h2>Some page explanation</h2>
         <p className="text-muted">Optional: Add some descriptive text about what this page does.</p>
         <Container className="mb-3">

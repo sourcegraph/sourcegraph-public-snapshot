@@ -3,6 +3,8 @@ import { Meta } from '@storybook/react'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
+import { Typography } from '..'
+
 import { BADGE_VARIANTS } from './constants'
 
 import { Badge } from '.'
@@ -41,7 +43,7 @@ export default config
 
 export const Badges = () => (
     <>
-        <h1>Badges</h1>
+        <Typography.H1>Badges</Typography.H1>
         <h2>Variants</h2>
         <p>Our badges can be styled with different variants.</p>
         {BADGE_VARIANTS.map(variant => (

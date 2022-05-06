@@ -11,7 +11,7 @@ import classNames from 'classnames'
 import 'storybook-addon-designs'
 
 import { highlightCodeSafe, registerHighlightContributions } from '@sourcegraph/common'
-import { TextArea, Button, ButtonGroup, Link, Select, BUTTON_SIZES, Checkbox } from '@sourcegraph/wildcard'
+import { TextArea, Button, ButtonGroup, Link, Select, BUTTON_SIZES, Checkbox, Typography } from '@sourcegraph/wildcard'
 
 import { BrandedStory } from '../../components/BrandedStory'
 import { CodeSnippet } from '../../components/CodeSnippet'
@@ -41,7 +41,7 @@ export default config
 
 export const Text: Story = () => (
     <>
-        <h1>Typography</h1>
+        <Typography.H1>Typography</Typography.H1>
 
         <TextStory />
     </>
@@ -60,7 +60,7 @@ type ButtonSizesType = typeof BUTTON_SIZES[number] | undefined
 
 export const Code: Story = () => (
     <>
-        <h1>Code</h1>
+        <Typography.H1>Code</Typography.H1>
 
         <h2>Inline Code</h2>
         <p>
@@ -127,7 +127,7 @@ export const Code: Story = () => (
 
 export const Colors: Story = () => (
     <>
-        <h1>Colors</h1>
+        <Typography.H1>Colors</Typography.H1>
 
         <h2>Semantic colors</h2>
         <p>These can be used to give semantic clues and always work both in light and dark theme.</p>
@@ -146,7 +146,7 @@ Colors.parameters = {
 
 export const Layout: Story = () => (
     <>
-        <h1>Layout</h1>
+        <Typography.H1>Layout</Typography.H1>
 
         <h2>Spacing</h2>
         <p>
@@ -244,7 +244,7 @@ export const ButtonGroups: Story = () => {
     const buttonSizes: ButtonSizesType[] = ['lg', undefined, 'sm']
     return (
         <>
-            <h1>Button groups</h1>
+            <Typography.H1>Button groups</Typography.H1>
             <p>
                 Group a series of buttons together on a single line with the button group.{' '}
                 <Link to="https://getbootstrap.com/docs/4.5/components/buttons/">Bootstrap documentation</Link>
@@ -371,7 +371,7 @@ ButtonGroups.parameters = {
 
 export const InputGroups: Story = () => (
     <>
-        <h1>Input groups</h1>
+        <Typography.H1>Input groups</Typography.H1>
 
         <p>
             Easily extend form controls by adding text, buttons, or button groups on either side of textual inputs,
@@ -397,7 +397,7 @@ InputGroups.storyName = 'Input groups'
 
 export const Forms: Story = () => (
     <>
-        <h1>Forms</h1>
+        <Typography.H1>Forms</Typography.H1>
         <p>
             Forms are validated using native HTML validation. Submit the below form with invalid input to try it out.{' '}
             <Link to="https://getbootstrap.com/docs/4.5/components/forms/" target="_blank" rel="noopener noreferrer">
@@ -503,7 +503,7 @@ Forms.parameters = {
 
 export const ListGroups: Story = () => (
     <>
-        <h1>List groups</h1>
+        <Typography.H1>List groups</Typography.H1>
         <p>
             List groups are a flexible and powerful component for displaying a series of content. Modify and extend them
             to support just about any content within.
@@ -571,7 +571,7 @@ export const Meter: Story = () => {
 
     return (
         <>
-            <h1>Meter</h1>
+            <Typography.H1>Meter</Typography.H1>
             <p>
                 The HTML{' '}
                 <Link

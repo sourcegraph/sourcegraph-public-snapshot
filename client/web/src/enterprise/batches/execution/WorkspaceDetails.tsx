@@ -32,6 +32,7 @@ import {
     CardBody,
     Card,
     Icon,
+    Typography,
 } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../../components/Collapsible'
@@ -174,10 +175,10 @@ const HiddenWorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<Hi
 }) => (
     <>
         <WorkspaceHeader deselectWorkspace={deselectWorkspace} workspace={workspace} />
-        <h1 className="text-center text-muted mt-5">
+        <Typography.H1 className="text-center text-muted mt-5">
             <Icon as={EyeOffOutlineIcon} />
             <VisuallyHidden>Hidden Workspace</VisuallyHidden>
-        </h1>
+        </Typography.H1>
         <p className="text-center">This workspace is hidden due to permissions.</p>
         <p className="text-center">Contact the owner of this batch change for more information.</p>
     </>
@@ -284,10 +285,10 @@ const IgnoredWorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<I
 }) => (
     <>
         <WorkspaceHeader deselectWorkspace={deselectWorkspace} workspace={workspace} />
-        <h1 className="text-center text-muted mt-5">
+        <Typography.H1 className="text-center text-muted mt-5">
             <Icon as={LinkVariantRemoveIcon} />
             <VisuallyHidden>Ignored Workspace</VisuallyHidden>
-        </h1>
+        </Typography.H1>
         <p className="text-center">
             This workspace has been skipped because a <code>.batchignore</code> file is present in the workspace
             repository.
@@ -305,10 +306,10 @@ const UnsupportedWorkspaceDetails: React.FunctionComponent<
 > = ({ workspace, deselectWorkspace }) => (
     <>
         <WorkspaceHeader deselectWorkspace={deselectWorkspace} workspace={workspace} />
-        <h1 className="text-center text-muted mt-5">
+        <Typography.H1 className="text-center text-muted mt-5">
             <Icon as={LinkVariantRemoveIcon} />
             <VisuallyHidden>Unsupported Workspace</VisuallyHidden>
-        </h1>
+        </Typography.H1>
         <p className="text-center">This workspace has been skipped because it is from an unsupported codehost.</p>
         <p className="text-center">Enable the execution option to "allow unsupported" to override.</p>
     </>

@@ -5,6 +5,7 @@ import { Meta, Story } from '@storybook/react'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
+import { Typography } from '../..'
 import { Grid } from '../../Grid'
 
 import { RadioButton, RadioButtonProps } from './RadioButton'
@@ -75,7 +76,7 @@ const BaseRadio = ({ name, ...props }: Pick<RadioButtonProps, 'name' | 'isValid'
 
 export const RadioExamples: Story = () => (
     <>
-        <h1>Radio</h1>
+        <Typography.H1>Radio</Typography.H1>
         <Grid columnCount={4}>
             <div>
                 <h2>Standard</h2>

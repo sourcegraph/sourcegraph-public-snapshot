@@ -10,6 +10,8 @@ import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
 import 'storybook-addon-designs'
 
+import { Typography } from '..'
+
 import { Alert } from './Alert'
 import { ALERT_VARIANTS } from './constants'
 
@@ -54,7 +56,7 @@ export default config
 
 export const Alerts: Story = () => (
     <>
-        <h1>Alerts</h1>
+        <Typography.H1>Alerts</Typography.H1>
         <p>
             Provide contextual feedback messages for typical user actions with the handful of available and flexible
             alert messages.

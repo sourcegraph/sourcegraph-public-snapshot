@@ -5,6 +5,7 @@ import SearchIcon from 'mdi-react/SearchIcon'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
+import { Typography } from '../..'
 import { Button } from '../Button'
 import { ButtonGroup } from '../ButtonGroup'
 import { BUTTON_VARIANTS, BUTTON_SIZES } from '../constants'
@@ -53,7 +54,7 @@ export const Simple: Story = () => (
 
 export const AllButtons: Story = () => (
     <div className="pb-3">
-        <h1>Buttons</h1>
+        <Typography.H1>Buttons</Typography.H1>
         <h2>Variants</h2>
         <ButtonVariants variants={BUTTON_VARIANTS} />
         <h2>Outline</h2>

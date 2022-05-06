@@ -5,7 +5,7 @@ import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
-import { Button, Grid } from '..'
+import { Button, Grid, Typography } from '..'
 
 import { Tooltip } from './Tooltip'
 import { TooltipController } from './TooltipController'
@@ -55,7 +55,7 @@ Basic.parameters = {
 
 export const Positions: Story = () => (
     <>
-        <h1>Tooltip</h1>
+        <Typography.H1>Tooltip</Typography.H1>
         <h2>Positions</h2>
 
         <Grid columnCount={4}>
