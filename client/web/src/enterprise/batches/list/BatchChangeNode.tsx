@@ -116,7 +116,7 @@ export const BatchChangeNode: React.FunctionComponent<React.PropsWithChildren<Ba
     }, [isExecutionEnabled, node.url, node.state, node.currentSpec, latestExecution])
 
     return (
-        <li className={classNames(styles.grid, isExecutionEnabled ? styles.wide : styles.narrow)}>
+        <>
             <span className={styles.batchChangeNodeSeparator} />
             {isExecutionEnabled ? (
                 <BatchChangeStatePill
@@ -162,7 +162,7 @@ export const BatchChangeNode: React.FunctionComponent<React.PropsWithChildren<Ba
                 />
             </div>
             {node.state !== BatchChangeState.DRAFT && (
-                <div role="region" aria-label="Changeset stats" className={styles.changesetStats}>
+                <>
                     <ChangesetStatusOpen
                         aria-labelledby="changesets-open-label"
                         className="d-block d-sm-flex"
@@ -196,8 +196,8 @@ export const BatchChangeNode: React.FunctionComponent<React.PropsWithChildren<Ba
                             >{`${node.changesetsStats.merged} merged`}</span>
                         }
                     />
-                </div>
+                </>
             )}
-        </li>
+        </>
     )
 }

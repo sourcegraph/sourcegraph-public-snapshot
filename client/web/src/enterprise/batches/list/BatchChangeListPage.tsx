@@ -170,7 +170,10 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                             />
                         </div>
                         {error && <ConnectionError errors={[error.message]} />}
-                        <ConnectionList as="ul">
+                        <ConnectionList
+                            as="div"
+                            className={classNames(styles.grid, isExecutionEnabled ? styles.wide : styles.narrow)}
+                        >
                             {connection?.nodes?.map(node => (
                                 <BatchChangeNode
                                     key={node.id}
