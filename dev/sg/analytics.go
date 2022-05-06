@@ -12,47 +12,48 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
 )
 
+// addAnalyticsHooks wraps command actions with analytics hooks. We reconstruct commandPath
+// ourselves because the library's state (and hence .FullName()) seems to get a bit funky.
 func addAnalyticsHooks(start time.Time, commandPath []string, commands []*cli.Command) {
-	if len(commands) == 0 {
-		return
-	}
 	for _, command := range commands {
 		if len(command.Subcommands) > 0 {
 			addAnalyticsHooks(start, append(commandPath, command.Name), command.Subcommands)
+		}
+
+		// No action to perform analytics on
+		if command.Action == nil {
 			continue
 		}
 
+		// Set up analytics hook for command
 		analyticsHook := makeAnalyticsHook(start, append(commandPath, command.Name))
 
-		// This command has no subcommands, so we add analytics hook to indicate it has
-		// been used.
-		command.After = analyticsHook
-
-		// Make sure analytics hook is called even on interrupts. Note that this only
-		// works if you 'go build' sg, not if you 'go run'.
-		var wrappedBeforeHook cli.BeforeFunc
-		if command.Before == nil {
-			wrappedBeforeHook = command.Before
-		}
-		command.Before = func(cmd *cli.Context) error {
-			c := make(chan os.Signal, 1)
-			signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+		// Wrap action with analytics
+		wrappedAction := command.Action
+		command.Action = func(cmd *cli.Context) error {
+			// Make sure analytics hook is called even on interrupts. Note that this only
+			// works if you 'go build' sg, not if you 'go run'.
+			interrupt := make(chan os.Signal, 1)
+			signal.Notify(interrupt, os.Interrupt, syscall.SIGTERM)
 			go func() {
-				<-c
+				<-interrupt
 				analyticsHook(cmd)
 				os.Exit(1)
 			}()
 
-			if wrappedBeforeHook != nil {
-				return wrappedBeforeHook(cmd)
-			}
-			return nil
+			// Call the underlying action
+			actionErr := wrappedAction(cmd)
+
+			// Capture analytics post-run
+			analyticsHook(cmd)
+
+			return actionErr
 		}
 	}
 }
 
-func makeAnalyticsHook(start time.Time, commandPath []string) func(cmd *cli.Context) error {
-	return func(cmd *cli.Context) error {
+func makeAnalyticsHook(start time.Time, commandPath []string) func(cmd *cli.Context) {
+	return func(cmd *cli.Context) {
 		// Log an sg usage occurrence
 		totalDuration := time.Since(start)
 		analytics.LogDuration(cmd.Context, "sg_action", commandPath, totalDuration)
@@ -62,7 +63,5 @@ func makeAnalyticsHook(start time.Time, commandPath []string) func(cmd *cli.Cont
 		if err := analytics.Persist(cmd.Context, strings.Join(commandPath, " "), flagsUsed); err != nil {
 			writeSkippedLinef("failed to persist events: %s", err)
 		}
-
-		return nil
 	}
 }

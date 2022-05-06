@@ -110,12 +110,17 @@ var sg = &cli.App{
 			return nil
 		}
 
+		// Configure analytics - this should be the first thing to be configured.
 		if !cmd.Bool("disable-analytics") {
 			cmd.Context = analytics.WithContext(cmd.Context, cmd.App.Version)
-			start := time.Now()
+			start := time.Now() // Start the clock immediately
 			addAnalyticsHooks(start, []string{"sg"}, cmd.App.Commands)
 		}
 
+		// Add autosuggestion hooks to commands with subcommands but no action
+		addSuggestionHooks(cmd.App.Commands)
+
+		// Configure output
 		log.Init(log.Resource{Name: "sg"})
 		if verbose {
 			stdout.Out.SetVerbose()

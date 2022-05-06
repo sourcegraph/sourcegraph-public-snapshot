@@ -10,24 +10,30 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 )
 
+// addSuggestionHooks adds an action that calculates and suggests similar commands for the
+// user to all commands that don't have an action yet.
+func addSuggestionHooks(commands []*cli.Command) {
+	for _, command := range commands {
+		if command.Action == nil {
+			command.Action = func(cmd *cli.Context) error {
+				s := cmd.Args().First()
+				if s == "" {
+					// Use default if no args are provided
+					return cli.ShowSubcommandHelp(cmd)
+				}
+				suggestCommands(cmd, s)
+				return cli.Exit("", 1)
+			}
+		}
+	}
+}
+
 // reconstructArgs reconstructs the argument string from the command context lineage.
 func reconstructArgs(cmd *cli.Context) string {
 	lineage := cmd.Lineage()
 	root := lineage[len(lineage)-1]
 	args := append([]string{cmd.App.Name}, root.Args().Slice()...)
 	return strings.Join(args, " ")
-}
-
-// suggestSubcommandsAction is a cli.Action that calculates and suggests subcommands
-// similar to the first argument.
-func suggestSubcommandsAction(cmd *cli.Context) error {
-	s := cmd.Args().First()
-	if s == "" {
-		// Use default if no args are provided
-		return cli.ShowSubcommandHelp(cmd)
-	}
-	suggestCommands(cmd, s)
-	return cli.Exit("", 1)
 }
 
 // suggestCommands is a cli.CommandNotFoundFunc that calculates and suggests subcommands

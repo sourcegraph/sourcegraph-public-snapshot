@@ -16,7 +16,6 @@ var analyticsCommand = &cli.Command{
 	Name:     "analytics",
 	Usage:    "Manage analytics collected by sg",
 	Category: CategoryCompany,
-	Action:   suggestSubcommandsAction,
 	Subcommands: []*cli.Command{
 		{
 			Name:        "submit",
