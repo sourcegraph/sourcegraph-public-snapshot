@@ -95,7 +95,11 @@ export const ExtensionAreaHeader: React.FunctionComponent<React.PropsWithChildre
                                     />
                                 )
                             }
-                            path={[{ to: '/extensions', icon: PuzzleOutlineIcon }, { text: publisher }, { text: name }]}
+                            path={[
+                                { to: '/extensions', icon: PuzzleOutlineIcon, ariaLabel: 'Extensions' },
+                                { text: publisher },
+                                { text: name },
+                            ]}
                             description={
                                 manifest &&
                                 (manifest.description || isWorkInProgress) && (
