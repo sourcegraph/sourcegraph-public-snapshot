@@ -70,7 +70,7 @@ export const BatchSpecContext = React.createContext<BatchSpecContextState>(defau
 
 interface BatchSpecContextProviderProps {
     batchChange: EditBatchChangeFields
-    refetchBatchChange: () => Promise<unknown>
+    refetchBatchChange?: () => Promise<unknown>
 }
 
 export const BatchSpecContextProvider: React.FunctionComponent<BatchSpecContextProviderProps> = ({
