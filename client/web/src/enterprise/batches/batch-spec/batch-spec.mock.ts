@@ -63,6 +63,10 @@ export const mockWorkspaceResolutionStatus = (
     },
 })
 
+export const UNSTARTED_RESOLUTION: WorkspaceResolutionStatusResult = {
+    node: { __typename: 'BatchSpec', workspaceResolution: null },
+}
+
 export const mockWorkspace = (
     id: number,
     fields?: Partial<PreviewVisibleBatchSpecWorkspaceFields>
@@ -129,7 +133,7 @@ export const mockBatchSpecWorkspaces = (workspacesCount: number): BatchSpecWorks
                 __typename: 'BatchSpecWorkspaceConnection',
                 totalCount: workspacesCount,
                 pageInfo: {
-                    hasNextPage: true,
+                    hasNextPage: workspacesCount > 0,
                     endCursor: 'end-cursor',
                 },
                 nodes: mockWorkspaces(workspacesCount),
@@ -145,7 +149,7 @@ export const mockBatchSpecImportingChangesets = (importsCount: number): BatchSpe
             __typename: 'ChangesetSpecConnection',
             totalCount: importsCount,
             pageInfo: {
-                hasNextPage: true,
+                hasNextPage: importsCount > 0,
                 endCursor: 'end-cursor',
             },
             nodes: mockImportingChangesets(importsCount),
