@@ -55,7 +55,7 @@ export const CreateBatchChangePage: React.FunctionComponent<React.PropsWithChild
         </Page>
     )
 
-const TABS_CONFIG: TabsConfig[] = [{ name: 'configuration', isEnabled: true }]
+const TABS_CONFIG: TabsConfig[] = [{ key: 'configuration', isEnabled: true }]
 
 const NewBatchChangePageContent: React.FunctionComponent<Omit<CreateBatchChangePageProps, 'headingElement'>> = ({
     settingsCascade,
@@ -68,7 +68,7 @@ const NewBatchChangePageContent: React.FunctionComponent<Omit<CreateBatchChangeP
             <div className={layoutStyles.headerContainer}>
                 <BatchChangeHeader title={{ text: 'Create batch change' }} />
             </div>
-            <TabBar activeTabName="configuration" tabsConfig={TABS_CONFIG} />
+            <TabBar activeTabKey="configuration" tabsConfig={TABS_CONFIG} />
             <ConfigurationForm
                 renderTemplate={renderTemplate}
                 insightTitle={insightTitle}
