@@ -23,18 +23,6 @@ declare global {
     }
 }
 
-async function onOpen(match: ContentMatch, lineIndex: number): Promise<void> {
-    const content = await loadContent(match)
-    console.log('open', await loadContent(match), match.lineMatches[lineIndex])
-    await window.callJava({
-        action: 'open',
-        arguments: {
-            content,
-            lineNumber: match.lineMatches[lineIndex].lineNumber,
-        },
-    })
-}
-
 async function onPreviewChange(match: ContentMatch, lineIndex: number): Promise<void> {
     const fileName = splitPath(match.path)[1]
     const content = await loadContent(match)
@@ -56,6 +44,21 @@ function onPreviewClear(): void {
         .callJava({ action: 'clearPreview', arguments: {} })
         .then(() => {})
         .catch(() => {})
+}
+
+async function onOpen(match: ContentMatch, lineIndex: number): Promise<void> {
+    const fileName = splitPath(match.path)[1]
+    const content = await loadContent(match)
+    console.log('open', await loadContent(match), match.lineMatches[lineIndex])
+    await window.callJava({
+        action: 'open',
+        arguments: {
+            fileName,
+            path: match.path,
+            content,
+            lineNumber: match.lineMatches[lineIndex].lineNumber,
+        },
+    })
 }
 
 function renderReactApp(): void {

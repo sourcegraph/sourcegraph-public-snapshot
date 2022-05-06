@@ -83,7 +83,7 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
                 return
             }
 
-            if (event.key === 'Enter' && event.ctrlKey === true) {
+            if (event.key === 'Enter' && event.altKey) {
                 const [matchId, lineNumber] = decodeLineId(selectedResult)
                 const match = resultMap.get(matchId)
                 if (match) {
