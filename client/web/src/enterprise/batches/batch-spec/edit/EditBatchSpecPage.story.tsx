@@ -12,7 +12,12 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { WebStory } from '../../../../components/WebStory'
 import { GET_BATCH_CHANGE_TO_EDIT } from '../../create/backend'
 import { insertNameIntoLibraryItem } from '../../yaml-util'
-import { mockBatchChange, mockBatchSpec } from '../batch-spec.mock'
+import {
+    mockBatchChange,
+    mockBatchSpec,
+    UNSTARTED_CONNECTION_MOCKS,
+    UNSTARTED_WITH_CACHE_CONNECTION_MOCKS,
+} from '../batch-spec.mock'
 
 import { EditBatchSpecPage } from './EditBatchSpecPage'
 import goImportsSample from './library/go-imports.batch.yaml'
@@ -58,6 +63,7 @@ const FIRST_TIME_MOCKS = new WildcardMockLink([
         result: { data: { batchChange: mockBatchChange() } },
         nMatches: Number.POSITIVE_INFINITY,
     },
+    ...UNSTARTED_CONNECTION_MOCKS,
 ])
 
 add('editing for the first time', () => (
@@ -104,6 +110,7 @@ const MULTIPLE_SPEC_MOCKS = new WildcardMockLink([
         },
         nMatches: Number.POSITIVE_INFINITY,
     },
+    ...UNSTARTED_WITH_CACHE_CONNECTION_MOCKS,
 ])
 
 add('editing the latest batch spec', () => (
