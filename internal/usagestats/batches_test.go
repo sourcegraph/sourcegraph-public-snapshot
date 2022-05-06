@@ -324,13 +324,13 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 			// batch change 3 should be ignored because it's too old
 		},
 		ActiveExecutorsCount: 2,
-		BulkOperationsCount: map[string]int32{
-			"commentatore": 2,
-			"close":        1,
-			"publish":      2,
-			"merge":        1,
-			"detach":       1,
-			"reenqueue":    1,
+		BulkOperationsCount: []*types.BulkOperationsCount{
+			{Name: "comment", Count: 2},
+			{Name: "detach", Count: 1},
+			{Name: "merge", Count: 1},
+			{Name: "publish", Count: 2},
+			{Name: "reenqueue", Count: 1},
+			{Name: "close", Count: 1},
 		},
 		ChangesetDistribution: []*types.ChangesetDistribution{
 			{Source: "local", Range: "0-9 changesets", BatchChangesCount: 2},
@@ -362,7 +362,7 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 			{
 				Week:          "2022-03-21T00:00:00Z",
 				Count:         2,
-				BulkOperation: "commentatore",
+				BulkOperation: "comment",
 			},
 			{
 				Week:          "2022-03-21T00:00:00Z",

@@ -117,7 +117,6 @@ GROUP BY batch_changes_range.range, created_from_raw;
 	if err != nil {
 		return nil, err
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
 
 	for rows.Next() {
 		var (
@@ -141,6 +140,9 @@ GROUP BY batch_changes_range.range, created_from_raw;
 			BatchChangesCount: count,
 			Source:            batchChangeSource,
 		})
+	}
+	if err = basestore.CloseRows(rows, err); err != nil {
+		return nil, err
 	}
 
 	queryUniqueContributorCurrentMonth := func(events []*sqlf.Query) *sql.Row {
@@ -376,7 +378,7 @@ GROUP BY date_trunc('week', created_at)::date, job_type;
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
-	stats.BulkOperationsCount = make(map[string]int32)
+	totalBulkOperation := make(map[string]int32)
 	for rows.Next() {
 		var (
 			bulkOperaton, week string
@@ -387,12 +389,23 @@ GROUP BY date_trunc('week', created_at)::date, job_type;
 			return nil, err
 		}
 
-		stats.BulkOperationsCount[bulkOperaton] += count
+		if bulkOperaton == "commentatore" {
+			bulkOperaton = "comment"
+		}
+
+		totalBulkOperation[bulkOperaton] += count
 
 		stats.WeeklyBulkOperationStats = append(stats.WeeklyBulkOperationStats, &types.WeeklyBulkOperationStats{
 			BulkOperation: bulkOperaton,
 			Week:          week,
 			Count:         count,
+		})
+	}
+
+	for name, count := range totalBulkOperation {
+		stats.BulkOperationsCount = append(stats.BulkOperationsCount, &types.BulkOperationsCount{
+			Name:  name,
+			Count: count,
 		})
 	}
 

@@ -860,7 +860,7 @@ type BatchChangesUsageStatistics struct {
 	ActiveExecutorsCount int32
 
 	// BulkOperationsCount is the count of bulk operations used to manage changesets
-	BulkOperationsCount map[string]int32
+	BulkOperationsCount []*BulkOperationsCount
 
 	// ChangesetDistribution is the distribution of batch changes per source and the amount of
 	// changesets created via the different sources
@@ -875,6 +875,14 @@ type BatchChangesUsageStatistics struct {
 	MonthlyBatchChangesExecutorUsage []*MonthlyBatchChangesExecutorUsage
 
 	WeeklyBulkOperationStats []*WeeklyBulkOperationStats
+}
+
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
+type BulkOperationsCount struct {
+	Name  string
+	Count int32
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change
