@@ -333,6 +333,9 @@ func (s *Service) resolveFileContents(
 
 	contentsByPath := map[string]string{}
 
+	N := 50
+	M := 5000
+
 	tr := tar.NewReader(rc)
 	for {
 		header, err := tr.Next()
@@ -342,6 +345,13 @@ func (s *Service) resolveFileContents(
 			}
 
 			break
+		}
+
+		if int(header.Size) > M {
+			return nil, errors.Newf("file too big man")
+		}
+		if len(contentsByPath) > N {
+			return nil, errors.Newf("repo too big man")
 		}
 
 		var buf bytes.Buffer
