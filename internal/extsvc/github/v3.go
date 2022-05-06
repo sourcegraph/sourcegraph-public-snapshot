@@ -232,7 +232,7 @@ func (e *APIError) AccountSuspended() bool {
 	return e.Code == http.StatusForbidden && strings.Contains(e.Message, "account was suspended")
 }
 
-func (e *APIError) IsUnavailableForLegalReason() bool {
+func (e *APIError) UnavailableForLegalReasons() bool {
 	return e.Code == http.StatusUnavailableForLegalReasons
 }
 
