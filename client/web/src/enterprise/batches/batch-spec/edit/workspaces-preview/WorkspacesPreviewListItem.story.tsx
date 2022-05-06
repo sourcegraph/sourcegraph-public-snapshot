@@ -53,3 +53,26 @@ add('stale', () => (
         )}
     </WebStory>
 ))
+
+add('read-only', () => (
+    <WebStory>
+        {props => (
+            <>
+                <WorkspacesPreviewListItem
+                    {...props}
+                    isStale={false}
+                    isReadOnly={true}
+                    workspace={mockWorkspace(1)}
+                    exclude={noop}
+                />
+                <WorkspacesPreviewListItem
+                    {...props}
+                    isStale={false}
+                    isReadOnly={true}
+                    workspace={mockWorkspace(2)}
+                    exclude={noop}
+                />
+            </>
+        )}
+    </WebStory>
+))

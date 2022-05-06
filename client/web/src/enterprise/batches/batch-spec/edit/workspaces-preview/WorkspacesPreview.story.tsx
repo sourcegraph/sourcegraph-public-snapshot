@@ -291,3 +291,15 @@ add('failed/errored, with cached connection result', () => {
         </WebStory>
     )
 })
+
+add('read-only', () => (
+    <WebStory>
+        {props => (
+            <MockedTestProvider link={new WildcardMockLink(UNSTARTED_WITH_CACHE_CONNECTION_MOCKS)}>
+                <BatchSpecContextProvider batchChange={mockBatchChange()} refetchBatchChange={() => Promise.resolve()}>
+                    <WorkspacesPreview {...props} isReadOnly={true} />
+                </BatchSpecContextProvider>
+            </MockedTestProvider>
+        )}
+    </WebStory>
+))
