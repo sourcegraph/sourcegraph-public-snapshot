@@ -23,7 +23,11 @@ import { EditBatchSpecPage } from './EditBatchSpecPage'
 import goImportsSample from './library/go-imports.batch.yaml'
 
 const { add } = storiesOf('web/batches/batch-spec/edit/EditBatchSpecPage', module)
-    .addDecorator(story => <div className="p-3 w-100">{story()}</div>)
+    .addDecorator(story => (
+        <div className="p-3" style={{ height: '95vh', width: '100%' }}>
+            {story()}
+        </div>
+    ))
     .addParameters({
         chromatic: {
             disableSnapshot: false,
@@ -70,17 +74,14 @@ add('editing for the first time', () => (
     <WebStory>
         {props => (
             <MockedTestProvider link={FIRST_TIME_MOCKS}>
-                <div style={{ height: '95vh', width: '100%' }}>
-                    <EditBatchSpecPage
-                        {...props}
-                        batchChange={{
-                            name: 'my-batch-change',
-                            url: 'some-url',
-                            namespace: { id: 'test1234' },
-                        }}
-                        settingsCascade={SETTINGS_CASCADE}
-                    />
-                </div>
+                <EditBatchSpecPage
+                    {...props}
+                    batchChange={{
+                        name: 'my-batch-change',
+                        namespace: 'test1234',
+                    }}
+                    settingsCascade={SETTINGS_CASCADE}
+                />
             </MockedTestProvider>
         )}
     </WebStory>
@@ -117,17 +118,14 @@ add('editing the latest batch spec', () => (
     <WebStory>
         {props => (
             <MockedTestProvider link={MULTIPLE_SPEC_MOCKS}>
-                <div style={{ height: '95vh', width: '100%' }}>
-                    <EditBatchSpecPage
-                        {...props}
-                        batchChange={{
-                            name: 'my-batch-change',
-                            url: 'some-url',
-                            namespace: { id: 'test1234' },
-                        }}
-                        settingsCascade={SETTINGS_CASCADE}
-                    />
-                </div>
+                <EditBatchSpecPage
+                    {...props}
+                    batchChange={{
+                        name: 'my-batch-change',
+                        namespace: 'test1234',
+                    }}
+                    settingsCascade={SETTINGS_CASCADE}
+                />
             </MockedTestProvider>
         )}
     </WebStory>
@@ -136,17 +134,14 @@ add('editing the latest batch spec', () => (
 add('batch change not found', () => (
     <WebStory>
         {props => (
-            <div style={{ height: '95vh', width: '100%' }}>
-                <EditBatchSpecPage
-                    {...props}
-                    batchChange={{
-                        name: 'doesnt-exist',
-                        url: 'some-url',
-                        namespace: { id: 'test1234' },
-                    }}
-                    settingsCascade={SETTINGS_CASCADE}
-                />
-            </div>
+            <EditBatchSpecPage
+                {...props}
+                batchChange={{
+                    name: 'doesnt-exist',
+                    namespace: 'test1234',
+                }}
+                settingsCascade={SETTINGS_CASCADE}
+            />
         )}
     </WebStory>
 ))
