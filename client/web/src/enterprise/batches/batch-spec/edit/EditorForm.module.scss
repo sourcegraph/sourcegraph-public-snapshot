@@ -16,6 +16,11 @@
     height: 100%;
 }
 
+.editor {
+    flex: 1;
+    max-height: 100%;
+}
+
 // Should mostly match WorkspacesPreview header and LibraryPane header
 .header {
     display: flex;

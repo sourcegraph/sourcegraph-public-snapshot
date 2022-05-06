@@ -7,14 +7,15 @@ import {
     SettingsOrgSubject,
     SettingsUserSubject,
 } from '@sourcegraph/shared/src/settings/settings'
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../../components/WebStory'
+import { GET_BATCH_CHANGE_TO_EDIT } from '../../create/backend'
+import { insertNameIntoLibraryItem } from '../../create/yaml-util'
+import { mockBatchChange, mockBatchSpec } from '../batch-spec.mock'
 
 import { EditBatchSpecPage } from './EditBatchSpecPage'
-import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
-import { GET_BATCH_CHANGE_TO_EDIT } from '../../create/backend'
-
-import { mockBatchChange } from '../batch-spec.mock'
+import goImportsSample from './library/go-imports.batch.yaml'
 
 const { add } = storiesOf('web/batches/batch-spec/edit/EditBatchSpecPage', module)
     .addDecorator(story => <div className="p-3 container">{story()}</div>)
@@ -48,7 +49,7 @@ const SETTINGS_CASCADE = {
     ],
 }
 
-const mocks = new WildcardMockLink([
+const FIRST_TIME_MOCKS = new WildcardMockLink([
     {
         request: {
             query: getDocumentNode(GET_BATCH_CHANGE_TO_EDIT),
@@ -62,12 +63,58 @@ const mocks = new WildcardMockLink([
 add('editing for the first time', () => (
     <WebStory>
         {props => (
-            <MockedTestProvider link={mocks}>
+            <MockedTestProvider link={FIRST_TIME_MOCKS}>
                 <div style={{ height: '95vh', width: '100%' }}>
                     <EditBatchSpecPage
                         {...props}
                         batchChange={{
-                            name: 'doesnt-exist',
+                            name: 'my-batch-change',
+                            url: 'some-url',
+                            namespace: { name: 'my-cool-org', id: 'test1234', url: 'some-url' },
+                        }}
+                        settingsCascade={SETTINGS_CASCADE}
+                    />
+                </div>
+            </MockedTestProvider>
+        )}
+    </WebStory>
+))
+
+const MULTIPLE_SPEC_MOCKS = new WildcardMockLink([
+    {
+        request: {
+            query: getDocumentNode(GET_BATCH_CHANGE_TO_EDIT),
+            variables: MATCH_ANY_PARAMETERS,
+        },
+        result: {
+            data: {
+                batchChange: mockBatchChange({
+                    batchSpecs: {
+                        nodes: [
+                            mockBatchSpec({
+                                id: 'new',
+                                originalInput: insertNameIntoLibraryItem(goImportsSample, 'my-batch-change'),
+                            }),
+                            mockBatchSpec({ id: 'old1' }),
+                            mockBatchSpec({ id: 'old2' }),
+                        ],
+                    },
+                }),
+            },
+        },
+        nMatches: Number.POSITIVE_INFINITY,
+    },
+])
+
+add('editing the latest batch spec', () => (
+    <WebStory>
+        {props => (
+            <MockedTestProvider link={MULTIPLE_SPEC_MOCKS}>
+                <div style={{ height: '95vh', width: '100%' }}>
+                    <EditBatchSpecPage
+                        {...props}
+                        batchChange={{
+                            name: 'my-batch-change',
                             url: 'some-url',
                             namespace: { name: 'my-cool-org', id: 'test1234', url: 'some-url' },
                         }}
