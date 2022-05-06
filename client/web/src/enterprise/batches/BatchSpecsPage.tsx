@@ -20,7 +20,7 @@ import styles from './BatchSpecsPage.module.scss'
 
 export interface BatchSpecsPageProps extends Omit<BatchSpecListProps, 'currentSpecID'> {}
 
-export const BatchSpecsPage: React.FunctionComponent<BatchSpecsPageProps> = props => (
+export const BatchSpecsPage: React.FunctionComponent<React.PropsWithChildren<BatchSpecsPageProps>> = props => (
     <>
         <PageTitle title="Batch specs" />
         <PageHeader
@@ -41,7 +41,9 @@ export interface BatchChangeBatchSpecListProps extends Omit<BatchSpecListProps, 
     queryBatchChangeBatchSpecs?: typeof _queryBatchChangeBatchSpecs
 }
 
-export const BatchChangeBatchSpecList: React.FunctionComponent<BatchChangeBatchSpecListProps> = ({
+export const BatchChangeBatchSpecList: React.FunctionComponent<
+    React.PropsWithChildren<BatchChangeBatchSpecListProps>
+> = ({
     history,
     location,
     batchChangeID,
@@ -71,7 +73,7 @@ export interface BatchSpecListProps extends ThemeProps, Pick<RouteComponentProps
     now?: () => Date
 }
 
-export const BatchSpecList: React.FunctionComponent<BatchSpecListProps> = ({
+export const BatchSpecList: React.FunctionComponent<React.PropsWithChildren<BatchSpecListProps>> = ({
     history,
     location,
     currentSpecID,
@@ -111,7 +113,7 @@ export const BatchSpecList: React.FunctionComponent<BatchSpecListProps> = ({
     )
 }
 
-const Header: React.FunctionComponent<{}> = () => (
+const Header: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
     <>
         <span className="d-none d-md-block" />
         <h5 className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">State</h5>
@@ -120,7 +122,7 @@ const Header: React.FunctionComponent<{}> = () => (
     </>
 )
 
-const EmptyList: React.FunctionComponent<{}> = () => (
+const EmptyList: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
     <div className="text-muted text-center mb-3 w-100">
         <MapSearchIcon className="icon" />
         <div className="pt-2">No batch specs have been created so far.</div>

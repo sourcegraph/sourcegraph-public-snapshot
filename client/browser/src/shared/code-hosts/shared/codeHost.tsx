@@ -139,10 +139,7 @@ import styles from './codeHost.module.scss'
 
 registerHighlightContributions()
 
-export interface OverlayPosition {
-    top: number
-    left: number
-}
+export type OverlayPosition = { left: number } & ({ top: number } | { bottom: number })
 
 export type ObserveMutations = (
     target: Node,
@@ -390,8 +387,6 @@ function initCodeIntelligence({
     /** Emits whenever the ref callback for the hover element is called */
     const hoverOverlayElements = new Subject<HTMLElement | null>()
 
-    const relativeElement = document.body
-
     const containerComponentUpdates = new Subject<void>()
 
     subscription.add(
@@ -412,7 +407,7 @@ function initCodeIntelligence({
         hoverOverlayElements,
         hoverOverlayRerenders: containerComponentUpdates.pipe(
             withLatestFrom(hoverOverlayElements),
-            map(([, hoverOverlayElement]) => ({ hoverOverlayElement, relativeElement })),
+            map(([, hoverOverlayElement]) => ({ hoverOverlayElement })),
             filter(property('hoverOverlayElement', isDefined))
         ),
         getHover: ({ line, character, part, ...rest }) =>

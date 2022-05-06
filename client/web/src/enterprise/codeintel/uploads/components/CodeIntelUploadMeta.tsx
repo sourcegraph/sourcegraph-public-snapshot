@@ -14,7 +14,10 @@ export interface CodeIntelUploadMetaProps {
     now?: () => Date
 }
 
-export const CodeIntelUploadMeta: FunctionComponent<CodeIntelUploadMetaProps> = ({ node, now }) => (
+export const CodeIntelUploadMeta: FunctionComponent<React.PropsWithChildren<CodeIntelUploadMetaProps>> = ({
+    node,
+    now,
+}) => (
     <Card>
         <CardBody>
             <CardTitle>

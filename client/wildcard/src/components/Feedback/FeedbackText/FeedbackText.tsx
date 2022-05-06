@@ -14,7 +14,11 @@ interface FeedbackTextProps {
 /**
  * An abstract UI component which renders a text for feedback.
  */
-export const FeedbackText: React.FunctionComponent<FeedbackTextProps> = ({ className, footerText, headerText }) => (
+export const FeedbackText: React.FunctionComponent<React.PropsWithChildren<FeedbackTextProps>> = ({
+    className,
+    footerText,
+    headerText,
+}) => (
     <p className={className}>
         {headerText || 'Questions/feedback?'} Contact us at{' '}
         <Link to="https://twitter.com/sourcegraph" target="_blank" rel="noopener noreferrer">

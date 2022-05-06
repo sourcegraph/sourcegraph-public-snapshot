@@ -18,7 +18,7 @@ export interface ReposMatchingPatternProps {
     disabled: boolean
 }
 
-export const ReposMatchingPattern: FunctionComponent<ReposMatchingPatternProps> = ({
+export const ReposMatchingPattern: FunctionComponent<React.PropsWithChildren<ReposMatchingPatternProps>> = ({
     index,
     pattern,
     setPattern,

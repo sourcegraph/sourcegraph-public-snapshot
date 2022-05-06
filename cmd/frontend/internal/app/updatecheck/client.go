@@ -297,7 +297,6 @@ func getAndMarshalIDEExtensionsUsageJSON(ctx context.Context, db database.DB) (_
 }
 
 func getAndMarshalCodeHostVersionsJSON(_ context.Context, _ database.DB) (_ json.RawMessage, err error) {
-
 	defer recordOperation("getAndMarshalCodeHostVersionsJSON")(&err)
 
 	versions, err := versions.GetVersions()

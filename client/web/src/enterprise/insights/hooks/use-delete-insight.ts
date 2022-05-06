@@ -6,7 +6,7 @@ import { eventLogger } from '../../../tracking/eventLogger'
 import { CodeInsightsBackendContext, Insight } from '../core'
 import { getTrackingTypeByInsightType } from '../pings'
 
-type DeletionInsight = Pick<Insight, 'id' | 'title' | 'type'>
+type DeletionInsight = Pick<Insight, 'id' | 'type'>
 
 export interface UseDeleteInsightAPI {
     delete: (insight: DeletionInsight) => Promise<void>

@@ -6,9 +6,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
 
-func TestRecognizersTypescript(t *testing.T) {
-	testRecognizers(t,
-		recognizerTestCase{
+func TestTypeScriptGenerator(t *testing.T) {
+	testGenerators(t,
+		generatorTestCase{
 			description: "javascript project with no tsconfig",
 			repositoryContents: map[string]string{
 				"package.json": "",
@@ -30,7 +30,7 @@ func TestRecognizersTypescript(t *testing.T) {
 				},
 			},
 		},
-		recognizerTestCase{
+		generatorTestCase{
 			description: "javascript project with no tsconfig",
 			repositoryContents: map[string]string{
 				"package.json": "",
@@ -53,7 +53,7 @@ func TestRecognizersTypescript(t *testing.T) {
 				},
 			},
 		},
-		recognizerTestCase{
+		generatorTestCase{
 			description: "simple tsconfig",
 			repositoryContents: map[string]string{
 				"tsconfig.json": "",
@@ -69,7 +69,7 @@ func TestRecognizersTypescript(t *testing.T) {
 				},
 			},
 		},
-		recognizerTestCase{
+		generatorTestCase{
 			description: "tsconfig in subdirectories",
 			repositoryContents: map[string]string{
 				"a/tsconfig.json": "",
@@ -103,7 +103,7 @@ func TestRecognizersTypescript(t *testing.T) {
 				},
 			},
 		},
-		recognizerTestCase{
+		generatorTestCase{
 			description: "typescript installation steps",
 			repositoryContents: map[string]string{
 				"tsconfig.json":              "",
@@ -189,7 +189,7 @@ func TestRecognizersTypescript(t *testing.T) {
 				},
 			},
 		},
-		recognizerTestCase{
+		generatorTestCase{
 			description: "typescript with lerna configuration",
 			repositoryContents: map[string]string{
 				"package.json":  "",
@@ -213,7 +213,7 @@ func TestRecognizersTypescript(t *testing.T) {
 				},
 			},
 		},
-		recognizerTestCase{
+		generatorTestCase{
 			description: "typescript with node version",
 			repositoryContents: map[string]string{
 				"package.json":  `{"engines": {"node": "42"}}`,

@@ -7,7 +7,7 @@ import { WebStory } from '../../../../../../../../components/WebStory'
 import { GetSearchContextsResult } from '../../../../../../../../graphql-operations'
 import { InsightFilters } from '../../../../../../core'
 
-import { DrillDownInsightFilters } from './DrillDownInsightFilters'
+import { DrillDownInsightFilters, FilterSectionVisualMode } from './DrillDownInsightFilters'
 import { SEARCH_CONTEXT_GQL } from './search-context/DrillDownSearchContextFilter'
 
 const defaultStory: Meta = {
@@ -46,6 +46,27 @@ const CONTEXTS_GQL_MOCKS: MockedResponse<GetSearchContextsResult> = {
                         query: 'repo:github.com/sourcegraph/sourcegraph2',
                         description: 'Hello this is mee, your friend context 2',
                     },
+                    {
+                        __typename: 'SearchContext',
+                        id: '004',
+                        spec: '@sourcegraph/code-insights',
+                        query: 'repo:github.com/sourcegraph/sourcegraph2',
+                        description: 'Hello this is mee, your friend context 2',
+                    },
+                    {
+                        __typename: 'SearchContext',
+                        id: '005',
+                        spec: '@sourcegraph/code-insights',
+                        query: 'repo:github.com/sourcegraph/sourcegraph2',
+                        description: 'Hello this is mee, your friend context 2',
+                    },
+                    {
+                        __typename: 'SearchContext',
+                        id: '006',
+                        spec: '@sourcegraph/code-insights',
+                        query: 'repo:github.com/sourcegraph/sourcegraph2',
+                        description: 'Hello this is mee, your friend context 2',
+                    },
                 ],
                 pageInfo: {
                     hasNextPage: false,
@@ -72,6 +93,20 @@ export const DrillDownFiltersShowcase: Story = () => (
         <DrillDownInsightFilters
             initialValues={FILTERS}
             originalValues={ORIGINAL_FILTERS}
+            visualMode={FilterSectionVisualMode.CollapseSections}
+            onFiltersChange={console.log}
+            onFilterSave={console.log}
+            onCreateInsightRequest={console.log}
+        />
+    </MockedTestProvider>
+)
+
+export const DrillDownFiltersHorizontalMode: Story = () => (
+    <MockedTestProvider mocks={[CONTEXTS_GQL_MOCKS]}>
+        <DrillDownInsightFilters
+            initialValues={FILTERS}
+            originalValues={ORIGINAL_FILTERS}
+            visualMode={FilterSectionVisualMode.HorizontalSections}
             onFiltersChange={console.log}
             onFilterSave={console.log}
             onCreateInsightRequest={console.log}

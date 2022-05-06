@@ -35,11 +35,11 @@ export interface BatchChangePreviewStatsBarProps {
     queryApplyPreviewStats?: typeof _queryApplyPreviewStats
 }
 
-export const BatchChangePreviewStatsBar: React.FunctionComponent<BatchChangePreviewStatsBarProps> = ({
-    batchSpec,
-    diffStat,
-    queryApplyPreviewStats = _queryApplyPreviewStats,
-}) => {
+export const BatchChangePreviewStatsBar: React.FunctionComponent<
+    React.PropsWithChildren<BatchChangePreviewStatsBarProps>
+> = ({ batchSpec, diffStat, queryApplyPreviewStats = _queryApplyPreviewStats }) => {
+    // `BatchChangePreviewContext` is responsible for managing the overrideable
+    // publication states for preview changesets on the clientside.
     const { publicationStates } = useContext(BatchChangePreviewContext)
 
     /** We use this to recalculate the stats when the publication states are modified. */
@@ -94,7 +94,7 @@ export const BatchChangePreviewStatsBar: React.FunctionComponent<BatchChangePrev
     )
 }
 
-export const PreviewStatsAdded: React.FunctionComponent<{ count: number }> = ({ count }) => (
+export const PreviewStatsAdded: React.FunctionComponent<React.PropsWithChildren<{ count: number }>> = ({ count }) => (
     <div className={classNames(styles.batchChangePreviewStatsBarStat, 'd-flex flex-column mr-2 text-nowrap')}>
         <div className="d-flex flex-column align-items-center justify-content-center">
             <span className={styles.previewStatsAddedLine}>&nbsp;</span>
@@ -108,7 +108,9 @@ export const PreviewStatsAdded: React.FunctionComponent<{ count: number }> = ({ 
         {count} Added
     </div>
 )
-export const PreviewStatsModified: React.FunctionComponent<{ count: number }> = ({ count }) => (
+export const PreviewStatsModified: React.FunctionComponent<React.PropsWithChildren<{ count: number }>> = ({
+    count,
+}) => (
     <div className={classNames(styles.batchChangePreviewStatsBarStat, 'd-flex flex-column text-nowrap ml-2')}>
         <div className="d-flex flex-column align-items-center">
             <span className={styles.previewStatsModifiedLine}>&nbsp;</span>
@@ -125,7 +127,7 @@ export const PreviewStatsModified: React.FunctionComponent<{ count: number }> = 
         {count} Modified
     </div>
 )
-export const PreviewStatsRemoved: React.FunctionComponent<{ count: number }> = ({ count }) => (
+export const PreviewStatsRemoved: React.FunctionComponent<React.PropsWithChildren<{ count: number }>> = ({ count }) => (
     <div className={classNames(styles.batchChangePreviewStatsBarStat, 'd-flex flex-column mx-2 text-nowrap')}>
         <div className="d-flex flex-column align-items-center">
             <span className={styles.previewStatsRemovedLine}>&nbsp;</span>

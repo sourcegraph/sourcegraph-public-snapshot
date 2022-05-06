@@ -2,7 +2,6 @@ package search
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 
 	zoektquery "github.com/google/zoekt/query"
@@ -236,7 +235,7 @@ type RepoOptions struct {
 	Limit       int
 	Cursors     []*types.Cursor
 
-	// Explicit forks indicates whether `fork:` was set explicitly in the query,
+	// ForkSet indicates whether `fork:` was set explicitly in the query,
 	// or whether the values were set from defaults.
 	ForkSet   bool
 	NoForks   bool
@@ -251,41 +250,41 @@ type RepoOptions struct {
 
 func (op *RepoOptions) String() string {
 	var b strings.Builder
-	if len(op.RepoFilters) == 0 {
-		b.WriteString("r=[]")
+
+	if len(op.RepoFilters) > 0 {
+		fmt.Fprintf(&b, "RepoFilters: %q\n", op.RepoFilters)
+	} else {
+		b.WriteString("RepoFilters: []\n")
 	}
-	for i, r := range op.RepoFilters {
-		if i != 0 {
-			b.WriteByte(' ')
-		}
-		b.WriteString(strconv.Quote(r))
+	if len(op.MinusRepoFilters) > 0 {
+		fmt.Fprintf(&b, "MinusRepoFilters: %q\n", op.MinusRepoFilters)
+	} else {
+		b.WriteString("MinusRepoFilters: []\n")
 	}
 
-	if len(op.MinusRepoFilters) > 0 {
-		_, _ = fmt.Fprintf(&b, " -r=%v", op.MinusRepoFilters)
-	}
-	if op.CommitAfter != "" {
-		_, _ = fmt.Fprintf(&b, " CommitAfter=%q", op.CommitAfter)
-	}
+	fmt.Fprintf(&b, "CommitAfter: %s\n", op.CommitAfter)
+	fmt.Fprintf(&b, "Visibility: %s\n", string(op.Visibility))
 
 	if op.CaseSensitiveRepoFilters {
-		b.WriteString(" CaseSensitiveRepoFilters")
+		fmt.Fprintf(&b, "CaseSensitiveRepoFilters: %t\n", op.CaseSensitiveRepoFilters)
 	}
-
+	if op.ForkSet {
+		fmt.Fprintf(&b, "ForkSet: %t\n", op.ForkSet)
+	}
 	if op.NoForks {
-		b.WriteString(" NoForks")
+		fmt.Fprintf(&b, "NoForks: %t\n", op.NoForks)
 	}
 	if op.OnlyForks {
-		b.WriteString(" OnlyForks")
+		fmt.Fprintf(&b, "OnlyForks: %t\n", op.OnlyForks)
+	}
+	if op.ArchivedSet {
+		fmt.Fprintf(&b, "ArchivedSet: %t\n", op.ArchivedSet)
 	}
 	if op.NoArchived {
-		b.WriteString(" NoArchived")
+		fmt.Fprintf(&b, "NoArchived: %t\n", op.NoArchived)
 	}
 	if op.OnlyArchived {
-		b.WriteString(" OnlyArchived")
-	}
-	if op.Visibility != query.Any {
-		b.WriteString(" Visibility" + string(op.Visibility))
+		fmt.Fprintf(&b, "OnlyArchived: %t\n", op.OnlyArchived)
 	}
 
 	return b.String()

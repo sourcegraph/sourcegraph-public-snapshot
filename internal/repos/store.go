@@ -108,10 +108,6 @@ type store struct {
 	// Used for tracing calls to store methods. Uses opentracing.GlobalTracer() by default.
 	Tracer trace.Tracer
 
-	repoStore            database.RepoStore
-	gitserverReposStore  database.GitserverRepoStore
-	externalServiceStore database.ExternalServiceStore
-
 	txtrace *trace.Trace
 	txctx   context.Context
 }
@@ -120,25 +116,22 @@ type store struct {
 func NewStore(db database.DB, txOpts sql.TxOptions) Store {
 	s := basestore.NewWithDB(db, txOpts)
 	return &store{
-		Store:                s,
-		repoStore:            db.Repos(),
-		gitserverReposStore:  db.GitserverRepos(),
-		externalServiceStore: db.ExternalServices(),
-		Log:                  log15.Root(),
-		Tracer:               trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Store:  s,
+		Log:    log15.Root(),
+		Tracer: trace.Tracer{Tracer: opentracing.GlobalTracer()},
 	}
 }
 
 func (s *store) RepoStore() database.RepoStore {
-	return s.repoStore
+	return database.ReposWith(s)
 }
 
 func (s *store) GitserverReposStore() database.GitserverRepoStore {
-	return s.gitserverReposStore
+	return database.NewGitserverReposWith(s)
 }
 
 func (s *store) ExternalServiceStore() database.ExternalServiceStore {
-	return s.externalServiceStore
+	return database.ExternalServicesWith(s)
 }
 
 func (s *store) SetLogger(l logging.ErrorLogger) { s.Log = l }
@@ -147,13 +140,10 @@ func (s *store) SetTracer(t trace.Tracer)        { s.Tracer = t }
 
 func (s *store) With(other basestore.ShareableStore) Store {
 	return &store{
-		Store:                s.Store.With(other),
-		repoStore:            s.repoStore.With(other),
-		gitserverReposStore:  s.gitserverReposStore.With(other),
-		externalServiceStore: s.externalServiceStore.With(other),
-		Log:                  s.Log,
-		Metrics:              s.Metrics,
-		Tracer:               s.Tracer,
+		Store:   s.Store.With(other),
+		Log:     s.Log,
+		Metrics: s.Metrics,
+		Tracer:  s.Tracer,
 	}
 }
 
@@ -180,14 +170,12 @@ func (s *store) transact(ctx context.Context) (stx *store, err error) {
 		return nil, errors.Wrap(err, "starting transaction")
 	}
 	return &store{
-		Store:                txBase,
-		repoStore:            s.repoStore.With(txBase),
-		externalServiceStore: s.externalServiceStore.With(txBase),
-		Log:                  s.Log,
-		Metrics:              s.Metrics,
-		Tracer:               s.Tracer,
-		txtrace:              tr,
-		txctx:                ctx,
+		Store:   txBase,
+		Log:     s.Log,
+		Metrics: s.Metrics,
+		Tracer:  s.Tracer,
+		txtrace: tr,
+		txctx:   ctx,
 	}, nil
 }
 

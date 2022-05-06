@@ -21,7 +21,7 @@ interface TooltipProps {
     reference?: HTMLElement
 }
 
-export const Tooltip: React.FunctionComponent<TooltipProps> = props => {
+export const Tooltip: React.FunctionComponent<React.PropsWithChildren<TooltipProps>> = props => {
     const [virtualElement, setVirtualElement] = useState<PopoverPoint | null>(null)
 
     useEffect(() => {

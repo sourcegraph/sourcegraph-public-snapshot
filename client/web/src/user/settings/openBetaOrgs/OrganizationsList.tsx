@@ -31,7 +31,7 @@ interface OrgItemProps {
     org: IOrgItem
 }
 
-const OrgItem: React.FunctionComponent<OrgItemProps> = ({ org }) => (
+const OrgItem: React.FunctionComponent<React.PropsWithChildren<OrgItemProps>> = ({ org }) => (
     <li data-test-username={org.id}>
         <div className={classNames('d-flex align-items-center justify-content-start flex-1', styles.orgDetails)}>
             <div className={styles.avatarContainer}>
@@ -79,7 +79,9 @@ const refreshOrganizationList = (): void => {
         .catch(() => eventLogger.logViewEvent('ErrorOrgListLoading'))
 }
 
-export const OrganizationsListPage: React.FunctionComponent<OrganizationsListProps> = ({ authenticatedUser }) => {
+export const OrganizationsListPage: React.FunctionComponent<React.PropsWithChildren<OrganizationsListProps>> = ({
+    authenticatedUser,
+}) => {
     useEffect(() => {
         refreshOrganizationList()
     }, [])

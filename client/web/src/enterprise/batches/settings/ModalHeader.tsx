@@ -9,7 +9,7 @@ export interface ModalHeaderProps {
     externalServiceURL: string
 }
 
-export const ModalHeader: React.FunctionComponent<ModalHeaderProps> = ({
+export const ModalHeader: React.FunctionComponent<React.PropsWithChildren<ModalHeaderProps>> = ({
     id,
     externalServiceKind,
     externalServiceURL,

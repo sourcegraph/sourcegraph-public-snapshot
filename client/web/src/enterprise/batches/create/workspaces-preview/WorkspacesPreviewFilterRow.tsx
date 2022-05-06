@@ -14,10 +14,9 @@ export interface WorkspacePreviewFilterRowProps {
     onFiltersChange: (newFilters: WorkspacePreviewFilters) => void
 }
 
-export const WorkspacePreviewFilterRow: React.FunctionComponent<WorkspacePreviewFilterRowProps> = ({
-    disabled,
-    onFiltersChange,
-}) => {
+export const WorkspacePreviewFilterRow: React.FunctionComponent<
+    React.PropsWithChildren<WorkspacePreviewFilterRowProps>
+> = ({ disabled, onFiltersChange }) => {
     const history = useHistory()
     const searchElement = useRef<HTMLInputElement | null>(null)
     const [search, setSearch] = useState<string | undefined>(() => {

@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { act } from 'react-dom/test-utils'
+// eslint-disable-next-line no-restricted-imports
 import { DropdownMenu, UncontrolledDropdown } from 'reactstrap'
 import { Observable, of, throwError } from 'rxjs'
 import sinon from 'sinon'

@@ -15,7 +15,7 @@ interface SiteAdminAlertProps {
 /**
  * An alert message with a site admin lock icon.
  */
-export const SiteAdminAlert: React.FunctionComponent<SiteAdminAlertProps> = ({
+export const SiteAdminAlert: React.FunctionComponent<React.PropsWithChildren<SiteAdminAlertProps>> = ({
     children,
     className = '',
     variant = 'warning',

@@ -25,7 +25,7 @@ export interface CtaAlertProps {
     onClose: () => void
 }
 
-export const CtaAlert: React.FunctionComponent<CtaAlertProps> = props => (
+export const CtaAlert: React.FunctionComponent<React.PropsWithChildren<CtaAlertProps>> = props => (
     <Card
         className={classNames(
             'my-2',

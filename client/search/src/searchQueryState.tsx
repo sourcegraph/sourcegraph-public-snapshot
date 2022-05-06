@@ -21,9 +21,11 @@ export const SearchQueryStateStoreContext = createContext<SearchQueryStateStore 
  * Example: Both the VS Code extension and the web app render `<SearchSidebar>`, so it needs to
  * reference the appropriate zustand store through context (provided here).
  */
-export const SearchQueryStateStoreProvider: React.FunctionComponent<{
-    useSearchQueryState: SearchQueryStateStore
-}> = ({ children, useSearchQueryState }) => (
+export const SearchQueryStateStoreProvider: React.FunctionComponent<
+    React.PropsWithChildren<{
+        useSearchQueryState: SearchQueryStateStore
+    }>
+> = ({ children, useSearchQueryState }) => (
     <SearchQueryStateStoreContext.Provider value={useSearchQueryState}>
         {children}
     </SearchQueryStateStoreContext.Provider>
