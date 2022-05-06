@@ -318,7 +318,7 @@ func (s *sessionIssuerHelper) verifyUserTeams(ctx context.Context, ghClient *git
 	}
 
 	for _, team := range userTeams {
-		if allowed[team.Organization.Login] {
+		if allowed[team.Name] {
 			return true
 		}
 	}
