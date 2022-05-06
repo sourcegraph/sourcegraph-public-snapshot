@@ -7,7 +7,7 @@ import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
 import { useQuery } from '@sourcegraph/http-client'
 import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Alert, Button, Icon, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Icon, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../../../../components/HeroPage'
 import {
@@ -19,17 +19,16 @@ import {
     Scalars,
 } from '../../../../graphql-operations'
 // TODO: Move some of these to batch-spec/edit
-import { BatchSpec } from '../../BatchSpec'
+// TODO: Make sure fields on GraphQL queries are all still needed
 import { GET_BATCH_CHANGE_TO_EDIT } from '../../create/backend'
 import { ConfigurationForm } from '../../create/ConfigurationForm'
 import { FETCH_BATCH_SPEC_EXECUTION } from '../../execution/backend'
 import { BatchSpecContext, BatchSpecContextProvider } from '../BatchSpecContext'
-import { LibraryPane } from '../edit/library/LibraryPane'
-import { WorkspacesPreviewPanel } from '../edit/workspaces-preview/WorkspacesPreviewPanel'
 import { BatchChangeHeader } from '../header/BatchChangeHeader'
 import { TabBar, TabsConfig } from '../TabBar'
 
-import editorStyles from '../edit/EditBatchSpecPage.module.scss'
+import { ReadOnlyBatchSpecForm } from './ReadOnlyBatchSpecForm'
+
 import layoutStyles from '../Layout.module.scss'
 
 export interface ExecuteBatchSpecPageProps extends SettingsCascadeProps<Settings>, ThemeProps, RouteComponentProps<{}> {
@@ -134,8 +133,9 @@ const ExecuteBatchSpecPageContent: React.FunctionComponent<
                         <>
                             <TabBar activeTabKey="spec" tabsConfig={TABS_CONFIG} matchURL={match.url} />
                             <ReadOnlyBatchSpecForm
-                                batchChangeName={batchSpec.description.name}
+                                batchChange={batchChange}
                                 originalInput={batchSpec.originalInput}
+                                executionState={batchSpec.state}
                                 isLightTheme={isLightTheme}
                             />
                         </>
@@ -151,52 +151,20 @@ const ExecuteBatchSpecPageContent: React.FunctionComponent<
                         </>
                     )}
                 />
-                <Route
-                    path={`${match.url}/preview`}
-                    render={() => (
-                        <>
-                            <TabBar activeTabKey="preview" tabsConfig={TABS_CONFIG} matchURL={match.url} />
-                            <h1>PREVIEW</h1>
-                        </>
-                    )}
-                    exact={true}
-                />
+                {batchSpec.applyURL ? (
+                    <Route
+                        path={`${match.url}/preview`}
+                        render={() => (
+                            <>
+                                <TabBar activeTabKey="preview" tabsConfig={TABS_CONFIG} matchURL={match.url} />
+                                <h1>PREVIEW</h1>
+                            </>
+                        )}
+                        exact={true}
+                    />
+                ) : null}
                 <Route component={() => <HeroPage icon={MapSearchIcon} title="404: Not Found" />} key="hardcoded-key" />
             </Switch>
         </div>
     )
 }
-
-interface ReadOnlyBatchSpecFormProps extends ThemeProps {
-    batchChangeName: string
-    originalInput: string
-}
-
-const ReadOnlyBatchSpecForm: React.FunctionComponent<React.PropsWithChildren<ReadOnlyBatchSpecFormProps>> = ({
-    batchChangeName,
-    originalInput,
-    isLightTheme,
-}) => (
-    <div className={editorStyles.form}>
-        <LibraryPane name={batchChangeName} isReadOnly={true} />
-        <div className={editorStyles.editorContainer}>
-            <h4 className={editorStyles.header}>Batch spec</h4>
-            {/* TODO: Banner should be different if execution finished... */}
-            <Alert variant="warning" className="d-flex align-items-center pr-3">
-                <div className="flex-grow-1">
-                    <h4>The execution is still running</h4>
-                    You are unable to edit the spec when an execution is running.
-                </div>
-                {/* TODO: Handle button */}
-                <Button variant="danger">Cancel execution</Button>
-            </Alert>
-            <BatchSpec
-                name={batchChangeName}
-                className={editorStyles.editor}
-                isLightTheme={isLightTheme}
-                originalInput={originalInput}
-            />
-        </div>
-        <WorkspacesPreviewPanel isReadOnly={true} />
-    </div>
-)
