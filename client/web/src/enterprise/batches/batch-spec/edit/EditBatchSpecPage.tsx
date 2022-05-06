@@ -22,6 +22,7 @@ import { BatchChangeHeader } from '../header/BatchChangeHeader'
 import { TabBar, TabsConfig, TabName } from '../TabBar'
 
 import { EditorForm } from './EditorForm'
+
 import layoutStyles from '../Layout.module.scss'
 
 export interface EditBatchSpecPageProps extends SettingsCascadeProps<Settings>, ThemeProps {
@@ -71,6 +72,8 @@ interface EditBatchSpecPageContentProps extends SettingsCascadeProps<Settings>, 
 
 const EditBatchSpecPageContent: React.FunctionComponent<React.PropsWithChildren<EditBatchSpecPageContentProps>> = ({
     settingsCascade,
+    isLightTheme,
+    refetchBatchChange,
 }) => {
     const { batchChange, batchSpec } = useContext(BatchSpecContext)
 
@@ -143,7 +146,7 @@ const EditBatchSpecPageContent: React.FunctionComponent<React.PropsWithChildren<
             {activeTabName === 'configuration' ? (
                 <ConfigurationForm isReadOnly={true} batchChange={batchChange} settingsCascade={settingsCascade} />
             ) : (
-                <EditorForm />
+                <EditorForm isLightTheme={isLightTheme} refetchBatchChange={refetchBatchChange} />
             )}
         </div>
     )
