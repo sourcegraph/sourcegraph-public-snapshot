@@ -136,9 +136,6 @@ func checkSgVersionAndUpdate(ctx context.Context, skipUpdate bool) error {
 	out = strings.TrimSpace(out)
 	if out == "" {
 		// No newer commits found. sg is up to date.
-		if !skipUpdate {
-			analytics.LogEvent(ctx, "auto_update", []string{"up-to-date"}, start)
-		}
 		return nil
 	}
 
@@ -156,6 +153,7 @@ func checkSgVersionAndUpdate(ctx context.Context, skipUpdate bool) error {
 	stdout.Out.WriteLine(output.Line(output.EmojiInfo, output.StyleSuggestion, "Auto updating sg ..."))
 	newPath, err := updateToPrebuiltSG(ctx)
 	if err != nil {
+		analytics.LogEvent(ctx, "auto_update", []string{"failed"}, start)
 		return errors.Newf("failed to install update: %s", err)
 	}
 	writeSuccessLinef("sg has been updated!")
