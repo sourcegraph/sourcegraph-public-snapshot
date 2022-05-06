@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.intellij.ui.jcef.JBCefJSQuery;
 import com.sourcegraph.config.ThemeUtil;
+import com.sourcegraph.find.PreviewContent;
 import com.sourcegraph.find.PreviewPanel;
 import org.jetbrains.annotations.Nullable;
 
@@ -18,21 +19,22 @@ public class JSToJavaBridgeRequestHandler {
         String action = request.get("action").getAsString();
         JsonObject arguments = request.getAsJsonObject("arguments");
         Gson gson = new Gson();
-        PreviewRequest previewRequest;
+        PreviewContent previewContent;
         switch (action) {
             case "getTheme":
                 JsonObject currentThemeAsJson = ThemeUtil.getCurrentThemeAsJson();
                 return createResponse(currentThemeAsJson);
             case "preview":
-                previewRequest = gson.fromJson(arguments, PreviewRequest.class);
-                previewPanel.setContent(previewRequest.getFileName(), previewRequest.getContent());
+                System.out.println(arguments.get("absoluteOffsetAndLengths").toString());
+                previewContent = gson.fromJson(arguments, PreviewContent.class);
+                previewPanel.setContent(previewContent, false);
                 return createResponse(null);
             case "clearPreview":
                 previewPanel.clearContent();
                 return createResponse(null);
             case "open":
-                previewRequest = gson.fromJson(arguments, PreviewRequest.class);
-                previewPanel.setContentAndOpenInEditor(previewRequest.getFileName(), previewRequest.getContent());
+                previewContent = gson.fromJson(arguments, PreviewContent.class);
+                previewPanel.setContent(previewContent, true);
                 return createResponse(null);
             default:
                 return createResponse(2, "Unknown action: " + action);

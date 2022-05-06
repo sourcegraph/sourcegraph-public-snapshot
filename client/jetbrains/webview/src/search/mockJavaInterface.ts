@@ -1,4 +1,4 @@
-import { RequestToJava } from '.'
+import { RequestToJava } from './jsToJavaBridgeUtil'
 
 export function callJava(request: RequestToJava): Promise<object> {
     return new Promise((resolve, reject) => {

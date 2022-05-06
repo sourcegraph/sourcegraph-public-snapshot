@@ -1,19 +1,13 @@
 import { render } from 'react-dom'
 
-import { splitPath } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { ContentMatch } from '@sourcegraph/shared/src/search/stream'
 import { AnchorLink, setLinkComponent } from '@sourcegraph/wildcard'
 
 import { App } from './App'
-import { loadContent } from './lib/blob'
+import { createRequestForMatch, RequestToJava } from './jsToJavaBridgeUtil'
 import { callJava } from './mockJavaInterface'
 
 setLinkComponent(AnchorLink)
-
-export interface RequestToJava {
-    action: string
-    arguments: object
-}
 
 /* Add global functions to global window object */
 declare global {
@@ -23,42 +17,19 @@ declare global {
     }
 }
 
-async function onPreviewChange(match: ContentMatch, lineIndex: number): Promise<void> {
-    const fileName = splitPath(match.path)[1]
-    const content = await loadContent(match)
-    console.log('preview', content, match.lineMatches[lineIndex])
-    await window.callJava({
-        action: 'preview',
-        arguments: {
-            fileName,
-            path: match.path,
-            content,
-            lineNumber: match.lineMatches[lineIndex].lineNumber,
-        },
-    })
+async function onPreviewChange(match: ContentMatch, lineMatchIndex: number): Promise<void> {
+    await window.callJava(await createRequestForMatch(match, lineMatchIndex, 'preview'))
 }
 
 function onPreviewClear(): void {
-    console.log('clear preview')
     window
         .callJava({ action: 'clearPreview', arguments: {} })
         .then(() => {})
         .catch(() => {})
 }
 
-async function onOpen(match: ContentMatch, lineIndex: number): Promise<void> {
-    const fileName = splitPath(match.path)[1]
-    const content = await loadContent(match)
-    console.log('open', await loadContent(match), match.lineMatches[lineIndex])
-    await window.callJava({
-        action: 'open',
-        arguments: {
-            fileName,
-            path: match.path,
-            content,
-            lineNumber: match.lineMatches[lineIndex].lineNumber,
-        },
-    })
+async function onOpen(match: ContentMatch, lineMatchIndex: number): Promise<void> {
+    await window.callJava(await createRequestForMatch(match, lineMatchIndex, 'open'))
 }
 
 function renderReactApp(): void {
