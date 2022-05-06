@@ -891,6 +891,9 @@ type WeeklyBulkOperationStats struct {
 	BulkOperation string
 }
 
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
 type MonthlyBatchChangesExecutorUsage struct {
 	// Month of the year corresponding to this executor usage data.
 	Month string
