@@ -43,7 +43,7 @@ export async function repoInfo(filePath: string): Promise<RepositoryInfo | undef
         const repoRoot = await gitHelpers.rootDirectory(fileDirectory)
 
         // Determine file path relative to repository root.
-        let fileRelative = filePath.slice(repoRoot.length + 1)
+        const fileRelative = filePath.slice(repoRoot.length + 1).replace(/\\/g, '/')
 
         let { branch, remoteName } = await gitRemoteNameAndBranch(repoRoot, gitHelpers, log)
 
@@ -51,9 +51,6 @@ export async function repoInfo(filePath: string): Promise<RepositoryInfo | undef
 
         const remoteURL = await gitRemoteUrlWithReplacements(repoRoot, remoteName, gitHelpers, log)
 
-        if (process.platform === 'win32') {
-            fileRelative = fileRelative.replace(/\\/g, '/')
-        }
         return { remoteURL, branch, fileRelative, remoteName }
     } catch {
         return undefined

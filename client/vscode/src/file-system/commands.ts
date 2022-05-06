@@ -42,7 +42,7 @@ async function getLocalCopy(remoteUri: SourcegraphUri): Promise<vscode.TextDocum
         .then(result => result[0]?.path || null)
     // If basePath is not configured, we will try to find file in the current workspace
     const absolutePath = basePath
-        ? vscode.Uri.joinPath(vscode.Uri.parse(basePath), repoName, filePath)
+        ? vscode.Uri.file(vscode.Uri.joinPath(vscode.Uri.parse(basePath), repoName, filePath).path)
         : workspaceFilePath
         ? vscode.Uri.file(workspaceFilePath)
         : null
@@ -56,7 +56,8 @@ async function getLocalCopy(remoteUri: SourcegraphUri): Promise<vscode.TextDocum
         const workspaceFolderUri = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(workspaceFilePath))?.uri
         if (workspaceFolderUri) {
             // go one level up and set that as the new basePath
-            const newBasePath = vscode.workspace.asRelativePath(vscode.Uri.joinPath(workspaceFolderUri, '../'))
+            // const newBasePath = vscode.workspace.asRelativePath(vscode.Uri.joinPath(workspaceFolderUri, '../'))
+            const newBasePath = vscode.Uri.file(vscode.Uri.joinPath(workspaceFolderUri, '../').fsPath).path
             await vscode.workspace
                 .getConfiguration('sourcegraph')
                 .update('basePath', newBasePath, vscode.ConfigurationTarget.Global)
