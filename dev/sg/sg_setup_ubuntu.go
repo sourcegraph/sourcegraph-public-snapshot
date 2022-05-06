@@ -107,9 +107,6 @@ NOTE: You can ignore this if you're not a Sourcegraph teammate.
 		name:               "Programming languages & tooling",
 		requiresRepository: true,
 		autoFixing:         true,
-		// autoFixingDependencies are only accounted for it the user asks to fix the category. Otherwise, they'll never be
-		// checked nor print an error, because the only thing that matters to run Sourcegraph are the final dependencies
-		// defined in the dependencies field itself.
 		autoFixingDependencies: []*dependency{
 			{
 				name:  "asdf",
@@ -202,7 +199,7 @@ asdf install rust
 		},
 	},
 	{
-		name:               "Setup PostgreSQL database",
+		name:               "Set up PostgreSQL database",
 		requiresRepository: true,
 		autoFixing:         true,
 		dependencies: []*dependency{
@@ -241,7 +238,7 @@ If you used another method, make sure psql is available.`,
 				name:  "Connection to 'sourcegraph' database",
 				check: getCheck("sourcegraph-database"),
 				instructionsComment: `` +
-					`Once PostgreSQL is installed and running, we need to setup Sourcegraph database itself and a
+					`Once PostgreSQL is installed and running, we need to set up Sourcegraph database itself and a
 specific user.`,
 				instructionsCommands: `createuser --superuser sourcegraph || true
 psql -c "ALTER USER sourcegraph WITH PASSWORD 'sourcegraph';"
@@ -251,7 +248,7 @@ createdb --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph
 		},
 	},
 	{
-		name:               "Setup Redis database",
+		name:               "Set up Redis database",
 		autoFixing:         true,
 		requiresRepository: true,
 		dependencies: []*dependency{
@@ -267,7 +264,7 @@ sudo systemctl enable --now redis-server.service`,
 		},
 	},
 	{
-		name:               "Setup proxy for local development",
+		name:               "Set up proxy for local development",
 		requiresRepository: true,
 		dependencies: []*dependency{
 			{
@@ -292,4 +289,11 @@ YOU NEED TO RESTART 'sg setup' AFTER RUNNING THIS COMMAND!`,
 		},
 	},
 	dependencyCategoryAdditionalSgConfiguration,
+	{
+		name:       "Set up cloud services",
+		autoFixing: true,
+		dependencies: []*dependency{
+			dependencyGcloud,
+		},
+	},
 }

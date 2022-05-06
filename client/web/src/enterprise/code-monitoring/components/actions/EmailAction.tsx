@@ -16,7 +16,7 @@ export const SEND_TEST_EMAIL = gql`
     }
 `
 
-export const EmailAction: React.FunctionComponent<ActionProps> = ({
+export const EmailAction: React.FunctionComponent<React.PropsWithChildren<ActionProps>> = ({
     action,
     setAction,
     disabled,

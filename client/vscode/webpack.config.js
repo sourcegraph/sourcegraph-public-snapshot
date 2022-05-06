@@ -151,7 +151,8 @@ const webviewConfig = {
     alias: {
       path: require.resolve('path-browserify'),
       './Link': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'alias', 'Link'), // Replace web app Link component from @sourcegraph/wildcard with the Link component built for VSCE
-      './SearchResult': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'alias', 'SearchResult'),
+      './RepoSearchResult': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'alias', 'RepoSearchResult'),
+      './CommitSearchResult': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'alias', 'CommitSearchResult'),
       './FileMatchChildren': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'alias', 'FileMatchChildren'),
       './RepoFileLink': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'alias', 'RepoFileLink'),
       '../documentation/ModalVideo': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'alias', 'ModalVideo'),

@@ -15,9 +15,9 @@ import styles from './CodeInsightsExamplesPicker.module.scss'
 
 interface CodeInsightsExamplesPickerProps extends TelemetryProps {}
 
-export const CodeInsightsExamplesPicker: React.FunctionComponent<CodeInsightsExamplesPickerProps> = ({
-    telemetryService,
-}) => {
+export const CodeInsightsExamplesPicker: React.FunctionComponent<
+    React.PropsWithChildren<CodeInsightsExamplesPickerProps>
+> = ({ telemetryService }) => {
     const [activeExampleIndex, setActiveExampleIndex] = useState(0)
     const [windowSize, setWindowSize] = useState(0)
 

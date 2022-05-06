@@ -20,7 +20,10 @@ export interface CodeIntelIndexNodeProps {
     now?: () => Date
 }
 
-export const CodeIntelIndexNode: FunctionComponent<CodeIntelIndexNodeProps> = ({ node, now }) => (
+export const CodeIntelIndexNode: FunctionComponent<React.PropsWithChildren<CodeIntelIndexNodeProps>> = ({
+    node,
+    now,
+}) => (
     <>
         <span className={styles.separator} />
 

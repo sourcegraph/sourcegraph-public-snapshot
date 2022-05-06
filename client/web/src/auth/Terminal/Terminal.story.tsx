@@ -30,7 +30,7 @@ const cloningStatusLines = [
     },
 ]
 
-export const InProgress: FunctionComponent = () => (
+export const InProgress: FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <>
         <div className="border overflow-hidden rounded">
             <header>
@@ -62,7 +62,7 @@ export const InProgress: FunctionComponent = () => (
     </>
 )
 
-export const Finished: FunctionComponent = () => (
+export const Finished: FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <>
         <div className="border overflow-hidden rounded">
             <header>

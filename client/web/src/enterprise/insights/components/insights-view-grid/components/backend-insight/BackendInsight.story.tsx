@@ -126,7 +126,7 @@ const mockInsightAPI = ({
     },
 })
 
-const TestBackendInsight: React.FunctionComponent = () => (
+const TestBackendInsight: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <BackendInsightView
         style={{ width: 400, height: 400 }}
         insight={INSIGHT_CONFIGURATION_MOCK}

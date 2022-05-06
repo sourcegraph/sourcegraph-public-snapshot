@@ -37,7 +37,9 @@ interface ViewOnSourcegraphButtonProps
     onSignInClose?: () => void
 }
 
-export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphButtonProps> = ({
+export const ViewOnSourcegraphButton: React.FunctionComponent<
+    React.PropsWithChildren<ViewOnSourcegraphButtonProps>
+> = ({
     codeHostType,
     repoExistsOrError,
     sourcegraphURL,
@@ -142,11 +144,9 @@ interface ConfigureSourcegraphButtonProps extends Partial<SourcegraphIconButtonP
     onConfigureSourcegraphClick?: React.MouseEventHandler<HTMLAnchorElement>
 }
 
-export const ConfigureSourcegraphButton: React.FunctionComponent<ConfigureSourcegraphButtonProps> = ({
-    onConfigureSourcegraphClick,
-    codeHostType,
-    ...commonProps
-}) => (
+export const ConfigureSourcegraphButton: React.FunctionComponent<
+    React.PropsWithChildren<ConfigureSourcegraphButtonProps>
+> = ({ onConfigureSourcegraphClick, codeHostType, ...commonProps }) => (
     <SourcegraphIconButton
         {...commonProps}
         href={commonProps.href || new URL(snakeCase(codeHostType), 'https://docs.sourcegraph.com/integration/').href}

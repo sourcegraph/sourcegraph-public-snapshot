@@ -1,12 +1,16 @@
 @import 'wildcard/src/global-styles/breakpoints';
 
+.root {
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    color: var(--body-color);
+}
+
 .search-box-container {
     flex: 1 1 auto;
     flex-grow: 0;
-    margin-top: 2rem;
-    margin-bottom: 4.5rem;
-    width: 100%;
-    max-width: var(--max-homepage-container-width);
-
-    position: relative;
+    width: 100vw;
 }

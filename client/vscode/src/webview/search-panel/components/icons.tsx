@@ -86,7 +86,7 @@ export const SearchBetaIcon = React.memo(() => (
     </svg>
 ))
 
-export const CodeMonitoringLogo: React.FunctionComponent<React.SVGProps<SVGSVGElement>> = (
+export const CodeMonitoringLogo: React.FunctionComponent<React.PropsWithChildren<React.SVGProps<SVGSVGElement>>> = (
     props: React.SVGProps<SVGSVGElement>
 ) => (
     <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" {...props}>

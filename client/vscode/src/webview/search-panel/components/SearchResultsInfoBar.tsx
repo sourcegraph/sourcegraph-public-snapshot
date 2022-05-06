@@ -40,7 +40,9 @@ interface ExperimentalActionButtonProps extends ButtonDropdownCtaProps {
     className?: string
 }
 
-const ExperimentalActionButton: React.FunctionComponent<ExperimentalActionButtonProps> = props => {
+const ExperimentalActionButton: React.FunctionComponent<
+    React.PropsWithChildren<ExperimentalActionButtonProps>
+> = props => {
     if (props.showExperimentalVersion) {
         return <ButtonDropdownCta {...props} />
     }
@@ -62,7 +64,9 @@ const ExperimentalActionButton: React.FunctionComponent<ExperimentalActionButton
  * will be searching literally for `foobar` (without quotes). This notice
  * informs them that this may be the case to avoid confusion.
  */
-const QuotesInterpretedLiterallyNotice: React.FunctionComponent<SearchResultsInfoBarProps> = props =>
+const QuotesInterpretedLiterallyNotice: React.FunctionComponent<
+    React.PropsWithChildren<SearchResultsInfoBarProps>
+> = props =>
     props.patternType === SearchPatternType.literal && props.fullQuery && props.fullQuery.includes('"') ? (
         <small
             className={styles.notice}
@@ -75,7 +79,9 @@ const QuotesInterpretedLiterallyNotice: React.FunctionComponent<SearchResultsInf
         </small>
     ) : null
 
-export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarProps> = props => {
+export const SearchResultsInfoBar: React.FunctionComponent<
+    React.PropsWithChildren<SearchResultsInfoBarProps>
+> = props => {
     const {
         extensionCoreAPI,
         platformContext,

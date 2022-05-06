@@ -34,7 +34,7 @@ export interface BatchChangeNodeProps {
 // This is the original, pre-SSBC version of the state badge. It has been superseded by
 // `BatchChangeStatePill` and should be removed once SSBC is not longer behind a feature
 // flag.
-const StateBadge: React.FunctionComponent<{ state: BatchChangeState }> = ({ state }) => {
+const StateBadge: React.FunctionComponent<React.PropsWithChildren<{ state: BatchChangeState }>> = ({ state }) => {
     switch (state) {
         case BatchChangeState.OPEN:
             return (
@@ -69,7 +69,7 @@ const StateBadge: React.FunctionComponent<{ state: BatchChangeState }> = ({ stat
 /**
  * An item in the list of batch changes.
  */
-export const BatchChangeNode: React.FunctionComponent<BatchChangeNodeProps> = ({
+export const BatchChangeNode: React.FunctionComponent<React.PropsWithChildren<BatchChangeNodeProps>> = ({
     node,
     isExecutionEnabled,
     now = () => new Date(),

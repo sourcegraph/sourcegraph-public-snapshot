@@ -6,11 +6,13 @@ import { Button, Modal } from '@sourcegraph/wildcard'
 /**
  * A modal confirmation prompt to the user confirming whether to add an extension.
  */
-export const ExtensionPermissionModal: React.FunctionComponent<{
-    extensionID: string
-    givePermission: () => void
-    denyPermission: () => void
-}> = ({ extensionID, denyPermission, givePermission }) => {
+export const ExtensionPermissionModal: React.FunctionComponent<
+    React.PropsWithChildren<{
+        extensionID: string
+        givePermission: () => void
+        denyPermission: () => void
+    }>
+> = ({ extensionID, denyPermission, givePermission }) => {
     const { name } = splitExtensionID(extensionID)
     const labelId = `label--permission-${extensionID}`
 

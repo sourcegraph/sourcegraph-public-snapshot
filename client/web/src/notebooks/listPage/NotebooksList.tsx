@@ -21,7 +21,7 @@ interface NotebooksListProps extends TelemetryProps {
     fetchNotebooks: typeof _fetchNotebooks
 }
 
-export const NotebooksList: React.FunctionComponent<NotebooksListProps> = ({
+export const NotebooksList: React.FunctionComponent<React.PropsWithChildren<NotebooksListProps>> = ({
     logEventName,
     filters,
     creatorUserID,

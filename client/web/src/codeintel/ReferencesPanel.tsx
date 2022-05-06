@@ -86,7 +86,9 @@ interface ReferencesPanelProps
     externalLocation: H.Location
 }
 
-export const ReferencesPanelWithMemoryRouter: React.FunctionComponent<ReferencesPanelProps> = props => (
+export const ReferencesPanelWithMemoryRouter: React.FunctionComponent<
+    React.PropsWithChildren<ReferencesPanelProps>
+> = props => (
     <MemoryRouter
         // Force router to remount the Panel when external location changes
         key={`${props.externalLocation.pathname}${props.externalLocation.search}${props.externalLocation.hash}`}
@@ -96,7 +98,7 @@ export const ReferencesPanelWithMemoryRouter: React.FunctionComponent<References
     </MemoryRouter>
 )
 
-const ReferencesPanel: React.FunctionComponent<ReferencesPanelProps> = props => {
+const ReferencesPanel: React.FunctionComponent<React.PropsWithChildren<ReferencesPanelProps>> = props => {
     const location = useLocation()
 
     const { hash, pathname, search } = location
@@ -117,13 +119,15 @@ const ReferencesPanel: React.FunctionComponent<ReferencesPanelProps> = props => 
 }
 
 export const RevisionResolvingReferencesList: React.FunctionComponent<
-    ReferencesPanelProps & {
-        repoName: string
-        line: number
-        character: number
-        filePath: string
-        revision?: string
-    }
+    React.PropsWithChildren<
+        ReferencesPanelProps & {
+            repoName: string
+            line: number
+            character: number
+            filePath: string
+            revision?: string
+        }
+    >
 > = props => {
     const { data, loading, error } = useRepoAndBlob(props.repoName, props.filePath, props.revision)
     if (loading && !data) {
@@ -165,7 +169,9 @@ interface ReferencesPanelPropsWithToken extends ReferencesPanelProps {
     fileContent: string
 }
 
-const SearchTokenFindingReferencesList: React.FunctionComponent<ReferencesPanelPropsWithToken> = props => {
+const SearchTokenFindingReferencesList: React.FunctionComponent<
+    React.PropsWithChildren<ReferencesPanelPropsWithToken>
+> = props => {
     const languageId = getModeFromPath(props.token.filePath)
     const spec = findLanguageSpec(languageId)
     const tokenResult = findSearchToken({
@@ -203,11 +209,13 @@ const SearchTokenFindingReferencesList: React.FunctionComponent<ReferencesPanelP
 const SHOW_SPINNER_DELAY_MS = 100
 
 export const ReferencesList: React.FunctionComponent<
-    ReferencesPanelPropsWithToken & {
-        searchToken: string
-        spec: LanguageSpec
-        fileContent: string
-    }
+    React.PropsWithChildren<
+        ReferencesPanelPropsWithToken & {
+            searchToken: string
+            spec: LanguageSpec
+            fileContent: string
+        }
+    >
 > = props => {
     const [filter, setFilter] = useState<string>()
     const debouncedFilter = useDebounce(filter, 150)
@@ -493,7 +501,9 @@ interface CollapsibleLocationListProps extends ActiveLocationProps, CollapseProp
     navigateToUrl: (url: string) => void
 }
 
-const CollapsibleLocationList: React.FunctionComponent<CollapsibleLocationListProps> = props => {
+const CollapsibleLocationList: React.FunctionComponent<
+    React.PropsWithChildren<CollapsibleLocationListProps>
+> = props => {
     const isOpen = props.isOpen(props.name) ?? true
 
     return (
@@ -563,13 +573,15 @@ const CollapsibleLocationList: React.FunctionComponent<CollapsibleLocationListPr
 }
 
 const SideBlob: React.FunctionComponent<
-    ReferencesPanelProps & {
-        activeLocation: Location
+    React.PropsWithChildren<
+        ReferencesPanelProps & {
+            activeLocation: Location
 
-        location: H.Location
-        history: H.History
-        blobNav: (url: string) => void
-    }
+            location: H.Location
+            history: H.History
+            blobNav: (url: string) => void
+        }
+    >
 > = props => {
     const { data, error, loading } = useQuery<
         ReferencesPanelHighlightedBlobResult,
@@ -656,7 +668,7 @@ interface LocationsListProps extends ActiveLocationProps, CollapseProps, SearchT
     navigateToUrl: (url: string) => void
 }
 
-const LocationsList: React.FunctionComponent<LocationsListProps> = ({
+const LocationsList: React.FunctionComponent<React.PropsWithChildren<LocationsListProps>> = ({
     locations,
     isActiveLocation,
     setActiveLocation,
@@ -690,14 +702,16 @@ const LocationsList: React.FunctionComponent<LocationsListProps> = ({
 }
 
 const CollapsibleRepoLocationGroup: React.FunctionComponent<
-    ActiveLocationProps &
-        CollapseProps &
-        SearchTokenProps & {
-            filter: string | undefined
-            navigateToUrl: (url: string) => void
-            repoLocationGroup: RepoLocationGroup
-            openByDefault: boolean
-        }
+    React.PropsWithChildren<
+        ActiveLocationProps &
+            CollapseProps &
+            SearchTokenProps & {
+                filter: string | undefined
+                navigateToUrl: (url: string) => void
+                repoLocationGroup: RepoLocationGroup
+                openByDefault: boolean
+            }
+    >
 > = ({
     repoLocationGroup,
     isActiveLocation,
@@ -760,12 +774,14 @@ const CollapsibleRepoLocationGroup: React.FunctionComponent<
 }
 
 const CollapsibleLocationGroup: React.FunctionComponent<
-    ActiveLocationProps &
-        CollapseProps &
-        SearchTokenProps & {
-            group: LocationGroup
-            filter: string | undefined
-        }
+    React.PropsWithChildren<
+        ActiveLocationProps &
+            CollapseProps &
+            SearchTokenProps & {
+                group: LocationGroup
+                filter: string | undefined
+            }
+    >
 > = ({ group, setActiveLocation, isActiveLocation, filter, isOpen, handleOpenChange, searchToken }) => {
     let highlighted = [group.path]
     if (filter !== undefined) {
@@ -895,7 +911,7 @@ const getPrePostLineContent = (location: Location): LocationLine => {
     return {}
 }
 
-const LoadingCodeIntel: React.FunctionComponent<{}> = () => (
+const LoadingCodeIntel: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
     <>
         <LoadingSpinner inline={false} className="mx-auto my-4" />
         <p className="text-muted text-center">
@@ -904,7 +920,7 @@ const LoadingCodeIntel: React.FunctionComponent<{}> = () => (
     </>
 )
 
-const LoadingCodeIntelFailed: React.FunctionComponent<{ error: ErrorLike }> = props => (
+const LoadingCodeIntelFailed: React.FunctionComponent<React.PropsWithChildren<{ error: ErrorLike }>> = props => (
     <>
         <div>
             <p className="text-danger">Loading code intel failed:</p>

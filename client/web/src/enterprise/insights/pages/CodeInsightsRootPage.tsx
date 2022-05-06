@@ -11,7 +11,7 @@ import { Button, Link, PageHeader, Tabs, TabList, Tab, Icon, TabPanels, TabPanel
 
 import { CodeInsightsIcon } from '../../../insights/Icons'
 import { CodeInsightsPage } from '../components/code-insights-page/CodeInsightsPage'
-import { ALL_INSIGHTS_DASHBOARD } from '../core/constants'
+import { ALL_INSIGHTS_DASHBOARD } from '../core'
 
 import { DashboardsContentPage } from './dashboards/dashboard-page/DashboardsContentPage'
 
@@ -40,7 +40,9 @@ interface CodeInsightsRootPageProps extends TelemetryProps {
     activeView: CodeInsightsRootPageTab
 }
 
-export const CodeInsightsRootPage: React.FunctionComponent<CodeInsightsRootPageProps> = props => {
+export const CodeInsightsRootPage: React.FunctionComponent<
+    React.PropsWithChildren<CodeInsightsRootPageProps>
+> = props => {
     const { telemetryService, activeView } = props
     const location = useLocation()
     const query = useQuery()

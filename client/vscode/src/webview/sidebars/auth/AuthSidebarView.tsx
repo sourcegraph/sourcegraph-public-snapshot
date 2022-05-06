@@ -22,7 +22,7 @@ interface AuthSidebarCtaProps extends Pick<WebviewPageProps, 'platformContext'> 
 /**
  * Rendered by sidebar in search-home state when user doesn't have a valid access token.
  */
-export const AuthSidebarView: React.FunctionComponent<AuthSidebarViewProps> = ({
+export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<AuthSidebarViewProps>> = ({
     instanceURL,
     extensionCoreAPI,
     platformContext,
@@ -129,7 +129,7 @@ export const AuthSidebarView: React.FunctionComponent<AuthSidebarViewProps> = ({
                 Sign in by entering an access token created through your user settings on {hostname}.
             </p>
             <p className={classNames(styles.ctaParagraph)}>
-                See our{' '}
+                See our {/* eslint-disable-next-line react/forbid-elements */}{' '}
                 <a
                     href={`https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token?${SIDEBAR_UTM_PARAMS}`}
                     onClick={() => platformContext.telemetryService.log('VSCESidebarCreateToken')}
@@ -214,7 +214,9 @@ export const AuthSidebarView: React.FunctionComponent<AuthSidebarViewProps> = ({
     )
 }
 
-export const AuthSidebarCta: React.FunctionComponent<AuthSidebarCtaProps> = ({ platformContext }) => {
+export const AuthSidebarCta: React.FunctionComponent<React.PropsWithChildren<AuthSidebarCtaProps>> = ({
+    platformContext,
+}) => {
     const onLinkClick = (type: 'Sourcegraph' | 'Extension'): void =>
         platformContext.telemetryService.log(`VSCESidebarLearn${type}Click`)
 
@@ -233,6 +235,7 @@ export const AuthSidebarCta: React.FunctionComponent<AuthSidebarCtaProps> = ({ p
             </p>
             <div className={classNames(styles.ctaParagraph)}>
                 <p className="mb-0">Learn more:</p>
+                {/* eslint-disable-next-line react/forbid-elements */}
                 <a
                     href={'https://sourcegraph.com/?' + SIDEBAR_UTM_PARAMS}
                     className="my-0"
@@ -241,6 +244,7 @@ export const AuthSidebarCta: React.FunctionComponent<AuthSidebarCtaProps> = ({ p
                     Sourcegraph.com
                 </a>
                 <br />
+                {/* eslint-disable-next-line react/forbid-elements */}
                 <a
                     href="https://marketplace.visualstudio.com/items?itemName=sourcegraph.sourcegraph"
                     className="my-0"

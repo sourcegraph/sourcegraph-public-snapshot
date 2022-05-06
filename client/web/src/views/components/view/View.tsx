@@ -25,7 +25,7 @@ export interface ViewCardProps extends ViewCardElementProps {
     actions?: ReactNode
 }
 
-export const View: React.FunctionComponent<PropsWithChildren<ViewCardProps>> = props => {
+export const View: React.FunctionComponent<React.PropsWithChildren<PropsWithChildren<ViewCardProps>>> = props => {
     const { title, subtitle, actions, children, innerRef, ...otherProps } = props
 
     // In case if we don't have a content for the header component
