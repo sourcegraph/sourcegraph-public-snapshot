@@ -9,8 +9,14 @@ import { BatchSpec } from '@sourcegraph/shared/src/schema/batch_spec.schema'
 import { useDebounce } from '@sourcegraph/wildcard'
 
 import batchSpecSchemaJSON from '../../../../../../schema/batch_spec.schema.json'
+import helloWorldSample from '../batch-spec/edit/library/hello-world.batch.yaml'
 
-import { excludeRepo as excludeRepoFromYaml, hasOnOrImportChangesetsStatement } from './yaml-util'
+import {
+    excludeRepo as excludeRepoFromYaml,
+    hasOnOrImportChangesetsStatement,
+    insertNameIntoLibraryItem,
+    isMinimalBatchSpec,
+} from './yaml-util'
 
 const ajv = new AJV()
 addFormats(ajv)
@@ -28,7 +34,7 @@ const formatError = (error: { instancePath: string; message?: string }): string 
 
 const DEBOUNCE_AMOUNT = 500
 
-interface UseBatchSpecCodeResult {
+export interface UseBatchSpecCodeResult {
     /** The current YAML code in the editor. */
     code: string
     /** The value of `code` but trail debounced by `DEBOUNCE_AMOUNT` */
@@ -62,10 +68,10 @@ interface UseBatchSpecCodeResult {
  * for managing the batch spec input YAML code that the user interacts with via the Monaco
  * editor.
  *
- * @param initialCode The initial YAML code that is displayed in the editor.
+ * @param originalInput The initial YAML code of the batch spec.
  * @param name The name of the batch change, which is used for validation.
  */
-export const useBatchSpecCode = (initialCode: string, name: string): UseBatchSpecCodeResult => {
+export const useBatchSpecCode = (originalInput: string, name: string): UseBatchSpecCodeResult => {
     const validateSpec = useMemo(() => {
         const schemaID = `${batchSpecSchemaJSON.$id}/${name}`
 
@@ -90,7 +96,11 @@ export const useBatchSpecCode = (initialCode: string, name: string): UseBatchSpe
         return ajv.compile<BatchSpec>(schemaJSONWithName)
     }, [name])
 
-    const [code, setCode] = useState<string>(initialCode)
+    const [code, setCode] = useState<string>(() =>
+        // Start with the hello world sample code initially if the user hasn't written any
+        // batch spec code yet, otherwise show the latest spec code.
+        isMinimalBatchSpec(originalInput) ? insertNameIntoLibraryItem(helloWorldSample, name) : originalInput
+    )
     const debouncedCode = useDebounce(code, 250)
 
     const [validationError, setValidationErrors] = useState<string>()
@@ -133,7 +143,7 @@ export const useBatchSpecCode = (initialCode: string, name: string): UseBatchSpe
     )
 
     // Run validation once for initial batch spec code.
-    useEffect(() => validate(initialCode), [initialCode, validate])
+    useEffect(() => validate(originalInput), [originalInput, validate])
 
     // Debounce validation to avoid excessive computation.
     const debouncedValidate = useMemo(() => debounce(validate, DEBOUNCE_AMOUNT), [validate])
