@@ -118,7 +118,7 @@ LOOP:
 	if err := ctx.Err(); errors.Is(err, context.DeadlineExceeded) {
 		_ = eventWriter.Event("alert", streamhttp.EventAlert{
 			Title:       "Incomplete data",
-			Description: "This data is incomplete! We ran this query for 1 minute and we'll need more time to compute all the results.",
+			Description: "This data is incomplete! We ran this query for 1 minute and we'll need more time to compute all the results. Please reach out to support@sourcegraph.com if it persists",
 		})
 	}
 	if alert != nil {
