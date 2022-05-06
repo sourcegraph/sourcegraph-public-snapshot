@@ -18,7 +18,7 @@ import { EditBatchSpecPage } from './EditBatchSpecPage'
 import goImportsSample from './library/go-imports.batch.yaml'
 
 const { add } = storiesOf('web/batches/batch-spec/edit/EditBatchSpecPage', module)
-    .addDecorator(story => <div className="p-3 container">{story()}</div>)
+    .addDecorator(story => <div className="p-3 w-100">{story()}</div>)
     .addParameters({
         chromatic: {
             disableSnapshot: false,
