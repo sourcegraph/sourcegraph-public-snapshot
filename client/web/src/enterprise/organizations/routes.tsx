@@ -5,7 +5,6 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { OrgAreaPageProps, OrgAreaRoute } from '../../org/area/OrgArea'
 import { orgAreaRoutes } from '../../org/area/routes'
 import { EditBatchSpecPageProps } from '../batches/batch-spec/edit/EditBatchSpecPage'
-import { ExecuteBatchSpecPageProps } from '../batches/batch-spec/execute/ExecuteBatchSpecPage'
 import { NamespaceBatchChangesAreaProps } from '../batches/global/GlobalBatchChangesArea'
 import { enterpriseNamespaceAreaRoutes } from '../namespaces/routes'
 
@@ -14,7 +13,7 @@ const NamespaceBatchChangesArea = lazyComponent<NamespaceBatchChangesAreaProps, 
     'NamespaceBatchChangesArea'
 )
 
-const ExecuteBatchSpecPage = lazyComponent<ExecuteBatchSpecPageProps, 'ExecuteBatchSpecPage'>(
+const ExecuteBatchSpecPage = lazyComponent(
     () => import('../batches/batch-spec/execute/ExecuteBatchSpecPage'),
     'ExecuteBatchSpecPage'
 )

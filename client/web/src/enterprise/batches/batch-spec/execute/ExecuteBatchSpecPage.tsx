@@ -12,6 +12,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Icon, LoadingSpinner } from '@sourcegraph/wildcard'
 
+import { withAuthenticatedUser } from '../../../../auth/withAuthenticatedUser'
 import { HeroPage } from '../../../../components/HeroPage'
 import { Timestamp } from '../../../../components/time/Timestamp'
 import {
@@ -36,7 +37,7 @@ import { ReadOnlyBatchSpecForm } from './ReadOnlyBatchSpecForm'
 
 import layoutStyles from '../Layout.module.scss'
 
-export interface ExecuteBatchSpecPageProps
+export interface AuthenticatedExecuteBatchSpecPageProps
     extends SettingsCascadeProps<Settings>,
         ThemeProps,
         TelemetryProps,
@@ -46,7 +47,7 @@ export interface ExecuteBatchSpecPageProps
     authenticatedUser: AuthenticatedUser
 }
 
-export const ExecuteBatchSpecPage: React.FunctionComponent<ExecuteBatchSpecPageProps> = ({
+export const AuthenticatedExecuteBatchSpecPage: React.FunctionComponent<AuthenticatedExecuteBatchSpecPageProps> = ({
     batchChange,
     batchSpecID,
     ...props
@@ -204,3 +205,5 @@ const ExecuteBatchSpecPageContent: React.FunctionComponent<
         </div>
     )
 }
+
+export const ExecuteBatchSpecPage = withAuthenticatedUser(AuthenticatedExecuteBatchSpecPage)
