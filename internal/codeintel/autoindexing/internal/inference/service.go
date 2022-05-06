@@ -353,7 +353,7 @@ func (s *Service) resolveFileContents(
 			break
 		}
 
-		if len(contentsByPath) > s.maximumFilesWithContentCount {
+		if len(contentsByPath) >= s.maximumFilesWithContentCount {
 			return nil, errors.Newf("inference limit: requested content for more than %d files", s.maximumFilesWithContentCount)
 		}
 		if int(header.Size) > s.maximumFileWithContentSizeBytes {
