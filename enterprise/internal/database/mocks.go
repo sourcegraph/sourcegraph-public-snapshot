@@ -369,8 +369,8 @@ func NewMockCodeMonitorStore() *MockCodeMonitorStore {
 			},
 		},
 		HasAnyLastSearchedFunc: &CodeMonitorStoreHasAnyLastSearchedFunc{
-			defaultHook: func(context.Context, int64) (bool, error) {
-				return false, nil
+			defaultHook: func(context.Context, int64) (r0 bool, r1 error) {
+				return
 			},
 		},
 		ListActionJobsFunc: &CodeMonitorStoreListActionJobsFunc{
