@@ -1,5 +1,6 @@
 import { render } from 'react-dom'
 
+import { splitPath } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { ContentMatch } from '@sourcegraph/shared/src/search/stream'
 import { AnchorLink, setLinkComponent } from '@sourcegraph/wildcard'
 
@@ -23,15 +24,38 @@ declare global {
 }
 
 async function onOpen(match: ContentMatch, lineIndex: number): Promise<void> {
+    const content = await loadContent(match)
     console.log('open', await loadContent(match), match.lineMatches[lineIndex])
+    await window.callJava({
+        action: 'open',
+        arguments: {
+            content,
+            lineNumber: match.lineMatches[lineIndex].lineNumber,
+        },
+    })
 }
 
 async function onPreviewChange(match: ContentMatch, lineIndex: number): Promise<void> {
-    console.log('preview', await loadContent(match), match.lineMatches[lineIndex])
+    const fileName = splitPath(match.path)[1]
+    const content = await loadContent(match)
+    console.log('preview', content, match.lineMatches[lineIndex])
+    await window.callJava({
+        action: 'preview',
+        arguments: {
+            fileName,
+            path: match.path,
+            content,
+            lineNumber: match.lineMatches[lineIndex].lineNumber,
+        },
+    })
 }
 
 function onPreviewClear(): void {
     console.log('clear preview')
+    window
+        .callJava({ action: 'clearPreview', arguments: {} })
+        .then(() => {})
+        .catch(() => {})
 }
 
 function renderReactApp(): void {

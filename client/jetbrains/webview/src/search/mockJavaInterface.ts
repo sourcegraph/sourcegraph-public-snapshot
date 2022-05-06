@@ -32,6 +32,14 @@ function handleRequest(
                 labelBackground: 'gray',
             })
         )
+    } else if (request.action === 'preview') {
+        const { path } = request.arguments as { path: string }
+        console.log(`Previewing "${path}"`)
+    } else if (request.action === 'clearPreview') {
+        console.log('Clearing preview.')
+    } else if (request.action === 'open') {
+        const { path } = request.arguments as { path: string }
+        console.log(`Opening "${path}"`)
     } else {
         onFailureCallback(2, `Unknown action: ${request.action}`)
     }
