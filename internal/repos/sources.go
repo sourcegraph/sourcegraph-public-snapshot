@@ -69,6 +69,8 @@ func NewSource(db database.DB, svc *types.ExternalService, cf *httpcli.Factory) 
 		return NewPagureSource(svc, cf)
 	case extsvc.KindNpmPackages:
 		return NewNpmPackagesSource(svc)
+	case extsvc.KindPythonPackages:
+		return NewPythonPackagesSource(svc, cf)
 	case extsvc.KindOther:
 		return NewOtherSource(svc, cf)
 	default:
@@ -86,8 +88,9 @@ type Source interface {
 	ExternalServices() types.ExternalServices
 }
 
-// RepoGetter captures the optional GetRepo method of a Source. It's used only
-// on sourcegraph.com to lazily sync individual repos.
+// RepoGetter captures the optional GetRepo method of a Source. It's used on
+// sourcegraph.com to lazily sync individual repos and to lazily sync dependency
+// repos on any customer instance.
 type RepoGetter interface {
 	GetRepo(context.Context, string) (*types.Repo, error)
 }

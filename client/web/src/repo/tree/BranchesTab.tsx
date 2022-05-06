@@ -36,7 +36,11 @@ interface Data {
 /**
  * Renders pages related to repository branches.
  */
-export const RepositoryBranchesTab: React.FunctionComponent<Props> = ({ repo, history, location }) => {
+export const RepositoryBranchesTab: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    repo,
+    history,
+    location,
+}) => {
     const [showAll, setShowAll] = useState(false)
 
     return (
@@ -74,7 +78,11 @@ export const RepositoryBranchesTab: React.FunctionComponent<Props> = ({ repo, hi
     )
 }
 
-export const RepositoryBranchesAllTab: React.FunctionComponent<Props> = ({ repo, history, location }) => {
+export const RepositoryBranchesAllTab: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    repo,
+    history,
+    location,
+}) => {
     const queryBranches = (args: FilteredConnectionQueryArguments): Observable<GitRefConnectionFields> =>
         queryGitReferences({ ...args, repo: repo.id, type: GitRefType.GIT_BRANCH })
 
@@ -97,7 +105,10 @@ export const RepositoryBranchesAllTab: React.FunctionComponent<Props> = ({ repo,
     )
 }
 
-export const RepositoryBranchesOverviewTab: React.FunctionComponent<OverviewTabProps> = ({ repo, setShowAll }) => {
+export const RepositoryBranchesOverviewTab: React.FunctionComponent<React.PropsWithChildren<OverviewTabProps>> = ({
+    repo,
+    setShowAll,
+}) => {
     const [branches, setBranches] = useState<Data | undefined>(undefined)
 
     useEventObservable<void, Data | null | ErrorLike>(

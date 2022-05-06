@@ -380,6 +380,8 @@ func (s *Store) DeleteOverlappingDumps(ctx context.Context, repositoryID int, co
 	}})
 	defer endObservation(1, observation.Args{})
 
+	unset, _ := s.Store.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "upload overlapping with a newer upload")
+	defer unset(ctx)
 	count, _, err := basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(deleteOverlappingDumpsQuery, repositoryID, commit, root, indexer)))
 	if err != nil {
 		return err

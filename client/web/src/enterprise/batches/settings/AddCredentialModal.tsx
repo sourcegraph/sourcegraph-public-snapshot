@@ -58,6 +58,7 @@ const scopeRequirements: Record<ExternalServiceKind, JSX.Element> = {
     [ExternalServiceKind.GERRIT]: <span>Unsupported</span>,
     [ExternalServiceKind.GITOLITE]: <span>Unsupported</span>,
     [ExternalServiceKind.GOMODULES]: <span>Unsupported</span>,
+    [ExternalServiceKind.PYTHONPACKAGES]: <span>Unsupported</span>,
     [ExternalServiceKind.JVMPACKAGES]: <span>Unsupported</span>,
     [ExternalServiceKind.NPMPACKAGES]: <span>Unsupported</span>,
     [ExternalServiceKind.PERFORCE]: <span>Unsupported</span>,
@@ -69,7 +70,7 @@ const scopeRequirements: Record<ExternalServiceKind, JSX.Element> = {
 
 type Step = 'add-token' | 'get-ssh-key'
 
-export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps> = ({
+export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren<AddCredentialModalProps>> = ({
     onCancel,
     afterCreate,
     userID,

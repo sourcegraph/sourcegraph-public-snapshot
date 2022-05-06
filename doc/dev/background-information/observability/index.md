@@ -21,10 +21,11 @@ Observability at Sourcegraph includes:
 
 ## Guides
 
+- [How to add observability](../../how-to/add_observability.md)
+- [How to add logging](../../how-to/add_logging.md)
 - [How to find monitoring](../../how-to/find_monitoring.md)
 - [How to add monitoring](../../how-to/add_monitoring.md)
 - [Set up local monitoring development](../../how-to/monitoring_local_dev.md)
-- [How to add and use logging](../../how-to/add_and_use_logging.md)
 
 ## Components
 

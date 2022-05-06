@@ -25,7 +25,9 @@ export interface CodeIntelligenceBadgeContentProps
     extends DefaultRepositoryMenuProps,
         CodeIntelligenceBadgeContentStorybookProps {}
 
-export const CodeIntelligenceBadgeContent: React.FunctionComponent<CodeIntelligenceBadgeContentProps> = props => {
+export const CodeIntelligenceBadgeContent: React.FunctionComponent<
+    React.PropsWithChildren<CodeIntelligenceBadgeContentProps>
+> = props => {
     const { data, loading, error } = defaultUseCodeIntelStatus({
         variables: {
             repository: props.repoName,

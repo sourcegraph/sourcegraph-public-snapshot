@@ -77,7 +77,7 @@ function createOptimisticRollbackPipeline<T>(
     }
 }
 
-export const ExtensionToggle: React.FunctionComponent<Props> = ({
+export const ExtensionToggle: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     settingsCascade,
     platformContext,
     extensionID,

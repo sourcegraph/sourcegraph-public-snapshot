@@ -18,7 +18,13 @@ export interface BranchProps extends Pick<BadgeProps, 'variant'> {
     name: string
 }
 
-export const Branch: React.FunctionComponent<BranchProps> = ({ className, deleted, forkTarget, name, variant }) => (
+export const Branch: React.FunctionComponent<React.PropsWithChildren<BranchProps>> = ({
+    className,
+    deleted,
+    forkTarget,
+    name,
+    variant,
+}) => (
     <Badge
         variant={variant !== undefined ? variant : deleted ? 'danger' : 'secondary'}
         className={classNames('text-monospace', className)}
@@ -42,7 +48,11 @@ export interface BranchMergeProps {
     headRef: string
 }
 
-export const BranchMerge: React.FunctionComponent<BranchMergeProps> = ({ baseRef, forkTarget, headRef }) => (
+export const BranchMerge: React.FunctionComponent<React.PropsWithChildren<BranchMergeProps>> = ({
+    baseRef,
+    forkTarget,
+    headRef,
+}) => (
     <div className="d-block d-sm-inline-block">
         <Branch name={baseRef} />
         <span className="p-1">&larr;</span>
@@ -54,7 +64,7 @@ interface BranchNamespaceProps {
     target: ForkTarget
 }
 
-const BranchNamespace: React.FunctionComponent<BranchNamespaceProps> = ({ target }) => {
+const BranchNamespace: React.FunctionComponent<React.PropsWithChildren<BranchNamespaceProps>> = ({ target }) => {
     if (!target) {
         return <></>
     }

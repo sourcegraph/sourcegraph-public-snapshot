@@ -21,9 +21,9 @@ interface CodeMonitorListProps
     authenticatedUser: AuthenticatedUser | null
 }
 
-const CodeMonitorEmptyList: React.FunctionComponent<{ authenticatedUser: AuthenticatedUser | null }> = ({
-    authenticatedUser,
-}) => (
+const CodeMonitorEmptyList: React.FunctionComponent<
+    React.PropsWithChildren<{ authenticatedUser: AuthenticatedUser | null }>
+> = ({ authenticatedUser }) => (
     <div className="text-center">
         <h2 className="text-muted mb-2">No code monitors have been created.</h2>
         {!authenticatedUser && (
@@ -36,7 +36,7 @@ const CodeMonitorEmptyList: React.FunctionComponent<{ authenticatedUser: Authent
     </div>
 )
 
-export const CodeMonitorList: React.FunctionComponent<CodeMonitorListProps> = ({
+export const CodeMonitorList: React.FunctionComponent<React.PropsWithChildren<CodeMonitorListProps>> = ({
     authenticatedUser,
     fetchUserCodeMonitors,
     toggleCodeMonitorEnabled,

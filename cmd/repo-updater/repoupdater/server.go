@@ -27,7 +27,7 @@ import (
 
 // Server is a repoupdater server.
 type Server struct {
-	*repos.Store
+	repos.Store
 	*repos.Syncer
 	SourcegraphDotComMode bool
 	Scheduler             interface {
@@ -162,7 +162,7 @@ func (s *Server) enqueueRepoUpdate(ctx context.Context, req *protocol.RepoUpdate
 		tr.Finish()
 	}()
 
-	rs, err := s.Store.RepoStore.List(ctx, database.ReposListOptions{Names: []string{string(req.Repo)}})
+	rs, err := s.Store.RepoStore().List(ctx, database.ReposListOptions{Names: []string{string(req.Repo)}})
 	if err != nil {
 		return nil, http.StatusInternalServerError, errors.Wrap(err, "store.list-repos")
 	}
@@ -195,7 +195,7 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 	if sourcer = s.Sourcer; sourcer == nil {
 		db := database.NewDB(s.Handle().DB())
 		depsSvc := livedependencies.GetService(db, nil)
-		sourcer = repos.NewSourcer(database.NewDB(s.Handle().DB()), httpcli.ExternalClientFactory, repos.WithDependenciesService(depsSvc))
+		sourcer = repos.NewSourcer(db, httpcli.ExternalClientFactory, repos.WithDependenciesService(depsSvc))
 	}
 	src, err := sourcer(&types.ExternalService{
 		ID:              req.ExternalService.ID,

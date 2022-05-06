@@ -49,7 +49,7 @@ const replacePattern = /[\n\r↵]/g
  * - Not supplying 'onSubmit' and setting 'preventNewLine' to false will result
  * in a new line being added when Enter is pressed
  */
-export const CodeMirrorMonacoFacade: React.FunctionComponent<MonacoQueryInputProps> = ({
+export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChildren<MonacoQueryInputProps>> = ({
     patternType,
     selectedSearchContextSpec,
     queryState,
@@ -251,7 +251,7 @@ interface CodeMirrorQueryInputProps extends ThemeProps, SearchPatternTypeProps {
  * "Core" codemirror query input component. Provides the basic behavior such as
  * theming, syntax highlighting and token info.
  */
-const CodeMirrorQueryInput: React.FunctionComponent<CodeMirrorQueryInputProps> = React.memo(
+const CodeMirrorQueryInput: React.FunctionComponent<React.PropsWithChildren<CodeMirrorQueryInputProps>> = React.memo(
     ({ isLightTheme, onEditorCreated, patternType, interpretComments, value, className, extensions = [] }) => {
         // This is using state instead of a ref because `useRef` doesn't cause a
         // re-render when the ref is attached, but we need that so that

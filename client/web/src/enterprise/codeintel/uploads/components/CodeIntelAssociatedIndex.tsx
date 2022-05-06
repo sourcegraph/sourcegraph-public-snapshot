@@ -16,7 +16,10 @@ export interface CodeIntelAssociatedIndexProps {
     now?: () => Date
 }
 
-export const CodeIntelAssociatedIndex: FunctionComponent<CodeIntelAssociatedIndexProps> = ({ node, now }) =>
+export const CodeIntelAssociatedIndex: FunctionComponent<React.PropsWithChildren<CodeIntelAssociatedIndexProps>> = ({
+    node,
+    now,
+}) =>
     node.associatedIndex && node.projectRoot ? (
         <>
             <div className="list-group position-relative">

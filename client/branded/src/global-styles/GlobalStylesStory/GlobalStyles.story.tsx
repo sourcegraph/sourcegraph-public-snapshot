@@ -11,7 +11,7 @@ import classNames from 'classnames'
 import 'storybook-addon-designs'
 
 import { highlightCodeSafe, registerHighlightContributions } from '@sourcegraph/common'
-import { TextArea, Button, ButtonGroup, Link, Select, BUTTON_SIZES } from '@sourcegraph/wildcard'
+import { TextArea, Button, ButtonGroup, Link, Select, BUTTON_SIZES, Checkbox } from '@sourcegraph/wildcard'
 
 import { BrandedStory } from '../../components/BrandedStory'
 import { CodeSnippet } from '../../components/CodeSnippet'
@@ -432,12 +432,9 @@ export const Forms: Story = () => (
             <div className="form-group">
                 <TextArea label="Example textarea" id="example-textarea" rows={3} />
             </div>
-            <div className="form-group form-check">
-                <input type="checkbox" className="form-check-input" id="exampleCheck1" />
-                <label className="form-check-label" htmlFor="exampleCheck1">
-                    Check me out
-                </label>
-            </div>
+
+            <Checkbox label="Check me out" wrapperClassName="mb-3" id="exampleCheck1" />
+
             <Button type="submit" variant="primary">
                 Submit
             </Button>
@@ -461,17 +458,7 @@ export const Forms: Story = () => (
                 </Select>
 
                 <div className="form-group">
-                    <div className="form-check">
-                        <input
-                            className="form-check-input"
-                            type="checkbox"
-                            id="disabledFieldsetCheck"
-                            disabled={true}
-                        />
-                        <label className="form-check-label" htmlFor="disabledFieldsetCheck">
-                            Can't check this
-                        </label>
-                    </div>
+                    <Checkbox label="Can't check this" id="disabledFieldsetCheck" disabled={true} />
                 </div>
                 <Button type="submit" variant="primary">
                     Submit

@@ -41,16 +41,16 @@ func SexpFormat(j job.Job, sep, indent string) string {
 		}
 		switch j := j.(type) {
 		case
-			*zoekt.ZoektRepoSubsetSearch,
-			*zoekt.ZoektSymbolSearch,
-			*searcher.Searcher,
-			*searcher.SymbolSearcher,
-			*run.RepoSearch,
-			*zoekt.GlobalSearch,
-			*structural.StructuralSearch,
-			*commit.CommitSearch,
-			*symbol.RepoUniverseSymbolSearch,
-			*repos.ComputeExcludedRepos,
+			*zoekt.ZoektRepoSubsetSearchJob,
+			*zoekt.ZoektSymbolSearchJob,
+			*searcher.SearcherJob,
+			*searcher.SymbolSearcherJob,
+			*run.RepoSearchJob,
+			*zoekt.ZoektGlobalSearchJob,
+			*structural.StructuralSearchJob,
+			*commit.CommitSearchJob,
+			*symbol.RepoUniverseSymbolSearchJob,
+			*repos.ComputeExcludedReposJob,
 			*noopJob:
 			b.WriteString(j.Name())
 
@@ -78,25 +78,6 @@ func SexpFormat(j job.Job, sep, indent string) string {
 				writeSep(b, sep, indent, depth)
 				writeSexp(child)
 			}
-			b.WriteString(")")
-			depth--
-		case *PriorityJob:
-			b.WriteString("(PRIORITY")
-			depth++
-			writeSep(b, sep, indent, depth)
-			b.WriteString("(REQUIRED")
-			depth++
-			writeSep(b, sep, indent, depth)
-			writeSexp(j.required)
-			b.WriteString(")")
-			depth--
-			writeSep(b, sep, indent, depth)
-			b.WriteString("(OPTIONAL")
-			depth++
-			writeSep(b, sep, indent, depth)
-			writeSexp(j.optional)
-			b.WriteString(")")
-			depth--
 			b.WriteString(")")
 			depth--
 		case *ParallelJob:
@@ -220,16 +201,16 @@ func PrettyMermaid(j job.Job) string {
 		}
 		switch j := j.(type) {
 		case
-			*zoekt.ZoektRepoSubsetSearch,
-			*zoekt.ZoektSymbolSearch,
-			*searcher.Searcher,
-			*searcher.SymbolSearcher,
-			*run.RepoSearch,
-			*zoekt.GlobalSearch,
-			*structural.StructuralSearch,
-			*commit.CommitSearch,
-			*symbol.RepoUniverseSymbolSearch,
-			*repos.ComputeExcludedRepos,
+			*zoekt.ZoektRepoSubsetSearchJob,
+			*zoekt.ZoektSymbolSearchJob,
+			*searcher.SearcherJob,
+			*searcher.SymbolSearcherJob,
+			*run.RepoSearchJob,
+			*zoekt.ZoektGlobalSearchJob,
+			*structural.StructuralSearchJob,
+			*commit.CommitSearchJob,
+			*symbol.RepoUniverseSymbolSearchJob,
+			*repos.ComputeExcludedReposJob,
 			*noopJob:
 			writeNode(b, depth, RoundedStyle, &id, j.Name())
 
@@ -257,23 +238,6 @@ func PrettyMermaid(j job.Job) string {
 				writeEdge(b, depth, srcId, id)
 				writeMermaid(child)
 			}
-			depth--
-		case *PriorityJob:
-			srcId := id
-			depth++
-			writeNode(b, depth, RoundedStyle, &id, "PRIORITY")
-
-			requiredId := id
-			writeEdge(b, depth, srcId, requiredId)
-			writeNode(b, depth, RoundedStyle, &id, "REQUIRED")
-			writeEdge(b, depth, requiredId, id)
-			writeMermaid(j.required)
-
-			optionalId := id
-			writeEdge(b, depth, srcId, optionalId)
-			writeNode(b, depth, RoundedStyle, &id, "OPTIONAL")
-			writeEdge(b, depth, optionalId, id)
-			writeMermaid(j.optional)
 			depth--
 		case *ParallelJob:
 			srcId := id
@@ -355,16 +319,16 @@ func toJSON(j job.Job, verbose bool) interface{} {
 		}
 		switch j := j.(type) {
 		case
-			*zoekt.ZoektRepoSubsetSearch,
-			*zoekt.ZoektSymbolSearch,
-			*searcher.Searcher,
-			*searcher.SymbolSearcher,
-			*run.RepoSearch,
-			*zoekt.GlobalSearch,
-			*structural.StructuralSearch,
-			*commit.CommitSearch,
-			*symbol.RepoUniverseSymbolSearch,
-			*repos.ComputeExcludedRepos,
+			*zoekt.ZoektRepoSubsetSearchJob,
+			*zoekt.ZoektSymbolSearchJob,
+			*searcher.SearcherJob,
+			*searcher.SymbolSearcherJob,
+			*run.RepoSearchJob,
+			*zoekt.ZoektGlobalSearchJob,
+			*structural.StructuralSearchJob,
+			*commit.CommitSearchJob,
+			*symbol.RepoUniverseSymbolSearchJob,
+			*repos.ComputeExcludedReposJob,
 			*noopJob:
 			if verbose {
 				return map[string]interface{}{j.Name(): j}
@@ -398,20 +362,6 @@ func toJSON(j job.Job, verbose bool) interface{} {
 				Or []interface{} `json:"OR"`
 			}{
 				Or: children,
-			}
-
-		case *PriorityJob:
-			priority := struct {
-				Required interface{} `json:"REQUIRED"`
-				Optional interface{} `json:"OPTIONAL"`
-			}{
-				Required: emitJSON(j.required),
-				Optional: emitJSON(j.optional),
-			}
-			return struct {
-				Priority interface{} `json:"PRIORITY"`
-			}{
-				Priority: priority,
 			}
 
 		case *ParallelJob:

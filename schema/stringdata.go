@@ -50,6 +50,10 @@ var JVMPackagesSchemaJSON string
 //go:embed npm-packages.schema.json
 var NpmPackagesSchemaJSON string
 
+// PythonPackagesSchemaJSON is the content of the file "python-packages.schema.json".
+//go:embed python-packages.schema.json
+var PythonPackagesSchemaJSON string
+
 // OtherExternalServiceSchemaJSON is the content of the file "other_external_service.schema.json".
 //go:embed other_external_service.schema.json
 var OtherExternalServiceSchemaJSON string

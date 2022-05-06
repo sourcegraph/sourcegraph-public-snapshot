@@ -36,7 +36,7 @@ describe('getHoverResult()', () => {
             {
               "contents": [
                 {
-                  "value": "Include only results from files matching the given search pattern."
+                  "value": "Include only results from file paths matching the given search pattern."
                 }
               ],
               "range": {

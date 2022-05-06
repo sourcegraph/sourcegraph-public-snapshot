@@ -1388,7 +1388,42 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 			t.Fatal(err)
 		}
 
-		err = client.WaitForReposToBeCloned("npm/urql", "go/github.com/oklog/ulid/v2")
+		_, err = client.AddExternalService(gqltestutil.AddExternalServiceInput{
+			Kind:        extsvc.KindPythonPackages,
+			DisplayName: "gqltest-python-search",
+			Config: mustMarshalJSONString(&schema.PythonPackagesConnection{
+				Urls: []string{"https://pypi.org/simple"},
+				Dependencies: []string{
+					"rich == 12.3.0",
+				},
+			}),
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		_, err = client.AddExternalService(gqltestutil.AddExternalServiceInput{
+			Kind:        extsvc.KindJVMPackages,
+			DisplayName: "gqltest-jvm-search",
+			Config: mustMarshalJSONString(&schema.JVMPackagesConnection{
+				Maven: &schema.Maven{
+					Dependencies: []string{
+						"com.google.guava:guava:19",
+						"com.google.guava:guava:21",
+					},
+				},
+			}),
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = client.WaitForReposToBeCloned(
+			"npm/urql",
+			"go/github.com/oklog/ulid/v2",
+			"maven/com.google.guava/guava",
+			"python/rich",
+		)
 		if err != nil {
 			t.Fatal(err)
 		}

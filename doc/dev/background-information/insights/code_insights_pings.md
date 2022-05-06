@@ -109,6 +109,27 @@ https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegrap
 - **Version Added:** 3.25
 - **Version(s) broken:** 3.25-3.26 (not weekly)([fix PR](https://github.com/sourcegraph/sourcegraph/pull/20070/files)), 3.30 (broken when switching to dashboard pages, didn't track dashboard views)([fix PR](https://github.com/sourcegraph/sourcegraph/pull/24129/files))
 
+### In-product landing page events (hover, data points click, template section clicks)
+
+**Type:** FE events
+
+**Intended purpose:** To track unique users' activity on the in-product (get started insights) and the cloud landing pages.
+
+**Other considerations:** N/A.
+
+- Aggregation: By week
+- Event Codes: 
+   - [InsightsGetStartedPage](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+InsightsGetStartedPage&patternType=regexp) to track how many unique users are viewing get started page
+   - [InsightsGetStartedPageQueryModification](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+InsightsGetStartedPageQueryModification&patternType=regexp) to track how many users change their live insight example query field value
+   - [InsightsGetStartedPageRepositoriesModification](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+InsightsGetStartedPageRepositoriesModification&patternType=regexp) to track how many users change their live insight example repositories field value
+   - [InsightsGetStartedPrimaryCTAClick](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+InsightsGetStartedPrimaryCTAClick&patternType=regexp) to track how many users click "Create your first insight" (call to action) button
+   - [InsightsGetStartedTabClick](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+InsightsGetStartedTabClick&patternType=regexp) to track how many users browse different template tabs on the in-product landing page, it sends selected tab `title` in event's payload data.
+   - [InsightGetStartedTemplateClick](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+InsightGetStartedTemplateClick&patternType=regexp) to track how many users click on the explore/use template button.
+   - [InsightsGetStartedTabMoreClick](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+InsightsGetStartedTabMoreClick&patternType=regexp) to track how many users expand to full template section, it sends selected tab `title` in event's payload data.
+   - [InsightsGetStartedDocsClicks](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+InsightsGetStartedDocsClicks&patternType=regexp) to track clicks over the in-product page's documentation links.
+- PRs: [#31048](https://github.com/sourcegraph/sourcegraph/pull/31048)
+- **Version Added:** 3.37
+
 ### Org-visible insights count (Total) 
 
 **Type:** BE capture

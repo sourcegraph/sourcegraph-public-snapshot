@@ -73,7 +73,7 @@ interface Props
     repoUrl: string
 }
 
-export const BlobPage: React.FunctionComponent<Props> = props => {
+export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
     const [wrapCode, setWrapCode] = useState(ToggleLineWrap.getValue())
     let renderMode = getModeFromURL(props.location)
     const { repoName, revision, commitID, filePath, isLightTheme, useBreadcrumb, mode, repoUrl } = props

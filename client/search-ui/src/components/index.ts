@@ -1,2 +1,3 @@
 export * from './SyntaxHighlightedSearchQuery'
-export * from './SearchResult'
+export * from './CommitSearchResult'
+export * from './RepoSearchResult'

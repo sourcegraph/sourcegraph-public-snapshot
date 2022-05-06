@@ -113,7 +113,7 @@ export const routes: readonly CodeIntelAreaRoute[] = [
     },
 ]
 
-const NotFoundPage: React.FunctionComponent = () => (
+const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <HeroPage
         icon={MapSearchIcon}
         title="404: Not Found"
@@ -163,11 +163,9 @@ const sidebarRoutes: CodeIntelSideBarGroups = [
 /**
  * Renders pages related to repository code intelligence.
  */
-export const RepositoryCodeIntelArea: React.FunctionComponent<RepositoryCodeIntelAreaPageProps> = ({
-    match,
-    useBreadcrumb,
-    ...props
-}) => {
+export const RepositoryCodeIntelArea: React.FunctionComponent<
+    React.PropsWithChildren<RepositoryCodeIntelAreaPageProps>
+> = ({ match, useBreadcrumb, ...props }) => {
     useBreadcrumb(useMemo(() => ({ key: 'code-intelligence', element: 'Code Intelligence' }), []))
 
     return (

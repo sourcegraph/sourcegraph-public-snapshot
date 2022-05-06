@@ -73,7 +73,12 @@ export const INVITATION_BY_TOKEN = gql`
 /**
  * Displays the organization invitation for the user, based on the token in the invite URL.
  */
-export const OrgInvitationPage: React.FunctionComponent<Props> = ({ authenticatedUser, className, history, match }) => {
+export const OrgInvitationPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    authenticatedUser,
+    className,
+    history,
+    match,
+}) => {
     const token = match.params.token
 
     const { data: inviteData, loading: inviteLoading, error: inviteError } = useQuery<InviteResult, InviteVariables>(

@@ -59,13 +59,9 @@ export interface BatchSpecExecutionDetailsPageProps extends ThemeProps, Telemetr
     authenticatedUser: AuthenticatedUser
 }
 
-export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExecutionDetailsPageProps> = ({
-    batchSpecID,
-    isLightTheme,
-    authenticatedUser,
-    telemetryService,
-    match,
-}) => {
+export const BatchSpecExecutionDetailsPage: React.FunctionComponent<
+    React.PropsWithChildren<BatchSpecExecutionDetailsPageProps>
+> = ({ batchSpecID, isLightTheme, authenticatedUser, telemetryService, match }) => {
     const { data, error, loading } = useQuery<BatchSpecExecutionByIDResult, BatchSpecExecutionByIDVariables>(
         FETCH_BATCH_SPEC_EXECUTION,
         {
@@ -164,7 +160,9 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
     )
 }
 
-const TabBar: React.FunctionComponent<{ url: string; batchSpec: BatchSpecExecutionFields }> = ({ url, batchSpec }) => (
+const TabBar: React.FunctionComponent<
+    React.PropsWithChildren<{ url: string; batchSpec: BatchSpecExecutionFields }>
+> = ({ url, batchSpec }) => (
     <div className="mb-3">
         <ul className="nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap">
             <li className="nav-item">
@@ -211,7 +209,10 @@ interface BatchSpecActionsProps {
     executionURL: string
 }
 
-const BatchSpecActions: React.FunctionComponent<BatchSpecActionsProps> = ({ batchSpec, executionURL }) => {
+const BatchSpecActions: React.FunctionComponent<React.PropsWithChildren<BatchSpecActionsProps>> = ({
+    batchSpec,
+    executionURL,
+}) => {
     const location = useLocation()
 
     const [cancelBatchSpecExecution, { loading: isCancelLoading, error: cancelError }] = useCancelBatchSpecExecution(
@@ -321,7 +322,7 @@ interface EditPageProps extends ThemeProps {
     content: string
 }
 
-const EditPage: React.FunctionComponent<EditPageProps> = ({ name, content, isLightTheme }) => (
+const EditPage: React.FunctionComponent<React.PropsWithChildren<EditPageProps>> = ({ name, content, isLightTheme }) => (
     <div className={classNames(styles.layoutContainer, 'h-100')}>
         <BatchSpec name={name} originalInput={content} isLightTheme={isLightTheme} className={styles.batchSpec} />
     </div>
@@ -333,7 +334,7 @@ interface ExecutionPageProps extends ThemeProps, RouteComponentProps<{}> {
     batchSpec: BatchSpecExecutionFields
 }
 
-const ExecutionPage: React.FunctionComponent<ExecutionPageProps> = ({ match, ...props }) => (
+const ExecutionPage: React.FunctionComponent<React.PropsWithChildren<ExecutionPageProps>> = ({ match, ...props }) => (
     <Switch>
         <Route
             path={`${match.url}/workspaces/:workspaceID`}
@@ -361,7 +362,7 @@ interface ExecutionWorkspacesPageProps extends ThemeProps {
     selectedWorkspaceID?: string
 }
 
-const ExecutionWorkspacesPage: React.FunctionComponent<ExecutionWorkspacesPageProps> = ({
+const ExecutionWorkspacesPage: React.FunctionComponent<React.PropsWithChildren<ExecutionWorkspacesPageProps>> = ({
     batchSpec,
     selectedWorkspaceID,
     executionURL,
@@ -396,7 +397,7 @@ interface PreviewPageProps extends TelemetryProps, ThemeProps {
     batchSpec: BatchSpecExecutionFields
     authenticatedUser: AuthenticatedUser
 }
-const PreviewPage: React.FunctionComponent<PreviewPageProps> = ({
+const PreviewPage: React.FunctionComponent<React.PropsWithChildren<PreviewPageProps>> = ({
     authenticatedUser,
     telemetryService,
     isLightTheme,
@@ -428,7 +429,7 @@ interface SelectedWorkspaceProps extends ThemeProps {
     workspace: Scalars['ID'] | null
 }
 
-const SelectedWorkspace: React.FunctionComponent<SelectedWorkspaceProps> = ({
+const SelectedWorkspace: React.FunctionComponent<React.PropsWithChildren<SelectedWorkspaceProps>> = ({
     workspace,
     deselectWorkspace,
     isLightTheme,
@@ -451,4 +452,6 @@ const SelectedWorkspace: React.FunctionComponent<SelectedWorkspaceProps> = ({
     </Card>
 )
 
-const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
+const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
+    <HeroPage icon={MapSearchIcon} title="404: Not Found" />
+)

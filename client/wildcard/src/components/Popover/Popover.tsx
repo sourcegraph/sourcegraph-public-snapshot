@@ -65,7 +65,7 @@ interface PopoverCommonProps {
 
 export type PopoverProps = PopoverCommonProps & PopoverControlledProps
 
-export const Popover: React.FunctionComponent<PopoverProps> = props => {
+export const Popover: React.FunctionComponent<React.PropsWithChildren<PopoverProps>> = props => {
     const { children, anchor, isOpen, onOpenChange = noop } = props
 
     const [targetElement, setTargetElement] = useState<HTMLElement | null>(null)

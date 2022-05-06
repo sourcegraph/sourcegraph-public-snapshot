@@ -98,6 +98,11 @@ func TestSubstituteAliases(t *testing.T) {
 		"substitution honors literal search pattern",
 		`[{"and":[{"field":"repo","value":"repo","negated":false,"labels":["IsAlias"]},{"value":"^not-actually-a-regexp:tbf$","negated":false,"labels":["IsAlias","Literal"]}]}]`).
 		Equal(t, test("r:repo content:^not-actually-a-regexp:tbf$", SearchTypeLiteral))
+
+	autogold.Want(
+		"substitution honors path",
+		`[{"field":"file","value":"foo","negated":false,"labels":["IsAlias"]}]`).
+		Equal(t, test("path:foo", SearchTypeLiteral))
 }
 
 func TestLowercaseFieldNames(t *testing.T) {
@@ -209,31 +214,31 @@ func TestSubstituteOrForRegexp(t *testing.T) {
 	}{
 		{
 			input: "foo or bar",
-			want:  `"(foo)|(bar)"`,
+			want:  `"(?:foo)|(?:bar)"`,
 		},
 		{
 			input: "(foo or (bar or baz))",
-			want:  `"(foo)|(bar)|(baz)"`,
+			want:  `"(?:foo)|(?:bar)|(?:baz)"`,
 		},
 		{
 			input: "repo:foobar foo or (bar or baz)",
-			want:  `(or "(bar)|(baz)" (and "repo:foobar" "foo"))`,
+			want:  `(or "(?:bar)|(?:baz)" (and "repo:foobar" "foo"))`,
 		},
 		{
 			input: "(foo or (bar or baz)) and foobar",
-			want:  `(and "(foo)|(bar)|(baz)" "foobar")`,
+			want:  `(and "(?:foo)|(?:bar)|(?:baz)" "foobar")`,
 		},
 		{
 			input: "(foo or (bar and baz))",
-			want:  `(or "(foo)" (and "bar" "baz"))`,
+			want:  `(or "(?:foo)" (and "bar" "baz"))`,
 		},
 		{
 			input: "foo or (bar and baz) or foobar",
-			want:  `(or "(foo)|(foobar)" (and "bar" "baz"))`,
+			want:  `(or "(?:foo)|(?:foobar)" (and "bar" "baz"))`,
 		},
 		{
 			input: "repo:foo a or b",
-			want:  `(and "repo:foo" "(a)|(b)")`,
+			want:  `(and "repo:foo" "(?:a)|(?:b)")`,
 		},
 	}
 	for _, c := range cases {
