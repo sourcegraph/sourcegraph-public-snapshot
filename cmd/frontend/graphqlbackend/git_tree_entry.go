@@ -309,6 +309,64 @@ func (r *GitTreeEntryResolver) LocalCodeIntel(ctx context.Context) (*JSONValue, 
 	return &JSONValue{Value: string(jsonValue)}, nil
 }
 
+func (r *GitTreeEntryResolver) SymbolInfo(ctx context.Context, args *symbolInfoArgs) (*symbolInfoResolver, error) {
+	if args == nil {
+		return nil, errors.New("expected arguments to symbolInfo")
+	}
+
+	repo, err := r.commit.repoResolver.repo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	start := types.RepoCommitPathPoint{
+		RepoCommitPath: types.RepoCommitPath{
+			Repo:   string(repo.Name),
+			Commit: string(r.commit.oid),
+			Path:   r.Path(),
+		},
+		Point: types.Point{
+			Row:    int(args.Line),
+			Column: int(args.Character),
+		},
+	}
+
+	result, err := symbols.DefaultClient.SymbolInfo(ctx, start)
+	if err != nil {
+		return nil, err
+	}
+
+	if result == nil {
+		return nil, nil
+	}
+
+	return &symbolInfoResolver{symbolInfo: result}, nil
+}
+
+type symbolInfoArgs struct {
+	Line      int32
+	Character int32
+}
+
+type symbolInfoResolver struct{ symbolInfo *types.SymbolInfo }
+
+func (r *symbolInfoResolver) Definition(ctx context.Context) (*symbolLocationResolver, error) {
+	return &symbolLocationResolver{location: r.symbolInfo.Definition}, nil
+}
+
+func (r *symbolInfoResolver) Hover(ctx context.Context) (*string, error) {
+	return r.symbolInfo.Hover, nil
+}
+
+type symbolLocationResolver struct{ location types.RepoCommitPathRange }
+
+func (r *symbolLocationResolver) Repo() string     { return r.location.Repo }
+func (r *symbolLocationResolver) Commit() string   { return r.location.Commit }
+func (r *symbolLocationResolver) Path() string     { return r.location.Path }
+func (r *symbolLocationResolver) Line() int32      { return int32(r.location.Row) }
+func (r *symbolLocationResolver) Character() int32 { return int32(r.location.Column) }
+func (r *symbolLocationResolver) Length() int32    { return int32(r.location.Length) }
+
 type fileInfo struct {
 	path  string
 	size  int64
