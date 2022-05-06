@@ -68,7 +68,10 @@ export const CodeInsightsAppRouter = withAuthenticatedUser<CodeInsightsAppRouter
                     <Route
                         path={`${match.url}/insight/:id`}
                         render={(props: RouteComponentProps<{ id: string }>) => (
-                            <CodeInsightIndependentPage insightId={props.match.params.id} />
+                            <CodeInsightIndependentPage
+                                insightId={props.match.params.id}
+                                telemetryService={telemetryService}
+                            />
                         )}
                     />
                 )}
