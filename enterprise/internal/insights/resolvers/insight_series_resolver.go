@@ -223,7 +223,7 @@ func (p *precalculatedInsightSeriesResolver) Label() string {
 	return p.label
 }
 
-func (p *precalculatedInsightSeriesResolver) Points(ctx context.Context, args *graphqlbackend.InsightsPointsArgs) ([]graphqlbackend.InsightsDataPointResolver, error) {
+func (p *precalculatedInsightSeriesResolver) Points(ctx context.Context, _ *graphqlbackend.InsightsPointsArgs) ([]graphqlbackend.InsightsDataPointResolver, error) {
 	resolvers := make([]graphqlbackend.InsightsDataPointResolver, 0, len(p.points))
 	for _, point := range p.points {
 		resolvers = append(resolvers, insightsDataPointResolver{point})
