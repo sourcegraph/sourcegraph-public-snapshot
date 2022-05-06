@@ -182,7 +182,8 @@ func preMergeAudit(ctx context.Context, ghc *github.Client, payload *EventPayloa
 		stateDescription = "No test plan detected - please provide one!"
 		stateURL = "https://docs.sourcegraph.com/dev/background-information/testing_principles#test-plans"
 	case result.ProtectedBranch:
-
+		prState = "success"
+		stateDescription = "No action needed, but an exception will be opened post-merge."
 	default:
 		prState = "success"
 		stateDescription = "No action needed, nice!"
