@@ -4,7 +4,7 @@ This tutorial shows you how to deploy Sourcegraph via [Docker Compose](https://d
 
 > NOTE: Trying to decide how to deploy Sourcegraph? See [our recommendations](../index.md) for how to choose a deployment type that suits your needs.
 
-> WARNING: To configure your Sourcegraph instance, you must create and use a fork of the reference repository - refer to [Configuring Sourcegraph with Docker Compose](./operations.md#configure) for more details.
+> WARNING: To configure your Sourcegraph instance, you must create and use a fork of the reference repository - refer to the [Configuration section](index.md#reference-repository) of the [Docker Compose deployment docs](index.md) for more details.
 ---
 
 ## Deploy to EC2
@@ -20,7 +20,7 @@ This tutorial shows you how to deploy Sourcegraph via [Docker Compose](https://d
 > WARNING: If working from a fork of the reference repository, update the following variables in the script below:
 > 
 > * `DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL`: Your fork's git clone URL
-> * `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION`: The git revision containing your fork's customizations to the base Sourcegraph Docker Compose YAML. Most likely, `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='release'` if you followed our branching recommendations in the [Configuration guide](./operations.md#configure)
+> * `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION`: The git revision containing your fork's customizations to the base Sourcegraph Docker Compose YAML. Most likely, `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='release'` if you followed our branching recommendations in the [Configuration guide](index.md#make-yaml-customizations)
 
 ```bash
 #!/usr/bin/env bash
@@ -136,7 +136,7 @@ To update to the most recent version of Sourcegraph (X.Y.Z), SSH into your insta
 cd /home/ec2-user/deploy-sourcegraph-docker/docker-compose
 ```
 
-And refer to the [Upgrade guide](./operations.md#upgrade).
+And refer to the [Upgrade section](index.md#upgrade) of the [Docker Compose deployment docs](index.md).
 
 ---
 

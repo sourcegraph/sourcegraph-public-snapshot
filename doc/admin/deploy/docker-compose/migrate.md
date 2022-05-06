@@ -82,9 +82,9 @@ scp example_user@example_docker_host.com:/tmp/*.out <local_dir>
 
 Follow your cloud provider's installation guide to create the new Docker Compose instance:
 
-* [Install Sourcegraph with Docker Compose on AWS](../../install/docker-compose/aws.md)
-* [Install Sourcegraph with Docker Compose on Google Cloud](../../install/docker-compose/google_cloud.md)
-* [Install Sourcegraph with Docker Compose on DigitalOcean](../../install/docker-compose/digitalocean.md)
+* [Deploy Sourcegraph with Docker Compose on AWS](../docker-compose/aws.md)
+* [Deploy Sourcegraph with Docker Compose on Google Cloud](../docker-compose/google_cloud.md)
+* [Deploy Sourcegraph with Docker Compose on DigitalOcean](../docker-compose/digitalocean.md)
 
 Once you have finished the above, come back here for directions on how to copy over the database from your old `sourcegraph/server` instance.
 
