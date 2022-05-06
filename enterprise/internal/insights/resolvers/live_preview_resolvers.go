@@ -13,6 +13,11 @@ import (
 )
 
 func (r *Resolver) SearchInsightLivePreview(ctx context.Context, args graphqlbackend.SearchInsightLivePreviewArgs) ([]graphqlbackend.SearchInsightLivePreviewSeriesResolver, error) {
+
+	if !args.Input.GeneratedFromCaptureGroups {
+		return nil, errors.New("live preview is currently only supported for generated series from capture groups")
+	}
+
 	previewArgs := graphqlbackend.InsightLivePreviewArgs{
 		Input: graphqlbackend.InsightLivePreviewInput{
 			RepositoryScope: args.Input.RepositoryScope,
