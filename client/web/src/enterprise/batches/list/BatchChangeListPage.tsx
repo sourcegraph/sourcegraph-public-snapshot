@@ -170,6 +170,14 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                             />
                         </div>
                         {error && <ConnectionError errors={[error.message]} />}
+                        {/*
+                            The connection list is a `div` instead of a `ul` because `ul` doesn't support css grid and we need to grid
+                            to live on the wrapper as opposed to each `BatchChangeNode`.
+
+                            This is because the current grid pattern gets broken when the individual child of the `ConnectionList` component
+                            has a grid.
+                            Discussion: https://github.com/sourcegraph/sourcegraph/pull/34716#pullrequestreview-959790114
+                        */}
                         <ConnectionList
                             as="div"
                             className={classNames(styles.grid, isExecutionEnabled ? styles.wide : styles.narrow)}
