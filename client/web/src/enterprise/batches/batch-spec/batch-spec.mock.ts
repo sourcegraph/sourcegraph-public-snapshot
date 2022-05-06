@@ -1,3 +1,7 @@
+import { MATCH_ANY_PARAMETERS, MockedResponses } from 'wildcard-mock-link'
+
+import { getDocumentNode } from '@sourcegraph/http-client'
+
 import {
     BatchSpecWorkspaceResolutionState,
     WorkspaceResolutionStatusResult,
@@ -9,6 +13,7 @@ import {
     BatchSpecState,
     BatchChangeState,
 } from '../../../graphql-operations'
+import { IMPORTING_CHANGESETS, WORKSPACES, WORKSPACE_RESOLUTION_STATUS } from '../create/backend'
 
 export const MOCK_USER_NAMESPACE = {
     __typename: 'User',
@@ -156,3 +161,57 @@ export const mockBatchSpecImportingChangesets = (importsCount: number): BatchSpe
         },
     },
 })
+
+export const UNSTARTED_CONNECTION_MOCKS: MockedResponses = [
+    {
+        request: {
+            query: getDocumentNode(WORKSPACES),
+            variables: MATCH_ANY_PARAMETERS,
+        },
+        result: { data: mockBatchSpecWorkspaces(0) },
+        nMatches: Number.POSITIVE_INFINITY,
+    },
+    {
+        request: {
+            query: getDocumentNode(IMPORTING_CHANGESETS),
+            variables: MATCH_ANY_PARAMETERS,
+        },
+        result: { data: mockBatchSpecImportingChangesets(0) },
+        nMatches: Number.POSITIVE_INFINITY,
+    },
+    {
+        request: {
+            query: getDocumentNode(WORKSPACE_RESOLUTION_STATUS),
+            variables: MATCH_ANY_PARAMETERS,
+        },
+        result: { data: UNSTARTED_RESOLUTION },
+        nMatches: Number.POSITIVE_INFINITY,
+    },
+]
+
+export const UNSTARTED_WITH_CACHE_CONNECTION_MOCKS: MockedResponses = [
+    {
+        request: {
+            query: getDocumentNode(WORKSPACES),
+            variables: MATCH_ANY_PARAMETERS,
+        },
+        result: { data: mockBatchSpecWorkspaces(50) },
+        nMatches: Number.POSITIVE_INFINITY,
+    },
+    {
+        request: {
+            query: getDocumentNode(IMPORTING_CHANGESETS),
+            variables: MATCH_ANY_PARAMETERS,
+        },
+        result: { data: mockBatchSpecImportingChangesets(20) },
+        nMatches: Number.POSITIVE_INFINITY,
+    },
+    {
+        request: {
+            query: getDocumentNode(WORKSPACE_RESOLUTION_STATUS),
+            variables: MATCH_ANY_PARAMETERS,
+        },
+        result: { data: mockWorkspaceResolutionStatus(BatchSpecWorkspaceResolutionState.COMPLETED) },
+        nMatches: Number.POSITIVE_INFINITY,
+    },
+]

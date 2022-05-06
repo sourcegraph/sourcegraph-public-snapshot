@@ -14,7 +14,8 @@ import {
     mockBatchSpecImportingChangesets,
     mockBatchSpecWorkspaces,
     mockWorkspaceResolutionStatus,
-    UNSTARTED_RESOLUTION,
+    UNSTARTED_CONNECTION_MOCKS,
+    UNSTARTED_WITH_CACHE_CONNECTION_MOCKS,
 } from '../../batch-spec.mock'
 import { BatchSpecContextProvider } from '../../BatchSpecContext'
 
@@ -24,37 +25,10 @@ const { add } = storiesOf('web/batches/batch-spec/edit/workspaces-preview/Worksp
     .addDecorator(story => <div className="p-3 container d-flex flex-column align-items-center">{story()}</div>)
     .addParameters({ chromatic: { disableSnapshot: true } })
 
-const UNSTARTED_CONNECTION_MOCKS = new WildcardMockLink([
-    {
-        request: {
-            query: getDocumentNode(WORKSPACES),
-            variables: MATCH_ANY_PARAMETERS,
-        },
-        result: { data: mockBatchSpecWorkspaces(0) },
-        nMatches: Number.POSITIVE_INFINITY,
-    },
-    {
-        request: {
-            query: getDocumentNode(IMPORTING_CHANGESETS),
-            variables: MATCH_ANY_PARAMETERS,
-        },
-        result: { data: mockBatchSpecImportingChangesets(0) },
-        nMatches: Number.POSITIVE_INFINITY,
-    },
-    {
-        request: {
-            query: getDocumentNode(WORKSPACE_RESOLUTION_STATUS),
-            variables: MATCH_ANY_PARAMETERS,
-        },
-        result: { data: UNSTARTED_RESOLUTION },
-        nMatches: Number.POSITIVE_INFINITY,
-    },
-])
-
 add('unstarted', () => (
     <WebStory>
         {props => (
-            <MockedTestProvider link={UNSTARTED_CONNECTION_MOCKS}>
+            <MockedTestProvider link={new WildcardMockLink(UNSTARTED_CONNECTION_MOCKS)}>
                 <BatchSpecContextProvider
                     batchChange={mockBatchChange({
                         batchSpecs: {
@@ -75,37 +49,10 @@ add('unstarted', () => (
     </WebStory>
 ))
 
-const UNSTARTED_WITH_CACHE_CONNECTION_MOCKS = new WildcardMockLink([
-    {
-        request: {
-            query: getDocumentNode(WORKSPACES),
-            variables: MATCH_ANY_PARAMETERS,
-        },
-        result: { data: mockBatchSpecWorkspaces(50) },
-        nMatches: Number.POSITIVE_INFINITY,
-    },
-    {
-        request: {
-            query: getDocumentNode(IMPORTING_CHANGESETS),
-            variables: MATCH_ANY_PARAMETERS,
-        },
-        result: { data: mockBatchSpecImportingChangesets(20) },
-        nMatches: Number.POSITIVE_INFINITY,
-    },
-    {
-        request: {
-            query: getDocumentNode(WORKSPACE_RESOLUTION_STATUS),
-            variables: MATCH_ANY_PARAMETERS,
-        },
-        result: { data: mockWorkspaceResolutionStatus(BatchSpecWorkspaceResolutionState.COMPLETED) },
-        nMatches: Number.POSITIVE_INFINITY,
-    },
-])
-
 add('unstarted, with cached connection result', () => (
     <WebStory>
         {props => (
-            <MockedTestProvider link={UNSTARTED_WITH_CACHE_CONNECTION_MOCKS}>
+            <MockedTestProvider link={new WildcardMockLink(UNSTARTED_WITH_CACHE_CONNECTION_MOCKS)}>
                 <BatchSpecContextProvider
                     batchChange={mockBatchChange({
                         batchSpecs: {
