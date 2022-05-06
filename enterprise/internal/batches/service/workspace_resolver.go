@@ -10,6 +10,7 @@ import (
 
 	"github.com/gobwas/glob"
 	"github.com/grafana/regexp"
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -316,8 +317,18 @@ func (wr *workspaceResolver) resolveRepositoriesMatchingQuery(ctx context.Contex
 	query = setDefaultQueryCount(query)
 
 	repoIDs := []api.RepoID{}
+	repoRevisions := make(map[api.RepoID]string)
 	repoFileMatches := make(map[api.RepoID]map[string]bool)
-	addRepoFilePatch := func(repoID api.RepoID, path string) {
+	addRepoFilePatch := func(repoID api.RepoID, commit, path string) {
+		if knownRev, ok := repoRevisions[repoID]; ok && knownRev != commit {
+			log15.Warn("Got repo results for multiple commits, this is unexpected", "repo", repoID, "rev1", knownRev, "rev2", commit)
+			// And live on and overwrite the known revision.
+			// TODO: Can this happen when the repo has multiple searchable branches.
+			repoRevisions[repoID] = commit
+		} else {
+			repoRevisions[repoID] = commit
+		}
+
 		repoMap, ok := repoFileMatches[repoID]
 		if !ok {
 			repoMap = make(map[string]bool)
@@ -334,13 +345,13 @@ func (wr *workspaceResolver) resolveRepositoriesMatchingQuery(ctx context.Contex
 				repoIDs = append(repoIDs, api.RepoID(m.RepositoryID))
 			case *streamhttp.EventContentMatch:
 				repoIDs = append(repoIDs, api.RepoID(m.RepositoryID))
-				addRepoFilePatch(api.RepoID(m.RepositoryID), m.Path)
+				addRepoFilePatch(api.RepoID(m.RepositoryID), m.Commit, m.Path)
 			case *streamhttp.EventPathMatch:
 				repoIDs = append(repoIDs, api.RepoID(m.RepositoryID))
-				addRepoFilePatch(api.RepoID(m.RepositoryID), m.Path)
+				addRepoFilePatch(api.RepoID(m.RepositoryID), m.Commit, m.Path)
 			case *streamhttp.EventSymbolMatch:
 				repoIDs = append(repoIDs, api.RepoID(m.RepositoryID))
-				addRepoFilePatch(api.RepoID(m.RepositoryID), m.Path)
+				addRepoFilePatch(api.RepoID(m.RepositoryID), m.Commit, m.Path)
 			}
 		}
 	}); err != nil {
@@ -367,6 +378,7 @@ func (wr *workspaceResolver) resolveRepositoriesMatchingQuery(ctx context.Contex
 			fileMatches = append(fileMatches, path)
 		}
 		sort.Strings(fileMatches)
+
 		rev, err := repoToRepoRevisionWithDefaultBranch(ctx, database.NewDBWith(wr.store), repo, fileMatches)
 		if err != nil {
 			// There is an edge-case where a repo might be returned by a search query that does not exist in gitserver yet.
@@ -374,6 +386,14 @@ func (wr *workspaceResolver) resolveRepositoriesMatchingQuery(ctx context.Contex
 				continue
 			}
 			return nil, err
+		}
+		// If we have searched a different commit than the default branch commit, we overwrite it here.
+		// There can be cases where indexed search lags behind latest main and then the search result paths
+		// can be incorrect for the latest head of the repo.
+		// TODO: This is not ideal. It does not verify the commit is actually part of the default branch.
+		// What if the user searched a different branch?
+		if commit, ok := repoRevisions[repo.ID]; ok {
+			rev.Commit = api.CommitID(commit)
 		}
 		revs = append(revs, rev)
 	}
