@@ -19,6 +19,7 @@ import { WORKSPACES_PER_PAGE_COUNT } from './useWorkspaces'
 import { WorkspacesPreviewListItem } from './WorkspacesPreviewListItem'
 
 interface WorkspacesPreviewListProps {
+    /** The current workspaces preview connection result used to render the list. */
     workspacesConnection: UseConnectionResult<
         PreviewHiddenBatchSpecWorkspaceFields | PreviewVisibleBatchSpecWorkspaceFields
     >
