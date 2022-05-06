@@ -51,11 +51,7 @@ export const enterpriseUserAreaRoutes: readonly UserAreaRoute[] = [
         render: ({ match, ...props }: UserAreaRouteContext & RouteComponentProps<{ batchChangeName: string }>) => (
             <EditBatchSpecPage
                 {...props}
-                batchChange={{
-                    name: match.params.batchChangeName,
-                    url: match.url.replace('/edit', ''),
-                    namespace: props.user,
-                }}
+                batchChange={{ name: match.params.batchChangeName, namespace: props.user.id }}
             />
         ),
         condition: ({ batchChangesEnabled, batchChangesExecutionEnabled }) =>

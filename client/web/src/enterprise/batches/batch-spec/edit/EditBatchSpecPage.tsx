@@ -29,26 +29,21 @@ import layoutStyles from '../Layout.module.scss'
 import styles from './EditBatchSpecPage.module.scss'
 
 export interface EditBatchSpecPageProps extends SettingsCascadeProps<Settings>, ThemeProps {
-    batchChange: { name: string; url: string; namespace: { id: Scalars['ID'] } }
+    batchChange: { name: string; namespace: Scalars['ID'] }
 }
 
 export const EditBatchSpecPage: React.FunctionComponent<EditBatchSpecPageProps> = ({ batchChange, ...props }) => {
-    const variables = useMemo(() => ({ namespace: batchChange.namespace.id, name: batchChange.name }), [
-        batchChange.namespace.id,
-        batchChange.name,
-    ])
-
     const { data, error, loading, refetch } = useQuery<GetBatchChangeToEditResult, GetBatchChangeToEditVariables>(
         GET_BATCH_CHANGE_TO_EDIT,
         {
-            variables,
+            variables: batchChange,
             // Cache this data but always re-request it in the background when we revisit
             // this page to pick up newer changes.
             fetchPolicy: 'cache-and-network',
         }
     )
 
-    const refetchBatchChange = useCallback(() => refetch(variables), [refetch, variables])
+    const refetchBatchChange = useCallback(() => refetch(batchChange), [refetch, batchChange])
 
     if (loading && !data) {
         return (
