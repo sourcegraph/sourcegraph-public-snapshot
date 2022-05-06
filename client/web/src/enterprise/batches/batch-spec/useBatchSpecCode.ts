@@ -72,7 +72,7 @@ export interface UseBatchSpecCodeResult {
  * @param name The name of the batch change, which is used for validation.
  */
 export const useBatchSpecCode = (originalInput: string, name: string): UseBatchSpecCodeResult => {
-    const validateSpec = useMemo(() => {
+    const validateFunction = useMemo(() => {
         const schemaID = `${batchSpecSchemaJSON.$id}/${name}`
 
         const existingValidateFunction = ajv.getSchema(schemaID)
@@ -96,57 +96,62 @@ export const useBatchSpecCode = (originalInput: string, name: string): UseBatchS
         return ajv.compile<BatchSpec>(schemaJSONWithName)
     }, [name])
 
+    const validate = useCallback(
+        (code: string): [isValid: boolean, error?: string] => {
+            try {
+                const parsed = loadYAML(code)
+                const valid = validateFunction(parsed)
+                const hasOnOrImport = hasOnOrImportChangesetsStatement(code)
+
+                const validationError =
+                    !valid && validateFunction.errors?.length
+                        ? `The entered spec is invalid:\n  * ${validateFunction.errors.map(formatError).join('\n  * ')}`
+                        : !hasOnOrImport
+                        ? 'The entered spec must contain either an "on:" or "importingChangesets:" statement.'
+                        : undefined
+
+                return [valid && hasOnOrImport, validationError]
+            } catch (error: unknown) {
+                // Try to extract the error message.
+                const validationError =
+                    error && typeof error === 'object' && 'reason' in error
+                        ? (error as { reason: string }).reason
+                        : 'Unknown validation error occurred.'
+
+                return [false, validationError]
+            }
+        },
+        [validateFunction]
+    )
+
     const [code, setCode] = useState<string>(() =>
         // Start with the hello world sample code initially if the user hasn't written any
         // batch spec code yet, otherwise show the latest spec code.
         isMinimalBatchSpec(originalInput) ? insertNameIntoLibraryItem(helloWorldSample, name) : originalInput
     )
-    const debouncedCode = useDebounce(code, 250)
+    const debouncedCode = useDebounce(code, DEBOUNCE_AMOUNT)
 
-    const [validationError, setValidationErrors] = useState<string>()
-    const [updateError, setUpdateError] = useState<string>()
+    const [validationError, setValidationErrors] = useState<string | undefined>(() => validate(code)[1])
+    const [updateError, setUpdateError] = useState<string | undefined>()
 
     const clearErrors = useCallback(() => {
         setValidationErrors(undefined)
         setUpdateError(undefined)
     }, [])
 
-    const [isValid, setIsValid] = useState<boolean | 'unknown'>('unknown')
+    const [isValid, setIsValid] = useState<boolean | 'unknown'>(() => validate(code)[0])
 
-    const validate = useCallback(
+    const revalidate = useCallback(
         (newCode: string) => {
-            try {
-                const parsed = loadYAML(newCode)
-                const valid = validateSpec(parsed)
-                const hasOnOrImport = hasOnOrImportChangesetsStatement(newCode)
-                setIsValid(valid && hasOnOrImport)
-                if (!valid && validateSpec.errors?.length) {
-                    setValidationErrors(
-                        `The entered spec is invalid:\n  * ${validateSpec.errors.map(formatError).join('\n  * ')}`
-                    )
-                } else if (!hasOnOrImport) {
-                    setValidationErrors(
-                        'The entered spec must contain either an "on:" or "importingChangesets:" statement.'
-                    )
-                }
-            } catch (error: unknown) {
-                setIsValid(false)
-                // Try to extract the error message.
-                if (error && typeof error === 'object' && 'reason' in error) {
-                    setValidationErrors((error as { reason: string }).reason)
-                } else {
-                    setValidationErrors('unknown validation error occurred')
-                }
-            }
+            const [isValid, validationError] = validate(newCode)
+            setIsValid(isValid)
+            setValidationErrors(validationError)
         },
-        [validateSpec]
+        [validate]
     )
 
-    // Run validation once for initial batch spec code.
-    useEffect(() => validate(originalInput), [originalInput, validate])
-
-    // Debounce validation to avoid excessive computation.
-    const debouncedValidate = useMemo(() => debounce(validate, DEBOUNCE_AMOUNT), [validate])
+    // Debounce revalidation to avoid excessive computation.
+    const debouncedValidate = useMemo(() => debounce(revalidate, DEBOUNCE_AMOUNT), [revalidate])
 
     // Stop the debounced function on dismount.
     useEffect(
