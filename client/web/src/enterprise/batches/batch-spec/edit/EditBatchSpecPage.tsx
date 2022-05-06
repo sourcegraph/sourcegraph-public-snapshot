@@ -103,7 +103,7 @@ const EditBatchSpecPageContent: React.FunctionComponent<React.PropsWithChildren<
 
     return (
         <div className={layoutStyles.pageContainer}>
-            {insightTitle && <InsightTemplatesBanner insightTitle={insightTitle} type="create" />}
+            {insightTitle && <InsightTemplatesBanner insightTitle={insightTitle} type="create" className="mb-3" />}
             <div className={layoutStyles.headerContainer}>
                 <BatchChangeHeader
                     namespace={{
