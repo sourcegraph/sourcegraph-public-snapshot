@@ -13,11 +13,9 @@ import (
 )
 
 func (r *Resolver) SearchInsightLivePreview(ctx context.Context, args graphqlbackend.SearchInsightLivePreviewArgs) ([]graphqlbackend.SearchInsightLivePreviewSeriesResolver, error) {
-
 	if !args.Input.GeneratedFromCaptureGroups {
 		return nil, errors.New("live preview is currently only supported for generated series from capture groups")
 	}
-
 	previewArgs := graphqlbackend.InsightLivePreviewArgs{
 		Input: graphqlbackend.InsightLivePreviewInput{
 			RepositoryScope: args.Input.RepositoryScope,
@@ -35,7 +33,6 @@ func (r *Resolver) SearchInsightLivePreview(ctx context.Context, args graphqlbac
 }
 
 func (r *Resolver) InsightLivePreview(ctx context.Context, args graphqlbackend.InsightLivePreviewArgs) ([]graphqlbackend.SearchInsightLivePreviewSeriesResolver, error) {
-
 	if args.Input.TimeScope.StepInterval == nil {
 		return nil, errors.New("live preview currently only supports a time interval time scope")
 	}
