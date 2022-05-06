@@ -66,6 +66,7 @@ func parseProvider(p *schema.GitHubAuthProvider, db database.DB, sourceCfg schem
 					clientID:    p.ClientID,
 					allowSignup: p.AllowSignup,
 					allowOrgs:   p.AllowOrgs,
+					allowTeams:  p.AllowTeams,
 				}, sessionKey),
 				http.HandlerFunc(failureHandler),
 			)

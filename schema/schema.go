@@ -727,6 +727,8 @@ type GitHubAuthProvider struct {
 	AllowOrgs []string `json:"allowOrgs,omitempty"`
 	// AllowSignup description: Allows new visitors to sign up for accounts via GitHub authentication. If false, users signing in via GitHub must have an existing Sourcegraph account, which will be linked to their GitHub identity after sign-in.
 	AllowSignup bool `json:"allowSignup,omitempty"`
+	// AllowTeams description: Restricts new logins to members of these GitHub teams. Existing sessions won't be invalidated. Leave empty or unset for no team restrictions.
+	AllowTeams []string `json:"allowTeams,omitempty"`
 	// ClientID description: The Client ID of the GitHub OAuth app, accessible from https://github.com/settings/developers (or the same path on GitHub Enterprise).
 	ClientID string `json:"clientID"`
 	// ClientSecret description: The Client Secret of the GitHub OAuth app, accessible from https://github.com/settings/developers (or the same path on GitHub Enterprise).
