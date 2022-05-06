@@ -49,11 +49,7 @@ export const enterpriseOrganizationAreaRoutes: readonly OrgAreaRoute[] = [
         render: ({ match, ...props }: OrgAreaPageProps & RouteComponentProps<{ batchChangeName: string }>) => (
             <EditBatchSpecPage
                 {...props}
-                batchChange={{
-                    name: match.params.batchChangeName,
-                    url: match.url.replace('/edit', ''),
-                    namespace: props.org,
-                }}
+                batchChange={{ name: match.params.batchChangeName, namespace: props.org.id }}
             />
         ),
         condition: ({ batchChangesEnabled, batchChangesExecutionEnabled }) =>
