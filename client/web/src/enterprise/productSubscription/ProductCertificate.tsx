@@ -29,7 +29,7 @@ interface Props {
  * In most cases, you should use a component that wraps this component and handles fetching the data to display.
  * Such components exist; check this component's TypeScript references.
  */
-export const ProductCertificate: React.FunctionComponent<Props> = ({
+export const ProductCertificate: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     title,
     subtitle,
     detail,

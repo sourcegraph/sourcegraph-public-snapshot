@@ -61,10 +61,9 @@ const createCodeMonitorUrl = (example: ExampleCodeMonitor): string => {
     return `/code-monitoring/new?${searchParameters.toString()}`
 }
 
-export const CodeMonitoringGettingStarted: React.FunctionComponent<CodeMonitoringGettingStartedProps> = ({
-    isLightTheme,
-    isSignedIn,
-}) => {
+export const CodeMonitoringGettingStarted: React.FunctionComponent<
+    React.PropsWithChildren<CodeMonitoringGettingStartedProps>
+> = ({ isLightTheme, isSignedIn }) => {
     const assetsRoot = window.context?.assetsRoot || ''
 
     return (

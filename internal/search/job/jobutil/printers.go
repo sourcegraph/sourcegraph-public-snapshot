@@ -41,17 +41,17 @@ func SexpFormat(j job.Job, sep, indent string) string {
 		}
 		switch j := j.(type) {
 		case
-			*zoekt.ZoektRepoSubsetSearch,
-			*zoekt.ZoektSymbolSearch,
-			*searcher.Searcher,
-			*searcher.SymbolSearcher,
+			*zoekt.ZoektRepoSubsetSearchJob,
+			*zoekt.ZoektSymbolSearchJob,
+			*searcher.SearcherJob,
+			*searcher.SymbolSearcherJob,
 			*run.RepoSearchJob,
-			*zoekt.GlobalSearch,
-			*structural.StructuralSearch,
+			*zoekt.ZoektGlobalSearchJob,
+			*structural.StructuralSearchJob,
 			*commit.CommitSearchJob,
-			*symbol.RepoUniverseSymbolSearch,
+			*symbol.RepoUniverseSymbolSearchJob,
 			*repos.ComputeExcludedReposJob,
-			*noopJob:
+			*NoopJob:
 			b.WriteString(j.Name())
 
 		case *repoPagerJob:
@@ -201,17 +201,17 @@ func PrettyMermaid(j job.Job) string {
 		}
 		switch j := j.(type) {
 		case
-			*zoekt.ZoektRepoSubsetSearch,
-			*zoekt.ZoektSymbolSearch,
-			*searcher.Searcher,
-			*searcher.SymbolSearcher,
+			*zoekt.ZoektRepoSubsetSearchJob,
+			*zoekt.ZoektSymbolSearchJob,
+			*searcher.SearcherJob,
+			*searcher.SymbolSearcherJob,
 			*run.RepoSearchJob,
-			*zoekt.GlobalSearch,
-			*structural.StructuralSearch,
+			*zoekt.ZoektGlobalSearchJob,
+			*structural.StructuralSearchJob,
 			*commit.CommitSearchJob,
-			*symbol.RepoUniverseSymbolSearch,
+			*symbol.RepoUniverseSymbolSearchJob,
 			*repos.ComputeExcludedReposJob,
-			*noopJob:
+			*NoopJob:
 			writeNode(b, depth, RoundedStyle, &id, j.Name())
 
 		case *repoPagerJob:
@@ -319,17 +319,17 @@ func toJSON(j job.Job, verbose bool) interface{} {
 		}
 		switch j := j.(type) {
 		case
-			*zoekt.ZoektRepoSubsetSearch,
-			*zoekt.ZoektSymbolSearch,
-			*searcher.Searcher,
-			*searcher.SymbolSearcher,
+			*zoekt.ZoektRepoSubsetSearchJob,
+			*zoekt.ZoektSymbolSearchJob,
+			*searcher.SearcherJob,
+			*searcher.SymbolSearcherJob,
 			*run.RepoSearchJob,
-			*zoekt.GlobalSearch,
-			*structural.StructuralSearch,
+			*zoekt.ZoektGlobalSearchJob,
+			*structural.StructuralSearchJob,
 			*commit.CommitSearchJob,
-			*symbol.RepoUniverseSymbolSearch,
+			*symbol.RepoUniverseSymbolSearchJob,
 			*repos.ComputeExcludedReposJob,
-			*noopJob:
+			*NoopJob:
 			if verbose {
 				return map[string]interface{}{j.Name(): j}
 			}

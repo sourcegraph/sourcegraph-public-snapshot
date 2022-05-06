@@ -14,12 +14,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 func main() {
 	if os.Args[len(os.Args)-1] == "--generate-bash-completion" {
 		batchCompletionMode = true
 	}
+
+	log.Init(log.Resource{
+		Name: "sg",
+	})
 
 	if err := sg.RunContext(context.Background(), os.Args); err != nil {
 		fmt.Printf("error: %s\n", err)

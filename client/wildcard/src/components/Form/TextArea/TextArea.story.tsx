@@ -35,7 +35,7 @@ const config: Meta = {
 
 export default config
 
-export const TextAreaExamples: React.FunctionComponent = () => {
+export const TextAreaExamples: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => {
     const [value, setValue] = useState('')
 
     const handleChange = useCallback<React.ChangeEventHandler<HTMLTextAreaElement>>(event => {

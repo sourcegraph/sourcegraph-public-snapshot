@@ -57,7 +57,7 @@ export interface GitCommitNodeProps {
 }
 
 /** Displays a Git commit. */
-export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
+export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitCommitNodeProps>> = ({
     node,
     afterElement,
     className,

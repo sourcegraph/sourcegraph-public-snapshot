@@ -39,7 +39,7 @@ interface RepositoryContributorNodeProps extends QuerySpec {
     globbing: boolean
 }
 
-const RepositoryContributorNode: React.FunctionComponent<RepositoryContributorNodeProps> = ({
+const RepositoryContributorNode: React.FunctionComponent<React.PropsWithChildren<RepositoryContributorNodeProps>> = ({
     node,
     repoName,
     revisionRange,
@@ -352,9 +352,10 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                     </CardBody>
                 </Card>
                 <FilteredContributorsConnection
-                    listClassName="list-group list-group-flush"
+                    listClassName="list-group list-group-flush test-filtered-contributors-connection"
                     noun="contributor"
                     pluralNoun="contributors"
+                    listComponent="div"
                     queryConnection={this.queryRepositoryContributors}
                     nodeComponent={RepositoryContributorNode}
                     nodeComponentProps={{

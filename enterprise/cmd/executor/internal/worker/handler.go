@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/ignite"
@@ -18,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type handler struct {
@@ -39,7 +39,7 @@ var (
 // process - refuse to dequeue a job for now so that we do not over-commit on VMs and cause issues
 // with keeping our heartbeats due to machine load. We'll continue to check this condition on the
 // polling interval
-func (h *handler) PreDequeue(ctx context.Context) (dequeueable bool, extraDequeueArguments interface{}, err error) {
+func (h *handler) PreDequeue(ctx context.Context, logger log.Logger) (dequeueable bool, extraDequeueArguments interface{}, err error) {
 	if !h.options.FirecrackerOptions.Enabled {
 		return true, nil, nil
 	}
@@ -53,14 +53,20 @@ func (h *handler) PreDequeue(ctx context.Context) (dequeueable bool, extraDequeu
 		return true, nil, nil
 	}
 
-	log15.Warn("Orphaned VMs detected - refusing to dequeue a new job until it's cleaned up", "numRunningVMs", len(runningVMsByName), "numHandlers", h.options.WorkerOptions.NumHandlers)
+	logger.Warn("Orphaned VMs detected - refusing to dequeue a new job until it's cleaned up",
+		log.Int("numRunningVMs", len(runningVMsByName)),
+		log.Int("numHandlers", h.options.WorkerOptions.NumHandlers))
 	return false, nil, nil
 }
 
 // Handle clones the target code into a temporary directory, invokes the target indexer in a
 // fresh docker container, and uploads the results to the external frontend API.
-func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err error) {
+func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
 	job := record.(executor.Job)
+	logger = logger.With(
+		log.Int("jobID", job.ID),
+		log.String("repositoryName", job.RepositoryName),
+		log.String("commit", job.Commit))
 
 	start := time.Now()
 	defer func() {
@@ -75,9 +81,9 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 	// interpolate into the command. No command that we run on the host leaks environment
 	// variables, and the user-specified commands (which could leak their environment) are
 	// run in a clean VM.
-	logger := command.NewLogger(h.store, job, record.RecordID(), union(h.options.RedactedValues, job.RedactedValues))
+	commandLogger := command.NewLogger(h.store, job, record.RecordID(), union(h.options.RedactedValues, job.RedactedValues))
 	defer func() {
-		flushErr := logger.Flush()
+		flushErr := commandLogger.Flush()
 		if flushErr != nil {
 			if err != nil {
 				err = errors.Append(err, flushErr)
@@ -90,10 +96,9 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 	// Create a working directory for this job which will be removed once the job completes.
 	// If a repository is supplied as part of the job configuration, it will be cloned into
 	// the working directory.
+	logger.Info("Creating workspace")
 
-	log15.Info("Creating workspace", "jobID", job.ID, "repositoryName", job.RepositoryName, "commit", job.Commit)
-
-	hostRunner := h.runnerFactory("", logger, command.Options{}, h.operations)
+	hostRunner := h.runnerFactory("", commandLogger, command.Options{}, h.operations)
 	workingDirectory, err := h.prepareWorkspace(ctx, hostRunner, job.RepositoryName, job.Commit)
 	if err != nil {
 		return errors.Wrap(err, "failed to prepare workspace")
@@ -124,7 +129,7 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 		FirecrackerOptions: h.options.FirecrackerOptions,
 		ResourceOptions:    h.options.ResourceOptions,
 	}
-	runner := h.runnerFactory(workingDirectory, logger, options, h.operations)
+	runner := h.runnerFactory(workingDirectory, commandLogger, options, h.operations)
 
 	// Construct a map from filenames to file content that should be accessible to jobs
 	// within the workspace. This consists of files supplied within the job record itself,
@@ -152,11 +157,11 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 		workspaceFileContentsByPath[path] = buildScript(dockerStep)
 	}
 
-	if err := writeFiles(workspaceFileContentsByPath, logger); err != nil {
+	if err := writeFiles(workspaceFileContentsByPath, commandLogger); err != nil {
 		return errors.Wrap(err, "failed to write virtual machine files")
 	}
 
-	log15.Info("Setting up VM", "jobID", job.ID, "repositoryName", job.RepositoryName, "commit", job.Commit)
+	logger.Info("Setting up VM")
 
 	// Setup Firecracker VM (if enabled)
 	if err := runner.Setup(ctx); err != nil {
@@ -182,7 +187,7 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 			Operation:  h.operations.Exec,
 		}
 
-		log15.Info(fmt.Sprintf("Running docker step #%d", i), "jobID", job.ID, "repositoryName", job.RepositoryName, "commit", job.Commit)
+		logger.Info(fmt.Sprintf("Running docker step #%d", i))
 
 		if err := runner.Run(ctx, dockerStepCommand); err != nil {
 			return errors.Wrap(err, "failed to perform docker step")
@@ -191,7 +196,7 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 
 	// Invoke each src-cli step sequentially
 	for i, cliStep := range job.CliSteps {
-		log15.Info(fmt.Sprintf("Running src-cli step #%d", i), "jobID", job.ID, "repositoryName", job.RepositoryName, "commit", job.Commit)
+		logger.Info(fmt.Sprintf("Running src-cli step #%d", i))
 
 		cliStepCommand := command.CommandSpec{
 			Key:       fmt.Sprintf("step.src.%d", i),

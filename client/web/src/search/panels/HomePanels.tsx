@@ -75,7 +75,7 @@ export const HOME_PANELS_QUERY = gql`
     ${collaboratorsFragment}
 `
 
-export const HomePanels: React.FunctionComponent<Props> = (props: Props) => {
+export const HomePanels: React.FunctionComponent<React.PropsWithChildren<Props>> = (props: Props) => {
     const userId = props.authenticatedUser?.id || ''
     const showCollaborators = props.showCollaborators
     const showSavedSearches = !props.isSourcegraphDotCom
@@ -181,7 +181,7 @@ interface CollaboratorsTabPanelProps extends Props {
     collaboratorsFragment: null | CollaboratorsFragment
 }
 
-const CollaboratorsTabPanel: React.FunctionComponent<CollaboratorsTabPanelProps> = ({
+const CollaboratorsTabPanel: React.FunctionComponent<React.PropsWithChildren<CollaboratorsTabPanelProps>> = ({
     data,
     collaboratorsFragment,
     ...props

@@ -21,7 +21,7 @@ interface Props extends TelemetryProps {
  * A search button with a dropdown with related links. It must be wrapped in a form whose onSubmit
  * handler performs the search.
  */
-export const SearchButton: React.FunctionComponent<Props> = ({
+export const SearchButton: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     hideHelpButton,
     className,
     isSourcegraphDotCom,

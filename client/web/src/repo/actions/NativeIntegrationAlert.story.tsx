@@ -27,9 +27,9 @@ const config: Meta = {
 
 export default config
 
-const NativeIntegrationAlertWrapper: React.FunctionComponent<{ serviceKind: ExternalServiceKind }> = ({
-    serviceKind,
-}) => (
+const NativeIntegrationAlertWrapper: React.FunctionComponent<
+    React.PropsWithChildren<{ serviceKind: ExternalServiceKind }>
+> = ({ serviceKind }) => (
     <NativeIntegrationAlert
         onAlertDismissed={onAlertDismissed}
         page="search"

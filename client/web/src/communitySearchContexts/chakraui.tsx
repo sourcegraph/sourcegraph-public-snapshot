@@ -27,5 +27,5 @@ export const chakraui: CommunitySearchContextMetadata = {
 }
 
 export const ChakraUICommunitySearchContextPage: React.FunctionComponent<
-    Omit<CommunitySearchContextPageProps, 'communitySearchContextMetadata'>
+    React.PropsWithChildren<Omit<CommunitySearchContextPageProps, 'communitySearchContextMetadata'>>
 > = props => <CommunitySearchContextPage {...props} communitySearchContextMetadata={chakraui} />

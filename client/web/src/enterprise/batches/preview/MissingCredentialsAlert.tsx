@@ -12,10 +12,9 @@ export interface MissingCredentialsAlertProps {
     authenticatedUser: Pick<AuthenticatedUser, 'url'>
 }
 
-export const MissingCredentialsAlert: React.FunctionComponent<MissingCredentialsAlertProps> = ({
-    viewerBatchChangesCodeHosts,
-    authenticatedUser,
-}) => {
+export const MissingCredentialsAlert: React.FunctionComponent<
+    React.PropsWithChildren<MissingCredentialsAlertProps>
+> = ({ viewerBatchChangesCodeHosts, authenticatedUser }) => {
     if (viewerBatchChangesCodeHosts.totalCount === 0) {
         return <></>
     }

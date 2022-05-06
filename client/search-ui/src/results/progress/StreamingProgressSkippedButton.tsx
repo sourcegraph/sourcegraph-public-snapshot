@@ -11,7 +11,7 @@ import { StreamingProgressSkippedPopover } from './StreamingProgressSkippedPopov
 import styles from './StreamingProgressSkippedButton.module.scss'
 
 export const StreamingProgressSkippedButton: React.FunctionComponent<
-    Pick<StreamingProgressProps, 'progress' | 'onSearchAgain'>
+    React.PropsWithChildren<Pick<StreamingProgressProps, 'progress' | 'onSearchAgain'>>
 > = ({ progress, onSearchAgain }) => {
     const [isOpen, setIsOpen] = useState(false)
 

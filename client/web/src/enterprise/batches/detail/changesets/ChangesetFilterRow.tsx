@@ -21,7 +21,7 @@ export interface ChangesetFilterRowProps {
     onFiltersChange: (newFilters: ChangesetFilters) => void
 }
 
-export const ChangesetFilterRow: React.FunctionComponent<ChangesetFilterRowProps> = ({
+export const ChangesetFilterRow: React.FunctionComponent<React.PropsWithChildren<ChangesetFilterRowProps>> = ({
     history,
     location,
     onFiltersChange,

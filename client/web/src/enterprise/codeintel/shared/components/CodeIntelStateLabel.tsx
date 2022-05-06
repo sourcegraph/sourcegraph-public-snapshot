@@ -14,7 +14,11 @@ export interface CodeIntelStateLabelProps {
 
 const labelClassNames = classNames(styles.label, 'text-muted')
 
-export const CodeIntelStateLabel: FunctionComponent<CodeIntelStateLabelProps> = ({ state, placeInQueue, className }) =>
+export const CodeIntelStateLabel: FunctionComponent<React.PropsWithChildren<CodeIntelStateLabelProps>> = ({
+    state,
+    placeInQueue,
+    className,
+}) =>
     state === LSIFUploadState.UPLOADING ? (
         <span className={classNames(labelClassNames, className)}>Uploading</span>
     ) : state === LSIFUploadState.DELETING ? (
@@ -37,5 +41,6 @@ export interface CodeIntelStateLabelPlaceInQueueProps {
     placeInQueue?: number | null
 }
 
-const CodeIntelStateLabelPlaceInQueue: FunctionComponent<CodeIntelStateLabelPlaceInQueueProps> = ({ placeInQueue }) =>
-    placeInQueue ? <span className={styles.block}>(#{placeInQueue} in line)</span> : <></>
+const CodeIntelStateLabelPlaceInQueue: FunctionComponent<
+    React.PropsWithChildren<CodeIntelStateLabelPlaceInQueueProps>
+> = ({ placeInQueue }) => (placeInQueue ? <span className={styles.block}>(#{placeInQueue} in line)</span> : <></>)

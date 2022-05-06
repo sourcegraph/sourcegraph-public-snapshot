@@ -37,7 +37,10 @@ const sortBySeverity = (a: Skipped, b: Skipped): number => {
     return aSev - bSev
 }
 
-const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; startOpen: boolean }> = ({ skipped, startOpen }) => {
+const SkippedMessage: React.FunctionComponent<React.PropsWithChildren<{ skipped: Skipped; startOpen: boolean }>> = ({
+    skipped,
+    startOpen,
+}) => {
     // Reactstrap is preventing default behavior on all non-DropdownItem elements inside a Dropdown,
     // so we need to stop propagation to allow normal behavior (e.g. enter and space to activate buttons)
     // See Reactstrap bug: https://github.com/reactstrap/reactstrap/issues/2099
@@ -100,7 +103,7 @@ const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; startOpen: boo
 }
 
 export const StreamingProgressSkippedPopover: React.FunctionComponent<
-    Pick<StreamingProgressProps, 'progress' | 'onSearchAgain'>
+    React.PropsWithChildren<Pick<StreamingProgressProps, 'progress' | 'onSearchAgain'>>
 > = ({ progress, onSearchAgain }) => {
     const [selectedSuggestedSearches, setSelectedSuggestedSearches] = useState(new Set<string>())
     const submitHandler = useCallback(
