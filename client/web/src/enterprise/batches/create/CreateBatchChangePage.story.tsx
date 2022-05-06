@@ -11,7 +11,11 @@ import { WebStory } from '../../../components/WebStory'
 import { CreateBatchChangePage } from './CreateBatchChangePage'
 
 const { add } = storiesOf('web/batches/create/CreateBatchChangePage', module)
-    .addDecorator(story => <div className="p-3 w-100">{story()}</div>)
+    .addDecorator(story => (
+        <div className="p-3" style={{ height: '95vh', width: '100%' }}>
+            {story()}
+        </div>
+    ))
     .addParameters({
         chromatic: {
             disableSnapshot: false,
@@ -43,22 +47,20 @@ const FIXTURE_USER: SettingsUserSubject = {
 add('experimental execution enabled', () => (
     <WebStory>
         {props => (
-            <div style={{ height: '95vh', width: '100%' }}>
-                <CreateBatchChangePage
-                    headingElement="h1"
-                    {...props}
-                    settingsCascade={{
-                        ...EMPTY_SETTINGS_CASCADE,
-                        final: {
-                            experimentalFeatures: { batchChangesExecution: true },
-                        },
-                        subjects: [
-                            { subject: FIXTURE_ORG, settings: { a: 1 }, lastID: 1 },
-                            { subject: FIXTURE_USER, settings: { b: 2 }, lastID: 2 },
-                        ],
-                    }}
-                />
-            </div>
+            <CreateBatchChangePage
+                headingElement="h1"
+                {...props}
+                settingsCascade={{
+                    ...EMPTY_SETTINGS_CASCADE,
+                    final: {
+                        experimentalFeatures: { batchChangesExecution: true },
+                    },
+                    subjects: [
+                        { subject: FIXTURE_ORG, settings: { a: 1 }, lastID: 1 },
+                        { subject: FIXTURE_USER, settings: { b: 2 }, lastID: 2 },
+                    ],
+                }}
+            />
         )}
     </WebStory>
 ))
