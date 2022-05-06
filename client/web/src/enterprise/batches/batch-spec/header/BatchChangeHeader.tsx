@@ -12,7 +12,7 @@ interface BatchChangeHeaderProps {
     /** The secondary title to use in the `PageHeader`, after the namespace. */
     title: { to?: string; text: string }
     /** The description to use in the `PageHeader`, under the namespace and title row. */
-    description?: string | null
+    description?: React.ReactNode
 }
 
 export const BatchChangeHeader: React.FC<BatchChangeHeaderProps> = ({ namespace, title, description }) => (
