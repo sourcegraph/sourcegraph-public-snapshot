@@ -264,13 +264,17 @@ const CodeMirrorQueryInput: React.FunctionComponent<React.PropsWithChildren<Code
             useMemo(
                 () => [
                     EditorView.darkTheme.of(isLightTheme === false),
-                    parseInputAsQuery(),
+                    parseInputAsQuery({ patternType, interpretComments }),
                     tokenHighlight,
                     queryDiagnostic,
                     tokenInfo(),
                     highlightFocusedFilter,
                     ...extensions,
                 ],
+                // patternType and interpretComments are updated via a
+                // transaction since there is no need to re-initialize all
+                // extensions
+                // eslint-disable-next-line react-hooks/exhaustive-deps
                 [isLightTheme, extensions]
             )
         )
