@@ -3,12 +3,12 @@ import { Meta, Story } from '@storybook/react'
 
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
-import { WebStory } from '../../../../../../../../components/WebStory'
-import { GetSearchContextsResult } from '../../../../../../../../graphql-operations'
-import { InsightFilters } from '../../../../../../core'
+import { WebStory } from '../../../../../../../../../components/WebStory'
+import { GetSearchContextsResult } from '../../../../../../../../../graphql-operations'
+import { InsightFilters } from '../../../../../../../core'
+import { SEARCH_CONTEXT_GQL } from '../search-context/DrillDownSearchContextFilter'
 
 import { DrillDownInsightFilters, FilterSectionVisualMode } from './DrillDownInsightFilters'
-import { SEARCH_CONTEXT_GQL } from './search-context/DrillDownSearchContextFilter'
 
 const defaultStory: Meta = {
     title: 'web/insights/DrillDownInsightFilters',
