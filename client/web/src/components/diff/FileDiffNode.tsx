@@ -97,10 +97,21 @@ export const FileDiffNode: React.FunctionComponent<React.PropsWithChildren<FileD
     return (
         <>
             {/* The empty <a> tag is to allow users to anchor links to the top of this file diff node */}
-            <Link to="" id={anchor} aria-hidden={true} />
+            {/*
+                a11y-ignore
+                Rule: "aria-hidden-focus" (ARIA hidden element must not contain focusable elements)
+                GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
+            */}
+            <Link className="a11y-ignore" to="" id={anchor} aria-hidden={true} />
             <div className={classNames('test-file-diff-node', styles.fileDiffNode, className)}>
                 <div className={styles.header}>
-                    <Button variant="icon" className="mr-2" onClick={toggleExpand} size="sm">
+                    <Button
+                        aria-label={expanded ? 'Toggle down icon' : 'Toggle right icon'}
+                        variant="icon"
+                        className="mr-2"
+                        onClick={toggleExpand}
+                        size="sm"
+                    >
                         <Icon as={expanded ? ChevronDownIcon : ChevronRightIcon} />
                     </Button>
                     <div className={classNames('align-items-baseline', styles.headerPathStat)}>

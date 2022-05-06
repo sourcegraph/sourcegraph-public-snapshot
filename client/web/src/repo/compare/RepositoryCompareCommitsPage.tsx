@@ -97,6 +97,7 @@ export class RepositoryCompareCommitsPage extends React.PureComponent<Props> {
                     <CardHeader>Commits</CardHeader>
                     <FilteredConnection<GitCommitFields, Pick<GitCommitNodeProps, 'className' | 'compact'>>
                         listClassName="list-group list-group-flush"
+                        listComponent="div"
                         noun="commit"
                         pluralNoun="commits"
                         compact={true}
