@@ -23,10 +23,12 @@ import (
 )
 
 type Service struct {
-	sandboxService SandboxService
-	gitService     GitService
-	limiter        *rate.Limiter
-	operations     *operations
+	sandboxService                  SandboxService
+	gitService                      GitService
+	limiter                         *rate.Limiter
+	maximumFilesWithContentCount    int
+	maximumFileWithContentSizeBytes int
+	operations                      *operations
 }
 
 type indexJobOrHint struct {
@@ -52,13 +54,17 @@ func newService(
 	sandboxService SandboxService,
 	gitService GitService,
 	limiter *rate.Limiter,
+	maximumFilesWithContentCount int,
+	maximumFileWithContentSizeBytes int,
 	observationContext *observation.Context,
 ) *Service {
 	return &Service{
-		sandboxService: sandboxService,
-		gitService:     gitService,
-		limiter:        limiter,
-		operations:     newOperations(observationContext),
+		sandboxService:                  sandboxService,
+		gitService:                      gitService,
+		limiter:                         limiter,
+		maximumFilesWithContentCount:    maximumFilesWithContentCount,
+		maximumFileWithContentSizeBytes: maximumFileWithContentSizeBytes,
+		operations:                      newOperations(observationContext),
 	}
 }
 
@@ -333,9 +339,6 @@ func (s *Service) resolveFileContents(
 
 	contentsByPath := map[string]string{}
 
-	N := 50
-	M := 5000
-
 	tr := tar.NewReader(rc)
 	for {
 		header, err := tr.Next()
@@ -347,11 +350,11 @@ func (s *Service) resolveFileContents(
 			break
 		}
 
-		if int(header.Size) > M {
-			return nil, errors.Newf("file too big man")
+		if len(contentsByPath) > s.maximumFilesWithContentCount {
+			return nil, errors.Newf("inference limit: requested content for more than %d files", s.maximumFilesWithContentCount)
 		}
-		if len(contentsByPath) > N {
-			return nil, errors.Newf("repo too big man")
+		if int(header.Size) > s.maximumFileWithContentSizeBytes {
+			return nil, errors.Newf("inference limit: requested content for a file larger than %d bytes", s.maximumFileWithContentSizeBytes)
 		}
 
 		var buf bytes.Buffer
