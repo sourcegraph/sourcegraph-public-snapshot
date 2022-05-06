@@ -6,6 +6,7 @@ import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
 import { Button, createRectangle, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
 
 import { InsightFilters } from '../../../../../../core'
+import { SeriesDisplayOptions } from '../../../../../../core/types/insight/common'
 import { FormChangeEvent, SubmissionResult } from '../../../../../form/hooks/useForm'
 import {
     DrillDownInsightCreationForm,
@@ -29,6 +30,8 @@ interface DrillDownFiltersPopoverProps {
     onFilterSave: (filters: InsightFilters) => void
     onInsightCreate: (values: DrillDownInsightCreationFormValues) => SubmissionResult
     onVisibilityChange: (open: boolean) => void
+    originalSeriesDisplayOptions?: SeriesDisplayOptions
+    onSeriesDisplayOptionsChange: (options: SeriesDisplayOptions) => void
 }
 
 // To prevent grid layout position change animation. Attempts to drag
@@ -55,6 +58,8 @@ export const DrillDownFiltersPopover: React.FunctionComponent<DrillDownFiltersPo
         onFilterChange,
         onFilterSave,
         onInsightCreate,
+        originalSeriesDisplayOptions,
+        onSeriesDisplayOptionsChange,
     } = props
 
     // By default always render filters mode
@@ -99,6 +104,8 @@ export const DrillDownFiltersPopover: React.FunctionComponent<DrillDownFiltersPo
                         onFiltersChange={handleFilterChange}
                         onFilterSave={onFilterSave}
                         onCreateInsightRequest={() => setStep(DrillDownFiltersStep.ViewCreation)}
+                        originalSeriesDisplayOptions={originalSeriesDisplayOptions}
+                        onSeriesDisplayOptionsChange={onSeriesDisplayOptionsChange}
                     />
                 )}
 

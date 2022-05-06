@@ -59,10 +59,12 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
     // Original insight filters values that are stored in setting subject with insight
     // configuration object, They are updated  whenever the user clicks update/save button
     const [originalInsightFilters, setOriginalInsightFilters] = useState(cachedInsight.filters)
+    const [originalSeriesDisplayOptions] = useState(cachedInsight.seriesDisplayOptions)
 
     // Live valid filters from filter form. They are updated whenever the user is changing
     // filter value in filters fields.
     const [filters, setFilters] = useState<InsightFilters>(originalInsightFilters)
+    const [seriesDisplayOptions, setSeriesDisplayOptions] = useState(originalSeriesDisplayOptions)
     const [isFiltersOpen, setIsFiltersOpen] = useState(false)
     const debouncedFilters = useDebounce(useDeepMemo<InsightFilters>(filters), 500)
 
@@ -72,9 +74,10 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
             () =>
                 getBackendInsightData({
                     ...cachedInsight,
+                    seriesDisplayOptions,
                     filters: debouncedFilters,
                 }),
-            [cachedInsight, debouncedFilters, getBackendInsightData]
+            [cachedInsight, debouncedFilters, getBackendInsightData, seriesDisplayOptions]
         ),
         insightCardReference
     )
@@ -153,6 +156,8 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
                             onFilterSave={handleFilterSave}
                             onInsightCreate={handleInsightFilterCreation}
                             onVisibilityChange={setIsFiltersOpen}
+                            originalSeriesDisplayOptions={insight.seriesDisplayOptions}
+                            onSeriesDisplayOptionsChange={setSeriesDisplayOptions}
                         />
                         <InsightContextMenu
                             settingsCascade={props.settingsCascade}

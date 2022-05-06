@@ -8,13 +8,10 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Button, Icon, Link } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../components/LoaderButton'
+import { SeriesDisplayOptions } from '../../../../../../core/types/insight/common'
 import { useField } from '../../../../../form/hooks/useField'
 import { FORM_ERROR, FormChangeEvent, SubmissionResult, useForm } from '../../../../../form/hooks/useForm'
-import {
-    SortFilterSeriesPanel,
-    SortFilterSeriesValue,
-    SortSeriesBy,
-} from '../sort-filter-series-panel/SortFilterSeriesPanel'
+import { SortFilterSeriesPanel } from '../sort-filter-series-panel/SortFilterSeriesPanel'
 
 import { DrillDownInput, LabelWithReset } from './drill-down-input/DrillDownInput'
 import { FilterCollapseSection } from './filter-collapse-section/FilterCollapseSection'
@@ -49,12 +46,25 @@ interface DrillDownInsightFilters {
     /** Fires whenever the user clicks the save/update filter button. */
     onFilterSave: (filters: DrillDownFiltersFormValues) => SubmissionResult
 
+    originalSeriesDisplayOptions?: SeriesDisplayOptions
+
+    onSeriesDisplayOptionsChange: (options: SeriesDisplayOptions) => void
+
     /** Fires whenever the user clicks the create insight button. */
     onCreateInsightRequest: () => void
 }
 
 export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters> = props => {
-    const { initialValues, originalValues, className, onFiltersChange, onFilterSave, onCreateInsightRequest } = props
+    const {
+        initialValues,
+        originalValues,
+        className,
+        onFiltersChange,
+        onFilterSave,
+        onCreateInsightRequest,
+        originalSeriesDisplayOptions,
+        onSeriesDisplayOptionsChange,
+    } = props
 
     const [activeSection, setActiveSection] = useState<FilterSection | null>(FilterSection.RegularExpressions)
 
@@ -89,41 +99,6 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
     const hasFiltersChanged = !isEqual(originalValues, values)
     const hasAppliedFilters = hasActiveFilters(originalValues)
 
-    const [sortValue, setSortValue] = useState<SortFilterSeriesValue>({
-        selected: SortSeriesBy.CountDesc,
-        seriesCount: 20,
-    })
-
-    const getSortPreview = (): string => {
-        let sortBy
-
-        switch (sortValue.selected) {
-            case SortSeriesBy.AlphaAsc:
-                sortBy = 'A-Z'
-                break
-            case SortSeriesBy.AlphaDesc:
-                sortBy = 'Z-A'
-                break
-            case SortSeriesBy.CountAsc:
-                sortBy = 'by result count low to high'
-                break
-            case SortSeriesBy.CountDesc:
-                sortBy = ' by result count high to low'
-                break
-            case SortSeriesBy.DateAsc:
-                sortBy = 'by date oldest to newest'
-                break
-            case SortSeriesBy.DateDesc:
-                sortBy = 'by date newest to oldest'
-                break
-            default:
-                sortBy = 'ERROR: Unknown sort type.'
-                break
-        }
-
-        return `Sorted ${sortBy}, limit ${sortValue.seriesCount} series`
-    }
-
     const handleCollapseState = (section: FilterSection, opened: boolean): void => {
         if (!opened) {
             setActiveSection(null)
@@ -136,6 +111,15 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
         contexts.input.onChange('')
         includeRegex.input.onChange('')
         excludeRegex.input.onChange('')
+    }
+
+    const [seriesDisplayOptions, setSeriesDisplayOptions] = useState(
+        originalSeriesDisplayOptions || DEFAULT_SERIES_DISPLAY_OPTIONS
+    )
+
+    const handleSeriesDisplayOptionsChange = (options: SeriesDisplayOptions): void => {
+        setSeriesDisplayOptions(options)
+        onSeriesDisplayOptionsChange(options)
     }
 
     return (
@@ -158,11 +142,11 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
             <FilterCollapseSection
                 open={activeSection === FilterSection.SortFilter}
                 title="Sort & Limit"
-                preview={getSortPreview()}
+                preview={getSortPreview(seriesDisplayOptions)}
                 hasActiveFilter={false}
                 onOpenChange={opened => handleCollapseState(FilterSection.SortFilter, opened)}
             >
-                <SortFilterSeriesPanel value={sortValue} onChange={setSortValue} />
+                <SortFilterSeriesPanel value={seriesDisplayOptions} onChange={handleSeriesDisplayOptionsChange} />
             </FilterCollapseSection>
 
             <FilterCollapseSection
@@ -313,4 +297,42 @@ function getSubmitButtonText(input: SubmitButtonTextProps): string {
         : hasAppliedFilters
         ? 'Update default filters'
         : 'Save default filters'
+}
+
+const DEFAULT_SERIES_DISPLAY_OPTIONS: SeriesDisplayOptions = {
+    limit: 20,
+    sortOptions: {
+        direction: 'DESC',
+        mode: 'RESULT_COUNT',
+    },
+}
+
+const getSortPreview = (seriesDisplayOptions: SeriesDisplayOptions): string => {
+    if (!seriesDisplayOptions) {
+        return ''
+    }
+
+    const {
+        sortOptions: { mode, direction },
+        limit,
+    } = seriesDisplayOptions
+    const ascending = direction === 'ASC'
+    let sortBy
+
+    switch (mode) {
+        case 'LEXICOGRAPHICAL':
+            sortBy = ascending ? 'A-Z' : 'Z-A'
+            break
+        case 'RESULT_COUNT':
+            sortBy = `by result count ${ascending ? 'low to high' : 'high to low'}`
+            break
+        case 'DATE_ADDED':
+            sortBy = `by date ${ascending ? 'newest to oldest' : 'oldest to newest'}`
+            break
+        default:
+            sortBy = 'ERROR: Unknown sort type.'
+            break
+    }
+
+    return `Sorted ${sortBy}, limit ${limit} series`
 }

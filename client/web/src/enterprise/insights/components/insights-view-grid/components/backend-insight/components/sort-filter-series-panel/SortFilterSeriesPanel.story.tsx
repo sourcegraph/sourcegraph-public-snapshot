@@ -3,8 +3,9 @@ import { useState } from 'react'
 import { Meta, Story } from '@storybook/react'
 
 import { WebStory } from '../../../../../../../../components/WebStory'
+import { SeriesDisplayOptions } from '../../../../../../core/types/insight/common'
 
-import { SortFilterSeriesPanel, SortFilterSeriesValue, SortSeriesBy } from './SortFilterSeriesPanel'
+import { SortFilterSeriesPanel } from './SortFilterSeriesPanel'
 
 import styles from './SortFilterSeriesPanel.module.scss'
 
@@ -16,9 +17,12 @@ const defaultStory: Meta = {
 export default defaultStory
 
 export const Primary: Story = () => {
-    const [value, setValue] = useState<SortFilterSeriesValue>({
-        selected: SortSeriesBy.CountDesc,
-        seriesCount: 20,
+    const [value, setValue] = useState<SeriesDisplayOptions>({
+        sortOptions: {
+            mode: 'RESULT_COUNT',
+            direction: 'DESC',
+        },
+        limit: 20,
     })
 
     return (
