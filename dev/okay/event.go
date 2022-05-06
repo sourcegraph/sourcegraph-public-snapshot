@@ -50,19 +50,17 @@ type Event struct {
 	// Sending another event with the same UniqueKey results in overwritting the previous event,
 	// enabling to replay events with historical data or to correct incorrect events that were previously sent.
 	UniqueKey []string
+	// Properties are a map of additonal metadata to enable filtering and grouping metrics.
+	// Property names cannot have ".", please use "_" instead.
+	Properties map[string]string
 
 	// Optional fields below
 
-	// Properties are a map of additonal metadata to enable filtering and grouping metrics
-	// (optional).
-	//
-	// Property names cannot have ".", please use "_" instead.
-	Properties map[string]string
 	// GitHub login this event is attached to (optional).
-	GitHubLogin string
+	GitHubLogin string `json:",omitempty"`
 	// OkayURL is used to generate a clickable link in OkayHQ's UI when browsing this
 	// event (optional).
 	//
 	// Usually a link to get more information about the event from the system that generated it.
-	OkayURL string
+	OkayURL string `json:",omitempty"`
 }
