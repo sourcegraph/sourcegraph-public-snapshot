@@ -18,15 +18,6 @@ add('editable', () => (
     </WebStory>
 ))
 
-add('read only', () => (
-    <WebStory>
-        {props => (
-            <LibraryPane
-                {...props}
-                name="my-batch-change"
-                onReplaceItem={() => alert('batch spec replaced!')}
-                isReadOnly={true}
-            />
-        )}
-    </WebStory>
+add('read-only', () => (
+    <WebStory>{props => <LibraryPane {...props} name="my-batch-change" isReadOnly={true} />}</WebStory>
 ))
