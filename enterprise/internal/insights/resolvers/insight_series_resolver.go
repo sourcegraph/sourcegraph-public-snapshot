@@ -408,8 +408,9 @@ func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.Insi
 	} else if definition.SeriesLimit != nil {
 		limit = *definition.SeriesLimit
 	} else {
-		limit = minInt(20, len(sortedCaptureGroups))
+		limit = 20
 	}
+	limit = minInt(int(limit), len(sortedCaptureGroups))
 
 	for _, capturedValue := range sortedCaptureGroups[0:limit] {
 		points := groupedByCapture[capturedValue]
