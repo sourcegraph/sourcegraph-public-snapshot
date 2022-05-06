@@ -62,7 +62,7 @@ const NewBatchChangePageContent: React.FunctionComponent<Omit<CreateBatchChangeP
     return (
         <div className={layoutStyles.pageContainer}>
             <PageTitle title="Create new batch change" />
-            {insightTitle && <InsightTemplatesBanner insightTitle={insightTitle} />}
+            {insightTitle && <InsightTemplatesBanner insightTitle={insightTitle} type="create" />}
             <div className={layoutStyles.headerContainer}>
                 <BatchChangeHeader title={{ text: 'Create batch change' }} />
             </div>
