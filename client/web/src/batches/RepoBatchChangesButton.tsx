@@ -13,7 +13,7 @@ interface RepoBatchChangesButtonProps {
     queryRepoChangesetsStats?: typeof _queryRepoChangesetsStats
 }
 
-export const RepoBatchChangesButton: FC<RepoBatchChangesButtonProps> = ({
+export const RepoBatchChangesButton: FC<React.PropsWithChildren<RepoBatchChangesButtonProps>> = ({
     className,
     repoName,
     queryRepoChangesetsStats = _queryRepoChangesetsStats,

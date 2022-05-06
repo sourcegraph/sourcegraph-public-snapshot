@@ -289,7 +289,7 @@ func Globbing(nodes []Node) ([]Node, error) {
 	return nodes, nil
 }
 
-func ToNodes(parameters []Parameter) []Node {
+func toNodes(parameters []Parameter) []Node {
 	nodes := make([]Node, 0, len(parameters))
 	for _, p := range parameters {
 		nodes = append(nodes, p)
@@ -357,7 +357,7 @@ func Hoist(nodes []Node) ([]Node, error) {
 		annotation.Labels |= HeuristicHoisted
 		return Pattern{Value: value, Negated: negated, Annotation: annotation}
 	})
-	return append(ToNodes(scopeParameters), newOperator(pattern, expression.Kind)...), nil
+	return append(toNodes(scopeParameters), newOperator(pattern, expression.Kind)...), nil
 }
 
 // partition partitions nodes into left and right groups. A node is put in the
@@ -675,7 +675,7 @@ func Map(query []Node, fns ...func([]Node) []Node) []Node {
 // Invariant: Guaranteed to succeed on a validat Basic query.
 func ConcatRevFilters(b Basic) Basic {
 	var revision string
-	nodes := MapField(ToNodes(b.Parameters), FieldRev, func(value string, _ bool, _ Annotation) Node {
+	nodes := MapField(toNodes(b.Parameters), FieldRev, func(value string, _ bool, _ Annotation) Node {
 		revision = value
 		return nil // remove this node
 	})
@@ -715,14 +715,6 @@ func ellipsesForHoles(nodes []Node) []Node {
 			Annotation: annotation,
 		}
 	})
-}
-
-func OverrideField(nodes []Node, field, value string) []Node {
-	// First remove any fields that exist.
-	nodes = MapField(nodes, field, func(_ string, _ bool, _ Annotation) Node {
-		return nil
-	})
-	return newOperator(append(nodes, Parameter{Field: field, Value: value}), And)
 }
 
 // OmitField removes all fields `field` from a query. The `field` string
@@ -770,15 +762,4 @@ func ToBasicQuery(nodes []Node) (Basic, error) {
 		return Basic{}, err
 	}
 	return Basic{Parameters: parameters, Pattern: pattern}, nil
-}
-
-// PatternToFile transforms a search query such that `file:` is prefixed to the
-// pattern. This transformation is used for generating suggestions. Succeeds
-// only when the pattern expression is an atom.
-func PatternToFile(b Basic) Basic {
-	if p, ok := b.Pattern.(Pattern); ok && !p.Negated {
-		b.Parameters = append(b.Parameters, Parameter{Field: "file", Value: p.Value})
-		return b
-	}
-	return b
 }

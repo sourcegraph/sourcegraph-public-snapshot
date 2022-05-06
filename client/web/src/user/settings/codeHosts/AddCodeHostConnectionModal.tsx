@@ -27,16 +27,18 @@ const getServiceConfig = (kind: ExternalServiceKind, token: string): string => {
     return JSON.stringify(config, null, 2)
 }
 
-export const AddCodeHostConnectionModal: React.FunctionComponent<{
-    ownerID: Scalars['ID']
-    serviceName: string
-    serviceKind: ExternalServiceKind
-    onDidAdd: (service: ListExternalServiceFields) => void
-    onDidCancel: () => void
-    onDidError: (error: ErrorLike) => void
+export const AddCodeHostConnectionModal: React.FunctionComponent<
+    React.PropsWithChildren<{
+        ownerID: Scalars['ID']
+        serviceName: string
+        serviceKind: ExternalServiceKind
+        onDidAdd: (service: ListExternalServiceFields) => void
+        onDidCancel: () => void
+        onDidError: (error: ErrorLike) => void
 
-    hintFragment?: React.ReactFragment
-}> = ({ ownerID, serviceName, serviceKind, hintFragment, onDidAdd, onDidCancel, onDidError }) => {
+        hintFragment?: React.ReactFragment
+    }>
+> = ({ ownerID, serviceName, serviceKind, hintFragment, onDidAdd, onDidCancel, onDidError }) => {
     const [token, setToken] = useState<string>('')
     const [isLoading, setIsLoading] = useState(false)
     const [didAckMachineUserHint, setAckMachineUserHint] = useState(false)

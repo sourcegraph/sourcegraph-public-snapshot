@@ -4,7 +4,7 @@
     {
       "files": ["./webview/src/index.scss"],
       "rules": {
-        "filenames/match-regex": null
+        "@sourcegraph/filenames-match-regex": null
       }
     }
   ]

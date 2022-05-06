@@ -69,10 +69,6 @@ func (s *JVMPackagesSource) listDependentRepos(ctx context.Context, results chan
 			Repo:   repo,
 		}
 	}
-	if err != nil {
-		results <- SourceResult{Err: err}
-		return
-	}
 
 	var (
 		totalDBFetched  int

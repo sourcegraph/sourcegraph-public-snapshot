@@ -27,7 +27,7 @@ interface Props extends HoverOverlayProps, HoverThresholdProps, SettingsCascadeP
     nav?: (url: string) => void
 }
 
-export const WebHoverOverlay: React.FunctionComponent<Props> = props => {
+export const WebHoverOverlay: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
     const [dismissedAlerts, setDismissedAlerts] = useLocalStorage<string[]>('WebHoverOverlay.dismissedAlerts', [])
     const onAlertDismissed = useCallback(
         (alertType: string) => {

@@ -23,7 +23,7 @@ interface Props {
 
 type Status = undefined | 'loading' | ErrorLike
 
-export const AddUserEmailForm: FunctionComponent<Props> = ({ user, className, onDidAdd }) => {
+export const AddUserEmailForm: FunctionComponent<React.PropsWithChildren<Props>> = ({ user, className, onDidAdd }) => {
     const [statusOrError, setStatusOrError] = useState<Status>()
 
     const [emailState, nextEmailFieldChange, emailInputReference, overrideEmailState] = useInputValidation(

@@ -30,7 +30,9 @@ export interface BatchChangePreviewPageProps extends BatchChangePreviewProps {
     queryApplyPreviewStats?: typeof _queryApplyPreviewStats
 }
 
-export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewPageProps> = props => {
+export const BatchChangePreviewPage: React.FunctionComponent<
+    React.PropsWithChildren<BatchChangePreviewPageProps>
+> = props => {
     const { batchSpecID: specID, history, authenticatedUser, telemetryService, queryApplyPreviewStats } = props
 
     const { data, loading } = useQuery<BatchSpecByIDResult, BatchSpecByIDVariables>(BATCH_SPEC_BY_ID, {
@@ -107,7 +109,9 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
  * current one, but until we are ready to flip the feature flag, we need to keep
  * both around.
  */
-export const NewBatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewPageProps> = props => {
+export const NewBatchChangePreviewPage: React.FunctionComponent<
+    React.PropsWithChildren<BatchChangePreviewPageProps>
+> = props => {
     const {
         batchSpecID: specID,
         history,

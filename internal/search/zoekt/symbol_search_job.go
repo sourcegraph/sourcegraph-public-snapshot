@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
 
-type ZoektSymbolSearch struct {
+type ZoektSymbolSearchJob struct {
 	Repos          *IndexedRepoRevs // the set of indexed repository revisions to search.
 	Query          zoektquery.Q
 	FileMatchLimit int32
@@ -22,7 +22,7 @@ type ZoektSymbolSearch struct {
 }
 
 // Run calls the zoekt backend to search symbols
-func (z *ZoektSymbolSearch) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+func (z *ZoektSymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	tr, ctx, stream, finish := job.StartSpan(ctx, stream, z)
 	defer func() { finish(alert, err) }()
 
@@ -53,6 +53,6 @@ func (z *ZoektSymbolSearch) Run(ctx context.Context, clients job.RuntimeClients,
 	return nil, nil
 }
 
-func (z *ZoektSymbolSearch) Name() string {
-	return "ZoektSymbolSearch"
+func (z *ZoektSymbolSearchJob) Name() string {
+	return "ZoektSymbolSearchJob"
 }

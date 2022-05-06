@@ -45,7 +45,7 @@ interface FilterControlProps {
     values: Map<string, FilteredConnectionFilterValue>
 }
 
-export const FilterControl: React.FunctionComponent<FilterControlProps> = ({
+export const FilterControl: React.FunctionComponent<React.PropsWithChildren<FilterControlProps>> = ({
     filters,
     values,
     onValueSelect,

@@ -10,11 +10,9 @@ export interface BatchChangeChangesetsHeaderProps {
     disabled?: boolean
 }
 
-export const BatchChangeChangesetsHeader: React.FunctionComponent<BatchChangeChangesetsHeaderProps> = ({
-    allSelected,
-    toggleSelectAll,
-    disabled,
-}) => (
+export const BatchChangeChangesetsHeader: React.FunctionComponent<
+    React.PropsWithChildren<BatchChangeChangesetsHeaderProps>
+> = ({ allSelected, toggleSelectAll, disabled }) => (
     <>
         <span className="d-none d-md-block" />
         {toggleSelectAll && (

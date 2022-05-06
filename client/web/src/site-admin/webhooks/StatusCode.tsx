@@ -10,7 +10,7 @@ export interface Props {
     code: number
 }
 
-export const StatusCode: React.FunctionComponent<Props> = ({ code }) => (
+export const StatusCode: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ code }) => (
     <span>
         <span className={classNames('mr-1')}>
             {code < 400 ? (

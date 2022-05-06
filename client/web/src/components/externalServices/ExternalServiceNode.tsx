@@ -22,7 +22,7 @@ export interface ExternalServiceNodeProps {
     afterDeleteRoute: string
 }
 
-export const ExternalServiceNode: React.FunctionComponent<ExternalServiceNodeProps> = ({
+export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildren<ExternalServiceNodeProps>> = ({
     node,
     onDidUpdate,
     history,

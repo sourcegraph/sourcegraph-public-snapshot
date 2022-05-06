@@ -1,6 +1,7 @@
 import { FunctionComponent, useMemo, useState } from 'react'
 
 import { useApolloClient } from '@apollo/client'
+import classNames from 'classnames'
 import { isEqual } from 'lodash'
 import PlusIcon from 'mdi-react/PlusIcon'
 
@@ -24,6 +25,11 @@ enum FilterSection {
     RegularExpressions,
 }
 
+export enum FilterSectionVisualMode {
+    CollapseSections,
+    HorizontalSections,
+}
+
 export interface DrillDownFiltersFormValues {
     context: string
     includeRepoRegexp: string
@@ -34,6 +40,8 @@ interface DrillDownInsightFilters {
     initialValues: DrillDownFiltersFormValues
 
     originalValues: DrillDownFiltersFormValues
+
+    visualMode: FilterSectionVisualMode
 
     className?: string
 
@@ -48,7 +56,15 @@ interface DrillDownInsightFilters {
 }
 
 export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters> = props => {
-    const { initialValues, originalValues, className, onFiltersChange, onFilterSave, onCreateInsightRequest } = props
+    const {
+        initialValues,
+        originalValues,
+        className,
+        visualMode,
+        onFiltersChange,
+        onFilterSave,
+        onCreateInsightRequest,
+    } = props
 
     const [activeSection, setActiveSection] = useState<FilterSection | null>(FilterSection.RegularExpressions)
 
@@ -97,6 +113,8 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
         excludeRegex.input.onChange('')
     }
 
+    const isHorizontalMode = visualMode === FilterSectionVisualMode.HorizontalSections
+
     return (
         // eslint-disable-next-line react/forbid-elements
         <form ref={ref} onSubmit={handleSubmit} className={className}>
@@ -114,83 +132,91 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                 </Button>
             </header>
 
-            <FilterCollapseSection
-                open={activeSection === FilterSection.SearchContext}
-                title="Search context"
-                preview={getSerializedSearchContextFilter(contexts.input.value)}
-                hasActiveFilter={hasActiveUnaryFilter(contexts.input.value)}
-                className={styles.panel}
-                onOpenChange={opened => handleCollapseState(FilterSection.SearchContext, opened)}
-            >
-                <small className={styles.sectionDescription}>
-                    Choose{' '}
-                    <Link
-                        to="/help/code_search/how-to/search_contexts#beta-query-based-search-contexts"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        query-based search context (beta)
-                    </Link>{' '}
-                    to change the scope of this insight.
-                </small>
+            <hr className={styles.headerSeparator} />
 
-                <DrillDownSearchContextFilter
-                    spellCheck={false}
-                    autoComplete="off"
-                    autoFocus={true}
-                    className={styles.input}
-                    status={getFilterInputStatus(contexts)}
-                    {...contexts.input}
-                />
-            </FilterCollapseSection>
+            <div className={classNames(styles.panels, { [styles.panelsHorizontalMode]: isHorizontalMode })}>
+                <FilterCollapseSection
+                    open={isHorizontalMode || activeSection === FilterSection.SearchContext}
+                    title="Search context"
+                    preview={getSerializedSearchContextFilter(contexts.input.value)}
+                    hasActiveFilter={hasActiveUnaryFilter(contexts.input.value)}
+                    className={styles.panel}
+                    withSeparators={!isHorizontalMode}
+                    onOpenChange={opened => handleCollapseState(FilterSection.SearchContext, opened)}
+                >
+                    <small className={styles.sectionDescription}>
+                        Choose{' '}
+                        <Link
+                            to="/help/code_search/how-to/search_contexts#beta-query-based-search-contexts"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            query-based search context (beta)
+                        </Link>{' '}
+                        to change the scope of this insight.
+                    </small>
 
-            <FilterCollapseSection
-                open={activeSection === FilterSection.RegularExpressions}
-                title="Regular expression"
-                preview={getSerializedRepositoriesFilter(currentRepositoriesFilters)}
-                hasActiveFilter={
-                    hasActiveUnaryFilter(includeRegex.input.value) || hasActiveUnaryFilter(excludeRegex.input.value)
-                }
-                className={styles.panel}
-                onOpenChange={opened => handleCollapseState(FilterSection.RegularExpressions, opened)}
-            >
-                <small className={styles.sectionDescription}>
-                    Use regular expression to change the scope of this insight.
-                </small>
+                    <DrillDownSearchContextFilter
+                        spellCheck={false}
+                        autoComplete="off"
+                        autoFocus={true}
+                        className={styles.input}
+                        status={getFilterInputStatus(contexts)}
+                        {...contexts.input}
+                    />
+                </FilterCollapseSection>
 
-                <fieldset className={styles.regExpFilters}>
-                    <LabelWithReset
-                        text="Include repositories"
-                        disabled={!includeRegex.input.value}
-                        onReset={() => includeRegex.input.onChange('')}
-                    >
-                        <DrillDownInput
-                            autoFocus={true}
-                            prefix="repo:"
-                            placeholder="regexp-pattern"
-                            spellCheck={false}
-                            className={styles.input}
-                            status={getFilterInputStatus(includeRegex)}
-                            {...includeRegex.input}
-                        />
-                    </LabelWithReset>
+                <FilterCollapseSection
+                    open={isHorizontalMode || activeSection === FilterSection.RegularExpressions}
+                    title="Regular expression"
+                    preview={getSerializedRepositoriesFilter(currentRepositoriesFilters)}
+                    hasActiveFilter={
+                        hasActiveUnaryFilter(includeRegex.input.value) || hasActiveUnaryFilter(excludeRegex.input.value)
+                    }
+                    className={styles.panel}
+                    withSeparators={!isHorizontalMode}
+                    onOpenChange={opened => handleCollapseState(FilterSection.RegularExpressions, opened)}
+                >
+                    <small className={styles.sectionDescription}>
+                        Use regular expression to change the scope of this insight.
+                    </small>
 
-                    <LabelWithReset
-                        text="Exclude repositories"
-                        disabled={!excludeRegex.input.value}
-                        onReset={() => excludeRegex.input.onChange('')}
-                    >
-                        <DrillDownInput
-                            prefix="-repo:"
-                            placeholder="regexp-pattern"
-                            spellCheck={false}
-                            className={styles.input}
-                            status={getFilterInputStatus(excludeRegex)}
-                            {...excludeRegex.input}
-                        />
-                    </LabelWithReset>
-                </fieldset>
-            </FilterCollapseSection>
+                    <fieldset className={styles.regExpFilters}>
+                        <LabelWithReset
+                            text="Include repositories"
+                            disabled={!includeRegex.input.value}
+                            onReset={() => includeRegex.input.onChange('')}
+                        >
+                            <DrillDownInput
+                                autoFocus={true}
+                                prefix="repo:"
+                                placeholder="regexp-pattern"
+                                spellCheck={false}
+                                className={styles.input}
+                                status={getFilterInputStatus(includeRegex)}
+                                {...includeRegex.input}
+                            />
+                        </LabelWithReset>
+
+                        <LabelWithReset
+                            text="Exclude repositories"
+                            disabled={!excludeRegex.input.value}
+                            onReset={() => excludeRegex.input.onChange('')}
+                        >
+                            <DrillDownInput
+                                prefix="-repo:"
+                                placeholder="regexp-pattern"
+                                spellCheck={false}
+                                className={styles.input}
+                                status={getFilterInputStatus(excludeRegex)}
+                                {...excludeRegex.input}
+                            />
+                        </LabelWithReset>
+                    </fieldset>
+                </FilterCollapseSection>
+            </div>
+
+            {isHorizontalMode && <hr />}
 
             <footer className={styles.footer}>
                 {formAPI.submitErrors?.[FORM_ERROR] && (

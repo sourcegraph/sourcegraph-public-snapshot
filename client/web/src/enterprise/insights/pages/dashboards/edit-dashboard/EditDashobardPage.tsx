@@ -36,7 +36,7 @@ interface EditDashboardPageProps {
 /**
  * Displays the edit (configure) dashboard page.
  */
-export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> = props => {
+export const EditDashboardPage: React.FunctionComponent<React.PropsWithChildren<EditDashboardPageProps>> = props => {
     const { dashboardId, authenticatedUser } = props
     const history = useHistory()
 

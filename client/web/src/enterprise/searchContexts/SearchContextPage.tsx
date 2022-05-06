@@ -31,9 +31,9 @@ export interface SearchContextPageProps
 const initialRepositoriesToShow = 15
 const incrementalRepositoriesToShow = 10
 
-const SearchContextRepositories: React.FunctionComponent<{ repositories: ISearchContextRepositoryRevisions[] }> = ({
-    repositories,
-}) => {
+const SearchContextRepositories: React.FunctionComponent<
+    React.PropsWithChildren<{ repositories: ISearchContextRepositoryRevisions[] }>
+> = ({ repositories }) => {
     const [filterQuery, setFilterQuery] = useState('')
     const debouncedSetFilterQuery = useMemo(() => debounce(value => setFilterQuery(value), 250), [setFilterQuery])
     const filteredRepositories = useMemo(
@@ -126,7 +126,7 @@ const SearchContextRepositories: React.FunctionComponent<{ repositories: ISearch
     )
 }
 
-export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> = props => {
+export const SearchContextPage: React.FunctionComponent<React.PropsWithChildren<SearchContextPageProps>> = props => {
     const LOADING = 'loading' as const
 
     const { match, fetchSearchContextBySpec, platformContext } = props

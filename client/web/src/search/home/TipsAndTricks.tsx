@@ -20,7 +20,7 @@ interface TipsAndTricksProps extends TelemetryProps {
     }
 }
 
-export const TipsAndTricks: React.FunctionComponent<TipsAndTricksProps> = ({
+export const TipsAndTricks: React.FunctionComponent<React.PropsWithChildren<TipsAndTricksProps>> = ({
     title,
     moreLink,
     telemetryService,

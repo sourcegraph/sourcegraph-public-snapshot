@@ -61,7 +61,7 @@ export interface FileHunksProps extends ThemeProps {
 }
 
 /** Displays hunks in a unified file diff. */
-export const FileDiffHunks: React.FunctionComponent<FileHunksProps> = ({
+export const FileDiffHunks: React.FunctionComponent<React.PropsWithChildren<FileHunksProps>> = ({
     className,
     fileDiffAnchor,
     hunks,

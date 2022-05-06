@@ -61,7 +61,7 @@ interface Props extends Partial<RevisionSpec>, ResolvedRevisionSpec, BreadcrumbS
     onVisible: (node: GQLDocumentationNode, entry?: IntersectionObserverEntry) => void
 }
 
-export const DocumentationNode: React.FunctionComponent<Props> = React.memo(
+export const DocumentationNode: React.FunctionComponent<React.PropsWithChildren<Props>> = React.memo(
     ({ useBreadcrumb, node, depth, isFirstChild, onlyPathID, scrollingRoot, onVisible, ...props }) => {
         const repoRevision = {
             repoName: props.repo.name,
@@ -231,8 +231,10 @@ export const DocumentationNode: React.FunctionComponent<Props> = React.memo(
     }
 )
 
-const Heading: React.FunctionComponent<{
-    level: number
-    children: React.ReactNode
-    [x: string]: any
-}> = ({ level, children, ...props }) => React.createElement(`h${level}`, props, children)
+const Heading: React.FunctionComponent<
+    React.PropsWithChildren<{
+        level: number
+        children: React.ReactNode
+        [x: string]: any
+    }>
+> = ({ level, children, ...props }) => React.createElement(`h${level}`, props, children)

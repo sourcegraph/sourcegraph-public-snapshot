@@ -54,7 +54,7 @@ interface FeedbackPromptContentProps {
 const LOCAL_STORAGE_KEY_RATING = 'feedbackPromptRating'
 const LOCAL_STORAGE_KEY_TEXT = 'feedbackPromptText'
 
-const FeedbackPromptContent: React.FunctionComponent<FeedbackPromptContentProps> = ({
+const FeedbackPromptContent: React.FunctionComponent<React.PropsWithChildren<FeedbackPromptContentProps>> = ({
     onClose,
     productResearchEnabled,
     onSubmit,
@@ -187,10 +187,10 @@ interface FeedbackPromptProps extends FeedbackPromptContentProps {
     position?: Position
     modal?: boolean
     modalLabelId?: string
-    children: React.FunctionComponent<FeedbackPromptTriggerProps> | ReactNode
+    children: React.FunctionComponent<React.PropsWithChildren<FeedbackPromptTriggerProps>> | ReactNode
 }
 
-export const FeedbackPrompt: React.FunctionComponent<FeedbackPromptProps> = ({
+export const FeedbackPrompt: React.FunctionComponent<React.PropsWithChildren<FeedbackPromptProps>> = ({
     openByDefault = false,
     onSubmit,
     children,

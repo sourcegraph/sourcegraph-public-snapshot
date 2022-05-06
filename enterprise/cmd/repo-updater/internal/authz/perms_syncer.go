@@ -47,7 +47,7 @@ type PermsSyncer struct {
 	// The generic database handle.
 	db database.DB
 	// The database interface for any repos and external services operations.
-	reposStore *repos.Store
+	reposStore repos.Store
 	// The database interface for any permissions operations.
 	permsStore edb.PermsStore
 	// The mockable function to return the current time.
@@ -61,7 +61,7 @@ type PermsSyncer struct {
 // NewPermsSyncer returns a new permissions syncing manager.
 func NewPermsSyncer(
 	db database.DB,
-	reposStore *repos.Store,
+	reposStore repos.Store,
 	permsStore edb.PermsStore,
 	clock func() time.Time,
 	rateLimiterRegistry *ratelimit.Registry,
@@ -210,7 +210,7 @@ func (s *PermsSyncer) listPrivateRepoNamesBySpecs(ctx context.Context, repoSpecs
 
 	repoNames := make([]types.MinimalRepo, 0, len(repoSpecs))
 	for nextCut > 0 {
-		rs, err := s.reposStore.RepoStore.ListMinimalRepos(ctx,
+		rs, err := s.reposStore.RepoStore().ListMinimalRepos(ctx,
 			database.ReposListOptions{
 				ExternalRepos: remaining[:nextCut],
 				OnlyPrivate:   true,
@@ -420,7 +420,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 	// Exclusions are relative to inclusions, so if there is no inclusion, exclusion
 	// are meaningless and no need to trigger a DB query.
 	if len(includeContainsSpecs) > 0 {
-		rs, err := s.reposStore.RepoStore.ListMinimalRepos(ctx,
+		rs, err := s.reposStore.RepoStore().ListMinimalRepos(ctx,
 			database.ReposListOptions{
 				ExternalRepoIncludeContains: includeContainsSpecs,
 				ExternalRepoExcludeContains: excludeContainsSpecs,
@@ -571,7 +571,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalServices(ctx context.Context, use
 	// Exclusions are relative to inclusions, so if there is no inclusion, exclusion
 	// are meaningless and no need to trigger a DB query.
 	if len(includeContainsSpecs) > 0 {
-		rs, err := s.reposStore.RepoStore.ListMinimalRepos(ctx,
+		rs, err := s.reposStore.RepoStore().ListMinimalRepos(ctx,
 			database.ReposListOptions{
 				ExternalRepoIncludeContains: includeContainsSpecs,
 				ExternalRepoExcludeContains: excludeContainsSpecs,
@@ -673,7 +673,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	ctx, save := s.observe(ctx, "PermsSyncer.syncRepoPerms", "")
 	defer save(requestTypeRepo, int32(repoID), &err)
 
-	rs, err := s.reposStore.RepoStore.List(ctx, database.ReposListOptions{
+	rs, err := s.reposStore.RepoStore().List(ctx, database.ReposListOptions{
 		IDs: []api.RepoID{repoID},
 	})
 	if err != nil {

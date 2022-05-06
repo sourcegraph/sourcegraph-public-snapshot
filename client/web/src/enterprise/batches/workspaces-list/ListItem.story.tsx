@@ -61,7 +61,7 @@ add('non-root path', () => (
     </WebStory>
 ))
 
-const STATUS_INDICATORS: [key: string, icon: React.FunctionComponent][] = [
+const STATUS_INDICATORS: [key: string, icon: React.FunctionComponent<React.PropsWithChildren<unknown>>][] = [
     ['cached', CachedIcon],
     ['exclude', ExcludeIcon],
 ]
