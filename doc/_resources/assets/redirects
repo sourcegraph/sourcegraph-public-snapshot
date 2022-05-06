@@ -265,5 +265,6 @@
 /admin/install/resource_estimator /admin/deploy/resource_estimator 308
 
 /admin/install/cluster.md /admin/deploy 308
+/admin/deploy/cluster /admin/deploy 308
 
 /admin/deploy/docker /admin/deploy/docker-single-container 308
