@@ -32,7 +32,7 @@ import { WORKSPACES_PER_PAGE_COUNT, WorkspacePreviewFilters } from './useWorkspa
 
 export type ResolutionState = BatchSpecWorkspaceResolutionState | 'UNSTARTED' | 'REQUESTED' | 'CANCELED'
 
-interface UseWorkspacesPreviewResult {
+export interface UseWorkspacesPreviewResult {
     /**
      * Method to invoke the appropriate GraphQL mutation to submit the batch spec input
      * YAML to the backend and request a preview of the workspaces it would affect.
@@ -94,7 +94,6 @@ const getBatchSpecID = ({
     }
     return data.replaceBatchSpecInput.id
 }
-
 /**
  * Custom hook to power the "preview" aspect of the batch spec creation workflow, i.e.
  * submitting batch spec input YAML code, enqueing a resolution job to evaluate the
@@ -244,6 +243,7 @@ export const useWorkspacesPreview = (
         ) {
             setError(undefined)
             // If the workspace resolution is still queued or processing, start polling.
+            setIsInProgress(true)
             startPolling(POLLING_INTERVAL)
         } else if (
             uiState === BatchSpecWorkspaceResolutionState.ERRORED ||

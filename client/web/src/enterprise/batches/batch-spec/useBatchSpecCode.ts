@@ -47,6 +47,11 @@ export interface UseBatchSpecCodeResult {
      */
     isValid: boolean | 'unknown'
     /**
+     * Whether or not the batch spec YAML on the server which was used to preview
+     * workspaces is up-to-date with that which is presently in the editor.
+     */
+    isServerStale: boolean
+    /**
      * Any errors that occurred either while validating the batch spec YAML, or while
      * trying to automatically update it (i.e. to automatically exclude a repo).
      */
@@ -198,6 +203,13 @@ export const useBatchSpecCode = (originalInput: string, name: string): UseBatchS
         debouncedCode,
         handleCodeChange,
         isValid,
+        // NOTE: The batch spec YAML code is considered stale if any part of it changes.
+        // This is because of a current limitation of the backend where we need to
+        // re-submit the batch spec code and wait for the new workspaces preview to finish
+        // resolving before we can execute, or else the execution will use an older batch
+        // spec. We will address this when we implement the "auto-saving" feature and
+        // decouple previewing workspaces from updating the batch spec code.
+        isServerStale: originalInput !== debouncedCode,
         errors: {
             validation: validationError,
             update: updateError,

@@ -1,6 +1,5 @@
 import React, { useCallback, useContext, useMemo, useState } from 'react'
 
-import { ApolloQueryResult } from '@apollo/client'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 
 import { useQuery } from '@sourcegraph/http-client'
@@ -60,22 +59,19 @@ export const EditBatchSpecPage: React.FunctionComponent<EditBatchSpecPageProps> 
     }
 
     return (
-        <BatchSpecContextProvider batchChange={data.batchChange}>
-            <EditBatchSpecPageContent refetchBatchChange={refetchBatchChange} {...props} />
+        <BatchSpecContextProvider batchChange={data.batchChange} refetchBatchChange={refetchBatchChange}>
+            <EditBatchSpecPageContent {...props} />
         </BatchSpecContextProvider>
     )
 }
 
-interface EditBatchSpecPageContentProps extends SettingsCascadeProps<Settings>, ThemeProps {
-    refetchBatchChange: () => Promise<ApolloQueryResult<GetBatchChangeToEditResult>>
-}
+interface EditBatchSpecPageContentProps extends SettingsCascadeProps<Settings>, ThemeProps {}
 
 const EditBatchSpecPageContent: React.FunctionComponent<React.PropsWithChildren<EditBatchSpecPageContentProps>> = ({
     settingsCascade,
     isLightTheme,
-    refetchBatchChange,
 }) => {
-    const { batchChange, batchSpec } = useContext(BatchSpecContext)
+    const { batchChange } = useContext(BatchSpecContext)
 
     const { insightTitle } = useInsightTemplates(settingsCascade)
 
@@ -146,7 +142,7 @@ const EditBatchSpecPageContent: React.FunctionComponent<React.PropsWithChildren<
             {activeTabName === 'configuration' ? (
                 <ConfigurationForm isReadOnly={true} batchChange={batchChange} settingsCascade={settingsCascade} />
             ) : (
-                <EditorForm isLightTheme={isLightTheme} refetchBatchChange={refetchBatchChange} />
+                <EditorForm isLightTheme={isLightTheme} />
             )}
         </div>
     )
