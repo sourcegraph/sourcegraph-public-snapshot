@@ -25,7 +25,7 @@ func Number(number int) Metric {
 	return Metric{Type: "number", Value: float64(number)}
 }
 
-func (m *Metric) String() string {
+func (m *Metric) ValueString() string {
 	if m == nil {
 		return "<nil>"
 	}
@@ -35,5 +35,5 @@ func (m *Metric) String() string {
 	case "durationMs":
 		return time.Duration(int64(m.Value)).String()
 	}
-	return "invalid"
+	return fmt.Sprintf("invalid type %q", m.Type)
 }
