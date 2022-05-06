@@ -7,7 +7,7 @@ import { dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { PageHeader, CardBody, Card, Link, Container, H3, H2, H4 } from '@sourcegraph/wildcard'
+import { PageHeader, CardBody, Card, Link, Container, H3, H2, H4, screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { isBatchChangesExecutionEnabled } from '../../../batches'
@@ -132,7 +132,9 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
     useEffect(() => {
         // If the data in the connection updates with new results, update the total count.
         if (connection) {
-            setLastTotalCount(connection.totalCount || 0)
+            const totalBatchChanges = connection.totalCount || 0
+            setLastTotalCount(totalBatchChanges)
+            screenReaderAnnounce(`${totalBatchChanges} batch changes`)
         }
     }, [connection])
 
