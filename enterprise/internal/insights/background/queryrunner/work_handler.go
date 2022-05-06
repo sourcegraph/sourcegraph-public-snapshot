@@ -205,7 +205,7 @@ func (r *workHandler) searchHandler(ctx context.Context, job *Job, series *types
 		return errors.Errorf("GraphQL errors: %v", results.Errors)
 	}
 	if alert := results.Data.Search.Results.Alert; alert != nil {
-		if alert.Title == "No repositories satisfied your repo: filter" {
+		if alert.Title == "No repositories found" {
 			// We got zero results and no repositories matched. This could be for a few reasons:
 			//
 			// 1. The repo hasn't been cloned by Sourcegraph yet.
