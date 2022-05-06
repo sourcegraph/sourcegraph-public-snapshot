@@ -126,6 +126,7 @@ const EditBatchSpecPageContent: React.FunctionComponent<React.PropsWithChildren<
                         onChangeOptions={setExecutionOptions}
                     />
 
+                    {/* TODO: Come back to this after Adeola's PR is merged */}
                     {/* {downloadSpecModalDismissed ? (
                 <BatchSpecDownloadLink name={batchChange.name} originalInput={code} isLightTheme={isLightTheme}>
                     or download for src-cli

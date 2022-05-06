@@ -7,7 +7,7 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { Icon } from '@sourcegraph/wildcard'
 
-import { BatchSpecContextErrors } from '../../batch-spec/BatchSpecContext'
+import { BatchSpecContextErrors } from '../../BatchSpecContext'
 
 import styles from './EditorFeedbackPanel.module.scss'
 
