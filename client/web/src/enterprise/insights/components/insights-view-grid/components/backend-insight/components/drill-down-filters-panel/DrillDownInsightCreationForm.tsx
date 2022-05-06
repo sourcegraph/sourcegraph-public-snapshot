@@ -1,4 +1,4 @@
-import React from 'react'
+import { FunctionComponent } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Button, Input } from '@sourcegraph/wildcard'
@@ -26,9 +26,7 @@ interface DrillDownInsightCreationFormProps {
     onCancel: () => void
 }
 
-export const DrillDownInsightCreationForm: React.FunctionComponent<
-    React.PropsWithChildren<DrillDownInsightCreationFormProps>
-> = props => {
+export const DrillDownInsightCreationForm: FunctionComponent<DrillDownInsightCreationFormProps> = props => {
     const { className, onCreateInsight, onCancel } = props
 
     const { formAPI, ref, handleSubmit } = useForm({

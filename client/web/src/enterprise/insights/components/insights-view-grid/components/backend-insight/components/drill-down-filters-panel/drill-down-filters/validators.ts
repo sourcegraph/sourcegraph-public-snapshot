@@ -2,8 +2,8 @@ import { ApolloClient, gql } from '@apollo/client'
 
 import { InputStatus } from '@sourcegraph/wildcard'
 
-import { GetSearchContextByNameResult } from '../../../../../../../../graphql-operations'
-import { useFieldAPI } from '../../../../../form/hooks/useField'
+import { GetSearchContextByNameResult } from '../../../../../../../../../graphql-operations'
+import { useFieldAPI } from '../../../../../../form/hooks/useField'
 
 const GET_CONTEXT_BY_NAME = gql`
     query GetSearchContextByName($query: String!) {
