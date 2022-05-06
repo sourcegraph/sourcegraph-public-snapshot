@@ -143,7 +143,7 @@ GROUP BY batch_changes_range.range, created_from_raw;
 		})
 	}
 
-	queryUniqueEventLogUsersCurrentMonth := func(events []*sqlf.Query) *sql.Row {
+	queryUniqueContributorCurrentMonth := func(events []*sqlf.Query) *sql.Row {
 		q := sqlf.Sprintf(`
 SELECT
 	COUNT(*)
@@ -172,7 +172,7 @@ FROM (
 		sqlf.Sprintf("%q", "ViewBatchChangeApplyPage"),
 	}
 
-	if err := queryUniqueEventLogUsersCurrentMonth(contributorEvents).Scan(&stats.CurrentMonthContributorsCount); err != nil {
+	if err := queryUniqueContributorCurrentMonth(contributorEvents).Scan(&stats.CurrentMonthContributorsCount); err != nil {
 		return nil, err
 	}
 
@@ -185,6 +185,19 @@ FROM (
 		sqlf.Sprintf("%q", "ViewBatchChangeApplyPage"),
 		sqlf.Sprintf("%q", "ViewBatchChangeDetailsPagePage"),
 		sqlf.Sprintf("%q", "ViewBatchChangesListPage"),
+	}
+
+	queryUniqueEventLogUsersCurrentMonth := func(events []*sqlf.Query) *sql.Row {
+		q := sqlf.Sprintf(`
+SELECT
+	COUNT(DISTINCT user_id)
+FROM event_logs
+WHERE name IN (%s) AND timestamp >= date_trunc('month', CURRENT_DATE)
+`,
+			sqlf.Join(events, ","),
+		)
+
+		return db.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	}
 
 	if err := queryUniqueEventLogUsersCurrentMonth(usersEvents).Scan(&stats.CurrentMonthUsersCount); err != nil {
