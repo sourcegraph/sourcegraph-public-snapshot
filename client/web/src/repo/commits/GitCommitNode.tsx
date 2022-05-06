@@ -268,6 +268,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                                                 variant="secondary"
                                                 as={Link}
                                                 size="sm"
+                                                aria-label="View this commit"
                                             >
                                                 <strong>{oidElement}</strong>
                                             </Button>
