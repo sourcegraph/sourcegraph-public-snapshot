@@ -18,12 +18,14 @@ export const GET_BATCH_CHANGE_TO_EDIT = gql`
             ... on User {
                 username
                 displayName
+                namespaceName
                 viewerCanAdminister
                 url
             }
             ... on Org {
                 name
                 displayName
+                namespaceName
                 viewerCanAdminister
                 url
             }
@@ -36,6 +38,9 @@ export const GET_BATCH_CHANGE_TO_EDIT = gql`
             id
             originalInput
             createdAt
+            startedAt
+            state
+            applyURL
         }
 
         batchSpecs(first: 1) {
@@ -43,6 +48,9 @@ export const GET_BATCH_CHANGE_TO_EDIT = gql`
                 id
                 originalInput
                 createdAt
+                startedAt
+                state
+                applyURL
             }
         }
 
