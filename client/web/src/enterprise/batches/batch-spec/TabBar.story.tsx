@@ -5,68 +5,47 @@ import { storiesOf } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
 
-import { TabBar, TabsConfig, TabName } from './TabBar'
+import { TabBar, TabsConfig, TabKey } from './TabBar'
 
 const { add } = storiesOf('web/batches/batch-spec/TabBar', module).addDecorator(story => (
     <div className="p-3 container">{story()}</div>
 ))
 
-const CREATE_TABS: TabsConfig[] = [{ name: 'configuration', isEnabled: true }]
+const CREATE_TABS: TabsConfig[] = [{ key: 'configuration', isEnabled: true }]
 
 add('creating a new batch change', () => (
-    <WebStory>{props => <TabBar {...props} activeTabName="configuration" tabsConfig={CREATE_TABS} />}</WebStory>
+    <WebStory>{props => <TabBar {...props} activeTabKey="configuration" tabsConfig={CREATE_TABS} />}</WebStory>
 ))
 
 add('editing unexecuted batch spec', () => {
-    const [activeTabName, setActiveTabName] = useState<TabName>('batch spec')
+    const [activeTabKey, setActiveTabKey] = useState<TabKey>('spec')
 
     const tabsConfig: TabsConfig[] = [
         {
-            name: 'configuration',
+            key: 'configuration',
             isEnabled: true,
             handler: {
                 type: 'button',
-                onClick: () => setActiveTabName('configuration'),
+                onClick: () => setActiveTabKey('configuration'),
             },
         },
         {
-            name: 'batch spec',
+            key: 'spec',
             isEnabled: true,
             handler: {
                 type: 'button',
-                onClick: () => setActiveTabName('batch spec'),
+                onClick: () => setActiveTabKey('spec'),
             },
         },
     ]
 
-    return <WebStory>{props => <TabBar {...props} tabsConfig={tabsConfig} activeTabName={activeTabName} />}</WebStory>
+    return <WebStory>{props => <TabBar {...props} tabsConfig={tabsConfig} activeTabKey={activeTabKey} />}</WebStory>
 })
 
 const EXECUTING_TABS: TabsConfig[] = [
-    {
-        name: 'configuration',
-        isEnabled: true,
-        handler: {
-            type: 'link',
-            to: '/configuration',
-        },
-    },
-    {
-        name: 'batch spec',
-        isEnabled: true,
-        handler: {
-            type: 'link',
-            to: '/spec',
-        },
-    },
-    {
-        name: 'execution',
-        isEnabled: true,
-        handler: {
-            type: 'link',
-            to: '/execution',
-        },
-    },
+    { key: 'configuration', isEnabled: true, handler: { type: 'link' } },
+    { key: 'spec', isEnabled: true, handler: { type: 'link' } },
+    { key: 'execution', isEnabled: true, handler: { type: 'link' } },
 ]
 
 add('executing a batch spec', () => (
@@ -75,45 +54,17 @@ add('executing a batch spec', () => (
             <TabBar
                 {...props}
                 tabsConfig={EXECUTING_TABS}
-                activeTabName={select('Active tab', ['configuration', 'batch spec', 'execution'], 'execution')}
+                activeTabKey={select('Active tab', ['configuration', 'spec', 'execution'], 'execution')}
             />
         )}
     </WebStory>
 ))
 
 const PREVIEWING_TABS: TabsConfig[] = [
-    {
-        name: 'configuration',
-        isEnabled: true,
-        handler: {
-            type: 'link',
-            to: '/configuration',
-        },
-    },
-    {
-        name: 'batch spec',
-        isEnabled: true,
-        handler: {
-            type: 'link',
-            to: '/spec',
-        },
-    },
-    {
-        name: 'execution',
-        isEnabled: true,
-        handler: {
-            type: 'link',
-            to: '/execution',
-        },
-    },
-    {
-        name: 'preview',
-        isEnabled: true,
-        handler: {
-            type: 'link',
-            to: '/preview',
-        },
-    },
+    { key: 'configuration', isEnabled: true, handler: { type: 'link' } },
+    { key: 'spec', isEnabled: true, handler: { type: 'link' } },
+    { key: 'execution', isEnabled: true, handler: { type: 'link' } },
+    { key: 'preview', isEnabled: true, handler: { type: 'link' } },
 ]
 
 add('previewing an execution result', () => (
@@ -122,7 +73,7 @@ add('previewing an execution result', () => (
             <TabBar
                 {...props}
                 tabsConfig={PREVIEWING_TABS}
-                activeTabName={select('Active tab', ['configuration', 'batch spec', 'execution', 'preview'], 'preview')}
+                activeTabKey={select('Active tab', ['configuration', 'spec', 'execution', 'preview'], 'preview')}
             />
         )}
     </WebStory>

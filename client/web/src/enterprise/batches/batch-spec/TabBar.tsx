@@ -8,38 +8,45 @@ import { Button } from '@sourcegraph/wildcard'
 
 import styles from './TabBar.module.scss'
 
-export type TabName = 'configuration' | 'batch spec' | 'execution' | 'preview'
+export const TAB_KEYS = ['configuration', 'spec', 'execution', 'preview'] as const
+export type TabKey = typeof TAB_KEYS[number]
 
 export interface TabsConfig {
-    name: TabName
+    key: TabKey
     isEnabled: boolean
     disabledTooltip?: string
-    handler?: { type: 'link'; to: string } | { type: 'button'; onClick: () => void }
+    handler?: { type: 'link' } | { type: 'button'; onClick: () => void }
 }
 
 const DEFAULT_TABS: TabsConfig[] = [
-    { name: 'configuration', isEnabled: false },
-    { name: 'batch spec', isEnabled: false },
-    { name: 'execution', isEnabled: false },
-    { name: 'preview', isEnabled: false },
+    { key: 'configuration', isEnabled: false },
+    { key: 'spec', isEnabled: false },
+    { key: 'execution', isEnabled: false },
+    { key: 'preview', isEnabled: false },
 ]
 
-interface TabBarProps {
-    activeTabName: TabName
-    tabsConfig: TabsConfig[]
+const getTabName = (key: TabKey, index: number): string => {
+    const lowerCaseName = key === 'spec' ? 'batch spec' : key
+    return `${index + 1}. ${upperFirst(lowerCaseName)}`
 }
 
-export const TabBar: React.FunctionComponent<TabBarProps> = ({ activeTabName, tabsConfig }) => {
+interface TabBarProps {
+    activeTabKey: TabKey
+    tabsConfig: TabsConfig[]
+    matchURL?: string
+}
+
+export const TabBar: React.FunctionComponent<TabBarProps> = ({ activeTabKey, tabsConfig, matchURL }) => {
     // uniqBy removes duplicates by taking the first item it finds with a given 'name', so we spread the defaults last
-    const fullTabsConfig = useMemo<TabsConfig[]>(() => uniqBy([...tabsConfig, ...DEFAULT_TABS], 'name'), [tabsConfig])
+    const fullTabsConfig = useMemo<TabsConfig[]>(() => uniqBy([...tabsConfig, ...DEFAULT_TABS], 'key'), [tabsConfig])
     return (
         <ul className="nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap">
-            {fullTabsConfig.map(({ name, isEnabled, disabledTooltip, handler }, index) => {
-                const tabName = `${index + 1}. ${upperFirst(name)}`
+            {fullTabsConfig.map(({ key, isEnabled, disabledTooltip, handler }, index) => {
+                const tabName = getTabName(key, index)
 
                 return (
-                    <li className="nav-item" key={name}>
-                        {activeTabName === name ? (
+                    <li className="nav-item" key={key}>
+                        {activeTabKey === key ? (
                             <span aria-disabled="true" className="nav-link active">
                                 {tabName}
                             </span>
@@ -62,7 +69,7 @@ export const TabBar: React.FunctionComponent<TabBarProps> = ({ activeTabName, ta
                             </span>
                         ) : handler.type === 'link' ? (
                             <RouterLink
-                                to={handler.to}
+                                to={`${matchURL || ''}/${key}`}
                                 role="button"
                                 className={classNames('nav-link', styles.navLink)}
                                 data-tab-content={tabName}

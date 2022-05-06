@@ -18,7 +18,7 @@ import { useInsightTemplates } from '../../create/useInsightTemplates'
 import { BatchSpecContext, BatchSpecContextProvider } from '../BatchSpecContext'
 import { ActionButtons } from '../header/ActionButtons'
 import { BatchChangeHeader } from '../header/BatchChangeHeader'
-import { TabBar, TabsConfig, TabName } from '../TabBar'
+import { TabBar, TabsConfig, TabKey } from '../TabBar'
 
 import { EditorFeedbackPanel } from './editor/EditorFeedbackPanel'
 import { MonacoBatchSpecEditor } from './editor/MonacoBatchSpecEditor'
@@ -79,23 +79,23 @@ const EditBatchSpecPageContent: React.FunctionComponent<React.PropsWithChildren<
 
     const { insightTitle } = useInsightTemplates(settingsCascade)
 
-    const [activeTabName, setActiveTabName] = useState<TabName>('batch spec')
+    const [activeTabKey, setActiveTabKey] = useState<TabKey>('spec')
     const tabsConfig = useMemo<TabsConfig[]>(
         () => [
             {
-                name: 'configuration',
+                key: 'configuration',
                 isEnabled: true,
                 handler: {
                     type: 'button',
-                    onClick: () => setActiveTabName('configuration'),
+                    onClick: () => setActiveTabKey('configuration'),
                 },
             },
             {
-                name: 'batch spec',
+                key: 'spec',
                 isEnabled: true,
                 handler: {
                     type: 'button',
-                    onClick: () => setActiveTabName('batch spec'),
+                    onClick: () => setActiveTabKey('spec'),
                 },
             },
         ],
@@ -142,9 +142,9 @@ const EditBatchSpecPageContent: React.FunctionComponent<React.PropsWithChildren<
             )} */}
                 </ActionButtons>
             </div>
-            <TabBar activeTabName={activeTabName} tabsConfig={tabsConfig} />
+            <TabBar activeTabKey={activeTabKey} tabsConfig={tabsConfig} />
 
-            {activeTabName === 'configuration' ? (
+            {activeTabKey === 'configuration' ? (
                 <ConfigurationForm isReadOnly={true} batchChange={batchChange} settingsCascade={settingsCascade} />
             ) : (
                 <div className={styles.form}>
