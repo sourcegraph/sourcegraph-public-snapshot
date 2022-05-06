@@ -1,6 +1,9 @@
 package okay
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 // Metric represents a particular metric attached to an event.
 type Metric struct {
@@ -20,4 +23,17 @@ func Duration(duration time.Duration) Metric {
 
 func Number(number int) Metric {
 	return Metric{Type: "number", Value: float64(number)}
+}
+
+func (m *Metric) String() string {
+	if m == nil {
+		return "<nil>"
+	}
+	switch m.Type {
+	case "count", "number":
+		return fmt.Sprintf("%+v", m.Value)
+	case "durationMs":
+		return time.Duration(int64(m.Value)).String()
+	}
+	return "invalid"
 }
