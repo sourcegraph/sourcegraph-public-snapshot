@@ -70,7 +70,7 @@ add('editing for the first time', () => (
                         batchChange={{
                             name: 'my-batch-change',
                             url: 'some-url',
-                            namespace: { name: 'my-cool-org', id: 'test1234', url: 'some-url' },
+                            namespace: { id: 'test1234' },
                         }}
                         settingsCascade={SETTINGS_CASCADE}
                     />
@@ -116,7 +116,7 @@ add('editing the latest batch spec', () => (
                         batchChange={{
                             name: 'my-batch-change',
                             url: 'some-url',
-                            namespace: { name: 'my-cool-org', id: 'test1234', url: 'some-url' },
+                            namespace: { id: 'test1234' },
                         }}
                         settingsCascade={SETTINGS_CASCADE}
                     />
@@ -135,7 +135,7 @@ add('batch change not found', () => (
                     batchChange={{
                         name: 'doesnt-exist',
                         url: 'some-url',
-                        namespace: { name: 'my-cool-org', id: 'test1234', url: 'some-url' },
+                        namespace: { id: 'test1234' },
                     }}
                     settingsCascade={SETTINGS_CASCADE}
                 />
