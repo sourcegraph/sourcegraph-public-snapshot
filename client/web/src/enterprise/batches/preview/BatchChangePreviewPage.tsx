@@ -129,7 +129,7 @@ export const NewBatchChangePreviewPage: React.FunctionComponent<
         queryApplyPreviewStats,
     } = props
 
-    const { data, loading } = useQuery<BatchSpecByIDResult, BatchSpecByIDVariables>(BATCH_SPEC_BY_ID, {
+    const { data, loading, error } = useQuery<BatchSpecByIDResult, BatchSpecByIDVariables>(BATCH_SPEC_BY_ID, {
         variables: {
             batchSpec: specID,
         },
@@ -141,14 +141,14 @@ export const NewBatchChangePreviewPage: React.FunctionComponent<
         telemetryService.logViewEvent('BatchChangeApplyPage')
     }, [telemetryService])
 
-    if (loading) {
+    if (loading && !data) {
         return (
             <div className="text-center">
                 <LoadingSpinner className="mx-auto my-4" />
             </div>
         )
     }
-    if (data?.node?.__typename !== 'BatchSpec') {
+    if (data?.node?.__typename !== 'BatchSpec' || error) {
         return <HeroPage icon={AlertCircleIcon} title="Batch spec not found" />
     }
     const spec = data.node
