@@ -29,7 +29,7 @@ type TabulationResult struct {
 
 // TabulationDecoder will tabulate the result counts per repository.
 func TabulationDecoder() (streamhttp.FrontendStreamDecoder, *TabulationResult) {
-	var tr = &TabulationResult{
+	tr := &TabulationResult{
 		RepoCounts: make(map[string]*SearchMatch),
 	}
 
@@ -114,7 +114,7 @@ type ComputeTabulationResult struct {
 const capturedValueMaxLength = 100
 
 func ComputeDecoder() (client.ComputeMatchContextStreamDecoder, *ComputeTabulationResult) {
-	var ctr = &ComputeTabulationResult{
+	ctr := &ComputeTabulationResult{
 		RepoCounts: make(map[string]*ComputeMatch),
 	}
 	getRepoCounts := func(matchContext compute.MatchContext) *ComputeMatch {
