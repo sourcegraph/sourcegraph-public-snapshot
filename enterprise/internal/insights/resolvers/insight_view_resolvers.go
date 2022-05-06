@@ -152,6 +152,14 @@ func (i *insightViewResolver) DataSeries(ctx context.Context) ([]graphqlbackend.
 	return resolvers, nil
 }
 
+func (i *insightViewResolver) Dashboards(ctx context.Context, args *graphqlbackend.InsightsDashboardsArgs) graphqlbackend.InsightsDashboardConnectionResolver {
+	return &dashboardConnectionResolver{baseInsightResolver: i.baseInsightResolver,
+		orgStore:         database.Orgs(i.postgresDB),
+		args:             args,
+		withViewUniqueID: &i.view.UniqueID,
+	}
+}
+
 func filterRepositories(ctx context.Context, filters types.InsightViewFilters, repositories []string, scLoader SearchContextLoader) ([]string, error) {
 	matches := make(map[string]interface{})
 

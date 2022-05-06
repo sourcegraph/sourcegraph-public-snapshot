@@ -3,20 +3,24 @@ package repos
 import (
 	"context"
 
+	"github.com/opentracing/opentracing-go/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 type ComputeExcludedReposJob struct {
-	Options search.RepoOptions
+	RepoOpts search.RepoOptions
 }
 
 func (c *ComputeExcludedReposJob) Run(ctx context.Context, clients job.RuntimeClients, s streaming.Sender) (alert *search.Alert, err error) {
-	_, ctx, s, finish := job.StartSpan(ctx, s, c)
+	tr, ctx, s, finish := job.StartSpan(ctx, s, c)
 	defer func() { finish(alert, err) }()
+	tr.TagFields(trace.LazyFields(c.Tags))
 
-	excluded, err := computeExcludedRepos(ctx, clients.DB, c.Options)
+	excluded, err := computeExcludedRepos(ctx, clients.DB, c.RepoOpts)
 	if err != nil {
 		return nil, err
 	}
@@ -33,4 +37,10 @@ func (c *ComputeExcludedReposJob) Run(ctx context.Context, clients job.RuntimeCl
 
 func (c *ComputeExcludedReposJob) Name() string {
 	return "ComputeExcludedReposJob"
+}
+
+func (c *ComputeExcludedReposJob) Tags() []log.Field {
+	return []log.Field{
+		trace.Stringer("repoOpts", &c.RepoOpts),
+	}
 }

@@ -3,7 +3,7 @@ package run
 import (
 	"context"
 
-	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -11,11 +11,12 @@ import (
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type RepoSearchJob struct {
-	RepoOptions                  search.RepoOptions
+	RepoOpts                     search.RepoOptions
 	FilePatternsReposMustInclude []string
 	FilePatternsReposMustExclude []string
 	Features                     search.Features
@@ -26,10 +27,11 @@ type RepoSearchJob struct {
 func (s *RepoSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
+	tr.TagFields(trace.LazyFields(s.Tags))
 
-	repos := &searchrepos.Resolver{DB: clients.DB, Opts: s.RepoOptions}
+	repos := &searchrepos.Resolver{DB: clients.DB, Opts: s.RepoOpts}
 	err = repos.Paginate(ctx, func(page *searchrepos.Resolved) error {
-		tr.LogFields(otlog.Int("resolved.len", len(page.RepoRevs)))
+		tr.LogFields(log.Int("resolved.len", len(page.RepoRevs)))
 
 		// Filter the repos if there is a repohasfile: or -repohasfile field.
 		if len(s.FilePatternsReposMustExclude) > 0 || len(s.FilePatternsReposMustInclude) > 0 {
@@ -51,11 +53,20 @@ func (s *RepoSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 	// actionable error, but for repo search, it is not.
 	err = errors.Ignore(err, errors.IsPred(searchrepos.ErrNoResolvedRepos))
 	return nil, err
-
 }
 
 func (*RepoSearchJob) Name() string {
 	return "RepoSearchJob"
+}
+
+func (s *RepoSearchJob) Tags() []log.Field {
+	return []log.Field{
+		trace.Stringer("repoOpts", &s.RepoOpts),
+		trace.Printf("filePatternsReposMustInclude", "%q", s.FilePatternsReposMustInclude),
+		trace.Printf("filePatternsReposMustExclude", "%q", s.FilePatternsReposMustExclude),
+		log.Bool("contentBasedLangFilters", s.Features.ContentBasedLangFilters),
+		trace.Stringer("mode", s.Mode),
+	}
 }
 
 func repoRevsToRepoMatches(ctx context.Context, db database.DB, repos []*search.RepositoryRevisions) []result.Match {

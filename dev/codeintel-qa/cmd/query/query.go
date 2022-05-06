@@ -40,7 +40,7 @@ func queryUploads(ctx context.Context) (_ map[string][]string, err error) {
 			} `json:"lsifUploads"`
 		} `json:"data"`
 	}
-	if err := queryGraphQL(ctx, "CodeIntelTesterUploads", uploadsQuery, map[string]interface{}{}, &payload); err != nil {
+	if err := queryGraphQL(ctx, "CodeIntelQA_Query_Uploads", uploadsQuery, map[string]interface{}{}, &payload); err != nil {
 		return nil, err
 	}
 
@@ -110,7 +110,7 @@ func queryDefinitions(ctx context.Context, location Location) (locations []Locat
 	}
 
 	var payload QueryResponse
-	if err := queryGraphQL(ctx, "CodeIntelTesterDefinitions", definitionsQuery, variables, &payload); err != nil {
+	if err := queryGraphQL(ctx, "CodeIntelQA_Query_Definitions", definitionsQuery, variables, &payload); err != nil {
 		return nil, err
 	}
 
@@ -159,7 +159,7 @@ func queryReferences(ctx context.Context, location Location) (locations []Locati
 		}
 
 		var payload QueryResponse
-		if err := queryGraphQL(ctx, "CodeIntelTesterReferences", referencesQuery, variables, &payload); err != nil {
+		if err := queryGraphQL(ctx, "CodeIntelQA_Query_References", referencesQuery, variables, &payload); err != nil {
 			return nil, err
 		}
 

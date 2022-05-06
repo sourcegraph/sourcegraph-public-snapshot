@@ -43,6 +43,7 @@ var allFields = map[string]struct{}{
 	"g":                     empty,
 	FieldFile:               empty,
 	"f":                     empty,
+	"path":                  empty,
 	FieldFork:               empty,
 	FieldArchived:           empty,
 	FieldLang:               empty,
@@ -75,6 +76,7 @@ var allFields = map[string]struct{}{
 var aliases = map[string]string{
 	"r":        FieldRepo,
 	"f":        FieldFile,
+	"path":     FieldFile,
 	"l":        FieldLang,
 	"language": FieldLang,
 	"since":    FieldAfter,
