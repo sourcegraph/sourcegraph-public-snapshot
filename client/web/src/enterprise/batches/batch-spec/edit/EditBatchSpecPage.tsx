@@ -5,14 +5,13 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { useQuery } from '@sourcegraph/http-client'
 import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Icon, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, Icon, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../../../../components/HeroPage'
 import { GetBatchChangeToEditResult, GetBatchChangeToEditVariables, Scalars } from '../../../../graphql-operations'
 // TODO: Move some of these to batch-spec/edit
 import { GET_BATCH_CHANGE_TO_EDIT } from '../../create/backend'
 import { ConfigurationForm } from '../../create/ConfigurationForm'
-import { ExecutionOptions, ExecutionOptionsDropdown } from '../../create/ExecutionOptions'
 import { InsightTemplatesBanner } from '../../create/InsightTemplatesBanner'
 import { useInsightTemplates } from '../../create/useInsightTemplates'
 import { BatchSpecContext, BatchSpecContextProvider } from '../BatchSpecContext'
@@ -23,6 +22,7 @@ import { TabBar, TabsConfig, TabKey } from '../TabBar'
 import { EditorFeedbackPanel } from './editor/EditorFeedbackPanel'
 import { MonacoBatchSpecEditor } from './editor/MonacoBatchSpecEditor'
 import { LibraryPane } from './library/LibraryPane'
+import { RunBatchSpecButton } from './RunBatchSpecButton'
 import { WorkspacesPreviewPanel } from './workspaces-preview/WorkspacesPreviewPanel'
 
 import layoutStyles from '../Layout.module.scss'
@@ -97,10 +97,6 @@ const EditBatchSpecPageContent: React.FunctionComponent<React.PropsWithChildren<
         []
     )
 
-    // TODO: Move to context??
-    // NOTE: Technically there's only one option, and it's actually a preview option.
-    const [executionOptions, setExecutionOptions] = useState<ExecutionOptions>({ runWithoutCache: false })
-
     return (
         <div className={layoutStyles.pageContainer}>
             {insightTitle && <InsightTemplatesBanner insightTitle={insightTitle} type="create" className="mb-3" />}
@@ -114,27 +110,25 @@ const EditBatchSpecPageContent: React.FunctionComponent<React.PropsWithChildren<
                     description={batchChange.description ?? undefined}
                 />
                 <ActionButtons>
-                    <ExecutionOptionsDropdown
-                        // execute={executeBatchSpec}
-                        execute={() => alert('execute!')}
-                        // isExecutionDisabled={isExecutionDisabled}
-                        isExecutionDisabled={true}
-                        // executionTooltip={executionTooltip}
-                        executionTooltip="lol"
-                        options={executionOptions}
-                        onChangeOptions={setExecutionOptions}
+                    <RunBatchSpecButton
+                        execute={editor.execute}
+                        isExecutionDisabled={editor.isExecutionDisabled}
+                        options={editor.executionOptions}
+                        onChangeOptions={editor.setExecutionOptions}
                     />
-
                     {/* TODO: Come back to this after Adeola's PR is merged */}
+                    <Button className={styles.downloadLink} variant="link" onClick={() => alert('hi')}>
+                        or download for src-cli
+                    </Button>
                     {/* {downloadSpecModalDismissed ? (
-                <BatchSpecDownloadLink name={batchChange.name} originalInput={code} isLightTheme={isLightTheme}>
-                    or download for src-cli
-                </BatchSpecDownloadLink>
-            ) : (
-                <Button className={styles.downloadLink} variant="link" onClick={() => setIsDownloadSpecModalOpen(true)}>
-                    or download for src-cli
-                </Button>
-            )} */}
+                        <BatchSpecDownloadLink name={batchChange.name} originalInput={code} isLightTheme={isLightTheme}>
+                            or download for src-cli
+                        </BatchSpecDownloadLink>
+                    ) : (
+                        <Button className={styles.downloadLink} variant="link" onClick={() => setIsDownloadSpecModalOpen(true)}>
+                            or download for src-cli
+                        </Button>
+                    )} */}
                 </ActionButtons>
             </div>
             <TabBar activeTabKey={activeTabKey} tabsConfig={tabsConfig} />

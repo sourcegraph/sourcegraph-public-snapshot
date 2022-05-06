@@ -1,14 +1,12 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
-import { noop } from 'lodash'
+import { BatchSpecState, BatchSpecWorkspaceResolutionState, EditBatchChangeFields } from '../../../graphql-operations'
 
-import { EditBatchChangeFields } from '../../../graphql-operations'
-
+import { useExecuteBatchSpec } from './edit/useExecuteBatchSpec'
 import { WorkspacePreviewFilters } from './edit/workspaces-preview/useWorkspaces'
 import { useWorkspacesPreview, UseWorkspacesPreviewResult } from './edit/workspaces-preview/useWorkspacesPreview'
 import { useBatchSpecCode, UseBatchSpecCodeResult } from './useBatchSpecCode'
 
-// TODO: This is probably just edit context LOL
 export interface BatchSpecContextErrors {
     // Errors from trying to automatically apply updates to the batch spec code.
     codeUpdate?: string | Error
@@ -20,10 +18,26 @@ export interface BatchSpecContextErrors {
     execute?: string | Error
 }
 
-type BatchSpecState = EditBatchChangeFields['currentSpec'] & {
+type NewBatchSpecState = EditBatchChangeFields['currentSpec'] & {
     // Whether or not the batch spec has already been applied.
     isApplied: boolean
+    // Execution URL for this batch spec.
+    executionURL: string
 }
+
+type EditorState = UseBatchSpecCodeResult & {
+    execute: () => void
+    // Whether or not the run batch spec button should be disabled, for example due to
+    // there being a problem with the input batch spec YAML, or an execution already being
+    // in progress. An optional tooltip string to display may be provided in place of
+    // `true`.
+    isExecutionDisabled: string | boolean
+    // Options to apply to the workspaces preview and execution requests.
+    executionOptions: ExecutionOptions
+    // Callback to update options applied to workspaces preview and execution requests.
+    setExecutionOptions: (options: ExecutionOptions) => void
+}
+
 type WorkspacesPreviewState = UseWorkspacesPreviewResult & {
     // Any filters to apply to the workspaces preview connection.
     filters?: WorkspacePreviewFilters
@@ -36,29 +50,40 @@ type WorkspacesPreviewState = UseWorkspacesPreviewResult & {
     isPreviewDisabled: string | boolean
 }
 
+// Options to apply to the execution of a batch spec.
+// NOTE: `runWithoutCache` is actually sent as options to the workspaces preview request,
+// because it determines whether or not to use cached results for the workspaces.
+export interface ExecutionOptions {
+    runWithoutCache: boolean
+}
+
+const DEFAULT_EXECUTION_OPTIONS: ExecutionOptions = {
+    runWithoutCache: false,
+}
+
 export interface BatchSpecContextState {
     readonly batchChange: EditBatchChangeFields
-    readonly batchSpec: BatchSpecState
+    readonly batchSpec: NewBatchSpecState
 
-    readonly editor: UseBatchSpecCodeResult
+    // API for state managing the batch spec input YAML code in the Monaco editor.
+    readonly editor: EditorState
 
+    // API for state managing the workspaces resolution preview for the batch spec.
     readonly workspacesPreview: WorkspacesPreviewState
 
     readonly errors: BatchSpecContextErrors
-    setError: (type: keyof BatchSpecContextErrors, error: string | Error | undefined) => void
 }
 
 export const defaultState = (): BatchSpecContextState => ({
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     batchChange: {} as EditBatchChangeFields,
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-    batchSpec: {} as BatchSpecState,
+    batchSpec: {} as NewBatchSpecState,
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-    editor: {} as UseBatchSpecCodeResult,
+    editor: {} as EditorState,
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     workspacesPreview: {} as WorkspacesPreviewState,
     errors: {},
-    setError: noop,
 })
 
 /**
@@ -91,36 +116,29 @@ export const BatchSpecContextProvider: React.FunctionComponent<BatchSpecContextP
     const isLatestSpecApplied = useMemo(() => currentSpec.id === latestSpec.id, [currentSpec.id, latestSpec.id])
 
     const editor = useBatchSpecCode(latestSpec.originalInput, batchChange.name)
-    const { handleCodeChange, isValid } = editor
+    const { handleCodeChange, isValid, isServerStale } = editor
 
     const [filters, setFilters] = useState<WorkspacePreviewFilters>()
+    const [executionOptions, setExecutionOptions] = useState<ExecutionOptions>(DEFAULT_EXECUTION_OPTIONS)
 
     // Manage the batch spec that was last submitted to the backend for the workspaces preview.
     const workspacesPreview = useWorkspacesPreview(latestSpec.id, {
         isBatchSpecApplied: isLatestSpecApplied,
         namespaceID: batchChange.namespace.id,
-        // TODO:
-        // noCache: executionOptions.runWithoutCache,
-        noCache: false,
+        noCache: executionOptions.runWithoutCache,
         onComplete: refetchBatchChange,
         filters,
     })
-    const { isInProgress: isWorkspacesPreviewInProgress } = workspacesPreview
+    const { isInProgress: isWorkspacesPreviewInProgress, resolutionState } = workspacesPreview
 
     // Disable triggering a new preview if the batch spec code is invalid or if we're
     // already processing a preview.
-    const isPreviewDisabled = useMemo(
+    const isPreviewDisabled = useMemo<boolean | string>(
         () => (isValid !== true ? "There's a problem with your batch spec." : isWorkspacesPreviewInProgress),
         [isValid, isWorkspacesPreviewInProgress]
     )
 
-    // TODO: This will probably go away
-    const [errors, setErrors] = useState<Pick<BatchSpecContextErrors, 'execute'>>({})
-    const setError = useCallback((type: keyof BatchSpecContextErrors, error: string | Error | undefined) => {
-        setErrors(errors => ({ ...errors, [type]: error }))
-    }, [])
-
-    const { clearError: clearPreviewError } = workspacesPreview
+    const { error: previewError, clearError: clearPreviewError, hasPreviewed } = workspacesPreview
     // Clear preview error when the batch spec code changes.
     const clearPreviewErrorsAndHandleCodeChange = useCallback(
         (newCode: string) => {
@@ -130,20 +148,76 @@ export const BatchSpecContextProvider: React.FunctionComponent<BatchSpecContextP
         [handleCodeChange, clearPreviewError]
     )
 
+    const isExecuting = batchSpec.state === BatchSpecState.QUEUED || batchSpec.state === BatchSpecState.PROCESSING
+    const alreadyExecuted =
+        batchSpec.applyURL !== null ||
+        batchSpec.state === BatchSpecState.COMPLETED ||
+        batchSpec.state === BatchSpecState.FAILED ||
+        batchSpec.state === BatchSpecState.CANCELED ||
+        batchSpec.state === BatchSpecState.CANCELING
+
+    // Manage submitting a batch spec for execution.
+    const { executeBatchSpec, isLoading: isExecutionRequestInProgress, error: executeError } = useExecuteBatchSpec(
+        batchSpec.id
+    )
+
+    // Disable triggering a new execution if any of the following are true:
+    // - The batch spec code is invalid.
+    // - There was an error with the workspaces preview.
+    // - We're in the middle of previewing or executing the batch spec.
+    // - We haven't sent the latest spec to the backend for a workspaces preview yet.
+    // - The batch spec on the backend is stale.
+    // - The current workspaces resolution job is not complete.
+    // - The batch spec is already executing, or has already been executed.
+    const isExecutionDisabled = useMemo<boolean | string>(
+        () =>
+            isValid === false || previewError
+                ? "There's a problem with your batch spec."
+                : !hasPreviewed
+                ? 'Preview workspaces first before you run.'
+                : isServerStale
+                ? 'Update your workspaces preview before you run.'
+                : isWorkspacesPreviewInProgress || resolutionState !== BatchSpecWorkspaceResolutionState.COMPLETED
+                ? 'Wait for the preview to finish first.'
+                : isExecuting
+                ? 'Batch spec is already executing.'
+                : isExecutionRequestInProgress,
+        [
+            isValid,
+            previewError,
+            hasPreviewed,
+            isWorkspacesPreviewInProgress,
+            isExecutionRequestInProgress,
+            isServerStale,
+            resolutionState,
+            isExecuting,
+        ]
+    )
+
     return (
         <BatchSpecContext.Provider
             value={{
                 batchChange,
-                batchSpec: { ...latestSpec, isApplied: isLatestSpecApplied },
-                editor: { ...editor, handleCodeChange: clearPreviewErrorsAndHandleCodeChange },
+                batchSpec: {
+                    ...batchSpec,
+                    isApplied: isBatchSpecApplied,
+                    executionURL: `${batchChange.url}/executions/${batchSpec.id}`,
+                },
+                editor: {
+                    ...editor,
+                    handleCodeChange: clearPreviewErrorsAndHandleCodeChange,
+                    execute: executeBatchSpec,
+                    isExecutionDisabled,
+                    executionOptions,
+                    setExecutionOptions,
+                },
+                workspacesPreview: { ...workspacesPreview, filters, setFilters, isPreviewDisabled },
                 errors: {
-                    ...errors,
                     codeUpdate: editor.errors.update,
                     codeValidation: editor.errors.validation,
                     preview: workspacesPreview.error,
+                    execute: executeError || fullBatchSpec?.failureMessage || undefined,
                 },
-                workspacesPreview: { ...workspacesPreview, filters, setFilters, isPreviewDisabled },
-                setError,
             }}
         >
             {children}
