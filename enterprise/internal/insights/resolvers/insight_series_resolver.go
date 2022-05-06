@@ -336,7 +336,6 @@ func getRecordedSeriesPointOpts(ctx context.Context, db dbutil.DB, definition ty
 }
 
 func recordedSeries(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {
-
 	opts, err := getRecordedSeriesPointOpts(ctx, r.workerBaseStore.Handle().DB(), definition, filters)
 	if err != nil {
 		return nil, errors.Wrap(err, "getRecordedSeriesPointOpts")
@@ -367,7 +366,6 @@ func recordedSeries(ctx context.Context, definition types.InsightViewSeries, r b
 		statusResolver:  statusResolver,
 	})
 	return resolvers, nil
-
 }
 
 func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {
