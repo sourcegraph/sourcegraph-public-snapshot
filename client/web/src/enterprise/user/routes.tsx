@@ -4,6 +4,7 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { userAreaRoutes } from '../../user/area/routes'
 import { UserAreaRoute, UserAreaRouteContext } from '../../user/area/UserArea'
+import { EditBatchSpecPageProps } from '../batches/batch-spec/edit/EditBatchSpecPage'
 import { CreateOrEditBatchChangePageProps } from '../batches/create/CreateOrEditBatchChangePage'
 import { ExecutionAreaProps, NamespaceBatchChangesAreaProps } from '../batches/global/GlobalBatchChangesArea'
 import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
@@ -22,6 +23,11 @@ const ExecutionArea = lazyComponent<ExecutionAreaProps, 'ExecutionArea'>(
 const CreateOrEditBatchChangePage = lazyComponent<CreateOrEditBatchChangePageProps, 'CreateOrEditBatchChangePage'>(
     () => import('../batches/create/CreateOrEditBatchChangePage'),
     'CreateOrEditBatchChangePage'
+)
+
+const EditBatchSpecPage = lazyComponent<EditBatchSpecPageProps, 'EditBatchSpecPage'>(
+    () => import('../batches/batch-spec/edit/EditBatchSpecPage'),
+    'EditBatchSpecPage'
 )
 
 export const enterpriseUserAreaRoutes: readonly UserAreaRoute[] = [
@@ -43,10 +49,13 @@ export const enterpriseUserAreaRoutes: readonly UserAreaRoute[] = [
     {
         path: '/batch-changes/:batchChangeName/edit',
         render: ({ match, ...props }: UserAreaRouteContext & RouteComponentProps<{ batchChangeName: string }>) => (
-            <CreateOrEditBatchChangePage
+            <EditBatchSpecPage
                 {...props}
-                initialNamespaceID={props.user.id}
-                batchChangeName={match.params.batchChangeName}
+                batchChange={{
+                    name: match.params.batchChangeName,
+                    url: match.url.replace('/edit', ''),
+                    namespace: props.user,
+                }}
             />
         ),
         condition: ({ batchChangesEnabled, batchChangesExecutionEnabled }) =>
