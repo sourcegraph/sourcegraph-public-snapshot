@@ -30,11 +30,12 @@
 }
 
 .panels {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-auto-flow: row;
 
     &--horizontal-mode {
-        flex-direction: row;
+        grid-auto-flow: column;
+        grid-auto-columns: 1fr;
         gap: 1.5rem;
         padding-bottom: 1rem;
     }
