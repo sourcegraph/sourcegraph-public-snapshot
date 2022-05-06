@@ -89,7 +89,7 @@ var analyticsCommand = &cli.Command{
 						ts := ev.Timestamp.Local().Format("2006-01-02 03:04:05PM")
 						var metrics []string
 						for k, v := range ev.Metrics {
-							metrics = append(metrics, fmt.Sprintf("%s: %s", k, v.Type))
+							metrics = append(metrics, fmt.Sprintf("%s: %s", k, v.String()))
 						}
 
 						entry := fmt.Sprintf("- [%s] `%s`: %s _(%s)_",
