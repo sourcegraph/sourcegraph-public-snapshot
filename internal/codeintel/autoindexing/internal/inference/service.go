@@ -314,9 +314,8 @@ func (s *Service) resolveFileContents(
 	if err != nil {
 		return nil, err
 	}
-	pathspecs := make([]gitserver.Pathspec, 0, len(relevantPaths))
-	for _, p := range relevantPaths {
-		pathspecs = append(pathspecs, gitserver.PathspecLiteral(p))
+	if len(relevantPaths) == 0 {
+		return nil, nil
 	}
 
 	start := time.Now()
@@ -326,6 +325,10 @@ func (s *Service) resolveFileContents(
 		return nil, err
 	}
 
+	pathspecs := make([]gitserver.Pathspec, 0, len(relevantPaths))
+	for _, p := range relevantPaths {
+		pathspecs = append(pathspecs, gitserver.PathspecLiteral(p))
+	}
 	opts := gitserver.ArchiveOptions{
 		Treeish:   invocationContext.commit,
 		Format:    "tar",
