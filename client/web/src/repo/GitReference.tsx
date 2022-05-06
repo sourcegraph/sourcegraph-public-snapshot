@@ -40,7 +40,7 @@ export interface GitReferenceNodeProps {
     onClick?: React.MouseEventHandler<HTMLAnchorElement>
 }
 
-export const GitReferenceNode: React.FunctionComponent<GitReferenceNodeProps> = ({
+export const GitReferenceNode: React.FunctionComponent<React.PropsWithChildren<GitReferenceNodeProps>> = ({
     node,
     url,
     ancestorIsLink,

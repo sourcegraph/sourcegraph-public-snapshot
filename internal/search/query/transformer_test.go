@@ -98,6 +98,11 @@ func TestSubstituteAliases(t *testing.T) {
 		"substitution honors literal search pattern",
 		`[{"and":[{"field":"repo","value":"repo","negated":false,"labels":["IsAlias"]},{"value":"^not-actually-a-regexp:tbf$","negated":false,"labels":["IsAlias","Literal"]}]}]`).
 		Equal(t, test("r:repo content:^not-actually-a-regexp:tbf$", SearchTypeLiteral))
+
+	autogold.Want(
+		"substitution honors path",
+		`[{"field":"file","value":"foo","negated":false,"labels":["IsAlias"]}]`).
+		Equal(t, test("path:foo", SearchTypeLiteral))
 }
 
 func TestLowercaseFieldNames(t *testing.T) {

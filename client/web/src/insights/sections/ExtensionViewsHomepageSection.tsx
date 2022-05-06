@@ -19,7 +19,9 @@ export interface ExtensionViewsHomepageSectionProps extends ExtensionViewsSectio
  * Renders extension views section for the home (search) page. Note that this component is used only for
  * OSS version. For Sourcegraph enterprise see `./enterprise/insights/sections` components.
  */
-export const ExtensionViewsHomepageSection: React.FunctionComponent<ExtensionViewsHomepageSectionProps> = props => {
+export const ExtensionViewsHomepageSection: React.FunctionComponent<
+    React.PropsWithChildren<ExtensionViewsHomepageSectionProps>
+> = props => {
     const { settingsCascade, extensionsController, className = '' } = props
     const showCodeInsights = isCodeInsightsEnabled(settingsCascade, { homepage: true })
 

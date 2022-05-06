@@ -42,7 +42,7 @@ export const savedSearchesPanelFragment = gql`
     }
 `
 
-export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
+export const SavedSearchesPanel: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     authenticatedUser,
     className,
     telemetryService,

@@ -31,16 +31,14 @@ Sourcegraph also maintains a variety of tooling on [GitHub Actions](#github-acti
 ## Buildkite pipelines
 
 [Tests](../../how-to/testing.md) are automatically run in our [various Buildkite pipelines](https://buildkite.com/sourcegraph) when you push your changes (i.e. when you run `git push`) to the `sourcegraph/sourcegraph` GitHub repository.
-Pipeline steps are generated on the fly using the [pipeline generator](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/tree/enterprise/dev/ci).
+Pipeline steps are generated on the fly using the [pipeline generator](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/tree/enterprise/dev/ci) - a complete reference of all available pipeline types and steps is available in the generated [Pipeline reference](./reference.md).
+You can also see these docs locally with `sg ci docs`.
 
 To see what checks will get run against your current branch, use [`sg`](../../setup/quickstart.md):
 
 ```sh
 sg ci preview
 ```
-
-A complete reference of all available pipeline types and steps is available in the generated [Pipeline reference](./reference.md).
-You can also see these docs locally with `sg ci docs`.
 
 You can also request builds manually for your builds using `sg ci build`.
 
@@ -144,7 +142,7 @@ An example use of `Skip`:
 @@ -260,7 +260,9 @@ func addGoBuild(pipeline *bk.Pipeline) {
  func addDockerfileLint(pipeline *bk.Pipeline) {
         pipeline.AddStep(":docker: Lint",
-                bk.Cmd("./dev/ci/docker-lint.sh"),
+                bk.Cmd("go run ./dev/sg lint -annotations docker"),
 +               bk.Skip("2021-09-29 example message https://github.com/sourcegraph/sourcegraph/issues/123"),
         )
  }

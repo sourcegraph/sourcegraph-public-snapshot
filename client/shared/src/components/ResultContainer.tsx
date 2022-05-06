@@ -110,7 +110,7 @@ export interface Props {
 /**
  * The container component for a result in the SearchResults component.
  */
-export const ResultContainer: React.FunctionComponent<Props> = ({
+export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     defaultExpanded,
     allExpanded,
     collapsible,

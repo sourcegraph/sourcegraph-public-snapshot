@@ -6,6 +6,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -45,3 +46,9 @@ func TestService(db database.DB) *Service {
 		&observation.TestContext,
 	)
 }
+
+// To be removed after https://github.com/sourcegraph/sourcegraph/issues/33377
+
+type InferenceService = inference.Service
+
+var GetInferenceService = inference.GetService

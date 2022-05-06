@@ -71,6 +71,11 @@ const config = {
             message:
               'Our Zustand stores should be created in a single place. Create this store in client/web/src/stores',
           },
+          {
+            name: 'reactstrap',
+            message:
+              'Please use components from the Wildcard component library instead. We work on removing `reactstrap` dependency.',
+          },
         ],
         patterns: [
           {

@@ -185,7 +185,7 @@ func TestPrettyJSON(t *testing.T) {
       "REPOPAGER": {
         "PARALLEL": [
           {
-            "ZoektRepoSubset": {
+            "ZoektRepoSubsetSearchJob": {
               "Repos": null,
               "Query": {
                 "Pattern": "bar",
@@ -199,7 +199,7 @@ func TestPrettyJSON(t *testing.T) {
             }
           },
           {
-            "Searcher": {
+            "SearcherJob": {
               "PatternInfo": {
                 "Pattern": "bar",
                 "IsNegated": false,
@@ -229,8 +229,8 @@ func TestPrettyJSON(t *testing.T) {
       }
     },
     {
-      "RepoSearch": {
-        "RepoOptions": {
+      "RepoSearchJob": {
+        "RepoOpts": {
           "RepoFilters": [
             "foo",
             "bar"
@@ -259,8 +259,8 @@ func TestPrettyJSON(t *testing.T) {
       }
     },
     {
-      "ComputeExcludedRepos": {
-        "Options": {
+      "ComputeExcludedReposJob": {
+        "RepoOpts": {
           "RepoFilters": [
             "foo"
           ],

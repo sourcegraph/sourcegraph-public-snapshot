@@ -98,7 +98,6 @@ func Main(enterpriseInit EnterpriseInit) {
 	go debugServerRoutine.Start()
 
 	clock := func() time.Time { return time.Now().UTC() }
-
 	if err := keyring.Init(ctx); err != nil {
 		log.Fatalf("error initialising encryption keyring: %v", err)
 	}

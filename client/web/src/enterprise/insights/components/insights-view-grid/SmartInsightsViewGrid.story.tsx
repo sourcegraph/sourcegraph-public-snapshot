@@ -573,10 +573,6 @@ const codeInsightsApiWithManyLines = {
 
 export const SmartInsightsViewGridExample = (): JSX.Element => (
     <CodeInsightsBackendStoryMock mocks={codeInsightsApiWithManyLines}>
-        <SmartInsightsViewGrid
-            settingsCascade={{ final: null, subjects: null }}
-            insights={insightsWithManyLines}
-            telemetryService={NOOP_TELEMETRY_SERVICE}
-        />
+        <SmartInsightsViewGrid insights={insightsWithManyLines} telemetryService={NOOP_TELEMETRY_SERVICE} />
     </CodeInsightsBackendStoryMock>
 )

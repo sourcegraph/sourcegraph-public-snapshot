@@ -32,7 +32,7 @@ export interface EditInsightPageProps {
     authenticatedUser: Pick<AuthenticatedUser, 'id' | 'organizations' | 'username'>
 }
 
-export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = props => {
+export const EditInsightPage: React.FunctionComponent<React.PropsWithChildren<EditInsightPageProps>> = props => {
     const { insightID, authenticatedUser } = props
 
     const { getInsightById } = useContext(CodeInsightsBackendContext)

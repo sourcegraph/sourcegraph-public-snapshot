@@ -41,17 +41,17 @@ func SexpFormat(j job.Job, sep, indent string) string {
 		}
 		switch j := j.(type) {
 		case
-			*zoekt.ZoektRepoSubsetSearch,
-			*zoekt.ZoektSymbolSearch,
-			*searcher.Searcher,
-			*searcher.SymbolSearcher,
-			*run.RepoSearch,
-			*zoekt.GlobalSearch,
-			*structural.StructuralSearch,
-			*commit.CommitSearch,
-			*symbol.RepoUniverseSymbolSearch,
-			*repos.ComputeExcludedRepos,
-			*noopJob:
+			*zoekt.ZoektRepoSubsetSearchJob,
+			*zoekt.ZoektSymbolSearchJob,
+			*searcher.SearcherJob,
+			*searcher.SymbolSearcherJob,
+			*run.RepoSearchJob,
+			*zoekt.ZoektGlobalSearchJob,
+			*structural.StructuralSearchJob,
+			*commit.CommitSearchJob,
+			*symbol.RepoUniverseSymbolSearchJob,
+			*repos.ComputeExcludedReposJob,
+			*NoopJob:
 			b.WriteString(j.Name())
 
 		case *repoPagerJob:
@@ -201,17 +201,17 @@ func PrettyMermaid(j job.Job) string {
 		}
 		switch j := j.(type) {
 		case
-			*zoekt.ZoektRepoSubsetSearch,
-			*zoekt.ZoektSymbolSearch,
-			*searcher.Searcher,
-			*searcher.SymbolSearcher,
-			*run.RepoSearch,
-			*zoekt.GlobalSearch,
-			*structural.StructuralSearch,
-			*commit.CommitSearch,
-			*symbol.RepoUniverseSymbolSearch,
-			*repos.ComputeExcludedRepos,
-			*noopJob:
+			*zoekt.ZoektRepoSubsetSearchJob,
+			*zoekt.ZoektSymbolSearchJob,
+			*searcher.SearcherJob,
+			*searcher.SymbolSearcherJob,
+			*run.RepoSearchJob,
+			*zoekt.ZoektGlobalSearchJob,
+			*structural.StructuralSearchJob,
+			*commit.CommitSearchJob,
+			*symbol.RepoUniverseSymbolSearchJob,
+			*repos.ComputeExcludedReposJob,
+			*NoopJob:
 			writeNode(b, depth, RoundedStyle, &id, j.Name())
 
 		case *repoPagerJob:
@@ -319,17 +319,17 @@ func toJSON(j job.Job, verbose bool) interface{} {
 		}
 		switch j := j.(type) {
 		case
-			*zoekt.ZoektRepoSubsetSearch,
-			*zoekt.ZoektSymbolSearch,
-			*searcher.Searcher,
-			*searcher.SymbolSearcher,
-			*run.RepoSearch,
-			*zoekt.GlobalSearch,
-			*structural.StructuralSearch,
-			*commit.CommitSearch,
-			*symbol.RepoUniverseSymbolSearch,
-			*repos.ComputeExcludedRepos,
-			*noopJob:
+			*zoekt.ZoektRepoSubsetSearchJob,
+			*zoekt.ZoektSymbolSearchJob,
+			*searcher.SearcherJob,
+			*searcher.SymbolSearcherJob,
+			*run.RepoSearchJob,
+			*zoekt.ZoektGlobalSearchJob,
+			*structural.StructuralSearchJob,
+			*commit.CommitSearchJob,
+			*symbol.RepoUniverseSymbolSearchJob,
+			*repos.ComputeExcludedReposJob,
+			*NoopJob:
 			if verbose {
 				return map[string]interface{}{j.Name(): j}
 			}

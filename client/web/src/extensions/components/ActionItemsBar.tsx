@@ -308,7 +308,7 @@ export interface ActionItemsToggleProps extends ExtensionsControllerProps<'extHo
     className?: string
 }
 
-export const ActionItemsToggle: React.FunctionComponent<ActionItemsToggleProps> = ({
+export const ActionItemsToggle: React.FunctionComponent<React.PropsWithChildren<ActionItemsToggleProps>> = ({
     useActionItemsToggle,
     extensionsController,
     className,
@@ -344,6 +344,6 @@ export const ActionItemsToggle: React.FunctionComponent<ActionItemsToggleProps> 
     ) : null
 }
 
-const ActionItemsDivider: React.FunctionComponent<{ className?: string }> = ({ className }) => (
-    <div className={classNames('position-relative rounded-sm d-flex', styles.dividerHorizontal, className)} />
-)
+const ActionItemsDivider: React.FunctionComponent<React.PropsWithChildren<{ className?: string }>> = ({
+    className,
+}) => <div className={classNames('position-relative rounded-sm d-flex', styles.dividerHorizontal, className)} />

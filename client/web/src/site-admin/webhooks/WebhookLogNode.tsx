@@ -22,7 +22,7 @@ export interface Props {
     initialTabIndex?: number
 }
 
-export const WebhookLogNode: React.FunctionComponent<Props> = ({
+export const WebhookLogNode: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     initiallyExpanded,
     initialTabIndex,
     node: { externalService, receivedAt, request, response, statusCode },

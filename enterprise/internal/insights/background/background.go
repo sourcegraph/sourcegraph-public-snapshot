@@ -15,7 +15,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
 
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -31,7 +30,7 @@ import (
 
 // GetBackgroundJobs is the main entrypoint which starts background jobs for code insights. It is
 // called from the worker service.
-func GetBackgroundJobs(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.DB) []goroutine.BackgroundRoutine {
+func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB *sql.DB, insightsDB *sql.DB) []goroutine.BackgroundRoutine {
 	insightPermStore := store.NewInsightPermissionStore(mainAppDB)
 	insightsStore := store.New(insightsDB, insightPermStore)
 
@@ -41,7 +40,7 @@ func GetBackgroundJobs(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.D
 
 	// Create basic metrics for recording information about background jobs.
 	observationContext := &observation.Context{
-		Logger:     log.Scoped("background", "insights background jobs"),
+		Logger:     logger.Scoped("background", "insights background jobs"),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
@@ -71,7 +70,7 @@ func GetBackgroundJobs(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.D
 	// should not be published as an option externally, and will be deprecated as soon as possible.
 	enableSync, _ := strconv.ParseBool(os.Getenv("ENABLE_CODE_INSIGHTS_SETTINGS_STORAGE"))
 	if enableSync {
-		log15.Warn("Enabling Code Insights Settings Storage - This is a deprecated functionality!")
+		observationContext.Logger.Info("Enabling Code Insights Settings Storage - This is a deprecated functionality!")
 		routines = append(routines, discovery.NewMigrateSettingInsightsJob(ctx, mainAppDB, insightsDB))
 	}
 	routines = append(
@@ -86,7 +85,7 @@ func GetBackgroundJobs(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.D
 
 // GetBackgroundQueryRunnerJob is the main entrypoint for starting the background jobs for code
 // insights query runner. It is called from the worker service.
-func GetBackgroundQueryRunnerJob(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.DB) []goroutine.BackgroundRoutine {
+func GetBackgroundQueryRunnerJob(ctx context.Context, logger log.Logger, mainAppDB *sql.DB, insightsDB *sql.DB) []goroutine.BackgroundRoutine {
 	insightPermStore := store.NewInsightPermissionStore(mainAppDB)
 	insightsStore := store.New(insightsDB, insightPermStore)
 
@@ -96,7 +95,7 @@ func GetBackgroundQueryRunnerJob(ctx context.Context, mainAppDB *sql.DB, insight
 
 	// Create basic metrics for recording information about background jobs.
 	observationContext := &observation.Context{
-		Logger:     log.Scoped("background.query", "background query runner job"),
+		Logger:     logger.Scoped("background", "background query runner job"),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
@@ -107,7 +106,7 @@ func GetBackgroundQueryRunnerJob(ctx context.Context, mainAppDB *sql.DB, insight
 	return []goroutine.BackgroundRoutine{
 		// Register the query-runner worker and resetter, which executes search queries and records
 		// results to the insights DB.
-		queryrunner.NewWorker(ctx, workerStore, insightsStore, queryRunnerWorkerMetrics),
+		queryrunner.NewWorker(ctx, logger, workerStore, insightsStore, queryRunnerWorkerMetrics),
 		queryrunner.NewResetter(ctx, workerStore, queryRunnerResetterMetrics),
 		queryrunner.NewCleaner(ctx, workerBaseStore, observationContext),
 	}

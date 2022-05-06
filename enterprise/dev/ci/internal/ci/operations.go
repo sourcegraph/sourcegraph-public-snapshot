@@ -72,7 +72,6 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 			frontendTests,                // ~4.5m
 			addWebApp,                    // ~5.5m
 			addBrowserExtensionUnitTests, // ~4.5m
-			addVsceIntegrationTests,      // ~5.5m
 			addTypescriptCheck,           // ~4m
 		)
 
@@ -89,7 +88,8 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 		// If there are any Graphql changes, they are impacting the backend as well.
 		ops.Merge(operations.NewNamedSet("Go checks",
 			addGoTests,
-			addGoBuild))
+			addGoBuild,
+			addCustomGoChecks))
 	}
 
 	if diff.Has(changed.DatabaseSchema) {
@@ -451,6 +451,14 @@ func addGoBuild(pipeline *bk.Pipeline) {
 	)
 }
 
+// Add custom GO checks
+func addCustomGoChecks(pipeline *bk.Pipeline) {
+	pipeline.AddStep(":one-does-not-simply: Custom Go checks",
+		bk.AnnotatedCmd("go run ./dev/sg lint -annotations go-custom", bk.AnnotatedCmdOpts{
+			Annotations: &bk.AnnotationOpts{},
+		}))
+}
+
 // Lints the Dockerfiles.
 func addDockerfileLint(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":docker: Docker linters",
@@ -714,7 +722,11 @@ func buildCandidateDockerImage(app, version, tag string) operations.Operation {
 			// Retag the local image for dev registry
 			bk.Cmd(fmt.Sprintf("docker tag %s %s", localImage, devImage)),
 			// Publish tagged image
-			bk.Cmd(fmt.Sprintf("docker push %s", devImage)),
+			bk.Cmd(fmt.Sprintf("docker push %s || exit 10", devImage)),
+			// Retry in case of flakes when pushing
+			bk.AutomaticRetryStatus(3, 10),
+			// Retry in case of flakes when pushing
+			bk.AutomaticRetryStatus(3, 222),
 		)
 
 		pipeline.AddStep(fmt.Sprintf(":docker: :construction: Build %s", app), cmds...)

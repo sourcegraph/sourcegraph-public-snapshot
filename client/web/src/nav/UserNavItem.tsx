@@ -5,6 +5,7 @@ import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
+// eslint-disable-next-line no-restricted-imports
 import { Tooltip } from 'reactstrap'
 
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
@@ -100,7 +101,7 @@ const showKeyboardShortcutsHelp = (): void => {
  * Displays the user's avatar and/or username in the navbar and exposes a dropdown menu with more options for
  * authenticated viewers.
  */
-export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
+export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNavItemProps>> = props => {
     const {
         menuButtonRef,
         themePreference,

@@ -27,7 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-type CommitSearch struct {
+type CommitSearchJob struct {
 	Query                gitprotocol.Node
 	RepoOpts             search.RepoOptions
 	Diff                 bool
@@ -48,7 +48,7 @@ type GitserverClient interface {
 	ResolveRevisions(context.Context, api.RepoName, []gitprotocol.RevisionSpecifier) ([]string, error)
 }
 
-func (j *CommitSearch) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+func (j *CommitSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	tr, ctx, stream, finish := job.StartSpan(ctx, stream, j)
 	defer func() { finish(alert, err) }()
 	tr.TagFields(trace.LazyFields(j.Tags))
@@ -128,14 +128,14 @@ func (j *CommitSearch) Run(ctx context.Context, clients job.RuntimeClients, stre
 	return nil, bounded.Wait()
 }
 
-func (j CommitSearch) Name() string {
+func (j CommitSearchJob) Name() string {
 	if j.Diff {
-		return "Diff"
+		return "DiffSearchJob"
 	}
-	return "Commit"
+	return "CommitSearchJob"
 }
 
-func (j *CommitSearch) Tags() []log.Field {
+func (j *CommitSearchJob) Tags() []log.Field {
 	return []log.Field{
 		trace.Stringer("query", j.Query),
 		trace.Stringer("repoOpts", &j.RepoOpts),
@@ -146,7 +146,7 @@ func (j *CommitSearch) Tags() []log.Field {
 	}
 }
 
-func (j *CommitSearch) ExpandUsernames(ctx context.Context, db database.DB) (err error) {
+func (j *CommitSearchJob) ExpandUsernames(ctx context.Context, db database.DB) (err error) {
 	protocol.ReduceWith(j.Query, func(n protocol.Node) protocol.Node {
 		if err != nil {
 			return n

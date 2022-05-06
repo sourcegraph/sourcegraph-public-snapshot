@@ -1,3 +1,19 @@
+.root {
+    &--no-collapse {
+        .collapse-icon {
+            display: none;
+        }
+
+        .collapse-button {
+            padding-left: 0;
+        }
+
+        .collapse-panel {
+            margin-left: 0;
+        }
+    }
+}
+
 .collapse-button {
     display: flex;
     align-items: center;

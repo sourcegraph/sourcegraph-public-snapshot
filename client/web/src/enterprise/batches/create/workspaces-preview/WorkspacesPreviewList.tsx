@@ -51,7 +51,7 @@ interface WorkspacesPreviewListProps {
     error?: string
 }
 
-export const WorkspacesPreviewList: React.FunctionComponent<WorkspacesPreviewListProps> = ({
+export const WorkspacesPreviewList: React.FunctionComponent<React.PropsWithChildren<WorkspacesPreviewListProps>> = ({
     isStale,
     excludeRepo,
     showCached,

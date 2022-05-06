@@ -4,7 +4,7 @@ Please visit our [Observability Docs](https://docs.sourcegraph.com/admin/observa
 
 ## Prerequisites
 
-This document assumes that you are a [site administrator](https://docs.sourcegraph.com/admin).
+This document assumes that you are a [site administrator](../index.md).
 
 ## Set up monitoring
 

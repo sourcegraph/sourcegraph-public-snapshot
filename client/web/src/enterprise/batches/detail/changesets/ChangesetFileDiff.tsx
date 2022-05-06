@@ -31,7 +31,7 @@ export interface ChangesetFileDiffProps extends ThemeProps {
     queryExternalChangesetWithFileDiffs?: typeof _queryExternalChangesetWithFileDiffs
 }
 
-export const ChangesetFileDiff: React.FunctionComponent<ChangesetFileDiffProps> = ({
+export const ChangesetFileDiff: React.FunctionComponent<React.PropsWithChildren<ChangesetFileDiffProps>> = ({
     isLightTheme,
     changesetID,
     history,
@@ -147,7 +147,7 @@ function commitOIDForGitRevision(revision: GitRefSpecFields): string {
     }
 }
 
-const DiffRenderingNotSupportedAlert: React.FunctionComponent<{}> = () => (
+const DiffRenderingNotSupportedAlert: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
     <Alert className="mb-0" variant="info">
         Diffs for processing, merged, closed and deleted changesets are currently only available on the code host.
     </Alert>
