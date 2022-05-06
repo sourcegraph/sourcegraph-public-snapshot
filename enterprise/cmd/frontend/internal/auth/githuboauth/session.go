@@ -60,13 +60,9 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		return nil, "Could not get verified email for GitHub user. Check that your GitHub account has a verified email that matches one of your Sourcegraph verified emails.", errors.New("no verified email")
 	}
 
-	// 🚨 SECURITY: Ensure that the user is part of one of the white listed orgs, if any.
-	if !s.verifyUserOrgs(ctx, ghClient) {
-		return nil, "Could not verify user is part of the allowed GitHub organizations.", errors.New("couldn't verify user is part of allowed GitHub organizations")
-	}
-
-	if !s.verifyUserTeams(ctx, ghClient) {
-		return nil, "Could not verify user is part of the allowed GitHub teams.", errors.New("couldn't verify user is part of allowed GitHub teams")
+	// 🚨 SECURITY: Ensure that the user is part of one of the allow listed orgs or teams, if any.
+	if !s.verifyUserOrgs(ctx, ghClient) && !s.verifyUserTeams(ctx, ghClient) {
+		return nil, "Could not verify user is part of the allowed GitHub organizations and teams.", errors.New("couldn't verify user is part of allowed GitHub organizations and teams")
 	}
 
 	// Try every verified email in succession until the first that succeeds
