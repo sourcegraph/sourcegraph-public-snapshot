@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, useMemo } from 'react'
 
 import * as H from 'history'
 import { concat, of, timer } from 'rxjs'
@@ -119,7 +119,7 @@ export type ConfiguredExtensionCache = Map<string, MinimalConfiguredRegistryExte
 export const ExtensionRegistry: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
     useEffect(() => eventLogger.logViewEvent('ExtensionsOverview'), [])
 
-    const { history, location, settingsCascade, platformContext, authenticatedUser } = props
+    const { history, location, settingsCascade, platformContext, authenticatedUser, isSourcegraphDotCom } = props
 
     // Update the cache after each response. This speeds up client-side filtering.
     // Lazy initialize cache ref. Don't mind the `useState` abuse:
@@ -165,6 +165,17 @@ export const ExtensionRegistry: React.FunctionComponent<React.PropsWithChildren<
         }
         setShowExperimentalExtensions(!showExperimentalExtensions)
     }
+
+    const allowOnlySourcegraphAuthoredExtensions = useMemo(
+        () =>
+            !isSourcegraphDotCom &&
+            Boolean(
+                settingsCascade.final &&
+                    !isErrorLike(settingsCascade.final) &&
+                    (settingsCascade.final['extensions.allowOnlySourcegraphAuthored'] as boolean)
+            ),
+        [isSourcegraphDotCom, settingsCascade]
+    )
 
     /**
      * Note: pass `settingsCascade` instead of making it a dependency to prevent creating
@@ -261,7 +272,12 @@ export const ExtensionRegistry: React.FunctionComponent<React.PropsWithChildren<
                         return {
                             error,
                             featuredExtensions,
-                            ...configureExtensionRegistry(nodes, configuredExtensionCache),
+                            ...configureExtensionRegistry(
+                                allowOnlySourcegraphAuthoredExtensions
+                                    ? nodes.filter(({ extensionID }) => extensionID.startsWith('sourcegraph/'))
+                                    : nodes,
+                                configuredExtensionCache
+                            ),
                         }
                     }),
                     tap(() => {
@@ -269,7 +285,7 @@ export const ExtensionRegistry: React.FunctionComponent<React.PropsWithChildren<
                         setChangedCategory(false)
                     })
                 ),
-            [platformContext, history, configuredExtensionCache]
+            [platformContext, history, configuredExtensionCache, allowOnlySourcegraphAuthoredExtensions]
         )
     )
 

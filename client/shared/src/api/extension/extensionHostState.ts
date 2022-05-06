@@ -1,8 +1,10 @@
 import * as comlink from 'comlink'
 import { BehaviorSubject, Observable, ReplaySubject, Subject } from 'rxjs'
+import { map } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 
 import { Contributions } from '@sourcegraph/client-api'
+import { isErrorLike } from '@sourcegraph/common'
 import { Context } from '@sourcegraph/template-parser'
 
 import { ConfiguredExtension } from '../../extensions/extension'
@@ -25,11 +27,22 @@ import {
 import { ReferenceCounter } from './utils/ReferenceCounter'
 
 export function createExtensionHostState(
-    initData: Pick<InitData, 'initialSettings' | 'clientApplication'>,
+    initData: Pick<InitData, 'initialSettings' | 'clientApplication' | 'sourcegraphURL'>,
     mainAPI: comlink.Remote<MainThreadAPI>,
     mainThreadAPIInitializations: Observable<boolean>
 ): ExtensionHostState {
     const { activeLanguages, activeExtensions } = observeActiveExtensions(mainAPI, mainThreadAPIInitializations)
+
+    const allowOnlySourcegraphAuthoredExtensions =
+        initData.clientApplication === 'sourcegraph' &&
+        new URL(initData.sourcegraphURL).hostname !== 'sourcegraph.com' &&
+        Boolean(
+            initData.initialSettings.final &&
+                !isErrorLike(initData.initialSettings.final) &&
+                ((initData.initialSettings.final as { [key: string]: unknown })[
+                    'extensions.allowOnlySourcegraphAuthored'
+                ] as boolean)
+        )
 
     return {
         haveInitialExtensionsLoaded: new BehaviorSubject<boolean>(false),
@@ -99,7 +112,11 @@ export function createExtensionHostState(
             readonly { urlMatchPattern: string; provider: sourcegraph.LinkPreviewProvider }[]
         >([]),
 
-        activeExtensions,
+        activeExtensions: allowOnlySourcegraphAuthoredExtensions
+            ? activeExtensions.pipe(
+                  map(extensions => extensions.filter(extension => extension.id.startsWith('sourcegraph/')))
+              )
+            : activeExtensions,
         activeLoggers: new Set<string>(),
     }
 }

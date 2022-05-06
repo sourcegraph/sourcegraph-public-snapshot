@@ -524,6 +524,10 @@
         "type": "string"
       }
     },
+    "extensions.allowOnlySourcegraphAuthored": {
+      "description": "Allow only Sourcegraph authored extensions. Setting it to `true` will disable all not Sourcegraph authored extensions.",
+      "type": "boolean"
+    },
     "codeHost.useNativeTooltips": {
       "description": "Whether to use the code host's native hover tooltips when they exist (GitHub's jump-to-definition tooltips, for example).",
       "type": "boolean",
