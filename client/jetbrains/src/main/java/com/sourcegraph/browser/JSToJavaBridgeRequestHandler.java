@@ -5,8 +5,7 @@ import com.google.gson.JsonObject;
 import com.intellij.ui.jcef.JBCefJSQuery;
 import com.sourcegraph.config.ThemeUtil;
 import com.sourcegraph.find.PreviewPanel;
-
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 public class JSToJavaBridgeRequestHandler {
     private final PreviewPanel previewPanel;
