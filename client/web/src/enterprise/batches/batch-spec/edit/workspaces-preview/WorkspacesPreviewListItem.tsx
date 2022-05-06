@@ -7,8 +7,8 @@ import { Button, Icon } from '@sourcegraph/wildcard'
 import {
     PreviewHiddenBatchSpecWorkspaceFields,
     PreviewVisibleBatchSpecWorkspaceFields,
-} from '../../../../graphql-operations'
-import { CachedIcon, Descriptor, ExcludeIcon, ListItem } from '../../workspaces-list'
+} from '../../../../../graphql-operations'
+import { CachedIcon, Descriptor, ExcludeIcon, ListItem } from '../../../workspaces-list'
 
 import styles from './WorkspacesPreviewListItem.module.scss'
 

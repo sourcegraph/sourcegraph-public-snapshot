@@ -3,7 +3,7 @@ import React from 'react'
 import { storiesOf } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
-import { mockWorkspace } from '../create/workspaces-preview/WorkspacesPreview.mock'
+import { mockWorkspace } from '../batch-spec/batch-spec.mock'
 
 import { Descriptor } from './Descriptor'
 import { CachedIcon, ExcludeIcon } from './Icons'

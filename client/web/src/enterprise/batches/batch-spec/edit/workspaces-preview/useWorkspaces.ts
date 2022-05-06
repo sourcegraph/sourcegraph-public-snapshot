@@ -1,14 +1,14 @@
 import { dataOrThrowErrors } from '@sourcegraph/http-client'
 
-import { useConnection, UseConnectionResult } from '../../../../components/FilteredConnection/hooks/useConnection'
+import { useConnection, UseConnectionResult } from '../../../../../components/FilteredConnection/hooks/useConnection'
 import {
     Scalars,
     BatchSpecWorkspacesPreviewResult,
     BatchSpecWorkspacesPreviewVariables,
     PreviewHiddenBatchSpecWorkspaceFields,
     PreviewVisibleBatchSpecWorkspaceFields,
-} from '../../../../graphql-operations'
-import { WORKSPACES } from '../backend'
+} from '../../../../../graphql-operations'
+import { WORKSPACES } from '../../../create/backend'
 
 export const WORKSPACES_PER_PAGE_COUNT = 100
 

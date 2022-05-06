@@ -5,7 +5,7 @@ import ImportIcon from 'mdi-react/ImportIcon'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { Icon } from '@sourcegraph/wildcard'
 
-import { UseConnectionResult } from '../../../../components/FilteredConnection/hooks/useConnection'
+import { UseConnectionResult } from '../../../../../components/FilteredConnection/hooks/useConnection'
 import {
     ConnectionContainer,
     ConnectionList,
@@ -13,7 +13,7 @@ import {
     ConnectionSummary,
     ShowMoreButton,
     SummaryContainer,
-} from '../../../../components/FilteredConnection/ui'
+} from '../../../../../components/FilteredConnection/ui'
 
 import { ImportingChangesetFields } from './useImportingChangesets'
 

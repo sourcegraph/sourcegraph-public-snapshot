@@ -1,13 +1,13 @@
 import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
 
-import { WebStory } from '../../../../components/WebStory'
+import { WebStory } from '../../../../../components/WebStory'
+import { mockWorkspace } from '../../batch-spec.mock'
 
-import { mockWorkspace } from './WorkspacesPreview.mock'
 import { WorkspacesPreviewListItem } from './WorkspacesPreviewListItem'
 
 const { add } = storiesOf(
-    'web/batches/create/WorkspacesPreview/WorkspacesPreviewListItem',
+    'web/batches/batch-spec/edit/workspaces-preview/WorkspacesPreviewListItem',
     module
 ).addDecorator(story => <div className="list-group d-flex flex-column w-100">{story()}</div>)
 

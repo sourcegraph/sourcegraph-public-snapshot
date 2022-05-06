@@ -4,18 +4,18 @@ import { noop } from 'lodash'
 
 import { BatchSpecWorkspaceResolutionState } from '@sourcegraph/shared/src/graphql-operations'
 
-import { UseConnectionResult } from '../../../../components/FilteredConnection/hooks/useConnection'
-import { WebStory } from '../../../../components/WebStory'
+import { UseConnectionResult } from '../../../../../components/FilteredConnection/hooks/useConnection'
+import { WebStory } from '../../../../../components/WebStory'
 import {
     PreviewHiddenBatchSpecWorkspaceFields,
     PreviewVisibleBatchSpecWorkspaceFields,
-} from '../../../../graphql-operations'
+} from '../../../../../graphql-operations'
+import { mockImportingChangesets, mockWorkspaces } from '../../batch-spec.mock'
 
 import { ImportingChangesetFields } from './useImportingChangesets'
 import { WorkspacesPreview } from './WorkspacesPreview'
-import { mockImportingChangesets, mockWorkspaces } from './WorkspacesPreview.mock'
 
-const { add } = storiesOf('web/batches/create/WorkspacesPreview', module)
+const { add } = storiesOf('web/batches/batch-spec/edit/workspaces-preview/WorkspacesPreview', module)
     .addDecorator(story => <div className="p-3 container d-flex flex-column align-items-center">{story()}</div>)
     .addParameters({ chromatic: { disableSnapshot: true } })
 

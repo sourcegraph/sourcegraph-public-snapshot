@@ -1,7 +1,7 @@
 import React from 'react'
 
-import { Connection } from '../../../../components/FilteredConnection'
-import { UseConnectionResult } from '../../../../components/FilteredConnection/hooks/useConnection'
+import { Connection } from '../../../../../components/FilteredConnection'
+import { UseConnectionResult } from '../../../../../components/FilteredConnection/hooks/useConnection'
 import {
     ConnectionContainer,
     ConnectionError,
@@ -9,11 +9,11 @@ import {
     SummaryContainer,
     ConnectionSummary,
     ShowMoreButton,
-} from '../../../../components/FilteredConnection/ui'
+} from '../../../../../components/FilteredConnection/ui'
 import {
     PreviewHiddenBatchSpecWorkspaceFields,
     PreviewVisibleBatchSpecWorkspaceFields,
-} from '../../../../graphql-operations'
+} from '../../../../../graphql-operations'
 
 import { WORKSPACES_PER_PAGE_COUNT } from './useWorkspaces'
 import { WorkspacesPreviewListItem } from './WorkspacesPreviewListItem'
