@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react'
 
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import { useHistory, useLocation } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
@@ -33,7 +34,9 @@ export interface BatchChangePreviewPageProps extends BatchChangePreviewProps {
 export const BatchChangePreviewPage: React.FunctionComponent<
     React.PropsWithChildren<BatchChangePreviewPageProps>
 > = props => {
-    const { batchSpecID: specID, history, authenticatedUser, telemetryService, queryApplyPreviewStats } = props
+    const history = useHistory()
+
+    const { batchSpecID: specID, authenticatedUser, telemetryService, queryApplyPreviewStats } = props
 
     const { data, loading } = useQuery<BatchSpecByIDResult, BatchSpecByIDVariables>(BATCH_SPEC_BY_ID, {
         variables: {
@@ -112,10 +115,11 @@ export const BatchChangePreviewPage: React.FunctionComponent<
 export const NewBatchChangePreviewPage: React.FunctionComponent<
     React.PropsWithChildren<BatchChangePreviewPageProps>
 > = props => {
+    const history = useHistory()
+    const location = useLocation()
+
     const {
         batchSpecID: specID,
-        history,
-        location,
         isLightTheme,
         expandChangesetDescriptions,
         queryChangesetApplyPreview,
