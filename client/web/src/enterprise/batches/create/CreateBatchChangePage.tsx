@@ -10,7 +10,7 @@ import { BatchChangesIcon } from '../../../batches/icons'
 import { Page } from '../../../components/Page'
 import { PageTitle } from '../../../components/PageTitle'
 import { BatchChangeHeader } from '../batch-spec/header/BatchChangeHeader'
-import { TabBar } from '../batch-spec/TabBar'
+import { TabBar, TabsConfig } from '../batch-spec/TabBar'
 
 import { ConfigurationForm } from './ConfigurationForm'
 import { InsightTemplatesBanner } from './InsightTemplatesBanner'
@@ -55,6 +55,8 @@ export const CreateBatchChangePage: React.FunctionComponent<React.PropsWithChild
         </Page>
     )
 
+const TABS_CONFIG: TabsConfig[] = [{ name: 'configuration', isEnabled: true }]
+
 const NewBatchChangePageContent: React.FunctionComponent<Omit<CreateBatchChangePageProps, 'headingElement'>> = ({
     settingsCascade,
 }) => {
@@ -66,7 +68,7 @@ const NewBatchChangePageContent: React.FunctionComponent<Omit<CreateBatchChangeP
             <div className={layoutStyles.headerContainer}>
                 <BatchChangeHeader title={{ text: 'Create batch change' }} />
             </div>
-            <TabBar batchChange={null} batchSpec={null} activeTabName="configuration" />
+            <TabBar activeTabName="configuration" tabsConfig={TABS_CONFIG} />
             <ConfigurationForm
                 renderTemplate={renderTemplate}
                 insightTitle={insightTitle}
