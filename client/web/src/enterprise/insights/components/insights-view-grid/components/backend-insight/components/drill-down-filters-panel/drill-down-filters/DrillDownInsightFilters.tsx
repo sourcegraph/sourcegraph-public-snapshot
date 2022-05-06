@@ -152,7 +152,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
 
             <div className={classNames(styles.panels, { [styles.panelsHorizontalMode]: isHorizontalMode })}>
                 <FilterCollapseSection
-                    open={activeSection === FilterSection.SortFilter}
+                    open={isHorizontalMode || activeSection === FilterSection.SortFilter}
                     title="Sort & Limit"
                     preview={getSortPreview(seriesDisplayOptions)}
                     hasActiveFilter={false}
@@ -162,27 +162,6 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                     <SortFilterSeriesPanel value={seriesDisplayOptions} onChange={handleSeriesDisplayOptionsChange} />
                 </FilterCollapseSection>
 
-                <FilterCollapseSection
-                    open={activeSection === FilterSection.SearchContext}
-                    title="Search context"
-                    preview={getSerializedSearchContextFilter(contexts.input.value)}
-                    hasActiveFilter={hasActiveUnaryFilter(contexts.input.value)}
-                    className={styles.panel}
-                    withSeparators={!isHorizontalMode}
-                    onOpenChange={opened => handleCollapseState(FilterSection.SearchContext, opened)}
-                >
-                    <small className={styles.sectionDescription}>
-                        Choose{' '}
-                        <Link
-                            to="/help/code_search/how-to/search_contexts#beta-query-based-search-contexts"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
-                            query-based search context (beta)
-                        </Link>{' '}
-                        to change the scope of this insight.
-                    </small>
-                </FilterCollapseSection>
                 <FilterCollapseSection
                     open={isHorizontalMode || activeSection === FilterSection.SearchContext}
                     title="Search context"
