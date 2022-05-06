@@ -4,7 +4,7 @@ import { WebStory } from '../../../components/WebStory'
 
 import { InsightTemplatesBanner } from './InsightTemplatesBanner'
 
-const { add } = storiesOf('web/batches/create', module)
+const { add } = storiesOf('web/batches/create/InsightTemplatesBanner', module)
     .addDecorator(story => <div className="p-3 container">{story()}</div>)
     .addParameters({
         chromatic: {
@@ -12,6 +12,10 @@ const { add } = storiesOf('web/batches/create', module)
         },
     })
 
-add('InsightTemplatesBanner', () => (
-    <WebStory>{props => <InsightTemplatesBanner {...props} insightTitle="My Go Insight" />}</WebStory>
+add('creating new batch change from insight', () => (
+    <WebStory>{props => <InsightTemplatesBanner {...props} insightTitle="My Go Insight" type="create" />}</WebStory>
+))
+
+add('editing a batch spec from an insight template', () => (
+    <WebStory>{props => <InsightTemplatesBanner {...props} insightTitle="My Go Insight" type="edit" />}</WebStory>
 ))

@@ -6,15 +6,10 @@ import { isGoCodeCheckerTemplatesEnabled } from '../../../batches'
 
 import { getTemplateRenderer } from './go-checker-templates'
 
-type UseInsightTemplatesResult =
-    | {
-          renderTemplate: undefined
-          insightTitle: undefined
-      }
-    | {
-          renderTemplate: (title: string) => string
-          insightTitle: string
-      }
+interface UseInsightTemplatesResult {
+    renderTemplate?: (title: string) => string
+    insightTitle?: string
+}
 
 /**
  * Custom hook for create page which checks if a user has enabled the experimental code
@@ -29,10 +24,7 @@ export const useInsightTemplates = (settingsCascade: SettingsCascadeOrError<Sett
     const renderTemplate = getTemplateRenderer(parameters.get('kind'))
     const insightTitle = parameters.get('title') ?? undefined
 
-    return isGoCodeCheckerTemplatesEnabled(settingsCascade) && renderTemplate && insightTitle
-        ? {
-              renderTemplate,
-              insightTitle,
-          }
+    return isGoCodeCheckerTemplatesEnabled(settingsCascade)
+        ? { renderTemplate, insightTitle }
         : { renderTemplate: undefined, insightTitle: undefined }
 }
