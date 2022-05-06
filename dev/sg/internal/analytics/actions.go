@@ -44,8 +44,8 @@ func Submit(okayToken string, gitHubLogin string) error {
 
 // Persist stores all events in context to disk.
 func Persist(ctx context.Context, command string, flags []string) error {
-	store, ok := ctx.Value(analyticsStoreKey{}).(*eventStore)
-	if !ok {
+	store := getStore(ctx)
+	if store == nil {
 		return nil
 	}
 	return store.Persist(command, flags)
