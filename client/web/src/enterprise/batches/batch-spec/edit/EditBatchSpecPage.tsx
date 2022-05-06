@@ -26,7 +26,7 @@ import { EditorForm } from './EditorForm'
 import layoutStyles from '../Layout.module.scss'
 
 export interface EditBatchSpecPageProps extends SettingsCascadeProps<Settings>, ThemeProps {
-    batchChange: { name: string; url: string; namespace: { name: string; id: Scalars['ID']; url: string } }
+    batchChange: { name: string; url: string; namespace: { id: Scalars['ID'] } }
 }
 
 export const EditBatchSpecPage: React.FunctionComponent<EditBatchSpecPageProps> = ({ batchChange, ...props }) => {

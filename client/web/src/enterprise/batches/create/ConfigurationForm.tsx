@@ -23,6 +23,7 @@ import {
     CreateBatchSpecFromRawVariables,
     CreateEmptyBatchChangeResult,
     CreateEmptyBatchChangeVariables,
+    Scalars,
 } from '../../../graphql-operations'
 
 import { CREATE_BATCH_SPEC_FROM_RAW, CREATE_EMPTY_BATCH_CHANGE } from './backend'
@@ -49,6 +50,11 @@ interface ConfigurationFormProps extends SettingsCascadeProps<Settings> {
     renderTemplate?: (title: string) => string
     /** The title of the insight this was created from, if any. */
     insightTitle?: string
+    /**
+     * When set, will pre-select the namespace with the given ID from the dropdown
+     * selector, if an existing batch change is not available.
+     */
+    initialNamespaceID?: Scalars['ID']
 }
 
 export const ConfigurationForm: React.FunctionComponent<ConfigurationFormProps> = ({
@@ -57,6 +63,7 @@ export const ConfigurationForm: React.FunctionComponent<ConfigurationFormProps> 
     batchChange,
     renderTemplate,
     insightTitle,
+    initialNamespaceID,
 }) => {
     const [createEmptyBatchChange, { loading: batchChangeLoading, error: batchChangeError }] = useMutation<
         CreateEmptyBatchChangeResult,
@@ -70,7 +77,10 @@ export const ConfigurationForm: React.FunctionComponent<ConfigurationFormProps> 
     const loading = batchChangeLoading || batchSpecLoading
     const error = batchChangeError || batchSpecError
 
-    const { namespaces, defaultSelectedNamespace } = useNamespaces(settingsCascade, batchChange?.namespace.id)
+    const { namespaces, defaultSelectedNamespace } = useNamespaces(
+        settingsCascade,
+        batchChange?.namespace.id || initialNamespaceID
+    )
 
     // The namespace selected for creating the new batch change under.
     const [selectedNamespace, setSelectedNamespace] = useState<SettingsUserSubject | SettingsOrgSubject>(
