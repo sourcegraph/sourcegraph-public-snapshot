@@ -1,4 +1,4 @@
-import { quoteYAMLString } from './yaml-util'
+import { quoteYAMLString } from '../yaml-util'
 
 export function goCheckerSA6005Template(name: string): string {
     return `name: ${quoteYAMLString(name)}

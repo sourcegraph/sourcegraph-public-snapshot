@@ -18,17 +18,17 @@ import {
     BatchSpecWorkspacesPreviewVariables,
     BatchSpecImportingChangesetsVariables,
     BatchSpecImportingChangesetsResult,
-} from '../../../graphql-operations'
-import { CHANGESETS_PER_PAGE_COUNT } from '../batch-spec/edit/workspaces-preview/useImportingChangesets'
-import { WORKSPACES_PER_PAGE_COUNT, WorkspacePreviewFilters } from '../batch-spec/edit/workspaces-preview/useWorkspaces'
-
+} from '../../../../../graphql-operations'
 import {
     CREATE_BATCH_SPEC_FROM_RAW,
     IMPORTING_CHANGESETS,
     REPLACE_BATCH_SPEC_INPUT,
     WORKSPACES,
     WORKSPACE_RESOLUTION_STATUS,
-} from './backend'
+} from '../../../create/backend'
+
+import { CHANGESETS_PER_PAGE_COUNT } from './useImportingChangesets'
+import { WORKSPACES_PER_PAGE_COUNT, WorkspacePreviewFilters } from './useWorkspaces'
 
 export type ResolutionState = BatchSpecWorkspaceResolutionState | 'UNSTARTED' | 'REQUESTED' | 'CANCELED'
 
