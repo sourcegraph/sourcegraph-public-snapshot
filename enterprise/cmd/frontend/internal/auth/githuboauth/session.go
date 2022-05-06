@@ -33,6 +33,7 @@ type sessionIssuerHelper struct {
 	clientID    string
 	allowSignup bool
 	allowOrgs   []string
+	allowTeams  []string
 }
 
 func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL, lastSourceURL string) (actr *actor.Actor, safeErrMsg string, err error) {
@@ -62,6 +63,10 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	// 🚨 SECURITY: Ensure that the user is part of one of the white listed orgs, if any.
 	if !s.verifyUserOrgs(ctx, ghClient) {
 		return nil, "Could not verify user is part of the allowed GitHub organizations.", errors.New("couldn't verify user is part of allowed GitHub organizations")
+	}
+
+	if !s.verifyUserTeams(ctx, ghClient) {
+		return nil, "Could not verify user is part of the allowed GitHub teams.", errors.New("couldn't verify user is part of allowed GitHub teams")
 	}
 
 	// Try every verified email in succession until the first that succeeds
@@ -276,6 +281,7 @@ func (s *sessionIssuerHelper) verifyUserOrgs(ctx context.Context, ghClient *gith
 	}
 
 	userOrgs, err := ghClient.GetAuthenticatedUserOrgs(ctx)
+
 	if err != nil {
 		log15.Warn("Could not get GitHub authenticated user organizations", "error", err)
 		return false
@@ -288,6 +294,31 @@ func (s *sessionIssuerHelper) verifyUserOrgs(ctx context.Context, ghClient *gith
 
 	for _, org := range userOrgs {
 		if allowed[org.Login] {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (s *sessionIssuerHelper) verifyUserTeams(ctx context.Context, ghClient *githubsvc.V3Client) bool {
+	if len(s.allowTeams) == 0 {
+		return true
+	}
+
+	userTeams, _, _, err := ghClient.GetAuthenticatedUserTeams(ctx, 1)
+	if err != nil {
+		log15.Warn("Could not get GitHub authenticated user team", "error", err)
+		return false
+	}
+
+	allowed := make(map[string]bool, len(s.allowTeams))
+	for _, team := range s.allowTeams {
+		allowed[team] = true
+	}
+
+	for _, team := range userTeams {
+		if allowed[team.Organization.Login] {
 			return true
 		}
 	}
