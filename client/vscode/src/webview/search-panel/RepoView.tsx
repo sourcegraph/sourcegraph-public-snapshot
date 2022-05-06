@@ -86,7 +86,7 @@ export const RepoView: React.FunctionComponent<React.PropsWithChildren<RepoViewP
                 onClick={onBackToSearchResults}
                 className="test-back-to-search-view-btn btn btn-sm btn-link btn-outline-secondary text-decoration-none border-0"
             >
-                <Icon className="mr-1" as={ArrowLeftIcon} />
+                <Icon role="img" className="mr-1" as={ArrowLeftIcon} />
                 Back to search view
             </button>
             {directoryStack.length > 0 && (
@@ -95,7 +95,7 @@ export const RepoView: React.FunctionComponent<React.PropsWithChildren<RepoViewP
                     onClick={onPreviousDirectory}
                     className="btn btn-sm btn-link btn-outline-secondary text-decoration-none border-0"
                 >
-                    <Icon className="mr-1" as={ArrowLeftIcon} />
+                    <Icon role="img" className="mr-1" as={ArrowLeftIcon} />
                     Back to previous directory
                 </button>
             )}
@@ -133,10 +133,10 @@ export const RepoView: React.FunctionComponent<React.PropsWithChildren<RepoViewP
                                 >
                                     <span>
                                         {entry.isDirectory && (
-                                            <Icon className="mr-1 text-muted" as={FolderOutlineIcon} />
+                                            <Icon role="img" className="mr-1 text-muted" as={FolderOutlineIcon} />
                                         )}
                                         {!entry.isDirectory && (
-                                            <Icon className="mr-1 text-muted" as={FileDocumentOutlineIcon} />
+                                            <Icon role="img" className="mr-1 text-muted" as={FileDocumentOutlineIcon} />
                                         )}
                                         {entry.name}
                                         {entry.isDirectory && '/'}

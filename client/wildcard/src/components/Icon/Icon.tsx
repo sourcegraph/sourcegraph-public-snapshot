@@ -9,7 +9,7 @@ import { ICON_SIZES } from './constants'
 
 import styles from './Icon.module.scss'
 
-export interface IconProps extends Omit<MdiReactIconProps, 'children'> {
+interface BaseIconProps extends Omit<MdiReactIconProps, 'children'> {
     className?: string
     /**
      * The variant style of the icon. defaults to 'sm'
@@ -17,18 +17,27 @@ export interface IconProps extends Omit<MdiReactIconProps, 'children'> {
     size?: typeof ICON_SIZES[number]
 }
 
+interface ScreenReaderIconProps extends BaseIconProps {
+    title?: string
+}
+
+interface HiddenIconProps extends BaseIconProps {
+    'aria-hidden'?: true | 'true'
+}
+
+// We're currently migrating our icons to provide a descriptive label or use aria-hidden to be excluded from screen readers.
+// Migration issue: https://github.com/sourcegraph/sourcegraph/issues/34582
+// TODO: We should enforce that these props are provided once that migration is complete.
+export type IconProps = HiddenIconProps | ScreenReaderIconProps
+
 export const Icon = React.forwardRef((props, reference) => {
-    // TODO: role should have a default value of "img", but most of our Icons don't
-    // provide an aria-label, title, or other form of alternative text, and so setting it
-    // causes accessibility audits to fail in our integration test suite. Once we've added
-    // text to all of our icons, we should restore this as the default value.
-    // const { children, inline = true, className, size, as: Component = 'svg', role = 'img', ...attributes } = props
-    const { children, inline = true, className, size, as: Component = 'svg', ...attributes } = props
+    const { children, inline = true, className, size, as: Component = 'svg', role, ...attributes } = props
 
     return (
         <Component
             className={classNames(styles.iconInline, size === 'md' && styles.iconInlineMd, className)}
             ref={reference}
+            role={role}
             {...attributes}
         >
             {children}

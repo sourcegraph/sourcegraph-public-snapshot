@@ -92,9 +92,9 @@ export const SavedSearchesSection: React.FunctionComponent<React.PropsWithChildr
             >
                 <h5 className="flex-grow-1">Saved Searches</h5>
                 {collapsed ? (
-                    <Icon className="mr-1" as={ChevronLeftIcon} />
+                    <Icon role="img" className="mr-1" as={ChevronLeftIcon} />
                 ) : (
-                    <Icon className="mr-1" as={ChevronDownIcon} />
+                    <Icon role="img" className="mr-1" as={ChevronDownIcon} />
                 )}
             </button>
 

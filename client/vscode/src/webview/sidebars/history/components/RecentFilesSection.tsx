@@ -62,9 +62,9 @@ export const RecentFilesSection: React.FunctionComponent<React.PropsWithChildren
             >
                 <h5 className="flex-grow-1">Recent Files</h5>
                 {collapsed ? (
-                    <Icon className="mr-1" as={ChevronLeftIcon} />
+                    <Icon role="img" className="mr-1" as={ChevronLeftIcon} />
                 ) : (
-                    <Icon className="mr-1" as={ChevronDownIcon} />
+                    <Icon role="img" className="mr-1" as={ChevronDownIcon} />
                 )}
             </button>
 
