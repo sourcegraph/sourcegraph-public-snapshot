@@ -389,22 +389,22 @@ GROUP BY date_trunc('week', created_at)::date, job_type;
 	totalBulkOperation := make(map[string]int32)
 	for rows.Next() {
 		var (
-			bulkOperaton, week string
-			count              int32
+			bulkOperation, week string
+			count               int32
 		)
 
-		if err = rows.Scan(&bulkOperaton, &count, &week); err != nil {
+		if err = rows.Scan(&bulkOperation, &count, &week); err != nil {
 			return nil, err
 		}
 
-		if bulkOperaton == "commentatore" {
-			bulkOperaton = "comment"
+		if bulkOperation == "commentatore" {
+			bulkOperation = "comment"
 		}
 
-		totalBulkOperation[bulkOperaton] += count
+		totalBulkOperation[bulkOperation] += count
 
 		stats.WeeklyBulkOperationStats = append(stats.WeeklyBulkOperationStats, &types.WeeklyBulkOperationStats{
-			BulkOperation: bulkOperaton,
+			BulkOperation: bulkOperation,
 			Week:          week,
 			Count:         count,
 		})
