@@ -124,7 +124,7 @@ export const FileDiffNode: React.FunctionComponent<FileDiffNodeProps> = ({
                             <Link
                                 to={node.mostRelevantFile.url}
                                 data-tooltip="View file at revision"
-                                className="pr-0 pl-2 fw-bold"
+                                className="mr-0 ml-2 fw-bold"
                             >
                                 <strong>{path}</strong>
                             </Link>
@@ -134,8 +134,8 @@ export const FileDiffNode: React.FunctionComponent<FileDiffNodeProps> = ({
                         <Link
                             to={{ ...location, hash: anchor }}
                             className={classNames('ml-2', styles.headerPath)}
-                            data-tooltip="View diff"
-                            aria-label="View diff"
+                            data-tooltip="Pin diff"
+                            aria-label="Pin diff"
                         >
                             #
                         </Link>
