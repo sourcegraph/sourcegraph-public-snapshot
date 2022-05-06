@@ -275,7 +275,7 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 						mode = search.SkipUnindexed
 					}
 					addJob(&run.RepoSearchJob{
-						RepoOptions:                  repoOptions,
+						RepoOpts:                     repoOptions,
 						Features:                     features,
 						FilePatternsReposMustInclude: patternInfo.FilePatternsReposMustInclude,
 						FilePatternsReposMustExclude: patternInfo.FilePatternsReposMustExclude,
@@ -287,7 +287,7 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 	}
 
 	addJob(&searchrepos.ComputeExcludedReposJob{
-		Options: repoOptions,
+		RepoOpts: repoOptions,
 	})
 
 	job := NewParallelJob(allJobs...)

@@ -91,6 +91,7 @@ export const PreviewFilterRow: React.FunctionComponent<React.PropsWithChildren<P
                         ref={searchElement}
                         defaultValue={filters.search ?? undefined}
                         placeholder="Search title and repository name"
+                        aria-label="Search title and repository name"
                     />
                 </Form>
             </div>

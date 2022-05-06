@@ -2,9 +2,12 @@
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
-    padding: 0.75rem 1rem;
+    padding: 0 0 0.75rem 0;
+}
+
+.header-separator {
+    margin-top: 0;
     margin-bottom: 0.25rem;
-    border-bottom: 1px solid var(--border-color);
 }
 
 .heading {
@@ -26,8 +29,20 @@
     display: block;
 }
 
+.panels {
+    display: flex;
+    flex-direction: column;
+
+    &--horizontal-mode {
+        flex-direction: row;
+        gap: 1.5rem;
+        padding-bottom: 1rem;
+    }
+}
+
 .panel {
-    padding-right: 1rem;
+    min-width: 0;
+    flex-basis: 50%;
 }
 
 .reg-exp-filters {
@@ -44,7 +59,7 @@
     gap: 1rem;
 
     margin-top: -0.25rem;
-    padding: 0.75rem 1rem;
+    padding: 0.75rem 0 0 0;
 }
 
 .buttons {
