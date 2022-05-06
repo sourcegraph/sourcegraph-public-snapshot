@@ -13,28 +13,20 @@ import (
 )
 
 func (r *Resolver) SearchInsightLivePreview(ctx context.Context, args graphqlbackend.SearchInsightLivePreviewArgs) ([]graphqlbackend.SearchInsightLivePreviewSeriesResolver, error) {
-	if !args.Input.GeneratedFromCaptureGroups {
-		return nil, errors.New("live preview is currently only supported for generated series from capture groups")
-	} else if args.Input.TimeScope.StepInterval == nil {
-		return nil, errors.New("live preview currently only supports a time interval time scope")
+	previewArgs := graphqlbackend.InsightLivePreviewArgs{
+		Input: graphqlbackend.InsightLivePreviewInput{
+			RepositoryScope: args.Input.RepositoryScope,
+			TimeScope:       args.Input.TimeScope,
+			Series: []graphqlbackend.SeriesLivePreviewInput{
+				{
+					Query:                      args.Input.Query,
+					Label:                      args.Input.Label,
+					GeneratedFromCaptureGroups: args.Input.GeneratedFromCaptureGroups,
+				},
+			},
+		},
 	}
-
-	executor := query.NewCaptureGroupExecutor(r.postgresDB, r.insightsDB, time.Now)
-	interval := timeseries.TimeInterval{
-		Unit:  types.IntervalUnit(args.Input.TimeScope.StepInterval.Unit),
-		Value: int(args.Input.TimeScope.StepInterval.Value),
-	}
-	generatedSeries, err := executor.Execute(ctx, args.Input.Query, args.Input.RepositoryScope.Repositories, interval)
-	if err != nil {
-		return nil, err
-	}
-
-	var resolvers []graphqlbackend.SearchInsightLivePreviewSeriesResolver
-	for i := range generatedSeries {
-		resolvers = append(resolvers, &searchInsightLivePreviewSeriesResolver{series: &generatedSeries[i]})
-	}
-
-	return resolvers, nil
+	return r.InsightLivePreview(ctx, previewArgs)
 }
 
 func (r *Resolver) InsightLivePreview(ctx context.Context, args graphqlbackend.InsightLivePreviewArgs) ([]graphqlbackend.SearchInsightLivePreviewSeriesResolver, error) {
