@@ -6,8 +6,8 @@ import { userAreaRoutes } from '../../user/area/routes'
 import { UserAreaRoute, UserAreaRouteContext } from '../../user/area/UserArea'
 import { CreateBatchChangePageProps } from '../batches/create/CreateBatchChangePage'
 import { EditBatchSpecPageProps } from '../batches/batch-spec/edit/EditBatchSpecPage'
-import { CreateOrEditBatchChangePageProps } from '../batches/create/CreateOrEditBatchChangePage'
-import { ExecutionAreaProps, NamespaceBatchChangesAreaProps } from '../batches/global/GlobalBatchChangesArea'
+import { ExecuteBatchSpecPageProps } from '../batches/batch-spec/execute/ExecuteBatchSpecPage'
+import { NamespaceBatchChangesAreaProps } from '../batches/global/GlobalBatchChangesArea'
 import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
 import { enterpriseNamespaceAreaRoutes } from '../namespaces/routes'
 
@@ -16,14 +16,9 @@ const NamespaceBatchChangesArea = lazyComponent<NamespaceBatchChangesAreaProps, 
     'NamespaceBatchChangesArea'
 )
 
-const ExecutionArea = lazyComponent<ExecutionAreaProps, 'ExecutionArea'>(
-    () => import('../batches/global/GlobalBatchChangesArea'),
-    'ExecutionArea'
-)
-
-const CreateOrEditBatchChangePage = lazyComponent<CreateOrEditBatchChangePageProps, 'CreateOrEditBatchChangePage'>(
-    () => import('../batches/create/CreateOrEditBatchChangePage'),
-    'CreateOrEditBatchChangePage'
+const ExecuteBatchSpecPage = lazyComponent<ExecuteBatchSpecPageProps, 'ExecuteBatchSpecPage'>(
+    () => import('../batches/batch-spec/execute/ExecuteBatchSpecPage'),
+    'ExecuteBatchSpecPage'
 )
 
 const CreateBatchChangePage = lazyComponent<CreateBatchChangePageProps, 'CreateBatchChangePage'>(
@@ -71,23 +66,17 @@ export const enterpriseUserAreaRoutes: readonly UserAreaRoute[] = [
         fullPage: true,
     },
     {
-        path: '/batch-changes/:batchChangeName/executions/:batchSpecID/configuration',
-        render: ({ match, ...props }: UserAreaRouteContext & RouteComponentProps<{ batchChangeName: string }>) => (
-            <CreateOrEditBatchChangePage
-                {...props}
-                initialNamespaceID={props.user.id}
-                batchChangeName={match.params.batchChangeName}
-                isReadOnly={true}
-            />
-        ),
-        condition: ({ batchChangesEnabled, batchChangesExecutionEnabled }) =>
-            batchChangesEnabled && batchChangesExecutionEnabled,
-        fullPage: true,
-    },
-    {
         path: '/batch-changes/:batchChangeName/executions/:batchSpecID',
-        render: (props: UserAreaRouteContext & RouteComponentProps<{ batchSpecID: string }>) => (
-            <ExecutionArea {...props} namespaceID={props.user.id} />
+        render: ({
+            match,
+            ...props
+        }: UserAreaRouteContext & RouteComponentProps<{ batchChangeName: string; batchSpecID: string }>) => (
+            <ExecuteBatchSpecPage
+                {...props}
+                batchSpecID={match.params.batchSpecID}
+                batchChange={{ name: match.params.batchChangeName, namespace: props.user.id }}
+                match={match}
+            />
         ),
         condition: ({ batchChangesEnabled, batchChangesExecutionEnabled }) =>
             batchChangesEnabled && batchChangesExecutionEnabled,
