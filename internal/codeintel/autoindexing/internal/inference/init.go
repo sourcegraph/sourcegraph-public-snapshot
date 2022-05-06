@@ -21,7 +21,9 @@ var (
 )
 
 var (
-	gitserverRequestRateLimit = env.MustGetInt("CODEINTEL_AUTOINDEXING_INFERENCE_GITSERVER_REQUEST_LIMIT", 100, "The maximum number of request to gitserver per second that can be made from the autoindexing inference service.")
+	gitserverRequestRateLimit       = env.MustGetInt("CODEINTEL_AUTOINDEXING_INFERENCE_GITSERVER_REQUEST_LIMIT", 100, "The maximum number of request to gitserver per second that can be made from the autoindexing inference service.")
+	maximumFilesWithContentCount    = env.MustGetInt("CODEINTEL_AUTOINDEXING_INFERENCE_MAXIMUM_FILE_WITH_COUNT", 100, "The maximum number of files that can be requested by the inference script. Inference operations exceeding this limit will fail.")
+	maximumFileWithContentSizeBytes = env.MustGetInt("CODEINTEL_AUTOINDEXING_INFERENCE_MAXIMUM_FILE_WITH_CONTENT_SIZE_BYTES", 1024*1024, "The maximum size of the content of a single file requested by the inference script. Inference operations exceeding this limit will fail.")
 )
 
 func GetService(db database.DB) *Service {
@@ -36,6 +38,8 @@ func GetService(db database.DB) *Service {
 			luasandbox.GetService(),
 			NewDefaultGitService(nil, db),
 			rate.NewLimiter(rate.Limit(gitserverRequestRateLimit), 1),
+			maximumFilesWithContentCount,
+			maximumFileWithContentSizeBytes,
 			observationContext,
 		)
 	})

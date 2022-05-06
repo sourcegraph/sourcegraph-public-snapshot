@@ -23,10 +23,12 @@ import (
 )
 
 type Service struct {
-	sandboxService SandboxService
-	gitService     GitService
-	limiter        *rate.Limiter
-	operations     *operations
+	sandboxService                  SandboxService
+	gitService                      GitService
+	limiter                         *rate.Limiter
+	maximumFilesWithContentCount    int
+	maximumFileWithContentSizeBytes int
+	operations                      *operations
 }
 
 type indexJobOrHint struct {
@@ -52,13 +54,17 @@ func newService(
 	sandboxService SandboxService,
 	gitService GitService,
 	limiter *rate.Limiter,
+	maximumFilesWithContentCount int,
+	maximumFileWithContentSizeBytes int,
 	observationContext *observation.Context,
 ) *Service {
 	return &Service{
-		sandboxService: sandboxService,
-		gitService:     gitService,
-		limiter:        limiter,
-		operations:     newOperations(observationContext),
+		sandboxService:                  sandboxService,
+		gitService:                      gitService,
+		limiter:                         limiter,
+		maximumFilesWithContentCount:    maximumFilesWithContentCount,
+		maximumFileWithContentSizeBytes: maximumFileWithContentSizeBytes,
+		operations:                      newOperations(observationContext),
 	}
 }
 
@@ -308,9 +314,8 @@ func (s *Service) resolveFileContents(
 	if err != nil {
 		return nil, err
 	}
-	pathspecs := make([]gitserver.Pathspec, 0, len(relevantPaths))
-	for _, p := range relevantPaths {
-		pathspecs = append(pathspecs, gitserver.PathspecLiteral(p))
+	if len(relevantPaths) == 0 {
+		return nil, nil
 	}
 
 	start := time.Now()
@@ -320,6 +325,10 @@ func (s *Service) resolveFileContents(
 		return nil, err
 	}
 
+	pathspecs := make([]gitserver.Pathspec, 0, len(relevantPaths))
+	for _, p := range relevantPaths {
+		pathspecs = append(pathspecs, gitserver.PathspecLiteral(p))
+	}
 	opts := gitserver.ArchiveOptions{
 		Treeish:   invocationContext.commit,
 		Format:    "tar",
@@ -342,6 +351,13 @@ func (s *Service) resolveFileContents(
 			}
 
 			break
+		}
+
+		if len(contentsByPath) > s.maximumFilesWithContentCount {
+			return nil, errors.Newf("inference limit: requested content for more than %d files", s.maximumFilesWithContentCount)
+		}
+		if int(header.Size) > s.maximumFileWithContentSizeBytes {
+			return nil, errors.Newf("inference limit: requested content for a file larger than %d bytes", s.maximumFileWithContentSizeBytes)
 		}
 
 		var buf bytes.Buffer
