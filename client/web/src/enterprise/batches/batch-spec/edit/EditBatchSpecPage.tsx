@@ -20,9 +20,13 @@ import { ActionButtons } from '../header/ActionButtons'
 import { BatchChangeHeader } from '../header/BatchChangeHeader'
 import { TabBar, TabsConfig, TabName } from '../TabBar'
 
-import { EditorForm } from './EditorForm'
+import { EditorFeedbackPanel } from './editor/EditorFeedbackPanel'
+import { MonacoBatchSpecEditor } from './editor/MonacoBatchSpecEditor'
+import { LibraryPane } from './library/LibraryPane'
+import { WorkspacesPreviewPanel } from './workspaces-preview/WorkspacesPreviewPanel'
 
 import layoutStyles from '../Layout.module.scss'
+import styles from './EditBatchSpecPage.module.scss'
 
 export interface EditBatchSpecPageProps extends SettingsCascadeProps<Settings>, ThemeProps {
     batchChange: { name: string; url: string; namespace: { id: Scalars['ID'] } }
@@ -71,7 +75,7 @@ const EditBatchSpecPageContent: React.FunctionComponent<React.PropsWithChildren<
     settingsCascade,
     isLightTheme,
 }) => {
-    const { batchChange } = useContext(BatchSpecContext)
+    const { batchChange, editor, errors } = useContext(BatchSpecContext)
 
     const { insightTitle } = useInsightTemplates(settingsCascade)
 
@@ -143,7 +147,21 @@ const EditBatchSpecPageContent: React.FunctionComponent<React.PropsWithChildren<
             {activeTabName === 'configuration' ? (
                 <ConfigurationForm isReadOnly={true} batchChange={batchChange} settingsCascade={settingsCascade} />
             ) : (
-                <EditorForm isLightTheme={isLightTheme} />
+                <div className={styles.form}>
+                    <LibraryPane name={batchChange.name} onReplaceItem={editor.handleCodeChange} />
+                    <div className={styles.editorContainer}>
+                        <h4 className={styles.header}>Batch spec</h4>
+                        <MonacoBatchSpecEditor
+                            batchChangeName={batchChange.name}
+                            className={styles.editor}
+                            isLightTheme={isLightTheme}
+                            value={editor.code}
+                            onChange={editor.handleCodeChange}
+                        />
+                        <EditorFeedbackPanel errors={errors} />
+                    </div>
+                    <WorkspacesPreviewPanel />
+                </div>
             )}
         </div>
     )
