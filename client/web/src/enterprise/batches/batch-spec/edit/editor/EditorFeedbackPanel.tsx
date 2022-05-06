@@ -18,7 +18,7 @@ interface EditorFeedbackPanelProps {
 export const EditorFeedbackPanel: React.FunctionComponent<React.PropsWithChildren<EditorFeedbackPanelProps>> = ({
     errors,
 }) => {
-    const compactedErrors = compact(Object.values(errors))
+    const compactedErrors = compact<string | Error>(Object.values(errors))
     if (compactedErrors.length === 0) {
         return null
     }
