@@ -172,7 +172,7 @@ func TestNewAuthzProviders(t *testing.T) {
 			assert.Empty(t, warnings)
 		})
 
-		t.Run("groups cache and internalRepos set to true", func(t *testing.T) {
+		t.Run("groups cache and internal set to true", func(t *testing.T) {
 			github.MockGetAuthenticatedOAuthScopes = func(context.Context) ([]string, error) {
 				return []string{"read:org"}, nil
 			}
@@ -186,7 +186,7 @@ func TestNewAuthzProviders(t *testing.T) {
 								Url: schema.DefaultGitHubURL,
 								Authorization: &schema.GitHubAuthorization{
 									GroupsCacheTTL: 72,
-									InternalRepos:  true,
+									Internal:       true,
 								},
 							},
 						},
@@ -225,7 +225,7 @@ func TestNewAuthzProviders(t *testing.T) {
 							GitHubConnection: &schema.GitHubConnection{
 								Url: schema.DefaultGitHubURL,
 								Authorization: &schema.GitHubAuthorization{
-									InternalRepos: true,
+									Internal: true,
 								},
 							},
 						},

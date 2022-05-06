@@ -169,7 +169,7 @@
           "type": "number",
           "default": 72
         },
-        "internalRepos": {
+        "internal": {
           "description": "Experimental: If true, treats all repositories in this code host connection as visible to any user that is a member of any organization in the GitHub Enterprise instance. Ignored if GroupsCacheTTL is enabled. Not supported on GitHub.com.",
           "type": "boolean",
           "default": "false"

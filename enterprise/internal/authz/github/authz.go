@@ -153,7 +153,7 @@ func newAuthzProvider(
 		GitHubURL:      baseURL,
 		BaseToken:      c.Token,
 		GroupsCacheTTL: ttl,
-		InternalRepos:  c.Authorization.InternalRepos,
+		InternalRepos:  c.Authorization.Internal,
 	}), nil
 }
 

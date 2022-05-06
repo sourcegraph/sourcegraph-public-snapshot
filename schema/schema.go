@@ -743,8 +743,8 @@ type GitHubAuthProvider struct {
 type GitHubAuthorization struct {
 	// GroupsCacheTTL description: Experimental: If set, configures hours cached permissions from teams and organizations should be kept for. Setting a negative value disables syncing from teams and organizations, and falls back to the default behaviour of syncing all permisisons directly from user-repository affiliations instead. [Learn more](https://docs.sourcegraph.com/admin/repo/permissions#teams-and-organizations-permissions-caching).
 	GroupsCacheTTL float64 `json:"groupsCacheTTL,omitempty"`
-	// InternalRepos description: Experimental: If set, configures the cached permissions to use a pseudo-org internally to support visibility of internal repositories for all users that belong to an organization. Ignored if GroupsCacheTTL is a positive number.
-	InternalRepos bool `json:"internalRepos,omitempty"`
+	// Internal description: Experimental: If true, treats all repositories in this code host connection as visible to any user that is a member of any organization in the GitHub Enterprise instance. Ignored if GroupsCacheTTL is enabled. Not supported on GitHub.com.
+	Internal bool `json:"internal,omitempty"`
 }
 
 // GitHubConnection description: Configuration for a connection to GitHub or GitHub Enterprise.
