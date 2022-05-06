@@ -34,6 +34,7 @@ const formatError = (error: { instancePath: string; message?: string }): string 
 
 const DEBOUNCE_AMOUNT = 500
 
+/** API for state managing the batch spec input YAML code in the Monaco editor. */
 export interface UseBatchSpecCodeResult {
     /** The current YAML code in the editor. */
     code: string
