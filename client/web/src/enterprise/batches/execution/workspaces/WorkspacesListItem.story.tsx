@@ -8,7 +8,7 @@ import { BatchSpecWorkspaceState } from '../../../../graphql-operations'
 import { mockWorkspace } from './WorkspacesList.mock'
 import { WorkspacesListItem } from './WorkspacesListItem'
 
-const { add } = storiesOf('web/batches/BatchSpecExecutionDetailsPage/WorkspacesList', module).addDecorator(story => (
+const { add } = storiesOf('web/batches/batch-spec/execute/WorkspacesList', module).addDecorator(story => (
     <div className="list-group d-flex flex-column w-100">{story()}</div>
 ))
 

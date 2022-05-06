@@ -1,15 +1,19 @@
-import React, { useContext } from 'react'
+import React, { useContext, useMemo } from 'react'
 
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
+import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Icon, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../../../../components/HeroPage'
+import { Timestamp } from '../../../../components/time/Timestamp'
 import {
     BatchSpecExecutionByIDResult,
     BatchSpecExecutionByIDVariables,
@@ -23,6 +27,7 @@ import {
 import { GET_BATCH_CHANGE_TO_EDIT } from '../../create/backend'
 import { ConfigurationForm } from '../../create/ConfigurationForm'
 import { FETCH_BATCH_SPEC_EXECUTION } from '../../execution/backend'
+import { NewBatchChangePreviewPage } from '../../preview/BatchChangePreviewPage'
 import { BatchSpecContext, BatchSpecContextProvider } from '../BatchSpecContext'
 import { BatchChangeHeader } from '../header/BatchChangeHeader'
 import { TabBar, TabsConfig } from '../TabBar'
@@ -31,9 +36,14 @@ import { ReadOnlyBatchSpecForm } from './ReadOnlyBatchSpecForm'
 
 import layoutStyles from '../Layout.module.scss'
 
-export interface ExecuteBatchSpecPageProps extends SettingsCascadeProps<Settings>, ThemeProps, RouteComponentProps<{}> {
+export interface ExecuteBatchSpecPageProps
+    extends SettingsCascadeProps<Settings>,
+        ThemeProps,
+        TelemetryProps,
+        RouteComponentProps<{}> {
     batchChange: { name: string; namespace: Scalars['ID'] }
     batchSpecID: Scalars['ID']
+    authenticatedUser: AuthenticatedUser
 }
 
 export const ExecuteBatchSpecPage: React.FunctionComponent<ExecuteBatchSpecPageProps> = ({
@@ -83,20 +93,29 @@ export const ExecuteBatchSpecPage: React.FunctionComponent<ExecuteBatchSpecPageP
     )
 }
 
-interface ExecuteBatchSpecPageContentProps extends SettingsCascadeProps<Settings>, ThemeProps, RouteComponentProps<{}> {
+interface ExecuteBatchSpecPageContentProps
+    extends SettingsCascadeProps<Settings>,
+        ThemeProps,
+        TelemetryProps,
+        RouteComponentProps<{}> {
     batchSpec: BatchSpecExecutionFields
+    authenticatedUser: AuthenticatedUser
 }
-
-const TABS_CONFIG: TabsConfig[] = [
-    { key: 'configuration', isEnabled: true, handler: { type: 'link' } },
-    { key: 'spec', isEnabled: true, handler: { type: 'link' } },
-    { key: 'execution', isEnabled: true, handler: { type: 'link' } },
-]
 
 const ExecuteBatchSpecPageContent: React.FunctionComponent<
     React.PropsWithChildren<ExecuteBatchSpecPageContentProps>
-> = ({ isLightTheme, batchSpec, match, settingsCascade }) => {
+> = ({ isLightTheme, batchSpec, match, settingsCascade, telemetryService, authenticatedUser }) => {
     const { batchChange } = useContext(BatchSpecContext)
+
+    const tabsConfig = useMemo<TabsConfig[]>(
+        () => [
+            { key: 'configuration', isEnabled: true, handler: { type: 'link' } },
+            { key: 'spec', isEnabled: true, handler: { type: 'link' } },
+            { key: 'execution', isEnabled: true, handler: { type: 'link' } },
+            { key: 'preview', isEnabled: batchSpec.applyURL !== null, handler: { type: 'link' } },
+        ],
+        [batchSpec.applyURL]
+    )
 
     return (
         <div className={layoutStyles.pageContainer}>
@@ -107,7 +126,14 @@ const ExecuteBatchSpecPageContent: React.FunctionComponent<
                         text: batchChange.namespace.namespaceName,
                     }}
                     title={{ to: batchChange.url, text: batchChange.name }}
-                    description={batchChange.description ?? undefined}
+                    description={
+                        <>
+                            Created <Timestamp date={batchSpec.createdAt} /> by{' '}
+                            <LinkOrSpan to={batchSpec.creator?.url}>
+                                {batchSpec.creator?.displayName || batchSpec.creator?.username || 'a deleted user'}
+                            </LinkOrSpan>
+                        </>
+                    }
                 />
             </div>
 
@@ -117,7 +143,7 @@ const ExecuteBatchSpecPageContent: React.FunctionComponent<
                     path={`${match.url}/configuration`}
                     render={() => (
                         <>
-                            <TabBar activeTabKey="configuration" tabsConfig={TABS_CONFIG} matchURL={match.url} />
+                            <TabBar activeTabKey="configuration" tabsConfig={tabsConfig} matchURL={match.url} />
                             <ConfigurationForm
                                 isReadOnly={true}
                                 batchChange={batchChange}
@@ -131,7 +157,7 @@ const ExecuteBatchSpecPageContent: React.FunctionComponent<
                     path={`${match.url}/spec`}
                     render={() => (
                         <>
-                            <TabBar activeTabKey="spec" tabsConfig={TABS_CONFIG} matchURL={match.url} />
+                            <TabBar activeTabKey="spec" tabsConfig={tabsConfig} matchURL={match.url} />
                             <ReadOnlyBatchSpecForm
                                 batchChange={batchChange}
                                 originalInput={batchSpec.originalInput}
@@ -146,7 +172,7 @@ const ExecuteBatchSpecPageContent: React.FunctionComponent<
                     path={`${match.url}/execution`}
                     render={() => (
                         <>
-                            <TabBar activeTabKey="execution" tabsConfig={TABS_CONFIG} matchURL={match.url} />
+                            <TabBar activeTabKey="execution" tabsConfig={tabsConfig} matchURL={match.url} />
                             <h1>EXECUTION</h1>
                         </>
                     )}
@@ -156,8 +182,18 @@ const ExecuteBatchSpecPageContent: React.FunctionComponent<
                         path={`${match.url}/preview`}
                         render={() => (
                             <>
-                                <TabBar activeTabKey="preview" tabsConfig={TABS_CONFIG} matchURL={match.url} />
-                                <h1>PREVIEW</h1>
+                                <TabBar
+                                    activeTabKey="preview"
+                                    tabsConfig={tabsConfig}
+                                    matchURL={match.url}
+                                    className="mb-3"
+                                />
+                                <NewBatchChangePreviewPage
+                                    authenticatedUser={authenticatedUser}
+                                    telemetryService={telemetryService}
+                                    isLightTheme={isLightTheme}
+                                    batchSpecID={batchSpec.id}
+                                />
                             </>
                         )}
                         exact={true}

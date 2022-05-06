@@ -34,13 +34,14 @@ interface TabBarProps {
     activeTabKey: TabKey
     tabsConfig: TabsConfig[]
     matchURL?: string
+    className?: string
 }
 
-export const TabBar: React.FunctionComponent<TabBarProps> = ({ activeTabKey, tabsConfig, matchURL }) => {
+export const TabBar: React.FunctionComponent<TabBarProps> = ({ activeTabKey, tabsConfig, matchURL, className }) => {
     // uniqBy removes duplicates by taking the first item it finds with a given 'name', so we spread the defaults last
     const fullTabsConfig = useMemo<TabsConfig[]>(() => uniqBy([...tabsConfig, ...DEFAULT_TABS], 'key'), [tabsConfig])
     return (
-        <ul className="nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap">
+        <ul className={classNames('nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap', className)}>
             {fullTabsConfig.map(({ key, isEnabled, disabledTooltip, handler }, index) => {
                 const tabName = getTabName(key, index)
 
