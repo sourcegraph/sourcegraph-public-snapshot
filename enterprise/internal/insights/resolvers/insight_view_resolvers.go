@@ -156,7 +156,8 @@ func (i *insightViewResolver) Dashboards(ctx context.Context, args *graphqlbacke
 	return &dashboardConnectionResolver{baseInsightResolver: i.baseInsightResolver,
 		orgStore:         database.Orgs(i.postgresDB),
 		args:             args,
-		defaultQueryArgs: store.DashboardQueryArgs{WithViewUniqueID: &i.view.UniqueID}}
+		withViewUniqueID: &i.view.UniqueID,
+	}
 }
 
 func filterRepositories(ctx context.Context, filters types.InsightViewFilters, repositories []string, scLoader SearchContextLoader) ([]string, error) {

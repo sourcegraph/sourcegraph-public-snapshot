@@ -825,7 +825,7 @@ type InsightView implements Node {
     """
     Dashboards this insight has been added to that the current user has permission to view
     """
-    dashboards(first: Int, after: ID): InsightsDashboardConnection
+    dashboards(first: Int, after: String, id: ID): InsightsDashboardConnection
 }
 
 """
