@@ -262,7 +262,6 @@ ORDER BY batch_change_counts.creation_week ASC
 	if err != nil {
 		return nil, err
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
 
 	for rows.Next() {
 		var cohort types.BatchChangesCohort
@@ -285,6 +284,10 @@ ORDER BY batch_change_counts.creation_week ASC
 		stats.BatchChangesCohorts = append(stats.BatchChangesCohorts, &cohort)
 	}
 
+	if err = basestore.CloseRows(rows, err); err != nil {
+		return nil, err
+	}
+
 	const batchChangeSourceStatQuery = `
 SELECT
 	batch_specs.created_from_raw,
@@ -300,7 +303,6 @@ GROUP BY batch_specs.created_from_raw;
 	if err != nil {
 		return nil, err
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
 
 	for rows.Next() {
 		var (
@@ -326,6 +328,10 @@ GROUP BY batch_specs.created_from_raw;
 		})
 	}
 
+	if err = basestore.CloseRows(rows, err); err != nil {
+		return nil, err
+	}
+
 	const monthlyExecutorUsageQuery = `
 SELECT
 	DATE_TRUNC('month', batch_specs.created_at)::date as month,
@@ -343,7 +349,6 @@ GROUP BY date_trunc('month', batch_specs.created_at)::date;
 	if err != nil {
 		return nil, err
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
 
 	for rows.Next() {
 		var (
@@ -363,6 +368,10 @@ GROUP BY date_trunc('month', batch_specs.created_at)::date;
 		})
 	}
 
+	if err = basestore.CloseRows(rows, err); err != nil {
+		return nil, err
+	}
+
 	const weeklyBulkOperationsStatQuery = `
 SELECT
 	job_type,
@@ -376,7 +385,6 @@ GROUP BY date_trunc('week', created_at)::date, job_type;
 	if err != nil {
 		return nil, err
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
 
 	totalBulkOperation := make(map[string]int32)
 	for rows.Next() {
@@ -400,6 +408,10 @@ GROUP BY date_trunc('week', created_at)::date, job_type;
 			Week:          week,
 			Count:         count,
 		})
+	}
+
+	if err = basestore.CloseRows(rows, err); err != nil {
+		return nil, err
 	}
 
 	for name, count := range totalBulkOperation {
