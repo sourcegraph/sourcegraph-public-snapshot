@@ -37,7 +37,7 @@ func addAnalyticsHooks(start time.Time, commandPath []string, commands []*cli.Co
 			signal.Notify(interrupt, os.Interrupt, syscall.SIGTERM)
 			go func() {
 				<-interrupt
-				analyticsHook(cmd)
+				analyticsHook(cmd, "cancelled")
 				os.Exit(1)
 			}()
 
@@ -45,18 +45,22 @@ func addAnalyticsHooks(start time.Time, commandPath []string, commands []*cli.Co
 			actionErr := wrappedAction(cmd)
 
 			// Capture analytics post-run
-			analyticsHook(cmd)
+			if actionErr != nil {
+				analyticsHook(cmd, "error")
+			} else {
+				analyticsHook(cmd, "success")
+			}
 
 			return actionErr
 		}
 	}
 }
 
-func makeAnalyticsHook(start time.Time, commandPath []string) func(cmd *cli.Context) {
-	return func(cmd *cli.Context) {
+func makeAnalyticsHook(start time.Time, commandPath []string) func(*cli.Context, ...string) {
+	return func(cmd *cli.Context, events ...string) {
 		// Log an sg usage occurrence
 		totalDuration := time.Since(start)
-		analytics.LogDuration(cmd.Context, "sg_action", commandPath, totalDuration)
+		analytics.LogEvent(cmd.Context, "sg_action", commandPath, totalDuration, events...)
 
 		// Persist all tracked to disk
 		flagsUsed := cmd.FlagNames()

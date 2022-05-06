@@ -19,20 +19,29 @@ func WithContext(ctx context.Context, sgVersion string) context.Context {
 	})
 }
 
-// LogDuration tracks an event in the per-run analytics store, if analytics are enabled,
+// LogEvent tracks an event in the per-run analytics store, if analytics are enabled,
 // in the context of a command.
-func LogDuration(ctx context.Context, name string, labels []string, duration time.Duration) {
+//
+// Events can also be provided to indicate that something happened - for example, and
+// error or cancellation. These are treated as metrics with a count of 1.
+func LogEvent(ctx context.Context, name string, labels []string, duration time.Duration, events ...string) {
 	store, ok := ctx.Value(analyticsStoreKey{}).(*eventStore)
 	if !ok {
 		return
 	}
+
+	metrics := map[string]okay.Metric{
+		"duration": okay.Duration(duration),
+	}
+	for _, event := range events {
+		metrics[event] = okay.Count(1)
+	}
+
 	store.events = append(store.events, &okay.Event{
 		Name:      name,
 		Labels:    labels,
 		Timestamp: time.Now().Add(-duration), // Timestamp as start of event
-		Metrics: map[string]okay.Metric{
-			"duration": okay.Duration(duration),
-		},
+		Metrics:   metrics,
 		UniqueKey: []string{"event_id"},
 		Properties: map[string]string{
 			"event_id": uuid.NewString(),
