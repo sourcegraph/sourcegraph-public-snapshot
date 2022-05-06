@@ -1,0 +1,201 @@
+diff --git a/node_modules/@reach/dialog/dist/reach-dialog.cjs.dev.js b/node_modules/@reach/dialog/dist/reach-dialog.cjs.dev.js
+index 56fd162..95c5026 100644
+--- a/node_modules/@reach/dialog/dist/reach-dialog.cjs.dev.js
++++ b/node_modules/@reach/dialog/dist/reach-dialog.cjs.dev.js
+@@ -176,9 +176,6 @@ var DialogInner = /*#__PURE__*/React.forwardRef(function DialogInner(_ref2, forw
+     mouseDownTarget.current = event.target;
+   }
+ 
+-  React.useEffect(function () {
+-    return overlayNode.current ? createAriaHider(overlayNode.current) : void null;
+-  }, []);
+   return /*#__PURE__*/React.createElement(FocusLock__default['default'], {
+     autoFocus: true,
+     returnFocus: true,
+@@ -298,53 +295,6 @@ if (process.env.NODE_ENV !== "production") {
+   };
+ } ////////////////////////////////////////////////////////////////////////////////
+ 
+-
+-function createAriaHider(dialogNode) {
+-  var originalValues = [];
+-  var rootNodes = [];
+-  var ownerDocument$1 = ownerDocument.getOwnerDocument(dialogNode);
+-
+-  if (!dialogNode) {
+-    if (process.env.NODE_ENV !== "production") {
+-      console.warn("A ref has not yet been attached to a dialog node when attempting to call `createAriaHider`.");
+-    }
+-
+-    return noop.noop;
+-  }
+-
+-  Array.prototype.forEach.call(ownerDocument$1.querySelectorAll("body > *"), function (node) {
+-    var _dialogNode$parentNod, _dialogNode$parentNod2;
+-
+-    var portalNode = (_dialogNode$parentNod = dialogNode.parentNode) == null ? void 0 : (_dialogNode$parentNod2 = _dialogNode$parentNod.parentNode) == null ? void 0 : _dialogNode$parentNod2.parentNode;
+-
+-    if (node === portalNode) {
+-      return;
+-    }
+-
+-    var attr = node.getAttribute("aria-hidden");
+-    var alreadyHidden = attr !== null && attr !== "false";
+-
+-    if (alreadyHidden) {
+-      return;
+-    }
+-
+-    originalValues.push(attr);
+-    rootNodes.push(node);
+-    node.setAttribute("aria-hidden", "true");
+-  });
+-  return function () {
+-    rootNodes.forEach(function (node, index) {
+-      var originalValue = originalValues[index];
+-
+-      if (originalValue === null) {
+-        node.removeAttribute("aria-hidden");
+-      } else {
+-        node.setAttribute("aria-hidden", originalValue);
+-      }
+-    });
+-  };
+-}
+-
+ function ariaLabelType(props, propName, compName, location, propFullName) {
+   var details = "\nSee https://www.w3.org/TR/wai-aria/#aria-label for details.";
+ 
+diff --git a/node_modules/@reach/dialog/dist/reach-dialog.cjs.prod.js b/node_modules/@reach/dialog/dist/reach-dialog.cjs.prod.js
+index 3de25b7..8586219 100644
+--- a/node_modules/@reach/dialog/dist/reach-dialog.cjs.prod.js
++++ b/node_modules/@reach/dialog/dist/reach-dialog.cjs.prod.js
+@@ -158,9 +158,6 @@ var DialogInner = /*#__PURE__*/React.forwardRef(function DialogInner(_ref2, forw
+     mouseDownTarget.current = event.target;
+   }
+ 
+-  React.useEffect(function () {
+-    return overlayNode.current ? createAriaHider(overlayNode.current) : void null;
+-  }, []);
+   return /*#__PURE__*/React.createElement(FocusLock__default['default'], {
+     autoFocus: true,
+     returnFocus: true,
+@@ -251,50 +248,6 @@ var Dialog = /*#__PURE__*/React.forwardRef(function Dialog(_ref4, forwardedRef)
+   }, props)));
+ });
+ 
+-
+-function createAriaHider(dialogNode) {
+-  var originalValues = [];
+-  var rootNodes = [];
+-  var ownerDocument$1 = ownerDocument.getOwnerDocument(dialogNode);
+-
+-  if (!dialogNode) {
+-
+-    return noop.noop;
+-  }
+-
+-  Array.prototype.forEach.call(ownerDocument$1.querySelectorAll("body > *"), function (node) {
+-    var _dialogNode$parentNod, _dialogNode$parentNod2;
+-
+-    var portalNode = (_dialogNode$parentNod = dialogNode.parentNode) == null ? void 0 : (_dialogNode$parentNod2 = _dialogNode$parentNod.parentNode) == null ? void 0 : _dialogNode$parentNod2.parentNode;
+-
+-    if (node === portalNode) {
+-      return;
+-    }
+-
+-    var attr = node.getAttribute("aria-hidden");
+-    var alreadyHidden = attr !== null && attr !== "false";
+-
+-    if (alreadyHidden) {
+-      return;
+-    }
+-
+-    originalValues.push(attr);
+-    rootNodes.push(node);
+-    node.setAttribute("aria-hidden", "true");
+-  });
+-  return function () {
+-    rootNodes.forEach(function (node, index) {
+-      var originalValue = originalValues[index];
+-
+-      if (originalValue === null) {
+-        node.removeAttribute("aria-hidden");
+-      } else {
+-        node.setAttribute("aria-hidden", originalValue);
+-      }
+-    });
+-  };
+-}
+-
+ exports.Dialog = Dialog;
+ exports.DialogContent = DialogContent;
+ exports.DialogOverlay = DialogOverlay;
+diff --git a/node_modules/@reach/dialog/dist/reach-dialog.esm.js b/node_modules/@reach/dialog/dist/reach-dialog.esm.js
+index 52aed29..fba622b 100644
+--- a/node_modules/@reach/dialog/dist/reach-dialog.esm.js
++++ b/node_modules/@reach/dialog/dist/reach-dialog.esm.js
+@@ -167,9 +167,6 @@ var DialogInner = /*#__PURE__*/forwardRef(function DialogInner(_ref2, forwardedR
+     mouseDownTarget.current = event.target;
+   }
+ 
+-  useEffect(function () {
+-    return overlayNode.current ? createAriaHider(overlayNode.current) : void null;
+-  }, []);
+   return /*#__PURE__*/createElement(FocusLock, {
+     autoFocus: true,
+     returnFocus: true,
+@@ -289,53 +286,6 @@ if (process.env.NODE_ENV !== "production") {
+   };
+ } ////////////////////////////////////////////////////////////////////////////////
+ 
+-
+-function createAriaHider(dialogNode) {
+-  var originalValues = [];
+-  var rootNodes = [];
+-  var ownerDocument = getOwnerDocument(dialogNode);
+-
+-  if (!dialogNode) {
+-    if (process.env.NODE_ENV !== "production") {
+-      console.warn("A ref has not yet been attached to a dialog node when attempting to call `createAriaHider`.");
+-    }
+-
+-    return noop;
+-  }
+-
+-  Array.prototype.forEach.call(ownerDocument.querySelectorAll("body > *"), function (node) {
+-    var _dialogNode$parentNod, _dialogNode$parentNod2;
+-
+-    var portalNode = (_dialogNode$parentNod = dialogNode.parentNode) == null ? void 0 : (_dialogNode$parentNod2 = _dialogNode$parentNod.parentNode) == null ? void 0 : _dialogNode$parentNod2.parentNode;
+-
+-    if (node === portalNode) {
+-      return;
+-    }
+-
+-    var attr = node.getAttribute("aria-hidden");
+-    var alreadyHidden = attr !== null && attr !== "false";
+-
+-    if (alreadyHidden) {
+-      return;
+-    }
+-
+-    originalValues.push(attr);
+-    rootNodes.push(node);
+-    node.setAttribute("aria-hidden", "true");
+-  });
+-  return function () {
+-    rootNodes.forEach(function (node, index) {
+-      var originalValue = originalValues[index];
+-
+-      if (originalValue === null) {
+-        node.removeAttribute("aria-hidden");
+-      } else {
+-        node.setAttribute("aria-hidden", originalValue);
+-      }
+-    });
+-  };
+-}
+-
+ function ariaLabelType(props, propName, compName, location, propFullName) {
+   var details = "\nSee https://www.w3.org/TR/wai-aria/#aria-label for details.";
+ 
