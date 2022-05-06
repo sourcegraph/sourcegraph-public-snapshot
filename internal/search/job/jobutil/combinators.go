@@ -17,7 +17,7 @@ import (
 // child job, it stops executing additional jobs and returns.
 func NewSequentialJob(children ...job.Job) job.Job {
 	if len(children) == 0 {
-		return &noopJob{}
+		return &NoopJob{}
 	}
 	if len(children) == 1 {
 		return children[0]
@@ -54,7 +54,7 @@ func (s *SequentialJob) Run(ctx context.Context, clients job.RuntimeClients, str
 // if any of the child jobs failed.
 func NewParallelJob(children ...job.Job) job.Job {
 	if len(children) == 0 {
-		return &noopJob{}
+		return &NoopJob{}
 	}
 	if len(children) == 1 {
 		return children[0]
@@ -92,7 +92,7 @@ func (p *ParallelJob) Run(ctx context.Context, clients job.RuntimeClients, s str
 // NewTimeoutJob creates a new job that is canceled after the
 // timeout is hit. The timer starts with `Run()` is called.
 func NewTimeoutJob(timeout time.Duration, child job.Job) job.Job {
-	if _, ok := child.(*noopJob); ok {
+	if _, ok := child.(*NoopJob); ok {
 		return child
 	}
 	return &TimeoutJob{
@@ -125,7 +125,7 @@ func (t *TimeoutJob) Name() string {
 // is incremented by the number of results in that event, and if it reaches
 // the limit, the context is canceled.
 func NewLimitJob(limit int, child job.Job) job.Job {
-	if _, ok := child.(*noopJob); ok {
+	if _, ok := child.(*NoopJob); ok {
 		return child
 	}
 	return &LimitJob{
@@ -159,14 +159,14 @@ func (l *LimitJob) Name() string {
 	return "LimitJob"
 }
 
-func NewNoopJob() *noopJob {
-	return &noopJob{}
+func NewNoopJob() *NoopJob {
+	return &NoopJob{}
 }
 
-type noopJob struct{}
+type NoopJob struct{}
 
-func (e *noopJob) Run(context.Context, job.RuntimeClients, streaming.Sender) (*search.Alert, error) {
+func (e *NoopJob) Run(context.Context, job.RuntimeClients, streaming.Sender) (*search.Alert, error) {
 	return nil, nil
 }
 
-func (e *noopJob) Name() string { return "NoopJob" }
+func (e *NoopJob) Name() string { return "NoopJob" }

@@ -341,7 +341,10 @@ interface SearchReferenceExampleProps {
     onClick?: (example: string) => void
 }
 
-const SearchReferenceExample: React.FunctionComponent<SearchReferenceExampleProps> = ({ example, onClick }) => {
+const SearchReferenceExample: React.FunctionComponent<React.PropsWithChildren<SearchReferenceExampleProps>> = ({
+    example,
+    onClick,
+}) => {
     // All current examples are literal queries
     const scanResult = scanSearchQuery(example, false, SearchPatternType.literal)
     // We only use valid queries as examples, so this will always be true

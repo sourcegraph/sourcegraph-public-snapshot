@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Masterminds/semver"
 	"github.com/bitfield/script"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/docker"
@@ -42,10 +43,11 @@ var allLintTargets = lintTargets{
 		},
 	},
 	{
-		Name: "logger-migration",
-		Help: "Run linter that enforces the new logger library",
+		Name: "go-custom",
+		Help: "Custom checks for Go, will be migrated to the default go check set in the future",
 		Linters: []lint.Runner{
 			lintLoggingLibraries(),
+			goModGuards(),
 		},
 	},
 	{
@@ -83,6 +85,76 @@ var allLintTargets = lintTargets{
 	},
 }
 
+func goModGuards() lint.Runner {
+	const header = "go.mod version guards"
+
+	var maxVersions = map[string]*semver.Version{
+		// Any version past this version is not yet released in any version of Alertmanager,
+		// and causes incompatibility in prom-wrapper.
+		//
+		// https://github.com/sourcegraph/zoekt/pull/330#issuecomment-1116857568
+		"github.com/prometheus/common": semver.MustParse("v0.32.1"),
+	}
+
+	if len(maxVersions) == 0 {
+		return func(ctx context.Context, s *repo.State) *lint.Report {
+			return &lint.Report{Header: header, Output: "No guards currently defined"}
+		}
+	}
+
+	return func(ctx context.Context, s *repo.State) *lint.Report {
+		start := time.Now()
+
+		diff, err := s.GetDiff("go.mod")
+		if err != nil {
+			return &lint.Report{Header: header, Err: err}
+		}
+		if len(diff) == 0 {
+			return &lint.Report{Header: header, Output: "No go.mod changes detected!"}
+		}
+
+		var errs error
+		for _, hunk := range diff["go.mod"] {
+			for _, l := range hunk.AddedLines {
+				parts := strings.Split(strings.TrimSpace(l), " ")
+				if len(parts) != 2 {
+					continue
+				}
+				var (
+					lib     = parts[0]
+					version = parts[1]
+				)
+				if !strings.HasPrefix(version, "v") {
+					continue
+				}
+				if maxVersion := maxVersions[lib]; maxVersion != nil {
+					v, err := semver.NewVersion(version)
+					if err != nil {
+						errs = errors.Append(errs, errors.Wrapf(err, "dependency %s has invalid version", lib))
+						continue
+					}
+					if v.GreaterThan(maxVersion) {
+						errs = errors.Append(errs, errors.Newf("dependency %s must not exceed version %s",
+							lib, maxVersion))
+					}
+				}
+			}
+		}
+
+		return &lint.Report{
+			Duration: time.Since(start),
+			Header:   header,
+			Output: func() string {
+				if errs != nil {
+					return strings.TrimSpace(errs.Error())
+				}
+				return ""
+			}(),
+			Err: errs,
+		}
+	}
+}
+
 // lintLoggingLibraries enforces that only usages of lib/log are added
 func lintLoggingLibraries() lint.Runner {
 	const header = "Logging library linter"
@@ -91,9 +163,9 @@ func lintLoggingLibraries() lint.Runner {
 		bannedImports = []string{
 			// No standard log library
 			`"log"`,
-			// No log15
+			// No log15 - we only catch import changes for now, checking for 'log15.' is
+			// too sensitive to just code moves.
 			`"github.com/inconshreveable/log15"`,
-			`log15.`,
 			// No zap - we re-rexport everything via lib/log
 			`"go.uber.org/zap"`,
 			`"go.uber.org/zap/zapcore"`,

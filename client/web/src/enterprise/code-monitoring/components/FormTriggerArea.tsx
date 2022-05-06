@@ -34,12 +34,14 @@ interface TriggerAreaProps extends ThemeProps {
 const isDiffOrCommit = (value: string): boolean => value === 'diff' || value === 'commit'
 const isLiteralOrRegexp = (value: string): boolean => value === 'literal' || value === 'regexp'
 
-const ValidQueryChecklistItem: React.FunctionComponent<{
-    checked: boolean
-    hint?: string
-    className?: string
-    dataTestid?: string
-}> = ({ checked, children, hint, className, dataTestid }) => (
+const ValidQueryChecklistItem: React.FunctionComponent<
+    React.PropsWithChildren<{
+        checked: boolean
+        hint?: string
+        className?: string
+        dataTestid?: string
+    }>
+> = ({ checked, children, hint, className, dataTestid }) => (
     <Checkbox
         wrapperClassName={classNames('d-flex align-items-center text-muted pl-0', className)}
         className="sr-only"
@@ -83,7 +85,7 @@ const ValidQueryChecklistItem: React.FunctionComponent<{
     />
 )
 
-export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
+export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<TriggerAreaProps>> = ({
     query,
     onQueryChange,
     triggerCompleted,

@@ -38,7 +38,7 @@ interface StatusIconProps {
     }
 }
 
-const StatusIcon: React.FunctionComponent<StatusIconProps> = ({ mirrorInfo }) => {
+const StatusIcon: React.FunctionComponent<React.PropsWithChildren<StatusIconProps>> = ({ mirrorInfo }) => {
     if (mirrorInfo === undefined) {
         return null
     }
@@ -70,7 +70,7 @@ interface CodeHostIconProps {
     hostType: string
 }
 
-const CodeHostIcon: React.FunctionComponent<CodeHostIconProps> = ({ hostType }) => {
+const CodeHostIcon: React.FunctionComponent<React.PropsWithChildren<CodeHostIconProps>> = ({ hostType }) => {
     switch (hostType) {
         case ExternalServiceKind.GITHUB:
             return (
@@ -99,7 +99,7 @@ const CodeHostIcon: React.FunctionComponent<CodeHostIconProps> = ({ hostType }) 
     }
 }
 
-export const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({
+export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<RepositoryNodeProps>> = ({
     name,
     mirrorInfo,
     url,
@@ -158,7 +158,7 @@ interface CheckboxRepositoryNodeProps {
     isPrivate: boolean
 }
 
-export const CheckboxRepositoryNode: React.FunctionComponent<CheckboxRepositoryNodeProps> = ({
+export const CheckboxRepositoryNode: React.FunctionComponent<React.PropsWithChildren<CheckboxRepositoryNodeProps>> = ({
     name,
     mirrorInfo,
     onClick,

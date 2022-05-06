@@ -26,7 +26,9 @@ interface InsightCreationPageProps extends TelemetryProps {
     mode: InsightCreationPageType
 }
 
-export const InsightCreationPage: React.FunctionComponent<InsightCreationPageProps> = props => {
+export const InsightCreationPage: React.FunctionComponent<
+    React.PropsWithChildren<InsightCreationPageProps>
+> = props => {
     const { mode, telemetryService } = props
 
     const history = useHistory()

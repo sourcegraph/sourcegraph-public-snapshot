@@ -914,6 +914,11 @@ type InsightView implements Node {
     The series display options currently applied to the insight.
     """
     appliedSeriesDisplayOptions: SeriesDisplayOptions!
+
+    """
+    Dashboards this insight has been added to that the current user has permission to view
+    """
+    dashboards(first: Int, after: String, id: ID): InsightsDashboardConnection
 }
 
 """

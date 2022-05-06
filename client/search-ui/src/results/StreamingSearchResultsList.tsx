@@ -71,7 +71,9 @@ export interface StreamingSearchResultsListProps
     resultClassName?: string
 }
 
-export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearchResultsListProps> = ({
+export const StreamingSearchResultsList: React.FunctionComponent<
+    React.PropsWithChildren<StreamingSearchResultsListProps>
+> = ({
     results,
     allExpanded,
     fetchHighlightedFileLineRanges,

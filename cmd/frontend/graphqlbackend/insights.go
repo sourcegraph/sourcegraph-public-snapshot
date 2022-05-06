@@ -178,6 +178,7 @@ type InsightViewResolver interface {
 	SeriesCount(ctx context.Context) (int32, error)
 	DefaultSeriesDisplayOptions(ctx context.Context) (InsightViewSeriesDisplayOptionsResolver, error)
 	AppliedSeriesDisplayOptions(ctx context.Context) (InsightViewSeriesDisplayOptionsResolver, error)
+	Dashboards(ctx context.Context, args *InsightsDashboardsArgs) InsightsDashboardConnectionResolver
 }
 
 type InsightDataSeriesDefinition interface {

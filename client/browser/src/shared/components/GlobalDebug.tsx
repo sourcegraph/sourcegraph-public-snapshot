@@ -15,7 +15,9 @@ interface Props extends PlatformContextProps<'sideloadedExtensionURL' | 'setting
     sourcegraphURL: string
 }
 
-const makeExtensionLink = (sourcegraphURL: string): React.FunctionComponent<{ id: string }> => props => {
+const makeExtensionLink = (
+    sourcegraphURL: string
+): React.FunctionComponent<React.PropsWithChildren<{ id: string }>> => props => {
     const extensionURL = new URL(sourcegraphURL)
     extensionURL.pathname = `extensions/${props.id}`
     return <Link to={extensionURL.href}>{props.id}</Link>
@@ -24,7 +26,7 @@ const makeExtensionLink = (sourcegraphURL: string): React.FunctionComponent<{ id
 /**
  * A global debug toolbar shown in the bottom right of the window.
  */
-export const GlobalDebug: React.FunctionComponent<Props> = props => (
+export const GlobalDebug: React.FunctionComponent<React.PropsWithChildren<Props>> = props => (
     <div className="navbar navbar-expand" data-global-debug={true}>
         <div className="navbar-nav align-items-center">
             <div className="nav-item">

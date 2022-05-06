@@ -9,7 +9,7 @@ import GithubIcon from 'mdi-react/GithubIcon'
 import { isErrorLike, isDefined, isEncodedImage } from '@sourcegraph/common'
 import { splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
 import { ExtensionCategory, ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
-import { Button, Link, Icon } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, H2, H3 } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
@@ -24,10 +24,9 @@ import styles from './RegistryExtensionOverviewPage.module.scss'
 
 interface Props extends Pick<ExtensionAreaRouteContext, 'extension' | 'telemetryService' | 'isLightTheme'> {}
 
-const RegistryExtensionOverviewIcon: React.FunctionComponent<Pick<Props, 'extension' | 'isLightTheme'>> = ({
-    extension,
-    isLightTheme,
-}) => {
+const RegistryExtensionOverviewIcon: React.FunctionComponent<
+    React.PropsWithChildren<Pick<Props, 'extension' | 'isLightTheme'>>
+> = ({ extension, isLightTheme }) => {
     const manifest: ExtensionManifest | undefined =
         extension.manifest && !isErrorLike(extension.manifest) ? extension.manifest : undefined
 
@@ -63,7 +62,7 @@ const RegistryExtensionOverviewIcon: React.FunctionComponent<Pick<Props, 'extens
 }
 
 /** A page that displays overview information about a registry extension. */
-export const RegistryExtensionOverviewPage: React.FunctionComponent<Props> = ({
+export const RegistryExtensionOverviewPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     telemetryService,
     extension,
     isLightTheme,
@@ -109,7 +108,7 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<Props> = ({
                 {/* Publisher */}
                 {publisher && (
                     <div className="pt-2 pb-3">
-                        <h3>Publisher</h3>
+                        <H3 as={H2}>Publisher</H3>
                         <small
                             data-tooltip={isSourcegraphExtension ? 'Created and maintained by Sourcegraph' : undefined}
                         >

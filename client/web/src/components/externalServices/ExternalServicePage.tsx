@@ -40,7 +40,7 @@ function isValidURL(url: string): boolean {
     }
 }
 
-export const ExternalServicePage: React.FunctionComponent<Props> = ({
+export const ExternalServicePage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     externalServiceID,
     history,
     isLightTheme,

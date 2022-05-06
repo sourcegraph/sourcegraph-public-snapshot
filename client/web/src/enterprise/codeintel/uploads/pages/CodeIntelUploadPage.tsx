@@ -65,7 +65,7 @@ enum RetentionPolicyMatcherState {
     ShowAll,
 }
 
-export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = ({
+export const CodeIntelUploadPage: FunctionComponent<React.PropsWithChildren<CodeIntelUploadPageProps>> = ({
     match: {
         params: { id },
     },

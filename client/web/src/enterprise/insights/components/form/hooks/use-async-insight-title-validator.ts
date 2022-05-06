@@ -1,6 +1,6 @@
 import { useCallback, useContext } from 'react'
 
-import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
+import { CodeInsightsBackendContext } from '../../../core'
 
 import { AsyncValidator } from './utils/use-async-validation'
 

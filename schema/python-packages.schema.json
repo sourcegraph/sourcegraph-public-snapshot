@@ -1,0 +1,52 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "python-packages.schema.json#",
+  "title": "PythonPackagesConnection",
+  "description": "Configuration for a connection to Python simple repository APIs compatible with PEP 503",
+  "allowComments": true,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["urls"],
+  "properties": {
+    "urls": {
+      "description": "The list of Python simple repository URLs to fetch packages from. 404 Not found or 410 Gone responses will result in the next URL to be attempted.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": ["https://pypi.org/simple"],
+      "examples": [["https://private.mycorp.org/simple", "https://pypi.org/simple"]]
+    },
+    "rateLimit": {
+      "description": "Rate limit applied when making background API requests to the configured Python simple repository APIs.",
+      "title": "PythonRateLimit",
+      "type": "object",
+      "required": ["enabled", "requestsPerHour"],
+      "properties": {
+        "enabled": {
+          "description": "true if rate limiting is enabled.",
+          "type": "boolean",
+          "default": true
+        },
+        "requestsPerHour": {
+          "description": "Requests per hour permitted. This is an average, calculated per second. Internally, the burst limit is set to 100, which implies that for a requests per hour limit as low as 1, users will continue to be able to send a maximum of 100 requests immediately, provided that the complexity cost of each request is 1.",
+          "type": "number",
+          "default": 57600,
+          "minimum": 0
+        }
+      },
+      "default": {
+        "enabled": true,
+        "requestsPerHour": 57600
+      }
+    },
+    "dependencies": {
+      "description": "An array of strings specifying Python packages to mirror in Sourcegraph.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "examples": [["numpy==1.22.3", "pytorch==1.0.2"]]
+    }
+  }
+}

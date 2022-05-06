@@ -30,7 +30,7 @@ interface Props extends Pick<RouteComponentProps<{}>, 'history' | 'location'>, T
 /**
  * Displays a list of all access tokens on the site.
  */
-export const SiteAdminTokensPage: React.FunctionComponent<Props> = ({
+export const SiteAdminTokensPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     history,
     location,
     authenticatedUser,

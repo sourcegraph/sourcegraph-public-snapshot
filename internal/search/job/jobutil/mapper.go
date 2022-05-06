@@ -206,7 +206,7 @@ func (m *Mapper) Map(j job.Job) job.Job {
 		}
 		return NewFilterJob(child)
 
-	case *noopJob:
+	case *NoopJob:
 		return j
 
 	default:
@@ -228,7 +228,7 @@ func MapAtom(j job.Job, f func(job.Job) job.Job) job.Job {
 				*commit.CommitSearchJob,
 				*symbol.RepoUniverseSymbolSearchJob,
 				*repos.ComputeExcludedReposJob,
-				*noopJob:
+				*NoopJob:
 				return f(typedJob)
 			default:
 				return currentJob

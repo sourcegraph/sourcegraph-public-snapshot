@@ -1,6 +1,4 @@
-import React from 'react'
-
-import classNames from 'classnames'
+import { FunctionComponent } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Button, Input } from '@sourcegraph/wildcard'
@@ -28,7 +26,7 @@ interface DrillDownInsightCreationFormProps {
     onCancel: () => void
 }
 
-export const DrillDownInsightCreationForm: React.FunctionComponent<DrillDownInsightCreationFormProps> = props => {
+export const DrillDownInsightCreationForm: FunctionComponent<DrillDownInsightCreationFormProps> = props => {
     const { className, onCreateInsight, onCancel } = props
 
     const { formAPI, ref, handleSubmit } = useForm({
@@ -49,7 +47,7 @@ export const DrillDownInsightCreationForm: React.FunctionComponent<DrillDownInsi
 
     return (
         // eslint-disable-next-line react/forbid-elements
-        <form ref={ref} onSubmit={handleSubmit} noValidate={true} className={classNames(className, 'p-3')}>
+        <form ref={ref} onSubmit={handleSubmit} noValidate={true} className={className}>
             <h3 className="mb-3">Save as new view</h3>
 
             <Input

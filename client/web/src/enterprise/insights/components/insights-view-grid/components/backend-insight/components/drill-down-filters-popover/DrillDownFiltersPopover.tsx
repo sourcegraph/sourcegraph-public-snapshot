@@ -11,12 +11,11 @@ import { FormChangeEvent, SubmissionResult } from '../../../../../form/hooks/use
 import {
     DrillDownInsightCreationForm,
     DrillDownInsightCreationFormValues,
-} from '../drill-down-filters-panel/DrillDownInsightCreationForm'
-import {
     DrillDownFiltersFormValues,
     DrillDownInsightFilters,
+    FilterSectionVisualMode,
     hasActiveFilters,
-} from '../drill-down-filters-panel/DrillDownInsightFilters'
+} from '../drill-down-filters-panel'
 
 import styles from './DrillDownFiltersPopover.module.scss'
 
@@ -38,7 +37,7 @@ interface DrillDownFiltersPopoverProps {
 // the filter panel should not trigger react-grid-layout events.
 const handleMouseDown: DOMAttributes<HTMLElement>['onMouseDown'] = event => event.stopPropagation()
 
-enum DrillDownFiltersStep {
+export enum DrillDownFiltersStep {
     Filters = 'filters',
     ViewCreation = 'view-creation',
 }
@@ -48,7 +47,9 @@ const STEP_STYLES = {
     [DrillDownFiltersStep.ViewCreation]: styles.popoverWithViewCreation,
 }
 
-export const DrillDownFiltersPopover: React.FunctionComponent<DrillDownFiltersPopoverProps> = props => {
+export const DrillDownFiltersPopover: React.FunctionComponent<
+    React.PropsWithChildren<DrillDownFiltersPopoverProps>
+> = props => {
     const {
         isOpen,
         anchor,
@@ -101,6 +102,7 @@ export const DrillDownFiltersPopover: React.FunctionComponent<DrillDownFiltersPo
                     <DrillDownInsightFilters
                         initialValues={initialFiltersValue}
                         originalValues={originalFiltersValue}
+                        visualMode={FilterSectionVisualMode.CollapseSections}
                         onFiltersChange={handleFilterChange}
                         onFilterSave={onFilterSave}
                         onCreateInsightRequest={() => setStep(DrillDownFiltersStep.ViewCreation)}

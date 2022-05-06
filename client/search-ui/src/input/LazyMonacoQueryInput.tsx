@@ -24,7 +24,7 @@ const CodemirrorQueryInput = lazyComponent(() => import('./CodeMirrorQueryInput'
  * It has no suggestions, but still allows to type in and submit queries.
  */
 export const PlainQueryInput: React.FunctionComponent<
-    Pick<MonacoQueryInputProps, 'queryState' | 'autoFocus' | 'onChange' | 'className'>
+    React.PropsWithChildren<Pick<MonacoQueryInputProps, 'queryState' | 'autoFocus' | 'onChange' | 'className'>>
 > = ({ queryState, autoFocus, onChange, className }) => {
     const onInputChange = React.useCallback(
         (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -54,7 +54,7 @@ export interface LazyMonacoQueryInputProps extends MonacoQueryInputProps {
 /**
  * A lazily-loaded {@link MonacoQueryInput}, displaying a read-only query field as a fallback during loading.
  */
-export const LazyMonacoQueryInput: React.FunctionComponent<LazyMonacoQueryInputProps> = ({
+export const LazyMonacoQueryInput: React.FunctionComponent<React.PropsWithChildren<LazyMonacoQueryInputProps>> = ({
     editorComponent,
     ...props
 }) => {

@@ -26,10 +26,12 @@ const { add } = storiesOf('web/site-admin/webhooks/WebhookLogPageHeader', module
 
 // Create a component to handle the minimum state management required for a
 // WebhookLogPageHeader.
-const WebhookLogPageHeaderContainer: React.FunctionComponent<{
-    initialExternalService?: SelectedExternalService
-    initialOnlyErrors?: boolean
-}> = ({ initialExternalService, initialOnlyErrors }) => {
+const WebhookLogPageHeaderContainer: React.FunctionComponent<
+    React.PropsWithChildren<{
+        initialExternalService?: SelectedExternalService
+        initialOnlyErrors?: boolean
+    }>
+> = ({ initialExternalService, initialOnlyErrors }) => {
     const [onlyErrors, setOnlyErrors] = useState(initialOnlyErrors === true)
     const [externalService, setExternalService] = useState(initialExternalService ?? 'all')
 

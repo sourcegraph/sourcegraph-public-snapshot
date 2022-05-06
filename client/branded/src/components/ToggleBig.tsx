@@ -39,7 +39,7 @@ interface Props {
 }
 
 /** A big toggle switch input component. */
-export const ToggleBig: React.FunctionComponent<Props> = ({
+export const ToggleBig: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     disabled,
     className,
     id,

@@ -60,7 +60,7 @@ interface Props extends Partial<RevisionSpec>, ResolvedRevisionSpec {
     excludingTags: Tag[]
 }
 
-export const DocumentationIndexNode: React.FunctionComponent<Props> = React.memo(
+export const DocumentationIndexNode: React.FunctionComponent<React.PropsWithChildren<Props>> = React.memo(
     ({ node, depth, ...props }) => {
         const repoRevision = {
             repoName: props.repo.name,
