@@ -12,7 +12,7 @@
 
 ## Unreleases
 
-- `cadvisor` container can collect out of memory events happening to containers and it can be used to discover underprovisoned resources. As a result, `cadvisor` now has to run in `privileged` mode. If you have your own monitoring infrastructure, you may choose to disable `cadvisor` or set `cadvisor.containerSecurityContext.privileged=false` in your override file. [#4126](https://github.com/sourcegraph/deploy-sourcegraph/pull/4126)
+- `cadvisor` now defaults to run in `privileged` mode. This allows `cadvisor` to collect out of memory events happening to containers which can be used to discover underprovisoned resources. This is disabled by default in `non-privileged` overlay. [#4126](https://github.com/sourcegraph/deploy-sourcegraph/pull/4126)
 
 ## 3.38 -> 3.39
 
