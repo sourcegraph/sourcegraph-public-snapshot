@@ -59,8 +59,7 @@ func addAnalyticsHooks(start time.Time, commandPath []string, commands []*cli.Co
 func makeAnalyticsHook(start time.Time, commandPath []string) func(*cli.Context, ...string) {
 	return func(cmd *cli.Context, events ...string) {
 		// Log an sg usage occurrence
-		totalDuration := time.Since(start)
-		analytics.LogEvent(cmd.Context, "sg_action", commandPath, totalDuration, events...)
+		analytics.LogEvent(cmd.Context, "sg_action", commandPath, start, events...)
 
 		// Persist all tracked to disk
 		flagsUsed := cmd.FlagNames()

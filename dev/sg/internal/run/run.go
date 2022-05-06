@@ -128,7 +128,7 @@ func waitForInstallation(ctx context.Context, cmdNames map[string]struct{}, inst
 
 			delete(cmdNames, cmdName)
 			done += 1.0
-			analytics.LogEvent(ctx, "install_command", []string{cmdName}, time.Since(installationStart), "succeeded")
+			analytics.LogEvent(ctx, "install_command", []string{cmdName}, installationStart, "succeeded")
 
 			progress.WriteLine(output.Linef("", output.StyleSuccess, "%s installed", cmdName))
 
@@ -149,7 +149,7 @@ func waitForInstallation(ctx context.Context, cmdNames map[string]struct{}, inst
 
 		case failure := <-failures:
 			progress.Destroy()
-			analytics.LogEvent(ctx, "install_command", []string{failure.cmdName}, time.Since(installationStart), "failed")
+			analytics.LogEvent(ctx, "install_command", []string{failure.cmdName}, installationStart, "failed")
 
 			// Something went wrong with an installation, no need to wait for the others
 			printCmdError(stdout.Out, failure.cmdName, failure.err)

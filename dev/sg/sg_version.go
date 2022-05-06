@@ -136,7 +136,9 @@ func checkSgVersionAndUpdate(ctx context.Context, skipUpdate bool) error {
 	out = strings.TrimSpace(out)
 	if out == "" {
 		// No newer commits found. sg is up to date.
-		analytics.LogEvent(ctx, "auto_update", []string{"up-to-date"}, time.Since(start))
+		if !skipUpdate {
+			analytics.LogEvent(ctx, "auto_update", []string{"up-to-date"}, start)
+		}
 		return nil
 	}
 
@@ -159,7 +161,7 @@ func checkSgVersionAndUpdate(ctx context.Context, skipUpdate bool) error {
 	writeSuccessLinef("sg has been updated!")
 	stdout.Out.Write("To see what's new, run 'sg version changelog'.")
 
-	analytics.LogEvent(ctx, "auto_update", []string{"updated"}, time.Since(start))
+	analytics.LogEvent(ctx, "auto_update", []string{"updated"}, start)
 
 	// Run command with new binary
 	return syscall.Exec(newPath, os.Args, os.Environ())
