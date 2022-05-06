@@ -11,7 +11,7 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../../components/WebStory'
 import { GET_BATCH_CHANGE_TO_EDIT } from '../../create/backend'
-import { insertNameIntoLibraryItem } from '../../create/yaml-util'
+import { insertNameIntoLibraryItem } from '../../yaml-util'
 import { mockBatchChange, mockBatchSpec } from '../batch-spec.mock'
 
 import { EditBatchSpecPage } from './EditBatchSpecPage'

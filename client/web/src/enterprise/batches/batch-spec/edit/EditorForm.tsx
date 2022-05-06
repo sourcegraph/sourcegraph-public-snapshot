@@ -4,9 +4,9 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Panel } from '@sourcegraph/wildcard'
 
 import { BatchSpecContext } from '../BatchSpecContext'
+
 import { EditorFeedbackPanel } from './editor/EditorFeedbackPanel'
 import { MonacoBatchSpecEditor } from './editor/MonacoBatchSpecEditor'
-
 import { LibraryPane } from './library/LibraryPane'
 import { WorkspacesPreview } from './workspaces-preview/WorkspacesPreview'
 

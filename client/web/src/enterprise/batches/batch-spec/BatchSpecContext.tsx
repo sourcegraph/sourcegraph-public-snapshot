@@ -3,10 +3,10 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { noop } from 'lodash'
 
 import { EditBatchChangeFields } from '../../../graphql-operations'
-import { useBatchSpecCode, UseBatchSpecCodeResult } from '../create/useBatchSpecCode'
-import { useWorkspacesPreview, UseWorkspacesPreviewResult } from '../create/useWorkspacesPreview'
 
 import { WorkspacePreviewFilters } from './edit/workspaces-preview/useWorkspaces'
+import { useWorkspacesPreview, UseWorkspacesPreviewResult } from './edit/workspaces-preview/useWorkspacesPreview'
+import { useBatchSpecCode, UseBatchSpecCodeResult } from './useBatchSpecCode'
 
 // TODO: This is probably just edit context LOL
 export interface BatchSpecContextErrors {
