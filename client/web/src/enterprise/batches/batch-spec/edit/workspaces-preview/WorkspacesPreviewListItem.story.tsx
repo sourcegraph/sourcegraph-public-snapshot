@@ -2,8 +2,8 @@ import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
 
 import { WebStory } from '../../../../../components/WebStory'
+import { mockWorkspace } from '../../batch-spec.mock'
 
-import { mockWorkspace } from './WorkspacesPreview.mock'
 import { WorkspacesPreviewListItem } from './WorkspacesPreviewListItem'
 
 const { add } = storiesOf(
