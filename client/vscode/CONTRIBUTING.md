@@ -55,11 +55,11 @@ If you need guidance or have any questions regarding Sourcegraph or the extensio
 
 Apache
 
-### Release Process
+## Release Process
 
 The release process for the VS Code Extension for Sourcegraph is currently automated.
 
-#### Release Steps:
+#### Release Steps
 
 1. Make sure the main branch is up-to-date.
 2. Make a commit in the following format: `$RELEASE_TYPE release vsce`
