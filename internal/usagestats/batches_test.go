@@ -3,6 +3,7 @@ package usagestats
 import (
 	"context"
 	"fmt"
+	"sort"
 	"testing"
 	"time"
 
@@ -325,12 +326,12 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 		},
 		ActiveExecutorsCount: 2,
 		BulkOperationsCount: []*types.BulkOperationsCount{
+			{Name: "close", Count: 1},
 			{Name: "comment", Count: 2},
 			{Name: "detach", Count: 1},
 			{Name: "merge", Count: 1},
 			{Name: "publish", Count: 2},
 			{Name: "reenqueue", Count: 1},
-			{Name: "close", Count: 1},
 		},
 		ChangesetDistribution: []*types.ChangesetDistribution{
 			{Source: "local", Range: "0-9 changesets", BatchChangesCount: 2},
@@ -386,6 +387,11 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 			},
 		},
 	}
+
+	sort.Slice(want.BulkOperationsCount, func(i, j int) bool {
+		return want.BulkOperationsCount[i].Name < want.BulkOperationsCount[j].Name
+	})
+
 	if diff := cmp.Diff(want, have); diff != "" {
 		t.Fatal(diff)
 	}
