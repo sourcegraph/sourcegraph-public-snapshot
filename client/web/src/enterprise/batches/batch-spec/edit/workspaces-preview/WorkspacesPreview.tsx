@@ -47,7 +47,9 @@ const WAITING_MESSAGES = [
 /* The time to wait until we display the next waiting message, in seconds. */
 const WAITING_MESSAGE_INTERVAL = 10
 
-export const WorkspacesPreview: React.FunctionComponent<React.PropsWithChildren<{}>> = () => {
+export const WorkspacesPreview: React.FunctionComponent<React.PropsWithChildren<{ isReadOnly?: boolean }>> = ({
+    isReadOnly = false,
+}) => {
     const { batchSpec, editor, workspacesPreview } = useContext(BatchSpecContext)
     const { debouncedCode, excludeRepo, isServerStale } = editor
     const {
@@ -173,10 +175,11 @@ export const WorkspacesPreview: React.FunctionComponent<React.PropsWithChildren<
     return (
         <div className="d-flex flex-column align-items-center w-100 h-100">
             <WorkspacesListHeader>
-                Workspaces preview{' '}
+                Workspaces {isReadOnly ? '' : 'preview '}
                 {(isServerStale || resolutionState === 'CANCELED' || !hasPreviewed) &&
                     shouldShowConnection &&
-                    !isWorkspacesPreviewInProgress && (
+                    !isWorkspacesPreviewInProgress &&
+                    !isReadOnly && (
                         <Icon
                             className={classNames('text-muted ml-1', styles.warningIcon)}
                             data-tooltip="The workspaces previewed below may not be up-to-date."
@@ -185,17 +188,19 @@ export const WorkspacesPreview: React.FunctionComponent<React.PropsWithChildren<
                     )}
             </WorkspacesListHeader>
             {/* We wrap this section in its own div to prevent margin collapsing within the flex column */}
-            <div className="d-flex flex-column align-items-center w-100 mb-3">
-                {error && <ErrorAlert error={error} className="w-100 mb-0" />}
-                <div className={styles.iconContainer}>
-                    <PreviewLoadingSpinner
-                        className={classNames({ [styles.hidden]: !isWorkspacesPreviewInProgress })}
-                    />
-                    <PreviewPromptIcon className={classNames({ [styles.hidden]: isWorkspacesPreviewInProgress })} />
+            {!isReadOnly && (
+                <div className="d-flex flex-column align-items-center w-100 mb-3">
+                    {error && <ErrorAlert error={error} className="w-100 mb-0" />}
+                    <div className={styles.iconContainer}>
+                        <PreviewLoadingSpinner
+                            className={classNames({ [styles.hidden]: !isWorkspacesPreviewInProgress })}
+                        />
+                        <PreviewPromptIcon className={classNames({ [styles.hidden]: isWorkspacesPreviewInProgress })} />
+                    </div>
+                    {ctaInstructions}
+                    {ctaButton}
                 </div>
-                {ctaInstructions}
-                {ctaButton}
-            </div>
+            )}
             {shouldShowConnection && (
                 <WorkspacePreviewFilterRow onFiltersChange={setFilters} disabled={isWorkspacesPreviewInProgress} />
             )}
@@ -212,6 +217,7 @@ export const WorkspacesPreview: React.FunctionComponent<React.PropsWithChildren<
                         workspacesConnection={workspacesConnection}
                         showCached={showCached}
                         cached={cachedWorkspacesPreview}
+                        isReadOnly={isReadOnly}
                     />
                     <ImportingChangesetsPreviewList
                         isStale={
