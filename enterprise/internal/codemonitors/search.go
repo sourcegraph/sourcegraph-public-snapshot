@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/url"
+	"sort"
 
 	"github.com/graphql-go/graphql/gqlerrors"
 	"github.com/opentracing/opentracing-go"
@@ -232,6 +233,10 @@ func hookWithID(
 	if err != nil {
 		return err
 	}
+	if stringsEqual(commitHashes, lastSearched) {
+		// Early return if the repo hasn't changed since last search
+		return nil
+	}
 
 	// Merge requested hashes and excluded hashes
 	newRevs := make([]gitprotocol.RevisionSpecifier, 0, len(commitHashes)+len(lastSearched))
@@ -284,4 +289,20 @@ func gqlURL(queryName string) (string, error) {
 	u.Path = "/.internal/graphql"
 	u.RawQuery = queryName
 	return u.String(), nil
+}
+
+func stringsEqual(left, right []string) bool {
+	if len(left) != len(right) {
+		return false
+	}
+
+	sort.Strings(left)
+	sort.Strings(right)
+
+	for i := range left {
+		if right[i] != left[i] {
+			return false
+		}
+	}
+	return true
 }
