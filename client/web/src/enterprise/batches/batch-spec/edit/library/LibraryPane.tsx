@@ -42,11 +42,13 @@ interface LibraryPaneProps {
      */
     name: Scalars['String']
     onReplaceItem: (item: string) => void
+    isReadOnly?: boolean
 }
 
 export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<LibraryPaneProps>> = ({
     name,
     onReplaceItem,
+    isReadOnly = false,
 }) => {
     // Remember the last collapsed state of the pane
     const [defaultCollapsed, setDefaultCollapsed] = useLocalStorage(LIBRARY_PANE_DEFAULT_COLLAPSED, false)
@@ -128,13 +130,13 @@ export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<Librar
                     <ul className={styles.listContainer}>
                         {LIBRARY.map(item => (
                             <li className={styles.libraryItem} key={item.name}>
-                                <button
-                                    type="button"
+                                <Button
                                     className={styles.libraryItemButton}
+                                    disabled={isReadOnly}
                                     onClick={() => setSelectedItem(item)}
                                 >
                                     {item.name}
-                                </button>
+                                </Button>
                             </li>
                         ))}
                     </ul>

@@ -14,14 +14,19 @@ import styles from './EditorForm.module.scss'
 
 const WORKSPACES_PREVIEW_SIZE = 'batch-changes.ssbc-workspaces-preview-size'
 
-interface EditorFormProps extends ThemeProps {}
+interface EditorFormProps extends ThemeProps {
+    isReadOnly?: boolean
+}
 
-export const EditorForm: React.FunctionComponent<React.PropsWithChildren<EditorFormProps>> = ({ isLightTheme }) => {
+export const EditorForm: React.FunctionComponent<React.PropsWithChildren<EditorFormProps>> = ({
+    isLightTheme,
+    isReadOnly = false,
+}) => {
     const { batchChange, editor, errors } = useContext(BatchSpecContext)
 
     return (
         <div className={styles.form}>
-            <LibraryPane name={batchChange.name} onReplaceItem={editor.handleCodeChange} />
+            <LibraryPane name={batchChange.name} onReplaceItem={editor.handleCodeChange} isReadOnly={isReadOnly} />
             <div className={styles.editorContainer}>
                 <h4 className={styles.header}>Batch spec</h4>
 
