@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/sourcegraph/sourcegraph/dev/okay"
 )
 
@@ -30,6 +32,10 @@ func LogDuration(ctx context.Context, name string, labels []string, duration tim
 		Timestamp: time.Now().Add(-duration), // Timestamp as start of event
 		Metrics: map[string]okay.Metric{
 			"duration": okay.Duration(duration),
+		},
+		UniqueKey: []string{"event_id"},
+		Properties: map[string]string{
+			"event_id": uuid.NewString(),
 		},
 	})
 }

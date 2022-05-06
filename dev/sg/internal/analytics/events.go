@@ -12,32 +12,40 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 )
 
+const eventVersion = "v0"
+
 // eventStore tracks events for a single sg command run.
 type eventStore struct {
 	sgVersion string
 	events    []*okay.Event
 }
 
-func (s *eventStore) Persist(command string, flags []string) error {
+// Persist is called once per sg run. All in this run events are correlated with a single
+// run ID.
+func (s *eventStore) Persist(command string, flagsUsed []string) error {
+	runID := uuid.NewString()
+
 	// Finalize events
 	for _, ev := range s.events {
+		// Create additional identifying keys
 		ev.UniqueKey = append(ev.UniqueKey,
 			"context",
-			"command",
 			"event_name",
-			"event_id")
-		ev.Properties = map[string]string{
-			// Unique keys
-			"context":    "sg",
-			"command":    command,
-			"event_name": ev.Name,
-			"event_id":   uuid.NewString(),
+			"event_version",
+			"run_id")
 
-			// Context
-			"sg_version": s.sgVersion,
-			"flags_used": strings.Join(flags, ","),
-		}
+		// Identifying keys
+		ev.Properties["context"] = "sg"
+		ev.Properties["event_name"] = ev.Name
+		ev.Properties["event_version"] = eventVersion
+		ev.Properties["run_id"] = runID
+
+		// Context
+		ev.Properties["command"] = command
+		ev.Properties["sg_version"] = s.sgVersion
+		ev.Properties["flags_used"] = strings.Join(flagsUsed, ",")
 	}
+
 	// Persist events to disk
 	return storeEvents(s.events)
 }

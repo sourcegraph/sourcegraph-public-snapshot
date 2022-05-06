@@ -19,6 +19,12 @@ func Submit(okayToken string, gitHubLogin string) error {
 
 	client := okay.NewClient(http.DefaultClient, okayToken)
 	for _, ev := range events {
+		// discard everything but the latest version of events. if event versions are
+		// migrate-able, do the migrations here.
+		if ev.Properties["event_version"] != eventVersion {
+			continue
+		}
+
 		// clean up data
 		ev.Labels = append(ev.Labels, "sg-analytics")
 		for k, v := range ev.Properties {
