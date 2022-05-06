@@ -585,11 +585,10 @@ func (c *V4Client) CreatePullRequest(ctx context.Context, in *CreatePullRequestI
 	input := map[string]interface{}{"input": compatibleInput}
 	err = c.requestGraphQL(ctx, q.String(), input, &result)
 	if err != nil {
-		var errs graphqlErrors
-		if errors.As(err, &errs) && len(errs) == 1 && strings.Contains(errs[0].Message, "A pull request already exists for") {
+		if isPullRequestAlreadyExistsError(err) {
 			return nil, ErrPullRequestAlreadyExists
 		}
-		return nil, errs
+		return nil, err
 	}
 
 	ti := result.CreatePullRequest.PullRequest.TimelineItems
@@ -648,8 +647,7 @@ func (c *V4Client) UpdatePullRequest(ctx context.Context, in *UpdatePullRequestI
 	input := map[string]interface{}{"input": in}
 	err = c.requestGraphQL(ctx, q.String(), input, &result)
 	if err != nil {
-		var errs graphqlErrors
-		if errors.As(err, &errs) && len(errs) == 1 && strings.Contains(errs[0].Message, "A pull request already exists for") {
+		if isPullRequestAlreadyExistsError(err) {
 			return nil, ErrPullRequestAlreadyExists
 		}
 		return nil, err
@@ -1958,4 +1956,12 @@ func normalizeURL(rawURL string) string {
 		parsed.Path += "/"
 	}
 	return parsed.String()
+}
+
+func isPullRequestAlreadyExistsError(err error) bool {
+	var errs graphqlErrors
+	if !errors.As(err, &errs) {
+		return false
+	}
+	return len(errs) == 1 && strings.Contains(errs[0].Message, "A pull request already exists for")
 }
