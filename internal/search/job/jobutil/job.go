@@ -740,31 +740,31 @@ func optimizeJobs(baseJob job.Job, inputs *run.SearchInputs, q query.Basic) (job
 			switch currentJob.(type) {
 			case *zoekt.ZoektGlobalSearchJob:
 				if exists("ZoektGlobalSearchJob") {
-					return &noopJob{}
+					return &NoopJob{}
 				}
 				return currentJob
 
 			case *zoekt.ZoektRepoSubsetSearchJob:
 				if exists("ZoektRepoSubsetSearchJob") {
-					return &noopJob{}
+					return &NoopJob{}
 				}
 				return currentJob
 
 			case *zoekt.ZoektSymbolSearchJob:
 				if exists("ZoektSymbolSearchJob") {
-					return &noopJob{}
+					return &NoopJob{}
 				}
 				return currentJob
 
 			case *symbol.RepoUniverseSymbolSearchJob:
 				if exists("RepoUniverseSymbolSearchJob") {
-					return &noopJob{}
+					return &NoopJob{}
 				}
 				return currentJob
 
 			case *commit.CommitSearchJob:
 				if exists("CommitSearchJob") || exists("DiffSearchJob") {
-					return &noopJob{}
+					return &NoopJob{}
 				}
 				return currentJob
 
