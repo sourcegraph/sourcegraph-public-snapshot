@@ -86,23 +86,11 @@ func TestToSearchInputs(t *testing.T) {
 	// Job generation for other types of search
 	autogold.Want("symbol", "\nComputeExcludedReposJob\n").Equal(t, test("type:symbol test", search.Streaming, query.ParseRegexp))
 
-	autogold.Want("commit", `
-(PARALLEL
-  CommitSearchJob
-  ComputeExcludedReposJob)
-`).Equal(t, test("type:commit test", search.Streaming, query.ParseRegexp))
+	autogold.Want("commit", "\nComputeExcludedReposJob\n").Equal(t, test("type:commit test", search.Streaming, query.ParseRegexp))
 
-	autogold.Want("diff", `
-(PARALLEL
-  DiffSearchJob
-  ComputeExcludedReposJob)
-`).Equal(t, test("type:diff test", search.Streaming, query.ParseRegexp))
+	autogold.Want("diff", "\nComputeExcludedReposJob\n").Equal(t, test("type:diff test", search.Streaming, query.ParseRegexp))
 
-	autogold.Want("Streaming: file or commit", `
-(PARALLEL
-  CommitSearchJob
-  ComputeExcludedReposJob)
-`).Equal(t, test("type:file type:commit test", search.Streaming, query.ParseRegexp))
+	autogold.Want("Streaming: file or commit", "\nComputeExcludedReposJob\n").Equal(t, test("type:file type:commit test", search.Streaming, query.ParseRegexp))
 
 	autogold.Want("Streaming: many types", `
 (PARALLEL
@@ -110,17 +98,12 @@ func TestToSearchInputs(t *testing.T) {
     SearcherJob)
   REPOPAGER
     SymbolSearcherJob)
-  CommitSearchJob
   RepoSearchJob
   ComputeExcludedReposJob)
 `).Equal(t, test("type:file type:path type:repo type:commit type:symbol repo:test test", search.Streaming, query.ParseRegexp))
 
 	// Priority jobs for Batched search.
-	autogold.Want("Batched: file or commit", `
-(PARALLEL
-  CommitSearchJob
-  ComputeExcludedReposJob)
-`).Equal(t, test("type:file type:commit test", search.Batch, query.ParseRegexp))
+	autogold.Want("Batched: file or commit", "\nComputeExcludedReposJob\n").Equal(t, test("type:file type:commit test", search.Batch, query.ParseRegexp))
 
 	autogold.Want("Batched: many types", `
 (PARALLEL
@@ -128,7 +111,6 @@ func TestToSearchInputs(t *testing.T) {
     SearcherJob)
   REPOPAGER
     SymbolSearcherJob)
-  CommitSearchJob
   RepoSearchJob
   ComputeExcludedReposJob)
 `).Equal(t, test("type:file type:path type:repo type:commit type:symbol repo:test test", search.Batch, query.ParseRegexp))
