@@ -816,30 +816,36 @@ var OptimizationPass = optimizeJobs
 func NewJob(inputs *run.SearchInputs, plan query.Plan, optimize Pass) (job.Job, error) {
 	children := make([]job.Job, 0, len(plan))
 	for _, q := range plan {
-		child, err := ToEvaluateJob(inputs, q)
+		child, err := NewBasicJob(inputs, q, optimize)
 		if err != nil {
 			return nil, err
 		}
-
-		child, err = optimize(child, inputs, q)
-		if err != nil {
-			return nil, err
-		}
-
-		// Apply selectors
-		if v, _ := q.ToParseTree().StringValue(query.FieldSelect); v != "" {
-			sp, _ := filter.SelectPathFromString(v) // Invariant: select already validated
-			child = NewSelectJob(sp, child)
-		}
-
-		// Apply limits and Timeouts.
-		maxResults := q.ToParseTree().MaxResults(inputs.DefaultLimit())
-		timeout := TimeoutDuration(q)
-		child = NewTimeoutJob(timeout, NewLimitJob(maxResults, child))
-
 		children = append(children, child)
 	}
 	return NewAlertJob(inputs, NewOrJob(children...)), nil
+}
+
+func NewBasicJob(inputs *run.SearchInputs, q query.Basic, optimize Pass) (job.Job, error) {
+	child, err := ToEvaluateJob(inputs, q)
+	if err != nil {
+		return nil, err
+	}
+
+	child, err = optimize(child, inputs, q)
+	if err != nil {
+		return nil, err
+	}
+
+	// Apply selectors
+	if v, _ := q.ToParseTree().StringValue(query.FieldSelect); v != "" {
+		sp, _ := filter.SelectPathFromString(v) // Invariant: select already validated
+		child = NewSelectJob(sp, child)
+	}
+
+	// Apply limits and Timeouts.
+	maxResults := q.ToParseTree().MaxResults(inputs.DefaultLimit())
+	timeout := TimeoutDuration(q)
+	return NewTimeoutJob(timeout, NewLimitJob(maxResults, child)), nil
 }
 
 // FromExpandedPlan takes a query plan that has had all predicates expanded,
