@@ -228,9 +228,7 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 		}
 	}
 
-	job := NewParallelJob(allJobs...)
-
-	return job, nil
+	return NewParallelJob(allJobs...), nil
 }
 
 func mapSlice(values []string, f func(string) string) []string {
