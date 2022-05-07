@@ -1,5 +1,5 @@
 import { storiesOf } from '@storybook/react'
-import { MATCH_ANY_PARAMETERS, MockedResponses, WildcardMockedResponse, WildcardMockLink } from 'wildcard-mock-link'
+import { MATCH_ANY_PARAMETERS, MockedResponses, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import {
@@ -13,7 +13,13 @@ import { WebStory } from '../../../../components/WebStory'
 import { BatchSpecWorkspaceResolutionState, BatchSpecWorkspaceState } from '../../../../graphql-operations'
 import { mockAuthenticatedUser } from '../../../code-monitoring/testing/util'
 import { GET_BATCH_CHANGE_TO_EDIT, WORKSPACE_RESOLUTION_STATUS } from '../../create/backend'
-import { mockBatchChange, mockFullBatchSpec, mockWorkspaceResolutionStatus, mockWorkspaces } from '../batch-spec.mock'
+import {
+    EXECUTING_BATCH_SPEC,
+    FAILED_BATCH_SPEC,
+    mockBatchChange,
+    mockWorkspaceResolutionStatus,
+    mockWorkspaces,
+} from '../batch-spec.mock'
 
 import { BATCH_SPEC_WORKSPACES, FETCH_BATCH_SPEC_EXECUTION } from './backend'
 import { ExecuteBatchSpecPage } from './ExecuteBatchSpecPage'
@@ -65,14 +71,6 @@ const COMMON_MOCKS: MockedResponses = [
     },
     {
         request: {
-            query: getDocumentNode(FETCH_BATCH_SPEC_EXECUTION),
-            variables: MATCH_ANY_PARAMETERS,
-        },
-        result: { data: { node: mockFullBatchSpec() } },
-        nMatches: Number.POSITIVE_INFINITY,
-    },
-    {
-        request: {
             query: getDocumentNode(WORKSPACE_RESOLUTION_STATUS),
             variables: MATCH_ANY_PARAMETERS,
         },
@@ -81,19 +79,29 @@ const COMMON_MOCKS: MockedResponses = [
     },
 ]
 
-const SUCCESSFUL_WORKSPACES: WildcardMockedResponse = {
-    request: {
-        query: getDocumentNode(BATCH_SPEC_WORKSPACES),
-        variables: MATCH_ANY_PARAMETERS,
+const SUCCESSFUL_MOCKS: MockedResponses = [
+    {
+        request: {
+            query: getDocumentNode(BATCH_SPEC_WORKSPACES),
+            variables: MATCH_ANY_PARAMETERS,
+        },
+        result: { data: mockWorkspaces(50) },
+        nMatches: Number.POSITIVE_INFINITY,
     },
-    result: { data: mockWorkspaces(50) },
-    nMatches: Number.POSITIVE_INFINITY,
-}
+    {
+        request: {
+            query: getDocumentNode(FETCH_BATCH_SPEC_EXECUTION),
+            variables: MATCH_ANY_PARAMETERS,
+        },
+        result: { data: { node: EXECUTING_BATCH_SPEC } },
+        nMatches: Number.POSITIVE_INFINITY,
+    },
+]
 
 add('executing', () => (
     <WebStory>
         {props => (
-            <MockedTestProvider link={new WildcardMockLink([...COMMON_MOCKS, SUCCESSFUL_WORKSPACES])}>
+            <MockedTestProvider link={new WildcardMockLink([...COMMON_MOCKS, ...SUCCESSFUL_MOCKS])}>
                 <ExecuteBatchSpecPage
                     {...props}
                     batchSpecID="spec1234"
@@ -106,21 +114,31 @@ add('executing', () => (
     </WebStory>
 ))
 
-const FAILED_WORKSPACES: WildcardMockedResponse = {
-    request: {
-        query: getDocumentNode(BATCH_SPEC_WORKSPACES),
-        variables: MATCH_ANY_PARAMETERS,
+const FAILED_MOCKS: MockedResponses = [
+    {
+        request: {
+            query: getDocumentNode(BATCH_SPEC_WORKSPACES),
+            variables: MATCH_ANY_PARAMETERS,
+        },
+        result: { data: mockWorkspaces(50, { state: BatchSpecWorkspaceState.FAILED, failureMessage: 'Uh oh!' }) },
+        nMatches: Number.POSITIVE_INFINITY,
     },
-    result: { data: mockWorkspaces(50, { state: BatchSpecWorkspaceState.FAILED, failureMessage: 'Uh oh!' }) },
-    nMatches: Number.POSITIVE_INFINITY,
-}
+    {
+        request: {
+            query: getDocumentNode(FETCH_BATCH_SPEC_EXECUTION),
+            variables: MATCH_ANY_PARAMETERS,
+        },
+        result: { data: { node: FAILED_BATCH_SPEC } },
+        nMatches: Number.POSITIVE_INFINITY,
+    },
+]
 
 add('failed', () => {
     console.log(mockWorkspaces(50, { state: BatchSpecWorkspaceState.FAILED, failureMessage: 'Uh oh!' }))
     return (
         <WebStory>
             {props => (
-                <MockedTestProvider link={new WildcardMockLink([...COMMON_MOCKS, FAILED_WORKSPACES])}>
+                <MockedTestProvider link={new WildcardMockLink([...COMMON_MOCKS, ...FAILED_MOCKS])}>
                     <ExecuteBatchSpecPage
                         {...props}
                         batchSpecID="spec1234"

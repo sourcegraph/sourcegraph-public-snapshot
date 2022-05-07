@@ -165,6 +165,16 @@ const batchSpecWorkspaceFieldsFragment = gql`
     }
 `
 
+const batchSpecWorkspaceStatsFragment = gql`
+    fragment BatchSpecWorkspaceStats on BatchSpecWorkspacesStats {
+        errored
+        completed
+        processing
+        queued
+        ignored
+    }
+`
+
 export const batchSpecExecutionFieldsFragment = gql`
     fragment BatchSpecExecutionFields on BatchSpec {
         id
@@ -196,15 +206,13 @@ export const batchSpecExecutionFieldsFragment = gql`
         workspaceResolution {
             workspaces {
                 stats {
-                    errored
-                    completed
-                    processing
-                    queued
-                    ignored
+                    ...BatchSpecWorkspaceStats
                 }
             }
         }
     }
+
+    ${batchSpecWorkspaceStatsFragment}
 `
 
 export const FETCH_BATCH_SPEC_EXECUTION = gql`

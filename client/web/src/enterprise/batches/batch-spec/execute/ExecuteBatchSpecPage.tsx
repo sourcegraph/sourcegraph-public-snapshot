@@ -2,6 +2,7 @@ import React, { useMemo } from 'react'
 
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
+import ProgressClockIcon from 'mdi-react/ProgressClockIcon'
 import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
 
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
@@ -15,6 +16,7 @@ import { Icon, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { withAuthenticatedUser } from '../../../../auth/withAuthenticatedUser'
 import { HeroPage } from '../../../../components/HeroPage'
+import { Duration } from '../../../../components/time/Duration'
 import { Timestamp } from '../../../../components/time/Timestamp'
 import {
     BatchSpecExecutionByIDResult,
@@ -34,6 +36,8 @@ import { BatchChangeHeader } from '../header/BatchChangeHeader'
 import { TabBar, TabsConfig } from '../TabBar'
 
 import { FETCH_BATCH_SPEC_EXECUTION } from './backend'
+import { BatchSpecStateBadge } from './BatchSpecStateBadge'
+import { ExecutionStat, ExecutionStatsBar } from './ExecutionStatsBar'
 import { ReadOnlyBatchSpecForm } from './ReadOnlyBatchSpecForm'
 import { ExecutionWorkspaces } from './workspaces/ExecutionWorkspaces'
 
@@ -114,7 +118,7 @@ const ExecuteBatchSpecPageContent: React.FunctionComponent<
     React.PropsWithChildren<ExecuteBatchSpecPageContentProps>
 > = ({ isLightTheme, match, settingsCascade, telemetryService, authenticatedUser }) => {
     const { batchChange, batchSpec, errors } = useBatchSpecContext<BatchSpecExecutionFields>()
-    const { executionURL } = batchSpec
+    const { executionURL, workspaceResolution } = batchSpec
 
     const tabsConfig = useMemo<TabsConfig[]>(
         () => [
@@ -144,6 +148,18 @@ const ExecuteBatchSpecPageContent: React.FunctionComponent<
                         </>
                     }
                 />
+                <div className="d-flex align-items-center mb-1">
+                    <span className="mr-2">
+                        <BatchSpecStateBadge state={batchSpec.state} />
+                    </span>
+                    {batchSpec.startedAt && (
+                        <ExecutionStat>
+                            <ProgressClockIcon />
+                            <Duration start={batchSpec.startedAt} end={batchSpec.finishedAt ?? undefined} />
+                        </ExecutionStat>
+                    )}
+                    {workspaceResolution && <ExecutionStatsBar {...workspaceResolution.workspaces.stats} />}
+                </div>
             </div>
 
             {errors.actions && <ErrorMessage error={errors.actions} key={String(errors.actions)} />}
