@@ -1,5 +1,7 @@
 import { gql } from '@sourcegraph/http-client'
 
+import { batchSpecExecutionFieldsFragment } from '../execution/backend'
+
 export const GET_BATCH_CHANGE_TO_EDIT = gql`
     query GetBatchChangeToEdit($namespace: ID!, $name: String!) {
         batchChange(namespace: $namespace, name: $name) {
@@ -61,15 +63,11 @@ export const GET_BATCH_CHANGE_TO_EDIT = gql`
 export const EXECUTE_BATCH_SPEC = gql`
     mutation ExecuteBatchSpec($batchSpec: ID!) {
         executeBatchSpec(batchSpec: $batchSpec) {
-            id
-            description {
-                name
-            }
-            namespace {
-                url
-            }
+            ...BatchSpecExecutionFields
         }
     }
+
+    ${batchSpecExecutionFieldsFragment}
 `
 
 // This mutation is used to create a new batch change. It creates the batch change and an

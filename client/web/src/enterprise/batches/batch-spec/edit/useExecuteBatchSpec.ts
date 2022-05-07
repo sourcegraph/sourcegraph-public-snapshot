@@ -24,7 +24,14 @@ interface UseExecuteBatchSpecResult {
  */
 export const useExecuteBatchSpec = (batchSpecID?: Scalars['ID']): UseExecuteBatchSpecResult => {
     const [submitBatchSpec, { loading }] = useMutation<ExecuteBatchSpecResult, ExecuteBatchSpecVariables>(
-        EXECUTE_BATCH_SPEC
+        EXECUTE_BATCH_SPEC,
+        {
+            update: (cache, { data }) => {
+                if (data?.executeBatchSpec) {
+                    cache.modify({ fields: { node: () => {} } })
+                }
+            },
+        }
     )
 
     const [executionError, setExecutionError] = useState<Error>()

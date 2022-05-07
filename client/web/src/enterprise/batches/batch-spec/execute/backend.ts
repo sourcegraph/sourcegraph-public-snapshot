@@ -165,7 +165,7 @@ const batchSpecWorkspaceFieldsFragment = gql`
     }
 `
 
-const batchSpecExecutionFieldsFragment = gql`
+export const batchSpecExecutionFieldsFragment = gql`
     fragment BatchSpecExecutionFields on BatchSpec {
         id
         originalInput
