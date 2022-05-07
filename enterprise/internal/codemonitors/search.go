@@ -279,6 +279,8 @@ func hookWithID(
 
 	// Execute the search
 	err = doSearch(&argsCopy)
+	// ignore any errors from early cancellation
+	err = errors.Ignore(err, errors.IsContextError)
 	if err != nil {
 		return err
 	}
