@@ -622,70 +622,10 @@ func toFlatJobs(inputs *run.SearchInputs, q query.Basic) (job.Job, error) {
 	}
 }
 
-// optimizeJobs optimizes a baseJob query with respect to an incoming basic
-// query. It checks that the incoming basic query has more expressive shape
-// (and/or/not expressions) and if so, converts it directly to native queries
-// for a backed. Currently that backend is Zoekt. It then removes unoptimized
-// Zoekt jobs from the baseJob and replaces them with the optimized ones.
-func optimizeJobs(baseJob job.Job, inputs *run.SearchInputs, q query.Basic) (job.Job, error) {
-	if _, ok := q.Pattern.(query.Pattern); ok {
-		// This job is already in it's simplest form, since the Pattern
-		// is just a single node and not an expression.
-		return baseJob, nil
-	}
-	candidateOptimizedJobs, err := ToSearchJob(inputs, q)
-	if err != nil {
-		return nil, err
-	}
-
-	var optimizedJobs []job.Job
-	collector := Mapper{
-		MapJob: func(currentJob job.Job) job.Job {
-			switch currentJob.(type) {
-			default:
-				return currentJob
-			}
-		},
-	}
-
-	collector.Map(candidateOptimizedJobs)
-
-	// We've created optimized jobs. Now let's remove any unoptimized ones
-	// in the job expression tree. We trim off any jobs corresponding to
-	// optimized ones (if we created an optimized global zoekt jobs, we
-	// delete all global zoekt jobs created by the default strategy).
-
-	trimmer := Mapper{
-		MapJob: func(currentJob job.Job) job.Job {
-			switch currentJob.(type) {
-			default:
-				return currentJob
-			}
-		},
-	}
-
-	trimmedJob := trimmer.Map(baseJob)
-
-	optimizedJob := NewParallelJob(optimizedJobs...)
-
-	return NewParallelJob(optimizedJob, trimmedJob), nil
-}
-
-// Pass represents an optimization pass over an incoming job. It exposes the
-// search inputs and basic query associated with the incoming job. After a pass
-// runs over the incoming job, it returns a (possibly modified) job.
-type Pass func(job.Job, *run.SearchInputs, query.Basic) (job.Job, error)
-
-func IdentityPass(j job.Job, _ *run.SearchInputs, _ query.Basic) (job.Job, error) {
-	return j, nil
-}
-
-var OptimizationPass = optimizeJobs
-
-func NewJob(inputs *run.SearchInputs, plan query.Plan, optimize Pass) (job.Job, error) {
+func NewJob(inputs *run.SearchInputs, plan query.Plan) (job.Job, error) {
 	children := make([]job.Job, 0, len(plan))
 	for _, q := range plan {
-		child, err := NewBasicJob(inputs, q, optimize)
+		child, err := NewBasicJob(inputs, q)
 		if err != nil {
 			return nil, err
 		}
@@ -694,7 +634,7 @@ func NewJob(inputs *run.SearchInputs, plan query.Plan, optimize Pass) (job.Job, 
 	return NewAlertJob(inputs, NewOrJob(children...)), nil
 }
 
-func NewBasicJob(inputs *run.SearchInputs, q query.Basic, optimize Pass) (job.Job, error) {
+func NewBasicJob(inputs *run.SearchInputs, q query.Basic) (job.Job, error) {
 	var children []job.Job
 	addJob := func(j job.Job) {
 		children = append(children, j)
@@ -784,17 +724,11 @@ func NewBasicJob(inputs *run.SearchInputs, q query.Basic, optimize Pass) (job.Jo
 
 	{
 		// This block generates jobs using the expansion of a basic query into
-		// flat queries, then post-optimizes the result.
+		// flat queries
 		flatJob, err := toFlatJobs(inputs, q)
 		if err != nil {
 			return nil, err
 		}
-
-		flatJob, err = optimize(flatJob, inputs, q)
-		if err != nil {
-			return nil, err
-		}
-
 		addJob(flatJob)
 	}
 
@@ -830,7 +764,7 @@ func NewBasicJob(inputs *run.SearchInputs, q query.Basic, optimize Pass) (job.Jo
 // FromExpandedPlan takes a query plan that has had all predicates expanded,
 // and converts it to a job.
 func FromExpandedPlan(inputs *run.SearchInputs, plan query.Plan) (job.Job, error) {
-	return NewJob(inputs, plan, OptimizationPass)
+	return NewJob(inputs, plan)
 }
 
 var metricFeatureFlagUnavailable = promauto.NewCounter(prometheus.CounterOpts{
