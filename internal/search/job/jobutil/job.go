@@ -246,11 +246,6 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 
 	job := NewParallelJob(allJobs...)
 
-	checker := authz.DefaultSubRepoPermsChecker
-	if authz.SubRepoEnabled(checker) {
-		job = NewFilterJob(job)
-	}
-
 	return job, nil
 }
 
@@ -704,12 +699,6 @@ func optimizeJobs(baseJob job.Job, inputs *run.SearchInputs, q query.Basic) (job
 
 	optimizedJob := NewParallelJob(optimizedJobs...)
 
-	// wrap optimized jobs in the permissions checker
-	checker := authz.DefaultSubRepoPermsChecker
-	if authz.SubRepoEnabled(checker) {
-		optimizedJob = NewFilterJob(optimizedJob)
-	}
-
 	return NewParallelJob(optimizedJob, trimmedJob), nil
 }
 
@@ -834,6 +823,13 @@ func NewBasicJob(inputs *run.SearchInputs, q query.Basic, optimize Pass) (job.Jo
 		if v, _ := q.ToParseTree().StringValue(query.FieldSelect); v != "" {
 			sp, _ := filter.SelectPathFromString(v) // Invariant: select already validated
 			basicJob = NewSelectJob(sp, basicJob)
+		}
+	}
+
+	{ // Apply subrepo permissions checks
+		checker := authz.DefaultSubRepoPermsChecker
+		if authz.SubRepoEnabled(checker) {
+			basicJob = NewFilterJob(basicJob)
 		}
 	}
 
