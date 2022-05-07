@@ -1,6 +1,6 @@
 import { gql } from '@sourcegraph/http-client'
 
-import { batchSpecExecutionFieldsFragment } from '../execution/backend'
+import { batchSpecExecutionFieldsFragment } from '../batch-spec/execute/backend'
 
 export const GET_BATCH_CHANGE_TO_EDIT = gql`
     query GetBatchChangeToEdit($namespace: ID!, $name: String!) {
