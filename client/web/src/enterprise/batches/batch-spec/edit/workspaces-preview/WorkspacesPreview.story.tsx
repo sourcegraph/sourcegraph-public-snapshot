@@ -21,9 +21,10 @@ import { BatchSpecContextProvider } from '../../BatchSpecContext'
 
 import { WorkspacesPreview } from './WorkspacesPreview'
 
-const { add } = storiesOf('web/batches/batch-spec/edit/workspaces-preview/WorkspacesPreview', module)
-    .addDecorator(story => <div className="p-3 container d-flex flex-column align-items-center">{story()}</div>)
-    .addParameters({ chromatic: { disableSnapshot: true } })
+const { add } = storiesOf(
+    'web/batches/batch-spec/edit/workspaces-preview/WorkspacesPreview',
+    module
+).addDecorator(story => <div className="p-3 container d-flex flex-column align-items-center">{story()}</div>)
 
 add('unstarted', () => (
     <WebStory>

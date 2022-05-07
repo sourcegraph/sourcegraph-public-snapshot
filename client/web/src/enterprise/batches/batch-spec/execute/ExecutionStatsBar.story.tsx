@@ -5,9 +5,9 @@ import { WebStory } from '../../../../components/WebStory'
 
 import { ExecutionStatsBar } from './ExecutionStatsBar'
 
-const { add } = storiesOf('web/batches/batch-spec/execute', module)
-    .addDecorator(story => <div className="p-3 container">{story()}</div>)
-    .addParameters({ chromatic: { disableSnapshot: false } })
+const { add } = storiesOf('web/batches/batch-spec/execute', module).addDecorator(story => (
+    <div className="p-3 container">{story()}</div>
+))
 
 add('ExecutionStatsBar', () => (
     <WebStory>

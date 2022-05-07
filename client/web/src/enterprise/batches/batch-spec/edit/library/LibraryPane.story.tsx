@@ -4,13 +4,9 @@ import { WebStory } from '../../../../../components/WebStory'
 
 import { LibraryPane } from './LibraryPane'
 
-const { add } = storiesOf('web/batches/batch-spec/edit/LibraryPane', module)
-    .addDecorator(story => <div className="p-3 container">{story()}</div>)
-    .addParameters({
-        chromatic: {
-            disableSnapshot: false,
-        },
-    })
+const { add } = storiesOf('web/batches/batch-spec/edit/LibraryPane', module).addDecorator(story => (
+    <div className="p-3 container">{story()}</div>
+))
 
 add('editable', () => (
     <WebStory>
