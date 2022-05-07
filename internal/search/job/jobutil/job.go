@@ -99,15 +99,6 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 
 		// Create Symbol Search Jobs
 		if resultTypes.Has(result.TypeSymbol) {
-			// Create Global Symbol Search jobs.
-			if repoUniverseSearch {
-				job, err := builder.newZoektGlobalSearch(search.SymbolRequest)
-				if err != nil {
-					return nil, err
-				}
-				addJob(job)
-			}
-
 			// Create Symbol Search jobs over repo set.
 			if !skipRepoSubsetSearch {
 				var symbolSearchJobs []job.Job
@@ -688,7 +679,6 @@ func optimizeJobs(baseJob job.Job, inputs *run.SearchInputs, q query.Basic) (job
 		MapJob: func(currentJob job.Job) job.Job {
 			switch currentJob.(type) {
 			case
-				*symbol.RepoUniverseSymbolSearchJob,
 				*zoekt.ZoektSymbolSearchJob,
 				*commit.CommitSearchJob:
 				optimizedJobs = append(optimizedJobs, currentJob)
@@ -720,12 +710,6 @@ func optimizeJobs(baseJob job.Job, inputs *run.SearchInputs, q query.Basic) (job
 			switch currentJob.(type) {
 			case *zoekt.ZoektSymbolSearchJob:
 				if exists("ZoektSymbolSearchJob") {
-					return &NoopJob{}
-				}
-				return currentJob
-
-			case *symbol.RepoUniverseSymbolSearchJob:
-				if exists("RepoUniverseSymbolSearchJob") {
 					return &NoopJob{}
 				}
 				return currentJob
@@ -840,6 +824,17 @@ func NewBasicJob(inputs *run.SearchInputs, q query.Basic, optimize Pass) (job.Jo
 					useIndex:         q.Index(),
 					containsRefGlobs: query.ContainsRefGlobs(q.ToParseTree()),
 				})
+			}
+		}
+
+		if resultTypes.Has(result.TypeSymbol) {
+			// Create Global Symbol Search jobs.
+			if repoUniverseSearch {
+				job, err := builder.newZoektGlobalSearch(search.SymbolRequest)
+				if err != nil {
+					return nil, err
+				}
+				addJob(job)
 			}
 		}
 	}

@@ -84,11 +84,7 @@ func TestToSearchInputs(t *testing.T) {
 	autogold.Want("unsupported Repo job regexp", "\nComputeExcludedReposJob\n").Equal(t, test("foo @bar", search.Streaming, query.ParseRegexp))
 
 	// Job generation for other types of search
-	autogold.Want("symbol", `
-(PARALLEL
-  RepoUniverseSymbolSearchJob
-  ComputeExcludedReposJob)
-`).Equal(t, test("type:symbol test", search.Streaming, query.ParseRegexp))
+	autogold.Want("symbol", "\nComputeExcludedReposJob\n").Equal(t, test("type:symbol test", search.Streaming, query.ParseRegexp))
 
 	autogold.Want("commit", `
 (PARALLEL
