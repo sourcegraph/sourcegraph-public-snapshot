@@ -53,7 +53,9 @@ export const Duration: React.FunctionComponent<React.PropsWithChildren<DurationP
     return (
         <div className={classNames(styles.stableWidth, className)} {...props}>
             {/* Set the width of the parent with a filler block of full-width digits, to prevent layout shift if the time changes. */}
-            <span className={styles.filler}>00:00:00</span>
+            <span className={styles.filler} aria-hidden={true}>
+                00:00:00
+            </span>
             <span className={styles.duration}>
                 {leading0(hours)}:{leading0(minutes)}:{leading0(seconds)}
             </span>
