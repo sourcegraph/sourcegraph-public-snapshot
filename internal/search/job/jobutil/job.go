@@ -757,12 +757,6 @@ func NewBasicJob(inputs *run.SearchInputs, q query.Basic) (job.Job, error) {
 	return basicJob, nil
 }
 
-// FromExpandedPlan takes a query plan that has had all predicates expanded,
-// and converts it to a job.
-func FromExpandedPlan(inputs *run.SearchInputs, plan query.Plan) (job.Job, error) {
-	return NewPlanJob(inputs, plan)
-}
-
 var metricFeatureFlagUnavailable = promauto.NewCounter(prometheus.CounterOpts{
 	Name: "src_search_featureflag_unavailable",
 	Help: "temporary counter to check if we have feature flag available in practice.",
