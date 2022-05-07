@@ -272,7 +272,7 @@ export const useBatchSpecWorkspace = (id: Scalars['ID']): BatchSpecWorkspaceHook
     return result
 }
 
-const CANCEL_BATCH_SPEC_EXECUTION = gql`
+export const CANCEL_BATCH_SPEC_EXECUTION = gql`
     mutation CancelBatchSpecExecution($id: ID!) {
         cancelBatchSpecExecution(batchSpec: $id) {
             ...BatchSpecExecutionFields

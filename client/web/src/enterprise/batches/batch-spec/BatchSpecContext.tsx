@@ -21,6 +21,8 @@ export interface BatchSpecContextErrors {
     preview?: string | Error
     // Errors from trying to execute the batch spec.
     execute?: string | Error
+    // Errors from trying to perform an action on a batch spec.
+    actions?: string | Error
 }
 
 type MinimalBatchSpecFields = EditBatchChangeFields['currentSpec'] & Partial<BatchSpecExecutionFields>
@@ -79,6 +81,7 @@ export interface BatchSpecContextState<BatchSpecFields extends MinimalBatchSpecF
     readonly workspacesPreview: WorkspacesPreviewState
 
     readonly errors: BatchSpecContextErrors
+    readonly setActionsError: (error: string | Error | undefined) => void
 }
 
 export const defaultState = (): BatchSpecContextState<MinimalBatchSpecFields> => ({
@@ -91,6 +94,7 @@ export const defaultState = (): BatchSpecContextState<MinimalBatchSpecFields> =>
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     workspacesPreview: {} as WorkspacesPreviewState,
     errors: {},
+    setActionsError: () => {},
 })
 
 const BatchSpecContext = React.createContext<BatchSpecContextState<MinimalBatchSpecFields>>(defaultState())
@@ -145,13 +149,9 @@ export const BatchSpecContextProvider = <BatchSpecFields extends MinimalBatchSpe
         [handleCodeChange, clearPreviewError]
     )
 
+    const [actionsError, setActionsError] = useState<string | Error | undefined>()
+
     const isExecuting = batchSpec.state === BatchSpecState.QUEUED || batchSpec.state === BatchSpecState.PROCESSING
-    const alreadyExecuted =
-        batchSpec.applyURL !== null ||
-        batchSpec.state === BatchSpecState.COMPLETED ||
-        batchSpec.state === BatchSpecState.FAILED ||
-        batchSpec.state === BatchSpecState.CANCELED ||
-        batchSpec.state === BatchSpecState.CANCELING
 
     // Manage submitting a batch spec for execution.
     const { executeBatchSpec, isLoading: isExecutionRequestInProgress, error: executeError } = useExecuteBatchSpec(
@@ -214,7 +214,9 @@ export const BatchSpecContextProvider = <BatchSpecFields extends MinimalBatchSpe
                     codeValidation: editor.errors.validation,
                     preview: workspacesPreview.error,
                     execute: executeError || batchSpec.failureMessage || undefined,
+                    actions: actionsError,
                 },
+                setActionsError,
             }}
         >
             {children}

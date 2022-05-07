@@ -1,36 +1,59 @@
-import React from 'react'
+import React, { useState } from 'react'
 
+import { useHistory } from 'react-router'
+
+import { useMutation } from '@sourcegraph/http-client'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Alert, Button } from '@sourcegraph/wildcard'
 
-import { BatchSpecState, EditBatchChangeFields } from '../../../../graphql-operations'
+import {
+    BatchSpecExecutionFields,
+    BatchSpecState,
+    CancelBatchSpecExecutionResult,
+    CancelBatchSpecExecutionVariables,
+} from '../../../../graphql-operations'
 import { BatchSpec } from '../../BatchSpec'
+import { useBatchSpecContext } from '../BatchSpecContext'
 import { LibraryPane } from '../edit/library/LibraryPane'
 import { WorkspacesPreviewPanel } from '../edit/workspaces-preview/WorkspacesPreviewPanel'
 
+import { CANCEL_BATCH_SPEC_EXECUTION } from './backend'
+import { CancelExecutionModal } from './CancelExecutionModal'
+
 import editorStyles from '../edit/EditBatchSpecPage.module.scss'
 
-interface ReadOnlyBatchSpecFormProps extends ThemeProps {
-    batchChange: EditBatchChangeFields
-    originalInput: string
-    executionState: BatchSpecState
-}
+interface ReadOnlyBatchSpecFormProps extends ThemeProps {}
 
 export const ReadOnlyBatchSpecForm: React.FunctionComponent<React.PropsWithChildren<ReadOnlyBatchSpecFormProps>> = ({
-    batchChange,
-    originalInput,
     isLightTheme,
-    executionState,
 }) => {
+    const history = useHistory()
+
+    const { batchChange, batchSpec, setActionsError } = useBatchSpecContext<BatchSpecExecutionFields>()
+
+    const [showCancelModal, setShowCancelModal] = useState(false)
+    const [cancelBatchSpecExecution, { loading: isCancelLoading }] = useMutation<
+        CancelBatchSpecExecutionResult,
+        CancelBatchSpecExecutionVariables
+    >(CANCEL_BATCH_SPEC_EXECUTION, {
+        variables: { id: batchSpec.id },
+        onError: setActionsError,
+        onCompleted: () => {
+            setShowCancelModal(false)
+            history.push(`${batchChange.url}/edit`)
+        },
+    })
+
     const alert =
-        executionState === BatchSpecState.QUEUED || executionState === BatchSpecState.PROCESSING ? (
+        batchSpec.state === BatchSpecState.QUEUED || batchSpec.state === BatchSpecState.PROCESSING ? (
             <Alert variant="warning" className="d-flex align-items-center pr-3">
                 <div className="flex-grow-1">
                     <h4>The execution is still running</h4>
                     You are unable to edit the spec when an execution is running.
                 </div>
-                {/* TODO: Handle button */}
-                <Button variant="danger">Cancel execution</Button>
+                <Button variant="danger" onClick={() => setShowCancelModal(true)}>
+                    Cancel execution
+                </Button>
             </Alert>
         ) : (
             <Alert variant="info" className="d-flex align-items-center pr-3">
@@ -60,10 +83,17 @@ export const ReadOnlyBatchSpecForm: React.FunctionComponent<React.PropsWithChild
                     name={batchChange.name}
                     className={editorStyles.editor}
                     isLightTheme={isLightTheme}
-                    originalInput={originalInput}
+                    originalInput={batchSpec.originalInput}
                 />
             </div>
             <WorkspacesPreviewPanel isReadOnly={true} />
+            <CancelExecutionModal
+                isOpen={showCancelModal}
+                onCancel={() => setShowCancelModal(false)}
+                onConfirm={cancelBatchSpecExecution}
+                modalBody={<p>Are you sure you want to cancel the current execution?</p>}
+                isLoading={isCancelLoading}
+            />
         </div>
     )
 }
