@@ -103,6 +103,8 @@ interface BatchSpecContextProviderProps<BatchSpecFields extends MinimalBatchSpec
     batchChange: EditBatchChangeFields
     refetchBatchChange?: () => Promise<unknown>
     batchSpec: BatchSpecFields
+    /** FOR TESTING ONLY */
+    testState?: Partial<BatchSpecContextState<BatchSpecFields>>
 }
 
 export const BatchSpecContextProvider = <BatchSpecFields extends MinimalBatchSpecFields>({
@@ -110,6 +112,7 @@ export const BatchSpecContextProvider = <BatchSpecFields extends MinimalBatchSpe
     batchChange,
     refetchBatchChange,
     batchSpec,
+    testState,
 }: React.PropsWithChildren<BatchSpecContextProviderProps<BatchSpecFields>>): JSX.Element => {
     const { currentSpec } = batchChange
 
@@ -199,6 +202,7 @@ export const BatchSpecContextProvider = <BatchSpecFields extends MinimalBatchSpe
                     ...batchSpec,
                     isApplied: isBatchSpecApplied,
                     executionURL: `${batchChange.url}/executions/${batchSpec.id}`,
+                    ...testState?.batchSpec,
                 },
                 editor: {
                     ...editor,
@@ -207,16 +211,25 @@ export const BatchSpecContextProvider = <BatchSpecFields extends MinimalBatchSpe
                     isExecutionDisabled,
                     executionOptions,
                     setExecutionOptions,
+                    ...testState?.editor,
                 },
-                workspacesPreview: { ...workspacesPreview, filters, setFilters, isPreviewDisabled },
+                workspacesPreview: {
+                    ...workspacesPreview,
+                    filters,
+                    setFilters,
+                    isPreviewDisabled,
+                    ...testState?.workspacesPreview,
+                },
                 errors: {
                     codeUpdate: editor.errors.update,
                     codeValidation: editor.errors.validation,
                     preview: workspacesPreview.error,
                     execute: executeError || batchSpec.failureMessage || undefined,
                     actions: actionsError,
+                    ...testState?.errors,
                 },
                 setActionsError,
+                ...testState,
             }}
         >
             {children}

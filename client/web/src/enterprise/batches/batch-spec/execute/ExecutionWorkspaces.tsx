@@ -30,9 +30,9 @@ export const ExecutionWorkspaces: React.FunctionComponent<React.PropsWithChildre
     const deselectWorkspace = useCallback(() => history.push(batchSpec.executionURL), [batchSpec.executionURL, history])
 
     return (
-        <>
-            {errors.execute && <ErrorAlert error={errors.execute} />}
-            <div className={styles.container}>
+        <div className={styles.container}>
+            {errors.execute && <ErrorAlert error={errors.execute} className={styles.errors} />}
+            <div className={styles.inner}>
                 <Panel defaultSize={500} minSize={405} maxSize={1400} position="left" storageKey={WORKSPACES_LIST_SIZE}>
                     <Workspaces
                         batchSpecID={batchSpec.id}
@@ -57,6 +57,6 @@ export const ExecutionWorkspaces: React.FunctionComponent<React.PropsWithChildre
                     </div>
                 </Card>
             </div>
-        </>
+        </div>
     )
 }

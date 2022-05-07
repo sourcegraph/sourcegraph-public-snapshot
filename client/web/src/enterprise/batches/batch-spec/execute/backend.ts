@@ -356,7 +356,7 @@ export const queryBatchSpecWorkspaceStepFileDiffs = ({
         })
     )
 
-const BATCH_SPEC_WORKSPACES = gql`
+export const BATCH_SPEC_WORKSPACES = gql`
     query BatchSpecWorkspaces(
         $node: ID!
         $first: Int
