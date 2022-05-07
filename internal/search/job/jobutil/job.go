@@ -677,7 +677,7 @@ func toPatternExpressionJob(inputs *run.SearchInputs, q query.Basic) (job.Job, e
 	return nil, errors.Errorf("unrecognized type %T in evaluatePatternExpression", q.Pattern)
 }
 
-func ToEvaluateJob(inputs *run.SearchInputs, q query.Basic) (job.Job, error) {
+func toFlatJobs(inputs *run.SearchInputs, q query.Basic) (job.Job, error) {
 	if q.Pattern == nil {
 		return ToSearchJob(inputs, q)
 	} else {
@@ -826,7 +826,7 @@ func NewJob(inputs *run.SearchInputs, plan query.Plan, optimize Pass) (job.Job, 
 }
 
 func NewBasicJob(inputs *run.SearchInputs, q query.Basic, optimize Pass) (job.Job, error) {
-	child, err := ToEvaluateJob(inputs, q)
+	child, err := toFlatJobs(inputs, q)
 	if err != nil {
 		return nil, err
 	}
