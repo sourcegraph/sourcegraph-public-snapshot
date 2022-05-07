@@ -82,23 +82,14 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 		if resultTypes.Has(result.TypeFile | result.TypePath) {
 			// Create Text Search jobs over repo set.
 			if !skipRepoSubsetSearch {
-				var textSearchJobs []job.Job
-				if runZoektOverRepos {
-					job, err := builder.newZoektSearch(search.TextRequest)
-					if err != nil {
-						return nil, err
-					}
-					textSearchJobs = append(textSearchJobs, job)
-				}
-
-				textSearchJobs = append(textSearchJobs, &searcher.SearcherJob{
+				searcherJob := &searcher.SearcherJob{
 					PatternInfo:     patternInfo,
 					Indexed:         false,
 					UseFullDeadline: useFullDeadline,
-				})
+				}
 
 				addJob(&repoPagerJob{
-					child:            NewParallelJob(textSearchJobs...),
+					child:            searcherJob,
 					repoOptions:      repoOptions,
 					useIndex:         b.Index(),
 					containsRefGlobs: query.ContainsRefGlobs(b.ToParseTree()),
@@ -698,7 +689,6 @@ func optimizeJobs(baseJob job.Job, inputs *run.SearchInputs, q query.Basic) (job
 			switch currentJob.(type) {
 			case
 				*symbol.RepoUniverseSymbolSearchJob,
-				*zoekt.ZoektRepoSubsetSearchJob,
 				*zoekt.ZoektSymbolSearchJob,
 				*commit.CommitSearchJob:
 				optimizedJobs = append(optimizedJobs, currentJob)
@@ -728,12 +718,6 @@ func optimizeJobs(baseJob job.Job, inputs *run.SearchInputs, q query.Basic) (job
 	trimmer := Mapper{
 		MapJob: func(currentJob job.Job) job.Job {
 			switch currentJob.(type) {
-			case *zoekt.ZoektRepoSubsetSearchJob:
-				if exists("ZoektRepoSubsetSearchJob") {
-					return &NoopJob{}
-				}
-				return currentJob
-
 			case *zoekt.ZoektSymbolSearchJob:
 				if exists("ZoektSymbolSearchJob") {
 					return &NoopJob{}
@@ -764,7 +748,6 @@ func optimizeJobs(baseJob job.Job, inputs *run.SearchInputs, q query.Basic) (job
 	for i, job := range optimizedJobs {
 		switch job.(type) {
 		case
-			*zoekt.ZoektRepoSubsetSearchJob,
 			*zoekt.ZoektSymbolSearchJob:
 			optimizedJobs[i] = &repoPagerJob{
 				child:            job,
@@ -825,7 +808,7 @@ func NewBasicJob(inputs *run.SearchInputs, q query.Basic, optimize Pass) (job.Jo
 		selector, _ := filter.SelectPathFromString(q.FindValue(query.FieldSelect)) // Invariant: select is validated
 		features := toFeatures(inputs.Features)
 		repoOptions := toRepoOptions(q, inputs.UserSettings)
-		repoUniverseSearch, _, _ := jobMode(q, resultTypes, inputs.PatternType, inputs.OnSourcegraphDotCom)
+		repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos := jobMode(q, resultTypes, inputs.PatternType, inputs.OnSourcegraphDotCom)
 
 		builder := &jobBuilder{
 			query:          q,
@@ -844,6 +827,19 @@ func NewBasicJob(inputs *run.SearchInputs, q query.Basic, optimize Pass) (job.Jo
 					return nil, err
 				}
 				addJob(job)
+			}
+
+			if !skipRepoSubsetSearch && runZoektOverRepos {
+				job, err := builder.newZoektSearch(search.TextRequest)
+				if err != nil {
+					return nil, err
+				}
+				addJob(&repoPagerJob{
+					child:            job,
+					repoOptions:      repoOptions,
+					useIndex:         q.Index(),
+					containsRefGlobs: query.ContainsRefGlobs(q.ToParseTree()),
+				})
 			}
 		}
 	}
