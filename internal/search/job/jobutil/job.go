@@ -80,15 +80,6 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 
 		// Create Text Search Jobs
 		if resultTypes.Has(result.TypeFile | result.TypePath) {
-			// Create Global Text Search jobs.
-			if repoUniverseSearch {
-				job, err := builder.newZoektGlobalSearch(search.TextRequest)
-				if err != nil {
-					return nil, err
-				}
-				addJob(job)
-			}
-
 			// Create Text Search jobs over repo set.
 			if !skipRepoSubsetSearch {
 				var textSearchJobs []job.Job
@@ -706,7 +697,6 @@ func optimizeJobs(baseJob job.Job, inputs *run.SearchInputs, q query.Basic) (job
 		MapJob: func(currentJob job.Job) job.Job {
 			switch currentJob.(type) {
 			case
-				*zoekt.ZoektGlobalSearchJob,
 				*symbol.RepoUniverseSymbolSearchJob,
 				*zoekt.ZoektRepoSubsetSearchJob,
 				*zoekt.ZoektSymbolSearchJob,
@@ -738,12 +728,6 @@ func optimizeJobs(baseJob job.Job, inputs *run.SearchInputs, q query.Basic) (job
 	trimmer := Mapper{
 		MapJob: func(currentJob job.Job) job.Job {
 			switch currentJob.(type) {
-			case *zoekt.ZoektGlobalSearchJob:
-				if exists("ZoektGlobalSearchJob") {
-					return &NoopJob{}
-				}
-				return currentJob
-
 			case *zoekt.ZoektRepoSubsetSearchJob:
 				if exists("ZoektRepoSubsetSearchJob") {
 					return &NoopJob{}
@@ -829,6 +813,39 @@ func NewBasicJob(inputs *run.SearchInputs, q query.Basic, optimize Pass) (job.Jo
 	var children []job.Job
 	addJob := func(j job.Job) {
 		children = append(children, j)
+	}
+
+	{
+		// This block generates jobs that can be built directly from
+		// a basic query rather than first being expanded into
+		// flat queries.
+		types, _ := q.IncludeExcludeValues(query.FieldType)
+		resultTypes := computeResultTypes(types, q, inputs.PatternType)
+		fileMatchLimit := int32(computeFileMatchLimit(q, inputs.Protocol))
+		selector, _ := filter.SelectPathFromString(q.FindValue(query.FieldSelect)) // Invariant: select is validated
+		features := toFeatures(inputs.Features)
+		repoOptions := toRepoOptions(q, inputs.UserSettings)
+		repoUniverseSearch, _, _ := jobMode(q, resultTypes, inputs.PatternType, inputs.OnSourcegraphDotCom)
+
+		builder := &jobBuilder{
+			query:          q,
+			resultTypes:    resultTypes,
+			repoOptions:    repoOptions,
+			features:       &features,
+			fileMatchLimit: fileMatchLimit,
+			selector:       selector,
+		}
+
+		if resultTypes.Has(result.TypeFile | result.TypePath) {
+			// Create Global Text Search jobs.
+			if repoUniverseSearch {
+				job, err := builder.newZoektGlobalSearch(search.TextRequest)
+				if err != nil {
+					return nil, err
+				}
+				addJob(job)
+			}
+		}
 	}
 
 	{
