@@ -172,8 +172,8 @@ func (q Q) MaxResults(defaultLimit int) int {
 // execute. The result of executing a plan is the union of individual query results.
 type Plan []Basic
 
-// ToParseTree models a plan as a parse tree of an Or-expression on plan queries.
-func (p Plan) ToParseTree() Q {
+// ToQ models a plan as a parse tree of an Or-expression on plan queries.
+func (p Plan) ToQ() Q {
 	nodes := make([]Node, 0, len(p))
 	for _, basic := range p {
 		operands := basic.ToParseTree()

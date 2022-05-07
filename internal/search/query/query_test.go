@@ -10,7 +10,7 @@ import (
 func TestPipelineStructural(t *testing.T) {
 	test := func(input string) string {
 		pipelinePlan, _ := Pipeline(InitStructural(input))
-		return pipelinePlan.ToParseTree().String()
+		return pipelinePlan.ToQ().String()
 	}
 
 	autogold.Want("contains(...) spans newlines", `"repo:contains.file(\nfoo\n)"`).Equal(t, test("repo:contains.file(\nfoo\n)"))
@@ -39,9 +39,9 @@ func TestSubstituteSearchContexts(t *testing.T) {
 		}
 
 		if verbose {
-			return jsonFormatted(plan.ToParseTree())
+			return jsonFormatted(plan.ToQ())
 		}
-		return plan.ToParseTree().String()
+		return plan.ToQ().String()
 	}
 
 	autogold.Want("basic", `(or (and "repo:primary" "scamaz") (and "repo:secondary" "scamaz"))`).Equal(t, test("context:gordo scamaz", false))

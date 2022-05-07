@@ -105,7 +105,7 @@ func TestSubstitute(t *testing.T) {
 		plan, _ := Substitute(b, func(p query.Plan) (result.Matches, error) {
 			return []result.Match{&result.RepoMatch{Name: "contains-foo"}}, nil
 		})
-		return query.StringHuman(plan.ToParseTree())
+		return query.StringHuman(plan.ToQ())
 	}
 
 	autogold.Want("predicate that generates a plan is replaced by values",

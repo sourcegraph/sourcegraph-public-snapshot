@@ -90,7 +90,7 @@ func NewSearchInputs(
 
 	inputs := &SearchInputs{
 		Plan:                plan,
-		Query:               plan.ToParseTree(),
+		Query:               plan.ToQ(),
 		OriginalQuery:       searchQuery,
 		UserSettings:        settings,
 		OnSourcegraphDotCom: sourcegraphDotComMode,
