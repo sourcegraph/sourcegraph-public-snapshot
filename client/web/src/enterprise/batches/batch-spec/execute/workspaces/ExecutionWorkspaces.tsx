@@ -6,11 +6,11 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Card, CardBody, Panel } from '@sourcegraph/wildcard'
 
-import { BatchSpecExecutionFields } from '../../../../graphql-operations'
-import { useBatchSpecContext } from '../BatchSpecContext'
+import { BatchSpecExecutionFields } from '../../../../../graphql-operations'
+import { useBatchSpecContext } from '../../BatchSpecContext'
 
 import { WorkspaceDetails } from './WorkspaceDetails'
-import { Workspaces } from './workspaces/Workspaces'
+import { Workspaces } from './Workspaces'
 
 import styles from './ExecutionWorkspaces.module.scss'
 

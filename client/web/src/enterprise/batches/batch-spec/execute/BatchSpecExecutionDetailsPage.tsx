@@ -405,8 +405,6 @@ const PreviewPage: React.FunctionComponent<React.PropsWithChildren<PreviewPagePr
     batchSpec,
     batchSpecID,
 }) => {
-    const history = useHistory()
-
     if (!batchSpec.applyURL) {
         return <Redirect to="./execution" />
     }
@@ -416,10 +414,8 @@ const PreviewPage: React.FunctionComponent<React.PropsWithChildren<PreviewPagePr
             <NewBatchChangePreviewPage
                 authenticatedUser={authenticatedUser}
                 telemetryService={telemetryService}
-                history={history}
                 isLightTheme={isLightTheme}
                 batchSpecID={batchSpecID}
-                location={history.location}
             />
         </div>
     )
