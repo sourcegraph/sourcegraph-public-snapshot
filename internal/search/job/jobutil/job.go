@@ -166,7 +166,7 @@ func NewBasicJob(inputs *run.SearchInputs, q query.Basic) (job.Job, error) {
 	}
 
 	{ // Apply timeout
-		timeout := TimeoutDuration(q)
+		timeout := timeoutDuration(q)
 		basicJob = NewTimeoutJob(timeout, basicJob)
 	}
 
@@ -397,7 +397,7 @@ func computeFileMatchLimit(q query.Basic, p search.Protocol) int {
 	panic("unreachable")
 }
 
-func TimeoutDuration(b query.Basic) time.Duration {
+func timeoutDuration(b query.Basic) time.Duration {
 	d := limits.DefaultTimeout
 	maxTimeout := time.Duration(limits.SearchLimits(conf.Get()).MaxTimeoutSeconds) * time.Second
 	timeout := b.GetTimeout()
