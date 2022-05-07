@@ -10,11 +10,17 @@ import {
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../../components/WebStory'
-import { BatchSpecWorkspaceResolutionState, BatchSpecWorkspaceState } from '../../../../graphql-operations'
+import {
+    BatchSpecExecutionFields,
+    BatchSpecWorkspaceResolutionState,
+    BatchSpecWorkspaceState,
+    VisibleBatchSpecWorkspaceFields,
+} from '../../../../graphql-operations'
 import { mockAuthenticatedUser } from '../../../code-monitoring/testing/util'
 import { GET_BATCH_CHANGE_TO_EDIT, WORKSPACE_RESOLUTION_STATUS } from '../../create/backend'
 import {
     COMPLETED_BATCH_SPEC,
+    COMPLETED_WITH_ERRORS_BATCH_SPEC,
     EXECUTING_BATCH_SPEC,
     FAILED_BATCH_SPEC,
     mockBatchChange,
@@ -80,13 +86,17 @@ const COMMON_MOCKS: MockedResponses = [
     },
 ]
 
-const SUCCESSFUL_MOCKS: MockedResponses = [
+const buildMocks = (
+    batchSpec: BatchSpecExecutionFields,
+    workspaceFields?: Partial<VisibleBatchSpecWorkspaceFields>
+): MockedResponses => [
+    ...COMMON_MOCKS,
     {
         request: {
             query: getDocumentNode(BATCH_SPEC_WORKSPACES),
             variables: MATCH_ANY_PARAMETERS,
         },
-        result: { data: mockWorkspaces(50) },
+        result: { data: mockWorkspaces(50, workspaceFields) },
         nMatches: Number.POSITIVE_INFINITY,
     },
     {
@@ -94,7 +104,7 @@ const SUCCESSFUL_MOCKS: MockedResponses = [
             query: getDocumentNode(FETCH_BATCH_SPEC_EXECUTION),
             variables: MATCH_ANY_PARAMETERS,
         },
-        result: { data: { node: EXECUTING_BATCH_SPEC } },
+        result: { data: { node: batchSpec } },
         nMatches: Number.POSITIVE_INFINITY,
     },
 ]
@@ -102,7 +112,7 @@ const SUCCESSFUL_MOCKS: MockedResponses = [
 add('executing', () => (
     <WebStory>
         {props => (
-            <MockedTestProvider link={new WildcardMockLink([...COMMON_MOCKS, ...SUCCESSFUL_MOCKS])}>
+            <MockedTestProvider link={new WildcardMockLink(buildMocks(EXECUTING_BATCH_SPEC))}>
                 <ExecuteBatchSpecPage
                     {...props}
                     batchSpecID="spec1234"
@@ -115,31 +125,14 @@ add('executing', () => (
     </WebStory>
 ))
 
-const FAILED_MOCKS: MockedResponses = [
-    {
-        request: {
-            query: getDocumentNode(BATCH_SPEC_WORKSPACES),
-            variables: MATCH_ANY_PARAMETERS,
-        },
-        result: { data: mockWorkspaces(50, { state: BatchSpecWorkspaceState.FAILED, failureMessage: 'Uh oh!' }) },
-        nMatches: Number.POSITIVE_INFINITY,
-    },
-    {
-        request: {
-            query: getDocumentNode(FETCH_BATCH_SPEC_EXECUTION),
-            variables: MATCH_ANY_PARAMETERS,
-        },
-        result: { data: { node: FAILED_BATCH_SPEC } },
-        nMatches: Number.POSITIVE_INFINITY,
-    },
-]
+const FAILED_MOCKS = buildMocks(FAILED_BATCH_SPEC, { state: BatchSpecWorkspaceState.FAILED, failureMessage: 'Uh oh!' })
 
 add('failed', () => {
     console.log(mockWorkspaces(50, { state: BatchSpecWorkspaceState.FAILED, failureMessage: 'Uh oh!' }))
     return (
         <WebStory>
             {props => (
-                <MockedTestProvider link={new WildcardMockLink([...COMMON_MOCKS, ...FAILED_MOCKS])}>
+                <MockedTestProvider link={new WildcardMockLink(FAILED_MOCKS)}>
                     <ExecuteBatchSpecPage
                         {...props}
                         batchSpecID="spec1234"
@@ -159,40 +152,40 @@ add('failed', () => {
     )
 })
 
-const COMPLETED_MOCKS: MockedResponses = [
-    {
-        request: {
-            query: getDocumentNode(BATCH_SPEC_WORKSPACES),
-            variables: MATCH_ANY_PARAMETERS,
-        },
-        result: { data: mockWorkspaces(50, { state: BatchSpecWorkspaceState.COMPLETED }) },
-        nMatches: Number.POSITIVE_INFINITY,
-    },
-    {
-        request: {
-            query: getDocumentNode(FETCH_BATCH_SPEC_EXECUTION),
-            variables: MATCH_ANY_PARAMETERS,
-        },
-        result: { data: { node: COMPLETED_BATCH_SPEC } },
-        nMatches: Number.POSITIVE_INFINITY,
-    },
-]
+const COMPLETED_MOCKS = buildMocks(COMPLETED_BATCH_SPEC, { state: BatchSpecWorkspaceState.COMPLETED })
 
-add('completed', () => {
-    console.log(mockWorkspaces(50, { state: BatchSpecWorkspaceState.FAILED, failureMessage: 'Uh oh!' }))
-    return (
-        <WebStory>
-            {props => (
-                <MockedTestProvider link={new WildcardMockLink([...COMMON_MOCKS, ...COMPLETED_MOCKS])}>
-                    <ExecuteBatchSpecPage
-                        {...props}
-                        batchSpecID="spec1234"
-                        batchChange={{ name: 'my-batch-change', namespace: 'user1234' }}
-                        authenticatedUser={mockAuthenticatedUser}
-                        settingsCascade={SETTINGS_CASCADE}
-                    />
-                </MockedTestProvider>
-            )}
-        </WebStory>
-    )
+add('completed', () => (
+    <WebStory>
+        {props => (
+            <MockedTestProvider link={new WildcardMockLink(COMPLETED_MOCKS)}>
+                <ExecuteBatchSpecPage
+                    {...props}
+                    batchSpecID="spec1234"
+                    batchChange={{ name: 'my-batch-change', namespace: 'user1234' }}
+                    authenticatedUser={mockAuthenticatedUser}
+                    settingsCascade={SETTINGS_CASCADE}
+                />
+            </MockedTestProvider>
+        )}
+    </WebStory>
+))
+
+const COMPLETED_WITH_ERRORS_MOCKS = buildMocks(COMPLETED_WITH_ERRORS_BATCH_SPEC, {
+    state: BatchSpecWorkspaceState.COMPLETED,
 })
+
+add('completed with errors', () => (
+    <WebStory>
+        {props => (
+            <MockedTestProvider link={new WildcardMockLink(COMPLETED_WITH_ERRORS_MOCKS)}>
+                <ExecuteBatchSpecPage
+                    {...props}
+                    batchSpecID="spec1234"
+                    batchChange={{ name: 'my-batch-change', namespace: 'user1234' }}
+                    authenticatedUser={mockAuthenticatedUser}
+                    settingsCascade={SETTINGS_CASCADE}
+                />
+            </MockedTestProvider>
+        )}
+    </WebStory>
+))

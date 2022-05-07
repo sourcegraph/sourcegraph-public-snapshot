@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from 'react'
 
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 import PencilIcon from 'mdi-react/PencilIcon'
@@ -30,7 +31,7 @@ export const ActionsMenu: React.FunctionComponent<React.PropsWithChildren<{}>> =
 
     const { batchChange, batchSpec, setActionsError } = useBatchSpecContext<BatchSpecExecutionFields>()
     const { url } = batchChange
-    const { isExecuting } = batchSpec
+    const { isExecuting, state } = batchSpec
 
     const [showCancelModal, setShowCancelModal] = useState(false)
     const [cancelModalType, setCancelModalType] = useState<'cancel' | 'edit'>('cancel')
@@ -66,6 +67,7 @@ export const ActionsMenu: React.FunctionComponent<React.PropsWithChildren<{}>> =
     }, [])
 
     const showPreviewButton = !location.pathname.endsWith('preview') && !!batchSpec.applyURL
+    const failed = state === BatchSpecState.FAILED
 
     // The actions menu button is wider than the "Preview" button, so to prevent layout
     // shift, we apply the width of the actions menu button to the "Preview" button
@@ -77,16 +79,22 @@ export const ActionsMenu: React.FunctionComponent<React.PropsWithChildren<{}>> =
             {showPreviewButton && (
                 <Button
                     to={`${batchSpec.executionURL}/preview`}
-                    variant="primary"
+                    variant={failed ? 'warning' : 'primary'}
                     as={Link}
                     className={styles.previewButton}
-                    style={{ width: menuWidth }}
+                    style={{ width: failed ? undefined : menuWidth }}
+                    data-tooltip={
+                        failed
+                            ? "Execution didn't finish successfully in all workspaces. Some changesets may be missing in preview."
+                            : undefined
+                    }
                 >
+                    {failed && <Icon className="mr-1" as={AlertCircleIcon} />}
                     Preview
                 </Button>
             )}
             <Menu>
-                <div ref={menuReference} aria-hidden={showPreviewButton}>
+                <div className="d-inline-block" ref={menuReference} aria-hidden={showPreviewButton}>
                     <MenuButton variant="secondary" className={showPreviewButton ? styles.menuButtonHidden : undefined}>
                         Actions
                         <Icon as={ChevronDownIcon} className={styles.chevronIcon} />
@@ -101,7 +109,7 @@ export const ActionsMenu: React.FunctionComponent<React.PropsWithChildren<{}>> =
                             <Icon as={CloseIcon} className={styles.cancelIcon} /> Cancel execution...
                         </MenuItem>
                     )}
-                    {batchSpec.state !== BatchSpecState.COMPLETED && batchSpec.viewerCanRetry && (
+                    {state !== BatchSpecState.COMPLETED && batchSpec.viewerCanRetry && (
                         <MenuItem onSelect={retryBatchSpecExecution} disabled={isRetryLoading}>
                             <Icon as={SyncIcon} /> Retry failed workspaces
                         </MenuItem>

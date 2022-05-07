@@ -126,6 +126,27 @@ export const COMPLETED_BATCH_SPEC = mockFullBatchSpec({
     },
 })
 
+export const COMPLETED_WITH_ERRORS_BATCH_SPEC = mockFullBatchSpec({
+    state: BatchSpecState.FAILED,
+    startedAt: subHours(now, 1).toISOString(),
+    finishedAt: subMinutes(now, 4).toISOString(),
+    applyURL: '/some/preview/url',
+    workspaceResolution: {
+        __typename: 'BatchSpecWorkspaceResolution',
+        workspaces: {
+            __typename: 'BatchSpecWorkspaceConnection',
+            stats: {
+                __typename: 'BatchSpecWorkspacesStats',
+                errored: 30,
+                ignored: 0,
+                queued: 0,
+                processing: 0,
+                completed: 22,
+            },
+        },
+    },
+})
+
 export const FAILED_BATCH_SPEC = mockFullBatchSpec({
     state: BatchSpecState.FAILED,
     startedAt: subHours(now, 1).toISOString(),
