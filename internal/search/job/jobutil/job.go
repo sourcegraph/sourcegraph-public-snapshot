@@ -30,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+// NewPlanJob converts a query.Plan into its job tree representation.
 func NewPlanJob(inputs *run.SearchInputs, plan query.Plan) (job.Job, error) {
 	children := make([]job.Job, 0, len(plan))
 	for _, q := range plan {
@@ -42,6 +43,7 @@ func NewPlanJob(inputs *run.SearchInputs, plan query.Plan) (job.Job, error) {
 	return NewAlertJob(inputs, NewOrJob(children...)), nil
 }
 
+// NewBasicJob converts a query.Basic into its job tree representation.
 func NewBasicJob(inputs *run.SearchInputs, q query.Basic) (job.Job, error) {
 	var children []job.Job
 	addJob := func(j job.Job) {
@@ -135,8 +137,9 @@ func NewBasicJob(inputs *run.SearchInputs, q query.Basic) (job.Job, error) {
 	}
 
 	{
-		// This block generates jobs using the expansion of a basic query into
-		// flat queries
+		// This block generates a job for all the backend types that cannot
+		// directly use a query.Basic and need to be split into query.Flat
+		// first.
 		flatJob, err := toFlatJobs(inputs, q)
 		if err != nil {
 			return nil, err
@@ -173,16 +176,7 @@ func NewBasicJob(inputs *run.SearchInputs, q query.Basic) (job.Job, error) {
 	return basicJob, nil
 }
 
-// NewFlatJob converts a query parse tree to the _internal_ representation
-// needed to run a search routine. To understand why this conversion matters, think
-// about the fact that the query parse tree doesn't know anything about our
-// backends or architecture. It doesn't decide certain defaults, like whether we
-// should return multiple result types (pattern matches content, or a file name,
-// or a repo name). If we want to optimize a Sourcegraph query parse tree for a
-// particular backend (e.g., skip repository resolution and just run a Zoekt
-// query on all indexed repositories) then we need to convert our tree to
-// Zoekt's internal inputs and representation. These concerns are all handled by
-// NewFlatJob.
+// NewFlatJob creates all jobs that are built from a query.Flat.
 func NewFlatJob(searchInputs *run.SearchInputs, f query.Flat) (job.Job, error) {
 	maxResults := f.MaxResults(searchInputs.DefaultLimit())
 	types, _ := f.IncludeExcludeValues(query.FieldType)
@@ -788,6 +782,8 @@ func toPatternExpressionJob(inputs *run.SearchInputs, q query.Basic) (job.Job, e
 	return nil, errors.Errorf("unrecognized type %T in evaluatePatternExpression", q.Pattern)
 }
 
+// toFlatJobs takes a query.Basic and expands it into a set query.Flat that are converted
+// to jobs and joined with AndJob and OrJob.
 func toFlatJobs(inputs *run.SearchInputs, q query.Basic) (job.Job, error) {
 	if q.Pattern == nil {
 		return NewFlatJob(inputs, query.Flat{Parameters: q.Parameters, Pattern: nil})
