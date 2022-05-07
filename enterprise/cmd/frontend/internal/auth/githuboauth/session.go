@@ -61,7 +61,8 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	}
 
 	// 🚨 SECURITY: Ensure that the user is part of one of the allow listed orgs or teams, if any.
-	if !s.verifyUserOrgs(ctx, ghClient) && !s.verifyUserTeams(ctx, ghClient) {
+	userBelongsToAllowedOrgs, userBelongsToAllowedTeams := s.verifyUserOrgsAndTeams(ctx, ghClient)
+	if !userBelongsToAllowedOrgs && !userBelongsToAllowedTeams {
 		return nil, "Could not verify user is part of the allowed GitHub organizations and teams.", errors.New("couldn't verify user is part of allowed GitHub organizations and teams")
 	}
 
@@ -272,10 +273,6 @@ func getVerifiedEmails(ctx context.Context, ghClient *githubsvc.V3Client) (verif
 }
 
 func (s *sessionIssuerHelper) verifyUserOrgs(ctx context.Context, ghClient *githubsvc.V3Client) bool {
-	if len(s.allowOrgs) == 0 {
-		return true
-	}
-
 	userOrgs, err := ghClient.GetAuthenticatedUserOrgs(ctx)
 
 	if err != nil {
@@ -298,13 +295,10 @@ func (s *sessionIssuerHelper) verifyUserOrgs(ctx context.Context, ghClient *gith
 }
 
 func (s *sessionIssuerHelper) verifyUserTeams(ctx context.Context, ghClient *githubsvc.V3Client) bool {
-	if len(s.allowTeams) == 0 {
-		return true
-	}
-
 	userTeams, _, _, err := ghClient.GetAuthenticatedUserTeams(ctx, 1)
+
 	if err != nil {
-		log15.Warn("Could not get GitHub authenticated user team", "error", err)
+		log15.Warn("Could not get GitHub authenticated user teams", "error", err)
 		return false
 	}
 
@@ -320,4 +314,22 @@ func (s *sessionIssuerHelper) verifyUserTeams(ctx context.Context, ghClient *git
 	}
 
 	return false
+}
+
+// verifyUserOrgsAndTeams checks if the user belongs to one of the allowed listed orgs or teams.
+// If only one list is provided, that list will be used to verify the user.
+func (s *sessionIssuerHelper) verifyUserOrgsAndTeams(ctx context.Context, ghClient *githubsvc.V3Client) (bool, bool) {
+	if len(s.allowOrgs) == 0 && len(s.allowTeams) == 0 {
+		return true, true
+	}
+
+	if len(s.allowOrgs) > 0 && len(s.allowTeams) == 0 {
+		return s.verifyUserOrgs(ctx, ghClient), false
+	}
+
+	if len(s.allowOrgs) == 0 && len(s.allowTeams) > 0 {
+		return false, s.verifyUserTeams(ctx, ghClient)
+	}
+
+	return s.verifyUserOrgs(ctx, ghClient), s.verifyUserTeams(ctx, ghClient)
 }
