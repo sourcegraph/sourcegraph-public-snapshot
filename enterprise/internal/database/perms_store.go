@@ -280,29 +280,14 @@ func (s *permsStore) SetUserPermissions(ctx context.Context, p *authz.UserPermis
 			return errors.Wrap(err, "load user permissions")
 		}
 	} else {
-		for _, id := range ids {
-			oldIDs[id] = struct{}{}
-		}
+		oldIDs = sliceToSet(ids)
 	}
 
 	if p.IDs == nil {
 		p.IDs = map[int32]struct{}{}
 	}
 
-	// Compute differences between the old and new sets.
-	var added []int32
-	for id := range p.IDs {
-		if _, ok := oldIDs[id]; !ok {
-			added = append(added, id)
-		}
-	}
-
-	var removed []int32
-	for id := range oldIDs {
-		if _, ok := p.IDs[id]; !ok {
-			removed = append(removed, id)
-		}
-	}
+	added, removed := computeDiff(oldIDs, p.IDs)
 
 	// Iterating over maps doesn't guarantee order so we sort the slices to avoid doing unnecessary DB updates.
 	sort.Slice(added, func(i, j int) bool { return added[i] < added[j] })
@@ -407,29 +392,15 @@ func (s *permsStore) SetRepoPermissions(ctx context.Context, p *authz.RepoPermis
 			return errors.Wrap(err, "load repo permissions")
 		}
 	} else {
-		for _, id := range ids {
-			oldIDs[id] = struct{}{}
-		}
+		oldIDs = sliceToSet(ids)
 	}
 
 	if p.UserIDs == nil {
 		p.UserIDs = map[int32]struct{}{}
 	}
 
-	// Compute differences between the old and new sets.
-	var added []int32
-	for id := range p.UserIDs {
-		if _, ok := oldIDs[id]; !ok {
-			added = append(added, id)
-		}
-	}
+	added, removed := computeDiff(oldIDs, p.UserIDs)
 
-	var removed []int32
-	for id := range oldIDs {
-		if _, ok := p.UserIDs[id]; !ok {
-			removed = append(removed, id)
-		}
-	}
 	// Iterating over maps doesn't guarantee order, so we sort the slices to avoid doing unnecessary DB updates.
 	sort.Slice(added, func(i, j int) bool { return added[i] < added[j] })
 	sort.Slice(removed, func(i, j int) bool { return removed[i] < removed[j] })
@@ -714,25 +685,8 @@ func (s *permsStore) SetRepoPendingPermissions(ctx context.Context, accounts *ex
 		return errors.Wrap(err, "load repo pending permissions")
 	}
 
-	oldIDs := make(map[int64]struct{}, len(ids))
-	for _, id := range ids {
-		oldIDs[id] = struct{}{}
-	}
-
-	// Compute differences between the old and new sets.
-	var added []int64
-	for key := range p.PendingUserIDs {
-		if _, ok := oldIDs[key]; !ok {
-			added = append(added, key)
-		}
-	}
-
-	var removed []int64
-	for key := range oldIDs {
-		if _, ok := p.PendingUserIDs[key]; !ok {
-			removed = append(removed, key)
-		}
-	}
+	oldIDs := sliceToSet(ids)
+	added, removed := computeDiff(oldIDs, p.PendingUserIDs)
 
 	// In case there is nothing added or removed.
 	if len(added) == 0 && len(removed) == 0 {
@@ -1850,4 +1804,28 @@ func (s *permsStore) observe(ctx context.Context, family, title string) (context
 
 		tr.Finish()
 	}
+}
+
+// computeDiff determines which ids were added or removed when comparing the old
+// list of ids, oldIDs, with the new set.
+func computeDiff[T comparable](oldIDs map[T]struct{}, set map[T]struct{}) (added []T, removed []T) {
+	for key := range set {
+		if _, ok := oldIDs[key]; !ok {
+			added = append(added, key)
+		}
+	}
+	for key := range oldIDs {
+		if _, ok := set[key]; !ok {
+			removed = append(removed, key)
+		}
+	}
+	return added, removed
+}
+
+func sliceToSet[T comparable](s []T) map[T]struct{} {
+	m := make(map[T]struct{}, len(s))
+	for _, n := range s {
+		m[n] = struct{}{}
+	}
+	return m
 }
