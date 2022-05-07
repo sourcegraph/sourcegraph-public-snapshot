@@ -444,8 +444,8 @@ func (p Parameters) FindParameter(field string, f func(value string, negated boo
 	}
 }
 
-// Flat is a more restricted form of Basic that has exactly one atomic pattern
-// node. This is used to
+// Flat is a more restricted form of Basic that has exactly zero or one atomic
+// pattern nodes.
 type Flat struct {
 	Parameters
 	Pattern *Pattern
