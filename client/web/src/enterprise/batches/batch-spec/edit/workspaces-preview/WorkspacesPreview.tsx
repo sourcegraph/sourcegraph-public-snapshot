@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import SearchIcon from 'mdi-react/SearchIcon'
@@ -16,7 +16,7 @@ import {
     PreviewVisibleBatchSpecWorkspaceFields,
 } from '../../../../../graphql-operations'
 import { Header as WorkspacesListHeader } from '../../../workspaces-list'
-import { BatchSpecContext } from '../../BatchSpecContext'
+import { useBatchSpecContext } from '../../BatchSpecContext'
 
 import { ImportingChangesetsPreviewList } from './ImportingChangesetsPreviewList'
 import { PreviewLoadingSpinner } from './PreviewLoadingSpinner'
@@ -50,7 +50,7 @@ const WAITING_MESSAGE_INTERVAL = 10
 export const WorkspacesPreview: React.FunctionComponent<React.PropsWithChildren<{ isReadOnly?: boolean }>> = ({
     isReadOnly = false,
 }) => {
-    const { batchSpec, editor, workspacesPreview } = useContext(BatchSpecContext)
+    const { batchSpec, editor, workspacesPreview } = useBatchSpecContext()
     const { debouncedCode, excludeRepo, isServerStale } = editor
     const {
         resolutionState,

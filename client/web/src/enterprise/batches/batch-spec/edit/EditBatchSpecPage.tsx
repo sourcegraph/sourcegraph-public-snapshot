@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 
@@ -14,7 +14,7 @@ import { GET_BATCH_CHANGE_TO_EDIT } from '../../create/backend'
 import { ConfigurationForm } from '../../create/ConfigurationForm'
 import { InsightTemplatesBanner } from '../../create/InsightTemplatesBanner'
 import { useInsightTemplates } from '../../create/useInsightTemplates'
-import { BatchSpecContext, BatchSpecContextProvider } from '../BatchSpecContext'
+import { BatchSpecContextProvider, useBatchSpecContext } from '../BatchSpecContext'
 import { ActionButtons } from '../header/ActionButtons'
 import { BatchChangeHeader } from '../header/BatchChangeHeader'
 import { TabBar, TabsConfig, TabKey } from '../TabBar'
@@ -57,8 +57,17 @@ export const EditBatchSpecPage: React.FunctionComponent<EditBatchSpecPageProps> 
         return <HeroPage icon={AlertCircleIcon} title="Batch change not found" />
     }
 
+    // The first node from the batch specs is the latest batch spec for a batch change. If
+    // it's different from the `currentSpec` on the batch change, that means the latest
+    // batch spec has not yet been applied.
+    const batchSpec = data.batchChange.batchSpecs.nodes[0] || data.batchChange.currentSpec
+
     return (
-        <BatchSpecContextProvider batchChange={data.batchChange} refetchBatchChange={refetchBatchChange}>
+        <BatchSpecContextProvider
+            batchChange={data.batchChange}
+            refetchBatchChange={refetchBatchChange}
+            batchSpec={batchSpec}
+        >
             <EditBatchSpecPageContent {...props} />
         </BatchSpecContextProvider>
     )
@@ -70,7 +79,7 @@ const EditBatchSpecPageContent: React.FunctionComponent<React.PropsWithChildren<
     settingsCascade,
     isLightTheme,
 }) => {
-    const { batchChange, editor, errors } = useContext(BatchSpecContext)
+    const { batchChange, editor, errors } = useBatchSpecContext()
 
     const { insightTitle } = useInsightTemplates(settingsCascade)
 

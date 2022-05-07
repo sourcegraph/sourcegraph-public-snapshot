@@ -30,16 +30,12 @@ add('unstarted', () => (
         {props => (
             <MockedTestProvider link={new WildcardMockLink(UNSTARTED_CONNECTION_MOCKS)}>
                 <BatchSpecContextProvider
-                    batchChange={mockBatchChange({
-                        batchSpecs: {
-                            __typename: 'BatchSpecConnection',
-                            nodes: [
-                                boolean('Valid batch spec?', true)
-                                    ? mockBatchSpec()
-                                    : mockBatchSpec({ originalInput: 'not-valid' }),
-                            ],
-                        },
-                    })}
+                    batchChange={mockBatchChange()}
+                    batchSpec={
+                        boolean('Valid batch spec?', true)
+                            ? mockBatchSpec()
+                            : mockBatchSpec({ originalInput: 'not-valid' })
+                    }
                     refetchBatchChange={() => Promise.resolve()}
                 >
                     <WorkspacesPreview {...props} />
@@ -54,16 +50,12 @@ add('unstarted, with cached connection result', () => (
         {props => (
             <MockedTestProvider link={new WildcardMockLink(UNSTARTED_WITH_CACHE_CONNECTION_MOCKS)}>
                 <BatchSpecContextProvider
-                    batchChange={mockBatchChange({
-                        batchSpecs: {
-                            __typename: 'BatchSpecConnection',
-                            nodes: [
-                                boolean('Valid batch spec?', true)
-                                    ? mockBatchSpec()
-                                    : mockBatchSpec({ originalInput: 'not-valid' }),
-                            ],
-                        },
-                    })}
+                    batchChange={mockBatchChange()}
+                    batchSpec={
+                        boolean('Valid batch spec?', true)
+                            ? mockBatchSpec()
+                            : mockBatchSpec({ originalInput: 'not-valid' })
+                    }
                     refetchBatchChange={() => Promise.resolve()}
                 >
                     <WorkspacesPreview {...props} />
@@ -114,16 +106,12 @@ add('queued/in progress', () => {
             {props => (
                 <MockedTestProvider link={inProgressConnectionMocks}>
                     <BatchSpecContextProvider
-                        batchChange={mockBatchChange({
-                            batchSpecs: {
-                                __typename: 'BatchSpecConnection',
-                                nodes: [
-                                    boolean('Valid batch spec?', true)
-                                        ? mockBatchSpec()
-                                        : mockBatchSpec({ originalInput: 'not-valid' }),
-                                ],
-                            },
-                        })}
+                        batchChange={mockBatchChange()}
+                        batchSpec={
+                            boolean('Valid batch spec?', true)
+                                ? mockBatchSpec()
+                                : mockBatchSpec({ originalInput: 'not-valid' })
+                        }
                         refetchBatchChange={() => Promise.resolve()}
                     >
                         <WorkspacesPreview {...props} />
@@ -176,6 +164,7 @@ add('queued/in progress, with cached connection result', () => {
                 <MockedTestProvider link={inProgressConnectionMocks}>
                     <BatchSpecContextProvider
                         batchChange={mockBatchChange()}
+                        batchSpec={mockBatchSpec()}
                         refetchBatchChange={() => Promise.resolve()}
                     >
                         <WorkspacesPreview {...props} />
@@ -229,6 +218,7 @@ add('failed/errored', () => {
                 <MockedTestProvider link={failedConnectionMocks}>
                     <BatchSpecContextProvider
                         batchChange={mockBatchChange()}
+                        batchSpec={mockBatchSpec()}
                         refetchBatchChange={() => Promise.resolve()}
                     >
                         <WorkspacesPreview {...props} />
@@ -282,6 +272,7 @@ add('failed/errored, with cached connection result', () => {
                 <MockedTestProvider link={failedConnectionMocks}>
                     <BatchSpecContextProvider
                         batchChange={mockBatchChange()}
+                        batchSpec={mockBatchSpec()}
                         refetchBatchChange={() => Promise.resolve()}
                     >
                         <WorkspacesPreview {...props} />
@@ -296,7 +287,11 @@ add('read-only', () => (
     <WebStory>
         {props => (
             <MockedTestProvider link={new WildcardMockLink(UNSTARTED_WITH_CACHE_CONNECTION_MOCKS)}>
-                <BatchSpecContextProvider batchChange={mockBatchChange()} refetchBatchChange={() => Promise.resolve()}>
+                <BatchSpecContextProvider
+                    batchChange={mockBatchChange()}
+                    batchSpec={mockBatchSpec()}
+                    refetchBatchChange={() => Promise.resolve()}
+                >
                     <WorkspacesPreview {...props} isReadOnly={true} />
                 </BatchSpecContextProvider>
             </MockedTestProvider>
