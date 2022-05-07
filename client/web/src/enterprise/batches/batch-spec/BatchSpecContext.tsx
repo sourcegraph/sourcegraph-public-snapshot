@@ -101,12 +101,14 @@ export const BatchSpecContext = React.createContext<BatchSpecContextState>(defau
 interface BatchSpecContextProviderProps {
     batchChange: EditBatchChangeFields
     refetchBatchChange?: () => Promise<unknown>
+    batchSpec?: BatchSpecExecutionFields
 }
 
 export const BatchSpecContextProvider: React.FunctionComponent<BatchSpecContextProviderProps> = ({
     children,
     batchChange,
     refetchBatchChange,
+    batchSpec: fullBatchSpec,
 }) => {
     const {
         currentSpec,
@@ -116,19 +118,19 @@ export const BatchSpecContextProvider: React.FunctionComponent<BatchSpecContextP
     // The first node from the batch specs is the latest batch spec for a batch change. If
     // it's different from the `currentSpec` on the batch change, that means the latest
     // batch spec has not yet been applied.
-    const latestSpec = nodes[0] || currentSpec
+    const batchSpec = fullBatchSpec || nodes[0] || currentSpec
     // TODO: This should probably just be a field on GraphQL.
-    const isLatestSpecApplied = useMemo(() => currentSpec.id === latestSpec.id, [currentSpec.id, latestSpec.id])
+    const isBatchSpecApplied = useMemo(() => currentSpec.id === batchSpec.id, [currentSpec.id, batchSpec.id])
 
-    const editor = useBatchSpecCode(latestSpec.originalInput, batchChange.name)
+    const editor = useBatchSpecCode(batchSpec.originalInput, batchChange.name)
     const { handleCodeChange, isValid, isServerStale } = editor
 
     const [filters, setFilters] = useState<WorkspacePreviewFilters>()
     const [executionOptions, setExecutionOptions] = useState<ExecutionOptions>(DEFAULT_EXECUTION_OPTIONS)
 
     // Manage the batch spec that was last submitted to the backend for the workspaces preview.
-    const workspacesPreview = useWorkspacesPreview(latestSpec.id, {
-        isBatchSpecApplied: isLatestSpecApplied,
+    const workspacesPreview = useWorkspacesPreview(batchSpec.id, {
+        isBatchSpecApplied,
         namespaceID: batchChange.namespace.id,
         noCache: executionOptions.runWithoutCache,
         onComplete: refetchBatchChange,
