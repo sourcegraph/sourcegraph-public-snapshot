@@ -15,6 +15,7 @@ CHECKS=(
   ./template-inlines.sh
   ./go-enterprise-import.sh
   ./go-dbconn-import.sh
+  ./go-directive.sh
   ./go-generate.sh
   ./go-lint.sh
   ./no-localhost-guard.sh
