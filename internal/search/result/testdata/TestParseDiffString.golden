@@ -1,19 +1,19 @@
-[]result.diffFile{
+[]result.DiffFile{
 	{
-		oldFile: "client/web/src/enterprise/codeintel/badge/components/IndexerSummary.module.scss",
-		newFile: "client/web/src/enterprise/codeintel/badge/components/IndexerSummary.module.scss",
+		OrigName: "client/web/src/enterprise/codeintel/badge/components/IndexerSummary.module.scss",
+		NewName:  "client/web/src/enterprise/codeintel/badge/components/IndexerSummary.module.scss",
 	},
 	{
-		oldFile: "client/web/src/enterprise/codeintel/badge/components/IndexerSummary.tsx",
-		newFile: "client/web/src/enterprise/codeintel/badge/components/IndexerSummary.tsx",
-		hunks: []result.diffHunk{
+		OrigName: "client/web/src/enterprise/codeintel/badge/components/IndexerSummary.tsx",
+		NewName:  "client/web/src/enterprise/codeintel/badge/components/IndexerSummary.tsx",
+		Hunks: []result.Hunk{
 			{
 				oldStart: 57,
 				newStart: 57,
 				oldCount: 3,
 				newCount: 3,
 				header:   "export const IndexerSummary: React.FunctionComponent<IndexerSummaryProps> = ({",
-				lines: []string{
+				Lines: []string{
 					"+.badge-wrapper {",
 					"+    font-size: 0.75rem;",
 					"+}",
@@ -33,7 +33,7 @@
 				oldCount: 3,
 				newCount: 3,
 				header:   "export const IndexerSummary: React.FunctionComponent<IndexerSummaryProps> = ({",
-				lines: []string{
+				Lines: []string{
 					"                     {summary.uploads.length + summary.indexes.length > 0 ? (",
 					`-                        <Badge variant="success" className={className}>`,
 					`+                        <Badge variant="success" small={true} className={className}>`,

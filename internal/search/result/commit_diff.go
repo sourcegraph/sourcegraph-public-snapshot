@@ -12,8 +12,9 @@ import (
 )
 
 type CommitDiffMatch struct {
-	Commit gitdomain.Commit
-	Repo   types.MinimalRepo
+	Commit  gitdomain.Commit
+	Repo    types.MinimalRepo
+	Preview *MatchedString
 	*DiffFile
 }
 
@@ -21,30 +22,14 @@ func (cd *CommitDiffMatch) RepoName() types.MinimalRepo {
 	return cd.Repo
 }
 
-// Return a file path associated with this diff. If the file was created, it
-// returns the created file path. IF the file was deleted, it returns the
-// deleted file path. If modified, returns the modified path.
-func (cm *CommitDiffMatch) Path() string {
-	if cm.OrigName == "/dev/null" {
-		return cm.NewName
-	}
-	if cm.NewName == "/dev/null" {
-		return cm.OrigName
-	}
-	return cm.OrigName
-}
-
 // Key implements Match interface's Key() method
 func (cm *CommitDiffMatch) Key() Key {
 	var nonEmptyPath string
-	pathStatus := Modified
 	if cm.OrigName == "/dev/null" {
 		nonEmptyPath = cm.NewName
-		pathStatus = Added
 	}
 	if cm.NewName == "/dev/null" {
 		nonEmptyPath = cm.OrigName
-		pathStatus = Deleted
 	}
 	return Key{
 		TypeRank:   rankDiffMatch,
@@ -52,20 +37,56 @@ func (cm *CommitDiffMatch) Key() Key {
 		AuthorDate: cm.Commit.Author.Date,
 		Commit:     cm.Commit.ID,
 		Path:       nonEmptyPath,
-		PathStatus: pathStatus,
+		PathStatus: cm.PathStatus,
 	}
 }
 
 func (cm *CommitDiffMatch) ResultCount() int {
-	return 0 // TODO
+	matchCount := len(cm.Preview.MatchedRanges)
+	if matchCount > 0 {
+		return matchCount
+	}
+	// Queries such as type:diff after:"1 week ago" don't have highlights. We count
+	// those results as 1.
+	return 1
 }
 
-func (cm *CommitDiffMatch) Limit(int) int {
-	return 0 // TODO
+func (cm *CommitDiffMatch) Limit(limit int) int {
+	limitMatchedString := func(ms *MatchedString) int {
+		if len(ms.MatchedRanges) == 0 {
+			return limit - 1
+		} else if len(ms.MatchedRanges) > limit {
+			ms.MatchedRanges = ms.MatchedRanges[:limit]
+			return 0
+		}
+		return limit - len(ms.MatchedRanges)
+	}
+
+	return limitMatchedString(cm.Preview)
 }
 
-func (cm *CommitDiffMatch) Select(filter.SelectPath) Match {
-	return nil // TODO
+func (cm *CommitDiffMatch) Select(path filter.SelectPath) Match {
+	switch path.Root() {
+	case filter.Repository:
+		return &RepoMatch{
+			Name: cm.Repo.Name,
+			ID:   cm.Repo.ID,
+		}
+	case filter.Commit:
+		fields := path[1:]
+		if len(fields) > 0 && fields[0] == "diff" {
+			if len(fields) == 1 {
+				return cm
+			}
+			if len(fields) == 2 {
+				filteredMatch := selectCommitDiffKind(cm.Preview, fields[1])
+				cm.Preview = filteredMatch
+				return cm
+			}
+			return nil
+		}
+	}
+	return nil
 }
 
 func (cm *CommitDiffMatch) searchResultMarker() {}
@@ -87,6 +108,13 @@ func ParseDiffString(diff string) (res []DiffFile, err error) {
 		switch state {
 		case INIT:
 			currentDiff.OrigName, currentDiff.NewName, err = splitDiffFiles(line)
+			if currentDiff.OrigName == "/dev/null" {
+				currentDiff.PathStatus = Added
+			} else if currentDiff.NewName == "/dev/null" {
+				currentDiff.PathStatus = Deleted
+			} else {
+				currentDiff.PathStatus = Modified
+			}
 			state = IN_DIFF
 		case IN_DIFF:
 			currentHunk.oldStart, currentHunk.oldCount, currentHunk.newStart, currentHunk.newCount, currentHunk.header, err = parseHunkHeader(line)
@@ -103,6 +131,13 @@ func ParseDiffString(diff string) (res []DiffFile, err error) {
 			default:
 				res = append(res, currentDiff)
 				currentDiff.OrigName, currentDiff.NewName, err = splitDiffFiles(line)
+				if currentDiff.OrigName == "/dev/null" {
+					currentDiff.PathStatus = Added
+				} else if currentDiff.NewName == "/dev/null" {
+					currentDiff.PathStatus = Deleted
+				} else {
+					currentDiff.PathStatus = Modified
+				}
 				state = IN_DIFF
 			}
 		}
@@ -124,7 +159,7 @@ func splitDiffFiles(fileLine string) (oldFile, newFile string, err error) {
 	return split[0], split[1], nil
 }
 
-var headerRegex = regexp.MustCompile(`@@ -(\d+),(\d+) \+(\d+),(\d+) @@ (.*)`)
+var headerRegex = regexp.MustCompile(`@@ -(\d+),(\d+) \+(\d+),(\d+) @@\ ?(.*)`)
 
 func parseHunkHeader(headerLine string) (oldStart, oldCount, newStart, newCount int, header string, err error) {
 	groups := headerRegex.FindStringSubmatch(headerLine)
@@ -152,6 +187,7 @@ func parseHunkHeader(headerLine string) (oldStart, oldCount, newStart, newCount 
 
 type DiffFile struct {
 	OrigName, NewName string
+	PathStatus        PathStatus
 	Hunks             []Hunk
 }
 
@@ -161,3 +197,11 @@ type Hunk struct {
 	header             string
 	Lines              []string
 }
+
+type PathStatus int
+
+const (
+	Modified PathStatus = iota
+	Added
+	Deleted
+)

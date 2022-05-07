@@ -46,14 +46,6 @@ const (
 	rankRepoMatch   = 3
 )
 
-type PathStatus int
-
-const (
-	Modified PathStatus = iota
-	Added
-	Deleted
-)
-
 // Key is a sorting or deduplicating key for a Match. It contains all the
 // identifying information for the Match. Keys must be comparable by struct
 // equality. If two matches have keys that are equal by struct equality, they
