@@ -55,16 +55,7 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 	features := toFeatures(searchInputs.Features)
 	repoOptions := toRepoOptions(b, searchInputs.UserSettings)
 
-	builder := &jobBuilder{
-		query:          b,
-		resultTypes:    resultTypes,
-		repoOptions:    repoOptions,
-		features:       &features,
-		fileMatchLimit: fileMatchLimit,
-		selector:       selector,
-	}
-
-	repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos := jobMode(b, resultTypes, searchInputs.PatternType, searchInputs.OnSourcegraphDotCom)
+	repoUniverseSearch, skipRepoSubsetSearch, _ := jobMode(b, resultTypes, searchInputs.PatternType, searchInputs.OnSourcegraphDotCom)
 
 	var allJobs []job.Job
 	addJob := func(job job.Job) {
@@ -101,23 +92,13 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 		if resultTypes.Has(result.TypeSymbol) {
 			// Create Symbol Search jobs over repo set.
 			if !skipRepoSubsetSearch {
-				var symbolSearchJobs []job.Job
-
-				if runZoektOverRepos {
-					job, err := builder.newZoektSearch(search.SymbolRequest)
-					if err != nil {
-						return nil, err
-					}
-					symbolSearchJobs = append(symbolSearchJobs, job)
-				}
-
-				symbolSearchJobs = append(symbolSearchJobs, &searcher.SymbolSearcherJob{
+				symbolSearchJob := &searcher.SymbolSearcherJob{
 					PatternInfo: patternInfo,
 					Limit:       maxResults,
-				})
+				}
 
 				addJob(&repoPagerJob{
-					child:            NewParallelJob(symbolSearchJobs...),
+					child:            symbolSearchJob,
 					repoOptions:      repoOptions,
 					useIndex:         b.Index(),
 					containsRefGlobs: query.ContainsRefGlobs(b.ToParseTree()),
@@ -679,7 +660,6 @@ func optimizeJobs(baseJob job.Job, inputs *run.SearchInputs, q query.Basic) (job
 		MapJob: func(currentJob job.Job) job.Job {
 			switch currentJob.(type) {
 			case
-				*zoekt.ZoektSymbolSearchJob,
 				*commit.CommitSearchJob:
 				optimizedJobs = append(optimizedJobs, currentJob)
 				return currentJob
@@ -708,12 +688,6 @@ func optimizeJobs(baseJob job.Job, inputs *run.SearchInputs, q query.Basic) (job
 	trimmer := Mapper{
 		MapJob: func(currentJob job.Job) job.Job {
 			switch currentJob.(type) {
-			case *zoekt.ZoektSymbolSearchJob:
-				if exists("ZoektSymbolSearchJob") {
-					return &NoopJob{}
-				}
-				return currentJob
-
 			case *commit.CommitSearchJob:
 				if exists("CommitSearchJob") || exists("DiffSearchJob") {
 					return &NoopJob{}
@@ -727,20 +701,6 @@ func optimizeJobs(baseJob job.Job, inputs *run.SearchInputs, q query.Basic) (job
 	}
 
 	trimmedJob := trimmer.Map(baseJob)
-
-	// wrap the optimized jobs that require repo pager
-	for i, job := range optimizedJobs {
-		switch job.(type) {
-		case
-			*zoekt.ZoektSymbolSearchJob:
-			optimizedJobs[i] = &repoPagerJob{
-				child:            job,
-				repoOptions:      toRepoOptions(q, inputs.UserSettings),
-				useIndex:         q.Index(),
-				containsRefGlobs: query.ContainsRefGlobs(q.ToParseTree()),
-			}
-		}
-	}
 
 	optimizedJob := NewParallelJob(optimizedJobs...)
 
@@ -835,6 +795,19 @@ func NewBasicJob(inputs *run.SearchInputs, q query.Basic, optimize Pass) (job.Jo
 					return nil, err
 				}
 				addJob(job)
+			}
+
+			if !skipRepoSubsetSearch && runZoektOverRepos {
+				job, err := builder.newZoektSearch(search.SymbolRequest)
+				if err != nil {
+					return nil, err
+				}
+				addJob(&repoPagerJob{
+					child:            job,
+					repoOptions:      repoOptions,
+					useIndex:         q.Index(),
+					containsRefGlobs: query.ContainsRefGlobs(q.ToParseTree()),
+				})
 			}
 		}
 	}

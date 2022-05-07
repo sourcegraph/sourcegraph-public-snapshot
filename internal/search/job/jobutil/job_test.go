@@ -109,9 +109,7 @@ func TestToSearchInputs(t *testing.T) {
   REPOPAGER
     SearcherJob)
   REPOPAGER
-    (PARALLEL
-      ZoektSymbolSearchJob
-      SymbolSearcherJob))
+    SymbolSearcherJob)
   CommitSearchJob
   RepoSearchJob
   ComputeExcludedReposJob)
@@ -129,9 +127,7 @@ func TestToSearchInputs(t *testing.T) {
   REPOPAGER
     SearcherJob)
   REPOPAGER
-    (PARALLEL
-      ZoektSymbolSearchJob
-      SymbolSearcherJob))
+    SymbolSearcherJob)
   CommitSearchJob
   RepoSearchJob
   ComputeExcludedReposJob)
