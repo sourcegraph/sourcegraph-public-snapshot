@@ -106,18 +106,6 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 			}
 		}
 
-		if resultTypes.Has(result.TypeCommit) || resultTypes.Has(result.TypeDiff) {
-			diff := resultTypes.Has(result.TypeDiff)
-			addJob(&commit.CommitSearchJob{
-				Query:                commit.QueryToGitQuery(b, diff),
-				RepoOpts:             repoOptions,
-				Diff:                 diff,
-				HasTimeFilter:        b.Exists("after") || b.Exists("before"),
-				Limit:                int(fileMatchLimit),
-				IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker),
-			})
-		}
-
 		if resultTypes.Has(result.TypeStructural) {
 			typ := search.TextRequest
 			zoektQuery, err := zoekt.QueryToZoektQuery(b, resultTypes, &features, typ)
@@ -654,10 +642,6 @@ func optimizeJobs(baseJob job.Job, inputs *run.SearchInputs, q query.Basic) (job
 	collector := Mapper{
 		MapJob: func(currentJob job.Job) job.Job {
 			switch currentJob.(type) {
-			case
-				*commit.CommitSearchJob:
-				optimizedJobs = append(optimizedJobs, currentJob)
-				return currentJob
 			default:
 				return currentJob
 			}
@@ -671,24 +655,9 @@ func optimizeJobs(baseJob job.Job, inputs *run.SearchInputs, q query.Basic) (job
 	// optimized ones (if we created an optimized global zoekt jobs, we
 	// delete all global zoekt jobs created by the default strategy).
 
-	exists := func(name string) bool {
-		for _, j := range optimizedJobs {
-			if name == j.Name() {
-				return true
-			}
-		}
-		return false
-	}
-
 	trimmer := Mapper{
 		MapJob: func(currentJob job.Job) job.Job {
 			switch currentJob.(type) {
-			case *commit.CommitSearchJob:
-				if exists("CommitSearchJob") || exists("DiffSearchJob") {
-					return &NoopJob{}
-				}
-				return currentJob
-
 			default:
 				return currentJob
 			}
@@ -798,6 +767,18 @@ func NewBasicJob(inputs *run.SearchInputs, q query.Basic, optimize Pass) (job.Jo
 					containsRefGlobs: query.ContainsRefGlobs(q.ToParseTree()),
 				})
 			}
+		}
+
+		if resultTypes.Has(result.TypeCommit) || resultTypes.Has(result.TypeDiff) {
+			diff := resultTypes.Has(result.TypeDiff)
+			addJob(&commit.CommitSearchJob{
+				Query:                commit.QueryToGitQuery(q, diff),
+				RepoOpts:             repoOptions,
+				Diff:                 diff,
+				HasTimeFilter:        q.Exists("after") || q.Exists("before"),
+				Limit:                int(fileMatchLimit),
+				IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker),
+			})
 		}
 	}
 
