@@ -826,26 +826,47 @@ func NewJob(inputs *run.SearchInputs, plan query.Plan, optimize Pass) (job.Job, 
 }
 
 func NewBasicJob(inputs *run.SearchInputs, q query.Basic, optimize Pass) (job.Job, error) {
-	child, err := toFlatJobs(inputs, q)
-	if err != nil {
-		return nil, err
+	var children []job.Job
+	addJob := func(j job.Job) {
+		children = append(children, j)
 	}
 
-	child, err = optimize(child, inputs, q)
-	if err != nil {
-		return nil, err
+	{
+		// This block generates jobs using the expansion of a basic query into
+		// flat queries, then post-optimizes the result.
+		flatJob, err := toFlatJobs(inputs, q)
+		if err != nil {
+			return nil, err
+		}
+
+		flatJob, err = optimize(flatJob, inputs, q)
+		if err != nil {
+			return nil, err
+		}
+
+		addJob(flatJob)
 	}
 
-	// Apply selectors
-	if v, _ := q.ToParseTree().StringValue(query.FieldSelect); v != "" {
-		sp, _ := filter.SelectPathFromString(v) // Invariant: select already validated
-		child = NewSelectJob(sp, child)
+	basicJob := NewParallelJob(children...)
+
+	{ // Apply selectors
+		if v, _ := q.ToParseTree().StringValue(query.FieldSelect); v != "" {
+			sp, _ := filter.SelectPathFromString(v) // Invariant: select already validated
+			basicJob = NewSelectJob(sp, basicJob)
+		}
 	}
 
-	// Apply limits and Timeouts.
-	maxResults := q.ToParseTree().MaxResults(inputs.DefaultLimit())
-	timeout := TimeoutDuration(q)
-	return NewTimeoutJob(timeout, NewLimitJob(maxResults, child)), nil
+	{ // Apply limit
+		maxResults := q.ToParseTree().MaxResults(inputs.DefaultLimit())
+		basicJob = NewLimitJob(maxResults, basicJob)
+	}
+
+	{ // Apply timeout
+		timeout := TimeoutDuration(q)
+		basicJob = NewTimeoutJob(timeout, basicJob)
+	}
+
+	return basicJob, nil
 }
 
 // FromExpandedPlan takes a query plan that has had all predicates expanded,
