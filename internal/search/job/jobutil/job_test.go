@@ -177,7 +177,7 @@ func TestToEvaluateJob(t *testing.T) {
 		}
 
 		b, _ := query.ToBasicQuery(q)
-		j, _ := ToEvaluateJob(inputs, b)
+		j, _ := toFlatJobs(inputs, b)
 		return "\n" + PrettySexp(j) + "\n"
 	}
 
