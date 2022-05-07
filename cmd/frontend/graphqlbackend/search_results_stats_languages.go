@@ -46,7 +46,7 @@ func (srs *searchResultsStats) getResults(ctx context.Context) (result.Matches, 
 			srs.err = err
 			return
 		}
-		j, err := jobutil.ToSearchJob(srs.sr.SearchInputs, b)
+		j, err := jobutil.NewFlatJob(srs.sr.SearchInputs, b)
 		if err != nil {
 			srs.err = err
 			return

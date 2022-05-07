@@ -30,7 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// ToSearchJob converts a query parse tree to the _internal_ representation
+// NewFlatJob converts a query parse tree to the _internal_ representation
 // needed to run a search routine. To understand why this conversion matters, think
 // about the fact that the query parse tree doesn't know anything about our
 // backends or architecture. It doesn't decide certain defaults, like whether we
@@ -39,8 +39,8 @@ import (
 // particular backend (e.g., skip repository resolution and just run a Zoekt
 // query on all indexed repositories) then we need to convert our tree to
 // Zoekt's internal inputs and representation. These concerns are all handled by
-// toSearchJob.
-func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error) {
+// NewFlatJob.
+func NewFlatJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 	maxResults := b.MaxResults(searchInputs.DefaultLimit())
 	types, _ := b.IncludeExcludeValues(query.FieldType)
 	resultTypes := computeResultTypes(types, b, searchInputs.PatternType)
@@ -596,10 +596,10 @@ func toPatternExpressionJob(inputs *run.SearchInputs, q query.Basic) (job.Job, e
 		case query.Or:
 			return toOrJob(inputs, q)
 		case query.Concat:
-			return ToSearchJob(inputs, q)
+			return NewFlatJob(inputs, q)
 		}
 	case query.Pattern:
-		return ToSearchJob(inputs, q)
+		return NewFlatJob(inputs, q)
 	case query.Parameter:
 		// evaluatePatternExpression does not process Parameter nodes.
 		return NewNoopJob(), nil
@@ -610,7 +610,7 @@ func toPatternExpressionJob(inputs *run.SearchInputs, q query.Basic) (job.Job, e
 
 func toFlatJobs(inputs *run.SearchInputs, q query.Basic) (job.Job, error) {
 	if q.Pattern == nil {
-		return ToSearchJob(inputs, q)
+		return NewFlatJob(inputs, q)
 	} else {
 		return toPatternExpressionJob(inputs, q)
 	}

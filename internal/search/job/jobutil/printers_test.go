@@ -174,7 +174,7 @@ func TestPrettyJSON(t *testing.T) {
 			UserSettings: &schema.Settings{},
 			Protocol:     search.Streaming,
 		}
-		j, _ := ToSearchJob(inputs, b)
+		j, _ := NewFlatJob(inputs, b)
 		return PrettyJSONVerbose(j)
 	}
 

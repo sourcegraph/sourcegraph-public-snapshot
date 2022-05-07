@@ -25,7 +25,7 @@ func TestToSearchInputs(t *testing.T) {
 			OnSourcegraphDotCom: true,
 		}
 
-		j, _ := ToSearchJob(inputs, b)
+		j, _ := NewFlatJob(inputs, b)
 		return "\n" + PrettySexp(j) + "\n"
 	}
 
