@@ -61,6 +61,19 @@ func (p Plan) ToParseTree() Q {
 	return Q(newOperator(nodes, Or))
 }
 
+type Flat struct {
+	Parameters
+	Pattern *Pattern
+}
+
+func (f *Flat) ToBasic() Basic {
+	var pattern Node
+	if f.Pattern != nil {
+		pattern = *f.Pattern
+	}
+	return Basic{Parameters: f.Parameters, Pattern: pattern}
+}
+
 // Basic represents a leaf expression to evaluate in our search engine. A basic
 // query comprises:
 //   (1) a single search pattern expression, which may contain
