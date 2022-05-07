@@ -25,73 +25,220 @@ func TestToSearchInputs(t *testing.T) {
 			OnSourcegraphDotCom: true,
 		}
 
-		j, _ := NewFlatJob(inputs, b)
+		j, _ := NewBasicJob(inputs, b)
 		return "\n" + PrettySexp(j) + "\n"
 	}
 
 	// Job generation for global vs non-global search
 	autogold.Want("user search context", `
-(PARALLEL
-  REPOPAGER
-    SearcherJob)
-  RepoSearchJob)
+(TIMEOUT
+  20s
+  (LIMIT
+    500
+    (PARALLEL
+      REPOPAGER
+        ZoektRepoSubsetSearchJob)
+      ComputeExcludedReposJob
+      (PARALLEL
+        REPOPAGER
+          SearcherJob)
+        RepoSearchJob))))
 `).Equal(t, test(`foo context:@userA`, search.Streaming, query.ParseLiteral))
 
-	autogold.Want("universal (AKA global) search context", "\nRepoSearchJob\n").Equal(t, test(`foo context:global`, search.Streaming, query.ParseLiteral))
+	autogold.Want("universal (AKA global) search context", `
+(TIMEOUT
+  20s
+  (LIMIT
+    500
+    (PARALLEL
+      ZoektGlobalSearchJob
+      ComputeExcludedReposJob
+      RepoSearchJob)))
+`).Equal(t, test(`foo context:global`, search.Streaming, query.ParseLiteral))
 
-	autogold.Want("universal (AKA global) search", "\nRepoSearchJob\n").Equal(t, test(`foo`, search.Streaming, query.ParseLiteral))
+	autogold.Want("universal (AKA global) search", `
+(TIMEOUT
+  20s
+  (LIMIT
+    500
+    (PARALLEL
+      ZoektGlobalSearchJob
+      ComputeExcludedReposJob
+      RepoSearchJob)))
+`).Equal(t, test(`foo`, search.Streaming, query.ParseLiteral))
 
 	autogold.Want("nonglobal repo", `
-(PARALLEL
-  REPOPAGER
-    SearcherJob)
-  RepoSearchJob)
+(TIMEOUT
+  20s
+  (LIMIT
+    500
+    (PARALLEL
+      REPOPAGER
+        ZoektRepoSubsetSearchJob)
+      ComputeExcludedReposJob
+      (PARALLEL
+        REPOPAGER
+          SearcherJob)
+        RepoSearchJob))))
 `).Equal(t, test(`foo repo:sourcegraph/sourcegraph`, search.Streaming, query.ParseLiteral))
 
 	autogold.Want("nonglobal repo contains", `
-(PARALLEL
-  REPOPAGER
-    SearcherJob)
-  RepoSearchJob)
+(TIMEOUT
+  20s
+  (LIMIT
+    500
+    (PARALLEL
+      REPOPAGER
+        ZoektRepoSubsetSearchJob)
+      ComputeExcludedReposJob
+      (PARALLEL
+        REPOPAGER
+          SearcherJob)
+        RepoSearchJob))))
 `).Equal(t, test(`foo repo:contains(bar)`, search.Streaming, query.ParseLiteral))
 
 	// Job generation support for implied `type:repo` queries.
-	autogold.Want("supported Repo job", "\nRepoSearchJob\n").Equal(t, test("ok ok", search.Streaming, query.ParseRegexp))
+	autogold.Want("supported Repo job", `
+(TIMEOUT
+  20s
+  (LIMIT
+    500
+    (PARALLEL
+      ZoektGlobalSearchJob
+      ComputeExcludedReposJob
+      RepoSearchJob)))
+`).Equal(t, test("ok ok", search.Streaming, query.ParseRegexp))
 
-	autogold.Want("supportedRepo job literal", "\nRepoSearchJob\n").Equal(t, test("ok @thing", search.Streaming, query.ParseLiteral))
+	autogold.Want("supportedRepo job literal", `
+(TIMEOUT
+  20s
+  (LIMIT
+    500
+    (PARALLEL
+      ZoektGlobalSearchJob
+      ComputeExcludedReposJob
+      RepoSearchJob)))
+`).Equal(t, test("ok @thing", search.Streaming, query.ParseLiteral))
 
-	autogold.Want("unsupported Repo job prefix", "\nNoopJob\n").Equal(t, test("@nope", search.Streaming, query.ParseRegexp))
+	autogold.Want("unsupported Repo job prefix", `
+(TIMEOUT
+  20s
+  (LIMIT
+    500
+    (PARALLEL
+      ZoektGlobalSearchJob
+      ComputeExcludedReposJob
+      NoopJob)))
+`).Equal(t, test("@nope", search.Streaming, query.ParseRegexp))
 
-	autogold.Want("unsupported Repo job regexp", "\nNoopJob\n").Equal(t, test("foo @bar", search.Streaming, query.ParseRegexp))
+	autogold.Want("unsupported Repo job regexp", `
+(TIMEOUT
+  20s
+  (LIMIT
+    500
+    (PARALLEL
+      ZoektGlobalSearchJob
+      ComputeExcludedReposJob
+      NoopJob)))
+`).Equal(t, test("foo @bar", search.Streaming, query.ParseRegexp))
 
 	// Job generation for other types of search
-	autogold.Want("symbol", "\nNoopJob\n").Equal(t, test("type:symbol test", search.Streaming, query.ParseRegexp))
+	autogold.Want("symbol", `
+(TIMEOUT
+  20s
+  (LIMIT
+    500
+    (PARALLEL
+      RepoUniverseSymbolSearchJob
+      ComputeExcludedReposJob
+      NoopJob)))
+`).Equal(t, test("type:symbol test", search.Streaming, query.ParseRegexp))
 
-	autogold.Want("commit", "\nNoopJob\n").Equal(t, test("type:commit test", search.Streaming, query.ParseRegexp))
+	autogold.Want("commit", `
+(TIMEOUT
+  20s
+  (LIMIT
+    500
+    (PARALLEL
+      CommitSearchJob
+      ComputeExcludedReposJob
+      NoopJob)))
+`).Equal(t, test("type:commit test", search.Streaming, query.ParseRegexp))
 
-	autogold.Want("diff", "\nNoopJob\n").Equal(t, test("type:diff test", search.Streaming, query.ParseRegexp))
+	autogold.Want("diff", `
+(TIMEOUT
+  20s
+  (LIMIT
+    500
+    (PARALLEL
+      DiffSearchJob
+      ComputeExcludedReposJob
+      NoopJob)))
+`).Equal(t, test("type:diff test", search.Streaming, query.ParseRegexp))
 
-	autogold.Want("Streaming: file or commit", "\nNoopJob\n").Equal(t, test("type:file type:commit test", search.Streaming, query.ParseRegexp))
+	autogold.Want("Streaming: file or commit", `
+(TIMEOUT
+  20s
+  (LIMIT
+    500
+    (PARALLEL
+      ZoektGlobalSearchJob
+      CommitSearchJob
+      ComputeExcludedReposJob
+      NoopJob)))
+`).Equal(t, test("type:file type:commit test", search.Streaming, query.ParseRegexp))
 
 	autogold.Want("Streaming: many types", `
-(PARALLEL
-  REPOPAGER
-    SearcherJob)
-  REPOPAGER
-    SymbolSearcherJob)
-  RepoSearchJob)
+(TIMEOUT
+  20s
+  (LIMIT
+    500
+    (PARALLEL
+      REPOPAGER
+        ZoektRepoSubsetSearchJob)
+      REPOPAGER
+        ZoektSymbolSearchJob)
+      CommitSearchJob
+      ComputeExcludedReposJob
+      (PARALLEL
+        REPOPAGER
+          SearcherJob)
+        REPOPAGER
+          SymbolSearcherJob)
+        RepoSearchJob))))
 `).Equal(t, test("type:file type:path type:repo type:commit type:symbol repo:test test", search.Streaming, query.ParseRegexp))
 
 	// Priority jobs for Batched search.
-	autogold.Want("Batched: file or commit", "\nNoopJob\n").Equal(t, test("type:file type:commit test", search.Batch, query.ParseRegexp))
+	autogold.Want("Batched: file or commit", `
+(TIMEOUT
+  20s
+  (LIMIT
+    30
+    (PARALLEL
+      ZoektGlobalSearchJob
+      CommitSearchJob
+      ComputeExcludedReposJob
+      NoopJob)))
+`).Equal(t, test("type:file type:commit test", search.Batch, query.ParseRegexp))
 
 	autogold.Want("Batched: many types", `
-(PARALLEL
-  REPOPAGER
-    SearcherJob)
-  REPOPAGER
-    SymbolSearcherJob)
-  RepoSearchJob)
+(TIMEOUT
+  20s
+  (LIMIT
+    30
+    (PARALLEL
+      REPOPAGER
+        ZoektRepoSubsetSearchJob)
+      REPOPAGER
+        ZoektSymbolSearchJob)
+      CommitSearchJob
+      ComputeExcludedReposJob
+      (PARALLEL
+        REPOPAGER
+          SearcherJob)
+        REPOPAGER
+          SymbolSearcherJob)
+        RepoSearchJob))))
 `).Equal(t, test("type:file type:path type:repo type:commit type:symbol repo:test test", search.Batch, query.ParseRegexp))
 }
 
