@@ -1,7 +1,13 @@
 import { storiesOf } from '@storybook/react'
 
 import { WebStory } from '../../../../components/WebStory'
-import { COMPLETED_BATCH_SPEC, EXECUTING_BATCH_SPEC, FAILED_BATCH_SPEC, mockBatchChange } from '../batch-spec.mock'
+import {
+    COMPLETED_BATCH_SPEC,
+    COMPLETED_WITH_ERRORS_BATCH_SPEC,
+    EXECUTING_BATCH_SPEC,
+    FAILED_BATCH_SPEC,
+    mockBatchChange,
+} from '../batch-spec.mock'
 import { BatchSpecContextProvider } from '../BatchSpecContext'
 
 import { ActionsMenu } from './ActionsMenu'
@@ -34,6 +40,16 @@ add('completed', () => (
     <WebStory>
         {props => (
             <BatchSpecContextProvider batchChange={mockBatchChange()} batchSpec={COMPLETED_BATCH_SPEC}>
+                <ActionsMenu {...props} />
+            </BatchSpecContextProvider>
+        )}
+    </WebStory>
+))
+
+add('completed with errors', () => (
+    <WebStory>
+        {props => (
+            <BatchSpecContextProvider batchChange={mockBatchChange()} batchSpec={COMPLETED_WITH_ERRORS_BATCH_SPEC}>
                 <ActionsMenu {...props} />
             </BatchSpecContextProvider>
         )}
