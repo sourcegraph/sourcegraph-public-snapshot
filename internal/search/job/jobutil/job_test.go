@@ -144,57 +144,6 @@ func TestToEvaluateJob(t *testing.T) {
 `).Equal(t, test("foo", search.Batch))
 }
 
-func Test_optimizeJobs(t *testing.T) {
-	test := func(input string) string {
-		plan, _ := query.Pipeline(query.InitLiteral(input))
-		inputs := &run.SearchInputs{
-			UserSettings:        &schema.Settings{},
-			PatternType:         query.SearchTypeLiteralDefault,
-			Protocol:            search.Streaming,
-			OnSourcegraphDotCom: true,
-		}
-
-		baseJob, _ := NewJob(inputs, plan, IdentityPass)
-		optimizedJob, _ := NewJob(inputs, plan, OptimizationPass)
-		return "INPUT:\n\n" + input + "\n\nBASE:\n\n" + PrettySexp(baseJob) + "\n\nOPTIMIZED:\n\n" + PrettySexp(optimizedJob) + "\n"
-	}
-
-	cases := []struct {
-		name  string
-		query string
-	}{{
-		name:  "optimize basic expression Zoekt Text Global",
-		query: "foo and bar and not baz",
-	}, {
-		name:  "optimize repo-qualified expression Zoekt Text over repos",
-		query: "repo:derp foo and bar not baz",
-	}, {
-		name:  "optimize repo-qualified expression Zoekt Text over repos",
-		query: "repo:derp foo and bar not baz",
-	}, {
-		name:  "optimize qualified repo with type:symbol expression Zoekt Symbol over repos",
-		query: "repo:derp foo and bar not baz type:symbol",
-	}, {
-		name:  "commit with and",
-		query: "type:commit a and b",
-	}, {
-		name:  "commit with or",
-		query: "type:commit a or b",
-	}, {
-		name:  "diff with and",
-		query: "type:diff a and b",
-	}, {
-		name:  "diff with or",
-		query: "type:diff a or b",
-	}}
-
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			autogold.Equal(t, autogold.Raw(test(tc.query)))
-		})
-	}
-}
-
 func TestToTextPatternInfo(t *testing.T) {
 	cases := []struct {
 		input  string
