@@ -23,10 +23,9 @@ export interface BatchSpecContextErrors {
     execute?: string | Error
 }
 
-type MinimalBatchSpecFields = EditBatchChangeFields['currentSpec'] & { contextType: 'minimal' }
-type FullBatchSpecFields = BatchSpecExecutionFields & { contextType: 'full' }
+type MinimalBatchSpecFields = EditBatchChangeFields['currentSpec'] & Partial<BatchSpecExecutionFields>
 
-type NewBatchSpecState = (MinimalBatchSpecFields | FullBatchSpecFields) & {
+type NewBatchSpecState<BatchSpecFields extends MinimalBatchSpecFields> = BatchSpecFields & {
     // Whether or not the batch spec has already been applied.
     isApplied: boolean
     // Execution URL for this batch spec.
@@ -69,9 +68,9 @@ const DEFAULT_EXECUTION_OPTIONS: ExecutionOptions = {
     runWithoutCache: false,
 }
 
-export interface BatchSpecContextState {
+export interface BatchSpecContextState<BatchSpecFields extends MinimalBatchSpecFields> {
     readonly batchChange: EditBatchChangeFields
-    readonly batchSpec: NewBatchSpecState
+    readonly batchSpec: NewBatchSpecState<BatchSpecFields>
 
     // API for state managing the batch spec input YAML code in the Monaco editor.
     readonly editor: EditorState
@@ -82,11 +81,11 @@ export interface BatchSpecContextState {
     readonly errors: BatchSpecContextErrors
 }
 
-export const defaultState = (): BatchSpecContextState => ({
+export const defaultState = (): BatchSpecContextState<MinimalBatchSpecFields> => ({
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     batchChange: {} as EditBatchChangeFields,
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-    batchSpec: {} as NewBatchSpecState,
+    batchSpec: {} as NewBatchSpecState<MinimalBatchSpecFields>,
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     editor: {} as EditorState,
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
@@ -94,34 +93,22 @@ export const defaultState = (): BatchSpecContextState => ({
     errors: {},
 })
 
-/**
- * TODO:
- *
- * @see BatchSpecContextProvider
- */
-export const BatchSpecContext = React.createContext<BatchSpecContextState>(defaultState())
+const BatchSpecContext = React.createContext<BatchSpecContextState<MinimalBatchSpecFields>>(defaultState())
 
-interface BatchSpecContextProviderProps {
+interface BatchSpecContextProviderProps<BatchSpecFields extends MinimalBatchSpecFields> {
     batchChange: EditBatchChangeFields
     refetchBatchChange?: () => Promise<unknown>
-    batchSpec?: BatchSpecExecutionFields
+    batchSpec: BatchSpecFields
 }
 
-export const BatchSpecContextProvider: React.FunctionComponent<BatchSpecContextProviderProps> = ({
+export const BatchSpecContextProvider = <BatchSpecFields extends MinimalBatchSpecFields>({
     children,
     batchChange,
     refetchBatchChange,
-    batchSpec: fullBatchSpec,
-}) => {
-    const {
-        currentSpec,
-        batchSpecs: { nodes },
-    } = batchChange
+    batchSpec,
+}: React.PropsWithChildren<BatchSpecContextProviderProps<BatchSpecFields>>): JSX.Element => {
+    const { currentSpec } = batchChange
 
-    // The first node from the batch specs is the latest batch spec for a batch change. If
-    // it's different from the `currentSpec` on the batch change, that means the latest
-    // batch spec has not yet been applied.
-    const batchSpec = fullBatchSpec || nodes[0] || currentSpec
     // TODO: This should probably just be a field on GraphQL.
     const isBatchSpecApplied = useMemo(() => currentSpec.id === batchSpec.id, [currentSpec.id, batchSpec.id])
 
@@ -204,16 +191,12 @@ export const BatchSpecContextProvider: React.FunctionComponent<BatchSpecContextP
         ]
     )
 
-    const batchSpecFields = fullBatchSpec
-        ? { ...fullBatchSpec, contextType: 'full' as const }
-        : { ...batchSpec, contextType: 'minimal' as const }
-
     return (
         <BatchSpecContext.Provider
             value={{
                 batchChange,
                 batchSpec: {
-                    ...batchSpecFields,
+                    ...batchSpec,
                     isApplied: isBatchSpecApplied,
                     executionURL: `${batchChange.url}/executions/${batchSpec.id}`,
                 },
@@ -230,11 +213,23 @@ export const BatchSpecContextProvider: React.FunctionComponent<BatchSpecContextP
                     codeUpdate: editor.errors.update,
                     codeValidation: editor.errors.validation,
                     preview: workspacesPreview.error,
-                    execute: executeError || fullBatchSpec?.failureMessage || undefined,
+                    execute: executeError || batchSpec.failureMessage || undefined,
                 },
             }}
         >
             {children}
         </BatchSpecContext.Provider>
     )
+}
+
+export const useBatchSpecContext = <
+    BatchSpecFields extends MinimalBatchSpecFields = MinimalBatchSpecFields
+>(): BatchSpecContextState<BatchSpecFields> => {
+    const context = React.useContext<BatchSpecContextState<BatchSpecFields>>(
+        (BatchSpecContext as unknown) as React.Context<BatchSpecContextState<BatchSpecFields>>
+    )
+    if (!context) {
+        throw new Error('useBatchSpecContext must be used under BatchSpecContextProvider')
+    }
+    return context
 }

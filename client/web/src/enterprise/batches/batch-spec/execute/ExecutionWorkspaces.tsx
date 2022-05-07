@@ -1,4 +1,4 @@
-import { useCallback, useContext } from 'react'
+import { useCallback } from 'react'
 
 import { useHistory } from 'react-router'
 
@@ -6,7 +6,8 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Card, CardBody, Panel } from '@sourcegraph/wildcard'
 
-import { BatchSpecContext } from '../BatchSpecContext'
+import { BatchSpecExecutionFields } from '../../../../graphql-operations'
+import { useBatchSpecContext } from '../BatchSpecContext'
 
 import { WorkspaceDetails } from './WorkspaceDetails'
 import { Workspaces } from './workspaces/Workspaces'
@@ -24,7 +25,7 @@ export const ExecutionWorkspaces: React.FunctionComponent<React.PropsWithChildre
     isLightTheme,
 }) => {
     const history = useHistory()
-    const { batchSpec, errors } = useContext(BatchSpecContext)
+    const { batchSpec, errors } = useBatchSpecContext<BatchSpecExecutionFields>()
 
     const deselectWorkspace = useCallback(() => history.push(batchSpec.executionURL), [batchSpec.executionURL, history])
 

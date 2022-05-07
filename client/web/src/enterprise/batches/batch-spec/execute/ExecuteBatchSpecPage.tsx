@@ -1,4 +1,4 @@
-import React, { useContext, useMemo } from 'react'
+import React, { useMemo } from 'react'
 
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
@@ -18,6 +18,7 @@ import { Timestamp } from '../../../../components/time/Timestamp'
 import {
     BatchSpecExecutionByIDResult,
     BatchSpecExecutionByIDVariables,
+    BatchSpecExecutionFields,
     GetBatchChangeToEditResult,
     GetBatchChangeToEditVariables,
     Scalars,
@@ -27,7 +28,7 @@ import {
 import { GET_BATCH_CHANGE_TO_EDIT } from '../../create/backend'
 import { ConfigurationForm } from '../../create/ConfigurationForm'
 import { NewBatchChangePreviewPage } from '../../preview/BatchChangePreviewPage'
-import { BatchSpecContext, BatchSpecContextProvider } from '../BatchSpecContext'
+import { BatchSpecContextProvider, useBatchSpecContext } from '../BatchSpecContext'
 import { BatchChangeHeader } from '../header/BatchChangeHeader'
 import { TabBar, TabsConfig } from '../TabBar'
 
@@ -104,7 +105,7 @@ interface ExecuteBatchSpecPageContentProps
 const ExecuteBatchSpecPageContent: React.FunctionComponent<
     React.PropsWithChildren<ExecuteBatchSpecPageContentProps>
 > = ({ isLightTheme, match, settingsCascade, telemetryService, authenticatedUser }) => {
-    const { batchChange, batchSpec } = useContext(BatchSpecContext)
+    const { batchChange, batchSpec } = useBatchSpecContext<BatchSpecExecutionFields>()
     const { executionURL } = batchSpec
 
     const tabsConfig = useMemo<TabsConfig[]>(
@@ -117,18 +118,6 @@ const ExecuteBatchSpecPageContent: React.FunctionComponent<
         [batchSpec.applyURL]
     )
 
-    const description =
-        batchSpec.contextType === 'full' ? (
-            <>
-                Created <Timestamp date={batchSpec.createdAt} /> by{' '}
-                <LinkOrSpan to={batchSpec.creator?.url}>
-                    {batchSpec.creator?.displayName || batchSpec.creator?.username || 'a deleted user'}
-                </LinkOrSpan>
-            </>
-        ) : (
-            batchChange.description
-        )
-
     return (
         <div className={layoutStyles.pageContainer}>
             <div className={layoutStyles.headerContainer}>
@@ -138,7 +127,14 @@ const ExecuteBatchSpecPageContent: React.FunctionComponent<
                         text: batchChange.namespace.namespaceName,
                     }}
                     title={{ to: batchChange.url, text: batchChange.name }}
-                    description={description}
+                    description={
+                        <>
+                            Created <Timestamp date={batchSpec.createdAt} /> by{' '}
+                            <LinkOrSpan to={batchSpec.creator?.url}>
+                                {batchSpec.creator?.displayName || batchSpec.creator?.username || 'a deleted user'}
+                            </LinkOrSpan>
+                        </>
+                    }
                 />
             </div>
 

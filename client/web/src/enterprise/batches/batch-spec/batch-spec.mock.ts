@@ -18,6 +18,7 @@ import {
     ChangesetSpecType,
     VisibleBatchSpecWorkspaceFields,
     BatchSpecWorkspaceStepFields,
+    BatchSpecExecutionFields,
 } from '../../../graphql-operations'
 import { IMPORTING_CHANGESETS, WORKSPACES, WORKSPACE_RESOLUTION_STATUS } from '../create/backend'
 
@@ -54,11 +55,33 @@ export const mockBatchSpec = (
 ): EditBatchChangeFields['currentSpec'] => ({
     __typename: 'BatchSpec',
     id: '1',
+    state: BatchSpecState.PENDING,
     originalInput: 'name: my-batch-change',
     createdAt: now.toISOString(),
     startedAt: null,
     applyURL: null,
+    ...batchSpec,
+})
+
+export const mockFullBatchSpec = (batchSpec?: Partial<BatchSpecExecutionFields>): BatchSpecExecutionFields => ({
+    __typename: 'BatchSpec',
+    id: '1',
     state: BatchSpecState.PENDING,
+    originalInput: 'name: my-batch-change',
+    createdAt: now.toISOString(),
+    startedAt: null,
+    finishedAt: null,
+    failureMessage: null,
+    applyURL: null,
+    viewerCanRetry: true,
+    description: {
+        __typename: 'BatchChangeDescription',
+        name: 'my-batch-change',
+    },
+    creator: MOCK_USER_NAMESPACE,
+    namespace: MOCK_USER_NAMESPACE,
+    appliesToBatchChange: mockBatchChange(),
+    workspaceResolution: null,
     ...batchSpec,
 })
 
