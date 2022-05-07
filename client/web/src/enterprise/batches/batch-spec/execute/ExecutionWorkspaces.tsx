@@ -6,9 +6,10 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Card, CardBody, Panel } from '@sourcegraph/wildcard'
 
-import { WorkspaceDetails } from '../../execution/WorkspaceDetails'
-import { Workspaces } from '../../execution/workspaces/Workspaces'
 import { BatchSpecContext } from '../BatchSpecContext'
+
+import { WorkspaceDetails } from './WorkspaceDetails'
+import { Workspaces } from './workspaces/Workspaces'
 
 import styles from './ExecutionWorkspaces.module.scss'
 

@@ -9,7 +9,7 @@ import TimerSandIcon from 'mdi-react/TimerSandIcon'
 
 import { LoadingSpinner, Icon } from '@sourcegraph/wildcard'
 
-import { BatchSpecWorkspaceState } from '../../../graphql-operations'
+import { BatchSpecWorkspaceState } from '../../../../graphql-operations'
 
 export interface WorkspaceStateIconProps {
     state: BatchSpecWorkspaceState

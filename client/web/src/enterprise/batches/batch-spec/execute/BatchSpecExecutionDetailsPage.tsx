@@ -31,21 +31,21 @@ import {
     Panel,
 } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../auth'
-import { BatchChangesIcon } from '../../../batches/icons'
-import { HeroPage } from '../../../components/HeroPage'
-import { LoaderButton } from '../../../components/LoaderButton'
-import { PageTitle } from '../../../components/PageTitle'
-import { Duration } from '../../../components/time/Duration'
-import { Timestamp } from '../../../components/time/Timestamp'
+import { AuthenticatedUser } from '../../../../auth'
+import { BatchChangesIcon } from '../../../../batches/icons'
+import { HeroPage } from '../../../../components/HeroPage'
+import { LoaderButton } from '../../../../components/LoaderButton'
+import { PageTitle } from '../../../../components/PageTitle'
+import { Duration } from '../../../../components/time/Duration'
+import { Timestamp } from '../../../../components/time/Timestamp'
 import {
     BatchSpecExecutionByIDResult,
     BatchSpecExecutionByIDVariables,
     BatchSpecExecutionFields,
     Scalars,
-} from '../../../graphql-operations'
-import { BatchSpec } from '../BatchSpec'
-import { NewBatchChangePreviewPage } from '../preview/BatchChangePreviewPage'
+} from '../../../../graphql-operations'
+import { BatchSpec } from '../../BatchSpec'
+import { NewBatchChangePreviewPage } from '../../preview/BatchChangePreviewPage'
 
 import { useCancelBatchSpecExecution, FETCH_BATCH_SPEC_EXECUTION, useRetryBatchSpecExecution } from './backend'
 import { BatchSpecStateBadge } from './BatchSpecStateBadge'

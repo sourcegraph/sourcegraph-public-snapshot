@@ -1,8 +1,11 @@
 import React from 'react'
 
-import { DiffStat } from '../../../../components/diff/DiffStat'
-import { HiddenBatchSpecWorkspaceListFields, VisibleBatchSpecWorkspaceListFields } from '../../../../graphql-operations'
-import { Descriptor, ListItem } from '../../workspaces-list'
+import { DiffStat } from '../../../../../components/diff/DiffStat'
+import {
+    HiddenBatchSpecWorkspaceListFields,
+    VisibleBatchSpecWorkspaceListFields,
+} from '../../../../../graphql-operations'
+import { Descriptor, ListItem } from '../../../workspaces-list'
 import { WorkspaceStateIcon } from '../WorkspaceStateIcon'
 
 import styles from './WorkspacesListItem.module.scss'

@@ -5,9 +5,9 @@ import { map } from 'rxjs/operators'
 import { asError, ErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql, useMutation, useQuery } from '@sourcegraph/http-client'
 
-import { fileDiffFields } from '../../../backend/diff'
-import { requestGraphQL } from '../../../backend/graphql'
-import { useConnection, UseConnectionResult } from '../../../components/FilteredConnection/hooks/useConnection'
+import { fileDiffFields } from '../../../../backend/diff'
+import { requestGraphQL } from '../../../../backend/graphql'
+import { useConnection, UseConnectionResult } from '../../../../components/FilteredConnection/hooks/useConnection'
 import {
     BatchSpecWorkspaceByIDResult,
     BatchSpecWorkspaceByIDVariables,
@@ -28,7 +28,7 @@ import {
     HiddenBatchSpecWorkspaceListFields,
     RetryWorkspaceExecutionResult,
     RetryWorkspaceExecutionVariables,
-} from '../../../graphql-operations'
+} from '../../../../graphql-operations'
 
 const batchSpecWorkspaceFieldsFragment = gql`
     fragment BatchSpecWorkspaceFields on BatchSpecWorkspace {

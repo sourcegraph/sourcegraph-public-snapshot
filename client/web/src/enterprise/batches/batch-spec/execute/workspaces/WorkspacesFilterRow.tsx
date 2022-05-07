@@ -6,7 +6,7 @@ import { useHistory } from 'react-router'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Input, Select } from '@sourcegraph/wildcard'
 
-import { BatchSpecWorkspaceState } from '../../../../graphql-operations'
+import { BatchSpecWorkspaceState } from '../../../../../graphql-operations'
 import { isValidBatchSpecWorkspaceState } from '../util'
 
 export interface WorkspaceFilters {

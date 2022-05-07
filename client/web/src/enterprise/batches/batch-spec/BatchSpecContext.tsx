@@ -6,8 +6,8 @@ import {
     BatchSpecWorkspaceResolutionState,
     EditBatchChangeFields,
 } from '../../../graphql-operations'
-import { useExecuteBatchSpec } from '../create/useExecuteBatchSpec'
 
+import { useExecuteBatchSpec } from './edit/useExecuteBatchSpec'
 import { WorkspacePreviewFilters } from './edit/workspaces-preview/useWorkspaces'
 import { useWorkspacesPreview, UseWorkspacesPreviewResult } from './edit/workspaces-preview/useWorkspacesPreview'
 import { useBatchSpecCode, UseBatchSpecCodeResult } from './useBatchSpecCode'
@@ -23,7 +23,10 @@ export interface BatchSpecContextErrors {
     execute?: string | Error
 }
 
-type NewBatchSpecState = EditBatchChangeFields['currentSpec'] & {
+type MinimalBatchSpecFields = EditBatchChangeFields['currentSpec'] & { contextType: 'minimal' }
+type FullBatchSpecFields = BatchSpecExecutionFields & { contextType: 'full' }
+
+type NewBatchSpecState = (MinimalBatchSpecFields | FullBatchSpecFields) & {
     // Whether or not the batch spec has already been applied.
     isApplied: boolean
     // Execution URL for this batch spec.
@@ -201,12 +204,16 @@ export const BatchSpecContextProvider: React.FunctionComponent<BatchSpecContextP
         ]
     )
 
+    const batchSpecFields = fullBatchSpec
+        ? { ...fullBatchSpec, contextType: 'full' as const }
+        : { ...batchSpec, contextType: 'minimal' as const }
+
     return (
         <BatchSpecContext.Provider
             value={{
                 batchChange,
                 batchSpec: {
-                    ...batchSpec,
+                    ...batchSpecFields,
                     isApplied: isBatchSpecApplied,
                     executionURL: `${batchChange.url}/executions/${batchSpec.id}`,
                 },

@@ -10,10 +10,10 @@ import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import { isDefined } from '@sourcegraph/common'
 import { Button, Modal, Icon } from '@sourcegraph/wildcard'
 
-import { ExecutionLogEntry } from '../../../components/ExecutionLogEntry'
-import { Timeline, TimelineStage } from '../../../components/Timeline'
-import { BatchSpecWorkspaceState, VisibleBatchSpecWorkspaceFields } from '../../../graphql-operations'
-import { ExecutorNode } from '../../executors/ExecutorsListPage'
+import { ExecutionLogEntry } from '../../../../components/ExecutionLogEntry'
+import { Timeline, TimelineStage } from '../../../../components/Timeline'
+import { BatchSpecWorkspaceState, VisibleBatchSpecWorkspaceFields } from '../../../../graphql-operations'
+import { ExecutorNode } from '../../../executors/ExecutorsListPage'
 
 import styles from './TimelineModal.module.scss'
 

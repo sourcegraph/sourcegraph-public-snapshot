@@ -2,10 +2,10 @@ import { useState } from 'react'
 
 import { storiesOf } from '@storybook/react'
 
-import { WebStory } from '../../../../components/WebStory'
-import { BatchSpecWorkspaceState } from '../../../../graphql-operations'
+import { WebStory } from '../../../../../components/WebStory'
+import { BatchSpecWorkspaceState } from '../../../../../graphql-operations'
+import { mockWorkspace } from '../../batch-spec.mock'
 
-import { mockWorkspace } from './WorkspacesList.mock'
 import { WorkspacesListItem } from './WorkspacesListItem'
 
 const { add } = storiesOf('web/batches/batch-spec/execute/WorkspacesList', module).addDecorator(story => (

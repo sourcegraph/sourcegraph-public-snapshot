@@ -8,14 +8,8 @@ import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { CardBody, Card } from '@sourcegraph/wildcard'
 
-import { BatchSpecWorkspaceByIDResult } from '../../../graphql-operations'
-import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from '../preview/list/backend'
-
-import {
-    BATCH_SPEC_WORKSPACE_BY_ID,
-    queryBatchSpecWorkspaceStepFileDiffs as _queryBatchSpecWorkspaceStepFileDiffs,
-} from './backend'
-import { WorkspaceDetails } from './WorkspaceDetails'
+import { BatchSpecWorkspaceByIDResult } from '../../../../graphql-operations'
+import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from '../../preview/list/backend'
 import {
     HIDDEN_WORKSPACE,
     QUEUED_WORKSPACE,
@@ -27,7 +21,13 @@ import {
     FAILED_WORKSPACE,
     CANCELING_WORKSPACE,
     CANCELED_WORKSPACE,
-} from './WorkspaceDetails.mock'
+} from '../batch-spec.mock'
+
+import {
+    BATCH_SPEC_WORKSPACE_BY_ID,
+    queryBatchSpecWorkspaceStepFileDiffs as _queryBatchSpecWorkspaceStepFileDiffs,
+} from './backend'
+import { WorkspaceDetails } from './WorkspaceDetails'
 
 const queryChangesetSpecFileDiffs = () =>
     of({ totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] })

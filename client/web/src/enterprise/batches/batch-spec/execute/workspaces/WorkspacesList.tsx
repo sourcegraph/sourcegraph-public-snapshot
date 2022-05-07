@@ -2,7 +2,7 @@ import React from 'react'
 
 import { useHistory } from 'react-router'
 
-import { UseConnectionResult } from '../../../../components/FilteredConnection/hooks/useConnection'
+import { UseConnectionResult } from '../../../../../components/FilteredConnection/hooks/useConnection'
 import {
     ConnectionContainer,
     ConnectionError,
@@ -11,12 +11,12 @@ import {
     ConnectionSummary,
     ShowMoreButton,
     SummaryContainer,
-} from '../../../../components/FilteredConnection/ui'
+} from '../../../../../components/FilteredConnection/ui'
 import {
     HiddenBatchSpecWorkspaceListFields,
     Scalars,
     VisibleBatchSpecWorkspaceListFields,
-} from '../../../../graphql-operations'
+} from '../../../../../graphql-operations'
 
 import { WorkspacesListItem } from './WorkspacesListItem'
 
