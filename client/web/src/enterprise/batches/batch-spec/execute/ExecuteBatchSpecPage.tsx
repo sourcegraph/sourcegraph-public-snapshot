@@ -159,12 +159,7 @@ const ExecuteBatchSpecPageContent: React.FunctionComponent<
                     render={() => (
                         <>
                             <TabBar activeTabKey="spec" tabsConfig={tabsConfig} matchURL={executionURL} />
-                            <ReadOnlyBatchSpecForm
-                                batchChange={batchChange}
-                                originalInput={batchSpec.originalInput}
-                                executionState={batchSpec.state}
-                                isLightTheme={isLightTheme}
-                            />
+                            <ReadOnlyBatchSpecForm isLightTheme={isLightTheme} />
                         </>
                     )}
                     exact={true}

@@ -3,7 +3,8 @@ import { storiesOf } from '@storybook/react'
 
 import { WebStory } from '../../../../components/WebStory'
 import { BatchSpecState } from '../../../../graphql-operations'
-import { mockBatchChange, mockBatchSpec } from '../batch-spec.mock'
+import { mockBatchChange, mockFullBatchSpec } from '../batch-spec.mock'
+import { BatchSpecContextProvider } from '../BatchSpecContext'
 
 import { ReadOnlyBatchSpecForm } from './ReadOnlyBatchSpecForm'
 
@@ -22,16 +23,18 @@ const { add } = storiesOf('web/batches/batch-spec/execute/ReadOnlyBatchSpecForm'
 add('while executing', () => (
     <WebStory>
         {props => (
-            <ReadOnlyBatchSpecForm
-                {...props}
+            <BatchSpecContextProvider
                 batchChange={mockBatchChange()}
-                originalInput={mockBatchSpec().originalInput}
-                executionState={select(
-                    'batch spec state',
-                    [BatchSpecState.PROCESSING, BatchSpecState.QUEUED],
-                    BatchSpecState.PROCESSING
-                )}
-            />
+                batchSpec={mockFullBatchSpec({
+                    state: select(
+                        'batch spec state',
+                        [BatchSpecState.PROCESSING, BatchSpecState.QUEUED],
+                        BatchSpecState.PROCESSING
+                    ),
+                })}
+            >
+                <ReadOnlyBatchSpecForm {...props} />
+            </BatchSpecContextProvider>
         )}
     </WebStory>
 ))
@@ -39,22 +42,24 @@ add('while executing', () => (
 add('after execution finishes', () => (
     <WebStory>
         {props => (
-            <ReadOnlyBatchSpecForm
-                {...props}
+            <BatchSpecContextProvider
                 batchChange={mockBatchChange()}
-                originalInput={mockBatchSpec().originalInput}
-                executionState={select(
-                    'batch spec state',
-                    [
-                        BatchSpecState.CANCELED,
-                        BatchSpecState.CANCELING,
-                        BatchSpecState.COMPLETED,
-                        BatchSpecState.FAILED,
-                        BatchSpecState.PENDING,
-                    ],
-                    BatchSpecState.COMPLETED
-                )}
-            />
+                batchSpec={mockFullBatchSpec({
+                    state: select(
+                        'batch spec state',
+                        [
+                            BatchSpecState.CANCELED,
+                            BatchSpecState.CANCELING,
+                            BatchSpecState.COMPLETED,
+                            BatchSpecState.FAILED,
+                            BatchSpecState.PENDING,
+                        ],
+                        BatchSpecState.COMPLETED
+                    ),
+                })}
+            >
+                <ReadOnlyBatchSpecForm {...props} />
+            </BatchSpecContextProvider>
         )}
     </WebStory>
 ))
