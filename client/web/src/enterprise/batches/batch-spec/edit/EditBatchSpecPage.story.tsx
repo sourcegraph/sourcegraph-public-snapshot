@@ -22,17 +22,11 @@ import {
 import { EditBatchSpecPage } from './EditBatchSpecPage'
 import goImportsSample from './library/go-imports.batch.yaml'
 
-const { add } = storiesOf('web/batches/batch-spec/edit/EditBatchSpecPage', module)
-    .addDecorator(story => (
-        <div className="p-3" style={{ height: '95vh', width: '100%' }}>
-            {story()}
-        </div>
-    ))
-    .addParameters({
-        chromatic: {
-            disableSnapshot: false,
-        },
-    })
+const { add } = storiesOf('web/batches/batch-spec/edit/EditBatchSpecPage', module).addDecorator(story => (
+    <div className="p-3" style={{ height: '95vh', width: '100%' }}>
+        {story()}
+    </div>
+))
 
 const FIXTURE_ORG: SettingsOrgSubject = {
     __typename: 'Org',

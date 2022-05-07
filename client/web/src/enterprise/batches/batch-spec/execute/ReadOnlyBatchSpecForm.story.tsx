@@ -8,17 +8,11 @@ import { BatchSpecContextProvider } from '../BatchSpecContext'
 
 import { ReadOnlyBatchSpecForm } from './ReadOnlyBatchSpecForm'
 
-const { add } = storiesOf('web/batches/batch-spec/execute/ReadOnlyBatchSpecForm', module)
-    .addDecorator(story => (
-        <div className="p-3 d-flex" style={{ height: '95vh', width: '100%' }}>
-            {story()}
-        </div>
-    ))
-    .addParameters({
-        chromatic: {
-            disableSnapshot: false,
-        },
-    })
+const { add } = storiesOf('web/batches/batch-spec/execute/ReadOnlyBatchSpecForm', module).addDecorator(story => (
+    <div className="p-3 d-flex" style={{ height: '95vh', width: '100%' }}>
+        {story()}
+    </div>
+))
 
 add('while executing', () => (
     <WebStory>

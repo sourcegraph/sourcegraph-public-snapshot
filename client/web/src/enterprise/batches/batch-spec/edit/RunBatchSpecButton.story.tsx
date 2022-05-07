@@ -7,9 +7,9 @@ import { ExecutionOptions } from '../BatchSpecContext'
 
 import { RunBatchSpecButton } from './RunBatchSpecButton'
 
-const { add } = storiesOf('web/batches/batch-spec/edit/RunBatchSpecButton', module)
-    .addDecorator(story => <div className="p-3 container">{story()}</div>)
-    .addParameters({ chromatic: { disableSnapshot: false } })
+const { add } = storiesOf('web/batches/batch-spec/edit/RunBatchSpecButton', module).addDecorator(story => (
+    <div className="p-3 container">{story()}</div>
+))
 
 add('disabled', () => {
     const [options, setOptions] = useState<ExecutionOptions>({ runWithoutCache: false })
