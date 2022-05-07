@@ -239,29 +239,6 @@ func TestPrettyJSON(t *testing.T) {
         },
         "Mode": 0
       }
-    },
-    {
-      "ComputeExcludedReposJob": {
-        "RepoOpts": {
-          "RepoFilters": [
-            "foo"
-          ],
-          "MinusRepoFilters": null,
-          "Dependencies": null,
-          "CaseSensitiveRepoFilters": false,
-          "SearchContextSpec": "",
-          "CommitAfter": "",
-          "Visibility": "Any",
-          "Limit": 0,
-          "Cursors": null,
-          "ForkSet": false,
-          "NoForks": true,
-          "OnlyForks": false,
-          "ArchivedSet": false,
-          "NoArchived": true,
-          "OnlyArchived": false
-        }
-      }
     }
   ]
 }`).Equal(t, fmt.Sprintf("\n%s", test("repo:foo bar")))
