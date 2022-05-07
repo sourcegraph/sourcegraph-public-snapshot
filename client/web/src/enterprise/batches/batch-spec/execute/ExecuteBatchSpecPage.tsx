@@ -32,9 +32,11 @@ import { GET_BATCH_CHANGE_TO_EDIT } from '../../create/backend'
 import { ConfigurationForm } from '../../create/ConfigurationForm'
 import { NewBatchChangePreviewPage } from '../../preview/BatchChangePreviewPage'
 import { BatchSpecContextProvider, BatchSpecContextState, useBatchSpecContext } from '../BatchSpecContext'
+import { ActionButtons } from '../header/ActionButtons'
 import { BatchChangeHeader } from '../header/BatchChangeHeader'
 import { TabBar, TabsConfig } from '../TabBar'
 
+import { ActionsMenu } from './ActionsMenu'
 import { FETCH_BATCH_SPEC_EXECUTION } from './backend'
 import { BatchSpecStateBadge } from './BatchSpecStateBadge'
 import { ExecutionStat, ExecutionStatsBar } from './ExecutionStatsBar'
@@ -149,9 +151,7 @@ const ExecuteBatchSpecPageContent: React.FunctionComponent<
                     }
                 />
                 <div className="d-flex align-items-center mb-1">
-                    <span className="mr-2">
-                        <BatchSpecStateBadge state={batchSpec.state} />
-                    </span>
+                    <BatchSpecStateBadge state={batchSpec.state} className="mr-2" />
                     {batchSpec.startedAt && (
                         <ExecutionStat>
                             <ProgressClockIcon />
@@ -160,6 +160,10 @@ const ExecuteBatchSpecPageContent: React.FunctionComponent<
                     )}
                     {workspaceResolution && <ExecutionStatsBar {...workspaceResolution.workspaces.stats} />}
                 </div>
+
+                <ActionButtons className="ml-2">
+                    <ActionsMenu />
+                </ActionButtons>
             </div>
 
             {errors.actions && <ErrorMessage error={errors.actions} key={String(errors.actions)} />}

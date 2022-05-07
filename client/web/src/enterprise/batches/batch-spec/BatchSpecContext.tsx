@@ -32,6 +32,8 @@ type NewBatchSpecState<BatchSpecFields extends MinimalBatchSpecFields> = BatchSp
     isApplied: boolean
     // Execution URL for this batch spec.
     executionURL: string
+    // Whether or not the batch spec is actively being executed.
+    isExecuting: boolean
 }
 
 type EditorState = UseBatchSpecCodeResult & {
@@ -154,6 +156,7 @@ export const BatchSpecContextProvider = <BatchSpecFields extends MinimalBatchSpe
 
     const [actionsError, setActionsError] = useState<string | Error | undefined>()
 
+    // TODO: This should probably just be a field on GraphQL.
     const isExecuting = batchSpec.state === BatchSpecState.QUEUED || batchSpec.state === BatchSpecState.PROCESSING
 
     // Manage submitting a batch spec for execution.
@@ -202,6 +205,7 @@ export const BatchSpecContextProvider = <BatchSpecFields extends MinimalBatchSpe
                     ...batchSpec,
                     isApplied: isBatchSpecApplied,
                     executionURL: `${batchChange.url}/executions/${batchSpec.id}`,
+                    isExecuting,
                     ...testState?.batchSpec,
                 },
                 editor: {

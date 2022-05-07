@@ -14,6 +14,7 @@ import { BatchSpecWorkspaceResolutionState, BatchSpecWorkspaceState } from '../.
 import { mockAuthenticatedUser } from '../../../code-monitoring/testing/util'
 import { GET_BATCH_CHANGE_TO_EDIT, WORKSPACE_RESOLUTION_STATUS } from '../../create/backend'
 import {
+    COMPLETED_BATCH_SPEC,
     EXECUTING_BATCH_SPEC,
     FAILED_BATCH_SPEC,
     mockBatchChange,
@@ -149,6 +150,44 @@ add('failed', () => {
                                     "Oh no something went wrong. This is a longer error message to demonstrate how this might take up a decent portion of screen real estate but hopefully it's still helpful information so it's worth the cost. Here's a long error message with some bullets:\n  * This is a bullet\n  * This is another bullet\n  * This is a third bullet and it's also the most important one so it's longer than all the others wow look at that.",
                             },
                         }}
+                        authenticatedUser={mockAuthenticatedUser}
+                        settingsCascade={SETTINGS_CASCADE}
+                    />
+                </MockedTestProvider>
+            )}
+        </WebStory>
+    )
+})
+
+const COMPLETED_MOCKS: MockedResponses = [
+    {
+        request: {
+            query: getDocumentNode(BATCH_SPEC_WORKSPACES),
+            variables: MATCH_ANY_PARAMETERS,
+        },
+        result: { data: mockWorkspaces(50, { state: BatchSpecWorkspaceState.COMPLETED }) },
+        nMatches: Number.POSITIVE_INFINITY,
+    },
+    {
+        request: {
+            query: getDocumentNode(FETCH_BATCH_SPEC_EXECUTION),
+            variables: MATCH_ANY_PARAMETERS,
+        },
+        result: { data: { node: COMPLETED_BATCH_SPEC } },
+        nMatches: Number.POSITIVE_INFINITY,
+    },
+]
+
+add('completed', () => {
+    console.log(mockWorkspaces(50, { state: BatchSpecWorkspaceState.FAILED, failureMessage: 'Uh oh!' }))
+    return (
+        <WebStory>
+            {props => (
+                <MockedTestProvider link={new WildcardMockLink([...COMMON_MOCKS, ...COMPLETED_MOCKS])}>
+                    <ExecuteBatchSpecPage
+                        {...props}
+                        batchSpecID="spec1234"
+                        batchChange={{ name: 'my-batch-change', namespace: 'user1234' }}
                         authenticatedUser={mockAuthenticatedUser}
                         settingsCascade={SETTINGS_CASCADE}
                     />

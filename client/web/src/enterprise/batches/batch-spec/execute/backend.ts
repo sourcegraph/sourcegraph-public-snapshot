@@ -19,8 +19,6 @@ import {
     CancelBatchSpecExecutionVariables,
     Scalars,
     WorkspaceStepFileDiffConnectionFields,
-    RetryBatchSpecExecutionResult,
-    RetryBatchSpecExecutionVariables,
     BatchSpecWorkspaceState,
     VisibleBatchSpecWorkspaceFields,
     HiddenBatchSpecWorkspaceFields,
@@ -489,7 +487,7 @@ export const useRetryWorkspaceExecution = (
 ): MutationTuple<RetryWorkspaceExecutionResult, RetryWorkspaceExecutionVariables> =>
     useMutation(RETRY_WORKSPACE_EXECUTION, { variables: { id: workspaceID } })
 
-const RETRY_BATCH_SPEC_EXECUTION = gql`
+export const RETRY_BATCH_SPEC_EXECUTION = gql`
     mutation RetryBatchSpecExecution($id: ID!) {
         retryBatchSpecExecution(batchSpec: $id) {
             ...BatchSpecExecutionFields
@@ -498,8 +496,3 @@ const RETRY_BATCH_SPEC_EXECUTION = gql`
 
     ${batchSpecExecutionFieldsFragment}
 `
-
-export const useRetryBatchSpecExecution = (
-    batchSpecID: Scalars['ID']
-): MutationTuple<RetryBatchSpecExecutionResult, RetryBatchSpecExecutionVariables> =>
-    useMutation(RETRY_BATCH_SPEC_EXECUTION, { variables: { id: batchSpecID } })
