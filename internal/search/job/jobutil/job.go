@@ -30,6 +30,149 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+func NewPlanJob(inputs *run.SearchInputs, plan query.Plan) (job.Job, error) {
+	children := make([]job.Job, 0, len(plan))
+	for _, q := range plan {
+		child, err := NewBasicJob(inputs, q)
+		if err != nil {
+			return nil, err
+		}
+		children = append(children, child)
+	}
+	return NewAlertJob(inputs, NewOrJob(children...)), nil
+}
+
+func NewBasicJob(inputs *run.SearchInputs, q query.Basic) (job.Job, error) {
+	var children []job.Job
+	addJob := func(j job.Job) {
+		children = append(children, j)
+	}
+
+	{
+		// This block generates jobs that can be built directly from
+		// a basic query rather than first being expanded into
+		// flat queries.
+		types, _ := q.IncludeExcludeValues(query.FieldType)
+		resultTypes := computeResultTypes(types, q, inputs.PatternType)
+		fileMatchLimit := int32(computeFileMatchLimit(q, inputs.Protocol))
+		selector, _ := filter.SelectPathFromString(q.FindValue(query.FieldSelect)) // Invariant: select is validated
+		features := toFeatures(inputs.Features)
+		repoOptions := toRepoOptions(q, inputs.UserSettings)
+		repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos := jobMode(q, resultTypes, inputs.PatternType, inputs.OnSourcegraphDotCom)
+
+		builder := &jobBuilder{
+			query:          q,
+			resultTypes:    resultTypes,
+			repoOptions:    repoOptions,
+			features:       &features,
+			fileMatchLimit: fileMatchLimit,
+			selector:       selector,
+		}
+
+		if resultTypes.Has(result.TypeFile | result.TypePath) {
+			// Create Global Text Search jobs.
+			if repoUniverseSearch {
+				job, err := builder.newZoektGlobalSearch(search.TextRequest)
+				if err != nil {
+					return nil, err
+				}
+				addJob(job)
+			}
+
+			if !skipRepoSubsetSearch && runZoektOverRepos {
+				job, err := builder.newZoektSearch(search.TextRequest)
+				if err != nil {
+					return nil, err
+				}
+				addJob(&repoPagerJob{
+					child:            job,
+					repoOptions:      repoOptions,
+					useIndex:         q.Index(),
+					containsRefGlobs: query.ContainsRefGlobs(q.ToParseTree()),
+				})
+			}
+		}
+
+		if resultTypes.Has(result.TypeSymbol) {
+			// Create Global Symbol Search jobs.
+			if repoUniverseSearch {
+				job, err := builder.newZoektGlobalSearch(search.SymbolRequest)
+				if err != nil {
+					return nil, err
+				}
+				addJob(job)
+			}
+
+			if !skipRepoSubsetSearch && runZoektOverRepos {
+				job, err := builder.newZoektSearch(search.SymbolRequest)
+				if err != nil {
+					return nil, err
+				}
+				addJob(&repoPagerJob{
+					child:            job,
+					repoOptions:      repoOptions,
+					useIndex:         q.Index(),
+					containsRefGlobs: query.ContainsRefGlobs(q.ToParseTree()),
+				})
+			}
+		}
+
+		if resultTypes.Has(result.TypeCommit) || resultTypes.Has(result.TypeDiff) {
+			diff := resultTypes.Has(result.TypeDiff)
+			addJob(&commit.CommitSearchJob{
+				Query:                commit.QueryToGitQuery(q, diff),
+				RepoOpts:             repoOptions,
+				Diff:                 diff,
+				HasTimeFilter:        q.Exists("after") || q.Exists("before"),
+				Limit:                int(fileMatchLimit),
+				IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker),
+			})
+		}
+
+		addJob(&searchrepos.ComputeExcludedReposJob{
+			RepoOpts: repoOptions,
+		})
+	}
+
+	{
+		// This block generates jobs using the expansion of a basic query into
+		// flat queries
+		flatJob, err := toFlatJobs(inputs, q)
+		if err != nil {
+			return nil, err
+		}
+		addJob(flatJob)
+	}
+
+	basicJob := NewParallelJob(children...)
+
+	{ // Apply selectors
+		if v, _ := q.ToParseTree().StringValue(query.FieldSelect); v != "" {
+			sp, _ := filter.SelectPathFromString(v) // Invariant: select already validated
+			basicJob = NewSelectJob(sp, basicJob)
+		}
+	}
+
+	{ // Apply subrepo permissions checks
+		checker := authz.DefaultSubRepoPermsChecker
+		if authz.SubRepoEnabled(checker) {
+			basicJob = NewFilterJob(basicJob)
+		}
+	}
+
+	{ // Apply limit
+		maxResults := q.ToParseTree().MaxResults(inputs.DefaultLimit())
+		basicJob = NewLimitJob(maxResults, basicJob)
+	}
+
+	{ // Apply timeout
+		timeout := TimeoutDuration(q)
+		basicJob = NewTimeoutJob(timeout, basicJob)
+	}
+
+	return basicJob, nil
+}
+
 // NewFlatJob converts a query parse tree to the _internal_ representation
 // needed to run a search routine. To understand why this conversion matters, think
 // about the fact that the query parse tree doesn't know anything about our
@@ -229,6 +372,45 @@ func NewFlatJob(searchInputs *run.SearchInputs, f query.Flat) (job.Job, error) {
 	}
 
 	return NewParallelJob(allJobs...), nil
+}
+
+var metricFeatureFlagUnavailable = promauto.NewCounter(prometheus.CounterOpts{
+	Name: "src_search_featureflag_unavailable",
+	Help: "temporary counter to check if we have feature flag available in practice.",
+})
+
+func computeFileMatchLimit(q query.Basic, p search.Protocol) int {
+	if count := q.Count(); count != nil {
+		return *count
+	}
+
+	if q.IsStructural() {
+		return limits.DefaultMaxSearchResults
+	}
+
+	switch p {
+	case search.Batch:
+		return limits.DefaultMaxSearchResults
+	case search.Streaming:
+		return limits.DefaultMaxSearchResultsStreaming
+	}
+	panic("unreachable")
+}
+
+func TimeoutDuration(b query.Basic) time.Duration {
+	d := limits.DefaultTimeout
+	maxTimeout := time.Duration(limits.SearchLimits(conf.Get()).MaxTimeoutSeconds) * time.Second
+	timeout := b.GetTimeout()
+	if timeout != nil {
+		d = *timeout
+	} else if b.Count() != nil {
+		// If `count:` is set but `timeout:` is not explicitly set, use the max timeout
+		d = maxTimeout
+	}
+	if d > maxTimeout {
+		d = maxTimeout
+	}
+	return d
 }
 
 func mapSlice(values []string, f func(string) string) []string {
@@ -612,186 +794,4 @@ func toFlatJobs(inputs *run.SearchInputs, q query.Basic) (job.Job, error) {
 	} else {
 		return toPatternExpressionJob(inputs, q)
 	}
-}
-
-func NewPlanJob(inputs *run.SearchInputs, plan query.Plan) (job.Job, error) {
-	children := make([]job.Job, 0, len(plan))
-	for _, q := range plan {
-		child, err := NewBasicJob(inputs, q)
-		if err != nil {
-			return nil, err
-		}
-		children = append(children, child)
-	}
-	return NewAlertJob(inputs, NewOrJob(children...)), nil
-}
-
-func NewBasicJob(inputs *run.SearchInputs, q query.Basic) (job.Job, error) {
-	var children []job.Job
-	addJob := func(j job.Job) {
-		children = append(children, j)
-	}
-
-	{
-		// This block generates jobs that can be built directly from
-		// a basic query rather than first being expanded into
-		// flat queries.
-		types, _ := q.IncludeExcludeValues(query.FieldType)
-		resultTypes := computeResultTypes(types, q, inputs.PatternType)
-		fileMatchLimit := int32(computeFileMatchLimit(q, inputs.Protocol))
-		selector, _ := filter.SelectPathFromString(q.FindValue(query.FieldSelect)) // Invariant: select is validated
-		features := toFeatures(inputs.Features)
-		repoOptions := toRepoOptions(q, inputs.UserSettings)
-		repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos := jobMode(q, resultTypes, inputs.PatternType, inputs.OnSourcegraphDotCom)
-
-		builder := &jobBuilder{
-			query:          q,
-			resultTypes:    resultTypes,
-			repoOptions:    repoOptions,
-			features:       &features,
-			fileMatchLimit: fileMatchLimit,
-			selector:       selector,
-		}
-
-		if resultTypes.Has(result.TypeFile | result.TypePath) {
-			// Create Global Text Search jobs.
-			if repoUniverseSearch {
-				job, err := builder.newZoektGlobalSearch(search.TextRequest)
-				if err != nil {
-					return nil, err
-				}
-				addJob(job)
-			}
-
-			if !skipRepoSubsetSearch && runZoektOverRepos {
-				job, err := builder.newZoektSearch(search.TextRequest)
-				if err != nil {
-					return nil, err
-				}
-				addJob(&repoPagerJob{
-					child:            job,
-					repoOptions:      repoOptions,
-					useIndex:         q.Index(),
-					containsRefGlobs: query.ContainsRefGlobs(q.ToParseTree()),
-				})
-			}
-		}
-
-		if resultTypes.Has(result.TypeSymbol) {
-			// Create Global Symbol Search jobs.
-			if repoUniverseSearch {
-				job, err := builder.newZoektGlobalSearch(search.SymbolRequest)
-				if err != nil {
-					return nil, err
-				}
-				addJob(job)
-			}
-
-			if !skipRepoSubsetSearch && runZoektOverRepos {
-				job, err := builder.newZoektSearch(search.SymbolRequest)
-				if err != nil {
-					return nil, err
-				}
-				addJob(&repoPagerJob{
-					child:            job,
-					repoOptions:      repoOptions,
-					useIndex:         q.Index(),
-					containsRefGlobs: query.ContainsRefGlobs(q.ToParseTree()),
-				})
-			}
-		}
-
-		if resultTypes.Has(result.TypeCommit) || resultTypes.Has(result.TypeDiff) {
-			diff := resultTypes.Has(result.TypeDiff)
-			addJob(&commit.CommitSearchJob{
-				Query:                commit.QueryToGitQuery(q, diff),
-				RepoOpts:             repoOptions,
-				Diff:                 diff,
-				HasTimeFilter:        q.Exists("after") || q.Exists("before"),
-				Limit:                int(fileMatchLimit),
-				IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker),
-			})
-		}
-
-		addJob(&searchrepos.ComputeExcludedReposJob{
-			RepoOpts: repoOptions,
-		})
-	}
-
-	{
-		// This block generates jobs using the expansion of a basic query into
-		// flat queries
-		flatJob, err := toFlatJobs(inputs, q)
-		if err != nil {
-			return nil, err
-		}
-		addJob(flatJob)
-	}
-
-	basicJob := NewParallelJob(children...)
-
-	{ // Apply selectors
-		if v, _ := q.ToParseTree().StringValue(query.FieldSelect); v != "" {
-			sp, _ := filter.SelectPathFromString(v) // Invariant: select already validated
-			basicJob = NewSelectJob(sp, basicJob)
-		}
-	}
-
-	{ // Apply subrepo permissions checks
-		checker := authz.DefaultSubRepoPermsChecker
-		if authz.SubRepoEnabled(checker) {
-			basicJob = NewFilterJob(basicJob)
-		}
-	}
-
-	{ // Apply limit
-		maxResults := q.ToParseTree().MaxResults(inputs.DefaultLimit())
-		basicJob = NewLimitJob(maxResults, basicJob)
-	}
-
-	{ // Apply timeout
-		timeout := TimeoutDuration(q)
-		basicJob = NewTimeoutJob(timeout, basicJob)
-	}
-
-	return basicJob, nil
-}
-
-var metricFeatureFlagUnavailable = promauto.NewCounter(prometheus.CounterOpts{
-	Name: "src_search_featureflag_unavailable",
-	Help: "temporary counter to check if we have feature flag available in practice.",
-})
-
-func computeFileMatchLimit(q query.Basic, p search.Protocol) int {
-	if count := q.Count(); count != nil {
-		return *count
-	}
-
-	if q.IsStructural() {
-		return limits.DefaultMaxSearchResults
-	}
-
-	switch p {
-	case search.Batch:
-		return limits.DefaultMaxSearchResults
-	case search.Streaming:
-		return limits.DefaultMaxSearchResultsStreaming
-	}
-	panic("unreachable")
-}
-
-func TimeoutDuration(b query.Basic) time.Duration {
-	d := limits.DefaultTimeout
-	maxTimeout := time.Duration(limits.SearchLimits(conf.Get()).MaxTimeoutSeconds) * time.Second
-	timeout := b.GetTimeout()
-	if timeout != nil {
-		d = *timeout
-	} else if b.Count() != nil {
-		// If `count:` is set but `timeout:` is not explicitly set, use the max timeout
-		d = maxTimeout
-	}
-	if d > maxTimeout {
-		d = maxTimeout
-	}
-	return d
 }
