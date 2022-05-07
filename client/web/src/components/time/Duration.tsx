@@ -1,8 +1,11 @@
 import React, { useEffect, useReducer } from 'react'
 
+import classNames from 'classnames'
 import { parseISO } from 'date-fns'
 
-export interface DurationProps {
+import styles from './Duration.module.scss'
+
+export interface DurationProps extends React.HTMLAttributes<HTMLDivElement> {
     /** The start time. */
     start: Date | string
     /** The end time. If not set, new Date() is used. Leave unset for timers. */
@@ -13,7 +16,12 @@ export interface DurationProps {
  * Prints a duration between two given timestamps or one given one and now.
  * Formats as hh:mm:ss.
  */
-export const Duration: React.FunctionComponent<React.PropsWithChildren<DurationProps>> = ({ start, end }) => {
+export const Duration: React.FunctionComponent<React.PropsWithChildren<DurationProps>> = ({
+    start,
+    end,
+    className,
+    ...props
+}) => {
     // Parse the start date.
     const startDate = typeof start === 'string' ? parseISO(start) : start
     // Parse the end date.
@@ -43,9 +51,13 @@ export const Duration: React.FunctionComponent<React.PropsWithChildren<DurationP
     }, [end])
 
     return (
-        <>
-            {leading0(hours)}:{leading0(minutes)}:{leading0(seconds)}
-        </>
+        <div className={classNames(styles.stableWidth, className)} {...props}>
+            {/* Set the width of the parent with a filler block of full-width digits, to prevent layout shift if the time changes. */}
+            <span className={styles.filler}>00:00:00</span>
+            <span className={styles.duration}>
+                {leading0(hours)}:{leading0(minutes)}:{leading0(seconds)}
+            </span>
+        </div>
     )
 }
 

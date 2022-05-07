@@ -1,0 +1,18 @@
+.stable-width{
+    position: relative;
+
+    .filler {
+        height: 0;
+        visibility: hidden; // a11y: avoid detection for voice over
+        overflow: hidden;
+        user-select: none;
+        pointer-events: none;
+    }
+
+    .duration {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+}
