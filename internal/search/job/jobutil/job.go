@@ -228,10 +228,6 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 		}
 	}
 
-	addJob(&searchrepos.ComputeExcludedReposJob{
-		RepoOpts: repoOptions,
-	})
-
 	job := NewParallelJob(allJobs...)
 
 	return job, nil
@@ -720,6 +716,10 @@ func NewBasicJob(inputs *run.SearchInputs, q query.Basic) (job.Job, error) {
 				IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker),
 			})
 		}
+
+		addJob(&searchrepos.ComputeExcludedReposJob{
+			RepoOpts: repoOptions,
+		})
 	}
 
 	{
