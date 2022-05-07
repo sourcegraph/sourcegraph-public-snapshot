@@ -614,7 +614,7 @@ func toFlatJobs(inputs *run.SearchInputs, q query.Basic) (job.Job, error) {
 	}
 }
 
-func NewJob(inputs *run.SearchInputs, plan query.Plan) (job.Job, error) {
+func NewPlanJob(inputs *run.SearchInputs, plan query.Plan) (job.Job, error) {
 	children := make([]job.Job, 0, len(plan))
 	for _, q := range plan {
 		child, err := NewBasicJob(inputs, q)
@@ -760,7 +760,7 @@ func NewBasicJob(inputs *run.SearchInputs, q query.Basic) (job.Job, error) {
 // FromExpandedPlan takes a query plan that has had all predicates expanded,
 // and converts it to a job.
 func FromExpandedPlan(inputs *run.SearchInputs, plan query.Plan) (job.Job, error) {
-	return NewJob(inputs, plan)
+	return NewPlanJob(inputs, plan)
 }
 
 var metricFeatureFlagUnavailable = promauto.NewCounter(prometheus.CounterOpts{
