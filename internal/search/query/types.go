@@ -47,6 +47,127 @@ func (s SearchType) String() string {
 	}
 }
 
+// A query is a tree of Nodes. We choose the type name Q so that external uses like query.Q do not stutter.
+type Q []Node
+
+func (q Q) String() string {
+	return toString(q)
+}
+
+func (q Q) StringValues(field string) (values, negatedValues []string) {
+	VisitField(q, field, func(visitedValue string, negated bool, _ Annotation) {
+		if negated {
+			negatedValues = append(negatedValues, visitedValue)
+		} else {
+			values = append(values, visitedValue)
+		}
+	})
+	return values, negatedValues
+}
+
+func (q Q) StringValue(field string) (value, negatedValue string) {
+	VisitField(q, field, func(visitedValue string, negated bool, _ Annotation) {
+		if negated {
+			negatedValue = visitedValue
+		} else {
+			value = visitedValue
+		}
+	})
+	return value, negatedValue
+}
+
+func (q Q) Exists(field string) bool {
+	found := false
+	VisitField(q, field, func(_ string, _ bool, _ Annotation) {
+		found = true
+	})
+	return found
+}
+
+func (q Q) BoolValue(field string) bool {
+	result := false
+	VisitField(q, field, func(value string, _ bool, _ Annotation) {
+		result, _ = parseBool(value) // err was checked during parsing and validation.
+	})
+	return result
+}
+
+func (q Q) Count() *int {
+	var count *int
+	VisitField(q, FieldCount, func(value string, _ bool, _ Annotation) {
+		c, err := strconv.Atoi(value)
+		if err != nil {
+			panic(fmt.Sprintf("Value %q for count cannot be parsed as an int: %s", value, err))
+		}
+		count = &c
+	})
+	return count
+}
+
+func (q Q) Archived() *YesNoOnly {
+	return q.yesNoOnlyValue(FieldArchived)
+}
+
+func (q Q) Fork() *YesNoOnly {
+	return q.yesNoOnlyValue(FieldFork)
+}
+
+func (q Q) yesNoOnlyValue(field string) *YesNoOnly {
+	var res *YesNoOnly
+	VisitField(q, field, func(value string, _ bool, _ Annotation) {
+		yno := parseYesNoOnly(value)
+		if yno == Invalid {
+			panic(fmt.Sprintf("Invalid value %q for field %q", value, field))
+		}
+		res = &yno
+	})
+	return res
+}
+
+func (q Q) IsCaseSensitive() bool {
+	return q.BoolValue("case")
+}
+
+func (q Q) Repositories() (repos []string, negatedRepos []string) {
+	VisitField(q, FieldRepo, func(value string, negated bool, a Annotation) {
+		if a.Labels.IsSet(IsPredicate) {
+			return
+		}
+
+		if negated {
+			negatedRepos = append(negatedRepos, value)
+		} else {
+			repos = append(repos, value)
+		}
+	})
+	return repos, negatedRepos
+}
+
+func (q Q) Dependencies() (dependencies []string) {
+	VisitPredicate(q, func(field, name, value string) {
+		if field == FieldRepo && (name == "dependencies" || name == "deps") {
+			dependencies = append(dependencies, value)
+		}
+	})
+	return dependencies
+}
+
+func (q Q) MaxResults(defaultLimit int) int {
+	if q == nil {
+		return 0
+	}
+
+	if count := q.Count(); count != nil {
+		return *count
+	}
+
+	if defaultLimit != 0 {
+		return defaultLimit
+	}
+
+	return limits.DefaultMaxSearchResults
+}
+
 // A query plan represents a set of disjoint queries for the search engine to
 // execute. The result of executing a plan is the union of individual query results.
 type Plan []Basic
@@ -59,19 +180,6 @@ func (p Plan) ToParseTree() Q {
 		nodes = append(nodes, newOperator(operands, And)...)
 	}
 	return Q(newOperator(nodes, Or))
-}
-
-type Flat struct {
-	Parameters
-	Pattern *Pattern
-}
-
-func (f *Flat) ToBasic() Basic {
-	var pattern Node
-	if f.Pattern != nil {
-		pattern = *f.Pattern
-	}
-	return Basic{Parameters: f.Parameters, Pattern: pattern}
 }
 
 // Basic represents a leaf expression to evaluate in our search engine. A basic
@@ -336,123 +444,17 @@ func (p Parameters) FindParameter(field string, f func(value string, negated boo
 	}
 }
 
-// A query is a tree of Nodes. We choose the type name Q so that external uses like query.Q do not stutter.
-type Q []Node
-
-func (q Q) String() string {
-	return toString(q)
+// Flat is a more restricted form of Basic that has exactly one atomic pattern
+// node. This is used to
+type Flat struct {
+	Parameters
+	Pattern *Pattern
 }
 
-func (q Q) StringValues(field string) (values, negatedValues []string) {
-	VisitField(q, field, func(visitedValue string, negated bool, _ Annotation) {
-		if negated {
-			negatedValues = append(negatedValues, visitedValue)
-		} else {
-			values = append(values, visitedValue)
-		}
-	})
-	return values, negatedValues
-}
-
-func (q Q) StringValue(field string) (value, negatedValue string) {
-	VisitField(q, field, func(visitedValue string, negated bool, _ Annotation) {
-		if negated {
-			negatedValue = visitedValue
-		} else {
-			value = visitedValue
-		}
-	})
-	return value, negatedValue
-}
-
-func (q Q) Exists(field string) bool {
-	found := false
-	VisitField(q, field, func(_ string, _ bool, _ Annotation) {
-		found = true
-	})
-	return found
-}
-
-func (q Q) BoolValue(field string) bool {
-	result := false
-	VisitField(q, field, func(value string, _ bool, _ Annotation) {
-		result, _ = parseBool(value) // err was checked during parsing and validation.
-	})
-	return result
-}
-
-func (q Q) Count() *int {
-	var count *int
-	VisitField(q, FieldCount, func(value string, _ bool, _ Annotation) {
-		c, err := strconv.Atoi(value)
-		if err != nil {
-			panic(fmt.Sprintf("Value %q for count cannot be parsed as an int: %s", value, err))
-		}
-		count = &c
-	})
-	return count
-}
-
-func (q Q) Archived() *YesNoOnly {
-	return q.yesNoOnlyValue(FieldArchived)
-}
-
-func (q Q) Fork() *YesNoOnly {
-	return q.yesNoOnlyValue(FieldFork)
-}
-
-func (q Q) yesNoOnlyValue(field string) *YesNoOnly {
-	var res *YesNoOnly
-	VisitField(q, field, func(value string, _ bool, _ Annotation) {
-		yno := parseYesNoOnly(value)
-		if yno == Invalid {
-			panic(fmt.Sprintf("Invalid value %q for field %q", value, field))
-		}
-		res = &yno
-	})
-	return res
-}
-
-func (q Q) IsCaseSensitive() bool {
-	return q.BoolValue("case")
-}
-
-func (q Q) Repositories() (repos []string, negatedRepos []string) {
-	VisitField(q, FieldRepo, func(value string, negated bool, a Annotation) {
-		if a.Labels.IsSet(IsPredicate) {
-			return
-		}
-
-		if negated {
-			negatedRepos = append(negatedRepos, value)
-		} else {
-			repos = append(repos, value)
-		}
-	})
-	return repos, negatedRepos
-}
-
-func (q Q) Dependencies() (dependencies []string) {
-	VisitPredicate(q, func(field, name, value string) {
-		if field == FieldRepo && (name == "dependencies" || name == "deps") {
-			dependencies = append(dependencies, value)
-		}
-	})
-	return dependencies
-}
-
-func (q Q) MaxResults(defaultLimit int) int {
-	if q == nil {
-		return 0
+func (f *Flat) ToBasic() Basic {
+	var pattern Node
+	if f.Pattern != nil {
+		pattern = *f.Pattern
 	}
-
-	if count := q.Count(); count != nil {
-		return *count
-	}
-
-	if defaultLimit != 0 {
-		return defaultLimit
-	}
-
-	return limits.DefaultMaxSearchResults
+	return Basic{Parameters: f.Parameters, Pattern: pattern}
 }
