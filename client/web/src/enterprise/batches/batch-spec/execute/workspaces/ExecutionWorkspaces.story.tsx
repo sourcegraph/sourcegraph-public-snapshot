@@ -4,19 +4,19 @@ import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
-import { WebStory } from '../../../../components/WebStory'
-import { BatchSpecWorkspaceResolutionState } from '../../../../graphql-operations'
-import { GET_BATCH_CHANGE_TO_EDIT, WORKSPACE_RESOLUTION_STATUS } from '../../create/backend'
+import { WebStory } from '../../../../../components/WebStory'
+import { BatchSpecWorkspaceResolutionState } from '../../../../../graphql-operations'
+import { GET_BATCH_CHANGE_TO_EDIT, WORKSPACE_RESOLUTION_STATUS } from '../../../create/backend'
 import {
     mockBatchChange,
     mockFullBatchSpec,
     mockWorkspace,
     mockWorkspaceResolutionStatus,
     mockWorkspaces,
-} from '../batch-spec.mock'
-import { BatchSpecContextProvider } from '../BatchSpecContext'
+} from '../../batch-spec.mock'
+import { BatchSpecContextProvider } from '../../BatchSpecContext'
+import { BATCH_SPEC_WORKSPACES, BATCH_SPEC_WORKSPACE_BY_ID, FETCH_BATCH_SPEC_EXECUTION } from '../backend'
 
-import { BATCH_SPEC_WORKSPACES, BATCH_SPEC_WORKSPACE_BY_ID, FETCH_BATCH_SPEC_EXECUTION } from './backend'
 import { ExecutionWorkspaces } from './ExecutionWorkspaces'
 
 const { add } = storiesOf('web/batches/batch-spec/execute/ExecutionWorkspaces', module)

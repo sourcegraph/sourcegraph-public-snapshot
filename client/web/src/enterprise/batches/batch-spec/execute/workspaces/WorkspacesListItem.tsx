@@ -6,7 +6,8 @@ import {
     VisibleBatchSpecWorkspaceListFields,
 } from '../../../../../graphql-operations'
 import { Descriptor, ListItem } from '../../../workspaces-list'
-import { WorkspaceStateIcon } from '../WorkspaceStateIcon'
+
+import { WorkspaceStateIcon } from './WorkspaceStateIcon'
 
 import styles from './WorkspacesListItem.module.scss'
 

@@ -34,14 +34,14 @@ import {
     Icon,
 } from '@sourcegraph/wildcard'
 
-import { Collapsible } from '../../../../components/Collapsible'
-import { DiffStat } from '../../../../components/diff/DiffStat'
-import { FileDiffConnection } from '../../../../components/diff/FileDiffConnection'
-import { FileDiffNode } from '../../../../components/diff/FileDiffNode'
-import { FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
-import { HeroPage } from '../../../../components/HeroPage'
-import { LogOutput } from '../../../../components/LogOutput'
-import { Duration } from '../../../../components/time/Duration'
+import { Collapsible } from '../../../../../components/Collapsible'
+import { DiffStat } from '../../../../../components/diff/DiffStat'
+import { FileDiffConnection } from '../../../../../components/diff/FileDiffConnection'
+import { FileDiffNode } from '../../../../../components/diff/FileDiffNode'
+import { FilteredConnectionQueryArguments } from '../../../../../components/FilteredConnection'
+import { HeroPage } from '../../../../../components/HeroPage'
+import { LogOutput } from '../../../../../components/LogOutput'
+import { Duration } from '../../../../../components/time/Duration'
 import {
     BatchSpecWorkspaceChangesetSpecFields,
     BatchSpecWorkspaceState,
@@ -49,16 +49,16 @@ import {
     HiddenBatchSpecWorkspaceFields,
     Scalars,
     VisibleBatchSpecWorkspaceFields,
-} from '../../../../graphql-operations'
-import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from '../../preview/list/backend'
-import { ChangesetSpecFileDiffConnection } from '../../preview/list/ChangesetSpecFileDiffConnection'
-
+} from '../../../../../graphql-operations'
+import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from '../../../preview/list/backend'
+import { ChangesetSpecFileDiffConnection } from '../../../preview/list/ChangesetSpecFileDiffConnection'
 import {
     useBatchSpecWorkspace,
     useRetryWorkspaceExecution,
     queryBatchSpecWorkspaceStepFileDiffs as _queryBatchSpecWorkspaceStepFileDiffs,
-} from './backend'
-import { TimelineModal } from './TimelineModal'
+} from '../backend'
+import { TimelineModal } from '../TimelineModal'
+
 import { WorkspaceStateIcon } from './WorkspaceStateIcon'
 
 import styles from './WorkspaceDetails.module.scss'

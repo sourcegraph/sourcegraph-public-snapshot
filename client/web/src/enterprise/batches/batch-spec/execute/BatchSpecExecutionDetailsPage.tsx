@@ -49,7 +49,7 @@ import { NewBatchChangePreviewPage } from '../../preview/BatchChangePreviewPage'
 
 import { useCancelBatchSpecExecution, FETCH_BATCH_SPEC_EXECUTION, useRetryBatchSpecExecution } from './backend'
 import { BatchSpecStateBadge } from './BatchSpecStateBadge'
-import { WorkspaceDetails } from './WorkspaceDetails'
+import { WorkspaceDetails } from './workspaces/WorkspaceDetails'
 import { Workspaces } from './workspaces/Workspaces'
 
 import styles from './BatchSpecExecutionDetailsPage.module.scss'
@@ -404,8 +404,6 @@ const PreviewPage: React.FunctionComponent<React.PropsWithChildren<PreviewPagePr
     batchSpec,
     batchSpecID,
 }) => {
-    const history = useHistory()
-
     if (!batchSpec.applyURL) {
         return <Redirect to="./execution" />
     }
@@ -415,10 +413,8 @@ const PreviewPage: React.FunctionComponent<React.PropsWithChildren<PreviewPagePr
             <NewBatchChangePreviewPage
                 authenticatedUser={authenticatedUser}
                 telemetryService={telemetryService}
-                history={history}
                 isLightTheme={isLightTheme}
                 batchSpecID={batchSpecID}
-                location={history.location}
             />
         </div>
     )

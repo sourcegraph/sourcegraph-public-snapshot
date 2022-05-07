@@ -34,8 +34,8 @@ import { BatchChangeHeader } from '../header/BatchChangeHeader'
 import { TabBar, TabsConfig } from '../TabBar'
 
 import { FETCH_BATCH_SPEC_EXECUTION } from './backend'
-import { ExecutionWorkspaces } from './ExecutionWorkspaces'
 import { ReadOnlyBatchSpecForm } from './ReadOnlyBatchSpecForm'
+import { ExecutionWorkspaces } from './workspaces/ExecutionWorkspaces'
 
 import layoutStyles from '../Layout.module.scss'
 
