@@ -81,25 +81,28 @@ export function changelogURL(version: string): string {
     return `https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CHANGELOG.md#${versionAnchor}`
 }
 
-function ensureBranchUpToDate(branch: string): boolean {
-    const { stdout } = execa.sync('git', ['status', '-uno'])
-    if (stdout.includes('Your branch is behind')) {
-        console.log(
-            `Your branch is behind the ${branch} branch. You should run \`git pull\` to update your ${branch} branch.`
-        )
-        return false
+function ensureBranchUpToDate(baseBranch: string, targetBranch: string): boolean {
+    const [behind, ahead] = execa.sync('git', ['rev-list', '--left-right', '--count', targetBranch, '...', baseBranch]).stdout.split('\t')
+
+    if (behind === '0' && ahead === '0') {
+        return true
     }
 
-    if (stdout.includes('Your branch is ahead')) {
-        console.log(`Your branch is ahead of the ${branch} branch.`)
-        return false
+    const buildMessage = function (numberOfCommits: string): string {
+        return numberOfCommits === '0' ? ''
+            : numberOfCommits === '1' ? numberOfCommits + ' commit'
+                : numberOfCommits + ' commits'
     }
 
-    return true
+    console.log(
+        `Your branch is ${buildMessage(ahead)} ahead and ${buildMessage(behind)} behind ${targetBranch}.`
+    )
+    return false
 }
 
 export function ensureMainBranchUpToDate(): void {
     const mainBranch = 'main'
+    const remoteMainBranch = 'origin/main'
     const currentBranch = execa.sync('git', ['rev-parse', '--abbrev-ref', 'HEAD']).stdout.trim()
     if (currentBranch !== mainBranch) {
         console.log(
@@ -108,17 +111,14 @@ export function ensureMainBranchUpToDate(): void {
         process.exit(1)
     }
     execa.sync('git', ['remote', 'update'], { stdout: 'ignore' })
-    if (!ensureBranchUpToDate(mainBranch)) {
+    if (!ensureBranchUpToDate(mainBranch, remoteMainBranch)) {
         process.exit(1)
     }
 }
 
 export function ensureReleaseBranchUpToDate(branch: string): void {
-    const currentBranch = execa.sync('git', ['rev-parse', '--abbrev-ref', 'HEAD']).stdout.trim()
-    execa.sync('git', ['checkout', branch])
-    const isReleaseBranchToDate = ensureBranchUpToDate(branch)
-    execa.sync('git', ['checkout', currentBranch])
-    if (!isReleaseBranchToDate) {
+    const remoteBranch = 'origin/' + branch
+    if (!ensureBranchUpToDate(branch, remoteBranch)) {
         process.exit(1)
     }
 }
