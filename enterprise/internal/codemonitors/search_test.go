@@ -72,7 +72,7 @@ func TestAddCodeMonitorHook(t *testing.T) {
 				Protocol:            search.Streaming,
 				OnSourcegraphDotCom: true,
 			}
-			j, err := jobutil.NewJob(inputs, plan)
+			j, err := jobutil.NewPlanJob(inputs, plan)
 			require.NoError(t, err)
 			addCodeMonitorHook(j, nil)
 		}
