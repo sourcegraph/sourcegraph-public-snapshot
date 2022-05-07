@@ -3,7 +3,7 @@
 
     .filler {
         height: 0;
-        visibility: hidden; // a11y: avoid detection for voice over
+        visibility: hidden;
         overflow: hidden;
         user-select: none;
         pointer-events: none;
