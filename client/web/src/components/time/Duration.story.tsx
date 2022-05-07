@@ -6,9 +6,7 @@ import { WebStory } from '../WebStory'
 
 import { Duration } from './Duration'
 
-const { add } = storiesOf('web/Duration', module)
-    .addDecorator(story => <div className="p-3 container">{story()}</div>)
-    .addParameters({ chromatic: { disableSnapshot: false } })
+const { add } = storiesOf('web/Duration', module).addDecorator(story => <div className="p-3 container">{story()}</div>)
 
 const now = new Date()
 
