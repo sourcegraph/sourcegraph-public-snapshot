@@ -19,6 +19,7 @@ import {
     VisibleBatchSpecWorkspaceFields,
     BatchSpecWorkspaceStepFields,
     BatchSpecExecutionFields,
+    BatchSpecWorkspacesResult,
 } from '../../../graphql-operations'
 import { IMPORTING_CHANGESETS, WORKSPACES, WORKSPACE_RESOLUTION_STATUS } from '../create/backend'
 
@@ -338,6 +339,28 @@ export const CANCELED_WORKSPACE = mockWorkspace(1, {
     finishedAt: null,
     diffStat: null,
     changesetSpecs: [],
+})
+
+export const mockWorkspaces = (
+    count: number,
+    workspace?: Partial<VisibleBatchSpecWorkspaceFields>
+): BatchSpecWorkspacesResult => ({
+    node: {
+        __typename: 'BatchSpec',
+        id: 'spec1234',
+        workspaceResolution: {
+            workspaces: {
+                totalCount: count,
+                pageInfo: {
+                    endCursor: 'cursor',
+                    hasNextPage: false,
+                },
+                nodes: new Array(count)
+                    .fill(null)
+                    .map((_item, index) => mockWorkspace(1, { id: `workspace${index + 1}`, ...workspace })),
+            },
+        },
+    },
 })
 
 const mockImportingChangeset = (

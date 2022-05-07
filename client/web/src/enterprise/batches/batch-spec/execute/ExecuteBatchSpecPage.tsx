@@ -4,6 +4,7 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
 
+import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { useQuery } from '@sourcegraph/http-client'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
@@ -28,7 +29,7 @@ import {
 import { GET_BATCH_CHANGE_TO_EDIT } from '../../create/backend'
 import { ConfigurationForm } from '../../create/ConfigurationForm'
 import { NewBatchChangePreviewPage } from '../../preview/BatchChangePreviewPage'
-import { BatchSpecContextProvider, useBatchSpecContext } from '../BatchSpecContext'
+import { BatchSpecContextProvider, BatchSpecContextState, useBatchSpecContext } from '../BatchSpecContext'
 import { BatchChangeHeader } from '../header/BatchChangeHeader'
 import { TabBar, TabsConfig } from '../TabBar'
 
@@ -46,11 +47,14 @@ export interface AuthenticatedExecuteBatchSpecPageProps
     batchChange: { name: string; namespace: Scalars['ID'] }
     batchSpecID: Scalars['ID']
     authenticatedUser: AuthenticatedUser
+    /** FOR TESTING ONLY */
+    testContextState?: Partial<BatchSpecContextState<BatchSpecExecutionFields>>
 }
 
 export const AuthenticatedExecuteBatchSpecPage: React.FunctionComponent<AuthenticatedExecuteBatchSpecPageProps> = ({
     batchChange,
     batchSpecID,
+    testContextState,
     ...props
 }) => {
     const { data: batchChangeData, error: batchChangeError, loading: batchChangeLoading } = useQuery<
@@ -88,7 +92,11 @@ export const AuthenticatedExecuteBatchSpecPage: React.FunctionComponent<Authenti
     }
 
     return (
-        <BatchSpecContextProvider batchChange={batchChangeData.batchChange} batchSpec={data.node}>
+        <BatchSpecContextProvider
+            batchChange={batchChangeData.batchChange}
+            batchSpec={data.node}
+            testState={testContextState}
+        >
             <ExecuteBatchSpecPageContent {...props} />
         </BatchSpecContextProvider>
     )
@@ -105,7 +113,7 @@ interface ExecuteBatchSpecPageContentProps
 const ExecuteBatchSpecPageContent: React.FunctionComponent<
     React.PropsWithChildren<ExecuteBatchSpecPageContentProps>
 > = ({ isLightTheme, match, settingsCascade, telemetryService, authenticatedUser }) => {
-    const { batchChange, batchSpec } = useBatchSpecContext<BatchSpecExecutionFields>()
+    const { batchChange, batchSpec, errors } = useBatchSpecContext<BatchSpecExecutionFields>()
     const { executionURL } = batchSpec
 
     const tabsConfig = useMemo<TabsConfig[]>(
@@ -137,6 +145,8 @@ const ExecuteBatchSpecPageContent: React.FunctionComponent<
                     }
                 />
             </div>
+
+            {errors.actions && <ErrorMessage error={errors.actions} key={String(errors.actions)} />}
 
             <Switch>
                 <Route render={() => <Redirect to={`${match.url}/execution`} />} path={match.url} exact={true} />
