@@ -10,10 +10,12 @@ export const EmptyDraftChangesetListElement: React.FunctionComponent<React.Props
     const location = useLocation()
     return (
         <div className={styles.emptyDraftChangesetListElementBody}>
-            <h3 className={styles.emptyDraftChangesetListElementHeader}>No changesets exist</h3>
+            <h3>No changesets exist</h3>
             <div className={styles.emptyDraftChangesetListElementContent}>
-                <span>This batch change is a draft. A batch spec must be executed to create changesets.</span>
-                <Link to={`${location.pathname}/edit`}>View the most recent spec.</Link>
+                <p className="mt-2">
+                    This batch change is a draft. A batch spec must be executed to create changesets.
+                </p>
+                <Link to={`${location.pathname}/edit`}>Edit the most recent spec.</Link>
             </div>
         </div>
     )
