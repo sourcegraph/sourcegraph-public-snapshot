@@ -4,6 +4,8 @@ import { MdiReactIconProps } from 'mdi-react'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
 import GitlabIcon from 'mdi-react/GitlabIcon'
+import LanguageJavaIcon from 'mdi-react/LanguageJavaIcon'
+import NpmIcon from 'mdi-react/NpmIcon'
 
 import { Icon } from '@sourcegraph/wildcard'
 
@@ -18,6 +20,8 @@ export const RepoIcon: React.FunctionComponent<React.PropsWithChildren<{ repoNam
         'github.com': GithubIcon,
         'gitlab.com': GitlabIcon,
         'bitbucket.com': BitbucketIcon,
+        maven: LanguageJavaIcon,
+        npm: NpmIcon,
     }
 
     const hostName = repoName.split('/')[0]
