@@ -135,7 +135,13 @@ export const BatchSpecContextProvider = <BatchSpecFields extends MinimalBatchSpe
         onComplete: refetchBatchChange,
         filters,
     })
-    const { isInProgress: isWorkspacesPreviewInProgress, resolutionState } = workspacesPreview
+    const {
+        isInProgress: isWorkspacesPreviewInProgress,
+        resolutionState,
+        error: previewError,
+        clearError: clearPreviewError,
+        hasPreviewed,
+    } = workspacesPreview
 
     // Disable triggering a new preview if the batch spec code is invalid or if we're
     // already processing a preview.
@@ -144,7 +150,6 @@ export const BatchSpecContextProvider = <BatchSpecFields extends MinimalBatchSpe
         [isValid, isWorkspacesPreviewInProgress]
     )
 
-    const { error: previewError, clearError: clearPreviewError, hasPreviewed } = workspacesPreview
     // Clear preview error when the batch spec code changes.
     const clearPreviewErrorsAndHandleCodeChange = useCallback(
         (newCode: string) => {
