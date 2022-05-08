@@ -139,14 +139,12 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                             <Icon className="text-muted mr-2" as={FileDocumentIcon} />
                             <span className="text-content" data-tab-content="Executions">
                                 Executions
-                            </span>{' '}
-                            <Badge
-                                variant={executingCount === 0 ? 'secondary' : 'warning'}
-                                pill={true}
-                                className="ml-1"
-                            >
-                                {executingCount} {batchChange.batchSpecs.pageInfo.hasNextPage && <>+</>}
-                            </Badge>
+                            </span>
+                            {executingCount > 0 && (
+                                <Badge variant="warning" pill={true} className="ml-2">
+                                    {executingCount} {batchChange.batchSpecs.pageInfo.hasNextPage && <>+</>}
+                                </Badge>
+                            )}
                         </span>
                     </BatchChangeTab>
                 )}
