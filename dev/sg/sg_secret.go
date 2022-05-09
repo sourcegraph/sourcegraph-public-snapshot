@@ -21,7 +21,6 @@ var (
 		ArgsUsage: "<...subcommand>",
 		Usage:     "Manipulate secrets stored in memory and in file",
 		Category:  CategoryEnv,
-		Action:    suggestSubcommandsAction,
 		Subcommands: []*cli.Command{
 			{
 				Name:      "reset",
