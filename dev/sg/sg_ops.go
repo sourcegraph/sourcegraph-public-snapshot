@@ -22,7 +22,6 @@ var (
 		Usage:       "Commands used by operations teams to perform common tasks",
 		Description: constructOpsCmdLongHelp(),
 		Category:    CategoryCompany,
-		Action:      suggestSubcommandsAction,
 		Subcommands: []*cli.Command{opsUpdateImagesCommand},
 	}
 
