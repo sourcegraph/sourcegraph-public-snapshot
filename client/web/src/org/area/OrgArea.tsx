@@ -100,7 +100,7 @@ function queryMembersFFlag(args: { orgID: string; flagName: string }): Observabl
     )
 }
 
-const NotFoundPage: React.FunctionComponent = () => (
+const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested organization was not found." />
 )
 

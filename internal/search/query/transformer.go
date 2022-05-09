@@ -289,7 +289,7 @@ func Globbing(nodes []Node) ([]Node, error) {
 	return nodes, nil
 }
 
-func ToNodes(parameters []Parameter) []Node {
+func toNodes(parameters []Parameter) []Node {
 	nodes := make([]Node, 0, len(parameters))
 	for _, p := range parameters {
 		nodes = append(nodes, p)
@@ -307,6 +307,44 @@ func toParameters(nodes []Node) []Parameter {
 	return parameters
 }
 
+// naturallyOrdered returns true if, reading the query from left to right,
+// patterns only appear after parameters. When reverse is true it returns true,
+// if, reading from right to left, patterns only appear after parameters.
+func naturallyOrdered(node Node, reverse bool) bool {
+	// This function looks at the position of the rightmost Parameter and
+	// leftmost Pattern range to check ordering (reverse respectively
+	// reverses the position tracking). This because term order in the tree
+	// structure is not guaranteed at all, even under a consistent traversal
+	// (like post-order DFS).
+	rightmostParameterPos := 0
+	rightmostPatternPos := 0
+	leftmostParameterPos := (1 << 30)
+	leftmostPatternPos := (1 << 30)
+	v := &Visitor{
+		Parameter: func(_, _ string, _ bool, a Annotation) {
+			if a.Range.Start.Column > rightmostParameterPos {
+				rightmostParameterPos = a.Range.Start.Column
+			}
+			if a.Range.Start.Column < leftmostParameterPos {
+				leftmostParameterPos = a.Range.Start.Column
+			}
+		},
+		Pattern: func(_ string, _ bool, a Annotation) {
+			if a.Range.Start.Column > rightmostPatternPos {
+				rightmostPatternPos = a.Range.Start.Column
+			}
+			if a.Range.Start.Column < leftmostPatternPos {
+				leftmostPatternPos = a.Range.Start.Column
+			}
+		},
+	}
+	v.Visit(node)
+	if reverse {
+		return leftmostParameterPos > rightmostPatternPos
+	}
+	return rightmostParameterPos < leftmostPatternPos
+}
+
 // Hoist is a heuristic that rewrites simple but possibly ambiguous queries. It
 // changes certain expressions in a way that some consider to be more natural.
 // For example, the following query without parentheses is interpreted as
@@ -318,11 +356,25 @@ func toParameters(nodes []Node) []Parameter {
 //
 // repo:foo a or b and c => repo:foo (a or b and c)
 //
-// Any number of field:value parameters may occur before and after the pattern
-// expression separated by or- or and-operators, and these are hoisted out. The
-// pattern expression must be contiguous. If not, we want to preserve the
-// default interpretation, which corresponds more naturally to groupings with
-// field parameters, i.e.,
+// For this heuristic to apply, reading the query from left to right, a query
+// must start with a contiguous sequence of parameters, followed by contiguous
+// sequence of pattern expressions, followed by a contiquous sequence of
+// parameters. When this shape holds, the pattern expressions are hoisted out.
+//
+// Valid example and interpretation:
+//
+// - repo:foo file:bar a or b and c => repo:foo file:bar (a or b and c)
+// - repo:foo a or b file:bar => repo:foo (a or b) file:bar
+// - a or b file:bar => file:bar (a or b)
+//
+// Invalid examples:
+//
+// - a or repo:foo b => Reading left to right, a parameter is interpolated between patterns
+// - a repo:foo or b => As above.
+// - repo:foo a or file:bar b => As above.
+//
+// In invalid cases, we want preserve the default interpretation, which
+// corresponds to groupings around `or` expressions, i.e.,
 //
 // repo:foo a or b or repo:bar c => (repo:foo a) or (b) or (repo:bar c)
 func Hoist(nodes []Node) ([]Node, error) {
@@ -339,10 +391,25 @@ func Hoist(nodes []Node) ([]Node, error) {
 	var pattern []Node
 	var scopeParameters []Parameter
 	for i, node := range expression.Operands {
-		if i == 0 || i == n-1 {
+		if i == 0 {
 			scopePart, patternPart, err := PartitionSearchPattern([]Node{node})
 			if err != nil || patternPart == nil {
-				return nil, errors.New("could not partition first or last expression")
+				return nil, errors.New("could not partition first expression")
+			}
+			if !naturallyOrdered(node, false) {
+				return nil, errors.New("unnatural order: patterns not followed by parameter")
+			}
+			pattern = append(pattern, patternPart)
+			scopeParameters = append(scopeParameters, scopePart...)
+			continue
+		}
+		if i == n-1 {
+			scopePart, patternPart, err := PartitionSearchPattern([]Node{node})
+			if err != nil || patternPart == nil {
+				return nil, errors.New("could not partition first expression")
+			}
+			if !naturallyOrdered(node, true) {
+				return nil, errors.New("unnatural order: patterns not followed by parameter")
 			}
 			pattern = append(pattern, patternPart)
 			scopeParameters = append(scopeParameters, scopePart...)
@@ -357,7 +424,7 @@ func Hoist(nodes []Node) ([]Node, error) {
 		annotation.Labels |= HeuristicHoisted
 		return Pattern{Value: value, Negated: negated, Annotation: annotation}
 	})
-	return append(ToNodes(scopeParameters), newOperator(pattern, expression.Kind)...), nil
+	return append(toNodes(scopeParameters), newOperator(pattern, expression.Kind)...), nil
 }
 
 // partition partitions nodes into left and right groups. A node is put in the
@@ -675,7 +742,7 @@ func Map(query []Node, fns ...func([]Node) []Node) []Node {
 // Invariant: Guaranteed to succeed on a validat Basic query.
 func ConcatRevFilters(b Basic) Basic {
 	var revision string
-	nodes := MapField(ToNodes(b.Parameters), FieldRev, func(value string, _ bool, _ Annotation) Node {
+	nodes := MapField(toNodes(b.Parameters), FieldRev, func(value string, _ bool, _ Annotation) Node {
 		revision = value
 		return nil // remove this node
 	})
@@ -715,14 +782,6 @@ func ellipsesForHoles(nodes []Node) []Node {
 			Annotation: annotation,
 		}
 	})
-}
-
-func OverrideField(nodes []Node, field, value string) []Node {
-	// First remove any fields that exist.
-	nodes = MapField(nodes, field, func(_ string, _ bool, _ Annotation) Node {
-		return nil
-	})
-	return newOperator(append(nodes, Parameter{Field: field, Value: value}), And)
 }
 
 // OmitField removes all fields `field` from a query. The `field` string
@@ -770,15 +829,4 @@ func ToBasicQuery(nodes []Node) (Basic, error) {
 		return Basic{}, err
 	}
 	return Basic{Parameters: parameters, Pattern: pattern}, nil
-}
-
-// PatternToFile transforms a search query such that `file:` is prefixed to the
-// pattern. This transformation is used for generating suggestions. Succeeds
-// only when the pattern expression is an atom.
-func PatternToFile(b Basic) Basic {
-	if p, ok := b.Pattern.(Pattern); ok && !p.Negated {
-		b.Parameters = append(b.Parameters, Parameter{Field: "file", Value: p.Value})
-		return b
-	}
-	return b
 }

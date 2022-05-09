@@ -2,7 +2,7 @@ interface ParsedLabelProps {
     filter: string
     label: string
 }
-export const ParsedLabel: React.FunctionComponent<ParsedLabelProps> = ({ filter, label }) => {
+export const ParsedLabel: React.FunctionComponent<React.PropsWithChildren<ParsedLabelProps>> = ({ filter, label }) => {
     if (filter.length === 0) {
         return <span>{label}</span>
     }

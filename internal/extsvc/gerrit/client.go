@@ -121,7 +121,7 @@ func (c *Client) ListProjects(ctx context.Context, opts ListProjectsArgs) (proje
 }
 
 // nolint:unparam
-func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) (*http.Response, error) {
+func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.Response, error) {
 	req.URL = c.URL.ResolveReference(req.URL)
 
 	// Add Basic Auth headers for authenticated requests.

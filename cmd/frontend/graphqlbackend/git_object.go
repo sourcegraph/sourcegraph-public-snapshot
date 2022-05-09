@@ -42,7 +42,7 @@ func (GitObjectID) ImplementsGraphQLType(name string) bool {
 	return name == "GitObjectID"
 }
 
-func (id *GitObjectID) UnmarshalGraphQL(input interface{}) error {
+func (id *GitObjectID) UnmarshalGraphQL(input any) error {
 	if input, ok := input.(string); ok && git.IsAbsoluteRevision(input) {
 		*id = GitObjectID(input)
 		return nil

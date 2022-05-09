@@ -56,7 +56,7 @@ export interface SearchPageProps
 /**
  * The search page
  */
-export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
+export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchPageProps>> = props => {
     const showEnterpriseHomePanels = useExperimentalFeatures(features => features.showEnterpriseHomePanels ?? false)
 
     const isExperimentalOnboardingTourEnabled = useExperimentalFeatures(

@@ -5,7 +5,7 @@ import { getSemanticColorVariables } from '../utils'
 
 import styles from './ColorVariants.module.scss'
 
-export const ColorVariants: React.FunctionComponent = () => (
+export const ColorVariants: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <div className={styles.grid}>
         {getSemanticColorVariables().map(variant => (
             <div className="m-2 text-center" key={variant}>

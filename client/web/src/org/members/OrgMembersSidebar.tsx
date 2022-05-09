@@ -16,7 +16,12 @@ interface Props extends OrgAreaPageProps, RouteComponentProps<{}> {
 /**
  * Sidebar for org members pages.
  */
-export const OrgMembersSidebar: React.FunctionComponent<Props> = ({ org, authenticatedUser, className, match }) => {
+export const OrgMembersSidebar: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    org,
+    authenticatedUser,
+    className,
+    match,
+}) => {
     if (!org) {
         return null
     }

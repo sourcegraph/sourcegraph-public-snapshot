@@ -33,7 +33,7 @@ interface OrgNodeProps {
     history: H.History
 }
 
-const OrgNode: React.FunctionComponent<OrgNodeProps> = ({ node, onDidUpdate }) => {
+const OrgNode: React.FunctionComponent<React.PropsWithChildren<OrgNodeProps>> = ({ node, onDidUpdate }) => {
     const [loading, setLoading] = useState<boolean | Error>(false)
 
     const deleteOrg = useCallback(() => {
@@ -109,7 +109,11 @@ interface Props extends RouteComponentProps<{}>, TelemetryProps {}
 /**
  * A page displaying the orgs on this site.
  */
-export const SiteAdminOrgsPage: React.FunctionComponent<Props> = ({ telemetryService, history, location }) => {
+export const SiteAdminOrgsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    telemetryService,
+    history,
+    location,
+}) => {
     const orgUpdates = useMemo(() => new Subject<void>(), [])
     const onDidUpdateOrg = useCallback((): void => orgUpdates.next(), [orgUpdates])
 

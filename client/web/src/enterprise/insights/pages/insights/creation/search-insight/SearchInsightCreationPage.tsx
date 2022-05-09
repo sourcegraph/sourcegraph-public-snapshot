@@ -45,7 +45,9 @@ export interface SearchInsightCreationPageProps extends TelemetryProps {
     onCancel: () => void
 }
 
-export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCreationPageProps> = props => {
+export const SearchInsightCreationPage: React.FunctionComponent<
+    React.PropsWithChildren<SearchInsightCreationPageProps>
+> = props => {
     const { telemetryService, onInsightCreateRequest, onCancel, onSuccessfulCreation } = props
 
     const { initialValues, loading, setLocalStorageFormValues } = useSearchInsightInitialValues()

@@ -33,7 +33,10 @@ interface EmbeddedNotebookPageProps
 
 const LOADING = 'loading' as const
 
-export const EmbeddedNotebookPage: React.FunctionComponent<EmbeddedNotebookPageProps> = ({ notebookId, ...props }) => {
+export const EmbeddedNotebookPage: React.FunctionComponent<React.PropsWithChildren<EmbeddedNotebookPageProps>> = ({
+    notebookId,
+    ...props
+}) => {
     useEffect(() => eventLogger.logViewEvent('EmbeddedNotebookPage'), [])
 
     const platformContext = useMemo(() => createPlatformContext(), [])

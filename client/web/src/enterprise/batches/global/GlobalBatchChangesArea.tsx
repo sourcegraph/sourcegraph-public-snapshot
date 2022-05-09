@@ -70,13 +70,15 @@ interface Props<RouteProps extends {} = {}>
 /**
  * The global batch changes area.
  */
-export const GlobalBatchChangesArea: React.FunctionComponent<Props> = props => (
+export const GlobalBatchChangesArea: React.FunctionComponent<React.PropsWithChildren<Props>> = props => (
     <div className="w-100">
         {props.isSourcegraphDotCom ? <DotcomGettingStartedPage /> : <AuthenticatedBatchChangesArea {...props} />}
     </div>
 )
 
-const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
+const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
+    <HeroPage icon={MapSearchIcon} title="404: Not Found" />
+)
 
 interface AuthenticatedProps extends Props {
     authenticatedUser: AuthenticatedUser

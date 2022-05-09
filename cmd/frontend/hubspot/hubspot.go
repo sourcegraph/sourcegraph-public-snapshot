@@ -33,7 +33,7 @@ func New(portalID, hapiKey string) *Client {
 
 // Send a POST request with form data to HubSpot APIs that accept
 // application/x-www-form-urlencoded data (e.g. the Forms API)
-func (c *Client) postForm(methodName string, baseURL *url.URL, suffix string, body interface{}) error {
+func (c *Client) postForm(methodName string, baseURL *url.URL, suffix string, body any) error {
 	var data url.Values
 	switch body := body.(type) {
 	case map[string]string:
@@ -74,7 +74,7 @@ func (c *Client) postForm(methodName string, baseURL *url.URL, suffix string, bo
 
 // Send a POST request with JSON data to HubSpot APIs that accept JSON
 // (e.g. the Contacts, Lists, etc APIs)
-func (c *Client) postJSON(methodName string, baseURL *url.URL, reqPayload, respPayload interface{}) error {
+func (c *Client) postJSON(methodName string, baseURL *url.URL, reqPayload, respPayload any) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 

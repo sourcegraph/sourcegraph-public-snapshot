@@ -154,7 +154,7 @@ func NewRawChangesetSpecExisting(repo graphql.ID, externalID string) string {
 	return fmt.Sprintf(tmpl, repo, externalID)
 }
 
-func MarshalJSON(t testing.TB, v interface{}) string {
+func MarshalJSON(t testing.TB, v any) string {
 	t.Helper()
 
 	bs, err := json.Marshal(v)

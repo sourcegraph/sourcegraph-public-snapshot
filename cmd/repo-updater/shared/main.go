@@ -98,7 +98,6 @@ func Main(enterpriseInit EnterpriseInit) {
 	go debugServerRoutine.Start()
 
 	clock := func() time.Time { return time.Now().UTC() }
-
 	if err := keyring.Init(ctx); err != nil {
 		log.Fatalf("error initialising encryption keyring: %v", err)
 	}
@@ -359,7 +358,7 @@ func listAuthzProvidersHandler() http.HandlerFunc {
 
 func repoUpdaterStatsHandler(db database.DB, scheduler *repos.UpdateScheduler, debugDumpers []debugserver.Dumper) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		dumps := []interface{}{
+		dumps := []any{
 			scheduler.DebugDump(r.Context(), db),
 		}
 		for _, dumper := range debugDumpers {

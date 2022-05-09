@@ -66,14 +66,14 @@ SELECT %s, source.scheme, source.name, source.version
 FROM t_lsif_packages source
 `
 
-func loadPackagesChannel(packages []precise.Package) <-chan []interface{} {
-	ch := make(chan []interface{}, len(packages))
+func loadPackagesChannel(packages []precise.Package) <-chan []any {
+	ch := make(chan []any, len(packages))
 
 	go func() {
 		defer close(ch)
 
 		for _, p := range packages {
-			ch <- []interface{}{p.Scheme, p.Name, p.Version}
+			ch <- []any{p.Scheme, p.Name, p.Version}
 		}
 	}()
 

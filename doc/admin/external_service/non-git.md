@@ -67,7 +67,7 @@ While this syncing functionality means that the original change history will be 
 
 ## Quickstart
 
-1. Start up a Sourcegraph instance (using our [Quickstart](../../index.md) or our [full installation documentation](../install/index.md)).
+1. Start up a Sourcegraph instance (using our [Quickstart](../../index.md) or our [full installation documentation](../deploy/index.md)).
 
 1. [Install `src-expose`](#installing-src-expose)
 

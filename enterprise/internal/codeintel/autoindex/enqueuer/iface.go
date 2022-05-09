@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
 
 type DBStore interface {
@@ -18,6 +19,7 @@ type DBStore interface {
 	Transact(ctx context.Context) (DBStore, error)
 	Done(err error) error
 
+	RepoName(ctx context.Context, repositoryID int) (string, error)
 	GetIndexesByIDs(ctx context.Context, ids ...int) ([]dbstore.Index, error)
 	DirtyRepositories(ctx context.Context) (map[int]int, error)
 	IsQueued(ctx context.Context, repositoryID int, commit string) (bool, error)
@@ -52,28 +54,7 @@ type GitserverClient interface {
 	ResolveRevision(ctx context.Context, repositoryID int, versionString string) (api.CommitID, error)
 }
 
-type gitClient struct {
-	client       GitserverClient
-	repositoryID int
-	commit       string
-}
-
-func newGitClient(client GitserverClient, repositoryID int, commit string) gitClient {
-	return gitClient{
-		client:       client,
-		repositoryID: repositoryID,
-		commit:       commit,
-	}
-}
-
-func (c gitClient) ListFiles(ctx context.Context, pattern *regexp.Regexp) ([]string, error) {
-	return c.client.ListFiles(ctx, c.repositoryID, c.commit, pattern)
-}
-
-func (c gitClient) FileExists(ctx context.Context, file string) (bool, error) {
-	return c.client.FileExists(ctx, c.repositoryID, c.commit, file)
-}
-
-func (c gitClient) RawContents(ctx context.Context, file string) ([]byte, error) {
-	return c.client.RawContents(ctx, c.repositoryID, c.commit, file)
+type InferenceService interface {
+	InferIndexJobs(ctx context.Context, repo api.RepoName, commit, overrideScript string) ([]config.IndexJob, error)
+	InferIndexJobHints(ctx context.Context, repo api.RepoName, commit, overrideScript string) ([]config.IndexJobHint, error)
 }

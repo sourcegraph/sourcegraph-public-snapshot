@@ -422,7 +422,7 @@ func HandleCheckUsernameTaken(db database.DB) func(w http.ResponseWriter, r *htt
 	}
 }
 
-func httpLogAndError(w http.ResponseWriter, msg string, code int, errArgs ...interface{}) {
+func httpLogAndError(w http.ResponseWriter, msg string, code int, errArgs ...any) {
 	log15.Error(msg, errArgs...)
 	http.Error(w, msg, code)
 }

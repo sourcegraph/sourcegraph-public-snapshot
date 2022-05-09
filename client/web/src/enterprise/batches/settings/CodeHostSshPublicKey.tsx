@@ -25,6 +25,7 @@ const configInstructionLinks: Record<ExternalServiceKind, string> = {
     [ExternalServiceKind.PERFORCE]: 'unsupported',
     [ExternalServiceKind.PAGURE]: 'unsupported',
     [ExternalServiceKind.PHABRICATOR]: 'unsupported',
+    [ExternalServiceKind.PYTHONPACKAGES]: 'unsupported',
 }
 
 export interface CodeHostSshPublicKeyProps {
@@ -35,7 +36,7 @@ export interface CodeHostSshPublicKeyProps {
     showCopyButton?: boolean
 }
 
-export const CodeHostSshPublicKey: React.FunctionComponent<CodeHostSshPublicKeyProps> = ({
+export const CodeHostSshPublicKey: React.FunctionComponent<React.PropsWithChildren<CodeHostSshPublicKeyProps>> = ({
     externalServiceKind,
     sshPublicKey,
     showInstructionsLink = true,

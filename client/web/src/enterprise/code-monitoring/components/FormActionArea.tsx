@@ -37,7 +37,7 @@ export type MonitorAction = CodeMonitorFields['actions']['nodes'][number]
  * TODO farhan: this component is built with the assumption that each monitor has exactly one email action.
  * Refactor to accomodate for more than one.
  */
-export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
+export const FormActionArea: React.FunctionComponent<React.PropsWithChildren<ActionAreaProps>> = ({
     actions,
     setActionsCompleted,
     disabled,

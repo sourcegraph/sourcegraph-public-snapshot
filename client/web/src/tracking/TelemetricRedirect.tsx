@@ -15,7 +15,7 @@ export interface TelemetricRedirectProps {
 
 const MAXIMUM_TELEMETRY_DELAY = 5000
 
-export const TelemetricRedirect: React.FunctionComponent<TelemetricRedirectProps> = ({
+export const TelemetricRedirect: React.FunctionComponent<React.PropsWithChildren<TelemetricRedirectProps>> = ({
     to,
     label,
     alwaysShowLabel,

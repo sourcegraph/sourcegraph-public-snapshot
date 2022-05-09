@@ -152,7 +152,7 @@ export const toMonacoSelection = (range: Monaco.IRange): Monaco.ISelection => ({
  * This component should not be imported directly: use {@link LazyMonacoQueryInput} instead
  * to avoid bundling the Monaco editor on every page.
  */
-export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = ({
+export const MonacoQueryInput: React.FunctionComponent<React.PropsWithChildren<MonacoQueryInputProps>> = ({
     queryState,
     onFocus,
     onBlur,

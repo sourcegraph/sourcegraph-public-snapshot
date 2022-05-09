@@ -29,7 +29,7 @@ const config: Meta = {
 
 export default config
 
-const InsightsNavItem: React.FunctionComponent = () => (
+const InsightsNavItem: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <LinkWithIcon
         to="/insights"
         text="Insights"

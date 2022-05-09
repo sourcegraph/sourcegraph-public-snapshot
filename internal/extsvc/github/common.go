@@ -457,7 +457,7 @@ type TimelineItemConnection struct {
 // TimelineItem is a union type of all supported pull request timeline items.
 type TimelineItem struct {
 	Type string
-	Item interface{}
+	Item any
 }
 
 // UnmarshalJSON knows how to unmarshal a TimelineItem as produced
@@ -568,7 +568,7 @@ func (c *V4Client) CreatePullRequest(ctx context.Context, in *CreatePullRequestI
 		} `json:"createPullRequest"`
 	}
 
-	compatibleInput := map[string]interface{}{
+	compatibleInput := map[string]any{
 		"repositoryId": in.RepositoryID,
 		"baseRefName":  in.BaseRefName,
 		"headRefName":  in.HeadRefName,
@@ -582,14 +582,13 @@ func (c *V4Client) CreatePullRequest(ctx context.Context, in *CreatePullRequestI
 		return nil, errors.New("draft PRs not supported by this version of GitHub enterprise. GitHub Enterprise v3.21 is the first version to support draft PRs.\nPotential fix: set `published: true` in your batch spec.")
 	}
 
-	input := map[string]interface{}{"input": compatibleInput}
+	input := map[string]any{"input": compatibleInput}
 	err = c.requestGraphQL(ctx, q.String(), input, &result)
 	if err != nil {
-		var errs graphqlErrors
-		if errors.As(err, &errs) && len(errs) == 1 && strings.Contains(errs[0].Message, "A pull request already exists for") {
+		if isPullRequestAlreadyExistsError(err) {
 			return nil, ErrPullRequestAlreadyExists
 		}
-		return nil, errs
+		return nil, err
 	}
 
 	ti := result.CreatePullRequest.PullRequest.TimelineItems
@@ -645,11 +644,10 @@ func (c *V4Client) UpdatePullRequest(ctx context.Context, in *UpdatePullRequestI
 		} `json:"updatePullRequest"`
 	}
 
-	input := map[string]interface{}{"input": in}
+	input := map[string]any{"input": in}
 	err = c.requestGraphQL(ctx, q.String(), input, &result)
 	if err != nil {
-		var errs graphqlErrors
-		if errors.As(err, &errs) && len(errs) == 1 && strings.Contains(errs[0].Message, "A pull request already exists for") {
+		if isPullRequestAlreadyExistsError(err) {
 			return nil, ErrPullRequestAlreadyExists
 		}
 		return nil, err
@@ -696,7 +694,7 @@ func (c *V4Client) MarkPullRequestReadyForReview(ctx context.Context, pr *PullRe
 		} `json:"markPullRequestReadyForReview"`
 	}
 
-	input := map[string]interface{}{"input": struct {
+	input := map[string]any{"input": struct {
 		ID string `json:"pullRequestId"`
 	}{ID: pr.ID}}
 	err = c.requestGraphQL(ctx, q.String(), input, &result)
@@ -745,7 +743,7 @@ func (c *V4Client) ClosePullRequest(ctx context.Context, pr *PullRequest) error 
 		} `json:"closePullRequest"`
 	}
 
-	input := map[string]interface{}{"input": struct {
+	input := map[string]any{"input": struct {
 		ID string `json:"pullRequestId"`
 	}{ID: pr.ID}}
 	err = c.requestGraphQL(ctx, q.String(), input, &result)
@@ -794,7 +792,7 @@ func (c *V4Client) ReopenPullRequest(ctx context.Context, pr *PullRequest) error
 		} `json:"reopenPullRequest"`
 	}
 
-	input := map[string]interface{}{"input": struct {
+	input := map[string]any{"input": struct {
 		ID string `json:"pullRequestId"`
 	}{ID: pr.ID}}
 	err = c.requestGraphQL(ctx, q.String(), input, &result)
@@ -847,7 +845,7 @@ query($owner: String!, $name: String!, $number: Int!) {
 		}
 	}
 
-	err = c.requestGraphQL(ctx, q, map[string]interface{}{"owner": owner, "name": repo, "number": pr.Number}, &result)
+	err = c.requestGraphQL(ctx, q, map[string]any{"owner": owner, "name": repo, "number": pr.Number}, &result)
 	if err != nil {
 		var errs graphqlErrors
 		if errors.As(err, &errs) {
@@ -954,7 +952,7 @@ func (c *V4Client) CreatePullRequestComment(ctx context.Context, pr *PullRequest
 		} `json:"addComment"`
 	}
 
-	input := map[string]interface{}{"input": struct {
+	input := map[string]any{"input": struct {
 		SubjectID string `json:"subjectId"`
 		Body      string `json:"body"`
 	}{SubjectID: pr.ID, Body: body}}
@@ -993,7 +991,7 @@ func (c *V4Client) MergePullRequest(ctx context.Context, pr *PullRequest, squash
 	if squash {
 		mergeMethod = "SQUASH"
 	}
-	input := map[string]interface{}{"input": struct {
+	input := map[string]any{"input": struct {
 		PullRequestID string `json:"pullRequestId"`
 		MergeMethod   string `json:"mergeMethod,omitempty"`
 	}{
@@ -1508,7 +1506,7 @@ func newHttpResponseState(statusCode int, headers http.Header) *httpResponseStat
 	}
 }
 
-func doRequest(ctx context.Context, apiURL *url.URL, auth auth.Authenticator, rateLimitMonitor *ratelimit.Monitor, httpClient httpcli.Doer, req *http.Request, result interface{}) (responseState *httpResponseState, err error) {
+func doRequest(ctx context.Context, apiURL *url.URL, auth auth.Authenticator, rateLimitMonitor *ratelimit.Monitor, httpClient httpcli.Doer, req *http.Request, result any) (responseState *httpResponseState, err error) {
 	req.URL.Path = path.Join(apiURL.Path, req.URL.Path)
 	req.URL = apiURL.ResolveReference(req.URL)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
@@ -1734,9 +1732,6 @@ type Repository struct {
 	Visibility Visibility `json:",omitempty"`
 }
 
-// GetRepositoryMock is set by tests to mock (*Client).GetRepository.
-var GetRepositoryMock func(ctx context.Context, owner, name string) (*Repository, error)
-
 type restRepositoryPermissions struct {
 	Admin bool `json:"admin"`
 	Push  bool `json:"push"`
@@ -1961,4 +1956,12 @@ func normalizeURL(rawURL string) string {
 		parsed.Path += "/"
 	}
 	return parsed.String()
+}
+
+func isPullRequestAlreadyExistsError(err error) bool {
+	var errs graphqlErrors
+	if !errors.As(err, &errs) {
+		return false
+	}
+	return len(errs) == 1 && strings.Contains(errs[0].Message, "A pull request already exists for")
 }

@@ -79,7 +79,7 @@ func TestEnterpriseLicenseHasFeature(t *testing.T) {
 			}()
 
 			var have struct{ EnterpriseLicenseHasFeature bool }
-			if err := apitest.Exec(ctx, t, schema, map[string]interface{}{
+			if err := apitest.Exec(ctx, t, schema, map[string]any{
 				"feature": tc.feature,
 			}, &have, query); err != nil {
 				if !tc.wantErr {

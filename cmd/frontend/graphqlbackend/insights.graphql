@@ -821,6 +821,11 @@ type InsightView implements Node {
     Represents if this insight is in a frozen state or not. A frozen state is relevant when a license is downgraded and the number of insights exceed the free plan limits.
     """
     isFrozen: Boolean!
+
+    """
+    Dashboards this insight has been added to that the current user has permission to view
+    """
+    dashboards(first: Int, after: String, id: ID): InsightsDashboardConnection
 }
 
 """

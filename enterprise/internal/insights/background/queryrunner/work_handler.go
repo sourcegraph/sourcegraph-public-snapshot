@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 var _ workerutil.Handler = &workHandler{}
@@ -153,7 +154,7 @@ func (r *workHandler) generateComputeRecordingsStream(ctx context.Context, job *
 // Returns false only if the repo doesn't have sub-repo permissions or these are disabled in settings.
 // Note that repo ID is received untyped and being cast to api.RepoID
 // err is an upstream error to which any new occurring error is appended
-func checkSubRepoPermissions(ctx context.Context, checker authz.SubRepoPermissionChecker, untypedRepoID interface{}, err error) (bool, error) {
+func checkSubRepoPermissions(ctx context.Context, checker authz.SubRepoPermissionChecker, untypedRepoID any, err error) (bool, error) {
 	if !authz.SubRepoEnabled(checker) {
 		return false, err
 	}
@@ -375,7 +376,7 @@ func (r *workHandler) searchStreamHandler(ctx context.Context, job *Job, series 
 	return err
 }
 
-func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err error) {
+func (r *workHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
 	// 🚨 SECURITY: The request is performed without authentication, we get back results from every
 	// repository on Sourcegraph - results will be filtered when users query for insight data based on the
 	// repositories they can see.
