@@ -126,7 +126,7 @@ func (s *DependenciesSource) GetRepo(ctx context.Context, name string) (*types.R
 		return nil, err
 	}
 
-	_, err = s.src.Get(ctx, dep.PackageSyntax(), "")
+	dep, err = s.src.Get(ctx, dep.PackageSyntax(), "")
 	if err != nil {
 		return nil, err
 	}

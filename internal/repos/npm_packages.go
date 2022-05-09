@@ -56,10 +56,12 @@ func (npmPackagesSource) ParseDependencyFromRepoName(repoName string) (reposourc
 }
 
 func (s *npmPackagesSource) Get(ctx context.Context, name, version string) (reposource.PackageDependency, error) {
-	dep, err := reposource.ParseNpmDependency(name + "@" + version)
+	parsedDbPackage, err := reposource.ParseNpmPackageFromPackageSyntax(name)
 	if err != nil {
 		return nil, err
 	}
+
+	dep := &reposource.NpmDependency{NpmPackage: parsedDbPackage, Version: version}
 
 	info, err := s.client.GetDependencyInfo(ctx, dep)
 	if err != nil {
