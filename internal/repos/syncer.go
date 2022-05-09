@@ -365,8 +365,7 @@ func (s *Syncer) syncRepo(
 
 	if stored != nil {
 		defer func() {
-			if errcode.IsNotFound(err) || errcode.IsUnauthorized(err) ||
-				errcode.IsForbidden(err) || errcode.IsAccountSuspended(err) {
+			if isDeleteableRepoError(err) {
 				err2 := s.Store.DeleteExternalServiceRepo(ctx, svc, stored.ID)
 				if err2 != nil {
 					s.log().Error(
@@ -396,6 +395,13 @@ func (s *Syncer) syncRepo(
 	}
 
 	return repo, nil
+}
+
+// isDeleteableRepoError checks whether the error returned from a repo sync
+// signals that we can safely delete the repo
+func isDeleteableRepoError(err error) bool {
+	return errcode.IsNotFound(err) || errcode.IsUnauthorized(err) ||
+		errcode.IsForbidden(err) || errcode.IsAccountSuspended(err) || errcode.IsUnavailableForLegalReasons(err)
 }
 
 // RepoLimitError is produced by Syncer.ExternalServiceSync when a user's sync job
