@@ -6,11 +6,10 @@
 set -eux
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
-root_dir=$(pwd)
 
 SOURCEGRAPH_BASE_URL="https://preview.sgdev.dev"
 TEST_USER_EMAIL="testadmin@preview.sgdev.dev"
-SOURCEGRAPH_SUDO_USER=admin
+SOURCEGRAPH_SUDO_USER="admin"
 TEST_USER_PASSWORD="$(gcloud secrets versions access latest --project=sourcegraph-ci --secret="PREPROD_TESTADMIN_PASSWORD" --quiet)"
 SOURCEGRAPH_SUDO_TOKEN="$(gcloud secrets versions access latest --project=sourcegraph-ci --secret="PREPROD_TESTADMIN_SG_TOKEN" --quiet)"
 export SOURCEGRAPH_BASE_URL
