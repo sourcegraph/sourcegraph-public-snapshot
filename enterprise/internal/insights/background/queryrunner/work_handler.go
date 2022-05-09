@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -37,7 +38,8 @@ type workHandler struct {
 	mu          sync.RWMutex
 	seriesCache map[string]*types.InsightSeries
 
-	computeSearch func(context.Context, string) ([]query.ComputeResult, error)
+	computeSearch       func(context.Context, string) ([]query.ComputeResult, error)
+	computeSearchStream func(ctx context.Context, query string) (*streaming.ComputeTabulationResult, error)
 }
 
 func (r *workHandler) getSeries(ctx context.Context, seriesID string) (*types.InsightSeries, error) {
@@ -120,6 +122,29 @@ func (r *workHandler) generateComputeRecordings(ctx context.Context, job *Job, r
 		for _, group := range groupedByCapture {
 			capture := group.Value
 			recordings = append(recordings, ToRecording(job, float64(group.Count), recordTime, byRepo[0].RepoName(), repoId, &capture)...)
+		}
+	}
+	return recordings, nil
+}
+
+func (r *workHandler) generateComputeRecordingsStream(ctx context.Context, job *Job, recordTime time.Time) (_ []store.RecordSeriesPointArgs, err error) {
+	streamResults, err := r.computeSearchStream(ctx, job.SearchQuery)
+	if err != nil {
+		return nil, err
+	}
+	checker := authz.DefaultSubRepoPermsChecker
+	var recordings []store.RecordSeriesPointArgs
+
+	for _, match := range streamResults.RepoCounts {
+		var subRepoEnabled bool
+		subRepoEnabled, err = checkSubRepoPermissions(ctx, checker, match.RepositoryID, err)
+		if subRepoEnabled {
+			continue
+		}
+
+		for capturedValue, count := range match.ValueCounts {
+			capture := capturedValue
+			recordings = append(recordings, ToRecording(job, float64(count), recordTime, match.RepositoryName, api.RepoID(match.RepositoryID), &capture)...)
 		}
 	}
 	return recordings, nil
@@ -287,7 +312,13 @@ func (r *workHandler) computeHandler(ctx context.Context, job *Job, series *type
 		}
 	}
 
-	recordings, err := r.generateComputeRecordings(ctx, job, recordTime)
+	computeDelegate := r.generateComputeRecordingsStream
+	useGraphQL := conf.Get().InsightsComputeGraphql
+	if useGraphQL != nil && *useGraphQL {
+		computeDelegate = r.generateComputeRecordings
+	}
+
+	recordings, err := computeDelegate(ctx, job, recordTime)
 	if err != nil {
 		return err
 	}
