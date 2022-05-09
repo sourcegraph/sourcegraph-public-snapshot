@@ -67,5 +67,8 @@ func Error(err error) Field {
 // This is currently intentionally different from the zap.NamedError implementation since
 // we don't want the additional verbosity at the moment.
 func NamedError(key string, err error) Field {
+	if err == nil {
+		return String(key, "<nil>")
+	}
 	return String(key, err.Error())
 }
