@@ -5,8 +5,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
-func CodeIntelPolicies() *monitoring.Container {
-	return &monitoring.Container{
+func CodeIntelPolicies() *monitoring.Dashboard {
+	return &monitoring.Dashboard{
 		Name:        "codeintel-policies",
 		Title:       "Code Intelligence > Policies",
 		Description: "The service at `internal/codeintel/policies`.",
