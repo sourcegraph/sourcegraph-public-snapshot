@@ -14,23 +14,6 @@ import (
 )
 
 func TestNewPlanJob(t *testing.T) {
-	test := func(t *testing.T, input string, protocol search.Protocol, searchType query.SearchType) string {
-		plan, err := query.Pipeline(query.Init(input, searchType))
-		require.NoError(t, err)
-
-		inputs := &run.SearchInputs{
-			UserSettings:        &schema.Settings{},
-			PatternType:         query.SearchTypeLiteralDefault,
-			Protocol:            protocol,
-			OnSourcegraphDotCom: true,
-		}
-
-		j, err := NewPlanJob(inputs, plan)
-		require.NoError(t, err)
-
-		return "\n" + PrettySexp(j)
-	}
-
 	cases := []struct {
 		query      string
 		protocol   search.Protocol
@@ -39,7 +22,7 @@ func TestNewPlanJob(t *testing.T) {
 	}{{
 		query:      `foo context:@userA`,
 		protocol:   search.Streaming,
-		searchType: query.SearchTypeLiteral,
+		searchType: query.SearchTypeLiteralDefault,
 		want: autogold.Want("user search context", `
 (ALERT
   (TIMEOUT
@@ -57,7 +40,7 @@ func TestNewPlanJob(t *testing.T) {
 	}, {
 		query:      `foo context:global`,
 		protocol:   search.Streaming,
-		searchType: query.SearchTypeLiteral,
+		searchType: query.SearchTypeLiteralDefault,
 		want: autogold.Want("global search explicit context", `
 (ALERT
   (TIMEOUT
@@ -71,7 +54,7 @@ func TestNewPlanJob(t *testing.T) {
 	}, {
 		query:      `foo`,
 		protocol:   search.Streaming,
-		searchType: query.SearchTypeLiteral,
+		searchType: query.SearchTypeLiteralDefault,
 		want: autogold.Want("global search implicit context", `
 (ALERT
   (TIMEOUT
@@ -85,7 +68,7 @@ func TestNewPlanJob(t *testing.T) {
 	}, {
 		query:      `foo repo:sourcegraph/sourcegraph`,
 		protocol:   search.Streaming,
-		searchType: query.SearchTypeLiteral,
+		searchType: query.SearchTypeLiteralDefault,
 		want: autogold.Want("nonglobal repo", `
 (ALERT
   (TIMEOUT
@@ -115,14 +98,9 @@ func TestNewPlanJob(t *testing.T) {
         ComputeExcludedReposJob
         RepoSearchJob))))`),
 	}, {
-		query:      `ok ok`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeLiteral,
-		want:       autogold.Want("supported repo job", nil),
-	}, {
 		query:      `ok @thing`,
 		protocol:   search.Streaming,
-		searchType: query.SearchTypeLiteral,
+		searchType: query.SearchTypeLiteralDefault,
 		want: autogold.Want("supported repo job literal", `
 (ALERT
   (TIMEOUT
@@ -279,11 +257,90 @@ func TestNewPlanJob(t *testing.T) {
           REPOPAGER
             SymbolSearcherJob)
           RepoSearchJob)))))`),
+	}, {
+		query:      `(type:commit or type:diff) (a or b)`,
+		protocol:   search.Streaming,
+		searchType: query.SearchTypeRegex,
+		// TODO this output doesn't look right. There shouldn't be any zoekt or repo jobs
+		want: autogold.Want("complex commit diff", `
+(ALERT
+  (OR
+    (TIMEOUT
+      20s
+      (LIMIT
+        500
+        (PARALLEL
+          CommitSearchJob
+          ComputeExcludedReposJob
+          (OR
+            NoopJob
+            NoopJob))))
+    (TIMEOUT
+      20s
+      (LIMIT
+        500
+        (PARALLEL
+          DiffSearchJob
+          ComputeExcludedReposJob
+          (OR
+            NoopJob
+            NoopJob))))))`),
+	}, {
+		query:      `(type:repo a) or (type:file b)`,
+		protocol:   search.Streaming,
+		searchType: query.SearchTypeRegex,
+		want: autogold.Want("disjunct types", `
+(ALERT
+  (OR
+    (TIMEOUT
+      20s
+      (LIMIT
+        500
+        (PARALLEL
+          ComputeExcludedReposJob
+          RepoSearchJob)))
+    (TIMEOUT
+      20s
+      (LIMIT
+        500
+        (PARALLEL
+          ZoektGlobalSearchJob
+          ComputeExcludedReposJob
+          NoopJob)))))`),
+	}, {
+		query:      `type:symbol a or b`,
+		protocol:   search.Streaming,
+		searchType: query.SearchTypeRegex,
+		want: autogold.Want("symbol with or", `
+(ALERT
+  (TIMEOUT
+    20s
+    (LIMIT
+      500
+      (PARALLEL
+        RepoUniverseSymbolSearchJob
+        ComputeExcludedReposJob
+        (OR
+          NoopJob
+          NoopJob)))))`),
 	}}
 
 	for _, tc := range cases {
 		t.Run(tc.want.Name(), func(t *testing.T) {
-			tc.want.Equal(t, test(t, tc.query, tc.protocol, tc.searchType))
+			plan, err := query.Pipeline(query.Init(tc.query, tc.searchType))
+			require.NoError(t, err)
+
+			inputs := &run.SearchInputs{
+				UserSettings:        &schema.Settings{},
+				PatternType:         query.SearchTypeLiteralDefault,
+				Protocol:            tc.protocol,
+				OnSourcegraphDotCom: true,
+			}
+
+			j, err := NewPlanJob(inputs, plan)
+			require.NoError(t, err)
+
+			tc.want.Equal(t, "\n"+PrettySexp(j))
 		})
 	}
 }
