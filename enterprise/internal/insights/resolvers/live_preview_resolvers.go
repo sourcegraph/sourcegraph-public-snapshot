@@ -16,11 +16,11 @@ func (r *Resolver) SearchInsightLivePreview(ctx context.Context, args graphqlbac
 	if !args.Input.GeneratedFromCaptureGroups {
 		return nil, errors.New("live preview is currently only supported for generated series from capture groups")
 	}
-	previewArgs := graphqlbackend.InsightLivePreviewArgs{
-		Input: graphqlbackend.InsightLivePreviewInput{
+	previewArgs := graphqlbackend.SearchInsightPreviewArgs{
+		Input: graphqlbackend.SearchInsightPreviewInput{
 			RepositoryScope: args.Input.RepositoryScope,
 			TimeScope:       args.Input.TimeScope,
-			Series: []graphqlbackend.SeriesLivePreviewInput{
+			Series: []graphqlbackend.SearchSeriesPreviewInput{
 				{
 					Query:                      args.Input.Query,
 					Label:                      args.Input.Label,
@@ -29,10 +29,10 @@ func (r *Resolver) SearchInsightLivePreview(ctx context.Context, args graphqlbac
 			},
 		},
 	}
-	return r.InsightLivePreview(ctx, previewArgs)
+	return r.SearchInsightPreview(ctx, previewArgs)
 }
 
-func (r *Resolver) InsightLivePreview(ctx context.Context, args graphqlbackend.InsightLivePreviewArgs) ([]graphqlbackend.SearchInsightLivePreviewSeriesResolver, error) {
+func (r *Resolver) SearchInsightPreview(ctx context.Context, args graphqlbackend.SearchInsightPreviewArgs) ([]graphqlbackend.SearchInsightLivePreviewSeriesResolver, error) {
 	if args.Input.TimeScope.StepInterval == nil {
 		return nil, errors.New("live preview currently only supports a time interval time scope")
 	}

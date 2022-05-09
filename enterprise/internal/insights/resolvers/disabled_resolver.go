@@ -79,6 +79,6 @@ func (r *disabledResolver) SearchInsightLivePreview(ctx context.Context, args gr
 	return nil, errors.New(r.reason)
 }
 
-func (r *disabledResolver) InsightLivePreview(ctx context.Context, args graphqlbackend.InsightLivePreviewArgs) ([]graphqlbackend.SearchInsightLivePreviewSeriesResolver, error) {
+func (r *disabledResolver) SearchInsightPreview(ctx context.Context, args graphqlbackend.SearchInsightPreviewArgs) ([]graphqlbackend.SearchInsightLivePreviewSeriesResolver, error) {
 	return nil, errors.New(r.reason)
 }
