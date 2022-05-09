@@ -3,6 +3,8 @@ package basestore
 import (
 	"database/sql"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 // CloseRows closes the given rows object. The resulting error is a multierror
@@ -28,118 +30,91 @@ func CloseRows(rows *sql.Rows, err error) error {
 	return combineErrors(err, rows.Close(), rows.Err())
 }
 
-// ScanSlice reads a slice of values from the given row object.
-func ScanSlice[T any](rows *sql.Rows, queryErr error) (_ []T, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = CloseRows(rows, err) }()
+// NewSliceScanner returns a basestore scanner function that returns the
+// all values of a query result. The given function is invoked multiple
+// times with a SQL rows object to scan a single value.
+func NewSliceScanner[T any](f func(dbutil.Scanner) (T, error)) func(rows *sql.Rows, queryErr error) ([]T, error) {
+	return func(rows *sql.Rows, queryErr error) (values []T, err error) {
+		if queryErr != nil {
+			return nil, queryErr
+		}
+		defer func() { err = CloseRows(rows, err) }()
 
-	var values []T
-	for rows.Next() {
-		var value T
-		if err := rows.Scan(&value); err != nil {
-			return nil, err
+		for rows.Next() {
+			value, err := f(rows)
+			if err != nil {
+				return nil, err
+			}
+
+			values = append(values, value)
 		}
 
-		values = append(values, value)
+		return values, nil
 	}
-
-	return values, nil
 }
 
-// ScanFirst reads a single value from the given row object.
-func ScanFirst[T any](rows *sql.Rows, queryErr error) (value T, _ bool, err error) {
-	if queryErr != nil {
-		return value, false, queryErr
-	}
-	defer func() { err = CloseRows(rows, err) }()
+// NewFirstScanner returns a basestore scanner function that returns the
+// first value of a query result (assuming there is at most one value).
+// The given function is invoked with a SQL rows object to scan a single
+// value.
+func NewFirstScanner[T any](f func(dbutil.Scanner) (T, error)) func(rows *sql.Rows, queryErr error) (T, bool, error) {
+	return func(rows *sql.Rows, queryErr error) (value T, _ bool, err error) {
+		if queryErr != nil {
+			return value, false, queryErr
+		}
+		defer func() { err = CloseRows(rows, err) }()
 
-	if rows.Next() {
-		if err := rows.Scan(&value); err != nil {
-			return value, false, err
+		if !rows.Next() {
+			return value, false, nil
 		}
 
-		return value, true, nil
+		value, err = f(rows)
+		return value, true, err
+	}
+}
+
+// ScanAny scans a single T value from the given scanner.
+func ScanAny[T any](s dbutil.Scanner) (value T, err error) {
+	err = s.Scan(&value)
+	return
+}
+
+// ScanNullString scans a single nullable string from the given scanner.
+func ScanNullString(s dbutil.Scanner) (string, error) {
+	var value sql.NullString
+	if err := s.Scan(&value); err != nil {
+		return "", err
 	}
 
-	return value, false, nil
+	return value.String, nil
 }
 
-// ScanStrings reads string values from the given row object.
-var ScanStrings = ScanSlice[string]
-
-// ScanFirstString reads string values from the given row object and returns the first one.
-// If no rows match the query, a false-valued flag is returned.
-var ScanFirstString = ScanFirst[string]
-
-// ScanFirstNullString reads possibly null string values from the given row
-// object and returns the first one. If no rows match the query, a false-valued
-// flag is returned.
-func ScanFirstNullString(rows *sql.Rows, queryErr error) (_ string, _ bool, err error) {
-	value, ok, err := ScanFirst[sql.NullString](rows, queryErr)
-	if err != nil || !ok {
-		return "", false, err
+// ScanNullInt64 scans a single int64 from the given scanner.
+func ScanNullInt64(s dbutil.Scanner) (int64, error) {
+	var value sql.NullInt64
+	if err := s.Scan(&value); err != nil {
+		return 0, err
 	}
 
-	return value.String, true, nil
+	return value.Int64, nil
 }
 
-// ScanInt is a convenience method to return an integer value and any query error from a given row object.
-func ScanInt(row *sql.Row) (int, error) {
-	var value int
-	return value, row.Scan(&value)
-}
-
-// ScanInts reads integer values from the given row object.
-var ScanInts = ScanSlice[int]
-
-// ScanInt32s reads integer values from the given row object.
-var ScanInt32s = ScanSlice[int32]
-
-// ScanInt64s reads integer values from the given row object.
-var ScanInt64s = ScanSlice[int64]
-
-// ScanUint32s reads unsigned integer values from the given row object.
-var Scanuint32s = ScanSlice[uint32]
-
-// ScanFirstInt reads integer values from the given row object and returns the first one.
-// If no rows match the query, a false-valued flag is returned.
-var ScanFirstInt = ScanFirst[int]
-
-// ScanFirstInt64 reads int64 values from the given row object and returns the first one.
-// If no rows match the query, a false-valued flag is returned.
-var ScanFirstInt64 = ScanFirst[int64]
-
-// ScanFirstNullInt64 reads possibly null int64 values from the given row
-// object and returns the first one. If no rows match the query, a false-valued
-// flag is returned.
-func ScanFirstNullInt64(rows *sql.Rows, queryErr error) (_ int64, _ bool, err error) {
-	value, ok, err := ScanFirst[sql.NullInt64](rows, queryErr)
-	if err != nil || !ok {
-		return 0, false, err
-	}
-
-	return value.Int64, true, nil
-}
-
-// ScanFloats reads float values from the given row object.
-var ScanFloats = ScanSlice[float64]
-
-// ScanFirstFloat reads float values from the given row object and returns the first one.
-// If no rows match the query, a false-valued flag is returned.
-var ScanFirstFloat = ScanFirst[float64]
-
-// ScanBools reads bool values from the given row object.
-var ScanBools = ScanSlice[bool]
-
-// ScanFirstBool reads bool values from the given row object and returns the first one.
-// If no rows match the query, a false-valued flag is returned.
-var ScanFirstBool = ScanFirst[bool]
-
-// ScanTimes reads time values from the given row object.
-var ScanTimes = ScanSlice[time.Time]
-
-// ScanFirstTime reads time values from the given row object and returns the first one.
-// If no rows match the query, a false-valued flag is returned.
-var ScanFirstTime = ScanFirst[time.Time]
+var (
+	ScanInt             = ScanAny[int]
+	ScanStrings         = NewSliceScanner(ScanAny[string])
+	ScanFirstString     = NewFirstScanner(ScanAny[string])
+	ScanFirstNullString = NewFirstScanner(ScanNullString)
+	ScanInts            = NewSliceScanner(ScanAny[int])
+	ScanInt32s          = NewSliceScanner(ScanAny[int32])
+	ScanInt64s          = NewSliceScanner(ScanAny[int64])
+	Scanuint32s         = NewSliceScanner(ScanAny[uint32])
+	ScanFirstInt        = NewFirstScanner(ScanAny[int])
+	ScanFirstInt64      = NewFirstScanner(ScanAny[int64])
+	ScanFirstNullInt64  = NewFirstScanner(ScanNullInt64)
+	ScanFloats          = NewSliceScanner(ScanAny[float64])
+	ScanFirstFloat      = NewFirstScanner(ScanAny[float64])
+	ScanBools           = NewSliceScanner(ScanAny[bool])
+	ScanFirstBool       = NewFirstScanner(ScanAny[bool])
+	ScanTimes           = NewSliceScanner(ScanAny[time.Time])
+	ScanFirstTime       = NewFirstScanner(ScanAny[time.Time])
+)
