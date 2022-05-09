@@ -83,6 +83,8 @@ func purge(ctx context.Context, db database.DB, log log15.Logger, options databa
 			}
 		}
 		total++
+		// The repo may have been deleted, we want its old name
+		repo = api.UndeletedRepoName(repo)
 		repo = protocol.NormalizeRepo(repo)
 		if err := gitserverClient.Remove(ctx, repo); err != nil {
 			// Do not fail at this point, just log so we can remove other repos.
