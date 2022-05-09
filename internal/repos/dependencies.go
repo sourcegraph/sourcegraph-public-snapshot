@@ -152,7 +152,22 @@ func (s *DependenciesSource) makeRepo(dep reposource.PackageDependency) *types.R
 				CloneURL: string(repoName),
 			},
 		},
-		Metadata: &struct{}{},
+		Metadata: metadata(dep),
+	}
+}
+
+func metadata(dep reposource.PackageDependency) any {
+	switch d := dep.(type) {
+	case *reposource.MavenDependency:
+		return &reposource.MavenMetadata{
+			Module: d.MavenModule,
+		}
+	case *reposource.NpmDependency:
+		return &reposource.NpmMetadata{
+			Package: d.NpmPackage,
+		}
+	default:
+		return &struct{}{}
 	}
 }
 

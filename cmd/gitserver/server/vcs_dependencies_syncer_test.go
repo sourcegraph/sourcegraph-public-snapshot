@@ -242,6 +242,11 @@ func (f fakeDep) GitTagFromVersion() string    { return "v" + f.version }
 func (f fakeDep) Less(other reposource.PackageDependency) bool {
 	return f.PackageManagerSyntax() > other.PackageManagerSyntax()
 }
+func (f fakeDep) Description() string { return f.name + "@" + f.version }
+func (f fakeDep) Metadata() interface{} {
+	pkg, _ := reposource.NewNpmPackage("", f.name)
+	return reposource.NpmMetadata{pkg}
+}
 
 func (s vcsDependenciesSyncer) runCloneCommand(t *testing.T, examplePackageURL, bareGitDirectory string, dependencies []string) {
 	u := vcs.URL{

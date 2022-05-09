@@ -6,6 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -14,18 +15,24 @@ import (
 
 // NewNpmPackagesSource returns a new DependenciesSource from the given external
 // service.
-func NewNpmPackagesSource(svc *types.ExternalService) (*DependenciesSource, error) {
+func NewNpmPackagesSource(svc *types.ExternalService, cf *httpcli.Factory) (*DependenciesSource, error) {
 	var c schema.NpmPackagesConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
+
+	cli, err := cf.Doer()
+	if err != nil {
+		return nil, err
+	}
+
 	return &DependenciesSource{
 		svc:        svc,
 		configDeps: c.Dependencies,
 		scheme:     dependencies.NpmPackagesScheme,
 		/* depsSvc initialized in SetDependenciesService */
 		src: &npmPackagesSource{
-			client: npm.NewHTTPClient(svc.URN(), c.Registry, c.Credentials),
+			client: npm.NewHTTPClient(svc.URN(), c.Registry, c.Credentials, cli),
 		},
 	}, nil
 }

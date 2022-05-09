@@ -192,6 +192,10 @@ func (d *NpmDependency) Description() string {
 	return d.PackageDescription
 }
 
+type NpmMetadata struct {
+	Package *NpmPackage
+}
+
 // PackageManagerSyntax returns the dependency in npm/Yarn syntax. The returned
 // string can (for example) be passed to `npm install`.
 func (d *NpmDependency) PackageManagerSyntax() string {

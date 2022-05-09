@@ -47,6 +47,10 @@ func (m *MavenModule) LsifJavaKind() string {
 
 func (m *MavenModule) Description() string { return "" }
 
+type MavenMetadata struct {
+	Module *MavenModule
+}
+
 func (m *MavenModule) RepoName() api.RepoName {
 	if m.IsJDK() {
 		return "jdk"

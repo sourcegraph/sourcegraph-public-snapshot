@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/jvmpackages"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/jvmpackages/coursier"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -142,7 +141,7 @@ func (s *JVMPackagesSource) makeRepo(module *reposource.MavenModule) *types.Repo
 				CloneURL: cloneURL,
 			},
 		},
-		Metadata: &jvmpackages.Metadata{
+		Metadata: &reposource.MavenMetadata{
 			Module: module,
 		},
 	}
