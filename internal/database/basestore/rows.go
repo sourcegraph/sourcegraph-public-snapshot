@@ -98,7 +98,7 @@ var ScanInts = ScanSlice[int]
 var ScanInt32s = ScanSlice[int32]
 
 // ScanInt64s reads integer values from the given row object.
-var ScanInt64 = ScanSlice[int64]
+var ScanInt64s = ScanSlice[int64]
 
 // ScanUint32s reads unsigned integer values from the given row object.
 var Scanuint32s = ScanSlice[uint32]
