@@ -390,7 +390,7 @@ func (w *Worker) isJobCanceled(id int, handleErr, ctxErr error) bool {
 }
 
 // preDequeueHook invokes the handler's pre-dequeue hook if it exists.
-func (w *Worker) preDequeueHook(ctx context.Context) (dequeueable bool, extraDequeueArguments interface{}, err error) {
+func (w *Worker) preDequeueHook(ctx context.Context) (dequeueable bool, extraDequeueArguments any, err error) {
 	if o, ok := w.handler.(WithPreDequeue); ok {
 		return o.PreDequeue(ctx, w.options.Metrics.logger)
 	}

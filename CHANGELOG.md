@@ -28,6 +28,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Sourcegraph's docker images are now based on Alpine Linux 3.14. [#34508](https://github.com/sourcegraph/sourcegraph/pull/34508)
 - Sourcegraph is now built with Go 1.18. [#34899](https://github.com/sourcegraph/sourcegraph/pull/34899)
+- Capture group Code Insights now use the Compute streaming endpoint. [#34905](https://github.com/sourcegraph/sourcegraph/pull/34905)
 
 ### Fixed
 

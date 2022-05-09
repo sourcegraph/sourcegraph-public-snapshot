@@ -36,7 +36,7 @@ func NewDocumentColumnSplitMigrator(store *lsifstore.Store, batchSize int) oobmi
 
 // MigrateRowUp reads the payload of the given row and returns an updateSpec on how to
 // modify the record to conform to the new schema.
-func (m *documentColumnSplitMigrator) MigrateRowUp(scanner scanner) ([]interface{}, error) {
+func (m *documentColumnSplitMigrator) MigrateRowUp(scanner scanner) ([]any, error) {
 	var path string
 	var rawData, ignored []byte
 
@@ -61,7 +61,7 @@ func (m *documentColumnSplitMigrator) MigrateRowUp(scanner scanner) ([]interface
 		return nil, err
 	}
 
-	return []interface{}{
+	return []any{
 		path,
 		nil,                        // data
 		encoded.Ranges,             // ranges
@@ -73,7 +73,7 @@ func (m *documentColumnSplitMigrator) MigrateRowUp(scanner scanner) ([]interface
 }
 
 // MigrateRowDown sets num_diagnostics back to zero to undo the migration up direction.
-func (m *documentColumnSplitMigrator) MigrateRowDown(scanner scanner) ([]interface{}, error) {
+func (m *documentColumnSplitMigrator) MigrateRowDown(scanner scanner) ([]any, error) {
 	var path string
 	var rawData []byte
 	var encoded lsifstore.MarshalledDocumentData
@@ -99,7 +99,7 @@ func (m *documentColumnSplitMigrator) MigrateRowDown(scanner scanner) ([]interfa
 		return nil, err
 	}
 
-	return []interface{}{
+	return []any{
 		path,
 		reencoded, // data
 		nil,       // ranges

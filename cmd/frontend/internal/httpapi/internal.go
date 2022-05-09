@@ -93,9 +93,9 @@ func serveExternalServiceConfigs(db database.DB) func(w http.ResponseWriter, r *
 		// the array of configs (which are themselves JSON objects).
 		// This makes it possible for the caller to directly unmarshal the response into
 		// a slice of connection configurations for this external service kind.
-		configs := make([]map[string]interface{}, 0, len(services))
+		configs := make([]map[string]any, 0, len(services))
 		for _, service := range services {
-			var config map[string]interface{}
+			var config map[string]any
 			// Raw configs may have comments in them so we have to use a json parser
 			// that supports comments in json.
 			if err := jsonc.Unmarshal(service.Config, &config); err != nil {

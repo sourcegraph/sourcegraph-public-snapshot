@@ -39,7 +39,7 @@ var (
 // process - refuse to dequeue a job for now so that we do not over-commit on VMs and cause issues
 // with keeping our heartbeats due to machine load. We'll continue to check this condition on the
 // polling interval
-func (h *handler) PreDequeue(ctx context.Context, logger log.Logger) (dequeueable bool, extraDequeueArguments interface{}, err error) {
+func (h *handler) PreDequeue(ctx context.Context, logger log.Logger) (dequeueable bool, extraDequeueArguments any, err error) {
 	if !h.options.FirecrackerOptions.Enabled {
 		return true, nil, nil
 	}
@@ -262,7 +262,7 @@ func writeFiles(workspaceFileContentsByPath map[string][]byte, logger *command.L
 }
 
 func createHoneyEvent(_ context.Context, job executor.Job, err error, duration time.Duration) honey.Event {
-	fields := map[string]interface{}{
+	fields := map[string]any{
 		"duration_ms":    duration.Milliseconds(),
 		"recordID":       job.RecordID(),
 		"repositoryName": job.RepositoryName,

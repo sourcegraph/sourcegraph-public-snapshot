@@ -384,7 +384,7 @@ type RecordSeriesPointArgs struct {
 	//
 	// See the DB schema comments for intended use cases. This should generally be small,
 	// low-cardinality data to avoid inflating the table.
-	Metadata interface{}
+	Metadata any
 
 	PersistMode PersistMode
 }
@@ -534,7 +534,7 @@ func (s *Store) query(ctx context.Context, q *sqlf.Query, sc scanFunc) error {
 
 // scanner captures the Scan method of sql.Rows and sql.Row
 type scanner interface {
-	Scan(dst ...interface{}) error
+	Scan(dst ...any) error
 }
 
 // a scanFunc scans one or more rows from a scanner, returning

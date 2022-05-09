@@ -308,7 +308,7 @@ func (g *graph) emitRange(lsifRange []int32) (int, error) {
 	}), nil
 }
 
-func (g *graph) emitVertex(label string, payload interface{}) int {
+func (g *graph) emitVertex(label string, payload any) int {
 	return g.emit("vertex", label, payload)
 }
 
@@ -319,7 +319,7 @@ func (g *graph) emitEdge(label string, payload Edge) {
 	g.emit("edge", label, payload)
 }
 
-func (g *graph) emit(ty, label string, payload interface{}) int {
+func (g *graph) emit(ty, label string, payload any) int {
 	g.ID++
 	g.Elements = append(g.Elements, Element{
 		ID:      g.ID,

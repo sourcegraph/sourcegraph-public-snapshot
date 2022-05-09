@@ -163,19 +163,19 @@ func Test_parseUserSettings(t *testing.T) {
 		{
 			name:  "nil",
 			input: nil,
-			want:  autogold.Want("nil", [2]interface{}{&schema.Settings{}, nil}),
+			want:  autogold.Want("nil", [2]any{&schema.Settings{}, nil}),
 		},
 		{
 			name: "empty",
 			input: &api.Settings{
 				Contents: "{}",
 			},
-			want: autogold.Want("empty", [2]interface{}{&schema.Settings{}, nil}),
+			want: autogold.Want("empty", [2]any{&schema.Settings{}, nil}),
 		},
 		{
 			name:  "real",
 			input: settingsExample,
-			want: autogold.Want("real", [2]interface{}{
+			want: autogold.Want("real", [2]any{
 				&schema.Settings{Insights: []*schema.Insight{
 					{
 						Description: "errors.Errorf/fmt.Printf usage",
@@ -215,7 +215,7 @@ func Test_parseUserSettings(t *testing.T) {
 	for _, tst := range tests {
 		t.Run(tst.name, func(t *testing.T) {
 			got, err := parseUserSettings(tst.input)
-			tst.want.Equal(t, [2]interface{}{got, err})
+			tst.want.Equal(t, [2]any{got, err})
 		})
 	}
 

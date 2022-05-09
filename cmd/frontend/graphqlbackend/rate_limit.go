@@ -30,7 +30,7 @@ type QueryCost struct {
 // EstimateQueryCost estimates the cost of the query before it is actually
 // executed. It is a worst cast estimate of the number of fields expected to be
 // returned by the query and handles nested queries a well as fragments.
-func EstimateQueryCost(query string, variables map[string]interface{}) (totalCost *QueryCost, err error) {
+func EstimateQueryCost(query string, variables map[string]any) (totalCost *QueryCost, err error) {
 	// NOTE: When we encounter errors in our visit funcs we return
 	// visitor.ActionBreak to stop walking the tree and set the top level err
 	// variable so that it is returned
@@ -47,7 +47,7 @@ func EstimateQueryCost(query string, variables map[string]interface{}) (totalCos
 		}
 	}()
 	if variables == nil {
-		variables = make(map[string]interface{})
+		variables = make(map[string]any)
 	}
 
 	doc, err := parser.Parse(parser.ParseParams{
@@ -140,7 +140,7 @@ func EstimateQueryCost(query string, variables map[string]interface{}) (totalCos
 	return totalCost, nil
 }
 
-func calcNodeCost(def ast.Node, fragmentCosts map[string]int, variables map[string]interface{}) (*QueryCost, error) {
+func calcNodeCost(def ast.Node, fragmentCosts map[string]int, variables map[string]any) (*QueryCost, error) {
 	// NOTE: When we encounter errors in our visit funcs we return
 	// visitor.ActionBreak to stop walking the tree and set the top level err
 	// variable so that it is returned
@@ -177,11 +177,11 @@ func calcNodeCost(def ast.Node, fragmentCosts map[string]int, variables map[stri
 		multiplier = multiplier / currentLimit
 	}
 
-	nonNullVariables := make(map[string]interface{})
-	defaultValues := make(map[string]interface{})
+	nonNullVariables := make(map[string]any)
+	defaultValues := make(map[string]any)
 
 	v := &visitor.VisitorOptions{
-		Enter: func(p visitor.VisitFuncParams) (string, interface{}) {
+		Enter: func(p visitor.VisitFuncParams) (string, any) {
 			switch node := p.Node.(type) {
 			case *ast.SelectionSet:
 				depth++
@@ -279,7 +279,7 @@ func calcNodeCost(def ast.Node, fragmentCosts map[string]int, variables map[stri
 			}
 			return visitor.ActionNoChange, nil
 		},
-		Leave: func(p visitor.VisitFuncParams) (string, interface{}) {
+		Leave: func(p visitor.VisitFuncParams) (string, any) {
 			switch p.Node.(type) {
 			case *ast.SelectionSet:
 				depth--
@@ -313,7 +313,7 @@ func getFragmentDependencies(node ast.Node) map[string]struct{} {
 	deps := make(map[string]struct{})
 
 	v := &visitor.VisitorOptions{
-		Enter: func(p visitor.VisitFuncParams) (string, interface{}) {
+		Enter: func(p visitor.VisitFuncParams) (string, any) {
 			switch node := p.Node.(type) {
 			case *ast.FragmentSpread:
 				deps[node.Name.Value] = struct{}{}
@@ -327,7 +327,7 @@ func getFragmentDependencies(node ast.Node) map[string]struct{} {
 	return deps
 }
 
-func extractInt(i interface{}) (int, error) {
+func extractInt(i any) (int, error) {
 	switch v := i.(type) {
 	case int:
 		return v, nil

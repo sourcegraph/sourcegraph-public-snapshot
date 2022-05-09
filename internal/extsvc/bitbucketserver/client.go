@@ -870,7 +870,7 @@ func (c *Client) Fork(ctx context.Context, projectKey, repoSlug string, input Cr
 	return &resp, err
 }
 
-func (c *Client) page(ctx context.Context, path string, qry url.Values, token *PageToken, results interface{}) (*PageToken, error) {
+func (c *Client) page(ctx context.Context, path string, qry url.Values, token *PageToken, results any) (*PageToken, error) {
 	if qry == nil {
 		qry = make(url.Values)
 	}
@@ -888,7 +888,7 @@ func (c *Client) page(ctx context.Context, path string, qry url.Values, token *P
 	var next PageToken
 	_, err = c.do(ctx, req, &struct {
 		*PageToken
-		Values interface{} `json:"values"`
+		Values any `json:"values"`
 	}{
 		PageToken: &next,
 		Values:    results,
@@ -901,7 +901,7 @@ func (c *Client) page(ctx context.Context, path string, qry url.Values, token *P
 	return &next, nil
 }
 
-func (c *Client) send(ctx context.Context, method, path string, qry url.Values, payload, result interface{}) (*http.Response, error) {
+func (c *Client) send(ctx context.Context, method, path string, qry url.Values, payload, result any) (*http.Response, error) {
 	if qry == nil {
 		qry = make(url.Values)
 	}
@@ -923,7 +923,7 @@ func (c *Client) send(ctx context.Context, method, path string, qry url.Values, 
 	return c.do(ctx, req, result)
 }
 
-func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) (*http.Response, error) {
+func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.Response, error) {
 	req.URL = c.URL.ResolveReference(req.URL)
 	if req.Header.Get("Content-Type") == "" {
 		req.Header.Set("Content-Type", "application/json; charset=utf-8")
@@ -1539,7 +1539,7 @@ func (c *Client) CreatePullRequestComment(ctx context.Context, pr *PullRequest, 
 
 	qry := url.Values{"version": {strconv.Itoa(pr.Version)}}
 
-	payload := map[string]interface{}{
+	payload := map[string]any{
 		"text": body,
 	}
 

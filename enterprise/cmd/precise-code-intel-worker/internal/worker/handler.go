@@ -68,7 +68,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerut
 	return err
 }
 
-func (h *handler) PreDequeue(ctx context.Context, logger log.Logger) (bool, interface{}, error) {
+func (h *handler) PreDequeue(ctx context.Context, logger log.Logger) (bool, any, error) {
 	if !h.enableBudget {
 		return true, nil, nil
 	}

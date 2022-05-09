@@ -30,7 +30,6 @@ var auditCommand = &cli.Command{
 	ArgsUsage: "[target]",
 	Hidden:    true,
 	Category:  CategoryCompany,
-	Action:    suggestSubcommandsAction,
 	Subcommands: []*cli.Command{{
 		Name:  "pr",
 		Usage: "Display audit trail for pull requests",

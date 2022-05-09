@@ -8,6 +8,7 @@ extend type Query {
         """
         ids: [ID!]
     ): InsightConnection
+        @deprecated(reason: "Use insightViews instead. This is deprecated and will be removed in a future release.")
 }
 
 """
@@ -72,13 +73,8 @@ type InsightsSeries {
     """
     Data points over a time range (inclusive)
 
-    If no 'from' time range is specified, the last 90 days of data is assumed.
-
-    If no 'to' time range is specified, the current point in time is assumed.
-
-    includeRepoRegex will include in the aggregation any repository names that match the provided regex
-
-    excludeRepoRegex will exclude in the aggregation any repository names that match the provided regex
+    The 'from', 'to', 'includeRepoRegex' and 'excludeRepoRegex' arguments have been deprecated.
+    They will have no affect on the points returned and will be removed in a future version.
     """
     points(from: DateTime, to: DateTime, includeRepoRegex: String, excludeRepoRegex: String): [InsightDataPoint!]!
 

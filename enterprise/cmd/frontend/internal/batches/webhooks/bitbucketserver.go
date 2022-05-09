@@ -68,7 +68,7 @@ func (h *BitbucketServerWebhook) ServeHTTP(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *types.ExternalService, *httpError) {
+func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (any, *types.ExternalService, *httpError) {
 	payload, err := io.ReadAll(r.Body)
 	if err != nil {
 		return nil, nil, &httpError{http.StatusInternalServerError, err}
@@ -126,7 +126,7 @@ func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *type
 	return e, extSvc, nil
 }
 
-func (h *BitbucketServerWebhook) convertEvent(theirs interface{}) (prs []PR, ours keyer) {
+func (h *BitbucketServerWebhook) convertEvent(theirs any) (prs []PR, ours keyer) {
 	log15.Debug("Bitbucket Server webhook received", "type", fmt.Sprintf("%T", theirs))
 
 	switch e := theirs.(type) {

@@ -74,7 +74,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 		hasCurrentSpec bool
 		plan           *Plan
 
-		sourcerMetadata interface{}
+		sourcerMetadata any
 		sourcerErr      error
 		// Whether or not the source responds to CreateChangeset with "already exists"
 		alreadyExists bool

@@ -7,9 +7,11 @@ import (
 	"os/exec"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
@@ -105,6 +107,8 @@ func changelogExec(ctx context.Context, args []string) error {
 }
 
 func checkSgVersionAndUpdate(ctx context.Context, skipUpdate bool) error {
+	start := time.Now()
+
 	if BuildCommit == "dev" {
 		// If `sg` was built with a dirty `./dev/sg` directory it's a dev build
 		// and we don't need to display this message.
@@ -149,10 +153,13 @@ func checkSgVersionAndUpdate(ctx context.Context, skipUpdate bool) error {
 	stdout.Out.WriteLine(output.Line(output.EmojiInfo, output.StyleSuggestion, "Auto updating sg ..."))
 	newPath, err := updateToPrebuiltSG(ctx)
 	if err != nil {
+		analytics.LogEvent(ctx, "auto_update", []string{"failed"}, start)
 		return errors.Newf("failed to install update: %s", err)
 	}
 	writeSuccessLinef("sg has been updated!")
 	stdout.Out.Write("To see what's new, run 'sg version changelog'.")
+
+	analytics.LogEvent(ctx, "auto_update", []string{"updated"}, start)
 
 	// Run command with new binary
 	return syscall.Exec(newPath, os.Args, os.Environ())
