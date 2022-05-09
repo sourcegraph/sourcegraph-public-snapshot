@@ -35,15 +35,41 @@ var lintCommand = &cli.Command{
 			Destination: &lintGenerateAnnotations,
 		},
 	},
+	Before: func(cmd *cli.Context) error {
+		// If more than 1 target is requested, hijack subcommands by setting it to nil
+		// so that the main lint command can handle it the run.
+		if cmd.Args().Len() > 1 {
+			cmd.App.Commands = nil
+		}
+		return nil
+	},
 	Action: func(cmd *cli.Context) error {
-		if cmd.NArg() > 0 {
-			writeFailureLinef("unrecognized command %q provided", cmd.Args().First())
-			return flag.ErrHelp
-		}
 		var fns []lint.Runner
-		for _, c := range allLintTargets {
-			fns = append(fns, c.Linters...)
+		targets := cmd.Args().Slice()
+
+		if len(targets) == 0 {
+			// If no args provided, run all
+			for _, c := range allLintTargets {
+				fns = append(fns, c.Linters...)
+				targets = append(targets, c.Name)
+			}
+		} else {
+			// Otherwise run requested set
+			allLintTargetsMap := make(map[string][]lint.Runner, len(allLintTargets))
+			for _, c := range allLintTargets {
+				allLintTargetsMap[c.Name] = c.Linters
+			}
+			for _, t := range targets {
+				runners, ok := allLintTargetsMap[t]
+				if !ok {
+					writeFailureLinef("unrecognized target %q provided", t)
+					return flag.ErrHelp
+				}
+				fns = append(fns, runners...)
+			}
 		}
+
+		writeFingerPointingLinef("Running checks from targets: %s", strings.Join(targets, ", "))
 		return runCheckScriptsAndReport(cmd.Context, fns...)
 	},
 	Subcommands: allLintTargets.Commands(),
@@ -151,6 +177,13 @@ func (lt lintTargets) Commands() (cmds []*cli.Command) {
 				}
 				return runCheckScriptsAndReport(cmd.Context, c.Linters...)
 			},
+			// Completions to chain multiple commands
+			BashComplete: completeOptions(func() (options []string) {
+				for _, c := range lt {
+					options = append(options, c.Name)
+				}
+				return options
+			}),
 		})
 	}
 	return cmds
