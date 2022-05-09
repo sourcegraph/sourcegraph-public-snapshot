@@ -28,7 +28,7 @@ func NewJVMPackagesSource(svc *types.ExternalService) (*DependenciesSource, erro
 	return &DependenciesSource{
 		svc:        svc,
 		configDeps: configDeps,
-		scheme:     dependencies.NpmPackagesScheme,
+		scheme:     dependencies.JVMPackagesScheme,
 		src:        &jvmPackagesSource{config: &c},
 	}, nil
 }
@@ -38,6 +38,8 @@ func NewJVMPackagesSource(svc *types.ExternalService) (*DependenciesSource, erro
 type jvmPackagesSource struct {
 	config *schema.JVMPackagesConnection
 }
+
+var _ dependenciesSource = &jvmPackagesSource{}
 
 func (s *jvmPackagesSource) Get(ctx context.Context, name, version string) (reposource.PackageDependency, error) {
 	mavenDependency, err := reposource.ParseMavenDependency(name + ":" + version)
