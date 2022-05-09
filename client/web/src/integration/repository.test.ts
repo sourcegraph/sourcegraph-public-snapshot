@@ -13,7 +13,7 @@ import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibilit
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { DiffHunkLineType, WebGraphQlOperations } from '../graphql-operations'
+import { DiffHunkLineType, RepositoryContributorsResult, WebGraphQlOperations } from '../graphql-operations'
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import {
@@ -23,6 +23,7 @@ import {
     createTreeEntriesResult,
     createBlobContentResult,
     createRepoChangesetsStatsResult,
+    createFileNamesResult,
 } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { percySnapshotWithVariants } from './utils'
@@ -36,6 +37,7 @@ export const getCommonRepositoryGraphQlResults = (
     RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
     RepoChangesetsStats: () => createRepoChangesetsStatsResult(),
     ResolveRev: () => createResolveRevisionResult(repositoryName),
+    FileNames: () => createFileNamesResult(),
     FileExternalLinks: ({ filePath }) => createFileExternalLinksResult(filePath),
     TreeEntries: () => createTreeEntriesResult(repositoryUrl, fileEntries),
     TreeCommits: () => ({
@@ -377,17 +379,6 @@ describe('Repository', () => {
                         },
                     },
                 }),
-                FileNames: () => ({
-                    repository: {
-                        id: 'repo-123',
-                        __typename: 'Repository',
-                        commit: {
-                            id: 'c0ff33',
-                            __typename: 'GitCommit',
-                            fileNames: ['README.md'],
-                        },
-                    },
-                }),
             })
 
             // Mock `Date.now` to stabilize timestamps
@@ -490,17 +481,6 @@ describe('Repository', () => {
                         },
                     },
                 }),
-                FileNames: () => ({
-                    repository: {
-                        id: 'repo-123',
-                        __typename: 'Repository',
-                        commit: {
-                            id: 'c0ff33',
-                            __typename: 'GitCommit',
-                            fileNames: ['README.md'],
-                        },
-                    },
-                }),
             })
 
             await driver.page.goto(
@@ -559,17 +539,6 @@ describe('Repository', () => {
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
                 ...getCommonRepositoryGraphQlResults(repositoryName, repositorySourcegraphUrl, ['readme.md']),
-                FileNames: () => ({
-                    repository: {
-                        id: 'repo-123',
-                        __typename: 'Repository',
-                        commit: {
-                            id: 'c0ff33',
-                            __typename: 'GitCommit',
-                            fileNames: ['README.md'],
-                        },
-                    },
-                }),
             })
 
             await driver.page.goto(driver.sourcegraphBaseUrl + repositorySourcegraphUrl)
@@ -607,17 +576,6 @@ describe('Repository', () => {
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
                 ...getCommonRepositoryGraphQlResults(repositoryName, repositorySourcegraphUrl, ['readme.md']),
-                FileNames: () => ({
-                    repository: {
-                        id: 'repo-123',
-                        __typename: 'Repository',
-                        commit: {
-                            id: 'c0ff33',
-                            __typename: 'GitCommit',
-                            fileNames: ['README.md'],
-                        },
-                    },
-                }),
             })
 
             await driver.page.goto(driver.sourcegraphBaseUrl + repositorySourcegraphUrl)
@@ -1027,17 +985,6 @@ describe('Repository', () => {
                         },
                     },
                 }),
-                FileNames: () => ({
-                    repository: {
-                        id: 'repo-123',
-                        __typename: 'Repository',
-                        commit: {
-                            id: 'c0ff33',
-                            __typename: 'GitCommit',
-                            fileNames: ['README.md'],
-                        },
-                    },
-                }),
             })
 
             // Serve a mock extension bundle with a simple file decoration provider
@@ -1271,6 +1218,96 @@ describe('Repository', () => {
                 },
                 'Incorrect decorations for triply-nested.ts on tree page'
             )
+        })
+    })
+
+    describe('Contributors', () => {
+        const shortRepositoryName = 'sourcegraph/sourcegraph'
+        const repositoryName = `github.com/${shortRepositoryName}`
+        const repositorySourcegraphUrl = `/${repositoryName}/-/stats/contributors`
+
+        it('Should render correctly all contributors', async () => {
+            testContext.overrideGraphQL({
+                ...commonWebGraphQlResults,
+                ...getCommonRepositoryGraphQlResults(repositoryName, repositorySourcegraphUrl, []),
+                RepositoryContributors: (): RepositoryContributorsResult => ({
+                    node: {
+                        contributors: {
+                            nodes: [
+                                {
+                                    person: {
+                                        name: 'alice',
+                                        displayName: 'alice',
+                                        email: 'alice@sourcegraph.test',
+                                        avatarURL: null,
+                                        user: null,
+                                    },
+                                    count: 1,
+                                    commits: {
+                                        nodes: [
+                                            {
+                                                oid: '1'.repeat(40),
+                                                abbreviatedOID: '1'.repeat(7),
+                                                url: `/${repositoryName}/-/commit/${'1'.repeat(40)}`,
+                                                subject: 'Commit message 1',
+                                                author: { date: subDays(new Date(), 1).toISOString() },
+                                            },
+                                        ],
+                                    },
+                                },
+                                {
+                                    person: {
+                                        name: 'jack',
+                                        displayName: 'jack',
+                                        email: 'jack@sourcegraph.test',
+                                        avatarURL: null,
+                                        user: null,
+                                    },
+                                    count: 1,
+                                    commits: {
+                                        nodes: [
+                                            {
+                                                oid: '2'.repeat(40),
+                                                abbreviatedOID: '2'.repeat(7),
+                                                url: `/${repositoryName}/-/commit/${'2'.repeat(40)}`,
+                                                subject: 'Commit message 2',
+                                                author: { date: subDays(new Date(), 2).toISOString() },
+                                            },
+                                        ],
+                                    },
+                                },
+                                {
+                                    person: {
+                                        name: 'jill',
+                                        displayName: 'jill',
+                                        email: 'jill@sourcegraph.test',
+                                        avatarURL: null,
+                                        user: null,
+                                    },
+                                    count: 1,
+                                    commits: {
+                                        nodes: [
+                                            {
+                                                oid: '3'.repeat(40),
+                                                abbreviatedOID: '3'.repeat(7),
+                                                url: `/${repositoryName}/-/commit/${'3'.repeat(40)}`,
+                                                subject: 'Commit message 3',
+                                                author: { date: subDays(new Date(), 3).toISOString() },
+                                            },
+                                        ],
+                                    },
+                                },
+                            ],
+                            totalCount: 3,
+                            pageInfo: { hasNextPage: false },
+                        },
+                    },
+                }),
+            })
+            await driver.page.goto(driver.sourcegraphBaseUrl + repositorySourcegraphUrl)
+            await driver.page.waitForSelector('.test-filtered-contributors-connection')
+            await percySnapshotWithVariants(driver.page, 'Contributor list')
+            await accessibilityAudit(driver.page)
         })
     })
 })

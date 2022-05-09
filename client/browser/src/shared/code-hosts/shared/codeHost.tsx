@@ -2,6 +2,7 @@ import * as React from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
+import { isEqual } from 'lodash'
 import { render as reactDOMRender, Renderer } from 'react-dom'
 import {
     asyncScheduler,
@@ -55,6 +56,8 @@ import {
     property,
     registerHighlightContributions,
     isExternalLink,
+    LineOrPositionOrRange,
+    lprToSelectionsZeroIndexed,
 } from '@sourcegraph/common'
 import { TextDocumentDecoration, WorkspaceRoot } from '@sourcegraph/extension-api-types'
 import { gql, isHTTPAuthError } from '@sourcegraph/http-client'
@@ -271,6 +274,8 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
         target: RepoSpec & RawRepoSpec & RevisionSpec & FileSpec & Partial<UIPositionSpec> & Partial<ViewStateSpec>,
         context: URLToFileContext
     ) => string
+
+    observeLineSelection?: Observable<LineOrPositionOrRange>
 
     notificationClassNames: UnbrandedNotificationItemStyleProps['notificationItemClassNames']
 
@@ -1234,6 +1239,29 @@ export async function handleCodeHost({
                         extensionHostAPI.addViewerIfNotExists(editorData),
                         addRootReference(rootURI, fileInfo.revision),
                     ])
+
+                    if (codeHost.observeLineSelection) {
+                        codeViewEvent.subscriptions.add(
+                            codeHost.observeLineSelection
+                                .pipe(
+                                    map(lprToSelectionsZeroIndexed),
+                                    distinctUntilChanged(isEqual),
+                                    tap(selections => {
+                                        extensionHostAPI
+                                            .setEditorSelections(viewerId, selections)
+                                            .catch(error =>
+                                                console.error(
+                                                    'Error updating editor selections on extension host',
+                                                    error
+                                                )
+                                            )
+                                    })
+                                )
+
+                                // eslint-disable-next-line rxjs/no-nested-subscribe
+                                .subscribe()
+                        )
+                    }
 
                     // Subscribe for removal
                     codeViewEvent.subscriptions.add(() => {

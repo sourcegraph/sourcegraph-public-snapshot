@@ -20,10 +20,14 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - Code Insights: Added fuzzy search filter for dashboard select drop down
+- Search: `path:` is now a valid filter. It is an alias for the existing `file:` filter. [#34947](https://github.com/sourcegraph/sourcegraph/pull/34947)
+- Search: `-language` is a valid filter, but the web app displays it as invalid. The web app is fixed to reflect validity. [#34949](https://github.com/sourcegraph/sourcegraph/pull/34949)
+- Search-based code intelligence now recognizes local variables in Python, Java, JavaScript, TypeScript, C/C++, C#, Go, and Ruby. [#33689](https://github.com/sourcegraph/sourcegraph/pull/33689)
 
 ### Changed
 
 - Sourcegraph's docker images are now based on Alpine Linux 3.14. [#34508](https://github.com/sourcegraph/sourcegraph/pull/34508)
+- Sourcegraph is now built with Go 1.18. [#34899](https://github.com/sourcegraph/sourcegraph/pull/34899)
 
 ### Fixed
 
@@ -32,6 +36,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Button to download raw file in blob page is now working correctly. [#34558](https://github.com/sourcegraph/sourcegraph/pull/34558)
 - Searches containing `or` expressions are now optimized to evaluate natively on the backends that support it ([#34382](https://github.com/sourcegraph/sourcegraph/pull/34382)), and both commit and diff search have been updated to run optimized `and`, `or`, and `not` queries. [#34595](https://github.com/sourcegraph/sourcegraph/pull/34595)
 - Carets in textareas in Firefox are now visible. [#34888](https://github.com/sourcegraph/sourcegraph/pull/34888)
+- Changesets to GitHub code hosts could fail with a confusing, non actionable error message. [#35048](https://github.com/sourcegraph/sourcegraph/pull/35048)
 
 ### Removed
 
@@ -44,6 +49,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Code Insights: Fixed bug that caused line rendering issues when series data is returned out of order by date.
 - Code Insights: Fixed bug that caused before and after parameters to be switched when clicking in to the diff view from an insight.
 - Fixed an issue with notebooks that caused the cursor to behave erratically in markdown blocks. [#34227](https://github.com/sourcegraph/sourcegraph/pull/34227)
+- Batch Changes on docker compose installations were failing due to a missing environment variable [#813](https://github.com/sourcegraph/deploy-sourcegraph-docker/pull/813).
 
 ## 3.39.0
 

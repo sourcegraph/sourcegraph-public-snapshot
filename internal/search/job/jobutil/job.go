@@ -275,7 +275,7 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 						mode = search.SkipUnindexed
 					}
 					addJob(&run.RepoSearchJob{
-						RepoOptions:                  repoOptions,
+						RepoOpts:                     repoOptions,
 						Features:                     features,
 						FilePatternsReposMustInclude: patternInfo.FilePatternsReposMustInclude,
 						FilePatternsReposMustExclude: patternInfo.FilePatternsReposMustExclude,
@@ -287,7 +287,7 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 	}
 
 	addJob(&searchrepos.ComputeExcludedReposJob{
-		Options: repoOptions,
+		RepoOpts: repoOptions,
 	})
 
 	job := NewParallelJob(allJobs...)
@@ -740,31 +740,31 @@ func optimizeJobs(baseJob job.Job, inputs *run.SearchInputs, q query.Basic) (job
 			switch currentJob.(type) {
 			case *zoekt.ZoektGlobalSearchJob:
 				if exists("ZoektGlobalSearchJob") {
-					return &noopJob{}
+					return &NoopJob{}
 				}
 				return currentJob
 
 			case *zoekt.ZoektRepoSubsetSearchJob:
 				if exists("ZoektRepoSubsetSearchJob") {
-					return &noopJob{}
+					return &NoopJob{}
 				}
 				return currentJob
 
 			case *zoekt.ZoektSymbolSearchJob:
 				if exists("ZoektSymbolSearchJob") {
-					return &noopJob{}
+					return &NoopJob{}
 				}
 				return currentJob
 
 			case *symbol.RepoUniverseSymbolSearchJob:
 				if exists("RepoUniverseSymbolSearchJob") {
-					return &noopJob{}
+					return &NoopJob{}
 				}
 				return currentJob
 
 			case *commit.CommitSearchJob:
 				if exists("CommitSearchJob") || exists("DiffSearchJob") {
-					return &noopJob{}
+					return &NoopJob{}
 				}
 				return currentJob
 

@@ -31,7 +31,7 @@ Make sure that
 
 This feature is experimental. In particular, it comes with the following limitations, that we plan to resolve before GA.
 
-- Running batch changes server-side is only available for self-hosted deployments. It is not available on Sourcegraph Cloud and on managed instances.
+- Running batch changes server-side requires setting up executors. Executors are only available as a self-hosted offering. This means we cannot offer managed executors at this time. Managed instances customers can still run batch changes server-side by setting up executors on their own infrastructure.
 - The execution UX is work in progress and will change a lot before the GA release.
 - Documentation is minimal and will change a lot before the GA release.
 - Executors can only be deployed using Terraform (AWS or GCP) or using pre-built binaries (see [deploying executors](../../admin/deploy_executors.md)).

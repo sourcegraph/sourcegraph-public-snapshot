@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/url"
+	"sort"
 
 	"github.com/graphql-go/graphql/gqlerrors"
 	"github.com/opentracing/opentracing-go"
@@ -128,6 +129,31 @@ func Search(ctx context.Context, db database.DB, query string, monitorID int64, 
 		hook := func(ctx context.Context, db database.DB, gs commit.GitserverClient, args *gitprotocol.SearchRequest, repoID api.RepoID, doSearch commit.DoSearchFunc) error {
 			return hookWithID(ctx, db, gs, monitorID, repoID, args, doSearch)
 		}
+		{
+			// This block is a transitional block that can be removed in a
+			// future version. We need this block to exist when we transition
+			// from timestamp-based code monitors to commit-hash-based
+			// (repo-aware) code monitors.
+			//
+			// When we flip the switch to repo-aware, all existing code
+			// monitors will start executing as repo-aware code monitors.
+			// Without this block, this  would mean all repos would be detected
+			// as "unsearched" and we would start searching from the beginning
+			// of the repo's history, flooding every code monitor user with a
+			// notification with many results.
+			//
+			// Instead, this detects if this monitor has ever been run as a
+			// repo-aware monitor before and snapshots the current state of the
+			// searched repos rather than searching them.
+			hasAnyLastSearched, err := edb.NewEnterpriseDB(db).CodeMonitors().HasAnyLastSearched(ctx, monitorID)
+			if err != nil {
+				return nil, err
+			} else if !hasAnyLastSearched {
+				hook = func(ctx context.Context, db database.DB, gs commit.GitserverClient, args *gitprotocol.SearchRequest, repoID api.RepoID, _ commit.DoSearchFunc) error {
+					return snapshotHook(ctx, db, gs, args, monitorID, repoID)
+				}
+			}
+		}
 		planJob, err = addCodeMonitorHook(planJob, hook)
 		if err != nil {
 			return nil, err
@@ -177,6 +203,7 @@ func Snapshot(ctx context.Context, db database.DB, query string, monitorID int64
 	hook := func(ctx context.Context, db database.DB, gs commit.GitserverClient, args *gitprotocol.SearchRequest, repoID api.RepoID, _ commit.DoSearchFunc) error {
 		return snapshotHook(ctx, db, gs, args, monitorID, repoID)
 	}
+
 	planJob, err = addCodeMonitorHook(planJob, hook)
 	if err != nil {
 		return err
@@ -200,7 +227,7 @@ func addCodeMonitorHook(in job.Job, hook commit.CodeMonitorHook) (_ job.Job, err
 			jobCopy := *typedAtom
 			jobCopy.CodeMonitorSearchWrapper = hook
 			return &jobCopy
-		case *repos.ComputeExcludedReposJob:
+		case *repos.ComputeExcludedReposJob, *jobutil.NoopJob:
 			// ComputeExcludedReposJob is fine for code monitor jobs
 			return atom
 		default:
@@ -232,6 +259,10 @@ func hookWithID(
 	if err != nil {
 		return err
 	}
+	if stringsEqual(commitHashes, lastSearched) {
+		// Early return if the repo hasn't changed since last search
+		return nil
+	}
 
 	// Merge requested hashes and excluded hashes
 	newRevs := make([]gitprotocol.RevisionSpecifier, 0, len(commitHashes)+len(lastSearched))
@@ -248,6 +279,8 @@ func hookWithID(
 
 	// Execute the search
 	err = doSearch(&argsCopy)
+	// ignore any errors from early cancellation
+	err = errors.Ignore(err, errors.IsContextError)
 	if err != nil {
 		return err
 	}
@@ -284,4 +317,20 @@ func gqlURL(queryName string) (string, error) {
 	u.Path = "/.internal/graphql"
 	u.RawQuery = queryName
 	return u.String(), nil
+}
+
+func stringsEqual(left, right []string) bool {
+	if len(left) != len(right) {
+		return false
+	}
+
+	sort.Strings(left)
+	sort.Strings(right)
+
+	for i := range left {
+		if right[i] != left[i] {
+			return false
+		}
+	}
+	return true
 }

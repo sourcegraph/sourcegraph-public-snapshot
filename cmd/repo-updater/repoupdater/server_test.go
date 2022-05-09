@@ -182,11 +182,12 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 	testCases := []testCase{{
 		name: "returns an error on store failure",
 		init: func(realDB database.DB) repos.Store {
-			repos := database.NewMockRepoStore()
-			repos.ListFunc.SetDefaultReturn(nil, errors.New("boom"))
-			db := database.NewMockDBFrom(realDB)
-			db.ReposFunc.SetDefaultReturn(repos)
-			return initStore(db)
+			mockRepos := database.NewMockRepoStore()
+			mockRepos.ListFunc.SetDefaultReturn(nil, errors.New("boom"))
+			realStore := initStore(realDB)
+			mockStore := repos.NewMockStoreFrom(realStore)
+			mockStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
+			return mockStore
 		},
 		err: `store.list-repos: boom`,
 	}, {

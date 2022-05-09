@@ -15,15 +15,10 @@ import (
 
 // InitDBStore initializes and returns a db store instance.
 func InitDBStore() (*dbstore.Store, error) {
-	conn, err := initDBStore.Init()
-	if err != nil {
-		return nil, err
-	}
-
-	return conn.(*dbstore.Store), nil
+	return initDBStore.Init()
 }
 
-var initDBStore = memo.NewMemoizedConstructor(func() (interface{}, error) {
+var initDBStore = memo.NewMemoizedConstructor(func() (*dbstore.Store, error) {
 	observationContext := &observation.Context{
 		Logger:     log.Scoped("store", "codeintel db store"),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
@@ -40,15 +35,10 @@ var initDBStore = memo.NewMemoizedConstructor(func() (interface{}, error) {
 
 // InitDependencySyncingStore initializes and returns a dependency index store.
 func InitDependencySyncingStore() (dbworkerstore.Store, error) {
-	store, err := initDependencySyncStore.Init()
-	if err != nil {
-		return nil, err
-	}
-
-	return store.(dbworkerstore.Store), nil
+	return initDependencySyncStore.Init()
 }
 
-var initDependencySyncStore = memo.NewMemoizedConstructor(func() (interface{}, error) {
+var initDependencySyncStore = memo.NewMemoizedConstructor(func() (dbworkerstore.Store, error) {
 	observationContext := &observation.Context{
 		Logger:     log.Scoped("store.dependency_sync", "dependency sync store"),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
@@ -64,15 +54,10 @@ var initDependencySyncStore = memo.NewMemoizedConstructor(func() (interface{}, e
 })
 
 func InitDependencyIndexingStore() (dbworkerstore.Store, error) {
-	store, err := initDependenyIndexStore.Init()
-	if err != nil {
-		return nil, err
-	}
-
-	return store.(dbworkerstore.Store), nil
+	return initDependenyIndexStore.Init()
 }
 
-var initDependenyIndexStore = memo.NewMemoizedConstructor(func() (interface{}, error) {
+var initDependenyIndexStore = memo.NewMemoizedConstructor(func() (dbworkerstore.Store, error) {
 	observationContext := &observation.Context{
 		Logger:     log.Scoped("store.dependency_index", "dependency index store"),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},

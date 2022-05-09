@@ -51,7 +51,7 @@ func SexpFormat(j job.Job, sep, indent string) string {
 			*commit.CommitSearchJob,
 			*symbol.RepoUniverseSymbolSearchJob,
 			*repos.ComputeExcludedReposJob,
-			*noopJob:
+			*NoopJob:
 			b.WriteString(j.Name())
 
 		case *repoPagerJob:
@@ -211,7 +211,7 @@ func PrettyMermaid(j job.Job) string {
 			*commit.CommitSearchJob,
 			*symbol.RepoUniverseSymbolSearchJob,
 			*repos.ComputeExcludedReposJob,
-			*noopJob:
+			*NoopJob:
 			writeNode(b, depth, RoundedStyle, &id, j.Name())
 
 		case *repoPagerJob:
@@ -329,7 +329,7 @@ func toJSON(j job.Job, verbose bool) interface{} {
 			*commit.CommitSearchJob,
 			*symbol.RepoUniverseSymbolSearchJob,
 			*repos.ComputeExcludedReposJob,
-			*noopJob:
+			*NoopJob:
 			if verbose {
 				return map[string]interface{}{j.Name(): j}
 			}

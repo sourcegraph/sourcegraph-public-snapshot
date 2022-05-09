@@ -9,9 +9,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/sourcegraph/sourcegraph/dev/okay"
 	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestMain(m *testing.M) {

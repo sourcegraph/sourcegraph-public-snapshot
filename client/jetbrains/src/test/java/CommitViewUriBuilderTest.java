@@ -1,5 +1,5 @@
-import com.sourcegraph.project.CommitViewUriBuilder;
-import com.sourcegraph.project.RepoInfo;
+import com.sourcegraph.git.CommitViewUriBuilder;
+import com.sourcegraph.git.RepoInfo;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EmptySource;

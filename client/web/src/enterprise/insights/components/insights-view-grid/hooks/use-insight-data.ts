@@ -1,8 +1,7 @@
-import { RefObject, useContext, useEffect, useState } from 'react'
+import { RefObject, useEffect, useState } from 'react'
 
 import { ObservableInput } from 'rxjs'
 
-import { CodeInsightsBackendContext, CodeInsightsGqlBackend } from '../../../core'
 import { LazyQueryState, useLazyParallelRequest } from '../../../hooks/use-parallel-requests/use-parallel-request'
 
 export interface UseInsightDataResult<T> {
@@ -23,16 +22,10 @@ export function useInsightData<D>(
     request: () => ObservableInput<D>,
     reference: RefObject<HTMLElement>
 ): UseInsightDataResult<D> {
-    const api = useContext(CodeInsightsBackendContext)
-    const isGqlAPI = api instanceof CodeInsightsGqlBackend
-
     const { state, query } = useLazyParallelRequest<D>()
 
-    // All non GQL API implementations do not support partial loading,
-    // allowing insights fetching for this API whether insights are
-    // in a viewport or not.
-    const [isVisible, setVisibility] = useState<boolean>(!isGqlAPI)
-    const [hasIntersected, setHasIntersected] = useState<boolean>(!isGqlAPI)
+    const [isVisible, setVisibility] = useState<boolean>(false)
+    const [hasIntersected, setHasIntersected] = useState<boolean>(false)
 
     useEffect(() => {
         if (hasIntersected) {
@@ -51,7 +44,7 @@ export function useInsightData<D>(
         // Do not observe insights visibility for non GQL based APIs.
         // Only GQL API supports partial insights fetching based on
         // insights visibility.
-        if (!element || !isGqlAPI) {
+        if (!element) {
             return
         }
 
@@ -70,7 +63,7 @@ export function useInsightData<D>(
         observer.observe(element)
 
         return () => observer.unobserve(element)
-    }, [isGqlAPI, reference])
+    }, [reference])
 
     return { state, isVisible, query }
 }
