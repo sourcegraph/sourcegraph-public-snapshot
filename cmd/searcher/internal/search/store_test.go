@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 func TestPrepareZip(t *testing.T) {
@@ -262,6 +263,7 @@ func tmpStore(t *testing.T) *Store {
 	d := t.TempDir()
 	return &Store{
 		Path: d,
+		Log:  logtest.Scoped(t),
 	}
 }
 
