@@ -34,7 +34,7 @@ import (
 
 var _ graphqlbackend.InsightSeriesResolver = &precalculatedInsightSeriesResolver{}
 
-// TODOL(insights): remove insightSeriesResolver when `insights` is removed from graphql query schema
+// TODO(insights): remove insightSeriesResolver when `insights` is removed from graphql query schema
 type insightSeriesResolver struct {
 	insightsStore   store.Interface
 	workerBaseStore *basestore.Store
