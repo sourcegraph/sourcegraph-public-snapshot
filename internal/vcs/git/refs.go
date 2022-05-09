@@ -220,15 +220,21 @@ func GetBehindAhead(ctx context.Context, db database.DB, repo api.RepoName, left
 	return &BehindAhead{Behind: uint32(b), Ahead: uint32(a)}, nil
 }
 
-// ListTags returns a list of all tags in the repository.
-func ListTags(ctx context.Context, db database.DB, repo api.RepoName) ([]*Tag, error) {
+// ListTags returns a list of all tags in the repository. If commitObjs is non-empty, only all tags pointing at those commits are returned.
+func ListTags(ctx context.Context, db database.DB, repo api.RepoName, commitObjs ...string) ([]*Tag, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: Tags")
 	defer span.Finish()
+
+	args := []string{"tag", "--list", "--sort", "-creatordate", "--format", "%(if)%(*objectname)%(then)%(*objectname)%(else)%(objectname)%(end)%00%(refname:short)%00%(if)%(creatordate:unix)%(then)%(creatordate:unix)%(else)%(*creatordate:unix)%(end)"}
+
+	for _, commit := range commitObjs {
+		args = append(args, "--points-at", commit)
+	}
 
 	// Support both lightweight tags and tag objects. For creatordate, use an %(if) to prefer the
 	// taggerdate for tag objects, otherwise use the commit's committerdate (instead of just always
 	// using committerdate).
-	cmd := gitserver.NewClient(db).GitCommand(repo, "tag", "--list", "--sort", "-creatordate", "--format", "%(if)%(*objectname)%(then)%(*objectname)%(else)%(objectname)%(end)%00%(refname:short)%00%(if)%(creatordate:unix)%(then)%(creatordate:unix)%(else)%(*creatordate:unix)%(end)")
+	cmd := gitserver.NewClient(db).GitCommand(repo, args...)
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
 		if gitdomain.IsRepoNotExist(err) {

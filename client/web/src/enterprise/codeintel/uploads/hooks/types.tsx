@@ -5,6 +5,7 @@ export const lsifUploadFieldsFragment = gql`
         __typename
         id
         inputCommit
+        tags
         inputRoot
         inputIndexer
         indexer {

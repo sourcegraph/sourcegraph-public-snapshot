@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 type UploadResolver struct {
@@ -57,6 +58,17 @@ func (r *UploadResolver) StartedAt() *gql.DateTime  { return gql.DateTimeOrNil(r
 func (r *UploadResolver) FinishedAt() *gql.DateTime { return gql.DateTimeOrNil(r.upload.FinishedAt) }
 func (r *UploadResolver) InputIndexer() string      { return r.upload.Indexer }
 func (r *UploadResolver) PlaceInQueue() *int32      { return toInt32(r.upload.Rank) }
+
+func (r *UploadResolver) Tags(ctx context.Context) (tagsNames []string, err error) {
+	tags, err := git.ListTags(ctx, r.db, api.RepoName(r.upload.RepositoryName), r.upload.Commit)
+	if err != nil {
+		return nil, err
+	}
+	for _, tag := range tags {
+		tagsNames = append(tagsNames, tag.Name)
+	}
+	return
+}
 
 func (r *UploadResolver) State() string {
 	state := strings.ToUpper(r.upload.State)
