@@ -115,6 +115,10 @@ func (cm *CommitMatch) Select(path filter.SelectPath) Match {
 			}
 			if len(fields) == 2 {
 				filteredMatch := selectCommitDiffKind(cm.DiffPreview, fields[1])
+				if filteredMatch == nil {
+					// no result after selecting, propagate no result.
+					return nil
+				}
 				cm.DiffPreview = filteredMatch
 				return cm
 			}
