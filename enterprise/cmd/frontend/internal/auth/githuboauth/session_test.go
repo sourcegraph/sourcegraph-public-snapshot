@@ -49,10 +49,13 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 		ghUser          *github.User
 		ghUserEmails    []*githubsvc.UserEmail
 		ghUserOrgs      []*githubsvc.Org
+		ghUserTeams     []*githubsvc.Team
 		ghUserEmailsErr error
 		ghUserOrgsErr   error
+		ghUserTeamsErr  error
 		allowSignup     bool
 		allowOrgs       []string
+		allowTeams      []string
 	}
 	cases := []struct {
 		inputs        []input
@@ -193,6 +196,95 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 				ExternalAccount: acct(extsvc.TypeGitHub, "https://github.com/", clientID, "101"),
 			},
 		},
+		{
+			inputs: []input{{
+				description: "ghUser, verified email, not in allowed teams -> no session created",
+				allowTeams:  []string{"anotherteam"},
+				ghUser: &github.User{
+					ID:    github.Int64(101),
+					Login: github.String("alice"),
+				},
+				ghUserEmails: []*githubsvc.UserEmail{{
+					Email:    "alice@example.com",
+					Primary:  true,
+					Verified: true,
+				}},
+				ghUserTeams: []*githubsvc.Team{
+					{Name: "myteam"},
+				},
+			}},
+			expErr: true,
+		},
+		{
+			inputs: []input{{
+				description: "ghUser, verified email, error getting user teams -> no session created",
+				allowTeams:  []string{"myteam"},
+				ghUser: &github.User{
+					ID:    github.Int64(101),
+					Login: github.String("alice"),
+				},
+				ghUserEmails: []*githubsvc.UserEmail{{
+					Email:    "alice@example.com",
+					Primary:  true,
+					Verified: true,
+				}},
+				ghUserTeams: []*githubsvc.Team{
+					{Name: "myteam"},
+				},
+				ghUserTeamsErr: errors.New("boom"),
+			}},
+			expErr: true,
+		},
+		{
+			inputs: []input{{
+				description: "ghUser, verified email, not in allowed orgs but in allowed teams -> session created",
+				allowTeams:  []string{"myteam"},
+				allowOrgs:   []string{"myorg"},
+				ghUser: &github.User{
+					ID:    github.Int64(101),
+					Login: github.String("alice"),
+				},
+				ghUserEmails: []*githubsvc.UserEmail{{
+					Email:    "alice@example.com",
+					Primary:  true,
+					Verified: true,
+				}},
+				ghUserTeams: []*githubsvc.Team{
+					{Name: "myteam"},
+				},
+				ghUserOrgs: []*githubsvc.Org{
+					{Login: "anotherorg"},
+				},
+			}},
+			expActor: &actor.Actor{UID: 1},
+			expAuthUserOp: &auth.GetAndSaveUserOp{
+				UserProps:       u("alice", "alice@example.com", true),
+				ExternalAccount: acct(extsvc.TypeGitHub, "https://github.com/", clientID, "101"),
+			},
+		},
+		{
+			inputs: []input{{
+				description: "ghUser, verified email, allowed teams -> session created",
+				allowTeams:  []string{"myteam"},
+				ghUser: &github.User{
+					ID:    github.Int64(101),
+					Login: github.String("alice"),
+				},
+				ghUserEmails: []*githubsvc.UserEmail{{
+					Email:    "alice@example.com",
+					Primary:  true,
+					Verified: true,
+				}},
+				ghUserTeams: []*githubsvc.Team{
+					{Name: "myteam"},
+				},
+			}},
+			expActor: &actor.Actor{UID: 1},
+			expAuthUserOp: &auth.GetAndSaveUserOp{
+				UserProps:       u("alice", "alice@example.com", true),
+				ExternalAccount: acct(extsvc.TypeGitHub, "https://github.com/", clientID, "101"),
+			},
+		},
 	}
 	for _, c := range cases {
 		for _, ci := range c.inputs {
@@ -203,6 +295,9 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 				}
 				githubsvc.MockGetAuthenticatedUserOrgs = func(ctx context.Context) ([]*githubsvc.Org, error) {
 					return ci.ghUserOrgs, ci.ghUserOrgsErr
+				}
+				githubsvc.MockGetAuthenticatedUserTeams = func(ctx context.Context) ([]*githubsvc.Team, error) {
+					return ci.ghUserTeams, ci.ghUserTeamsErr
 				}
 				var gotAuthUserOp *auth.GetAndSaveUserOp
 				auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
@@ -221,6 +316,7 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 					auth.MockGetAndSaveUser = nil
 					githubsvc.MockGetAuthenticatedUserEmails = nil
 					githubsvc.MockGetAuthenticatedUserOrgs = nil
+					githubsvc.MockGetAuthenticatedUserTeams = nil
 				}()
 
 				ctx := githublogin.WithUser(context.Background(), ci.ghUser)
@@ -229,12 +325,15 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 					clientID:    clientID,
 					allowSignup: ci.allowSignup,
 					allowOrgs:   ci.allowOrgs,
+					allowTeams:  ci.allowTeams,
 				}
+
 				tok := &oauth2.Token{AccessToken: "dummy-value-that-isnt-relevant-to-unit-correctness"}
 				actr, _, err := s.GetOrCreateUser(ctx, tok, "", "", "")
 				if got, exp := actr, c.expActor; !reflect.DeepEqual(got, exp) {
 					t.Errorf("expected actor %v, got %v", exp, got)
 				}
+
 				if c.expErr && err == nil {
 					t.Errorf("expected err %v, but was nil", c.expErr)
 				} else if !c.expErr && err != nil {

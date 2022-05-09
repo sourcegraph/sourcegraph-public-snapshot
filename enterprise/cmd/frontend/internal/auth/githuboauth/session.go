@@ -295,7 +295,7 @@ func (s *sessionIssuerHelper) verifyUserOrgs(ctx context.Context, ghClient *gith
 }
 
 func (s *sessionIssuerHelper) verifyUserTeams(ctx context.Context, ghClient *githubsvc.V3Client) bool {
-	userTeams, _, _, err := ghClient.GetAuthenticatedUserTeams(ctx, 1)
+	userTeams, err := ghClient.GetAuthenticatedUserTeams(ctx)
 
 	if err != nil {
 		log15.Warn("Could not get GitHub authenticated user teams", "error", err)
