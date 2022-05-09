@@ -1679,7 +1679,7 @@ func file_lib_codeintel_lsiftyped_lsif_proto_rawDescGZIP() []byte {
 
 var file_lib_codeintel_lsiftyped_lsif_proto_enumTypes = make([]protoimpl.EnumInfo, 7)
 var file_lib_codeintel_lsiftyped_lsif_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
-var file_lib_codeintel_lsiftyped_lsif_proto_goTypes = []any{
+var file_lib_codeintel_lsiftyped_lsif_proto_goTypes = []interface{}{
 	(ProtocolVersion)(0),      // 0: lib.codeintel.lsiftyped.ProtocolVersion
 	(TextEncoding)(0),         // 1: lib.codeintel.lsiftyped.TextEncoding
 	(SymbolRole)(0),           // 2: lib.codeintel.lsiftyped.SymbolRole
@@ -1729,7 +1729,7 @@ func file_lib_codeintel_lsiftyped_lsif_proto_init() {
 		return
 	}
 	if !protoimpl.UnsafeEnabled {
-		file_lib_codeintel_lsiftyped_lsif_proto_msgTypes[0].Exporter = func(v any, i int) any {
+		file_lib_codeintel_lsiftyped_lsif_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Index); i {
 			case 0:
 				return &v.state
@@ -1741,7 +1741,7 @@ func file_lib_codeintel_lsiftyped_lsif_proto_init() {
 				return nil
 			}
 		}
-		file_lib_codeintel_lsiftyped_lsif_proto_msgTypes[1].Exporter = func(v any, i int) any {
+		file_lib_codeintel_lsiftyped_lsif_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Metadata); i {
 			case 0:
 				return &v.state
@@ -1753,7 +1753,7 @@ func file_lib_codeintel_lsiftyped_lsif_proto_init() {
 				return nil
 			}
 		}
-		file_lib_codeintel_lsiftyped_lsif_proto_msgTypes[2].Exporter = func(v any, i int) any {
+		file_lib_codeintel_lsiftyped_lsif_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ToolInfo); i {
 			case 0:
 				return &v.state
@@ -1765,7 +1765,7 @@ func file_lib_codeintel_lsiftyped_lsif_proto_init() {
 				return nil
 			}
 		}
-		file_lib_codeintel_lsiftyped_lsif_proto_msgTypes[3].Exporter = func(v any, i int) any {
+		file_lib_codeintel_lsiftyped_lsif_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Document); i {
 			case 0:
 				return &v.state
@@ -1777,7 +1777,7 @@ func file_lib_codeintel_lsiftyped_lsif_proto_init() {
 				return nil
 			}
 		}
-		file_lib_codeintel_lsiftyped_lsif_proto_msgTypes[4].Exporter = func(v any, i int) any {
+		file_lib_codeintel_lsiftyped_lsif_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Symbol); i {
 			case 0:
 				return &v.state
@@ -1789,7 +1789,7 @@ func file_lib_codeintel_lsiftyped_lsif_proto_init() {
 				return nil
 			}
 		}
-		file_lib_codeintel_lsiftyped_lsif_proto_msgTypes[5].Exporter = func(v any, i int) any {
+		file_lib_codeintel_lsiftyped_lsif_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Package); i {
 			case 0:
 				return &v.state
@@ -1801,7 +1801,7 @@ func file_lib_codeintel_lsiftyped_lsif_proto_init() {
 				return nil
 			}
 		}
-		file_lib_codeintel_lsiftyped_lsif_proto_msgTypes[6].Exporter = func(v any, i int) any {
+		file_lib_codeintel_lsiftyped_lsif_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Descriptor); i {
 			case 0:
 				return &v.state
@@ -1813,7 +1813,7 @@ func file_lib_codeintel_lsiftyped_lsif_proto_init() {
 				return nil
 			}
 		}
-		file_lib_codeintel_lsiftyped_lsif_proto_msgTypes[7].Exporter = func(v any, i int) any {
+		file_lib_codeintel_lsiftyped_lsif_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*SymbolInformation); i {
 			case 0:
 				return &v.state
@@ -1825,7 +1825,7 @@ func file_lib_codeintel_lsiftyped_lsif_proto_init() {
 				return nil
 			}
 		}
-		file_lib_codeintel_lsiftyped_lsif_proto_msgTypes[8].Exporter = func(v any, i int) any {
+		file_lib_codeintel_lsiftyped_lsif_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Relationship); i {
 			case 0:
 				return &v.state
@@ -1837,7 +1837,7 @@ func file_lib_codeintel_lsiftyped_lsif_proto_init() {
 				return nil
 			}
 		}
-		file_lib_codeintel_lsiftyped_lsif_proto_msgTypes[9].Exporter = func(v any, i int) any {
+		file_lib_codeintel_lsiftyped_lsif_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Occurrence); i {
 			case 0:
 				return &v.state
@@ -1849,7 +1849,7 @@ func file_lib_codeintel_lsiftyped_lsif_proto_init() {
 				return nil
 			}
 		}
-		file_lib_codeintel_lsiftyped_lsif_proto_msgTypes[10].Exporter = func(v any, i int) any {
+		file_lib_codeintel_lsiftyped_lsif_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Diagnostic); i {
 			case 0:
 				return &v.state
