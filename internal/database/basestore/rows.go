@@ -28,16 +28,16 @@ func CloseRows(rows *sql.Rows, err error) error {
 	return combineErrors(err, rows.Close(), rows.Err())
 }
 
-// ScanStrings reads string values from the given row object.
-func ScanStrings(rows *sql.Rows, queryErr error) (_ []string, err error) {
+// ScanSlice reads a slice of values from the given row object.
+func ScanSlice[T any](rows *sql.Rows, queryErr error) (_ []T, err error) {
 	if queryErr != nil {
 		return nil, queryErr
 	}
 	defer func() { err = CloseRows(rows, err) }()
 
-	var values []string
+	var values []T
 	for rows.Next() {
-		var value string
+		var value T
 		if err := rows.Scan(&value); err != nil {
 			return nil, err
 		}
@@ -48,45 +48,41 @@ func ScanStrings(rows *sql.Rows, queryErr error) (_ []string, err error) {
 	return values, nil
 }
 
-// ScanFirstString reads string values from the given row object and returns the first one.
-// If no rows match the query, a false-valued flag is returned.
-func ScanFirstString(rows *sql.Rows, queryErr error) (_ string, _ bool, err error) {
+// ScanFirst reads a single value from the given row object.
+func ScanFirst[T any](rows *sql.Rows, queryErr error) (value T, _ bool, err error) {
 	if queryErr != nil {
-		return "", false, queryErr
+		return value, false, queryErr
 	}
 	defer func() { err = CloseRows(rows, err) }()
 
 	if rows.Next() {
-		var value string
 		if err := rows.Scan(&value); err != nil {
-			return "", false, err
+			return value, false, err
 		}
 
 		return value, true, nil
 	}
 
-	return "", false, nil
+	return value, false, nil
 }
+
+// ScanStrings reads string values from the given row object.
+var ScanStrings = ScanSlice[string]
+
+// ScanFirstString reads string values from the given row object and returns the first one.
+// If no rows match the query, a false-valued flag is returned.
+var ScanFirstString = ScanFirst[string]
 
 // ScanFirstNullString reads possibly null string values from the given row
 // object and returns the first one. If no rows match the query, a false-valued
 // flag is returned.
 func ScanFirstNullString(rows *sql.Rows, queryErr error) (_ string, _ bool, err error) {
-	if queryErr != nil {
-		return "", false, queryErr
-	}
-	defer func() { err = CloseRows(rows, err) }()
-
-	if rows.Next() {
-		var value sql.NullString
-		if err := rows.Scan(&value); err != nil {
-			return "", false, err
-		}
-
-		return value.String, true, nil
+	value, ok, err := ScanFirst[sql.NullString](rows, queryErr)
+	if err != nil || !ok {
+		return "", false, err
 	}
 
-	return "", false, nil
+	return value.String, true, nil
 }
 
 // ScanInt is a convenience method to return an integer value and any query error from a given row object.
@@ -96,261 +92,54 @@ func ScanInt(row *sql.Row) (int, error) {
 }
 
 // ScanInts reads integer values from the given row object.
-func ScanInts(rows *sql.Rows, queryErr error) (_ []int, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = CloseRows(rows, err) }()
-
-	var values []int
-	for rows.Next() {
-		var value int
-		if err := rows.Scan(&value); err != nil {
-			return nil, err
-		}
-
-		values = append(values, value)
-	}
-
-	return values, nil
-}
+var ScanInts = ScanSlice[int]
 
 // ScanInt32s reads integer values from the given row object.
-func ScanInt32s(rows *sql.Rows, queryErr error) (_ []int32, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = CloseRows(rows, err) }()
-
-	var values []int32
-	for rows.Next() {
-		var value int32
-		if err := rows.Scan(&value); err != nil {
-			return nil, err
-		}
-
-		values = append(values, value)
-	}
-
-	return values, nil
-}
+var ScanInt32s = ScanSlice[int32]
 
 // ScanInt64s reads integer values from the given row object.
-func ScanInt64s(rows *sql.Rows, queryErr error) (_ []int64, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = CloseRows(rows, err) }()
-
-	var values []int64
-	for rows.Next() {
-		var value int64
-		if err := rows.Scan(&value); err != nil {
-			return nil, err
-		}
-
-		values = append(values, value)
-	}
-
-	return values, nil
-}
+var ScanInt64s = ScanSlice[int64]
 
 // ScanUint32s reads unsigned integer values from the given row object.
-func ScanUint32s(rows *sql.Rows, queryErr error) (_ []uint32, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = CloseRows(rows, err) }()
-
-	var values []uint32
-	for rows.Next() {
-		var value uint32
-		if err := rows.Scan(&value); err != nil {
-			return nil, err
-		}
-
-		values = append(values, value)
-	}
-
-	return values, nil
-}
+var Scanuint32s = ScanSlice[uint32]
 
 // ScanFirstInt reads integer values from the given row object and returns the first one.
 // If no rows match the query, a false-valued flag is returned.
-func ScanFirstInt(rows *sql.Rows, queryErr error) (_ int, _ bool, err error) {
-	if queryErr != nil {
-		return 0, false, queryErr
-	}
-	defer func() { err = CloseRows(rows, err) }()
-
-	if rows.Next() {
-		var value int
-		if err := rows.Scan(&value); err != nil {
-			return 0, false, err
-		}
-
-		return value, true, nil
-	}
-
-	return 0, false, nil
-}
+var ScanFirstInt = ScanFirst[int]
 
 // ScanFirstInt64 reads int64 values from the given row object and returns the first one.
 // If no rows match the query, a false-valued flag is returned.
-func ScanFirstInt64(rows *sql.Rows, queryErr error) (_ int64, _ bool, err error) {
-	if queryErr != nil {
-		return 0, false, queryErr
-	}
-	defer func() { err = CloseRows(rows, err) }()
-
-	if rows.Next() {
-		var value int64
-		if err := rows.Scan(&value); err != nil {
-			return 0, false, err
-		}
-
-		return value, true, nil
-	}
-
-	return 0, false, nil
-}
+var ScanFirstInt64 = ScanFirst[int64]
 
 // ScanFirstNullInt64 reads possibly null int64 values from the given row
 // object and returns the first one. If no rows match the query, a false-valued
 // flag is returned.
 func ScanFirstNullInt64(rows *sql.Rows, queryErr error) (_ int64, _ bool, err error) {
-	if queryErr != nil {
-		return 0, false, queryErr
-	}
-	defer func() { err = CloseRows(rows, err) }()
-
-	if rows.Next() {
-		var value sql.NullInt64
-		if err := rows.Scan(&value); err != nil {
-			return 0, false, err
-		}
-
-		return value.Int64, true, nil
+	value, ok, err := ScanFirst[sql.NullInt64](rows, queryErr)
+	if err != nil || !ok {
+		return 0, false, err
 	}
 
-	return 0, false, nil
+	return value.Int64, true, nil
 }
 
 // ScanFloats reads float values from the given row object.
-func ScanFloats(rows *sql.Rows, queryErr error) (_ []float64, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = CloseRows(rows, err) }()
-
-	var values []float64
-	for rows.Next() {
-		var value float64
-		if err := rows.Scan(&value); err != nil {
-			return nil, err
-		}
-
-		values = append(values, value)
-	}
-
-	return values, nil
-}
+var ScanFloats = ScanSlice[float64]
 
 // ScanFirstFloat reads float values from the given row object and returns the first one.
 // If no rows match the query, a false-valued flag is returned.
-func ScanFirstFloat(rows *sql.Rows, queryErr error) (_ float64, _ bool, err error) {
-	if queryErr != nil {
-		return 0, false, queryErr
-	}
-	defer func() { err = CloseRows(rows, err) }()
-
-	if rows.Next() {
-		var value float64
-		if err := rows.Scan(&value); err != nil {
-			return 0, false, err
-		}
-
-		return value, true, nil
-	}
-
-	return 0, false, nil
-}
+var ScanFirstFloat = ScanFirst[float64]
 
 // ScanBools reads bool values from the given row object.
-func ScanBools(rows *sql.Rows, queryErr error) (_ []bool, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = CloseRows(rows, err) }()
-
-	var values []bool
-	for rows.Next() {
-		var value bool
-		if err := rows.Scan(&value); err != nil {
-			return nil, err
-		}
-
-		values = append(values, value)
-	}
-
-	return values, nil
-}
+var ScanBools = ScanSlice[bool]
 
 // ScanFirstBool reads bool values from the given row object and returns the first one.
 // If no rows match the query, a false-valued flag is returned.
-func ScanFirstBool(rows *sql.Rows, queryErr error) (value bool, exists bool, err error) {
-	if queryErr != nil {
-		return false, false, queryErr
-	}
-	defer func() { err = CloseRows(rows, err) }()
-
-	if rows.Next() {
-		if err := rows.Scan(&value); err != nil {
-			return false, false, err
-		}
-
-		return value, true, nil
-	}
-
-	return false, false, nil
-}
+var ScanFirstBool = ScanFirst[bool]
 
 // ScanTimes reads time values from the given row object.
-func ScanTimes(rows *sql.Rows, queryErr error) (_ []time.Time, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = CloseRows(rows, err) }()
-
-	var values []time.Time
-	for rows.Next() {
-		var value time.Time
-		if err := rows.Scan(&value); err != nil {
-			return nil, err
-		}
-
-		values = append(values, value)
-	}
-
-	return values, nil
-}
+var ScanTimes = ScanSlice[time.Time]
 
 // ScanFirstTime reads time values from the given row object and returns the first one.
 // If no rows match the query, a false-valued flag is returned.
-func ScanFirstTime(rows *sql.Rows, queryErr error) (_ time.Time, _ bool, err error) {
-	if queryErr != nil {
-		return time.Time{}, false, queryErr
-	}
-	defer func() { err = CloseRows(rows, err) }()
-
-	if rows.Next() {
-		var value time.Time
-		if err := rows.Scan(&value); err != nil {
-			return time.Time{}, false, err
-		}
-
-		return value, true, nil
-	}
-
-	return time.Time{}, false, nil
-}
+var ScanFirstTime = ScanFirst[time.Time]
