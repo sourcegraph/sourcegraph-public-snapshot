@@ -1,23 +1,21 @@
 package queryrunner
 
-import "fmt"
+import (
+	"fmt"
 
-type ComputeStreamingError struct {
-	Messages []string
-}
-
-func (e ComputeStreamingError) Error() string {
-	return fmt.Sprintf("Encountered error(s) while running a stream compute search: %v", e.Messages)
-}
-
-func (e ComputeStreamingError) NonRetryable() bool { return true }
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+)
 
 type StreamingError struct {
+	Type     types.GenerationMethod
 	Messages []string
 }
 
 func (e StreamingError) Error() string {
-	return fmt.Sprintf("Encountered error(s) while running a stream search: %v", e.Messages)
+	if e.Type == types.SearchCompute {
+		return fmt.Sprintf("encountered error(s) while running a streaming compute search: %v", e.Messages)
+	}
+	return fmt.Sprintf("encountered error(s) while running a streaming search: %v", e.Messages)
 }
 
 func (e StreamingError) NonRetryable() bool { return true }

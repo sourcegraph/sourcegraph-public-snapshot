@@ -133,7 +133,7 @@ func (r *workHandler) generateComputeRecordingsStream(ctx context.Context, job *
 		return nil, err
 	}
 	if len(streamResults.Errors) > 0 {
-		return nil, ComputeStreamingError{Messages: streamResults.Errors}
+		return nil, StreamingError{Type: types.SearchCompute, Messages: streamResults.Errors}
 	}
 
 	checker := authz.DefaultSubRepoPermsChecker
