@@ -10,6 +10,10 @@
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
+## Unreleases
+
+- `cadvisor` now defaults to run in `privileged` mode. This allows `cadvisor` to collect out of memory events happening to containers which can be used to discover underprovisoned resources. This is disabled by default in `non-privileged` overlay. [#4126](https://github.com/sourcegraph/deploy-sourcegraph/pull/4126)
+
 ## 3.38 -> 3.39
 
 The`codeinsights-db` container no longer uses TimescaleDB and is now based on the standard Postgres image [sourcegraph/deploy-sourcegraph#4103](https://github.com/sourcegraph/deploy-sourcegraph/pull/4103). Metrics scraping is also enabled.
