@@ -129,6 +129,9 @@ type MockCodeMonitorStore struct {
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *CodeMonitorStoreHandleFunc
+	// HasAnyLastSearchedFunc is an instance of a mock function object
+	// controlling the behavior of the method HasAnyLastSearched.
+	HasAnyLastSearchedFunc *CodeMonitorStoreHasAnyLastSearchedFunc
 	// ListActionJobsFunc is an instance of a mock function object
 	// controlling the behavior of the method ListActionJobs.
 	ListActionJobsFunc *CodeMonitorStoreListActionJobsFunc
@@ -362,6 +365,11 @@ func NewMockCodeMonitorStore() *MockCodeMonitorStore {
 		},
 		HandleFunc: &CodeMonitorStoreHandleFunc{
 			defaultHook: func() (r0 *basestore.TransactableHandle) {
+				return
+			},
+		},
+		HasAnyLastSearchedFunc: &CodeMonitorStoreHasAnyLastSearchedFunc{
+			defaultHook: func(context.Context, int64) (r0 bool, r1 error) {
 				return
 			},
 		},
@@ -637,6 +645,11 @@ func NewStrictMockCodeMonitorStore() *MockCodeMonitorStore {
 				panic("unexpected invocation of MockCodeMonitorStore.Handle")
 			},
 		},
+		HasAnyLastSearchedFunc: &CodeMonitorStoreHasAnyLastSearchedFunc{
+			defaultHook: func(context.Context, int64) (bool, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.HasAnyLastSearched")
+			},
+		},
 		ListActionJobsFunc: &CodeMonitorStoreListActionJobsFunc{
 			defaultHook: func(context.Context, ListActionJobsOpts) ([]*ActionJob, error) {
 				panic("unexpected invocation of MockCodeMonitorStore.ListActionJobs")
@@ -841,6 +854,9 @@ func NewMockCodeMonitorStoreFrom(i CodeMonitorStore) *MockCodeMonitorStore {
 		},
 		HandleFunc: &CodeMonitorStoreHandleFunc{
 			defaultHook: i.Handle,
+		},
+		HasAnyLastSearchedFunc: &CodeMonitorStoreHasAnyLastSearchedFunc{
+			defaultHook: i.HasAnyLastSearched,
 		},
 		ListActionJobsFunc: &CodeMonitorStoreListActionJobsFunc{
 			defaultHook: i.ListActionJobs,
@@ -4671,6 +4687,117 @@ func (c CodeMonitorStoreHandleFuncCall) Args() []interface{} {
 // invocation.
 func (c CodeMonitorStoreHandleFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// CodeMonitorStoreHasAnyLastSearchedFunc describes the behavior when the
+// HasAnyLastSearched method of the parent MockCodeMonitorStore instance is
+// invoked.
+type CodeMonitorStoreHasAnyLastSearchedFunc struct {
+	defaultHook func(context.Context, int64) (bool, error)
+	hooks       []func(context.Context, int64) (bool, error)
+	history     []CodeMonitorStoreHasAnyLastSearchedFuncCall
+	mutex       sync.Mutex
+}
+
+// HasAnyLastSearched delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) HasAnyLastSearched(v0 context.Context, v1 int64) (bool, error) {
+	r0, r1 := m.HasAnyLastSearchedFunc.nextHook()(v0, v1)
+	m.HasAnyLastSearchedFunc.appendCall(CodeMonitorStoreHasAnyLastSearchedFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the HasAnyLastSearched
+// method of the parent MockCodeMonitorStore instance is invoked and the
+// hook queue is empty.
+func (f *CodeMonitorStoreHasAnyLastSearchedFunc) SetDefaultHook(hook func(context.Context, int64) (bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// HasAnyLastSearched method of the parent MockCodeMonitorStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *CodeMonitorStoreHasAnyLastSearchedFunc) PushHook(hook func(context.Context, int64) (bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeMonitorStoreHasAnyLastSearchedFunc) SetDefaultReturn(r0 bool, r1 error) {
+	f.SetDefaultHook(func(context.Context, int64) (bool, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeMonitorStoreHasAnyLastSearchedFunc) PushReturn(r0 bool, r1 error) {
+	f.PushHook(func(context.Context, int64) (bool, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeMonitorStoreHasAnyLastSearchedFunc) nextHook() func(context.Context, int64) (bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreHasAnyLastSearchedFunc) appendCall(r0 CodeMonitorStoreHasAnyLastSearchedFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeMonitorStoreHasAnyLastSearchedFuncCall
+// objects describing the invocations of this function.
+func (f *CodeMonitorStoreHasAnyLastSearchedFunc) History() []CodeMonitorStoreHasAnyLastSearchedFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreHasAnyLastSearchedFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreHasAnyLastSearchedFuncCall is an object that describes an
+// invocation of method HasAnyLastSearched on an instance of
+// MockCodeMonitorStore.
+type CodeMonitorStoreHasAnyLastSearchedFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int64
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 bool
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreHasAnyLastSearchedFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreHasAnyLastSearchedFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // CodeMonitorStoreListActionJobsFunc describes the behavior when the

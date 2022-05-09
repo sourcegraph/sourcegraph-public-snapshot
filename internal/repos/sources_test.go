@@ -707,7 +707,7 @@ func save(t testing.TB, rec *recorder.Recorder) {
 	}
 }
 
-func marshalJSON(t testing.TB, v interface{}) string {
+func marshalJSON(t testing.TB, v any) string {
 	t.Helper()
 
 	bs, err := json.Marshal(v)

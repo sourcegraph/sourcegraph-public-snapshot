@@ -281,7 +281,7 @@ func runWatch(
 	installDone chan string,
 	okayToStart chan struct{},
 ) error {
-	printDebug := func(f string, args ...interface{}) {
+	printDebug := func(f string, args ...any) {
 		if !verbose {
 			return
 		}

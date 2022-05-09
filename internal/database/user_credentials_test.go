@@ -363,7 +363,7 @@ func TestUserCredentials_GetByScope(t *testing.T) {
 		if !errors.As(err, &e) {
 			t.Errorf("error is not a userCredentialNotFoundError; got %T: %v", err, err)
 		}
-		if diff := cmp.Diff(e.args, []interface{}{scope}); diff != "" {
+		if diff := cmp.Diff(e.args, []any{scope}); diff != "" {
 			t.Errorf("unexpected args:\n%s", diff)
 		}
 	})

@@ -877,12 +877,12 @@ func TestSerializeCodeHostVersions(t *testing.T) {
 }
 
 func compareJSON(t *testing.T, actual []byte, expected string) {
-	var o1 interface{}
+	var o1 any
 	if err := json.Unmarshal(actual, &o1); err != nil {
 		t.Fatalf("unexpected error %s", err)
 	}
 
-	var o2 interface{}
+	var o2 any
 	if err := json.Unmarshal([]byte(expected), &o2); err != nil {
 		t.Fatalf("unexpected error %s", err)
 	}

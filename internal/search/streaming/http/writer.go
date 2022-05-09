@@ -46,7 +46,7 @@ func NewWriter(w http.ResponseWriter) (*Writer, error) {
 }
 
 // Event writes event with data json marshalled.
-func (e *Writer) Event(event string, data interface{}) error {
+func (e *Writer) Event(event string, data any) error {
 	encoded, err := json.Marshal(data)
 	if err != nil {
 		return err

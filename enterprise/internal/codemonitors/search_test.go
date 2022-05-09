@@ -12,12 +12,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestAddCodeMonitorHook(t *testing.T) {
@@ -55,6 +58,39 @@ func TestAddCodeMonitorHook(t *testing.T) {
 			t.Run("", func(t *testing.T) {
 				_, err := addCodeMonitorHook(j, nil)
 				require.NoError(t, err)
+			})
+		}
+	})
+
+	t.Run("no errors on allowed queries", func(t *testing.T) {
+		test := func(t *testing.T, input string) {
+			plan, err := query.Pipeline(query.InitRegexp(input))
+			require.NoError(t, err)
+			inputs := &run.SearchInputs{
+				UserSettings:        &schema.Settings{},
+				PatternType:         query.SearchTypeLiteral,
+				Protocol:            search.Streaming,
+				OnSourcegraphDotCom: true,
+			}
+			j, err := jobutil.NewJob(inputs, plan, jobutil.IdentityPass)
+			require.NoError(t, err)
+			addCodeMonitorHook(j, nil)
+		}
+
+		queries := []string{
+			"type:commit a or b",
+			"type:diff a or b",
+			"type:diff a and b",
+			"type:diff a or b",
+			"type:diff a or b repo:c",
+			"type:commit a or b repo:c",
+			"type:commit a or b repo:c case:no",
+			"type:commit a or b repo:c context:global",
+		}
+
+		for _, query := range queries {
+			t.Run("", func(t *testing.T) {
+				test(t, query)
 			})
 		}
 	})

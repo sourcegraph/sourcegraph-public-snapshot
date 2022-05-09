@@ -866,9 +866,9 @@ func (s *uploadMetaListSerializer) take() []byte {
 }
 
 type sanitizedCommitInput struct {
-	nearestUploadsRowValues       <-chan []interface{}
-	nearestUploadsLinksRowValues  <-chan []interface{}
-	uploadsVisibleAtTipRowValues  <-chan []interface{}
+	nearestUploadsRowValues       <-chan []any
+	nearestUploadsLinksRowValues  <-chan []any
+	uploadsVisibleAtTipRowValues  <-chan []any
 	numNearestUploadsRecords      uint32 // populated once nearestUploadsRowValues is exhausted
 	numNearestUploadsLinksRecords uint32 // populated once nearestUploadsLinksRowValues is exhausted
 	numUploadsVisibleAtTipRecords uint32 // populated once uploadsVisibleAtTipRowValues is exhausted
@@ -889,9 +889,9 @@ func sanitizeCommitInput(
 		gitdomain.RefTypeTag:    maxAgeForNonStaleTags,
 	}
 
-	nearestUploadsRowValues := make(chan []interface{})
-	nearestUploadsLinksRowValues := make(chan []interface{})
-	uploadsVisibleAtTipRowValues := make(chan []interface{})
+	nearestUploadsRowValues := make(chan []any)
+	nearestUploadsLinksRowValues := make(chan []any)
+	uploadsVisibleAtTipRowValues := make(chan []any)
 
 	sanitized := &sanitizedCommitInput{
 		nearestUploadsRowValues:      nearestUploadsRowValues,
@@ -979,7 +979,7 @@ func sanitizeCommitInput(
 // countingWrite writes the given slice of interfaces to the given channel. This function returns true
 // if the write succeeded and false if the context was canceled. On success, the counter's underlying
 // value will be incremented (non-atomically).
-func countingWrite(ctx context.Context, ch chan<- []interface{}, counter *uint32, values ...interface{}) bool {
+func countingWrite(ctx context.Context, ch chan<- []any, counter *uint32, values ...any) bool {
 	select {
 	case ch <- values:
 		*counter++

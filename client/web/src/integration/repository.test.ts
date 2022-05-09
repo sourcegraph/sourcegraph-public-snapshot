@@ -49,6 +49,7 @@ export const getCommonRepositoryGraphQlResults = (
     Blob: ({ filePath }) => createBlobContentResult(`content for: ${filePath}\nsecond line\nthird line`),
 })
 
+const now = new Date()
 describe('Repository', () => {
     let driver: Driver
     before(async () => {
@@ -592,6 +593,209 @@ describe('Repository', () => {
                 [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent?.trim())
             )
             assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', '/readme.md'])
+        })
+    })
+
+    describe('commits page', () => {
+        it('loads commits of a repository', async () => {
+            const shortRepositoryName = 'sourcegraph/sourcegraph'
+            const repositoryName = `github.com/${shortRepositoryName}`
+            testContext.overrideGraphQL({
+                ...commonWebGraphQlResults,
+                ResolveRev: () => createResolveRevisionResult(repositoryName),
+                RepositoryGitCommits: () => ({
+                    __typename: 'Query',
+                    node: {
+                        __typename: 'GitCommit',
+                        commit: {
+                            __typename: 'GitCommit',
+                            ancestors: {
+                                __typename: 'GitCommitConnection',
+                                nodes: [
+                                    {
+                                        id:
+                                            'R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3hORGs9IiwiYyI6IjI4NGFiYTAyNGIxYjU1ODU5MGU4ZTJmOTdkYmMzNTUzYTVlMGM3NmIifQ==',
+                                        oid: '284aba024b1b558590e8e2f97dbc3553a5e0c76b',
+                                        abbreviatedOID: '284aba0',
+                                        message: 'sg: create a test command to run e2e tests locally (#34627)\n',
+                                        subject: 'sg: create a test command to run e2e tests locally (#34627)',
+                                        body: null,
+                                        author: {
+                                            person: {
+                                                avatarURL: null,
+                                                name: 'Jean-Hadrien Chabran',
+                                                email: 'jr9@gmail.com',
+                                                displayName: 'Jean-Hadrien Chabran',
+                                                user: null,
+                                            },
+                                            date: subDays(now, 5).toISOString(),
+                                        },
+                                        committer: {
+                                            person: {
+                                                avatarURL: null,
+                                                name: 'GitHub',
+                                                email: 'noreply@yahoo.com',
+                                                displayName: 'GitHub',
+                                                user: null,
+                                            },
+                                            date: subDays(now, 5).toISOString(),
+                                        },
+                                        parents: [
+                                            {
+                                                oid: 'a2d1fd474d79dc29af6c7b4c33f02fe22287bd11',
+                                                abbreviatedOID: 'a2d1fd4',
+                                                url:
+                                                    '/github.com/sourcegraph/sourcegraph/-/commit/a2d1fd474d79dc29af6c7b4c33f02fe22287bd11',
+                                            },
+                                        ],
+                                        url:
+                                            '/github.com/sourcegraph/sourcegraph/-/commit/284aba024b1b558590e8e2f97dbc3553a5e0c76b',
+                                        canonicalURL:
+                                            '/github.com/sourcegraph/sourcegraph/-/commit/284aba024b1b558590e8e2f97dbc3553a5e0c76b',
+                                        externalURLs: [
+                                            {
+                                                url:
+                                                    'https://github.com/sourcegraph/sourcegraph/commit/284aba024b1b558590e8e2f97dbc3553a5e0c76b',
+                                                serviceKind: 'GITHUB',
+                                            },
+                                        ],
+                                        tree: {
+                                            canonicalURL:
+                                                '/github.com/sourcegraph/sourcegraph@284aba024b1b558590e8e2f97dbc3553a5e0c76b',
+                                        },
+                                    },
+                                    {
+                                        id:
+                                            'R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3hORGs9IiwiYyI6ImEyZDFmZDQ3NGQ3OWRjMjlhZjZjN2I0YzMzZjAyZmUyMjI4N2JkMTEifQ==',
+                                        oid: 'a2d1fd474d79dc29af6c7b4c33f02fe22287bd11',
+                                        abbreviatedOID: 'a2d1fd4',
+                                        message:
+                                            'Wildcard V2: <Checkbox /> migration (#34324)\n\nCo-authored-by: gitstart-sourcegraph <gitstart@users.noreply.github.com>',
+                                        subject: 'Wildcard V2: <Checkbox /> migration (#34324)',
+                                        body:
+                                            'Co-authored-by: gitstart-sourcegraph <gitstart@users.noreply.github.com>',
+                                        author: {
+                                            person: {
+                                                avatarURL: null,
+                                                name: 'GitStart-SourceGraph',
+                                                email: '89894075h@facebook.net',
+                                                displayName: 'GitStart-SourceGraph',
+                                                user: null,
+                                            },
+                                            date: subDays(now, 5).toISOString(),
+                                        },
+                                        committer: {
+                                            person: {
+                                                avatarURL: null,
+                                                name: 'GitHub',
+                                                email: 'google@yahoo.com',
+                                                displayName: 'GitHub',
+                                                user: null,
+                                            },
+                                            date: subDays(now, 5).toISOString(),
+                                        },
+                                        parents: [
+                                            {
+                                                oid: '3a163b92b5c45921fbc730ff2047ff7e60d8689b',
+                                                abbreviatedOID: '3a163b9',
+                                                url:
+                                                    '/github.com/sourcegraph/sourcegraph/-/commit/3a163b92b5c45921fbc730ff2047ff7e60d8689b',
+                                            },
+                                        ],
+                                        url:
+                                            '/github.com/sourcegraph/sourcegraph/-/commit/a2d1fd474d79dc29af6c7b4c33f02fe22287bd11',
+                                        canonicalURL:
+                                            '/github.com/sourcegraph/sourcegraph/-/commit/a2d1fd474d79dc29af6c7b4c33f02fe22287bd11',
+                                        externalURLs: [
+                                            {
+                                                url:
+                                                    'https://github.com/sourcegraph/sourcegraph/commit/a2d1fd474d79dc29af6c7b4c33f02fe22287bd11',
+                                                serviceKind: 'GITHUB',
+                                            },
+                                        ],
+                                        tree: {
+                                            canonicalURL:
+                                                '/github.com/sourcegraph/sourcegraph@a2d1fd474d79dc29af6c7b4c33f02fe22287bd11',
+                                        },
+                                    },
+                                    {
+                                        id:
+                                            'R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3hORGs9IiwiYyI6IjNhMTYzYjkyYjVjNDU5MjFmYmM3MzBmZjIwNDdmZjdlNjBkODY4OWIifQ==',
+                                        oid: '3a163b92b5c45921fbc730ff2047ff7e60d8689b',
+                                        abbreviatedOID: '3a163b9',
+                                        message: 'web: ban `reactstrap` imports (#34881)\n',
+                                        subject: 'web: ban `reactstrap` imports (#34881)',
+                                        body: null,
+                                        author: {
+                                            person: {
+                                                avatarURL: null,
+                                                name: 'Valery Bugakov',
+                                                email: 'user23@gmail.com',
+                                                displayName: 'Valery Bugakov',
+                                                user: null,
+                                            },
+                                            date: subDays(now, 5).toISOString(),
+                                        },
+                                        committer: {
+                                            person: {
+                                                avatarURL: null,
+                                                name: 'GitHub',
+                                                email: 'user43@gmail.com',
+                                                displayName: 'GitHub',
+                                                user: null,
+                                            },
+                                            date: subDays(now, 5).toISOString(),
+                                        },
+                                        parents: [
+                                            {
+                                                oid: 'e2e91f0dcdc90811c4f2f4df638bc459b2358e7d',
+                                                abbreviatedOID: 'e2e91f0',
+                                                url:
+                                                    '/github.com/sourcegraph/sourcegraph/-/commit/e2e91f0dcdc90811c4f2f4df638bc459b2358e7d',
+                                            },
+                                        ],
+                                        url:
+                                            '/github.com/sourcegraph/sourcegraph/-/commit/3a163b92b5c45921fbc730ff2047ff7e60d8689b',
+                                        canonicalURL:
+                                            '/github.com/sourcegraph/sourcegraph/-/commit/3a163b92b5c45921fbc730ff2047ff7e60d8689b',
+                                        externalURLs: [
+                                            {
+                                                url:
+                                                    'https://github.com/sourcegraph/sourcegraph/commit/3a163b92b5c45921fbc730ff2047ff7e60d8689b',
+                                                serviceKind: 'GITHUB',
+                                            },
+                                        ],
+                                        tree: {
+                                            canonicalURL:
+                                                '/github.com/sourcegraph/sourcegraph@3a163b92b5c45921fbc730ff2047ff7e60d8689b',
+                                        },
+                                    },
+                                ],
+                                pageInfo: {
+                                    __typename: 'PageInfo',
+                                    hasNextPage: true,
+                                },
+                            },
+                        },
+                    },
+                }),
+                FileNames: () => ({
+                    repository: {
+                        id: 'repo-123',
+                        __typename: 'Repository',
+                        commit: {
+                            id: 'c0ff33',
+                            __typename: 'GitCommit',
+                            fileNames: ['README.md'],
+                        },
+                    },
+                }),
+                RepositoryRedirect: () => createRepositoryRedirectResult(repositoryName),
+            })
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/github.com/sourcegraph/sourcegraph/-/commits')
+            await driver.page.waitForSelector('[data-testid="commits-page"]', { visible: true })
+            await percySnapshotWithVariants(driver.page, 'Repository commits page')
+            await accessibilityAudit(driver.page)
         })
     })
 

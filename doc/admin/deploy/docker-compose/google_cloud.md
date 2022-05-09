@@ -17,10 +17,10 @@ This tutorial shows you how to deploy Sourcegraph via [Docker Compose](https://d
 * Check the boxes for **Allow HTTP traffic** and **Allow HTTPS traffic** in the **Firewall** section
 * Open the **Management, disks, networking, and SSH keys** dropdown section
 
-> WARNING: To configure your Sourcegraph instance, you must create and use a fork of the reference repository - refer to [Configuring Sourcegraph with Docker Compose](./operations.md#configure) for more details. Then update the following variables in the script below:
+> WARNING: To configure your Sourcegraph instance, you must create and use a fork of the reference repository - refer to the [Configuration section](index.md#reference-repository) of the [Docker Compose deployment docs](index.md) for more details. Then update the following variables in the script below:
 >
 > * `DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL`: Your fork's git clone URL
-> * `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION`: The git revision containing your fork's customizations to the base Sourcegraph Docker Compose YAML. Most likely, `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='release'` if you followed our branching recommendations in the [Configuration guide](./operations.md#configure)
+> * `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION`: The git revision containing your fork's customizations to the base Sourcegraph Docker Compose YAML. Most likely, `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='release'` if you followed our branching recommendations in the [Configuration section](index.md#configuration) of the [Docker Compose deployment docs](index.md)
 
 * Under the **Management** section, add the following in the **Startup script** field:
 
@@ -135,7 +135,7 @@ To update to the most recent version of Sourcegraph (X.Y.Z), SSH into your insta
 cd /root/deploy-sourcegraph-docker/docker-compose
 ```
 
-Then follow the [upgrade guide](./operations.md#upgrade).
+Then follow the [Upgrade section](index.md#upgrade) of the [Docker Compose deployment docs](index.md).
 
 ---
 

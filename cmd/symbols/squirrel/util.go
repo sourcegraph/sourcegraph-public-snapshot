@@ -90,7 +90,7 @@ func spacesToColumn(s string, column int) int {
 }
 
 // colorSprintfFunc is a color printing function.
-type colorSprintfFunc func(a ...interface{}) string
+type colorSprintfFunc func(a ...any) string
 
 // bracket prefixes all the lines of the given string with pretty brackets.
 func bracket(text string) string {

@@ -10,6 +10,7 @@ exports[`RegistryExtensionOverviewPage renders 1`] = `
     >
       <div
         class="markdown"
+        data-testid="registry-extension-overview"
       >
         <p>
           <strong>
@@ -39,9 +40,11 @@ exports[`RegistryExtensionOverviewPage renders 1`] = `
       <div
         class="pt-2 pb-3"
       >
-        <h3>
+        <h2
+          class="h2 h3"
+        >
           Publisher
-        </h3>
+        </h2>
         <small>
           x
         </small>
@@ -168,6 +171,7 @@ exports[`RegistryExtensionOverviewPage renders with no tags 1`] = `
     >
       <div
         class="markdown"
+        data-testid="registry-extension-overview"
       >
         <p>
           <strong>
@@ -197,9 +201,11 @@ exports[`RegistryExtensionOverviewPage renders with no tags 1`] = `
       <div
         class="pt-2 pb-3"
       >
-        <h3>
+        <h2
+          class="h2 h3"
+        >
           Publisher
-        </h3>
+        </h2>
         <small>
           x
         </small>

@@ -220,7 +220,7 @@ func TestGitserverPushConfig(t *testing.T) {
 		repoName            string
 		externalServiceType string
 		config              string
-		repoMetadata        interface{}
+		repoMetadata        any
 		authenticator       auth.Authenticator
 		wantPushConfig      *protocol.PushConfig
 		wantErr             error

@@ -16,7 +16,7 @@ import (
 // NewAlertJob creates a job that translates errors from child jobs
 // into alerts when necessary.
 func NewAlertJob(inputs *run.SearchInputs, child job.Job) job.Job {
-	if _, ok := child.(*noopJob); ok {
+	if _, ok := child.(*NoopJob); ok {
 		return child
 	}
 	return &alertJob{

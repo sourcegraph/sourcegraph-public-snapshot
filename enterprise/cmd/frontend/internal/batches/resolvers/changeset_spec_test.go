@@ -273,7 +273,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			input := map[string]interface{}{"id": marshalChangesetSpecRandID(spec.RandID)}
+			input := map[string]any{"id": marshalChangesetSpecRandID(spec.RandID)}
 			var response struct{ Node apitest.ChangesetSpec }
 			apitest.MustExec(ctx, t, s, input, &response, queryChangesetSpecNode)
 

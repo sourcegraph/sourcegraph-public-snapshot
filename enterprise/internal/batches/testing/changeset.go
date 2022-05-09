@@ -49,7 +49,7 @@ type TestChangesetOpts struct {
 	IsArchived bool
 	Archive    bool
 
-	Metadata interface{}
+	Metadata any
 }
 
 type CreateChangeseter interface {

@@ -9,7 +9,8 @@ import (
 
 	"github.com/RoaringBitmap/roaring"
 	zoektquery "github.com/google/zoekt/query"
-	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go/ext"
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
@@ -18,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 // The Sourcegraph frontend and interface only allow LineMatches (matches on a
@@ -214,7 +216,6 @@ func toMatcher(languages []string, extensionHint string) string {
 		// multiple language matchers in a single search query.
 		matcher := lookupMatcher(languages[0])
 		requestTotalStructuralSearch.WithLabelValues(matcher).Inc()
-		log15.Debug("structural search", "language", languages[0], "matcher", matcher)
 		return matcher
 	}
 
@@ -241,8 +242,16 @@ type subset []string
 
 var all universalSet = struct{}{}
 
-func structuralSearch(ctx context.Context, zipPath string, paths filePatterns, extensionHint, pattern, rule string, languages []string, repo api.RepoName, sender matchSender) error {
-	log15.Info("structural search", "repo", string(repo))
+func structuralSearch(ctx context.Context, zipPath string, paths filePatterns, extensionHint, pattern, rule string, languages []string, repo api.RepoName, sender matchSender) (err error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "StructuralSearch")
+	span.SetTag("repo", repo)
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
+		}
+		span.Finish()
+	}()
 
 	// Cap the number of forked processes to limit the size of zip contents being mapped to memory. Resolving #7133 could help to lift this restriction.
 	numWorkers := 4
@@ -253,6 +262,7 @@ func structuralSearch(ctx context.Context, zipPath string, paths filePatterns, e
 	if v, ok := paths.(subset); ok {
 		filePatterns = []string(v)
 	}
+	span.LogFields(otlog.Int("paths", len(filePatterns)))
 
 	args := comby.Args{
 		Input:         comby.ZipPath(zipPath),
