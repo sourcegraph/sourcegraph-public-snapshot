@@ -39,9 +39,11 @@ export const CodeIntelUploadNode: FunctionComponent<React.PropsWithChildren<Code
                 <span className="mr-2 d-block d-mdinline-block">
                     Directory <CodeIntelUploadOrIndexRoot node={node} /> indexed at commit{' '}
                     <CodeIntelUploadOrIndexCommit node={node} />
-                    {', '}
-                    <CodeIntelUploadOrIndexCommitTags tags={node.tags} />
-                    {', '}
+                    {node.tags.length > 0 && (
+                        <>
+                            , <CodeIntelUploadOrIndexCommitTags tags={node.tags} />,
+                        </>
+                    )}{' '}
                     by <CodeIntelUploadOrIndexIndexer node={node} />
                 </span>
 
