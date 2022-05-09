@@ -30,7 +30,7 @@ func init() {
 			return extensions
 		}
 
-		allow := make(map[string]interface{})
+		allow := make(map[string]any)
 		for _, id := range allowedExtensions {
 			allow[id] = struct{}{}
 		}

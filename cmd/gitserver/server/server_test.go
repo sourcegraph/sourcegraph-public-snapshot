@@ -1415,7 +1415,7 @@ func TestHandleBatchLog(t *testing.T) {
 	}
 }
 
-func mustEncodeJSONResponse(value interface{}) string {
+func mustEncodeJSONResponse(value any) string {
 	encoded, _ := json.Marshal(value)
 	return strings.TrimSpace(string(encoded))
 }

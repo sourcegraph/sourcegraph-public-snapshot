@@ -168,7 +168,7 @@ func (r *batchSpecWorkspaceEnvironmentVariableResolver) Value() string {
 
 type batchSpecWorkspaceOutputVariableResolver struct {
 	key   string
-	value interface{}
+	value any
 }
 
 var _ graphqlbackend.BatchSpecWorkspaceOutputVariableResolver = &batchSpecWorkspaceOutputVariableResolver{}

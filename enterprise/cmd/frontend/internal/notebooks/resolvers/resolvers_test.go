@@ -227,7 +227,7 @@ func testGetNotebook(t *testing.T, db database.DB, schema *graphql.Schema, user 
 	}
 
 	notebookGQLID := marshalNotebookID(createdNotebook.ID)
-	input := map[string]interface{}{"id": notebookGQLID}
+	input := map[string]any{"id": notebookGQLID}
 	var response struct{ Node notebooksapitest.Notebook }
 	apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(user.ID)), t, schema, input, &response, queryNotebook)
 
@@ -270,7 +270,7 @@ func testCreateNotebook(t *testing.T, schema *graphql.Schema, user1 *types.User,
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			notebook := notebookFixture(tt.creator.ID, tt.namespaceUserID, tt.namespaceOrgID, true)
-			input := map[string]interface{}{"notebook": notebooksapitest.NotebookToAPIInput(notebook)}
+			input := map[string]any{"notebook": notebooksapitest.NotebookToAPIInput(notebook)}
 			var response struct{ CreateNotebook notebooksapitest.Notebook }
 			gotErrors := apitest.Exec(actor.WithActor(context.Background(), actor.FromUser(tt.creator.ID)), t, schema, input, &response, createNotebookMutation)
 
@@ -399,7 +399,7 @@ func testUpdateNotebook(t *testing.T, db database.DB, schema *graphql.Schema, us
 				updatedNotebook.NamespaceOrgID = tt.updatedNamespaceOrgID
 			}
 
-			input := map[string]interface{}{"id": marshalNotebookID(createdNotebook.ID), "notebook": notebooksapitest.NotebookToAPIInput(updatedNotebook)}
+			input := map[string]any{"id": marshalNotebookID(createdNotebook.ID), "notebook": notebooksapitest.NotebookToAPIInput(updatedNotebook)}
 			var response struct{ UpdateNotebook notebooksapitest.Notebook }
 			gotErrors := apitest.Exec(actor.WithActor(context.Background(), actor.FromUser(tt.updater.ID)), t, schema, input, &response, updateNotebookMutation)
 
@@ -501,7 +501,7 @@ func testDeleteNotebook(t *testing.T, db database.DB, schema *graphql.Schema, us
 				t.Fatal(err)
 			}
 
-			input := map[string]interface{}{"id": marshalNotebookID(createdNotebook.ID)}
+			input := map[string]any{"id": marshalNotebookID(createdNotebook.ID)}
 			var response struct{}
 			gotErrors := apitest.Exec(actor.WithActor(context.Background(), actor.FromUser(tt.deleterID)), t, schema, input, &response, deleteNotebookMutation)
 
@@ -607,70 +607,70 @@ func TestListNotebooks(t *testing.T) {
 	tests := []struct {
 		name          string
 		viewerID      int32
-		args          map[string]interface{}
+		args          map[string]any
 		wantCount     int32
 		wantNotebooks []*notebooks.Notebook
 	}{
 		{
 			name:          "list all available notebooks",
 			viewerID:      user1.ID,
-			args:          map[string]interface{}{"first": 3, "orderBy": graphqlbackend.NotebookOrderByCreatedAt, "descending": false},
+			args:          map[string]any{"first": 3, "orderBy": graphqlbackend.NotebookOrderByCreatedAt, "descending": false},
 			wantNotebooks: getNotebooks(0, 1, 2),
 			wantCount:     5,
 		},
 		{
 			name:          "list second page of available notebooks",
 			viewerID:      user1.ID,
-			args:          map[string]interface{}{"first": 2, "after": marshalNotebookCursor(1), "orderBy": graphqlbackend.NotebookOrderByCreatedAt, "descending": false},
+			args:          map[string]any{"first": 2, "after": marshalNotebookCursor(1), "orderBy": graphqlbackend.NotebookOrderByCreatedAt, "descending": false},
 			wantNotebooks: getNotebooks(1, 2),
 			wantCount:     5,
 		},
 		{
 			name:          "query by block contents",
 			viewerID:      user1.ID,
-			args:          map[string]interface{}{"first": 3, "query": "special", "orderBy": graphqlbackend.NotebookOrderByCreatedAt, "descending": false},
+			args:          map[string]any{"first": 3, "query": "special", "orderBy": graphqlbackend.NotebookOrderByCreatedAt, "descending": false},
 			wantNotebooks: getNotebooks(0),
 			wantCount:     1,
 		},
 		{
 			name:          "filter by creator",
 			viewerID:      user1.ID,
-			args:          map[string]interface{}{"first": 3, "creatorUserID": graphqlbackend.MarshalUserID(user2.ID), "orderBy": graphqlbackend.NotebookOrderByCreatedAt, "descending": false},
+			args:          map[string]any{"first": 3, "creatorUserID": graphqlbackend.MarshalUserID(user2.ID), "orderBy": graphqlbackend.NotebookOrderByCreatedAt, "descending": false},
 			wantNotebooks: getNotebooks(2),
 			wantCount:     1,
 		},
 		{
 			name:          "filter by user namespace",
 			viewerID:      user1.ID,
-			args:          map[string]interface{}{"first": 3, "namespace": graphqlbackend.MarshalUserID(user1.ID), "orderBy": graphqlbackend.NotebookOrderByCreatedAt, "descending": false},
+			args:          map[string]any{"first": 3, "namespace": graphqlbackend.MarshalUserID(user1.ID), "orderBy": graphqlbackend.NotebookOrderByCreatedAt, "descending": false},
 			wantNotebooks: getNotebooks(0, 1),
 			wantCount:     2,
 		},
 		{
 			name:          "filter by org namespace",
 			viewerID:      user1.ID,
-			args:          map[string]interface{}{"first": 3, "namespace": graphqlbackend.MarshalOrgID(org.ID), "orderBy": graphqlbackend.NotebookOrderByCreatedAt, "descending": false},
+			args:          map[string]any{"first": 3, "namespace": graphqlbackend.MarshalOrgID(org.ID), "orderBy": graphqlbackend.NotebookOrderByCreatedAt, "descending": false},
 			wantNotebooks: getNotebooks(3, 4),
 			wantCount:     2,
 		},
 		{
 			name:          "user2 cannot view user1 private notebooks",
 			viewerID:      user2.ID,
-			args:          map[string]interface{}{"first": 3, "namespace": graphqlbackend.MarshalUserID(user1.ID), "orderBy": graphqlbackend.NotebookOrderByCreatedAt, "descending": false},
+			args:          map[string]any{"first": 3, "namespace": graphqlbackend.MarshalUserID(user1.ID), "orderBy": graphqlbackend.NotebookOrderByCreatedAt, "descending": false},
 			wantNotebooks: getNotebooks(0),
 			wantCount:     1,
 		},
 		{
 			name:          "user2 cannot view org private notebooks",
 			viewerID:      user2.ID,
-			args:          map[string]interface{}{"first": 3, "namespace": graphqlbackend.MarshalOrgID(org.ID), "orderBy": graphqlbackend.NotebookOrderByCreatedAt, "descending": false},
+			args:          map[string]any{"first": 3, "namespace": graphqlbackend.MarshalOrgID(org.ID), "orderBy": graphqlbackend.NotebookOrderByCreatedAt, "descending": false},
 			wantNotebooks: getNotebooks(4),
 			wantCount:     1,
 		},
 		{
 			name:          "user1 starred notebooks ordered by count",
 			viewerID:      user1.ID,
-			args:          map[string]interface{}{"first": 3, "starredByUserID": graphqlbackend.MarshalUserID(user1.ID), "orderBy": graphqlbackend.NotebookOrderByStarCount, "descending": true},
+			args:          map[string]any{"first": 3, "starredByUserID": graphqlbackend.MarshalUserID(user1.ID), "orderBy": graphqlbackend.NotebookOrderByStarCount, "descending": true},
 			wantNotebooks: []*notebooks.Notebook{createdNotebooks[2], createdNotebooks[0]},
 			wantCount:     2,
 		},

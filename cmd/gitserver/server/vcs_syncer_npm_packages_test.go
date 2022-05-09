@@ -236,7 +236,7 @@ func (info *fileInfo) Size() int64        { return int64(len(info.contents)) }
 func (info *fileInfo) Mode() fs.FileMode  { return 0600 }
 func (info *fileInfo) ModTime() time.Time { return time.Unix(0, 0) }
 func (info *fileInfo) IsDir() bool        { return false }
-func (info *fileInfo) Sys() interface{}   { return nil }
+func (info *fileInfo) Sys() any           { return nil }
 
 func TestDecompressTgz(t *testing.T) {
 	table := []struct {

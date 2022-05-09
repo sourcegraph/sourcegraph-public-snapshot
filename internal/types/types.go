@@ -62,7 +62,7 @@ type Repo struct {
 	// The key is a URN created by extsvc.URN
 	Sources map[string]*SourceInfo
 	// Metadata contains the raw source code host JSON metadata.
-	Metadata interface{}
+	Metadata any
 	// Blocked contains the reason this repository was blocked and the timestamp of when it happened.
 	Blocked *RepoBlock `json:",omitempty"`
 }
@@ -540,7 +540,7 @@ func (e *ExternalService) Update(n *ExternalService) (modified bool) {
 }
 
 // Configuration returns the external service config.
-func (e *ExternalService) Configuration() (cfg interface{}, _ error) {
+func (e *ExternalService) Configuration() (cfg any, _ error) {
 	return extsvc.ParseConfig(e.Kind, e.Config)
 }
 

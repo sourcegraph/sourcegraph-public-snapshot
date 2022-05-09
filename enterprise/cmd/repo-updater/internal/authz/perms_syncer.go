@@ -1157,7 +1157,7 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 }
 
 // DebugDump returns the state of the permissions syncer for debugging.
-func (s *PermsSyncer) DebugDump() interface{} {
+func (s *PermsSyncer) DebugDump() any {
 	type requestInfo struct {
 		Meta     *requestMeta
 		Acquired bool

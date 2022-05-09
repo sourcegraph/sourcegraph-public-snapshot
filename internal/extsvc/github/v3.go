@@ -132,7 +132,7 @@ func (c *V3Client) RateLimitMonitor() *ratelimit.Monitor {
 	return c.rateLimitMonitor
 }
 
-func (c *V3Client) get(ctx context.Context, requestURI string, result interface{}) (*httpResponseState, error) {
+func (c *V3Client) get(ctx context.Context, requestURI string, result any) (*httpResponseState, error) {
 	req, err := http.NewRequest("GET", requestURI, nil)
 	if err != nil {
 		return nil, err
@@ -142,7 +142,7 @@ func (c *V3Client) get(ctx context.Context, requestURI string, result interface{
 }
 
 //nolint:unparam // Return *httpResponseState for consistency with other methods
-func (c *V3Client) post(ctx context.Context, requestURI string, payload, result interface{}) (*httpResponseState, error) {
+func (c *V3Client) post(ctx context.Context, requestURI string, payload, result any) (*httpResponseState, error) {
 	body, err := json.Marshal(payload)
 	if err != nil {
 		return nil, errors.Wrap(err, "marshalling payload")
@@ -158,7 +158,7 @@ func (c *V3Client) post(ctx context.Context, requestURI string, payload, result 
 	return c.request(ctx, req, result)
 }
 
-func (c *V3Client) request(ctx context.Context, req *http.Request, result interface{}) (*httpResponseState, error) {
+func (c *V3Client) request(ctx context.Context, req *http.Request, result any) (*httpResponseState, error) {
 	// Include node_id (GraphQL ID) in response. See
 	// https://developer.github.com/changes/2017-12-19-graphql-node-id/.
 	//
@@ -254,7 +254,7 @@ func (c *V3Client) GetVersion(ctx context.Context) (string, error) {
 		return "unknown", nil
 	}
 
-	var empty interface{}
+	var empty any
 
 	respState, err := c.get(ctx, "/", &empty)
 	if err != nil {

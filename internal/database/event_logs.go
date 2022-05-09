@@ -202,14 +202,14 @@ func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 		return json.RawMessage(`{}`)
 	}
 
-	rowValues := make(chan []interface{}, len(events))
+	rowValues := make(chan []any, len(events))
 	for _, event := range events {
 		featureFlags, err := json.Marshal(event.FeatureFlags)
 		if err != nil {
 			return err
 		}
 
-		rowValues <- []interface{}{
+		rowValues <- []any{
 			event.Name,
 			// 🚨 SECURITY: It is important to sanitize event URL before
 			// being stored to the database to help guarantee no malicious

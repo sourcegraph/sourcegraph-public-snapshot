@@ -31,7 +31,7 @@ func NewDiagnosticsCountMigrator(store *lsifstore.Store, batchSize int) oobmigra
 
 // MigrateRowUp reads the payload of the given row and returns an updateSpec on how to
 // modify the record to conform to the new schema.
-func (m *diagnosticsCountMigrator) MigrateRowUp(scanner scanner) ([]interface{}, error) {
+func (m *diagnosticsCountMigrator) MigrateRowUp(scanner scanner) ([]any, error) {
 	var path string
 	var rawData []byte
 
@@ -44,11 +44,11 @@ func (m *diagnosticsCountMigrator) MigrateRowUp(scanner scanner) ([]interface{},
 		return nil, err
 	}
 
-	return []interface{}{path, len(data.Diagnostics)}, nil
+	return []any{path, len(data.Diagnostics)}, nil
 }
 
 // MigrateRowDown sets num_diagnostics back to zero to undo the migration up direction.
-func (m *diagnosticsCountMigrator) MigrateRowDown(scanner scanner) ([]interface{}, error) {
+func (m *diagnosticsCountMigrator) MigrateRowDown(scanner scanner) ([]any, error) {
 	var path string
 	var rawData []byte
 
@@ -56,5 +56,5 @@ func (m *diagnosticsCountMigrator) MigrateRowDown(scanner scanner) ([]interface{
 		return nil, err
 	}
 
-	return []interface{}{path, 0}, nil
+	return []any{path, 0}, nil
 }

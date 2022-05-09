@@ -473,7 +473,7 @@ func (s *Service) invokeLinearizedRecognizer(
 	}
 
 	opts := luasandbox.RunOptions{}
-	args := []interface{}{registrationAPI, callPaths, callContentsByPath}
+	args := []any{registrationAPI, callPaths, callContentsByPath}
 	value, err := invocationContext.sandbox.Call(ctx, opts, invocationContext.callback(recognizer), args...)
 	if err != nil {
 		return nil, err

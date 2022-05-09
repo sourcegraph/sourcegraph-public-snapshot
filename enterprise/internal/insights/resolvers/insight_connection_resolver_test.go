@@ -108,7 +108,7 @@ func TestResolver_InsightConnection(t *testing.T) {
 		if len(nodes) != 1 {
 			t.Fatal("incorrect length")
 		}
-		autogold.Want("first insight", map[string]interface{}{"description": "desc1", "title": "title1"}).Equal(t, map[string]interface{}{
+		autogold.Want("first insight", map[string]any{"description": "desc1", "title": "title1"}).Equal(t, map[string]any{
 			"title":       nodes[0].Title(),
 			"description": nodes[0].Description(),
 		})

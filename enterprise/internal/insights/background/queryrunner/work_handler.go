@@ -129,7 +129,7 @@ func (r *workHandler) generateComputeRecordings(ctx context.Context, job *Job, r
 // Returns false only if the repo doesn't have sub-repo permissions or these are disabled in settings.
 // Note that repo ID is received untyped and being cast to api.RepoID
 // err is an upstream error to which any new occurring error is appended
-func checkSubRepoPermissions(ctx context.Context, checker authz.SubRepoPermissionChecker, untypedRepoID interface{}, err error) (bool, error) {
+func checkSubRepoPermissions(ctx context.Context, checker authz.SubRepoPermissionChecker, untypedRepoID any, err error) (bool, error) {
 	if !authz.SubRepoEnabled(checker) {
 		return false, err
 	}

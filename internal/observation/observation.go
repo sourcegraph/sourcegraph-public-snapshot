@@ -281,7 +281,7 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 	event := honey.NoopEvent()
 	snakecaseOpName := toSnakeCase(op.name)
 	if op.context.HoneyDataset != nil {
-		event = op.context.HoneyDataset.EventWithFields(map[string]interface{}{
+		event = op.context.HoneyDataset.EventWithFields(map[string]any{
 			"operation":     snakecaseOpName,
 			"meta.hostname": hostname.Get(),
 			"meta.version":  version.Version(),
