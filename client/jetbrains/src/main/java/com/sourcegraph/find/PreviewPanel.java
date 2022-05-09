@@ -38,7 +38,8 @@ public class PreviewPanel extends JBPanelWithEmptyText {
         if (editorComponent != null &&
             fileName.equals(previewContent.getFileName()) &&
             fileContent.equals(previewContent.getContent()) &&
-            lineNumber == previewContent.getLineNumber()) {
+            lineNumber == previewContent.getLineNumber() &&
+            !openInEditor) {
             return;
         }
 

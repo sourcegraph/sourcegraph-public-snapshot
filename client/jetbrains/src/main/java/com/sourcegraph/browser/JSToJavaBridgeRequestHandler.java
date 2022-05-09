@@ -25,7 +25,6 @@ public class JSToJavaBridgeRequestHandler {
                 JsonObject currentThemeAsJson = ThemeUtil.getCurrentThemeAsJson();
                 return createResponse(currentThemeAsJson);
             case "preview":
-                System.out.println(arguments.get("absoluteOffsetAndLengths").toString());
                 previewContent = gson.fromJson(arguments, PreviewContent.class);
                 previewPanel.setContent(previewContent, false);
                 return createResponse(null);
