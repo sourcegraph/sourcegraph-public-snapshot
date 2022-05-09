@@ -94,7 +94,6 @@ export class RepositoryCompareDiffPage extends React.PureComponent<RepositoryCom
             <div className="repository-compare-page">
                 <FileDiffConnection
                     listClassName="list-group list-group-flush test-file-diff-connection"
-                    listComponent="div"
                     noun="changed file"
                     pluralNoun="changed files"
                     queryConnection={this.queryDiffs}

@@ -46,7 +46,6 @@ export const RepositoryReleasesTagsPage: React.FunctionComponent<React.PropsWith
             <FilteredConnection<GitRefFields>
                 className="my-3"
                 listClassName="list-group list-group-flush test-filtered-tags-connection"
-                listComponent="div"
                 noun="tag"
                 pluralNoun="tags"
                 queryConnection={queryTags}

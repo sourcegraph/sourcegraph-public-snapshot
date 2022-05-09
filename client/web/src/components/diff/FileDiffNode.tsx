@@ -103,10 +103,10 @@ export const FileDiffNode: React.FunctionComponent<React.PropsWithChildren<FileD
                 GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
             */}
             <Link className="a11y-ignore" to="" id={anchor} aria-hidden={true} />
-            <div className={classNames('test-file-diff-node', styles.fileDiffNode, className)}>
+            <li className={classNames('test-file-diff-node', styles.fileDiffNode, className)}>
                 <div className={styles.header}>
                     <Button
-                        aria-label={expanded ? 'Toggle down icon' : 'Toggle right icon'}
+                        aria-label={expanded ? 'Hide file diff' : 'Show file diff'}
                         variant="icon"
                         className="mr-2"
                         onClick={toggleExpand}
@@ -190,7 +190,7 @@ export const FileDiffNode: React.FunctionComponent<React.PropsWithChildren<FileD
                             diffMode={diffMode}
                         />
                     ))}
-            </div>
+            </li>
         </>
     )
 }
