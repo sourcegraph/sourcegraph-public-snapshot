@@ -1408,8 +1408,8 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 			Config: mustMarshalJSONString(&schema.JVMPackagesConnection{
 				Maven: &schema.Maven{
 					Dependencies: []string{
-						"com.google.guava:guava:19",
-						"com.google.guava:guava:21",
+						"com.google.guava:guava:19.0",
+						"com.google.guava:guava:21.0",
 					},
 				},
 			}),
