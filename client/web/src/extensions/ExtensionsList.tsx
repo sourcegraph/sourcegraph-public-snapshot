@@ -47,7 +47,7 @@ const ORDERED_EXTENSION_CATEGORIES: ExtensionCategory[] = [
 /**
  * Displays a list of extensions.
  */
-export const ExtensionsList: React.FunctionComponent<Props> = ({
+export const ExtensionsList: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     subject,
     settingsCascade,
     platformContext,
@@ -276,7 +276,7 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
     return (
         <>
             {error && <ErrorAlert className="mb-2" error={error} />}
-            {featuredExtensionsSection}
+            {enablementFilter === 'all' && featuredExtensionsSection}
             {categorySections.length > 0 ? (
                 categorySections
             ) : (

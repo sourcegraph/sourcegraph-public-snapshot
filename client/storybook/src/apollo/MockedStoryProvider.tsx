@@ -35,7 +35,7 @@ export interface MockedStoryProviderProps extends MockedProviderProps {
  * MockedProvider does not support dynamic variable matching for mocks.
  * This wrapper **only** mocks against the operation name, the specific provided variables are not used to match against a mock.
  */
-export const MockedStoryProvider: React.FunctionComponent<MockedStoryProviderProps> = ({
+export const MockedStoryProvider: React.FunctionComponent<React.PropsWithChildren<MockedStoryProviderProps>> = ({
     children,
     mocks = [],
     useStrictMocking,

@@ -11,7 +11,7 @@ import { Tooltip, WildcardThemeContext } from '@sourcegraph/wildcard'
 import brandedStyles from '../global-styles/index.scss'
 
 export interface BrandedProps extends MemoryRouterProps, Pick<MockedStoryProviderProps, 'mocks' | 'useStrictMocking'> {
-    children: React.FunctionComponent<ThemeProps>
+    children: React.FunctionComponent<React.PropsWithChildren<ThemeProps>>
     styles?: string
 }
 
@@ -19,7 +19,7 @@ export interface BrandedProps extends MemoryRouterProps, Pick<MockedStoryProvide
  * Wrapper component for branded Storybook stories that provides light theme and react-router props.
  * Takes a render function as children that gets called with the props.
  */
-export const BrandedStory: React.FunctionComponent<BrandedProps> = ({
+export const BrandedStory: React.FunctionComponent<React.PropsWithChildren<BrandedProps>> = ({
     children: Children,
     styles = brandedStyles,
     mocks,

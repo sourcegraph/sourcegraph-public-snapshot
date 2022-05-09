@@ -23,7 +23,7 @@ interface Props {
  * Displays a certificate with information about and status for a user's product subscription. It
  * supports both billing-linked and non-billing-linked subscriptions.
  */
-export const UserProductSubscriptionStatus: React.FunctionComponent<Props> = ({
+export const UserProductSubscriptionStatus: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     subscriptionName,
     productNameWithBrand,
     userCount,

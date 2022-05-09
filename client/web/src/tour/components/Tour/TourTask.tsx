@@ -24,7 +24,13 @@ type TourTaskProps = TourTaskType & {
 /**
  * Tour task smart component. Handles all TourTaskStepType.type options.
  */
-export const TourTask: React.FunctionComponent<TourTaskProps> = ({ title, steps, completed, icon, variant }) => {
+export const TourTask: React.FunctionComponent<React.PropsWithChildren<TourTaskProps>> = ({
+    title,
+    steps,
+    completed,
+    icon,
+    variant,
+}) => {
     const [selectedStep, setSelectedStep] = useState<TourTaskStepType>()
     const [showLanguagePicker, setShowLanguagePicker] = useState(false)
     const { language, onLanguageSelect, onStepClick, onRestart } = useContext(TourContext)

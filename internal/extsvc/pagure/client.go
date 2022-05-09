@@ -111,7 +111,7 @@ func (c *Client) ListProjects(ctx context.Context, opts ListProjectsArgs) (*List
 	return &resp, nil
 }
 
-func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) (*http.Response, error) {
+func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.Response, error) {
 	req.URL = c.URL.ResolveReference(req.URL)
 	if req.Header.Get("Content-Type") == "" && req.Method != "GET" {
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")

@@ -19,7 +19,7 @@ interface ExternalsAuthProps {
     withCenteredText?: boolean
 }
 
-const GitlabColorIcon: React.FunctionComponent<{ className?: string }> = ({ className }) => (
+const GitlabColorIcon: React.FunctionComponent<React.PropsWithChildren<{ className?: string }>> = ({ className }) => (
     <svg
         className={className}
         width="24"
@@ -50,7 +50,7 @@ const GitlabColorIcon: React.FunctionComponent<{ className?: string }> = ({ clas
     </svg>
 )
 
-const ExternalsAuth: React.FunctionComponent<ExternalsAuthProps> = ({
+const ExternalsAuth: React.FunctionComponent<React.PropsWithChildren<ExternalsAuthProps>> = ({
     context,
     githubLabel,
     gitlabLabel,

@@ -44,7 +44,7 @@ export interface ChartViewContentProps {
 /**
  * Display chart content with different type of charts (line, bar, pie)
  */
-export const ChartViewContent: FunctionComponent<ChartViewContentProps> = props => {
+export const ChartViewContent: FunctionComponent<React.PropsWithChildren<ChartViewContentProps>> = props => {
     const {
         content,
         className = '',

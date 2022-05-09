@@ -35,7 +35,7 @@ const savedSearchQuery = gql`
     }
 `
 
-export const SavedSearchesSection: React.FunctionComponent<HistorySidebarProps> = ({
+export const SavedSearchesSection: React.FunctionComponent<React.PropsWithChildren<HistorySidebarProps>> = ({
     platformContext,
     extensionCoreAPI,
 }) => {
@@ -89,13 +89,15 @@ export const SavedSearchesSection: React.FunctionComponent<HistorySidebarProps> 
                 type="button"
                 className={classNames('btn btn-outline-secondary', styles.sidebarSectionCollapseButton)}
                 onClick={() => setCollapsed(!collapsed)}
+                aria-label={`${collapsed ? 'Expand' : 'Collapse'} saved searches`}
             >
                 <h5 className="flex-grow-1">Saved Searches</h5>
-                {collapsed ? (
-                    <Icon className="mr-1" as={ChevronLeftIcon} />
-                ) : (
-                    <Icon className="mr-1" as={ChevronDownIcon} />
-                )}
+                <Icon
+                    role="img"
+                    aria-hidden={true}
+                    className="mr-1"
+                    as={collapsed ? ChevronLeftIcon : ChevronDownIcon}
+                />
             </button>
 
             {!collapsed && savedSearches && (

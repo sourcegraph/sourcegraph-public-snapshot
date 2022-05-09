@@ -30,7 +30,9 @@ import { UserSettingsSidebar, UserSettingsSidebarItems } from './UserSettingsSid
 
 import styles from './UserSettingsArea.module.scss'
 
-const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
+const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
+    <HeroPage icon={MapSearchIcon} title="404: Not Found" />
+)
 
 export interface UserSettingsAreaRoute extends RouteDescriptor<UserSettingsAreaRouteContext> {}
 
@@ -94,7 +96,9 @@ const USER_SETTINGS_AREA_USER_PROFILE = gql`
 /**
  * Renders a layout of a sidebar and a content area to display user settings.
  */
-export const AuthenticatedUserSettingsArea: React.FunctionComponent<UserSettingsAreaProps> = props => {
+export const AuthenticatedUserSettingsArea: React.FunctionComponent<
+    React.PropsWithChildren<UserSettingsAreaProps>
+> = props => {
     const { authenticatedUser, sideBarItems } = props
 
     const { data, error, loading, previousData } = useQuery<

@@ -28,7 +28,7 @@ export interface BatchChangeNodeProps extends ThemeProps {
     now?: () => Date
 }
 
-export const BatchChangeNode: React.FunctionComponent<BatchChangeNodeProps> = ({
+export const BatchChangeNode: React.FunctionComponent<React.PropsWithChildren<BatchChangeNodeProps>> = ({
     node: initialNode,
     now = () => new Date(),
     ...props

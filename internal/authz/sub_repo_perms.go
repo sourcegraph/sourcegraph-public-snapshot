@@ -249,7 +249,7 @@ func (s *SubRepoPermsClient) getCompiledRules(ctx context.Context, userID int32)
 	// Slow path on cache miss or expiry. Ensure that only one goroutine is doing the
 	// work
 	groupKey := strconv.FormatInt(int64(userID), 10)
-	result, err, _ := s.group.Do(groupKey, func() (interface{}, error) {
+	result, err, _ := s.group.Do(groupKey, func() (any, error) {
 		repoPerms, err := s.permissionsGetter.GetByUser(ctx, userID)
 		if err != nil {
 			return nil, errors.Wrap(err, "fetching rules")

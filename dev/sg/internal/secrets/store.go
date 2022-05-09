@@ -3,8 +3,14 @@ package secrets
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"os"
+	"sync"
+	"time"
+
+	secretmanager "cloud.google.com/go/secretmanager/apiv1"
+	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -21,6 +27,10 @@ var (
 type Store struct {
 	filepath string
 	m        map[string]json.RawMessage
+
+	secretmanagerOnce sync.Once
+	secretmanager     *secretmanager.Client
+	secretmanagerErr  error
 }
 
 type storeKey struct{}
@@ -77,7 +87,7 @@ func (s *Store) SaveFile() error {
 }
 
 // Put stores serialized data in memory.
-func (s *Store) Put(key string, data interface{}) error {
+func (s *Store) Put(key string, data any) error {
 	b, err := json.Marshal(data)
 	if err != nil {
 		return err
@@ -87,7 +97,7 @@ func (s *Store) Put(key string, data interface{}) error {
 }
 
 // PutAndSave saves automatically after calling Put.
-func (s *Store) PutAndSave(key string, data interface{}) error {
+func (s *Store) PutAndSave(key string, data any) error {
 	err := s.Put(key, data)
 	if err != nil {
 		return err
@@ -96,11 +106,42 @@ func (s *Store) PutAndSave(key string, data interface{}) error {
 }
 
 // Get fetches a value from memory and uses the given target to deserialize it.
-func (s *Store) Get(key string, target interface{}) error {
+func (s *Store) Get(key string, target any) error {
 	if v, ok := s.m[key]; ok {
 		return json.Unmarshal(v, target)
 	}
 	return errors.Newf("%w: %s not found", ErrSecretNotFound, key)
+}
+
+func (s *Store) GetExternal(ctx context.Context, secret ExternalSecret) (string, error) {
+	var value externalSecretValue
+
+	// Check if we already have this secret
+	if err := s.Get(secret.id(), &value); err == nil {
+		return value.Value, nil
+	}
+
+	if secret.Provider != "gcloud" {
+		return "", errors.Newf("Unknown secrets provider %q", secret.Provider)
+	}
+
+	client, err := s.getSecretmanagerClient(ctx)
+	if err != nil {
+		return "", err
+	}
+	result, err := client.AccessSecretVersion(ctx, &secretmanagerpb.AccessSecretVersionRequest{
+		Name: fmt.Sprintf("projects/%s/secrets/%s/versions/latest", secret.Project, secret.Name),
+	})
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to access secret %q from %q", secret.Name, secret.Project)
+	}
+
+	// cache value, but don't save - TBD if we want to persist these secrets
+	value.Fetched = time.Now()
+	value.Value = string(result.Payload.Data)
+	s.Put(secret.id(), &value)
+
+	return value.Value, nil
 }
 
 // Remove deletes a value from memory.
@@ -119,4 +160,15 @@ func (s *Store) Keys() []string {
 		keys = append(keys, key)
 	}
 	return keys
+}
+
+func (s *Store) getSecretmanagerClient(ctx context.Context) (*secretmanager.Client, error) {
+	s.secretmanagerOnce.Do(func() {
+		var err error
+		s.secretmanager, err = secretmanager.NewClient(ctx)
+		if err != nil {
+			s.secretmanagerErr = errors.Errorf("failed to create secretmanager client: %v", err)
+		}
+	})
+	return s.secretmanager, s.secretmanagerErr
 }

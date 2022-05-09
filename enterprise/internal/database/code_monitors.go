@@ -82,6 +82,11 @@ type CodeMonitorStore interface {
 	GetActionJob(ctx context.Context, jobID int32) (*ActionJob, error)
 	EnqueueActionJobsForMonitor(ctx context.Context, monitorID int64, triggerJob int32) ([]*ActionJob, error)
 
+	// HasAnyLastSearched returns whether there have ever been any repo-aware code monitor
+	// searches executed for this code monitor. This should only be needed during the transition
+	// version so that we don't detect every repo as a new repo and search their entire history
+	// when a code monitor transitions from non-repo-aware to repo-aware.
+	HasAnyLastSearched(ctx context.Context, monitorID int64) (bool, error)
 	UpsertLastSearched(ctx context.Context, monitorID int64, repoID api.RepoID, lastSearched []string) error
 	GetLastSearched(ctx context.Context, monitorID int64, repoID api.RepoID) ([]string, error)
 }

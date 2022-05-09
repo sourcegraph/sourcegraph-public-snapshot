@@ -13,31 +13,31 @@ func TestTextSearchTermToClause(t *testing.T) {
 	for name, tc := range map[string]struct {
 		term      search.TextSearchTerm
 		fields    []string
-		wantArgs  []interface{}
+		wantArgs  []any
 		wantQuery string
 	}{
 		"one positive field": {
 			term:      search.TextSearchTerm{Term: "foo"},
 			fields:    []string{"field"},
-			wantArgs:  []interface{}{"foo"},
+			wantArgs:  []any{"foo"},
 			wantQuery: `(field ~* ('\m'||$1||'\M'))`,
 		},
 		"one negative field": {
 			term:      search.TextSearchTerm{Term: "foo", Not: true},
 			fields:    []string{"field"},
-			wantArgs:  []interface{}{"foo"},
+			wantArgs:  []any{"foo"},
 			wantQuery: `(field !~* ('\m'||$1||'\M'))`,
 		},
 		"two positive fields": {
 			term:      search.TextSearchTerm{Term: "foo"},
 			fields:    []string{"field", "paddock"},
-			wantArgs:  []interface{}{"foo", "foo"},
+			wantArgs:  []any{"foo", "foo"},
 			wantQuery: `(field ~* ('\m'||$1||'\M') OR paddock ~* ('\m'||$2||'\M'))`,
 		},
 		"two negative fields": {
 			term:      search.TextSearchTerm{Term: "foo", Not: true},
 			fields:    []string{"field", "paddock"},
-			wantArgs:  []interface{}{"foo", "foo"},
+			wantArgs:  []any{"foo", "foo"},
 			wantQuery: `(field !~* ('\m'||$1||'\M') AND paddock !~* ('\m'||$2||'\M'))`,
 		},
 	} {

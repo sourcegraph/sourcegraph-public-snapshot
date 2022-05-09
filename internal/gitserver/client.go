@@ -319,6 +319,13 @@ var addrForRepoAddrMismatch = promauto.NewCounterVec(prometheus.CounterOpts{
 	Help: "Number of times the gitserver_repos state and the result of gitserver.AddrForRepo are mismatched",
 }, []string{"user_agent"})
 
+// addrForRepoAddrFromDB is used to count the number of times we called the
+// database to get the gitserver address for a repo.
+var addrForRepoAddrFromDB = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "src_gitserver_addr_for_repo_addr_from_db",
+	Help: "Number of times the gitserver address for a repo is retrieved from the database",
+}, []string{"user_agent"})
+
 // AddrForRepo returns the gitserver address to use for the given repo name.
 // It should never be called with a nil addresses pointer.
 func AddrForRepo(ctx context.Context, userAgent string, db database.DB, repo api.RepoName, addresses GitServerAddresses) (string, error) {
@@ -371,6 +378,8 @@ func AddrForRepo(ctx context.Context, userAgent string, db database.DB, repo api
 				}
 				span.Finish()
 			}()
+
+			addrForRepoAddrFromDB.WithLabelValues(userAgent).Inc()
 
 			gr, err := db.GitserverRepos().GetByName(ctx, repo)
 			switch {
@@ -1336,7 +1345,7 @@ func (c *ClientImplementor) RemoveFrom(ctx context.Context, repo api.RepoName, f
 // httpPost will apply the MD5 hashing scheme on the repo name to determine the gitserver instance
 // to which the HTTP POST request is sent. To use the rendezvous hashing scheme, see
 // httpPostWithURI.
-func (c *ClientImplementor) httpPost(ctx context.Context, repo api.RepoName, op string, payload interface{}) (resp *http.Response, err error) {
+func (c *ClientImplementor) httpPost(ctx context.Context, repo api.RepoName, op string, payload any) (resp *http.Response, err error) {
 	b, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
@@ -1353,7 +1362,7 @@ func (c *ClientImplementor) httpPost(ctx context.Context, repo api.RepoName, op 
 // httpPostWithURI does not apply any transformations to the given URI. This allows the consumer to
 // use the predetermined hashing scheme (md5 or rendezvous) of their choice to derive the gitserver
 // instance to which the HTTP POST request is sent.
-func (c *ClientImplementor) httpPostWithURI(ctx context.Context, repo api.RepoName, uri string, payload interface{}) (resp *http.Response, err error) {
+func (c *ClientImplementor) httpPostWithURI(ctx context.Context, repo api.RepoName, uri string, payload any) (resp *http.Response, err error) {
 	b, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err

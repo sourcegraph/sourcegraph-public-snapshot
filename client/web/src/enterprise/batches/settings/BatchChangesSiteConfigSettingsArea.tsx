@@ -9,7 +9,9 @@ import { GlobalCodeHostConnections } from './CodeHostConnections'
 export interface BatchChangesSiteConfigSettingsAreaProps {}
 
 /** The page area for all batch changes settings. It's shown in the site admin settings sidebar. */
-export const BatchChangesSiteConfigSettingsArea: React.FunctionComponent<BatchChangesSiteConfigSettingsAreaProps> = () => (
+export const BatchChangesSiteConfigSettingsArea: React.FunctionComponent<
+    React.PropsWithChildren<BatchChangesSiteConfigSettingsAreaProps>
+> = () => (
     <>
         <PageTitle title="Batch changes settings" />
         <PageHeader headingElement="h2" path={[{ text: 'Batch Changes settings' }]} className="mb-3" />

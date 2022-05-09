@@ -9,7 +9,7 @@ import { DismissibleAlert } from '../../components/DismissibleAlert'
 
 import styles from './DocumentationWelcomeAlert.module.scss'
 
-export const DocumentationWelcomeAlert: React.FunctionComponent = () => (
+export const DocumentationWelcomeAlert: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <DismissibleAlert
         className={classNames('mt-3', styles.documentationWelcomeAlert)}
         partialStorageKey="apidocs-welcome"

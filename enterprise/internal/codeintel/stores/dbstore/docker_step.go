@@ -13,7 +13,7 @@ type DockerStep struct {
 	Commands []string `json:"commands"`
 }
 
-func (s *DockerStep) Scan(value interface{}) error {
+func (s *DockerStep) Scan(value any) error {
 	b, ok := value.([]byte)
 	if !ok {
 		return errors.Errorf("value is not []byte: %T", value)

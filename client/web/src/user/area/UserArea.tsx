@@ -133,7 +133,7 @@ export interface UserAreaRouteContext
 /**
  * A user's public profile area.
  */
-export const UserArea: React.FunctionComponent<UserAreaProps> = ({
+export const UserArea: React.FunctionComponent<React.PropsWithChildren<UserAreaProps>> = ({
     useBreadcrumb,
     userAreaRoutes,
     match: {
@@ -231,6 +231,6 @@ export const UserArea: React.FunctionComponent<UserAreaProps> = ({
     )
 }
 
-const NotFoundPage: React.FunctionComponent<{}> = () => (
+const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
     <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested user page was not found." />
 )

@@ -27,7 +27,10 @@ const LOADING = 'loading' as const
  * SiteAdminCustomerBillingLink shows a link to the customer on the billing system associated with a user, if any.
  * It also supports setting or unsetting the association with the billing system.
  */
-export const SiteAdminCustomerBillingLink: React.FunctionComponent<Props> = ({ customer, onDidUpdate }) => {
+export const SiteAdminCustomerBillingLink: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    customer,
+    onDidUpdate,
+}) => {
     /** The result of updating this customer: undefined for done or not started, loading, or an error. */
     const [nextUpdate, update] = useEventObservable(
         useCallback(

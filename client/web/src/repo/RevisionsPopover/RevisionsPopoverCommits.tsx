@@ -74,7 +74,7 @@ interface GitCommitNodeProps {
     onClick?: React.MouseEventHandler<HTMLAnchorElement>
 }
 
-const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
+const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitCommitNodeProps>> = ({
     node,
     currentCommitID,
     location,
@@ -119,16 +119,9 @@ interface RevisionsPopoverCommitsProps {
 
 const BATCH_COUNT = 15
 
-export const RevisionsPopoverCommits: React.FunctionComponent<RevisionsPopoverCommitsProps> = ({
-    repo,
-    defaultBranch,
-    getPathFromRevision,
-    currentRev,
-    noun,
-    pluralNoun,
-    currentCommitID,
-    onSelect,
-}) => {
+export const RevisionsPopoverCommits: React.FunctionComponent<
+    React.PropsWithChildren<RevisionsPopoverCommitsProps>
+> = ({ repo, defaultBranch, getPathFromRevision, currentRev, noun, pluralNoun, currentCommitID, onSelect }) => {
     const [searchValue, setSearchValue] = useState('')
     const query = useDebounce(searchValue, 200)
     const location = useLocation()

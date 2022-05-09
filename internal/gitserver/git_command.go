@@ -154,7 +154,7 @@ type RemoteGitCommand struct {
 	args           []string
 	noTimeout      bool
 	exitStatus     int
-	execFn         func(ctx context.Context, repo api.RepoName, op string, payload interface{}) (resp *http.Response, err error)
+	execFn         func(ctx context.Context, repo api.RepoName, op string, payload any) (resp *http.Response, err error)
 }
 
 // DividedOutput runs the command and returns its standard output and standard error.

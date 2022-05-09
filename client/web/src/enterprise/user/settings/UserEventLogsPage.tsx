@@ -30,7 +30,9 @@ interface UserEventNodeProps {
     node: UserEventLogFields
 }
 
-export const UserEventNode: React.FunctionComponent<UserEventNodeProps> = ({ node }: UserEventNodeProps) => (
+export const UserEventNode: React.FunctionComponent<React.PropsWithChildren<UserEventNodeProps>> = ({
+    node,
+}: UserEventNodeProps) => (
     <li className={classNames('list-group-item', styles.eventLog)}>
         <div className="d-flex align-items-center justify-content-between">
             <code>{node.name}</code>
@@ -59,7 +61,7 @@ export interface UserEventLogsPageProps
 /**
  * A page displaying usage statistics for the site.
  */
-export const UserEventLogsPage: React.FunctionComponent<UserEventLogsPageProps> = ({
+export const UserEventLogsPage: React.FunctionComponent<React.PropsWithChildren<UserEventLogsPageProps>> = ({
     telemetryService,
     history,
     location,

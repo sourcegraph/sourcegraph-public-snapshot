@@ -28,7 +28,7 @@ type Message struct {
 	References []string // optional "References" header list
 
 	Template txtypes.Templates // unparsed subject/body templates
-	Data     interface{}       // template data
+	Data     any               // template data
 }
 
 var emailSendCounter = promauto.NewCounterVec(prometheus.CounterOpts{

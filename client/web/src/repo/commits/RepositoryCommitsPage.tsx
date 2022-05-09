@@ -122,7 +122,10 @@ interface Props
 }
 
 /** A page that shows a repository's commits at the current revision. */
-export const RepositoryCommitsPage: React.FunctionComponent<Props> = ({ useBreadcrumb, ...props }) => {
+export const RepositoryCommitsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    useBreadcrumb,
+    ...props
+}) => {
     useEffect(() => {
         eventLogger.logViewEvent('RepositoryCommits')
     }, [])
@@ -136,7 +139,7 @@ export const RepositoryCommitsPage: React.FunctionComponent<Props> = ({ useBread
     )
 
     return (
-        <div className={styles.repositoryCommitsPage}>
+        <div className={styles.repositoryCommitsPage} data-testid="commits-page">
             <PageTitle title="Commits" />
             <FilteredConnection<GitCommitFields, Pick<GitCommitNodeProps, 'className' | 'compact'>>
                 className={styles.content}

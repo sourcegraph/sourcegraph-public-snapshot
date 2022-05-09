@@ -52,7 +52,7 @@ interface FormSeriesInputProps {
     onChange?: (formValues: EditableDataSeries, valid: boolean) => void
 }
 
-export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = props => {
+export const FormSeriesInput: React.FunctionComponent<React.PropsWithChildren<FormSeriesInputProps>> = props => {
     const {
         index,
         series,
@@ -165,7 +165,7 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
     )
 }
 
-const QueryFieldDescription: React.FunctionComponent = () => (
+const QueryFieldDescription: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <span>
         Do not include the <code>context:</code> or <code>repo:</code> filter; if needed, <code>repo:</code> will be
         added automatically.

@@ -144,7 +144,7 @@ type tsvLogger struct {
 	buf bytes.Buffer
 }
 
-func (t *tsvLogger) Log(a ...interface{}) {
+func (t *tsvLogger) Log(a ...any) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 

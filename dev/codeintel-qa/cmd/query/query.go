@@ -6,6 +6,55 @@ import (
 	"strings"
 )
 
+const uploadsQuery = `
+	query Uploads {
+		lsifUploads(state: COMPLETED) {
+			nodes {
+				projectRoot {
+					repository {
+						name
+					}
+					commit {
+						oid
+					}
+				}
+			}
+		}
+	}
+`
+
+func queryUploads(ctx context.Context) (_ map[string][]string, err error) {
+	var payload struct {
+		Data struct {
+			LSIFUploads struct {
+				Nodes []struct {
+					ProjectRoot struct {
+						Repository struct {
+							Name string `json:"name"`
+						} `json:"repository"`
+						Commit struct {
+							OID string `json:"oid"`
+						} `json:"commit"`
+					} `json:"projectRoot"`
+				} `json:"nodes"`
+			} `json:"lsifUploads"`
+		} `json:"data"`
+	}
+	if err := queryGraphQL(ctx, "CodeIntelQA_Query_Uploads", uploadsQuery, map[string]any{}, &payload); err != nil {
+		return nil, err
+	}
+
+	commitsByRepo := map[string][]string{}
+	for _, node := range payload.Data.LSIFUploads.Nodes {
+		projectRoot := node.ProjectRoot
+		name := projectRoot.Repository.Name
+		commit := projectRoot.Commit.OID
+		commitsByRepo[name] = append(commitsByRepo[name], commit)
+	}
+
+	return commitsByRepo, nil
+}
+
 const definitionsQuery = `
 	query Definitions($repository: String!, $commit: String!, $path: String!, $line: Int!, $character: Int!) {
 		repository(name: $repository) {
@@ -52,7 +101,7 @@ pageInfo {
 
 // queryDefinitions returns all of the LSIF definitions for the given location.
 func queryDefinitions(ctx context.Context, location Location) (locations []Location, err error) {
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"repository": location.Repo,
 		"commit":     location.Rev,
 		"path":       location.Path,
@@ -61,7 +110,7 @@ func queryDefinitions(ctx context.Context, location Location) (locations []Locat
 	}
 
 	var payload QueryResponse
-	if err := queryGraphQL(ctx, "CodeIntelTesterDefinitions", definitionsQuery, variables, &payload); err != nil {
+	if err := queryGraphQL(ctx, "CodeIntelQA_Query_Definitions", definitionsQuery, variables, &payload); err != nil {
 		return nil, err
 	}
 
@@ -98,7 +147,7 @@ const referencesQuery = `
 func queryReferences(ctx context.Context, location Location) (locations []Location, err error) {
 	endCursor := ""
 	for {
-		variables := map[string]interface{}{
+		variables := map[string]any{
 			"repository": location.Repo,
 			"commit":     location.Rev,
 			"path":       location.Path,
@@ -110,7 +159,7 @@ func queryReferences(ctx context.Context, location Location) (locations []Locati
 		}
 
 		var payload QueryResponse
-		if err := queryGraphQL(ctx, "CodeIntelTesterReferences", referencesQuery, variables, &payload); err != nil {
+		if err := queryGraphQL(ctx, "CodeIntelQA_Query_References", referencesQuery, variables, &payload); err != nil {
 			return nil, err
 		}
 

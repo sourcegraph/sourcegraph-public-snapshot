@@ -15,7 +15,7 @@ query Blob($repoName: String!, $revision: String!, $filePath: String!) {
 	}
 }
 `
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"repoName": repoName,
 		"revision": revision,
 		"filePath": filePath,
@@ -50,7 +50,7 @@ query Files($repoName: String!, $revision: String!) {
 	}
 }
 `
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"repoName": repoName,
 		"revision": revision,
 	}
@@ -84,7 +84,7 @@ query Files($repoName: String!, $revision: String!) {
 	}
 }
 `
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"repoName": repoName,
 		"revision": revision,
 	}

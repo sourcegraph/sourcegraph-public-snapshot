@@ -95,7 +95,7 @@ interface Props
     branding?: typeof window.context.branding
 }
 
-export const GlobalNavbar: React.FunctionComponent<Props> = ({
+export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     authRequired,
     showSearchBox,
     variant,

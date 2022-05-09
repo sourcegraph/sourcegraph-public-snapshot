@@ -189,7 +189,7 @@ func (e httpError) Error() string {
 	return fmt.Sprintf("HTTP %d: %s", e.code, http.StatusText(e.code))
 }
 
-func respond(w http.ResponseWriter, code int, v interface{}) {
+func respond(w http.ResponseWriter, code int, v any) {
 	switch val := v.(type) {
 	case nil:
 		w.WriteHeader(code)

@@ -70,15 +70,15 @@ export function LineChart<Datum extends object>(props: LineChartProps<Datum>): R
     )
 }
 
-export const LegendBlock: React.FunctionComponent<React.HTMLAttributes<HTMLUListElement>> = props => (
-    <ul className={classNames(styles.legendList, props.className)}>{props.children}</ul>
-)
+export const LegendBlock: React.FunctionComponent<
+    React.PropsWithChildren<React.HTMLAttributes<HTMLUListElement>>
+> = props => <ul className={classNames(styles.legendList, props.className)}>{props.children}</ul>
 
 interface LegendItemProps extends React.LiHTMLAttributes<HTMLLIElement> {
     color: string
 }
 
-export const LegendItem: React.FunctionComponent<LegendItemProps> = props => (
+export const LegendItem: React.FunctionComponent<React.PropsWithChildren<LegendItemProps>> = props => (
     <li className={classNames(props.className, styles.legendItem)}>
         <div
             /* eslint-disable-next-line react/forbid-dom-props */

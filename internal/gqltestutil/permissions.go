@@ -12,7 +12,7 @@ mutation ScheduleRepositoryPermissionsSync($repository: ID!) {
 	}
 }
 `
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"repository": id,
 	}
 	err := c.GraphQL("", query, variables, nil)
