@@ -108,7 +108,7 @@ export const AfterInstallPageContent: React.FunctionComponent<React.PropsWithChi
                                         role="img"
                                         className={styles.codeHostLogo}
                                         as={GithubIcon}
-                                        title="Github logo"
+                                        aria-hidden={true}
                                     />{' '}
                                     github.com
                                 </h3>

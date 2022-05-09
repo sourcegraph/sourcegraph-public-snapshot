@@ -263,7 +263,7 @@ const RepoSyncErrorAlert: React.FunctionComponent<
 const SourcegraphCloudAlert: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <section className={classNames('bg-2', styles.section)}>
         <h4>
-            <Icon aria-hidden={true} role="img" className="mr-2" as={CheckCircleOutlineIcon} />
+            <Icon role="img" aria-hidden={true} className="mr-2" as={CheckCircleOutlineIcon} />
             You're on Sourcegraph Cloud
         </h4>
         <p>Naturally, the browser extension is not necessary to browse public code on sourcegraph.com.</p>

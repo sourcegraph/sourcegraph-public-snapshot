@@ -89,7 +89,7 @@ export const SavedSearchesSection: React.FunctionComponent<React.PropsWithChildr
                 type="button"
                 className={classNames('btn btn-outline-secondary', styles.sidebarSectionCollapseButton)}
                 onClick={() => setCollapsed(!collapsed)}
-                aria-label="Expand Collapse'} saved searches"
+                aria-label={`${collapsed ? 'Expand' : 'Collapse'} saved searches`}
             >
                 <h5 className="flex-grow-1">Saved Searches</h5>
                 <Icon

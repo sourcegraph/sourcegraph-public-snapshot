@@ -61,7 +61,7 @@ export const RecentSearchesSection: React.FunctionComponent<React.PropsWithChild
                 type="button"
                 className={classNames('btn btn-outline-secondary', styles.sidebarSectionCollapseButton)}
                 onClick={() => setCollapsed(!collapsed)}
-                aria-label="Expand recent searches"
+                aria-label={`${collapsed ? 'Expand' : 'Collapse'} recent searches`}
             >
                 <h5 className="flex-grow-1">Recent Searches</h5>
                 <Icon

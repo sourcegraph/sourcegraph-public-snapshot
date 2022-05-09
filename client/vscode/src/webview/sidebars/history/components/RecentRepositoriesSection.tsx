@@ -65,7 +65,7 @@ export const RecentRepositoriesSection: React.FunctionComponent<React.PropsWithC
                 type="button"
                 className={classNames('btn btn-outline-secondary', styles.sidebarSectionCollapseButton)}
                 onClick={() => setCollapsed(!collapsed)}
-                aria-label="Expand recent repositories"
+                aria-label={`${collapsed ? 'Expand' : 'Collapse'} recent files`}
             >
                 <h5 className="flex-grow-1">Recent Repositories</h5>
                 <Icon
