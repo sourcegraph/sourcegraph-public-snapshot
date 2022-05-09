@@ -64,6 +64,7 @@ func NewSource(db database.DB, svc *types.ExternalService, cf *httpcli.Factory) 
 	case extsvc.KindGoModules:
 		return NewGoModulesSource(svc, cf)
 	case extsvc.KindJVMPackages:
+		// JVM doesn't need a client factory because we use coursier.
 		return NewJVMPackagesSource(svc)
 	case extsvc.KindPagure:
 		return NewPagureSource(svc, cf)
