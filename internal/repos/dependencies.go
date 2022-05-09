@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
+// A DependenciesSource yields dependency repositories from a package (dependencies) host connection.
 type DependenciesSource struct {
 	svc        *types.ExternalService
 	configDeps []string
