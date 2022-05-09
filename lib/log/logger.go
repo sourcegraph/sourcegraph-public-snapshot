@@ -72,6 +72,11 @@ func Scoped(scope string, description string) Logger {
 	safeGet := !development // do not panic in prod
 	adapted := &zapAdapter{Logger: globallogger.Get(safeGet), fromPackageScoped: true}
 
+	if development {
+		// In development, don't add the OpenTelemetry "Attributes" namespace which gets
+		// rather difficult to read.
+		return adapted.Scoped(scope, description)
+	}
 	return adapted.Scoped(scope, description).With(otfields.AttributesNamespace)
 }
 
