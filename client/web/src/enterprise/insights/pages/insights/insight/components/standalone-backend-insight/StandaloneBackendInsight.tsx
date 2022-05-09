@@ -51,9 +51,12 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
     const [filters, setFilters] = useState<InsightFilters>(originalInsightFilters)
     const debouncedFilters = useDebounce(useDeepMemo<InsightFilters>(filters), 500)
 
+    const [seriesDisplayOptions, setSeriesDisplayOptions] = useState(insight.seriesDisplayOptions)
+
     const { state, isVisible } = useInsightData(
-        useCallback(() => getBackendInsightData({ ...insight, filters: debouncedFilters }), [
+        useCallback(() => getBackendInsightData({ ...insight, seriesDisplayOptions, filters: debouncedFilters }), [
             insight,
+            seriesDisplayOptions,
             debouncedFilters,
             getBackendInsightData,
         ]),
@@ -117,6 +120,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
                         onFiltersChange={handleFilterChange}
                         onFilterSave={handleFilterSave}
                         onCreateInsightRequest={() => setStep(DrillDownFiltersStep.ViewCreation)}
+                        onSeriesDisplayOptionsChange={setSeriesDisplayOptions}
                     />
                 )}
 
