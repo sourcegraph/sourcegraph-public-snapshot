@@ -194,6 +194,7 @@ const batchSpecExecutionFieldsFragment = gql`
         }
         viewerCanRetry
         workspaceResolution {
+            id
             workspaces {
                 stats {
                     errored
@@ -369,6 +370,7 @@ const BATCH_SPEC_WORKSPACES = gql`
             ... on BatchSpec {
                 id
                 workspaceResolution {
+                    id
                     workspaces(first: $first, after: $after, search: $search, state: $state) {
                         ...BatchSpecWorkspacesConnectionFields
                     }
@@ -448,9 +450,8 @@ export const useWorkspacesListConnection = (
         },
         options: {
             useURL: true,
-            // For some reason caching caused flickering here. Will need to investigate
-            // further why.
-            fetchPolicy: 'no-cache',
+            fetchPolicy: 'network-only',
+            // fetchPolicy: 'cache-and-network',
             pollInterval: 1000,
         },
         getConnection: result => {

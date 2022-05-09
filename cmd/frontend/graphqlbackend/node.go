@@ -278,3 +278,8 @@ func (r *NodeResolver) ToExecutor() (*executor.ExecutorResolver, bool) {
 	n, ok := r.Node.(*executor.ExecutorResolver)
 	return n, ok
 }
+
+func (r *NodeResolver) ToBatchSpecWorkspaceResolution() (BatchSpecWorkspaceResolutionResolver, bool) {
+	n, ok := r.Node.(BatchSpecWorkspaceResolutionResolver)
+	return n, ok
+}

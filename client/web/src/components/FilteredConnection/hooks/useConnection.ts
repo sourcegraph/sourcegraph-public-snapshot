@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef } from 'react'
 
-import { ApolloError, QueryResult, WatchQueryFetchPolicy } from '@apollo/client'
+import { ApolloError, NetworkStatus, QueryResult, WatchQueryFetchPolicy } from '@apollo/client'
+import { isNetworkRequestInFlight } from '@apollo/client/core/networkStatus'
 
 import { GraphQLResult, useQuery } from '@sourcegraph/http-client'
 import { useSearchParameters, useInterval } from '@sourcegraph/wildcard'
@@ -100,15 +101,21 @@ export const useConnection = <TResult, TVariables, TData>({
      * Initial query of the hook.
      * Subsequent requests (such as further pagination) will be handled through `fetchMore`
      */
-    const { data, error, loading, fetchMore, refetch } = useQuery<TResult, TVariables>(query, {
+    const { data, error, loading, networkStatus, fetchMore, refetch } = useQuery<TResult, TVariables>(query, {
         variables: {
             ...variables,
             ...initialControls,
         },
-        notifyOnNetworkStatusChange: true, // Ensures loading state is updated on `fetchMore`
+        // notifyOnNetworkStatusChange: true, // Ensures loading state is updated on `fetchMore`
         fetchPolicy: options?.fetchPolicy,
         onCompleted: options?.onCompleted,
     })
+
+    const statuses = new Map<any, string>()
+    for (const [key, value] of Object.entries(NetworkStatus)) {
+        statuses.set(value, key)
+    }
+    console.log('networkStatus', statuses.get(networkStatus))
 
     /**
      * Map over Apollo results to provide type-compatible `GraphQLResult`s for consumers.
@@ -136,37 +143,43 @@ export const useConnection = <TResult, TVariables, TData>({
                 // Use cursor paging if possible, otherwise fallback to multiplying `first`
                 ...(cursor ? { after: cursor } : { first: firstReference.current.actual * 2 }),
             },
-            updateQuery: (previousResult, { fetchMoreResult }) => {
-                if (!fetchMoreResult) {
-                    return previousResult
-                }
+            // updateQuery:
+            //     options?.fetchPolicy === 'no-cache'
+            //         ? undefined
+            //         : (previousResult, { fetchMoreResult }) => {
+            //               if (!fetchMoreResult) {
+            //                   return previousResult
+            //               }
 
-                if (cursor) {
-                    // Update resultant data in the cache by prepending the `previousResult`s to the
-                    // `fetchMoreResult`s. We must rely on the consumer-provided `getConnection` here in
-                    // order to access and modify the actual `nodes` in the connection response because we
-                    // don't know the exact response structure
-                    const previousNodes = getConnection({ data: previousResult }).nodes
-                    getConnection({ data: fetchMoreResult }).nodes.unshift(...previousNodes)
-                } else {
-                    // With batch-based pagination, we have all the results already in `fetchMoreResult`,
-                    // we just need to update `first` to fetch more results next time
-                    firstReference.current.actual *= 2
-                }
+            //               if (cursor) {
+            //                   // Update resultant data in the cache by prepending the `previousResult`s to the
+            //                   // `fetchMoreResult`s. We must rely on the consumer-provided `getConnection` here in
+            //                   // order to access and modify the actual `nodes` in the connection response because we
+            //                   // don't know the exact response structure
+            //                   const previousNodes = getConnection({ data: previousResult }).nodes
+            //                   getConnection({ data: fetchMoreResult }).nodes.unshift(...previousNodes)
+            //               } else {
+            //                   // With batch-based pagination, we have all the results already in `fetchMoreResult`,
+            //                   // we just need to update `first` to fetch more results next time
+            //                   firstReference.current.actual *= 2
+            //               }
 
-                return fetchMoreResult
-            },
+            //               return fetchMoreResult
+            //           },
         })
     }
 
     const refetchAll = useCallback(async (): Promise<void> => {
+        if (isNetworkRequestInFlight(networkStatus)) {
+            return
+        }
         const first = connection?.nodes.length || firstReference.current.actual
 
         await refetch({
             ...variables,
             first,
         })
-    }, [connection?.nodes.length, refetch, variables])
+    }, [connection?.nodes.length, refetch, variables, networkStatus])
 
     // We use `refetchAll` to poll for all of the nodes currently loaded in the
     // connection, vs. just providing a `pollInterval` to the underlying `useQuery`, which
@@ -175,7 +188,7 @@ export const useConnection = <TResult, TVariables, TData>({
 
     return {
         connection,
-        loading,
+        loading: loading || isNetworkRequestInFlight(networkStatus),
         error,
         fetchMore: fetchMoreData,
         refetchAll,

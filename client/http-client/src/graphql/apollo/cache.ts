@@ -1,4 +1,5 @@
 import { InMemoryCache } from '@apollo/client'
+import { relayStylePagination } from '@apollo/client/utilities'
 
 import { TypedTypePolicies } from '@sourcegraph/shared/src/graphql-operations'
 import { IExtensionRegistry, IPerson } from '@sourcegraph/shared/src/schema'
@@ -18,6 +19,11 @@ const typePolicies: TypedTypePolicies = {
         // Required because of the missing `id` on the `Person` field.
         merge(existing: IPerson, incoming: IPerson): IPerson {
             return incoming
+        },
+    },
+    BatchSpecWorkspaceResolution: {
+        fields: {
+            workspaces: relayStylePagination(),
         },
     },
     Query: {

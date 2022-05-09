@@ -1888,7 +1888,12 @@ enum WorkspacesSortOrder {
 """
 A bag for all info around resolving workspaces.
 """
-type BatchSpecWorkspaceResolution {
+type BatchSpecWorkspaceResolution implements Node {
+    """
+    An ID for apollo, but doesn't implement node. This can not be queried individually.
+    """
+    id: ID!
+
     """
     Error message, if the evaluation failed.
     """

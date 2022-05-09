@@ -125,6 +125,9 @@ func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
 		batchSpecWorkspaceIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
 			return r.batchSpecWorkspaceByID(ctx, id)
 		},
+		"BatchSpecWorkspaceResolution": func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+			return nil, nil
+		},
 	}
 }
 
