@@ -87,7 +87,7 @@ func (s *Store) SaveFile() error {
 }
 
 // Put stores serialized data in memory.
-func (s *Store) Put(key string, data interface{}) error {
+func (s *Store) Put(key string, data any) error {
 	b, err := json.Marshal(data)
 	if err != nil {
 		return err
@@ -97,7 +97,7 @@ func (s *Store) Put(key string, data interface{}) error {
 }
 
 // PutAndSave saves automatically after calling Put.
-func (s *Store) PutAndSave(key string, data interface{}) error {
+func (s *Store) PutAndSave(key string, data any) error {
 	err := s.Put(key, data)
 	if err != nil {
 		return err
@@ -106,7 +106,7 @@ func (s *Store) PutAndSave(key string, data interface{}) error {
 }
 
 // Get fetches a value from memory and uses the given target to deserialize it.
-func (s *Store) Get(key string, target interface{}) error {
+func (s *Store) Get(key string, target any) error {
 	if v, ok := s.m[key]; ok {
 		return json.Unmarshal(v, target)
 	}

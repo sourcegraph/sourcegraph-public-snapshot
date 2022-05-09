@@ -53,7 +53,7 @@ func (blocks NotebookBlocks) Value() (driver.Value, error) {
 	return json.Marshal(blocks)
 }
 
-func (blocks *NotebookBlocks) Scan(value interface{}) error {
+func (blocks *NotebookBlocks) Scan(value any) error {
 	b, ok := value.([]byte)
 	if !ok {
 		return errors.New("type assertion to []byte failed")

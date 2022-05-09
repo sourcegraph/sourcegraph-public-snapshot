@@ -1199,7 +1199,7 @@ AND bind_id IN (%s)`,
 	return nil
 }
 
-func (s *permsStore) execute(ctx context.Context, q *sqlf.Query, vs ...interface{}) (err error) {
+func (s *permsStore) execute(ctx context.Context, q *sqlf.Query, vs ...any) (err error) {
 	ctx, save := s.observe(ctx, "execute", "")
 	defer func() { save(&err, otlog.Object("q", q)) }()
 

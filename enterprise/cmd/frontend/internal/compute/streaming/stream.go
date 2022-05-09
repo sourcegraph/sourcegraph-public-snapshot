@@ -58,7 +58,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Always send a final done event so clients know the stream is shutting
 	// down.
-	defer eventWriter.Event("done", map[string]interface{}{})
+	defer eventWriter.Event("done", map[string]any{})
 
 	// Log events to trace
 	eventWriter.StatHook = eventStreamOTHook(tr.LogFields)

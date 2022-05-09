@@ -197,23 +197,23 @@ func (es edits) apply(input string) (output string, err error) {
 	return
 }
 
-func (es *edits) edit(v interface{}, path ...interface{}) {
+func (es *edits) edit(v any, path ...any) {
 	*es = append(*es, edit{jsonx.MakePath(path...), v})
 }
 
-func (es *edits) redactString(s string, path ...interface{}) {
+func (es *edits) redactString(s string, path ...any) {
 	if s != "" {
 		es.edit(redactedString(s), path...)
 	}
 }
 
-func (es *edits) unredactString(new, old string, path ...interface{}) {
+func (es *edits) unredactString(new, old string, path ...any) {
 	if new != "" && old != "" {
 		es.edit(unredactedString(new, old), path...)
 	}
 }
 
-func (es *edits) redactURL(s string, path ...interface{}) error {
+func (es *edits) redactURL(s string, path ...any) error {
 	if s == "" {
 		return nil
 	}
@@ -258,7 +258,7 @@ func (es *edits) unredactURLs(new, old []string) (err error) {
 	return nil
 }
 
-func (es *edits) unredactURL(new, old string, path ...interface{}) error {
+func (es *edits) unredactURL(new, old string, path ...any) error {
 	if new == "" || old == "" {
 		return nil
 	}
@@ -274,7 +274,7 @@ func (es *edits) unredactURL(new, old string, path ...interface{}) error {
 
 type edit struct {
 	path  jsonx.Path
-	value interface{}
+	value any
 }
 
 func (p edit) apply(input string) (string, error) {

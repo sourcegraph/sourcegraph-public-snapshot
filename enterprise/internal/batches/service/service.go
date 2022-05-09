@@ -1071,7 +1071,7 @@ var ErrChangesetsForJobNotFound = errors.New("some changesets could not be found
 // CreateChangesetJobs creates one changeset job for each given Changeset in the
 // given BatchChange, checking whether the actor in the context has permission to
 // trigger a job, and enqueues it.
-func (s *Service) CreateChangesetJobs(ctx context.Context, batchChangeID int64, ids []int64, jobType btypes.ChangesetJobType, payload interface{}, listOpts store.ListChangesetsOpts) (bulkGroupID string, err error) {
+func (s *Service) CreateChangesetJobs(ctx context.Context, batchChangeID int64, ids []int64, jobType btypes.ChangesetJobType, payload any, listOpts store.ListChangesetsOpts) (bulkGroupID string, err error) {
 	ctx, _, endObservation := s.operations.createChangesetJobs.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 

@@ -1412,7 +1412,7 @@ func (e *externalServiceStore) recalculateFields(es *types.ExternalService, rawC
 	return nil
 }
 
-func configurationHasWebhooks(config interface{}) bool {
+func configurationHasWebhooks(config any) bool {
 	switch v := config.(type) {
 	case *schema.GitHubConnection:
 		return len(v.Webhooks) > 0

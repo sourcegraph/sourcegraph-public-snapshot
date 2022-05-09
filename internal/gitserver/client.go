@@ -1336,7 +1336,7 @@ func (c *ClientImplementor) RemoveFrom(ctx context.Context, repo api.RepoName, f
 // httpPost will apply the MD5 hashing scheme on the repo name to determine the gitserver instance
 // to which the HTTP POST request is sent. To use the rendezvous hashing scheme, see
 // httpPostWithURI.
-func (c *ClientImplementor) httpPost(ctx context.Context, repo api.RepoName, op string, payload interface{}) (resp *http.Response, err error) {
+func (c *ClientImplementor) httpPost(ctx context.Context, repo api.RepoName, op string, payload any) (resp *http.Response, err error) {
 	b, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
@@ -1353,7 +1353,7 @@ func (c *ClientImplementor) httpPost(ctx context.Context, repo api.RepoName, op 
 // httpPostWithURI does not apply any transformations to the given URI. This allows the consumer to
 // use the predetermined hashing scheme (md5 or rendezvous) of their choice to derive the gitserver
 // instance to which the HTTP POST request is sent.
-func (c *ClientImplementor) httpPostWithURI(ctx context.Context, repo api.RepoName, uri string, payload interface{}) (resp *http.Response, err error) {
+func (c *ClientImplementor) httpPostWithURI(ctx context.Context, repo api.RepoName, uri string, payload any) (resp *http.Response, err error) {
 	b, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err

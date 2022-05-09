@@ -19,7 +19,7 @@ type authnResponseInfo struct {
 	spec                 extsvc.AccountSpec
 	email, displayName   string
 	unnormalizedUsername string
-	accountData          interface{}
+	accountData          any
 }
 
 func readAuthnResponse(p *provider, encodedResp string) (*authnResponseInfo, error) {

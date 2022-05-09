@@ -448,7 +448,7 @@ func (s *gitserverRepoStore) sendBatchQuery(ctx context.Context, batchSize int, 
 
 // ScannerWithError captures Scan and Err methods of sql.Rows and sql.Row.
 type ScannerWithError interface {
-	Scan(dst ...interface{}) error
+	Scan(dst ...any) error
 	Err() error
 }
 

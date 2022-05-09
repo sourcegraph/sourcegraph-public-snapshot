@@ -15,9 +15,9 @@ import (
 
 // A DB captures the essential method of a sql.DB: QueryContext.
 type DB interface {
-	QueryContext(ctx context.Context, q string, args ...interface{}) (*sql.Rows, error)
-	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
-	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
+	QueryContext(ctx context.Context, q string, args ...any) (*sql.Rows, error)
+	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
+	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
 }
 
 // A Tx captures the essential methods of a sql.Tx.
@@ -51,7 +51,7 @@ func IsPostgresError(err error, codename string) bool {
 type NullTime struct{ *time.Time }
 
 // Scan implements the Scanner interface.
-func (nt *NullTime) Scan(value interface{}) error {
+func (nt *NullTime) Scan(value any) error {
 	*nt.Time, _ = value.(time.Time)
 	return nil
 }
@@ -78,7 +78,7 @@ func NewNullString(s string) NullString {
 }
 
 // Scan implements the Scanner interface.
-func (nt *NullString) Scan(value interface{}) error {
+func (nt *NullString) Scan(value any) error {
 	switch v := value.(type) {
 	case []byte:
 		*nt.S = string(v)
@@ -102,7 +102,7 @@ func (nt NullString) Value() (driver.Value, error) {
 type NullInt32 struct{ N *int32 }
 
 // Scan implements the Scanner interface.
-func (n *NullInt32) Scan(value interface{}) error {
+func (n *NullInt32) Scan(value any) error {
 	switch value := value.(type) {
 	case int64:
 		*n.N = int32(value)
@@ -138,7 +138,7 @@ func NewNullInt64(i int64) NullInt64 {
 }
 
 // Scan implements the Scanner interface.
-func (n *NullInt64) Scan(value interface{}) error {
+func (n *NullInt64) Scan(value any) error {
 	switch value := value.(type) {
 	case int64:
 		*n.N = value
@@ -174,7 +174,7 @@ func NewNullInt(i int) NullInt {
 }
 
 // Scan implements the Scanner interface.
-func (n *NullInt) Scan(value interface{}) error {
+func (n *NullInt) Scan(value any) error {
 	switch value := value.(type) {
 	case int64:
 		*n.N = int(value)
@@ -202,7 +202,7 @@ func (n NullInt) Value() (driver.Value, error) {
 type NullBool struct{ B *bool }
 
 // Scan implements the Scanner interface.
-func (n *NullBool) Scan(value interface{}) error {
+func (n *NullBool) Scan(value any) error {
 	switch v := value.(type) {
 	case bool:
 		*n.B = v
@@ -235,7 +235,7 @@ func (n NullBool) Value() (driver.Value, error) {
 type JSONInt64Set struct{ Set *[]int64 }
 
 // Scan implements the Scanner interface.
-func (n *JSONInt64Set) Scan(value interface{}) error {
+func (n *JSONInt64Set) Scan(value any) error {
 	set := make(map[int64]*struct{})
 
 	switch value := value.(type) {
@@ -277,7 +277,7 @@ type NullJSONRawMessage struct {
 }
 
 // Scan implements the Scanner interface.
-func (n *NullJSONRawMessage) Scan(value interface{}) error {
+func (n *NullJSONRawMessage) Scan(value any) error {
 	switch value := value.(type) {
 	case nil:
 	case []byte:
@@ -302,7 +302,7 @@ func (n *NullJSONRawMessage) Value() (driver.Value, error) {
 type CommitBytea string
 
 // Scan implements the Scanner interface.
-func (c *CommitBytea) Scan(value interface{}) error {
+func (c *CommitBytea) Scan(value any) error {
 	switch value := value.(type) {
 	case nil:
 	case []byte:
@@ -321,7 +321,7 @@ func (c CommitBytea) Value() (driver.Value, error) {
 
 // Scanner captures the Scan method of sql.Rows and sql.Row.
 type Scanner interface {
-	Scan(dst ...interface{}) error
+	Scan(dst ...any) error
 }
 
 // A ScanFunc scans one or more rows from a scanner, returning

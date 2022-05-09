@@ -358,7 +358,7 @@ func listAuthzProvidersHandler() http.HandlerFunc {
 
 func repoUpdaterStatsHandler(db database.DB, scheduler *repos.UpdateScheduler, debugDumpers []debugserver.Dumper) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		dumps := []interface{}{
+		dumps := []any{
 			scheduler.DebugDump(r.Context(), db),
 		}
 		for _, dumper := range debugDumpers {

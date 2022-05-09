@@ -77,7 +77,7 @@ func listSecretExec(ctx context.Context, args []string) error {
 	keys := secretsStore.Keys()
 	if secretListViewFlag {
 		for _, key := range keys {
-			var val map[string]interface{}
+			var val map[string]any
 			if err := secretsStore.Get(key, &val); err != nil {
 				return errors.Newf("Get %q: %w", key, err)
 			}

@@ -111,10 +111,10 @@ func (c *V4Client) RateLimitMonitor() *ratelimit.Monitor {
 	return c.rateLimitMonitor
 }
 
-func (c *V4Client) requestGraphQL(ctx context.Context, query string, vars map[string]interface{}, result interface{}) (err error) {
+func (c *V4Client) requestGraphQL(ctx context.Context, query string, vars map[string]any, result any) (err error) {
 	reqBody, err := json.Marshal(struct {
-		Query     string                 `json:"query"`
-		Variables map[string]interface{} `json:"variables"`
+		Query     string         `json:"query"`
+		Variables map[string]any `json:"variables"`
 	}{
 		Query:     query,
 		Variables: vars,
@@ -207,7 +207,7 @@ func calcDefinitionCost(def ast.Node) int {
 	limitStack := make([]limitDepth, 0)
 
 	v := &visitor.VisitorOptions{
-		Enter: func(p visitor.VisitFuncParams) (string, interface{}) {
+		Enter: func(p visitor.VisitFuncParams) (string, any) {
 			switch node := p.Node.(type) {
 			case *ast.IntValue:
 				// We're looking for a 'first' or 'last' param indicating a limit
@@ -271,9 +271,9 @@ func filterInPlace(limitStack []limitDepth, depth int) []limitDepth {
 // graphqlErrors describes the errors in a GraphQL response. It contains at least 1 element when returned by
 // requestGraphQL. See https://graphql.github.io/graphql-spec/June2018/#sec-Errors.
 type graphqlErrors []struct {
-	Message   string        `json:"message"`
-	Type      string        `json:"type"`
-	Path      []interface{} `json:"path"`
+	Message   string `json:"message"`
+	Type      string `json:"type"`
+	Path      []any  `json:"path"`
 	Locations []struct {
 		Line   int `json:"line"`
 		Column int `json:"column"`
@@ -288,7 +288,7 @@ func (e graphqlErrors) Error() string {
 
 // unmarshal wraps json.Unmarshal, but includes extra context in the case of
 // json.UnmarshalTypeError
-func unmarshal(data []byte, v interface{}) error {
+func unmarshal(data []byte, v any) error {
 	err := json.Unmarshal(data, v)
 	var e *json.UnmarshalTypeError
 	if errors.As(err, &e) && e.Offset >= 0 {
@@ -408,7 +408,7 @@ func (c *V4Client) SearchRepos(ctx context.Context, p SearchReposParams) (Search
 		p.First = 100
 	}
 
-	vars := map[string]interface{}{
+	vars := map[string]any{
 		"query": p.Query,
 		"type":  "REPOSITORY",
 		"first": p.First,
@@ -484,7 +484,7 @@ func (c *V4Client) GetReposByNameWithOwner(ctx context.Context, namesWithOwners 
 	}
 
 	var result map[string]*Repository
-	err = c.requestGraphQL(ctx, query, map[string]interface{}{}, &result)
+	err = c.requestGraphQL(ctx, query, map[string]any{}, &result)
 	if err != nil {
 		var e graphqlErrors
 		if errors.As(err, &e) {
@@ -657,7 +657,7 @@ func (c *V4Client) RecentCommitters(ctx context.Context, params *RecentCommitter
 	  }
 	`
 
-	vars := map[string]interface{}{
+	vars := map[string]any{
 		"name":  params.Name,
 		"owner": params.Owner,
 		"first": params.First,

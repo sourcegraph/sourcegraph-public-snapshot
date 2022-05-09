@@ -126,7 +126,7 @@ func LinearizeHinter(recognizer *Recognizer) (recognizers []*Recognizer) {
 // RecognizersFromUserDataMap decodes a keyed map of recognizers from the given Lua value.
 func RecognizersFromUserDataMap(value lua.LValue) (recognizers []*Recognizer, err error) {
 	err = util.ForEach(value, func(key, value lua.LValue) error {
-		return util.UnwrapLuaUserData(value, func(value interface{}) error {
+		return util.UnwrapLuaUserData(value, func(value any) error {
 			if recognizer, ok := value.(*Recognizer); ok {
 				recognizers = append(recognizers, recognizer)
 				return nil
@@ -143,7 +143,7 @@ func RecognizersFromUserDataMap(value lua.LValue) (recognizers []*Recognizer, er
 // given Lua value.
 func RecognizersFromUserData(value lua.LValue) (recognizers []*Recognizer, err error) {
 	err = util.UnwrapSliceOrSingleton(value, func(value lua.LValue) error {
-		return util.UnwrapLuaUserData(value, func(value interface{}) error {
+		return util.UnwrapLuaUserData(value, func(value any) error {
 			if recognizer, ok := value.(*Recognizer); ok {
 				recognizers = append(recognizers, recognizer)
 				return nil

@@ -70,7 +70,7 @@ func (s *Server) Handler() http.Handler {
 }
 
 // TODO(tsenart): Reuse this function in all handlers.
-func respond(w http.ResponseWriter, code int, v interface{}) {
+func respond(w http.ResponseWriter, code int, v any) {
 	switch val := v.(type) {
 	case error:
 		if val != nil {

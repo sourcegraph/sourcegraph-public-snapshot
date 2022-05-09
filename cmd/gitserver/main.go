@@ -409,7 +409,7 @@ func getVCSSyncer(
 		return nil, errors.Wrap(err, "get repository")
 	}
 
-	extractOptions := func(connection interface{}) (string, error) {
+	extractOptions := func(connection any) (string, error) {
 		for _, info := range r.Sources {
 			extSvc, err := externalServiceStore.GetByID(ctx, info.ExternalServiceID())
 			if err != nil {

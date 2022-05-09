@@ -154,7 +154,7 @@ func TestEnforcement_AfterCreateUser(t *testing.T) {
 
 			calledExecContext := false
 			db := &fakeDB{
-				execContext: func(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+				execContext: func(ctx context.Context, query string, args ...any) (sql.Result, error) {
 					calledExecContext = true
 					return nil, nil
 				},
@@ -180,18 +180,18 @@ func TestEnforcement_AfterCreateUser(t *testing.T) {
 }
 
 type fakeDB struct {
-	execContext func(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
+	execContext func(ctx context.Context, query string, args ...any) (sql.Result, error)
 }
 
-func (db *fakeDB) QueryContext(ctx context.Context, q string, args ...interface{}) (*sql.Rows, error) {
+func (db *fakeDB) QueryContext(ctx context.Context, q string, args ...any) (*sql.Rows, error) {
 	panic("implement me")
 }
 
-func (db *fakeDB) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+func (db *fakeDB) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
 	return db.execContext(ctx, query, args...)
 }
 
-func (db *fakeDB) QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row {
+func (db *fakeDB) QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row {
 	panic("implement me")
 }
 

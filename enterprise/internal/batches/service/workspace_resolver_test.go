@@ -424,7 +424,7 @@ func newStreamSearchTestServer(t *testing.T, matches map[string][]streamhttp.Eve
 
 		type ev struct {
 			Name  string
-			Value interface{}
+			Value any
 		}
 		ew, err := streamhttp.NewWriter(w)
 		if err != nil {

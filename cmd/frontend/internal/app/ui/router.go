@@ -436,7 +436,7 @@ func handler(db database.DB, f handlerFunc) http.Handler {
 }
 
 type recoverError struct {
-	recover interface{}
+	recover any
 	stack   []byte
 }
 
