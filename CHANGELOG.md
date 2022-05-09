@@ -23,7 +23,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
--
+- Capture group Code Insights now use the Compute streaming endpoint. [#34905](https://github.com/sourcegraph/sourcegraph/pull/34905)
 
 ### Fixed
 
