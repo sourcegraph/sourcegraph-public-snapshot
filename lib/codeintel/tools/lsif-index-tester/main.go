@@ -66,7 +66,7 @@ var debug bool
 // TODO: Do more monitoring of the process.
 // var monitor bool
 
-func logFatal(msg string, args ...interface{}) {
+func logFatal(msg string, args ...any) {
 	log15.Error(msg, args...)
 	os.Exit(1)
 }

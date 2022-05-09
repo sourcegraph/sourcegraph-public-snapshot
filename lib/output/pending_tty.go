@@ -20,7 +20,7 @@ func (p *pendingTTY) Verbose(s string) {
 	}
 }
 
-func (p *pendingTTY) Verbosef(format string, args ...interface{}) {
+func (p *pendingTTY) Verbosef(format string, args ...any) {
 	if p.o.opts.Verbose {
 		p.Writef(format, args...)
 	}
@@ -42,7 +42,7 @@ func (p *pendingTTY) Write(s string) {
 	p.write(p.line)
 }
 
-func (p *pendingTTY) Writef(format string, args ...interface{}) {
+func (p *pendingTTY) Writef(format string, args ...any) {
 	p.o.Lock()
 	defer p.o.Unlock()
 
@@ -68,14 +68,14 @@ func (p *pendingTTY) Update(s string) {
 	defer p.o.Unlock()
 
 	p.line.format = "%s"
-	p.line.args = []interface{}{s}
+	p.line.args = []any{s}
 
 	p.o.moveUp(1)
 	p.o.clearCurrentLine()
 	p.write(p.line)
 }
 
-func (p *pendingTTY) Updatef(format string, args ...interface{}) {
+func (p *pendingTTY) Updatef(format string, args ...any) {
 	p.o.Lock()
 	defer p.o.Unlock()
 
@@ -141,7 +141,7 @@ func (p *pendingTTY) updateEmoji(emoji string) {
 	// We add an extra space because the Braille characters are single width,
 	// but emoji are generally double width and that's what will most likely be
 	// used in the completion message, if any.
-	p.line.emoji = fmt.Sprintf("%s%s ", p.o.caps.formatArgs([]interface{}{
+	p.line.emoji = fmt.Sprintf("%s%s ", p.o.caps.formatArgs([]any{
 		p.line.style,
 		emoji,
 	})...)
