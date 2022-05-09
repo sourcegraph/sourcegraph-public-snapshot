@@ -154,7 +154,6 @@ export const RepositoryCommitsPage: React.FunctionComponent<React.PropsWithChild
                 history={props.history}
                 hideSearch={true}
                 location={props.location}
-                listComponent="div"
             />
         </div>
     )

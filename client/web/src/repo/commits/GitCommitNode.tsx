@@ -232,7 +232,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
 
     if (sidebar) {
         return (
-            <div key={node.id} className={classNames(styles.gitCommitNode, styles.gitCommitNodeCompact, className)}>
+            <li key={node.id} className={classNames(styles.gitCommitNode, styles.gitCommitNodeCompact, className)}>
                 <div className="w-100 d-flex justify-content-between align-items-center flex-wrap-reverse">
                     {bylineElement}
                     <small className={classNames('text-muted', styles.messageTimestamp)}>
@@ -244,12 +244,12 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                     </small>
                     <Link to={node.canonicalURL}>{oidElement}</Link>
                 </div>
-            </div>
+            </li>
         )
     }
 
     return (
-        <div
+        <li
             key={node.id}
             className={classNames(styles.gitCommitNode, compact && styles.gitCommitNodeCompact, className)}
         >
@@ -315,6 +315,6 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                     </div>
                 )}
             </>
-        </div>
+        </li>
     )
 }
