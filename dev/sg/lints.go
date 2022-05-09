@@ -243,6 +243,7 @@ func hadolint() lint.Runner {
 			Input(strings.NewReader(strings.Join(files, "\n"))).
 			Run().
 			Lines()
+
 		return &lint.Report{
 			Header:   header,
 			Output:   strings.Join(out, "\n"),
