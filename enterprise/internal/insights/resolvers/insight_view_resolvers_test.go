@@ -2,14 +2,17 @@ package resolvers
 
 import (
 	"context"
+	"database/sql"
 	"sort"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	internalTypes "github.com/sourcegraph/sourcegraph/internal/types"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 
 	"github.com/google/go-cmp/cmp"
@@ -164,10 +167,17 @@ func TestFrozenInsightDataSeriesResolver(t *testing.T) {
 	})
 	t.Run("insight_is_not_frozen_returns_real_resolvers", func(t *testing.T) {
 		insightsDB := dbtest.NewInsightsDB(t)
+		postgres := dbtest.NewDB(t)
+		permStore := store.NewInsightPermissionStore(postgres)
+		clock := timeutil.Now
+		timeseriesStore := store.NewWithClock(insightsDB, permStore, clock)
 		base := baseInsightResolver{
-			insightStore:   store.NewInsightStore(insightsDB),
-			dashboardStore: store.NewDashboardStore(insightsDB),
-			insightsDB:     insightsDB,
+			insightStore:    store.NewInsightStore(insightsDB),
+			dashboardStore:  store.NewDashboardStore(insightsDB),
+			insightsDB:      insightsDB,
+			workerBaseStore: basestore.NewWithDB(postgres, sql.TxOptions{}),
+			postgresDB:      postgres,
+			timeSeriesStore: timeseriesStore,
 		}
 
 		series, err := base.insightStore.CreateSeries(ctx, types.InsightSeries{

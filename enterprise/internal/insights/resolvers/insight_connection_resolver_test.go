@@ -301,7 +301,7 @@ func resolvePoints(ctx context.Context, conn graphqlbackend.InsightConnectionRes
 		t.Errorf("unexpected length of series resolvers: want: %v got: %v", 1, len(seriesResolvers))
 	}
 	sr := seriesResolvers[0]
-	data, err := sr.Points(ctx, &graphqlbackend.InsightsPointsArgs{})
+	data, err := sr.Points(ctx, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
