@@ -29,6 +29,7 @@ type GitserverRepoStore interface {
 	SetLastFetched(ctx context.Context, name api.RepoName, data GitserverFetchData) error
 	SetRepoSize(ctx context.Context, name api.RepoName, size int64, shardID string) error
 	IterateWithNonemptyLastError(ctx context.Context, repoFn func(repo types.RepoGitserverStatus) error) error
+	IteratePurgeableRepos(ctx context.Context, deletedBefore time.Time, repoFn func(repo api.RepoName) error) error
 	TotalErroredCloudDefaultRepos(ctx context.Context) (int, error)
 	ListReposWithoutSize(ctx context.Context) (map[api.RepoName]api.RepoID, error)
 	UpdateRepoSizes(ctx context.Context, shardID string, repos map[api.RepoID]int64) error
@@ -162,6 +163,52 @@ FROM repo
 	INNER JOIN external_service_repos esr ON repo.id = esr.repo_id
 	INNER JOIN external_services es on esr.external_service_id = es.id
 WHERE gr.last_error != '' AND repo.deleted_at is NULL AND es.cloud_default IS True
+`
+
+// IteratePurgeableRepos iterates over all purgeable repos. These are repos that
+// are cloned on disk but have been deleted or blocked. The optional
+// deletedBefore param will filter the deleted repos to only those that were
+// deleted before the given time. The zero value will not apply filtering.
+func (s *gitserverRepoStore) IteratePurgeableRepos(ctx context.Context, deletedBefore time.Time, repoFn func(repo api.RepoName) error) error {
+	deletedAtClause := sqlf.Sprintf("deleted_at IS NOT NULL")
+	if !deletedBefore.IsZero() {
+		deletedAtClause = sqlf.Sprintf("(deleted_at IS NOT NULL AND deleted_at > %s)", deletedBefore)
+	}
+	rows, err := s.Query(ctx, sqlf.Sprintf(purgableReposQuery, deletedAtClause))
+	if err != nil {
+		return errors.Wrap(err, "fetching repos with nonempty last_error")
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var name api.RepoName
+		if err := rows.Scan(
+			&name,
+		); err != nil {
+			return errors.Wrap(err, "scanning row")
+		}
+		err := repoFn(name)
+		if err != nil {
+			// Abort
+			return errors.Wrap(err, "calling repoFn")
+		}
+	}
+
+	if rows.Err() != nil {
+		return errors.Wrap(rows.Err(), "iterating rows")
+	}
+
+	return nil
+}
+
+const purgableReposQuery = `
+-- source: internal/database/gitserver_repos.go:gitserverRepoStore.IteratePurgeableRepos
+SELECT
+	repo.name
+FROM repo
+	JOIN gitserver_repos gr ON repo.id = gr.repo_id
+WHERE (%s OR repo.blocked IS NOT NULL)
+AND gr.clone_status = 'cloned'
 `
 
 type IterateRepoGitserverStatusOptions struct {

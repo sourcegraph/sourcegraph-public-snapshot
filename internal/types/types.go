@@ -95,7 +95,7 @@ type RepoBlock struct {
 	Reason string
 }
 
-// CloneURLs returns all the clone URLs this repo is clonable from.
+// CloneURLs returns all the clone URLs this repo is cloneable from.
 func (r *Repo) CloneURLs() []string {
 	urls := make([]string, 0, len(r.Sources))
 	for _, src := range r.Sources {
