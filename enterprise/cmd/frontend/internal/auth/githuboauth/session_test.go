@@ -296,8 +296,8 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 				githubsvc.MockGetAuthenticatedUserOrgs = func(ctx context.Context) ([]*githubsvc.Org, error) {
 					return ci.ghUserOrgs, ci.ghUserOrgsErr
 				}
-				githubsvc.MockGetAuthenticatedUserTeams = func(ctx context.Context) ([]*githubsvc.Team, error) {
-					return ci.ghUserTeams, ci.ghUserTeamsErr
+				githubsvc.MockGetAuthenticatedUserTeams = func(ctx context.Context, page int) ([]*githubsvc.Team, bool, int, error) {
+					return ci.ghUserTeams, false, 0, ci.ghUserTeamsErr
 				}
 				var gotAuthUserOp *auth.GetAndSaveUserOp
 				auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {

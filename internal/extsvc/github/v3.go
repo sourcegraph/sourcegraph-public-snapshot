@@ -366,29 +366,22 @@ func (t *restTeam) convert() *Team {
 	}
 }
 
-var MockGetAuthenticatedUserTeams func(ctx context.Context) ([]*Team, error)
-
-// GetAuthenticatedUserTeamsreturns the first 100 teams associated with the currently
-// authenticated user.
-func (c *V3Client) GetAuthenticatedUserTeams(ctx context.Context) ([]*Team, error) {
-	if MockGetAuthenticatedUserTeams != nil {
-		return MockGetAuthenticatedUserTeams(ctx)
-	}
-
-	teams, _, _, err := c.getAuthenticatedUserTeams(ctx, 1)
-	return teams, err
-}
+var MockGetAuthenticatedUserTeams func(ctx context.Context, page int) ([]*Team, bool, int, error)
 
 // GetAuthenticatedUserTeams lists GitHub teams affiliated with the client token.
 //
 // The page is the page of results to return, and is 1-indexed (so the first call should
 // be for page 1).
-func (c *V3Client) getAuthenticatedUserTeams(ctx context.Context, page int) (
+func (c *V3Client) GetAuthenticatedUserTeams(ctx context.Context, page int) (
 	teams []*Team,
 	hasNextPage bool,
 	rateLimitCost int,
 	err error,
 ) {
+	if MockGetAuthenticatedUserTeams != nil {
+		return MockGetAuthenticatedUserTeams(ctx, 1)
+	}
+
 	var restTeams []*restTeam
 	_, err = c.get(ctx, fmt.Sprintf("/user/teams?per_page=100&page=%d", page), &restTeams)
 	if err != nil {
