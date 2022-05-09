@@ -2701,7 +2701,7 @@ WHERE user_id = 2`, clock().AddDate(1, 0, 0))
 		}
 
 		// Should only get user 1 back (NULL FIRST)
-		results, err := s.UserIDsWithOldestPerms(ctx, 1)
+		results, err := s.UserIDsWithOldestPerms(ctx, 1, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -2712,7 +2712,7 @@ WHERE user_id = 2`, clock().AddDate(1, 0, 0))
 		}
 
 		// Should get both users back
-		results, err = s.UserIDsWithOldestPerms(ctx, 2)
+		results, err = s.UserIDsWithOldestPerms(ctx, 2, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -2725,13 +2725,27 @@ WHERE user_id = 2`, clock().AddDate(1, 0, 0))
 			t.Fatal(diff)
 		}
 
+		// Ignore users that have synced recently (or in the future)
+		results, err = s.UserIDsWithOldestPerms(ctx, 5, 1*time.Hour)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		wantResults = map[int32]time.Time{
+			1: {},
+			// User 2 should be filtered out since it synced in the future
+		}
+		if diff := cmp.Diff(wantResults, results); diff != "" {
+			t.Fatal(diff)
+		}
+
 		// Hard-delete user 2
 		if err := s.execute(ctx, sqlf.Sprintf(`DELETE FROM users WHERE id = 2`)); err != nil {
 			t.Fatal(err)
 		}
 
 		// Should only get user 1 back with limit=2
-		results, err = s.UserIDsWithOldestPerms(ctx, 2)
+		results, err = s.UserIDsWithOldestPerms(ctx, 2, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -2798,38 +2812,52 @@ func testPermsStore_ReposIDsWithOldestPerms(db *sql.DB) func(*testing.T) {
 			}
 		}
 
-		// Mock user repo 2's permissions to be synced in the future
+		// Mock repo 2's permissions to be synced in the past
 		q := sqlf.Sprintf(`
 UPDATE repo_permissions
 SET synced_at = %s
-WHERE repo_id = 2`, clock().AddDate(1, 0, 0))
+WHERE repo_id = 2`, clock().AddDate(-1, 0, 0))
 		if err := s.execute(ctx, q); err != nil {
 			t.Fatal(err)
 		}
 
 		// Should only get repo 1 back
-		results, err := s.ReposIDsWithOldestPerms(ctx, 1)
+		results, err := s.ReposIDsWithOldestPerms(ctx, 1, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		wantResults := map[api.RepoID]time.Time{1: clock()}
+		wantResults := map[api.RepoID]time.Time{2: clock().AddDate(-1, 0, 0)}
 		if diff := cmp.Diff(wantResults, results); diff != "" {
 			t.Fatalf("Results mismatch (-want +got):\n%s", diff)
 		}
 
-		// Should get both repos back
-		results, err = s.ReposIDsWithOldestPerms(ctx, 2)
+		// Should get two repos back
+		results, err = s.ReposIDsWithOldestPerms(ctx, 2, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		wantResults = map[api.RepoID]time.Time{
 			1: clock(),
-			2: clock().AddDate(1, 0, 0),
+			2: clock().AddDate(-1, 0, 0),
 		}
 		if diff := cmp.Diff(wantResults, results); diff != "" {
 			t.Fatalf("Results mismatch (-want +got):\n%s", diff)
+		}
+
+		// Ignore repos that have synced recently (or in the future)
+		results, err = s.ReposIDsWithOldestPerms(ctx, 2, 1*time.Hour)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		wantResults = map[api.RepoID]time.Time{
+			// Only repo 2 should appear since it was synced a long time in the past
+			2: clock().AddDate(-1, 0, 0),
+		}
+		if diff := cmp.Diff(wantResults, results); diff != "" {
+			t.Fatal(diff)
 		}
 
 		// Hard-delete repo 2
@@ -2838,7 +2866,7 @@ WHERE repo_id = 2`, clock().AddDate(1, 0, 0))
 		}
 
 		// Should only get repo 1 back with limit=2
-		results, err = s.ReposIDsWithOldestPerms(ctx, 2)
+		results, err = s.ReposIDsWithOldestPerms(ctx, 2, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
