@@ -12,7 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
-    "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
