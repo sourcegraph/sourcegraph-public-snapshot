@@ -83,7 +83,7 @@ Other tips:
 		}
 
 		if *explainJSONFlag {
-			fmt.Println(searchJSONExplanation)
+			fmt.Printf("%s\n", searchJSONExplanation)
 			return nil
 		}
 
