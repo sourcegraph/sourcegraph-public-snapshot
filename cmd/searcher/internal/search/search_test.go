@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 type fileType int
@@ -517,6 +518,7 @@ func newStore(t *testing.T, files map[string]struct {
 			return r, nil
 		},
 		Path: t.TempDir(),
+		Log:  logtest.Scoped(t),
 	}
 }
 

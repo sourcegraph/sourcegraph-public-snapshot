@@ -46,7 +46,6 @@ const (
 // Service is the search service. It is an http.Handler.
 type Service struct {
 	Store *Store
-	Log   sglog.Logger
 }
 
 // ServeHTTP handles HTTP based search requests
@@ -165,24 +164,22 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 		span.LogFields(otlog.Int("matches.len", sender.SentCount()))
 		span.SetTag("limitHit", sender.LimitHit())
 		span.Finish()
-		if s.Log != nil {
-			s.Log.Debug("search request",
-				sglog.String("repo", string(p.Repo)),
-				sglog.String("commit", string(p.Commit)),
-				sglog.String("pattern", p.Pattern),
-				sglog.Bool("isRegExp", p.IsRegExp),
-				sglog.Bool("isStructuralPat", p.IsStructuralPat),
-				sglog.Strings("languages", p.Languages),
-				sglog.Bool("isWordMatch", p.IsWordMatch),
-				sglog.Bool("isCaseSensitive", p.IsCaseSensitive),
-				sglog.Bool("patternMatchesContent", p.PatternMatchesContent),
-				sglog.Bool("patternMatchesPath", p.PatternMatchesPath),
-				sglog.Int("matches", sender.SentCount()),
-				sglog.String("code", code),
-				sglog.Duration("duration", time.Since(start)),
-				sglog.Strings("indexerEndpoints", p.IndexerEndpoints),
-				sglog.Error(err))
-		}
+		s.Store.Log.Debug("search request",
+			sglog.String("repo", string(p.Repo)),
+			sglog.String("commit", string(p.Commit)),
+			sglog.String("pattern", p.Pattern),
+			sglog.Bool("isRegExp", p.IsRegExp),
+			sglog.Bool("isStructuralPat", p.IsStructuralPat),
+			sglog.Strings("languages", p.Languages),
+			sglog.Bool("isWordMatch", p.IsWordMatch),
+			sglog.Bool("isCaseSensitive", p.IsCaseSensitive),
+			sglog.Bool("patternMatchesContent", p.PatternMatchesContent),
+			sglog.Bool("patternMatchesPath", p.PatternMatchesPath),
+			sglog.Int("matches", sender.SentCount()),
+			sglog.String("code", code),
+			sglog.Duration("duration", time.Since(start)),
+			sglog.Strings("indexerEndpoints", p.IndexerEndpoints),
+			sglog.Error(err))
 	}(time.Now())
 
 	if p.IsStructuralPat && p.Indexed {

@@ -9,14 +9,12 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
@@ -31,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // maxFileSize is the limit on file size in bytes. Only files smaller
@@ -78,6 +77,9 @@ type Store struct {
 	// over MaxCacheSizeBytes we trigger delete files until we get below
 	// MaxCacheSizeBytes.
 	MaxCacheSizeBytes int64
+
+	// Log is the Logger to use.
+	Log log.Logger
 
 	// once protects Start
 	once sync.Once
@@ -180,7 +182,7 @@ func (s *Store) PrepareZip(ctx context.Context, repo api.RepoName, commit api.Co
 			}
 		}
 		if err != nil {
-			log15.Error("failed to fetch archive", "repo", repo, "commit", commit, "duration", time.Since(start), "error", err)
+			s.Log.Error("failed to fetch archive", log.String("repo", string(repo)), log.String("commit", string(commit)), log.Duration("duration", time.Since(start)), log.Error(err))
 		}
 		resC <- result{path, err, cacheHit}
 	}()
@@ -392,7 +394,7 @@ func (s *Store) watchAndEvict() {
 
 		stats, err := s.cache.Evict(s.MaxCacheSizeBytes)
 		if err != nil {
-			log.Printf("failed to Evict: %s", err)
+			s.Log.Error("failed to Evict", log.Error(err))
 			continue
 		}
 		cacheSizeBytes.Set(float64(stats.CacheSize))
