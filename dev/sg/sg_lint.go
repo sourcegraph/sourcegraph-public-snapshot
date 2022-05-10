@@ -13,6 +13,7 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/lint"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/lint/linters"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
@@ -49,14 +50,14 @@ var lintCommand = &cli.Command{
 
 		if len(targets) == 0 {
 			// If no args provided, run all
-			for _, c := range allLintTargets {
+			for _, c := range linters.Targets {
 				fns = append(fns, c.Linters...)
 				targets = append(targets, c.Name)
 			}
 		} else {
 			// Otherwise run requested set
-			allLintTargetsMap := make(map[string][]lint.Runner, len(allLintTargets))
-			for _, c := range allLintTargets {
+			allLintTargetsMap := make(map[string][]lint.Runner, len(linters.Targets))
+			for _, c := range linters.Targets {
 				allLintTargetsMap[c.Name] = c.Linters
 			}
 			for _, t := range targets {
@@ -72,7 +73,7 @@ var lintCommand = &cli.Command{
 		writeFingerPointingLinef("Running checks from targets: %s", strings.Join(targets, ", "))
 		return runCheckScriptsAndReport(cmd.Context, fns...)
 	},
-	Subcommands: allLintTargets.Commands(),
+	Subcommands: lintTargets(linters.Targets).Commands(),
 }
 
 // runCheckScriptsAndReport concurrently runs all fns and report as each check finishes. Returns an error
