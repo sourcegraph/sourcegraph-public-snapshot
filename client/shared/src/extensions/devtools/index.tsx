@@ -81,7 +81,12 @@ const ExtensionDevelopmentTools: React.FunctionComponent<
 /** A button that toggles the visibility of the ExtensionDevTools element in a popover. */
 export const ExtensionDevelopmentToolsPopover = React.memo<ExtensionsDevelopmentToolsProps>(props => (
     <Popover>
-        <PopoverTrigger as={Button} className="text-decoration-none px-2" variant="link">
+        <PopoverTrigger
+            as={Button}
+            className="text-decoration-none px-2"
+            variant="link"
+            aria-label="Open extensions developer tools"
+        >
             <span className="text-muted">Ext</span> <Icon role="img" as={MenuUpIcon} aria-hidden={true} />
         </PopoverTrigger>
         <PopoverContent position={Position.leftEnd}>

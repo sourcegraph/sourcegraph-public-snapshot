@@ -393,11 +393,11 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
                   </div>
                   <div>
                     <svg
-                      aria-hidden="true"
                       class="mdi-icon iconInline text-muted"
                       fill="currentColor"
                       height="24"
                       role="img"
+                      title="Not completed"
                       viewBox="0 0 24 24"
                       width="24"
                     >

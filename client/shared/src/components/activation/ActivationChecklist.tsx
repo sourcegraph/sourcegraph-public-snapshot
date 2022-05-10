@@ -44,9 +44,9 @@ export const ActivationChecklistItem: React.FunctionComponent<
         </div>
         <div>
             {props.done ? (
-                <Icon role="img" className="text-success" as={CheckCircleIcon} aria-hidden={true} />
+                <Icon role="img" className="text-success" as={CheckCircleIcon} title="Completed" />
             ) : (
-                <Icon role="img" className="text-muted" as={CheckboxBlankCircleOutlineIcon} aria-hidden={true} />
+                <Icon role="img" className="text-muted" as={CheckboxBlankCircleOutlineIcon} title="Not completed" />
             )}
         </div>
     </div>

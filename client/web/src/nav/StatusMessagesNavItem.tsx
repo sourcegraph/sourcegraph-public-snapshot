@@ -406,25 +406,25 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                     data-tooltip="Sorry, we couldn’t fetch notifications!"
                     as={CloudAlertIconRefresh}
                     size="md"
-                    aria-hidden={true}
+                    title="Sorry, we couldn’t fetch notifications!"
                 />
             )
         }
 
+        let codeHostMessage = this.state.isOpen
+            ? undefined
+            : this.state.messagesOrError === ExternalServiceNoActivityReasons.NoCodehosts
+            ? 'No code host connections'
+            : 'No repositories'
         if (isNoActivityReason(this.state.messagesOrError)) {
             return (
                 <Icon
                     role="img"
-                    data-tooltip={
-                        this.state.isOpen
-                            ? undefined
-                            : this.state.messagesOrError === ExternalServiceNoActivityReasons.NoCodehosts
-                            ? 'No code host connections'
-                            : 'No repositories'
-                    }
+                    data-tooltip={codeHostMessage}
                     as={CloudOffOutlineIcon}
                     size="md"
-                    aria-hidden={true}
+                    aria-hidden={this.state.isOpen}
+                    title={codeHostMessage}
                 />
             )
         }
@@ -432,34 +432,40 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         if (
             this.state.messagesOrError.some(({ type }) => type === 'ExternalServiceSyncError' || type === 'SyncError')
         ) {
+            codeHostMessage = this.state.isOpen ? undefined : 'Syncing repositories failed!'
             return (
                 <Icon
                     role="img"
-                    data-tooltip={this.state.isOpen ? undefined : 'Syncing repositories failed!'}
+                    data-tooltip={codeHostMessage}
                     as={CloudAlertIconRefresh}
                     size="md"
-                    aria-hidden={true}
+                    aria-hidden={this.state.isOpen}
+                    title={codeHostMessage}
                 />
             )
         }
         if (this.state.messagesOrError.some(({ type }) => type === 'CloningProgress')) {
+            codeHostMessage = this.state.isOpen ? undefined : 'Cloning repositories...'
             return (
                 <Icon
                     img="img"
-                    data-tooltip={this.state.isOpen ? undefined : 'Cloning repositories...'}
+                    data-tooltip={codeHostMessage}
                     as={CloudSyncIconRefresh}
                     size="md"
-                    aria-hidden={true}
+                    aria-hidden={this.state.isOpen}
+                    title={codeHostMessage}
                 />
             )
         }
+        codeHostMessage = this.state.isOpen ? undefined : 'Repositories up-to-date'
         return (
             <Icon
                 role="img"
-                data-tooltip={this.state.isOpen ? undefined : 'Repositories up-to-date'}
+                data-tooltip={codeHostMessage}
                 as={CloudCheckIconRefresh}
                 size="md"
-                aria-hidden={true}
+                aria-hidden={this.state.isOpen}
+                title={codeHostMessage}
             />
         )
     }
