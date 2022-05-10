@@ -1,6 +1,8 @@
 package buildkite
 
-const cachePluginName = "gencer/cache#v2.4.10"
+// const cachePluginName = "gencer/cache#v2.4.10"
+// Follow-up to INC-101, this fork uses bsdtar instead of tar.
+const cachePluginName = "https://github.com/jhchabran/cache-buildkite-plugin.git#master"
 
 // CacheConfig represents the configuration data for https://github.com/gencer/cache-buildkite-plugin
 type CacheConfigPayload struct {
