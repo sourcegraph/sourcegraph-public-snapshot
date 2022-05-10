@@ -771,6 +771,21 @@ changesetTemplate:
   branch: my-multi-workspace-batch-change-${{ replace steps.path "/" "-" }}
 ```
 
+You can create a spec targeting multiple repositories and by providing multiple arguements to `rootAtLocationOf:` and `in:`
+
+```yaml
+on:
+  - repository: ^github.com/sourcegraph/(.*)$
+
+workspaces:
+  - rootAtLocationOf: workspace.yaml 
+    in: "github.com/sourcegraph/deploy-sourcegraph"
+  - rootAtLocationOf: workspace.yaml 
+    in: "github.com/sourcegraph/deploy-sourcegraph-docker"  
+  - rootAtLocationOf: workspace.yaml 
+    in: "github.com/sourcegraph/src-cli"
+```
+
 Using templating to produce a unique branch name in repositories _with_ workspaces and repositories without workspaces:
 
 ```yaml
