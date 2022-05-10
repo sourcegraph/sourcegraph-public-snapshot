@@ -38,7 +38,7 @@ const CommitNode: React.FunctionComponent<React.PropsWithChildren<CommitNodeProp
     location,
     preferAbsoluteTimestamps,
 }) => (
-    <li className={classNames(styles.commitContainer, 'list-group-item p-0')}>
+    <div className={classNames(styles.commitContainer, 'list-group-item p-0')}>
         <GitCommitNode
             className={styles.commitNode}
             compact={true}
@@ -55,7 +55,7 @@ const CommitNode: React.FunctionComponent<React.PropsWithChildren<CommitNodeProp
                 </Link>
             }
         />
-    </li>
+    </div>
 )
 
 interface Props extends Partial<RevisionSpec>, FileSpec {

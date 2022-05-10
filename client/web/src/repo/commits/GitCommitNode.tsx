@@ -54,6 +54,9 @@ export interface GitCommitNodeProps {
 
     /** An optional additional css class name to apply this to commit node message subject */
     messageSubjectClassName?: string
+
+    /** Element that should wrap the commit data. Only use 'div' when rendering the component on its own */
+    wrapperElement?: 'li' | 'div'
 }
 
 /** Displays a Git commit. */
@@ -70,6 +73,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
     preferAbsoluteTimestamps,
     diffMode,
     onHandleDiffMode,
+    wrapperElement: WrapperElement,
 }) => {
     const [showCommitMessageBody, setShowCommitMessageBody] = useState<boolean>(false)
     const [flashCopiedToClipboardMessage, setFlashCopiedToClipboardMessage] = useState<boolean>(false)
@@ -232,7 +236,10 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
 
     if (sidebar) {
         return (
-            <li key={node.id} className={classNames(styles.gitCommitNode, styles.gitCommitNodeCompact, className)}>
+            <WrapperElement
+                key={node.id}
+                className={classNames(styles.gitCommitNode, styles.gitCommitNodeCompact, className)}
+            >
                 <div className="w-100 d-flex justify-content-between align-items-center flex-wrap-reverse">
                     {bylineElement}
                     <small className={classNames('text-muted', styles.messageTimestamp)}>
@@ -244,12 +251,12 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                     </small>
                     <Link to={node.canonicalURL}>{oidElement}</Link>
                 </div>
-            </li>
+            </WrapperElement>
         )
     }
 
     return (
-        <li
+        <WrapperElement
             key={node.id}
             className={classNames(styles.gitCommitNode, compact && styles.gitCommitNodeCompact, className)}
         >
@@ -315,6 +322,6 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                     </div>
                 )}
             </>
-        </li>
+        </WrapperElement>
     )
 }
