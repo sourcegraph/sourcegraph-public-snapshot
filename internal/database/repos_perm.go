@@ -63,13 +63,13 @@ func authzQuery(bypassAuthz, usePermissionsUserMapping bool, authenticatedUserID
 	const queryFmtString = `(
     %s                            -- TRUE or FALSE to indicate whether to bypass the check
 OR (
-  -- Unrestricted repos are visible to all users
-  EXISTS (
-    SELECT
-      FROM repo_permissions
-      WHERE repo_id = repo.id
-      AND unrestricted
-  )
+	-- Unrestricted repos are visible to all users
+	EXISTS (
+		SELECT
+		FROM repo_permissions
+		WHERE repo_id = repo.id
+		AND unrestricted
+	)
 )
 OR  (
 	NOT %s                        -- Disregard unrestricted state when permissions user mapping is enabled
