@@ -19,7 +19,7 @@ import (
 	"sigs.k8s.io/kustomize/kyaml/yaml"
 	k8syaml "sigs.k8s.io/yaml"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -157,7 +157,7 @@ func (filter imageFilter) Filter(in []*yaml.RNode) ([]*yaml.RNode, error) {
 	for _, r := range in {
 		if err := findImage(r, *filter.credentials, filter.pinTag); err != nil {
 			if errors.As(err, &ErrNoImage{}) || errors.Is(err, ErrNoUpdateNeeded) {
-				stdout.Out.Verbosef("Encountered expected err: %v\n", err)
+				std.Out.Verbosef("Encountered expected err: %v\n", err)
 				continue
 			}
 			return nil, err
@@ -201,7 +201,7 @@ func findImage(r *yaml.RNode, credential credentials.Credentials, pinTag string)
 			return err
 		}
 
-		stdout.Out.Verbosef("found image %s for container %s in file %s+%s\n Replaced with %s", s, node.GetName(), r.GetKind(), r.GetName(), updatedImage)
+		std.Out.Verbosef("found image %s for container %s in file %s+%s\n Replaced with %s", s, node.GetName(), r.GetKind(), r.GetName(), updatedImage)
 
 		return node.PipeE(yaml.Lookup("image"), yaml.Set(yaml.NewStringRNode(updatedImage)))
 	}
@@ -434,7 +434,7 @@ func findLatestTag(tags []string) string {
 	for _, tag := range tags {
 		stag, err := ParseTag(tag)
 		if err != nil {
-			stdout.Out.Verbosef("%v\n", err)
+			std.Out.Verbosef("%v\n", err)
 			continue
 		}
 		if stag.buildNum > maxBuildID {

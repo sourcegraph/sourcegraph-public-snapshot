@@ -3,12 +3,10 @@ package images
 import (
 	"reflect"
 	"testing"
-
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 )
 
 func TestParseTag(t *testing.T) {
-	stdout.Out.SetVerbose()
+	std.Out.SetVerbose()
 	tests := []struct {
 		name    string
 		tag     string
@@ -48,7 +46,7 @@ func TestParseTag(t *testing.T) {
 }
 
 func Test_findLatestTag(t *testing.T) {
-	stdout.Out.SetVerbose()
+	std.Out.SetVerbose()
 
 	tests := []struct {
 		name string
@@ -76,7 +74,7 @@ func Test_findLatestTag(t *testing.T) {
 }
 
 func TestParseRawImgString(t *testing.T) {
-	stdout.Out.SetVerbose()
+	std.Out.SetVerbose()
 
 	tests := []struct {
 		name string
