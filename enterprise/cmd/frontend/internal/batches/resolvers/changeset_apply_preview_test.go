@@ -113,7 +113,7 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 
 	apiID := string(marshalBatchSpecRandID(batchSpec.RandID))
 
-	input := map[string]interface{}{"batchSpec": apiID}
+	input := map[string]any{"batchSpec": apiID}
 	var response struct{ Node apitest.BatchSpec }
 	apitest.MustExec(ctx, t, s, input, &response, queryChangesetApplyPreview)
 
@@ -294,7 +294,7 @@ func TestChangesetApplyPreviewResolverWithPublicationStates(t *testing.T) {
 		// are correctly handled across pages.
 		previews := repeatApplyPreview(
 			ctx, t, s,
-			fx.DecorateInput(map[string]interface{}{}),
+			fx.DecorateInput(map[string]any{}),
 			queryChangesetApplyPreview,
 			1,
 		)
@@ -326,7 +326,7 @@ func TestChangesetApplyPreviewResolverWithPublicationStates(t *testing.T) {
 		// it up.
 		previews := repeatApplyPreview(
 			ctx, t, s,
-			newFx.DecorateInput(map[string]interface{}{}),
+			newFx.DecorateInput(map[string]any{}),
 			queryChangesetApplyPreview,
 			2,
 		)
@@ -387,8 +387,8 @@ func TestChangesetApplyPreviewResolverWithPublicationStates(t *testing.T) {
 		// it up.
 		previews := repeatApplyPreview(
 			ctx, t, s,
-			newFx.DecorateInput(map[string]interface{}{
-				"publicationStates": []map[string]interface{}{
+			newFx.DecorateInput(map[string]any{
+				"publicationStates": []map[string]any{
 					{
 						"changesetSpec":    marshalChangesetSpecRandID(newFx.specPublished.RandID),
 						"publicationState": true,
@@ -415,8 +415,8 @@ func TestChangesetApplyPreviewResolverWithPublicationStates(t *testing.T) {
 		var response struct{ Node apitest.BatchSpec }
 		err := apitest.Exec(
 			ctx, t, s,
-			fx.DecorateInput(map[string]interface{}{
-				"publicationStates": []map[string]interface{}{
+			fx.DecorateInput(map[string]any{
+				"publicationStates": []map[string]any{
 					{
 						"changesetSpec":    marshalChangesetSpecRandID(fx.specPublished.RandID),
 						"publicationState": true,
@@ -471,7 +471,7 @@ func repeatApplyPreview(
 	ctx context.Context,
 	t *testing.T,
 	schema *graphql.Schema,
-	in map[string]interface{},
+	in map[string]any,
 	query string,
 	pageSize int,
 ) []apitest.ChangesetApplyPreview {
@@ -552,8 +552,8 @@ func newApplyPreviewTestFixture(
 	}
 }
 
-func (fx *applyPreviewTestFixture) DecorateInput(in map[string]interface{}) map[string]interface{} {
-	commonInputs := map[string]interface{}{
+func (fx *applyPreviewTestFixture) DecorateInput(in map[string]any) map[string]any {
+	commonInputs := map[string]any{
 		"batchSpec":         marshalBatchSpecRandID(fx.batchSpec.RandID),
 		"publicationStates": fx.DefaultPublicationStates(),
 	}
@@ -565,8 +565,8 @@ func (fx *applyPreviewTestFixture) DecorateInput(in map[string]interface{}) map[
 	return commonInputs
 }
 
-func (fx *applyPreviewTestFixture) DefaultPublicationStates() []map[string]interface{} {
-	return []map[string]interface{}{
+func (fx *applyPreviewTestFixture) DefaultPublicationStates() []map[string]any {
+	return []map[string]any{
 		{
 			"changesetSpec":    marshalChangesetSpecRandID(fx.specToBePublished.RandID),
 			"publicationState": true,
@@ -592,7 +592,7 @@ func (fx *applyPreviewTestFixture) DefaultPublicationStates() []map[string]inter
 func (fx *applyPreviewTestFixture) DefaultUiPublicationStates() service.UiPublicationStates {
 	ups := service.UiPublicationStates{}
 
-	for spec, state := range map[*btypes.ChangesetSpec]interface{}{
+	for spec, state := range map[*btypes.ChangesetSpec]any{
 		fx.specToBePublished:   true,
 		fx.specToBeDraft:       "draft",
 		fx.specToBeUnpublished: false,

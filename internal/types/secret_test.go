@@ -14,8 +14,8 @@ import (
 func TestExternalService_RedactedConfig(t *testing.T) {
 	for i, tc := range []struct {
 		kind string
-		in   interface{}
-		out  interface{}
+		in   any
+		out  any
 	}{
 		{
 			kind: extsvc.KindGitHub,
@@ -165,9 +165,9 @@ func TestExternalService_RedactedConfig(t *testing.T) {
 func TestExternalService_UnredactConfig(t *testing.T) {
 	for i, tc := range []struct {
 		kind string
-		old  interface{}
-		in   interface{}
-		out  interface{}
+		old  any
+		in   any
+		out  any
 	}{
 		{
 			kind: extsvc.KindGitHub,

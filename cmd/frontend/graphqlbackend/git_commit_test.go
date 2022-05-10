@@ -68,49 +68,49 @@ func TestGitCommitResolver(t *testing.T) {
 
 		for _, tc := range []struct {
 			name string
-			want interface{}
-			have func(*GitCommitResolver) (interface{}, error)
+			want any
+			have func(*GitCommitResolver) (any, error)
 		}{{
 			name: "author",
 			want: toSignatureResolver(db, &commit.Author, true),
-			have: func(r *GitCommitResolver) (interface{}, error) {
+			have: func(r *GitCommitResolver) (any, error) {
 				return r.Author(ctx)
 			},
 		}, {
 			name: "committer",
 			want: toSignatureResolver(db, commit.Committer, true),
-			have: func(r *GitCommitResolver) (interface{}, error) {
+			have: func(r *GitCommitResolver) (any, error) {
 				return r.Committer(ctx)
 			},
 		}, {
 			name: "message",
 			want: string(commit.Message),
-			have: func(r *GitCommitResolver) (interface{}, error) {
+			have: func(r *GitCommitResolver) (any, error) {
 				return r.Message(ctx)
 			},
 		}, {
 			name: "subject",
 			want: "subject: Changes things",
-			have: func(r *GitCommitResolver) (interface{}, error) {
+			have: func(r *GitCommitResolver) (any, error) {
 				return r.Subject(ctx)
 			},
 		}, {
 			name: "body",
 			want: "Body of changes",
-			have: func(r *GitCommitResolver) (interface{}, error) {
+			have: func(r *GitCommitResolver) (any, error) {
 				s, err := r.Body(ctx)
 				return *s, err
 			},
 		}, {
 			name: "url",
 			want: "/bob-repo/-/commit/c1",
-			have: func(r *GitCommitResolver) (interface{}, error) {
+			have: func(r *GitCommitResolver) (any, error) {
 				return r.URL(), nil
 			},
 		}, {
 			name: "canonical-url",
 			want: "/bob-repo/-/commit/c1",
-			have: func(r *GitCommitResolver) (interface{}, error) {
+			have: func(r *GitCommitResolver) (any, error) {
 				return r.CanonicalURL(), nil
 			},
 		}} {

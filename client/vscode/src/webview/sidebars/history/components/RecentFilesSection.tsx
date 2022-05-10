@@ -59,13 +59,15 @@ export const RecentFilesSection: React.FunctionComponent<React.PropsWithChildren
                 type="button"
                 className={classNames('btn btn-outline-secondary', styles.sidebarSectionCollapseButton)}
                 onClick={() => setCollapsed(!collapsed)}
+                aria-label={`${collapsed ? 'Expand' : 'Collapse'} recent files`}
             >
                 <h5 className="flex-grow-1">Recent Files</h5>
-                {collapsed ? (
-                    <Icon className="mr-1" as={ChevronLeftIcon} />
-                ) : (
-                    <Icon className="mr-1" as={ChevronDownIcon} />
-                )}
+                <Icon
+                    role="img"
+                    aria-hidden={true}
+                    className="mr-1"
+                    as={collapsed ? ChevronLeftIcon : ChevronDownIcon}
+                />
             </button>
 
             {!collapsed && (

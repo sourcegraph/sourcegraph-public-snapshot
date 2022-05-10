@@ -78,7 +78,7 @@ func (h *UploadHandler) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 	// executed so that we can instrument the duration and the resulting error more
 	// easily. The remainder of the function simply serializes the result to the
 	// HTTP response writer.
-	payload, statusCode, err := func() (_ interface{}, statusCode int, err error) {
+	payload, statusCode, err := func() (_ any, statusCode int, err error) {
 		ctx, trace, endObservation := h.operations.handleEnqueue.With(r.Context(), &err, observation.Args{})
 		defer func() {
 			endObservation(1, observation.Args{LogFields: []log.Field{
@@ -142,7 +142,7 @@ func (h *UploadHandler) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-type uploadHandlerFunc = func(context.Context, uploadState, io.Reader) (interface{}, int, error)
+type uploadHandlerFunc = func(context.Context, uploadState, io.Reader) (any, int, error)
 
 func (h *UploadHandler) selectUploadHandlerFunc(uploadState uploadState) uploadHandlerFunc {
 	if uploadState.uploadID == 0 {

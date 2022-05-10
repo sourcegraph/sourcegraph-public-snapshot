@@ -60,7 +60,7 @@ type CapturedLog struct {
 	Scope   string
 	Level   log.Level
 	Message string
-	Fields  map[string]interface{}
+	Fields  map[string]any
 }
 
 // Get retrieves a logger from scoped to the the given test.

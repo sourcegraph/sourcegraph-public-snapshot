@@ -150,15 +150,15 @@ func TestPush(t *testing.T) {
 func TestFlush(t *testing.T) {
 	t.Run("OK", func(t *testing.T) {
 		svr, cli := newTestServer(t,
-			eventHandlerMap(func(rawEvent map[string]interface{}) int {
+			eventHandlerMap(func(rawEvent map[string]any) int {
 				assert.Equal(t, "one", rawEvent["customEventName"])
 				return 200
 			}),
-			eventHandlerMap(func(rawEvent map[string]interface{}) int {
+			eventHandlerMap(func(rawEvent map[string]any) int {
 				assert.Equal(t, "two", rawEvent["customEventName"])
 				return 200
 			}),
-			eventHandlerMap(func(rawEvent map[string]interface{}) int {
+			eventHandlerMap(func(rawEvent map[string]any) int {
 				assert.Equal(t, "three", rawEvent["customEventName"])
 				return 200
 			}),
@@ -176,19 +176,19 @@ func TestFlush(t *testing.T) {
 
 	t.Run("NOK http errors", func(t *testing.T) {
 		svr, cli := newTestServer(t,
-			eventHandlerMap(func(rawEvent map[string]interface{}) int {
+			eventHandlerMap(func(rawEvent map[string]any) int {
 				assert.Equal(t, "one", rawEvent["customEventName"])
 				return 200
 			}),
-			eventHandlerMap(func(rawEvent map[string]interface{}) int {
+			eventHandlerMap(func(rawEvent map[string]any) int {
 				assert.Equal(t, "two", rawEvent["customEventName"])
 				return 500
 			}),
-			eventHandlerMap(func(rawEvent map[string]interface{}) int {
+			eventHandlerMap(func(rawEvent map[string]any) int {
 				assert.Equal(t, "three", rawEvent["customEventName"])
 				return 500
 			}),
-			eventHandlerMap(func(rawEvent map[string]interface{}) int {
+			eventHandlerMap(func(rawEvent map[string]any) int {
 				assert.Equal(t, "four", rawEvent["customEventName"])
 				return 200
 			}),
@@ -238,9 +238,9 @@ func timestamp() time.Time {
 
 type eventHandler func([]byte) int
 
-func eventHandlerMap(h func(map[string]interface{}) int) eventHandler {
+func eventHandlerMap(h func(map[string]any) int) eventHandler {
 	return func(body []byte) int {
-		var rawEvent map[string]interface{}
+		var rawEvent map[string]any
 		_ = json.Unmarshal(body, &rawEvent)
 		return h(rawEvent)
 	}

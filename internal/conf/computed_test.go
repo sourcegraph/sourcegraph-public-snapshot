@@ -20,7 +20,7 @@ func TestSearchIndexEnabled(t *testing.T) {
 		name string
 		sc   *Unified
 		env  []string
-		want interface{}
+		want any
 	}{{
 		name: "SearchIndex defaults to true in docker",
 		sc:   &Unified{},

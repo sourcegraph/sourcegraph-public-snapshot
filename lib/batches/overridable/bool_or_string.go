@@ -10,19 +10,19 @@ type BoolOrString struct {
 }
 
 // FromBoolOrString creates a BoolOrString representing a static, scalar value.
-func FromBoolOrString(v interface{}) BoolOrString {
+func FromBoolOrString(v any) BoolOrString {
 	return BoolOrString{
 		rules: rules{simpleRule(v)},
 	}
 }
 
 // Value returns the value for the given repository.
-func (bs *BoolOrString) Value(name string) interface{} {
+func (bs *BoolOrString) Value(name string) any {
 	return bs.rules.Match(name)
 }
 
 // ValueWithSuffix returns the value for the given repository and branch name.
-func (bs *BoolOrString) ValueWithSuffix(name, suffix string) interface{} {
+func (bs *BoolOrString) ValueWithSuffix(name, suffix string) any {
 	return bs.rules.MatchWithSuffix(name, suffix)
 }
 
@@ -56,7 +56,7 @@ func (bs *BoolOrString) UnmarshalJSON(data []byte) error {
 }
 
 // UnmarshalYAML unmarshalls a YAML value into a Publish.
-func (bs *BoolOrString) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (bs *BoolOrString) UnmarshalYAML(unmarshal func(any) error) error {
 	var b bool
 	if err := unmarshal(&b); err == nil {
 		*bs = BoolOrString{rules: rules{simpleRule(b)}}

@@ -28,6 +28,7 @@ var macOSDependencies = []dependencyCategory{
 		dependencies: []*dependency{
 			{name: "git", check: getCheck("git"), instructionsCommands: `brew install git`},
 			{name: "gnu-sed", check: check.InPath("gsed"), instructionsCommands: "brew install gnu-sed"},
+			{name: "findutils", check: check.InPath("gfind"), instructionsCommands: "brew install findutils"},
 			{name: "comby", check: check.InPath("comby"), instructionsCommands: "brew install comby"},
 			{name: "pcre", check: check.InPath("pcregrep"), instructionsCommands: `brew install pcre`},
 			{name: "sqlite", check: check.InPath("sqlite3"), instructionsCommands: `brew install sqlite`},

@@ -479,7 +479,7 @@ func TestFeaturedExtensions(t *testing.T) {
 	}
 }
 
-func asJSON(t *testing.T, v interface{}) string {
+func asJSON(t *testing.T, v any) string {
 	b, err := json.MarshalIndent(v, "", "  ")
 	if err != nil {
 		t.Fatal(err)

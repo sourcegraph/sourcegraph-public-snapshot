@@ -70,7 +70,7 @@ func TestRepositories(t *testing.T) {
 			`,
 				ExpectedErrors: []*gqlerrors.QueryError{
 					{
-						Path:          []interface{}{"repositories", "totalCount"},
+						Path:          []any{"repositories", "totalCount"},
 						Message:       backend.ErrMustBeSiteAdmin.Error(),
 						ResolverError: backend.ErrMustBeSiteAdmin,
 					},
@@ -431,7 +431,7 @@ func TestRepositories_CursorPagination(t *testing.T) {
 				ExpectedResult: "null",
 				ExpectedErrors: []*gqlerrors.QueryError{
 					{
-						Path:          []interface{}{"repositories"},
+						Path:          []any{"repositories"},
 						Message:       `cannot unmarshal repository cursor type: ""`,
 						ResolverError: errors.Errorf(`cannot unmarshal repository cursor type: ""`),
 					},

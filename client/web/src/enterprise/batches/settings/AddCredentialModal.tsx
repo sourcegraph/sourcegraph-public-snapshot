@@ -134,6 +134,9 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
         ]
     )
 
+    const patLabel =
+        externalServiceKind === ExternalServiceKind.BITBUCKETCLOUD ? 'App password' : 'Personal access token'
+
     return (
         <Modal onDismiss={onCancel} aria-labelledby={labelId}>
             <div className="test-add-credential-modal">
@@ -191,7 +194,7 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
                                         />
                                     </>
                                 )}
-                                <label htmlFor="token">Personal access token</label>
+                                <label htmlFor="token">{patLabel}</label>
                                 <input
                                     id="token"
                                     name="token"
@@ -209,9 +212,9 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
                                         to={HELP_TEXT_LINK_URL}
                                         rel="noreferrer noopener"
                                         target="_blank"
-                                        aria-label="Follow our docs to learn how to create a new access token on this code host"
+                                        aria-label={`Follow our docs to learn how to create a new ${patLabel.toLocaleLowerCase()} on this code host`}
                                     >
-                                        Create a new access token
+                                        Create a new {patLabel.toLocaleLowerCase()}
                                     </Link>{' '}
                                     {scopeRequirements[externalServiceKind]}
                                 </p>
@@ -246,18 +249,13 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
                             key below and enter it on your code host.
                         </p>
                         <CodeHostSshPublicKey externalServiceKind={externalServiceKind} sshPublicKey={sshPublicKey!} />
-                        <div className="d-flex justify-content-end">
-                            <Button className="mr-2" onClick={afterCreate} outline={true} variant="secondary">
-                                Close
-                            </Button>
-                            <Button
-                                className="test-add-credential-modal-submit"
-                                onClick={afterCreate}
-                                variant="primary"
-                            >
-                                Add credential
-                            </Button>
-                        </div>
+                        <Button
+                            className="test-add-credential-modal-submit float-right"
+                            onClick={afterCreate}
+                            variant="primary"
+                        >
+                            Finish
+                        </Button>
                     </>
                 )}
             </div>
