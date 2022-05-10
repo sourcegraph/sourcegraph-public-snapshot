@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 
 	"github.com/hexops/autogold"
@@ -81,5 +83,79 @@ func TestResolver_InsightSeries(t *testing.T) {
 		}
 		autogold.Want("insights[0][0].Points", []graphqlbackend.InsightsDataPointResolver{}).Equal(t, points)
 
+	})
+}
+
+func TestGetSortedCaptureGroups(t *testing.T) {
+	seriesId := "series_id"
+	getPoint := func(month time.Month, value float64, capture string) store.SeriesPoint {
+		return store.SeriesPoint{
+			SeriesID: seriesId,
+			Time:     time.Date(2021, month, 5, 1, 1, 1, 1, time.UTC),
+			Value:    value,
+			Metadata: []byte{},
+			Capture:  &capture,
+		}
+	}
+	captureGroups := map[string][]store.SeriesPoint{
+		"v0.2.1": {getPoint(time.July, 50, "v0.2.1")},
+		"1.2.3":  {getPoint(time.March, 70, "1.2.3")},
+		"earliest date added": {
+			getPoint(time.January, 50, "earliest date added"),
+			getPoint(time.February, 50, "earliest date added"),
+			getPoint(time.March, 50, "earliest date added"),
+			getPoint(time.April, 50, "earliest date added"),
+			getPoint(time.May, 50, "earliest date added"),
+		},
+		"latest date added": {
+			getPoint(time.December, 50, "latest date added"),
+		},
+		"least results": {
+			getPoint(time.July, 500, "least results"),
+			getPoint(time.August, 100, "least results"),
+			getPoint(time.September, 10, "least results"),
+		},
+		"most results": {
+			getPoint(time.July, 10, "most results"),
+			getPoint(time.August, 100, "most results"),
+			getPoint(time.September, 500, "most results"),
+		},
+	}
+
+	t.Run("sorts by asc lexicographical", func(t *testing.T) {
+		sorted := getSortedCaptureGroups(types.SeriesSortMode(types.Lexicographical), types.SeriesSortDirection(types.Asc), captureGroups)
+		if diff := cmp.Diff([]string{"v0.2.1", "1.2.3", "earliest date added", "latest date added", "least results", "most results"}, sorted); diff != "" {
+			t.Errorf("unexpected sort order (want/got): %v", diff)
+		}
+	})
+	t.Run("sorts by desc lexicographical", func(t *testing.T) {
+		sorted := getSortedCaptureGroups(types.SeriesSortMode(types.Lexicographical), types.SeriesSortDirection(types.Desc), captureGroups)
+		if diff := cmp.Diff([]string{"most results", "least results", "latest date added", "earliest date added", "1.2.3", "v0.2.1"}, sorted); diff != "" {
+			t.Errorf("unexpected sort order (want/got): %v", diff)
+		}
+	})
+	t.Run("sorts by asc date added", func(t *testing.T) {
+		sorted := getSortedCaptureGroups(types.SeriesSortMode(types.DateAdded), types.SeriesSortDirection(types.Asc), captureGroups)
+		if diff := cmp.Diff([]string{"earliest date added", "1.2.3", "v0.2.1", "least results", "most results", "latest date added"}, sorted); diff != "" {
+			t.Errorf("unexpected sort order (want/got): %v", diff)
+		}
+	})
+	t.Run("sorts by desc date added", func(t *testing.T) {
+		sorted := getSortedCaptureGroups(types.SeriesSortMode(types.DateAdded), types.SeriesSortDirection(types.Desc), captureGroups)
+		if diff := cmp.Diff([]string{"latest date added", "v0.2.1", "least results", "most results", "1.2.3", "earliest date added"}, sorted); diff != "" {
+			t.Errorf("unexpected sort order (want/got): %v", diff)
+		}
+	})
+	t.Run("sorts by asc result count", func(t *testing.T) {
+		sorted := getSortedCaptureGroups(types.SeriesSortMode(types.ResultCount), types.SeriesSortDirection(types.Asc), captureGroups)
+		if diff := cmp.Diff([]string{"least results", "v0.2.1", "earliest date added", "latest date added", "1.2.3", "most results"}, sorted); diff != "" {
+			t.Errorf("unexpected sort order (want/got): %v", diff)
+		}
+	})
+	t.Run("sorts by desc result count", func(t *testing.T) {
+		sorted := getSortedCaptureGroups(types.SeriesSortMode(types.ResultCount), types.SeriesSortDirection(types.Desc), captureGroups)
+		if diff := cmp.Diff([]string{"most results", "1.2.3", "v0.2.1", "earliest date added", "latest date added", "least results"}, sorted); diff != "" {
+			t.Errorf("unexpected sort order (want/got): %v", diff)
+		}
 	})
 }

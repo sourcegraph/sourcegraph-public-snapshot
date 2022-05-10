@@ -477,12 +477,26 @@ func getSortedCaptureGroups(sortMode types.SeriesSortMode, sortDirection types.S
 		return points[len(points)-1].Value
 	}
 
+	ascLexSort := func(s1 string, s2 string) (hasSemVar bool, result bool) {
+		version1, err1 := semver.NewVersion(s1)
+		version2, err2 := semver.NewVersion(s2)
+		if err1 == nil && err2 == nil {
+			return true, version1.Compare(version2) < 0
+		}
+		if err1 != nil && err2 == nil {
+			return true, false
+		}
+		if err1 == nil && err2 != nil {
+			return true, true
+		}
+		return false, false
+	}
+
 	// First sort lexicographically (ascending) to make sure the ordering is consistent even if some result counts are equal.
 	sort.SliceStable(orderedCaptureGroups, func(i, j int) bool {
-		version1, err1 := semver.NewVersion(*orderedCaptureGroups[i][0].Capture)
-		version2, err2 := semver.NewVersion(*orderedCaptureGroups[j][0].Capture)
-		if err1 == nil && err2 == nil {
-			return version1.Compare(version2) < 0
+		hasSemVar, result := ascLexSort(*orderedCaptureGroups[i][0].Capture, *orderedCaptureGroups[j][0].Capture)
+		if hasSemVar == true {
+			return result
 		}
 		return strings.Compare(*orderedCaptureGroups[i][0].Capture, *orderedCaptureGroups[j][0].Capture) < 0
 	})
@@ -500,20 +514,12 @@ func getSortedCaptureGroups(sortMode types.SeriesSortMode, sortDirection types.S
 		}
 	case types.Lexicographical:
 		if sortDirection == types.Asc {
-			sort.SliceStable(orderedCaptureGroups, func(i, j int) bool {
-				version1, err1 := semver.NewVersion(*orderedCaptureGroups[i][0].Capture)
-				version2, err2 := semver.NewVersion(*orderedCaptureGroups[j][0].Capture)
-				if err1 == nil && err2 == nil {
-					return version1.Compare(version2) < 0
-				}
-				return strings.Compare(*orderedCaptureGroups[i][0].Capture, *orderedCaptureGroups[j][0].Capture) < 0
-			})
+			// Already pre-sorted by default
 		} else {
 			sort.SliceStable(orderedCaptureGroups, func(i, j int) bool {
-				version1, err1 := semver.NewVersion(*orderedCaptureGroups[i][0].Capture)
-				version2, err2 := semver.NewVersion(*orderedCaptureGroups[j][0].Capture)
-				if err1 == nil && err2 == nil {
-					return version1.Compare(version2) < 0
+				hasSemVar, result := ascLexSort(*orderedCaptureGroups[i][0].Capture, *orderedCaptureGroups[j][0].Capture)
+				if hasSemVar == true {
+					return !result
 				}
 				return strings.Compare(*orderedCaptureGroups[i][0].Capture, *orderedCaptureGroups[j][0].Capture) > 0
 			})
