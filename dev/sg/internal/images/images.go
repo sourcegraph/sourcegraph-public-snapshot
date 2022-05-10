@@ -376,7 +376,10 @@ func createAndFillImageRepository(ref *ImageReference, pinTag string) (repo *ima
 	var targetTag string
 	isDevTag := pinTag == ""
 	if isDevTag {
-		targetTag = findLatestTag(tags)
+		targetTag, err = findLatestTag(tags)
+		if err != nil {
+			std.Out.Verbose("findLatestTag: " + err.Error())
+		}
 	} else {
 		targetTag = pinTag
 	}
@@ -427,14 +430,15 @@ func ParseTag(t string) (*SgImageTag, error) {
 }
 
 // Assume we use 'sourcegraph' tag format of :[build_number]_[date]_[short SHA1]
-func findLatestTag(tags []string) string {
+func findLatestTag(tags []string) (string, error) {
 	maxBuildID := 0
 	targetTag := ""
 
+	var errs error
 	for _, tag := range tags {
 		stag, err := ParseTag(tag)
 		if err != nil {
-			std.Out.Verbosef("%v\n", err)
+			errs = errors.Append(errs, err)
 			continue
 		}
 		if stag.buildNum > maxBuildID {
@@ -442,7 +446,7 @@ func findLatestTag(tags []string) string {
 			targetTag = tag
 		}
 	}
-	return targetTag
+	return targetTag, errs
 }
 
 // CheckLegacy prevents changing the registry if they are equivalent, internally legacyDockerhub is resolved to dockerhub
