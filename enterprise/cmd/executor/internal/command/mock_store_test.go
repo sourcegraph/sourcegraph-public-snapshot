@@ -4,9 +4,8 @@ package command
 
 import (
 	"context"
-	"sync"
-
 	workerutil "github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"sync"
 )
 
 // MockExecutionLogEntryStore is a mock implementation of the
