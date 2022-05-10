@@ -249,18 +249,13 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
                             key below and enter it on your code host.
                         </p>
                         <CodeHostSshPublicKey externalServiceKind={externalServiceKind} sshPublicKey={sshPublicKey!} />
-                        <div className="d-flex justify-content-end">
-                            <Button className="mr-2" onClick={afterCreate} outline={true} variant="secondary">
-                                Close
-                            </Button>
-                            <Button
-                                className="test-add-credential-modal-submit"
-                                onClick={afterCreate}
-                                variant="primary"
-                            >
-                                Add credential
-                            </Button>
-                        </div>
+                        <Button
+                            className="test-add-credential-modal-submit float-right"
+                            onClick={afterCreate}
+                            variant="primary"
+                        >
+                            Finish
+                        </Button>
                     </>
                 )}
             </div>

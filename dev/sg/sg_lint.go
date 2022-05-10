@@ -71,7 +71,9 @@ func runCheckScriptsAndReport(ctx context.Context, fns ...lint.Runner) error {
 		Verbose:    true,
 	})
 
-	// Spawn a goroutine for each check and increment count to report completion.
+	// Spawn a goroutine for each check and increment count to report completion. We use
+	// a single start time for the sake of simplicity.
+	start := time.Now()
 	var count int64
 	total := len(fns)
 	pending := out.Pending(output.Linef("", output.StylePending, "Running linters (done: 0/%d)", total))
@@ -94,14 +96,15 @@ func runCheckScriptsAndReport(ctx context.Context, fns ...lint.Runner) error {
 	var messages []string
 	for report := range reportsCh {
 		count++
-		printLintReport(pending, report)
+		printLintReport(pending, start, report)
 		pending.Updatef("Running linters (done: %d/%d)", count, total)
 		if report.Err != nil {
 			messages = append(messages, report.Header)
 			hasErr = true
 		}
 	}
-	pending.Complete(output.Linef("", output.StyleBold, "Done running linters."))
+
+	pending.Complete(output.Linef(output.EmojiFingerPointRight, output.StyleBold, "Done running linters."))
 
 	// return the final error, if any
 	if hasErr {
@@ -110,15 +113,11 @@ func runCheckScriptsAndReport(ctx context.Context, fns ...lint.Runner) error {
 	return nil
 }
 
-func printLintReport(pending output.Pending, report *lint.Report) {
-	msg := fmt.Sprintf("%s (%ds)", report.Header, report.Duration/time.Second)
+func printLintReport(pending output.Pending, start time.Time, report *lint.Report) {
+	msg := fmt.Sprintf("%s (%ds)", report.Header, time.Since(start)/time.Second)
 	if report.Err != nil {
 		pending.VerboseLine(output.Linef(output.EmojiFailure, output.StyleWarning, msg))
-		if report.Output != "" {
-			pending.Verbose(report.Output)
-		} else {
-			pending.Verbose(report.Err.Error())
-		}
+		pending.Verbose(report.Summary())
 
 		if lintGenerateAnnotations {
 			repoRoot, err := root.RepositoryRoot()
@@ -127,7 +126,7 @@ func printLintReport(pending output.Pending, report *lint.Report) {
 			}
 			annotationPath := filepath.Join(repoRoot, "annotations")
 			os.MkdirAll(annotationPath, os.ModePerm)
-			if err := os.WriteFile(filepath.Join(annotationPath, report.Header), []byte(report.Output+"\n"), os.ModePerm); err != nil {
+			if err := os.WriteFile(filepath.Join(annotationPath, report.Header), []byte(report.Summary()+"\n"), os.ModePerm); err != nil {
 				return // do nothing
 			}
 		}

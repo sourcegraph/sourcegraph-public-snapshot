@@ -858,6 +858,31 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 <br />
 
+## frontend: container_oomkill_events_total
+
+<p class="subtitle">container OOMKILL events total by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> frontend: 1+ container OOMKILL events total by instance
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of (frontend|sourcegraph-frontend) container in `docker-compose.yml`.
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#frontend-container-oomkill-events-total).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_frontend_container_oomkill_events_total"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
+
+<br />
+
 ## frontend: go_goroutines
 
 <p class="subtitle">maximum active goroutines</p>
@@ -1301,6 +1326,31 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 <br />
 
+## gitserver: container_oomkill_events_total
+
+<p class="subtitle">container OOMKILL events total by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> gitserver: 1+ container OOMKILL events total by instance
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of gitserver container in `docker-compose.yml`.
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#gitserver-container-oomkill-events-total).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_gitserver_container_oomkill_events_total"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
+
+<br />
+
 ## gitserver: go_goroutines
 
 <p class="subtitle">maximum active goroutines</p>
@@ -1538,6 +1588,31 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ```json
 "observability.silenceAlerts": [
   "warning_github-proxy_provisioning_container_memory_usage_short_term"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
+
+<br />
+
+## github-proxy: container_oomkill_events_total
+
+<p class="subtitle">container OOMKILL events total by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> github-proxy: 1+ container OOMKILL events total by instance
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of github-proxy container in `docker-compose.yml`.
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#github-proxy-container-oomkill-events-total).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_github-proxy_container_oomkill_events_total"
 ]
 ```
 
@@ -1793,8 +1868,8 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
-- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the (pgsql|codeintel-db|codeinsights-db) service.
-- **Docker Compose:** Consider increasing `cpus:` of the (pgsql|codeintel-db|codeinsights-db) container in `docker-compose.yml`.
+- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the (pgsql|codeintel-db|codeinsights) service.
+- **Docker Compose:** Consider increasing `cpus:` of the (pgsql|codeintel-db|codeinsights) container in `docker-compose.yml`.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#postgres-provisioning-container-cpu-usage-long-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -1818,8 +1893,8 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
-- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the (pgsql|codeintel-db|codeinsights-db) service.
-- **Docker Compose:** Consider increasing `memory:` of the (pgsql|codeintel-db|codeinsights-db) container in `docker-compose.yml`.
+- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the (pgsql|codeintel-db|codeinsights) service.
+- **Docker Compose:** Consider increasing `memory:` of the (pgsql|codeintel-db|codeinsights) container in `docker-compose.yml`.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#postgres-provisioning-container-memory-usage-long-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -1844,7 +1919,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Possible solutions**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the (pgsql|codeintel-db|codeinsights-db) container in `docker-compose.yml`.
+- **Docker Compose:** Consider increasing `cpus:` of the (pgsql|codeintel-db|codeinsights) container in `docker-compose.yml`.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#postgres-provisioning-container-cpu-usage-short-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -1869,13 +1944,38 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Possible solutions**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of (pgsql|codeintel-db|codeinsights-db) container in `docker-compose.yml`.
+- **Docker Compose:** Consider increasing `memory:` of (pgsql|codeintel-db|codeinsights) container in `docker-compose.yml`.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#postgres-provisioning-container-memory-usage-short-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
   "warning_postgres_provisioning_container_memory_usage_short_term"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
+
+<br />
+
+## postgres: container_oomkill_events_total
+
+<p class="subtitle">container OOMKILL events total by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> postgres: 1+ container OOMKILL events total by instance
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of (pgsql|codeintel-db|codeinsights) container in `docker-compose.yml`.
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#postgres-container-oomkill-events-total).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_postgres_container_oomkill_events_total"
 ]
 ```
 
@@ -2139,6 +2239,31 @@ count being required for the volume of uploads.
 
 <br />
 
+## precise-code-intel-worker: container_oomkill_events_total
+
+<p class="subtitle">container OOMKILL events total by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> precise-code-intel-worker: 1+ container OOMKILL events total by instance
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of precise-code-intel-worker container in `docker-compose.yml`.
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#precise-code-intel-worker-container-oomkill-events-total).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-worker_container_oomkill_events_total"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<br />
+
 ## precise-code-intel-worker: go_goroutines
 
 <p class="subtitle">maximum active goroutines</p>
@@ -2356,6 +2481,31 @@ count being required for the volume of uploads.
 
 <br />
 
+## redis: container_oomkill_events_total
+
+<p class="subtitle">container OOMKILL events total by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> redis: 1+ container OOMKILL events total by instance
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of redis-cache container in `docker-compose.yml`.
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#redis-container-oomkill-events-total).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_redis_container_oomkill_events_total"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
+
+<br />
+
 ## redis: provisioning_container_cpu_usage_long_term
 
 <p class="subtitle">container cpu usage total (90th percentile over 1d) across all cores by instance</p>
@@ -2449,6 +2599,31 @@ count being required for the volume of uploads.
 ```json
 "observability.silenceAlerts": [
   "warning_redis_provisioning_container_memory_usage_short_term"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
+
+<br />
+
+## redis: container_oomkill_events_total
+
+<p class="subtitle">container OOMKILL events total by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> redis: 1+ container OOMKILL events total by instance
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of redis-store container in `docker-compose.yml`.
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#redis-container-oomkill-events-total).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_redis_container_oomkill_events_total"
 ]
 ```
 
@@ -2838,6 +3013,31 @@ an underprovisioned main postgres instance.
 ```json
 "observability.silenceAlerts": [
   "warning_worker_provisioning_container_memory_usage_short_term"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<br />
+
+## worker: container_oomkill_events_total
+
+<p class="subtitle">container OOMKILL events total by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: 1+ container OOMKILL events total by instance
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of worker container in `docker-compose.yml`.
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#worker-container-oomkill-events-total).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_container_oomkill_events_total"
 ]
 ```
 
@@ -3885,6 +4085,31 @@ with your code hosts connections or networking issues affecting communication wi
 
 <br />
 
+## repo-updater: container_oomkill_events_total
+
+<p class="subtitle">container OOMKILL events total by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> repo-updater: 1+ container OOMKILL events total by instance
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of repo-updater container in `docker-compose.yml`.
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#repo-updater-container-oomkill-events-total).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_repo-updater_container_oomkill_events_total"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
+
+<br />
+
 ## repo-updater: go_goroutines
 
 <p class="subtitle">maximum active goroutines</p>
@@ -4207,6 +4432,31 @@ with your code hosts connections or networking issues affecting communication wi
 
 <br />
 
+## searcher: container_oomkill_events_total
+
+<p class="subtitle">container OOMKILL events total by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> searcher: 1+ container OOMKILL events total by instance
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of searcher container in `docker-compose.yml`.
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#searcher-container-oomkill-events-total).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_searcher_container_oomkill_events_total"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/core).*</sub>
+
+<br />
+
 ## searcher: go_goroutines
 
 <p class="subtitle">maximum active goroutines</p>
@@ -4456,6 +4706,31 @@ with your code hosts connections or networking issues affecting communication wi
 
 <br />
 
+## symbols: container_oomkill_events_total
+
+<p class="subtitle">container OOMKILL events total by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> symbols: 1+ container OOMKILL events total by instance
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of symbols container in `docker-compose.yml`.
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#symbols-container-oomkill-events-total).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_symbols_container_oomkill_events_total"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<br />
+
 ## symbols: go_goroutines
 
 <p class="subtitle">maximum active goroutines</p>
@@ -4668,6 +4943,31 @@ with your code hosts connections or networking issues affecting communication wi
 ```json
 "observability.silenceAlerts": [
   "warning_syntect-server_provisioning_container_memory_usage_short_term"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
+
+<br />
+
+## syntect-server: container_oomkill_events_total
+
+<p class="subtitle">container OOMKILL events total by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> syntect-server: 1+ container OOMKILL events total by instance
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of syntect-server container in `docker-compose.yml`.
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#syntect-server-container-oomkill-events-total).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_syntect-server_container_oomkill_events_total"
 ]
 ```
 
@@ -4974,6 +5274,31 @@ with your code hosts connections or networking issues affecting communication wi
 
 <br />
 
+## zoekt: container_oomkill_events_total
+
+<p class="subtitle">container OOMKILL events total by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> zoekt: 1+ container OOMKILL events total by instance
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of zoekt-indexserver container in `docker-compose.yml`.
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#zoekt-container-oomkill-events-total).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_zoekt_container_oomkill_events_total"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/core).*</sub>
+
+<br />
+
 ## zoekt: provisioning_container_cpu_usage_long_term
 
 <p class="subtitle">container cpu usage total (90th percentile over 1d) across all cores by instance</p>
@@ -5067,6 +5392,31 @@ with your code hosts connections or networking issues affecting communication wi
 ```json
 "observability.silenceAlerts": [
   "warning_zoekt_provisioning_container_memory_usage_short_term"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/core).*</sub>
+
+<br />
+
+## zoekt: container_oomkill_events_total
+
+<p class="subtitle">container OOMKILL events total by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> zoekt: 1+ container OOMKILL events total by instance
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of zoekt-webserver container in `docker-compose.yml`.
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#zoekt-container-oomkill-events-total).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_zoekt_container_oomkill_events_total"
 ]
 ```
 
@@ -5464,6 +5814,31 @@ with your code hosts connections or networking issues affecting communication wi
 ```json
 "observability.silenceAlerts": [
   "warning_prometheus_provisioning_container_memory_usage_short_term"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
+
+<br />
+
+## prometheus: container_oomkill_events_total
+
+<p class="subtitle">container OOMKILL events total by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> prometheus: 1+ container OOMKILL events total by instance
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of prometheus container in `docker-compose.yml`.
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#prometheus-container-oomkill-events-total).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_prometheus_container_oomkill_events_total"
 ]
 ```
 
