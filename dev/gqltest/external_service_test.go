@@ -279,10 +279,12 @@ func TestExternalService_AsyncDeletion(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// wait for external service to be deleted to reduce probability of flakes
-	time.Sleep(time.Second * 3)
-	// This call should return not found error
-	if _, err = client.UpdateExternalService(gqltestutil.UpdateExternalServiceInput{ID: esID}); err == nil {
+	// This call should return not found error. Retrying for 5 seconds to wait for async deletion to finish
+	err = gqltestutil.Retry(5*time.Second, func() error {
+		_, err = client.UpdateExternalService(gqltestutil.UpdateExternalServiceInput{ID: esID})
+		return err
+	})
+	if err == nil {
 		t.Fatal("Deleted service should not be found")
 	}
 	if !strings.Contains(err.Error(), "external service not found") {

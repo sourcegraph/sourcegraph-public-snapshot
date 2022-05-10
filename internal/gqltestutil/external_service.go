@@ -23,7 +23,7 @@ mutation AddExternalService($input: AddExternalServiceInput!) {
 	}
 }
 `
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"input": input,
 	}
 	var resp struct {

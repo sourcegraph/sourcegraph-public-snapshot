@@ -219,7 +219,7 @@ func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *delete
 		// run deletion in the background and return right away
 		go func() {
 			if err := r.deleteExternalService(context.Background(), id, es); err != nil {
-				log15.Warn("Background external service deletion failed", "err", err)
+				log15.Error("Background external service deletion failed", "err", err)
 			}
 		}()
 	} else {
