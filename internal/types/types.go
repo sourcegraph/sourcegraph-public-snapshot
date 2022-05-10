@@ -482,6 +482,8 @@ type ExternalService struct {
 	CloudDefault    bool       // Whether this external service is our default public service on Cloud
 	HasWebhooks     *bool      // Whether this external service has webhooks configured; calculated from Config
 	TokenExpiresAt  *time.Time // Whether the token in this external services expires, nil indicates never expires.
+
+	// Remember to update ToAPIService if you add more fields
 }
 
 // ExternalServiceSyncJob represents an sync job for an external service
@@ -566,6 +568,24 @@ func (e *ExternalService) With(opts ...func(*ExternalService)) *ExternalService 
 	clone := e.Clone()
 	clone.Apply(opts...)
 	return clone
+}
+
+func (e *ExternalService) ToAPIService() api.ExternalService {
+	return api.ExternalService{
+		ID:              e.ID,
+		Kind:            e.Kind,
+		DisplayName:     e.DisplayName,
+		Config:          e.Config,
+		CreatedAt:       e.CreatedAt,
+		UpdatedAt:       e.UpdatedAt,
+		DeletedAt:       e.DeletedAt,
+		LastSyncAt:      e.LastSyncAt,
+		NextSyncAt:      e.NextSyncAt,
+		NamespaceUserID: e.NamespaceUserID,
+		NamespaceOrgID:  e.NamespaceOrgID,
+		Unrestricted:    e.Unrestricted,
+		CloudDefault:    e.CloudDefault,
+	}
 }
 
 // ExternalServices is an utility type with
