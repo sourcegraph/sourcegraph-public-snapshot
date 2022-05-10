@@ -53,7 +53,7 @@ type UpdateExternalServiceInput struct {
 }
 
 // UpdateExternalService updates existing external service with given input.
-// It returns GraphQL node ID of newly created external service.
+// It returns GraphQL node ID of updated external service.
 //
 // This method requires the authenticated user to be a site admin.
 func (c *Client) UpdateExternalService(input UpdateExternalServiceInput) (string, error) {
