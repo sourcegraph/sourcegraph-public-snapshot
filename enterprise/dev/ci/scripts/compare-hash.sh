@@ -10,11 +10,20 @@ set -ex -o pipefail
 
 current_commit=$(git rev-parse HEAD)
 
+checkout() {
+  git checkout -f "$1"
+
+  # Re-run asdf to ensure we have the correct set of utilities to
+  # run the currently checked out version of the Go unit tests.
+  echo "--- asdf install checked out tools"
+  ./dev/ci/asdf-install.sh
+}
+
 restore() {
   checked_out_commit=$(git rev-parse HEAD)
   if [ "$current_commit" != "$checked_out_commit" ]; then
     echo "Restoring correct commit"
-    git checkout -f -
+    checkout -
   else
     echo "Already on correct commit"
   fi
@@ -22,7 +31,8 @@ restore() {
 trap restore EXIT
 
 # Build previous
-git checkout -f HEAD^
+checkout HEAD^
+
 commit=$(git rev-parse HEAD)
 echo "--- compare-hash.sh: running $HASH_SCRIPT against $commit"
 if test -f "$HASH_SCRIPT"; then
@@ -33,7 +43,7 @@ else
 fi
 
 # Build current
-git checkout -f -
+checkout -
 echo "--- compare-hash.sh: running $HASH_SCRIPT against $current_commit"
 new_hash=$($HASH_SCRIPT)
 if [ "$new_hash" == "$previous_hash" ]; then

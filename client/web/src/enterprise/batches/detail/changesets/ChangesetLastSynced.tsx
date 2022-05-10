@@ -20,7 +20,11 @@ interface Props {
     _now?: Date
 }
 
-export const ChangesetLastSynced: React.FunctionComponent<Props> = ({ changeset, viewerCanAdminister, _now }) => {
+export const ChangesetLastSynced: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    changeset,
+    viewerCanAdminister,
+    _now,
+}) => {
     // initially, the changeset was never last updated
     const [lastUpdatedAt, setLastUpdatedAt] = useState<string | Error | null>(null)
     // .. if it was, and the changesets current updatedAt doesn't match the previous updated at, we know that it has been synced
@@ -91,12 +95,14 @@ export const ChangesetLastSynced: React.FunctionComponent<Props> = ({ changeset,
     )
 }
 
-const UpdateLoaderIcon: React.FunctionComponent<{
-    lastUpdatedAt: string | Error | null
-    changesetUpdatedAt: string
-    viewerCanAdminister: boolean
-    onEnqueueChangeset: React.MouseEventHandler
-}> = ({ lastUpdatedAt, changesetUpdatedAt, onEnqueueChangeset, viewerCanAdminister }) => {
+const UpdateLoaderIcon: React.FunctionComponent<
+    React.PropsWithChildren<{
+        lastUpdatedAt: string | Error | null
+        changesetUpdatedAt: string
+        viewerCanAdminister: boolean
+        onEnqueueChangeset: React.MouseEventHandler
+    }>
+> = ({ lastUpdatedAt, changesetUpdatedAt, onEnqueueChangeset, viewerCanAdminister }) => {
     if (typeof lastUpdatedAt === 'string' && changesetUpdatedAt === lastUpdatedAt) {
         return <LoadingSpinner inline={true} />
     }

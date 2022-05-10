@@ -82,7 +82,6 @@ var (
 		Name:     "migration",
 		Usage:    "Modifies and runs database migrations",
 		Category: CategoryDev,
-		Action:   suggestSubcommandsAction,
 		Subcommands: []*cli.Command{
 			addCommand,
 			revertCommand,

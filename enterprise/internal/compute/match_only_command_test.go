@@ -12,13 +12,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
-type serializer func(*MatchContext) interface{}
+type serializer func(*MatchContext) any
 
-func match(r *MatchContext) interface{} {
+func match(r *MatchContext) any {
 	return r
 }
 
-func environment(r *MatchContext) interface{} {
+func environment(r *MatchContext) any {
 	env := make(map[string]string)
 	for _, m := range r.Matches {
 		for k, v := range m.Environment {

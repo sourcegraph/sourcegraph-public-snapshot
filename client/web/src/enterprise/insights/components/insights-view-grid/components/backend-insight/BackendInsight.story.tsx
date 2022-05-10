@@ -33,7 +33,7 @@ const INSIGHT_CONFIGURATION_MOCK: SearchBackendBasedInsight = {
     type: InsightType.SearchBased,
     executionType: InsightExecutionType.Backend,
     step: { weeks: 2 },
-    filters: { excludeRepoRegexp: '', includeRepoRegexp: '', contexts: [] },
+    filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
     dashboardReferenceCount: 0,
     isFrozen: false,
 }
@@ -126,7 +126,7 @@ const mockInsightAPI = ({
     },
 })
 
-const TestBackendInsight: React.FunctionComponent = () => (
+const TestBackendInsight: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <BackendInsightView
         style={{ width: 400, height: 400 }}
         insight={INSIGHT_CONFIGURATION_MOCK}

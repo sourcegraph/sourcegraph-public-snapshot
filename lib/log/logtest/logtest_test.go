@@ -18,5 +18,5 @@ func TestExport(t *testing.T) {
 	assert.Len(t, logs, 1)
 	assert.Equal(t, logs[0].Scope, "TestExport")
 	assert.Equal(t, logs[0].Message, "hello world")
-	assert.Equal(t, logs[0].Fields["Attributes"], map[string]interface{}{"key": "value"})
+	assert.Equal(t, logs[0].Fields["Attributes"], map[string]any{"key": "value"})
 }

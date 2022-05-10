@@ -33,7 +33,7 @@ interface BatchChangeStatsCardProps {
 // least 1/50/100% is actually completed).
 const formatDisplayPercent = (percent: number): string => `${Math.floor(percent)}%`
 
-export const BatchChangeStatsCard: React.FunctionComponent<BatchChangeStatsCardProps> = ({
+export const BatchChangeStatsCard: React.FunctionComponent<React.PropsWithChildren<BatchChangeStatsCardProps>> = ({
     stats,
     diff,
     closedAt,

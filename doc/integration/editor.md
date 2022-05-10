@@ -1,8 +1,11 @@
 # Editor integrations
 
-Our editor plugins let you quickly jump to files and search code on your Sourcegraph instance from your editor.
+Sourcegraph's editor integrations allow you search and navigate across all of your repositories without ever leaving your IDE or checking them out locally. 
 
-We currently have plugins for these editors:
+Get up to speed quickly, learn best practices and, find code to re-use all while maintaining your flow using our editor integrations.
+
+
+We currently have integrations with these editors:
 
 <a href="https://marketplace.visualstudio.com/items?itemName=sourcegraph.sourcegraph"><img src="img/vscode.svg"/> Visual Studio Code</a>
 

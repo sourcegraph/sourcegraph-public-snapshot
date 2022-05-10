@@ -325,4 +325,4 @@ func (f fileInfo) Mode() os.FileMode {
 	return 0
 }
 func (f fileInfo) ModTime() time.Time { return time.Now() }
-func (f fileInfo) Sys() interface{}   { return interface{}(nil) }
+func (f fileInfo) Sys() any           { return any(nil) }

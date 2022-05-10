@@ -9,18 +9,20 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 func main() {
+	// Do not add initialization here, do all setup in sg.Before.
 	if os.Args[len(os.Args)-1] == "--generate-bash-completion" {
 		batchCompletionMode = true
 	}
-
 	if err := sg.RunContext(context.Background(), os.Args); err != nil {
 		fmt.Printf("error: %s\n", err)
 		os.Exit(1)
@@ -94,6 +96,12 @@ var sg = &cli.App{
 			EnvVars: []string{"SG_SKIP_AUTO_UPDATE"},
 			Value:   BuildCommit == "dev", // Default to skip in dev, otherwise don't
 		},
+		&cli.BoolFlag{
+			Name:    "disable-analytics",
+			Usage:   "disable event logging (logged to '~/.sourcegraph/events')",
+			EnvVars: []string{"SG_DISABLE_ANALYTICS"},
+			// Value:   BuildCommit == "dev", // Default to skip in dev, otherwise don't
+		},
 	},
 	Before: func(cmd *cli.Context) error {
 		if batchCompletionMode {
@@ -102,6 +110,18 @@ var sg = &cli.App{
 			return nil
 		}
 
+		// Configure analytics - this should be the first thing to be configured.
+		if !cmd.Bool("disable-analytics") {
+			cmd.Context = analytics.WithContext(cmd.Context, cmd.App.Version)
+			start := time.Now() // Start the clock immediately
+			addAnalyticsHooks(start, []string{"sg"}, cmd.App.Commands)
+		}
+
+		// Add autosuggestion hooks to commands with subcommands but no action
+		addSuggestionHooks(cmd.App.Commands)
+
+		// Configure output
+		log.Init(log.Resource{Name: "sg"})
 		if verbose {
 			stdout.Out.SetVerbose()
 		}
@@ -166,6 +186,7 @@ var sg = &cli.App{
 		liveCommand,
 		opsCommand,
 		auditCommand,
+		analyticsCommand,
 
 		// Util
 		helpCommand,

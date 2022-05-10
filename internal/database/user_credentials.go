@@ -94,7 +94,7 @@ const (
 
 // UserCredentialNotFoundErr is returned when a credential cannot be found from
 // its ID or scope.
-type UserCredentialNotFoundErr struct{ args []interface{} }
+type UserCredentialNotFoundErr struct{ args []any }
 
 func (err UserCredentialNotFoundErr) Error() string {
 	return fmt.Sprintf("user credential not found: %v", err.args)
@@ -230,7 +230,7 @@ func (s *userCredentialsStore) Delete(ctx context.Context, id int64) error {
 	if rows, err := res.RowsAffected(); err != nil {
 		return err
 	} else if rows == 0 {
-		return UserCredentialNotFoundErr{args: []interface{}{id}}
+		return UserCredentialNotFoundErr{args: []any{id}}
 	}
 
 	return nil
@@ -248,7 +248,7 @@ func (s *userCredentialsStore) GetByID(ctx context.Context, id int64) (*UserCred
 	cred := UserCredential{key: s.key}
 	row := s.QueryRow(ctx, q)
 	if err := scanUserCredential(&cred, row); err == sql.ErrNoRows {
-		return nil, UserCredentialNotFoundErr{args: []interface{}{id}}
+		return nil, UserCredentialNotFoundErr{args: []any{id}}
 	} else if err != nil {
 		return nil, err
 	}
@@ -271,7 +271,7 @@ func (s *userCredentialsStore) GetByScope(ctx context.Context, scope UserCredent
 	cred := UserCredential{key: s.key}
 	row := s.QueryRow(ctx, q)
 	if err := scanUserCredential(&cred, row); err == sql.ErrNoRows {
-		return nil, UserCredentialNotFoundErr{args: []interface{}{scope}}
+		return nil, UserCredentialNotFoundErr{args: []any{scope}}
 	} else if err != nil {
 		return nil, err
 	}
@@ -478,7 +478,7 @@ RETURNING %s
 // s is inspired by the BatchChange scanner type, but also matches sql.Row, which
 // is generally used directly in this module.
 func scanUserCredential(cred *UserCredential, s interface {
-	Scan(...interface{}) error
+	Scan(...any) error
 }) error {
 	return s.Scan(
 		&cred.ID,

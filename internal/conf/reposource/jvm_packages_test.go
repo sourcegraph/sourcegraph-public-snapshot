@@ -10,7 +10,7 @@ import (
 )
 
 func TestDecomposeMavenPath(t *testing.T) {
-	obtained, _ := ParseMavenModule("maven/org.hamcrest/hamcrest-core")
+	obtained, _ := ParseMavenDependencyFromRepoName("maven/org.hamcrest/hamcrest-core")
 	assert.Equal(t, obtained.GroupID, "org.hamcrest")
 	assert.Equal(t, obtained.ArtifactID, "hamcrest-core")
 	assert.Equal(t, api.RepoName("maven/org.hamcrest/hamcrest-core"), obtained.RepoName())

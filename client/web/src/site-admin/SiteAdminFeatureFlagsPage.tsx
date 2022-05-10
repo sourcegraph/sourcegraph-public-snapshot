@@ -120,11 +120,9 @@ const filters: FilteredConnectionFilter[] = [
     },
 ]
 
-export const SiteAdminFeatureFlagsPage: React.FunctionComponent<SiteAdminFeatureFlagsPageProps> = ({
-    fetchFeatureFlags = defaultFetchFeatureFlags,
-    productVersion = window.context.version,
-    ...props
-}) => {
+export const SiteAdminFeatureFlagsPage: React.FunctionComponent<
+    React.PropsWithChildren<SiteAdminFeatureFlagsPageProps>
+> = ({ fetchFeatureFlags = defaultFetchFeatureFlags, productVersion = window.context.version, ...props }) => {
     const history = useHistory()
 
     // Try to parse out a git rev based on the product version, otherwise just fall back
@@ -138,18 +136,20 @@ export const SiteAdminFeatureFlagsPage: React.FunctionComponent<SiteAdminFeature
                 // T => Observable<T[]>
                 map(flags =>
                     // Observable<T>[] => Observable<T[]>
-                    forkJoin(
-                        flags.map(flag =>
-                            getFeatureFlagReferences(flag.name, productGitVersion).pipe(
-                                map(
-                                    (references): FeatureFlagAndReferences => ({
-                                        ...flag,
-                                        references,
-                                    })
-                                )
-                            )
-                        )
-                    )
+                    flags.length > 0
+                        ? forkJoin(
+                              flags.map(flag =>
+                                  getFeatureFlagReferences(flag.name, productGitVersion).pipe(
+                                      map(
+                                          (references): FeatureFlagAndReferences => ({
+                                              ...flag,
+                                              references,
+                                          })
+                                      )
+                                  )
+                              )
+                          )
+                        : of([])
                 ),
                 // Observable<T[]> => T[]
                 mergeMap(flags => flags),
@@ -233,7 +233,7 @@ interface FeatureFlagNodeProps {
     node: FeatureFlagAndReferences
 }
 
-const FeatureFlagNode: React.FunctionComponent<FeatureFlagNodeProps> = ({ node }) => {
+const FeatureFlagNode: React.FunctionComponent<React.PropsWithChildren<FeatureFlagNodeProps>> = ({ node }) => {
     const { name, overrides, references } = node
     const hasOverridesOrReferences = overrides.length > 0 || references.length > 0
     return (

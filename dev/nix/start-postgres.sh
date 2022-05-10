@@ -21,7 +21,7 @@ if [ ! -d "$PGDATA" ]; then
   initdb "$PGDATA" --nosync -E UNICODE --auth=trust >/dev/null
   cat <<-EOF >>"$PGDATA"/postgresql.conf
 	    unix_socket_directories = '$PGHOST'
-	    listen_addresses = ''
+	    listen_addresses = 'localhost'
 	    shared_buffers = 12MB
 	    fsync = off
 	    synchronous_commit = off

@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/bloomfilter"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 func TestReferences(t *testing.T) {
@@ -538,7 +539,7 @@ func TestIgnoredIDs(t *testing.T) {
 			ignoreIDs,
 			10,
 			0,
-			observation.TestTraceLogger,
+			observation.TestTraceLogger(logtest.Scoped(t)),
 		)
 		if err != nil {
 			t.Fatalf("uploadIDsWithReferences: %s", err)

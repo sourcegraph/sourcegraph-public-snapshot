@@ -148,9 +148,6 @@ sg start web-<tab><tab>
 # Run default environment, Sourcegraph enterprise:
 sg start
 
-# (macOs only) Automatically add exceptions to the system firewall 
-sg start -add-to-macos-firewall
-
 # List available environments (defined under `commandSets` in `sg.config.yaml`):
 sg start -help
 

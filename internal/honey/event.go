@@ -11,15 +11,15 @@ type Event interface {
 	// Dataset returns the destination dataset of this event
 	Dataset() string
 	// AddField adds a single key-value pair to this event.
-	AddField(key string, val interface{})
+	AddField(key string, val any)
 	// AddLogFields adds each opentracing-go/log key-value field to this event.
 	AddLogFields(fields []log.Field)
 	// Add adds a complex type to the event. For structs, it adds each exported field.
 	// For maps, it adds each key/value. Add will error on all other types.
-	Add(data interface{}) error
+	Add(data any) error
 	// Fields returns all the added fields of the event. The returned map is not safe to
 	// be modified concurrently with calls Add/AddField/AddLogFields.
-	Fields() map[string]interface{}
+	Fields() map[string]any
 	// SetSampleRate overrides the global sample rate for this event. Default is 1,
 	// meaning no sampling. If you want to send one event out of every 250 times
 	// Send() is called, you would specify 250 here.
@@ -43,7 +43,7 @@ func (w eventWrapper) Dataset() string {
 	return w.event.Dataset
 }
 
-func (w eventWrapper) AddField(name string, val interface{}) {
+func (w eventWrapper) AddField(name string, val any) {
 	data, ok := w.Fields()[name]
 	if !ok {
 		data = val
@@ -62,11 +62,11 @@ func (w eventWrapper) AddLogFields(fields []log.Field) {
 	}
 }
 
-func (w eventWrapper) Add(data interface{}) error {
+func (w eventWrapper) Add(data any) error {
 	return w.event.Add(data)
 }
 
-func (w eventWrapper) Fields() map[string]interface{} {
+func (w eventWrapper) Fields() map[string]any {
 	return w.event.Fields()
 }
 
@@ -95,7 +95,7 @@ func NewEvent(dataset string) Event {
 
 // NewEventWithFields creates an event for logging to the given dataset. The given
 // fields are assigned to the event.
-func NewEventWithFields(dataset string, fields map[string]interface{}) Event {
+func NewEventWithFields(dataset string, fields map[string]any) Event {
 	if !Enabled() {
 		return noopEvent{}
 	}

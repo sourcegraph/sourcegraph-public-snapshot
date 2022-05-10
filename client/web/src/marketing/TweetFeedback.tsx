@@ -11,7 +11,10 @@ export interface TweetFeedbackProps {
 
 const SCORE_TO_TWEET = 9
 
-export const TweetFeedback: React.FunctionComponent<TweetFeedbackProps> = ({ feedback, score }) => {
+export const TweetFeedback: React.FunctionComponent<React.PropsWithChildren<TweetFeedbackProps>> = ({
+    feedback,
+    score,
+}) => {
     if (score >= SCORE_TO_TWEET) {
         const url = new URL('https://twitter.com/intent/tweet')
         url.searchParams.set('text', `After using @sourcegraph: ${feedback}`)

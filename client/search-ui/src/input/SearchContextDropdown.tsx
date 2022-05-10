@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
+// eslint-disable-next-line no-restricted-imports
 import { Dropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 
 import { SearchContextInputProps, SubmitSearchProps } from '@sourcegraph/search'
@@ -30,7 +31,9 @@ export interface SearchContextDropdownProps
     isExternalServicesUserModeAll?: boolean
 }
 
-export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdownProps> = props => {
+export const SearchContextDropdown: React.FunctionComponent<
+    React.PropsWithChildren<SearchContextDropdownProps>
+> = props => {
     const {
         isSourcegraphDotCom,
         authenticatedUser,

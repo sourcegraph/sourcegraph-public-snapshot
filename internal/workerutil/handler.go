@@ -2,6 +2,8 @@ package workerutil
 
 import (
 	"context"
+
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // Handler is the configurable consumer within a worker. Types that conform to this
@@ -9,13 +11,13 @@ import (
 // interfaces to further configure the behavior of the worker routine.
 type Handler interface {
 	// Handle processes a single record.
-	Handle(ctx context.Context, record Record) error
+	Handle(ctx context.Context, logger log.Logger, record Record) error
 }
 
-type HandlerFunc func(ctx context.Context, record Record) error
+type HandlerFunc func(ctx context.Context, logger log.Logger, record Record) error
 
-func (f HandlerFunc) Handle(ctx context.Context, record Record) error {
-	return f(ctx, record)
+func (f HandlerFunc) Handle(ctx context.Context, logger log.Logger, record Record) error {
+	return f(ctx, logger, record)
 }
 
 // WithPreDequeue is an extension of the Handler interface.
@@ -24,7 +26,7 @@ type WithPreDequeue interface {
 	// If this method returns false, then the current worker iteration is skipped and the next iteration
 	// will begin after waiting for the configured polling interval. Any value returned by this method
 	// will be used as additional parameters to the store's Dequeue method.
-	PreDequeue(ctx context.Context) (dequeueable bool, extraDequeueArguments interface{}, err error)
+	PreDequeue(ctx context.Context, logger log.Logger) (dequeueable bool, extraDequeueArguments any, err error)
 }
 
 // WithHooks is an extension of the Handler interface.
@@ -38,11 +40,11 @@ type WithHooks interface {
 	// PreHandle is called, if implemented, directly before a invoking the handler with the given
 	// record. This method is invoked before starting a handler goroutine - therefore, any expensive
 	// operations in this method will block the dequeue loop from proceeding.
-	PreHandle(ctx context.Context, record Record)
+	PreHandle(ctx context.Context, logger log.Logger, record Record)
 
 	// PostHandle is called, if implemented, directly after the handler for the given record has
 	// completed. This method is invoked inside the handler goroutine. Note that if PreHandle and
 	// PostHandle both operate on shared data, that they will be operating on the data from different
 	// goroutines and it is up to the caller to properly synchronize access to it.
-	PostHandle(ctx context.Context, record Record)
+	PostHandle(ctx context.Context, logger log.Logger, record Record)
 }

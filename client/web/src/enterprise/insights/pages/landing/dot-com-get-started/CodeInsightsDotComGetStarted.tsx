@@ -21,7 +21,9 @@ const DOT_COM_CONTEXT = { mode: CodeInsightsLandingPageType.Cloud }
 
 export interface CodeInsightsDotComGetStartedProps extends TelemetryProps {}
 
-export const CodeInsightsDotComGetStarted: React.FunctionComponent<CodeInsightsDotComGetStartedProps> = props => {
+export const CodeInsightsDotComGetStarted: React.FunctionComponent<
+    React.PropsWithChildren<CodeInsightsDotComGetStartedProps>
+> = props => {
     const { telemetryService } = props
 
     useEffect(() => {

@@ -90,9 +90,9 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			testDB := dbtest.NewDB(t)
 			ctx := actor.WithInternalActor(context.Background())
 
-			reposStore := repos.NewStore(testDB, sql.TxOptions{})
+			reposStore := repos.NewStore(database.NewDB(testDB), sql.TxOptions{})
 
-			err = reposStore.ExternalServiceStore.Upsert(ctx, &svc)
+			err = reposStore.ExternalServiceStore().Upsert(ctx, &svc)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -122,7 +122,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 					},
 				},
 			}
-			err = reposStore.RepoStore.Create(ctx, &repo)
+			err = reposStore.RepoStore().Create(ctx, &repo)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -171,9 +171,9 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			testDB := dbtest.NewDB(t)
 			ctx := actor.WithInternalActor(context.Background())
 
-			reposStore := repos.NewStore(testDB, sql.TxOptions{})
+			reposStore := repos.NewStore(database.NewDB(testDB), sql.TxOptions{})
 
-			err = reposStore.ExternalServiceStore.Upsert(ctx, &svc)
+			err = reposStore.ExternalServiceStore().Upsert(ctx, &svc)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -203,7 +203,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 					},
 				},
 			}
-			err = reposStore.RepoStore.Create(ctx, &repo)
+			err = reposStore.RepoStore().Create(ctx, &repo)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -275,9 +275,9 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			testDB := dbtest.NewDB(t)
 			ctx := actor.WithInternalActor(context.Background())
 
-			reposStore := repos.NewStore(testDB, sql.TxOptions{})
+			reposStore := repos.NewStore(database.NewDB(testDB), sql.TxOptions{})
 
-			err = reposStore.ExternalServiceStore.Upsert(ctx, &svc)
+			err = reposStore.ExternalServiceStore().Upsert(ctx, &svc)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -307,7 +307,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 					},
 				},
 			}
-			err = reposStore.RepoStore.Create(ctx, &repo)
+			err = reposStore.RepoStore().Create(ctx, &repo)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -359,9 +359,9 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			testDB := dbtest.NewDB(t)
 			ctx := actor.WithInternalActor(context.Background())
 
-			reposStore := repos.NewStore(testDB, sql.TxOptions{})
+			reposStore := repos.NewStore(database.NewDB(testDB), sql.TxOptions{})
 
-			err = reposStore.ExternalServiceStore.Upsert(ctx, &svc)
+			err = reposStore.ExternalServiceStore().Upsert(ctx, &svc)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -391,7 +391,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 					},
 				},
 			}
-			err = reposStore.RepoStore.Create(ctx, &repo)
+			err = reposStore.RepoStore().Create(ctx, &repo)
 			if err != nil {
 				t.Fatal(err)
 			}

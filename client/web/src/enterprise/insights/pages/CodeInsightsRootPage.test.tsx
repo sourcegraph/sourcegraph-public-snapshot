@@ -46,7 +46,10 @@ const mockTelemetryService = {
 
 const fakeApi = new FakeDefaultCodeInsightsBackend()
 
-const Wrapper: React.FunctionComponent<{ api: Partial<CodeInsightsBackend> }> = ({ children, api = {} }) => {
+const Wrapper: React.FunctionComponent<React.PropsWithChildren<{ api: Partial<CodeInsightsBackend> }>> = ({
+    children,
+    api = {},
+}) => {
     const extendedApi: CodeInsightsBackend = {
         ...fakeApi,
         ...api,

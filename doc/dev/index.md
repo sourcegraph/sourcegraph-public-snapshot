@@ -158,12 +158,15 @@ Guides to help with troubleshooting, configuring test instances, debugging, and 
 
 ### Observability
 
+- [How to add observability](how-to/add_observability.md)
+- [How to add logging](how-to/add_logging.md)
 - [How to find monitoring](how-to/find_monitoring.md)
 - [How to add monitoring](how-to/add_monitoring.md)
 
 ### Documentation
 
 - [Developing the product documentation](how-to/documentation_implementation.md)
+- [Architecture Decision Records (ADRs)](adr/index.md)
 
 ### Executors
 

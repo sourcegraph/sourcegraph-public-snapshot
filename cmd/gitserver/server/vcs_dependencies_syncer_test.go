@@ -40,14 +40,14 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 		svc:         depsService,
 	}
 
-	depsService.Add("foo@0.0.1")
-	depsSource.Add("foo@0.0.1")
-
 	remoteURL := &vcs.URL{URL: url.URL{Path: "fake/foo"}}
 
 	dir := GitDir(t.TempDir())
 	_, err := s.CloneCommand(ctx, remoteURL, string(dir))
 	require.NoError(t, err)
+
+	depsService.Add("foo@0.0.1")
+	depsSource.Add("foo@0.0.1")
 
 	t.Run("one version from service", func(t *testing.T) {
 		err := s.Fetch(ctx, remoteURL, dir)
@@ -136,11 +136,7 @@ type fakeDepsService struct {
 }
 
 func (s *fakeDepsService) ListDependencyRepos(ctx context.Context, opts dependencies.ListDependencyReposOpts) ([]dependencies.Repo, error) {
-	dep, ok := s.deps[opts.Name]
-	if !ok {
-		return nil, notFoundError{errors.Errorf("%s not found", opts.Name)}
-	}
-	return dep, nil
+	return s.deps[opts.Name], nil
 }
 
 func (s *fakeDepsService) Add(deps ...string) {

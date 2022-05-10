@@ -21,7 +21,7 @@ func (c *Client) GetInsights() ([]string, error) {
 			} `json:"insightviews"`
 		} `json:"data"`
 	}
-	err := c.GraphQL("", query, map[string]interface{}{}, &resp)
+	err := c.GraphQL("", query, map[string]any{}, &resp)
 	if err != nil {
 		return nil, errors.Wrap(err, "request GraphQL")
 	}
@@ -70,8 +70,8 @@ func (c *Client) CreateDashboard(args DashboardInputArgs) (DashboardResponse, er
 		}
 	`
 
-	variables := map[string]interface{}{
-		"input": map[string]interface{}{
+	variables := map[string]any{
+		"input": map[string]any{
 			"title":  args.Title,
 			"grants": buildGrants(args.UserGrant, args.OrgGrant, args.GlobalGrant),
 		},
@@ -103,7 +103,7 @@ func (c *Client) GetDashboards(args GetDashboardArgs) ([]DashboardResponse, erro
 		}
 	`
 
-	variables := map[string]interface{}{}
+	variables := map[string]any{}
 	if args.First != nil {
 		variables["first"] = args.First
 	}
@@ -141,9 +141,9 @@ func (c *Client) UpdateDashboard(id string, args DashboardInputArgs) (DashboardR
 		}
 	`
 
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"id": id,
-		"input": map[string]interface{}{
+		"input": map[string]any{
 			"title":  args.Title,
 			"grants": buildGrants(args.UserGrant, args.OrgGrant, args.GlobalGrant),
 		},
@@ -173,7 +173,7 @@ func (c *Client) DeleteDashboard(id string) error {
 			}
 		}
 	`
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"id": id,
 	}
 	var resp struct {
@@ -191,7 +191,7 @@ func (c *Client) DeleteDashboard(id string) error {
 	return nil
 }
 
-func buildGrants(userGrant string, orgGrant string, globalGrant bool) map[string]interface{} {
+func buildGrants(userGrant string, orgGrant string, globalGrant bool) map[string]any {
 	userGrants := []string{}
 	orgGrants := []string{}
 
@@ -202,7 +202,7 @@ func buildGrants(userGrant string, orgGrant string, globalGrant bool) map[string
 		orgGrants = []string{orgGrant}
 	}
 
-	return map[string]interface{}{
+	return map[string]any{
 		"users":         userGrants,
 		"organizations": orgGrants,
 		"global":        globalGrant,

@@ -18,7 +18,7 @@ func TestGetDashboard(t *testing.T) {
 
 	_, err := insightsDB.Exec(`
 		INSERT INTO dashboard (id, title)
-		VALUES (1, 'test dashboard'), (2, 'private dashboard for user 3');`)
+		VALUES (1, 'test dashboard'), (2, 'private dashboard for user 3'), (3, 'private dashbord for org 1');`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -26,28 +26,40 @@ func TestGetDashboard(t *testing.T) {
 	ctx := context.Background()
 
 	// assign some global grants just so the test can immediately fetch the created dashboard
-	_, err = insightsDB.Exec(`INSERT INTO dashboard_grants (dashboard_id, global)
-									VALUES (1, true)`)
+	_, err = insightsDB.Exec(`INSERT INTO dashboard_grants (dashboard_id, global) VALUES (1, true)`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	// assign a private grant
-	_, err = insightsDB.Exec(`INSERT INTO dashboard_grants (dashboard_id, user_id)
-									VALUES (2, 3)`)
+	// assign a private user grant
+	_, err = insightsDB.Exec(`INSERT INTO dashboard_grants (dashboard_id, user_id) VALUES (2, 3)`)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// assign some global grants just so the test can immediately fetch the created dashboard
+	// assign a private org grant
+	_, err = insightsDB.Exec(`INSERT INTO dashboard_grants (dashboard_id, org_id) VALUES (3, 1)`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// create some views to assign to the dashboards
 	_, err = insightsDB.Exec(`INSERT INTO insight_view (id, title, description, unique_id)
-									VALUES (1, 'my view', 'my description', 'unique1234')`)
+									VALUES
+										(1, 'my view', 'my description', 'unique1234'),
+										(2, 'private view', 'private description', 'private1234'),
+										(3, 'shared view', 'shared description', 'shared1234')`)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// assign some global grants just so the test can immediately fetch the created dashboard
+	// assign views to dashboards
 	_, err = insightsDB.Exec(`INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id)
-									VALUES (1, 1)`)
+									VALUES
+										(1, 1),
+										(1, 3),
+										(2, 2),
+										(2, 3),
+										(3, 3)`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -66,7 +78,7 @@ func TestGetDashboard(t *testing.T) {
 		autogold.Equal(t, got, autogold.ExportedOnly())
 	})
 
-	t.Run("test user 3 can see both dashboards", func(t *testing.T) {
+	t.Run("test user 3 can see global and user private dashboards", func(t *testing.T) {
 		got, err := store.GetDashboards(ctx, DashboardQueryArgs{UserID: []int{3}})
 		if err != nil {
 			t.Fatal(err)
@@ -84,6 +96,59 @@ func TestGetDashboard(t *testing.T) {
 	})
 	t.Run("test user 3 can see both dashboards after 1", func(t *testing.T) {
 		got, err := store.GetDashboards(ctx, DashboardQueryArgs{UserID: []int{3}, After: 1})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		autogold.Equal(t, got, autogold.ExportedOnly())
+	})
+	t.Run("test user 4 in org 1 can see both global and org private dashboard", func(t *testing.T) {
+		got, err := store.GetDashboards(ctx, DashboardQueryArgs{UserID: []int{4}, OrgID: []int{1}})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		autogold.Equal(t, got, autogold.ExportedOnly())
+	})
+	t.Run("test user 3 can see both dashboards with view", func(t *testing.T) {
+		viewId := "shared1234"
+		got, err := store.GetDashboards(ctx, DashboardQueryArgs{UserID: []int{3}, WithViewUniqueID: &viewId})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		autogold.Equal(t, got, autogold.ExportedOnly())
+	})
+	t.Run("test user 4 in org 1 can see both dashboards with view", func(t *testing.T) {
+		viewId := "shared1234"
+		got, err := store.GetDashboards(ctx, DashboardQueryArgs{UserID: []int{4}, OrgID: []int{1}, WithViewUniqueID: &viewId})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		autogold.Equal(t, got, autogold.ExportedOnly())
+	})
+	t.Run("test user 4 can not see dashboards with private view", func(t *testing.T) {
+		viewId := "private1234"
+		got, err := store.GetDashboards(ctx, DashboardQueryArgs{UserID: []int{4}, WithViewUniqueID: &viewId})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		autogold.Equal(t, got, autogold.ExportedOnly())
+	})
+	t.Run("test user 3 can see both dashboards with view limit 1", func(t *testing.T) {
+		viewId := "shared1234"
+		got, err := store.GetDashboards(ctx, DashboardQueryArgs{UserID: []int{3}, WithViewUniqueID: &viewId, Limit: 1})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		autogold.Equal(t, got, autogold.ExportedOnly())
+	})
+	t.Run("test user 3 can see both dashboards with view after 1", func(t *testing.T) {
+		viewId := "shared1234"
+		got, err := store.GetDashboards(ctx, DashboardQueryArgs{UserID: []int{3}, WithViewUniqueID: &viewId, After: 1})
 		if err != nil {
 			t.Fatal(err)
 		}

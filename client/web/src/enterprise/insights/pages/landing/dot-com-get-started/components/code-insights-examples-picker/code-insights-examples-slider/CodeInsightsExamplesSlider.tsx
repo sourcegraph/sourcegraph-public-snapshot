@@ -13,7 +13,9 @@ import styles from './CodeInsightsExamplesSlider.module.scss'
 
 interface CodeInsightsExamplesSliderProps extends TelemetryProps {}
 
-export const CodeInsightsExamplesSlider: React.FunctionComponent<CodeInsightsExamplesSliderProps> = props => {
+export const CodeInsightsExamplesSlider: React.FunctionComponent<
+    React.PropsWithChildren<CodeInsightsExamplesSliderProps>
+> = props => {
     const { telemetryService } = props
     const itemElementReferences = useRef<Map<number, HTMLElement | null>>(new Map())
     const [activeExampleIndex, setActiveExampleIndex] = useState<number>(0)
@@ -142,7 +144,7 @@ interface ArrowIconProps {
     side: 'right' | 'left'
 }
 
-const ArrowIcon: React.FunctionComponent<ArrowIconProps> = props => {
+const ArrowIcon: React.FunctionComponent<React.PropsWithChildren<ArrowIconProps>> = props => {
     const { side } = props
     const rotate = `rotate(${side === 'left' ? 180 : 0}deg)`
 

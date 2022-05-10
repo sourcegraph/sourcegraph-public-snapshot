@@ -33,7 +33,7 @@ const FEEDBACK_DELAY = 5000
 /**
  * Header for the extension area.
  */
-export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderProps> = (
+export const ExtensionAreaHeader: React.FunctionComponent<React.PropsWithChildren<ExtensionAreaHeaderProps>> = (
     props: ExtensionAreaHeaderProps
 ) => {
     const manifest: ExtensionManifest | undefined =
@@ -95,7 +95,11 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                     />
                                 )
                             }
-                            path={[{ to: '/extensions', icon: PuzzleOutlineIcon }, { text: publisher }, { text: name }]}
+                            path={[
+                                { to: '/extensions', icon: PuzzleOutlineIcon, ariaLabel: 'Extensions' },
+                                { text: publisher },
+                                { text: name },
+                            ]}
                             description={
                                 manifest &&
                                 (manifest.description || isWorkInProgress) && (

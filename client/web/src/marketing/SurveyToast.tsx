@@ -15,7 +15,7 @@ interface SurveyToastProps {
     forceVisible?: boolean
 }
 
-export const SurveyToast: React.FunctionComponent<SurveyToastProps> = ({ forceVisible }) => {
+export const SurveyToast: React.FunctionComponent<React.PropsWithChildren<SurveyToastProps>> = ({ forceVisible }) => {
     const [shouldPermanentlyDismiss, setShouldPermanentlyDismiss] = useState(false)
     const [temporarilyDismissed, setTemporarilyDismissed] = useTemporarySetting(
         'npsSurvey.hasTemporarilyDismissed',

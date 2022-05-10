@@ -3,7 +3,6 @@ package batches
 import (
 	"context"
 
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -33,7 +32,7 @@ func (j *workspaceResolverJob) Config() []env.Config {
 
 func (j *workspaceResolverJob) Routines(_ context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	observationContext := &observation.Context{
-		Logger:     log15.Root(),
+		Logger:     logger.Scoped("routines", "workspace resolver job routines"),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}

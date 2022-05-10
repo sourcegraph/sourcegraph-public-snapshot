@@ -180,9 +180,8 @@ func (s *vcsDependenciesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, d
 
 	if len(cloneable) == 0 {
 		cmd := exec.CommandContext(ctx, "git", "branch", "--force", "-D", "latest")
-		if _, err := runCommandInDirectory(ctx, cmd, string(dir), s.placeholder); err != nil {
-			return err
-		}
+		// Best-effort branch deletion since we don't know if this branch has been created yet.
+		_, _ = runCommandInDirectory(ctx, cmd, string(dir), s.placeholder)
 	}
 
 	return nil

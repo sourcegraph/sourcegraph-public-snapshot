@@ -5,7 +5,6 @@ import (
 	"io"
 	"os"
 	"sort"
-	"strings"
 	"testing"
 
 	"github.com/sebdah/goldie/v2"
@@ -40,16 +39,16 @@ func TestListDependencies(t *testing.T) {
 			"yarn.lock",
 		}, nil)
 
-		yarnLock, err := os.Open("testdata/parse/yarn.lock/yarn_normal.lock")
+		yarnLock, err := os.ReadFile("testdata/parse/yarn.lock/yarn_normal.lock")
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		gitSvc.ArchiveFunc.SetDefaultHook(zipArchive(t, map[string]io.Reader{
-			"client/package-lock.json": strings.NewReader(`{"dependencies": { "@octokit/request": {"version": "5.6.2"} }}`),
+		gitSvc.ArchiveFunc.SetDefaultHook(zipArchive(t, map[string]string{
+			"client/package-lock.json": `{"dependencies": { "@octokit/request": {"version": "5.6.2"} }}`,
 			// promise@8.0.3 is also in yarn.lock. We test that it gets de-duplicated.
-			"package-lock.json": strings.NewReader(`{"dependencies": { "promise": {"version": "8.0.3"} }}`),
-			"yarn.lock":         yarnLock,
+			"package-lock.json": `{"dependencies": { "promise": {"version": "8.0.3"} }}`,
+			"yarn.lock":         string(yarnLock),
 		}))
 
 		deps, err := TestService(gitSvc).ListDependencies(ctx, "foo", "HEAD")
@@ -75,17 +74,17 @@ func TestListDependencies(t *testing.T) {
 			"go.mod",
 		}, nil)
 
-		gitSvc.ArchiveFunc.SetDefaultHook(zipArchive(t, map[string]io.Reader{
+		gitSvc.ArchiveFunc.SetDefaultHook(zipArchive(t, map[string]string{
 			// github.com/google/uuid v1.0.0 is also in go.mod. We test that it gets de-duplicated.
-			"subpkg/go.mod": strings.NewReader(`
+			"subpkg/go.mod": `
 require modernc.org/cc v1.0.0
 require modernc.org/golex v1.0.0
 require github.com/google/uuid v1.0.0
-`),
-			"go.mod": strings.NewReader(`
+`,
+			"go.mod": `
 require github.com/google/uuid v1.0.0
 require github.com/pborman/uuid v1.2.1
-`),
+`,
 		}))
 
 		deps, err := TestService(gitSvc).ListDependencies(ctx, "foo", "HEAD")
@@ -105,8 +104,8 @@ require github.com/pborman/uuid v1.2.1
 	})
 }
 
-func zipArchive(t testing.TB, files map[string]io.Reader) func(context.Context, api.RepoName, gitserver.ArchiveOptions) (io.ReadCloser, error) {
+func zipArchive(t testing.TB, files map[string]string) func(context.Context, api.RepoName, gitserver.ArchiveOptions) (io.ReadCloser, error) {
 	return func(ctx context.Context, name api.RepoName, options gitserver.ArchiveOptions) (io.ReadCloser, error) {
-		return unpacktest.CreateZipArchive(t, files)
+		return unpacktest.CreateZipArchive(t, files), nil
 	}
 }

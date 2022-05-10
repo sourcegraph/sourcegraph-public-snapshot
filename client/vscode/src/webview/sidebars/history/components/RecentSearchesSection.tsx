@@ -14,7 +14,7 @@ import { HistorySidebarProps } from '../HistorySidebarView'
 
 import styles from '../../search/SearchSidebarView.module.scss'
 
-export const RecentSearchesSection: React.FunctionComponent<HistorySidebarProps> = ({
+export const RecentSearchesSection: React.FunctionComponent<React.PropsWithChildren<HistorySidebarProps>> = ({
     platformContext,
     extensionCoreAPI,
     authenticatedUser,
@@ -61,13 +61,15 @@ export const RecentSearchesSection: React.FunctionComponent<HistorySidebarProps>
                 type="button"
                 className={classNames('btn btn-outline-secondary', styles.sidebarSectionCollapseButton)}
                 onClick={() => setCollapsed(!collapsed)}
+                aria-label={`${collapsed ? 'Expand' : 'Collapse'} recent searches`}
             >
                 <h5 className="flex-grow-1">Recent Searches</h5>
-                {collapsed ? (
-                    <Icon className="mr-1" as={ChevronLeftIcon} />
-                ) : (
-                    <Icon className="mr-1" as={ChevronDownIcon} />
-                )}
+                <Icon
+                    role="img"
+                    className="mr-1"
+                    as={collapsed ? ChevronLeftIcon : ChevronDownIcon}
+                    aria-hidden={true}
+                />
             </button>
 
             {!collapsed && (

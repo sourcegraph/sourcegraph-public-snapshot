@@ -154,18 +154,6 @@ func MapPlan(plan Plan, pass BasicPass) Plan {
 	return Plan(updated)
 }
 
-func ToPlan(disjuncts [][]Node) (Plan, error) {
-	plan := make([]Basic, 0, len(disjuncts))
-	for _, disjunct := range disjuncts {
-		basic, err := ToBasicQuery(disjunct)
-		if err != nil {
-			return nil, err
-		}
-		plan = append(plan, basic)
-	}
-	return plan, nil
-}
-
 // Pipeline processes zero or more steps to produce a query. The first step must
 // be Init, otherwise this function is a no-op.
 func Pipeline(steps ...step) (Plan, error) {

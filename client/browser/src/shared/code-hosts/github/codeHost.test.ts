@@ -4,7 +4,7 @@ import fetch from 'jest-fetch-mock'
 import { startCase } from 'lodash'
 import { readFile } from 'mz/fs'
 
-import { disableFetchCache, enableFetchCache, fetchCache } from '@sourcegraph/common'
+import { disableFetchCache, enableFetchCache, fetchCache, LineOrPositionOrRange } from '@sourcegraph/common'
 
 import { testCodeHostMountGetters, testToolbarMountGetter } from '../shared/codeHostTestUtils'
 import { CodeView } from '../shared/codeViews'
@@ -15,6 +15,7 @@ import {
     githubCodeHost,
     checkIsGitHubDotCom,
     isPrivateRepository,
+    parseHash,
 } from './codeHost'
 
 const testCodeHost = (fixturePath: string): void => {
@@ -263,4 +264,25 @@ describe('isPrivateRepository', () => {
             expect(fetch).toHaveBeenCalledTimes(2)
         })
     })
+})
+
+describe('parseHash', () => {
+    const entries: [string, LineOrPositionOrRange][] = [
+        ['#L143', { line: 143 }],
+        ['#helloL143', { line: 143 }],
+        ['#L143-L162', { line: 143, endLine: 162 }],
+        ['#L143L162', { line: 143, endLine: 162 }],
+        ['#L143+L162', { line: 143, endLine: 162 }],
+        ['#L143/L162', { line: 143, endLine: 162 }],
+        ['#L143fooL162', { line: 143, endLine: 162 }],
+        ['#L143fooL162bar', { line: 143, endLine: 162 }],
+        ['#helloL143fooL162bar', { line: 143, endLine: 162 }],
+        ['#L143-L162-L172', {}],
+    ]
+
+    for (const [hash, expectedValue] of entries) {
+        test(`given "${hash}" as argument returns ${JSON.stringify(expectedValue)}`, () => {
+            expect(parseHash(hash)).toEqual(expectedValue)
+        })
+    }
 })

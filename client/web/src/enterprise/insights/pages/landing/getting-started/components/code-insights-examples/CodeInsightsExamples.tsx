@@ -43,7 +43,9 @@ const CAPTURE_GROUP_INSIGHT_CREATION_UI_URL_PARAMETERS = encodeCaptureInsightURL
     groupSearchQuery: ALPINE_VERSIONS_INSIGHT.groupSearch,
 })
 
-export const CodeInsightsExamples: React.FunctionComponent<CodeInsightsExamplesProps> = props => {
+export const CodeInsightsExamples: React.FunctionComponent<
+    React.PropsWithChildren<CodeInsightsExamplesProps>
+> = props => {
     const { telemetryService, ...otherProps } = props
     const { pathname, search } = useLocation()
 
@@ -84,7 +86,7 @@ interface CodeInsightExampleCommonProps {
 export type CodeInsightExampleProps = (CodeInsightSearchExampleProps | CodeInsightCaptureExampleProps) &
     CodeInsightExampleCommonProps
 
-export const CodeInsightExample: React.FunctionComponent<CodeInsightExampleProps> = props => {
+export const CodeInsightExample: React.FunctionComponent<React.PropsWithChildren<CodeInsightExampleProps>> = props => {
     if (props.type === InsightType.SearchBased) {
         return <CodeInsightSearchExample {...props} />
     }
@@ -99,7 +101,9 @@ interface CodeInsightSearchExampleProps extends TelemetryProps {
     className?: string
 }
 
-const CodeInsightSearchExample: React.FunctionComponent<CodeInsightSearchExampleProps> = props => {
+const CodeInsightSearchExample: React.FunctionComponent<
+    React.PropsWithChildren<CodeInsightSearchExampleProps>
+> = props => {
     const { templateLink, className, content, telemetryService } = props
 
     const { mode } = useContext(CodeInsightsLandingPageContext)
@@ -174,7 +178,9 @@ interface CodeInsightCaptureExampleProps extends TelemetryProps {
     className?: string
 }
 
-const CodeInsightCaptureExample: React.FunctionComponent<CodeInsightCaptureExampleProps> = props => {
+const CodeInsightCaptureExample: React.FunctionComponent<
+    React.PropsWithChildren<CodeInsightCaptureExampleProps>
+> = props => {
     const { content, templateLink, className, telemetryService } = props
 
     const {

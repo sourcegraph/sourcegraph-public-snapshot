@@ -18,7 +18,7 @@ const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development
 
 const rootPath = path.resolve(__dirname, '../../')
 const jetbrainsWorkspacePath = path.resolve(rootPath, 'client', 'jetbrains')
-const webviewSourcePath = path.resolve(jetbrainsWorkspacePath, 'webview')
+const webviewSourcePath = path.resolve(jetbrainsWorkspacePath, 'webview', 'src')
 
 // Build artifacts are put directly into the JetBrains resources folder
 const distPath = path.resolve(jetbrainsWorkspacePath, 'src', 'main', 'resources', 'dist')

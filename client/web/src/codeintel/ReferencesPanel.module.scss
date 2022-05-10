@@ -21,37 +21,58 @@ $filter-input-height: 1.5rem;
     }
 }
 
+$group-header-font-size: 0.875rem;
+$group-divider-height: 0.25rem;
+
 .repo-location-group {
-    padding-top: 0.2rem;
-    padding-bottom: 0.2rem;
-    padding-left: 2.3rem;
-    width: 100%;
-    text-align: left;
+    margin-bottom: $group-divider-height;
 
-    font-weight: 400;
+    &:last-child {
+        margin-bottom: 0;
+    }
 
-    &--repo-name {
-        padding-left: 0.6rem;
+    &--header {
+        padding-top: 0.2rem;
+        padding-bottom: 0.2rem;
+        padding-left: 2.3rem;
+        width: 100%;
+        text-align: left;
+
+        font-weight: 400;
+
+        &--repo-name {
+            padding-left: 0.6rem;
+            font-size: $group-header-font-size;
+        }
     }
 }
 
 .location-group {
-    padding-left: 3.75rem;
-    padding-top: 0.2rem;
-    padding-bottom: 0.2rem;
-    width: 100%;
-    text-align: left;
+    margin-bottom: $group-divider-height;
 
-    transition: none !important;
+    &:last-child {
+        margin-bottom: 0;
+    }
 
-    &--filename {
-        padding-left: 0.6rem;
-        font-weight: 400;
+    &--header {
+        padding-left: 3.75rem;
+        padding-top: 0.2rem;
+        padding-bottom: 0.2rem;
+        width: 100%;
+        text-align: left;
 
-        mark {
-            padding-left: 0;
-            padding-right: 0;
-            font-weight: bold;
+        transition: none !important;
+
+        &--filename {
+            padding-left: 0.6rem;
+            font-weight: 400;
+            font-size: $group-header-font-size;
+
+            mark {
+                padding-left: 0;
+                padding-right: 0;
+                font-weight: bold;
+            }
         }
     }
 }

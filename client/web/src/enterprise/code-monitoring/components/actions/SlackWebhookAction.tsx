@@ -18,7 +18,7 @@ export const SEND_TEST_SLACK_WEBHOOK = gql`
     }
 `
 
-export const SlackWebhookAction: React.FunctionComponent<ActionProps> = ({
+export const SlackWebhookAction: React.FunctionComponent<React.PropsWithChildren<ActionProps>> = ({
     action,
     setAction,
     disabled,

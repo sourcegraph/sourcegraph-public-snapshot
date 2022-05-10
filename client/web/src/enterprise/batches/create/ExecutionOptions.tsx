@@ -31,13 +31,9 @@ interface ExecutionOptionsDropdownProps {
     onChangeOptions: (newOptions: ExecutionOptions) => void
 }
 
-export const ExecutionOptionsDropdown: React.FunctionComponent<ExecutionOptionsDropdownProps> = ({
-    execute,
-    isExecutionDisabled,
-    executionTooltip,
-    options,
-    onChangeOptions,
-}) => {
+export const ExecutionOptionsDropdown: React.FunctionComponent<
+    React.PropsWithChildren<ExecutionOptionsDropdownProps>
+> = ({ execute, isExecutionDisabled, executionTooltip, options, onChangeOptions }) => {
     const [isOpen, setIsOpen] = useState(false)
 
     return (
@@ -100,7 +96,7 @@ type ExecutionOptionProps =
           disabledTooltip: string
       }
 
-const ExecutionOption: React.FunctionComponent<ExecutionOptionProps> = props => {
+const ExecutionOption: React.FunctionComponent<React.PropsWithChildren<ExecutionOptionProps>> = props => {
     const [infoReference, infoOpen, setInfoOpen, infoStyle] = useAccordion<HTMLParagraphElement>()
 
     const info = props.disabled ? (

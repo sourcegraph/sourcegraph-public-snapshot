@@ -1443,6 +1443,24 @@ type PhabricatorConnection struct {
 	// Url description: URL of a Phabricator instance, such as https://phabricator.example.com
 	Url string `json:"url,omitempty"`
 }
+
+// PythonPackagesConnection description: Configuration for a connection to Python simple repository APIs compatible with PEP 503
+type PythonPackagesConnection struct {
+	// Dependencies description: An array of strings specifying Python packages to mirror in Sourcegraph.
+	Dependencies []string `json:"dependencies,omitempty"`
+	// RateLimit description: Rate limit applied when making background API requests to the configured Python simple repository APIs.
+	RateLimit *PythonRateLimit `json:"rateLimit,omitempty"`
+	// Urls description: The list of Python simple repository URLs to fetch packages from. 404 Not found or 410 Gone responses will result in the next URL to be attempted.
+	Urls []string `json:"urls"`
+}
+
+// PythonRateLimit description: Rate limit applied when making background API requests to the configured Python simple repository APIs.
+type PythonRateLimit struct {
+	// Enabled description: true if rate limiting is enabled.
+	Enabled bool `json:"enabled"`
+	// RequestsPerHour description: Requests per hour permitted. This is an average, calculated per second. Internally, the burst limit is set to 100, which implies that for a requests per hour limit as low as 1, users will continue to be able to send a maximum of 100 requests immediately, provided that the complexity cost of each request is 1.
+	RequestsPerHour float64 `json:"requestsPerHour"`
+}
 type QuickLink struct {
 	// Description description: A description for this quick link
 	Description string `json:"description,omitempty"`
@@ -1693,6 +1711,8 @@ type SettingsExperimentalFeatures struct {
 	FuzzyFinder *bool `json:"fuzzyFinder,omitempty"`
 	// FuzzyFinderCaseInsensitiveFileCountThreshold description: The maximum number of files a repo can have to use case-insensitive fuzzy finding
 	FuzzyFinderCaseInsensitiveFileCountThreshold *float64 `json:"fuzzyFinderCaseInsensitiveFileCountThreshold,omitempty"`
+	// GoCodeCheckerTemplates description: Shows a panel with code insights templates for go code checker results.
+	GoCodeCheckerTemplates *bool `json:"goCodeCheckerTemplates,omitempty"`
 	// HomepageUserInvitation description: Shows a panel to invite collaborators to Sourcegraph on home page.
 	HomepageUserInvitation *bool `json:"homepageUserInvitation,omitempty"`
 	// SearchContextsQuery description: DEPRECATED: This feature is now permanently enabled. Enables query based search contexts
@@ -1763,7 +1783,7 @@ type SiteConfiguration struct {
 	AuthSessionExpiry string `json:"auth.sessionExpiry,omitempty"`
 	// AuthUnlockAccountLinkExpiry description: Validity expressed in minutes of the unlock account token
 	AuthUnlockAccountLinkExpiry int `json:"auth.unlockAccountLinkExpiry,omitempty"`
-	// AuthUnlockAccountLinkSigningKey description: Base64 encoded HMAC Signing key to sign a JWT token, which is attached to each invitation URL.
+	// AuthUnlockAccountLinkSigningKey description: Base64-encoded HMAC signing key to sign the JWT token for account unlock URLs
 	AuthUnlockAccountLinkSigningKey string `json:"auth.unlockAccountLinkSigningKey,omitempty"`
 	// AuthUserOrgMap description: Ensure that matching users are members of the specified orgs (auto-joining users to the orgs if they are not already a member). Provide a JSON object of the form `{"*": ["org1", "org2"]}`, where org1 and org2 are orgs that all users are automatically joined to. Currently the only supported key is `"*"`.
 	AuthUserOrgMap map[string][]string `json:"auth.userOrgMap,omitempty"`
@@ -1861,6 +1881,8 @@ type SiteConfiguration struct {
 	InsightsCommitIndexerInterval int `json:"insights.commit.indexer.interval,omitempty"`
 	// InsightsCommitIndexerWindowDuration description: The number of days of commits the insights commit indexer will pull during each request (0 is no limit).
 	InsightsCommitIndexerWindowDuration int `json:"insights.commit.indexer.windowDuration,omitempty"`
+	// InsightsComputeGraphql description: Force GraphQL mode for insights compute searches. This will overwrite the default streaming behavior and force search clients to use the GraphQL API
+	InsightsComputeGraphql *bool `json:"insights.compute.graphql,omitempty"`
 	// InsightsHistoricalFrameLength description: (debug) duration of historical insights timeframes, one point per repository will be recorded in each timeframe.
 	InsightsHistoricalFrameLength string `json:"insights.historical.frameLength,omitempty"`
 	// InsightsHistoricalFrames description: (debug) number of historical insights timeframes to populate

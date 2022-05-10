@@ -111,7 +111,7 @@ export function useCachedSearchResults(
     return results
 }
 
-export const SearchResultsCacheProvider: React.FunctionComponent<{}> = ({ children }) => {
+export const SearchResultsCacheProvider: React.FunctionComponent<React.PropsWithChildren<{}>> = ({ children }) => {
     const cachedResultsState = useState<CachedResults | null>(null)
 
     return (

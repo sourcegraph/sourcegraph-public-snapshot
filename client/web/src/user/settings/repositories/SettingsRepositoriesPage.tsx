@@ -70,7 +70,7 @@ type SyncStatusOrError = undefined | 'scheduled' | 'schedule-complete' | ErrorLi
 /**
  * A page displaying the repositories for this user.
  */
-export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
+export const SettingsRepositoriesPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     owner,
     routingPrefix,
     telemetryService,

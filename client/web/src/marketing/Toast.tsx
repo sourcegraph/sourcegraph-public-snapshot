@@ -15,7 +15,7 @@ interface ToastProps {
     onDismiss: () => void
 }
 
-export const Toast: React.FunctionComponent<ToastProps> = props => (
+export const Toast: React.FunctionComponent<React.PropsWithChildren<ToastProps>> = props => (
     <Card className={styles.toast}>
         <CardBody>
             <CardTitle as="header" className={classNames(styles.header)}>

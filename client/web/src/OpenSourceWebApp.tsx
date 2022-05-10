@@ -25,7 +25,7 @@ import { userSettingsSideBarItems } from './user/settings/sidebaritems'
 
 // Entry point for the app without enterprise functionality.
 // For more info see: https://docs.sourcegraph.com/admin/subscriptions#paid-subscriptions-for-sourcegraph-enterprise
-export const OpenSourceWebApp: React.FunctionComponent = () => (
+export const OpenSourceWebApp: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <SourcegraphWebApp
         extensionAreaRoutes={extensionAreaRoutes}
         extensionAreaHeaderNavItems={extensionAreaHeaderNavItems}
@@ -48,7 +48,6 @@ export const OpenSourceWebApp: React.FunctionComponent = () => (
         routes={routes}
         keyboardShortcuts={KEYBOARD_SHORTCUTS}
         codeIntelligenceEnabled={false}
-        codeIntelligenceRepositoryMenu={undefined}
         batchChangesEnabled={false}
         searchContextsEnabled={false}
     />

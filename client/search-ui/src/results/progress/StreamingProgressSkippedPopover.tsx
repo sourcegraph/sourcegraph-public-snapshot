@@ -6,14 +6,14 @@ import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
-import { FormGroup, Input, Label } from 'reactstrap'
+// eslint-disable-next-line no-restricted-imports
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { renderMarkdown } from '@sourcegraph/common'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { Skipped } from '@sourcegraph/shared/src/search/stream'
-import { Button, Collapse, CollapseHeader, CollapsePanel, Icon } from '@sourcegraph/wildcard'
+import { Button, Collapse, CollapseHeader, CollapsePanel, Icon, Checkbox } from '@sourcegraph/wildcard'
 
 import { StreamingProgressProps } from './StreamingProgress'
 
@@ -37,7 +37,10 @@ const sortBySeverity = (a: Skipped, b: Skipped): number => {
     return aSev - bSev
 }
 
-const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; startOpen: boolean }> = ({ skipped, startOpen }) => {
+const SkippedMessage: React.FunctionComponent<React.PropsWithChildren<{ skipped: Skipped; startOpen: boolean }>> = ({
+    skipped,
+    startOpen,
+}) => {
     // Reactstrap is preventing default behavior on all non-DropdownItem elements inside a Dropdown,
     // so we need to stop propagation to allow normal behavior (e.g. enter and space to activate buttons)
     // See Reactstrap bug: https://github.com/reactstrap/reactstrap/issues/2099
@@ -100,7 +103,7 @@ const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; startOpen: boo
 }
 
 export const StreamingProgressSkippedPopover: React.FunctionComponent<
-    Pick<StreamingProgressProps, 'progress' | 'onSearchAgain'>
+    React.PropsWithChildren<Pick<StreamingProgressProps, 'progress' | 'onSearchAgain'>>
 > = ({ progress, onSearchAgain }) => {
     const [selectedSuggestedSearches, setSelectedSuggestedSearches] = useState(new Set<string>())
     const submitHandler = useCallback(
@@ -139,27 +142,30 @@ export const StreamingProgressSkippedPopover: React.FunctionComponent<
             {sortedSkippedItems.some(skipped => skipped.suggested) && (
                 <Form className="pb-3 px-3" onSubmit={submitHandler} data-testid="popover-form">
                     <div className="mb-2 mt-3">Search again:</div>
-                    <FormGroup check={true}>
+                    <div className="form-check">
                         {sortedSkippedItems.map(
                             skipped =>
                                 skipped.suggested && (
-                                    <Label
-                                        check={true}
-                                        className="mb-1 d-block"
+                                    <Checkbox
                                         key={skipped.suggested.queryExpression}
-                                    >
-                                        <Input
-                                            type="checkbox"
-                                            value={skipped.suggested.queryExpression}
-                                            onChange={checkboxHandler}
-                                            data-testid="streaming-progress-skipped-suggest-check"
-                                        />{' '}
-                                        {skipped.suggested.title} (
-                                        <SyntaxHighlightedSearchQuery query={skipped.suggested.queryExpression} />)
-                                    </Label>
+                                        value={skipped.suggested.queryExpression}
+                                        onChange={checkboxHandler}
+                                        data-testid="streaming-progress-skipped-suggest-check"
+                                        id="streaming-progress-skipped-suggest-check"
+                                        wrapperClassName="mb-1 d-block"
+                                        label={
+                                            <>
+                                                {skipped.suggested.title} (
+                                                <SyntaxHighlightedSearchQuery
+                                                    query={skipped.suggested.queryExpression}
+                                                />
+                                                )
+                                            </>
+                                        }
+                                    />
                                 )
                         )}
-                    </FormGroup>
+                    </div>
 
                     <Button
                         type="submit"

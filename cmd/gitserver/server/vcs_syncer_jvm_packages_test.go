@@ -169,9 +169,7 @@ func createMaliciousJar(t *testing.T, name string) {
 }
 
 func TestJVMCloneCommand(t *testing.T) {
-	dir, err := os.MkdirTemp("", "")
-	assert.Nil(t, err)
-	defer os.RemoveAll(dir)
+	dir := t.TempDir()
 
 	createPlaceholderSourcesJar(t, dir, exampleFileContents, exampleJar)
 	createPlaceholderByteCodeJar(t,

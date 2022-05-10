@@ -29,6 +29,7 @@ type GitserverRepoStore interface {
 	SetLastFetched(ctx context.Context, name api.RepoName, data GitserverFetchData) error
 	SetRepoSize(ctx context.Context, name api.RepoName, size int64, shardID string) error
 	IterateWithNonemptyLastError(ctx context.Context, repoFn func(repo types.RepoGitserverStatus) error) error
+	IteratePurgeableRepos(ctx context.Context, deletedBefore time.Time, repoFn func(repo api.RepoName) error) error
 	TotalErroredCloudDefaultRepos(ctx context.Context) (int, error)
 	ListReposWithoutSize(ctx context.Context) (map[api.RepoName]api.RepoID, error)
 	UpdateRepoSizes(ctx context.Context, shardID string, repos map[api.RepoID]int64) error
@@ -164,9 +165,58 @@ FROM repo
 WHERE gr.last_error != '' AND repo.deleted_at is NULL AND es.cloud_default IS True
 `
 
+// IteratePurgeableRepos iterates over all purgeable repos. These are repos that
+// are cloned on disk but have been deleted or blocked. The optional
+// deletedBefore param will filter the deleted repos to only those that were
+// deleted before the given time. The zero value will not apply filtering.
+func (s *gitserverRepoStore) IteratePurgeableRepos(ctx context.Context, deletedBefore time.Time, repoFn func(repo api.RepoName) error) error {
+	deletedAtClause := sqlf.Sprintf("deleted_at IS NOT NULL")
+	if !deletedBefore.IsZero() {
+		deletedAtClause = sqlf.Sprintf("(deleted_at IS NOT NULL AND deleted_at > %s)", deletedBefore)
+	}
+	rows, err := s.Query(ctx, sqlf.Sprintf(purgableReposQuery, deletedAtClause))
+	if err != nil {
+		return errors.Wrap(err, "fetching repos with nonempty last_error")
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var name api.RepoName
+		if err := rows.Scan(
+			&name,
+		); err != nil {
+			return errors.Wrap(err, "scanning row")
+		}
+		err := repoFn(name)
+		if err != nil {
+			// Abort
+			return errors.Wrap(err, "calling repoFn")
+		}
+	}
+
+	if rows.Err() != nil {
+		return errors.Wrap(rows.Err(), "iterating rows")
+	}
+
+	return nil
+}
+
+const purgableReposQuery = `
+-- source: internal/database/gitserver_repos.go:gitserverRepoStore.IteratePurgeableRepos
+SELECT
+	repo.name
+FROM repo
+	JOIN gitserver_repos gr ON repo.id = gr.repo_id
+WHERE (%s OR repo.blocked IS NOT NULL)
+AND gr.clone_status = 'cloned'
+`
+
 type IterateRepoGitserverStatusOptions struct {
 	// If set, will only iterate over repos that have not been assigned to a shard
 	OnlyWithoutShard bool
+	// If true, also include deleted repos. Note that their repo name will start with
+	// 'DELETED-'
+	IncludeDeleted bool
 }
 
 // IterateRepoGitserverStatus iterates over the status of all repos by joining
@@ -178,14 +228,19 @@ func (s *gitserverRepoStore) IterateRepoGitserverStatus(ctx context.Context, opt
 		return errors.New("nil repoFn")
 	}
 
-	var q string
-	if options.OnlyWithoutShard {
-		q = iterateRepoGitserverStatusWithoutShardQuery
-	} else {
-		q = iterateRepoGitserverQuery
+	deletedClause := sqlf.Sprintf("repo.deleted_at is null")
+	if options.IncludeDeleted {
+		deletedClause = sqlf.Sprintf("TRUE")
 	}
 
-	rows, err := s.Query(ctx, sqlf.Sprintf(q))
+	var q *sqlf.Query
+	if options.OnlyWithoutShard {
+		q = sqlf.Sprintf(iterateRepoGitserverStatusWithoutShardQuery, deletedClause, deletedClause)
+	} else {
+		q = sqlf.Sprintf(iterateRepoGitserverQuery, deletedClause)
+	}
+
+	rows, err := s.Query(ctx, q)
 	if err != nil {
 		return errors.Wrap(err, "fetching gitserver status")
 	}
@@ -246,7 +301,7 @@ SELECT
 	gr.updated_at
 FROM repo
 LEFT JOIN gitserver_repos gr ON gr.repo_id = repo.id
-WHERE repo.deleted_at IS NULL
+WHERE %s
 `
 
 const iterateRepoGitserverStatusWithoutShardQuery = `
@@ -263,7 +318,7 @@ const iterateRepoGitserverStatusWithoutShardQuery = `
 		NULL AS repo_size_bytes,
 		NULL AS updated_at
 	FROM repo
-	WHERE repo.deleted_at IS NULL AND NOT EXISTS (SELECT 1 FROM gitserver_repos gr WHERE gr.repo_id = repo.id)
+	WHERE %s AND NOT EXISTS (SELECT 1 FROM gitserver_repos gr WHERE gr.repo_id = repo.id)
 ) UNION ALL (
 	SELECT
 		repo.id,
@@ -277,7 +332,7 @@ const iterateRepoGitserverStatusWithoutShardQuery = `
 		gr.updated_at
 	FROM repo
 	JOIN gitserver_repos gr ON gr.repo_id = repo.id
-	WHERE repo.deleted_at IS NULL AND gr.shard_id = ''
+	WHERE %s AND gr.shard_id = ''
 )
 `
 
@@ -393,7 +448,7 @@ func (s *gitserverRepoStore) sendBatchQuery(ctx context.Context, batchSize int, 
 
 // ScannerWithError captures Scan and Err methods of sql.Rows and sql.Row.
 type ScannerWithError interface {
-	Scan(dst ...interface{}) error
+	Scan(dst ...any) error
 	Err() error
 }
 

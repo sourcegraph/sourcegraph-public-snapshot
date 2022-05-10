@@ -75,7 +75,7 @@ func TestCreateChangesetSpecs(t *testing.T) {
 			ChangedFiles: &git.Changes{
 				Modified: []string{"README.md"},
 			},
-			Outputs: map[string]interface{}{},
+			Outputs: map[string]any{},
 		},
 	}
 

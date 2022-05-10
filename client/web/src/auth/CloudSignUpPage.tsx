@@ -46,7 +46,7 @@ export const ShowEmailFormQueryParameter = 'showEmail'
 /**
  * Sign up page specifically for Sourcegraph.com
  */
-export const CloudSignUpPage: React.FunctionComponent<Props> = ({
+export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     isLightTheme,
     source,
     showEmailForm,

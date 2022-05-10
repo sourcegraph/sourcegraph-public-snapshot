@@ -12,9 +12,17 @@ Internally, the pipeline generator determines what gets run over contributions b
 
 The above factors are then used to determine the appropriate [operations](#operations), composed of [step options](#step-options), that translate into steps in the resulting pipeline.
 
+If you are looking to modify the pipeline, some good rules of thumbs for which construct to look at for implementing something are:
+
+- Adding a new check? Try a new [operation](#operations) or additional [step options](#step-options).
+- Adding a set of changes to run when particular files are changed? Start with a new or updated [diff type](#diff-types).
+- Adding an entirely new pipeline type for the `sourcegraph/sourcegraph` repository? Take a look at how [run types](#run-types) are implemented.
+
 > WARNING: Sourcegraph's pipeline generator and its generated output are under the [Sourcegraph Enterprise license](https://github.com/sourcegraph/sourcegraph/blob/main/LICENSE.enterprise).
 
 ### Run types
+
+> NOTE: A full reference of what our existing run types do is available in the [Pipeline reference](reference.md).
 
 <div class="embed">
   <iframe src="https://sourcegraph.com/embed/notebooks/Tm90ZWJvb2s6MTU5"
@@ -49,7 +57,17 @@ For more advanced pipelines, see [Run types](#run-types).
 
 ### Step options
 
-> NOTE: Coming soon!
+Each [operation](#operations) is composed of steps that are built via step options, defined as [implementations of the `StepOpt` interface](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/dev/ci/internal/buildkite/buildkite.go?L229:6#tab=implementations_go). The core step option is `Cmd`, which defines a command to run when added to a pipeline via `AddStep`:
+
+```go
+func addGoBuild(pipeline *bk.Pipeline) {
+  pipeline.AddStep(":go: Build",
+    bk.Cmd("./dev/ci/go-build.sh"),
+  )
+}
+```
+
+> NOTE: More details coming soon!
 
 #### Creating annotations
 
@@ -165,3 +183,17 @@ The term _secret_ refers to authentication credentials like passwords, API keys,
 - to add a secret, use the Secret Manager on Google Cloud and then inject it at deployment time as an environment variable in the CI agents, which will make it available to every step.
 - use an environment variable name with one of the following suffixes to ensure it gets redacted in the logs: `*_PASSWORD, *_SECRET, *_TOKEN, *_ACCESS_KEY, *_SECRET_KEY, *_CREDENTIALS`
 - while environment variables can be assigned when declaring steps, they should never be used for secrets, because they won't get redacted, even if they match one of the above patterns.
+
+#### Creating scheduled builds
+
+You can schedule builds with build schedules, which automatically create builds at the specified intervals. They are useful to create, for example, nightly builds.
+
+1. Go to `Pipeline Settings` in buildkite and then click `New Schedule`
+
+![new schedule](https://user-images.githubusercontent.com/68532117/165358554-85e48dd0-379c-4461-aef7-09e1cd058569.png)
+
+2. Complete the form to create a new build where you can define the intervals with the `Cron Interval` field. Check out the [Buildkite Docs](https://buildkite.com/docs/pipelines/scheduled-builds#schedule-intervals-predefined-intervals) to see a list of predefined intervals.
+
+![cron interval](https://user-images.githubusercontent.com/68532117/165358933-a27e4293-a363-4a77-84d7-a3ce67f743d2.png)
+
+> NOTE: You can also inject custom environment variables, for example, to trigger a custom [Run Type](#run-types). 

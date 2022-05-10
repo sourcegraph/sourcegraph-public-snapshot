@@ -50,7 +50,7 @@ type ListOpts struct {
 }
 
 func (s *Store) List(ctx context.Context, opts ListOpts) (policies []shared.Policy, err error) {
-	ctx, endObservation := s.operations.list.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.list.With(ctx, &err, observation.Args{})
 	defer func() {
 		endObservation(1, observation.Args{LogFields: []log.Field{
 			log.Int("numPolicies", len(policies)),

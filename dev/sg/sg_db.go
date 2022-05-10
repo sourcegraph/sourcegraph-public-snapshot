@@ -30,7 +30,6 @@ var (
 	dbCommand = &cli.Command{
 		Name:     "db",
 		Usage:    "Interact with local Sourcegraph databases for development",
-		Action:   suggestSubcommandsAction,
 		Category: CategoryDev,
 		Subcommands: []*cli.Command{
 			{
@@ -64,7 +63,7 @@ var (
 						Usage: "Username for user",
 					},
 					&cli.StringFlag{
-						Name:  "username",
+						Name:  "password",
 						Value: "sourcegraphsourcegraph",
 						Usage: "Password for user",
 					},

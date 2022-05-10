@@ -12,7 +12,7 @@ import (
 
 // Exists determines if the path exists in the database.
 func (s *Store) Exists(ctx context.Context, bundleID int, path string) (_ bool, err error) {
-	ctx, endObservation := s.operations.exists.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.exists.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.String("path", path),
 	}})

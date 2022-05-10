@@ -132,7 +132,7 @@ func (c *V3Client) RateLimitMonitor() *ratelimit.Monitor {
 	return c.rateLimitMonitor
 }
 
-func (c *V3Client) get(ctx context.Context, requestURI string, result interface{}) (*httpResponseState, error) {
+func (c *V3Client) get(ctx context.Context, requestURI string, result any) (*httpResponseState, error) {
 	req, err := http.NewRequest("GET", requestURI, nil)
 	if err != nil {
 		return nil, err
@@ -142,7 +142,7 @@ func (c *V3Client) get(ctx context.Context, requestURI string, result interface{
 }
 
 //nolint:unparam // Return *httpResponseState for consistency with other methods
-func (c *V3Client) post(ctx context.Context, requestURI string, payload, result interface{}) (*httpResponseState, error) {
+func (c *V3Client) post(ctx context.Context, requestURI string, payload, result any) (*httpResponseState, error) {
 	body, err := json.Marshal(payload)
 	if err != nil {
 		return nil, errors.Wrap(err, "marshalling payload")
@@ -158,7 +158,7 @@ func (c *V3Client) post(ctx context.Context, requestURI string, payload, result 
 	return c.request(ctx, req, result)
 }
 
-func (c *V3Client) request(ctx context.Context, req *http.Request, result interface{}) (*httpResponseState, error) {
+func (c *V3Client) request(ctx context.Context, req *http.Request, result any) (*httpResponseState, error) {
 	// Include node_id (GraphQL ID) in response. See
 	// https://developer.github.com/changes/2017-12-19-graphql-node-id/.
 	//
@@ -232,6 +232,10 @@ func (e *APIError) AccountSuspended() bool {
 	return e.Code == http.StatusForbidden && strings.Contains(e.Message, "account was suspended")
 }
 
+func (e *APIError) UnavailableForLegalReasons() bool {
+	return e.Code == http.StatusUnavailableForLegalReasons
+}
+
 func (e *APIError) Temporary() bool { return IsRateLimitExceeded(e) }
 
 // HTTPErrorCode returns err's HTTP status code, if it is an HTTP error from
@@ -250,7 +254,7 @@ func (c *V3Client) GetVersion(ctx context.Context) (string, error) {
 		return "unknown", nil
 	}
 
-	var empty interface{}
+	var empty any
 
 	respState, err := c.get(ctx, "/", &empty)
 	if err != nil {
@@ -445,11 +449,7 @@ func (c *V3Client) ListRepositoryTeams(ctx context.Context, owner, repo string, 
 
 // GetRepository gets a repository from GitHub by owner and repository name.
 func (c *V3Client) GetRepository(ctx context.Context, owner, name string) (*Repository, error) {
-	if GetRepositoryMock != nil {
-		return GetRepositoryMock(ctx, owner, name)
-	}
 	return c.getRepositoryFromAPI(ctx, owner, name)
-
 }
 
 // GetOrganization gets an org from GitHub by its login.
