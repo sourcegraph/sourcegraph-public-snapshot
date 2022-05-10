@@ -16,8 +16,7 @@ func WithDefaults(inputQuery string, defaults searchquery.Parameters) (string, e
 	}
 	modified := make(searchquery.Plan, 0, len(plan))
 
-	for i := range plan {
-		basic := &plan[i]
+	for _, basic := range plan {
 		p := make(searchquery.Parameters, 0, len(basic.Parameters)+len(defaults))
 
 		for _, defaultParam := range defaults {
