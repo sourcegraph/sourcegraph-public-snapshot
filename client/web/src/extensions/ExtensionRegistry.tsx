@@ -166,15 +166,12 @@ export const ExtensionRegistry: React.FunctionComponent<React.PropsWithChildren<
         setShowExperimentalExtensions(!showExperimentalExtensions)
     }
 
-    const allowOnlySourcegraphAuthoredExtensions = useMemo(
-        () =>
+    const allowOnlySourcegraphAuthoredExtensions =
             !isSourcegraphDotCom &&
             Boolean(
                 settingsCascade.final &&
                     !isErrorLike(settingsCascade.final) &&
                     (settingsCascade.final['extensions.allowOnlySourcegraphAuthored'] as boolean)
-            ),
-        [isSourcegraphDotCom, settingsCascade]
     )
 
     /**
