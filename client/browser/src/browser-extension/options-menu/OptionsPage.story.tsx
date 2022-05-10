@@ -7,6 +7,7 @@ import GithubIcon from 'mdi-react/GithubIcon'
 import { Observable, of } from 'rxjs'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
+import { Typography } from '@sourcegraph/wildcard'
 
 import { OptionsPage, OptionsPageProps } from './OptionsPage'
 
@@ -108,7 +109,7 @@ export const AllOptionsPages: Story = () => (
                 </div>
             </div>
 
-            <h2 className="mt-5 text-center">Not synced repository</h2>
+            <Typography.H2 className="mt-5 text-center">Not synced repository</Typography.H2>
             <div className="d-flex justify-content-center mb-3">
                 <div className="mx-4">
                     <h3 className="text-center">Sourcegraph Cloud</h3>

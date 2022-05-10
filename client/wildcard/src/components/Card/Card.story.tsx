@@ -4,6 +4,7 @@ import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
+import { Typography } from '..'
 import { Button } from '../Button'
 import { Grid } from '../Grid'
 
@@ -50,7 +51,7 @@ export const Simple: Story = () => (
             variety of content, contextual background colors, and powerful display options.{' '}
         </p>
 
-        <h2>Examples</h2>
+        <Typography.H2>Examples</Typography.H2>
 
         <Grid className="mb-3" columnCount={1}>
             <Card>
@@ -105,7 +106,7 @@ const cardItem = (
 
 export const InteractiveCard: Story = () => (
     <>
-        <h2>Interactive Cards</h2>
+        <Typography.H2>Interactive Cards</Typography.H2>
         {cardItem}
 
         <h3 className="mt-4">Cards List</h3>

@@ -12,7 +12,7 @@ import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, Icon } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { ModalVideo } from '../documentation/ModalVideo'
 
@@ -205,7 +205,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
 
     return (
         <div className={styles.root}>
-            <h2>Sourcegraph basics</h2>
+            <Typography.H2>Sourcegraph basics</Typography.H2>
             <div className={styles.panels}>
                 {!hiddenSectionIDs?.includes(SectionID.VIDEOS) && (
                     <div className="mr-3">

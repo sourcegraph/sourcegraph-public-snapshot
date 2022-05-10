@@ -2,6 +2,7 @@ import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Typography } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../components/WebStory'
 
@@ -39,13 +40,13 @@ add('RecentFilesPanel', () => (
     <WebStory>
         {() => (
             <div style={{ maxWidth: '32rem' }}>
-                <h2>Populated</h2>
+                <Typography.H2>Populated</Typography.H2>
                 <RecentFilesPanel {...props} />
 
-                <h2>Loading</h2>
+                <Typography.H2>Loading</Typography.H2>
                 <RecentFilesPanel {...props} recentFilesFragment={null} />
 
-                <h2>Empty</h2>
+                <Typography.H2>Empty</Typography.H2>
                 <RecentFilesPanel {...props} recentFilesFragment={{ recentFilesLogs: emptyRecentFiles }} />
             </div>
         )}

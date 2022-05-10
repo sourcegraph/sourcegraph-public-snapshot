@@ -19,6 +19,7 @@ import {
     Alert,
     Link,
     Checkbox,
+    Typography,
 } from '@sourcegraph/wildcard'
 
 import { ALLOW_NAVIGATION, AwayPrompt } from '../../../components/AwayPrompt'
@@ -788,9 +789,9 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<React.P
     return (
         <UserSettingReposContainer>
             <PageTitle title="Manage Repositories" />
-            <h2 className="d-flex mb-2">
+            <Typography.H2 className="d-flex mb-2">
                 Manage Repositories <ProductStatusBadge status="beta" className="ml-2" linkToDocs={true} />
-            </h2>
+            </Typography.H2>
             <p className="text-muted">
                 Choose repositories to sync with Sourcegraph.
                 <Link

@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import PlusIcon from 'mdi-react/PlusIcon'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Link, Button, CardBody, Card, Icon } from '@sourcegraph/wildcard'
+import { Link, Button, CardBody, Card, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { CodeMonitorSignUpLink } from './CodeMonitoringSignUpLink'
 
@@ -75,7 +75,9 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
                     className={classNames('mr-lg-5', styles.heroImage)}
                 />
                 <div className="align-self-center">
-                    <h2 className={classNames('mb-3', styles.heading)}>Proactively monitor changes to your codebase</h2>
+                    <Typography.H2 className={classNames('mb-3', styles.heading)}>
+                        Proactively monitor changes to your codebase
+                    </Typography.H2>
                     <p className={classNames('mb-4')}>
                         With code monitoring, you can automatically track changes made across multiple code hosts and
                         repositories.
