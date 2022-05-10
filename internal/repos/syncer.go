@@ -868,6 +868,9 @@ func syncErrorReason(err error) string {
 		return "forbidden"
 	case errcode.IsTemporary(err):
 		return "temporary"
+	case strings.Contains(err.Error(), "expected path in npm/(scope/)?name"):
+		// This is a known issue which we can filter out for now
+		return "invalid_npm_path"
 	default:
 		return "unknown"
 	}
