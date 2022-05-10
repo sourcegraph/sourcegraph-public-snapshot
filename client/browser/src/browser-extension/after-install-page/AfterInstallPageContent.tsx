@@ -61,7 +61,7 @@ export const AfterInstallPageContent: React.FunctionComponent<React.PropsWithChi
                     <SourcegraphLogo className={styles.sourcegraphLogo} />
                 </Link>
                 <Link to="https://docs.sourcegraph.com/integration/browser_extension" target="_blank" rel="noopener">
-                    Browser extension docs <Icon as={ExternalLinkIcon} />
+                    Browser extension docs <Icon role="img" as={ExternalLinkIcon} aria-hidden={true} />
                 </Link>
             </div>
 
@@ -104,25 +104,56 @@ export const AfterInstallPageContent: React.FunctionComponent<React.PropsWithChi
                             <h2 className="mb-4">Make it work on your codehost</h2>
                             <div className="bg-2 rounded p-3 mb-3 d-flex flex-column justify-content-center">
                                 <h3 className={classNames('mb-3', styles.codeHostTitles)}>
-                                    <Icon className={styles.codeHostLogo} as={GithubIcon} /> github.com
+                                    <Icon
+                                        role="img"
+                                        className={styles.codeHostLogo}
+                                        as={GithubIcon}
+                                        aria-hidden={true}
+                                    />{' '}
+                                    github.com
                                 </h3>
                                 <p className="m-0">
-                                    <Icon as={CheckIcon} /> No action required.Your extension works here by default.
+                                    <Icon role="img" as={CheckIcon} aria-hidden={true} /> No action required.Your
+                                    extension works here by default.
                                 </p>
                             </div>
                             <div className="bg-2 rounded p-3 d-flex flex-column justify-content-center">
                                 <h3 className={classNames('d-flex flex-wrap', styles.codeHostTitles)}>
                                     <div className="mr-5 mb-3">
-                                        <Icon className={styles.codeHostLogo} as={GithubIcon} /> GitHub Enterprise
+                                        <Icon
+                                            role="img"
+                                            className={styles.codeHostLogo}
+                                            as={GithubIcon}
+                                            aria-hidden={true}
+                                        />{' '}
+                                        GitHub Enterprise
                                     </div>
                                     <div className="mr-5 mb-3">
-                                        <Icon className={styles.codeHostLogo} as={GitlabIcon} /> GitLab
+                                        <Icon
+                                            role="img"
+                                            className={styles.codeHostLogo}
+                                            as={GitlabIcon}
+                                            aria-hidden={true}
+                                        />{' '}
+                                        GitLab
                                     </div>
                                     <div className="mr-5 mb-3">
-                                        <Icon className={styles.codeHostLogo} as={BitbucketIcon} /> Bitbucket Server
+                                        <Icon
+                                            role="img"
+                                            className={styles.codeHostLogo}
+                                            as={BitbucketIcon}
+                                            aria-hidden={true}
+                                        />{' '}
+                                        Bitbucket Server
                                     </div>
                                     <div className="mr-5 mb-3">
-                                        <Icon className={styles.codeHostLogo} as={PhabricatorIcon} /> Phabricator
+                                        <Icon
+                                            role="img"
+                                            className={styles.codeHostLogo}
+                                            as={PhabricatorIcon}
+                                            aria-hidden={true}
+                                        />{' '}
+                                        Phabricator
                                     </div>
                                 </h3>
                                 <p>Your extension needs explicit permissions to your code host:</p>
@@ -160,7 +191,7 @@ export const AfterInstallPageContent: React.FunctionComponent<React.PropsWithChi
                             <p>By default, the browser extension works only for public code.</p>
                             <div className="d-flex align-items-center">
                                 <div className="bg-3 rounded-circle p-2">
-                                    <Icon as={LockIcon} />
+                                    <Icon role="img" as={LockIcon} aria-hidden={true} />
                                 </div>
                                 <p className="m-0 ml-3">
                                     To use the browser extension with your private repositories, you need to set up a{' '}
@@ -208,7 +239,7 @@ export const AfterInstallPageContent: React.FunctionComponent<React.PropsWithChi
                     <h2 className="mb-4">Additional resources</h2>
                     <div className="d-flex w-100 align-items-center">
                         <div className="bg-3 rounded-circle p-2">
-                            <Icon as={BookOpenPageVariantIcon} />
+                            <Icon role="img" as={BookOpenPageVariantIcon} aria-hidden={true} />
                         </div>
                         <p className="m-0 ml-3">
                             Read the{' '}

@@ -20,6 +20,7 @@ exports[`GlobalNavbar default 1`] = `
       </a>
     </h1>
     <hr
+      aria-hidden="true"
       class="divider"
     />
     <div
@@ -281,6 +282,7 @@ exports[`GlobalNavbar low-profile 1`] = `
       </a>
     </h1>
     <hr
+      aria-hidden="true"
       class="divider"
     />
     <div

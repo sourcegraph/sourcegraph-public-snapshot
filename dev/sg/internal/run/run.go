@@ -15,6 +15,7 @@ import (
 	"github.com/grafana/regexp"
 	"github.com/rjeczalik/notify"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -76,7 +77,7 @@ func Commands(ctx context.Context, parentEnv map[string]string, verbose bool, cm
 		}(cmd, chs[i])
 	}
 
-	err = waitForInstallation(cmdNames, installed, failures, okayToStart)
+	err = waitForInstallation(ctx, cmdNames, installed, failures, okayToStart)
 	if err != nil {
 		return err
 	}
@@ -92,7 +93,9 @@ func Commands(ctx context.Context, parentEnv map[string]string, verbose bool, cm
 	}
 }
 
-func waitForInstallation(cmdNames map[string]struct{}, installed chan string, failures chan failedRun, okayToStart chan struct{}) error {
+func waitForInstallation(ctx context.Context, cmdNames map[string]struct{}, installed chan string, failures chan failedRun, okayToStart chan struct{}) error {
+	installationStart := time.Now()
+
 	stdout.Out.Write("")
 	stdout.Out.WriteLine(output.Linef(output.EmojiLightbulb, output.StyleBold, "Installing %d commands...", len(cmdNames)))
 	stdout.Out.Write("")
@@ -125,6 +128,7 @@ func waitForInstallation(cmdNames map[string]struct{}, installed chan string, fa
 
 			delete(cmdNames, cmdName)
 			done += 1.0
+			analytics.LogEvent(ctx, "install_command", []string{cmdName}, installationStart, "succeeded")
 
 			progress.WriteLine(output.Linef("", output.StyleSuccess, "%s installed", cmdName))
 
@@ -145,6 +149,7 @@ func waitForInstallation(cmdNames map[string]struct{}, installed chan string, fa
 
 		case failure := <-failures:
 			progress.Destroy()
+			analytics.LogEvent(ctx, "install_command", []string{failure.cmdName}, installationStart, "failed")
 
 			// Something went wrong with an installation, no need to wait for the others
 			printCmdError(stdout.Out, failure.cmdName, failure.err)

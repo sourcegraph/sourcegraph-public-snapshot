@@ -225,7 +225,6 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
                     hideSearch={true}
                     emptyElement={emptyElement}
                     totalCountSummaryComponent={TotalCountSummary}
-                    listComponent="div"
                 />
             </div>
         </>
