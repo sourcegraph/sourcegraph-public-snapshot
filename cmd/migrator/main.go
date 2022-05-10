@@ -60,8 +60,8 @@ func mainErr(ctx context.Context, args []string) error {
 			cliutil.Up(appName, runnerFactory, outputFactory, false),
 			cliutil.UpTo(appName, runnerFactory, outputFactory, false),
 			cliutil.DownTo(appName, runnerFactory, outputFactory, false),
-			cliutil.Validate(appName, runnerFactory, out),
-			cliutil.AddLog(appName, runnerFactory, out),
+			cliutil.Validate(appName, runnerFactory, outputFactory),
+			cliutil.AddLog(appName, runnerFactory, outputFactory),
 		},
 	}
 
