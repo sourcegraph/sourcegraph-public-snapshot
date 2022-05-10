@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import PlusIcon from 'mdi-react/PlusIcon'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Link, Button, CardBody, Card, Icon } from '@sourcegraph/wildcard'
+import { Link, Button, CardBody, Card, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { CodeMonitorSignUpLink } from './CodeMonitoringSignUpLink'
 
@@ -81,7 +81,7 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
                         repositories.
                     </p>
 
-                    <h3>Common use cases</h3>
+                    <Typography.H3>Common use cases</Typography.H3>
                     <ul>
                         <li>Identify when bad patterns are committed </li>
                         <li>Identify use of deprecated libraries</li>
@@ -101,14 +101,14 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
                 </div>
             </Card>
             <div>
-                <h3 className="mb-3">Example code monitors</h3>
+                <Typography.H3 className="mb-3">Example code monitors</Typography.H3>
 
                 <div className={classNames('mb-3', styles.startingPointsContainer)}>
                     {exampleCodeMonitors.map(monitor => (
                         <div className={styles.startingPoint} key={monitor.title}>
                             <Card className="h-100">
                                 <CardBody className="d-flex flex-column">
-                                    <h3>{monitor.title}</h3>
+                                    <Typography.H3>{monitor.title}</Typography.H3>
                                     <p className="text-muted flex-grow-1">{monitor.description}</p>
                                     <Link to={createCodeMonitorUrl(monitor)}>Create copy of monitor</Link>
                                 </CardBody>

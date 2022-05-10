@@ -19,7 +19,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps, Settings } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, useObservable, Link, Card, Icon } from '@sourcegraph/wildcard'
+import { Button, useObservable, Link, Card, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'
@@ -139,7 +139,7 @@ export const CommunitySearchContextPage: React.FunctionComponent<
                         <h2>Search examples</h2>
                         {props.communitySearchContextMetadata.examples.map(example => (
                             <div className="mt-3" key={example.title}>
-                                <h3 className="mb-3">{example.title}</h3>
+                                <Typography.H3 className="mb-3">{example.title}</Typography.H3>
                                 <p>{example.description}</p>
                                 <div className="d-flex mb-4">
                                     <small className={classNames('form-control text-monospace ', styles.exampleBar)}>
@@ -269,6 +269,8 @@ const CommunitySearchContextPageLogo: React.FunctionComponent<
 > = props => (
     <div className={classNames('d-flex align-items-center', styles.logoContainer)}>
         <img {...props} src={props.icon} alt="" />
-        <span className="h3 font-weight-normal mb-0 ml-1">{props.text}</span>
+        <Typography.H3 as="span" className="font-weight-normal mb-0 ml-1">
+            {props.text}
+        </Typography.H3>
     </div>
 )

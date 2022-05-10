@@ -38,6 +38,7 @@ import {
     Card,
     CardBody,
     H4,
+    Typography,
 } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
@@ -362,9 +363,9 @@ const BatchConfigurationPage: React.FunctionComponent<React.PropsWithChildren<Ba
                     </span>
                 </small>
                 <hr className="my-3" />
-                <h3 className="text-muted">
+                <Typography.H3 className="text-muted">
                     Visibility <Icon data-tooltip="Coming soon" as={InfoCircleOutlineIcon} />
-                </h3>
+                </Typography.H3>
                 <div className="form-group mb-1">
                     <RadioButton
                         name="visibility"

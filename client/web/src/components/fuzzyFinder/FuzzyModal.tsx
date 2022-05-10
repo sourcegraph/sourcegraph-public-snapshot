@@ -6,7 +6,7 @@ import CloseIcon from 'mdi-react/CloseIcon'
 
 import { pluralize } from '@sourcegraph/common'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
-import { useLocalStorage, Button, Modal, Icon } from '@sourcegraph/wildcard'
+import { useLocalStorage, Button, Modal, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { CaseInsensitiveFuzzySearch } from '../../fuzzyFinder/CaseInsensitiveFuzzySearch'
 import { FuzzySearch, FuzzySearchResult, SearchIndexing, SearchValue } from '../../fuzzyFinder/FuzzySearch'
@@ -238,9 +238,9 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
         >
             <div className={styles.content}>
                 <div className={styles.header}>
-                    <h3 className="mb-0" id={FUZZY_MODAL_TITLE}>
+                    <Typography.H3 className="mb-0" id={FUZZY_MODAL_TITLE}>
                         Find file
-                    </h3>
+                    </Typography.H3>
                     <Button variant="icon" onClick={() => props.onClose()} aria-label="Close">
                         <Icon className={styles.closeIcon} as={CloseIcon} />
                     </Button>

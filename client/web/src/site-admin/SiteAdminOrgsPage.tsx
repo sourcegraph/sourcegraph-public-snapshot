@@ -11,7 +11,7 @@ import { Subject } from 'rxjs'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, isErrorLike, pluralize } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Link, Alert, Icon } from '@sourcegraph/wildcard'
+import { Button, Link, Alert, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
@@ -138,7 +138,7 @@ export const SiteAdminOrgsPage: React.FunctionComponent<React.PropsWithChildren<
             {window.context.sourcegraphDotComMode ? (
                 <>
                     <Alert variant="info">Only organization members can view & modify organization settings.</Alert>
-                    <h3>Enable early access</h3>
+                    <Typography.H3>Enable early access</Typography.H3>
                     <div className="d-flex justify-content-between align-items-center mb-3">
                         <p>Enable early access for organization code host connections and repositories on Cloud.</p>
                         <Button to="./organizations/early-access-orgs-code" variant="primary" outline={true} as={Link}>

@@ -13,9 +13,9 @@ import {
     MenuItem,
     MenuList,
     Icon,
-    H3,
     H4,
     Checkbox,
+    Typography,
 } from '@sourcegraph/wildcard'
 
 import { SidebarGroup, SidebarGroupHeader } from '../components/Sidebar'
@@ -126,7 +126,7 @@ const ExtensionSidenavBanner: React.FunctionComponent<React.PropsWithChildren<un
     <div className={classNames(styles.banner, 'mx-2')}>
         <img className={classNames(styles.bannerIcon, 'mb-2')} src={extensionBannerIconURL} alt="" />
         {/* Override h4 font-weight */}
-        <H4 as={H3} className="mt-2 font-weight-bold">
+        <H4 as={Typography.H3} className="mt-2 font-weight-bold">
             Create custom extensions!
         </H4>
         <small>

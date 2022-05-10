@@ -11,7 +11,7 @@ import { ActivationProps, percentageDone } from '@sourcegraph/shared/src/compone
 import { ActivationChecklist } from '@sourcegraph/shared/src/components/activation/ActivationChecklist'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { LoadingSpinner, useObservable, Button, Link, Icon } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Button, Link, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { Collapsible } from '../../components/Collapsible'
@@ -260,7 +260,7 @@ export const SiteAdminOverviewPage: React.FunctionComponent<React.PropsWithChild
                                             header={
                                                 <div className="site-admin-overview-page__detail-header">
                                                     <h2>Weekly unique users</h2>
-                                                    <h3>
+                                                    <Typography.H3>
                                                         <Button
                                                             to="/site-admin/usage-statistics"
                                                             variant="secondary"
@@ -268,7 +268,7 @@ export const SiteAdminOverviewPage: React.FunctionComponent<React.PropsWithChild
                                                         >
                                                             View all usage statistics <Icon as={OpenInNewIcon} />
                                                         </Button>
-                                                    </h3>
+                                                    </Typography.H3>
                                                 </div>
                                             }
                                         />

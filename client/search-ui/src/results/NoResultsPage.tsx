@@ -12,7 +12,7 @@ import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, Icon } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { ModalVideo } from '../documentation/ModalVideo'
 
@@ -137,14 +137,14 @@ const Container: React.FunctionComponent<React.PropsWithChildren<ContainerProps>
     className = '',
 }) => (
     <div className={classNames(styles.container, className)}>
-        <h3 className={styles.title}>
+        <Typography.H3 className={styles.title}>
             <span className="flex-1">{title}</span>
             {sectionID && (
                 <Button variant="icon" aria-label="Hide Section" onClick={() => onClose?.(sectionID)}>
                     <Icon as={CloseIcon} />
                 </Button>
             )}
-        </h3>
+        </Typography.H3>
         <div className={styles.content}>{children}</div>
     </div>
 )

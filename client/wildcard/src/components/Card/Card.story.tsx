@@ -4,6 +4,7 @@ import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
+import { Typography } from '..'
 import { Button } from '../Button'
 import { Grid } from '../Grid'
 
@@ -108,7 +109,7 @@ export const InteractiveCard: Story = () => (
         <h2>Interactive Cards</h2>
         {cardItem}
 
-        <h3 className="mt-4">Cards List</h3>
+        <Typography.H3 className="mt-4">Cards List</Typography.H3>
 
         <div className="d-flex flex-column">
             {cardItem}

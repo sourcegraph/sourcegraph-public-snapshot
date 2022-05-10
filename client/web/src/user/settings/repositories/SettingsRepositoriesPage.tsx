@@ -18,6 +18,7 @@ import {
     Alert,
     Link,
     Icon,
+    Typography,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
@@ -402,7 +403,9 @@ export const SettingsRepositoriesPage: React.FunctionComponent<React.PropsWithCh
                 className="mb-3"
             />
             {isErrorLike(status) ? (
-                <h3 className="text-muted">Sorry, we couldn’t fetch your repositories. Try again?</h3>
+                <Typography.H3 className="text-muted">
+                    Sorry, we couldn’t fetch your repositories. Try again?
+                </Typography.H3>
             ) : !externalServices ? (
                 <div className="d-flex justify-content-center mt-4">
                     <LoadingSpinner />

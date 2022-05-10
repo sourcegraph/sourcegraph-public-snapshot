@@ -17,7 +17,15 @@ import * as GQL from '@sourcegraph/shared/src/schema'
 import extensionSchemaJSON from '@sourcegraph/shared/src/schema/extension.schema.json'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, LoadingSpinner, useLocalStorage, useEventObservable, Link, Icon } from '@sourcegraph/wildcard'
+import {
+    Button,
+    LoadingSpinner,
+    useLocalStorage,
+    useEventObservable,
+    Link,
+    Icon,
+    Typography,
+} from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
@@ -156,7 +164,7 @@ export const RegistryExtensionNewReleasePage = withAuthenticatedUser<Props>(
                                 <div className="col-lg-6">
                                     <div className="form-group">
                                         <label htmlFor="registry-extension-new-release-page__manifest">
-                                            <h3>Manifest</h3>
+                                            <Typography.H3>Manifest</Typography.H3>
                                         </label>
                                         <DynamicallyImportedMonacoSettingsEditor
                                             id="registry-extension-new-release-page__manifest"
@@ -174,7 +182,7 @@ export const RegistryExtensionNewReleasePage = withAuthenticatedUser<Props>(
                                 <div className="col-lg-6">
                                     <div className="form-group">
                                         <label htmlFor="registry-extension-new-release-page__bundle">
-                                            <h3>Source</h3>
+                                            <Typography.H3>Source</Typography.H3>
                                         </label>
                                         {bundleOrError === undefined ? (
                                             <div>

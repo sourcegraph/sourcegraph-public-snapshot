@@ -5,7 +5,7 @@ import PlusIcon from 'mdi-react/PlusIcon'
 import { noop } from 'rxjs'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Card, Link, useObservable, useDebounce, Icon, Input } from '@sourcegraph/wildcard'
+import { Button, Card, Link, useObservable, useDebounce, Icon, Input, Typography } from '@sourcegraph/wildcard'
 
 import { getDefaultInputProps } from '../../../../../components/form/getDefaultInputProps'
 import { useField } from '../../../../../components/form/hooks/useField'
@@ -141,7 +141,7 @@ export const DynamicCodeInsightExample: React.FunctionComponent<
                     difficult or impossible to answer before.
                 </p>
 
-                <h3 className={classNames(styles.bulletTitle)}>Use Code Insights to...</h3>
+                <Typography.H3 className={classNames(styles.bulletTitle)}>Use Code Insights to...</Typography.H3>
 
                 <ul>
                     <li>Track migrations, adoption, and deprecations</li>

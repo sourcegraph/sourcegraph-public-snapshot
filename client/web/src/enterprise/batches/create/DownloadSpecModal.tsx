@@ -4,7 +4,7 @@ import { VisuallyHidden } from '@reach/visually-hidden'
 import CloseIcon from 'mdi-react/CloseIcon'
 
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
-import { Button, Link, Modal } from '@sourcegraph/wildcard'
+import { Button, Link, Modal, Typography } from '@sourcegraph/wildcard'
 
 import { BatchSpecDownloadLink, getFileName } from '../BatchSpec'
 
@@ -33,7 +33,7 @@ export const DownloadSpecModal: React.FunctionComponent<React.PropsWithChildren<
         className={styles.modal}
     >
         <div>
-            <h3 id={MODAL_LABEL_ID}>Download spec for src-cli</h3>
+            <Typography.H3 id={MODAL_LABEL_ID}>Download spec for src-cli</Typography.H3>
             <Button
                 className={styles.close}
                 onClick={() => {

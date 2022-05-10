@@ -1,6 +1,7 @@
 import React, { FunctionComponent } from 'react'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
+import { Typography } from '@sourcegraph/wildcard'
 
 import { RadioButtons } from '../../../../components/RadioButtons'
 import { CodeIntelligenceConfigurationPolicyFields, GitObjectType } from '../../../../graphql-operations'
@@ -47,7 +48,7 @@ export const RetentionSettings: FunctionComponent<React.PropsWithChildren<Retent
 
     return (
         <div className="form-group">
-            <h3>Retention</h3>
+            <Typography.H3>Retention</Typography.H3>
 
             <div className="form-group">
                 <RadioButtons
