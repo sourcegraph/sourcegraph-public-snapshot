@@ -67,8 +67,8 @@ SELECT %s, source.scheme, source.name, source.version, source.filter
 FROM t_lsif_references source
 `
 
-func loadReferencesChannel(references []precise.PackageReference) <-chan []interface{} {
-	ch := make(chan []interface{}, len(references))
+func loadReferencesChannel(references []precise.PackageReference) <-chan []any {
+	ch := make(chan []any, len(references))
 
 	go func() {
 		defer close(ch)
@@ -80,7 +80,7 @@ func loadReferencesChannel(references []precise.PackageReference) <-chan []inter
 				filter = []byte{}
 			}
 
-			ch <- []interface{}{r.Scheme, r.Name, r.Version, filter}
+			ch <- []any{r.Scheme, r.Name, r.Version, filter}
 		}
 	}()
 

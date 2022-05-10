@@ -35,7 +35,7 @@ func TestExternalServiceWebhookMigrator(t *testing.T) {
 		// services for the external service kinds that support webhooks.
 		for _, svc := range []struct {
 			kind string
-			cfg  interface{}
+			cfg  any
 		}{
 			{kind: extsvc.KindAWSCodeCommit, cfg: schema.AWSCodeCommitConnection{}},
 			{kind: extsvc.KindBitbucketServer, cfg: schema.BitbucketServerConnection{}},

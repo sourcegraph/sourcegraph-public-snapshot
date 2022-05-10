@@ -7,10 +7,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 )
 
-func toJSON(node query.Node) interface{} {
+func toJSON(node query.Node) any {
 	switch n := node.(type) {
 	case query.Operator:
-		var jsons []interface{}
+		var jsons []any
 		for _, o := range n.Operands {
 			jsons = append(jsons, toJSON(o))
 		}
@@ -18,13 +18,13 @@ func toJSON(node query.Node) interface{} {
 		switch n.Kind {
 		case query.And:
 			return struct {
-				And []interface{} `json:"and"`
+				And []any `json:"and"`
 			}{
 				And: jsons,
 			}
 		case query.Or:
 			return struct {
-				Or []interface{} `json:"or"`
+				Or []any `json:"or"`
 			}{
 				Or: jsons,
 			}
@@ -33,7 +33,7 @@ func toJSON(node query.Node) interface{} {
 			// the original query expresses something that is not
 			// supported. We just return the parse tree anyway.
 			return struct {
-				Concat []interface{} `json:"concat"`
+				Concat []any `json:"concat"`
 			}{
 				Concat: jsons,
 			}
@@ -90,7 +90,7 @@ func (r *schemaResolver) ParseSearchQuery(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	var jsons []interface{}
+	var jsons []any
 	for _, node := range plan.ToParseTree() {
 		jsons = append(jsons, toJSON(node))
 	}

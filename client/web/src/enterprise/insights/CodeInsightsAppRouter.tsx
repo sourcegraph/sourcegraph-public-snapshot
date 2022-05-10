@@ -33,7 +33,7 @@ const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = 
     <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 )
 
-const CODE_INSIGHT_STANDALONE_PAGE = false
+const CODE_INSIGHT_STANDALONE_PAGE = true
 
 /**
  * This interface has to receive union type props derived from all child components
@@ -68,7 +68,10 @@ export const CodeInsightsAppRouter = withAuthenticatedUser<CodeInsightsAppRouter
                     <Route
                         path={`${match.url}/insight/:id`}
                         render={(props: RouteComponentProps<{ id: string }>) => (
-                            <CodeInsightIndependentPage insightId={props.match.params.id} />
+                            <CodeInsightIndependentPage
+                                insightId={props.match.params.id}
+                                telemetryService={telemetryService}
+                            />
                         )}
                     />
                 )}

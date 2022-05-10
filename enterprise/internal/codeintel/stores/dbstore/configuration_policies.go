@@ -296,7 +296,7 @@ func (s *Store) CreateConfigurationPolicy(ctx context.Context, configurationPoli
 		indexingCommitMaxAgeHours = &duration
 	}
 
-	var repositoryPatterns interface{}
+	var repositoryPatterns any
 	if configurationPolicy.RepositoryPatterns != nil {
 		repositoryPatterns = pq.Array(*configurationPolicy.RepositoryPatterns)
 	}
@@ -401,7 +401,7 @@ func (s *Store) UpdateConfigurationPolicy(ctx context.Context, policy Configurat
 		}
 	}
 
-	var repositoryPatterns interface{}
+	var repositoryPatterns any
 	if policy.RepositoryPatterns != nil {
 		repositoryPatterns = pq.Array(*policy.RepositoryPatterns)
 	}

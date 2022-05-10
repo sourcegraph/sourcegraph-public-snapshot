@@ -1,6 +1,6 @@
 module github.com/sourcegraph/sourcegraph
 
-go 1.17
+go 1.18
 
 require (
 	cloud.google.com/go/kms v1.1.0
@@ -37,7 +37,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1
 	github.com/daviddengcn/go-colortext v1.0.0
 	github.com/derision-test/glock v1.0.0
-	github.com/derision-test/go-mockgen v1.1.5
+	github.com/derision-test/go-mockgen v1.2.0
 	github.com/dghubble/gologin v2.2.0+incompatible
 	github.com/dgraph-io/ristretto v0.1.0
 	github.com/dineshappavoo/basex v0.0.0-20170425072625-481a6f6dc663

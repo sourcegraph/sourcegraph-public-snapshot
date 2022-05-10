@@ -13,7 +13,7 @@ func init() {
 	edgeUnmarshalers[string(protocol.EdgeSourcegraphDocumentationString)] = unmarshalDocumentationStringEdge
 }
 
-func unmarshalDocumentationResult(line []byte) (interface{}, error) {
+func unmarshalDocumentationResult(line []byte) (any, error) {
 	var payload struct {
 		Result protocol.Documentation `json:"result"`
 	}
@@ -23,7 +23,7 @@ func unmarshalDocumentationResult(line []byte) (interface{}, error) {
 	return payload.Result, nil
 }
 
-func unmarshalDocumentationString(line []byte) (interface{}, error) {
+func unmarshalDocumentationString(line []byte) (any, error) {
 	var payload struct {
 		Result protocol.MarkupContent `json:"result"`
 	}
@@ -39,7 +39,7 @@ type DocumentationStringEdge struct {
 	Kind protocol.DocumentationStringKind
 }
 
-func unmarshalDocumentationStringEdge(line []byte) (interface{}, error) {
+func unmarshalDocumentationStringEdge(line []byte) (any, error) {
 	var payload struct {
 		OutV int    `json:"outV"`
 		InV  int    `json:"inV"`

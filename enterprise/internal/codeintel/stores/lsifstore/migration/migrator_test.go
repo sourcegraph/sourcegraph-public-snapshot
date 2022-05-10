@@ -120,20 +120,20 @@ func TestMigratorRemovesBoundsWithoutData(t *testing.T) {
 
 type testMigrationDriver struct{}
 
-func (m *testMigrationDriver) MigrateRowUp(scanner scanner) ([]interface{}, error) {
+func (m *testMigrationDriver) MigrateRowUp(scanner scanner) ([]any, error) {
 	var a, b, c int
 	if err := scanner.Scan(&a, &b, &c); err != nil {
 		return nil, err
 	}
 
-	return []interface{}{a, b + c}, nil
+	return []any{a, b + c}, nil
 }
 
-func (m *testMigrationDriver) MigrateRowDown(scanner scanner) ([]interface{}, error) {
+func (m *testMigrationDriver) MigrateRowDown(scanner scanner) ([]any, error) {
 	var a, b, c int
 	if err := scanner.Scan(&a, &b, &c); err != nil {
 		return nil, err
 	}
 
-	return []interface{}{a, b - c}, nil
+	return []any{a, b - c}, nil
 }

@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -81,6 +82,14 @@ func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore
 		metadadataStore: store.NewInsightStore(insightsStore.Handle().DB()),
 		seriesCache:     sharedCache,
 		computeSearch:   query.ComputeSearch,
+		computeSearchStream: func(ctx context.Context, query string) (*streaming.ComputeTabulationResult, error) {
+			decoder, streamResults := streaming.ComputeDecoder()
+			err := streaming.ComputeMatchContextStream(ctx, query, decoder)
+			if err != nil {
+				return nil, err
+			}
+			return streamResults, nil
+		},
 	}, options)
 }
 

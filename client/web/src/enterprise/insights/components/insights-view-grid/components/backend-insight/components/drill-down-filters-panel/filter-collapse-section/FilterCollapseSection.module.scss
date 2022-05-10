@@ -1,9 +1,25 @@
+.root {
+    &--no-collapse {
+        .collapse-icon {
+            display: none;
+        }
+
+        .collapse-button {
+            padding-left: 0;
+        }
+
+        .collapse-panel {
+            margin-left: 0;
+        }
+    }
+}
+
 .collapse-button {
     display: flex;
     align-items: center;
     justify-content: left;
     width: 100%;
-    padding: 0.5rem 1rem;
+    padding: 0.5rem 1rem 0.5rem 0;
 }
 
 .button-text {
@@ -18,7 +34,7 @@
 }
 
 .collapse-panel {
-    margin-left: 2.5rem;
+    margin-left: 1.5rem;
 }
 
 .changed-filter-marker {

@@ -41,16 +41,6 @@ var (
 	// time is serialized.
 	Time = zap.Time
 
-	// Error is shorthand for the common idiom NamedError("error", err).
-	Error = zap.Error
-	// NamedError constructs a field that lazily stores err.Error() under the provided key.
-	// Errors which also implement fmt.Formatter (like those produced by github.com/pkg/errors)
-	// will also have their verbose representation stored under key+"Verbose". If passed a
-	// nil error, the field is a no-op.
-	//
-	// For the common case in which the key is simply "error", the Error function is shorter and less repetitive.
-	NamedError = zap.NamedError
-
 	// Namespace creates a named, isolated scope within the logger's context. All subsequent
 	// fields will be added to the new namespace.
 	//
@@ -63,4 +53,22 @@ var (
 // namespace.
 func Object(key string, fields ...Field) Field {
 	return zap.Object(key, encoders.FieldsObjectEncoder(fields))
+}
+
+// Error is shorthand for the common idiom NamedError("error", err).
+func Error(err error) Field {
+	return NamedError("error", err)
+}
+
+// NamedError constructs a field that logs err.Error() under the provided key.
+//
+// For the common case in which the key is simply "error", the Error function is shorter and less repetitive.
+//
+// This is currently intentionally different from the zap.NamedError implementation since
+// we don't want the additional verbosity at the moment.
+func NamedError(key string, err error) Field {
+	if err == nil {
+		return String(key, "<nil>")
+	}
+	return String(key, err.Error())
 }
