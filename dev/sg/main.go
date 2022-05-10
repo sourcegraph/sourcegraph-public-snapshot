@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -193,17 +194,24 @@ var sg = &cli.App{
 		installCommand,
 		funkyLogoCommand,
 	},
-	ExitErrHandler: func(_ *cli.Context, err error) {
+	ExitErrHandler: func(cmd *cli.Context, err error) {
 		if err == nil {
 			return
 		}
 
+		// Show help text only
+		if errors.Is(err, flag.ErrHelp) {
+			cli.ShowAppHelp(cmd)
+			os.Exit(1)
+		}
+
+		// Render error
 		std.Out.WriteFailuref(err.Error())
 
+		// Determine exit code
 		if exitErr, ok := err.(cli.ExitCoder); ok {
 			os.Exit(exitErr.ExitCode())
 		}
-
 		os.Exit(1)
 	},
 
