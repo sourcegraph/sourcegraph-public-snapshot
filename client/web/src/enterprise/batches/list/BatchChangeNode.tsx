@@ -166,6 +166,7 @@ export const BatchChangeNode: React.FunctionComponent<React.PropsWithChildren<Ba
                     <ChangesetStatusOpen
                         aria-labelledby="changesets-open-label"
                         className="d-block d-sm-flex"
+                        role-="group"
                         label={
                             <span
                                 className="text-muted"
@@ -177,6 +178,7 @@ export const BatchChangeNode: React.FunctionComponent<React.PropsWithChildren<Ba
                     <ChangesetStatusClosed
                         className="d-block d-sm-flex text-center"
                         aria-labelledby="changesets-closed-label"
+                        role-="group"
                         label={
                             <span
                                 className="text-muted"
@@ -188,6 +190,7 @@ export const BatchChangeNode: React.FunctionComponent<React.PropsWithChildren<Ba
                     <ChangesetStatusMerged
                         className="d-block d-sm-flex"
                         aria-labelledby="changesets-merged-label"
+                        role-="group"
                         label={
                             <span
                                 className="text-muted"
