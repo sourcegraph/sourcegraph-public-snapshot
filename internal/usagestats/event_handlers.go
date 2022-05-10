@@ -258,7 +258,7 @@ func redactSensitiveInfoFromCloudURL(rawURL string) (string, error) {
 		"campaign_id":  {},
 		"ad_id":        {},
 		"offer":        {},
-		"gclid":		{},
+		"gclid":        {},
 	}
 	urlQueryParams, err := url.ParseQuery(parsedURL.RawQuery)
 	if err != nil {
