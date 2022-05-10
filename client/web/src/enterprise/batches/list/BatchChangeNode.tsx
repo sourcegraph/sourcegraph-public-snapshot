@@ -164,37 +164,34 @@ export const BatchChangeNode: React.FunctionComponent<React.PropsWithChildren<Ba
             {node.state !== BatchChangeState.DRAFT && (
                 <>
                     <ChangesetStatusOpen
-                        aria-labelledby="changesets-open-label"
+                        aria-labelledby={`changesets-open-label-${node.id}`}
                         className="d-block d-sm-flex"
-                        role-="group"
                         label={
                             <span
                                 className="text-muted"
-                                id="changesets-open-label"
+                                id={`changesets-open-label-${node.id}`}
                                 aria-hidden={true}
                             >{`${node.changesetsStats.open} open`}</span>
                         }
                     />
                     <ChangesetStatusClosed
                         className="d-block d-sm-flex text-center"
-                        aria-labelledby="changesets-closed-label"
-                        role-="group"
+                        aria-labelledby={`changesets-closed-label-${node.id}`}
                         label={
                             <span
                                 className="text-muted"
                                 aria-hidden={true}
-                                id="changesets-closed-label"
+                                id={`changesets-closed-label-${node.id}`}
                             >{`${node.changesetsStats.closed} closed`}</span>
                         }
                     />
                     <ChangesetStatusMerged
                         className="d-block d-sm-flex"
-                        aria-labelledby="changesets-merged-label"
-                        role-="group"
+                        aria-labelledby={`changesets-merged-label-${node.id}`}
                         label={
                             <span
                                 className="text-muted"
-                                id="changesets-merged-label"
+                                id={`changesets-merged-label-${node.id}`}
                                 aria-hidden={true}
                             >{`${node.changesetsStats.merged} merged`}</span>
                         }
