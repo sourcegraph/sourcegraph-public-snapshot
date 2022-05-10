@@ -42,6 +42,8 @@ type workHandler struct {
 	computeSearchStream func(ctx context.Context, query string) (*streaming.ComputeTabulationResult, error)
 }
 
+type insightsHandler func(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) error
+
 func (r *workHandler) getSeries(ctx context.Context, seriesID string) (*types.InsightSeries, error) {
 	var val *types.InsightSeries
 	var ok bool
@@ -72,6 +74,45 @@ func (r *workHandler) fetchSeries(ctx context.Context, seriesID string) (*types.
 		return nil, err
 	}
 	return &result[0], nil
+}
+
+// checkSubRepoPermissions returns true if the repo has sub-repo permissions or any error occurred while checking it
+// Returns false only if the repo doesn't have sub-repo permissions or these are disabled in settings.
+// Note that repo ID is received untyped and being cast to api.RepoID
+// err is an upstream error to which any new occurring error is appended
+func checkSubRepoPermissions(ctx context.Context, checker authz.SubRepoPermissionChecker, untypedRepoID any, err error) (bool, error) {
+	if !authz.SubRepoEnabled(checker) {
+		return false, err
+	}
+
+	// casting repoID
+	var repoID api.RepoID
+	switch untypedRepoID := untypedRepoID.(type) {
+	case api.RepoID:
+		repoID = untypedRepoID
+	case string:
+		var idErr error
+		repoID, idErr = graphqlbackend.UnmarshalRepositoryID(graphql.ID(untypedRepoID))
+		if idErr != nil {
+			log15.Error("Error during sub-repo permissions check", "repoID", untypedRepoID, "error", "unmarshalling repoID")
+			err = errors.Append(err, errors.Wrap(idErr, "Checking sub-repo permissions: UnmarshalRepositoryID"))
+			return true, err
+		}
+	default:
+		log15.Error("Error during sub-repo permissions check: Unsupported untypedRepoID type",
+			"repoID", untypedRepoID, "type", fmt.Sprintf("%T", untypedRepoID))
+		return true, errors.Append(err, errors.Newf("Checking sub-repo permissions for repoID=%v: Unsupported untypedRepoID type=%T",
+			untypedRepoID, untypedRepoID))
+	}
+
+	// performing the check itself
+	enabled, checkErr := authz.SubRepoEnabledForRepoID(ctx, checker, repoID)
+	if checkErr != nil {
+		log15.Error("Error during sub-repo permissions check", "error", checkErr)
+		err = errors.Append(err, errors.Wrap(checkErr, "Checking sub-repo permissions"))
+		return true, err
+	}
+	return enabled, err
 }
 
 func ToRecording(record *Job, value float64, recordTime time.Time, repoName string, repoID api.RepoID, capture *string) []store.RecordSeriesPointArgs {
@@ -154,56 +195,14 @@ func (r *workHandler) generateComputeRecordingsStream(ctx context.Context, job *
 	return recordings, nil
 }
 
-// checkSubRepoPermissions returns true if the repo has sub-repo permissions or any error occurred while checking it
-// Returns false only if the repo doesn't have sub-repo permissions or these are disabled in settings.
-// Note that repo ID is received untyped and being cast to api.RepoID
-// err is an upstream error to which any new occurring error is appended
-func checkSubRepoPermissions(ctx context.Context, checker authz.SubRepoPermissionChecker, untypedRepoID any, err error) (bool, error) {
-	if !authz.SubRepoEnabled(checker) {
-		return false, err
-	}
-
-	// casting repoID
-	var repoID api.RepoID
-	switch untypedRepoID := untypedRepoID.(type) {
-	case api.RepoID:
-		repoID = untypedRepoID
-	case string:
-		var idErr error
-		repoID, idErr = graphqlbackend.UnmarshalRepositoryID(graphql.ID(untypedRepoID))
-		if idErr != nil {
-			log15.Error("Error during sub-repo permissions check", "repoID", untypedRepoID, "error", "unmarshalling repoID")
-			err = errors.Append(err, errors.Wrap(idErr, "Checking sub-repo permissions: UnmarshalRepositoryID"))
-			return true, err
-		}
-	default:
-		log15.Error("Error during sub-repo permissions check: Unsupported untypedRepoID type",
-			"repoID", untypedRepoID, "type", fmt.Sprintf("%T", untypedRepoID))
-		return true, errors.Append(err, errors.Newf("Checking sub-repo permissions for repoID=%v: Unsupported untypedRepoID type=%T",
-			untypedRepoID, untypedRepoID))
-	}
-
-	// performing the check itself
-	enabled, checkErr := authz.SubRepoEnabledForRepoID(ctx, checker, repoID)
-	if checkErr != nil {
-		log15.Error("Error during sub-repo permissions check", "error", checkErr)
-		err = errors.Append(err, errors.Wrap(checkErr, "Checking sub-repo permissions"))
-		return true, err
-	}
-	return enabled, err
-}
-
-type insightsHandler func(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) error
-
-func (r *workHandler) searchHandler(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) (err error) {
-	var results *query.GqlSearchResponse
-	results, err = query.Search(ctx, job.SearchQuery)
+func (r *workHandler) generateSearchRecordings(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) ([]store.RecordSeriesPointArgs, error) {
+	results, err := query.Search(ctx, job.SearchQuery)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if len(results.Errors) > 0 {
-		return errors.Errorf("GraphQL errors: %v", results.Errors)
+		return nil, errors.Errorf("GraphQL errors: %v", results.Errors)
 	}
 	if alert := results.Data.Search.Results.Alert; alert != nil {
 		if alert.Title == "No repositories satisfied your repo: filter" {
@@ -220,7 +219,7 @@ func (r *workHandler) searchHandler(ctx context.Context, job *Job, series *types
 			// general.
 		} else {
 			// Maybe the user's search query is actually wrong.
-			return errors.Errorf("insights query issue: alert: %v query=%q", alert, job.SearchQuery)
+			return nil, errors.Errorf("insights query issue: alert: %v query=%q", alert, job.SearchQuery)
 		}
 	}
 	if results.Data.Search.Results.LimitHit {
@@ -231,7 +230,7 @@ func (r *workHandler) searchHandler(ctx context.Context, job *Job, series *types
 			Reason:  "limit hit",
 		}
 		if err := r.metadadataStore.InsertDirtyQuery(ctx, series, &dq); err != nil {
-			return errors.Wrap(err, "failed to write dirty query record")
+			return nil, errors.Wrap(err, "failed to write dirty query record")
 		}
 	}
 	if cloning := len(results.Data.Search.Results.Cloning); cloning > 0 {
@@ -246,10 +245,11 @@ func (r *workHandler) searchHandler(ctx context.Context, job *Job, series *types
 	matchesPerRepo := make(map[string]int, len(results.Data.Search.Results.Results)*4)
 	repoNames := make(map[string]string, len(matchesPerRepo))
 	checker := authz.DefaultSubRepoPermsChecker
+	var recordings []store.RecordSeriesPointArgs
 	for _, result := range results.Data.Search.Results.Results {
 		decoded, err := query.DecodeResult(result)
 		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf(`for query "%s"`, job.SearchQuery))
+			return nil, errors.Wrap(err, fmt.Sprintf(`for query "%s"`, job.SearchQuery))
 		}
 		// sub-repo permissions filtering. If the repo supports it, then it should be excluded from search results
 		var subRepoEnabled bool
@@ -259,20 +259,6 @@ func (r *workHandler) searchHandler(ctx context.Context, job *Job, series *types
 		}
 		repoNames[decoded.RepoID()] = decoded.RepoName()
 		matchesPerRepo[decoded.RepoID()] = matchesPerRepo[decoded.RepoID()] + decoded.MatchCount()
-	}
-
-	tx, err := r.insightsStore.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	if store.PersistMode(job.PersistMode) == store.SnapshotMode {
-		// The purpose of the snapshot is for low fidelity but recently updated data points.
-		// We store one snapshot of an insight at any time, so we prune the table whenever adding a new series.
-		if err := tx.DeleteSnapshots(ctx, series); err != nil {
-			return err
-		}
 	}
 
 	// Record the number of results we got, one data point per-repository.
@@ -289,19 +275,16 @@ func (r *workHandler) searchHandler(ctx context.Context, job *Job, series *types
 			continue
 		}
 
-		args := ToRecording(job, float64(matchCount), recordTime, repoName, dbRepoID, nil)
-		if recordErr := tx.RecordSeriesPoints(ctx, args); recordErr != nil {
-			err = errors.Append(err, errors.Wrap(recordErr, "RecordSeriesPoints"))
-		}
+		recordings = append(recordings, ToRecording(job, float64(matchCount), recordTime, repoName, dbRepoID, nil)...)
 	}
-	return err
+	return recordings, nil
 }
 
-func (r *workHandler) searchStreamHandler(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) (err error) {
+func (r *workHandler) generateSearchRecordingsStream(ctx context.Context, job *Job, _ *types.InsightSeries, recordTime time.Time) ([]store.RecordSeriesPointArgs, error) {
 	decoder, tabulationResult := streaming.TabulationDecoder()
-	err = streaming.Search(ctx, job.SearchQuery, decoder)
+	err := streaming.Search(ctx, job.SearchQuery, decoder)
 	if err != nil {
-		return errors.Wrap(err, "streaming.Search")
+		return nil, errors.Wrap(err, "streaming.Search")
 	}
 
 	tr := *tabulationResult
@@ -311,24 +294,11 @@ func (r *workHandler) searchStreamHandler(ctx context.Context, job *Job, series 
 		log15.Error("insights query issue", "reasons", tr.SkippedReasons, "query", job.SearchQuery)
 	}
 	if len(tr.Errors) > 0 {
-		return StreamingError{Messages: tr.Errors}
-	}
-
-	tx, err := r.insightsStore.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	if store.PersistMode(job.PersistMode) == store.SnapshotMode {
-		// The purpose of the snapshot is for low fidelity but recently updated data points.
-		// We store one snapshot of an insight at any time, so we prune the table whenever adding a new series.
-		if err := tx.DeleteSnapshots(ctx, series); err != nil {
-			return err
-		}
+		return nil, StreamingError{Messages: tr.Errors}
 	}
 
 	checker := authz.DefaultSubRepoPermsChecker
+	var recordings []store.RecordSeriesPointArgs
 	for _, match := range tr.RepoCounts {
 		// sub-repo permissions filtering. If the repo supports it, then it should be excluded from search results
 		var subRepoEnabled bool
@@ -337,17 +307,22 @@ func (r *workHandler) searchStreamHandler(ctx context.Context, job *Job, series 
 		if subRepoEnabled {
 			continue
 		}
-		args := ToRecording(job, float64(match.MatchCount), recordTime, match.RepositoryName, repoID, nil)
-		if recordErr := tx.RecordSeriesPoints(ctx, args); recordErr != nil {
-			err = errors.Append(err, errors.Wrap(recordErr, "RecordSeriesPoints"))
-		}
+		recordings = append(recordings, ToRecording(job, float64(match.MatchCount), recordTime, match.RepositoryName, repoID, nil)...)
 	}
-	return err
+	return recordings, nil
 }
 
-func (r *workHandler) computeHandler(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) (err error) {
+func (r *workHandler) searchHandler(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) (err error) {
 	if series.JustInTime {
 		return errors.Newf("just in time series are not eligible for background processing, series_id: %s", series.ID)
+	}
+
+	searchDelegate := r.generateSearchRecordingsStream
+	// Add switch on search delegate.
+
+	recordings, err := searchDelegate(ctx, job, series, recordTime)
+	if err != nil {
+		return err
 	}
 
 	tx, err := r.insightsStore.Transact(ctx)
@@ -362,6 +337,17 @@ func (r *workHandler) computeHandler(ctx context.Context, job *Job, series *type
 		if err := tx.DeleteSnapshots(ctx, series); err != nil {
 			return err
 		}
+	}
+
+	if recordErr := tx.RecordSeriesPoints(ctx, recordings); recordErr != nil {
+		err = errors.Append(err, errors.Wrap(recordErr, "RecordSeriesPointsCapture"))
+	}
+	return err
+}
+
+func (r *workHandler) computeHandler(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) (err error) {
+	if series.JustInTime {
+		return errors.Newf("just in time series are not eligible for background processing, series_id: %s", series.ID)
 	}
 
 	computeDelegate := r.generateComputeRecordingsStream
@@ -374,6 +360,21 @@ func (r *workHandler) computeHandler(ctx context.Context, job *Job, series *type
 	if err != nil {
 		return err
 	}
+
+	tx, err := r.insightsStore.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	if store.PersistMode(job.PersistMode) == store.SnapshotMode {
+		// The purpose of the snapshot is for low fidelity but recently updated data points.
+		// We store one snapshot of an insight at any time, so we prune the table whenever adding a new series.
+		if err := tx.DeleteSnapshots(ctx, series); err != nil {
+			return err
+		}
+	}
+
 	if recordErr := tx.RecordSeriesPoints(ctx, recordings); recordErr != nil {
 		err = errors.Append(err, errors.Wrap(recordErr, "RecordSeriesPointsCapture"))
 	}
@@ -411,7 +412,6 @@ func (r *workHandler) Handle(ctx context.Context, logger log.Logger, record work
 
 	handlersByType := map[types.GenerationMethod]insightsHandler{
 		types.SearchCompute: r.computeHandler,
-		types.SearchStream:  r.searchStreamHandler,
 		types.Search:        r.searchHandler,
 	}
 
