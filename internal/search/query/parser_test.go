@@ -607,7 +607,7 @@ func TestMatchUnaryKeyword(t *testing.T) {
 
 func TestParseAndOrLiteral(t *testing.T) {
 	test := func(input string) string {
-		result, err := Parse(input, SearchTypeLiteral)
+		result, err := Parse(input, SearchTypeLiteralDefault)
 		if err != nil {
 			return fmt.Sprintf("ERROR: %s", err.Error())
 		}
