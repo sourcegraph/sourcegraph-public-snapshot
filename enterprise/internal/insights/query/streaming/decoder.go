@@ -29,7 +29,7 @@ type TabulationResult struct {
 
 // TabulationDecoder will tabulate the result counts per repository.
 func TabulationDecoder() (streamhttp.FrontendStreamDecoder, *TabulationResult) {
-	tr := &TabulationResult{
+	var tr = &TabulationResult{
 		RepoCounts: make(map[string]*SearchMatch),
 	}
 
@@ -114,36 +114,34 @@ type ComputeTabulationResult struct {
 const capturedValueMaxLength = 100
 
 func ComputeDecoder() (client.ComputeMatchContextStreamDecoder, *ComputeTabulationResult) {
-	ctr := &ComputeTabulationResult{
-		RepoCounts: make(map[string]*ComputeMatch),
-	}
+	byRepo := make(map[string]*ComputeMatch)
 	getRepoCounts := func(matchContext compute.MatchContext) *ComputeMatch {
 		var v *ComputeMatch
-		if got, ok := ctr.RepoCounts[matchContext.Repository]; ok {
+		if got, ok := byRepo[matchContext.Repository]; ok {
 			return got
 		}
 		v = newComputeMatch(matchContext.Repository, matchContext.RepositoryID)
-		ctr.RepoCounts[matchContext.Repository] = v
+		byRepo[matchContext.Repository] = v
 		return v
 	}
 
 	return client.ComputeMatchContextStreamDecoder{
-		OnResult: func(results []compute.MatchContext) {
-			for _, result := range results {
-				current := getRepoCounts(result)
-				for _, match := range result.Matches {
-					for _, data := range match.Environment {
-						value := data.Value
-						if len(value) > capturedValueMaxLength {
-							value = value[:capturedValueMaxLength]
+			OnResult: func(results []compute.MatchContext) {
+				for _, result := range results {
+					current := getRepoCounts(result)
+					for _, match := range result.Matches {
+						for _, data := range match.Environment {
+							value := data.Value
+							if len(value) > capturedValueMaxLength {
+								value = value[:capturedValueMaxLength]
+							}
+							current.ValueCounts[value] += 1
 						}
-						current.ValueCounts[value] += 1
 					}
 				}
-			}
-		},
-		OnError: func(eventError *streamhttp.EventError) {
-			ctr.Errors = append(ctr.Errors, eventError.Message)
-		},
-	}, ctr
+			},
+		}, &ComputeTabulationResult{
+			StreamDecoderEvents: StreamDecoderEvents{},
+			RepoCounts:          byRepo,
+		}
 }
