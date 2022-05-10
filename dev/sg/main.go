@@ -94,13 +94,13 @@ var sg = &cli.App{
 			Name:    "skip-auto-update",
 			Usage:   "prevent sg from automatically updating itself",
 			EnvVars: []string{"SG_SKIP_AUTO_UPDATE"},
-			Value:   BuildCommit == "dev", // Default to skip in dev, otherwise don't
+			Value:   BuildCommit == "dev", // Default to skip in dev
 		},
 		&cli.BoolFlag{
 			Name:    "disable-analytics",
 			Usage:   "disable event logging (logged to '~/.sourcegraph/events')",
 			EnvVars: []string{"SG_DISABLE_ANALYTICS"},
-			// Value:   BuildCommit == "dev", // Default to skip in dev, otherwise don't
+			Value:   BuildCommit == "dev", // Default to skip in dev
 		},
 	},
 	Before: func(cmd *cli.Context) error {

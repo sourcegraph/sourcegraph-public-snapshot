@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver"
-	"github.com/bitfield/script"
+	"github.com/sourcegraph/run"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/docker"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/download"
@@ -238,14 +238,15 @@ func hadolint() lint.Runner {
 	const hadolintVersion = "v2.10.0"
 	hadolintBinary := fmt.Sprintf("./.bin/hadolint-%s", hadolintVersion)
 
-	runHadolint := func(start time.Time, files []string) *lint.Report {
-		out, err := script.NewPipe().
-			WithReader(strings.NewReader(strings.Join(files, "\n"))).
-			Exec("xargs " + hadolintBinary).
-			String()
+	runHadolint := func(ctx context.Context, start time.Time, files []string) *lint.Report {
+		out, err := run.Cmd(ctx, "xargs "+hadolintBinary).
+			Input(strings.NewReader(strings.Join(files, "\n"))).
+			Run().
+			Lines()
+
 		return &lint.Report{
 			Header:   header,
-			Output:   out,
+			Output:   strings.Join(out, "\n"),
 			Err:      err,
 			Duration: time.Since(start),
 		}
@@ -271,7 +272,7 @@ func hadolint() lint.Runner {
 
 		// If our binary is already here, just go!
 		if _, err := os.Stat(hadolintBinary); err == nil {
-			return runHadolint(start, dockerfiles)
+			return runHadolint(ctx, start, dockerfiles)
 		}
 
 		// https://github.com/hadolint/hadolint/releases for downloads
@@ -305,7 +306,7 @@ func hadolint() lint.Runner {
 			}
 		}
 
-		return runHadolint(start, dockerfiles)
+		return runHadolint(ctx, start, dockerfiles)
 	}
 }
 
