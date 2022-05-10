@@ -3,6 +3,8 @@ package images
 import (
 	"reflect"
 	"testing"
+
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 )
 
 func TestParseTag(t *testing.T) {

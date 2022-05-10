@@ -32,7 +32,7 @@ var setupCommand = &cli.Command{
 func setupExec(ctx context.Context, args []string) error {
 	if runtime.GOOS != "linux" && runtime.GOOS != "darwin" {
 		std.Out.WriteLine(output.Styled(output.StyleWarning, "'sg setup' currently only supports macOS and Linux"))
-		os.Exit(1)
+		return NewEmptyExitErr(1)
 	}
 
 	currentOS := runtime.GOOS
@@ -51,7 +51,6 @@ func setupExec(ctx context.Context, args []string) error {
 		for range c {
 			std.Out.WriteAlertf("\n💡 You may need to restart your shell for the changes to work in this terminal.")
 			std.Out.WriteAlertf("   Close this terminal and open a new one or type the following command and press ENTER: %s", filepath.Base(usershell.ShellPath(ctx)))
-			os.Exit(0)
 		}
 	}()
 
@@ -273,7 +272,7 @@ func fixDependencyAutomatically(ctx context.Context, dep *dependency) error {
 
 	if dep.requiresSgSetupRestart {
 		std.Out.WriteNoticef("This command requires restarting of 'sg setup' to pick up the changes.")
-		os.Exit(0)
+		return nil
 	}
 
 	return nil

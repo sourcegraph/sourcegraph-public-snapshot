@@ -153,14 +153,14 @@ func startExec(ctx context.Context, args []string) error {
 		repoRoot, err := root.RepositoryRoot()
 		if err != nil {
 			std.Out.WriteLine(output.Styledf(output.StyleWarning, "Failed to determine repository root location: %s", err))
-			os.Exit(1)
+			return NewEmptyExitErr(1)
 		}
 
 		devPrivatePath := filepath.Join(repoRoot, "..", "dev-private")
 		exists, err := pathExists(devPrivatePath)
 		if err != nil {
 			std.Out.WriteLine(output.Styledf(output.StyleWarning, "Failed to check whether dev-private repository exists: %s", err))
-			os.Exit(1)
+			return NewEmptyExitErr(1)
 		}
 		if !exists {
 			std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: dev-private repository not found!"))
@@ -178,7 +178,7 @@ func startExec(ctx context.Context, args []string) error {
 `, set.Name))
 			std.Out.Write("")
 
-			os.Exit(1)
+			return NewEmptyExitErr(1)
 		}
 	}
 

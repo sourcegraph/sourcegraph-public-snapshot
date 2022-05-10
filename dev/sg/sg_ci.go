@@ -283,7 +283,7 @@ Learn more about pipeline run types in https://docs.sourcegraph.com/dev/backgrou
 				if rt == runtype.PullRequest {
 					std.Out.WriteFailuref("Unsupported runtype %q", cmd.Args().First())
 					std.Out.Writef("Supported runtypes:\n\n\t%s\n\nSee 'sg ci docs' to learn more.", strings.Join(getAllowedBuildTypeArgs(), ", "))
-					os.Exit(1)
+					return NewEmptyExitErr(1)
 				}
 			}
 			if rt != runtype.PullRequest {

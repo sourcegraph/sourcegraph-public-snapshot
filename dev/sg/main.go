@@ -206,7 +206,10 @@ var sg = &cli.App{
 		}
 
 		// Render error
-		std.Out.WriteFailuref(err.Error())
+		errMsg := err.Error()
+		if errMsg != "" {
+			std.Out.WriteFailuref(errMsg)
+		}
 
 		// Determine exit code
 		if exitErr, ok := err.(cli.ExitCoder); ok {
