@@ -74,13 +74,7 @@ func loadReferencesChannel(references []precise.PackageReference) <-chan []any {
 		defer close(ch)
 
 		for _, r := range references {
-			filter := r.Filter
-			if filter == nil {
-				// avoid not null constraint
-				filter = []byte{}
-			}
-
-			ch <- []any{r.Scheme, r.Name, r.Version, filter}
+			ch <- []any{r.Scheme, r.Name, r.Version}
 		}
 	}()
 

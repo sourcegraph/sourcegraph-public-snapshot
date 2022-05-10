@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/bloomfilter"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
@@ -171,17 +170,13 @@ func TestReferencesRemote(t *testing.T) {
 	mockDBStore.GetDumpsByIDsFunc.PushReturn(referenceUploads[:2], nil)
 	mockDBStore.GetDumpsByIDsFunc.PushReturn(referenceUploads[2:], nil)
 
-	filter, err := bloomfilter.CreateFilter([]string{"padLeft", "pad_left", "pad-left", "left_pad"})
-	if err != nil {
-		t.Fatalf("unexpected error encoding bloom filter: %s", err)
-	}
 	scanner1 := dbstore.PackageReferenceScannerFromSlice(
-		shared.PackageReference{Package: shared.Package{DumpID: 250}, Filter: filter},
-		shared.PackageReference{Package: shared.Package{DumpID: 251}, Filter: filter},
+		shared.PackageReference{Package: shared.Package{DumpID: 250}},
+		shared.PackageReference{Package: shared.Package{DumpID: 251}},
 	)
 	scanner2 := dbstore.PackageReferenceScannerFromSlice(
-		shared.PackageReference{Package: shared.Package{DumpID: 252}, Filter: filter},
-		shared.PackageReference{Package: shared.Package{DumpID: 253}, Filter: filter},
+		shared.PackageReference{Package: shared.Package{DumpID: 252}},
+		shared.PackageReference{Package: shared.Package{DumpID: 253}},
 	)
 	mockDBStore.ReferenceIDsAndFiltersFunc.PushReturn(scanner1, 4, nil)
 	mockDBStore.ReferenceIDsAndFiltersFunc.PushReturn(scanner2, 2, nil)
@@ -344,17 +339,13 @@ func TestReferencesRemoteWithSubRepoPermissions(t *testing.T) {
 	mockDBStore.GetDumpsByIDsFunc.PushReturn(referenceUploads[:2], nil)
 	mockDBStore.GetDumpsByIDsFunc.PushReturn(referenceUploads[2:], nil)
 
-	filter, err := bloomfilter.CreateFilter([]string{"padLeft", "pad_left", "pad-left", "left_pad"})
-	if err != nil {
-		t.Fatalf("unexpected error encoding bloom filter: %s", err)
-	}
 	scanner1 := dbstore.PackageReferenceScannerFromSlice(
-		shared.PackageReference{Package: shared.Package{DumpID: 250}, Filter: filter},
-		shared.PackageReference{Package: shared.Package{DumpID: 251}, Filter: filter},
+		shared.PackageReference{Package: shared.Package{DumpID: 250}},
+		shared.PackageReference{Package: shared.Package{DumpID: 251}},
 	)
 	scanner2 := dbstore.PackageReferenceScannerFromSlice(
-		shared.PackageReference{Package: shared.Package{DumpID: 252}, Filter: filter},
-		shared.PackageReference{Package: shared.Package{DumpID: 253}, Filter: filter},
+		shared.PackageReference{Package: shared.Package{DumpID: 252}},
+		shared.PackageReference{Package: shared.Package{DumpID: 253}},
 	)
 	mockDBStore.ReferenceIDsAndFiltersFunc.PushReturn(scanner1, 4, nil)
 	mockDBStore.ReferenceIDsAndFiltersFunc.PushReturn(scanner2, 2, nil)
@@ -525,11 +516,7 @@ func TestIgnoredIDs(t *testing.T) {
 	refDumpID := 50
 
 	run := func(ignoreIDs []int, wantDumps []int) {
-		filter, err := bloomfilter.CreateFilter([]string{"padLeft"})
-		if err != nil {
-			t.Fatalf("unexpected error encoding bloom filter: %s", err)
-		}
-		pkg := shared.PackageReference{Package: shared.Package{DumpID: refDumpID}, Filter: filter}
+		pkg := shared.PackageReference{Package: shared.Package{DumpID: refDumpID}}
 		scanner := dbstore.PackageReferenceScannerFromSlice(pkg)
 		mockDBStore.ReferenceIDsAndFiltersFunc.PushReturn(scanner, 1, nil)
 
