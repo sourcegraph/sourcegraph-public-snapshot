@@ -24,6 +24,7 @@ var Targets = []lint.Target{
 			goDBConnImport,
 			goEnterpriseImport,
 			noLocalHost,
+			lintGoDirectives,
 		},
 	},
 	{
@@ -83,6 +84,7 @@ var Targets = []lint.Target{
 			shFmt,
 			shellCheck,
 			submodules,
+			lintGoDirectives,
 		},
 	},
 }
