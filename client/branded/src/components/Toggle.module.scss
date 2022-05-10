@@ -1,5 +1,6 @@
 :root {
     --toggle-width: 2rem;
+    --toggle-height: 1rem;
 }
 
 .toggle {
@@ -19,7 +20,7 @@
     position: relative;
     width: var(--toggle-width);
 
-    height: 1rem;
+    height: var(--toggle-height);
     display: inline-flex;
     align-items: center;
 
