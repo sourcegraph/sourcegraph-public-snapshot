@@ -23,6 +23,7 @@ var Targets = []lint.Target{
 			lint.RunScript("Go lint", "dev/check/go-lint.sh"),
 			lint.RunScript("Go pkg/database/dbconn", "dev/check/go-dbconn-import.sh"),
 			lint.RunScript("Go enterprise imports in OSS", "dev/check/go-enterprise-import.sh"),
+			lintGoDirectives,
 		},
 	},
 	{
