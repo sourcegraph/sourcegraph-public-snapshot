@@ -1,5 +1,6 @@
 .stable-width {
     position: relative;
+    isolation: isolate;
 
     .filler {
         height: 0;
