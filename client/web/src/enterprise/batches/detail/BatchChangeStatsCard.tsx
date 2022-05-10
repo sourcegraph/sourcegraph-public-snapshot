@@ -1,5 +1,6 @@
 import React from 'react'
 
+import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
 import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
 import ProgressCheckIcon from 'mdi-react/ProgressCheckIcon'
@@ -108,7 +109,7 @@ export const BatchChangeStatsCard: React.FunctionComponent<React.PropsWithChildr
 
 export const BatchChangeStatsTotalAction: React.FunctionComponent<{ count: number }> = ({ count }) => (
     <>
-        <div className="sr-only">{`${count} ${pluralize('Changeset', count)}`}</div>
+        <VisuallyHidden>{`${count} ${pluralize('Changeset', count)}`}</VisuallyHidden>
         <div
             className={classNames(
                 styles.batchChangeStatsCardStat,

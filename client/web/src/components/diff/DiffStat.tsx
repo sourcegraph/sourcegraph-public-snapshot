@@ -1,5 +1,6 @@
 import * as React from 'react'
 
+import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
 
 import { numberWithCommas, pluralize } from '@sourcegraph/common'
@@ -48,13 +49,10 @@ export const DiffStat: React.FunctionComponent<React.PropsWithChildren<DiffStatP
     }
     return (
         <>
-            <div className="sr-only">{`Diff stat: added ${added} ${pluralize(
+            <VisuallyHidden>{`Diff stat: added ${added} ${pluralize('line', added)}, changed ${changed} ${pluralize(
                 'line',
-                added
-            )}, changed ${changed} ${pluralize('line', changed)}, deleted ${deleted} ${pluralize(
-                'line',
-                deleted
-            )}`}</div>
+                changed
+            )}, deleted ${deleted} ${pluralize('line', deleted)}`}</VisuallyHidden>
             <div className={classNames(styles.diffStat, className)} data-tooltip={labels.join(', ')} aria-hidden={true}>
                 {expandedCounts ? (
                     <div>

@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react'
 
+import VisuallyHidden from '@reach/visually-hidden'
 import * as H from 'history'
 import ArchiveIcon from 'mdi-react/ArchiveIcon'
 import ChartLineVariantIcon from 'mdi-react/ChartLineVariantIcon'
@@ -107,7 +108,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
         <BatchChangeTabs history={history} location={location} initialTab={initialTab}>
             <BatchChangeTabList>
                 <BatchChangeTab index={0} name={TabName.Changesets}>
-                    <span className="sr-only">{`${changesetCount} ${pluralize('changeset', changesetCount)}`}</span>
+                    <VisuallyHidden>{`${changesetCount} ${pluralize('changeset', changesetCount)}`}</VisuallyHidden>
                     <span aria-hidden={true}>
                         <Icon className="text-muted mr-1" as={SourceBranchIcon} />
                         <span className="text-content" data-tab-content="Changesets">
@@ -138,7 +139,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                 )}
                 {isExecutionEnabled && (
                     <BatchChangeTab index={2} name={TabName.Executions} customPath="/executions">
-                        <span className="sr-only">{`${executingCount} ${pluralize('execution', executingCount)}`}</span>
+                        <VisuallyHidden>{`${executingCount} ${pluralize('execution', executingCount)}`}</VisuallyHidden>
                         <span aria-hidden={true}>
                             <Icon className="text-muted mr-1" as={FileDocumentIcon} />{' '}
                             <span className="text-content" data-tab-content="Executions">
@@ -155,10 +156,10 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                     </BatchChangeTab>
                 )}
                 <BatchChangeTab index={3} name={TabName.Archived}>
-                    <span className="sr-only">{`${batchChange.changesetsStats.archived} ${pluralize(
+                    <VisuallyHidden>{`${batchChange.changesetsStats.archived} ${pluralize(
                         'archived changeset',
                         batchChange.changesetsStats.archived
-                    )}`}</span>
+                    )}`}</VisuallyHidden>
                     <span aria-hidden={true}>
                         <Icon className="text-muted mr-1" as={ArchiveIcon} />{' '}
                         <span className="text-content" data-tab-content="Archived">
@@ -170,10 +171,10 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                     </span>
                 </BatchChangeTab>
                 <BatchChangeTab index={4} name={TabName.BulkOperations}>
-                    <span className="sr-only">{`${batchChange.bulkOperations.totalCount} ${pluralize(
+                    <VisuallyHidden>{`${batchChange.bulkOperations.totalCount} ${pluralize(
                         'bulk operation',
                         batchChange.bulkOperations.totalCount
-                    )}`}</span>
+                    )}`}</VisuallyHidden>
                     <span aria-hidden={true}>
                         <Icon className="text-muted mr-1" as={MonitorStarIcon} />{' '}
                         <span className="text-content" data-tab-content="Bulk operations">
