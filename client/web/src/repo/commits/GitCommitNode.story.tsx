@@ -9,9 +9,9 @@ import { GitCommitFields } from '../../graphql-operations'
 
 import { GitCommitNode } from './GitCommitNode'
 
-const { add } = storiesOf('web/GitCommitNode', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
+const { add } = storiesOf('web/GitCommitNode', module)
+    .addDecorator(story => <div className="p-3 container">{story()}</div>)
+    .addParameters({ disableSnapshot: false })
 
 const gitCommitNode: GitCommitFields = {
     id: 'commit123',
@@ -70,6 +70,7 @@ add('Full customizable', () => (
         {() => (
             <Card>
                 <GitCommitNode
+                    wrapperElement="div"
                     node={gitCommitNode}
                     compact={boolean('compact', false)}
                     expandCommitMessageBody={boolean('expandCommitMessageBody', false)}
@@ -86,6 +87,7 @@ add('Compact', () => (
         {() => (
             <Card>
                 <GitCommitNode
+                    wrapperElement="div"
                     node={gitCommitNode}
                     compact={true}
                     expandCommitMessageBody={false}
@@ -101,6 +103,7 @@ add('Commit message expanded', () => (
         {() => (
             <Card>
                 <GitCommitNode
+                    wrapperElement="div"
                     node={gitCommitNode}
                     compact={false}
                     expandCommitMessageBody={true}
@@ -116,6 +119,7 @@ add('SHA and parent shown', () => (
         {() => (
             <Card>
                 <GitCommitNode
+                    wrapperElement="div"
                     node={gitCommitNode}
                     compact={false}
                     expandCommitMessageBody={false}
@@ -131,6 +135,7 @@ add('Expand commit message btn hidden', () => (
         {() => (
             <Card>
                 <GitCommitNode
+                    wrapperElement="div"
                     node={gitCommitNode}
                     compact={false}
                     expandCommitMessageBody={false}
