@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
@@ -81,18 +81,15 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
         selectable?.onSelect(node.id)
     }, [selectable, node.id])
 
-    const { tooltip, ariaLabel } = useMemo(() => {
-        const title = node.title ?? 'changeset'
-        return viewerCanAdminister
-            ? {
-                  tooltip: 'Click to select changeset for bulk operation',
-                  ariaLabel: `Click to select ${title} for bulk operation`,
-              }
-            : {
-                  tooltip: 'You do not have permission to perform this operation',
-                  ariaLabel: 'You do not have permission to perform this operation',
-              }
-    }, [node.title, viewerCanAdminister])
+    const { tooltip, ariaLabel } = viewerCanAdminister
+        ? {
+              tooltip: 'Click to select changeset for bulk operation',
+              ariaLabel: `Click to select ${node.title ?? 'changeset'} for bulk operation`,
+          }
+        : {
+              tooltip: 'You do not have permission to perform this operation',
+              ariaLabel: 'You do not have permission to perform this operation',
+          }
 
     return (
         <>
