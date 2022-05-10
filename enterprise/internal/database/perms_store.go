@@ -1616,7 +1616,7 @@ func (s *permsStore) ReposIDsWithOldestPerms(ctx context.Context, limit int, age
 	cutoffClause := sqlf.Sprintf("TRUE")
 	if age > 0 {
 		cutoff := s.clock().Add(-1 * age)
-		cutoffClause = sqlf.Sprintf("(perms.synced_at IS NULL OR (perms.synced_at IS NOT NULL AND perms.synced_at < %s))", cutoff)
+		cutoffClause = sqlf.Sprintf("(perms.synced_at IS NULL OR perms.synced_at < %s)", cutoff)
 	}
 	q := sqlf.Sprintf(`
 -- source: enterprise/internal/database/perms_store.go:PermsStore.ReposIDsWithOldestPerms
