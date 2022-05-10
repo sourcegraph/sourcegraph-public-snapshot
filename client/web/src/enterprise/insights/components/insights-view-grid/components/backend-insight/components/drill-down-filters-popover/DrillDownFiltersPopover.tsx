@@ -5,8 +5,8 @@ import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
 
 import { Button, createRectangle, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
 
+import { SeriesDisplayOptionsInput } from '../../../../../../../../graphql-operations'
 import { InsightFilters } from '../../../../../../core'
-import { SeriesDisplayOptions } from '../../../../../../core/types/insight/common'
 import { FormChangeEvent, SubmissionResult } from '../../../../../form/hooks/useForm'
 import {
     DrillDownInsightCreationForm,
@@ -29,8 +29,8 @@ interface DrillDownFiltersPopoverProps {
     onFilterSave: (filters: InsightFilters) => void
     onInsightCreate: (values: DrillDownInsightCreationFormValues) => SubmissionResult
     onVisibilityChange: (open: boolean) => void
-    originalSeriesDisplayOptions?: SeriesDisplayOptions
-    onSeriesDisplayOptionsChange: (options: SeriesDisplayOptions) => void
+    originalSeriesDisplayOptions?: SeriesDisplayOptionsInput
+    onSeriesDisplayOptionsChange: (options: SeriesDisplayOptionsInput) => void
 }
 
 // To prevent grid layout position change animation. Attempts to drag

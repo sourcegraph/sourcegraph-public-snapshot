@@ -1,4 +1,4 @@
-import { FunctionComponent, useMemo, useState } from 'react'
+import { FunctionComponent, useMemo, useState, forwardRef } from 'react'
 
 import { useApolloClient } from '@apollo/client'
 import classNames from 'classnames'
@@ -9,7 +9,7 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Button, Icon, Link } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../../components/LoaderButton'
-import { SeriesDisplayOptions } from '../../../../../../../core/types/insight/common'
+import { SeriesDisplayOptionsInput } from '../../../../../../../../../graphql-operations'
 import { useField } from '../../../../../../form/hooks/useField'
 import { FormChangeEvent, SubmissionResult, useForm, FORM_ERROR } from '../../../../../../form/hooks/useForm'
 import { SortFilterSeriesPanel } from '../../sort-filter-series-panel/SortFilterSeriesPanel'
@@ -54,15 +54,15 @@ interface DrillDownInsightFilters {
     /** Fires whenever the user clicks the save/update filter button. */
     onFilterSave: (filters: DrillDownFiltersFormValues) => SubmissionResult
 
-    originalSeriesDisplayOptions?: SeriesDisplayOptions
+    originalSeriesDisplayOptions?: SeriesDisplayOptionsInput
 
-    onSeriesDisplayOptionsChange: (options: SeriesDisplayOptions) => void
+    onSeriesDisplayOptionsChange: (options: SeriesDisplayOptionsInput) => void
 
     /** Fires whenever the user clicks the create insight button. */
     onCreateInsightRequest: () => void
 }
 
-export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters> = props => {
+export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters> = forwardRef((props, reference) => {
     const {
         initialValues,
         originalValues,
@@ -122,11 +122,11 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
         excludeRegex.input.onChange('')
     }
 
-    const [seriesDisplayOptions, setSeriesDisplayOptions] = useState(
-        originalSeriesDisplayOptions || DEFAULT_SERIES_DISPLAY_OPTIONS
+    const [seriesDisplayOptions, setSeriesDisplayOptions] = useState<SeriesDisplayOptionsInput>(
+        originalSeriesDisplayOptions || {}
     )
 
-    const handleSeriesDisplayOptionsChange = (options: SeriesDisplayOptions): void => {
+    const handleSeriesDisplayOptionsChange = (options: SeriesDisplayOptionsInput): void => {
         setSeriesDisplayOptions(options)
         onSeriesDisplayOptionsChange(options)
     }
@@ -290,7 +290,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
             </footer>
         </form>
     )
-}
+})
 
 export function hasActiveFilters(filters: DrillDownFiltersFormValues): boolean {
     const { excludeRepoRegexp, includeRepoRegexp, context } = filters
@@ -317,16 +317,8 @@ function getSubmitButtonText(input: SubmitButtonTextProps): string {
         : 'Save default filters'
 }
 
-const DEFAULT_SERIES_DISPLAY_OPTIONS: SeriesDisplayOptions = {
-    limit: 20,
-    sortOptions: {
-        direction: 'DESC',
-        mode: 'RESULT_COUNT',
-    },
-}
-
-const getSortPreview = (seriesDisplayOptions: SeriesDisplayOptions): string => {
-    if (!seriesDisplayOptions) {
+const getSortPreview = (seriesDisplayOptions: SeriesDisplayOptionsInput): string => {
+    if (!seriesDisplayOptions.sortOptions || !seriesDisplayOptions.limit) {
         return ''
     }
 

@@ -1,8 +1,7 @@
-import { SeriesDisplayOptions } from '@sourcegraph/shared/src/graphql-operations'
-
 import {
     InsightViewFiltersInput,
     LineChartSearchInsightDataSeriesInput,
+    SeriesDisplayOptionsInput,
     UpdateLineChartSearchInsightInput,
     UpdatePieChartSearchInsightInput,
 } from '../../../../../../../graphql-operations'
@@ -25,7 +24,7 @@ export function getSearchInsightUpdateInput(insight: MinimalSearchBasedInsightDa
                   searchContexts: insight.filters.context ? [insight.filters.context] : [],
               }
             : {}
-    const seriesDisplayOptions: SeriesDisplayOptions = {} // TODO fill this in.
+    const seriesDisplayOptions: SeriesDisplayOptionsInput = {} // TODO fill this in.
 
     return {
         dataSeries: insight.series.map<LineChartSearchInsightDataSeriesInput>(series => ({
@@ -48,7 +47,7 @@ export function getSearchInsightUpdateInput(insight: MinimalSearchBasedInsightDa
 export function getCaptureGroupInsightUpdateInput(
     insight: MinimalCaptureGroupInsightData
 ): UpdateLineChartSearchInsightInput {
-    const { step, filters, query, title, repositories } = insight
+    const { step, filters, query, title, repositories, seriesDisplayOptions } = insight
     const [unit, value] = getStepInterval(step)
 
     return {
@@ -70,6 +69,7 @@ export function getCaptureGroupInsightUpdateInput(
                 excludeRepoRegex: filters.excludeRepoRegexp,
                 searchContexts: insight.filters.context ? [filters.context] : [],
             },
+            seriesDisplayOptions,
         },
     }
 }

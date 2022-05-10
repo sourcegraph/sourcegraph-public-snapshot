@@ -36,6 +36,7 @@ const INSIGHT_CONFIGURATION_MOCK: SearchBackendBasedInsight = {
     filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
     dashboardReferenceCount: 0,
     isFrozen: false,
+    seriesDisplayOptions: {},
 }
 
 interface BackendInsightDatum {

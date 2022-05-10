@@ -4,7 +4,11 @@ import { Meta, Story } from '@storybook/react'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../../../../../../../components/WebStory'
-import { GetSearchContextsResult } from '../../../../../../../../../graphql-operations'
+import {
+    GetSearchContextsResult,
+    SeriesSortDirection,
+    SeriesSortMode,
+} from '../../../../../../../../../graphql-operations'
 import { InsightFilters } from '../../../../../../../core'
 import { SEARCH_CONTEXT_GQL } from '../search-context/DrillDownSearchContextFilter'
 
@@ -91,8 +95,8 @@ const FILTERS: InsightFilters = {
 const ORIGINAL_SERIES_DISPLAY_OPTIONS = {
     limit: 20,
     sortOptions: {
-        direction: 'DESC' as const,
-        mode: 'RESULT_COUNT' as const,
+        direction: SeriesSortDirection.DESC,
+        mode: SeriesSortMode.RESULT_COUNT,
     },
 }
 

@@ -4,7 +4,12 @@ import classNames from 'classnames'
 
 import { Button, ButtonGroup } from '@sourcegraph/wildcard'
 
-import { SeriesDisplayOptions, SeriesSortOptionsInput } from '../../../../../../core/types/insight/common'
+import {
+    SeriesDisplayOptionsInput,
+    SeriesSortOptionsInput,
+    SeriesSortDirection,
+    SeriesSortMode,
+} from '../../../../../../../../graphql-operations'
 
 import styles from './SortFilterSeriesPanel.module.scss'
 
@@ -14,8 +19,8 @@ const getClasses = (selected: SeriesSortOptionsInput, value: SeriesSortOptionsIn
 }
 
 interface SortFilterSeriesPanelProps {
-    value: SeriesDisplayOptions
-    onChange: (parameter: SeriesDisplayOptions) => void
+    value: SeriesDisplayOptionsInput
+    onChange: (parameter: SeriesDisplayOptionsInput) => void
 }
 
 export const SortFilterSeriesPanel: React.FunctionComponent<SortFilterSeriesPanelProps> = ({ value, onChange }) => {
@@ -33,6 +38,10 @@ export const SortFilterSeriesPanel: React.FunctionComponent<SortFilterSeriesPane
         onChange({ limit: count, sortOptions: selected })
     }
 
+    if (!selected || !seriesCount) {
+        return null
+    }
+
     return (
         <section>
             <section className={classNames(styles.togglesContainer)}>
@@ -41,14 +50,14 @@ export const SortFilterSeriesPanel: React.FunctionComponent<SortFilterSeriesPane
                     <ButtonGroup className={styles.toggleGroup}>
                         <ToggleButton
                             selected={selected}
-                            value={{ mode: 'RESULT_COUNT', direction: 'DESC' }}
+                            value={{ mode: SeriesSortMode.RESULT_COUNT, direction: SeriesSortDirection.DESC }}
                             onClick={handleToggle}
                         >
                             Highest
                         </ToggleButton>
                         <ToggleButton
                             selected={selected}
-                            value={{ mode: 'RESULT_COUNT', direction: 'ASC' }}
+                            value={{ mode: SeriesSortMode.RESULT_COUNT, direction: SeriesSortDirection.ASC }}
                             onClick={handleToggle}
                         >
                             Lowest
@@ -60,14 +69,14 @@ export const SortFilterSeriesPanel: React.FunctionComponent<SortFilterSeriesPane
                     <ButtonGroup className={styles.toggleGroup}>
                         <ToggleButton
                             selected={selected}
-                            value={{ mode: 'LEXICOGRAPHICAL', direction: 'ASC' }}
+                            value={{ mode: SeriesSortMode.LEXICOGRAPHICAL, direction: SeriesSortDirection.ASC }}
                             onClick={handleToggle}
                         >
                             A-Z
                         </ToggleButton>
                         <ToggleButton
                             selected={selected}
-                            value={{ mode: 'LEXICOGRAPHICAL', direction: 'DESC' }}
+                            value={{ mode: SeriesSortMode.LEXICOGRAPHICAL, direction: SeriesSortDirection.DESC }}
                             onClick={handleToggle}
                         >
                             Z-A
@@ -79,14 +88,14 @@ export const SortFilterSeriesPanel: React.FunctionComponent<SortFilterSeriesPane
                     <ButtonGroup className={styles.toggleGroup}>
                         <ToggleButton
                             selected={selected}
-                            value={{ mode: 'DATE_ADDED', direction: 'ASC' }}
+                            value={{ mode: SeriesSortMode.DATE_ADDED, direction: SeriesSortDirection.ASC }}
                             onClick={handleToggle}
                         >
                             Latest
                         </ToggleButton>
                         <ToggleButton
                             selected={selected}
-                            value={{ mode: 'DATE_ADDED', direction: 'DESC' }}
+                            value={{ mode: SeriesSortMode.DATE_ADDED, direction: SeriesSortDirection.DESC }}
                             onClick={handleToggle}
                         >
                             Oldest

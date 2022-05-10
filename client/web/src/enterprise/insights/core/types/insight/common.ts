@@ -1,3 +1,5 @@
+import { SeriesDisplayOptionsInput } from '../../../../../graphql-operations'
+
 export enum InsightExecutionType {
     /**
      * This type of insights run on FE via search API.
@@ -29,16 +31,6 @@ export interface InsightFilters {
     repositories?: string[]
 }
 
-export interface SeriesSortOptionsInput {
-    mode: 'RESULT_COUNT' | 'LEXICOGRAPHICAL' | 'DATE_ADDED'
-    direction: 'ASC' | 'DESC'
-}
-
-export interface SeriesDisplayOptions {
-    sortOptions: SeriesSortOptionsInput
-    limit: number
-}
-
 export interface BaseInsight {
     id: string
     title: string
@@ -46,5 +38,5 @@ export interface BaseInsight {
     type: InsightType
     dashboardReferenceCount: number
     isFrozen: boolean
-    seriesDisplayOptions?: SeriesDisplayOptions
+    seriesDisplayOptions: SeriesDisplayOptionsInput
 }
