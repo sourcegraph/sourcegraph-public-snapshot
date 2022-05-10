@@ -297,41 +297,6 @@ func (r *workHandler) searchHandler(ctx context.Context, job *Job, series *types
 	return err
 }
 
-func (r *workHandler) computeHandler(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) (err error) {
-	if series.JustInTime {
-		return errors.Newf("just in time series are not eligible for background processing, series_id: %s", series.ID)
-	}
-
-	tx, err := r.insightsStore.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	if store.PersistMode(job.PersistMode) == store.SnapshotMode {
-		// The purpose of the snapshot is for low fidelity but recently updated data points.
-		// We store one snapshot of an insight at any time, so we prune the table whenever adding a new series.
-		if err := tx.DeleteSnapshots(ctx, series); err != nil {
-			return err
-		}
-	}
-
-	computeDelegate := r.generateComputeRecordingsStream
-	useGraphQL := conf.Get().InsightsComputeGraphql
-	if useGraphQL != nil && *useGraphQL {
-		computeDelegate = r.generateComputeRecordings
-	}
-
-	recordings, err := computeDelegate(ctx, job, recordTime)
-	if err != nil {
-		return err
-	}
-	if recordErr := tx.RecordSeriesPoints(ctx, recordings); recordErr != nil {
-		err = errors.Append(err, errors.Wrap(recordErr, "RecordSeriesPointsCapture"))
-	}
-	return err
-}
-
 func (r *workHandler) searchStreamHandler(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) (err error) {
 	decoder, tabulationResult := streaming.TabulationDecoder()
 	err = streaming.Search(ctx, job.SearchQuery, decoder)
@@ -376,6 +341,41 @@ func (r *workHandler) searchStreamHandler(ctx context.Context, job *Job, series 
 		if recordErr := tx.RecordSeriesPoints(ctx, args); recordErr != nil {
 			err = errors.Append(err, errors.Wrap(recordErr, "RecordSeriesPoints"))
 		}
+	}
+	return err
+}
+
+func (r *workHandler) computeHandler(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) (err error) {
+	if series.JustInTime {
+		return errors.Newf("just in time series are not eligible for background processing, series_id: %s", series.ID)
+	}
+
+	tx, err := r.insightsStore.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	if store.PersistMode(job.PersistMode) == store.SnapshotMode {
+		// The purpose of the snapshot is for low fidelity but recently updated data points.
+		// We store one snapshot of an insight at any time, so we prune the table whenever adding a new series.
+		if err := tx.DeleteSnapshots(ctx, series); err != nil {
+			return err
+		}
+	}
+
+	computeDelegate := r.generateComputeRecordingsStream
+	useGraphQL := conf.Get().InsightsComputeGraphql
+	if useGraphQL != nil && *useGraphQL {
+		computeDelegate = r.generateComputeRecordings
+	}
+
+	recordings, err := computeDelegate(ctx, job, recordTime)
+	if err != nil {
+		return err
+	}
+	if recordErr := tx.RecordSeriesPoints(ctx, recordings); recordErr != nil {
+		err = errors.Append(err, errors.Wrap(recordErr, "RecordSeriesPointsCapture"))
 	}
 	return err
 }
