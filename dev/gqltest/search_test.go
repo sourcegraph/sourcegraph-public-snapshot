@@ -1373,6 +1373,7 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 				URL:   "https://ghe.sgdev.org/",
 				Token: *githubToken,
 				Repos: []string{
+					"sgtest/pipenv-hw",
 					"sgtest/poetry-hw",
 				},
 				RepositoryPathPattern: "github.com/{nameWithOwner}",
@@ -1445,6 +1446,7 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 			"go/github.com/oklog/ulid/v2",
 			"maven/com.google.guava/guava",
 			"python/rich",
+			"github.com/sgtest/pipenv-hw",
 			"github.com/sgtest/poetry-hw",
 		)
 		if err != nil {
@@ -1459,19 +1461,10 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 			{"stream", streamClient},
 		} {
 			tc := tc
-			t.Run(tc.name+"/"+"repos", func(t *testing.T) {
+
+			h := func(query string, want []string) {
+				t.Helper()
 				began := time.Now()
-
-				const query = `(r:deps(^npm/urql$@v2.2.0) r:core|wonka) OR r:deps(oklog/ulid) OR (r:deps(^github\.com/sgtest/poetry-hw$) r:pluggy|attrs) `
-
-				want := []string{
-					"/go/github.com/pborman/getopt@v0.0.0-20170112200414-7148bc3a4c30",
-					"/npm/urql/core@v1.9.2",
-					"/npm/wonka@v4.0.7",
-					"/python/attrs@v21.4.0",
-					"/python/pluggy@v0.13.1",
-				}
-
 				for {
 					results, err := tc.client.SearchRepositories(query)
 					require.NoError(t, err)
@@ -1494,6 +1487,61 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 					}
 					break
 				}
+			}
+
+			t.Run(tc.name+"/"+"repos-npm", func(t *testing.T) {
+				const query = `r:deps(^npm/urql$@v2.2.0)`
+
+				want := []string{
+					"/npm/urql/core@v1.9.2",
+					"/npm/wonka@v4.0.7",
+				}
+
+				h(query, want)
+			})
+
+			t.Run(tc.name+"/"+"repos-go", func(t *testing.T) {
+				const query = `r:deps(oklog/ulid)`
+
+				want := []string{
+					"/go/github.com/pborman/getopt@v0.0.0-20170112200414-7148bc3a4c30",
+				}
+
+				h(query, want)
+			})
+
+			t.Run(tc.name+"/"+"repos-python-poetry", func(t *testing.T) {
+				const query = `r:deps(^github\.com/sgtest/poetry-hw$)`
+
+				want := []string{
+					"/python/atomicwrites@v1.4.0",
+					"/python/attrs@v21.4.0",
+					"/python/colorama@v0.4.4",
+					"/python/more-itertools@v8.13.0",
+					"/python/packaging@v21.3",
+					"/python/pluggy@v0.13.1",
+					"/python/py@v1.11.0",
+					"/python/pyparsing@v3.0.8",
+					"/python/pytest@v5.4.3",
+					"/python/tqdm@v4.64.0",
+					"/python/wcwidth@v0.2.5",
+				}
+
+				h(query, want)
+			})
+
+			t.Run(tc.name+"/"+"repos-python-pipenv", func(t *testing.T) {
+				const query = `r:deps(^github\.com/sgtest/pipenv-hw$)`
+
+				want := []string{
+					"/python/certifi@v2021.10.8",
+					"/python/charset-normalizer@v2.0.12",
+					"/python/idna@v3.3",
+					"/python/requests@v2.27.1",
+					"/python/urllib3@v1.26.9",
+				}
+
+				h(query, want)
 			})
 
 			t.Run(tc.name+"/"+"no-alert", func(t *testing.T) {
