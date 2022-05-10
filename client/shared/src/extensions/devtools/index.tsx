@@ -82,7 +82,7 @@ const ExtensionDevelopmentTools: React.FunctionComponent<
 export const ExtensionDevelopmentToolsPopover = React.memo<ExtensionsDevelopmentToolsProps>(props => (
     <Popover>
         <PopoverTrigger as={Button} className="text-decoration-none px-2" variant="link">
-            <span className="text-muted">Ext</span> <Icon as={MenuUpIcon} />
+            <span className="text-muted">Ext</span> <Icon role="img" as={MenuUpIcon} aria-hidden={true} />
         </PopoverTrigger>
         <PopoverContent position={Position.leftEnd}>
             <ExtensionDevelopmentTools {...props} />

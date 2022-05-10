@@ -349,7 +349,7 @@ const NotepadCTA: React.FunctionComponent<React.PropsWithChildren<NotepadCTAProp
         <MarketingBlock wrapperClassName={styles.notepadCta}>
             <aside className={styles.notepadCtaContent}>
                 <Button
-                    arial-label="Hide"
+                    aria-label="Hide"
                     variant="icon"
                     onClick={onClose}
                     size="sm"

@@ -141,6 +141,7 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                         variant="link"
                         data-testid="user-nav-item-toggle"
                         className={classNames('d-flex align-items-center text-decoration-none', styles.menuButton)}
+                        aria-label={`${isExpanded ? 'Close' : 'Open'} user profile menu`}
                     >
                         <div className="position-relative">
                             <div className="align-items-center d-flex">
@@ -149,7 +150,7 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                                     targetID={targetID}
                                     className={styles.avatar}
                                 />
-                                <Icon as={isExpanded ? ChevronUpIcon : ChevronDownIcon} />
+                                <Icon role="img" as={isExpanded ? ChevronUpIcon : ChevronDownIcon} aria-hidden={true} />
                             </div>
                         </div>
                         {isExtensionAlertAnimating && (
@@ -246,7 +247,7 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                             </MenuLink>
                         )}
                         <MenuLink as={Link} to="/help" target="_blank" rel="noopener">
-                            Help <Icon as={OpenInNewIcon} />
+                            Help <Icon role="img" as={OpenInNewIcon} aria-hidden={true} />
                         </MenuLink>
                         <MenuItem onSelect={showKeyboardShortcutsHelp}>Keyboard shortcuts</MenuItem>
 
@@ -258,7 +259,7 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                         <MenuDivider />
                         {props.showDotComMarketing && (
                             <MenuLink as={AnchorLink} to="https://about.sourcegraph.com" target="_blank" rel="noopener">
-                                About Sourcegraph <Icon as={OpenInNewIcon} />
+                                About Sourcegraph <Icon role="img" as={OpenInNewIcon} aria-hidden={true} />
                             </MenuLink>
                         )}
                         {codeHostIntegrationMessaging === 'browser-extension' && (
@@ -268,7 +269,7 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                                 target="_blank"
                                 rel="noopener"
                             >
-                                Browser extension <Icon as={OpenInNewIcon} />
+                                Browser extension <Icon role="img" as={OpenInNewIcon} aria-hidden={true} />
                             </MenuLink>
                         )}
                     </MenuList>

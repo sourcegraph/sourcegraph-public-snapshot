@@ -400,12 +400,21 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
 
     private renderIcon(): JSX.Element | null {
         if (isErrorLike(this.state.messagesOrError)) {
-            return <Icon data-tooltip="Sorry, we couldn’t fetch notifications!" as={CloudAlertIconRefresh} size="md" />
+            return (
+                <Icon
+                    role="img"
+                    data-tooltip="Sorry, we couldn’t fetch notifications!"
+                    as={CloudAlertIconRefresh}
+                    size="md"
+                    aria-hidden={true}
+                />
+            )
         }
 
         if (isNoActivityReason(this.state.messagesOrError)) {
             return (
                 <Icon
+                    role="img"
                     data-tooltip={
                         this.state.isOpen
                             ? undefined
@@ -415,6 +424,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                     }
                     as={CloudOffOutlineIcon}
                     size="md"
+                    aria-hidden={true}
                 />
             )
         }
@@ -424,26 +434,32 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         ) {
             return (
                 <Icon
+                    role="img"
                     data-tooltip={this.state.isOpen ? undefined : 'Syncing repositories failed!'}
                     as={CloudAlertIconRefresh}
                     size="md"
+                    aria-hidden={true}
                 />
             )
         }
         if (this.state.messagesOrError.some(({ type }) => type === 'CloningProgress')) {
             return (
                 <Icon
+                    img="img"
                     data-tooltip={this.state.isOpen ? undefined : 'Cloning repositories...'}
                     as={CloudSyncIconRefresh}
                     size="md"
+                    aria-hidden={true}
                 />
             )
         }
         return (
             <Icon
+                role="img"
                 data-tooltip={this.state.isOpen ? undefined : 'Repositories up-to-date'}
                 as={CloudCheckIconRefresh}
                 size="md"
+                aria-hidden={true}
             />
         )
     }
