@@ -49,6 +49,13 @@ export function getCaptureGroupInsightCreateInput(
             },
         ],
         options: { title: insight.title },
+        viewControls: {
+            seriesDisplayOptions: insight.seriesDisplayOptions,
+            filters: {
+                excludeRepoRegex: insight.filters.excludeRepoRegexp,
+                includeRepoRegex: insight.filters.includeRepoRegexp,
+            },
+        },
     }
 
     if (dashboard && !isVirtualDashboard(dashboard)) {

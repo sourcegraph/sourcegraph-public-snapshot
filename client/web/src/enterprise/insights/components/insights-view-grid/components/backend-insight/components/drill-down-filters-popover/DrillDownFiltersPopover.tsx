@@ -5,6 +5,7 @@ import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
 
 import { Button, createRectangle, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
 
+import { SeriesDisplayOptionsInput } from '../../../../../../../../graphql-operations'
 import { InsightFilters } from '../../../../../../core'
 import { SeriesDisplayOptionsInputRequired } from '../../../../../../core/types/insight/common'
 import { FormChangeEvent, SubmissionResult } from '../../../../../form/hooks/useForm'
@@ -26,7 +27,7 @@ interface DrillDownFiltersPopoverProps {
     originalFiltersValue: InsightFilters
     anchor: React.RefObject<HTMLElement>
     onFilterChange: (filters: InsightFilters) => void
-    onFilterSave: (filters: InsightFilters) => void
+    onFilterSave: (filters: InsightFilters, displayOptions: SeriesDisplayOptionsInput) => void
     onInsightCreate: (values: DrillDownInsightCreationFormValues) => SubmissionResult
     onVisibilityChange: (open: boolean) => void
     originalSeriesDisplayOptions: SeriesDisplayOptionsInputRequired

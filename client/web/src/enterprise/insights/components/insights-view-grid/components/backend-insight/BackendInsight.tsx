@@ -86,9 +86,12 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
         insightCardReference
     )
 
-    const handleFilterSave = async (filters: InsightFilters): Promise<SubmissionErrors> => {
+    const handleFilterSave = async (
+        filters: InsightFilters,
+        displayOptions: SeriesDisplayOptionsInput
+    ): Promise<SubmissionErrors> => {
         try {
-            const insightWithNewFilters = { ...insight, filters }
+            const insightWithNewFilters = { ...insight, filters, seriesDisplayOptions: displayOptions }
 
             await updateInsight({ insightId: insight.id, nextInsightData: insightWithNewFilters }).toPromise()
 
@@ -117,6 +120,7 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
                 ...insight,
                 title: insightName,
                 filters,
+                seriesDisplayOptions,
             }
 
             await createInsight({

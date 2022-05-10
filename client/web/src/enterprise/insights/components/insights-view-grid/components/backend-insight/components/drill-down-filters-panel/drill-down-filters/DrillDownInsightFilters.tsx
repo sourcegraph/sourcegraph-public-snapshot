@@ -9,7 +9,11 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Button, Icon, Link } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../../components/LoaderButton'
-import { SeriesSortDirection, SeriesSortMode } from '../../../../../../../../../graphql-operations'
+import {
+    SeriesDisplayOptionsInput,
+    SeriesSortDirection,
+    SeriesSortMode,
+} from '../../../../../../../../../graphql-operations'
 import { SeriesDisplayOptionsInputRequired } from '../../../../../../../core/types/insight/common'
 import { useField } from '../../../../../../form/hooks/useField'
 import { FormChangeEvent, SubmissionResult, useForm, FORM_ERROR } from '../../../../../../form/hooks/useForm'
@@ -53,7 +57,7 @@ interface DrillDownInsightFilters {
     onFiltersChange: (filters: FormChangeEvent<DrillDownFiltersFormValues>) => void
 
     /** Fires whenever the user clicks the save/update filter button. */
-    onFilterSave: (filters: DrillDownFiltersFormValues) => SubmissionResult
+    onFilterSave: (filters: DrillDownFiltersFormValues, displayOptions: SeriesDisplayOptionsInput) => SubmissionResult
 
     originalSeriesDisplayOptions: SeriesDisplayOptionsInputRequired
 
@@ -77,11 +81,12 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
     } = props
 
     const [activeSection, setActiveSection] = useState<FilterSection | null>(FilterSection.RegularExpressions)
+    const [seriesDisplayOptions, setSeriesDisplayOptions] = useState(originalSeriesDisplayOptions)
 
     const { ref, formAPI, handleSubmit, values } = useForm<DrillDownFiltersFormValues>({
         initialValues,
         onChange: onFiltersChange,
-        onSubmit: onFilterSave,
+        onSubmit: values => onFilterSave(values, seriesDisplayOptions),
     })
 
     const client = useApolloClient()
@@ -108,6 +113,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
     const currentRepositoriesFilters = { include: includeRegex.input.value, exclude: excludeRegex.input.value }
     const hasFiltersChanged = !isEqual(originalValues, values)
     const hasAppliedFilters = hasActiveFilters(originalValues)
+    const hasSeriesDisplayOptionsChanged = !isEqual(originalSeriesDisplayOptions, seriesDisplayOptions)
 
     const handleCollapseState = (section: FilterSection, opened: boolean): void => {
         if (!opened) {
@@ -122,8 +128,6 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
         includeRegex.input.onChange('')
         excludeRegex.input.onChange('')
     }
-
-    const [seriesDisplayOptions, setSeriesDisplayOptions] = useState(originalSeriesDisplayOptions)
 
     const handleSeriesDisplayOptionsChange = (options: SeriesDisplayOptionsInputRequired): void => {
         setSeriesDisplayOptions(options)
@@ -279,7 +283,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                         type="button"
                         variant="secondary"
                         size="sm"
-                        disabled={!hasFiltersChanged || !formAPI.valid}
+                        disabled={(!hasFiltersChanged && !hasSeriesDisplayOptionsChanged) || !formAPI.valid}
                         onClick={onCreateInsightRequest}
                     >
                         <Icon className="mr-1" as={PlusIcon} />
