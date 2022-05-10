@@ -101,10 +101,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
         [batchChange.batchSpecs.nodes]
     )
 
-    const changesetCount = useMemo(() => batchChange.changesetsStats.total - batchChange.changesetsStats.archived, [
-        batchChange.changesetsStats.archived,
-        batchChange.changesetsStats.total,
-    ])
+    const changesetCount = batchChange.changesetsStats.total - batchChange.changesetsStats.archived
 
     return (
         <BatchChangeTabs history={history} location={location} initialTab={initialTab}>
