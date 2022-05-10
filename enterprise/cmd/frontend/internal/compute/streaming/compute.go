@@ -43,9 +43,11 @@ func NewComputeStream(ctx context.Context, db database.DB, query string) (<-chan
 				eventsC <- Event{Results: []compute.Result{result}}
 			}
 			err = toComputeResultStream(ctx, db, computeQuery.Command, event.Results, callback)
-			select {
-			case errorC <- err:
-			default:
+			if err != nil {
+				select {
+				case errorC <- err:
+				default:
+				}
 			}
 		}
 	})
