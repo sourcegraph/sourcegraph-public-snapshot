@@ -275,6 +275,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                         <div className="border-bottom pb-2">
                             <div>
                                 <GitCommitNode
+                                    wrapperElement="div"
                                     node={this.state.commitOrError}
                                     expandCommitMessageBody={true}
                                     showSHAAndParentsRow={true}

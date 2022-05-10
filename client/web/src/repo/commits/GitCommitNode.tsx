@@ -73,7 +73,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
     preferAbsoluteTimestamps,
     diffMode,
     onHandleDiffMode,
-    wrapperElement: WrapperElement,
+    wrapperElement: WrapperElement = 'li',
 }) => {
     const [showCommitMessageBody, setShowCommitMessageBody] = useState<boolean>(false)
     const [flashCopiedToClipboardMessage, setFlashCopiedToClipboardMessage] = useState<boolean>(false)
