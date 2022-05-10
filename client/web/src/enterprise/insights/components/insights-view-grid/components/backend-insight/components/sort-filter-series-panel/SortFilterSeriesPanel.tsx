@@ -4,12 +4,8 @@ import classNames from 'classnames'
 
 import { Button, ButtonGroup } from '@sourcegraph/wildcard'
 
-import {
-    SeriesDisplayOptionsInput,
-    SeriesSortOptionsInput,
-    SeriesSortDirection,
-    SeriesSortMode,
-} from '../../../../../../../../graphql-operations'
+import { SeriesSortOptionsInput, SeriesSortDirection, SeriesSortMode } from '../../../../../../../../graphql-operations'
+import { SeriesDisplayOptionsInputRequired } from '../../../../../../core/types/insight/common'
 
 import styles from './SortFilterSeriesPanel.module.scss'
 
@@ -19,8 +15,8 @@ const getClasses = (selected: SeriesSortOptionsInput, value: SeriesSortOptionsIn
 }
 
 interface SortFilterSeriesPanelProps {
-    value: SeriesDisplayOptionsInput
-    onChange: (parameter: SeriesDisplayOptionsInput) => void
+    value: SeriesDisplayOptionsInputRequired
+    onChange: (parameter: SeriesDisplayOptionsInputRequired) => void
 }
 
 export const SortFilterSeriesPanel: React.FunctionComponent<SortFilterSeriesPanelProps> = ({ value, onChange }) => {
@@ -36,10 +32,6 @@ export const SortFilterSeriesPanel: React.FunctionComponent<SortFilterSeriesPane
         const count = parseInt(event.target.value, 10) || 1
         setSeriesCount(count)
         onChange({ limit: count, sortOptions: selected })
-    }
-
-    if (!selected || !seriesCount) {
-        return null
     }
 
     return (

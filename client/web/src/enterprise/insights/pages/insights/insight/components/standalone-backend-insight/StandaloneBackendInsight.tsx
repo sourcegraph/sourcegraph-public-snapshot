@@ -20,7 +20,13 @@ import {
     DrillDownInsightCreationFormValues,
 } from '../../../../../components/insights-view-grid/components/backend-insight/components'
 import { useInsightData } from '../../../../../components/insights-view-grid/hooks/use-insight-data'
-import { ALL_INSIGHTS_DASHBOARD, BackendInsight, CodeInsightsBackendContext, InsightFilters } from '../../../../../core'
+import {
+    ALL_INSIGHTS_DASHBOARD,
+    BackendInsight,
+    CodeInsightsBackendContext,
+    DEFAULT_SERIES_DISPLAY_OPTIONS,
+    InsightFilters,
+} from '../../../../../core'
 import { LazyQueryStatus } from '../../../../../hooks/use-parallel-requests/use-parallel-request'
 import { getTrackingTypeByInsightType, useCodeInsightViewPings } from '../../../../../pings'
 import { StandaloneInsightContextMenu } from '../context-menu/StandaloneInsightContextMenu'
@@ -120,6 +126,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
                         onFiltersChange={handleFilterChange}
                         onFilterSave={handleFilterSave}
                         onCreateInsightRequest={() => setStep(DrillDownFiltersStep.ViewCreation)}
+                        originalSeriesDisplayOptions={DEFAULT_SERIES_DISPLAY_OPTIONS}
                         onSeriesDisplayOptionsChange={setSeriesDisplayOptions}
                     />
                 )}

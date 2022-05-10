@@ -1,4 +1,4 @@
-import { SeriesDisplayOptionsInput } from '../../../../../graphql-operations'
+import { SeriesDisplayOptionsInput, SeriesSortOptionsInput } from '../../../../../graphql-operations'
 
 export enum InsightExecutionType {
     /**
@@ -39,4 +39,11 @@ export interface BaseInsight {
     dashboardReferenceCount: number
     isFrozen: boolean
     seriesDisplayOptions: SeriesDisplayOptionsInput
+}
+
+// This type simply resets limit and sortOptions to required.
+// This makes reasoning about the code simpler.
+export interface SeriesDisplayOptionsInputRequired extends SeriesDisplayOptionsInput {
+    limit: number
+    sortOptions: SeriesSortOptionsInput
 }

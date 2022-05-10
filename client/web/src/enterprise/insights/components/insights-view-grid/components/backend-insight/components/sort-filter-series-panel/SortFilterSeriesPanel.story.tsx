@@ -2,13 +2,10 @@ import { useState } from 'react'
 
 import { Meta, Story } from '@storybook/react'
 
-import {
-    SeriesDisplayOptionsInput,
-    SeriesSortMode,
-    SeriesSortDirection,
-} from '@sourcegraph/shared/src/graphql-operations'
+import { SeriesSortMode, SeriesSortDirection } from '@sourcegraph/shared/src/graphql-operations'
 
 import { WebStory } from '../../../../../../../../components/WebStory'
+import { SeriesDisplayOptionsInputRequired } from '../../../../../../core/types/insight/common'
 
 import { SortFilterSeriesPanel } from './SortFilterSeriesPanel'
 
@@ -22,7 +19,7 @@ const defaultStory: Meta = {
 export default defaultStory
 
 export const Primary: Story = () => {
-    const [value, setValue] = useState<SeriesDisplayOptionsInput>({
+    const [value, setValue] = useState<SeriesDisplayOptionsInputRequired>({
         limit: 20,
         sortOptions: {
             mode: SeriesSortMode.RESULT_COUNT,

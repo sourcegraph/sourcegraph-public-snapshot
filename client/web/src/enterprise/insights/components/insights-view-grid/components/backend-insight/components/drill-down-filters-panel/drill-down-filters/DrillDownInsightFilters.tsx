@@ -9,7 +9,8 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Button, Icon, Link } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../../components/LoaderButton'
-import { SeriesDisplayOptionsInput } from '../../../../../../../../../graphql-operations'
+import { SeriesSortDirection, SeriesSortMode } from '../../../../../../../../../graphql-operations'
+import { SeriesDisplayOptionsInputRequired } from '../../../../../../../core/types/insight/common'
 import { useField } from '../../../../../../form/hooks/useField'
 import { FormChangeEvent, SubmissionResult, useForm, FORM_ERROR } from '../../../../../../form/hooks/useForm'
 import { SortFilterSeriesPanel } from '../../sort-filter-series-panel/SortFilterSeriesPanel'
@@ -54,9 +55,9 @@ interface DrillDownInsightFilters {
     /** Fires whenever the user clicks the save/update filter button. */
     onFilterSave: (filters: DrillDownFiltersFormValues) => SubmissionResult
 
-    originalSeriesDisplayOptions?: SeriesDisplayOptionsInput
+    originalSeriesDisplayOptions: SeriesDisplayOptionsInputRequired
 
-    onSeriesDisplayOptionsChange: (options: SeriesDisplayOptionsInput) => void
+    onSeriesDisplayOptionsChange: (options: SeriesDisplayOptionsInputRequired) => void
 
     /** Fires whenever the user clicks the create insight button. */
     onCreateInsightRequest: () => void
@@ -122,11 +123,9 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
         excludeRegex.input.onChange('')
     }
 
-    const [seriesDisplayOptions, setSeriesDisplayOptions] = useState<SeriesDisplayOptionsInput>(
-        originalSeriesDisplayOptions || {}
-    )
+    const [seriesDisplayOptions, setSeriesDisplayOptions] = useState(originalSeriesDisplayOptions)
 
-    const handleSeriesDisplayOptionsChange = (options: SeriesDisplayOptionsInput): void => {
+    const handleSeriesDisplayOptionsChange = (options: SeriesDisplayOptionsInputRequired): void => {
         setSeriesDisplayOptions(options)
         onSeriesDisplayOptionsChange(options)
     }
@@ -317,26 +316,22 @@ function getSubmitButtonText(input: SubmitButtonTextProps): string {
         : 'Save default filters'
 }
 
-const getSortPreview = (seriesDisplayOptions: SeriesDisplayOptionsInput): string => {
-    if (!seriesDisplayOptions.sortOptions || !seriesDisplayOptions.limit) {
-        return ''
-    }
-
+const getSortPreview = (seriesDisplayOptions: SeriesDisplayOptionsInputRequired): string => {
     const {
         sortOptions: { mode, direction },
         limit,
     } = seriesDisplayOptions
-    const ascending = direction === 'ASC'
+    const ascending = direction === SeriesSortDirection.ASC
     let sortBy
 
     switch (mode) {
-        case 'LEXICOGRAPHICAL':
+        case SeriesSortMode.LEXICOGRAPHICAL:
             sortBy = ascending ? 'A-Z' : 'Z-A'
             break
-        case 'RESULT_COUNT':
+        case SeriesSortMode.RESULT_COUNT:
             sortBy = `by result count ${ascending ? 'low to high' : 'high to low'}`
             break
-        case 'DATE_ADDED':
+        case SeriesSortMode.DATE_ADDED:
             sortBy = `by date ${ascending ? 'newest to oldest' : 'oldest to newest'}`
             break
         default:
