@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"time"
 
 	"github.com/Masterminds/semver"
 	"github.com/sourcegraph/run"
@@ -103,8 +102,6 @@ func goModGuards() lint.Runner {
 	}
 
 	return func(ctx context.Context, s *repo.State) *lint.Report {
-		start := time.Now()
-
 		diff, err := s.GetDiff("go.mod")
 		if err != nil {
 			return &lint.Report{Header: header, Err: err}
@@ -142,8 +139,7 @@ func goModGuards() lint.Runner {
 		}
 
 		return &lint.Report{
-			Duration: time.Since(start),
-			Header:   header,
+			Header: header,
 			Output: func() string {
 				if errs != nil {
 					return strings.TrimSpace(errs.Error())
@@ -199,8 +195,6 @@ func lintLoggingLibraries() lint.Runner {
 	}
 
 	return func(ctx context.Context, state *repo.State) *lint.Report {
-		start := time.Now()
-
 		diffs, err := state.GetDiff("**/*.go")
 		if err != nil {
 			return &lint.Report{
@@ -219,8 +213,7 @@ func lintLoggingLibraries() lint.Runner {
 		}
 
 		return &lint.Report{
-			Duration: time.Since(start),
-			Header:   header,
+			Header: header,
 			Output: func() string {
 				if errs != nil {
 					return strings.TrimSpace(errs.Error()) +
@@ -238,22 +231,20 @@ func hadolint() lint.Runner {
 	const hadolintVersion = "v2.10.0"
 	hadolintBinary := fmt.Sprintf("./.bin/hadolint-%s", hadolintVersion)
 
-	runHadolint := func(ctx context.Context, start time.Time, files []string) *lint.Report {
+	runHadolint := func(ctx context.Context, files []string) *lint.Report {
 		out, err := run.Cmd(ctx, "xargs "+hadolintBinary).
 			Input(strings.NewReader(strings.Join(files, "\n"))).
 			Run().
 			Lines()
 
 		return &lint.Report{
-			Header:   header,
-			Output:   strings.Join(out, "\n"),
-			Err:      err,
-			Duration: time.Since(start),
+			Header: header,
+			Output: strings.Join(out, "\n"),
+			Err:    err,
 		}
 	}
 
 	return func(ctx context.Context, s *repo.State) *lint.Report {
-		start := time.Now()
 		diff, err := s.GetDiff("**/*Dockerfile*")
 		if err != nil {
 			return &lint.Report{Header: header, Err: err}
@@ -264,15 +255,14 @@ func hadolint() lint.Runner {
 		}
 		if len(dockerfiles) == 0 {
 			return &lint.Report{
-				Header:   header,
-				Output:   "No Dockerfiles changed",
-				Duration: time.Since(start),
+				Header: header,
+				Output: "No Dockerfiles changed",
 			}
 		}
 
 		// If our binary is already here, just go!
 		if _, err := os.Stat(hadolintBinary); err == nil {
-			return runHadolint(ctx, start, dockerfiles)
+			return runHadolint(ctx, dockerfiles)
 		}
 
 		// https://github.com/hadolint/hadolint/releases for downloads
@@ -300,20 +290,18 @@ func hadolint() lint.Runner {
 		stdout.Out.WriteLine(output.Linef(output.EmojiHourglass, nil, "Downloading hadolint from %s", url))
 		if err := download.Exeuctable(url, hadolintBinary); err != nil {
 			return &lint.Report{
-				Header:   header,
-				Err:      errors.Wrap(err, "downloading hadolint"),
-				Duration: time.Since(start),
+				Header: header,
+				Err:    errors.Wrap(err, "downloading hadolint"),
 			}
 		}
 
-		return runHadolint(ctx, start, dockerfiles)
+		return runHadolint(ctx, dockerfiles)
 	}
 }
 
 // customDockerfileLinters runs custom Sourcegraph Dockerfile linters
 func customDockerfileLinters() lint.Runner {
 	return func(ctx context.Context, _ *repo.State) *lint.Report {
-		start := time.Now()
 		var combinedErrors error
 		for _, dir := range []string{
 			"docker-images",
@@ -350,8 +338,7 @@ func customDockerfileLinters() lint.Runner {
 			}
 		}
 		return &lint.Report{
-			Duration: time.Since(start),
-			Header:   "Sourcegraph Dockerfile linters",
+			Header: "Sourcegraph Dockerfile linters",
 			Output: func() string {
 				if combinedErrors != nil {
 					return strings.TrimSpace(combinedErrors.Error())
@@ -364,21 +351,18 @@ func customDockerfileLinters() lint.Runner {
 }
 
 func lintGoGenerate(ctx context.Context, _ *repo.State) *lint.Report {
-	start := time.Now()
 	report := golang.Generate(ctx, nil, golang.QuietOutput)
 	if report.Err != nil {
 		return &lint.Report{
-			Header:   "Go generate check",
-			Duration: report.Duration + time.Since(start),
-			Err:      report.Err,
+			Header: "Go generate check",
+			Err:    report.Err,
 		}
 	}
 
 	cmd := exec.CommandContext(ctx, "git", "diff", "--exit-code", "--", ".", ":!go.sum")
 	out, err := cmd.CombinedOutput()
 	r := lint.Report{
-		Header:   "Go generate check",
-		Duration: report.Duration + time.Since(start),
+		Header: "Go generate check",
 	}
 	if err != nil {
 		var sb strings.Builder
