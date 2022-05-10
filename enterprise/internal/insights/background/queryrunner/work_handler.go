@@ -318,7 +318,10 @@ func (r *workHandler) searchHandler(ctx context.Context, job *Job, series *types
 	}
 
 	searchDelegate := r.generateSearchRecordingsStream
-	// Add switch on search delegate.
+	useGraphQL := conf.Get().InsightsSearchGraphql
+	if useGraphQL != nil && *useGraphQL {
+		searchDelegate = r.generateSearchRecordings
+	}
 
 	recordings, err := searchDelegate(ctx, job, series, recordTime)
 	if err != nil {
