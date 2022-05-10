@@ -66,7 +66,7 @@ export const ExtensionAreaHeader: React.FunctionComponent<React.PropsWithChildre
             // Don't show change alert when the user is a site admin (two toggles)
             if (!isSiteAdmin) {
                 setChange(enabled ? 'enabled' : 'disabled')
-                changeFeedbackTimeoutManager.setTimeout(() => setChange(null), FEEDBACK_DELAY * 20)
+                changeFeedbackTimeoutManager.setTimeout(() => setChange(null), FEEDBACK_DELAY)
             }
         },
         [changeFeedbackTimeoutManager, isSiteAdmin]
