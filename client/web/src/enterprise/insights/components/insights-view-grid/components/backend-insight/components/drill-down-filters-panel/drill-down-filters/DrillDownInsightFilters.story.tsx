@@ -88,6 +88,14 @@ const FILTERS: InsightFilters = {
     context: '',
 }
 
+const ORIGINAL_SERIES_DISPLAY_OPTIONS = {
+    limit: 20,
+    sortOptions: {
+        direction: 'DESC' as const,
+        mode: 'RESULT_COUNT' as const,
+    },
+}
+
 export const DrillDownFiltersShowcase: Story = () => (
     <MockedTestProvider mocks={[CONTEXTS_GQL_MOCKS]}>
         <DrillDownInsightFilters
@@ -97,6 +105,8 @@ export const DrillDownFiltersShowcase: Story = () => (
             onFiltersChange={console.log}
             onFilterSave={console.log}
             onCreateInsightRequest={console.log}
+            onSeriesDisplayOptionsChange={console.log}
+            originalSeriesDisplayOptions={ORIGINAL_SERIES_DISPLAY_OPTIONS}
         />
     </MockedTestProvider>
 )
@@ -110,6 +120,8 @@ export const DrillDownFiltersHorizontalMode: Story = () => (
             onFiltersChange={console.log}
             onFilterSave={console.log}
             onCreateInsightRequest={console.log}
+            onSeriesDisplayOptionsChange={console.log}
+            originalSeriesDisplayOptions={ORIGINAL_SERIES_DISPLAY_OPTIONS}
         />
     </MockedTestProvider>
 )
