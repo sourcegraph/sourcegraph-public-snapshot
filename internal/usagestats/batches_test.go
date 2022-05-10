@@ -388,8 +388,8 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 		},
 	}
 
-	sort.Slice(want.BulkOperationsCount, func(i, j int) bool {
-		return want.BulkOperationsCount[i].Name < want.BulkOperationsCount[j].Name
+	sort.Slice(have.BulkOperationsCount, func(i, j int) bool {
+		return have.BulkOperationsCount[i].Name < have.BulkOperationsCount[j].Name
 	})
 
 	if diff := cmp.Diff(want, have); diff != "" {
