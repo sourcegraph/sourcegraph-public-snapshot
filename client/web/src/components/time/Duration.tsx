@@ -10,6 +10,11 @@ export interface DurationProps extends React.HTMLAttributes<HTMLDivElement> {
     start: Date | string
     /** The end time. If not set, new Date() is used. Leave unset for timers. */
     end?: Date | string
+    /**
+     * If true, will ensure the duration is rendered at a stable width, even if the time
+     * is changing (e.g. for a timer). Default is true.
+     */
+    stableWidth?: boolean
 }
 
 /**
@@ -20,6 +25,7 @@ export const Duration: React.FunctionComponent<React.PropsWithChildren<DurationP
     start,
     end,
     className,
+    stableWidth = true,
     ...props
 }) => {
     // Parse the start date.
@@ -51,11 +57,15 @@ export const Duration: React.FunctionComponent<React.PropsWithChildren<DurationP
     }, [end])
 
     return (
-        <div className={classNames(styles.stableWidth, className)} {...props}>
-            {/* Set the width of the parent with a filler block of full-width digits, to prevent layout shift if the time changes. */}
-            <span className={styles.filler} aria-hidden={true}>
-                00:00:00
-            </span>
+        <div className={classNames({ [styles.stableWidth]: stableWidth, className })} {...props}>
+            {stableWidth && (
+                // Set the width of the parent with a filler block of full-width digits,
+                // to prevent layout shift if the time changes.
+                // NOTE: This would not be a problem if we used a monospace font instead.
+                <span className={styles.filler} aria-hidden={true}>
+                    00:00:00
+                </span>
+            )}
             <span className={styles.duration}>
                 {leading0(hours)}:{leading0(minutes)}:{leading0(seconds)}
             </span>
