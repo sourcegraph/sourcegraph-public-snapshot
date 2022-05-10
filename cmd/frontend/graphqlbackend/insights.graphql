@@ -203,6 +203,11 @@ extend type Query {
     Generate an ephemeral time series for a Search based code insight, generally for the purposes of live preview.
     """
     searchInsightLivePreview(input: SearchInsightLivePreviewInput!): [SearchInsightLivePreviewSeries!]!
+
+    """
+    Generate an ephemeral set of time series for a code insight, generally for the purposes of live preview.
+    """
+    searchInsightPreview(input: SearchInsightPreviewInput!): [SearchInsightLivePreviewSeries!]!
 }
 
 extend type Mutation {
@@ -987,6 +992,45 @@ input SearchInsightLivePreviewInput {
     The scope of time.
     """
     timeScope: TimeScopeInput!
+
+    """
+    Whether or not to generate the timeseries results from the query capture groups.
+    """
+    generatedFromCaptureGroups: Boolean!
+}
+
+"""
+Required input to generate a live preview for an insight.
+"""
+input SearchInsightPreviewInput {
+    """
+    The scope of repositories.
+    """
+    repositoryScope: RepositoryScopeInput!
+    """
+    The scope of time.
+    """
+    timeScope: TimeScopeInput!
+
+    """
+    The series to generate previews for
+    """
+    series: [SearchSeriesPreviewInput!]!
+}
+
+"""
+Required input to generate a live preview for a series.
+"""
+input SearchSeriesPreviewInput {
+    """
+    The query string.
+    """
+    query: String!
+
+    """
+    The desired label for the series. Will be overwritten when series are dynamically generated.
+    """
+    label: String!
 
     """
     Whether or not to generate the timeseries results from the query capture groups.
