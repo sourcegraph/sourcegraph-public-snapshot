@@ -588,8 +588,8 @@ func (e *ExternalService) ToAPIService() api.ExternalService {
 	}
 }
 
-// ExternalServices is an utility type with
-// convenience methods for operating on lists of ExternalServices.
+// ExternalServices is a utility type with convenience methods for operating on
+// lists of ExternalServices.
 type ExternalServices []*ExternalService
 
 // IDs returns the list of ids from all ExternalServices.
