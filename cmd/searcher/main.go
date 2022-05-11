@@ -129,6 +129,7 @@ func run(logger log.Logger) error {
 			Log:               logger,
 			DB:                db,
 		},
+		Log: logger,
 	}
 	service.Store.Start()
 

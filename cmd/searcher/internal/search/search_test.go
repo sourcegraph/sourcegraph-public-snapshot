@@ -240,7 +240,10 @@ abc.txt
 			return hdr.Name == "ignore.me"
 		}, nil
 	}
-	ts := httptest.NewServer(&search.Service{Store: s})
+	ts := httptest.NewServer(&search.Service{
+		Store: s,
+		Log:   s.Log,
+	})
 	defer ts.Close()
 
 	for i, test := range cases {
@@ -395,7 +398,10 @@ func TestSearch_badrequest(t *testing.T) {
 	}
 
 	store := newStore(t, nil)
-	ts := httptest.NewServer(&search.Service{Store: store})
+	ts := httptest.NewServer(&search.Service{
+		Store: store,
+		Log:   store.Log,
+	})
 	defer ts.Close()
 
 	for _, p := range cases {

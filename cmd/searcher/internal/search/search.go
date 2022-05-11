@@ -15,7 +15,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"math"
 	"net/http"
 	"strconv"
@@ -33,6 +32,7 @@ import (
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 	sglog "github.com/sourcegraph/sourcegraph/lib/log"
 )
 
@@ -46,6 +46,7 @@ const (
 // Service is the search service. It is an http.Handler.
 type Service struct {
 	Store *Store
+	Log   log.Logger
 }
 
 // ServeHTTP handles HTTP based search requests
@@ -92,7 +93,7 @@ func (s *Service) streamSearch(ctx context.Context, w http.ResponseWriter, p pro
 	})
 	onMatches := func(match protocol.FileMatch) {
 		if err := matchesBuf.Append(match); err != nil {
-			log.Printf("failed appending match to buffer: %s", err)
+			s.Log.Warn("failed appending match to buffer", log.Error(err))
 		}
 	}
 
@@ -109,10 +110,10 @@ func (s *Service) streamSearch(ctx context.Context, w http.ResponseWriter, p pro
 
 	// Flush remaining matches before sending a different event
 	if err := matchesBuf.Flush(); err != nil {
-		log.Printf("failed to flush matches: %s", err)
+		s.Log.Warn("failed to flush matches", log.Error(err))
 	}
 	if err := eventWriter.Event("done", doneEvent); err != nil {
-		log.Printf("failed to send done event: %s", err)
+		s.Log.Warn("failed to send done event", log.Error(err))
 	}
 }
 
@@ -164,7 +165,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 		span.LogFields(otlog.Int("matches.len", sender.SentCount()))
 		span.SetTag("limitHit", sender.LimitHit())
 		span.Finish()
-		s.Store.Log.Debug("search request",
+		s.Log.Debug("search request",
 			sglog.String("repo", string(p.Repo)),
 			sglog.String("commit", string(p.Commit)),
 			sglog.String("pattern", p.Pattern),
