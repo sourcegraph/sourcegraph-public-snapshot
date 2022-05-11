@@ -387,14 +387,14 @@ func (r *queryResolver) uploadIDsWithReferences(
 	offset int,
 	trace observation.TraceLogger,
 ) (ids []int, recordsScanned int, totalCount int, err error) {
-	scanner, totalCount, err := r.dbStore.ReferenceIDsAndFilters(ctx, r.repositoryID, r.commit, orderedMonikers, limit, offset)
+	scanner, totalCount, err := r.dbStore.ReferenceIDs(ctx, r.repositoryID, r.commit, orderedMonikers, limit, offset)
 	if err != nil {
-		return nil, 0, 0, errors.Wrap(err, "dbstore.ReferenceIDsAndFilters")
+		return nil, 0, 0, errors.Wrap(err, "dbstore.ReferenceIDs")
 	}
 
 	defer func() {
 		if closeErr := scanner.Close(); closeErr != nil {
-			err = errors.Append(err, errors.Wrap(closeErr, "dbstore.ReferenceIDsAndFilters.Close"))
+			err = errors.Append(err, errors.Wrap(closeErr, "dbstore.ReferenceIDs.Close"))
 		}
 	}()
 
@@ -408,7 +408,7 @@ func (r *queryResolver) uploadIDsWithReferences(
 	for len(filtered) < limit {
 		packageReference, exists, err := scanner.Next()
 		if err != nil {
-			return nil, 0, 0, errors.Wrap(err, "dbstore.ReferenceIDsAndFilters.Next")
+			return nil, 0, 0, errors.Wrap(err, "dbstore.ReferenceIDs.Next")
 		}
 		if !exists {
 			break

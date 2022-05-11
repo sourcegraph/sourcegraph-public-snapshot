@@ -25,7 +25,7 @@ func TestReferences(t *testing.T) {
 	mockPositionAdjuster := noopPositionAdjuster()
 
 	// Empty result set (prevents nil pointer as scanner is always non-nil)
-	mockDBStore.ReferenceIDsAndFiltersFunc.PushReturn(dbstore.PackageReferenceScannerFromSlice(), 0, nil)
+	mockDBStore.ReferenceIDsFunc.PushReturn(dbstore.PackageReferenceScannerFromSlice(), 0, nil)
 
 	locations := []lsifstore.Location{
 		{DumpID: 51, Path: "a.go", Range: testRange1},
@@ -82,7 +82,7 @@ func TestReferencesWithSubRepoPermissions(t *testing.T) {
 	mockPositionAdjuster := noopPositionAdjuster()
 
 	// Empty result set (prevents nil pointer as scanner is always non-nil)
-	mockDBStore.ReferenceIDsAndFiltersFunc.PushReturn(dbstore.PackageReferenceScannerFromSlice(), 0, nil)
+	mockDBStore.ReferenceIDsFunc.PushReturn(dbstore.PackageReferenceScannerFromSlice(), 0, nil)
 
 	locations := []lsifstore.Location{
 		{DumpID: 51, Path: "a.go", Range: testRange1},
@@ -178,8 +178,8 @@ func TestReferencesRemote(t *testing.T) {
 		shared.PackageReference{Package: shared.Package{DumpID: 252}},
 		shared.PackageReference{Package: shared.Package{DumpID: 253}},
 	)
-	mockDBStore.ReferenceIDsAndFiltersFunc.PushReturn(scanner1, 4, nil)
-	mockDBStore.ReferenceIDsAndFiltersFunc.PushReturn(scanner2, 2, nil)
+	mockDBStore.ReferenceIDsFunc.PushReturn(scanner1, 4, nil)
+	mockDBStore.ReferenceIDsFunc.PushReturn(scanner2, 2, nil)
 
 	// upload #150/#250's commits no longer exists; all others do
 	mockGitserverClient.CommitsExistFunc.SetDefaultHook(func(ctx context.Context, rcs []gitserver.RepositoryCommit) (exists []bool, _ error) {
@@ -347,8 +347,8 @@ func TestReferencesRemoteWithSubRepoPermissions(t *testing.T) {
 		shared.PackageReference{Package: shared.Package{DumpID: 252}},
 		shared.PackageReference{Package: shared.Package{DumpID: 253}},
 	)
-	mockDBStore.ReferenceIDsAndFiltersFunc.PushReturn(scanner1, 4, nil)
-	mockDBStore.ReferenceIDsAndFiltersFunc.PushReturn(scanner2, 2, nil)
+	mockDBStore.ReferenceIDsFunc.PushReturn(scanner1, 4, nil)
+	mockDBStore.ReferenceIDsFunc.PushReturn(scanner2, 2, nil)
 
 	// upload #150/#250's commits no longer exists; all others do
 	mockGitserverClient.CommitsExistFunc.SetDefaultHook(func(ctx context.Context, rcs []gitserver.RepositoryCommit) (exists []bool, _ error) {
@@ -518,7 +518,7 @@ func TestIgnoredIDs(t *testing.T) {
 	run := func(ignoreIDs []int, wantDumps []int) {
 		pkg := shared.PackageReference{Package: shared.Package{DumpID: refDumpID}}
 		scanner := dbstore.PackageReferenceScannerFromSlice(pkg)
-		mockDBStore.ReferenceIDsAndFiltersFunc.PushReturn(scanner, 1, nil)
+		mockDBStore.ReferenceIDsFunc.PushReturn(scanner, 1, nil)
 
 		gotDumps, scanned, totalCount, err := resolver.uploadIDsWithReferences(
 			context.Background(),
