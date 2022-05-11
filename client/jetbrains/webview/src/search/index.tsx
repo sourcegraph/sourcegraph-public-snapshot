@@ -9,6 +9,13 @@ import { callJava } from './mockJavaInterface'
 
 setLinkComponent(AnchorLink)
 
+let isDarkTheme = false
+
+export interface RequestToJava {
+    action: string
+    arguments: object
+}
+
 /* Add global functions to global window object */
 declare global {
     interface Window {
@@ -34,10 +41,19 @@ async function onOpen(match: ContentMatch, lineMatchIndex: number): Promise<void
 
 function renderReactApp(): void {
     const node = document.querySelector('#main') as HTMLDivElement
-    render(<App onOpen={onOpen} onPreviewChange={onPreviewChange} onPreviewClear={onPreviewClear} />, node)
+    render(
+        <App
+            isDarkTheme={isDarkTheme}
+            onOpen={onOpen}
+            onPreviewChange={onPreviewChange}
+            onPreviewClear={onPreviewClear}
+        />,
+        node
+    )
 }
 
-window.initializeSourcegraph = (isDarkTheme: boolean) => {
+window.initializeSourcegraph = (isDarkThemeArgument: boolean) => {
+    isDarkTheme = isDarkThemeArgument
     window
         .callJava({ action: 'getTheme', arguments: {} })
         .then(response => {
