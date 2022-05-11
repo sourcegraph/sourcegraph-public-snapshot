@@ -12,3 +12,12 @@ func withYarnCache() buildkite.StepOpt {
 		Compress: false,
 	})
 }
+
+func withSGCache() buildkite.StepOpt {
+	return buildkite.Cache(&buildkite.CacheOptions{
+		ID:          "sg",
+		Key:         "cache-sg-{{ git.commit }}",
+		RestoreKeys: []string{"cache-sg-{{ git.commit }}"},
+		Paths:       []string{"./bin/sg"},
+	})
+}

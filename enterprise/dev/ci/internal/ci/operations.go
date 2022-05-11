@@ -101,10 +101,11 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 
 // addSgLints runs linters for the given targets.
 func addSgLints(targets []string) func(pipeline *bk.Pipeline) {
-	cmd := "go run ./dev/sg lint -annotations " + strings.Join(targets, " ")
+	cmd := "./dev/ci/sg-run.sh lint -annotations " + strings.Join(targets, " ")
 
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":clipboard: sg lint",
+			withSGCache(),
 			withYarnCache(),
 			bk.AnnotatedCmd(cmd, bk.AnnotatedCmdOpts{
 				Annotations: &bk.AnnotationOpts{IncludeNames: true},
