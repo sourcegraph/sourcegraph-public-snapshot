@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/lint/linters"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -63,14 +64,14 @@ var lintCommand = &cli.Command{
 			for _, t := range targets {
 				runners, ok := allLintTargetsMap[t]
 				if !ok {
-					writeFailureLinef("unrecognized target %q provided", t)
+					std.Out.WriteFailuref("unrecognized target %q provided", t)
 					return flag.ErrHelp
 				}
 				fns = append(fns, runners...)
 			}
 		}
 
-		writeFingerPointingLinef("Running checks from targets: %s", strings.Join(targets, ", "))
+		std.Out.WriteNoticef("Running checks from targets: %s", strings.Join(targets, ", "))
 		return runCheckScriptsAndReport(cmd.Context, fns...)
 	},
 	Subcommands: lintTargets(linters.Targets).Commands(),
@@ -103,7 +104,7 @@ func runCheckScriptsAndReport(ctx context.Context, fns ...lint.Runner) error {
 	start := time.Now()
 	var count int64
 	total := len(fns)
-	pending := out.Pending(output.Linef("", output.StylePending, "Running linters (done: 0/%d)", total))
+	pending := out.Pending(output.Styledf(output.StylePending, "Running linters (done: 0/%d)", total))
 	var wg sync.WaitGroup
 	reportsCh := make(chan *lint.Report)
 	wg.Add(total)
@@ -173,9 +174,10 @@ func (lt lintTargets) Commands() (cmds []*cli.Command) {
 			Usage: c.Help,
 			Action: func(cmd *cli.Context) error {
 				if cmd.NArg() > 0 {
-					writeFailureLinef("unrecognized argument %q provided", cmd.Args().First())
+					std.Out.WriteFailuref("unrecognized argument %q provided", cmd.Args().First())
 					return flag.ErrHelp
 				}
+				std.Out.WriteNoticef("Running checks from target: %s", c.Name)
 				return runCheckScriptsAndReport(cmd.Context, c.Linters...)
 			},
 			// Completions to chain multiple commands

@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+
 # ASDF setup that either does a simple install, or pulls it from cache, geared towards
 # usage in CI.
 # In most cases you should not need to call this script directly.

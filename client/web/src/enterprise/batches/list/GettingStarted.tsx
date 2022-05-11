@@ -193,6 +193,7 @@ const FindReplaceIcon: React.FunctionComponent<React.PropsWithChildren<{ classNa
         fill="none"
         className={className}
         xmlns="http://www.w3.org/2000/svg"
+        role="presentation"
     >
         <rect width="54" height="8" rx="4" fill="#CAD2E2" />
         <rect x="57" width="32" height="8" rx="4" fill="#CAD2E2" />
@@ -240,6 +241,7 @@ const RefactorCombyIcon: React.FunctionComponent<React.PropsWithChildren<{ class
         fill="none"
         className={className}
         xmlns="http://www.w3.org/2000/svg"
+        role="presentation"
     >
         <rect width="54" height="8" rx="4" fill="#CAD2E2" />
         <rect x="57" width="32" height="8" rx="4" fill="#CAD2E2" />

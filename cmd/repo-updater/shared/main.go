@@ -10,6 +10,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"strconv"
 	"time"
 
 	"golang.org/x/time/rate"
@@ -67,6 +68,7 @@ type LazyDebugserverEndpoint struct {
 	listAuthzProvidersEndpoint   http.HandlerFunc
 	gitserverReposStatusEndpoint http.HandlerFunc
 	rateLimiterStateEndpoint     http.HandlerFunc
+	manualPurgeEndpoint          http.HandlerFunc
 }
 
 func Main(enterpriseInit EnterpriseInit) {
@@ -224,6 +226,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	debugserverEndpoints.listAuthzProvidersEndpoint = listAuthzProvidersHandler()
 	debugserverEndpoints.gitserverReposStatusEndpoint = gitserverReposStatusHandler(db)
 	debugserverEndpoints.rateLimiterStateEndpoint = rateLimiterStateHandler
+	debugserverEndpoints.manualPurgeEndpoint = manualPurgeHandler(db)
 
 	// We mark the service as ready now AFTER assigning the additional endpoints in
 	// the debugserver constructed at the top of this function. This ensures we don't
@@ -286,6 +289,14 @@ func createDebugServerRoutine(ready chan struct{}, debugserverEndpoints *LazyDeb
 				debugserverEndpoints.rateLimiterStateEndpoint(w, r)
 			}),
 		},
+		debugserver.Endpoint{
+			Name: "Manual Repo Purge",
+			Path: "/manual-purge",
+			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				<-ready
+				debugserverEndpoints.manualPurgeEndpoint(w, r)
+			}),
+		},
 	)
 }
 
@@ -310,6 +321,44 @@ func gitserverReposStatusHandler(db database.DB) http.HandlerFunc {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write(resp)
+	}
+}
+
+func manualPurgeHandler(db database.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		limit, err := strconv.Atoi(r.FormValue("limit"))
+		if err != nil {
+			http.Error(w, fmt.Sprintf("invalid limit: %v", err), http.StatusBadRequest)
+			return
+		}
+		if limit <= 0 {
+			http.Error(w, "limit must be greater than 0", http.StatusBadRequest)
+			return
+		}
+		if limit > 10000 {
+			http.Error(w, "limit must be less than 10000", http.StatusBadRequest)
+			return
+		}
+		var perSecond = 1.0 // Default value
+		perSecondParam := r.FormValue("perSecond")
+		if perSecondParam != "" {
+			perSecond, err = strconv.ParseFloat(perSecondParam, 64)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("invalid per second rate limit: %v", err), http.StatusBadRequest)
+				return
+			}
+			// Set a sane lower bound
+			if perSecond <= 0.1 {
+				http.Error(w, fmt.Sprintf("invalid per second rate limit. Must be > 0.1, got %f", perSecond), http.StatusBadRequest)
+				return
+			}
+		}
+		err = repos.PurgeOldestRepos(db, limit, perSecond)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("starting manual purge: %v", err), http.StatusInternalServerError)
+			return
+		}
+		_, _ = w.Write([]byte(fmt.Sprintf("manual purge started with limit of %d and rate of %f", limit, perSecond)))
 	}
 }
 
