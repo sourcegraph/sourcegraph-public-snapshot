@@ -57,7 +57,7 @@ func TestWithDefaults(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got, err := WithDefaults(test.input, test.defaults)
+			got, err := withDefaults(test.input, test.defaults)
 			if err != nil {
 				t.Fatal(err)
 			}

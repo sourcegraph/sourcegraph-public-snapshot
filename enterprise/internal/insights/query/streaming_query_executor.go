@@ -2,11 +2,9 @@ package query
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"time"
 
-	"github.com/grafana/regexp"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
@@ -75,11 +73,13 @@ func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seri
 				continue
 			}
 
-			modifiedQuery := withCountUnlimited(query)
-			modifiedQuery = fmt.Sprintf("%s repo:^%s$@%s", modifiedQuery, regexp.QuoteMeta(repository), commits[0].ID)
+			modified, err := SingleRepoQuery(query, repository, string(commits[0].ID))
+			if err != nil {
+				return nil, errors.Wrap(err, "SingleRepoQuery")
+			}
 
 			decoder, tabulationResult := streaming.TabulationDecoder()
-			err = streaming.Search(ctx, modifiedQuery, decoder)
+			err = streaming.Search(ctx, modified, decoder)
 			if err != nil {
 				return nil, errors.Wrap(err, "streaming.Search")
 			}
