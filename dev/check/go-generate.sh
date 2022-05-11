@@ -4,7 +4,7 @@ echo "!!!!!!!!!!!!!!!!!!"
 echo "!!! DEPRECATED !!!"
 echo "!!!!!!!!!!!!!!!!!!"
 echo "This script is deprecated!"
-echo "Add your checks to 'dev/sg/internal/lint/linters' instead."
+echo "Add your checks to 'dev/sg/linters' instead."
 
 echo "--- go generate"
 
