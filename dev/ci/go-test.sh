@@ -48,6 +48,7 @@ function go_test() {
     $test_packages | tee "$tmpfile" | richgo testfilter
   # Save the test exit code so we can return it after saving the test report
   test_exit_code="${PIPESTATUS[0]}"
+  echo "--- Tests complete with status $test_exit_code"
   set -eo pipefail # resume being strict about errors
 
   mkdir -p './test-reports'
