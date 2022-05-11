@@ -48,7 +48,7 @@ export const RepoBatchChangesButton: FC<React.PropsWithChildren<RepoBatchChanges
             )}
             {merged > 0 && (
                 <Badge
-                    tooltip={`${merged} merged ${pluralize('batch changeset', open)}`}
+                    tooltip={`${merged} merged ${pluralize('batch changeset', merged)}`}
                     variant="merged"
                     className="d-inline-block batch-change-badge ml-2"
                 >
