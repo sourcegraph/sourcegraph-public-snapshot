@@ -11,10 +11,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func toJSON(node Node) interface{} {
+func toJSON(node Node) any {
 	switch n := node.(type) {
 	case Operator:
-		var jsons []interface{}
+		var jsons []any
 		for _, o := range n.Operands {
 			jsons = append(jsons, toJSON(o))
 		}
@@ -22,19 +22,19 @@ func toJSON(node Node) interface{} {
 		switch n.Kind {
 		case And:
 			return struct {
-				And []interface{} `json:"and"`
+				And []any `json:"and"`
 			}{
 				And: jsons,
 			}
 		case Or:
 			return struct {
-				Or []interface{} `json:"or"`
+				Or []any `json:"or"`
 			}{
 				Or: jsons,
 			}
 		case Concat:
 			return struct {
-				Concat []interface{} `json:"concat"`
+				Concat []any `json:"concat"`
 			}{
 				Concat: jsons,
 			}
@@ -67,7 +67,7 @@ func toJSON(node Node) interface{} {
 }
 
 func nodesToJSON(nodes []Node) string {
-	var jsons []interface{}
+	var jsons []any
 	for _, node := range nodes {
 		jsons = append(jsons, toJSON(node))
 	}
@@ -97,12 +97,12 @@ func TestSubstituteAliases(t *testing.T) {
 	autogold.Want(
 		"substitution honors literal search pattern",
 		`[{"and":[{"field":"repo","value":"repo","negated":false,"labels":["IsAlias"]},{"value":"^not-actually-a-regexp:tbf$","negated":false,"labels":["IsAlias","Literal"]}]}]`).
-		Equal(t, test("r:repo content:^not-actually-a-regexp:tbf$", SearchTypeLiteral))
+		Equal(t, test("r:repo content:^not-actually-a-regexp:tbf$", SearchTypeLiteralDefault))
 
 	autogold.Want(
 		"substitution honors path",
 		`[{"field":"file","value":"foo","negated":false,"labels":["IsAlias"]}]`).
-		Equal(t, test("path:foo", SearchTypeLiteral))
+		Equal(t, test("path:foo", SearchTypeLiteralDefault))
 }
 
 func TestLowercaseFieldNames(t *testing.T) {
@@ -457,7 +457,7 @@ func TestPipeline(t *testing.T) {
 	}}
 	for _, c := range cases {
 		t.Run("Map query", func(t *testing.T) {
-			plan, err := Pipeline(Init(c.input, SearchTypeLiteral))
+			plan, err := Pipeline(Init(c.input, SearchTypeLiteralDefault))
 			require.NoError(t, err)
 			got := plan.ToParseTree().String()
 			if diff := cmp.Diff(c.want, got); diff != "" {
@@ -960,7 +960,7 @@ func TestQueryField(t *testing.T) {
 
 func TestSubstituteCountAll(t *testing.T) {
 	test := func(input string) string {
-		query, _ := Parse(input, SearchTypeLiteral)
+		query, _ := Parse(input, SearchTypeLiteralDefault)
 		q := SubstituteCountAll(query)
 		return toString(q)
 	}

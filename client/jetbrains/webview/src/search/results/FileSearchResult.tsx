@@ -59,7 +59,7 @@ export const FileSearchResult: React.FunctionComponent<Props> = ({
         // eslint-disable-next-line jsx-a11y/no-static-element-interactions
         <div className={styles.header} onMouseDown={preventAll}>
             <div className={classNames(styles.headerTitle)} data-testid="result-container-header">
-                <Icon className="flex-shrink-0" as={FileDocumentIcon} />
+                <Icon role="img" title="File" className="flex-shrink-0" as={FileDocumentIcon} />
                 <div className={classNames('mx-1', styles.headerDivider)} />
                 <RepoIcon repoName={result.repository} className="text-muted flex-shrink-0" />
                 <RepoFileLink

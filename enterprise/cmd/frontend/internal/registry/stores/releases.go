@@ -31,7 +31,7 @@ type Release struct {
 // ReleaseNotFoundError occurs when an extension release is not found in the
 // extension registry.
 type ReleaseNotFoundError struct {
-	args []interface{}
+	args []any
 }
 
 // NotFound implements errcode.NotFounder.
@@ -150,7 +150,7 @@ LIMIT 1`,
 	err := s.QueryRow(ctx, q).Scan(&r.ID, &r.RegistryExtensionID, &r.CreatorUserID, &r.ReleaseVersion, &r.ReleaseTag, &r.Manifest, &r.Bundle, &r.SourceMap, &r.CreatedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, ReleaseNotFoundError{[]interface{}{fmt.Sprintf("latest for registry extension ID %d tag %q", registryExtensionID, releaseTag)}}
+			return nil, ReleaseNotFoundError{[]any{fmt.Sprintf("latest for registry extension ID %d tag %q", registryExtensionID, releaseTag)}}
 		}
 		return nil, err
 	}
@@ -227,13 +227,13 @@ WHERE
 
 	if err := s.QueryRow(ctx, q).Scan(&bundle, &sourcemap); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, nil, ReleaseNotFoundError{[]interface{}{fmt.Sprintf("registry extension release %d", id)}}
+			return nil, nil, ReleaseNotFoundError{[]any{fmt.Sprintf("registry extension release %d", id)}}
 		}
 		return nil, nil, err
 	}
 
 	if bundle == nil {
-		return nil, nil, ReleaseNotFoundError{[]interface{}{fmt.Sprintf("no bundle for registry extension release %d", id)}}
+		return nil, nil, ReleaseNotFoundError{[]any{fmt.Sprintf("no bundle for registry extension release %d", id)}}
 	}
 
 	return bundle, sourcemap, nil

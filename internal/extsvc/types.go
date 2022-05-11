@@ -172,6 +172,8 @@ func KindToType(kind string) string {
 		return TypeJVMPackages
 	case KindPythonPackages:
 		return TypePythonPackages
+	case KindNpmPackages:
+		return TypeNpmPackages
 	case KindGoModules:
 		return TypeGoModules
 	case KindPagure:
@@ -322,7 +324,7 @@ type RepoID string
 type RepoIDType string
 
 // ParseConfig attempts to unmarshal the given JSON config into a configuration struct defined in the schema package.
-func ParseConfig(kind, config string) (cfg interface{}, _ error) {
+func ParseConfig(kind, config string) (cfg any, _ error) {
 	switch strings.ToUpper(kind) {
 	case KindAWSCodeCommit:
 		cfg = &schema.AWSCodeCommitConnection{}
@@ -417,7 +419,7 @@ func ExtractRateLimit(config, kind string) (rate.Limit, error) {
 }
 
 // GetLimitFromConfig gets RateLimitConfig from an already parsed config schema.
-func GetLimitFromConfig(kind string, config interface{}) (rate.Limit, error) {
+func GetLimitFromConfig(kind string, config any) (rate.Limit, error) {
 	// Rate limit config can be in a few states:
 	// 1. Not defined: We fall back to default specified in code.
 	// 2. Defined and enabled: We use their defined limit.

@@ -193,7 +193,7 @@ func dbConn(t testing.TB, cfg *url.URL, schemas ...*schemas.Schema) *sql.DB {
 	return db
 }
 
-func dbExec(t testing.TB, db *sql.DB, q string, args ...interface{}) {
+func dbExec(t testing.TB, db *sql.DB, q string, args ...any) {
 	t.Helper()
 	_, err := db.Exec(q, args...)
 	if err != nil {

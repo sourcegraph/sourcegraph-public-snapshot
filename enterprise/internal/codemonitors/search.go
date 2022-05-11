@@ -56,7 +56,7 @@ func Settings(ctx context.Context) (_ *schema.Settings, err error) {
 		span.Finish()
 	}()
 
-	reqBody, err := json.Marshal(map[string]interface{}{"query": gqlSettingsQuery})
+	reqBody, err := json.Marshal(map[string]any{"query": gqlSettingsQuery})
 	if err != nil {
 		return nil, errors.Wrap(err, "marshal request body")
 	}

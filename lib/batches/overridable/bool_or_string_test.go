@@ -12,7 +12,7 @@ func TestBoolOrStringIs(t *testing.T) {
 	for name, tc := range map[string]struct {
 		def        BoolOrString
 		input      string
-		wantParsed interface{}
+		wantParsed any
 	}{
 		"wildcard false": {
 			def: BoolOrString{
@@ -89,7 +89,7 @@ func TestBoolOrStringWithSuffix(t *testing.T) {
 		inputName   string
 		inputSuffix string
 
-		wantParsed interface{}
+		wantParsed any
 	}{
 		"pattern and suffix match": {
 			def: BoolOrString{

@@ -60,9 +60,9 @@ export const UserFacingCodeIntelligenceBadgeContent: React.FunctionComponent<
     return indexerNames.length === 0 ? (
         <Unsupported />
     ) : (
-        <>
+        <ul className={styles.list}>
             {indexerNames.map((name, index) => (
-                <React.Fragment key={`indexer-${name}`}>
+                <li key={`indexer-${name}`}>
                     {index > 0 && <MenuDivider />}
                     <IndexerSummary
                         repoName={repoName}
@@ -77,8 +77,8 @@ export const UserFacingCodeIntelligenceBadgeContent: React.FunctionComponent<
                         useRequestedLanguageSupportQuery={useRequestedLanguageSupportQuery}
                         useRequestLanguageSupportQuery={useRequestLanguageSupportQuery}
                     />
-                </React.Fragment>
+                </li>
             ))}
-        </>
+        </ul>
     )
 }

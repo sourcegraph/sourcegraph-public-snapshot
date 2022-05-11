@@ -158,7 +158,7 @@ func TestChangesetConnectionResolver(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(fmt.Sprintf("Unsafe opts %t, first %d", tc.useUnsafeOpts, tc.firstParam), func(t *testing.T) {
-			input := map[string]interface{}{"batchChange": batchChangeAPIID, "first": int64(tc.firstParam)}
+			input := map[string]any{"batchChange": batchChangeAPIID, "first": int64(tc.firstParam)}
 			if tc.useUnsafeOpts {
 				input["reviewState"] = btypes.ChangesetReviewStatePending
 			}
@@ -187,7 +187,7 @@ func TestChangesetConnectionResolver(t *testing.T) {
 
 	var endCursor *string
 	for i := range nodes {
-		input := map[string]interface{}{"batchChange": batchChangeAPIID, "first": 1}
+		input := map[string]any{"batchChange": batchChangeAPIID, "first": 1}
 		if endCursor != nil {
 			input["after"] = *endCursor
 		}

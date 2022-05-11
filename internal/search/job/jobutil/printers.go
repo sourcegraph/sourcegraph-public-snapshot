@@ -311,9 +311,9 @@ func PrettyMermaid(j job.Job) string {
 // toJSON returns a JSON object representing a job. If `verbose` is true, values
 // for all leaf jobs are emitted; if false, only the names of leaf nodes are
 // emitted.
-func toJSON(j job.Job, verbose bool) interface{} {
-	var emitJSON func(job.Job) interface{}
-	emitJSON = func(j job.Job) interface{} {
+func toJSON(j job.Job, verbose bool) any {
+	var emitJSON func(job.Job) any
+	emitJSON = func(j job.Job) any {
 		if j == nil {
 			return struct{}{}
 		}
@@ -331,65 +331,65 @@ func toJSON(j job.Job, verbose bool) interface{} {
 			*repos.ComputeExcludedReposJob,
 			*NoopJob:
 			if verbose {
-				return map[string]interface{}{j.Name(): j}
+				return map[string]any{j.Name(): j}
 			}
 			return j.Name()
 
 		case *repoPagerJob:
 			return struct {
-				Repopager interface{} `json:"REPOPAGER"`
+				Repopager any `json:"REPOPAGER"`
 			}{
 				Repopager: emitJSON(j.child),
 			}
 
 		case *AndJob:
-			children := make([]interface{}, 0, len(j.children))
+			children := make([]any, 0, len(j.children))
 			for _, child := range j.children {
 				children = append(children, emitJSON(child))
 			}
 			return struct {
-				And []interface{} `json:"AND"`
+				And []any `json:"AND"`
 			}{
 				And: children,
 			}
 
 		case *OrJob:
-			children := make([]interface{}, 0, len(j.children))
+			children := make([]any, 0, len(j.children))
 			for _, child := range j.children {
 				children = append(children, emitJSON(child))
 			}
 			return struct {
-				Or []interface{} `json:"OR"`
+				Or []any `json:"OR"`
 			}{
 				Or: children,
 			}
 
 		case *ParallelJob:
-			children := make([]interface{}, 0, len(j.children))
+			children := make([]any, 0, len(j.children))
 			for _, child := range j.children {
 				children = append(children, emitJSON(child))
 			}
 			return struct {
-				Parallel interface{} `json:"PARALLEL"`
+				Parallel any `json:"PARALLEL"`
 			}{
 				Parallel: children,
 			}
 
 		case *SequentialJob:
-			children := make([]interface{}, 0, len(j.children))
+			children := make([]any, 0, len(j.children))
 			for _, child := range j.children {
 				children = append(children, emitJSON(child))
 			}
 			return struct {
-				Sequential interface{} `json:"SEQUENTIAL"`
+				Sequential any `json:"SEQUENTIAL"`
 			}{
 				Sequential: children,
 			}
 
 		case *TimeoutJob:
 			return struct {
-				Timeout interface{} `json:"TIMEOUT"`
-				Value   string      `json:"value"`
+				Timeout any    `json:"TIMEOUT"`
+				Value   string `json:"value"`
 			}{
 				Timeout: emitJSON(j.child),
 				Value:   j.timeout.String(),
@@ -397,8 +397,8 @@ func toJSON(j job.Job, verbose bool) interface{} {
 
 		case *LimitJob:
 			return struct {
-				Limit interface{} `json:"LIMIT"`
-				Value int         `json:"value"`
+				Limit any `json:"LIMIT"`
+				Value int `json:"value"`
 			}{
 				Limit: emitJSON(j.child),
 				Value: j.limit,
@@ -406,23 +406,23 @@ func toJSON(j job.Job, verbose bool) interface{} {
 
 		case *subRepoPermsFilterJob:
 			return struct {
-				Filter interface{} `json:"FILTER"`
-				Value  string      `json:"value"`
+				Filter any    `json:"FILTER"`
+				Value  string `json:"value"`
 			}{
 				Filter: emitJSON(j.child),
 				Value:  "SubRepoPermissions",
 			}
 		case *selectJob:
 			return struct {
-				Select interface{} `json:"SELECT"`
-				Value  string      `json:"value"`
+				Select any    `json:"SELECT"`
+				Value  string `json:"value"`
 			}{
 				Select: emitJSON(j.child),
 				Value:  j.path.String(),
 			}
 		case *alertJob:
 			return struct {
-				Alert interface{} `json:"ALERT"`
+				Alert any `json:"ALERT"`
 			}{
 				Alert: emitJSON(j.child),
 			}

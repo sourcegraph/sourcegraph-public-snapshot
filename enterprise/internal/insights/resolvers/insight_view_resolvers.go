@@ -161,7 +161,7 @@ func (i *insightViewResolver) Dashboards(ctx context.Context, args *graphqlbacke
 }
 
 func filterRepositories(ctx context.Context, filters types.InsightViewFilters, repositories []string, scLoader SearchContextLoader) ([]string, error) {
-	matches := make(map[string]interface{})
+	matches := make(map[string]any)
 
 	// we need to "unwrap" the search contexts and extract the regexps that compose
 	// the Sourcegraph query filters. Then we will union these sets of included /
@@ -715,7 +715,7 @@ func emptyIfNil(in *string) string {
 
 // A dummy type to represent the GraphQL union InsightTimeScope
 type insightTimeScopeUnionResolver struct {
-	resolver interface{}
+	resolver any
 }
 
 // ToInsightIntervalTimeScope is used by the GraphQL library to resolve type fragments for unions
@@ -726,7 +726,7 @@ func (r *insightTimeScopeUnionResolver) ToInsightIntervalTimeScope() (graphqlbac
 
 // A dummy type to represent the GraphQL union InsightPresentation
 type insightPresentationUnionResolver struct {
-	resolver interface{}
+	resolver any
 }
 
 // ToLineChartInsightViewPresentation is used by the GraphQL library to resolve type fragments for unions
@@ -743,7 +743,7 @@ func (r *insightPresentationUnionResolver) ToPieChartInsightViewPresentation() (
 
 // A dummy type to represent the GraphQL union InsightDataSeriesDefinition
 type insightDataSeriesDefinitionUnionResolver struct {
-	resolver interface{}
+	resolver any
 }
 
 // ToSearchInsightDataSeriesDefinition is used by the GraphQL library to resolve type fragments for unions
