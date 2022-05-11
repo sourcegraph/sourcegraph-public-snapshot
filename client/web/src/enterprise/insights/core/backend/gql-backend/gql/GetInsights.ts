@@ -44,6 +44,7 @@ export const INSIGHT_VIEW_FRAGMENT = gql`
         appliedFilters {
             includeRepoRegex
             excludeRepoRegex
+            searchContexts
         }
         dashboardReferenceCount
         ...InsightViewSeries

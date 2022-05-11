@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type commitGraphJob struct{}
@@ -24,13 +25,17 @@ func NewCommitGraphJob() job.Job {
 	return &commitGraphJob{}
 }
 
+func (j *commitGraphJob) Description() string {
+	return ""
+}
+
 func (j *commitGraphJob) Config() []env.Config {
 	return []env.Config{commitGraphConfigInst}
 }
 
-func (j *commitGraphJob) Routines(ctx context.Context) ([]goroutine.BackgroundRoutine, error) {
+func (j *commitGraphJob) Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	observationContext := &observation.Context{
-		Logger:     log15.Root(),
+		Logger:     logger.Scoped("routines", "commit graph job routines"),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}

@@ -45,7 +45,9 @@ function setSelectedLocationTab(location: H.Location, history: H.History, select
     }
 }
 
-export const SearchContextsListPage: React.FunctionComponent<SearchContextsListPageProps> = props => {
+export const SearchContextsListPage: React.FunctionComponent<
+    React.PropsWithChildren<SearchContextsListPageProps>
+> = props => {
     const [selectedTab, setSelectedTab] = useState<SelectedTab>(getSelectedTabFromLocation(props.location.search))
 
     const setTab = useCallback(
@@ -72,6 +74,7 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
                         {
                             icon: MagnifyIcon,
                             to: '/search',
+                            ariaLabel: 'Code Search',
                         },
                         {
                             text: 'Contexts',

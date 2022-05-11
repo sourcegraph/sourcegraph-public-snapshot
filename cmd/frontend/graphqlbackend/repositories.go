@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -130,7 +131,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 		}
 
 		var indexed *zoekt.RepoList
-		searchIndexEnabled := search.Indexed() != nil
+		searchIndexEnabled := conf.SearchIndexEnabled()
 		isIndexed := func(id api.RepoID) bool {
 			if !searchIndexEnabled {
 				return true // do not need index

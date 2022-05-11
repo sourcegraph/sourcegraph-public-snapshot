@@ -1,7 +1,6 @@
 import { area } from '@visx/shape'
 import { ScaleLinear, ScaleTime } from 'd3-scale'
 
-import { Series } from '../../../../types'
 import { isDatumWithValidNumber, SeriesType, SeriesWithData } from '../../utils'
 import { StackedSeriesDatum } from '../../utils/data-series-processing/types'
 
@@ -11,14 +10,16 @@ interface Props<Datum> {
     xScale: ScaleTime<number, number>
 }
 
-interface SeriesPath<Datum> extends Series<Datum> {
+interface SeriesPath {
+    id: string | number
     path: string
+    color: string
 }
 
-export function getStackedAreaPaths<Datum>(props: Props<Datum>): SeriesPath<Datum>[] {
+export function getStackedAreaPaths<Datum>(props: Props<Datum>): SeriesPath[] {
     const { dataSeries, yScale, xScale } = props
 
-    const paths: SeriesPath<Datum>[] = []
+    const paths: SeriesPath[] = []
     const bottomLine = yScale(0)
 
     for (const series of dataSeries) {
@@ -35,7 +36,8 @@ export function getStackedAreaPaths<Datum>(props: Props<Datum>): SeriesPath<Datu
         const stackedData = series.data.filter(isDatumWithValidNumber)
 
         paths.push({
-            ...series,
+            id: series.id,
+            color: series.color ?? 'gray',
             path: path(stackedData) ?? '',
         })
     }

@@ -27,8 +27,9 @@ export class EventLogger implements VsceTelemetryService {
     }
 
     /**
-     * Log a pageview.
-     * Page titles should be specific and human-readable in pascal case, e.g. "SearchResults" or "Blob" or "NewOrg"
+     * @deprecated use logPageView instead
+     *
+     * Log a pageview event (by sending it to the server).
      */
     public logViewEvent(pageTitle: string, eventProperties?: any, publicArgument?: any, url?: string): void {
         if (pageTitle) {
@@ -41,8 +42,19 @@ export class EventLogger implements VsceTelemetryService {
         }
     }
 
-    public logPageView(): void {
-        // Debt: migrate VS Code `logViewEvent` calls to `logPageView`
+    /**
+     * Log a pageview.
+     * Page titles should be specific and human-readable in pascal case, e.g. "SearchResults" or "Blob" or "NewOrg"
+     */
+    public logPageView(eventName: string, eventProperties?: any, publicArgument?: any, url?: string): void {
+        if (eventName) {
+            this.tracker(
+                `${eventName}Viewed`,
+                { ...eventProperties, ...this.editorInfo },
+                { ...publicArgument, ...this.editorInfo },
+                url
+            )
+        }
     }
 
     /**

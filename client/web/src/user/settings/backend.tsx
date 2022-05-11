@@ -122,7 +122,7 @@ export function logUserEvent(event: UserEvent): void {
 }
 
 // Log events in batches.
-const events = new Subject<Event>()
+const batchedEvents = new Subject<Event>()
 
 export const logEventsMutation = gql`
     mutation LogEvents($events: [Event!]) {
@@ -132,14 +132,25 @@ export const logEventsMutation = gql`
     }
 `
 
-events
+function sendEvents(events: Event[]): Promise<void> {
+    return requestGraphQL<LogEventsResult, LogEventsVariables>(logEventsMutation, {
+        events,
+    })
+        .toPromise()
+        .then(dataOrThrowErrors)
+        .then(() => {})
+}
+
+function sendEvent(event: Event): Promise<void> {
+    return sendEvents([event])
+}
+
+batchedEvents
     .pipe(
         bufferTime(1000),
         concatMap(events => {
             if (events.length > 0) {
-                return requestGraphQL<LogEventsResult, LogEventsVariables>(logEventsMutation, {
-                    events,
-                }).pipe(map(dataOrThrowErrors))
+                return sendEvents(events)
             }
             return EMPTY
         }),
@@ -159,7 +170,26 @@ events
  * instance's database, and not sent to Sourcegraph.com.
  */
 export function logEvent(event: string, eventProperties?: unknown, publicArgument?: unknown): void {
-    events.next({
+    batchedEvents.next(createEvent(event, eventProperties, publicArgument))
+}
+
+/**
+ * Log a raw user action and return a promise that resolves once the event has
+ * been sent. This method will not attempt to batch requests, so it should be
+ * used only when low event latency is necessary (e.g., on an external link).
+ *
+ * See logEvent for additional details.
+ */
+export function logEventSynchronously(
+    event: string,
+    eventProperties?: unknown,
+    publicArgument?: unknown
+): Promise<void> {
+    return sendEvent(createEvent(event, eventProperties, publicArgument))
+}
+
+function createEvent(event: string, eventProperties?: unknown, publicArgument?: unknown): Event {
+    return {
         event,
         userCookieID: eventLogger.getAnonymousUserID(),
         cohortID: eventLogger.getCohortID() || null,
@@ -173,5 +203,5 @@ export function logEvent(event: string, eventProperties?: unknown, publicArgumen
         deviceID: window.context.sourcegraphDotComMode ? eventLogger.getDeviceID() : null,
         eventID: window.context.sourcegraphDotComMode ? eventLogger.getEventID() : null,
         insertID: window.context.sourcegraphDotComMode ? eventLogger.getInsertID() : null,
-    })
+    }
 }

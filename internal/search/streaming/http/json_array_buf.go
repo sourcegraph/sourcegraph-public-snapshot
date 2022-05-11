@@ -28,7 +28,7 @@ func NewJSONArrayBuf(flushSize int, write func([]byte) error) *JSONArrayBuf {
 
 // Append marshals v and adds it to the json array buffer. If the size of the
 // buffer exceed FlushSize the buffer is written out.
-func (j *JSONArrayBuf) Append(v interface{}) error {
+func (j *JSONArrayBuf) Append(v any) error {
 	oldLen := j.buf.Len()
 
 	if j.buf.Len() == 0 {

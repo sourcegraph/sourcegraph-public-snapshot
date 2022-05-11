@@ -8,7 +8,7 @@ echo "# Note: NODE_ENV only used for build command"
 
 echo "--- Yarn install in root"
 # mutex is necessary since CI runs various yarn installs in parallel
-NODE_ENV='' yarn --mutex network --frozen-lockfile --network-timeout 60000
+NODE_ENV='' yarn --mutex network --frozen-lockfile --network-timeout 60000 --silent
 
 cd "$1"
 echo "--- browserslist"

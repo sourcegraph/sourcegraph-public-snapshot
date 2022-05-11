@@ -21,7 +21,7 @@ type BatchSpecExecutionCacheEntry struct {
 	CreatedAt  time.Time
 }
 
-func NewCacheEntryFromResult(key string, result interface{}) (*BatchSpecExecutionCacheEntry, error) {
+func NewCacheEntryFromResult(key string, result any) (*BatchSpecExecutionCacheEntry, error) {
 	value, err := json.Marshal(result)
 	if err != nil {
 		return nil, err

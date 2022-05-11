@@ -6,12 +6,12 @@ export enum SeriesType {
     Stacked,
 }
 
-export interface StackedSeries<Datum> extends Series<Datum> {
+export interface StackedSeries<Datum> extends Omit<Series<Datum>, 'data'> {
     type: SeriesType.Stacked
     data: StackedSeriesDatum<Datum>[]
 }
 
-export interface IndependentSeries<Datum> extends Series<Datum> {
+export interface IndependentSeries<Datum> extends Omit<Series<Datum>, 'data'> {
     type: SeriesType.Independent
     data: StandardSeriesDatum<Datum>[]
 }

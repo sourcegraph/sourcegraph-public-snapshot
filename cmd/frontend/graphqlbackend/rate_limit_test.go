@@ -17,7 +17,7 @@ func TestEstimateQueryCost(t *testing.T) {
 	for _, tc := range []struct {
 		name      string
 		query     string
-		variables map[string]interface{}
+		variables map[string]any
 		want      QueryCost
 	}{
 		{
@@ -87,7 +87,7 @@ query Extensions($first: Int!, $prioritizeExtensionIDs: [String!]!) {
                     }
                 }
 `,
-			variables: map[string]interface{}{
+			variables: map[string]any{
 				"first": 10,
 			},
 			want: QueryCost{
@@ -107,7 +107,7 @@ query fetchExternalServices($first: Int = 10){
   }
 }
 `,
-			variables: map[string]interface{}{
+			variables: map[string]any{
 				"first": 5,
 			},
 			want: QueryCost{
@@ -127,7 +127,7 @@ query fetchExternalServices($first: Int = 10){
   }
 }
 `,
-			variables: map[string]interface{}{},
+			variables: map[string]any{},
 			want: QueryCost{
 				FieldCount: 21,
 				MaxDepth:   3,
@@ -354,7 +354,7 @@ fragment FileDiffFields on FileDiff {
 				FieldCount: 7,
 				MaxDepth:   5,
 			},
-			variables: map[string]interface{}{
+			variables: map[string]any{
 				"base": "a46cf4a8b6dc42ea7b7b716e53c49dd3508a8678",
 				"head": "0fd3fb1f4e41ae1f95970beeec1c1f7b2d8a7d06",
 				"repo": "github.com/presslabs/mysql-operator",

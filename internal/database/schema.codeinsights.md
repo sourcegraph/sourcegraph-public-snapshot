@@ -200,6 +200,7 @@ Data series that comprise code insights.
  other_threshold                   | double precision       |           |          | 
  presentation_type                 | presentation_type_enum |           | not null | 'LINE'::presentation_type_enum
  is_frozen                         | boolean                |           | not null | false
+ default_filter_search_contexts    | text[]                 |           |          | 
 Indexes:
     "insight_view_pkey" PRIMARY KEY, btree (id)
     "insight_view_unique_id_unique_idx" UNIQUE, btree (unique_id)
@@ -216,7 +217,7 @@ Views for insight data series. An insight view is an abstraction on top of an in
 
 **id**: Primary key ID for this view
 
-**other_threshold**: Percent threshold for grouping series under "other"
+**other_threshold**: Percent threshold for grouping series under &#34;other&#34;
 
 **presentation_type**: The basic presentation type for the insight view. (e.g Line, Pie, etc.)
 
@@ -297,7 +298,7 @@ Records arbitrary metadata about events. Stored in a separate table as it is oft
 
 **id**: The metadata ID.
 
-**metadata**: Metadata about some event, this can be any arbitrary JSON emtadata which will be returned when querying events, and can be filtered on and grouped using jsonb operators ?, ?&, ?|, and @>. This should be small data only.
+**metadata**: Metadata about some event, this can be any arbitrary JSON emtadata which will be returned when querying events, and can be filtered on and grouped using jsonb operators ?, ?&amp;, ?|, and @&gt;. This should be small data only.
 
 # Table "public.migration_logs"
 ```

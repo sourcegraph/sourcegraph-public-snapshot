@@ -32,6 +32,7 @@ type Resolver interface {
 	GetUploadByID(ctx context.Context, id int) (store.Upload, bool, error)
 	GetUploadsByIDs(ctx context.Context, ids ...int) ([]store.Upload, error)
 	DeleteUploadByID(ctx context.Context, uploadID int) error
+	GetUploadDocumentsForPath(ctx context.Context, uploadID int, pathPrefix string) ([]string, int, error)
 
 	GetIndexByID(ctx context.Context, id int) (store.Index, bool, error)
 	GetIndexesByIDs(ctx context.Context, ids ...int) ([]store.Index, error)
@@ -60,6 +61,9 @@ type Resolver interface {
 	IndexConnectionResolver(opts store.GetIndexesOptions) *IndexesResolver
 	QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataArgs) (QueryResolver, error)
 	RepositorySummary(ctx context.Context, repositoryID int) (RepositorySummary, error)
+
+	RequestLanguageSupport(ctx context.Context, userID int, language string) error
+	RequestedLanguageSupport(ctx context.Context, userID int) ([]string, error)
 
 	ExecutorResolver() executor.Resolver
 }
@@ -177,6 +181,10 @@ func (r *resolver) CommitGraph(ctx context.Context, repositoryID int) (gql.CodeI
 	return NewCommitGraphResolver(stale, updatedAt), nil
 }
 
+func (r *resolver) GetUploadDocumentsForPath(ctx context.Context, uploadID int, pathPattern string) ([]string, int, error) {
+	return r.lsifStore.DocumentPaths(ctx, uploadID, pathPattern)
+}
+
 func (r *resolver) QueueAutoIndexJobsForRepo(ctx context.Context, repositoryID int, rev, configuration string) ([]store.Index, error) {
 	return r.indexEnqueuer.QueueIndexes(ctx, repositoryID, rev, configuration, true)
 }
@@ -187,7 +195,7 @@ const slowQueryResolverRequestThreshold = time.Second
 // given repository, commit, and path, then constructs a new query resolver instance which
 // can be used to answer subsequent queries.
 func (r *resolver) QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataArgs) (_ QueryResolver, err error) {
-	ctx, _, endObservation := observeResolver(ctx, &err, "QueryResolver", r.operations.queryResolver, slowQueryResolverRequestThreshold, observation.Args{
+	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.queryResolver, slowQueryResolverRequestThreshold, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", int(args.Repo.ID)),
 			log.String("commit", string(args.Commit)),

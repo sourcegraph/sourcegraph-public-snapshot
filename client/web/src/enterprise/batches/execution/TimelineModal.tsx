@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react'
 
+import VisuallyHidden from '@reach/visually-hidden'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
@@ -11,21 +12,25 @@ import { Button, Modal, Icon } from '@sourcegraph/wildcard'
 
 import { ExecutionLogEntry } from '../../../components/ExecutionLogEntry'
 import { Timeline, TimelineStage } from '../../../components/Timeline'
-import { BatchSpecWorkspaceFields, BatchSpecWorkspaceState } from '../../../graphql-operations'
+import { BatchSpecWorkspaceState, VisibleBatchSpecWorkspaceFields } from '../../../graphql-operations'
 import { ExecutorNode } from '../../executors/ExecutorsListPage'
 
 import styles from './TimelineModal.module.scss'
 
 export interface TimelineModalProps {
-    node: BatchSpecWorkspaceFields
+    node: VisibleBatchSpecWorkspaceFields
     onCancel: () => void
 }
 
-export const TimelineModal: React.FunctionComponent<TimelineModalProps> = ({ node, onCancel }) => (
+export const TimelineModal: React.FunctionComponent<React.PropsWithChildren<TimelineModalProps>> = ({
+    node,
+    onCancel,
+}) => (
     <Modal className={styles.modalBody} onDismiss={onCancel} aria-label="Execution timeline">
         <div className="d-flex justify-content-between">
             <h3 className="mb-0">Execution timeline</h3>
-            <Button className="p-0 m-0" onClick={onCancel} variant="link" size="sm">
+            <Button className="p-0 ml-2" onClick={onCancel} variant="icon">
+                <VisuallyHidden>Close</VisuallyHidden>
                 <Icon as={CloseIcon} />
             </Button>
         </div>
@@ -40,7 +45,7 @@ export const TimelineModal: React.FunctionComponent<TimelineModalProps> = ({ nod
 )
 
 interface ExecutionTimelineProps {
-    node: BatchSpecWorkspaceFields
+    node: VisibleBatchSpecWorkspaceFields
     className?: string
 
     /** For testing only. */
@@ -48,7 +53,12 @@ interface ExecutionTimelineProps {
     expandStage?: string
 }
 
-const ExecutionTimeline: React.FunctionComponent<ExecutionTimelineProps> = ({ node, className, now, expandStage }) => {
+const ExecutionTimeline: React.FunctionComponent<React.PropsWithChildren<ExecutionTimelineProps>> = ({
+    node,
+    className,
+    now,
+    expandStage,
+}) => {
     const stages = useMemo(
         () => [
             { icon: <TimerSandIcon />, text: 'Queued', date: node.queuedAt, className: 'bg-success' },
@@ -75,7 +85,7 @@ const ExecutionTimeline: React.FunctionComponent<ExecutionTimelineProps> = ({ no
 }
 
 const setupStage = (
-    execution: BatchSpecWorkspaceFields,
+    execution: VisibleBatchSpecWorkspaceFields,
     expand: boolean,
     now?: () => Date
 ): TimelineStage | undefined => {
@@ -94,7 +104,7 @@ const setupStage = (
 }
 
 const batchPreviewStage = (
-    execution: BatchSpecWorkspaceFields,
+    execution: VisibleBatchSpecWorkspaceFields,
     expand: boolean,
     now?: () => Date
 ): TimelineStage | undefined => {
@@ -113,7 +123,7 @@ const batchPreviewStage = (
 }
 
 const teardownStage = (
-    execution: BatchSpecWorkspaceFields,
+    execution: VisibleBatchSpecWorkspaceFields,
     expand: boolean,
     now?: () => Date
 ): TimelineStage | undefined => {

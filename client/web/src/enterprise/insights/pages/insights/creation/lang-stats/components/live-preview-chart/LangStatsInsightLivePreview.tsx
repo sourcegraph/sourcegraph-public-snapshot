@@ -3,6 +3,7 @@ import React, { useContext, useMemo } from 'react'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { useDeepMemo } from '@sourcegraph/wildcard'
 
+import { CategoricalBasedChartTypes, CategoricalChart } from '../../../../../../components'
 import {
     LivePreviewBanner,
     LivePreviewBlurBackdrop,
@@ -13,7 +14,6 @@ import {
     useLivePreview,
     StateStatus,
 } from '../../../../../../components/creation-ui-kit'
-import { CategoricalBasedChartTypes, CategoricalChart } from '../../../../../../components/views'
 import { CodeInsightsBackendContext, CategoricalChartContent } from '../../../../../../core'
 
 import { DEFAULT_PREVIEW_MOCK } from './constants'
@@ -34,7 +34,9 @@ export interface LangStatsInsightLivePreviewProps {
  * Displays live preview chart for creation UI with the latest insights settings
  * from creation UI form.
  */
-export const LangStatsInsightLivePreview: React.FunctionComponent<LangStatsInsightLivePreviewProps> = props => {
+export const LangStatsInsightLivePreview: React.FunctionComponent<
+    React.PropsWithChildren<LangStatsInsightLivePreviewProps>
+> = props => {
     const { repository = '', threshold, disabled = false, className } = props
     const { getLangStatsInsightContent } = useContext(CodeInsightsBackendContext)
 

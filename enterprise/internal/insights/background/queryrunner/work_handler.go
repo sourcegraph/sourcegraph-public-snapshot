@@ -18,9 +18,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 var _ workerutil.Handler = &workHandler{}
@@ -36,7 +38,8 @@ type workHandler struct {
 	mu          sync.RWMutex
 	seriesCache map[string]*types.InsightSeries
 
-	computeSearch func(context.Context, string) ([]query.ComputeResult, error)
+	computeSearch       func(context.Context, string) ([]query.ComputeResult, error)
+	computeSearchStream func(ctx context.Context, query string) (*streaming.ComputeTabulationResult, error)
 }
 
 func (r *workHandler) getSeries(ctx context.Context, seriesID string) (*types.InsightSeries, error) {
@@ -124,11 +127,34 @@ func (r *workHandler) generateComputeRecordings(ctx context.Context, job *Job, r
 	return recordings, nil
 }
 
+func (r *workHandler) generateComputeRecordingsStream(ctx context.Context, job *Job, recordTime time.Time) (_ []store.RecordSeriesPointArgs, err error) {
+	streamResults, err := r.computeSearchStream(ctx, job.SearchQuery)
+	if err != nil {
+		return nil, err
+	}
+	checker := authz.DefaultSubRepoPermsChecker
+	var recordings []store.RecordSeriesPointArgs
+
+	for _, match := range streamResults.RepoCounts {
+		var subRepoEnabled bool
+		subRepoEnabled, err = checkSubRepoPermissions(ctx, checker, match.RepositoryID, err)
+		if subRepoEnabled {
+			continue
+		}
+
+		for capturedValue, count := range match.ValueCounts {
+			capture := capturedValue
+			recordings = append(recordings, ToRecording(job, float64(count), recordTime, match.RepositoryName, api.RepoID(match.RepositoryID), &capture)...)
+		}
+	}
+	return recordings, nil
+}
+
 // checkSubRepoPermissions returns true if the repo has sub-repo permissions or any error occurred while checking it
 // Returns false only if the repo doesn't have sub-repo permissions or these are disabled in settings.
 // Note that repo ID is received untyped and being cast to api.RepoID
 // err is an upstream error to which any new occurring error is appended
-func checkSubRepoPermissions(ctx context.Context, checker authz.SubRepoPermissionChecker, untypedRepoID interface{}, err error) (bool, error) {
+func checkSubRepoPermissions(ctx context.Context, checker authz.SubRepoPermissionChecker, untypedRepoID any, err error) (bool, error) {
 	if !authz.SubRepoEnabled(checker) {
 		return false, err
 	}
@@ -237,7 +263,7 @@ func (r *workHandler) searchHandler(ctx context.Context, job *Job, series *types
 	}
 	defer func() { err = tx.Done(err) }()
 
-	if job.PersistMode == string(store.SnapshotMode) {
+	if store.PersistMode(job.PersistMode) == store.SnapshotMode {
 		// The purpose of the snapshot is for low fidelity but recently updated data points.
 		// We store one snapshot of an insight at any time, so we prune the table whenever adding a new series.
 		if err := tx.DeleteSnapshots(ctx, series); err != nil {
@@ -271,28 +297,52 @@ func (r *workHandler) computeHandler(ctx context.Context, job *Job, series *type
 	if series.JustInTime {
 		return errors.Newf("just in time series are not eligible for background processing, series_id: %s", series.ID)
 	}
-	if store.PersistMode(job.PersistMode) != store.RecordMode {
-		return nil
-	}
-	recordings, err := r.generateComputeRecordings(ctx, job, recordTime)
+
+	tx, err := r.insightsStore.Transact(ctx)
 	if err != nil {
 		return err
 	}
-	if recordErr := r.insightsStore.RecordSeriesPoints(ctx, recordings); recordErr != nil {
+	defer func() { err = tx.Done(err) }()
+
+	if store.PersistMode(job.PersistMode) == store.SnapshotMode {
+		// The purpose of the snapshot is for low fidelity but recently updated data points.
+		// We store one snapshot of an insight at any time, so we prune the table whenever adding a new series.
+		if err := tx.DeleteSnapshots(ctx, series); err != nil {
+			return err
+		}
+	}
+
+	computeDelegate := r.generateComputeRecordingsStream
+	useGraphQL := conf.Get().InsightsComputeGraphql
+	if useGraphQL != nil && *useGraphQL {
+		computeDelegate = r.generateComputeRecordings
+	}
+
+	recordings, err := computeDelegate(ctx, job, recordTime)
+	if err != nil {
+		return err
+	}
+	if recordErr := tx.RecordSeriesPoints(ctx, recordings); recordErr != nil {
 		err = errors.Append(err, errors.Wrap(recordErr, "RecordSeriesPointsCapture"))
 	}
 	return err
 }
 
 func (r *workHandler) searchStreamHandler(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) (err error) {
-	decoder, countPtr, streamRepoCounts, streamErrs := streaming.TabulationDecoder()
+	decoder, tabulationResult := streaming.TabulationDecoder()
 	err = streaming.Search(ctx, job.SearchQuery, decoder)
 	if err != nil {
 		return errors.Wrap(err, "streaming.Search")
 	}
-	log15.Info("Search Counts", "streaming", *countPtr)
-	if len(streamErrs) > 0 {
-		log15.Error("streaming errors", "errors", streamErrs)
+
+	tr := *tabulationResult
+
+	log15.Info("Search Counts", "streaming", tr.TotalCount)
+	if len(tr.SkippedReasons) > 0 {
+		log15.Error("insights query issue", "reasons", tr.SkippedReasons, "query", job.SearchQuery)
+	}
+	if len(tr.Errors) > 0 {
+		log15.Error("streaming errors", "errors", tr.Errors)
 	}
 
 	tx, err := r.insightsStore.Transact(ctx)
@@ -301,7 +351,7 @@ func (r *workHandler) searchStreamHandler(ctx context.Context, job *Job, series 
 	}
 	defer func() { err = tx.Done(err) }()
 
-	if job.PersistMode == string(store.SnapshotMode) {
+	if store.PersistMode(job.PersistMode) == store.SnapshotMode {
 		// The purpose of the snapshot is for low fidelity but recently updated data points.
 		// We store one snapshot of an insight at any time, so we prune the table whenever adding a new series.
 		if err := tx.DeleteSnapshots(ctx, series); err != nil {
@@ -310,7 +360,7 @@ func (r *workHandler) searchStreamHandler(ctx context.Context, job *Job, series 
 	}
 
 	checker := authz.DefaultSubRepoPermsChecker
-	for _, match := range streamRepoCounts {
+	for _, match := range tr.RepoCounts {
 		// sub-repo permissions filtering. If the repo supports it, then it should be excluded from search results
 		var subRepoEnabled bool
 		repoID := api.RepoID(match.RepositoryID)
@@ -326,7 +376,7 @@ func (r *workHandler) searchStreamHandler(ctx context.Context, job *Job, series 
 	return err
 }
 
-func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err error) {
+func (r *workHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
 	// 🚨 SECURITY: The request is performed without authentication, we get back results from every
 	// repository on Sourcegraph - results will be filtered when users query for insight data based on the
 	// repositories they can see.

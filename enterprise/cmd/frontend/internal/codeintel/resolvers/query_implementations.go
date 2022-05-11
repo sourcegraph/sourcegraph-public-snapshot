@@ -19,7 +19,7 @@ const ImplementationsLimit = 100
 
 // Implementations returns the list of source locations that define the symbol at the given position.
 func (r *queryResolver) Implementations(ctx context.Context, line, character int, limit int, rawCursor string) (_ []AdjustedLocation, _ string, err error) {
-	ctx, trace, endObservation := observeResolver(ctx, &err, "Implementations", r.operations.implementations, slowImplementationsRequestThreshold, observation.Args{
+	ctx, trace, endObservation := observeResolver(ctx, &err, r.operations.implementations, slowImplementationsRequestThreshold, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", r.repositoryID),
 			log.String("commit", r.commit),

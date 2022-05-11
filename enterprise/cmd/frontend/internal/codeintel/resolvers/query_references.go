@@ -21,7 +21,7 @@ const slowReferencesRequestThreshold = time.Second
 
 // References returns the list of source locations that reference the symbol at the given position.
 func (r *queryResolver) References(ctx context.Context, line, character, limit int, rawCursor string) (_ []AdjustedLocation, _ string, err error) {
-	ctx, trace, endObservation := observeResolver(ctx, &err, "References", r.operations.references, slowReferencesRequestThreshold, observation.Args{
+	ctx, trace, endObservation := observeResolver(ctx, &err, r.operations.references, slowReferencesRequestThreshold, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", r.repositoryID),
 			log.String("commit", r.commit),

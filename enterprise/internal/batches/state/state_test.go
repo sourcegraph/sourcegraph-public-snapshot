@@ -268,7 +268,7 @@ func TestComputeBitbucketBuildStatus(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			have := computeBitbucketBuildStatus(lastSynced, pr, tc.events)
+			have := computeBitbucketServerBuildStatus(lastSynced, pr, tc.events)
 			if diff := cmp.Diff(tc.want, have); diff != "" {
 				t.Fatalf(diff)
 			}

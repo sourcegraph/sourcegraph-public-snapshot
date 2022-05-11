@@ -12,7 +12,7 @@ import (
 
 // PackageInformation looks up package information data by identifier.
 func (s *Store) PackageInformation(ctx context.Context, bundleID int, path, packageInformationID string) (_ precise.PackageInformationData, _ bool, err error) {
-	ctx, endObservation := s.operations.packageInformation.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.packageInformation.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.String("path", path),
 		log.String("packageInformationID", packageInformationID),

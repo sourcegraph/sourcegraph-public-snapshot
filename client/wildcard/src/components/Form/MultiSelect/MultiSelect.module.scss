@@ -11,6 +11,7 @@
         --react-select-neutral70: var(--gray-07);
         --react-select-neutral80: var(--gray-08);
         --react-select-neutral90: var(--gray-09);
+        --select-button-border-color: var(--secondary-3);
     }
 
     :global(.theme-dark) & {
@@ -25,6 +26,7 @@
         --react-select-neutral70: var(--gray-02);
         --react-select-neutral80: var(--gray-01);
         --react-select-neutral90: var(--white);
+        --select-button-border-color: var(--secondary);
     }
 
     input:focus-within {
@@ -52,9 +54,7 @@
     height: 0.75rem;
 }
 
-.multi-value-container {
-    display: flex;
-    align-items: center;
-    padding-right: 0;
-    margin: 0.125rem;
+.multi-value-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
 }

@@ -27,7 +27,7 @@ interface Props {
 /**
  * UserAvatar displays the avatar of a user.
  */
-export const UserAvatar: React.FunctionComponent<Props> = ({
+export const UserAvatar: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     size,
     user,
     className,

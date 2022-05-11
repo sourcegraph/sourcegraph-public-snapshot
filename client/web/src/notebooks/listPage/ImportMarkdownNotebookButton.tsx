@@ -27,13 +27,9 @@ interface ImportMarkdownNotebookButtonProps extends TelemetryProps {
     setImportState: (state: typeof LOADING | ErrorLike | undefined) => void
 }
 
-export const ImportMarkdownNotebookButton: React.FunctionComponent<ImportMarkdownNotebookButtonProps> = ({
-    authenticatedUser,
-    telemetryService,
-    importState,
-    setImportState,
-    importNotebook,
-}) => {
+export const ImportMarkdownNotebookButton: React.FunctionComponent<
+    React.PropsWithChildren<ImportMarkdownNotebookButtonProps>
+> = ({ authenticatedUser, telemetryService, importState, setImportState, importNotebook }) => {
     const fileInputReference = useRef<HTMLInputElement>(null)
 
     const onImportButtonClick = useCallback(() => {
@@ -89,7 +85,12 @@ export const ImportMarkdownNotebookButton: React.FunctionComponent<ImportMarkdow
                 onChange={onFileInputChange}
                 data-testid="import-markdown-notebook-file-input"
             />
-            <Button variant="secondary" onClick={onImportButtonClick} disabled={importState === LOADING}>
+            <Button
+                variant="secondary"
+                onClick={onImportButtonClick}
+                disabled={importState === LOADING}
+                className="ml-2"
+            >
                 <Icon className="mr-1" as={UploadIcon} />
                 <span>{importState === LOADING ? 'Importing...' : 'Import Markdown notebook'}</span>
             </Button>

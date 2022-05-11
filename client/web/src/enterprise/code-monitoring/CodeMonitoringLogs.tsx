@@ -107,7 +107,9 @@ export const CODE_MONITOR_EVENTS = gql`
     }
 `
 
-export const CodeMonitoringLogs: React.FunctionComponent<{ now?: () => Date; _testStartOpen?: boolean }> = ({
+export const CodeMonitoringLogs: React.FunctionComponent<
+    React.PropsWithChildren<{ now?: () => Date; _testStartOpen?: boolean }>
+> = ({
     now,
     _testStartOpen = false, // For testing purposes only; force everything to start expanded
 }) => {

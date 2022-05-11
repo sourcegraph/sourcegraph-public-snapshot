@@ -5,9 +5,9 @@ import lodash from 'lodash'
 
 import { SourcegraphContext } from '../../src/jscontext'
 
-import { environmentConfig } from './environment-config'
+import { ENVIRONMENT_CONFIG } from './environment-config'
 
-const { SITE_CONFIG_PATH } = environmentConfig
+const { SITE_CONFIG_PATH } = ENVIRONMENT_CONFIG
 
 // Get site-config from `SITE_CONFIG_PATH` as an object with camel cased keys.
 export const getSiteConfig = (): Partial<SourcegraphContext> => {

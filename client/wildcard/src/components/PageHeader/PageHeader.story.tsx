@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import PlusIcon from 'mdi-react/PlusIcon'
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'

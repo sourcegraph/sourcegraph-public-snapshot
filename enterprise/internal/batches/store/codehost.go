@@ -18,7 +18,7 @@ type ListCodeHostsOpts struct {
 }
 
 func (s *Store) ListCodeHosts(ctx context.Context, opts ListCodeHostsOpts) (cs []*btypes.CodeHost, err error) {
-	ctx, endObservation := s.operations.listCodeHosts.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.listCodeHosts.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	q := listCodeHostsQuery(opts)
@@ -156,7 +156,7 @@ type GetExternalServiceIDsOpts struct {
 }
 
 func (s *Store) GetExternalServiceIDs(ctx context.Context, opts GetExternalServiceIDsOpts) (ids []int64, err error) {
-	ctx, endObservation := s.operations.getExternalServiceIDs.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.getExternalServiceIDs.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	q := getExternalServiceIDsQuery(opts)

@@ -53,7 +53,7 @@ func replace(ctx context.Context, content []byte, matchPattern MatchPattern, rep
 func (c *Replace) Run(ctx context.Context, db database.DB, r result.Match) (Result, error) {
 	switch m := r.(type) {
 	case *result.FileMatch:
-		content, err := git.ReadFile(ctx, db, m.Repo.Name, m.CommitID, m.Path, 0, authz.DefaultSubRepoPermsChecker)
+		content, err := git.ReadFile(ctx, db, m.Repo.Name, m.CommitID, m.Path, authz.DefaultSubRepoPermsChecker)
 		if err != nil {
 			return nil, err
 		}

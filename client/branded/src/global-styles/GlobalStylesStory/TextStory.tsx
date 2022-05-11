@@ -6,7 +6,7 @@ import { Link } from '@sourcegraph/wildcard'
 import { SEMANTIC_COLORS } from './constants'
 import { TextVariants } from './TextVariants'
 
-export const TextStory: React.FunctionComponent = () => (
+export const TextStory: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <>
         <h2>Headings</h2>
         <table className="table">

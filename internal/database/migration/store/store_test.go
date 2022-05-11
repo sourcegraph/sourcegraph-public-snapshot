@@ -512,7 +512,7 @@ func TestIndexStatus(t *testing.T) {
 	}
 
 	start := time.Now()
-	const missingIndexThreshold = time.Second
+	const missingIndexThreshold = time.Second * 10
 
 retryLoop:
 	for {
@@ -521,13 +521,10 @@ retryLoop:
 		} else if !ok {
 			// Give a small amount of time for Session C to begin creating the index. Signaling
 			// when Postgres has started to create the index is as difficult and expensive as
-			// querying the index the status, so we just poll here for a short time.
-			if remaining := time.Since(start) - missingIndexThreshold; remaining > 0 {
-				time.Sleep(time.Millisecond)
-				continue
+			// querying the index the status, so we just poll here for a relatively short time.
+			if time.Since(start) >= missingIndexThreshold {
+				t.Fatalf("expected index status after %s", missingIndexThreshold)
 			}
-
-			t.Fatalf("expected index status after %s", missingIndexThreshold)
 		} else if status.Phase == nil {
 			t.Fatalf("unexpected phase. want=%q have=nil", blockingPhase)
 		} else if *status.Phase == blockingPhase {

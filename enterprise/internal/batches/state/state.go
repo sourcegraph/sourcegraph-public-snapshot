@@ -11,11 +11,13 @@ import (
 
 	"github.com/sourcegraph/go-diff/diff"
 
+	bbcs "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/bitbucketcloud"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -104,10 +106,13 @@ func computeCheckState(c *btypes.Changeset, events ChangesetEvents) btypes.Chang
 		return computeGitHubCheckState(c.UpdatedAt, m, events)
 
 	case *bitbucketserver.PullRequest:
-		return computeBitbucketBuildStatus(c.UpdatedAt, m, events)
+		return computeBitbucketServerBuildStatus(c.UpdatedAt, m, events)
 
 	case *gitlab.MergeRequest:
 		return computeGitLabCheckState(c.UpdatedAt, m, events)
+
+	case *bbcs.AnnotatedPullRequest:
+		return computeBitbucketCloudBuildState(c.UpdatedAt, m, events)
 	}
 
 	return btypes.ChangesetCheckStateUnknown
@@ -149,7 +154,7 @@ func computeReviewState(c *btypes.Changeset, history []changesetStatesAtTime) (b
 	return newestDataPoint.reviewState, nil
 }
 
-func computeBitbucketBuildStatus(lastSynced time.Time, pr *bitbucketserver.PullRequest, events []*btypes.ChangesetEvent) btypes.ChangesetCheckState {
+func computeBitbucketServerBuildStatus(lastSynced time.Time, pr *bitbucketserver.PullRequest, events []*btypes.ChangesetEvent) btypes.ChangesetCheckState {
 	var latestCommit bitbucketserver.Commit
 	for _, c := range pr.Commits {
 		if latestCommit.CommitterTimestamp <= c.CommitterTimestamp {
@@ -161,7 +166,7 @@ func computeBitbucketBuildStatus(lastSynced time.Time, pr *bitbucketserver.PullR
 
 	// States from last sync
 	for _, status := range pr.CommitStatus {
-		stateMap[status.Key()] = parseBitbucketBuildState(status.Status.State)
+		stateMap[status.Key()] = parseBitbucketServerBuildState(status.Status.State)
 	}
 
 	// Add any events we've received since our last sync
@@ -175,7 +180,7 @@ func computeBitbucketBuildStatus(lastSynced time.Time, pr *bitbucketserver.PullR
 			if dateAdded.Before(lastSynced) {
 				continue
 			}
-			stateMap[m.Key()] = parseBitbucketBuildState(m.Status.State)
+			stateMap[m.Key()] = parseBitbucketServerBuildState(m.Status.State)
 		}
 	}
 
@@ -187,13 +192,36 @@ func computeBitbucketBuildStatus(lastSynced time.Time, pr *bitbucketserver.PullR
 	return combineCheckStates(states)
 }
 
-func parseBitbucketBuildState(s string) btypes.ChangesetCheckState {
+func parseBitbucketServerBuildState(s string) btypes.ChangesetCheckState {
 	switch s {
 	case "FAILED":
 		return btypes.ChangesetCheckStateFailed
 	case "INPROGRESS":
 		return btypes.ChangesetCheckStatePending
 	case "SUCCESSFUL":
+		return btypes.ChangesetCheckStatePassed
+	default:
+		return btypes.ChangesetCheckStateUnknown
+	}
+}
+
+func computeBitbucketCloudBuildState(_ time.Time, apr *bbcs.AnnotatedPullRequest, _ []*btypes.ChangesetEvent) btypes.ChangesetCheckState {
+	states := make([]btypes.ChangesetCheckState, len(apr.Statuses))
+	for i, status := range apr.Statuses {
+		states[i] = parseBitbucketCloudBuildState(status.State)
+	}
+	// TODO: handle events.
+
+	return combineCheckStates(states)
+}
+
+func parseBitbucketCloudBuildState(s bitbucketcloud.PullRequestStatusState) btypes.ChangesetCheckState {
+	switch s {
+	case bitbucketcloud.PullRequestStatusStateFailed, bitbucketcloud.PullRequestStatusStateStopped:
+		return btypes.ChangesetCheckStateFailed
+	case bitbucketcloud.PullRequestStatusStateInProgress:
+		return btypes.ChangesetCheckStatePending
+	case bitbucketcloud.PullRequestStatusStateSuccessful:
 		return btypes.ChangesetCheckStatePassed
 	default:
 		return btypes.ChangesetCheckStateUnknown
@@ -453,6 +481,17 @@ func computeSingleChangesetExternalState(c *btypes.Changeset) (s btypes.Changese
 		default:
 			return "", errors.Errorf("unknown GitLab merge request state: %s", m.State)
 		}
+	case *bbcs.AnnotatedPullRequest:
+		switch m.State {
+		case bitbucketcloud.PullRequestStateDeclined, bitbucketcloud.PullRequestStateSuperseded:
+			s = btypes.ChangesetExternalStateClosed
+		case bitbucketcloud.PullRequestStateMerged:
+			s = btypes.ChangesetExternalStateMerged
+		case bitbucketcloud.PullRequestStateOpen:
+			s = btypes.ChangesetExternalStateOpen
+		default:
+			return "", errors.Errorf("unknown Bitbucket Cloud pull request state: %s", m.State)
+		}
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -509,6 +548,18 @@ func computeSingleChangesetReviewState(c *btypes.Changeset) (s btypes.ChangesetR
 			}
 		}
 		return btypes.ChangesetReviewStatePending, nil
+
+	case *bbcs.AnnotatedPullRequest:
+		for _, participant := range m.Participants {
+			switch participant.State {
+			case bitbucketcloud.ParticipantStateApproved:
+				states[btypes.ChangesetReviewStateApproved] = true
+			case bitbucketcloud.ParticipantStateChangesRequested:
+				states[btypes.ChangesetReviewStateChangesRequested] = true
+			default:
+				states[btypes.ChangesetReviewStatePending] = true
+			}
+		}
 
 	default:
 		return "", errors.New("unknown changeset type")

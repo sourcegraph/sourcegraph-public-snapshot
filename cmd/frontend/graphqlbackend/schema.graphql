@@ -2280,6 +2280,7 @@ enum ExternalServiceKind {
     AWSCODECOMMIT
     BITBUCKETCLOUD
     BITBUCKETSERVER
+    GERRIT
     GITHUB
     GITLAB
     GITOLITE
@@ -2290,6 +2291,7 @@ enum ExternalServiceKind {
     PAGURE
     PERFORCE
     PHABRICATOR
+    PYTHONPACKAGES
 }
 
 """

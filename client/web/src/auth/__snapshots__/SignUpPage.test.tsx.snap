@@ -161,11 +161,11 @@ exports[`SignUpPage renders sign up page (server) 1`] = `
           />
         </svg>
       </div>
-      <div
-        class="title"
+      <h1
+        class="h1 title"
       >
         Sign up for Sourcegraph Server
-      </div>
+      </h1>
       <div
         class="pb-5 signupPageContainer"
       >

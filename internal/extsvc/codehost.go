@@ -15,7 +15,7 @@ type CodeHost struct {
 
 func (c *CodeHost) IsPackageHost() bool {
 	switch c.ServiceType {
-	case TypeNpmPackages, TypeJVMPackages, TypeGoModules:
+	case TypeNpmPackages, TypeJVMPackages, TypeGoModules, TypePythonPackages:
 		return true
 	}
 	return false
@@ -38,12 +38,16 @@ var (
 	GoURL     = &url.URL{Host: "go"}
 	GoModules = NewCodeHost(GoURL, TypeGoModules)
 
+	PythonURL      = &url.URL{Host: "python"}
+	PythonPackages = NewCodeHost(PythonURL, TypePythonPackages)
+
 	PublicCodeHosts = []*CodeHost{
 		GitHubDotCom,
 		GitLabDotCom,
 		JVMPackages,
 		NpmPackages,
 		GoModules,
+		PythonPackages,
 	}
 )
 

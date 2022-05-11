@@ -1,4 +1,4 @@
-import React, { FunctionComponent } from 'react'
+import { FunctionComponent } from 'react'
 
 import classNames from 'classnames'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
@@ -20,7 +20,10 @@ export interface CodeIntelIndexNodeProps {
     now?: () => Date
 }
 
-export const CodeIntelIndexNode: FunctionComponent<CodeIntelIndexNodeProps> = ({ node, now }) => (
+export const CodeIntelIndexNode: FunctionComponent<React.PropsWithChildren<CodeIntelIndexNodeProps>> = ({
+    node,
+    now,
+}) => (
     <>
         <span className={styles.separator} />
 

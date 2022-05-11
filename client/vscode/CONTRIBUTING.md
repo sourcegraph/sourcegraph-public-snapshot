@@ -10,7 +10,7 @@ Your feedback is important to us and is greatly appreciated. Please do not hesit
 
 ## Issues / Bugs
 
-New issues and feature requests can be filed through our [issue tracker](https://github.com/sourcegraph/sourcegraph/issues/new/choose) using the `vscode-extension` label.
+New issues and feature requests can be filed through our [issue tracker](https://github.com/sourcegraph/sourcegraph/issues/new?labels=team/integrations,vscode-extension&title=VSCode+Bug+report:+&projects=Integrations%20Project%20Board) using the `vscode-extension` & `team/integrations` label.
 
 ## Development
 
@@ -29,9 +29,8 @@ New issues and feature requests can be filed through our [issue tracker](https:/
    1. `yarn`
    2. `yarn generate`
 2. In the `client/vscode` directory:
-   1. `yarn build`
-   2. `yarn package`
-   3. `yarn test`
+   1. `yarn build:test` or `yarn watch:test`
+   2. `yarn test-integration`
 
 ### Debugging
 
@@ -49,7 +48,14 @@ If you need guidance or have any questions regarding Sourcegraph or the extensio
 - [Developing the web clients](https://docs.sourcegraph.com/dev/background-information/web)
 - [Issue Tracker](https://github.com/sourcegraph/sourcegraph/labels/vscode-extension)
 - [Troubleshooting docs](https://docs.sourcegraph.com/admin/how-to/troubleshoot-sg-extension#vs-code-extension)
+- [Report a bug](https://github.com/sourcegraph/sourcegraph/issues/new?labels=team/integrations,vscode-extension&title=VSCode+Bug+report:+&projects=Integrations%20Project%20Board)
 
 ## License
 
 Apache
+
+## Release
+
+The extension is released to the VS Code Marketplace automatically whenever the `vsce/release` branch is updated.
+
+- Commit made for the release to the release branch must start with: `patch release vsce`, `minor release vsce`, or `major release vsce`

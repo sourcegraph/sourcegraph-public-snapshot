@@ -107,3 +107,5 @@ export const Button = React.forwardRef(
         return buttonComponent
     }
 ) as ForwardReferenceComponent<'button', ButtonProps>
+
+Button.displayName = 'Button'

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 
 import { action } from '@storybook/addon-actions'
 import { DecoratorFn, Meta, Story } from '@storybook/react'

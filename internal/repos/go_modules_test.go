@@ -4,9 +4,7 @@ import (
 	"context"
 	"testing"
 
-	dependenciesStore "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -14,36 +12,33 @@ import (
 )
 
 func TestGoModulesSource_ListRepos(t *testing.T) {
-	db := dbtest.NewDB(t)
 	ctx := context.Background()
-	store := dependenciesStore.TestStore(database.NewDB(db))
-
-	_, err := store.UpsertDependencyRepos(ctx, []dependenciesStore.DependencyRepo{
+	depsSvc := testDependenciesService(ctx, t, []dependencies.Repo{
 		{
-			Scheme:  dependenciesStore.GoModulesScheme,
+			ID:      1,
+			Scheme:  dependencies.GoModulesScheme,
 			Name:    "github.com/gorilla/mux",
 			Version: "v1.8.0", // test deduplication with version from config
 		},
 		{
-			Scheme:  dependenciesStore.GoModulesScheme,
+			ID:      2,
+			Scheme:  dependencies.GoModulesScheme,
 			Name:    "github.com/gorilla/mux",
 			Version: "v1.7.4", // test multiple versions of the same module
 		},
 		{
-			Scheme:  dependenciesStore.GoModulesScheme,
+			ID:      3,
+			Scheme:  dependencies.GoModulesScheme,
 			Name:    "github.com/goware/urlx",
 			Version: "v0.3.1",
 		},
 		{
-			Scheme:  dependenciesStore.GoModulesScheme,
+			ID:      4,
+			Scheme:  dependencies.GoModulesScheme,
 			Name:    "github.com/foo/barbaz",
 			Version: "v0.0.1", // Test missing modules are skipped.
 		},
 	})
-
-	if err != nil {
-		t.Fatal(err)
-	}
 
 	svc := types.ExternalService{
 		Kind: extsvc.KindGoModules,
@@ -68,7 +63,7 @@ func TestGoModulesSource_ListRepos(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	src.SetDB(db)
+	src.SetDependenciesService(depsSvc)
 
 	repos, err := listAll(ctx, src)
 	if err != nil {

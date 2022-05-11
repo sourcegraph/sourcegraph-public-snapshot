@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Link } from '@sourcegraph/wildcard'
+import { H3, H4, Link } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { PageRoutes } from '../../routes.constants'
@@ -62,7 +62,7 @@ const footerLinkSections: { name: string; links: { name: string; to: string; eve
 ]
 
 export const SearchPageFooter: React.FunctionComponent<
-    ThemeProps & TelemetryProps & { isSourcegraphDotCom: boolean }
+    React.PropsWithChildren<ThemeProps & TelemetryProps & { isSourcegraphDotCom: boolean }>
 > = ({ isLightTheme, telemetryService, isSourcegraphDotCom }) => {
     const assetsRoot = window.context?.assetsRoot || ''
 
@@ -107,7 +107,7 @@ export const SearchPageFooter: React.FunctionComponent<
                     >
                         <img
                             src={`${assetsRoot}/img/devtooltime-logo.svg`}
-                            alt="DevToolTime logo"
+                            alt=""
                             className={styles.devToolTimeImage}
                         />
                         <div className={styles.devToolTimeText}>
@@ -120,7 +120,9 @@ export const SearchPageFooter: React.FunctionComponent<
         </footer>
     ) : (
         <footer className={classNames(styles.serverFooter, 'd-flex flex-column flex-lg-row align-items-center')}>
-            <h4 className="mb-2 mb-lg-0">Explore and extend</h4>
+            <H4 as={H3} className="mb-2 mb-lg-0">
+                Explore and extend
+            </H4>
             <span className="d-flex flex-column flex-md-row align-items-center">
                 <span className="d-flex flex-row mb-2 mb-md-0">
                     <Link

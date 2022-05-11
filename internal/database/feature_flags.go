@@ -183,7 +183,7 @@ var ErrInvalidColumnState = errors.New("encountered column that is unexpectedly 
 
 // rowScanner is an interface that can scan from either a sql.Row or sql.Rows
 type rowScanner interface {
-	Scan(...interface{}) error
+	Scan(...any) error
 }
 
 func scanFeatureFlag(scanner rowScanner) (*ff.FeatureFlag, error) {

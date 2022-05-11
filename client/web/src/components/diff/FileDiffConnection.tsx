@@ -59,7 +59,7 @@ export type PartInfo<ExtraData extends object = {}> = {
 /**
  * Displays a list of file diffs.
  */
-export const FileDiffConnection: React.FunctionComponent<FileDiffConnectionProps> = props => {
+export const FileDiffConnection: React.FunctionComponent<React.PropsWithChildren<FileDiffConnectionProps>> = props => {
     const { observeViewerId, setViewerIds, getCurrentViewerIdByUri } = useMemo(() => {
         const viewerIdByUris = new BehaviorSubject<Map<string, ViewerId | undefined>>(new Map())
 

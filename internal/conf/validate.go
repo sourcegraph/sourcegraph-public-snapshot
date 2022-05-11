@@ -217,6 +217,7 @@ var siteConfigSecrets = []struct {
 	{readPath: `githubClientSecret`, editPaths: []string{"githubClientSecret"}},
 	{readPath: `dotcom.githubApp\.cloud.clientSecret`, editPaths: []string{"dotcom", "githubApp.cloud", "clientSecret"}},
 	{readPath: `dotcom.githubApp\.cloud.privateKey`, editPaths: []string{"dotcom", "githubApp.cloud", "privateKey"}},
+	{readPath: `auth\.unlockAccountLinkSigningKey`, editPaths: []string{"auth.unlockAccountLinkSigningKey"}},
 }
 
 // UnredactSecrets unredacts unchanged secrets back to their original value for

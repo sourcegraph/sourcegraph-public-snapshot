@@ -17,7 +17,7 @@ const MaximumRangesDefinitionLocations = 10000
 
 // Ranges returns definition, reference, implementation, hover, and documentation data for each range within the given span of lines.
 func (s *Store) Ranges(ctx context.Context, bundleID int, path string, startLine, endLine int) (_ []CodeIntelligenceRange, err error) {
-	ctx, trace, endObservation := s.operations.ranges.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := s.operations.ranges.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.String("path", path),
 		log.Int("startLine", startLine),
@@ -78,7 +78,7 @@ func (s *Store) Ranges(ctx context.Context, bundleID int, path string, startLine
 
 // DocumentationAtPosition returns documentation path IDs found at the given position.
 func (s *Store) DocumentationAtPosition(ctx context.Context, bundleID int, path string, line, character int) (_ []string, err error) {
-	ctx, trace, endObservation := s.operations.documentationAtPosition.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := s.operations.documentationAtPosition.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.String("path", path),
 		log.Int("line", line),
@@ -131,7 +131,7 @@ LIMIT 1
 // identifiers. Like locations, this method returns a map from result set identifiers to another map from
 // document paths to locations within that document.
 func (s *Store) locationsWithinFile(ctx context.Context, bundleID int, ids []precise.ID, path string, documentData precise.DocumentData) (_ map[precise.ID][]Location, err error) {
-	ctx, trace, endObservation := s.operations.locationsWithinFile.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := s.operations.locationsWithinFile.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.Int("numIDs", len(ids)),
 		log.String("ids", idsToString(ids)),

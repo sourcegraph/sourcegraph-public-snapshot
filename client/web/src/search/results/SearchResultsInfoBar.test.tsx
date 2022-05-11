@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { createMemoryHistory, createLocation } from 'history'
 import { noop } from 'lodash'
 import { NEVER } from 'rxjs'

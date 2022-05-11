@@ -57,9 +57,9 @@ export interface CommunitySearchContextPageProps
     globbing: boolean
 }
 
-export const CommunitySearchContextPage: React.FunctionComponent<CommunitySearchContextPageProps> = (
-    props: CommunitySearchContextPageProps
-) => {
+export const CommunitySearchContextPage: React.FunctionComponent<
+    React.PropsWithChildren<CommunitySearchContextPageProps>
+> = (props: CommunitySearchContextPageProps) => {
     const LOADING = 'loading' as const
 
     useEffect(
@@ -104,7 +104,12 @@ export const CommunitySearchContextPage: React.FunctionComponent<CommunitySearch
                     <>{props.communitySearchContextMetadata.description}</>
                 ) : (
                     <span className="text-monospace">
-                        <span className="search-filter-keyword">context:</span>
+                        {/*
+                           a11y-ignore
+                           Rule: "color-contrast" (Elements must have sufficient color contrast)
+                           GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
+                          */}
+                        <span className="search-filter-keyword a11y-ignore">context:</span>
                         {props.communitySearchContextMetadata.spec}
                     </span>
                 )}
@@ -168,7 +173,12 @@ export const CommunitySearchContextPage: React.FunctionComponent<CommunitySearch
                                 <p>
                                     Using the syntax{' '}
                                     <code>
-                                        <span className="search-filter-keyword">context:</span>
+                                        {/*
+                                            a11y-ignore
+                                            Rule: "color-contrast" (Elements must have sufficient color contrast)
+                                            GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
+                                          */}
+                                        <span className="search-filter-keyword a11y-ignore">context:</span>
                                         {props.communitySearchContextMetadata.spec}
                                     </code>{' '}
                                     in a query will search these repositories:
@@ -211,7 +221,7 @@ export const CommunitySearchContextPage: React.FunctionComponent<CommunitySearch
 const RepoLinkClicked = (repoName: string) => (): void =>
     eventLogger.log('CommunitySearchContextPageRepoLinkClicked', { repo_name: repoName }, { repo_name: repoName })
 
-const RepoLink: React.FunctionComponent<{ repo: string }> = ({ repo }) => (
+const RepoLink: React.FunctionComponent<React.PropsWithChildren<{ repo: string }>> = ({ repo }) => (
     <li className={classNames('list-unstyled mb-3', styles.repoItem)} key={repo}>
         {repo.startsWith('github.com') && (
             <>
@@ -254,7 +264,9 @@ interface CommunitySearchContextPageLogoProps extends Exclude<React.ImgHTMLAttri
 /**
  * The community search context logo image.
  */
-const CommunitySearchContextPageLogo: React.FunctionComponent<CommunitySearchContextPageLogoProps> = props => (
+const CommunitySearchContextPageLogo: React.FunctionComponent<
+    React.PropsWithChildren<CommunitySearchContextPageLogoProps>
+> = props => (
     <div className={classNames('d-flex align-items-center', styles.logoContainer)}>
         <img {...props} src={props.icon} alt="" />
         <span className="h3 font-weight-normal mb-0 ml-1">{props.text}</span>

@@ -56,12 +56,13 @@ type JSContext struct {
 
 	IsAuthenticatedUser bool `json:"isAuthenticatedUser"`
 
-	SentryDSN     *string `json:"sentryDSN"`
-	SiteID        string  `json:"siteID"`
-	SiteGQLID     string  `json:"siteGQLID"`
-	Debug         bool    `json:"debug"`
-	NeedsSiteInit bool    `json:"needsSiteInit"`
-	EmailEnabled  bool    `json:"emailEnabled"`
+	Datadog       schema.RUM `json:"datadog,omitempty"`
+	SentryDSN     *string    `json:"sentryDSN"`
+	SiteID        string     `json:"siteID"`
+	SiteGQLID     string     `json:"siteGQLID"`
+	Debug         bool       `json:"debug"`
+	NeedsSiteInit bool       `json:"needsSiteInit"`
+	EmailEnabled  bool       `json:"emailEnabled"`
 
 	Site              schema.SiteConfiguration `json:"site"` // public subset of site configuration
 	LikelyDockerOnMac bool                     `json:"likelyDockerOnMac"`
@@ -146,6 +147,11 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		sentryDSN = &siteConfig.Log.Sentry.Dsn
 	}
 
+	var datadogRUM schema.RUM
+	if siteConfig.ObservabilityLogging != nil && siteConfig.ObservabilityLogging.Datadog != nil && siteConfig.ObservabilityLogging.Datadog.RUM != nil {
+		datadogRUM = *siteConfig.ObservabilityLogging.Datadog.RUM
+	}
+
 	var githubAppCloudSlug string
 	var githubAppCloudClientID string
 	if envvar.SourcegraphDotComMode() && siteConfig.Dotcom != nil && siteConfig.Dotcom.GithubAppCloud != nil {
@@ -165,6 +171,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		AssetsRoot:          assetsutil.URL("").String(),
 		Version:             version.Version(),
 		IsAuthenticatedUser: actor.IsAuthenticated(),
+		Datadog:             datadogRUM,
 		SentryDSN:           sentryDSN,
 		Debug:               env.InsecureDev,
 		SiteID:              siteID,

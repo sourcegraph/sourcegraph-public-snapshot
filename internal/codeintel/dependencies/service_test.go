@@ -11,7 +11,6 @@ import (
 	"golang.org/x/sync/semaphore"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -35,7 +34,7 @@ func TestDependencies(t *testing.T) {
 		return v%2 == 0
 	}
 
-	mockStore.UpsertDependencyReposFunc.SetDefaultHook(func(ctx context.Context, dependencyRepos []store.DependencyRepo) ([]store.DependencyRepo, error) {
+	mockStore.UpsertDependencyReposFunc.SetDefaultHook(func(ctx context.Context, dependencyRepos []Repo) ([]Repo, error) {
 		filtered := dependencyRepos[:0]
 		for _, dependencyRepo := range dependencyRepos {
 			// repo is even + commit is odd, or

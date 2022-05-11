@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+
 # ASDF setup that either does a simple install, or pulls it from cache, geared towards
 # usage in CI.
 # In most cases you should not need to call this script directly.
@@ -34,6 +36,7 @@ else
     echo -e "ASDF 🔥 Cache hit: $cache_key"
     aws s3 cp --profile buildkite --endpoint-url 'https://storage.googleapis.com' --region "us-central1" "s3://sourcegraph_buildkite_cache/$cache_key" "$HOME/"
     pushd "$HOME" || exit
+    rm -rf .asdf
     tar xzf "$cache_file"
     popd || exit
   else

@@ -97,11 +97,11 @@ func (s *orgInvitationStore) Transact(ctx context.Context) (OrgInvitationStore, 
 
 // OrgInvitationNotFoundError occurs when an org invitation is not found.
 type OrgInvitationNotFoundError struct {
-	args []interface{}
+	args []any
 }
 
 func NewOrgInvitationNotFoundError(id int64) OrgInvitationNotFoundError {
-	return OrgInvitationNotFoundError{[]interface{}{id}}
+	return OrgInvitationNotFoundError{[]any{id}}
 }
 
 // NotFound implements errcode.NotFounder.
@@ -192,7 +192,7 @@ func (s *orgInvitationStore) GetPending(ctx context.Context, orgID, recipientUse
 		return nil, err
 	}
 	if len(results) == 0 {
-		return nil, OrgInvitationNotFoundError{[]interface{}{fmt.Sprintf("pending for org %d recipient %d", orgID, recipientUserID)}}
+		return nil, OrgInvitationNotFoundError{[]any{fmt.Sprintf("pending for org %d recipient %d", orgID, recipientUserID)}}
 	}
 	lastInvitation := results[len(results)-1]
 	if lastInvitation.Expired() {
@@ -310,7 +310,7 @@ func (s *orgInvitationStore) UpdateEmailSentTimestamp(ctx context.Context, id in
 // OrgInvitationNotFoundError error is returned.
 func (s *orgInvitationStore) Respond(ctx context.Context, id int64, recipientUserID int32, accept bool) (orgID int32, err error) {
 	if err := s.Handle().DB().QueryRowContext(ctx, "UPDATE org_invitations SET responded_at=now(), response_type=$2 WHERE id=$1 AND responded_at IS NULL AND revoked_at IS NULL AND deleted_at IS NULL AND expires_at > now() RETURNING org_id", id, accept).Scan(&orgID); err == sql.ErrNoRows {
-		return 0, OrgInvitationNotFoundError{[]interface{}{fmt.Sprintf("id %d recipient %d", id, recipientUserID)}}
+		return 0, OrgInvitationNotFoundError{[]any{fmt.Sprintf("id %d recipient %d", id, recipientUserID)}}
 	} else if err != nil {
 		return 0, err
 	}

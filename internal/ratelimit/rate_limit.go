@@ -4,6 +4,8 @@ import (
 	"math"
 	"sync"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+
 	"golang.org/x/time/rate"
 )
 
@@ -13,7 +15,8 @@ var DefaultRegistry = NewRegistry()
 
 const defaultBurst = 10
 
-// NewRegistry creates and returns an empty rate limit registry.
+// NewRegistry creates and returns an empty rate limit registry. If a global default rate limit is specified a fallback
+// rate limiter will be added.
 func NewRegistry() *Registry {
 	return &Registry{
 		rateLimiters: make(map[string]*rate.Limiter),
@@ -29,8 +32,9 @@ type Registry struct {
 }
 
 // Get returns the rate limiter configured for the given URN of an external
-// service. It returns an infinite limiter if no rate limiter has been configured
-// for the URN.
+// service. If no rate limiter has been configured for the URN, it returns either
+// the default rate limiter specified by the config or an infinite limiter if no
+// limiter specified in the config.
 //
 // Modifications to the returned rate limiter takes effect on all call sites.
 func (r *Registry) Get(urn string) *rate.Limiter {
@@ -48,7 +52,14 @@ func (r *Registry) GetOrSet(urn string, fallback *rate.Limiter) *rate.Limiter {
 	l := r.rateLimiters[urn]
 	if l == nil {
 		if fallback == nil {
-			fallback = rate.NewLimiter(rate.Inf, defaultBurst)
+			defaultRateLimit := conf.Get().DefaultRateLimit
+			// the rate limit in the config is in requests per hour, whereas rate.Limit is in
+			// requests per second.
+			fallbackRateLimit := rate.Limit(defaultRateLimit / 3600.0)
+			if defaultRateLimit <= 0 {
+				fallbackRateLimit = rate.Inf
+			}
+			fallback = rate.NewLimiter(fallbackRateLimit, defaultBurst)
 		}
 		r.rateLimiters[urn] = fallback
 		return fallback

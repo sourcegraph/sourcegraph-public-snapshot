@@ -22,3 +22,5 @@ export const RouterLink = React.forwardRef(({ to, children, ...rest }, reference
         {children}
     </AnchorLink>
 )) as ForwardReferenceComponent<Link, AnchorLinkProps>
+
+RouterLink.displayName = 'RouterLink'

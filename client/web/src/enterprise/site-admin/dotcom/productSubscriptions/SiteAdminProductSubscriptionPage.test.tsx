@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { act } from '@testing-library/react'
 import * as H from 'history'
 import { of } from 'rxjs'

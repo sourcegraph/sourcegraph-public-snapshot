@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { Redirect } from 'react-router'
 
 import { isErrorLike } from '@sourcegraph/common'

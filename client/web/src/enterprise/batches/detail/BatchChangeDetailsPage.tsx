@@ -47,7 +47,9 @@ export interface BatchChangeDetailsPageProps extends BatchChangeDetailsProps, Se
 /**
  * The area for a single batch change.
  */
-export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsPageProps> = props => {
+export const BatchChangeDetailsPage: React.FunctionComponent<
+    React.PropsWithChildren<BatchChangeDetailsPageProps>
+> = props => {
     const { namespaceID, batchChangeName, history, location, telemetryService, deleteBatchChange } = props
 
     useEffect(() => {
@@ -112,6 +114,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                     {
                         icon: BatchChangesIcon,
                         to: '/batch-changes',
+                        ariaLabel: 'Batch changes',
                     },
                     { to: `${batchChange.namespace.url}/batch-changes`, text: batchChange.namespace.namespaceName },
                     { text: batchChange.name },

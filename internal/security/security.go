@@ -3,13 +3,13 @@
 package security
 
 import (
-	"errors"
 	"fmt"
 	"unicode"
 	"unicode/utf8"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // maxPasswordRunes is the maximum number of UTF-8 runes that a password can contain.

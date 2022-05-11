@@ -1,5 +1,5 @@
-syntect_server includes all syntaxes from https://github.com/slimsag/Packages
+syntect_server includes all syntaxes from https://github.com/sourcegraph/Packages
 
 Please refer to the license information there to see the license for all syntaxes:
 
-https://github.com/slimsag/Packages#license
+https://github.com/sourcegraph/Packages#license

@@ -23,14 +23,16 @@ const deleteUserExternalAccount = async (externalAccount: Scalars['ID']): Promis
     )
 }
 
-export const RemoveExternalAccountModal: React.FunctionComponent<{
-    id: Scalars['ID']
-    name: string
+export const RemoveExternalAccountModal: React.FunctionComponent<
+    React.PropsWithChildren<{
+        id: Scalars['ID']
+        name: string
 
-    onDidRemove: (id: string, name: string) => void
-    onDidCancel: () => void
-    onDidError: (error: ErrorLike) => void
-}> = ({ id, name, onDidRemove, onDidCancel, onDidError }) => {
+        onDidRemove: (id: string, name: string) => void
+        onDidCancel: () => void
+        onDidError: (error: ErrorLike) => void
+    }>
+> = ({ id, name, onDidRemove, onDidCancel, onDidError }) => {
     const [isLoading, setIsLoading] = useState(false)
 
     const onAccountRemove = useCallback<React.FormEventHandler<HTMLFormElement>>(

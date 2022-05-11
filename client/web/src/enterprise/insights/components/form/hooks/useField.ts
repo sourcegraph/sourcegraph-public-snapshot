@@ -62,8 +62,6 @@ export interface useFieldAPI<FieldValue> {
     }
 }
 
-export type Field = useFieldAPI<string> | useFieldAPI<number>
-
 export type UseFieldProps<FormValues, Key, Value> = {
     name: Key
     formApi: FormAPI<FormValues>

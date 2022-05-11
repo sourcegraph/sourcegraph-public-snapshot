@@ -32,7 +32,7 @@ interface SearchInputExampleProps {
     onRun: () => void
 }
 
-const SearchInputExample: React.FunctionComponent<SearchInputExampleProps> = ({
+const SearchInputExample: React.FunctionComponent<React.PropsWithChildren<SearchInputExampleProps>> = ({
     showSearchContext,
     query,
     patternType = SearchPatternType.literal,
@@ -61,7 +61,12 @@ const SearchInputExample: React.FunctionComponent<SearchInputExampleProps> = ({
                                 )}
                             >
                                 <code className={searchContextDropDownStyles.buttonContent}>
-                                    <span className="search-filter-keyword">context:</span>
+                                    {/*
+                                       a11y-ignore
+                                       Rule: "color-contrast" (Elements must have sufficient color contrast)
+                                       GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
+                                     */}
+                                    <span className="search-filter-keyword a11y-ignore">context:</span>
                                     global
                                 </code>
                             </Button>
@@ -124,7 +129,7 @@ interface ContainerProps {
     onClose?: (sectionID: SectionID) => void
 }
 
-const Container: React.FunctionComponent<ContainerProps> = ({
+const Container: React.FunctionComponent<React.PropsWithChildren<ContainerProps>> = ({
     sectionID,
     title,
     children,
@@ -174,7 +179,7 @@ interface NoResultsPageProps extends ThemeProps, TelemetryProps, Pick<SearchCont
     assetsRoot?: string
 }
 
-export const NoResultsPage: React.FunctionComponent<NoResultsPageProps> = ({
+export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoResultsPageProps>> = ({
     searchContextsEnabled,
     isLightTheme,
     telemetryService,

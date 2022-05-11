@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react'
+import { ReactElement } from 'react'
 
 import CloseIcon from 'mdi-react/CloseIcon'
 import { components, ClearIndicatorProps } from 'react-select'

@@ -109,6 +109,12 @@ function highlightNodeHelper(
                     // If there are more than one new nodes, wrap them in a span
                     const containerNode = document.createElement('span')
                     containerNode.append(...newNodes)
+                    /*
+                        a11y-ignore
+                        Rule: "color-contrast" (Elements must have sufficient color contrast)
+                        GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
+                    */
+                    containerNode.className = 'a11y-ignore'
                     newNode = containerNode
                 }
 

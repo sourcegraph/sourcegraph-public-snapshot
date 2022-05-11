@@ -24,7 +24,7 @@ import {
 } from '@sourcegraph/build-config'
 
 import { ensureDllBundleIsReady } from './dllPlugin'
-import { environment } from './environment-config'
+import { ENVIRONMENT_CONFIG } from './environment-config'
 import {
     monacoEditorPath,
     dllPluginConfig,
@@ -34,8 +34,8 @@ import {
 } from './webpack.config.common'
 
 const getStoriesGlob = (): string[] => {
-    if (process.env.STORIES_GLOB) {
-        return [path.resolve(ROOT_PATH, process.env.STORIES_GLOB)]
+    if (ENVIRONMENT_CONFIG.STORIES_GLOB) {
+        return [path.resolve(ROOT_PATH, ENVIRONMENT_CONFIG.STORIES_GLOB)]
     }
 
     // Stories in `Chromatic.story.tsx` are guarded by the `isChromatic()` check. It will result in noop in all other environments.
@@ -93,12 +93,12 @@ const config = {
     // Include DLL bundle script tag into preview-head.html if DLLPlugin is enabled.
     previewHead: (head: string) => `
         ${head}
-        ${environment.isDLLPluginEnabled ? getDllScriptTag() : ''}
+        ${ENVIRONMENT_CONFIG.WEBPACK_DLL_PLUGIN ? getDllScriptTag() : ''}
     `,
 
     webpackFinal: (config: Configuration, options: Options) => {
         config.stats = 'errors-warnings'
-        config.mode = environment.shouldMinify ? 'production' : 'development'
+        config.mode = ENVIRONMENT_CONFIG.MINIFY ? 'production' : 'development'
 
         // Check the default config is in an expected shape.
         if (!config.module?.rules || !config.plugins) {
@@ -115,7 +115,7 @@ const config = {
             getProvidePlugin()
         )
 
-        if (environment.shouldMinify) {
+        if (ENVIRONMENT_CONFIG.MINIFY) {
             if (!config.optimization) {
                 throw new Error('The structure of the config changed, expected config.optimization to be not-null')
             }
@@ -155,7 +155,7 @@ const config = {
             exclude: storybookPath,
             use: getCSSLoaders(
                 'style-loader',
-                getCSSModulesLoader({ sourceMap: !environment.shouldMinify, url: false })
+                getCSSModulesLoader({ sourceMap: !ENVIRONMENT_CONFIG.MINIFY, url: false })
             ),
         })
 
@@ -200,11 +200,11 @@ const config = {
 
         // Disable `ProgressPlugin` by default to speed up development build.
         // Can be re-enabled by setting `WEBPACK_PROGRESS_PLUGIN` env variable.
-        if (!environment.isProgressPluginEnabled) {
+        if (!ENVIRONMENT_CONFIG.WEBPACK_PROGRESS_PLUGIN) {
             remove(config.plugins, plugin => plugin instanceof ProgressPlugin)
         }
 
-        if (environment.isDLLPluginEnabled && !options.webpackStatsJson) {
+        if (ENVIRONMENT_CONFIG.WEBPACK_DLL_PLUGIN && !options.webpackStatsJson) {
             config.plugins.unshift(
                 new DllReferencePlugin({
                     context: dllPluginConfig.context,
@@ -216,11 +216,11 @@ const config = {
             config.module.rules.push(getMonacoCSSRule(), getMonacoTTFRule())
         }
 
-        if (environment.isBundleAnalyzerEnabled) {
+        if (ENVIRONMENT_CONFIG.WEBPACK_BUNDLE_ANALYZER) {
             config.plugins.push(getStatoscopePlugin())
         }
 
-        if (environment.isSpeedAnalyzerEnabled) {
+        if (ENVIRONMENT_CONFIG.WEBPACK_SPEED_ANALYZER) {
             const speedMeasurePlugin = new SpeedMeasurePlugin({
                 outputFormat: 'human',
             })

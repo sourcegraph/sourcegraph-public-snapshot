@@ -93,7 +93,7 @@ func SubstituteSearchContexts(lookupQueryString func(contextValue string) (strin
 func For(searchType SearchType) step {
 	var processType step
 	switch searchType {
-	case SearchTypeLiteral:
+	case SearchTypeLiteralDefault:
 		processType = succeeds(substituteConcat(space))
 	case SearchTypeRegex:
 		processType = succeeds(escapeParensHeuristic, substituteConcat(fuzzyRegexp))
@@ -115,7 +115,7 @@ func Init(in string, searchType SearchType) step {
 
 // InitLiteral is Init where SearchType is Literal.
 func InitLiteral(in string) step {
-	return Init(in, SearchTypeLiteral)
+	return Init(in, SearchTypeLiteralDefault)
 }
 
 // InitRegexp is Init where SearchType is Regex.
@@ -132,9 +132,9 @@ func Run(step step) ([]Node, error) {
 	return step(nil)
 }
 
-func Validate(disjuncts [][]Node) error {
-	for _, disjunct := range disjuncts {
-		if err := validate(disjunct); err != nil {
+func ValidatePlan(plan Plan) error {
+	for _, basic := range plan {
+		if err := validate(basic.ToParseTree()); err != nil {
 			return err
 		}
 	}
@@ -154,18 +154,6 @@ func MapPlan(plan Plan, pass BasicPass) Plan {
 	return Plan(updated)
 }
 
-func ToPlan(disjuncts [][]Node) (Plan, error) {
-	plan := make([]Basic, 0, len(disjuncts))
-	for _, disjunct := range disjuncts {
-		basic, err := ToBasicQuery(disjunct)
-		if err != nil {
-			return nil, err
-		}
-		plan = append(plan, basic)
-	}
-	return plan, nil
-}
-
 // Pipeline processes zero or more steps to produce a query. The first step must
 // be Init, otherwise this function is a no-op.
 func Pipeline(steps ...step) (Plan, error) {
@@ -174,13 +162,8 @@ func Pipeline(steps ...step) (Plan, error) {
 		return nil, err
 	}
 
-	disjuncts := Dnf(nodes)
-	if err := Validate(disjuncts); err != nil {
-		return nil, err
-	}
-
-	plan, err := ToPlan(disjuncts)
-	if err != nil {
+	plan := BuildPlan(nodes)
+	if err := ValidatePlan(plan); err != nil {
 		return nil, err
 	}
 	plan = MapPlan(plan, ConcatRevFilters)

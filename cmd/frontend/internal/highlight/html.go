@@ -6,9 +6,10 @@ import (
 	"html/template"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsiftyped"
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
+
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsiftyped"
 )
 
 // DocumentToSplitHTML returns a list of each line of HTML.

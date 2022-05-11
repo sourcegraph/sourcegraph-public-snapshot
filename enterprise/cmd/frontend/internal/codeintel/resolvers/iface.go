@@ -60,10 +60,13 @@ type DBStore interface {
 	RecentIndexesSummary(ctx context.Context, repositoryID int) ([]dbstore.IndexesWithRepositoryNamespace, error)
 	LastUploadRetentionScanForRepository(ctx context.Context, repositoryID int) (*time.Time, error)
 	LastIndexScanForRepository(ctx context.Context, repositoryID int) (*time.Time, error)
+	RequestLanguageSupport(ctx context.Context, userID int, language string) error
+	LanguagesRequestedBy(ctx context.Context, userID int) ([]string, error)
 }
 
 type LSIFStore interface {
 	Exists(ctx context.Context, bundleID int, path string) (bool, error)
+	DocumentPaths(ctx context.Context, bundleID int, path string) ([]string, int, error)
 	Stencil(ctx context.Context, bundelID int, path string) ([]lsifstore.Range, error)
 	Ranges(ctx context.Context, bundleID int, path string, startLine, endLine int) ([]lsifstore.CodeIntelligenceRange, error)
 	Definitions(ctx context.Context, bundleID int, path string, line, character, limit, offset int) ([]lsifstore.Location, int, error)

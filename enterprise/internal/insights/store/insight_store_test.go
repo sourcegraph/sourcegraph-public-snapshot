@@ -971,6 +971,9 @@ func TestCreateView(t *testing.T) {
 			Description:      "my view description",
 			UniqueID:         "1234567",
 			PresentationType: types.Line,
+			Filters: types.InsightViewFilters{
+				SearchContexts: []string{"@dev/mycontext"},
+			},
 		}
 
 		got, err := store.CreateView(ctx, view, []InsightViewGrant{GlobalGrant()})
@@ -984,6 +987,9 @@ func TestCreateView(t *testing.T) {
 			Description:      "my view description",
 			UniqueID:         "1234567",
 			PresentationType: types.Line,
+			Filters: types.InsightViewFilters{
+				SearchContexts: []string{"@dev/mycontext"},
+			},
 		}
 
 		if diff := cmp.Diff(want, got); diff != "" {
@@ -1157,6 +1163,7 @@ func TestUpdateView(t *testing.T) {
 			Filters: types.InsightViewFilters{
 				IncludeRepoRegex: &include,
 				ExcludeRepoRegex: &exclude,
+				SearchContexts:   []string{"@dev/mycontext"},
 			},
 			PresentationType: types.Line,
 		})
@@ -1168,6 +1175,7 @@ func TestUpdateView(t *testing.T) {
 			Filters: types.InsightViewFilters{
 				IncludeRepoRegex: valast.Addr("include repos").(*string),
 				ExcludeRepoRegex: valast.Addr("exclude repos").(*string),
+				SearchContexts:   []string{"@dev/mycontext"},
 			},
 			PresentationType: types.PresentationType("LINE"),
 		}).Equal(t, got)

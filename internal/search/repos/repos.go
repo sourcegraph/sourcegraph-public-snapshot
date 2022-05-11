@@ -19,13 +19,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel"
+	livedependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
 	codeintelTypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -63,20 +61,14 @@ type Resolver struct {
 	Opts search.RepoOptions
 }
 
-func (r *Resolver) Paginate(ctx context.Context, op *search.RepoOptions, handle func(*Resolved) error) (err error) {
+func (r *Resolver) Paginate(ctx context.Context, handle func(*Resolved) error) (err error) {
 	tr, ctx := trace.New(ctx, "searchrepos.Paginate", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	var opts search.RepoOptions
-	if op != nil {
-		opts = *op
-	} else {
-		opts = r.Opts
-	}
-
+	opts := r.Opts
 	if opts.Limit == 0 {
 		opts.Limit = 500
 	}
@@ -116,24 +108,15 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 		tr.Finish()
 	}()
 
-	includePatterns := op.RepoFilters
-	if len(includePatterns) > 0 {
-		// Copy to avoid race condition.
-		includePatterns = append([]string{}, includePatterns...)
-	}
-
 	excludePatterns := op.MinusRepoFilters
+	includePatterns, includePatternRevs, err := findPatternRevs(op.RepoFilters)
+	if err != nil {
+		return Resolved{}, err
+	}
 
 	limit := op.Limit
 	if limit == 0 {
 		limit = limits.SearchLimits(conf.Get()).MaxRepos
-	}
-
-	// note that this mutates the strings in includePatterns, stripping their
-	// revision specs, if they had any.
-	includePatternRevs, err := findPatternRevs(includePatterns)
-	if err != nil {
-		return Resolved{}, err
 	}
 
 	var (
@@ -160,7 +143,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 	options := database.ReposListOptions{
 		IncludePatterns:       includePatterns,
 		Names:                 depNames,
-		ExcludePattern:        search.UnionRegExps(excludePatterns),
+		ExcludePattern:        query.UnionRegExps(excludePatterns),
 		CaseSensitivePatterns: op.CaseSensitiveRepoFilters,
 		Cursors:               op.Cursors,
 		// List N+1 repos so we can see if there are repos omitted due to our repo limit.
@@ -407,9 +390,9 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 	return res.Resolved, err
 }
 
-// Excluded computes the ExcludedRepos that the given RepoOptions would not match. This is
+// computeExcludedRepos computes the ExcludedRepos that the given RepoOptions would not match. This is
 // used to show in the search UI what repos are excluded precisely.
-func (r *Resolver) Excluded(ctx context.Context, op search.RepoOptions) (ex ExcludedRepos, err error) {
+func computeExcludedRepos(ctx context.Context, db database.DB, op search.RepoOptions) (ex ExcludedRepos, err error) {
 	tr, ctx := trace.New(ctx, "searchrepos.Excluded", op.String())
 	defer func() {
 		tr.LazyPrintf("excluded repos: %+v", ex)
@@ -417,28 +400,15 @@ func (r *Resolver) Excluded(ctx context.Context, op search.RepoOptions) (ex Excl
 		tr.Finish()
 	}()
 
-	if op.Query == nil {
-		return ExcludedRepos{}, nil
-	}
-
-	includePatterns := op.RepoFilters
-	if includePatterns != nil {
-		// Copy to avoid race condition.
-		includePatterns = append([]string{}, includePatterns...)
-	}
-
 	excludePatterns := op.MinusRepoFilters
+	includePatterns, _, err := findPatternRevs(op.RepoFilters)
+	if err != nil {
+		return ExcludedRepos{}, err
+	}
 
 	limit := op.Limit
 	if limit == 0 {
 		limit = limits.SearchLimits(conf.Get()).MaxRepos
-	}
-
-	// note that this mutates the strings in includePatterns, stripping their
-	// revision specs, if they had any.
-	_, err = findPatternRevs(includePatterns)
-	if err != nil {
-		return ExcludedRepos{}, err
 	}
 
 	if len(op.Dependencies) > 0 {
@@ -448,14 +418,14 @@ func (r *Resolver) Excluded(ctx context.Context, op search.RepoOptions) (ex Excl
 		return ExcludedRepos{}, nil
 	}
 
-	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.DB, op.SearchContextSpec)
+	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, db, op.SearchContextSpec)
 	if err != nil {
 		return ExcludedRepos{}, err
 	}
 
 	options := database.ReposListOptions{
 		IncludePatterns: includePatterns,
-		ExcludePattern:  search.UnionRegExps(excludePatterns),
+		ExcludePattern:  query.UnionRegExps(excludePatterns),
 		// List N+1 repos so we can see if there are repos omitted due to our repo limit.
 		LimitOffset:            &database.LimitOffset{Limit: limit + 1},
 		NoForks:                op.NoForks,
@@ -477,14 +447,14 @@ func (r *Resolver) Excluded(ctx context.Context, op search.RepoOptions) (ex Excl
 		ExcludedRepos
 	}
 
-	if op.Query.Fork() == nil && !ExactlyOneRepo(includePatterns) {
+	if !op.ForkSet && !ExactlyOneRepo(includePatterns) {
 		g.Go(func() error {
 			// 'fork:...' was not specified and Forks are excluded, find out
 			// which repos are excluded.
 			selectForks := options
 			selectForks.OnlyForks = true
 			selectForks.NoForks = false
-			numExcludedForks, err := r.DB.Repos().Count(ctx, selectForks)
+			numExcludedForks, err := db.Repos().Count(ctx, selectForks)
 			if err != nil {
 				return err
 			}
@@ -497,14 +467,14 @@ func (r *Resolver) Excluded(ctx context.Context, op search.RepoOptions) (ex Excl
 		})
 	}
 
-	if op.Query.Archived() == nil && !ExactlyOneRepo(includePatterns) {
+	if !op.ArchivedSet && !ExactlyOneRepo(includePatterns) {
 		g.Go(func() error {
 			// Archived...: was not specified and archives are excluded,
 			// find out which repos are excluded.
 			selectArchived := options
 			selectArchived.OnlyArchived = true
 			selectArchived.NoArchived = false
-			numExcludedArchived, err := r.DB.Repos().Count(ctx, selectArchived)
+			numExcludedArchived, err := db.Repos().Count(ctx, selectArchived)
 			if err != nil {
 				return err
 			}
@@ -572,12 +542,7 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 		}
 	}
 
-	depsSvc := codeintel.GetDependenciesService(
-		r.DB,
-		&packageRepoSyncer{cli: repoupdater.DefaultClient},
-	)
-
-	dependencyRepoRevs, err := depsSvc.Dependencies(ctx, repoRevs)
+	dependencyRepoRevs, err := livedependencies.GetService(r.DB, livedependencies.NewSyncer()).Dependencies(ctx, repoRevs)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -595,13 +560,6 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 	}
 
 	return depNames, depRevs, nil
-}
-
-type packageRepoSyncer struct{ cli *repoupdater.Client }
-
-func (s *packageRepoSyncer) Sync(ctx context.Context, repo api.RepoName) error {
-	_, err := s.cli.RepoLookup(ctx, protocol.RepoLookupArgs{Repo: repo, Update: true})
-	return err
 }
 
 // ExactlyOneRepo returns whether exactly one repo: literal field is specified and
@@ -700,22 +658,24 @@ func getRevsForMatchedRepo(repo api.RepoName, pats []patternRevspec) (matched []
 // findPatternRevs mutates the given list of include patterns to
 // be a raw list of the repository name patterns we want, separating
 // out their revision specs, if any.
-func findPatternRevs(includePatterns []string) (includePatternRevs []patternRevspec, err error) {
+func findPatternRevs(includePatterns []string) (outputPatterns []string, includePatternRevs []patternRevspec, err error) {
+	outputPatterns = make([]string, 0, len(includePatterns))
 	includePatternRevs = make([]patternRevspec, 0, len(includePatterns))
-	for i, includePattern := range includePatterns {
+
+	for _, includePattern := range includePatterns {
 		repoPattern, revs := search.ParseRepositoryRevisions(includePattern)
 		// Validate pattern now so the error message is more recognizable to the
 		// user
 		if _, err := regexp.Compile(repoPattern); err != nil {
-			return nil, &badRequestError{errors.Wrap(err, "in findPatternRevs")}
+			return nil, nil, &badRequestError{errors.Wrap(err, "in findPatternRevs")}
 		}
 		repoPattern = optimizeRepoPatternWithHeuristics(repoPattern)
 
-		includePatterns[i] = repoPattern
+		outputPatterns = append(outputPatterns, repoPattern)
 		if len(revs) > 0 {
-			p, err := regexp.Compile("(?i:" + includePatterns[i] + ")")
+			p, err := regexp.Compile("(?i:" + repoPattern + ")")
 			if err != nil {
-				return nil, &badRequestError{err}
+				return nil, nil, &badRequestError{err}
 			}
 			patternRev := patternRevspec{includePattern: p, revs: revs}
 			includePatternRevs = append(includePatternRevs, patternRev)
@@ -787,7 +747,7 @@ func PrivateReposForActor(ctx context.Context, db database.DB, repoOptions searc
 		NoForks:        repoOptions.NoForks,
 		OnlyArchived:   repoOptions.OnlyArchived,
 		NoArchived:     repoOptions.NoArchived,
-		ExcludePattern: search.UnionRegExps(repoOptions.MinusRepoFilters),
+		ExcludePattern: query.UnionRegExps(repoOptions.MinusRepoFilters),
 	})
 
 	if err != nil {

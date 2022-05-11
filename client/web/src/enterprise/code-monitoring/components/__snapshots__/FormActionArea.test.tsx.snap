@@ -49,6 +49,34 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
       </small>
     </div>
     <div
+      class="d-flex align-items-center mb-3"
+    >
+      <div>
+        <button
+          aria-checked="false"
+          aria-labelledby="code-monitoring-email-include-results-toggle"
+          class="toggle mr-2 inlineCenter"
+          data-testid="include-results-toggle-email"
+          role="switch"
+          title="Include search results in message"
+          type="button"
+          value="0"
+        >
+          <span
+            class="bar"
+          />
+          <span
+            class="knob"
+          />
+        </button>
+      </div>
+      <span
+        id="code-monitoring-email-form-actions-include-results-toggle"
+      >
+        Include search results in sent message
+      </span>
+    </div>
+    <div
       class="flex mt-1"
     >
       <button
@@ -59,11 +87,11 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
       >
         Send test email
       </button>
-      <small
-        class="mt-2 form-text testActionError"
+      <div
+        class="mt-2 testActionError"
       >
         Please provide a name for the code monitor before sending a test
-      </small>
+      </div>
     </div>
     <div
       class="d-flex align-items-center my-4"

@@ -56,7 +56,6 @@
 }
 
 .search-example-icon {
-    color: var(--primary);
     padding: 0.5rem 0.75rem;
     display: flex;
     align-items: center;
@@ -126,6 +125,7 @@
     text-transform: uppercase;
 }
 
+/* stylelint-disable-next-line selector-class-pattern */
 .thumbnailWrapper {
     padding: 0;
 

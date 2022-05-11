@@ -17,6 +17,7 @@ type metrics struct {
 	numUploadsPurged                prometheus.Counter
 	numDocumentSearchRecordsRemoved prometheus.Counter
 	numPoliciesUpdated              prometheus.Counter
+	numAuditLogRecordsExpired       prometheus.Counter
 	numErrors                       prometheus.Counter
 
 	// Resetter metrics
@@ -80,6 +81,10 @@ func newMetrics(observationContext *observation.Context) *metrics {
 		"src_codeintel_background_policies_updated_total",
 		"The number of configuration policies whose repository membership list was updated.",
 	)
+	numAuditLogRecordsExpired := counter(
+		"src_codeintel_background_audit_log_records_expired_total",
+		"The number of audit log records removed due to age.",
+	)
 	numErrors := counter(
 		"src_codeintel_background_errors_total",
 		"The number of errors that occur during a codeintel expiration job.",
@@ -134,6 +139,7 @@ func newMetrics(observationContext *observation.Context) *metrics {
 		numUploadsPurged:                numUploadsPurged,
 		numDocumentSearchRecordsRemoved: numDocumentSearchRecordsRemoved,
 		numPoliciesUpdated:              numPoliciesUpdated,
+		numAuditLogRecordsExpired:       numAuditLogRecordsExpired,
 		numErrors:                       numErrors,
 		numUploadResets:                 numUploadResets,
 		numUploadResetFailures:          numUploadResetFailures,

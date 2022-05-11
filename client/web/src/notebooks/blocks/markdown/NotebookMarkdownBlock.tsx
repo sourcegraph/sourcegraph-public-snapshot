@@ -80,18 +80,22 @@ const staticExtensions: Extension[] = [
 ]
 
 function focusInput(editor: EditorView): void {
-    editor.focus()
-    editor.dispatch({
-        selection: { anchor: editor.state.doc.length },
-        scrollIntoView: true,
-    })
+    if (!editor.hasFocus) {
+        editor.focus()
+        editor.dispatch({
+            selection: { anchor: editor.state.doc.length },
+            scrollIntoView: true,
+        })
+    }
 }
 
 interface NotebookMarkdownBlockProps extends BlockProps<MarkdownBlock>, ThemeProps {
     isEmbedded?: boolean
 }
 
-export const NotebookMarkdownBlock: React.FunctionComponent<NotebookMarkdownBlockProps> = React.memo(
+export const NotebookMarkdownBlock: React.FunctionComponent<
+    React.PropsWithChildren<NotebookMarkdownBlockProps>
+> = React.memo(
     ({
         id,
         input,

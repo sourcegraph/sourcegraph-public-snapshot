@@ -13,15 +13,10 @@ import (
 
 // InitCodeIntelDatabase initializes and returns a connection to the codeintel db.
 func InitCodeIntelDatabase() (*sql.DB, error) {
-	conn, err := initCodeIntelDatabaseMemo.Init()
-	if err != nil {
-		return nil, err
-	}
-
-	return conn.(*sql.DB), err
+	return initCodeIntelDatabaseMemo.Init()
 }
 
-var initCodeIntelDatabaseMemo = memo.NewMemoizedConstructor(func() (interface{}, error) {
+var initCodeIntelDatabaseMemo = memo.NewMemoizedConstructor(func() (*sql.DB, error) {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.CodeIntelPostgresDSN
 	})

@@ -1,7 +1,7 @@
 .list-container {
     margin: 0;
     padding: 0;
-    // Match this to the value in JS
+    // Match this to the `CONTENT_WIDTH` value in JS
     width: 14rem;
 }
 
@@ -38,8 +38,11 @@
     margin-bottom: 0.5rem;
     border-bottom: 1px solid var(--border-color);
     overflow: hidden;
+    flex-shrink: 0;
 }
 
 .last-item {
     margin-top: 1rem;
+    // Match this to the `CONTENT_WIDTH` value in JS
+    width: 14rem;
 }

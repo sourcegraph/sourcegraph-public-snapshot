@@ -6,16 +6,6 @@
     font-size: 0.875rem;
     text-align: start;
 
-    &:hover {
-        box-shadow: var(--dropdown-shadow);
-        border: 1px solid var(--border-color-2);
-    }
-
-    &:focus {
-        box-shadow: var(--focus-box-shadow);
-        outline: none;
-    }
-
     &--extension-card {
         background-color: transparent;
     }

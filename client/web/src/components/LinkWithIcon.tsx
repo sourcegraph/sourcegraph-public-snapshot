@@ -16,7 +16,7 @@ interface LinkWithIconProps extends NavLinkProps {
 /**
  * A link displaying an icon along with text.
  */
-export const LinkWithIcon: React.FunctionComponent<LinkWithIconProps> = props => {
+export const LinkWithIcon: React.FunctionComponent<React.PropsWithChildren<LinkWithIconProps>> = props => {
     const { to, exact, text, className, activeClassName, icon: linkIcon } = props
 
     return (

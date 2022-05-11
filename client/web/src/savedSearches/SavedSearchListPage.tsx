@@ -96,6 +96,7 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
                         data-tooltip="Delete saved search"
                         variant="danger"
                         size="sm"
+                        aria-label="Delete saved search"
                     >
                         <Icon as={DeleteIcon} />
                     </Button>
@@ -171,7 +172,7 @@ interface SavedSearchListPageContentProps extends Props, State {
     onDelete: () => void
 }
 
-const SavedSearchListPageContent: React.FunctionComponent<SavedSearchListPageContentProps> = ({
+const SavedSearchListPageContent: React.FunctionComponent<React.PropsWithChildren<SavedSearchListPageContentProps>> = ({
     namespace,
     savedSearchesOrError,
     ...props

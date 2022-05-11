@@ -58,7 +58,7 @@ const currentMigrationLogSchemaVersion = 2
 // if they do not already exist. If old versions of the tables exist, this method
 // will attempt to update them in a backward-compatible manner.
 func (s *Store) EnsureSchemaTable(ctx context.Context) (err error) {
-	ctx, endObservation := s.operations.ensureSchemaTable.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.ensureSchemaTable.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	queries := []*sqlf.Query{
@@ -95,7 +95,7 @@ func (s *Store) EnsureSchemaTable(ctx context.Context) (err error) {
 // A failed migration requires administrator attention. A pending migration may currently be
 // in-progress, or may indicate that a migration was attempted but failed part way through.
 func (s *Store) Versions(ctx context.Context) (appliedVersions, pendingVersions, failedVersions []int, err error) {
-	ctx, endObservation := s.operations.versions.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.versions.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	migrationLogs, err := scanMigrationLogs(s.Query(ctx, sqlf.Sprintf(versionsQuery, s.schemaName)))
@@ -150,7 +150,7 @@ ORDER BY version
 func (s *Store) TryLock(ctx context.Context) (_ bool, _ func(err error) error, err error) {
 	key := s.lockKey()
 
-	ctx, endObservation := s.operations.tryLock.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.tryLock.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int32("key", key),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -182,7 +182,7 @@ func (s *Store) lockKey() int32 {
 
 // Up runs the given definition's up query.
 func (s *Store) Up(ctx context.Context, definition definition.Definition) (err error) {
-	ctx, endObservation := s.operations.up.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.up.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	return s.Exec(ctx, definition.UpQuery)
@@ -190,7 +190,7 @@ func (s *Store) Up(ctx context.Context, definition definition.Definition) (err e
 
 // Down runs the given definition's down query.
 func (s *Store) Down(ctx context.Context, definition definition.Definition) (err error) {
-	ctx, endObservation := s.operations.down.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.down.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	return s.Exec(ctx, definition.DownQuery)
@@ -199,7 +199,7 @@ func (s *Store) Down(ctx context.Context, definition definition.Definition) (err
 // IndexStatus returns an object describing the current validity status and creation progress of the
 // index with the given name. If the index does not exist, a false-valued flag is returned.
 func (s *Store) IndexStatus(ctx context.Context, tableName, indexName string) (_ storetypes.IndexStatus, _ bool, err error) {
-	ctx, endObservation := s.operations.indexStatus.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.indexStatus.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	return scanFirstIndexStatus(s.Query(ctx, sqlf.Sprintf(indexStatusQuery, tableName, indexName)))
@@ -230,7 +230,7 @@ WHERE
 // with the given definition. All users are assumed to run either `s.Up` or `s.Down` as part of the
 // given function, among any other behaviors that are necessary to perform in the _critical section_.
 func (s *Store) WithMigrationLog(ctx context.Context, definition definition.Definition, up bool, f func() error) (err error) {
-	ctx, endObservation := s.operations.withMigrationLog.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.withMigrationLog.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	logID, err := s.createMigrationLog(ctx, definition.ID, up)

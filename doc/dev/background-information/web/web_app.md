@@ -104,7 +104,7 @@ The `tsx` extension makes certain generic syntax impossible and also enables emm
 
 ### `index.*` files
 
-Index files should not never contain declarations on their own.
+Index files should never contain declarations on their own.
 Their purpose is to reexport symbols from a number of other files to make imports easier and define the the public API.
 
 ## Components
@@ -131,7 +131,7 @@ If you don't do this (and just use a normal `import`), it will still work, but i
 ## Formatting
 
 We use [Prettier](https://github.com/prettier/prettier) so you never have to worry about how to format your code.
-`yarn run prettier` will check & autoformat all code.
+`yarn run format` will check & autoformat all code.
 
 ## Tests
 

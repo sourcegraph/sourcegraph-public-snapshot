@@ -12,12 +12,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestAddCodeMonitorHook(t *testing.T) {
@@ -25,10 +28,10 @@ func TestAddCodeMonitorHook(t *testing.T) {
 
 	t.Run("errors on non-commit search", func(t *testing.T) {
 		erroringJobs := []job.Job{
-			jobutil.NewParallelJob(&run.RepoSearch{}, &commit.CommitSearch{}),
-			&run.RepoSearch{},
-			jobutil.NewAndJob(&searcher.SymbolSearcher{}, &commit.CommitSearch{}),
-			jobutil.NewTimeoutJob(0, &run.RepoSearch{}),
+			jobutil.NewParallelJob(&run.RepoSearchJob{}, &commit.CommitSearchJob{}),
+			&run.RepoSearchJob{},
+			jobutil.NewAndJob(&searcher.SymbolSearcherJob{}, &commit.CommitSearchJob{}),
+			jobutil.NewTimeoutJob(0, &run.RepoSearchJob{}),
 		}
 
 		for _, j := range erroringJobs {
@@ -40,21 +43,54 @@ func TestAddCodeMonitorHook(t *testing.T) {
 	})
 
 	t.Run("error on multiple commit search jobs", func(t *testing.T) {
-		_, err := addCodeMonitorHook(jobutil.NewAndJob(&commit.CommitSearch{}, &commit.CommitSearch{}), nil)
+		_, err := addCodeMonitorHook(jobutil.NewAndJob(&commit.CommitSearchJob{}, &commit.CommitSearchJob{}), nil)
 		require.Error(t, err)
 	})
 
 	t.Run("no errors on only commit search", func(t *testing.T) {
 		nonErroringJobs := []job.Job{
-			jobutil.NewLimitJob(1000, &commit.CommitSearch{}),
-			&commit.CommitSearch{},
-			jobutil.NewTimeoutJob(0, &commit.CommitSearch{}),
+			jobutil.NewLimitJob(1000, &commit.CommitSearchJob{}),
+			&commit.CommitSearchJob{},
+			jobutil.NewTimeoutJob(0, &commit.CommitSearchJob{}),
 		}
 
 		for _, j := range nonErroringJobs {
 			t.Run("", func(t *testing.T) {
 				_, err := addCodeMonitorHook(j, nil)
 				require.NoError(t, err)
+			})
+		}
+	})
+
+	t.Run("no errors on allowed queries", func(t *testing.T) {
+		test := func(t *testing.T, input string) {
+			plan, err := query.Pipeline(query.InitRegexp(input))
+			require.NoError(t, err)
+			inputs := &run.SearchInputs{
+				UserSettings:        &schema.Settings{},
+				PatternType:         query.SearchTypeLiteralDefault,
+				Protocol:            search.Streaming,
+				OnSourcegraphDotCom: true,
+			}
+			j, err := jobutil.NewJob(inputs, plan, jobutil.IdentityPass)
+			require.NoError(t, err)
+			addCodeMonitorHook(j, nil)
+		}
+
+		queries := []string{
+			"type:commit a or b",
+			"type:diff a or b",
+			"type:diff a and b",
+			"type:diff a or b",
+			"type:diff a or b repo:c",
+			"type:commit a or b repo:c",
+			"type:commit a or b repo:c case:no",
+			"type:commit a or b repo:c context:global",
+		}
+
+		for _, query := range queries {
+			t.Run("", func(t *testing.T) {
+				test(t, query)
 			})
 		}
 	})

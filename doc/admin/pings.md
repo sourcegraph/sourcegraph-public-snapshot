@@ -101,6 +101,14 @@ This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
   - Total count of insights grouped by time interval (step size) in days  
   - Total count of insights set organization visible grouped by insight type
   - Total count of insights grouped by presentation type, series type, and presentation-series type.
+  - Weekly count of unique users that have viewed code insights in-product landing page
+  - Weekly count of per user changes that have been made over the query field insight example.
+  - Weekly count of per user changes that have been made over the repositories field insight example.
+  - Weekly count of clicks on the "Create your first insight" CTA button on the in-product landing page.
+  - Weekly count of clicks on the code insights in-product template section's tabs.
+  - Weekly count of clicks on the use/explore template card's button.
+  - Weekly count of clicks on the "view more" template section button.
+  - Weekly count of clicks on the in-product landing page documentation links.
 - Code monitoring usage data
   - Total number of views of the code monitoring page
   - Total number of views of the create code monitor page

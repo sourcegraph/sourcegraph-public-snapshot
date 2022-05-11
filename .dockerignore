@@ -94,5 +94,10 @@ cmd/indexer/debug
 node_modules/
 /client/web
 
+# Browser
+/client/browser/build
+/client/browser/node_modules
+/client/browser/code-intel-extensions/node_modules
+
 # Extensions
 /extension-api/dist

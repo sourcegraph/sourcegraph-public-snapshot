@@ -35,7 +35,10 @@ export interface SurveyFormLocationState {
     feedback: string
 }
 
-export const SurveyForm: React.FunctionComponent<SurveyFormProps> = ({ authenticatedUser, score }) => {
+export const SurveyForm: React.FunctionComponent<React.PropsWithChildren<SurveyFormProps>> = ({
+    authenticatedUser,
+    score,
+}) => {
     const history = useHistory<SurveyFormLocationState>()
     const [reason, setReason] = useState('')
     const [betterProduct, setBetterProduct] = useState('')

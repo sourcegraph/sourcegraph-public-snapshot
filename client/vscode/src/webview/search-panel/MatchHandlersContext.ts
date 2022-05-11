@@ -57,7 +57,7 @@ export function useMatchHandlers({
                     })
                 // Log View Event to sync search history
                 // URL must be provided to render Recent Searches on Web
-                platformContext.telemetryService.logViewEvent(
+                platformContext.telemetryService.logPageView(
                     'Repository',
                     null,
                     authenticatedUser !== null,
@@ -71,7 +71,7 @@ export function useMatchHandlers({
                 const uri = sourcegraphUri.uri + sourcegraphUri.positionSuffix()
 
                 // Log View Event to sync search history
-                platformContext.telemetryService.logViewEvent(
+                platformContext.telemetryService.logPageView(
                     'Blob',
                     null,
                     authenticatedUser !== null,

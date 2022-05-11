@@ -467,7 +467,8 @@ export const mockLogs: MonitorTriggerEventsResult = {
                                     __typename: 'MonitorTriggerEvent',
                                     id: 'd',
                                     status: EventStatus.ERROR,
-                                    message: 'Search failed',
+                                    message:
+                                        'Search failed. This is a very long error that should wrap. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
                                     timestamp: '2022-02-14T12:29:21Z',
                                     query: '',
                                     resultCount: 0,

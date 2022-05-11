@@ -27,7 +27,10 @@ var DefaultValidatorByCodeHost = AuthValidatorMap{
 	"gitlab.com": enforceAuthViaGitLab,
 }
 
-var errVerificationNotSupported = errors.New("verification not supported for code host - see https://github.com/sourcegraph/sourcegraph/issues/4967")
+var errVerificationNotSupported = errors.New(strings.Join([]string{
+	"verification is supported for the following code hosts: github.com, gitlab.com",
+	"please request support for additional code host verification at https://github.com/sourcegraph/sourcegraph/issues/4967",
+}, " - "))
 
 // authMiddleware wraps the given upload handler with an authorization check. On each initial upload
 // request, the target repository is checked against the supplied auth validators. The matching validator
@@ -38,7 +41,7 @@ var errVerificationNotSupported = errors.New("verification not supported for cod
 func authMiddleware(next http.Handler, db database.DB, authValidators AuthValidatorMap, operation *observation.Operation) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		statusCode, err := func() (_ int, err error) {
-			ctx, trace, endObservation := operation.WithAndLogger(r.Context(), &err, observation.Args{})
+			ctx, trace, endObservation := operation.With(r.Context(), &err, observation.Args{})
 			defer endObservation(1, observation.Args{})
 
 			// Skip auth check if it's not enabled in the instance's site configuration, if this

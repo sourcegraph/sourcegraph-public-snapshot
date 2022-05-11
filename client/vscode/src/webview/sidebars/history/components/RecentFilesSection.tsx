@@ -5,7 +5,7 @@ import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 
 import { EventLogResult, fetchRecentFileViews } from '@sourcegraph/search'
-import { Link, useObservable } from '@sourcegraph/wildcard'
+import { Icon, Link, useObservable } from '@sourcegraph/wildcard'
 
 import { HistorySidebarProps } from '../HistorySidebarView'
 
@@ -18,7 +18,7 @@ interface RecentFile {
     url: string
 }
 
-export const RecentFilesSection: React.FunctionComponent<HistorySidebarProps> = ({
+export const RecentFilesSection: React.FunctionComponent<React.PropsWithChildren<HistorySidebarProps>> = ({
     platformContext,
     authenticatedUser,
     extensionCoreAPI,
@@ -59,13 +59,15 @@ export const RecentFilesSection: React.FunctionComponent<HistorySidebarProps> = 
                 type="button"
                 className={classNames('btn btn-outline-secondary', styles.sidebarSectionCollapseButton)}
                 onClick={() => setCollapsed(!collapsed)}
+                aria-label={`${collapsed ? 'Expand' : 'Collapse'} recent files`}
             >
                 <h5 className="flex-grow-1">Recent Files</h5>
-                {collapsed ? (
-                    <ChevronLeftIcon className="icon-inline mr-1" />
-                ) : (
-                    <ChevronDownIcon className="icon-inline mr-1" />
-                )}
+                <Icon
+                    role="img"
+                    aria-hidden={true}
+                    className="mr-1"
+                    as={collapsed ? ChevronLeftIcon : ChevronDownIcon}
+                />
             </button>
 
             {!collapsed && (

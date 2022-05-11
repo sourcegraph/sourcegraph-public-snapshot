@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react'
+import { ReactElement } from 'react'
 
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import { components, DropdownIndicatorProps } from 'react-select'

@@ -116,7 +116,7 @@ func NewHandler(
 // 🚨 SECURITY: This handler should not be served on a publicly exposed port. 🚨
 // This handler is not guaranteed to provide the same authorization checks as
 // public API handlers.
-func NewInternalHandler(m *mux.Router, db database.DB, schema *graphql.Schema, newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler, rateLimitWatcher graphqlbackend.LimitWatcher) http.Handler {
+func NewInternalHandler(m *mux.Router, db database.DB, schema *graphql.Schema, newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler, newComputeStreamHandler enterprise.NewComputeStreamHandler, rateLimitWatcher graphqlbackend.LimitWatcher) http.Handler {
 	if m == nil {
 		m = apirouter.New(nil)
 	}
@@ -168,6 +168,7 @@ func NewInternalHandler(m *mux.Router, db database.DB, schema *graphql.Schema, n
 	m.Get(apirouter.Configuration).Handler(trace.Route(handler(serveConfiguration)))
 	m.Path("/ping").Methods("GET").Name("ping").HandlerFunc(handlePing)
 	m.Get(apirouter.StreamingSearch).Handler(trace.Route(frontendsearch.StreamHandler(db)))
+	m.Get(apirouter.ComputeStream).Handler(trace.Route(newComputeStreamHandler()))
 
 	m.Get(apirouter.LSIFUpload).Handler(trace.Route(newCodeIntelUploadHandler(true)))
 

@@ -7,7 +7,7 @@ import { catchError } from 'rxjs/operators'
 
 import { gql } from '@sourcegraph/http-client'
 import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
-import { useObservable } from '@sourcegraph/wildcard'
+import { Icon, useObservable } from '@sourcegraph/wildcard'
 
 import { SavedSearchesResult, SavedSearchesVariables, SearchPatternType } from '../../../../graphql-operations'
 import { HistorySidebarProps } from '../HistorySidebarView'
@@ -35,7 +35,7 @@ const savedSearchQuery = gql`
     }
 `
 
-export const SavedSearchesSection: React.FunctionComponent<HistorySidebarProps> = ({
+export const SavedSearchesSection: React.FunctionComponent<React.PropsWithChildren<HistorySidebarProps>> = ({
     platformContext,
     extensionCoreAPI,
 }) => {
@@ -89,13 +89,15 @@ export const SavedSearchesSection: React.FunctionComponent<HistorySidebarProps> 
                 type="button"
                 className={classNames('btn btn-outline-secondary', styles.sidebarSectionCollapseButton)}
                 onClick={() => setCollapsed(!collapsed)}
+                aria-label={`${collapsed ? 'Expand' : 'Collapse'} saved searches`}
             >
                 <h5 className="flex-grow-1">Saved Searches</h5>
-                {collapsed ? (
-                    <ChevronLeftIcon className="icon-inline mr-1" />
-                ) : (
-                    <ChevronDownIcon className="icon-inline mr-1" />
-                )}
+                <Icon
+                    role="img"
+                    aria-hidden={true}
+                    className="mr-1"
+                    as={collapsed ? ChevronLeftIcon : ChevronDownIcon}
+                />
             </button>
 
             {!collapsed && savedSearches && (

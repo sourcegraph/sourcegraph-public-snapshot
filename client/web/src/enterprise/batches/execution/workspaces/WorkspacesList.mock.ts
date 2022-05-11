@@ -2,6 +2,7 @@ import {
     BatchSpecWorkspaceListFields,
     EditBatchChangeFields,
     BatchSpecWorkspaceState,
+    VisibleBatchSpecWorkspaceListFields,
 } from '../../../../graphql-operations'
 
 export const mockBatchSpec = (): EditBatchChangeFields['currentSpec'] => ({
@@ -13,9 +14,9 @@ export const mockBatchSpec = (): EditBatchChangeFields['currentSpec'] => ({
 
 export const mockWorkspace = (
     id: number,
-    fields?: Partial<BatchSpecWorkspaceListFields>
-): BatchSpecWorkspaceListFields => ({
-    __typename: 'BatchSpecWorkspace',
+    fields?: Partial<VisibleBatchSpecWorkspaceListFields>
+): VisibleBatchSpecWorkspaceListFields => ({
+    __typename: 'VisibleBatchSpecWorkspace',
     id: `spec-${id}`,
     state: BatchSpecWorkspaceState.PROCESSING,
     placeInQueue: id,

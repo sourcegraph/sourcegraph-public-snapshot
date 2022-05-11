@@ -64,6 +64,7 @@ func NewConfig(now time.Time) Config {
 		runType = runtype.Compute(tag, branch, map[string]string{
 			"BEXT_NIGHTLY":    os.Getenv("BEXT_NIGHTLY"),
 			"RELEASE_NIGHTLY": os.Getenv("RELEASE_NIGHTLY"),
+			"VSCE_NIGHTLY":    os.Getenv("VSCE_NIGHTLY"),
 		})
 		// defaults to 0
 		buildNumber, _ = strconv.Atoi(os.Getenv("BUILDKITE_BUILD_NUMBER"))

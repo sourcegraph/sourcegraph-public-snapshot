@@ -115,8 +115,6 @@ Code insights surface higher-level, aggregated information to leaders in enginee
 For example, code insights can track the number of matches of a search query over time, the number of code intelligence diagnostic warnings in a code base, usage of different programming languages, or even data from external services, like test coverage from Codecov.
 Sample use cases for this are for tracking migrations, usage of libraries across an organization, tech debt, code base health, and much more.
 
-Code insights are currently feature-flagged - set `"experimentalFeatures": { "codeInsights": true }` in your user settings to enable them.
-
 Code Insights are persisted in a separate databased called `codeinsights-db`. The web application interacts with the backend through a [GraphQL API](../../../code_insights/references/code_insights_graphql_api.md).
 
 Code Insights makes use of data from the `frontend` database for repository metadata, as well as repository permissions to filter time series data.
@@ -126,6 +124,7 @@ For code insights being run just-in-time in the client, the performance of code 
 These insights are relatively fast as long as the scope doesn't include many repositories (or large monorepos), but performance degrades when trying to include a lot of repositories. Insights
 that are processed in the background are rate limited and will perform approximately 28,000 queries per hour when fully saturated on default settings.
 
+There is also a feature flag left over from the original development of the early stage product that we retained in case a customer who doesn't purchase it ever has a justified need to disable insights. You can set `"experimentalFeatures": { "codeInsights": false }` in your settings to disable insights. 
 
 If you want to learn more about code insights:
 
@@ -266,11 +265,11 @@ The editor extension is still in the exploratory phase of determining priority a
 
 Sourcegraph is deployable via three supported methods:
 
-- [Kubernetes](../../../admin/install/kubernetes/index.md) is intended for all medium to large scale production deployments that require fault tolerance and high availibility. For advanced users only with significant kubernetes experience required. This deployment method is developed in [`deploy-sourcegraph`](https://github.com/sourcegraph/deploy-sourcegraph).
-- [Docker-Compose](../../../admin/install/docker-compose/index.md) is intended to be used for small to medium production deployments, with some customization available. Easy to setup with basic infrastructure and docker knowledge required. A variation on this is the [pure-Docker option](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/README.md). Both of these deployment methods are developed in [`deploy-sourcegraph-docker`](https://github.com/sourcegraph/deploy-sourcegraph-docker).
-- [Server](../../../admin/install/docker/index.md) for small environments on a single server. Easiest and quickest to setup with a single command. Little infrastructure knowledge is required. This deployment method is developed in [`cmd/server`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/cmd/server).
+- [Kubernetes](../../../admin/deploy/kubernetes/index.md) is intended for all medium to large scale production deployments that require fault tolerance and high availibility. For advanced users only with significant kubernetes experience required. This deployment method is developed in [`deploy-sourcegraph`](https://github.com/sourcegraph/deploy-sourcegraph).
+- [Docker Compose](../../../admin/deploy/docker-compose/index.md) is intended to be used for small to medium production deployments, with some customization available. Easy to setup with basic infrastructure and docker knowledge required. A variation on this is the [pure-Docker option](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/README.md). Both of these deployment methods are developed in [`deploy-sourcegraph-docker`](https://github.com/sourcegraph/deploy-sourcegraph-docker).
+- [Docker Single Container](../../../admin/deploy/docker-single-container/index.md) for small environments on a single server. Easiest and quickest to setup with a single command. Little infrastructure knowledge is required. This deployment method is developed in [`cmd/server`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/cmd/server).
 
-The [resource estimator](https://docs.sourcegraph.com/admin/install/resource_estimator) can guide you on the requirements for each deployment type.
+The [resource estimator](https://docs.sourcegraph.com/admin/deploy/resource_estimator can guide you on the requirements for each deployment type.
 
 ## Observability
 

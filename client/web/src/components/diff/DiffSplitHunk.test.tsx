@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { cleanup, fireEvent, render, RenderResult } from '@testing-library/react'
 import { createMemoryHistory } from 'history'
 import { Router } from 'react-router'

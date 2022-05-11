@@ -34,11 +34,19 @@ export interface BatchChangeNodeProps {
 // This is the original, pre-SSBC version of the state badge. It has been superseded by
 // `BatchChangeStatePill` and should be removed once SSBC is not longer behind a feature
 // flag.
-const StateBadge: React.FunctionComponent<{ state: BatchChangeState }> = ({ state }) => {
+const StateBadge: React.FunctionComponent<React.PropsWithChildren<{ state: BatchChangeState }>> = ({ state }) => {
     switch (state) {
         case BatchChangeState.OPEN:
             return (
-                <Badge variant="success" className={classNames(styles.batchChangeNodeBadge, 'text-uppercase')}>
+                /*
+                        a11y-ignore
+                        Rule: "color-contrast" (Elements must have sufficient color contrast)
+                        GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
+                    */
+                <Badge
+                    variant="success"
+                    className={classNames('a11y-ignore', styles.batchChangeNodeBadge, 'text-uppercase')}
+                >
                     Open
                 </Badge>
             )
@@ -61,7 +69,7 @@ const StateBadge: React.FunctionComponent<{ state: BatchChangeState }> = ({ stat
 /**
  * An item in the list of batch changes.
  */
-export const BatchChangeNode: React.FunctionComponent<BatchChangeNodeProps> = ({
+export const BatchChangeNode: React.FunctionComponent<React.PropsWithChildren<BatchChangeNodeProps>> = ({
     node,
     isExecutionEnabled,
     now = () => new Date(),
@@ -157,15 +165,39 @@ export const BatchChangeNode: React.FunctionComponent<BatchChangeNodeProps> = ({
                 <>
                     <ChangesetStatusOpen
                         className="d-block d-sm-flex"
-                        label={<span className="text-muted">{node.changesetsStats.open} open</span>}
+                        aria-labelledby={`changesets-open-label-${node.id}`}
+                        role="group"
+                        label={
+                            <span
+                                className="text-muted"
+                                id={`changesets-open-label-${node.id}`}
+                                aria-hidden={true}
+                            >{`${node.changesetsStats.open} open`}</span>
+                        }
                     />
                     <ChangesetStatusClosed
                         className="d-block d-sm-flex text-center"
-                        label={<span className="text-muted">{node.changesetsStats.closed} closed</span>}
+                        aria-labelledby={`changesets-closed-label-${node.id}`}
+                        role="group"
+                        label={
+                            <span
+                                className="text-muted"
+                                aria-hidden={true}
+                                id={`changesets-closed-label-${node.id}`}
+                            >{`${node.changesetsStats.closed} closed`}</span>
+                        }
                     />
                     <ChangesetStatusMerged
                         className="d-block d-sm-flex"
-                        label={<span className="text-muted">{node.changesetsStats.merged} merged</span>}
+                        aria-labelledby={`changesets-merged-label-${node.id}`}
+                        role="group"
+                        label={
+                            <span
+                                className="text-muted"
+                                id={`changesets-merged-label-${node.id}`}
+                                aria-hidden={true}
+                            >{`${node.changesetsStats.merged} merged`}</span>
+                        }
                     />
                 </>
             )}

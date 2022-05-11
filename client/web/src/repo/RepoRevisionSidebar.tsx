@@ -50,7 +50,7 @@ const SIDEBAR_KEY = 'repo-revision-sidebar-toggle'
 /**
  * The sidebar for a specific repo revision that shows the list of files and directories.
  */
-export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
+export const RepoRevisionSidebar: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
     const [persistedTabIndex, setPersistedTabIndex] = useLocalStorage(TABS_KEY, 0)
     const [persistedIsVisible, setPersistedIsVisible] = useLocalStorage(
         SIDEBAR_KEY,
@@ -124,11 +124,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
                             <span className="tablist-wrapper--tab-label">Symbols</span>
                         </Tab>
                     </TabList>
-                    <div
-                        aria-hidden={true}
-                        className={classNames('flex w-100 overflow-auto explorer', styles.tabpanels)}
-                        tabIndex={-1}
-                    >
+                    <div className={classNames('flex w-100 overflow-auto explorer', styles.tabpanels)} tabIndex={-1}>
                         <TabPanels>
                             <TabPanel>
                                 <Tree

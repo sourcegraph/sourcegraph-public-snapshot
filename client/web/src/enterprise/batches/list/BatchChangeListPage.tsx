@@ -7,7 +7,7 @@ import { dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { PageHeader, CardBody, Card, Link, Container } from '@sourcegraph/wildcard'
+import { PageHeader, CardBody, Card, Link, Container, H3, H2, H4, screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { isBatchChangesExecutionEnabled } from '../../../batches'
@@ -62,7 +62,7 @@ const BATCH_CHANGES_PER_PAGE_COUNT = 15
 /**
  * A list of all batch changes on the Sourcegraph instance.
  */
-export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPageProps> = ({
+export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildren<BatchChangeListPageProps>> = ({
     canCreate,
     namespaceID,
     headingElement,
@@ -132,7 +132,9 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
     useEffect(() => {
         // If the data in the connection updates with new results, update the total count.
         if (connection) {
-            setLastTotalCount(connection.totalCount || 0)
+            const totalBatchChanges = connection.totalCount || 0
+            setLastTotalCount(totalBatchChanges)
+            screenReaderAnnounce(`${totalBatchChanges} batch changes`)
         }
     }, [connection])
 
@@ -153,9 +155,13 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
                     <ConnectionContainer>
                         <div className={styles.filtersRow}>
                             {(licenseAndUsageInfo?.allBatchChanges.totalCount || 0) > 0 && (
-                                <h3 className="align-self-end flex-1">{lastTotalCount} batch changes</h3>
+                                <H3 as={H2} className="align-self-end flex-1">
+                                    {`${lastTotalCount} batch changes`}
+                                </H3>
                             )}
-                            <h4 className="mb-0 mr-2">Status</h4>
+                            <H4 as={H3} className="mb-0 mr-2">
+                                Status
+                            </H4>
                             <BatchChangeListFilters
                                 className="m-0"
                                 isExecutionEnabled={isExecutionEnabled}
@@ -164,7 +170,16 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
                             />
                         </div>
                         {error && <ConnectionError errors={[error.message]} />}
+                        {/*
+                            The connection list is a `div` instead of a `ul` because `ul` doesn't support css grid and we need to grid
+                            to live on the wrapper as opposed to each `BatchChangeNode`.
+
+                            This is because the current grid pattern gets broken when the individual child of the `ConnectionList` component
+                            has a grid.
+                            Discussion: https://github.com/sourcegraph/sourcegraph/pull/34716#pullrequestreview-959790114
+                        */}
                         <ConnectionList
+                            as="div"
                             className={classNames(styles.grid, isExecutionEnabled ? styles.wide : styles.narrow)}
                         >
                             {connection?.nodes?.map(node => (
@@ -209,11 +224,9 @@ export interface NamespaceBatchChangeListPageProps extends Omit<BatchChangeListP
 /**
  * A list of all batch changes in a namespace.
  */
-export const NamespaceBatchChangeListPage: React.FunctionComponent<NamespaceBatchChangeListPageProps> = ({
-    authenticatedUser,
-    namespaceID,
-    ...props
-}) => {
+export const NamespaceBatchChangeListPage: React.FunctionComponent<
+    React.PropsWithChildren<NamespaceBatchChangeListPageProps>
+> = ({ authenticatedUser, namespaceID, ...props }) => {
     // A user should only see the button to create a batch change in a namespace if it is
     // their namespace (user namespace), or they belong to it (organization namespace)
     const canCreateInThisNamespace = useMemo(
@@ -228,10 +241,9 @@ export const NamespaceBatchChangeListPage: React.FunctionComponent<NamespaceBatc
 
 interface BatchChangeListEmptyElementProps extends Pick<BatchChangeListPageProps, 'location' | 'canCreate'> {}
 
-const BatchChangeListEmptyElement: React.FunctionComponent<BatchChangeListEmptyElementProps> = ({
-    canCreate,
-    location,
-}) => (
+const BatchChangeListEmptyElement: React.FunctionComponent<
+    React.PropsWithChildren<BatchChangeListEmptyElementProps>
+> = ({ canCreate, location }) => (
     <div className="w-100 py-5 text-center">
         <p>
             <strong>No batch changes have been created.</strong>
@@ -240,10 +252,12 @@ const BatchChangeListEmptyElement: React.FunctionComponent<BatchChangeListEmptyE
     </div>
 )
 
-const BatchChangeListTabHeader: React.FunctionComponent<{
-    selectedTab: SelectedTab
-    setSelectedTab: (selectedTab: SelectedTab) => void
-}> = ({ selectedTab, setSelectedTab }) => {
+const BatchChangeListTabHeader: React.FunctionComponent<
+    React.PropsWithChildren<{
+        selectedTab: SelectedTab
+        setSelectedTab: (selectedTab: SelectedTab) => void
+    }>
+> = ({ selectedTab, setSelectedTab }) => {
     const onSelectBatchChanges = useCallback<React.MouseEventHandler>(
         event => {
             event.preventDefault()
@@ -291,7 +305,7 @@ const BatchChangeListTabHeader: React.FunctionComponent<{
     )
 }
 
-const GettingStartedFooter: React.FunctionComponent<{}> = () => (
+const GettingStartedFooter: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
     <div className="row">
         <div className="col-12 col-sm-8 offset-sm-2 col-md-6 offset-md-3">
             <Card>

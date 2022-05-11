@@ -7,11 +7,11 @@ import { useLocation } from 'react-router-dom'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
-import { Button, Link, PageHeader, Tabs, TabList, Tab, Icon } from '@sourcegraph/wildcard'
+import { Button, Link, PageHeader, Tabs, TabList, Tab, Icon, TabPanels, TabPanel } from '@sourcegraph/wildcard'
 
 import { CodeInsightsIcon } from '../../../insights/Icons'
 import { CodeInsightsPage } from '../components/code-insights-page/CodeInsightsPage'
-import { ALL_INSIGHTS_DASHBOARD } from '../core/constants'
+import { ALL_INSIGHTS_DASHBOARD } from '../core'
 
 import { DashboardsContentPage } from './dashboards/dashboard-page/DashboardsContentPage'
 
@@ -40,7 +40,9 @@ interface CodeInsightsRootPageProps extends TelemetryProps {
     activeView: CodeInsightsRootPageTab
 }
 
-export const CodeInsightsRootPage: React.FunctionComponent<CodeInsightsRootPageProps> = props => {
+export const CodeInsightsRootPage: React.FunctionComponent<
+    React.PropsWithChildren<CodeInsightsRootPageProps>
+> = props => {
     const { telemetryService, activeView } = props
     const location = useLocation()
     const query = useQuery()
@@ -93,21 +95,21 @@ export const CodeInsightsRootPage: React.FunctionComponent<CodeInsightsRootPageP
                 className="align-items-start mb-3"
             />
 
-            <Tabs index={activeView} size="medium" className="mb-3" onChange={handleTabNavigationChange}>
+            <Tabs index={activeView} size="medium" className="mb-3" onChange={handleTabNavigationChange} lazy={true}>
                 <TabList>
                     <Tab index={CodeInsightsRootPageTab.CodeInsights}>Code Insights</Tab>
 
                     <Tab index={CodeInsightsRootPageTab.GettingStarted}>Getting started</Tab>
                 </TabList>
+                <TabPanels className="mt-3">
+                    <TabPanel>
+                        <DashboardsContentPage telemetryService={telemetryService} dashboardID={params?.dashboardId} />
+                    </TabPanel>
+                    <TabPanel>
+                        <LazyCodeInsightsGettingStartedPage telemetryService={telemetryService} />
+                    </TabPanel>
+                </TabPanels>
             </Tabs>
-
-            {activeView === CodeInsightsRootPageTab.CodeInsights && (
-                <DashboardsContentPage telemetryService={telemetryService} dashboardID={params?.dashboardId} />
-            )}
-
-            {activeView === CodeInsightsRootPageTab.GettingStarted && (
-                <LazyCodeInsightsGettingStartedPage telemetryService={telemetryService} />
-            )}
         </CodeInsightsPage>
     )
 }

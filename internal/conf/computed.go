@@ -299,6 +299,30 @@ func AuthPasswordResetLinkExpiry() int {
 	return val
 }
 
+// AuthLockout populates and returns the *schema.AuthLockout with default values
+// for fields that are not initialized.
+func AuthLockout() *schema.AuthLockout {
+	val := Get().AuthLockout
+	if val == nil {
+		return &schema.AuthLockout{
+			ConsecutivePeriod:      3600,
+			FailedAttemptThreshold: 5,
+			LockoutPeriod:          1800,
+		}
+	}
+
+	if val.ConsecutivePeriod <= 0 {
+		val.ConsecutivePeriod = 3600
+	}
+	if val.FailedAttemptThreshold <= 0 {
+		val.FailedAttemptThreshold = 5
+	}
+	if val.LockoutPeriod <= 0 {
+		val.LockoutPeriod = 1800
+	}
+	return val
+}
+
 type ExternalServiceMode int
 
 const (

@@ -15,6 +15,7 @@ import (
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"golang.org/x/time/rate"
 
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -28,8 +29,29 @@ import (
 // The metric generated here will be named as "src_bitbucket_cloud_requests_total".
 var requestCounter = metrics.NewRequestMeter("bitbucket_cloud", "Total number of requests sent to the Bitbucket Cloud API.")
 
-// Client access a Bitbucket Cloud via the REST API 2.0.
-type Client struct {
+type Client interface {
+	Authenticator() auth.Authenticator
+	WithAuthenticator(a auth.Authenticator) Client
+
+	Ping(ctx context.Context) error
+
+	CreatePullRequest(ctx context.Context, repo *Repo, input PullRequestInput) (*PullRequest, error)
+	DeclinePullRequest(ctx context.Context, repo *Repo, id int64) (*PullRequest, error)
+	GetPullRequest(ctx context.Context, repo *Repo, id int64) (*PullRequest, error)
+	GetPullRequestStatuses(repo *Repo, id int64) (*PaginatedResultSet, error)
+	UpdatePullRequest(ctx context.Context, repo *Repo, id int64, input PullRequestInput) (*PullRequest, error)
+	CreatePullRequestComment(ctx context.Context, repo *Repo, id int64, input CommentInput) (*Comment, error)
+	MergePullRequest(ctx context.Context, repo *Repo, id int64, opts MergePullRequestOpts) (*PullRequest, error)
+
+	Repo(ctx context.Context, namespace, slug string) (*Repo, error)
+	Repos(ctx context.Context, pageToken *PageToken, accountName string) ([]*Repo, *PageToken, error)
+	ForkRepository(ctx context.Context, upstream *Repo, input ForkInput) (*Repo, error)
+
+	CurrentUser(ctx context.Context) (*User, error)
+}
+
+// client access a Bitbucket Cloud via the REST API 2.0.
+type client struct {
 	// HTTP Client used to communicate with the API
 	httpClient httpcli.Doer
 
@@ -48,7 +70,11 @@ type Client struct {
 // NewClient creates a new Bitbucket Cloud API client from the given external
 // service configuration. If a nil httpClient is provided, http.DefaultClient
 // will be used.
-func NewClient(urn string, config *schema.BitbucketCloudConnection, httpClient httpcli.Doer) (*Client, error) {
+func NewClient(urn string, config *schema.BitbucketCloudConnection, httpClient httpcli.Doer) (Client, error) {
+	return newClient(urn, config, httpClient)
+}
+
+func newClient(urn string, config *schema.BitbucketCloudConnection, httpClient httpcli.Doer) (*client, error) {
 	if httpClient == nil {
 		httpClient = httpcli.ExternalDoer
 	}
@@ -68,7 +94,7 @@ func NewClient(urn string, config *schema.BitbucketCloudConnection, httpClient h
 		return nil, err
 	}
 
-	return &Client{
+	return &client{
 		httpClient: httpClient,
 		URL:        extsvc.NormalizeBaseURL(apiURL),
 		Auth: &auth.BasicAuth{
@@ -80,6 +106,10 @@ func NewClient(urn string, config *schema.BitbucketCloudConnection, httpClient h
 	}, nil
 }
 
+func (c *client) Authenticator() auth.Authenticator {
+	return c.Auth
+}
+
 // WithAuthenticator returns a new Client that uses the same configuration,
 // HTTPClient, and RateLimiter as the current Client, except authenticated with
 // the given authenticator instance.
@@ -87,8 +117,8 @@ func NewClient(urn string, config *schema.BitbucketCloudConnection, httpClient h
 // Note that using an unsupported Authenticator implementation may result in
 // unexpected behaviour, or (more likely) errors. At present, only BasicAuth is
 // supported.
-func (c *Client) WithAuthenticator(a auth.Authenticator) *Client {
-	return &Client{
+func (c *client) WithAuthenticator(a auth.Authenticator) Client {
+	return &client{
 		httpClient: c.httpClient,
 		URL:        c.URL,
 		Auth:       a,
@@ -96,25 +126,28 @@ func (c *Client) WithAuthenticator(a auth.Authenticator) *Client {
 	}
 }
 
-// Repos returns a list of repositories that are fetched and populated based on given account
-// name and pagination criteria. If the account requested is a team, results will be filtered
-// down to the ones that the app password's user has access to.
-// If the argument pageToken.Next is not empty, it will be used directly as the URL to make
-// the request. The PageToken it returns may also contain the URL to the next page for
-// succeeding requests if any.
-func (c *Client) Repos(ctx context.Context, pageToken *PageToken, accountName string) ([]*Repo, *PageToken, error) {
-	var repos []*Repo
-	var next *PageToken
-	var err error
-	if pageToken.HasMore() {
-		next, err = c.reqPage(ctx, pageToken.Next, &repos)
-	} else {
-		next, err = c.page(ctx, fmt.Sprintf("/2.0/repositories/%s", accountName), nil, pageToken, &repos)
+// Ping makes a request to the API root, thereby validating that the current
+// authenticator is valid.
+func (c *client) Ping(ctx context.Context) error {
+	// This relies on an implementation detail: Bitbucket Cloud doesn't have an
+	// API endpoint at /2.0/, but does the authentication check before returning
+	// the 404, so we can distinguish based on the response code.
+	//
+	// The reason we do this is because there literally isn't an API call
+	// available that doesn't require a specific scope.
+	req, err := http.NewRequest("GET", "/2.0/", nil)
+	if err != nil {
+		return errors.Wrap(err, "creating request")
 	}
-	return repos, next, err
+
+	err = c.do(ctx, req, nil)
+	if err != nil && !errcode.IsNotFound(err) {
+		return err
+	}
+	return nil
 }
 
-func (c *Client) page(ctx context.Context, path string, qry url.Values, token *PageToken, results interface{}) (*PageToken, error) {
+func (c *client) page(ctx context.Context, path string, qry url.Values, token *PageToken, results any) (*PageToken, error) {
 	if qry == nil {
 		qry = make(url.Values)
 	}
@@ -132,7 +165,7 @@ func (c *Client) page(ctx context.Context, path string, qry url.Values, token *P
 // API 2.0 pagination renders the full link of next page in the response.
 // See more at https://developer.atlassian.com/bitbucket/api/2/reference/meta/pagination
 // However, for the very first request, use method page instead.
-func (c *Client) reqPage(ctx context.Context, url string, results interface{}) (*PageToken, error) {
+func (c *client) reqPage(ctx context.Context, url string, results any) (*PageToken, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
@@ -141,7 +174,7 @@ func (c *Client) reqPage(ctx context.Context, url string, results interface{}) (
 	var next PageToken
 	err = c.do(ctx, req, &struct {
 		*PageToken
-		Values interface{} `json:"values"`
+		Values any `json:"values"`
 	}{
 		PageToken: &next,
 		Values:    results,
@@ -154,9 +187,15 @@ func (c *Client) reqPage(ctx context.Context, url string, results interface{}) (
 	return &next, nil
 }
 
-func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) error {
+func (c *client) do(ctx context.Context, req *http.Request, result any) error {
 	req.URL = c.URL.ResolveReference(req.URL)
-	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+
+	// If the request doesn't expect a body, then including a content-type can
+	// actually cause errors on the Bitbucket side. So we need to pick apart the
+	// request just a touch to figure out if we should add the header.
+	if req.Body != nil {
+		req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	}
 
 	req, ht := nethttp.TraceRequest(ot.GetTracer(ctx),
 		req.WithContext(ctx),
@@ -193,7 +232,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 		return errors.WithStack(&httpError{
 			URL:        req.URL,
 			StatusCode: resp.StatusCode,
-			Body:       bs,
+			Body:       string(bs),
 		})
 	}
 
@@ -229,46 +268,10 @@ func (t *PageToken) Values() url.Values {
 	return v
 }
 
-type Repo struct {
-	Slug        string `json:"slug"`
-	Name        string `json:"name"`
-	FullName    string `json:"full_name"`
-	UUID        string `json:"uuid"`
-	SCM         string `json:"scm"`
-	Description string `json:"description"`
-	Parent      *Repo  `json:"parent"`
-	IsPrivate   bool   `json:"is_private"`
-	Links       Links  `json:"links"`
-}
-
-type Links struct {
-	Clone CloneLinks `json:"clone"`
-	HTML  Link       `json:"html"`
-}
-
-type CloneLinks []struct {
-	Href string `json:"href"`
-	Name string `json:"name"`
-}
-
-type Link struct {
-	Href string `json:"href"`
-}
-
-// HTTPS returns clone link named "https", it returns an error if not found.
-func (cl CloneLinks) HTTPS() (string, error) {
-	for _, l := range cl {
-		if l.Name == "https" {
-			return l.Href, nil
-		}
-	}
-	return "", errors.New("HTTPS clone link not found")
-}
-
 type httpError struct {
 	StatusCode int
 	URL        *url.URL
-	Body       []byte
+	Body       string
 }
 
 func (e *httpError) Error() string {

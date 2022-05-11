@@ -102,7 +102,7 @@ func (u *Updater) tryUpdate(ctx context.Context, repositoryID, dirtyToken int) (
 // the repository can be unmarked as long as the repository is not marked as dirty again before
 // the update completes.
 func (u *Updater) update(ctx context.Context, repositoryID, dirtyToken int) (err error) {
-	ctx, trace, endObservation := u.operations.commitUpdate.WithAndLogger(ctx, &err, observation.Args{
+	ctx, trace, endObservation := u.operations.commitUpdate.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", repositoryID),
 			log.Int("dirtyToken", dirtyToken),

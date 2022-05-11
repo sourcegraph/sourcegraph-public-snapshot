@@ -11,7 +11,11 @@ import { Button, useAccordion, useStopwatch, Icon } from '@sourcegraph/wildcard'
 
 import { Connection } from '../../../../components/FilteredConnection'
 import { UseConnectionResult } from '../../../../components/FilteredConnection/hooks/useConnection'
-import { BatchSpecWorkspaceResolutionState, PreviewBatchSpecWorkspaceFields } from '../../../../graphql-operations'
+import {
+    BatchSpecWorkspaceResolutionState,
+    PreviewHiddenBatchSpecWorkspaceFields,
+    PreviewVisibleBatchSpecWorkspaceFields,
+} from '../../../../graphql-operations'
 import { Header as WorkspacesListHeader } from '../../workspaces-list'
 import { ResolutionState } from '../useWorkspacesPreview'
 
@@ -81,14 +85,16 @@ interface WorkspacesPreviewProps {
     /** Any error from `previewBatchSpec` or the workspaces resolution job. */
     error?: string
     /** The current workspaces preview connection result used to render the list. */
-    workspacesConnection: UseConnectionResult<PreviewBatchSpecWorkspaceFields>
+    workspacesConnection: UseConnectionResult<
+        PreviewHiddenBatchSpecWorkspaceFields | PreviewVisibleBatchSpecWorkspaceFields
+    >
     /** The current importing changesets connection result used to render the list. */
     importingChangesetsConnection: UseConnectionResult<ImportingChangesetFields>
     /** Method to invoke to capture a change in the active filters applied. */
     setFilters: (filters: WorkspacePreviewFilters) => void
 }
 
-export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> = ({
+export const WorkspacesPreview: React.FunctionComponent<React.PropsWithChildren<WorkspacesPreviewProps>> = ({
     previewDisabled,
     preview,
     batchSpecStale,
@@ -115,7 +121,7 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
     // results will come up empty and overwrite the previous results in the Apollo Client
     // cache while this is happening.
     const [cachedWorkspacesPreview, setCachedWorkspacesPreview] = useState<
-        Connection<PreviewBatchSpecWorkspaceFields>
+        Connection<PreviewHiddenBatchSpecWorkspaceFields | PreviewVisibleBatchSpecWorkspaceFields>
     >()
 
     // We copy the results from `connection` to `cachedWorkspacesPreview` whenever a
@@ -252,7 +258,10 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
     )
 }
 
-const CTAInstruction: React.FunctionComponent<{ active: boolean }> = ({ active, children }) => {
+const CTAInstruction: React.FunctionComponent<React.PropsWithChildren<{ active: boolean }>> = ({
+    active,
+    children,
+}) => {
     // We use 3rem for the height, which is intentionally bigger than the parent (2rem) so
     // that if text is forced to wrap, it isn't cut off.
     const style = useSpring({ height: active ? '3rem' : '0rem', opacity: active ? 1 : 0 })

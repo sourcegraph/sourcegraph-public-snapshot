@@ -1,4 +1,4 @@
-import React, { FunctionComponent } from 'react'
+import { FunctionComponent } from 'react'
 
 import classNames from 'classnames'
 
@@ -13,7 +13,7 @@ interface RepositoryPreviewProps {
     patterns: string[]
 }
 
-export const RepositoryPreview: FunctionComponent<RepositoryPreviewProps> = ({ patterns }) => {
+export const RepositoryPreview: FunctionComponent<React.PropsWithChildren<RepositoryPreviewProps>> = ({ patterns }) => {
     const { previewResult: preview, isLoadingPreview: previewLoading, previewError } = usePreviewRepositoryFilter(
         patterns
     )

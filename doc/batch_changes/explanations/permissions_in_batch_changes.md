@@ -15,6 +15,10 @@ Site admins have admin permissions on all batch changes.
 
 Users have admin permissions on the batch changes they created and read access to other batch changes.
 
+### Namespaces
+
+Batch changes can be created either under the user's or an organization's namespace. If placed under an organization namespace, all users of the organization have admin access on the batch change.
+
 ### Batch Change access for each permission level
 
 Batch change action | Read | Admin

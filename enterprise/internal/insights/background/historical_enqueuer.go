@@ -8,7 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/grafana/regexp"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
+
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
@@ -536,12 +537,14 @@ func (h *historicalEnqueuer) buildSeries(ctx context.Context, bctx *buildSeriesC
 		log15.Warn("[historical_enqueuer] revision mismatch from commit index", "indexRevision", bctx.execution.Revision, "fetchedRevision", revision, "repoName", bctx.repoName, "repo_id", bctx.id, "before", bctx.execution.RecordingTime)
 	}
 
-	// Build the search query we will run. The most important part here is
+	// Construct the search query that will generate data for this repository and time (revision) tuple.
+	modifiedQuery, err := querybuilder.SingleRepoQuery(query, repoName, revision)
+	if err != nil {
+		softErr = errors.Append(softErr, errors.Wrap(err, "SingleRepoQuery"))
+		return
+	}
 
-	query = withCountUnlimited(query)
-	query = fmt.Sprintf("%s repo:^%s$@%s", query, regexp.QuoteMeta(repoName), revision)
-
-	job := queryrunner.ToQueueJob(bctx.execution, bctx.seriesID, query, priority.Unindexed, priority.FromTimeInterval(bctx.execution.RecordingTime, bctx.series.CreatedAt))
+	job := queryrunner.ToQueueJob(bctx.execution, bctx.seriesID, modifiedQuery, priority.Unindexed, priority.FromTimeInterval(bctx.execution.RecordingTime, bctx.series.CreatedAt))
 	hardErr = h.enqueueQueryRunnerJob(ctx, job)
 	return
 }

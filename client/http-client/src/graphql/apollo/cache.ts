@@ -34,6 +34,11 @@ const typePolicies: TypedTypePolicies = {
 export const generateCache = (): InMemoryCache =>
     new InMemoryCache({
         typePolicies,
+        possibleTypes: {
+            BatchSpecWorkspace: ['VisibleBatchSpecWorkspace', 'HiddenBatchSpecWorkspace'],
+            ChangesetSpec: ['VisibleChangesetSpec', 'HiddenChangesetSpec'],
+            Changeset: ['ExternalChangeset', 'HiddenExternalChangeset'],
+        },
     })
 
 export const cache = generateCache()

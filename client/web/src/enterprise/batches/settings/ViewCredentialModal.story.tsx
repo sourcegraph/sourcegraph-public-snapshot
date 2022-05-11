@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
 
@@ -34,6 +32,7 @@ add('View', () => (
                     externalServiceKind: ExternalServiceKind.GITHUB,
                     externalServiceURL: 'https://github.com/',
                     requiresSSH: true,
+                    requiresUsername: false,
                 }}
                 credential={credential}
                 onClose={noop}

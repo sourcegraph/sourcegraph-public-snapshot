@@ -1,4 +1,4 @@
-import React, { forwardRef, InputHTMLAttributes, Ref, useEffect, useImperativeHandle, useRef, useState } from 'react'
+import { forwardRef, InputHTMLAttributes, Ref, useEffect, useImperativeHandle, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 

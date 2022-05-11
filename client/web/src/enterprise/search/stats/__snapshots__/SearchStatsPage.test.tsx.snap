@@ -54,6 +54,7 @@ exports[`SearchStatsPage limitHit 1`] = `
     />
     <div
       class=""
+      role="alert"
     >
       Limit hit. Add 
       <code>

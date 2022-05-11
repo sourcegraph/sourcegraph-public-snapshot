@@ -82,9 +82,15 @@ func (r *changesetSpecConnectionResolver) compute(ctx context.Context) (btypes.C
 			return
 		}
 
+		repoIDs := r.changesetSpecs.RepoIDs()
+		if len(repoIDs) == 0 {
+			r.reposByID = make(map[api.RepoID]*types.Repo)
+			return
+		}
+
 		// 🚨 SECURITY: database.Repos.GetRepoIDsSet uses the authzFilter under the hood and
 		// filters out repositories that the user doesn't have access to.
-		r.reposByID, r.err = r.store.Repos().GetReposSetByIDs(ctx, r.changesetSpecs.RepoIDs()...)
+		r.reposByID, r.err = r.store.Repos().GetReposSetByIDs(ctx, repoIDs...)
 	})
 
 	return r.changesetSpecs, r.reposByID, r.next, r.err

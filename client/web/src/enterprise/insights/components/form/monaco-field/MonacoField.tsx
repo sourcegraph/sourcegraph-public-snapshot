@@ -1,4 +1,4 @@
-import React, { createContext, forwardRef, InputHTMLAttributes, useContext, useImperativeHandle, useMemo } from 'react'
+import { createContext, forwardRef, InputHTMLAttributes, useContext, useImperativeHandle, useMemo } from 'react'
 
 import classNames from 'classnames'
 import { noop } from 'lodash'

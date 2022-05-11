@@ -348,7 +348,7 @@ func sqlfToString(q *sqlf.Query) (string, error) {
 	return s, nil
 }
 
-func argToString(arg interface{}) (string, error) {
+func argToString(arg any) (string, error) {
 	switch arg := arg.(type) {
 	case string:
 		return fmt.Sprintf("'%s'", sqlEscapeQuotes(arg)), nil

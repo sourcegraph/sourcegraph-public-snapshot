@@ -62,20 +62,26 @@ export interface HoverOverlayProps
     useBrandedLogo?: boolean
 }
 
-const getOverlayStyle = (overlayPosition: HoverOverlayProps['overlayPosition']): CSSProperties =>
-    overlayPosition
-        ? {
-              opacity: 1,
-              visibility: 'visible',
-              left: `${overlayPosition.left}px`,
-              top: `${overlayPosition.top}px`,
-          }
-        : {
-              opacity: 0,
-              visibility: 'hidden',
-          }
+const getOverlayStyle = (overlayPosition: HoverOverlayProps['overlayPosition']): CSSProperties => {
+    if (!overlayPosition) {
+        return {
+            opacity: 0,
+            visibility: 'hidden',
+        }
+    }
 
-export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props => {
+    const topOrBottom = 'top' in overlayPosition ? 'top' : 'bottom'
+    const topOrBottomValue = 'top' in overlayPosition ? overlayPosition.top : overlayPosition.bottom
+
+    return {
+        opacity: 1,
+        visibility: 'visible',
+        left: `${overlayPosition.left}px`,
+        [topOrBottom]: `${topOrBottomValue}px`,
+    }
+}
+
+export const HoverOverlay: React.FunctionComponent<React.PropsWithChildren<HoverOverlayProps>> = props => {
     const {
         hoverOrError,
         hoverRef,

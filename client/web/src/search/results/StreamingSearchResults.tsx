@@ -38,7 +38,7 @@ import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
 import {
     useExperimentalFeatures,
     useNavbarQueryState,
-    useSearchStack,
+    useNotepad,
     buildSearchURLQueryFromQueryState,
 } from '../../stores'
 import { useTourQueryParameters } from '../../tour/components/Tour/TourAgent'
@@ -178,7 +178,9 @@ function useCtaAlert(
     }
 }
 
-export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResultsProps> = props => {
+export const StreamingSearchResults: React.FunctionComponent<
+    React.PropsWithChildren<StreamingSearchResultsProps>
+> = props => {
     const {
         streamSearch,
         location,
@@ -276,7 +278,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
         }
     }, [results, telemetryService])
 
-    useSearchStack(
+    useNotepad(
         useMemo(
             () =>
                 results?.state === 'complete'

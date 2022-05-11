@@ -45,7 +45,9 @@ The authors of the following failed commits who are Sourcegraph teammates have b
 
 The branch will automatically be unlocked once a green build has run on %s.
 Please head over to %s for relevant discussion about this branch lock.
-Refer to the <https://handbook.sourcegraph.com/departments/product-engineering/engineering/process/incidents/playbooks/ci|CI incident playbook> for help.
+:bulb: First time being mentioned by this bot? :point_right: <https://handbook.sourcegraph.com/departments/product-engineering/engineering/process/incidents/playbooks/ci/#build-has-failed-on-the-main-branch|Follow this step by step guide!>.
+
+For more, refer to the <https://handbook.sourcegraph.com/departments/product-engineering/engineering/process/incidents/playbooks/ci|CI incident playbook> for help.
 
 If unable to resolve the issue, please start an incident with the '/incident' Slack command.
 

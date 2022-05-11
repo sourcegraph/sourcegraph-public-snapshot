@@ -2,6 +2,7 @@ package schemas
 
 import (
 	"fmt"
+	"html"
 	"math"
 	"sort"
 	"strconv"
@@ -53,7 +54,6 @@ func (f psqlFormatter) formatTable(schemaDescription SchemaDescription, table Ta
 	}
 
 	formatColumns := func(headers []string, rows [][]string) []string {
-
 		sizes := make([]int, len(headers))
 		headerValues := make([]string, len(headers))
 		sepValues := make([]string, len(headers))
@@ -212,13 +212,13 @@ func (f psqlFormatter) formatTable(schemaDescription SchemaDescription, table Ta
 	docs = append(docs, "\n```\n")
 
 	if table.Comment != "" {
-		docs = append(docs, table.Comment+"\n")
+		docs = append(docs, html.EscapeString(table.Comment)+"\n")
 	}
 
 	sortColumnsByName(table.Columns)
 	for _, column := range table.Columns {
 		if column.Comment != "" {
-			docs = append(docs, fmt.Sprintf("**%s**: %s\n", column.Name, column.Comment))
+			docs = append(docs, fmt.Sprintf("**%s**: %s\n", column.Name, html.EscapeString(column.Comment)))
 		}
 	}
 

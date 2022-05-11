@@ -1,4 +1,4 @@
-import React, { FunctionComponent } from 'react'
+import { FunctionComponent } from 'react'
 
 import classNames from 'classnames'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
@@ -17,7 +17,10 @@ export interface CodeIntelAssociatedUploadProps {
     now?: () => Date
 }
 
-export const CodeIntelAssociatedUpload: FunctionComponent<CodeIntelAssociatedUploadProps> = ({ node, now }) =>
+export const CodeIntelAssociatedUpload: FunctionComponent<React.PropsWithChildren<CodeIntelAssociatedUploadProps>> = ({
+    node,
+    now,
+}) =>
     node.associatedUpload && node.projectRoot ? (
         <>
             <div className="list-group position-relative">
@@ -27,7 +30,7 @@ export const CodeIntelAssociatedUpload: FunctionComponent<CodeIntelAssociatedUpl
                     <div className={classNames(styles.information, 'd-flex flex-column')}>
                         <div className="m-0">
                             <h3 className="m-0 d-block d-md-inline">
-                                This job uploaded an index{' '}
+                                This job performed an upload{' '}
                                 <Timestamp date={node.associatedUpload.uploadedAt} now={now} />
                             </h3>
                         </div>

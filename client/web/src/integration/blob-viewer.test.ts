@@ -6,6 +6,7 @@ import type * as sourcegraph from 'sourcegraph'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
+import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
@@ -1063,7 +1064,7 @@ describe('Blob viewer', () => {
             await driver.page.waitForSelector('.test-file-match-children-item', { visible: true })
 
             await percySnapshotWithVariants(driver.page, 'Blob Reference Panel', { waitForCodeHighlighting: true })
-
+            await accessibilityAudit(driver.page)
             // Click on the first reference
             await driver.page.click('.test-file-match-children-item')
 

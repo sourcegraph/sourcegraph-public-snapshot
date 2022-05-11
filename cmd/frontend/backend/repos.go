@@ -201,7 +201,7 @@ func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api
 		return Mocks.Repos.GetInventory(ctx, repo, commitID)
 	}
 
-	ctx, done := trace(ctx, "Repos", "GetInventory", map[string]interface{}{"repo": repo.Name, "commitID": commitID}, &err)
+	ctx, done := trace(ctx, "Repos", "GetInventory", map[string]any{"repo": repo.Name, "commitID": commitID}, &err)
 	defer done()
 
 	// Cap GetInventory operation to some reasonable time.

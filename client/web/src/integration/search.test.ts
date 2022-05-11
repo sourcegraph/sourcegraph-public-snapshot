@@ -2,17 +2,8 @@ import expect from 'expect'
 import { test } from 'mocha'
 import { Key } from 'ts-key-enum'
 
-import { SearchGraphQlOperations } from '@sourcegraph/search'
-import { SharedGraphQlOperations, SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
-import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
-import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
-import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
-
-import { WebGraphQlOperations } from '../graphql-operations'
-
-import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
-import { commonWebGraphQlResults } from './graphQlResults'
 import {
+    SearchGraphQlOperations,
     commitHighlightResult,
     commitSearchStreamEvents,
     diffSearchStreamEvents,
@@ -20,7 +11,17 @@ import {
     mixedSearchStreamEvents,
     highlightFileResult,
     symbolSearchStreamEvents,
-} from './streaming-search-mocks'
+} from '@sourcegraph/search'
+import { SharedGraphQlOperations, SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
+import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
+import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
+import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
+import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
+
+import { WebGraphQlOperations } from '../graphql-operations'
+
+import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
+import { commonWebGraphQlResults } from './graphQlResults'
 import { percySnapshotWithVariants } from './utils'
 
 const mockDefaultStreamEvents: SearchEvent[] = [
@@ -147,6 +148,7 @@ describe('Search', () => {
             })
             expect(await getSearchFieldValue(driver)).toStrictEqual('-file:')
             await percySnapshotWithVariants(driver.page, 'Search home page')
+            await accessibilityAudit(driver.page)
         })
     })
 
@@ -418,6 +420,7 @@ describe('Search', () => {
             await percySnapshotWithVariants(driver.page, 'Streaming diff search syntax highlighting', {
                 waitForCodeHighlighting: true,
             })
+            await accessibilityAudit(driver.page)
         })
 
         test('commit search syntax highlighting', async () => {
@@ -439,6 +442,7 @@ describe('Search', () => {
             await percySnapshotWithVariants(driver.page, 'Streaming commit search syntax highlighting', {
                 waitForCodeHighlighting: true,
             })
+            await accessibilityAudit(driver.page)
         })
 
         test('code, file and repo results with filter suggestions', async () => {
@@ -461,6 +465,7 @@ describe('Search', () => {
                     waitForCodeHighlighting: true,
                 }
             )
+            await accessibilityAudit(driver.page)
         })
 
         test('symbol results', async () => {
@@ -478,6 +483,7 @@ describe('Search', () => {
             await percySnapshotWithVariants(driver.page, 'Streaming search symbols', {
                 waitForCodeHighlighting: true,
             })
+            await accessibilityAudit(driver.page)
         })
     })
 
@@ -553,12 +559,14 @@ describe('Search', () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/users/test/searches')
             await driver.page.waitForSelector('[data-testid="saved-searches-list-page"]')
             await percySnapshotWithVariants(driver.page, 'Saved searches list')
+            await accessibilityAudit(driver.page)
         })
 
         test('is styled correctly, with saved search form', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/users/test/searches/add')
             await driver.page.waitForSelector('[data-testid="saved-search-form"]')
             await percySnapshotWithVariants(driver.page, 'Saved search - Form')
+            await accessibilityAudit(driver.page)
         })
     })
 })
