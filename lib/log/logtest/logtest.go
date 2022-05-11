@@ -29,7 +29,7 @@ func Init(_ *testing.M) {
 	if testing.Verbose() {
 		initGlobal(zapcore.DebugLevel)
 	} else {
-		initGlobal(zapcore.WarnLevel)
+		initGlobal(zapcore.DPanicLevel)
 	}
 }
 
