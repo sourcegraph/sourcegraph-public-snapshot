@@ -15,7 +15,7 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -31,8 +31,8 @@ var setupCommand = &cli.Command{
 
 func setupExec(ctx context.Context, args []string) error {
 	if runtime.GOOS != "linux" && runtime.GOOS != "darwin" {
-		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "'sg setup' currently only supports macOS and Linux"))
-		os.Exit(1)
+		std.Out.WriteLine(output.Styled(output.StyleWarning, "'sg setup' currently only supports macOS and Linux"))
+		return NewEmptyExitErr(1)
 	}
 
 	currentOS := runtime.GOOS
@@ -49,9 +49,8 @@ func setupExec(ctx context.Context, args []string) error {
 	signal.Notify(c, os.Interrupt)
 	go func() {
 		for range c {
-			writeOrangeLinef("\n💡 You may need to restart your shell for the changes to work in this terminal.")
-			writeOrangeLinef("   Close this terminal and open a new one or type the following command and press ENTER: %s", filepath.Base(usershell.ShellPath(ctx)))
-			os.Exit(0)
+			std.Out.WriteAlertf("\n💡 You may need to restart your shell for the changes to work in this terminal.")
+			std.Out.WriteAlertf("   Close this terminal and open a new one or type the following command and press ENTER: %s", filepath.Base(usershell.ShellPath(ctx)))
 		}
 	}()
 
@@ -77,60 +76,60 @@ func setupExec(ctx context.Context, args []string) error {
 	}
 
 	for len(failed) != 0 {
-		stdout.Out.ClearScreen()
+		std.Out.ClearScreen()
 
 		printSgSetupWelcomeScreen()
-		writeOrangeLinef("                INFO: You can quit any time by typing ctrl-c\n")
+		std.Out.WriteAlertf("                INFO: You can quit any time by typing ctrl-c\n")
 
 		for i, category := range categories {
 			idx := i + 1
 
 			if category.requiresRepository && !inRepo {
-				writeSkippedLinef("%d. %s %s[SKIPPED. Requires 'sg setup' to be run in 'sourcegraph' repository]%s", idx, category.name, output.StyleBold, output.StyleReset)
+				std.Out.WriteSkippedf("%d. %s %s[SKIPPED. Requires 'sg setup' to be run in 'sourcegraph' repository]%s", idx, category.name, output.StyleBold, output.StyleReset)
 				skipped = append(skipped, idx)
 				failed = removeEntry(failed, i)
 				continue
 			}
 
-			pending := stdout.Out.Pending(output.Linef("", output.StylePending, "%d. %s - Determining status...", idx, category.name))
+			pending := std.Out.Pending(output.Styledf(output.StylePending, "%d. %s - Determining status...", idx, category.name))
 			category.Update(ctx)
 			pending.Destroy()
 
 			if combined := category.CombinedState(); combined {
-				writeSuccessLinef("%d. %s", idx, category.name)
+				std.Out.WriteSuccessf("%d. %s", idx, category.name)
 				failed = removeEntry(failed, i)
 			} else {
 				nonTeammateState := category.CombinedStateNonTeammates()
 				if nonTeammateState {
-					writeWarningLinef("%d. %s", idx, category.name)
+					std.Out.WriteWarningf("%d. %s", idx, category.name)
 					teammateFailed = append(skipped, idx)
 				} else {
-					writeFailureLinef("%d. %s", idx, category.name)
+					std.Out.WriteFailuref("%d. %s", idx, category.name)
 				}
 			}
 		}
 
 		if len(failed) == 0 && len(teammateFailed) == 0 {
 			if len(skipped) == 0 && len(teammateFailed) == 0 {
-				stdout.Out.Write("")
-				stdout.Out.WriteLine(output.Linef(output.EmojiOk, output.StyleBold, "Everything looks good! Happy hacking!"))
+				std.Out.Write("")
+				std.Out.WriteLine(output.Linef(output.EmojiOk, output.StyleBold, "Everything looks good! Happy hacking!"))
 			}
 
 			if len(skipped) != 0 {
-				stdout.Out.Write("")
-				writeWarningLinef("Some checks were skipped because 'sg setup' is not run in the 'sourcegraph' repository.")
-				writeFingerPointingLinef("Restart 'sg setup' in the 'sourcegraph' repository to continue.")
+				std.Out.Write("")
+				std.Out.WriteWarningf("Some checks were skipped because 'sg setup' is not run in the 'sourcegraph' repository.")
+				std.Out.WriteSuggestionf("Restart 'sg setup' in the 'sourcegraph' repository to continue.")
 			}
 
 			return nil
 		}
 
-		stdout.Out.Write("")
+		std.Out.Write("")
 
 		if len(teammateFailed) != 0 && len(failed) == len(teammateFailed) {
-			writeWarningLinef("Some checks that are only relevant for Sourcegraph teammates failed.\nIf you're not a Sourcegraph teammate you're good to go. Hit Ctrl-C.\n\nIf you're a Sourcegraph teammate: which one do you want to fix?")
+			std.Out.WriteWarningf("Some checks that are only relevant for Sourcegraph teammates failed.\nIf you're not a Sourcegraph teammate you're good to go. Hit Ctrl-C.\n\nIf you're a Sourcegraph teammate: which one do you want to fix?")
 		} else {
-			writeWarningLinef("Some checks failed. Which one do you want to fix?")
+			std.Out.WriteWarningf("Some checks failed. Which one do you want to fix?")
 		}
 
 		idx, err := getNumberOutOf(all)
@@ -142,7 +141,7 @@ func setupExec(ctx context.Context, args []string) error {
 		}
 		selectedCategory := categories[idx]
 
-		stdout.Out.ClearScreen()
+		std.Out.ClearScreen()
 
 		err = presentFailedCategoryWithOptions(ctx, idx, &selectedCategory)
 		if err != nil {
@@ -195,7 +194,7 @@ func presentFailedCategoryWithOptions(ctx context.Context, categoryIdx int, cate
 		err = fixCategoryManually(ctx, categoryIdx, category)
 	case 2:
 		if category.autoFixing {
-			stdout.Out.ClearScreen()
+			std.Out.ClearScreen()
 			err = fixCategoryAutomatically(ctx, category)
 		}
 	case 3:
@@ -205,20 +204,20 @@ func presentFailedCategoryWithOptions(ctx context.Context, categoryIdx int, cate
 }
 
 func printCategoryHeaderAndDependencies(categoryIdx int, category *dependencyCategory) {
-	stdout.Out.WriteLine(output.Linef(output.EmojiLightbulb, output.CombineStyles(output.StyleSearchQuery, output.StyleBold), "%d. %s", categoryIdx, category.name))
-	stdout.Out.Write("")
-	stdout.Out.Write("Checks:")
+	std.Out.WriteLine(output.Linef(output.EmojiLightbulb, output.CombineStyles(output.StyleSearchQuery, output.StyleBold), "%d. %s", categoryIdx, category.name))
+	std.Out.Write("")
+	std.Out.Write("Checks:")
 
 	for i, dep := range category.dependencies {
 		idx := i + 1
 		if dep.IsMet() {
-			writeSuccessLinef("%d. %s", idx, dep.name)
+			std.Out.WriteSuccessf("%d. %s", idx, dep.name)
 		} else {
 			var printer func(fmtStr string, args ...any)
 			if dep.onlyTeammates {
-				printer = writeWarningLinef
+				printer = std.Out.WriteWarningf
 			} else {
-				printer = writeFailureLinef
+				printer = std.Out.WriteFailuref
 			}
 
 			if dep.err != nil {
@@ -255,7 +254,7 @@ func fixCategoryAutomatically(ctx context.Context, category *dependencyCategory)
 }
 
 func fixDependencyAutomatically(ctx context.Context, dep *dependency) error {
-	writeFingerPointingLinef("Trying my hardest to fix %q automatically...", dep.name)
+	std.Out.WriteNoticef("Trying my hardest to fix %q automatically...", dep.name)
 
 	cmdStr := dep.InstructionsCommands(ctx)
 	if cmdStr == "" {
@@ -265,15 +264,15 @@ func fixDependencyAutomatically(ctx context.Context, dep *dependency) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
-		writeFailureLinef("Failed to run command: %s", err)
+		std.Out.WriteFailuref("Failed to run command: %s", err)
 		return err
 	}
 
-	writeSuccessLinef("Done! %q should be fixed now!", dep.name)
+	std.Out.WriteSuccessf("Done! %q should be fixed now!", dep.name)
 
 	if dep.requiresSgSetupRestart {
-		writeFingerPointingLinef("This command requires restarting of 'sg setup' to pick up the changes.")
-		os.Exit(0)
+		std.Out.WriteNoticef("This command requires restarting of 'sg setup' to pick up the changes.")
+		return nil
 	}
 
 	return nil
@@ -300,7 +299,7 @@ func fixCategoryManually(ctx context.Context, categoryIdx int, category *depende
 		if len(toFix) == 1 {
 			idx = toFix[0]
 		} else {
-			writeFingerPointingLinef("Which one do you want to fix?")
+			std.Out.WriteNoticef("Which one do you want to fix?")
 			var err error
 			idx, err = getNumberOutOf(toFix)
 			if err != nil {
@@ -313,42 +312,42 @@ func fixCategoryManually(ctx context.Context, categoryIdx int, category *depende
 
 		dep := category.dependencies[idx]
 
-		stdout.Out.WriteLine(output.Linef(output.EmojiFailure, output.CombineStyles(output.StyleWarning, output.StyleBold), "%s", dep.name))
-		stdout.Out.Write("")
+		std.Out.WriteLine(output.Linef(output.EmojiFailure, output.CombineStyles(output.StyleWarning, output.StyleBold), "%s", dep.name))
+		std.Out.Write("")
 
 		if dep.err != nil {
-			stdout.Out.WriteLine(output.Linef("", output.StyleBold, "Encountered the following error:\n\n%s%s\n", output.StyleReset, dep.err))
+			std.Out.WriteLine(output.Styledf(output.StyleBold, "Encountered the following error:\n\n%s%s\n", output.StyleReset, dep.err))
 		}
 
-		stdout.Out.WriteLine(output.Linef("", output.StyleBold, "How to fix:"))
+		std.Out.WriteLine(output.Styled(output.StyleBold, "How to fix:"))
 
 		if dep.instructionsComment != "" {
 			if dep.requiresSgSetupRestart {
 				// Make sure to highlight the manual fix, if any.
-				stdout.Out.Write("")
-				stdout.Out.WriteLine(output.Linef(output.EmojiWarningSign, output.StyleYellow, "%s", dep.instructionsComment))
+				std.Out.Write("")
+				std.Out.WriteLine(output.Linef(output.EmojiWarningSign, output.StyleYellow, "%s", dep.instructionsComment))
 			} else {
-				stdout.Out.Write("")
-				stdout.Out.Write(dep.instructionsComment)
+				std.Out.Write("")
+				std.Out.Write(dep.instructionsComment)
 			}
 		}
 
 		// If we don't have anything do run, we simply print instructions to
 		// the user
 		if dep.InstructionsCommands(ctx) == "" {
-			writeFingerPointingLinef("Hit return once you're done")
+			std.Out.WriteNoticef("Hit return once you're done")
 			waitForReturn()
 		} else {
 			// Otherwise we print the command(s) and ask the user whether we should run it or not
-			stdout.Out.Write("")
+			std.Out.Write("")
 			if category.requiresRepository {
-				stdout.Out.Writef("Run the following command(s) %sin the 'sourcegraph' repository%s:", output.StyleBold, output.StyleReset)
+				std.Out.Writef("Run the following command(s) %sin the 'sourcegraph' repository%s:", output.StyleBold, output.StyleReset)
 			} else {
-				stdout.Out.Write("Run the following command(s):")
+				std.Out.Write("Run the following command(s):")
 			}
-			stdout.Out.Write("")
+			std.Out.Write("")
 
-			stdout.Out.WriteLine(output.Line("", output.CombineStyles(output.StyleBold, output.StyleYellow), strings.TrimSpace(dep.InstructionsCommands(ctx))))
+			std.Out.WriteLine(output.Line("", output.CombineStyles(output.StyleBold, output.StyleYellow), strings.TrimSpace(dep.InstructionsCommands(ctx))))
 
 			choice, err := getChoice(map[int]string{
 				1: "I'll fix this manually (either by running the command or doing something else)",
@@ -361,7 +360,7 @@ func fixCategoryManually(ctx context.Context, categoryIdx int, category *depende
 
 			switch choice {
 			case 1:
-				writeFingerPointingLinef("Hit return once you're done")
+				std.Out.WriteNoticef("Hit return once you're done")
 				waitForReturn()
 			case 2:
 				if err := fixDependencyAutomatically(ctx, dep); err != nil {
@@ -372,7 +371,7 @@ func fixCategoryManually(ctx context.Context, categoryIdx int, category *depende
 			}
 		}
 
-		pending := stdout.Out.Pending(output.Linef("", output.StylePending, "Determining status..."))
+		pending := std.Out.Pending(output.Styled(output.StylePending, "Determining status..."))
 		for _, dep := range category.dependencies {
 			dep.Update(ctx)
 		}
@@ -489,8 +488,8 @@ func waitForReturn() { fmt.Scanln() }
 
 func getChoice(choices map[int]string) (int, error) {
 	for {
-		stdout.Out.Write("")
-		writeFingerPointingLinef("What do you want to do?")
+		std.Out.Write("")
+		std.Out.WriteNoticef("What do you want to do?")
 
 		for i := 0; i < len(choices); i++ {
 			num := i + 1
@@ -498,7 +497,7 @@ func getChoice(choices map[int]string) (int, error) {
 			if !ok {
 				return 0, errors.Newf("internal error: %d not found in provided choices", i)
 			}
-			stdout.Out.Writef("%s[%d]%s: %s", output.StyleBold, num, output.StyleReset, desc)
+			std.Out.Writef("%s[%d]%s: %s", output.StyleBold, num, output.StyleReset, desc)
 		}
 
 		fmt.Printf("Enter choice: ")
@@ -512,7 +511,7 @@ func getChoice(choices map[int]string) (int, error) {
 		if _, ok := choices[s]; ok {
 			return s, nil
 		}
-		writeFailureLinef("Invalid choice")
+		std.Out.WriteFailuref("Invalid choice")
 	}
 }
 
@@ -594,4 +593,29 @@ type stringCommandBuilder func(context.Context) string
 
 func (l stringCommandBuilder) Build(ctx context.Context) string {
 	return l(ctx)
+}
+
+func printSgSetupWelcomeScreen() {
+	genLine := func(style output.Style, content string) string {
+		return fmt.Sprintf("%s%s%s", output.CombineStyles(output.StyleBold, style), content, output.StyleReset)
+	}
+
+	boxContent := func(content string) string { return genLine(output.StyleWhiteOnPurple, content) }
+	shadow := func(content string) string { return genLine(output.StyleGreyBackground, content) }
+
+	std.Out.Write(boxContent(`┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ sg ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓`))
+	std.Out.Write(boxContent(`┃            _       __     __                             __                ┃`))
+	std.Out.Write(boxContent(`┃           | |     / /__  / /________  ____ ___  ___     / /_____           ┃`) + shadow(`  `))
+	std.Out.Write(boxContent(`┃           | | /| / / _ \/ / ___/ __ \/ __ '__ \/ _ \   / __/ __ \          ┃`) + shadow(`  `))
+	std.Out.Write(boxContent(`┃           | |/ |/ /  __/ / /__/ /_/ / / / / / /  __/  / /_/ /_/ /          ┃`) + shadow(`  `))
+	std.Out.Write(boxContent(`┃           |__/|__/\___/_/\___/\____/_/ /_/ /_/\___/   \__/\____/           ┃`) + shadow(`  `))
+	std.Out.Write(boxContent(`┃                                           __              __               ┃`) + shadow(`  `))
+	std.Out.Write(boxContent(`┃                  ___________   ________  / /___  ______  / /               ┃`) + shadow(`  `))
+	std.Out.Write(boxContent(`┃                 / ___/ __  /  / ___/ _ \/ __/ / / / __ \/ /                ┃`) + shadow(`  `))
+	std.Out.Write(boxContent(`┃                (__  ) /_/ /  (__  )  __/ /_/ /_/ / /_/ /_/                 ┃`) + shadow(`  `))
+	std.Out.Write(boxContent(`┃               /____/\__, /  /____/\___/\__/\__,_/ .___(_)                  ┃`) + shadow(`  `))
+	std.Out.Write(boxContent(`┃                    /____/                      /_/                         ┃`) + shadow(`  `))
+	std.Out.Write(boxContent(`┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛`) + shadow(`  `))
+	std.Out.Write(`  ` + shadow(`                                                                              `))
+	std.Out.Write(`  ` + shadow(`                                                                              `))
 }
