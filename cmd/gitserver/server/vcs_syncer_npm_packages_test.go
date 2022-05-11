@@ -19,7 +19,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
+	livedependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
@@ -100,13 +100,12 @@ func TestNpmCloneCommand(t *testing.T) {
 		},
 	}
 
-	depsSvc := live.TestService(database.NewDB(dbtest.NewDB(t)), nil)
+	depsSvc := livedependencies.TestService(database.NewDB(dbtest.NewDB(t)), livedependencies.NewSyncer())
 
 	s := NewNpmPackagesSyncer(
 		schema.NpmPackagesConnection{Dependencies: []string{}},
 		depsSvc,
 		&client,
-		"urn",
 	).(*vcsDependenciesSyncer)
 
 	bareGitDirectory := path.Join(dir, "git")

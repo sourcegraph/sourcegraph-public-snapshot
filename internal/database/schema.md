@@ -2172,8 +2172,10 @@ Indexes:
  updated_at    | timestamp with time zone |           | not null | 
  synced_at     | timestamp with time zone |           |          | 
  user_ids_ints | integer[]                |           | not null | '{}'::integer[]
+ unrestricted  | boolean                  |           | not null | false
 Indexes:
     "repo_permissions_perm_unique" UNIQUE CONSTRAINT, btree (repo_id, permission)
+    "repo_permissions_unrestricted_true_idx" btree (unrestricted) WHERE unrestricted
 
 ```
 

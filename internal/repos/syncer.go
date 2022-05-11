@@ -294,22 +294,21 @@ func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background boo
 
 			// We don't care about the return value here, but we still want to ensure that
 			// only one is in flight at a time.
-			_, _, _ = s.syncGroup.Do(string(name), func() (any, error) {
-				updatedRepo, err := s.syncRepo(ctx, codehost, name, repo)
-				if err != nil {
-					log15.Error("SyncRepo", "name", name, "error", err, "background", background)
-				}
-				return updatedRepo, nil
+			_, err, shared := s.syncGroup.Do(string(name), func() (any, error) {
+				return s.syncRepo(ctx, codehost, name, repo)
 			})
+			if err != nil {
+				log15.Error("SyncRepo", "name", name, "error", err, "background", background, "shared", shared)
+			}
 		}()
 		return repo, nil
 	}
 
-	updatedRepo, err, _ := s.syncGroup.Do(string(name), func() (any, error) {
+	updatedRepo, err, shared := s.syncGroup.Do(string(name), func() (any, error) {
 		return s.syncRepo(ctx, codehost, name, repo)
 	})
 	if err != nil {
-		log15.Error("SyncRepo", "name", name, "error", err, "background", background)
+		log15.Error("SyncRepo", "name", name, "error", err, "background", background, "shared", shared)
 		return nil, err
 	}
 	return updatedRepo.(*types.Repo), nil
@@ -868,6 +867,13 @@ func syncErrorReason(err error) string {
 		return "forbidden"
 	case errcode.IsTemporary(err):
 		return "temporary"
+	case strings.Contains(err.Error(), "expected path in npm/(scope/)?name"):
+		// This is a known issue which we can filter out for now
+		return "invalid_npm_path"
+	case strings.Contains(err.Error(), "internal rate limit exceeded"):
+		// We want to identify these as it's not an issue communicating with the code
+		// host and is most likely caused by temporary traffic spikes.
+		return "internal_rate_limit"
 	default:
 		return "unknown"
 	}
