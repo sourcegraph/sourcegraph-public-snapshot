@@ -24,8 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -544,12 +542,7 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 		}
 	}
 
-	depsSvc := livedependencies.GetService(
-		r.DB,
-		&packageRepoSyncer{cli: repoupdater.DefaultClient},
-	)
-
-	dependencyRepoRevs, err := depsSvc.Dependencies(ctx, repoRevs)
+	dependencyRepoRevs, err := livedependencies.GetService(r.DB, livedependencies.NewSyncer()).Dependencies(ctx, repoRevs)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -567,13 +560,6 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 	}
 
 	return depNames, depRevs, nil
-}
-
-type packageRepoSyncer struct{ cli *repoupdater.Client }
-
-func (s *packageRepoSyncer) Sync(ctx context.Context, repo api.RepoName) error {
-	_, err := s.cli.RepoLookup(ctx, protocol.RepoLookupArgs{Repo: repo, Update: true})
-	return err
 }
 
 // ExactlyOneRepo returns whether exactly one repo: literal field is specified and

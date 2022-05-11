@@ -20,7 +20,7 @@ func TestToSearchInputs(t *testing.T) {
 		require.NoError(t, err)
 		inputs := &run.SearchInputs{
 			UserSettings:        &schema.Settings{},
-			PatternType:         query.SearchTypeLiteral,
+			PatternType:         query.SearchTypeLiteralDefault,
 			Protocol:            protocol,
 			OnSourcegraphDotCom: true,
 		}
@@ -171,7 +171,7 @@ func TestToEvaluateJob(t *testing.T) {
 		q, _ := query.ParseLiteral(input)
 		inputs := &run.SearchInputs{
 			UserSettings:        &schema.Settings{},
-			PatternType:         query.SearchTypeLiteral,
+			PatternType:         query.SearchTypeLiteralDefault,
 			Protocol:            protocol,
 			OnSourcegraphDotCom: true,
 		}
@@ -201,7 +201,7 @@ func Test_optimizeJobs(t *testing.T) {
 		plan, _ := query.Pipeline(query.InitLiteral(input))
 		inputs := &run.SearchInputs{
 			UserSettings:        &schema.Settings{},
-			PatternType:         query.SearchTypeLiteral,
+			PatternType:         query.SearchTypeLiteralDefault,
 			Protocol:            search.Streaming,
 			OnSourcegraphDotCom: true,
 		}
@@ -386,7 +386,7 @@ func TestToTextPatternInfo(t *testing.T) {
 	}}
 
 	test := func(input string) string {
-		searchType := overrideSearchType(input, query.SearchTypeLiteral)
+		searchType := overrideSearchType(input, query.SearchTypeLiteralDefault)
 		plan, err := query.Pipeline(query.Init(input, searchType))
 		if err != nil {
 			return "Error"
@@ -397,7 +397,7 @@ func TestToTextPatternInfo(t *testing.T) {
 		b := plan[0]
 		types, _ := b.ToParseTree().StringValues(query.FieldType)
 		mode := search.Batch
-		resultTypes := computeResultTypes(types, b, query.SearchTypeLiteral)
+		resultTypes := computeResultTypes(types, b, query.SearchTypeLiteralDefault)
 		p := toTextPatternInfo(b, resultTypes, mode)
 		v, _ := json.Marshal(p)
 		return string(v)
@@ -411,7 +411,7 @@ func TestToTextPatternInfo(t *testing.T) {
 }
 
 func overrideSearchType(input string, searchType query.SearchType) query.SearchType {
-	q, err := query.Parse(input, query.SearchTypeLiteral)
+	q, err := query.Parse(input, query.SearchTypeLiteralDefault)
 	q = query.LowercaseFieldNames(q)
 	if err != nil {
 		// If parsing fails, return the default search type. Any actual
@@ -423,7 +423,7 @@ func overrideSearchType(input string, searchType query.SearchType) query.SearchT
 		case "regex", "regexp":
 			searchType = query.SearchTypeRegex
 		case "literal":
-			searchType = query.SearchTypeLiteral
+			searchType = query.SearchTypeLiteralDefault
 		case "structural":
 			searchType = query.SearchTypeStructural
 		}

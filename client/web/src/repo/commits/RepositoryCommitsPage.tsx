@@ -141,14 +141,14 @@ export const RepositoryCommitsPage: React.FunctionComponent<React.PropsWithChild
     return (
         <div className={styles.repositoryCommitsPage} data-testid="commits-page">
             <PageTitle title="Commits" />
-            <FilteredConnection<GitCommitFields, Pick<GitCommitNodeProps, 'className' | 'compact'>>
+            <FilteredConnection<GitCommitFields, Pick<GitCommitNodeProps, 'className' | 'compact' | 'wrapperElement'>>
                 className={styles.content}
                 listClassName="list-group list-group-flush"
                 noun="commit"
                 pluralNoun="commits"
                 queryConnection={queryCommits}
                 nodeComponent={GitCommitNode}
-                nodeComponentProps={{ className: 'list-group-item' }}
+                nodeComponentProps={{ className: 'list-group-item', wrapperElement: 'li' }}
                 defaultFirst={20}
                 autoFocus={true}
                 history={props.history}
