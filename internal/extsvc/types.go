@@ -364,7 +364,7 @@ func ParseConfig(kind, config string) (cfg any, _ error) {
 
 const IDParam = "externalServiceID"
 
-func WebhookURL(kind string, externalServiceID int64, cfg interface{}, externalURL string) (string, error) {
+func WebhookURL(kind string, externalServiceID int64, cfg any, externalURL string) (string, error) {
 	var path, extra string
 	switch strings.ToUpper(kind) {
 	case KindGitHub:
