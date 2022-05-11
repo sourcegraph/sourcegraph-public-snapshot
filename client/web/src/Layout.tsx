@@ -21,7 +21,7 @@ import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/que
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
-import { LoadingSpinner, Panel, useObservable } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Panel, SkipLink, useObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser, authRequired as authRequiredObservable } from './auth'
 import { BatchChangesProps } from './batches'
@@ -208,6 +208,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
 
     return (
         <div className={styles.layout}>
+            <SkipLink href="#main">Skip to content</SkipLink>
             <KeyboardShortcutsHelp
                 keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_HELP}
                 keyboardShortcuts={props.keyboardShortcuts}
