@@ -1,8 +1,12 @@
 package main
 
 import (
+	"encoding/base64"
+	"strings"
+
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -16,17 +20,26 @@ var (
 				Name:        "decode-id",
 				Usage:       "Decodes an encoded insight ID found on the frontend into an insight_view_id",
 				Description: `Run 'sg insights decode-id' to decode 1+ frontend IDs which can then be used for SQL queries`,
-				Action:      decodeInsightAction,
+				Action:      decodeInsightIDAction,
 			},
 		},
 	}
 )
 
-func decodeInsightAction(cmd *cli.Context) error {
+func decodeInsightIDAction(cmd *cli.Context) error {
 	ids := cmd.Args().Slice()
 	if len(ids) == 0 {
-		writeFailureLinef("Unexpected argument usage")
 		return errors.New("Expected at least 1 id to decode")
+	}
+	writeFingerPointingLinef("Decoding %d IDs", len(ids))
+	for _, id := range ids {
+		decoded, err := base64.StdEncoding.DecodeString(id)
+		if err != nil {
+			return errors.Newf("could not decode id %q: %v", id, err)
+		}
+		// an insight view id is encoded in this format: `insight_view:"[id]"`
+		cleanDecoded := strings.TrimLeft(strings.TrimRight(string(decoded), "\""), "insight_view:\"")
+		stdout.Out.Writef("\t%s -> %s", id, cleanDecoded)
 	}
 	return nil
 }
