@@ -49,15 +49,6 @@ func (h Webhook) getRepoForPR(
 			},
 		},
 	})
-	log15.Info("getRepoForPR", "rs", rs, "err", err, "opts", fmt.Sprintf("%+v", database.ReposListOptions{
-		ExternalRepos: []api.ExternalRepoSpec{
-			{
-				ID:          pr.RepoExternalID,
-				ServiceType: h.ServiceType,
-				ServiceID:   externalServiceID,
-			},
-		},
-	}))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load repository")
 	}

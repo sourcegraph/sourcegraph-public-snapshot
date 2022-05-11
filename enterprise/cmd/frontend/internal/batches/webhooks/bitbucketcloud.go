@@ -2,12 +2,9 @@ package webhooks
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"net/http"
 	"strconv"
-
-	"github.com/inconshreveable/log15"
 
 	fewebhooks "github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	bbcs "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/bitbucketcloud"
@@ -63,7 +60,6 @@ func (h *BitbucketCloudWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request
 
 	var m error
 	for _, pr := range prs {
-		log15.Info("processing", "pr", pr, "ev", fmt.Sprintf("%+v", ev))
 		err := h.upsertChangesetEvent(ctx, externalServiceID, pr, ev)
 		if err != nil {
 			m = errors.Append(m, err)
