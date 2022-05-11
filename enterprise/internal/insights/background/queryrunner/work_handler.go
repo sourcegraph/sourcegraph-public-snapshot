@@ -343,7 +343,7 @@ func (r *workHandler) searchHandler(ctx context.Context, job *Job, series *types
 	}
 
 	if recordErr := tx.RecordSeriesPoints(ctx, recordings); recordErr != nil {
-		err = errors.Append(err, errors.Wrap(recordErr, "RecordSeriesPointsCapture"))
+		err = errors.Append(err, errors.Wrap(recordErr, "RecordSeriesPoints"))
 	}
 	return err
 }
