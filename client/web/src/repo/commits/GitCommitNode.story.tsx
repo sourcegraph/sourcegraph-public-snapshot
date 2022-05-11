@@ -70,7 +70,6 @@ add('Full customizable', () => (
         {() => (
             <Card>
                 <GitCommitNode
-                    wrapperElement="div"
                     node={gitCommitNode}
                     compact={boolean('compact', false)}
                     expandCommitMessageBody={boolean('expandCommitMessageBody', false)}
@@ -87,7 +86,6 @@ add('Compact', () => (
         {() => (
             <Card>
                 <GitCommitNode
-                    wrapperElement="div"
                     node={gitCommitNode}
                     compact={true}
                     expandCommitMessageBody={false}
@@ -103,7 +101,6 @@ add('Commit message expanded', () => (
         {() => (
             <Card>
                 <GitCommitNode
-                    wrapperElement="div"
                     node={gitCommitNode}
                     compact={false}
                     expandCommitMessageBody={true}
@@ -119,7 +116,6 @@ add('SHA and parent shown', () => (
         {() => (
             <Card>
                 <GitCommitNode
-                    wrapperElement="div"
                     node={gitCommitNode}
                     compact={false}
                     expandCommitMessageBody={false}
@@ -135,7 +131,6 @@ add('Expand commit message btn hidden', () => (
         {() => (
             <Card>
                 <GitCommitNode
-                    wrapperElement="div"
                     node={gitCommitNode}
                     compact={false}
                     expandCommitMessageBody={false}

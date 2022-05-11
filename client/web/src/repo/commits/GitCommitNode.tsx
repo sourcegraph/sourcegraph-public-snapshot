@@ -55,8 +55,8 @@ export interface GitCommitNodeProps {
     /** An optional additional css class name to apply this to commit node message subject */
     messageSubjectClassName?: string
 
-    /** Element that should wrap the commit data. Only use 'div' when rendering the component on its own */
-    wrapperElement?: 'li' | 'div'
+    /** Element that should wrap the commit data. Only use 'li' when rendering the component in a list */
+    wrapperElement?: 'div' | 'li'
 }
 
 /** Displays a Git commit. */
@@ -73,7 +73,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
     preferAbsoluteTimestamps,
     diffMode,
     onHandleDiffMode,
-    wrapperElement: WrapperElement = 'li',
+    wrapperElement: WrapperElement = 'div',
 }) => {
     const [showCommitMessageBody, setShowCommitMessageBody] = useState<boolean>(false)
     const [flashCopiedToClipboardMessage, setFlashCopiedToClipboardMessage] = useState<boolean>(false)
