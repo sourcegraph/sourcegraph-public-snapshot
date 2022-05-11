@@ -122,40 +122,94 @@ func TestGetSortedCaptureGroups(t *testing.T) {
 		},
 	}
 
+	getOptions := func(sortOptions *types.SeriesSortOptions, limit *int32) types.SeriesDisplayOptions {
+		return types.SeriesDisplayOptions{
+			SortOptions: sortOptions,
+			Limit:       limit,
+		}
+	}
+	nilOptions := getOptions(nil, nil)
+
+	getDefinition := func(mode types.SeriesSortMode, direction types.SeriesSortDirection, limit int32) types.InsightViewSeries {
+		return types.InsightViewSeries{
+			SeriesSortMode:      &mode,
+			SeriesSortDirection: &direction,
+			SeriesLimit:         &limit,
+		}
+	}
+
 	t.Run("sorts by asc lexicographical", func(t *testing.T) {
-		sorted := getSortedCaptureGroups(types.SeriesSortMode(types.Lexicographical), types.SeriesSortDirection(types.Asc), captureGroups)
+		sorted, limit := getSortedCaptureGroups(nilOptions, getDefinition(types.Lexicographical, types.Asc, 6), captureGroups)
 		if diff := cmp.Diff([]string{"v0.2.1", "1.2.3", "earliest date added", "latest date added", "least results", "most results"}, sorted); diff != "" {
 			t.Errorf("unexpected sort order (want/got): %v", diff)
 		}
+		if diff := cmp.Diff(int32(6), limit); diff != "" {
+			t.Errorf("unexpected limit (want/got): %v", diff)
+		}
 	})
 	t.Run("sorts by desc lexicographical", func(t *testing.T) {
-		sorted := getSortedCaptureGroups(types.SeriesSortMode(types.Lexicographical), types.SeriesSortDirection(types.Desc), captureGroups)
+		sorted, limit := getSortedCaptureGroups(nilOptions, getDefinition(types.Lexicographical, types.Desc, 6), captureGroups)
 		if diff := cmp.Diff([]string{"most results", "least results", "latest date added", "earliest date added", "1.2.3", "v0.2.1"}, sorted); diff != "" {
 			t.Errorf("unexpected sort order (want/got): %v", diff)
 		}
+		if diff := cmp.Diff(int32(6), limit); diff != "" {
+			t.Errorf("unexpected limit (want/got): %v", diff)
+		}
 	})
 	t.Run("sorts by asc date added", func(t *testing.T) {
-		sorted := getSortedCaptureGroups(types.SeriesSortMode(types.DateAdded), types.SeriesSortDirection(types.Asc), captureGroups)
+		sorted, limit := getSortedCaptureGroups(nilOptions, getDefinition(types.DateAdded, types.Asc, 6), captureGroups)
 		if diff := cmp.Diff([]string{"earliest date added", "1.2.3", "v0.2.1", "least results", "most results", "latest date added"}, sorted); diff != "" {
 			t.Errorf("unexpected sort order (want/got): %v", diff)
 		}
+		if diff := cmp.Diff(int32(6), limit); diff != "" {
+			t.Errorf("unexpected limit (want/got): %v", diff)
+		}
 	})
 	t.Run("sorts by desc date added", func(t *testing.T) {
-		sorted := getSortedCaptureGroups(types.SeriesSortMode(types.DateAdded), types.SeriesSortDirection(types.Desc), captureGroups)
+		sorted, limit := getSortedCaptureGroups(nilOptions, getDefinition(types.DateAdded, types.Desc, 6), captureGroups)
 		if diff := cmp.Diff([]string{"latest date added", "v0.2.1", "least results", "most results", "1.2.3", "earliest date added"}, sorted); diff != "" {
 			t.Errorf("unexpected sort order (want/got): %v", diff)
 		}
+		if diff := cmp.Diff(int32(6), limit); diff != "" {
+			t.Errorf("unexpected limit (want/got): %v", diff)
+		}
 	})
 	t.Run("sorts by asc result count", func(t *testing.T) {
-		sorted := getSortedCaptureGroups(types.SeriesSortMode(types.ResultCount), types.SeriesSortDirection(types.Asc), captureGroups)
+		sorted, limit := getSortedCaptureGroups(nilOptions, getDefinition(types.ResultCount, types.Asc, 6), captureGroups)
 		if diff := cmp.Diff([]string{"least results", "v0.2.1", "earliest date added", "latest date added", "1.2.3", "most results"}, sorted); diff != "" {
 			t.Errorf("unexpected sort order (want/got): %v", diff)
 		}
+		if diff := cmp.Diff(int32(6), limit); diff != "" {
+			t.Errorf("unexpected limit (want/got): %v", diff)
+		}
 	})
 	t.Run("sorts by desc result count", func(t *testing.T) {
-		sorted := getSortedCaptureGroups(types.SeriesSortMode(types.ResultCount), types.SeriesSortDirection(types.Desc), captureGroups)
+		sorted, limit := getSortedCaptureGroups(nilOptions, getDefinition(types.ResultCount, types.Desc, 5), captureGroups)
 		if diff := cmp.Diff([]string{"most results", "1.2.3", "v0.2.1", "earliest date added", "latest date added", "least results"}, sorted); diff != "" {
 			t.Errorf("unexpected sort order (want/got): %v", diff)
+		}
+		if diff := cmp.Diff(int32(5), limit); diff != "" {
+			t.Errorf("unexpected limit (want/got): %v", diff)
+		}
+	})
+	t.Run("uses override options over definition", func(t *testing.T) {
+		optionsLimit := int32(3)
+		sorted, limit := getSortedCaptureGroups(getOptions(&types.SeriesSortOptions{Mode: types.Lexicographical, Direction: types.Desc}, &optionsLimit), getDefinition(types.ResultCount, types.Desc, 6), captureGroups)
+		if diff := cmp.Diff([]string{"most results", "least results", "latest date added", "earliest date added", "1.2.3", "v0.2.1"}, sorted); diff != "" {
+			t.Errorf("unexpected sort order (want/got): %v", diff)
+		}
+		if diff := cmp.Diff(int32(3), limit); diff != "" {
+			t.Errorf("unexpected limit (want/got): %v", diff)
+		}
+	})
+	t.Run("uses defaults when no options or definitions are set", func(t *testing.T) {
+		sorted, limit := getSortedCaptureGroups(nilOptions, types.InsightViewSeries{}, captureGroups)
+		// defaults to desc result count
+		if diff := cmp.Diff([]string{"most results", "1.2.3", "v0.2.1", "earliest date added", "latest date added", "least results"}, sorted); diff != "" {
+			t.Errorf("unexpected sort order (want/got): %v", diff)
+		}
+		if diff := cmp.Diff(int32(6), limit); diff != "" {
+			t.Errorf("unexpected limit (want/got): %v", diff)
 		}
 	})
 }

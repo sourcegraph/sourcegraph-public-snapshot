@@ -397,36 +397,8 @@ func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.Insi
 	}
 	statusResolver := NewStatusResolver(status, definition.BackfillQueuedAt)
 
+	sortedCaptureGroups, limit := getSortedCaptureGroups(seriesOptions, definition, groupedByCapture)
 	var resolvers []graphqlbackend.InsightSeriesResolver
-
-	var sortMode types.SeriesSortMode
-	var sortDirection types.SeriesSortDirection
-	var limit int32
-	if seriesOptions.SortOptions != nil {
-		sortMode = seriesOptions.SortOptions.Mode
-		sortDirection = seriesOptions.SortOptions.Direction
-	} else {
-		if definition.SeriesSortMode != nil {
-			sortMode = *definition.SeriesSortMode
-		} else {
-			sortMode = types.ResultCount
-		}
-		if definition.SeriesSortDirection != nil {
-			sortDirection = *definition.SeriesSortDirection
-		} else {
-			sortDirection = types.Desc
-		}
-	}
-	sortedCaptureGroups := getSortedCaptureGroups(sortMode, sortDirection, groupedByCapture)
-	if seriesOptions.Limit != nil {
-		limit = *seriesOptions.Limit
-	} else if definition.SeriesLimit != nil {
-		limit = *definition.SeriesLimit
-	} else {
-		limit = 20
-	}
-	limit = minInt(int(limit), len(sortedCaptureGroups))
-
 	for _, capturedValue := range sortedCaptureGroups[0:limit] {
 		points := groupedByCapture[capturedValue]
 		sort.Slice(points, func(i, j int) bool {
@@ -467,7 +439,108 @@ func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.Insi
 	return resolvers, nil
 }
 
-func getSortedCaptureGroups(sortMode types.SeriesSortMode, sortDirection types.SeriesSortDirection, captureGroups map[string][]store.SeriesPoint) []string {
+func expandCaptureGroupSeriesJustInTime(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters, seriesOptions types.SeriesDisplayOptions) ([]graphqlbackend.InsightSeriesResolver, error) {
+	executor := query.NewCaptureGroupExecutor(r.postgresDB, r.insightsDB, time.Now)
+	interval := timeseries.TimeInterval{
+		Unit:  types.IntervalUnit(definition.SampleIntervalUnit),
+		Value: definition.SampleIntervalValue,
+	}
+
+	scLoader := &scLoader{primary: r.postgresDB}
+	matchedRepos, err := filterRepositories(ctx, filters, definition.Repositories, scLoader)
+	if err != nil {
+		return nil, err
+	}
+	log15.Debug("capture group series", "seriesId", definition.SeriesID, "filteredRepos", matchedRepos)
+	generatedSeries, err := executor.Execute(ctx, definition.Query, matchedRepos, interval)
+	if err != nil {
+		return nil, errors.Wrap(err, "CaptureGroupExecutor.Execute")
+	}
+
+	groupedByCapture := make(map[string][]store.SeriesPoint)
+	var allPoints []store.SeriesPoint
+	for i := range generatedSeries {
+		for _, point := range generatedSeries[i].Points {
+			allPoints = append(allPoints, store.SeriesPoint{
+				SeriesID: generatedSeries[i].SeriesId,
+				Time:     point.Time,
+				Value:    float64(point.Count),
+				Capture:  &generatedSeries[i].Label,
+			})
+		}
+	}
+	for i := range allPoints {
+		point := allPoints[i]
+		if point.Capture == nil {
+			// skip nil values, this shouldn't be a real possibility
+			continue
+		}
+		groupedByCapture[*point.Capture] = append(groupedByCapture[*point.Capture], point)
+	}
+
+	sortedCaptureGroups, limit := getSortedCaptureGroups(seriesOptions, definition, groupedByCapture)
+	var resolvers []graphqlbackend.InsightSeriesResolver
+	for _, capture := range sortedCaptureGroups[0:limit] {
+		var series query.GeneratedTimeSeries
+		for i := range generatedSeries {
+			if generatedSeries[i].Label == capture {
+				series = generatedSeries[i]
+				break
+			}
+		}
+
+		resolvers = append(resolvers, &dynamicInsightSeriesResolver{generated: &series})
+	}
+
+	return resolvers, nil
+}
+
+func streamingSeriesJustInTime(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters, seriesOptions types.SeriesDisplayOptions) ([]graphqlbackend.InsightSeriesResolver, error) {
+	executor := query.NewStreamingExecutor(r.postgresDB, r.insightsDB, time.Now)
+	interval := timeseries.TimeInterval{
+		Unit:  types.IntervalUnit(definition.SampleIntervalUnit),
+		Value: definition.SampleIntervalValue,
+	}
+
+	scLoader := &scLoader{primary: r.postgresDB}
+	matchedRepos, err := filterRepositories(ctx, filters, definition.Repositories, scLoader)
+	if err != nil {
+		return nil, err
+	}
+	log15.Debug("just in time series", "seriesId", definition.SeriesID, "filteredRepos", matchedRepos)
+	generatedSeries, err := executor.Execute(ctx, definition.Query, definition.Label, definition.SeriesID, matchedRepos, interval)
+	if err != nil {
+		return nil, errors.Wrap(err, "CaptureGroupExecutor.Execute")
+	}
+
+	var resolvers []graphqlbackend.InsightSeriesResolver
+	for i := range generatedSeries {
+		resolvers = append(resolvers, &dynamicInsightSeriesResolver{generated: &generatedSeries[i]})
+	}
+
+	return resolvers, nil
+}
+
+func getSortedCaptureGroups(seriesOptions types.SeriesDisplayOptions, definition types.InsightViewSeries, captureGroups map[string][]store.SeriesPoint) ([]string, int32) {
+	var sortMode types.SeriesSortMode
+	var sortDirection types.SeriesSortDirection
+	var limit int32
+	if seriesOptions.SortOptions != nil {
+		sortMode = seriesOptions.SortOptions.Mode
+		sortDirection = seriesOptions.SortOptions.Direction
+	} else {
+		if definition.SeriesSortMode != nil {
+			sortMode = *definition.SeriesSortMode
+		} else {
+			sortMode = types.ResultCount
+		}
+		if definition.SeriesSortDirection != nil {
+			sortDirection = *definition.SeriesSortDirection
+		} else {
+			sortDirection = types.Desc
+		}
+	}
+
 	orderedCaptureGroups := make([][]store.SeriesPoint, 0, len(captureGroups))
 	for _, value := range captureGroups {
 		orderedCaptureGroups = append(orderedCaptureGroups, value)
@@ -540,59 +613,17 @@ func getSortedCaptureGroups(sortMode types.SeriesSortMode, sortDirection types.S
 	for _, group := range orderedCaptureGroups {
 		groupNames = append(groupNames, *group[0].Capture)
 	}
-	return groupNames
-}
 
-func expandCaptureGroupSeriesJustInTime(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters, seriesOptions types.SeriesDisplayOptions) ([]graphqlbackend.InsightSeriesResolver, error) {
-	executor := query.NewCaptureGroupExecutor(r.postgresDB, r.insightsDB, time.Now)
-	interval := timeseries.TimeInterval{
-		Unit:  types.IntervalUnit(definition.SampleIntervalUnit),
-		Value: definition.SampleIntervalValue,
+	if seriesOptions.Limit != nil {
+		limit = *seriesOptions.Limit
+	} else if definition.SeriesLimit != nil {
+		limit = *definition.SeriesLimit
+	} else {
+		limit = 20
 	}
+	limit = minInt(int(limit), len(groupNames))
 
-	scLoader := &scLoader{primary: r.postgresDB}
-	matchedRepos, err := filterRepositories(ctx, filters, definition.Repositories, scLoader)
-	if err != nil {
-		return nil, err
-	}
-	log15.Debug("capture group series", "seriesId", definition.SeriesID, "filteredRepos", matchedRepos)
-	generatedSeries, err := executor.Execute(ctx, definition.Query, matchedRepos, interval)
-	if err != nil {
-		return nil, errors.Wrap(err, "CaptureGroupExecutor.Execute")
-	}
-
-	var resolvers []graphqlbackend.InsightSeriesResolver
-	for i := range generatedSeries {
-		resolvers = append(resolvers, &dynamicInsightSeriesResolver{generated: &generatedSeries[i]})
-	}
-
-	return resolvers, nil
-}
-
-func streamingSeriesJustInTime(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters, seriesOptions types.SeriesDisplayOptions) ([]graphqlbackend.InsightSeriesResolver, error) {
-	executor := query.NewStreamingExecutor(r.postgresDB, r.insightsDB, time.Now)
-	interval := timeseries.TimeInterval{
-		Unit:  types.IntervalUnit(definition.SampleIntervalUnit),
-		Value: definition.SampleIntervalValue,
-	}
-
-	scLoader := &scLoader{primary: r.postgresDB}
-	matchedRepos, err := filterRepositories(ctx, filters, definition.Repositories, scLoader)
-	if err != nil {
-		return nil, err
-	}
-	log15.Debug("just in time series", "seriesId", definition.SeriesID, "filteredRepos", matchedRepos)
-	generatedSeries, err := executor.Execute(ctx, definition.Query, definition.Label, definition.SeriesID, matchedRepos, interval)
-	if err != nil {
-		return nil, errors.Wrap(err, "CaptureGroupExecutor.Execute")
-	}
-
-	var resolvers []graphqlbackend.InsightSeriesResolver
-	for i := range generatedSeries {
-		resolvers = append(resolvers, &dynamicInsightSeriesResolver{generated: &generatedSeries[i]})
-	}
-
-	return resolvers, nil
+	return groupNames, limit
 }
 
 func minInt(a, b int) int32 {
