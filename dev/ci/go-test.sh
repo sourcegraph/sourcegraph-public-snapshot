@@ -15,13 +15,16 @@ Run go tests, optionally restricting which ones based on the only and exclude co
 EOF
 }
 
-echo "--- install tools"
 # https://github.com/sourcegraph/sourcegraph/issues/28469
-# TODO is that the best way to handle this?
-alias go-junit-report='go run github.com/jstemmer/go-junit-report@latest'
+function go-junit-report() {
+  go run github.com/jstemmer/go-junit-report@latest "$@"
+}
+
 # Set up richgo for better output
-# This fork gives us the `anyStyle` configuration required to hide log lines
-alias richgo='go run github.com/jhchabran/richgo@installable'
+function richgo() {
+  # This fork gives us the `anyStyle` configuration required to hide log lines
+  go run github.com/jhchabran/richgo@installable "$@"
+}
 
 function go_test() {
   local test_packages
