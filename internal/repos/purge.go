@@ -53,10 +53,9 @@ func PurgeOldestRepos(db database.DB, limit int, perSecond float64) error {
 	}
 	log := log15.Root().New("request", "repo-purge")
 	go func() {
-		// Use a background routine so that we don't time out based on the http context.
-		ctx := context.Background()
 		limiter := rate.NewLimiter(rate.Limit(perSecond), 1)
-		if err := purge(ctx, db, log, database.IteratePurgableReposOptions{
+		// Use a background routine so that we don't time out based on the http context.
+		if err := purge(context.Background(), db, log, database.IteratePurgableReposOptions{
 			Limit:   limit,
 			Limiter: limiter,
 		}); err != nil {
