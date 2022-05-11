@@ -60,6 +60,10 @@ import { MonacoBatchSpecEditor } from '../batch-spec/edit/editor/MonacoBatchSpec
 import { LibraryPane } from '../batch-spec/edit/library/LibraryPane'
 import { ExecutionOptions, RunBatchSpecButton } from '../batch-spec/edit/RunBatchSpecButton'
 import { useBatchSpecCode } from '../batch-spec/edit/useBatchSpecCode'
+import { useImportingChangesets } from '../batch-spec/edit/workspaces-preview/useImportingChangesets'
+import { useWorkspaces, WorkspacePreviewFilters } from '../batch-spec/edit/workspaces-preview/useWorkspaces'
+import { useWorkspacesPreview } from '../batch-spec/edit/workspaces-preview/useWorkspacesPreview'
+import { WorkspacesPreview } from '../batch-spec/edit/workspaces-preview/WorkspacesPreview'
 import { BatchSpecDownloadLink } from '../BatchSpec'
 
 import { GET_BATCH_CHANGE_TO_EDIT, CREATE_EMPTY_BATCH_CHANGE, CREATE_BATCH_SPEC_FROM_RAW } from './backend'
@@ -70,10 +74,6 @@ import { NamespaceSelector } from './NamespaceSelector'
 import { useExecuteBatchSpec } from './useExecuteBatchSpec'
 import { useInitialBatchSpec } from './useInitialBatchSpec'
 import { useNamespaces } from './useNamespaces'
-import { useWorkspacesPreview } from './useWorkspacesPreview'
-import { useImportingChangesets } from './workspaces-preview/useImportingChangesets'
-import { useWorkspaces, WorkspacePreviewFilters } from './workspaces-preview/useWorkspaces'
-import { WorkspacesPreview } from './workspaces-preview/WorkspacesPreview'
 
 import styles from './CreateOrEditBatchChangePage.module.scss'
 

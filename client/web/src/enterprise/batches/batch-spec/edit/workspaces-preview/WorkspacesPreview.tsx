@@ -9,21 +9,21 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
 import { Button, useAccordion, useStopwatch, Icon } from '@sourcegraph/wildcard'
 
-import { Connection } from '../../../../components/FilteredConnection'
-import { UseConnectionResult } from '../../../../components/FilteredConnection/hooks/useConnection'
+import { Connection } from '../../../../../components/FilteredConnection'
+import { UseConnectionResult } from '../../../../../components/FilteredConnection/hooks/useConnection'
 import {
     BatchSpecWorkspaceResolutionState,
     PreviewHiddenBatchSpecWorkspaceFields,
     PreviewVisibleBatchSpecWorkspaceFields,
-} from '../../../../graphql-operations'
-import { Header as WorkspacesListHeader } from '../../workspaces-list'
-import { ResolutionState } from '../useWorkspacesPreview'
+} from '../../../../../graphql-operations'
+import { Header as WorkspacesListHeader } from '../../../workspaces-list'
 
 import { ImportingChangesetsPreviewList } from './ImportingChangesetsPreviewList'
 import { PreviewLoadingSpinner } from './PreviewLoadingSpinner'
 import { PreviewPromptIcon } from './PreviewPromptIcon'
 import { ImportingChangesetFields } from './useImportingChangesets'
 import { WorkspacePreviewFilters } from './useWorkspaces'
+import { ResolutionState } from './useWorkspacesPreview'
 import { WorkspacePreviewFilterRow } from './WorkspacesPreviewFilterRow'
 import { WorkspacesPreviewList } from './WorkspacesPreviewList'
 

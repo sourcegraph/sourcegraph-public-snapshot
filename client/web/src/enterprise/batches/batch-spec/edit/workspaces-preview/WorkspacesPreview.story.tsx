@@ -4,12 +4,12 @@ import { noop } from 'lodash'
 
 import { BatchSpecWorkspaceResolutionState } from '@sourcegraph/shared/src/graphql-operations'
 
-import { UseConnectionResult } from '../../../../components/FilteredConnection/hooks/useConnection'
-import { WebStory } from '../../../../components/WebStory'
+import { UseConnectionResult } from '../../../../../components/FilteredConnection/hooks/useConnection'
+import { WebStory } from '../../../../../components/WebStory'
 import {
     PreviewHiddenBatchSpecWorkspaceFields,
     PreviewVisibleBatchSpecWorkspaceFields,
-} from '../../../../graphql-operations'
+} from '../../../../../graphql-operations'
 
 import { ImportingChangesetFields } from './useImportingChangesets'
 import { WorkspacesPreview } from './WorkspacesPreview'

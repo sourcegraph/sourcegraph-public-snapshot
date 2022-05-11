@@ -1,13 +1,13 @@
 import { dataOrThrowErrors } from '@sourcegraph/http-client'
 
-import { useConnection, UseConnectionResult } from '../../../../components/FilteredConnection/hooks/useConnection'
+import { useConnection, UseConnectionResult } from '../../../../../components/FilteredConnection/hooks/useConnection'
 import {
     Scalars,
     PreviewBatchSpecImportingChangesetFields,
     BatchSpecImportingChangesetsResult,
     BatchSpecImportingChangesetsVariables,
-} from '../../../../graphql-operations'
-import { IMPORTING_CHANGESETS } from '../backend'
+} from '../../../../../graphql-operations'
+import { IMPORTING_CHANGESETS } from '../../../create/backend'
 
 export const CHANGESETS_PER_PAGE_COUNT = 100
 
