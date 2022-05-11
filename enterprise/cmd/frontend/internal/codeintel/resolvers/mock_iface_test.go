@@ -7643,6 +7643,9 @@ type MockLSIFStore struct {
 	// DiagnosticsFunc is an instance of a mock function object controlling
 	// the behavior of the method Diagnostics.
 	DiagnosticsFunc *LSIFStoreDiagnosticsFunc
+	// DocumentPathsFunc is an instance of a mock function object
+	// controlling the behavior of the method DocumentPaths.
+	DocumentPathsFunc *LSIFStoreDocumentPathsFunc
 	// DocumentationAtPositionFunc is an instance of a mock function object
 	// controlling the behavior of the method DocumentationAtPosition.
 	DocumentationAtPositionFunc *LSIFStoreDocumentationAtPositionFunc
@@ -7700,6 +7703,11 @@ func NewMockLSIFStore() *MockLSIFStore {
 		},
 		DiagnosticsFunc: &LSIFStoreDiagnosticsFunc{
 			defaultHook: func(context.Context, int, string, int, int) (r0 []lsifstore.Diagnostic, r1 int, r2 error) {
+				return
+			},
+		},
+		DocumentPathsFunc: &LSIFStoreDocumentPathsFunc{
+			defaultHook: func(context.Context, int, string) (r0 []string, r1 int, r2 error) {
 				return
 			},
 		},
@@ -7790,6 +7798,11 @@ func NewStrictMockLSIFStore() *MockLSIFStore {
 				panic("unexpected invocation of MockLSIFStore.Diagnostics")
 			},
 		},
+		DocumentPathsFunc: &LSIFStoreDocumentPathsFunc{
+			defaultHook: func(context.Context, int, string) ([]string, int, error) {
+				panic("unexpected invocation of MockLSIFStore.DocumentPaths")
+			},
+		},
 		DocumentationAtPositionFunc: &LSIFStoreDocumentationAtPositionFunc{
 			defaultHook: func(context.Context, int, string, int, int) ([]string, error) {
 				panic("unexpected invocation of MockLSIFStore.DocumentationAtPosition")
@@ -7870,6 +7883,9 @@ func NewMockLSIFStoreFrom(i LSIFStore) *MockLSIFStore {
 		},
 		DiagnosticsFunc: &LSIFStoreDiagnosticsFunc{
 			defaultHook: i.Diagnostics,
+		},
+		DocumentPathsFunc: &LSIFStoreDocumentPathsFunc{
+			defaultHook: i.DocumentPaths,
 		},
 		DocumentationAtPositionFunc: &LSIFStoreDocumentationAtPositionFunc{
 			defaultHook: i.DocumentationAtPosition,
@@ -8280,6 +8296,120 @@ func (c LSIFStoreDiagnosticsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c LSIFStoreDiagnosticsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// LSIFStoreDocumentPathsFunc describes the behavior when the DocumentPaths
+// method of the parent MockLSIFStore instance is invoked.
+type LSIFStoreDocumentPathsFunc struct {
+	defaultHook func(context.Context, int, string) ([]string, int, error)
+	hooks       []func(context.Context, int, string) ([]string, int, error)
+	history     []LSIFStoreDocumentPathsFuncCall
+	mutex       sync.Mutex
+}
+
+// DocumentPaths delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockLSIFStore) DocumentPaths(v0 context.Context, v1 int, v2 string) ([]string, int, error) {
+	r0, r1, r2 := m.DocumentPathsFunc.nextHook()(v0, v1, v2)
+	m.DocumentPathsFunc.appendCall(LSIFStoreDocumentPathsFuncCall{v0, v1, v2, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the DocumentPaths method
+// of the parent MockLSIFStore instance is invoked and the hook queue is
+// empty.
+func (f *LSIFStoreDocumentPathsFunc) SetDefaultHook(hook func(context.Context, int, string) ([]string, int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DocumentPaths method of the parent MockLSIFStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *LSIFStoreDocumentPathsFunc) PushHook(hook func(context.Context, int, string) ([]string, int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *LSIFStoreDocumentPathsFunc) SetDefaultReturn(r0 []string, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, int, string) ([]string, int, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *LSIFStoreDocumentPathsFunc) PushReturn(r0 []string, r1 int, r2 error) {
+	f.PushHook(func(context.Context, int, string) ([]string, int, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *LSIFStoreDocumentPathsFunc) nextHook() func(context.Context, int, string) ([]string, int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *LSIFStoreDocumentPathsFunc) appendCall(r0 LSIFStoreDocumentPathsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of LSIFStoreDocumentPathsFuncCall objects
+// describing the invocations of this function.
+func (f *LSIFStoreDocumentPathsFunc) History() []LSIFStoreDocumentPathsFuncCall {
+	f.mutex.Lock()
+	history := make([]LSIFStoreDocumentPathsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// LSIFStoreDocumentPathsFuncCall is an object that describes an invocation
+// of method DocumentPaths on an instance of MockLSIFStore.
+type LSIFStoreDocumentPathsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []string
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c LSIFStoreDocumentPathsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c LSIFStoreDocumentPathsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
