@@ -9,14 +9,14 @@ import { BatchSpec } from '@sourcegraph/shared/src/schema/batch_spec.schema'
 import { useDebounce } from '@sourcegraph/wildcard'
 
 import batchSpecSchemaJSON from '../../../../../../schema/batch_spec.schema.json'
+
+import helloWorldSample from './edit/library/hello-world.batch.yaml'
 import {
     excludeRepo as excludeRepoFromYaml,
     hasOnOrImportChangesetsStatement,
     insertNameIntoLibraryItem,
     isMinimalBatchSpec,
-} from '../yaml-util'
-
-import helloWorldSample from './edit/library/hello-world.batch.yaml'
+} from './yaml-util'
 
 const ajv = new AJV()
 addFormats(ajv)

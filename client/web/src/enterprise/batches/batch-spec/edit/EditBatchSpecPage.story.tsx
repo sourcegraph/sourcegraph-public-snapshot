@@ -11,13 +11,13 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../../components/WebStory'
 import { GET_BATCH_CHANGE_TO_EDIT } from '../../create/backend'
-import { insertNameIntoLibraryItem } from '../../yaml-util'
 import {
     mockBatchChange,
     mockBatchSpec,
     UNSTARTED_CONNECTION_MOCKS,
     UNSTARTED_WITH_CACHE_CONNECTION_MOCKS,
 } from '../batch-spec.mock'
+import { insertNameIntoLibraryItem } from '../yaml-util'
 
 import { EditBatchSpecPage } from './EditBatchSpecPage'
 import goImportsSample from './library/go-imports.batch.yaml'
