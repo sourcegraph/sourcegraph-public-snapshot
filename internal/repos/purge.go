@@ -74,7 +74,7 @@ func purge(ctx context.Context, db database.DB, log log15.Logger, options databa
 		failed  int
 	)
 
-	err := database.GitserverRepos(db).IteratePurgeableRepos(ctx, options, func(repo api.RepoName) error {
+	err := db.GitserverRepos().IteratePurgeableRepos(ctx, options, func(repo api.RepoName) error {
 		if options.Limiter != nil {
 			if err := options.Limiter.Wait(ctx); err != nil {
 				// A rate limit failure is fatal
