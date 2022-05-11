@@ -22,6 +22,7 @@ import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExce
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, useObservable, Tab, TabList, TabPanel, TabPanels, Tabs, Icon } from '@sourcegraph/wildcard'
@@ -141,10 +142,11 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
     const areExtensionsReady = useObservable(
         useMemo(() => haveInitialExtensionsLoaded(props.extensionsController.extHostAPI), [props.extensionsController])
     )
-
+    const [redesignedEnabled] = useTemporarySetting('codeintel.referencePanel.redesignedEnabled', false)
     const isExperimentalReferencePanelEnabled =
-        !isErrorLike(props.settingsCascade.final) &&
-        props.settingsCascade.final?.experimentalFeatures?.coolCodeIntel === true
+        (!isErrorLike(props.settingsCascade.final) &&
+            props.settingsCascade.final?.experimentalFeatures?.coolCodeIntel === true) ||
+        redesignedEnabled
 
     const [tabIndex, setTabIndex] = useState(0)
     const location = useLocation()
