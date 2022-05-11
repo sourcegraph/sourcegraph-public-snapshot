@@ -35,6 +35,13 @@ func Test_manualPurgeHandler(t *testing.T) {
 `,
 		},
 		{
+			name:     "limit too large",
+			url:      "https://example.com/manual_purge?limit=10001",
+			wantCode: http.StatusBadRequest,
+			wantBody: `limit must be less than 10000
+`,
+		},
+		{
 			name:     "missing perSecond, default 1.0",
 			url:      "https://example.com/manual_purge?limit=100",
 			wantCode: http.StatusOK,
@@ -44,7 +51,7 @@ func Test_manualPurgeHandler(t *testing.T) {
 			name:     "invalid perSecond",
 			url:      "https://example.com/manual_purge?limit=100&perSecond=0",
 			wantCode: http.StatusBadRequest,
-			wantBody: `invalid per second rate limit. Must be > 0, got 0.000000
+			wantBody: `invalid per second rate limit. Must be > 0.1, got 0.000000
 `,
 		},
 		{

@@ -335,6 +335,10 @@ func manualPurgeHandler(db database.DB) http.HandlerFunc {
 			http.Error(w, "limit must be greater than 0", http.StatusBadRequest)
 			return
 		}
+		if limit > 10000 {
+			http.Error(w, "limit must be less than 10000", http.StatusBadRequest)
+			return
+		}
 		var perSecond = 1.0 // Default value
 		perSecondParam := r.FormValue("perSecond")
 		if perSecondParam != "" {
@@ -343,8 +347,9 @@ func manualPurgeHandler(db database.DB) http.HandlerFunc {
 				http.Error(w, fmt.Sprintf("invalid per second rate limit: %v", err), http.StatusBadRequest)
 				return
 			}
-			if perSecond <= 0 {
-				http.Error(w, fmt.Sprintf("invalid per second rate limit. Must be > 0, got %f", perSecond), http.StatusBadRequest)
+			// Set a sane lower bound
+			if perSecond <= 0.1 {
+				http.Error(w, fmt.Sprintf("invalid per second rate limit. Must be > 0.1, got %f", perSecond), http.StatusBadRequest)
 				return
 			}
 		}
