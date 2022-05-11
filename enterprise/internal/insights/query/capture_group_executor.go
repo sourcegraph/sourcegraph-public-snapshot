@@ -6,6 +6,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 
 	"github.com/inconshreveable/log15"
@@ -103,7 +105,7 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 				continue
 			}
 
-			modifiedQuery, err := SingleRepoQuery(query, repository, string(commits[0].ID))
+			modifiedQuery, err := querybuilder.SingleRepoQuery(query, repository, string(commits[0].ID))
 			if err != nil {
 				return nil, errors.Wrap(err, "SingleRepoQuery")
 			}

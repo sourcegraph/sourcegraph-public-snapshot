@@ -5,6 +5,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
+
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
@@ -73,7 +75,7 @@ func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seri
 				continue
 			}
 
-			modified, err := SingleRepoQuery(query, repository, string(commits[0].ID))
+			modified, err := querybuilder.SingleRepoQuery(query, repository, string(commits[0].ID))
 			if err != nil {
 				return nil, errors.Wrap(err, "SingleRepoQuery")
 			}
