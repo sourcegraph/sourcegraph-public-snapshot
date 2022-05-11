@@ -11,7 +11,7 @@ import classNames from 'classnames'
 import 'storybook-addon-designs'
 
 import { highlightCodeSafe, registerHighlightContributions } from '@sourcegraph/common'
-import { TextArea, Button, ButtonGroup, Link, Select, BUTTON_SIZES, Checkbox } from '@sourcegraph/wildcard'
+import { TextArea, Button, ButtonGroup, Link, Select, BUTTON_SIZES, Checkbox, Typography } from '@sourcegraph/wildcard'
 
 import { BrandedStory } from '../../components/BrandedStory'
 import { CodeSnippet } from '../../components/CodeSnippet'
@@ -179,7 +179,7 @@ export const Layout: Story = () => (
         </p>
 
         <h3>Row layout</h3>
-        <h4>Equally distributed</h4>
+        <Typography.H4>Equally distributed</Typography.H4>
         <div
             className="d-flex p-1 border mb-2 overflow-hidden"
             style={{ resize: 'both', minWidth: '16rem', minHeight: '3rem' }}
@@ -189,7 +189,7 @@ export const Layout: Story = () => (
             <div className="p-1 m-1 flex-grow-1 d-flex justify-content-center align-items-center border">Column 3</div>
         </div>
 
-        <h4>Middle column growing</h4>
+        <Typography.H4>Middle column growing</Typography.H4>
         <div
             className="d-flex p-1 border mb-2 overflow-hidden"
             style={{ resize: 'both', minWidth: '16rem', minHeight: '3rem' }}

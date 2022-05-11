@@ -6,7 +6,7 @@ import { asError, isErrorLike, renderMarkdown } from '@sourcegraph/common'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Alert } from '@sourcegraph/wildcard'
+import { Alert, Typography } from '@sourcegraph/wildcard'
 
 import { ExternalServiceFields, Scalars, AddExternalServiceInput } from '../../graphql-operations'
 import { refreshSiteFlags } from '../../site/backend'
@@ -112,7 +112,7 @@ export const AddExternalServicePage: React.FunctionComponent<React.PropsWithChil
                         />
                     </div>
                     <Alert variant="warning">
-                        <h4>Warning</h4>
+                        <Typography.H4>Warning</Typography.H4>
                         <Markdown dangerousInnerHTML={renderMarkdown(createdExternalService.warning)} />
                     </Alert>
                 </div>

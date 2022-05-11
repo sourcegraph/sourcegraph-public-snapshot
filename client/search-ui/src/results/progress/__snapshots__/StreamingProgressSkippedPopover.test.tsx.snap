@@ -12,7 +12,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       type="button"
     >
       <h4
-        class="d-flex align-items-center mb-0 w-100"
+        class="h4 d-flex align-items-center mb-0 w-100"
       >
         <svg
           class="mdi-icon iconInline icon flex-shrink-0"
@@ -70,7 +70,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       type="button"
     >
       <h4
-        class="d-flex align-items-center mb-0 w-100"
+        class="h4 d-flex align-items-center mb-0 w-100"
       >
         <svg
           class="mdi-icon iconInline icon flex-shrink-0"
@@ -128,7 +128,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       type="button"
     >
       <h4
-        class="d-flex align-items-center mb-0 w-100"
+        class="h4 d-flex align-items-center mb-0 w-100"
       >
         <svg
           class="mdi-icon iconInline icon flex-shrink-0"
@@ -186,7 +186,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       type="button"
     >
       <h4
-        class="d-flex align-items-center mb-0 w-100"
+        class="h4 d-flex align-items-center mb-0 w-100"
       >
         <svg
           class="mdi-icon iconInline icon flex-shrink-0"
@@ -244,7 +244,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       type="button"
     >
       <h4
-        class="d-flex align-items-center mb-0 w-100"
+        class="h4 d-flex align-items-center mb-0 w-100"
       >
         <svg
           class="mdi-icon iconInline icon flex-shrink-0"

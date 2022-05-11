@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { CardBody, Card, Link } from '@sourcegraph/wildcard'
+import { CardBody, Card, Link, Typography } from '@sourcegraph/wildcard'
 
 import { SourcegraphIcon } from '../../../auth/icons'
 
@@ -48,7 +48,7 @@ const BatchChangesUnlicensedAlert: React.FunctionComponent<React.PropsWithChildr
                 {/* d-none d-sm-block ensure that we hide the icon on XS displays. */}
                 <SourcegraphIcon className="mr-3 col-2 mt-2 d-none d-sm-block" />
                 <div>
-                    <h4>Batch changes trial</h4>
+                    <Typography.H4>Batch changes trial</Typography.H4>
                     <p>
                         Batch changes is a paid feature of Sourcegraph. All users can create sample batch changes with
                         up to five changesets without a license.

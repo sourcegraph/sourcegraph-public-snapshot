@@ -7,6 +7,7 @@ import { flow } from 'lodash'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
+import { Typography } from '@sourcegraph/wildcard'
 
 import 'storybook-addon-designs'
 
@@ -62,13 +63,13 @@ export const Alerts: Story = () => (
         <div className="mb-2">
             {ALERT_VARIANTS.map(variant => (
                 <Alert key={variant} variant={variant}>
-                    <h4>Too many matching repositories</h4>
+                    <Typography.H4>Too many matching repositories</Typography.H4>
                     Use a 'repo:' or 'repogroup:' filter to narrow your search.
                 </Alert>
             ))}
             <Alert variant="info" className="d-flex align-items-center">
                 <div className="flex-grow-1">
-                    <h4>Too many matching repositories</h4>
+                    <Typography.H4>Too many matching repositories</Typography.H4>
                     Use a 'repo:' or 'repogroup:' filter to narrow your search.
                 </div>
                 <AlertLink className="mr-2" to="/" onClick={flow(preventDefault, action(classNames('link clicked')))}>
