@@ -693,10 +693,6 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 	})
 }
 
-func TestGenerateSearchRecordings(t *testing.T) {
-
-}
-
 func TestGenerateSearchRecordingsStream(t *testing.T) {
 	t.Run("search stream job with no dependencies", func(t *testing.T) {
 		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
