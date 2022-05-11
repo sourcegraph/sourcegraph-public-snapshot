@@ -8,8 +8,15 @@ import { CodeInsightsBatchesIcon } from './CodeInsightsBatchesIcon'
 
 import styles from './InsightTemplatesBanner.module.scss'
 
-export const InsightTemplatesBanner: React.FunctionComponent<{ insightTitle: string; type: 'create' | 'edit' }> = ({
+interface InsightTemplatesBannerProps {
+    insightTitle: string
+    type: 'create' | 'edit'
+    className?: string
+}
+
+export const InsightTemplatesBanner: React.FunctionComponent<InsightTemplatesBannerProps> = ({
     insightTitle,
+    className,
     type,
 }) => {
     const [heading, paragraph]: [React.ReactNode, React.ReactNode] =
@@ -27,7 +34,7 @@ export const InsightTemplatesBanner: React.FunctionComponent<{ insightTitle: str
               ]
 
     return (
-        <Card className={classNames('mb-5', styles.banner)}>
+        <Card className={classNames(className, styles.banner)}>
             <CardBody>
                 <div className="d-flex justify-content-between align-items-center">
                     <CodeInsightsBatchesIcon className="mr-4" />

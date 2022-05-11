@@ -168,7 +168,7 @@ const CreatePage: React.FunctionComponent<React.PropsWithChildren<CreatePageProp
     return (
         <div className="w-100 p-4">
             <PageTitle title="Create new batch change" />
-            {insightTitle && <InsightTemplatesBanner insightTitle={insightTitle} type="create" />}
+            {insightTitle && <InsightTemplatesBanner insightTitle={insightTitle} type="create" className="mb-5" />}
             <PageHeader
                 path={[{ icon: BatchChangesIcon, to: '.' }, { text: 'Create batch change' }]}
                 className="flex-1 pb-2"
@@ -545,7 +545,9 @@ const EditPage: React.FunctionComponent<React.PropsWithChildren<EditPageProps>> 
                 <LibraryPane name={batchChange.name} onReplaceItem={clearErrorsAndHandleCodeChange} />
                 <div className={styles.editorContainer}>
                     <h4 className={styles.header}>Batch spec</h4>
-                    {insightTitle && <InsightTemplatesBanner insightTitle={insightTitle} type="edit" />}
+                    {insightTitle && (
+                        <InsightTemplatesBanner insightTitle={insightTitle} type="edit" className="mb-3" />
+                    )}
                     <MonacoBatchSpecEditor
                         batchChangeName={batchChange.name}
                         className={styles.editor}
