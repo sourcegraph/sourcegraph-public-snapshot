@@ -2,8 +2,9 @@ package background
 
 import (
 	"context"
-	"strings"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 
 	"github.com/inconshreveable/log15"
 
@@ -102,9 +103,16 @@ func enqueue(ctx context.Context, dataSeries []types.InsightSeries, mode store.P
 		}
 		uniqueSeries[seriesID] = series
 
-		err := enqueueQueryRunnerJob(ctx, &queryrunner.Job{
+		// Construct the search query that will generate data for this repository and time (revision) tuple.
+		modifiedQuery, err := querybuilder.GlobalQuery(series.Query)
+		if err != nil {
+			multi = errors.Append(multi, errors.Wrapf(err, "GlobalQuery series_id:%s", seriesID))
+			continue
+		}
+
+		err = enqueueQueryRunnerJob(ctx, &queryrunner.Job{
 			SeriesID:    seriesID,
-			SearchQuery: withCountUnlimited(series.Query),
+			SearchQuery: modifiedQuery,
 			State:       "queued",
 			Priority:    int(priority.High),
 			Cost:        int(priority.Indexed),
@@ -126,17 +134,4 @@ func enqueue(ctx context.Context, dataSeries []types.InsightSeries, mode store.P
 	}
 
 	return multi
-}
-
-// withCountUnlimited adds `count:9999999` to the given search query string iff `count:` does not
-// exist in the query string. This is extremely important as otherwise the number of results our
-// search query would return would be incomplete and fluctuate.
-//
-// TODO(slimsag): future: we should pull in the search query parser to avoid cases where `count:`
-// is actually e.g. a search query like `content:"count:"`.
-func withCountUnlimited(s string) string {
-	if strings.Contains(s, "count:") {
-		return s
-	}
-	return s + " count:all"
 }
