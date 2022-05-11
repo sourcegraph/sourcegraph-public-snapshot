@@ -153,7 +153,7 @@ SELECT
 	u.num_resets,
 	u.num_failures,
 	u.repository_id,
-	u.repository_name,
+	repo.name,
 	u.docker_steps,
 	u.root,
 	u.indexer,
@@ -163,11 +163,11 @@ SELECT
 	s.rank,
 	u.local_steps,
 	` + indexAssociatedUploadIDQueryFragment + `
-FROM lsif_indexes_with_repository_name u
+FROM lsif_indexes u
 LEFT JOIN (` + indexRankQueryFragment + `) s
 ON u.id = s.id
 JOIN repo ON repo.id = u.repository_id
-WHERE u.id = %s AND %s
+WHERE repo.deleted_at IS NULL AND u.id = %s AND %s
 `
 
 // GetIndexesByIDs returns an index for each of the given identifiers. Not all given ids will necessarily
@@ -209,7 +209,7 @@ SELECT
 	u.num_resets,
 	u.num_failures,
 	u.repository_id,
-	u.repository_name,
+	repo.name,
 	u.docker_steps,
 	u.root,
 	u.indexer,
@@ -219,11 +219,11 @@ SELECT
 	s.rank,
 	u.local_steps,
 	` + indexAssociatedUploadIDQueryFragment + `
-FROM lsif_indexes_with_repository_name u
+FROM lsif_indexes u
 LEFT JOIN (` + indexRankQueryFragment + `) s
 ON u.id = s.id
 JOIN repo ON repo.id = u.repository_id
-WHERE u.id IN (%s) AND %s
+WHERE repo.deleted_at IS NULL AND u.id IN (%s) AND %s
 ORDER BY u.id
 `
 
@@ -290,9 +290,9 @@ func (s *Store) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Ind
 const getIndexesCountQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/indexes.go:GetIndexes
 SELECT COUNT(*)
-FROM lsif_indexes_with_repository_name u
+FROM lsif_indexes u
 JOIN repo ON repo.id = u.repository_id
-WHERE %s
+WHERE repo.deleted_at IS NULL AND %s
 `
 
 const getIndexesQuery = `
@@ -309,7 +309,7 @@ SELECT
 	u.num_resets,
 	u.num_failures,
 	u.repository_id,
-	u.repository_name,
+	repo.name,
 	u.docker_steps,
 	u.root,
 	u.indexer,
@@ -319,11 +319,11 @@ SELECT
 	s.rank,
 	u.local_steps,
 	` + indexAssociatedUploadIDQueryFragment + `
-FROM lsif_indexes_with_repository_name u
+FROM lsif_indexes u
 LEFT JOIN (` + indexRankQueryFragment + `) s
 ON u.id = s.id
 JOIN repo ON repo.id = u.repository_id
-WHERE %s ORDER BY queued_at DESC, u.id LIMIT %d OFFSET %d
+WHERE repo.deleted_at IS NULL AND %s ORDER BY queued_at DESC, u.id LIMIT %d OFFSET %d
 `
 
 // makeIndexSearchCondition returns a disjunction of LIKE clauses against all searchable columns of an index.
@@ -332,7 +332,7 @@ func makeIndexSearchCondition(term string) *sqlf.Query {
 		"u.commit",
 		"(u.state)::text",
 		"u.failure_message",
-		`u.repository_name`,
+		`repo.name`,
 		"u.root",
 		"u.indexer",
 	}

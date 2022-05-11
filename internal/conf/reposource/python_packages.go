@@ -64,6 +64,8 @@ func (p *PythonDependency) PackageVersion() string {
 	return p.Version
 }
 
+func (p *PythonDependency) Description() string { return "" }
+
 func (p *PythonDependency) RepoName() api.RepoName {
 	return api.RepoName("python/" + p.Name)
 }

@@ -23,14 +23,8 @@ import (
 func NewNpmPackagesSyncer(
 	connection schema.NpmPackagesConnection,
 	svc *dependencies.Service,
-	customClient npm.Client,
-	urn string,
+	client npm.Client,
 ) VCSSyncer {
-	var client = customClient
-	if client == nil {
-		client = npm.NewHTTPClient(urn, connection.Registry, connection.Credentials)
-	}
-
 	placeholder, err := reposource.ParseNpmDependency("@sourcegraph/placeholder@1.0.0")
 	if err != nil {
 		panic(fmt.Sprintf("expected placeholder package to parse but got %v", err))

@@ -63,10 +63,10 @@ type HTTPClient struct {
 	credentials string
 }
 
-func NewHTTPClient(urn string, registryURL string, credentials string) *HTTPClient {
+func NewHTTPClient(urn string, registryURL string, credentials string, doer httpcli.Doer) *HTTPClient {
 	return &HTTPClient{
 		registryURL: registryURL,
-		doer:        httpcli.ExternalDoer,
+		doer:        doer,
 		limiter:     ratelimit.DefaultRegistry.Get(urn),
 		credentials: credentials,
 	}
@@ -94,7 +94,8 @@ func (client *HTTPClient) GetPackageInfo(ctx context.Context, pkg *reposource.Np
 }
 
 type DependencyInfo struct {
-	Dist DependencyInfoDist `json:"dist"`
+	Description string             `json:"description"`
+	Dist        DependencyInfoDist `json:"dist"`
 }
 
 type DependencyInfoDist struct {
