@@ -670,11 +670,7 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 		}
 
 		mocked := func(context.Context, string) (*streaming.ComputeTabulationResult, error) {
-			return &streaming.ComputeTabulationResult{
-				StreamDecoderEvents: streaming.StreamDecoderEvents{
-					Errors: []string{"error 1"},
-				},
-			}, nil
+			return &streaming.ComputeTabulationResult{}, errors.New("error")
 		}
 
 		handler := workHandler{
@@ -691,9 +687,8 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 		if len(recordings) != 0 {
 			t.Error("No records should be returned as we errored on compute stream")
 		}
-		var expectedErr StreamingError
-		if !errors.As(err, &expectedErr) {
-			t.Error(fmt.Errorf("Incorrect error returned, got %q", err))
+		if err == nil {
+			t.Error("Expected error but received nil")
 		}
 	})
 }

@@ -290,7 +290,7 @@ func (r *workHandler) generateSearchRecordingsStream(ctx context.Context, job *J
 		log15.Error("insights query issue", "reasons", tr.SkippedReasons, "query", job.SearchQuery)
 	}
 	if len(tr.Errors) > 0 {
-		return nil, StreamingError{Messages: tr.Errors}
+		log15.Error("streaming errors", "errors", tr.Errors)
 	}
 
 	checker := authz.DefaultSubRepoPermsChecker
