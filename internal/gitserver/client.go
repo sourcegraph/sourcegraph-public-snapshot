@@ -319,6 +319,13 @@ var addrForRepoAddrMismatch = promauto.NewCounterVec(prometheus.CounterOpts{
 	Help: "Number of times the gitserver_repos state and the result of gitserver.AddrForRepo are mismatched",
 }, []string{"user_agent"})
 
+// addrForRepoAddrFromDB is used to count the number of times we called the
+// database to get the gitserver address for a repo.
+var addrForRepoAddrFromDB = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "src_gitserver_addr_for_repo_addr_from_db",
+	Help: "Number of times the gitserver address for a repo is retrieved from the database",
+}, []string{"user_agent"})
+
 // AddrForRepo returns the gitserver address to use for the given repo name.
 // It should never be called with a nil addresses pointer.
 func AddrForRepo(ctx context.Context, userAgent string, db database.DB, repo api.RepoName, addresses GitServerAddresses) (string, error) {
@@ -371,6 +378,8 @@ func AddrForRepo(ctx context.Context, userAgent string, db database.DB, repo api
 				}
 				span.Finish()
 			}()
+
+			addrForRepoAddrFromDB.WithLabelValues(userAgent).Inc()
 
 			gr, err := db.GitserverRepos().GetByName(ctx, repo)
 			switch {
