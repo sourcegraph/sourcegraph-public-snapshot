@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 
-import { Scalars } from '../../../../graphql-operations'
-import { Header as WorkspacesListHeader } from '../../workspaces-list'
+import { Scalars } from '../../../../../graphql-operations'
+import { Header as WorkspacesListHeader } from '../../../workspaces-list'
 import { useWorkspacesListConnection } from '../backend'
 
 import { WorkspaceFilterRow, WorkspaceFilters } from './WorkspacesFilterRow'

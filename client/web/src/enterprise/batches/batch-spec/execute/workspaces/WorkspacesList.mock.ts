@@ -3,7 +3,7 @@ import {
     EditBatchChangeFields,
     BatchSpecWorkspaceState,
     VisibleBatchSpecWorkspaceListFields,
-} from '../../../../graphql-operations'
+} from '../../../../../graphql-operations'
 
 export const mockBatchSpec = (): EditBatchChangeFields['currentSpec'] => ({
     __typename: 'BatchSpec',

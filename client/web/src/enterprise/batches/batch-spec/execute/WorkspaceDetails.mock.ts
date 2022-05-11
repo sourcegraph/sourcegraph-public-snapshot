@@ -6,7 +6,7 @@ import {
     ChangesetSpecType,
     HiddenBatchSpecWorkspaceFields,
     VisibleBatchSpecWorkspaceFields,
-} from '../../../graphql-operations'
+} from '../../../../graphql-operations'
 
 const now = new Date()
 

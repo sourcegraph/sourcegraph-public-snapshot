@@ -9,7 +9,7 @@ import { Link, Button, Icon } from '@sourcegraph/wildcard'
 import { Timestamp } from '../../components/time/Timestamp'
 import { BatchChangeFields } from '../../graphql-operations'
 
-import { MonacoBatchSpecEditor } from './create/editor/MonacoBatchSpecEditor'
+import { MonacoBatchSpecEditor } from './batch-spec/edit/editor/MonacoBatchSpecEditor'
 
 /** Reports whether `string` is a valid JSON document. */
 const isJSON = (string: string): boolean => {

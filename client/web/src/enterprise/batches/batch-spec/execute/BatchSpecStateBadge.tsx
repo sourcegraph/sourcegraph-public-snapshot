@@ -2,7 +2,7 @@ import React from 'react'
 
 import { Badge } from '@sourcegraph/wildcard'
 
-import { BatchSpecState } from '../../../graphql-operations'
+import { BatchSpecState } from '../../../../graphql-operations'
 
 export interface BatchSpecStateBadgeProps {
     state: BatchSpecState
