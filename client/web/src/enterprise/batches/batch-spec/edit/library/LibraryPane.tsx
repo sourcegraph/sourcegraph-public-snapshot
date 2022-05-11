@@ -6,8 +6,8 @@ import { animated, useSpring } from 'react-spring'
 
 import { Button, useLocalStorage, Icon, Link } from '@sourcegraph/wildcard'
 
-import { Scalars } from '../../../../graphql-operations'
-import { insertNameIntoLibraryItem } from '../yaml-util'
+import { Scalars } from '../../../../../graphql-operations'
+import { insertNameIntoLibraryItem } from '../../../create/yaml-util'
 
 import combySample from './comby.batch.yaml'
 import goImportsSample from './go-imports.batch.yaml'

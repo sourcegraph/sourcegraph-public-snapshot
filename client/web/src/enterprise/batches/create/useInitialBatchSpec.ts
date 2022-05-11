@@ -1,8 +1,8 @@
 import { useMemo } from 'react'
 
 import { EditBatchChangeFields } from '../../../graphql-operations'
+import helloWorldSample from '../batch-spec/edit/library/hello-world.batch.yaml'
 
-import helloWorldSample from './library/hello-world.batch.yaml'
 import { insertNameIntoLibraryItem, isMinimalBatchSpec } from './yaml-util'
 
 interface UseInitialBatchSpecResult {

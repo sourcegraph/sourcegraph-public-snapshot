@@ -57,6 +57,7 @@ import {
 } from '../../../graphql-operations'
 import { EditorFeedbackPanel } from '../batch-spec/edit/editor/EditorFeedbackPanel'
 import { MonacoBatchSpecEditor } from '../batch-spec/edit/editor/MonacoBatchSpecEditor'
+import { LibraryPane } from '../batch-spec/edit/library/LibraryPane'
 import { ExecutionOptions, RunBatchSpecButton } from '../batch-spec/edit/RunBatchSpecButton'
 import { BatchSpecDownloadLink } from '../BatchSpec'
 
@@ -64,7 +65,6 @@ import { GET_BATCH_CHANGE_TO_EDIT, CREATE_EMPTY_BATCH_CHANGE, CREATE_BATCH_SPEC_
 import { CodeInsightsBatchesIcon } from './CodeInsightsBatchesIcon'
 import { DownloadSpecModal } from './DownloadSpecModal'
 import { getTemplateRenderer } from './go-checker-templates'
-import { LibraryPane } from './library/LibraryPane'
 import { NamespaceSelector } from './NamespaceSelector'
 import { useBatchSpecCode } from './useBatchSpecCode'
 import { useExecuteBatchSpec } from './useExecuteBatchSpec'
