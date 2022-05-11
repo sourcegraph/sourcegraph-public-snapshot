@@ -28,15 +28,11 @@ import {
 import { ReferenceCounter } from './utils/ReferenceCounter'
 
 export function createExtensionHostState(
-    initData: Pick<InitData, 'initialSettings' | 'clientApplication' | 'sourcegraphURL'>,
+    initData: Pick<InitData, 'initialSettings' | 'clientApplication'>,
     mainAPI: comlink.Remote<MainThreadAPI>,
     mainThreadAPIInitializations: Observable<boolean>
 ): ExtensionHostState {
     const { activeLanguages, activeExtensions } = observeActiveExtensions(mainAPI, mainThreadAPIInitializations)
-
-    const allowOnlySourcegraphAuthoredExtensions =
-        new URL(initData.sourcegraphURL).hostname !== 'sourcegraph.com' &&
-        allowOnlySourcegraphAuthoredExtensionsFromSettings(initData.initialSettings)
 
     return {
         haveInitialExtensionsLoaded: new BehaviorSubject<boolean>(false),
@@ -106,7 +102,7 @@ export function createExtensionHostState(
             readonly { urlMatchPattern: string; provider: sourcegraph.LinkPreviewProvider }[]
         >([]),
 
-        activeExtensions: allowOnlySourcegraphAuthoredExtensions
+        activeExtensions: allowOnlySourcegraphAuthoredExtensionsFromSettings(initData.initialSettings).value
             ? activeExtensions.pipe(
                   map(extensions => extensions.filter(({ id }) => isSourcegraphAuthoredExtension(id)))
               )

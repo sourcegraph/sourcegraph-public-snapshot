@@ -26,7 +26,6 @@ import { queryGraphQL } from '../../backend/graphql'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
-import { LayoutRouteComponentProps } from '../../routes'
 import { RouteDescriptor } from '../../util/contributions'
 import { ExtensionsAreaRouteContext } from '../ExtensionsArea'
 
@@ -99,8 +98,7 @@ export interface ExtensionAreaRouteContext
     extends SettingsCascadeProps,
         PlatformContextProps,
         ThemeProps,
-        TelemetryProps,
-        Pick<LayoutRouteComponentProps<any>, 'isSourcegraphDotCom'> {
+        TelemetryProps {
     /** The extension registry area main URL. */
     url: string
 
@@ -219,7 +217,6 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
             platformContext: this.props.platformContext,
             isLightTheme: this.props.isLightTheme,
             telemetryService: this.props.telemetryService,
-            isSourcegraphDotCom: this.props.isSourcegraphDotCom,
         }
 
         return (

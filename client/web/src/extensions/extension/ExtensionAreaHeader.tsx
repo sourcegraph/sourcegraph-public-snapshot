@@ -82,13 +82,14 @@ export const ExtensionAreaHeader: React.FunctionComponent<React.PropsWithChildre
 
     const toggleDisabledReason = !props.authenticatedUser
         ? ToggleDisabledReason.NotAuthenticated
-        : !props.isSourcegraphDotCom &&
-          allowOnlySourcegraphAuthoredExtensionsFromSettings(props.settingsCascade) &&
+        : allowOnlySourcegraphAuthoredExtensionsFromSettings(props.settingsCascade).value &&
           !isSourcegraphAuthoredExtension(props.extension.id)
         ? ToggleDisabledReason.ForbiddenToInstallNonSourcegraphAuthoredExtensions
         : undefined
 
     const userCannotToggle = toggleDisabledReason !== undefined
+    const isNotAllowed =
+        toggleDisabledReason === ToggleDisabledReason.ForbiddenToInstallNonSourcegraphAuthoredExtensions
 
     const onHover = useCallback(() => {
         if (!disabledReason) {
@@ -195,6 +196,7 @@ export const ExtensionAreaHeader: React.FunctionComponent<React.PropsWithChildre
                                                             onHover={onHover}
                                                             userCannotToggle={userCannotToggle}
                                                             subject={props.authenticatedUser}
+                                                            isNotAllowed={isNotAllowed}
                                                         />
                                                     </div>
                                                     {/* Site admin toggle */}
@@ -219,6 +221,7 @@ export const ExtensionAreaHeader: React.FunctionComponent<React.PropsWithChildre
                                                             onHover={onHover}
                                                             userCannotToggle={userCannotToggle}
                                                             subject={siteSubject.subject}
+                                                            isNotAllowed={isNotAllowed}
                                                         />
                                                     </div>
                                                 </div>
@@ -239,6 +242,7 @@ export const ExtensionAreaHeader: React.FunctionComponent<React.PropsWithChildre
                                             onHover={onHover}
                                             userCannotToggle={userCannotToggle}
                                             subject={props.authenticatedUser}
+                                            isNotAllowed={isNotAllowed}
                                         />
                                     )}
                                 </div>

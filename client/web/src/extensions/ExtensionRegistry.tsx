@@ -168,8 +168,9 @@ export const ExtensionRegistry: React.FunctionComponent<React.PropsWithChildren<
         setShowExperimentalExtensions(!showExperimentalExtensions)
     }
 
-    const allowOnlySourcegraphAuthoredExtensions =
-        !isSourcegraphDotCom && allowOnlySourcegraphAuthoredExtensionsFromSettings(settingsCascade)
+    const { value: allowOnlySourcegraphAuthoredExtensions } = allowOnlySourcegraphAuthoredExtensionsFromSettings(
+        settingsCascade
+    )
 
     /**
      * Note: pass `settingsCascade` instead of making it a dependency to prevent creating
