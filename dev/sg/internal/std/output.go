@@ -73,7 +73,7 @@ func (o *Output) WriteSuccessf(fmtStr string, args ...any) {
 
 // WriteFailuref should be used to communicate a major failure to the user.
 //
-// The line is rendered with writeExpandPrevious.
+// In Buildkite it expands the previous and current section to make them visible.
 func (o *Output) WriteFailuref(fmtStr string, args ...any) {
 	o.writeExpandPrevious(output.Linef(output.EmojiFailure, output.StyleWarning, fmtStr, args...))
 }
@@ -93,7 +93,9 @@ func (o *Output) WriteSuggestionf(fmtStr string, args ...any) {
 	o.WriteLine(output.Linef(output.EmojiLightbulb, output.StyleSuggestion, fmtStr, args...))
 }
 
-// WriteAlertf prints a bold alert notice for the user. It is rendered as a header.
+// WriteAlertf prints a bold alert notice for the user.
+//
+// In Buildkite it expands the current section to make it visible.
 func (o *Output) WriteAlertf(fmtStr string, args ...any) {
 	o.writeExpanded(output.Styledf(output.CombineStyles(output.StyleBold, output.StyleOrange), fmtStr, args...))
 }
@@ -101,7 +103,7 @@ func (o *Output) WriteAlertf(fmtStr string, args ...any) {
 // WriteNoticef should be used to raise major events to the user's attention, such as a
 // prompt or the beginning of a major task.
 //
-// The line is rendered with writeExpanded.
+// In Buildkite it expands the current section to make it visible.
 func (o *Output) WriteNoticef(fmtStr string, args ...any) {
 	o.writeExpanded(output.Linef(output.EmojiFingerPointRight, output.StyleBold, fmtStr, args...))
 }
