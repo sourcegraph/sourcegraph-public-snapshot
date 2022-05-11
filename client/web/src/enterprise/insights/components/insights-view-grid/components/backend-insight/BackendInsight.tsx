@@ -8,13 +8,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { useDebounce, useDeepMemo } from '@sourcegraph/wildcard'
 
 import { SeriesDisplayOptionsInput } from '../../../../../../graphql-operations'
-import {
-    BackendInsight,
-    CodeInsightsBackendContext,
-    DEFAULT_SERIES_DISPLAY_OPTIONS,
-    InsightFilters,
-} from '../../../../core'
-import { SeriesDisplayOptionsInputRequired } from '../../../../core/types/insight/common'
+import { BackendInsight, CodeInsightsBackendContext, InsightFilters } from '../../../../core'
 import { LazyQueryStatus } from '../../../../hooks/use-parallel-requests/use-parallel-request'
 import { getTrackingTypeByInsightType, useCodeInsightViewPings } from '../../../../pings'
 import { FORM_ERROR, SubmissionErrors } from '../../../form/hooks/useForm'
@@ -29,6 +23,7 @@ import {
     DrillDownInsightCreationFormValues,
     BackendInsightChart,
 } from './components'
+import { parseSeriesDisplayOptions } from './components/drill-down-filters-panel/drill-down-filters/utils'
 
 import styles from './BackendInsight.module.scss'
 
@@ -63,7 +58,7 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
     // Original insight filters values that are stored in setting subject with insight
     // configuration object, They are updated  whenever the user clicks update/save button
     const [originalInsightFilters, setOriginalInsightFilters] = useState(cachedInsight.filters)
-    const [originalSeriesDisplayOptions] = useState(parseSeriesDisplayOptions(cachedInsight.seriesDisplayOptions))
+    const [originalSeriesDisplayOptions] = useState(cachedInsight.seriesDisplayOptions)
 
     // Live valid filters from filter form. They are updated whenever the user is changing
     // filter value in filters fields.
@@ -164,7 +159,9 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
                             onFilterSave={handleFilterSave}
                             onInsightCreate={handleInsightFilterCreation}
                             onVisibilityChange={setIsFiltersOpen}
-                            originalSeriesDisplayOptions={parseSeriesDisplayOptions(insight.seriesDisplayOptions)}
+                            originalSeriesDisplayOptions={parseSeriesDisplayOptions(
+                                insight.defaultSeriesDisplayOptions
+                            )}
                             onSeriesDisplayOptionsChange={setSeriesDisplayOptions}
                         />
                         <InsightContextMenu
@@ -194,24 +191,4 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
             }
         </InsightCard>
     )
-}
-
-// Exporting to make testing easier
-// The backend allows for limit and sortOptions to be undefined
-// To simplify logic on the front end we ensure that a value is always proved
-export const parseSeriesDisplayOptions = (options: SeriesDisplayOptionsInput): SeriesDisplayOptionsInputRequired => {
-    const limit = options.limit || DEFAULT_SERIES_DISPLAY_OPTIONS.limit
-    const sortOptions = options.sortOptions || DEFAULT_SERIES_DISPLAY_OPTIONS.sortOptions
-
-    if (!sortOptions.direction) {
-        sortOptions.direction = DEFAULT_SERIES_DISPLAY_OPTIONS.sortOptions.direction
-    }
-
-    if (!sortOptions.mode) {
-        sortOptions.mode = DEFAULT_SERIES_DISPLAY_OPTIONS.sortOptions.mode
-    }
-    return {
-        limit,
-        sortOptions,
-    }
 }

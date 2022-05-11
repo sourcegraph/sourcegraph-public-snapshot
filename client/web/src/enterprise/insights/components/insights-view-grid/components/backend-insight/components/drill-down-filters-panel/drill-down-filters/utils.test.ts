@@ -1,7 +1,8 @@
-import { SeriesSortDirection, SeriesSortMode } from '../../../../../../../graphql-operations'
-import { DEFAULT_SERIES_DISPLAY_OPTIONS } from '../../../../../core'
-import { SeriesDisplayOptionsInputRequired } from '../../../../../core/types/insight/common'
-import { parseSeriesDisplayOptions } from '../BackendInsight'
+import { SeriesSortDirection, SeriesSortMode } from '../../../../../../../../../graphql-operations'
+import { DEFAULT_SERIES_DISPLAY_OPTIONS } from '../../../../../../../core'
+import { SeriesDisplayOptionsInputRequired } from '../../../../../../../core/types/insight/common'
+
+import { parseSeriesDisplayOptions } from './utils'
 
 const TEST_SERIES_DISPLAY_OPTIONS: SeriesDisplayOptionsInputRequired = {
     limit: 10,
@@ -14,7 +15,7 @@ const TEST_SERIES_DISPLAY_OPTIONS: SeriesDisplayOptionsInputRequired = {
 describe('BackendInsight', () => {
     describe('parseSeriesDisplayOptions', () => {
         it('returns default values when provided an empty object', () => {
-            const parsed = parseSeriesDisplayOptions({})
+            const parsed = parseSeriesDisplayOptions()
             expect(parsed).toEqual(DEFAULT_SERIES_DISPLAY_OPTIONS)
         })
 
@@ -24,12 +25,15 @@ describe('BackendInsight', () => {
         })
 
         it('provides default limit', () => {
-            const parsed = parseSeriesDisplayOptions({ ...TEST_SERIES_DISPLAY_OPTIONS, limit: undefined })
+            const parsed = parseSeriesDisplayOptions({ ...TEST_SERIES_DISPLAY_OPTIONS, limit: null })
             expect(parsed.limit).toEqual(DEFAULT_SERIES_DISPLAY_OPTIONS.limit)
         })
 
         it('provides default sortOptions', () => {
-            const parsed = parseSeriesDisplayOptions({ ...TEST_SERIES_DISPLAY_OPTIONS, sortOptions: undefined })
+            const parsed = parseSeriesDisplayOptions({
+                ...TEST_SERIES_DISPLAY_OPTIONS,
+                sortOptions: { mode: null, direction: null },
+            })
             expect(parsed.sortOptions).toEqual(DEFAULT_SERIES_DISPLAY_OPTIONS.sortOptions)
         })
     })
