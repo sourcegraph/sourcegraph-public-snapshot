@@ -59,11 +59,11 @@ import { EditorFeedbackPanel } from '../batch-spec/edit/editor/EditorFeedbackPan
 import { MonacoBatchSpecEditor } from '../batch-spec/edit/editor/MonacoBatchSpecEditor'
 import { LibraryPane } from '../batch-spec/edit/library/LibraryPane'
 import { ExecutionOptions, RunBatchSpecButton } from '../batch-spec/edit/RunBatchSpecButton'
-import { useBatchSpecCode } from '../batch-spec/edit/useBatchSpecCode'
 import { useImportingChangesets } from '../batch-spec/edit/workspaces-preview/useImportingChangesets'
 import { useWorkspaces, WorkspacePreviewFilters } from '../batch-spec/edit/workspaces-preview/useWorkspaces'
 import { useWorkspacesPreview } from '../batch-spec/edit/workspaces-preview/useWorkspacesPreview'
 import { WorkspacesPreview } from '../batch-spec/edit/workspaces-preview/WorkspacesPreview'
+import { useBatchSpecCode } from '../batch-spec/useBatchSpecCode'
 import { BatchSpecDownloadLink } from '../BatchSpec'
 
 import { GET_BATCH_CHANGE_TO_EDIT, CREATE_EMPTY_BATCH_CHANGE, CREATE_BATCH_SPEC_FROM_RAW } from './backend'
