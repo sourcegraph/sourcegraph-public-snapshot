@@ -66,6 +66,8 @@ function handleRequest(
         onSuccessCallback('{}')
     } else if (request.action === 'loadLastSearch') {
         onSuccessCallback(JSON.stringify(savedSearch))
+    } else if (request.action === 'indicateFinishedLoading') {
+        onSuccessCallback('{}')
     } else {
         onFailureCallback(2, `Unknown action: ${request.action as string}`)
     }

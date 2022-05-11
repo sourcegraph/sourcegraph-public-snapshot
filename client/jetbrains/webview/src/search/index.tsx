@@ -116,6 +116,7 @@ window.initializeSourcegraph = async () => {
     applyConfig(config)
     applyTheme(theme)
     renderReactApp()
+    await window.callJava({ action: 'indicateFinishedLoading', arguments: {} })
 }
 
 /* Initialize app for standalone server */
