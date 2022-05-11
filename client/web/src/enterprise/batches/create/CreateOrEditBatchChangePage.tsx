@@ -62,7 +62,7 @@ import { CodeInsightsBatchesIcon } from './CodeInsightsBatchesIcon'
 import { DownloadSpecModal } from './DownloadSpecModal'
 import { EditorFeedbackPanel } from './editor/EditorFeedbackPanel'
 import { MonacoBatchSpecEditor } from './editor/MonacoBatchSpecEditor'
-import { ExecutionOptions, ExecutionOptionsDropdown } from './ExecutionOptions'
+import { ExecutionOptions, RunBatchSpecButton } from '../batch-spec/edit/RunBatchSpecButton'
 import { getTemplateRenderer } from './go-checker-templates'
 import { LibraryPane } from './library/LibraryPane'
 import { NamespaceSelector } from './NamespaceSelector'
@@ -548,7 +548,7 @@ const EditPage: React.FunctionComponent<React.PropsWithChildren<EditPageProps>> 
 
     const actionButtons = (
         <>
-            <ExecutionOptionsDropdown
+            <RunBatchSpecButton
                 execute={executeBatchSpec}
                 isExecutionDisabled={isExecutionDisabled}
                 executionTooltip={executionTooltip}

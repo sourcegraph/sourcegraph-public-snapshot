@@ -17,13 +17,13 @@ import {
     Icon,
 } from '@sourcegraph/wildcard'
 
-import styles from './ExecutionOptions.module.scss'
+import styles from './RunBatchSpecButton.module.scss'
 
 export interface ExecutionOptions {
     runWithoutCache: boolean
 }
 
-interface ExecutionOptionsDropdownProps {
+interface RunBatchSpecButtonProps {
     execute: () => void
     isExecutionDisabled: boolean
     executionTooltip?: string
@@ -31,9 +31,13 @@ interface ExecutionOptionsDropdownProps {
     onChangeOptions: (newOptions: ExecutionOptions) => void
 }
 
-export const ExecutionOptionsDropdown: React.FunctionComponent<
-    React.PropsWithChildren<ExecutionOptionsDropdownProps>
-> = ({ execute, isExecutionDisabled, executionTooltip, options, onChangeOptions }) => {
+export const RunBatchSpecButton: React.FunctionComponent<React.PropsWithChildren<RunBatchSpecButtonProps>> = ({
+    execute,
+    isExecutionDisabled,
+    executionTooltip,
+    options,
+    onChangeOptions,
+}) => {
     const [isOpen, setIsOpen] = useState(false)
 
     return (
