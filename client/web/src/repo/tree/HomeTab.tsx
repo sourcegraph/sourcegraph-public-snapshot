@@ -400,7 +400,7 @@ export const HomeTabBatchChangeBadge: React.FunctionComponent<
             const summaryTexts = summaries.map(({ value, name }) => `${value} ${name}`)
 
             return (
-                <div className={styles.item} key={id}>
+                <li className={styles.item} key={id}>
                     <Badge variant="success" className={badgeClassNames}>
                         OPEN
                     </Badge>
@@ -410,13 +410,13 @@ export const HomeTabBatchChangeBadge: React.FunctionComponent<
                         </Link>
                         <div>{summaryTexts.join(', ')}</div>
                     </div>
-                </div>
+                </li>
             )
         }
     )
     return (
         <>
-            {items}
+            <ul className={styles.list}>{items}</ul>
             {allBatchChanges}
         </>
     )
