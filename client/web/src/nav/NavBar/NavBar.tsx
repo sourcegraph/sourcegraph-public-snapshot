@@ -66,7 +66,7 @@ export const NavBar = ({ children, logo }: NavBarProps): JSX.Element => (
                 {logo}
             </RouterLink>
         </h1>
-        <hr className={navBarStyles.divider} />
+        <hr className={navBarStyles.divider} aria-hidden={true} />
         {children}
     </nav>
 )

@@ -10,6 +10,23 @@ import (
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 )
 
+type StreamDecoderEvents struct {
+	SkippedReasons []string
+	Errors         []string
+}
+
+type SearchMatch struct {
+	RepositoryID   int32
+	RepositoryName string
+	MatchCount     int
+}
+
+type TabulationResult struct {
+	StreamDecoderEvents
+	RepoCounts map[string]*SearchMatch
+	TotalCount int
+}
+
 // TabulationDecoder will tabulate the result counts per repository.
 func TabulationDecoder() (streamhttp.FrontendStreamDecoder, *TabulationResult) {
 	var tr = &TabulationResult{
@@ -72,32 +89,13 @@ func TabulationDecoder() (streamhttp.FrontendStreamDecoder, *TabulationResult) {
 	}, tr
 }
 
-type TabulationResult struct {
-	StreamDecoderEvents
-	RepoCounts map[string]*SearchMatch
-	TotalCount int
-}
-
-type StreamDecoderEvents struct {
-	SkippedReasons []string
-	Errors         []string
-}
-
-type SearchMatch struct {
-	RepositoryID   int32
-	RepositoryName string
-	MatchCount     int
-}
-
+// ComputeMatch is our internal representation of a match retrieved from a Compute Streaming Search.
+// It is internally different from the `ComputeMatch` returned by the Compute GraphQL query but they
+// serve the same end goal.
 type ComputeMatch struct {
 	RepositoryID   int32
 	RepositoryName string
 	ValueCounts    map[string]int
-}
-
-type TabulatedValue struct {
-	MatchCount int
-	Value      string
 }
 
 func newComputeMatch(repoName string, repoID int32) *ComputeMatch {
@@ -112,6 +110,8 @@ type ComputeTabulationResult struct {
 	StreamDecoderEvents
 	RepoCounts map[string]*ComputeMatch
 }
+
+const capturedValueMaxLength = 100
 
 func ComputeDecoder() (client.ComputeMatchContextStreamDecoder, *ComputeTabulationResult) {
 	byRepo := make(map[string]*ComputeMatch)
@@ -131,7 +131,11 @@ func ComputeDecoder() (client.ComputeMatchContextStreamDecoder, *ComputeTabulati
 					current := getRepoCounts(result)
 					for _, match := range result.Matches {
 						for _, data := range match.Environment {
-							current.ValueCounts[data.Value] += 1
+							value := data.Value
+							if len(value) > capturedValueMaxLength {
+								value = value[:capturedValueMaxLength]
+							}
+							current.ValueCounts[value] += 1
 						}
 					}
 				}

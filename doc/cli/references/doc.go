@@ -56,7 +56,7 @@ func clean(base string) error {
 	return nil
 }
 
-func get(url string, v interface{}) error {
+func get(url string, v any) error {
 	resp, err := http.Get(url)
 	if err != nil {
 		return errors.Wrapf(err, "http get: %s", url)

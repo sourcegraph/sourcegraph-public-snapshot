@@ -1146,7 +1146,7 @@ func TestExternalServices(t *testing.T) {
 		`,
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
-					Path:          []interface{}{"externalServices"},
+					Path:          []any{"externalServices"},
 					Message:       backend.ErrNoAccessExternalService.Error(),
 					ResolverError: backend.ErrNoAccessExternalService,
 				},

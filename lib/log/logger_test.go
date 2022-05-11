@@ -34,20 +34,20 @@ func TestInitLogger(t *testing.T) {
 		assert.Equal(t, l.Scope, "TestInitLogger") // scope is always applied
 	}
 
-	assert.Equal(t, map[string]interface{}{
+	assert.Equal(t, map[string]any{
 		"some":  "field",
 		"hello": "world",
 	}, logs[1].Fields["Attributes"])
 
 	assert.Equal(t, "asdf", logs[2].Fields["TraceId"])
-	assert.Equal(t, map[string]interface{}{
+	assert.Equal(t, map[string]any{
 		"some":  "field",
 		"world": "hello",
 	}, logs[2].Fields["Attributes"])
 
-	assert.Equal(t, map[string]interface{}{
+	assert.Equal(t, map[string]any{
 		"some": "field",
-		"object": map[string]interface{}{
+		"object": map[string]any{
 			"field1": "value",
 			"field2": "value",
 		},

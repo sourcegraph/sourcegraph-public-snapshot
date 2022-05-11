@@ -128,20 +128,28 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                 <div className="container col-8">
                     <PageTitle title="Create new extension" />
                     <PageHeader
-                        path={[{ icon: PuzzleOutlineIcon, to: '/extensions' }, { text: 'Create extension' }]}
+                        path={[
+                            { icon: PuzzleOutlineIcon, to: '/extensions', ariaLabel: 'Extensions' },
+                            { text: 'Create extension' },
+                        ]}
                         description={
                             <>
                                 <Link target="_blank" rel="noopener" to="/help/extensions/authoring">
                                     Learn more
                                 </Link>{' '}
                                 about authoring Sourcegraph extensions{' '}
-                                <Link target="_blank" rel="noopener" to="/help/extensions/authoring">
+                                <Link
+                                    aria-label="Learn more about extensions authoring"
+                                    target="_blank"
+                                    rel="noopener"
+                                    to="/help/extensions/authoring"
+                                >
                                     <Icon as={HelpCircleOutline} />
                                 </Link>
                             </>
                         }
                     />
-                    <Form onSubmit={this.onSubmit} className="my-4 pb-5">
+                    <Form onSubmit={this.onSubmit} className="my-4 pb-5 test-registry-new-extension">
                         <Container className="mb-4">
                             <RegistryPublisherFormGroup
                                 value={this.state.publisher}

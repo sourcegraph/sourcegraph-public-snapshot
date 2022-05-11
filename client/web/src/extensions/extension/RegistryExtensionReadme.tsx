@@ -69,7 +69,7 @@ export const ExtensionReadme: React.FunctionComponent<
 
     try {
         const html = renderMarkdown(manifest.readme)
-        return <Markdown dangerousInnerHTML={html} />
+        return <Markdown testId="registry-extension-overview" dangerousInnerHTML={html} />
     } catch {
         return (
             <PublishNewManifestAlert

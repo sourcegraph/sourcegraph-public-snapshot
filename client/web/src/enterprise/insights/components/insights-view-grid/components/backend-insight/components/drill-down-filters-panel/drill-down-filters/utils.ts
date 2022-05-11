@@ -1,4 +1,4 @@
-import { Validator } from '../../../../../form/hooks/useField'
+import { Validator } from '../../../../../../form/hooks/useField'
 
 export const validRegexp: Validator<string> = (value = '') => {
     if (value.trim() === '') {

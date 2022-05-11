@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type CommitSearchJob struct {
@@ -82,6 +83,11 @@ func (j *CommitSearchJob) Run(ctx context.Context, clients job.RuntimeClients, s
 	bounded := goroutine.NewBounded(8)
 	for _, repoRev := range repoRevs {
 		repoRev := repoRev // we close over repoRev in onMatches
+		if ctx.Err() != nil {
+			// Don't keep spinning up goroutines if context has been canceled,
+			// but make sure we still clean up any running goroutines.
+			return nil, errors.Append(ctx.Err(), bounded.Wait())
+		}
 
 		// Skip the repo if no revisions were resolved for it
 		if len(repoRev.Revs) == 0 {

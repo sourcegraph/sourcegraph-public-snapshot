@@ -16486,6 +16486,9 @@ type MockGitserverRepoStore struct {
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *GitserverRepoStoreHandleFunc
+	// IteratePurgeableReposFunc is an instance of a mock function object
+	// controlling the behavior of the method IteratePurgeableRepos.
+	IteratePurgeableReposFunc *GitserverRepoStoreIteratePurgeableReposFunc
 	// IterateRepoGitserverStatusFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// IterateRepoGitserverStatus.
@@ -16546,6 +16549,11 @@ func NewMockGitserverRepoStore() *MockGitserverRepoStore {
 		},
 		HandleFunc: &GitserverRepoStoreHandleFunc{
 			defaultHook: func() (r0 *basestore.TransactableHandle) {
+				return
+			},
+		},
+		IteratePurgeableReposFunc: &GitserverRepoStoreIteratePurgeableReposFunc{
+			defaultHook: func(context.Context, time.Time, func(repo api.RepoName) error) (r0 error) {
 				return
 			},
 		},
@@ -16632,6 +16640,11 @@ func NewStrictMockGitserverRepoStore() *MockGitserverRepoStore {
 				panic("unexpected invocation of MockGitserverRepoStore.Handle")
 			},
 		},
+		IteratePurgeableReposFunc: &GitserverRepoStoreIteratePurgeableReposFunc{
+			defaultHook: func(context.Context, time.Time, func(repo api.RepoName) error) error {
+				panic("unexpected invocation of MockGitserverRepoStore.IteratePurgeableRepos")
+			},
+		},
 		IterateRepoGitserverStatusFunc: &GitserverRepoStoreIterateRepoGitserverStatusFunc{
 			defaultHook: func(context.Context, IterateRepoGitserverStatusOptions, func(repo types.RepoGitserverStatus) error) error {
 				panic("unexpected invocation of MockGitserverRepoStore.IterateRepoGitserverStatus")
@@ -16706,6 +16719,9 @@ func NewMockGitserverRepoStoreFrom(i GitserverRepoStore) *MockGitserverRepoStore
 		},
 		HandleFunc: &GitserverRepoStoreHandleFunc{
 			defaultHook: i.Handle,
+		},
+		IteratePurgeableReposFunc: &GitserverRepoStoreIteratePurgeableReposFunc{
+			defaultHook: i.IteratePurgeableRepos,
 		},
 		IterateRepoGitserverStatusFunc: &GitserverRepoStoreIterateRepoGitserverStatusFunc{
 			defaultHook: i.IterateRepoGitserverStatus,
@@ -17171,6 +17187,118 @@ func (c GitserverRepoStoreHandleFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverRepoStoreHandleFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverRepoStoreIteratePurgeableReposFunc describes the behavior when
+// the IteratePurgeableRepos method of the parent MockGitserverRepoStore
+// instance is invoked.
+type GitserverRepoStoreIteratePurgeableReposFunc struct {
+	defaultHook func(context.Context, time.Time, func(repo api.RepoName) error) error
+	hooks       []func(context.Context, time.Time, func(repo api.RepoName) error) error
+	history     []GitserverRepoStoreIteratePurgeableReposFuncCall
+	mutex       sync.Mutex
+}
+
+// IteratePurgeableRepos delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockGitserverRepoStore) IteratePurgeableRepos(v0 context.Context, v1 time.Time, v2 func(repo api.RepoName) error) error {
+	r0 := m.IteratePurgeableReposFunc.nextHook()(v0, v1, v2)
+	m.IteratePurgeableReposFunc.appendCall(GitserverRepoStoreIteratePurgeableReposFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// IteratePurgeableRepos method of the parent MockGitserverRepoStore
+// instance is invoked and the hook queue is empty.
+func (f *GitserverRepoStoreIteratePurgeableReposFunc) SetDefaultHook(hook func(context.Context, time.Time, func(repo api.RepoName) error) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// IteratePurgeableRepos method of the parent MockGitserverRepoStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *GitserverRepoStoreIteratePurgeableReposFunc) PushHook(hook func(context.Context, time.Time, func(repo api.RepoName) error) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverRepoStoreIteratePurgeableReposFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, time.Time, func(repo api.RepoName) error) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverRepoStoreIteratePurgeableReposFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, time.Time, func(repo api.RepoName) error) error {
+		return r0
+	})
+}
+
+func (f *GitserverRepoStoreIteratePurgeableReposFunc) nextHook() func(context.Context, time.Time, func(repo api.RepoName) error) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverRepoStoreIteratePurgeableReposFunc) appendCall(r0 GitserverRepoStoreIteratePurgeableReposFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverRepoStoreIteratePurgeableReposFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverRepoStoreIteratePurgeableReposFunc) History() []GitserverRepoStoreIteratePurgeableReposFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverRepoStoreIteratePurgeableReposFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverRepoStoreIteratePurgeableReposFuncCall is an object that
+// describes an invocation of method IteratePurgeableRepos on an instance of
+// MockGitserverRepoStore.
+type GitserverRepoStoreIteratePurgeableReposFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 time.Time
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 func(repo api.RepoName) error
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverRepoStoreIteratePurgeableReposFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverRepoStoreIteratePurgeableReposFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -25525,9 +25653,6 @@ type MockRepoStore struct {
 	// ListFunc is an instance of a mock function object controlling the
 	// behavior of the method List.
 	ListFunc *RepoStoreListFunc
-	// ListEnabledNamesFunc is an instance of a mock function object
-	// controlling the behavior of the method ListEnabledNames.
-	ListEnabledNamesFunc *RepoStoreListEnabledNamesFunc
 	// ListIndexableReposFunc is an instance of a mock function object
 	// controlling the behavior of the method ListIndexableRepos.
 	ListIndexableReposFunc *RepoStoreListIndexableReposFunc
@@ -25612,11 +25737,6 @@ func NewMockRepoStore() *MockRepoStore {
 		},
 		ListFunc: &RepoStoreListFunc{
 			defaultHook: func(context.Context, ReposListOptions) (r0 []*types.Repo, r1 error) {
-				return
-			},
-		},
-		ListEnabledNamesFunc: &RepoStoreListEnabledNamesFunc{
-			defaultHook: func(context.Context) (r0 []api.RepoName, r1 error) {
 				return
 			},
 		},
@@ -25722,11 +25842,6 @@ func NewStrictMockRepoStore() *MockRepoStore {
 				panic("unexpected invocation of MockRepoStore.List")
 			},
 		},
-		ListEnabledNamesFunc: &RepoStoreListEnabledNamesFunc{
-			defaultHook: func(context.Context) ([]api.RepoName, error) {
-				panic("unexpected invocation of MockRepoStore.ListEnabledNames")
-			},
-		},
 		ListIndexableReposFunc: &RepoStoreListIndexableReposFunc{
 			defaultHook: func(context.Context, ListIndexableReposOptions) ([]types.MinimalRepo, error) {
 				panic("unexpected invocation of MockRepoStore.ListIndexableRepos")
@@ -25804,9 +25919,6 @@ func NewMockRepoStoreFrom(i RepoStore) *MockRepoStore {
 		},
 		ListFunc: &RepoStoreListFunc{
 			defaultHook: i.List,
-		},
-		ListEnabledNamesFunc: &RepoStoreListEnabledNamesFunc{
-			defaultHook: i.ListEnabledNames,
 		},
 		ListIndexableReposFunc: &RepoStoreListIndexableReposFunc{
 			defaultHook: i.ListIndexableRepos,
@@ -27127,111 +27239,6 @@ func (c RepoStoreListFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c RepoStoreListFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// RepoStoreListEnabledNamesFunc describes the behavior when the
-// ListEnabledNames method of the parent MockRepoStore instance is invoked.
-type RepoStoreListEnabledNamesFunc struct {
-	defaultHook func(context.Context) ([]api.RepoName, error)
-	hooks       []func(context.Context) ([]api.RepoName, error)
-	history     []RepoStoreListEnabledNamesFuncCall
-	mutex       sync.Mutex
-}
-
-// ListEnabledNames delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockRepoStore) ListEnabledNames(v0 context.Context) ([]api.RepoName, error) {
-	r0, r1 := m.ListEnabledNamesFunc.nextHook()(v0)
-	m.ListEnabledNamesFunc.appendCall(RepoStoreListEnabledNamesFuncCall{v0, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the ListEnabledNames
-// method of the parent MockRepoStore instance is invoked and the hook queue
-// is empty.
-func (f *RepoStoreListEnabledNamesFunc) SetDefaultHook(hook func(context.Context) ([]api.RepoName, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// ListEnabledNames method of the parent MockRepoStore instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *RepoStoreListEnabledNamesFunc) PushHook(hook func(context.Context) ([]api.RepoName, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *RepoStoreListEnabledNamesFunc) SetDefaultReturn(r0 []api.RepoName, r1 error) {
-	f.SetDefaultHook(func(context.Context) ([]api.RepoName, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *RepoStoreListEnabledNamesFunc) PushReturn(r0 []api.RepoName, r1 error) {
-	f.PushHook(func(context.Context) ([]api.RepoName, error) {
-		return r0, r1
-	})
-}
-
-func (f *RepoStoreListEnabledNamesFunc) nextHook() func(context.Context) ([]api.RepoName, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *RepoStoreListEnabledNamesFunc) appendCall(r0 RepoStoreListEnabledNamesFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of RepoStoreListEnabledNamesFuncCall objects
-// describing the invocations of this function.
-func (f *RepoStoreListEnabledNamesFunc) History() []RepoStoreListEnabledNamesFuncCall {
-	f.mutex.Lock()
-	history := make([]RepoStoreListEnabledNamesFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// RepoStoreListEnabledNamesFuncCall is an object that describes an
-// invocation of method ListEnabledNames on an instance of MockRepoStore.
-type RepoStoreListEnabledNamesFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []api.RepoName
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c RepoStoreListEnabledNamesFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c RepoStoreListEnabledNamesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

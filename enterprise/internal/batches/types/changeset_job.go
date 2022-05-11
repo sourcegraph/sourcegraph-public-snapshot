@@ -77,7 +77,7 @@ type ChangesetJob struct {
 	UserID        int32
 	ChangesetID   int64
 	JobType       ChangesetJobType
-	Payload       interface{}
+	Payload       any
 
 	// workerutil fields
 

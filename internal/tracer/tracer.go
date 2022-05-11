@@ -212,7 +212,7 @@ type log15Logger struct{}
 
 func (l log15Logger) Error(msg string) { log15.Error(msg) }
 
-func (l log15Logger) Infof(msg string, args ...interface{}) {
+func (l log15Logger) Infof(msg string, args ...any) {
 	log15.Info(fmt.Sprintf(msg, args...))
 }
 
@@ -240,7 +240,7 @@ func (t *switchableTracer) StartSpan(operationName string, opts ...opentracing.S
 	return t.opentracer.StartSpan(operationName, opts...)
 }
 
-func (t *switchableTracer) Inject(sm opentracing.SpanContext, format interface{}, carrier interface{}) error {
+func (t *switchableTracer) Inject(sm opentracing.SpanContext, format any, carrier any) error {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 	if t.log {
@@ -249,7 +249,7 @@ func (t *switchableTracer) Inject(sm opentracing.SpanContext, format interface{}
 	return t.opentracer.Inject(sm, format, carrier)
 }
 
-func (t *switchableTracer) Extract(format interface{}, carrier interface{}) (opentracing.SpanContext, error) {
+func (t *switchableTracer) Extract(format any, carrier any) (opentracing.SpanContext, error) {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 	if t.log {

@@ -153,7 +153,7 @@ func scanTemplate(buf []byte) *Template {
 	return &t
 }
 
-func toJSON(atom Atom) interface{} {
+func toJSON(atom Atom) any {
 	switch a := atom.(type) {
 	case Constant:
 		return struct {
@@ -174,7 +174,7 @@ func toJSON(atom Atom) interface{} {
 }
 
 func toJSONString(template *Template) string {
-	var jsons []interface{}
+	var jsons []any
 	for _, atom := range *template {
 		jsons = append(jsons, toJSON(atom))
 	}

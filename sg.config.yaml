@@ -384,7 +384,7 @@ commands:
         -index "$HOME/.sourcegraph/zoekt/index-$ZOEKT_NUM" \
         -hostname "localhost:$ZOEKT_HOSTNAME_PORT" \
         -interval 1m \
-        -listen ":$ZOEKT_LISTEN_PORT" \
+        -listen "127.0.0.1:$ZOEKT_LISTEN_PORT" \
         -cpu_fraction 0.25
     install: |
       mkdir -p .bin
@@ -424,11 +424,11 @@ commands:
 
   zoekt-webserver-0:
     <<: *zoekt_webserver_template
-    cmd: env PATH="${PWD}/.bin:$PATH" .bin/zoekt-webserver -index "$HOME/.sourcegraph/zoekt/index-0" -pprof -rpc -listen ":3070"
+    cmd: env PATH="${PWD}/.bin:$PATH" .bin/zoekt-webserver -index "$HOME/.sourcegraph/zoekt/index-0" -pprof -rpc -listen "127.0.0.1:3070"
 
   zoekt-webserver-1:
     <<: *zoekt_webserver_template
-    cmd: env PATH="${PWD}/.bin:$PATH" .bin/zoekt-webserver -index "$HOME/.sourcegraph/zoekt/index-1" -pprof -rpc -listen ":3071"
+    cmd: env PATH="${PWD}/.bin:$PATH" .bin/zoekt-webserver -index "$HOME/.sourcegraph/zoekt/index-1" -pprof -rpc -listen "127.0.0.1:3071"
 
   precise-code-intel-worker:
     cmd: .bin/precise-code-intel-worker

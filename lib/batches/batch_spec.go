@@ -58,8 +58,8 @@ type ExpandedGitCommitDescription struct {
 }
 
 type ImportChangeset struct {
-	Repository  string        `json:"repository" yaml:"repository"`
-	ExternalIDs []interface{} `json:"externalIDs" yaml:"externalIDs"`
+	Repository  string `json:"repository" yaml:"repository"`
+	ExternalIDs []any  `json:"externalIDs" yaml:"externalIDs"`
 }
 
 type WorkspaceConfiguration struct {
@@ -94,7 +94,7 @@ type Step struct {
 	Files     map[string]string `json:"files,omitempty" yaml:"files,omitempty"`
 	Outputs   Outputs           `json:"outputs,omitempty" yaml:"outputs,omitempty"`
 
-	If interface{} `json:"if,omitempty" yaml:"if,omitempty"`
+	If any `json:"if,omitempty" yaml:"if,omitempty"`
 }
 
 func (s *Step) IfCondition() string {

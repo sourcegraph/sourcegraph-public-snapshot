@@ -65,25 +65,25 @@ func ParseK8S(path string, creds credentials.Credentials, pinTag string) error {
 	return err
 }
 
-func isImgMap(m map[string]interface{}) bool {
+func isImgMap(m map[string]any) bool {
 	if m["defaultTag"] != nil && m["name"] != nil {
 		return true
 	}
 	return false
 }
 
-func extraImages(m interface{}, acc *[]string) {
+func extraImages(m any, acc *[]string) {
 	for m != nil {
 		switch m := m.(type) {
-		case map[string]interface{}:
+		case map[string]any:
 			for k, v := range m {
-				if k == "image" && reflect.TypeOf(v).Kind() == reflect.Map && isImgMap(v.(map[string]interface{})) {
-					imgMap := v.(map[string]interface{})
+				if k == "image" && reflect.TypeOf(v).Kind() == reflect.Map && isImgMap(v.(map[string]any)) {
+					imgMap := v.(map[string]any)
 					*acc = append(*acc, fmt.Sprintf("index.docker.io/sourcegraph/%s:%s", imgMap["name"], imgMap["defaultTag"]))
 				}
 				extraImages(v, acc)
 			}
-		case []interface{}:
+		case []any:
 			for _, v := range m {
 				extraImages(v, acc)
 			}
@@ -105,7 +105,7 @@ func ParseHelm(path string, creds credentials.Credentials, pinTag string) error 
 		return errors.Wrapf(err, "couldn't unmarshal %s", valuesFilePath)
 	}
 
-	var values map[string]interface{}
+	var values map[string]any
 	err = json.Unmarshal(rawValues, &values)
 	if err != nil {
 		return errors.Wrapf(err, "couldn't unmarshal %s", valuesFilePath)

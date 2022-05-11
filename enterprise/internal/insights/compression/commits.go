@@ -139,7 +139,9 @@ SELECT repo_id, commit_bytea, committed_at FROM commit_index WHERE repo_id = %s 
 
 const insertCommitIndexStr = `
 -- source: enterprise/internal/insights/compression/commits.go:Save
-INSERT INTO commit_index(repo_id, commit_bytea, committed_at, debug_field) VALUES (%s, %s, %s, %s);
+INSERT INTO commit_index(repo_id, commit_bytea, committed_at, debug_field)
+VALUES (%s, %s, %s, %s)
+ON CONFLICT ON CONSTRAINT commit_index_pkey DO NOTHING;
 `
 
 const getCommitIndexMetadataStr = `

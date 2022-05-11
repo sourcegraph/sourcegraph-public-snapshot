@@ -157,7 +157,7 @@ func defaultTestStoreOptions(clock glock.Clock) Options {
 	}
 }
 
-func assertDequeueRecordResult(t *testing.T, expectedID int, record interface{}, ok bool, err error) {
+func assertDequeueRecordResult(t *testing.T, expectedID int, record any, ok bool, err error) {
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
@@ -173,13 +173,13 @@ func assertDequeueRecordResult(t *testing.T, expectedID int, record interface{},
 	}
 }
 
-func assertDequeueRecordResultLogCount(t *testing.T, expectedLogCount int, record interface{}) {
+func assertDequeueRecordResultLogCount(t *testing.T, expectedLogCount int, record any) {
 	if val := len(record.(TestRecord).ExecutionLogs); val != expectedLogCount {
 		t.Errorf("unexpected count of logs. want=%d have=%d", expectedLogCount, val)
 	}
 }
 
-func assertDequeueRecordViewResult(t *testing.T, expectedID, expectedNewField int, record interface{}, ok bool, err error) {
+func assertDequeueRecordViewResult(t *testing.T, expectedID, expectedNewField int, record any, ok bool, err error) {
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
@@ -198,7 +198,7 @@ func assertDequeueRecordViewResult(t *testing.T, expectedID, expectedNewField in
 	}
 }
 
-func assertDequeueRecordRetryResult(t *testing.T, expectedID, record interface{}, ok bool, err error) {
+func assertDequeueRecordRetryResult(t *testing.T, expectedID, record any, ok bool, err error) {
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}

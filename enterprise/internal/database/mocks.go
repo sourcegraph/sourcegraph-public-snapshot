@@ -129,6 +129,9 @@ type MockCodeMonitorStore struct {
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *CodeMonitorStoreHandleFunc
+	// HasAnyLastSearchedFunc is an instance of a mock function object
+	// controlling the behavior of the method HasAnyLastSearched.
+	HasAnyLastSearchedFunc *CodeMonitorStoreHasAnyLastSearchedFunc
 	// ListActionJobsFunc is an instance of a mock function object
 	// controlling the behavior of the method ListActionJobs.
 	ListActionJobsFunc *CodeMonitorStoreListActionJobsFunc
@@ -362,6 +365,11 @@ func NewMockCodeMonitorStore() *MockCodeMonitorStore {
 		},
 		HandleFunc: &CodeMonitorStoreHandleFunc{
 			defaultHook: func() (r0 *basestore.TransactableHandle) {
+				return
+			},
+		},
+		HasAnyLastSearchedFunc: &CodeMonitorStoreHasAnyLastSearchedFunc{
+			defaultHook: func(context.Context, int64) (r0 bool, r1 error) {
 				return
 			},
 		},
@@ -637,6 +645,11 @@ func NewStrictMockCodeMonitorStore() *MockCodeMonitorStore {
 				panic("unexpected invocation of MockCodeMonitorStore.Handle")
 			},
 		},
+		HasAnyLastSearchedFunc: &CodeMonitorStoreHasAnyLastSearchedFunc{
+			defaultHook: func(context.Context, int64) (bool, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.HasAnyLastSearched")
+			},
+		},
 		ListActionJobsFunc: &CodeMonitorStoreListActionJobsFunc{
 			defaultHook: func(context.Context, ListActionJobsOpts) ([]*ActionJob, error) {
 				panic("unexpected invocation of MockCodeMonitorStore.ListActionJobs")
@@ -841,6 +854,9 @@ func NewMockCodeMonitorStoreFrom(i CodeMonitorStore) *MockCodeMonitorStore {
 		},
 		HandleFunc: &CodeMonitorStoreHandleFunc{
 			defaultHook: i.Handle,
+		},
+		HasAnyLastSearchedFunc: &CodeMonitorStoreHasAnyLastSearchedFunc{
+			defaultHook: i.HasAnyLastSearched,
 		},
 		ListActionJobsFunc: &CodeMonitorStoreListActionJobsFunc{
 			defaultHook: i.ListActionJobs,
@@ -4671,6 +4687,117 @@ func (c CodeMonitorStoreHandleFuncCall) Args() []interface{} {
 // invocation.
 func (c CodeMonitorStoreHandleFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// CodeMonitorStoreHasAnyLastSearchedFunc describes the behavior when the
+// HasAnyLastSearched method of the parent MockCodeMonitorStore instance is
+// invoked.
+type CodeMonitorStoreHasAnyLastSearchedFunc struct {
+	defaultHook func(context.Context, int64) (bool, error)
+	hooks       []func(context.Context, int64) (bool, error)
+	history     []CodeMonitorStoreHasAnyLastSearchedFuncCall
+	mutex       sync.Mutex
+}
+
+// HasAnyLastSearched delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) HasAnyLastSearched(v0 context.Context, v1 int64) (bool, error) {
+	r0, r1 := m.HasAnyLastSearchedFunc.nextHook()(v0, v1)
+	m.HasAnyLastSearchedFunc.appendCall(CodeMonitorStoreHasAnyLastSearchedFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the HasAnyLastSearched
+// method of the parent MockCodeMonitorStore instance is invoked and the
+// hook queue is empty.
+func (f *CodeMonitorStoreHasAnyLastSearchedFunc) SetDefaultHook(hook func(context.Context, int64) (bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// HasAnyLastSearched method of the parent MockCodeMonitorStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *CodeMonitorStoreHasAnyLastSearchedFunc) PushHook(hook func(context.Context, int64) (bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeMonitorStoreHasAnyLastSearchedFunc) SetDefaultReturn(r0 bool, r1 error) {
+	f.SetDefaultHook(func(context.Context, int64) (bool, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeMonitorStoreHasAnyLastSearchedFunc) PushReturn(r0 bool, r1 error) {
+	f.PushHook(func(context.Context, int64) (bool, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeMonitorStoreHasAnyLastSearchedFunc) nextHook() func(context.Context, int64) (bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreHasAnyLastSearchedFunc) appendCall(r0 CodeMonitorStoreHasAnyLastSearchedFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeMonitorStoreHasAnyLastSearchedFuncCall
+// objects describing the invocations of this function.
+func (f *CodeMonitorStoreHasAnyLastSearchedFunc) History() []CodeMonitorStoreHasAnyLastSearchedFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreHasAnyLastSearchedFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreHasAnyLastSearchedFuncCall is an object that describes an
+// invocation of method HasAnyLastSearched on an instance of
+// MockCodeMonitorStore.
+type CodeMonitorStoreHasAnyLastSearchedFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int64
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 bool
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreHasAnyLastSearchedFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreHasAnyLastSearchedFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // CodeMonitorStoreListActionJobsFunc describes the behavior when the
@@ -11197,7 +11324,7 @@ func NewMockPermsStore() *MockPermsStore {
 			},
 		},
 		ReposIDsWithOldestPermsFunc: &PermsStoreReposIDsWithOldestPermsFunc{
-			defaultHook: func(context.Context, int) (r0 map[api.RepoID]time.Time, r1 error) {
+			defaultHook: func(context.Context, int, time.Duration) (r0 map[api.RepoID]time.Time, r1 error) {
 				return
 			},
 		},
@@ -11232,7 +11359,7 @@ func NewMockPermsStore() *MockPermsStore {
 			},
 		},
 		UserIDsWithOldestPermsFunc: &PermsStoreUserIDsWithOldestPermsFunc{
-			defaultHook: func(context.Context, int) (r0 map[int32]time.Time, r1 error) {
+			defaultHook: func(context.Context, int, time.Duration) (r0 map[int32]time.Time, r1 error) {
 				return
 			},
 		},
@@ -11324,7 +11451,7 @@ func NewStrictMockPermsStore() *MockPermsStore {
 			},
 		},
 		ReposIDsWithOldestPermsFunc: &PermsStoreReposIDsWithOldestPermsFunc{
-			defaultHook: func(context.Context, int) (map[api.RepoID]time.Time, error) {
+			defaultHook: func(context.Context, int, time.Duration) (map[api.RepoID]time.Time, error) {
 				panic("unexpected invocation of MockPermsStore.ReposIDsWithOldestPerms")
 			},
 		},
@@ -11359,7 +11486,7 @@ func NewStrictMockPermsStore() *MockPermsStore {
 			},
 		},
 		UserIDsWithOldestPermsFunc: &PermsStoreUserIDsWithOldestPermsFunc{
-			defaultHook: func(context.Context, int) (map[int32]time.Time, error) {
+			defaultHook: func(context.Context, int, time.Duration) (map[int32]time.Time, error) {
 				panic("unexpected invocation of MockPermsStore.UserIDsWithOldestPerms")
 			},
 		},
@@ -12861,24 +12988,24 @@ func (c PermsStoreRepoIDsWithNoPermsFuncCall) Results() []interface{} {
 // ReposIDsWithOldestPerms method of the parent MockPermsStore instance is
 // invoked.
 type PermsStoreReposIDsWithOldestPermsFunc struct {
-	defaultHook func(context.Context, int) (map[api.RepoID]time.Time, error)
-	hooks       []func(context.Context, int) (map[api.RepoID]time.Time, error)
+	defaultHook func(context.Context, int, time.Duration) (map[api.RepoID]time.Time, error)
+	hooks       []func(context.Context, int, time.Duration) (map[api.RepoID]time.Time, error)
 	history     []PermsStoreReposIDsWithOldestPermsFuncCall
 	mutex       sync.Mutex
 }
 
 // ReposIDsWithOldestPerms delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockPermsStore) ReposIDsWithOldestPerms(v0 context.Context, v1 int) (map[api.RepoID]time.Time, error) {
-	r0, r1 := m.ReposIDsWithOldestPermsFunc.nextHook()(v0, v1)
-	m.ReposIDsWithOldestPermsFunc.appendCall(PermsStoreReposIDsWithOldestPermsFuncCall{v0, v1, r0, r1})
+func (m *MockPermsStore) ReposIDsWithOldestPerms(v0 context.Context, v1 int, v2 time.Duration) (map[api.RepoID]time.Time, error) {
+	r0, r1 := m.ReposIDsWithOldestPermsFunc.nextHook()(v0, v1, v2)
+	m.ReposIDsWithOldestPermsFunc.appendCall(PermsStoreReposIDsWithOldestPermsFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the
 // ReposIDsWithOldestPerms method of the parent MockPermsStore instance is
 // invoked and the hook queue is empty.
-func (f *PermsStoreReposIDsWithOldestPermsFunc) SetDefaultHook(hook func(context.Context, int) (map[api.RepoID]time.Time, error)) {
+func (f *PermsStoreReposIDsWithOldestPermsFunc) SetDefaultHook(hook func(context.Context, int, time.Duration) (map[api.RepoID]time.Time, error)) {
 	f.defaultHook = hook
 }
 
@@ -12887,7 +13014,7 @@ func (f *PermsStoreReposIDsWithOldestPermsFunc) SetDefaultHook(hook func(context
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *PermsStoreReposIDsWithOldestPermsFunc) PushHook(hook func(context.Context, int) (map[api.RepoID]time.Time, error)) {
+func (f *PermsStoreReposIDsWithOldestPermsFunc) PushHook(hook func(context.Context, int, time.Duration) (map[api.RepoID]time.Time, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -12896,19 +13023,19 @@ func (f *PermsStoreReposIDsWithOldestPermsFunc) PushHook(hook func(context.Conte
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *PermsStoreReposIDsWithOldestPermsFunc) SetDefaultReturn(r0 map[api.RepoID]time.Time, r1 error) {
-	f.SetDefaultHook(func(context.Context, int) (map[api.RepoID]time.Time, error) {
+	f.SetDefaultHook(func(context.Context, int, time.Duration) (map[api.RepoID]time.Time, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *PermsStoreReposIDsWithOldestPermsFunc) PushReturn(r0 map[api.RepoID]time.Time, r1 error) {
-	f.PushHook(func(context.Context, int) (map[api.RepoID]time.Time, error) {
+	f.PushHook(func(context.Context, int, time.Duration) (map[api.RepoID]time.Time, error) {
 		return r0, r1
 	})
 }
 
-func (f *PermsStoreReposIDsWithOldestPermsFunc) nextHook() func(context.Context, int) (map[api.RepoID]time.Time, error) {
+func (f *PermsStoreReposIDsWithOldestPermsFunc) nextHook() func(context.Context, int, time.Duration) (map[api.RepoID]time.Time, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -12948,6 +13075,9 @@ type PermsStoreReposIDsWithOldestPermsFuncCall struct {
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
 	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 time.Duration
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 map[api.RepoID]time.Time
@@ -12959,7 +13089,7 @@ type PermsStoreReposIDsWithOldestPermsFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c PermsStoreReposIDsWithOldestPermsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
@@ -13613,24 +13743,24 @@ func (c PermsStoreUserIDsWithNoPermsFuncCall) Results() []interface{} {
 // UserIDsWithOldestPerms method of the parent MockPermsStore instance is
 // invoked.
 type PermsStoreUserIDsWithOldestPermsFunc struct {
-	defaultHook func(context.Context, int) (map[int32]time.Time, error)
-	hooks       []func(context.Context, int) (map[int32]time.Time, error)
+	defaultHook func(context.Context, int, time.Duration) (map[int32]time.Time, error)
+	hooks       []func(context.Context, int, time.Duration) (map[int32]time.Time, error)
 	history     []PermsStoreUserIDsWithOldestPermsFuncCall
 	mutex       sync.Mutex
 }
 
 // UserIDsWithOldestPerms delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockPermsStore) UserIDsWithOldestPerms(v0 context.Context, v1 int) (map[int32]time.Time, error) {
-	r0, r1 := m.UserIDsWithOldestPermsFunc.nextHook()(v0, v1)
-	m.UserIDsWithOldestPermsFunc.appendCall(PermsStoreUserIDsWithOldestPermsFuncCall{v0, v1, r0, r1})
+func (m *MockPermsStore) UserIDsWithOldestPerms(v0 context.Context, v1 int, v2 time.Duration) (map[int32]time.Time, error) {
+	r0, r1 := m.UserIDsWithOldestPermsFunc.nextHook()(v0, v1, v2)
+	m.UserIDsWithOldestPermsFunc.appendCall(PermsStoreUserIDsWithOldestPermsFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the
 // UserIDsWithOldestPerms method of the parent MockPermsStore instance is
 // invoked and the hook queue is empty.
-func (f *PermsStoreUserIDsWithOldestPermsFunc) SetDefaultHook(hook func(context.Context, int) (map[int32]time.Time, error)) {
+func (f *PermsStoreUserIDsWithOldestPermsFunc) SetDefaultHook(hook func(context.Context, int, time.Duration) (map[int32]time.Time, error)) {
 	f.defaultHook = hook
 }
 
@@ -13639,7 +13769,7 @@ func (f *PermsStoreUserIDsWithOldestPermsFunc) SetDefaultHook(hook func(context.
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *PermsStoreUserIDsWithOldestPermsFunc) PushHook(hook func(context.Context, int) (map[int32]time.Time, error)) {
+func (f *PermsStoreUserIDsWithOldestPermsFunc) PushHook(hook func(context.Context, int, time.Duration) (map[int32]time.Time, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -13648,19 +13778,19 @@ func (f *PermsStoreUserIDsWithOldestPermsFunc) PushHook(hook func(context.Contex
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *PermsStoreUserIDsWithOldestPermsFunc) SetDefaultReturn(r0 map[int32]time.Time, r1 error) {
-	f.SetDefaultHook(func(context.Context, int) (map[int32]time.Time, error) {
+	f.SetDefaultHook(func(context.Context, int, time.Duration) (map[int32]time.Time, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *PermsStoreUserIDsWithOldestPermsFunc) PushReturn(r0 map[int32]time.Time, r1 error) {
-	f.PushHook(func(context.Context, int) (map[int32]time.Time, error) {
+	f.PushHook(func(context.Context, int, time.Duration) (map[int32]time.Time, error) {
 		return r0, r1
 	})
 }
 
-func (f *PermsStoreUserIDsWithOldestPermsFunc) nextHook() func(context.Context, int) (map[int32]time.Time, error) {
+func (f *PermsStoreUserIDsWithOldestPermsFunc) nextHook() func(context.Context, int, time.Duration) (map[int32]time.Time, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -13700,6 +13830,9 @@ type PermsStoreUserIDsWithOldestPermsFuncCall struct {
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
 	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 time.Duration
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 map[int32]time.Time
@@ -13711,7 +13844,7 @@ type PermsStoreUserIDsWithOldestPermsFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c PermsStoreUserIDsWithOldestPermsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this

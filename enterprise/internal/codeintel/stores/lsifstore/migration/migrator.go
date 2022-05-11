@@ -88,20 +88,20 @@ type migrationDriver interface {
 	// migrator's fields option. Implementations must return the same number of values as the set
 	// of primary keys plus any additional non-selectOnly fields supplied via the migrator's fields
 	// option.
-	MigrateRowUp(scanner scanner) ([]interface{}, error)
+	MigrateRowUp(scanner scanner) ([]any, error)
 
 	// MigrateRowDown undoes the migration for the given row.  The scanner will receive the values
 	// of the primary keys plus any additional non-updateOnly fields supplied via the migrator's
 	// fields option. Implementations must return the same number of values as the set  of primary
 	// keys plus any additional non-selectOnly fields supplied via the migrator's fields option.
-	MigrateRowDown(scanner scanner) ([]interface{}, error)
+	MigrateRowDown(scanner scanner) ([]any, error)
 }
 
 // driverFunc is the type of MigrateRowUp and MigrateRowDown.
-type driverFunc func(scanner scanner) ([]interface{}, error)
+type driverFunc func(scanner scanner) ([]any, error)
 
 type scanner interface {
-	Scan(dest ...interface{}) error
+	Scan(dest ...any) error
 }
 
 func newMigrator(store *lsifstore.Store, driver migrationDriver, options migratorOptions) oobmigration.Migrator {
@@ -313,7 +313,7 @@ FOR UPDATE SKIP LOCKED
 // processRows selects a batch of rows from the target table associated with the given dump identifier
 // to  update and calls the given driver func over each row. The driver func returns the set of values
 // that should be used to update that row. These values are fed into a channel usable for batch insert.
-func (m *Migrator) processRows(ctx context.Context, tx *lsifstore.Store, dumpID, version int, driverFunc driverFunc) (_ <-chan []interface{}, err error) {
+func (m *Migrator) processRows(ctx context.Context, tx *lsifstore.Store, dumpID, version int, driverFunc driverFunc) (_ <-chan []any, err error) {
 	rows, err := tx.Query(ctx, sqlf.Sprintf(
 		processRowsQuery,
 		sqlf.Join(m.selectionExpressions, ", "),
@@ -327,7 +327,7 @@ func (m *Migrator) processRows(ctx context.Context, tx *lsifstore.Store, dumpID,
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
-	rowValues := make(chan []interface{}, m.options.batchSize)
+	rowValues := make(chan []any, m.options.batchSize)
 	defer close(rowValues)
 
 	for rows.Next() {
@@ -353,7 +353,7 @@ var temporaryTableExpression = sqlf.Sprintf(temporaryTableName)
 // updateBatch creates a temporary table symmetric to the target table but without any of the read-only
 // fields. Then, the given row values are bulk inserted into the temporary table. Finally, the rows in
 // the temporary table are used to update the target table.
-func (m *Migrator) updateBatch(ctx context.Context, tx *lsifstore.Store, dumpID, targetVersion int, rowValues <-chan []interface{}) error {
+func (m *Migrator) updateBatch(ctx context.Context, tx *lsifstore.Store, dumpID, targetVersion int, rowValues <-chan []any) error {
 	if err := tx.Exec(ctx, sqlf.Sprintf(
 		updateBatchTemporaryTableQuery,
 		temporaryTableExpression,

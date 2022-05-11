@@ -22,7 +22,7 @@ var allJobs = []job.Job{
 	&commit.CommitSearchJob{},
 	&symbol.RepoUniverseSymbolSearchJob{},
 	&repos.ComputeExcludedReposJob{},
-	&noopJob{},
+	&NoopJob{},
 
 	&repoPagerJob{},
 

@@ -434,7 +434,7 @@ func logIndexStatus(schemaContext schemaContext, tableName, indexName string, in
 	logger.Info(
 		"Checked progress of index creation",
 		append(
-			[]interface{}{
+			[]any{
 				"schema", schemaContext.schema.Name,
 				"tableName", tableName,
 				"indexName", indexName,
@@ -450,9 +450,9 @@ func logIndexStatus(schemaContext schemaContext, tableName, indexName string, in
 // renderIndexStatus returns a slice of interface pairs describing the given index status for use in a
 // call to logger. If the index is currently being created, the progress of the create operation will be
 // summarized.
-func renderIndexStatus(progress storetypes.IndexStatus) (logPairs []interface{}) {
+func renderIndexStatus(progress storetypes.IndexStatus) (logPairs []any) {
 	if progress.Phase == nil {
-		return []interface{}{
+		return []any{
 			"in-progress", false,
 		}
 	}
@@ -465,7 +465,7 @@ func renderIndexStatus(progress storetypes.IndexStatus) (logPairs []interface{})
 		}
 	}
 
-	return []interface{}{
+	return []any{
 		"in-progress", true,
 		"phase", *progress.Phase,
 		"phases", fmt.Sprintf("%d of %d", index, len(storetypes.CreateIndexConcurrentlyPhases)),

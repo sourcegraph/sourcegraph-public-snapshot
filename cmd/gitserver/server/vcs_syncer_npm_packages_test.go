@@ -19,7 +19,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
+	livedependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
@@ -100,7 +100,7 @@ func TestNpmCloneCommand(t *testing.T) {
 		},
 	}
 
-	depsSvc := live.TestService(database.NewDB(dbtest.NewDB(t)), nil)
+	depsSvc := livedependencies.TestService(database.NewDB(dbtest.NewDB(t)), livedependencies.NewSyncer())
 
 	s := NewNpmPackagesSyncer(
 		schema.NpmPackagesConnection{Dependencies: []string{}},
@@ -236,7 +236,7 @@ func (info *fileInfo) Size() int64        { return int64(len(info.contents)) }
 func (info *fileInfo) Mode() fs.FileMode  { return 0600 }
 func (info *fileInfo) ModTime() time.Time { return time.Unix(0, 0) }
 func (info *fileInfo) IsDir() bool        { return false }
-func (info *fileInfo) Sys() interface{}   { return nil }
+func (info *fileInfo) Sys() any           { return nil }
 
 func TestDecompressTgz(t *testing.T) {
 	table := []struct {

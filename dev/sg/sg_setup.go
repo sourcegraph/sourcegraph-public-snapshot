@@ -214,7 +214,7 @@ func printCategoryHeaderAndDependencies(categoryIdx int, category *dependencyCat
 		if dep.IsMet() {
 			writeSuccessLinef("%d. %s", idx, dep.name)
 		} else {
-			var printer func(fmtStr string, args ...interface{})
+			var printer func(fmtStr string, args ...any)
 			if dep.onlyTeammates {
 				printer = writeWarningLinef
 			} else {
