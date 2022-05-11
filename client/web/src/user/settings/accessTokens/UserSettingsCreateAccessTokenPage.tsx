@@ -81,8 +81,10 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
         telemetryService.logViewEvent('NewAccessToken')
     }, [telemetryService])
 
+    /** Get the token description from the url parameters if any */
+    const urlParameters = new URLSearchParams(history.location.search).get('description')
     /** The contents of the note input field. */
-    const [note, setNote] = useState<string>('')
+    const [note, setNote] = useState<string>(urlParameters || '')
     /** The selected scopes checkboxes. */
     const [scopes, setScopes] = useState<string[]>([AccessTokenScopes.UserAll])
 
@@ -144,6 +146,7 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
                             className="form-control test-create-access-token-description"
                             id="user-settings-create-access-token-page__note"
                             onChange={onNoteChange}
+                            value={note}
                             required={true}
                             autoFocus={true}
                             placeholder="What's this token for?"

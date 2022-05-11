@@ -31,7 +31,7 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
     const [state, setState] = useState<'initial' | 'validating' | 'success' | 'failure'>('initial')
     const [hasAccount, setHasAccount] = useState(!authenticatedUser)
     const [usePrivateInstance, setUsePrivateInstance] = useState(false)
-    const signUpURL = `https://sourcegraph.com/sign-up?editor=vscode&${SIDEBAR_UTM_PARAMS}`
+    const signUpURL = `https://sourcegraph.com/sign-up?editor=vscode&${SIDEBAR_UTM_PARAMS}&returnTo=%2Fuser%2Fsettings%2Ftokens%2Fnew%3Fdescription%3Dvsce%2Btoken%26toast%3Dintegrations`
     const instanceHostname = useMemo(() => new URL(instanceURL).hostname, [instanceURL])
     const [hostname, setHostname] = useState(instanceHostname)
 
