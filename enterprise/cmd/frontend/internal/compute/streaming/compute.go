@@ -24,19 +24,18 @@ func toComputeResultStream(ctx context.Context, db database.DB, cmd compute.Comm
 	return nil
 }
 
-func NewComputeStream(ctx context.Context, db database.DB, query string) (<-chan Event, func() (*search.Alert, error)) {
+func NewComputeStream(ctx context.Context, db database.DB, query string) (<-chan Event, func() error) {
 	computeQuery, err := compute.Parse(query)
 	if err != nil {
-		return nil, func() (*search.Alert, error) { return nil, err }
+		return nil, func() error { return err }
 	}
 
 	searchQuery, err := computeQuery.ToSearchQuery()
 	if err != nil {
-		return nil, func() (*search.Alert, error) { return nil, err }
+		return nil, func() error { return err }
 	}
 
 	eventsC := make(chan Event)
-	errorC := make(chan error, 1)
 	stream := streaming.StreamFunc(func(event streaming.SearchEvent) {
 		if len(event.Results) > 0 {
 			callback := func(result compute.Result) {
@@ -55,8 +54,7 @@ func NewComputeStream(ctx context.Context, db database.DB, query string) (<-chan
 	settings, err := graphqlbackend.DecodedViewerFinalSettings(ctx, db)
 	if err != nil {
 		close(eventsC)
-		close(errorC)
-		return eventsC, func() (*search.Alert, error) { return nil, err }
+		return eventsC, func() error { return err }
 	}
 
 	patternType := "regexp"
@@ -64,31 +62,23 @@ func NewComputeStream(ctx context.Context, db database.DB, query string) (<-chan
 	inputs, err := searchClient.Plan(ctx, "", &patternType, searchQuery, search.Streaming, settings, envvar.SourcegraphDotComMode())
 	if err != nil {
 		close(eventsC)
-		close(errorC)
-
-		return eventsC, func() (*search.Alert, error) { return nil, err }
+		return eventsC, func() error { return err }
 	}
 
 	type finalResult struct {
-		alert *search.Alert
-		err   error
+		err error
 	}
 	final := make(chan finalResult, 1)
 	go func() {
 		defer close(final)
 		defer close(eventsC)
-		defer close(errorC)
 
-		alert, err := searchClient.Execute(ctx, stream, inputs)
-		final <- finalResult{alert: alert, err: err}
+		_, err := searchClient.Execute(ctx, stream, inputs)
+		final <- finalResult{err: err}
 	}()
 
-	return eventsC, func() (*search.Alert, error) {
-		computeErr := <-errorC
-		if computeErr != nil {
-			return nil, computeErr
-		}
+	return eventsC, func() error {
 		f := <-final
-		return f.alert, f.err
+		return f.err
 	}
 }

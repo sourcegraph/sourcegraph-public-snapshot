@@ -994,8 +994,8 @@ func (s *PermsSyncer) scheduleReposWithNoPerms(ctx context.Context) ([]scheduled
 
 // scheduleUsersWithOldestPerms returns computed schedules for users who have oldest
 // permissions in database and capped results by the limit.
-func (s *PermsSyncer) scheduleUsersWithOldestPerms(ctx context.Context, limit int) ([]scheduledUser, error) {
-	results, err := s.permsStore.UserIDsWithOldestPerms(ctx, limit)
+func (s *PermsSyncer) scheduleUsersWithOldestPerms(ctx context.Context, limit int, age time.Duration) ([]scheduledUser, error) {
+	results, err := s.permsStore.UserIDsWithOldestPerms(ctx, limit, age)
 	if err != nil {
 		return nil, err
 	}
@@ -1013,8 +1013,8 @@ func (s *PermsSyncer) scheduleUsersWithOldestPerms(ctx context.Context, limit in
 
 // scheduleReposWithOldestPerms returns computed schedules for private repositories that
 // have oldest permissions in database.
-func (s *PermsSyncer) scheduleReposWithOldestPerms(ctx context.Context, limit int) ([]scheduledRepo, error) {
-	results, err := s.permsStore.ReposIDsWithOldestPerms(ctx, limit)
+func (s *PermsSyncer) scheduleReposWithOldestPerms(ctx context.Context, limit int, age time.Duration) ([]scheduledRepo, error) {
+	results, err := s.permsStore.ReposIDsWithOldestPerms(ctx, limit, age)
 	if err != nil {
 		return nil, err
 	}
@@ -1099,13 +1099,13 @@ func (s *PermsSyncer) schedule(ctx context.Context) (*schedule, error) {
 	// TODO(jchen): Use better heuristics for setting NextSyncAt, the initial version
 	// just uses the value of LastUpdatedAt get from the perms tables.
 
-	users, err = s.scheduleUsersWithOldestPerms(ctx, userLimit)
+	users, err = s.scheduleUsersWithOldestPerms(ctx, userLimit, syncUserBackoff())
 	if err != nil {
 		return nil, errors.Wrap(err, "load users with oldest permissions")
 	}
 	schedule.Users = append(schedule.Users, users...)
 
-	repos, err = s.scheduleReposWithOldestPerms(ctx, repoLimit)
+	repos, err = s.scheduleReposWithOldestPerms(ctx, repoLimit, syncRepoBackoff())
 	if err != nil {
 		return nil, errors.Wrap(err, "scan repositories with oldest permissions")
 	}
@@ -1305,4 +1305,20 @@ func oldestRepoPermissionsBatchSize() int {
 		return 10
 	}
 	return batchSize
+}
+
+func syncUserBackoff() time.Duration {
+	seconds := conf.Get().PermissionsSyncUsersBackoffSeconds
+	if seconds <= 0 {
+		return 60 * time.Second
+	}
+	return time.Duration(seconds) * time.Second
+}
+
+func syncRepoBackoff() time.Duration {
+	seconds := conf.Get().PermissionsSyncReposBackoffSeconds
+	if seconds <= 0 {
+		return 60 * time.Second
+	}
+	return time.Duration(seconds) * time.Second
 }

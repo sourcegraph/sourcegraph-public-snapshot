@@ -888,6 +888,16 @@
       "type": "integer",
       "default": 10
     },
+    "permissions.syncUsersBackoffSeconds": {
+      "description": "Don't sync a user's permissions if they have synced within the last n seconds",
+      "type": "integer",
+      "default": 60
+    },
+    "permissions.syncReposBackoffSeconds": {
+      "description": "Don't sync a repo's permissions if it has synced within the last n seconds",
+      "type": "integer",
+      "default": 60
+    },
     "branding": {
       "description": "Customize Sourcegraph homepage logo and search icon.\n\nOnly available in Sourcegraph Enterprise.",
       "type": "object",
