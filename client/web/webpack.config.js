@@ -113,6 +113,7 @@ const config = {
   },
   output: {
     path: path.join(ROOT_PATH, 'ui', 'assets'),
+    // path: '/tmp/sg-ui-assets-test3',
     // Do not [hash] for development -- see https://github.com/webpack/webpack-dev-server/issues/377#issuecomment-241258405
     // Note: [name] will vary depending on the Webpack chunk. If specified, it will use a provided chunk name, otherwise it will fallback to a deterministic id.
     filename:
@@ -121,7 +122,8 @@ const config = {
         : 'scripts/[name].bundle.js',
     chunkFilename:
       IS_PRODUCTION && !WEBPACK_USE_NAMED_CHUNKS ? 'scripts/[name]-[contenthash].chunk.js' : 'scripts/[name].chunk.js',
-    publicPath: '/.assets/',
+    // publicPath: '/.assets/',
+    publicPath: 'https://storage.googleapis.com/sourcegraph-assets/test5/',
     globalObject: 'self',
     pathinfo: false,
   },
