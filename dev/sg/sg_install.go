@@ -55,7 +55,7 @@ func installAction(cmd *cli.Context) error {
 		}
 		// Looks like sg is already installed.
 		if cmd.Bool("force") {
-			std.Out.WriteAlertf("Removing existing 'sg' installation at %s.", path)
+			std.Out.WriteNoticef("Removing existing 'sg' installation at %s.", path)
 			if err := os.Remove(path); err != nil {
 				return err
 			}
