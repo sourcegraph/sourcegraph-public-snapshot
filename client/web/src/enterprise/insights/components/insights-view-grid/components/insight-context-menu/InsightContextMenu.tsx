@@ -20,6 +20,7 @@ import { useExperimentalFeatures } from '../../../../../../stores'
 import { Insight, InsightDashboard, InsightType, isVirtualDashboard } from '../../../../core'
 import { useUiFeatures } from '../../../../hooks/use-ui-features'
 import { ConfirmDeleteModal } from '../../../modals/ConfirmDeleteModal'
+import { ShareLinkModal } from '../../../modals/ShareLinkModal'
 
 import { ConfirmRemoveModal } from './ConfirmRemoveModal'
 
@@ -41,6 +42,7 @@ export const InsightContextMenu: React.FunctionComponent<React.PropsWithChildren
 
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const [showRemoveConfirm, setShowRemoveConfirm] = useState(false)
+    const [showShareModal, setShowShareModal] = useState(false)
 
     const { insight: insightPermissions } = useUiFeatures()
     const menuPermissions = insightPermissions.getContextActionsPermissions(insight)
@@ -84,6 +86,14 @@ export const InsightContextMenu: React.FunctionComponent<React.PropsWithChildren
                                 to={editUrl}
                             >
                                 Edit
+                            </MenuLink>
+
+                            <MenuLink
+                                data-testid="InsightContextMenuShareLink"
+                                className={styles.item}
+                                onSelect={() => setShowShareModal(true)}
+                            >
+                                Get shareable link
                             </MenuLink>
 
                             {menuPermissions.showYAxis && (
@@ -152,6 +162,7 @@ export const InsightContextMenu: React.FunctionComponent<React.PropsWithChildren
                 showModal={showRemoveConfirm}
                 onCancel={() => setShowRemoveConfirm(false)}
             />
+            <ShareLinkModal aria-label="Share insight" isOpen={showShareModal} />
         </>
     )
 }
