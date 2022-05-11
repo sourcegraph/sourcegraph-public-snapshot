@@ -29,7 +29,12 @@ func traceInternal(ctx context.Context, args []string) error {
 	}
 	pkg := args[0]
 
-	graph, err := graph.Load()
+	root, err := findRoot()
+	if err != nil {
+		return err
+	}
+
+	graph, err := graph.Load(root)
 	if err != nil {
 		return err
 	}

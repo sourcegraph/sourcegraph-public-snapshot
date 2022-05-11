@@ -5,19 +5,26 @@ import (
 	"flag"
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/peterbourgon/ff/v3/ffcli"
+
+	"github.com/sourcegraph/run"
 
 	"github.com/sourcegraph/sourcegraph/dev/depgraph/internal/graph"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var summaryFlagSet = flag.NewFlagSet("depgraph summary", flag.ExitOnError)
+var (
+	summaryFlagSet  = flag.NewFlagSet("depgraph summary", flag.ExitOnError)
+	summaryDepsSum  = summaryFlagSet.Bool("deps.sum", false, "generate md5sum of each dependency")
+	summaryDepsOnly = summaryFlagSet.Bool("deps.only", false, "only display dependencies")
+)
 
 var summaryCommand = &ffcli.Command{
 	Name:       "summary",
 	ShortUsage: "depgraph summary {package}",
-	ShortHelp:  "Outputs a DOT-formatted graph of the given package dependency and dependents",
+	ShortHelp:  "Outputs a text summary of the given package dependency and dependents",
 	FlagSet:    summaryFlagSet,
 	Exec:       summary,
 }
@@ -28,7 +35,12 @@ func summary(ctx context.Context, args []string) error {
 	}
 	pkg := args[0]
 
-	graph, err := graph.Load()
+	root, err := findRoot()
+	if err != nil {
+		return err
+	}
+
+	graph, err := graph.Load(root)
 	if err != nil {
 		return err
 	}
@@ -51,7 +63,7 @@ func summary(ctx context.Context, args []string) error {
 
 	for _, dependency := range dependencies {
 		if dependencyMap[dependency] {
-			fmt.Printf("\t> %s\n", dependency)
+			printPkg(ctx, root, dependency)
 		}
 	}
 
@@ -60,8 +72,12 @@ func summary(ctx context.Context, args []string) error {
 
 	for _, dependency := range dependencies {
 		if !dependencyMap[dependency] {
-			fmt.Printf("\t> %s\n", dependency)
+			printPkg(ctx, root, dependency)
 		}
+	}
+
+	if *summaryDepsOnly {
+		return nil
 	}
 
 	fmt.Printf("\n")
@@ -131,4 +147,22 @@ func isMain(graph *graph.DependencyGraph, pkg string) bool {
 	}
 
 	return false
+}
+
+func printPkg(ctx context.Context, root string, pkg string) error {
+	fmt.Printf("\t> %s", pkg)
+	if *summaryDepsSum {
+		dir := "./" + pkg
+		lines, err := run.Cmd(ctx, "bash -c", "'tar c "+dir+" | md5sum'").
+			Dir(root).
+			Run().
+			Lines()
+		if err != nil {
+			return err
+		}
+		sum := strings.Split(lines[0], " ")[0]
+		fmt.Printf("\t%s", sum)
+	}
+	fmt.Println()
+	return nil
 }
