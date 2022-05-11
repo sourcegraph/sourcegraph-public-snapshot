@@ -26,7 +26,7 @@ jobs:
           if ! git diff --quiet; then
             git config user.name sourcegraph-bot
             git config user.email sourcegraph-bot-github@sourcegraph.com
-            git checkout -b "sync-bot/$(date -Iminutes)"
+            git checkout -b "sync-bot/$(date -Iminutes | sed -e 's/:/./g')"
             git add schema/schema.graphql
             TITLE="schema: Sync GraphQL schema from sourcegraph/sourcegraph."
             git commit -m "$TITLE"
