@@ -32,7 +32,7 @@ func TestFeatureFlagStore(t *testing.T) {
 }
 
 func errorContains(s string) require.ErrorAssertionFunc {
-	return func(t require.TestingT, err error, msg ...interface{}) {
+	return func(t require.TestingT, err error, msg ...any) {
 		require.Error(t, err)
 		require.Contains(t, err.Error(), s, msg)
 	}

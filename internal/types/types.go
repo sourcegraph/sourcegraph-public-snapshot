@@ -62,7 +62,7 @@ type Repo struct {
 	// The key is a URN created by extsvc.URN
 	Sources map[string]*SourceInfo
 	// Metadata contains the raw source code host JSON metadata.
-	Metadata interface{}
+	Metadata any
 	// Blocked contains the reason this repository was blocked and the timestamp of when it happened.
 	Blocked *RepoBlock `json:",omitempty"`
 }
@@ -95,7 +95,7 @@ type RepoBlock struct {
 	Reason string
 }
 
-// CloneURLs returns all the clone URLs this repo is clonable from.
+// CloneURLs returns all the clone URLs this repo is cloneable from.
 func (r *Repo) CloneURLs() []string {
 	urls := make([]string, 0, len(r.Sources))
 	for _, src := range r.Sources {
@@ -540,7 +540,7 @@ func (e *ExternalService) Update(n *ExternalService) (modified bool) {
 }
 
 // Configuration returns the external service config.
-func (e *ExternalService) Configuration() (cfg interface{}, _ error) {
+func (e *ExternalService) Configuration() (cfg any, _ error) {
 	return extsvc.ParseConfig(e.Kind, e.Config)
 }
 

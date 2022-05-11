@@ -152,7 +152,7 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *btypes.Changese
 
 	uiPublicationState := uiPublicationStateColumn(c)
 
-	vars := []interface{}{
+	vars := []any{
 		sqlf.Join(changesetInsertColumns, ", "),
 		c.RepoID,
 		c.CreatedAt,
@@ -754,10 +754,10 @@ func (s *Store) UpdateChangesetUiPublicationState(ctx context.Context, cs *btype
 
 // updateChangesetColumn updates the column with the given name, setting it to
 // the given value, and updating the updated_at column.
-func (s *Store) updateChangesetColumn(ctx context.Context, cs *btypes.Changeset, name string, val interface{}) error {
+func (s *Store) updateChangesetColumn(ctx context.Context, cs *btypes.Changeset, name string, val any) error {
 	cs.UpdatedAt = s.now()
 
-	vars := []interface{}{
+	vars := []any{
 		sqlf.Sprintf(name),
 		cs.UpdatedAt,
 		val,
@@ -816,7 +816,7 @@ func updateChangesetCodeHostStateQuery(c *btypes.Changeset) (*sqlf.Query, error)
 	// Not being able to find a title is fine, we just have a NULL in the database then.
 	title, _ := c.Title()
 
-	vars := []interface{}{
+	vars := []any{
 		sqlf.Join(changesetCodeHostStateInsertColumns, ", "),
 		c.UpdatedAt,
 		metadata,
@@ -1072,7 +1072,7 @@ type jsonBatchChangeChangesetSet struct {
 }
 
 // Scan implements the Scanner interface.
-func (n *jsonBatchChangeChangesetSet) Scan(value interface{}) error {
+func (n *jsonBatchChangeChangesetSet) Scan(value any) error {
 	m := make(map[int64]btypes.BatchChangeAssoc)
 
 	switch value := value.(type) {

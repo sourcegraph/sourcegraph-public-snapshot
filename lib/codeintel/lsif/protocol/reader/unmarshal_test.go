@@ -198,7 +198,7 @@ func TestUnmarshalRangeWithTag(t *testing.T) {
 	}
 }
 
-var result interface{}
+var result any
 
 func BenchmarkUnmarshalHover(b *testing.B) {
 	for i := 0; i < b.N; i++ {

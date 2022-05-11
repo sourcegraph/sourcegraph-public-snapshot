@@ -90,10 +90,7 @@ export const InsightContextMenu: React.FunctionComponent<React.PropsWithChildren
                                 <MenuItem
                                     role="menuitemcheckbox"
                                     data-testid="InsightContextMenuEditLink"
-                                    className={classNames(
-                                        'd-flex align-items-center justify-content-between',
-                                        styles.item
-                                    )}
+                                    className={classNames('d-flex align-items-center justify-content-end', styles.item)}
                                     onSelect={onToggleZeroYAxisMin}
                                     aria-checked={zeroYAxisMin}
                                 >
@@ -103,7 +100,7 @@ export const InsightContextMenu: React.FunctionComponent<React.PropsWithChildren
                                         onChange={noop}
                                         tabIndex={-1}
                                         id="InsightContextMenuEditInput"
-                                        label="Start Y Axis at 0"
+                                        label={<span className="font-weight-normal">Start Y Axis at 0</span>}
                                     />
                                 </MenuItem>
                             )}

@@ -33,7 +33,7 @@ func TestEvalStepCondition(t *testing.T) {
 			Changes: testChanges,
 			Path:    "sub/directory/of/repo",
 		},
-		Outputs: map[string]interface{}{},
+		Outputs: map[string]any{},
 		// Step is not set when evalStepCondition is called
 		Repository: *testRepo1,
 	}
@@ -79,7 +79,7 @@ func TestRenderStepTemplate(t *testing.T) {
 	// To avoid bugs due to differences between test setup and actual code, we
 	// do the actual parsing of YAML here to get an interface{} which we'll put
 	// in the StepContext.
-	var parsedYaml interface{}
+	var parsedYaml any
 	if err := yaml.Unmarshal([]byte(rawYaml), &parsedYaml); err != nil {
 		t.Fatalf("failed to parse YAML: %s", err)
 	}
@@ -94,7 +94,7 @@ func TestRenderStepTemplate(t *testing.T) {
 			Stdout: bytes.NewBufferString("this is previous step's stdout"),
 			Stderr: bytes.NewBufferString("this is previous step's stderr"),
 		},
-		Outputs: map[string]interface{}{
+		Outputs: map[string]any{
 			"lastLine": "lastLine is this",
 			"project":  parsedYaml,
 		},
@@ -238,7 +238,7 @@ func TestRenderStepMap(t *testing.T) {
 			Stdout: bytes.NewBufferString("this is previous step's stdout"),
 			Stderr: bytes.NewBufferString("this is previous step's stderr"),
 		},
-		Outputs:    map[string]interface{}{},
+		Outputs:    map[string]any{},
 		Repository: *testRepo1,
 	}
 
@@ -268,7 +268,7 @@ func TestRenderChangesetTemplateField(t *testing.T) {
 	// To avoid bugs due to differences between test setup and actual code, we
 	// do the actual parsing of YAML here to get an interface{} which we'll put
 	// in the StepContext.
-	var parsedYaml interface{}
+	var parsedYaml any
 	if err := yaml.Unmarshal([]byte(rawYaml), &parsedYaml); err != nil {
 		t.Fatalf("failed to parse YAML: %s", err)
 	}
@@ -278,7 +278,7 @@ func TestRenderChangesetTemplateField(t *testing.T) {
 			Name:        "test-batch-change",
 			Description: "This batch change is just an experiment",
 		},
-		Outputs: map[string]interface{}{
+		Outputs: map[string]any{
 			"lastLine": "lastLine is this",
 			"project":  parsedYaml,
 		},

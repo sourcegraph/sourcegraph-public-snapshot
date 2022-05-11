@@ -52,63 +52,47 @@ func (u Upload) RecordID() int {
 	return u.ID
 }
 
-// scanUploads scans a slice of uploads from the return value of `*Store.query`.
-func scanUploads(rows *sql.Rows, queryErr error) (_ []Upload, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	var uploads []Upload
-	for rows.Next() {
-		var upload Upload
-		var rawUploadedParts []sql.NullInt32
-		if err := rows.Scan(
-			&upload.ID,
-			&upload.Commit,
-			&upload.Root,
-			&upload.VisibleAtTip,
-			&upload.UploadedAt,
-			&upload.State,
-			&upload.FailureMessage,
-			&upload.StartedAt,
-			&upload.FinishedAt,
-			&upload.ProcessAfter,
-			&upload.NumResets,
-			&upload.NumFailures,
-			&upload.RepositoryID,
-			&upload.RepositoryName,
-			&upload.Indexer,
-			&dbutil.NullString{S: &upload.IndexerVersion},
-			&upload.NumParts,
-			pq.Array(&rawUploadedParts),
-			&upload.UploadSize,
-			&upload.AssociatedIndexID,
-			&upload.Rank,
-		); err != nil {
-			return nil, err
-		}
-
-		uploadedParts := make([]int, 0, len(rawUploadedParts))
-		for _, uploadedPart := range rawUploadedParts {
-			uploadedParts = append(uploadedParts, int(uploadedPart.Int32))
-		}
-		upload.UploadedParts = uploadedParts
-
-		uploads = append(uploads, upload)
+func scanUpload(s dbutil.Scanner) (upload Upload, _ error) {
+	var rawUploadedParts []sql.NullInt32
+	if err := s.Scan(
+		&upload.ID,
+		&upload.Commit,
+		&upload.Root,
+		&upload.VisibleAtTip,
+		&upload.UploadedAt,
+		&upload.State,
+		&upload.FailureMessage,
+		&upload.StartedAt,
+		&upload.FinishedAt,
+		&upload.ProcessAfter,
+		&upload.NumResets,
+		&upload.NumFailures,
+		&upload.RepositoryID,
+		&upload.RepositoryName,
+		&upload.Indexer,
+		&dbutil.NullString{S: &upload.IndexerVersion},
+		&upload.NumParts,
+		pq.Array(&rawUploadedParts),
+		&upload.UploadSize,
+		&upload.AssociatedIndexID,
+		&upload.Rank,
+	); err != nil {
+		return upload, err
 	}
 
-	return uploads, nil
+	upload.UploadedParts = make([]int, 0, len(rawUploadedParts))
+	for _, uploadedPart := range rawUploadedParts {
+		upload.UploadedParts = append(upload.UploadedParts, int(uploadedPart.Int32))
+	}
+
+	return upload, nil
 }
+
+// scanUploads scans a slice of uploads from the return value of `*Store.query`.
+var scanUploads = basestore.NewSliceScanner(scanUpload)
 
 // scanFirstUpload scans a slice of uploads from the return value of `*Store.query` and returns the first.
-func scanFirstUpload(rows *sql.Rows, err error) (Upload, bool, error) {
-	uploads, err := scanUploads(rows, err)
-	if err != nil || len(uploads) == 0 {
-		return Upload{}, false, err
-	}
-	return uploads[0], true, nil
-}
+var scanFirstUpload = basestore.NewFirstScanner(scanUpload)
 
 // scanFirstUploadRecord scans a slice of uploads from the return value of `*Store.query` and returns the first.
 func scanFirstUploadRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {

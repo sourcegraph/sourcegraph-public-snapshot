@@ -232,7 +232,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
 
     if (sidebar) {
         return (
-            <div key={node.id} className={classNames(styles.gitCommitNode, styles.gitCommitNodeCompact, className)}>
+            <li key={node.id} className={classNames(styles.gitCommitNode, styles.gitCommitNodeCompact, className)}>
                 <div className="w-100 d-flex justify-content-between align-items-center flex-wrap-reverse">
                     {bylineElement}
                     <small className={classNames('text-muted', styles.messageTimestamp)}>
@@ -244,12 +244,12 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                     </small>
                     <Link to={node.canonicalURL}>{oidElement}</Link>
                 </div>
-            </div>
+            </li>
         )
     }
 
     return (
-        <div
+        <li
             key={node.id}
             className={classNames(styles.gitCommitNode, compact && styles.gitCommitNodeCompact, className)}
         >
@@ -268,6 +268,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                                                 variant="secondary"
                                                 as={Link}
                                                 size="sm"
+                                                aria-label="View this commit"
                                             >
                                                 <strong>{oidElement}</strong>
                                             </Button>
@@ -278,6 +279,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                                                 }
                                                 variant="secondary"
                                                 size="sm"
+                                                aria-label="Copy full SHA"
                                             >
                                                 <Icon className="small" as={ContentCopyIcon} />
                                             </Button>
@@ -289,6 +291,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                                                 variant="secondary"
                                                 size="sm"
                                                 as={Link}
+                                                aria-label="View files at this commit"
                                             >
                                                 <Icon className="mr-1" as={FileDocumentIcon} />
                                             </Button>
@@ -312,6 +315,6 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                     </div>
                 )}
             </>
-        </div>
+        </li>
     )
 }

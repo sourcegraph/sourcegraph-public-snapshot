@@ -81,3 +81,34 @@ func TestCodeMonitorStoreLastSearched(t *testing.T) {
 		require.Empty(t, lastSearched)
 	})
 }
+
+func TestCodeMonitorHasAnyLastSearched(t *testing.T) {
+	t.Parallel()
+
+	t.Run("has none", func(t *testing.T) {
+		t.Parallel()
+		ctx := context.Background()
+		db := NewEnterpriseDB(database.NewDB(dbtest.NewDB(t)))
+		fixtures := populateCodeMonitorFixtures(t, db)
+		cm := db.CodeMonitors()
+
+		hasLastSearched, err := cm.HasAnyLastSearched(ctx, fixtures.Monitor.ID)
+		require.NoError(t, err)
+		require.False(t, hasLastSearched)
+	})
+
+	t.Run("has some", func(t *testing.T) {
+		t.Parallel()
+		ctx := context.Background()
+		db := NewEnterpriseDB(database.NewDB(dbtest.NewDB(t)))
+		fixtures := populateCodeMonitorFixtures(t, db)
+		cm := db.CodeMonitors()
+
+		err := cm.UpsertLastSearched(ctx, fixtures.Monitor.ID, fixtures.Repo.ID, []string{"a", "b"})
+		require.NoError(t, err)
+
+		hasLastSearched, err := cm.HasAnyLastSearched(ctx, fixtures.Monitor.ID)
+		require.NoError(t, err)
+		require.True(t, hasLastSearched)
+	})
+}

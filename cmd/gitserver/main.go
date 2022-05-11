@@ -41,6 +41,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gomodproxy"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/pypi"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -408,7 +409,7 @@ func getVCSSyncer(
 		return nil, errors.Wrap(err, "get repository")
 	}
 
-	extractOptions := func(connection interface{}) (string, error) {
+	extractOptions := func(connection any) (string, error) {
 		for _, info := range r.Sources {
 			extSvc, err := externalServiceStore.GetByID(ctx, info.ExternalServiceID())
 			if err != nil {
@@ -458,6 +459,14 @@ func getVCSSyncer(
 		}
 		cli := gomodproxy.NewClient(urn, c.Urls, httpcli.ExternalDoer)
 		return server.NewGoModulesSyncer(&c, depsSvc, cli), nil
+	case extsvc.TypePythonPackages:
+		var c schema.PythonPackagesConnection
+		urn, err := extractOptions(&c)
+		if err != nil {
+			return nil, err
+		}
+		cli := pypi.NewClient(urn, c.Urls, httpcli.ExternalDoer)
+		return server.NewPythonPackagesSyncer(&c, depsSvc, cli), nil
 	}
 	return &server.GitRepoSyncer{}, nil
 }

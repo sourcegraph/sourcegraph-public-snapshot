@@ -1443,6 +1443,24 @@ type PhabricatorConnection struct {
 	// Url description: URL of a Phabricator instance, such as https://phabricator.example.com
 	Url string `json:"url,omitempty"`
 }
+
+// PythonPackagesConnection description: Configuration for a connection to Python simple repository APIs compatible with PEP 503
+type PythonPackagesConnection struct {
+	// Dependencies description: An array of strings specifying Python packages to mirror in Sourcegraph.
+	Dependencies []string `json:"dependencies,omitempty"`
+	// RateLimit description: Rate limit applied when making background API requests to the configured Python simple repository APIs.
+	RateLimit *PythonRateLimit `json:"rateLimit,omitempty"`
+	// Urls description: The list of Python simple repository URLs to fetch packages from. 404 Not found or 410 Gone responses will result in the next URL to be attempted.
+	Urls []string `json:"urls"`
+}
+
+// PythonRateLimit description: Rate limit applied when making background API requests to the configured Python simple repository APIs.
+type PythonRateLimit struct {
+	// Enabled description: true if rate limiting is enabled.
+	Enabled bool `json:"enabled"`
+	// RequestsPerHour description: Requests per hour permitted. This is an average, calculated per second. Internally, the burst limit is set to 100, which implies that for a requests per hour limit as low as 1, users will continue to be able to send a maximum of 100 requests immediately, provided that the complexity cost of each request is 1.
+	RequestsPerHour float64 `json:"requestsPerHour"`
+}
 type QuickLink struct {
 	// Description description: A description for this quick link
 	Description string `json:"description,omitempty"`
@@ -1905,8 +1923,12 @@ type SiteConfiguration struct {
 	PermissionsSyncOldestRepos int `json:"permissions.syncOldestRepos,omitempty"`
 	// PermissionsSyncOldestUsers description: Number of user permissions to schedule for syncing in single scheduler iteration
 	PermissionsSyncOldestUsers int `json:"permissions.syncOldestUsers,omitempty"`
+	// PermissionsSyncReposBackoffSeconds description: Don't sync a repo's permissions if it has synced within the last n seconds
+	PermissionsSyncReposBackoffSeconds int `json:"permissions.syncReposBackoffSeconds,omitempty"`
 	// PermissionsSyncScheduleInterval description: Time interval (in seconds) of how often each component picks up authorization changes in external services.
 	PermissionsSyncScheduleInterval int `json:"permissions.syncScheduleInterval,omitempty"`
+	// PermissionsSyncUsersBackoffSeconds description: Don't sync a user's permissions if they have synced within the last n seconds
+	PermissionsSyncUsersBackoffSeconds int `json:"permissions.syncUsersBackoffSeconds,omitempty"`
 	// PermissionsUserMapping description: Settings for Sourcegraph permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This setting cannot be enabled if repository permissions for any specific external service are enabled (i.e., when the external service's `authorization` field is set).
 	PermissionsUserMapping *PermissionsUserMapping `json:"permissions.userMapping,omitempty"`
 	// ProductResearchPageEnabled description: Enables users access to the product research page in their settings.

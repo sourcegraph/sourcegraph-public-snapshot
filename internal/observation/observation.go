@@ -11,7 +11,6 @@ import (
 
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
-	"go.uber.org/zap"
 
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
@@ -281,7 +280,7 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 	event := honey.NoopEvent()
 	snakecaseOpName := toSnakeCase(op.name)
 	if op.context.HoneyDataset != nil {
-		event = op.context.HoneyDataset.EventWithFields(map[string]interface{}{
+		event = op.context.HoneyDataset.EventWithFields(map[string]any{
 			"operation":     snakecaseOpName,
 			"meta.hostname": hostname.Get(),
 			"meta.version":  version.Version(),
@@ -361,11 +360,11 @@ func (op *Operation) emitErrorLogs(trLogger TraceLogger, err *error, logFields [
 	if err == nil || *err == nil {
 		return
 	}
-	fields := append(toLogFields(logFields), zap.Error(*err))
+	fields := append(toLogFields(logFields), log.Error(*err))
 
 	trLogger.
 		AddCallerSkip(2). // callback() -> emitErrorLogs() -> Logger
-		Error(op.name, fields...)
+		Error("operation.error", fields...)
 }
 
 func (op *Operation) emitHoneyEvent(err *error, opName string, event honey.Event, logFields []otlog.Field, duration int64) {

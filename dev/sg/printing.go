@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func writeOrangeLinef(fmtStr string, args ...interface{}) {
+func writeOrangeLinef(fmtStr string, args ...any) {
 	stdout.Out.WriteLine(output.Linef("", output.CombineStyles(output.StyleBold, output.StyleOrange), fmtStr, args...))
 }
 
@@ -38,27 +38,27 @@ func printSgSetupWelcomeScreen() {
 	stdout.Out.Write(`  ` + shadow(`                                                                              `))
 }
 
-func writeSuccessLinef(fmtStr string, args ...interface{}) {
+func writeSuccessLinef(fmtStr string, args ...any) {
 	stdout.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, fmtStr, args...))
 }
 
-func writeFailureLinef(fmtStr string, args ...interface{}) {
+func writeFailureLinef(fmtStr string, args ...any) {
 	stdout.Out.WriteLine(output.Linef(output.EmojiFailure, output.StyleWarning, fmtStr, args...))
 }
 
-func newWarningLinef(fmtStr string, args ...interface{}) output.FancyLine {
+func newWarningLinef(fmtStr string, args ...any) output.FancyLine {
 	return output.Linef(output.EmojiWarningSign, output.StyleYellow, fmtStr, args...)
 }
 
-func writeWarningLinef(fmtStr string, args ...interface{}) {
+func writeWarningLinef(fmtStr string, args ...any) {
 	stdout.Out.WriteLine(newWarningLinef(fmtStr, args...))
 }
 
-func writeSkippedLinef(fmtStr string, args ...interface{}) {
+func writeSkippedLinef(fmtStr string, args ...any) {
 	stdout.Out.WriteLine(output.Linef(output.EmojiQuestionMark, output.StyleGrey, fmtStr, args...))
 }
 
-func writeFingerPointingLinef(fmtStr string, args ...interface{}) {
+func writeFingerPointingLinef(fmtStr string, args ...any) {
 	stdout.Out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleBold, fmtStr, args...))
 }
 

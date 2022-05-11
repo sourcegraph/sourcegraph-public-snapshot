@@ -1276,7 +1276,6 @@ func testSearchClient(t *testing.T, client searchClient) {
 				counts: counts{Commit: 1},
 			},
 			{
-				// https://github.com/sourcegraph/sourcegraph/issues/21031
 				name:   `search diffs with file filter and time filters`,
 				query:  `repo:go-diff patterntype:literal type:diff lang:go before:"May 10 2020" after:"May 5 2020" unquotedOrigName`,
 				counts: counts{Commit: 1},
@@ -1389,6 +1388,20 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 		}
 
 		_, err = client.AddExternalService(gqltestutil.AddExternalServiceInput{
+			Kind:        extsvc.KindPythonPackages,
+			DisplayName: "gqltest-python-search",
+			Config: mustMarshalJSONString(&schema.PythonPackagesConnection{
+				Urls: []string{"https://pypi.org/simple"},
+				Dependencies: []string{
+					"rich == 12.3.0",
+				},
+			}),
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		_, err = client.AddExternalService(gqltestutil.AddExternalServiceInput{
 			Kind:        extsvc.KindJVMPackages,
 			DisplayName: "gqltest-jvm-search",
 			Config: mustMarshalJSONString(&schema.JVMPackagesConnection{
@@ -1408,6 +1421,7 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 			"npm/urql",
 			"go/github.com/oklog/ulid/v2",
 			"maven/com.google.guava/guava",
+			"python/rich",
 		)
 		if err != nil {
 			t.Fatal(err)

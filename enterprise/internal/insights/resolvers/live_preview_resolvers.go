@@ -15,21 +15,61 @@ import (
 func (r *Resolver) SearchInsightLivePreview(ctx context.Context, args graphqlbackend.SearchInsightLivePreviewArgs) ([]graphqlbackend.SearchInsightLivePreviewSeriesResolver, error) {
 	if !args.Input.GeneratedFromCaptureGroups {
 		return nil, errors.New("live preview is currently only supported for generated series from capture groups")
-	} else if args.Input.TimeScope.StepInterval == nil {
+	}
+	previewArgs := graphqlbackend.SearchInsightPreviewArgs{
+		Input: graphqlbackend.SearchInsightPreviewInput{
+			RepositoryScope: args.Input.RepositoryScope,
+			TimeScope:       args.Input.TimeScope,
+			Series: []graphqlbackend.SearchSeriesPreviewInput{
+				{
+					Query:                      args.Input.Query,
+					Label:                      args.Input.Label,
+					GeneratedFromCaptureGroups: args.Input.GeneratedFromCaptureGroups,
+				},
+			},
+		},
+	}
+	return r.SearchInsightPreview(ctx, previewArgs)
+}
+
+func (r *Resolver) SearchInsightPreview(ctx context.Context, args graphqlbackend.SearchInsightPreviewArgs) ([]graphqlbackend.SearchInsightLivePreviewSeriesResolver, error) {
+	if args.Input.TimeScope.StepInterval == nil {
 		return nil, errors.New("live preview currently only supports a time interval time scope")
 	}
+	var resolvers []graphqlbackend.SearchInsightLivePreviewSeriesResolver
+	var generatedSeries []query.GeneratedTimeSeries
 
-	executor := query.NewCaptureGroupExecutor(r.postgresDB, r.insightsDB, time.Now)
+	// get a consistent time to use across all preview series
+	previewTime := time.Now().UTC()
+	clock := func() time.Time {
+		return previewTime
+	}
 	interval := timeseries.TimeInterval{
 		Unit:  types.IntervalUnit(args.Input.TimeScope.StepInterval.Unit),
 		Value: int(args.Input.TimeScope.StepInterval.Value),
 	}
-	generatedSeries, err := executor.Execute(ctx, args.Input.Query, args.Input.RepositoryScope.Repositories, interval)
-	if err != nil {
-		return nil, err
+	repos := args.Input.RepositoryScope.Repositories
+	for _, seriesArgs := range args.Input.Series {
+
+		var series []query.GeneratedTimeSeries
+		var err error
+
+		if seriesArgs.GeneratedFromCaptureGroups {
+			executor := query.NewCaptureGroupExecutor(r.postgresDB, r.insightsDB, clock)
+			series, err = executor.Execute(ctx, seriesArgs.Query, repos, interval)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			executor := query.NewStreamingExecutor(r.postgresDB, r.insightsDB, clock)
+			series, err = executor.Execute(ctx, seriesArgs.Query, seriesArgs.Label, seriesArgs.Label, repos, interval)
+			if err != nil {
+				return nil, err
+			}
+		}
+		generatedSeries = append(generatedSeries, series...)
 	}
 
-	var resolvers []graphqlbackend.SearchInsightLivePreviewSeriesResolver
 	for i := range generatedSeries {
 		resolvers = append(resolvers, &searchInsightLivePreviewSeriesResolver{series: &generatedSeries[i]})
 	}

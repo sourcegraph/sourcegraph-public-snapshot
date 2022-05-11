@@ -30,7 +30,6 @@ var (
 	dbCommand = &cli.Command{
 		Name:     "db",
 		Usage:    "Interact with local Sourcegraph databases for development",
-		Action:   suggestSubcommandsAction,
 		Category: CategoryDev,
 		Subcommands: []*cli.Command{
 			{

@@ -387,7 +387,7 @@ func (s *UpdateScheduler) UpdateOnce(id api.RepoID, name api.RepoName) {
 }
 
 // DebugDump returns the state of the update scheduler for debugging.
-func (s *UpdateScheduler) DebugDump(ctx context.Context, db database.DB) interface{} {
+func (s *UpdateScheduler) DebugDump(ctx context.Context, db database.DB) any {
 	data := struct {
 		Name        string
 		UpdateQueue []*repoUpdate
@@ -639,7 +639,7 @@ func (q *updateQueue) Swap(i, j int) {
 	q.heap[j].Index = j
 }
 
-func (q *updateQueue) Push(x interface{}) {
+func (q *updateQueue) Push(x any) {
 	n := len(q.heap)
 	item := x.(*repoUpdate)
 	item.Index = n
@@ -648,7 +648,7 @@ func (q *updateQueue) Push(x interface{}) {
 	q.index[item.Repo.ID] = item
 }
 
-func (q *updateQueue) Pop() interface{} {
+func (q *updateQueue) Pop() any {
 	n := len(q.heap)
 	item := q.heap[n-1]
 	item.Index = -1 // for safety
@@ -893,7 +893,7 @@ func (s *schedule) Swap(i, j int) {
 	s.heap[j].Index = j
 }
 
-func (s *schedule) Push(x interface{}) {
+func (s *schedule) Push(x any) {
 	n := len(s.heap)
 	item := x.(*scheduledRepoUpdate)
 	item.Index = n
@@ -902,7 +902,7 @@ func (s *schedule) Push(x interface{}) {
 	schedKnownRepos.Inc()
 }
 
-func (s *schedule) Pop() interface{} {
+func (s *schedule) Pop() any {
 	n := len(s.heap)
 	item := s.heap[n-1]
 	item.Index = -1 // for safety

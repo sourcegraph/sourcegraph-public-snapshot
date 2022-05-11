@@ -87,7 +87,7 @@ type batchChangeEventArg struct {
 	BatchChangeID int64 `json:"batch_change_id"`
 }
 
-func logBackendEvent(ctx context.Context, db database.DB, name string, args interface{}, publicArgs interface{}) error {
+func logBackendEvent(ctx context.Context, db database.DB, name string, args any, publicArgs any) error {
 	actor := actor.FromContext(ctx)
 	jsonArg, err := json.Marshal(args)
 	if err != nil {

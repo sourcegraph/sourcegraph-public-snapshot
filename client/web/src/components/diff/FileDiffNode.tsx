@@ -65,8 +65,8 @@ export const FileDiffNode: React.FunctionComponent<React.PropsWithChildren<FileD
         path = <span title={node.newPath}>{node.newPath}</span>
     } else if (node.newPath && node.oldPath && node.newPath !== node.oldPath) {
         path = (
-            <span title={`${node.oldPath} ⟶ ${node.newPath}`}>
-                {node.oldPath} ⟶ {node.newPath}
+            <span title={`${node.oldPath} → ${node.newPath}`}>
+                {node.oldPath} → {node.newPath}
             </span>
         )
     } else {
@@ -120,23 +120,25 @@ export const FileDiffNode: React.FunctionComponent<React.PropsWithChildren<FileD
                             </Badge>
                         )}
                         {stat}
-                        <Link to={{ ...location, hash: anchor }} className={classNames('ml-2', styles.headerPath)}>
-                            {path}
-                        </Link>
-                    </div>
-                    <div className={styles.headerActions}>
-                        {/* We only have a 'view' component for GitBlobs, but not for `VirtualFile`s. */}
-                        {node.mostRelevantFile.__typename === 'GitBlob' && (
-                            <Button
+                        {node.mostRelevantFile.__typename === 'GitBlob' ? (
+                            <Link
                                 to={node.mostRelevantFile.url}
                                 data-tooltip="View file at revision"
-                                variant="link"
-                                size="sm"
-                                as={Link}
+                                className="mr-0 ml-2 fw-bold"
                             >
-                                View
-                            </Button>
+                                <strong>{path}</strong>
+                            </Link>
+                        ) : (
+                            <span className="ml-2">{path}</span>
                         )}
+                        <Link
+                            to={{ ...location, hash: anchor }}
+                            className={classNames('ml-2', styles.headerPath)}
+                            data-tooltip="Pin diff"
+                            aria-label="Pin diff"
+                        >
+                            #
+                        </Link>
                     </div>
                 </div>
                 {expanded &&

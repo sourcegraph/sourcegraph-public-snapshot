@@ -38,6 +38,8 @@ export interface BatchChangePreviewStatsBarProps {
 export const BatchChangePreviewStatsBar: React.FunctionComponent<
     React.PropsWithChildren<BatchChangePreviewStatsBarProps>
 > = ({ batchSpec, diffStat, queryApplyPreviewStats = _queryApplyPreviewStats }) => {
+    // `BatchChangePreviewContext` is responsible for managing the overrideable
+    // publication states for preview changesets on the clientside.
     const { publicationStates } = useContext(BatchChangePreviewContext)
 
     /** We use this to recalculate the stats when the publication states are modified. */

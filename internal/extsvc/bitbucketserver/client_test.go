@@ -1044,7 +1044,7 @@ func TestClient_RepoIDs(t *testing.T) {
 	checkGolden(t, "RepoIDs", ids)
 }
 
-func checkGolden(t *testing.T, name string, got interface{}) {
+func checkGolden(t *testing.T, name string, got any) {
 	t.Helper()
 
 	data, err := json.MarshalIndent(got, " ", " ")

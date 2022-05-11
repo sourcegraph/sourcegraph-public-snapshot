@@ -1,7 +1,7 @@
 package inference
 
 import (
-	"archive/zip"
+	"archive/tar"
 	"bytes"
 	"context"
 	"io"
@@ -23,10 +23,12 @@ import (
 )
 
 type Service struct {
-	sandboxService SandboxService
-	gitService     GitService
-	limiter        *rate.Limiter
-	operations     *operations
+	sandboxService                  SandboxService
+	gitService                      GitService
+	limiter                         *rate.Limiter
+	maximumFilesWithContentCount    int
+	maximumFileWithContentSizeBytes int
+	operations                      *operations
 }
 
 type indexJobOrHint struct {
@@ -52,13 +54,17 @@ func newService(
 	sandboxService SandboxService,
 	gitService GitService,
 	limiter *rate.Limiter,
+	maximumFilesWithContentCount int,
+	maximumFileWithContentSizeBytes int,
 	observationContext *observation.Context,
 ) *Service {
 	return &Service{
-		sandboxService: sandboxService,
-		gitService:     gitService,
-		limiter:        limiter,
-		operations:     newOperations(observationContext),
+		sandboxService:                  sandboxService,
+		gitService:                      gitService,
+		limiter:                         limiter,
+		maximumFilesWithContentCount:    maximumFilesWithContentCount,
+		maximumFileWithContentSizeBytes: maximumFileWithContentSizeBytes,
+		operations:                      newOperations(observationContext),
 	}
 }
 
@@ -308,9 +314,8 @@ func (s *Service) resolveFileContents(
 	if err != nil {
 		return nil, err
 	}
-	pathspecs := make([]gitserver.Pathspec, 0, len(relevantPaths))
-	for _, p := range relevantPaths {
-		pathspecs = append(pathspecs, gitserver.PathspecLiteral(p))
+	if len(relevantPaths) == 0 {
+		return nil, nil
 	}
 
 	start := time.Now()
@@ -320,35 +325,49 @@ func (s *Service) resolveFileContents(
 		return nil, err
 	}
 
+	pathspecs := make([]gitserver.Pathspec, 0, len(relevantPaths))
+	for _, p := range relevantPaths {
+		pathspecs = append(pathspecs, gitserver.PathspecLiteral(p))
+	}
 	opts := gitserver.ArchiveOptions{
 		Treeish:   invocationContext.commit,
-		Format:    "zip",
+		Format:    "tar",
 		Pathspecs: pathspecs,
 	}
 	rc, err := invocationContext.gitService.Archive(ctx, invocationContext.repo, opts)
 	if err != nil {
 		return nil, err
 	}
+	defer rc.Close()
 
-	data, err := io.ReadAll(rc)
-	if err != nil {
-		return nil, err
-	}
-	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
-	if err != nil {
-		return nil, nil
-	}
+	contentsByPath := map[string]string{}
 
-	contentsByPath := make(map[string]string, len(zr.File))
-	for _, f := range zr.File {
-		contents, err := readZipFile(f)
+	tr := tar.NewReader(rc)
+	for {
+		header, err := tr.Next()
 		if err != nil {
+			if err != io.EOF {
+				return nil, err
+			}
+
+			break
+		}
+
+		if len(contentsByPath) >= s.maximumFilesWithContentCount {
+			return nil, errors.Newf("inference limit: requested content for more than %d files", s.maximumFilesWithContentCount)
+		}
+		if int(header.Size) > s.maximumFileWithContentSizeBytes {
+			return nil, errors.Newf("inference limit: requested content for a file larger than %d bytes", s.maximumFileWithContentSizeBytes)
+		}
+
+		var buf bytes.Buffer
+		if _, err := io.CopyN(&buf, tr, header.Size); err != nil {
 			return nil, err
 		}
 
 		// Since we quoted all literal path specs on entry, we need to remove it from
 		// the returned filepaths.
-		contentsByPath[strings.TrimPrefix(f.Name, ":(literal)")] = contents
+		contentsByPath[strings.TrimPrefix(header.Name, ":(literal)")] = buf.String()
 	}
 
 	return contentsByPath, nil
@@ -454,7 +473,7 @@ func (s *Service) invokeLinearizedRecognizer(
 	}
 
 	opts := luasandbox.RunOptions{}
-	args := []interface{}{registrationAPI, callPaths, callContentsByPath}
+	args := []any{registrationAPI, callPaths, callContentsByPath}
 	value, err := invocationContext.sandbox.Call(ctx, opts, invocationContext.callback(recognizer), args...)
 	if err != nil {
 		return nil, err

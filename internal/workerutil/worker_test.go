@@ -440,7 +440,7 @@ func TestWorkerMaxActiveTime(t *testing.T) {
 	called := make(chan struct{})
 	defer close(called)
 
-	dequeueHook := func(c context.Context, s string, i interface{}) (Record, bool, error) {
+	dequeueHook := func(c context.Context, s string, i any) (Record, bool, error) {
 		called <- struct{}{}
 		return TestRecord{ID: 42}, true, nil
 	}
@@ -641,7 +641,7 @@ func TestWorkerStopDrainsDequeueLoopOnly(t *testing.T) {
 	}
 
 	var dequeueContext context.Context
-	handler.PreDequeueFunc.SetDefaultHook(func(ctx context.Context, l log.Logger) (bool, interface{}, error) {
+	handler.PreDequeueFunc.SetDefaultHook(func(ctx context.Context, l log.Logger) (bool, any, error) {
 		// Store dequeueContext in outer function so we can tell when Stop has
 		// reliably been called. Unfortunately we need to peek a bit into the
 		// internals here so we're not dependent on time-based unit tests.
