@@ -47,9 +47,9 @@ mutation AddExternalService($input: AddExternalServiceInput!) {
 }
 
 type UpdateExternalServiceInput struct {
-	ID          string `json:"id"`
-	DisplayName string `json:"displayName"`
-	Config      string `json:"config"`
+	ID          string  `json:"id"`
+	DisplayName *string `json:"displayName"`
+	Config      *string `json:"config"`
 }
 
 // UpdateExternalService updates existing external service with given input.
