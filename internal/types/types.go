@@ -482,8 +482,6 @@ type ExternalService struct {
 	CloudDefault    bool       // Whether this external service is our default public service on Cloud
 	HasWebhooks     *bool      // Whether this external service has webhooks configured; calculated from Config
 	TokenExpiresAt  *time.Time // Whether the token in this external services expires, nil indicates never expires.
-
-	// Remember to update ToAPIService if you add more fields
 }
 
 // ExternalServiceSyncJob represents an sync job for an external service
