@@ -3,6 +3,7 @@ import {
     LineChartSearchInsightInput,
     PieChartSearchInsightInput,
 } from '../../../../../../../graphql-operations'
+import { parseSeriesDisplayOptions } from '../../../../../components/insights-view-grid/components/backend-insight/components/drill-down-filters-panel/drill-down-filters/utils'
 import { InsightDashboard, InsightExecutionType, InsightType, isVirtualDashboard } from '../../../../types'
 import {
     CreationInsightInput,
@@ -50,7 +51,8 @@ export function getCaptureGroupInsightCreateInput(
         ],
         options: { title: insight.title },
         viewControls: {
-            seriesDisplayOptions: insight.seriesDisplayOptions,
+            seriesDisplayOptions:
+                insight.seriesDisplayOptions || parseSeriesDisplayOptions(insight.appliedSeriesDisplayOptions),
             filters: {
                 excludeRepoRegex: insight.filters.excludeRepoRegexp,
                 includeRepoRegex: insight.filters.includeRepoRegexp,

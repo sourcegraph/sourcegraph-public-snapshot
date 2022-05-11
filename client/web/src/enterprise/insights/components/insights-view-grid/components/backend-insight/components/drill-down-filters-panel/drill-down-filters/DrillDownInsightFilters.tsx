@@ -22,7 +22,12 @@ import { DrillDownInput, LabelWithReset } from '../drill-down-input/DrillDownInp
 import { FilterCollapseSection } from '../filter-collapse-section/FilterCollapseSection'
 import { DrillDownSearchContextFilter } from '../search-context/DrillDownSearchContextFilter'
 
-import { getSerializedRepositoriesFilter, getSerializedSearchContextFilter, validRegexp } from './utils'
+import {
+    getSerializedRepositoriesFilter,
+    getSerializedSearchContextFilter,
+    parseSeriesDisplayOptions,
+    validRegexp,
+} from './utils'
 import { createSearchContextValidator, getFilterInputStatus } from './validators'
 
 import styles from './DrillDownInsightFilters.module.scss'
@@ -157,12 +162,15 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                 <FilterCollapseSection
                     open={isHorizontalMode || activeSection === FilterSection.SortFilter}
                     title="Sort & Limit"
-                    preview={getSortPreview(seriesDisplayOptions)}
+                    preview={getSortPreview(parseSeriesDisplayOptions(seriesDisplayOptions))}
                     hasActiveFilter={false}
                     withSeparators={!isHorizontalMode}
                     onOpenChange={opened => handleCollapseState(FilterSection.SortFilter, opened)}
                 >
-                    <SortFilterSeriesPanel value={seriesDisplayOptions} onChange={handleSeriesDisplayOptionsChange} />
+                    <SortFilterSeriesPanel
+                        value={parseSeriesDisplayOptions(seriesDisplayOptions)}
+                        onChange={handleSeriesDisplayOptionsChange}
+                    />
                 </FilterCollapseSection>
 
                 <FilterCollapseSection

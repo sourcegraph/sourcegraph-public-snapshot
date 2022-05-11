@@ -7,7 +7,7 @@ import { Button, createRectangle, Popover, PopoverContent, PopoverTrigger, Posit
 
 import { SeriesDisplayOptionsInput } from '../../../../../../../../graphql-operations'
 import { InsightFilters } from '../../../../../../core'
-import { SeriesDisplayOptionsInputRequired } from '../../../../../../core/types/insight/common'
+import { SeriesDisplayOptions, SeriesDisplayOptionsInputRequired } from '../../../../../../core/types/insight/common'
 import { FormChangeEvent, SubmissionResult } from '../../../../../form/hooks/useForm'
 import {
     DrillDownInsightCreationForm,
@@ -17,6 +17,7 @@ import {
     FilterSectionVisualMode,
     hasActiveFilters,
 } from '../drill-down-filters-panel'
+import { parseSeriesDisplayOptions } from '../drill-down-filters-panel/drill-down-filters/utils'
 
 import styles from './DrillDownFiltersPopover.module.scss'
 
@@ -30,7 +31,7 @@ interface DrillDownFiltersPopoverProps {
     onFilterSave: (filters: InsightFilters, displayOptions: SeriesDisplayOptionsInput) => void
     onInsightCreate: (values: DrillDownInsightCreationFormValues) => SubmissionResult
     onVisibilityChange: (open: boolean) => void
-    originalSeriesDisplayOptions: SeriesDisplayOptionsInputRequired
+    originalSeriesDisplayOptions: SeriesDisplayOptions
     onSeriesDisplayOptionsChange: (options: SeriesDisplayOptionsInputRequired) => void
 }
 
@@ -107,7 +108,7 @@ export const DrillDownFiltersPopover: React.FunctionComponent<
                         onFiltersChange={handleFilterChange}
                         onFilterSave={onFilterSave}
                         onCreateInsightRequest={() => setStep(DrillDownFiltersStep.ViewCreation)}
-                        originalSeriesDisplayOptions={originalSeriesDisplayOptions}
+                        originalSeriesDisplayOptions={parseSeriesDisplayOptions(originalSeriesDisplayOptions)}
                         onSeriesDisplayOptionsChange={onSeriesDisplayOptionsChange}
                     />
                 )}

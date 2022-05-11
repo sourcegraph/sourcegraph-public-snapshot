@@ -1,4 +1,4 @@
-import { SeriesDisplayOptionsInput, SeriesSortOptionsInput } from '../../../../../graphql-operations'
+import { InsightViewNode, SeriesDisplayOptionsInput, SeriesSortOptionsInput } from '../../../../../graphql-operations'
 
 export enum InsightExecutionType {
     /**
@@ -31,6 +31,9 @@ export interface InsightFilters {
     repositories?: string[]
 }
 
+export type SeriesDisplayOptions = InsightViewNode['appliedSeriesDisplayOptions'] &
+    InsightViewNode['defaultSeriesDisplayOptions']
+
 export interface BaseInsight {
     id: string
     title: string
@@ -38,7 +41,10 @@ export interface BaseInsight {
     type: InsightType
     dashboardReferenceCount: number
     isFrozen: boolean
-    seriesDisplayOptions: SeriesDisplayOptionsInput
+
+    seriesDisplayOptions?: SeriesDisplayOptionsInput
+    appliedSeriesDisplayOptions?: SeriesDisplayOptions
+    defaultSeriesDisplayOptions?: SeriesDisplayOptions
 }
 
 // This type simply resets limit and sortOptions to required.

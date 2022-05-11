@@ -5,6 +5,7 @@ import {
     UpdateLineChartSearchInsightInput,
     UpdatePieChartSearchInsightInput,
 } from '../../../../../../../graphql-operations'
+import { parseSeriesDisplayOptions } from '../../../../../components/insights-view-grid/components/backend-insight/components/drill-down-filters-panel/drill-down-filters/utils'
 import { InsightExecutionType } from '../../../../types'
 import {
     MinimalCaptureGroupInsightData,
@@ -47,7 +48,7 @@ export function getSearchInsightUpdateInput(insight: MinimalSearchBasedInsightDa
 export function getCaptureGroupInsightUpdateInput(
     insight: MinimalCaptureGroupInsightData
 ): UpdateLineChartSearchInsightInput {
-    const { step, filters, query, title, repositories, seriesDisplayOptions } = insight
+    const { step, filters, query, title, repositories, appliedSeriesDisplayOptions } = insight
     const [unit, value] = getStepInterval(step)
 
     return {
@@ -69,7 +70,7 @@ export function getCaptureGroupInsightUpdateInput(
                 excludeRepoRegex: filters.excludeRepoRegexp,
                 searchContexts: insight.filters.context ? [filters.context] : [],
             },
-            seriesDisplayOptions,
+            seriesDisplayOptions: parseSeriesDisplayOptions(appliedSeriesDisplayOptions),
         },
     }
 }
