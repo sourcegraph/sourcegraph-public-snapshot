@@ -187,8 +187,8 @@ func NewMockResolver() *MockResolver {
 			},
 		},
 		GetUploadDocumentsForPathFunc: &ResolverGetUploadDocumentsForPathFunc{
-			defaultHook: func(context.Context, int, string) ([]string, int, error) {
-				return nil, 0, nil
+			defaultHook: func(context.Context, int, string) (r0 []string, r1 int, r2 error) {
+				return
 			},
 		},
 		GetUploadsByIDsFunc: &ResolverGetUploadsByIDsFunc{
