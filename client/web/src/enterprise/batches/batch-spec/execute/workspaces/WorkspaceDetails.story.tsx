@@ -8,13 +8,13 @@ import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { CardBody, Card } from '@sourcegraph/wildcard'
 
-import { BatchSpecWorkspaceByIDResult } from '../../../../graphql-operations'
-import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from '../../preview/list/backend'
-
+import { BatchSpecWorkspaceByIDResult } from '../../../../../graphql-operations'
+import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from '../../../preview/list/backend'
 import {
     BATCH_SPEC_WORKSPACE_BY_ID,
     queryBatchSpecWorkspaceStepFileDiffs as _queryBatchSpecWorkspaceStepFileDiffs,
-} from './backend'
+} from '../backend'
+
 import { WorkspaceDetails } from './WorkspaceDetails'
 import {
     HIDDEN_WORKSPACE,

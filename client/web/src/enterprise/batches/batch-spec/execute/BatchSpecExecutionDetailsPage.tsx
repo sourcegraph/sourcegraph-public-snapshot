@@ -49,7 +49,7 @@ import { NewBatchChangePreviewPage } from '../../preview/BatchChangePreviewPage'
 
 import { useCancelBatchSpecExecution, FETCH_BATCH_SPEC_EXECUTION, useRetryBatchSpecExecution } from './backend'
 import { BatchSpecStateBadge } from './BatchSpecStateBadge'
-import { WorkspaceDetails } from './WorkspaceDetails'
+import { WorkspaceDetails } from './workspaces/WorkspaceDetails'
 import { Workspaces } from './workspaces/Workspaces'
 
 import styles from './BatchSpecExecutionDetailsPage.module.scss'
