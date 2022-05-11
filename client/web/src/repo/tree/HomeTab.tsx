@@ -204,7 +204,12 @@ export const HomeTab: React.FunctionComponent<React.PropsWithChildren<Props>> = 
                 GitCommitFields,
                 Pick<
                     GitCommitNodeProps,
-                    'className' | 'compact' | 'messageSubjectClassName' | 'hideExpandCommitMessageBody' | 'sidebar'
+                    | 'className'
+                    | 'compact'
+                    | 'messageSubjectClassName'
+                    | 'hideExpandCommitMessageBody'
+                    | 'sidebar'
+                    | 'wrapperElement'
                 >
             >
                 location={props.location}
@@ -221,6 +226,7 @@ export const HomeTab: React.FunctionComponent<React.PropsWithChildren<Props>> = 
                     compact: isSidebar,
                     hideExpandCommitMessageBody: isSidebar,
                     sidebar: isSidebar,
+                    wrapperElement: 'li',
                 }}
                 updateOnChange={`${repo.name}:${revision}:${filePath}:${String(showOlderCommits)}`}
                 defaultFirst={7}
