@@ -17,7 +17,7 @@ EOF
 
 # https://github.com/sourcegraph/sourcegraph/issues/28469
 function go-junit-report() {
-  go run github.com/jstemmer/go-junit-report@latest "$@"
+  go run github.com/jstemmer/go-junit-report@latest
 }
 
 # Set up richgo for better output
