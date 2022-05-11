@@ -1,6 +1,7 @@
 package webhooks
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -9,8 +10,10 @@ import (
 	"github.com/inconshreveable/log15"
 
 	fewebhooks "github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
+	bbcs "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
@@ -48,7 +51,7 @@ func (h *BitbucketCloudWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	prs, ev, err := h.convertEvent(e)
+	prs, ev, err := h.convertEvent(r.Context(), e, externalServiceID)
 	if err != nil {
 		if !errors.Is(err, bitbucketcloud.UnknownWebhookEventKey("")) {
 			respond(w, http.StatusInternalServerError, err)
@@ -128,7 +131,7 @@ func (h *BitbucketCloudWebhook) parseEvent(r *http.Request) (interface{}, *types
 	return e, extSvc, nil
 }
 
-func (h *BitbucketCloudWebhook) convertEvent(theirs interface{}) ([]PR, keyer, error) {
+func (h *BitbucketCloudWebhook) convertEvent(ctx context.Context, theirs interface{}, externalServiceID string) ([]PR, keyer, error) {
 	switch e := theirs.(type) {
 	case *bitbucketcloud.PullRequestApprovedEvent:
 		return bitbucketCloudPullRequestEventPRs(&e.PullRequestEvent), e, nil
@@ -150,12 +153,12 @@ func (h *BitbucketCloudWebhook) convertEvent(theirs interface{}) ([]PR, keyer, e
 		return bitbucketCloudPullRequestEventPRs(&e.PullRequestEvent), e, nil
 	case *bitbucketcloud.PullRequestUpdatedEvent:
 		return bitbucketCloudPullRequestEventPRs(&e.PullRequestEvent), e, nil
-	case *bitbucketcloud.RepoCommitStatusCreatedEvent,
-		*bitbucketcloud.RepoCommitStatusUpdatedEvent:
-		// TODO: figure out how the fuck to get the head commit out of a
-		// changeset and see if we have a match, since we _should_ get a
-		// pullrequest:updated before any commit statuses.
-		return nil, nil, errors.New("unimplemented")
+	case *bitbucketcloud.RepoCommitStatusCreatedEvent:
+		prs, err := bitbucketCloudRepoCommitStatusEventPRs(ctx, h.Store, &e.RepoCommitStatusEvent, externalServiceID)
+		return prs, e, err
+	case *bitbucketcloud.RepoCommitStatusUpdatedEvent:
+		prs, err := bitbucketCloudRepoCommitStatusEventPRs(ctx, h.Store, &e.RepoCommitStatusEvent, externalServiceID)
+		return prs, e, err
 	default:
 		return nil, nil, errors.Newf("unknown event type: %T", theirs)
 	}
@@ -168,4 +171,49 @@ func bitbucketCloudPullRequestEventPRs(e *bitbucketcloud.PullRequestEvent) []PR 
 			RepoExternalID: e.Repository.UUID,
 		},
 	}
+}
+
+func bitbucketCloudRepoCommitStatusEventPRs(
+	ctx context.Context, bstore *store.Store,
+	e *bitbucketcloud.RepoCommitStatusEvent, externalServiceID string,
+) ([]PR, error) {
+	// Bitbucket Cloud repo commit statuses only include the commit hash they
+	// relate to, not the branch or PR, so we have to go look up the relevant
+	// changeset(s) from the database.
+
+	// First up, let's find the repos ID so we can limit the changeset search.
+	repos, err := bstore.Repos().List(ctx, database.ReposListOptions{
+		ExternalRepos: []api.ExternalRepoSpec{
+			{
+				ID:          e.Repository.UUID,
+				ServiceType: extsvc.TypeBitbucketCloud,
+				ServiceID:   externalServiceID,
+			},
+		},
+	})
+	if err != nil {
+		return nil, errors.Wrapf(err, "cannot find repo with ID=%q ServiceType=%q ServiceID=%q", e.Repository.UUID, extsvc.TypeBitbucketCloud, externalServiceID)
+	}
+	if len(repos) != 1 {
+		return nil, errors.Wrapf(err, "unexpected number of repos matched: %d", len(repos))
+	}
+	repo := repos[0]
+
+	// Now we can look up the changeset(s).
+	changesets, _, err := bstore.ListChangesets(ctx, store.ListChangesetsOpts{
+		BitbucketCloudCommit: e.CommitStatus.Commit.Hash,
+		RepoID:               repo.ID,
+	})
+	if err != nil {
+		return nil, errors.Wrapf(err, "listing changesets matched to repo ID=%d", repo.ID)
+	}
+
+	prs := make([]PR, len(changesets))
+	for i, changeset := range changesets {
+		prs[i] = PR{
+			ID:             changeset.Metadata.(*bbcs.AnnotatedPullRequest).ID,
+			RepoExternalID: e.Repository.UUID,
+		}
+	}
+	return prs, nil
 }
