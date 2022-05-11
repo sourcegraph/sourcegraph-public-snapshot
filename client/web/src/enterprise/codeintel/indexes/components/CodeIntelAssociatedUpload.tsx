@@ -30,7 +30,7 @@ export const CodeIntelAssociatedUpload: FunctionComponent<React.PropsWithChildre
                     <div className={classNames(styles.information, 'd-flex flex-column')}>
                         <div className="m-0">
                             <h3 className="m-0 d-block d-md-inline">
-                                This job uploaded an index{' '}
+                                This job performed an upload{' '}
                                 <Timestamp date={node.associatedUpload.uploadedAt} now={now} />
                             </h3>
                         </div>
