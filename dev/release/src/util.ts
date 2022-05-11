@@ -89,9 +89,8 @@ function ensureBranchUpToDate(baseBranch: string, targetBranch: string): boolean
     }
 
     const countCommits = function (numberOfCommits: string, aheadOrBehind: string): string {
-        return numberOfCommits === '0' ? ''
-            : numberOfCommits === '1' ? numberOfCommits + ' commit ' + aheadOrBehind
-                : numberOfCommits + ' commits ' + aheadOrBehind
+        return numberOfCommits === '1' ? numberOfCommits + ' commit ' + aheadOrBehind
+            : numberOfCommits + ' commits ' + aheadOrBehind
     }
 
     if (behind !== '0' && ahead !== '0') {
