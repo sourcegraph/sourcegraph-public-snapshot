@@ -144,7 +144,7 @@ func addDocs(pipeline *bk.Pipeline) {
 func addCheck(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":clipboard: Misc linters",
 		withYarnCache(),
-		bk.AnnotatedCmd("./dev/check/all.sh", bk.AnnotatedCmdOpts{
+		bk.AnnotatedCmd("go run ./dev/sg lint -annotations check-all-compat", bk.AnnotatedCmdOpts{
 			Annotations: &bk.AnnotationOpts{IncludeNames: true},
 		}))
 }
@@ -900,8 +900,7 @@ func uploadBuildeventTrace() operations.Operation {
 func prPreview() operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":globe_with_meridians: Client PR preview",
-			// Soft-fail with code 222 if nothing has changed
-			bk.SoftFail(222),
+			bk.SoftFail(),
 			bk.Cmd("dev/ci/render-pr-preview.sh"))
 	}
 }

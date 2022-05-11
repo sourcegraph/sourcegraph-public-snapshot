@@ -294,22 +294,21 @@ func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background boo
 
 			// We don't care about the return value here, but we still want to ensure that
 			// only one is in flight at a time.
-			_, _, _ = s.syncGroup.Do(string(name), func() (any, error) {
-				updatedRepo, err := s.syncRepo(ctx, codehost, name, repo)
-				if err != nil {
-					log15.Error("SyncRepo", "name", name, "error", err, "background", background)
-				}
-				return updatedRepo, nil
+			_, err, shared := s.syncGroup.Do(string(name), func() (any, error) {
+				return s.syncRepo(ctx, codehost, name, repo)
 			})
+			if err != nil {
+				log15.Error("SyncRepo", "name", name, "error", err, "background", background, "shared", shared)
+			}
 		}()
 		return repo, nil
 	}
 
-	updatedRepo, err, _ := s.syncGroup.Do(string(name), func() (any, error) {
+	updatedRepo, err, shared := s.syncGroup.Do(string(name), func() (any, error) {
 		return s.syncRepo(ctx, codehost, name, repo)
 	})
 	if err != nil {
-		log15.Error("SyncRepo", "name", name, "error", err, "background", background)
+		log15.Error("SyncRepo", "name", name, "error", err, "background", background, "shared", shared)
 		return nil, err
 	}
 	return updatedRepo.(*types.Repo), nil

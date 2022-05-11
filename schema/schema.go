@@ -597,6 +597,8 @@ type ExperimentalFeatures struct {
 	EnableGitServerCommandExecFilter bool `json:"enableGitServerCommandExecFilter,omitempty"`
 	// EnableGithubInternalRepoVisibility description: Enable support for visilibity of internal Github repositories
 	EnableGithubInternalRepoVisibility bool `json:"enableGithubInternalRepoVisibility,omitempty"`
+	// EnableGitserverClientLookupTable description: Enable getting repository location from the database. Works only on Cloud.
+	EnableGitserverClientLookupTable bool `json:"enableGitserverClientLookupTable,omitempty"`
 	// EnablePermissionsWebhooks description: Enables webhook consumers to sync permissions from external services faster than the defaults schedule
 	EnablePermissionsWebhooks bool `json:"enablePermissionsWebhooks,omitempty"`
 	// EnablePostSignupFlow description: Enables post sign-up user flow to add code hosts and sync code
@@ -607,6 +609,8 @@ type ExperimentalFeatures struct {
 	Gerrit string `json:"gerrit,omitempty"`
 	// GitServerPinnedRepos description: List of repositories pinned to specific gitserver instances. The specified repositories will remain at their pinned servers on scaling the cluster. If the specified pinned server differs from the current server that stores the repository, then it must be re-cloned to the specified server.
 	GitServerPinnedRepos map[string]string `json:"gitServerPinnedRepos,omitempty"`
+	// GitserverClientLookupTableRate description: Percentage of calls to AddrFromRepo that read from the database. Only used if enableGitserverClientLookupTable is true.
+	GitserverClientLookupTableRate int `json:"gitserverClientLookupTable.Rate,omitempty"`
 	// JvmPackages description: Allow adding JVM packages code host connections
 	JvmPackages string `json:"jvmPackages,omitempty"`
 	// NpmPackages description: Allow adding npm packages code host connections
@@ -1921,8 +1925,12 @@ type SiteConfiguration struct {
 	PermissionsSyncOldestRepos int `json:"permissions.syncOldestRepos,omitempty"`
 	// PermissionsSyncOldestUsers description: Number of user permissions to schedule for syncing in single scheduler iteration
 	PermissionsSyncOldestUsers int `json:"permissions.syncOldestUsers,omitempty"`
+	// PermissionsSyncReposBackoffSeconds description: Don't sync a repo's permissions if it has synced within the last n seconds
+	PermissionsSyncReposBackoffSeconds int `json:"permissions.syncReposBackoffSeconds,omitempty"`
 	// PermissionsSyncScheduleInterval description: Time interval (in seconds) of how often each component picks up authorization changes in external services.
 	PermissionsSyncScheduleInterval int `json:"permissions.syncScheduleInterval,omitempty"`
+	// PermissionsSyncUsersBackoffSeconds description: Don't sync a user's permissions if they have synced within the last n seconds
+	PermissionsSyncUsersBackoffSeconds int `json:"permissions.syncUsersBackoffSeconds,omitempty"`
 	// PermissionsUserMapping description: Settings for Sourcegraph permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This setting cannot be enabled if repository permissions for any specific external service are enabled (i.e., when the external service's `authorization` field is set).
 	PermissionsUserMapping *PermissionsUserMapping `json:"permissions.userMapping,omitempty"`
 	// ProductResearchPageEnabled description: Enables users access to the product research page in their settings.
