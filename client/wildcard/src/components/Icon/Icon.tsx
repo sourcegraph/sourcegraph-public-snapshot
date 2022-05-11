@@ -15,10 +15,12 @@ interface BaseIconProps extends Omit<MdiReactIconProps, 'children'> {
      * The variant style of the icon. defaults to 'sm'
      */
     size?: typeof ICON_SIZES[number]
+
+    title?: never
 }
 
 interface ScreenReaderIconProps extends BaseIconProps {
-    title?: string
+    'aria-label'?: string
 }
 
 interface HiddenIconProps extends BaseIconProps {
