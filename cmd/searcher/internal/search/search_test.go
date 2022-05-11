@@ -14,12 +14,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/internal/search"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
-	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -269,11 +269,7 @@ abc.txt
 			if len(test.want) > 0 {
 				test.want = test.want[1:]
 			}
-			if got != test.want {
-				d, err := testutil.Diff(test.want, got)
-				if err != nil {
-					t.Fatal(err)
-				}
+			if d := cmp.Diff(test.want, got); d != "" {
 				t.Fatalf("%s unexpected response:\n%s", test.arg.String(), d)
 			}
 		})
