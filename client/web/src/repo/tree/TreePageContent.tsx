@@ -205,7 +205,7 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
                 <h2>Changes</h2>
                 <FilteredConnection<
                     GitCommitFields,
-                    Pick<GitCommitNodeProps, 'className' | 'compact' | 'messageSubjectClassName'>
+                    Pick<GitCommitNodeProps, 'className' | 'compact' | 'messageSubjectClassName' | 'wrapperElement'>
                 >
                     location={props.location}
                     className="mt-2"
@@ -218,6 +218,7 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
                         className: classNames('list-group-item', styles.gitCommitNode),
                         messageSubjectClassName: styles.gitCommitNodeMessageSubject,
                         compact: true,
+                        wrapperElement: 'li',
                     }}
                     updateOnChange={`${repo.name}:${revision}:${filePath}:${String(showOlderCommits)}`}
                     defaultFirst={7}

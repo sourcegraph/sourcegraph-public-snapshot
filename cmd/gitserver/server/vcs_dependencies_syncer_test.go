@@ -237,6 +237,7 @@ func (f fakeDep) Scheme() string               { return "fake" }
 func (f fakeDep) PackageSyntax() string        { return f.name }
 func (f fakeDep) PackageManagerSyntax() string { return f.name + "@" + f.version }
 func (f fakeDep) PackageVersion() string       { return f.version }
+func (f fakeDep) Description() string          { return f.name + "@" + f.version }
 func (f fakeDep) RepoName() api.RepoName       { return api.RepoName("fake/" + f.name) }
 func (f fakeDep) GitTagFromVersion() string    { return "v" + f.version }
 func (f fakeDep) Less(other reposource.PackageDependency) bool {
