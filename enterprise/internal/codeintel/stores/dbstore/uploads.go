@@ -159,7 +159,7 @@ SELECT
 	u.num_resets,
 	u.num_failures,
 	u.repository_id,
-	u.repository_name,
+	repo.name,
 	u.indexer,
 	u.indexer_version,
 	u.num_parts,
@@ -167,11 +167,11 @@ SELECT
 	u.upload_size,
 	u.associated_index_id,
 	s.rank
-FROM lsif_uploads_with_repository_name u
+FROM lsif_uploads u
 LEFT JOIN (` + uploadRankQueryFragment + `) s
 ON u.id = s.id
 JOIN repo ON repo.id = u.repository_id
-WHERE u.state != 'deleted' AND u.id = %s AND %s
+WHERE repo.deleted_at IS NULL AND u.state != 'deleted' AND u.id = %s AND %s
 `
 
 const visibleAtTipSubselectQuery = `SELECT 1 FROM lsif_uploads_visible_at_tip uvt WHERE uvt.repository_id = u.repository_id AND uvt.upload_id = u.id`
@@ -217,7 +217,7 @@ SELECT
 	u.num_resets,
 	u.num_failures,
 	u.repository_id,
-	u.repository_name,
+	repo.name,
 	u.indexer,
 	u.indexer_version,
 	u.num_parts,
@@ -225,11 +225,11 @@ SELECT
 	u.upload_size,
 	u.associated_index_id,
 	s.rank
-FROM lsif_uploads_with_repository_name u
+FROM lsif_uploads u
 LEFT JOIN (` + uploadRankQueryFragment + `) s
 ON u.id = s.id
 JOIN repo ON repo.id = u.repository_id
-WHERE u.state != 'deleted' AND u.id IN (%s) AND %s
+WHERE repo.deleted_at IS NULL AND u.state != 'deleted' AND u.id IN (%s) AND %s
 `
 
 // DeleteUploadsStuckUploading soft deletes any upload record that has been uploading since the given time.
