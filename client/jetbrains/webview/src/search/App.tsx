@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react'
 
-import { Observable, of } from 'rxjs'
+import { Observable, of, Subscription } from 'rxjs'
 
 import { requestGraphQLCommon } from '@sourcegraph/http-client'
 import {
@@ -52,38 +52,56 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     onPreviewClear,
     onOpen,
 }: Props) => {
-    const [caseSensitive, setCaseSensitivity] = useState(false)
-    const [patternType, setPatternType] = useState(SearchPatternType.literal)
     const [results, setResults] = useState<SearchMatch[]>([])
-    const [lastSearchedQuery, setLastSearchedQuery] = useState<null | string>(null)
+    const [lastSearchedQuery, setLastSearchedQuery] = useState<{
+        query: null | string
+        caseSensitive: boolean
+        patternType: SearchPatternType
+    }>({ query: null, caseSensitive: false, patternType: SearchPatternType.literal })
     const [userQueryState, setUserQueryState] = useState<QueryState>({
         query: '',
     })
+    const [subscription, setSubscription] = useState<Subscription>()
 
-    const onSubmit = useCallback(() => {
-        const query = userQueryState.query
+    const onSubmit = useCallback(
+        (options?: { caseSensitive?: boolean; patternType?: SearchPatternType }) => {
+            const query = userQueryState.query
+            const caseSensitive = options?.caseSensitive
+            const patternType = options?.patternType
 
-        // When we submit a search that is already the last search, do nothing. This prevents the
-        // search results from being reloaded and reapplied in a different order when a user
-        // accidentally hits enter thinking that this would open the file
-        if (query === lastSearchedQuery) {
-            return
-        }
-
-        aggregateStreamingSearch(of(query), {
-            version: LATEST_VERSION,
-            patternType,
-            caseSensitive,
-            trace: undefined,
-            sourcegraphURL: 'https://sourcegraph.com/.api',
-            decorationContextLines: 0,
-            // eslint-disable-next-line rxjs/no-ignored-subscription
-        }).subscribe(searchResults => {
-            setResults(searchResults.results)
-        })
-        setResults([])
-        setLastSearchedQuery(query)
-    }, [caseSensitive, lastSearchedQuery, patternType, userQueryState.query])
+            // When we submit a search that is already the last search, do nothing. This prevents the
+            // search results from being reloaded and reapplied in a different order when a user
+            // accidentally hits enter thinking that this would open the file
+            if (
+                query === lastSearchedQuery.query &&
+                (caseSensitive === undefined || caseSensitive === lastSearchedQuery.caseSensitive) &&
+                (patternType === undefined || patternType === lastSearchedQuery.patternType)
+            ) {
+                return
+            }
+            // If we don't unsubscribe, the previous search will be continued after the new search and search results will be mixed
+            subscription?.unsubscribe()
+            setSubscription(
+                aggregateStreamingSearch(of(query), {
+                    version: LATEST_VERSION,
+                    caseSensitive: caseSensitive ?? lastSearchedQuery.caseSensitive,
+                    patternType: patternType ?? lastSearchedQuery.patternType,
+                    trace: undefined,
+                    sourcegraphURL: 'https://sourcegraph.com/.api',
+                    decorationContextLines: 0,
+                }).subscribe(searchResults => {
+                    setResults(searchResults.results)
+                })
+            )
+            setResults([])
+            setLastSearchedQuery({
+                query,
+                caseSensitive: caseSensitive ?? lastSearchedQuery.caseSensitive,
+                patternType: patternType ?? lastSearchedQuery.patternType,
+            })
+        },
+        [lastSearchedQuery, subscription, userQueryState.query]
+    )
 
     const setSelectedSearchContextSpec = useCallback(() => console.log('setSelectedSearchContextSpec'), [])
 
@@ -100,10 +118,10 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                         }}
                     >
                         <SearchBox
-                            caseSensitive={caseSensitive}
-                            setCaseSensitivity={setCaseSensitivity} // TODO: Run query when this is changed
-                            patternType={patternType}
-                            setPatternType={setPatternType} // TODO: Run query when this is changed
+                            caseSensitive={lastSearchedQuery.caseSensitive}
+                            setCaseSensitivity={caseSensitive => onSubmit({ caseSensitive })}
+                            patternType={lastSearchedQuery.patternType}
+                            setPatternType={patternType => onSubmit({ patternType })}
                             isSourcegraphDotCom={true} // TODO: Make this dynamic. See VS Code's SearchResultsView.tsx
                             hasUserAddedExternalServices={false}
                             hasUserAddedRepositories={true} // Used for search context CTA, which we won't show here.
@@ -138,7 +156,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                 {/* We reset the search result list whenever a new search is started using key={lastSearchedQuery} */}
                 <SearchResultList
                     results={results}
-                    key={lastSearchedQuery}
+                    key={lastSearchedQuery.query}
                     onPreviewChange={onPreviewChange}
                     onPreviewClear={onPreviewClear}
                     onOpen={onOpen}
