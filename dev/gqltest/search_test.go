@@ -1360,7 +1360,30 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 	return func(t *testing.T) {
 		t.Helper()
 
+		// We are adding another GitHub external service here to make sure we don't
+		// pollute the other integration tests running earlier.
 		_, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
+			Kind:        extsvc.KindGitHub,
+			DisplayName: "gqltest-dependency-search",
+			Config: mustMarshalJSONString(struct {
+				URL                   string   `json:"url"`
+				Token                 string   `json:"token"`
+				Repos                 []string `json:"repos"`
+				RepositoryPathPattern string   `json:"repositoryPathPattern"`
+			}{
+				URL:   "https://ghe.sgdev.org/",
+				Token: *githubToken,
+				Repos: []string{
+					"sgtest/poetry-hw",
+				},
+				RepositoryPathPattern: "github.com/{nameWithOwner}",
+			}),
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		_, err = client.AddExternalService(gqltestutil.AddExternalServiceInput{
 			Kind:        extsvc.KindNpmPackages,
 			DisplayName: "gqltest-npm-search",
 			Config: mustMarshalJSONString(&schema.NpmPackagesConnection{
@@ -1423,6 +1446,7 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 			"go/github.com/oklog/ulid/v2",
 			"maven/com.google.guava/guava",
 			"python/rich",
+			"github.com/sgtest/poetry-hw",
 		)
 		if err != nil {
 			t.Fatal(err)
