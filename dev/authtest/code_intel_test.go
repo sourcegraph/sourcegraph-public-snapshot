@@ -52,7 +52,7 @@ func TestCodeIntelEndpoints(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer func() {
-		err := client.DeleteExternalService(esID, false)
+		err := client.DeleteExternalService(esID)
 		if err != nil {
 			t.Fatal(err)
 		}
