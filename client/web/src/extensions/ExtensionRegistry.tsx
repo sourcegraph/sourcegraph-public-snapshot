@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 
 import * as H from 'history'
 import { concat, of, timer } from 'rxjs'
@@ -12,6 +12,8 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { ExtensionCategory, EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { Settings, SettingsCascadeProps, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { isSourcegraphAuthoredExtension } from '@sourcegraph/shared/src/util/extensions'
+import { allowOnlySourcegraphAuthoredExtensionsFromSettings } from '@sourcegraph/shared/src/util/settings'
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
 import { AlertLink, useLocalStorage, useEventObservable, Alert, Link } from '@sourcegraph/wildcard'
 
@@ -167,12 +169,7 @@ export const ExtensionRegistry: React.FunctionComponent<React.PropsWithChildren<
     }
 
     const allowOnlySourcegraphAuthoredExtensions =
-            !isSourcegraphDotCom &&
-            Boolean(
-                settingsCascade.final &&
-                    !isErrorLike(settingsCascade.final) &&
-                    (settingsCascade.final['extensions.allowOnlySourcegraphAuthored'] as boolean)
-    )
+        !isSourcegraphDotCom && allowOnlySourcegraphAuthoredExtensionsFromSettings(settingsCascade)
 
     /**
      * Note: pass `settingsCascade` instead of making it a dependency to prevent creating
@@ -271,7 +268,7 @@ export const ExtensionRegistry: React.FunctionComponent<React.PropsWithChildren<
                             featuredExtensions,
                             ...configureExtensionRegistry(
                                 allowOnlySourcegraphAuthoredExtensions
-                                    ? nodes.filter(({ extensionID }) => extensionID.startsWith('sourcegraph/'))
+                                    ? nodes.filter(({ extensionID }) => isSourcegraphAuthoredExtension(extensionID))
                                     : nodes,
                                 configuredExtensionCache
                             ),

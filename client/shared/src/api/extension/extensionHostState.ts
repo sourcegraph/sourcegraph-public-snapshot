@@ -4,11 +4,12 @@ import { map } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 
 import { Contributions } from '@sourcegraph/client-api'
-import { isErrorLike } from '@sourcegraph/common'
 import { Context } from '@sourcegraph/template-parser'
 
 import { ConfiguredExtension } from '../../extensions/extension'
 import { SettingsCascade } from '../../settings/settings'
+import { isSourcegraphAuthoredExtension } from '../../util/extensions'
+import { allowOnlySourcegraphAuthoredExtensionsFromSettings } from '../../util/settings'
 import { MainThreadAPI } from '../contract'
 import { ExtensionViewer, ViewerUpdate } from '../viewerTypes'
 
@@ -34,15 +35,8 @@ export function createExtensionHostState(
     const { activeLanguages, activeExtensions } = observeActiveExtensions(mainAPI, mainThreadAPIInitializations)
 
     const allowOnlySourcegraphAuthoredExtensions =
-        initData.clientApplication === 'sourcegraph' &&
         new URL(initData.sourcegraphURL).hostname !== 'sourcegraph.com' &&
-        Boolean(
-            initData.initialSettings.final &&
-                !isErrorLike(initData.initialSettings.final) &&
-                ((initData.initialSettings.final as { [key: string]: unknown })[
-                    'extensions.allowOnlySourcegraphAuthored'
-                ] as boolean)
-        )
+        allowOnlySourcegraphAuthoredExtensionsFromSettings(initData.initialSettings)
 
     return {
         haveInitialExtensionsLoaded: new BehaviorSubject<boolean>(false),
@@ -114,7 +108,7 @@ export function createExtensionHostState(
 
         activeExtensions: allowOnlySourcegraphAuthoredExtensions
             ? activeExtensions.pipe(
-                  map(extensions => extensions.filter(extension => extension.id.startsWith('sourcegraph/')))
+                  map(extensions => extensions.filter(({ id }) => isSourcegraphAuthoredExtension(id)))
               )
             : activeExtensions,
         activeLoggers: new Set<string>(),

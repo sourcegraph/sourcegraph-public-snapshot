@@ -7,6 +7,8 @@ import { NavLink, RouteComponentProps } from 'react-router-dom'
 import { isErrorLike } from '@sourcegraph/common'
 import { isExtensionEnabled, splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
 import { ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
+import { isSourcegraphAuthoredExtension } from '@sourcegraph/shared/src/util/extensions'
+import { allowOnlySourcegraphAuthoredExtensionsFromSettings } from '@sourcegraph/shared/src/util/settings'
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
 import { PageHeader, useTimeoutManager, Alert, Icon, AlertLink } from '@sourcegraph/wildcard'
 
@@ -78,15 +80,11 @@ export const ExtensionAreaHeader: React.FunctionComponent<React.PropsWithChildre
     const [disabledReason, setDisabledReason] = useState<ToggleDisabledReason>()
     const disabledFeedbackTimeoutManager = useTimeoutManager()
 
-    const allowOnlySourcegraphAuthoredExtensions = Boolean(
-        props.settingsCascade.final &&
-            !isErrorLike(props.settingsCascade.final) &&
-            (props.settingsCascade.final['extensions.allowOnlySourcegraphAuthored'] as boolean)
-    )
-
     const toggleDisabledReason = !props.authenticatedUser
         ? ToggleDisabledReason.NotAuthenticated
-        : !props.isSourcegraphDotCom && allowOnlySourcegraphAuthoredExtensions && publisher !== 'sourcegraph'
+        : !props.isSourcegraphDotCom &&
+          allowOnlySourcegraphAuthoredExtensionsFromSettings(props.settingsCascade) &&
+          !isSourcegraphAuthoredExtension(props.extension.id)
         ? ToggleDisabledReason.ForbiddenToInstallNonSourcegraphAuthoredExtensions
         : undefined
 
