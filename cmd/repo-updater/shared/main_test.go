@@ -1,6 +1,7 @@
 package shared
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -8,10 +9,17 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func Test_manualPurgeHandler(t *testing.T) {
 	db := database.NewMockDB()
+	gsr := database.NewMockGitserverRepoStore()
+	gsr.IterateRepoGitserverStatusFunc.SetDefaultHook(func(ctx context.Context, options database.IterateRepoGitserverStatusOptions, f func(repo types.RepoGitserverStatus) error) error {
+		return nil
+	})
+	db.GitserverReposFunc.SetDefaultReturn(gsr)
+
 	handler := manualPurgeHandler(db)
 
 	for _, tt := range []struct {
