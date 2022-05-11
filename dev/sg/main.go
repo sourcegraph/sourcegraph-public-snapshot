@@ -174,6 +174,7 @@ var sg = &cli.App{
 		generateCommand,
 		dbCommand,
 		migrationCommand,
+		insightsCommand,
 
 		// Dev environment
 		doctorCommand,
