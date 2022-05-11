@@ -60,6 +60,8 @@ import { EditorFeedbackPanel } from '../batch-spec/edit/editor/EditorFeedbackPan
 import { MonacoBatchSpecEditor } from '../batch-spec/edit/editor/MonacoBatchSpecEditor'
 import { LibraryPane } from '../batch-spec/edit/library/LibraryPane'
 import { ExecutionOptions, RunBatchSpecButton } from '../batch-spec/edit/RunBatchSpecButton'
+import { useExecuteBatchSpec } from '../batch-spec/edit/useExecuteBatchSpec'
+import { useInitialBatchSpec } from '../batch-spec/edit/useInitialBatchSpec'
 import { useImportingChangesets } from '../batch-spec/edit/workspaces-preview/useImportingChangesets'
 import { useWorkspaces, WorkspacePreviewFilters } from '../batch-spec/edit/workspaces-preview/useWorkspaces'
 import { useWorkspacesPreview } from '../batch-spec/edit/workspaces-preview/useWorkspacesPreview'
@@ -71,8 +73,6 @@ import { GET_BATCH_CHANGE_TO_EDIT, CREATE_EMPTY_BATCH_CHANGE, CREATE_BATCH_SPEC_
 import { CodeInsightsBatchesIcon } from './CodeInsightsBatchesIcon'
 import { getTemplateRenderer } from './go-checker-templates'
 import { NamespaceSelector } from './NamespaceSelector'
-import { useExecuteBatchSpec } from './useExecuteBatchSpec'
-import { useInitialBatchSpec } from './useInitialBatchSpec'
 import { useNamespaces } from './useNamespaces'
 
 import styles from './CreateOrEditBatchChangePage.module.scss'

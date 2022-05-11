@@ -7,7 +7,7 @@ import { mockWorkspace } from './WorkspacesPreview.mock'
 import { WorkspacesPreviewListItem } from './WorkspacesPreviewListItem'
 
 const { add } = storiesOf(
-    'web/batches/CreateBatchChangePage/WorkspacesPreview/WorkspacesPreviewListItem',
+    'web/batches/batch-spec/edit/workspaces-preview/WorkspacesPreviewListItem',
     module
 ).addDecorator(story => <div className="list-group d-flex flex-column w-100">{story()}</div>)
 

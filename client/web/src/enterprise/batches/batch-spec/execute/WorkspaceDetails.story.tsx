@@ -40,7 +40,7 @@ const MOCK_FILE_DIFF_QUERIES = {
     queryChangesetSpecFileDiffs,
 }
 
-const { add } = storiesOf('web/batches/execution/WorkspaceDetails', module).addDecorator(story => (
+const { add } = storiesOf('web/batches/batch-spec/execute/WorkspaceDetails', module).addDecorator(story => (
     <div className="d-flex w-100" style={{ height: '95vh' }}>
         <Card className="w-100 overflow-auto flex-grow-1" style={{ backgroundColor: 'var(--color-bg-1)' }}>
             <div className="w-100">

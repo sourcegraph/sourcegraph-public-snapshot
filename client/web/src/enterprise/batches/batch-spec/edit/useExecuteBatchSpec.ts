@@ -5,9 +5,8 @@ import { useHistory } from 'react-router'
 import { useMutation } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 
-import { ExecuteBatchSpecResult, ExecuteBatchSpecVariables } from '../../../graphql-operations'
-
-import { EXECUTE_BATCH_SPEC } from './backend'
+import { ExecuteBatchSpecResult, ExecuteBatchSpecVariables } from '../../../../graphql-operations'
+import { EXECUTE_BATCH_SPEC } from '../../create/backend'
 
 interface UseExecuteBatchSpecResult {
     /** Method to invoke the GraphQL mutation to execute the current batch spec. */

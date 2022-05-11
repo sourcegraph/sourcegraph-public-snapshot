@@ -6,7 +6,7 @@ import CloseIcon from 'mdi-react/CloseIcon'
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
 import { Button, Link, Modal } from '@sourcegraph/wildcard'
 
-import { BatchSpecDownloadLink, getFileName } from '../BatchSpec'
+import { BatchSpecDownloadLink, getFileName } from '../../BatchSpec'
 
 import styles from './DownloadSpecModal.module.scss'
 
