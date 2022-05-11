@@ -1781,14 +1781,22 @@
             "minLength": 1
           }
         },
-        "allowTeams": {
-          "description": "Restricts new logins to members of these GitHub teams. Existing sessions won't be invalidated. Leave empty or unset for no team restrictions.",
-          "default": [],
-          "type": "array",
-          "items": {
-            "type": "string",
-            "minLength": 1
-          }
+        "allowOrgsMap": {
+          "description": "Restricts new logins to members of GitHub organization > teams. Existing sessions won't be invalidated. Leave empty or unset for no org > team restrictions.",
+          "default": {},
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "examples": [
+            {
+              "org1": ["team1", "team2"],
+              "org2": ["team1", "team3"]
+            }
+          ]
         },
         "allowGroupsPermissionsSync": {
           "description": "Experimental: Allows sync of GitHub teams and organizations permissions across all external services associated with this provider to allow enabling of [repository permissions caching](https://docs.sourcegraph.com/admin/repo/permissions#permissions-caching).",

@@ -29,11 +29,11 @@ import (
 
 type sessionIssuerHelper struct {
 	*extsvc.CodeHost
-	db          database.DB
-	clientID    string
-	allowSignup bool
-	allowOrgs   []string
-	allowTeams  []string
+	db           database.DB
+	clientID     string
+	allowSignup  bool
+	allowOrgs    []string
+	allowOrgsMap map[string][]string
 }
 
 func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL, lastSourceURL string) (actr *actor.Actor, safeErrMsg string, err error) {
@@ -295,21 +295,26 @@ func (s *sessionIssuerHelper) verifyUserOrgs(ctx context.Context, ghClient *gith
 }
 
 func (s *sessionIssuerHelper) verifyUserTeams(ctx context.Context, ghClient *githubsvc.V3Client) bool {
-	userTeams, _, _, err := ghClient.GetAuthenticatedUserTeams(ctx, 1)
+	githubTeams, _, _, err := ghClient.GetAuthenticatedUserTeams(ctx, 1)
 
 	if err != nil {
 		log15.Warn("Could not get GitHub authenticated user teams", "error", err)
 		return false
 	}
 
-	allowed := make(map[string]bool, len(s.allowTeams))
-	for _, team := range s.allowTeams {
-		allowed[team] = true
+	allowedOrgsTeamsFromConfig := make(map[string][]string, len(s.allowOrgsMap))
+	for k, v := range s.allowOrgsMap {
+		allowedOrgsTeamsFromConfig[k] = v
 	}
 
-	for _, team := range userTeams {
-		if allowed[team.Name] {
-			return true
+	for _, ghTeam := range githubTeams {
+		configTeams, ok := allowedOrgsTeamsFromConfig[ghTeam.Organization.Login]
+		if ok {
+			for _, team := range configTeams {
+				if team == ghTeam.Name {
+					return true
+				}
+			}
 		}
 	}
 
@@ -319,15 +324,15 @@ func (s *sessionIssuerHelper) verifyUserTeams(ctx context.Context, ghClient *git
 // verifyUserOrgsAndTeams checks if the user belongs to one of the allowed listed orgs or teams.
 // If only one list is provided, that list will be used to verify the user.
 func (s *sessionIssuerHelper) verifyUserOrgsAndTeams(ctx context.Context, ghClient *githubsvc.V3Client) (bool, bool) {
-	if len(s.allowOrgs) == 0 && len(s.allowTeams) == 0 {
+	if len(s.allowOrgs) == 0 && len(s.allowOrgsMap) == 0 {
 		return true, true
 	}
 
-	if len(s.allowOrgs) > 0 && len(s.allowTeams) == 0 {
+	if len(s.allowOrgs) > 0 && len(s.allowOrgsMap) == 0 {
 		return s.verifyUserOrgs(ctx, ghClient), false
 	}
 
-	if len(s.allowOrgs) == 0 && len(s.allowTeams) > 0 {
+	if len(s.allowOrgs) == 0 && len(s.allowOrgsMap) > 0 {
 		return false, s.verifyUserTeams(ctx, ghClient)
 	}
 
