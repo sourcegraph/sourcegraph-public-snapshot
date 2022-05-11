@@ -610,10 +610,15 @@ func decorateChangesetBody(ctx context.Context, tx getBatchChanger, nsStore getN
 		return errors.Wrap(err, "building URL")
 	}
 
-	cs.Body = fmt.Sprintf(
-		"%s\n\n[_Created by Sourcegraph batch change `%s/%s`._](%s)",
-		cs.Body, ns.Name, batchChange.Name, u,
-	)
+	bcl := fmt.Sprintf("[_Created by Sourcegraph batch change `%s/%s`._](%s)", ns.Name, batchChange.Name, u)
+
+	// If batch change link template variable was specififed.
+	if strings.Contains(cs.Body, "${{ batch_change_link }}") {
+		cs.Body = strings.ReplaceAll(cs.Body, "${{ batch_change_link }}", bcl)
+	} else {
+		// Otherwise, append to the end of the body.
+		cs.Body = fmt.Sprintf("%s\n\n%s", cs.Body, bcl)
+	}
 
 	return nil
 }
