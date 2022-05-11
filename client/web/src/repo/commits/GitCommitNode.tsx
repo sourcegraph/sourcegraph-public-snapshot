@@ -55,7 +55,12 @@ export interface GitCommitNodeProps {
     /** An optional additional css class name to apply this to commit node message subject */
     messageSubjectClassName?: string
 
-    /** Element that should wrap the commit data. Only use 'li' when rendering the component in a list */
+    /**
+     * Element that should wrap the commit data. Only use 'li' when rendering the component in a list
+     *
+     * Note: This is primarily required for support when using this component in `FilteredConnection`
+     * Tracking issue to migrate away from this component: https://github.com/sourcegraph/sourcegraph/issues/23157
+     * */
     wrapperElement?: 'div' | 'li'
 }
 
