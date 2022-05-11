@@ -12,7 +12,7 @@ import { distinctUntilChanged, map, startWith } from 'rxjs/operators'
 import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import batchSpecSchemaJSON from '../../../../../../../schema/batch_spec.schema.json'
+import batchSpecSchemaJSON from '../../../../../../../../schema/batch_spec.schema.json'
 
 import styles from './MonacoBatchSpecEditor.module.scss'
 
