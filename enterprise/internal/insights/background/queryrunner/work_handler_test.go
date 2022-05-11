@@ -693,6 +693,14 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 	})
 }
 
+func TestGenerateSearchRecordings(t *testing.T) {
+
+}
+
+func TestGenerateSearchRecordingsStream(t *testing.T) {
+	
+}
+
 // stringify will turn the results of the recording worker into a slice of strings to easily compare golden test files against using autogold
 func stringify(recordings []store.RecordSeriesPointArgs) []string {
 	stringified := make([]string, 0, len(recordings))

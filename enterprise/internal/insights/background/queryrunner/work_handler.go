@@ -38,8 +38,11 @@ type workHandler struct {
 	mu          sync.RWMutex
 	seriesCache map[string]*types.InsightSeries
 
+	search       func(context.Context, string) (*query.GqlSearchResponse, error)
+	searchStream func(context.Context, string) (*streaming.TabulationResult, error)
+
 	computeSearch       func(context.Context, string) ([]query.ComputeResult, error)
-	computeSearchStream func(ctx context.Context, query string) (*streaming.ComputeTabulationResult, error)
+	computeSearchStream func(context.Context, string) (*streaming.ComputeTabulationResult, error)
 }
 
 type insightsHandler func(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) error
@@ -144,9 +147,10 @@ func (r *workHandler) generateComputeRecordings(ctx context.Context, job *Job, r
 		return nil, err
 	}
 
-	var recordings []store.RecordSeriesPointArgs
-	groupedByRepo := query.GroupByRepository(results)
 	checker := authz.DefaultSubRepoPermsChecker
+	var recordings []store.RecordSeriesPointArgs
+
+	groupedByRepo := query.GroupByRepository(results)
 	for repoKey, byRepo := range groupedByRepo {
 		groupedByCapture := query.GroupByCaptureMatch(byRepo)
 		repoId, idErr := graphqlbackend.UnmarshalRepositoryID(graphql.ID(repoKey))
@@ -173,6 +177,7 @@ func (r *workHandler) generateComputeRecordingsStream(ctx context.Context, job *
 	if err != nil {
 		return nil, err
 	}
+
 	checker := authz.DefaultSubRepoPermsChecker
 	var recordings []store.RecordSeriesPointArgs
 
@@ -192,7 +197,7 @@ func (r *workHandler) generateComputeRecordingsStream(ctx context.Context, job *
 }
 
 func (r *workHandler) generateSearchRecordings(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) ([]store.RecordSeriesPointArgs, error) {
-	results, err := query.Search(ctx, job.SearchQuery)
+	results, err := r.search(ctx, job.SearchQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -238,10 +243,12 @@ func (r *workHandler) generateSearchRecordings(ctx context.Context, job *Job, se
 	if timedout := len(results.Data.Search.Results.Timedout); timedout > 0 {
 		log15.Error("insights query issue", "timedout_repos", timedout, "query", job.SearchQuery)
 	}
-	matchesPerRepo := make(map[string]int, len(results.Data.Search.Results.Results)*4)
-	repoNames := make(map[string]string, len(matchesPerRepo))
+
 	checker := authz.DefaultSubRepoPermsChecker
 	var recordings []store.RecordSeriesPointArgs
+
+	matchesPerRepo := make(map[string]int, len(results.Data.Search.Results.Results)*4)
+	repoNames := make(map[string]string, len(matchesPerRepo))
 	for _, result := range results.Data.Search.Results.Results {
 		decoded, err := query.DecodeResult(result)
 		if err != nil {
@@ -277,10 +284,9 @@ func (r *workHandler) generateSearchRecordings(ctx context.Context, job *Job, se
 }
 
 func (r *workHandler) generateSearchRecordingsStream(ctx context.Context, job *Job, _ *types.InsightSeries, recordTime time.Time) ([]store.RecordSeriesPointArgs, error) {
-	decoder, tabulationResult := streaming.TabulationDecoder()
-	err := streaming.Search(ctx, job.SearchQuery, decoder)
+	tabulationResult, err := r.searchStream(ctx, job.SearchQuery)
 	if err != nil {
-		return nil, errors.Wrap(err, "streaming.Search")
+		return nil, err
 	}
 
 	tr := *tabulationResult
@@ -295,6 +301,7 @@ func (r *workHandler) generateSearchRecordingsStream(ctx context.Context, job *J
 
 	checker := authz.DefaultSubRepoPermsChecker
 	var recordings []store.RecordSeriesPointArgs
+
 	for _, match := range tr.RepoCounts {
 		// sub-repo permissions filtering. If the repo supports it, then it should be excluded from search results
 		var subRepoEnabled bool
