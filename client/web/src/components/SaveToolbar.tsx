@@ -32,16 +32,9 @@ export type SaveToolbarPropsGenerator<T extends object> = (
     props: Readonly<React.PropsWithChildren<SaveToolbarProps>>
 ) => React.PropsWithChildren<SaveToolbarProps> & T
 
-export const SaveToolbar: React.FunctionComponent<React.PropsWithChildren<SaveToolbarProps>> = ({
-    dirty,
-    saving,
-    error,
-    onSave,
-    onDiscard,
-    children,
-    willShowError,
-    saveDiscardDisabled,
-}) => {
+export const SaveToolbar: React.FunctionComponent<
+    React.PropsWithChildren<React.PropsWithChildren<SaveToolbarProps>>
+> = ({ dirty, saving, error, onSave, onDiscard, children, willShowError, saveDiscardDisabled }) => {
     const disabled = saveDiscardDisabled ? saveDiscardDisabled() : saving || !dirty
     let saveDiscardTitle: string | undefined
     if (saving) {

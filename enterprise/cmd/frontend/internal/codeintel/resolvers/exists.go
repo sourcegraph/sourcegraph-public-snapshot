@@ -26,7 +26,7 @@ const numAncestors = 100
 // path is a prefix are returned. These dump IDs should be subsequently passed to invocations of
 // Definitions, References, and Hover.
 func (r *resolver) findClosestDumps(ctx context.Context, cachedCommitChecker *cachedCommitChecker, repositoryID int, commit, path string, exactPath bool, indexer string) (_ []store.Dump, err error) {
-	ctx, trace, endObservation := r.operations.findClosestDumps.WithAndLogger(ctx, &err, observation.Args{
+	ctx, trace, endObservation := r.operations.findClosestDumps.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", repositoryID),
 			log.String("commit", commit),

@@ -20,7 +20,7 @@ const slowDocumentationPageRequestThreshold = time.Second
 //
 // nil, nil is returned if the page does not exist.
 func (r *queryResolver) DocumentationPage(ctx context.Context, pathID string) (_ *precise.DocumentationPageData, err error) {
-	ctx, trace, endObservation := observeResolver(ctx, &err, "DocumentationPage", r.operations.documentationPage, slowDocumentationPageRequestThreshold, observation.Args{
+	ctx, trace, endObservation := observeResolver(ctx, &err, r.operations.documentationPage, slowDocumentationPageRequestThreshold, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", r.repositoryID),
 			log.String("commit", r.commit),
@@ -55,7 +55,7 @@ const slowDocumentationPathInfoRequestThreshold = time.Second
 //
 // nil, nil is returned if the page does not exist.
 func (r *queryResolver) DocumentationPathInfo(ctx context.Context, pathID string) (_ *precise.DocumentationPathInfoData, err error) {
-	ctx, trace, endObservation := observeResolver(ctx, &err, "DocumentationPathInfo", r.operations.documentationPathInfo, slowDocumentationPathInfoRequestThreshold, observation.Args{
+	ctx, trace, endObservation := observeResolver(ctx, &err, r.operations.documentationPathInfo, slowDocumentationPathInfoRequestThreshold, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", r.repositoryID),
 			log.String("commit", r.commit),
@@ -88,7 +88,7 @@ const slowDocumentationRequestThreshold = time.Second
 
 // Documentation returns documentation for the symbol at the given position.
 func (r *queryResolver) Documentation(ctx context.Context, line, character int) (_ []*Documentation, err error) {
-	ctx, _, endObservation := observeResolver(ctx, &err, "Documentation", r.operations.documentation, slowDocumentationRequestThreshold, observation.Args{
+	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.documentation, slowDocumentationRequestThreshold, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", r.repositoryID),
 			log.String("commit", r.commit),
@@ -142,7 +142,7 @@ const slowDocumentationSearchRequestThreshold = 3 * time.Second
 
 // DocumentationSearch searches for documentation, limiting the results to the specified set of repos (or all if empty).
 func (r *resolver) DocumentationSearch(ctx context.Context, query string, repos []string) (_ []precise.DocumentationSearchResult, err error) {
-	ctx, _, endObservation := observeResolver(ctx, &err, "DocumentationSearch", r.operations.documentationSearch, slowDocumentationSearchRequestThreshold, observation.Args{
+	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.documentationSearch, slowDocumentationSearchRequestThreshold, observation.Args{
 		LogFields: []log.Field{
 			log.String("query", query),
 			log.String("repos", fmt.Sprint(repos)),

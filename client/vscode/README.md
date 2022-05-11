@@ -87,13 +87,14 @@ Once you have repositories synced to Sourcegraph, you can generate an access tok
 
 This extension contributes the following settings:
 
-| Setting                             | Description                                                                                                                    | Example                                                      |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------ |
-| `sourcegraph.url`                   | Specify your on-premises Sourcegraph instance here, if applicable. The extension is connected to Sourcegraph Cloud by default. | "https://your-sourcegraph.com"                               |
-| `sourcegraph.accessToken`           | The access token to query the Sourcegraph API. Required to use this extension with private instances.                          | "6dfc880b320dff712d9f6cfcac5cbd13ebfad1d8"                   |
-| `sourcegraph.remoteUrlReplacements` | Object, where each `key` is replaced by `value` in the remote url.                                                             | {"github": "gitlab", "master": "main"}                       |
-| `sourcegraph.defaultBranch`         | String to set the name of the default branch. Always open files in the default branch.                                         | "master"                                                     |
-| `sourcegraph.requestHeaders`        | Takes object, where each value pair will be added to the request headers made to your instance.                                | {"Cache-Control": "no-cache", "Proxy-Authenticate": "Basic"} |
+| Setting                           | Description                                                                                                                                     | Example                                                      |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| sourcegraph.url                   | Specify your on-premises Sourcegraph instance here, if applicable. The extension is connected to Sourcegraph Cloud by default.                  | "https://your-sourcegraph.com"                               |
+| sourcegraph.accessToken           | The access token to query the Sourcegraph API. Required to use this extension with private instances.                                           | "6dfc880b320dff712d9f6cfcac5cbd13ebfad1d8"                   |
+| sourcegraph.remoteUrlReplacements | Object, where each `key` is replaced by `value` in the remote url.                                                                              | {"github": "gitlab", "master": "main"}                       |
+| sourcegraph.defaultBranch         | String to set the name of the default branch. Always open files in the default branch.                                                          | "master"                                                     |
+| sourcegraph.requestHeaders        | Takes object, where each value pair will be added to the request headers made to your instance.                                                 | {"Cache-Control": "no-cache", "Proxy-Authenticate": "Basic"} |
+| sourcegraph.basePath              | The file path on the machine to the folder that is expected to contain all repositories. We will try to open search results using the basePath. | "/Users/USERNAME/Documents/"                                 |
 
 ## Questions & Feedback
 

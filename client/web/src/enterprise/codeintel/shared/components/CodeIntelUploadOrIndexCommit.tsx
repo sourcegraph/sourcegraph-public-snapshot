@@ -1,4 +1,4 @@
-import React, { FunctionComponent } from 'react'
+import { FunctionComponent } from 'react'
 
 import { Link } from '@sourcegraph/wildcard'
 
@@ -9,10 +9,9 @@ export interface CodeIntelUploadOrIndexCommitProps {
     abbreviated?: boolean
 }
 
-export const CodeIntelUploadOrIndexCommit: FunctionComponent<CodeIntelUploadOrIndexCommitProps> = ({
-    node,
-    abbreviated = true,
-}) => (
+export const CodeIntelUploadOrIndexCommit: FunctionComponent<
+    React.PropsWithChildren<CodeIntelUploadOrIndexCommitProps>
+> = ({ node, abbreviated = true }) => (
     <code>
         {node.projectRoot ? (
             <Link to={node.projectRoot.commit.url}>

@@ -1,6 +1,7 @@
 package reposource
 
 import (
+	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -39,7 +40,7 @@ func TestParseNpmDependency(t *testing.T) {
 	}
 }
 
-func TestSortNpmDependencies(t *testing.T) {
+func TestNpmDependency_Less(t *testing.T) {
 	dependencies := []*NpmDependency{
 		parseNpmDependencyOrPanic(t, "ac@1.2.0"),
 		parseNpmDependencyOrPanic(t, "ab@1.2.0.Final"),
@@ -64,7 +65,11 @@ func TestSortNpmDependencies(t *testing.T) {
 		parseNpmDependencyOrPanic(t, "ab@1.1.0"),
 		parseNpmDependencyOrPanic(t, "aa@1.2.0"),
 	}
-	SortNpmDependencies(dependencies)
+
+	sort.Slice(dependencies, func(i, j int) bool {
+		return dependencies[i].Less(dependencies[j])
+	})
+
 	assert.Equal(t, expected, dependencies)
 }
 

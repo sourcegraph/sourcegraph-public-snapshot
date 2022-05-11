@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { render, within, waitFor } from '@testing-library/react'
 import { ReplaySubject } from 'rxjs'
 import { TextDocumentDecoration, ThemableDecorationStyle } from 'sourcegraph'

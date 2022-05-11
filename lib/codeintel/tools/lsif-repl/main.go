@@ -60,7 +60,7 @@ func main() {
 
 			err = queryBundle(bundles[dumpID], path, line, column)
 			if err != nil {
-				fmt.Println(helpMsg)
+				fmt.Printf("%s\n", helpMsg)
 				break
 			}
 
@@ -142,7 +142,7 @@ func main() {
 			// break
 
 		default:
-			fmt.Println(helpMsg)
+			fmt.Printf("%s\n", helpMsg)
 		}
 
 		fmt.Printf("\n> ")

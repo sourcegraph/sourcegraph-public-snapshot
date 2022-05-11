@@ -34,6 +34,14 @@ type AriaLabelControlFieldProps<T> = BaseFieldProps<T> & {
     'aria-label': string
 }
 
+type AriaLabelledByControlFieldProps<T> = BaseFieldProps<T> & {
+    /**
+     * A valid ID to any element that can be used to describe to associated input.
+     * This can be used for specific cases where we want fully control over the `label` element that is rendered.
+     */
+    'aria-labelledby': string
+}
+
 /**
  * This type should be used as a foundation for any form field elements within Wildcard.
  *
@@ -44,4 +52,7 @@ type AriaLabelControlFieldProps<T> = BaseFieldProps<T> & {
  *
  * It enforces that accessible labels are attached to the field through either a `label` (and `id`) prop or an `aria-label` prop.
  */
-export type AccessibleFieldProps<T> = AssociatedLabelControlFieldProps<T> | AriaLabelControlFieldProps<T>
+export type AccessibleFieldProps<T> =
+    | AssociatedLabelControlFieldProps<T>
+    | AriaLabelControlFieldProps<T>
+    | AriaLabelledByControlFieldProps<T>

@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useState } from 'react'
+import { FunctionComponent, useState } from 'react'
 
 import classNames from 'classnames'
 
@@ -19,7 +19,7 @@ const defaultCustomValue = 24
 
 const toInt = (value: string): number | null => Math.floor(parseInt(value, 10)) || null
 
-export const DurationSelect: FunctionComponent<DurationSelectProps> = ({
+export const DurationSelect: FunctionComponent<React.PropsWithChildren<DurationSelectProps>> = ({
     id,
     value,
     disabled,

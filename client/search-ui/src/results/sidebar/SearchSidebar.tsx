@@ -71,7 +71,7 @@ const selectFromQueryState = ({
     submitSearch,
 })
 
-export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props => {
+export const SearchSidebar: React.FunctionComponent<React.PropsWithChildren<SearchSidebarProps>> = props => {
     const history = useHistory()
     const [collapsedSections, setCollapsedSections] = useTemporarySetting('search.collapsedSidebarSections', {})
 

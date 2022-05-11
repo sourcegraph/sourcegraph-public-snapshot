@@ -2,7 +2,7 @@ import { ProxyMarked, transferHandlers, releaseProxy, TransferHandler, Remote, p
 import { Observable, Observer, PartialObserver, Subscription } from 'rxjs'
 import { Subscribable, Unsubscribable } from 'sourcegraph'
 
-import { hasProperty } from '@sourcegraph/common'
+import { hasProperty, AbortError } from '@sourcegraph/common'
 
 import { ProxySubscribable } from './extension/api/common'
 
@@ -122,11 +122,6 @@ export const observableFromAsyncIterable = <T>(iterable: AsyncIterable<T>): Obse
             }
         }
     })
-
-export class AbortError extends Error {
-    public readonly name = 'AbortError'
-    public readonly message = 'Aborted'
-}
 
 /**
  * Promisifies method calls and objects if specified, throws otherwise if there is no stub provided

@@ -52,7 +52,7 @@ export interface ExternalChangesetNodeProps extends ThemeProps {
     expandByDefault?: boolean
 }
 
-export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNodeProps> = ({
+export const ExternalChangesetNode: React.FunctionComponent<React.PropsWithChildren<ExternalChangesetNodeProps>> = ({
     node: initialNode,
     viewerCanAdminister,
     selectable,
@@ -81,6 +81,10 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
         selectable?.onSelect(node.id)
     }, [selectable, node.id])
 
+    const tooltipLabel = viewerCanAdminister
+        ? 'Click to select changeset for bulk operation'
+        : 'You do not have permission to perform this operation'
+
     return (
         <>
             <Button
@@ -103,11 +107,8 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                         checked={selected}
                         onChange={toggleSelected}
                         disabled={!viewerCanAdminister}
-                        tooltip={
-                            viewerCanAdminister
-                                ? 'Click to select changeset for bulk operation'
-                                : 'You do not have permission to perform this operation'
-                        }
+                        tooltip={tooltipLabel}
+                        aria-label={tooltipLabel}
                     />
                 </div>
             ) : (
@@ -223,7 +224,7 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
     )
 }
 
-const SyncerError: React.FunctionComponent<{ syncerError: string }> = ({ syncerError }) => (
+const SyncerError: React.FunctionComponent<React.PropsWithChildren<{ syncerError: string }>> = ({ syncerError }) => (
     <Alert role="alert" variant="danger">
         <h4 className={classNames(styles.alertHeading)}>
             Encountered error during last attempt to sync changeset data from code host
@@ -236,9 +237,11 @@ const SyncerError: React.FunctionComponent<{ syncerError: string }> = ({ syncerE
     </Alert>
 )
 
-const ChangesetError: React.FunctionComponent<{
-    node: ExternalChangesetFields
-}> = ({ node }) => {
+const ChangesetError: React.FunctionComponent<
+    React.PropsWithChildren<{
+        node: ExternalChangesetFields
+    }>
+> = ({ node }) => {
     if (!node.error) {
         return null
     }
@@ -251,11 +254,13 @@ const ChangesetError: React.FunctionComponent<{
     )
 }
 
-const RetryChangesetButton: React.FunctionComponent<{
-    node: ExternalChangesetFields
-    setNode: (node: ExternalChangesetFields) => void
-    viewerCanAdminister: boolean
-}> = ({ node, setNode }) => {
+const RetryChangesetButton: React.FunctionComponent<
+    React.PropsWithChildren<{
+        node: ExternalChangesetFields
+        setNode: (node: ExternalChangesetFields) => void
+        viewerCanAdminister: boolean
+    }>
+> = ({ node, setNode }) => {
     const [isLoading, setIsLoading] = useState<boolean | Error>(false)
     const onRetry = useCallback(async () => {
         setIsLoading(true)

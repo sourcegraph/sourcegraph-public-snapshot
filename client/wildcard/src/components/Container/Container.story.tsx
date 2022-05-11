@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'

@@ -1,9 +1,7 @@
 import React from 'react'
 
 export interface SeriesLikeChart<Datum> {
-    data: Datum[]
     series: Series<Datum>[]
-    getXValue: (datum: Datum) => Date
     stacked?: boolean
 
     /**
@@ -23,16 +21,24 @@ export interface CategoricalLikeChart<Datum> {
 }
 
 export interface Series<Datum> {
-    /**
-     * The key in each data object for the values this line should be
-     * calculated from.
+    /** Unique series id. */
+    id: string | number
+
+    /** The name of the line shown in the legend and tooltip */
+    name: string
+
+    /*
+     * List of datum (points) for this particular data series. Should
+     * contain y and x-axis value for the point.
      */
-    dataKey: keyof Datum
+    data: Datum[]
 
     /**
-     * The name of the line shown in the legend and tooltip
+     * Getters that will run over each data points and should return x and y
+     * value for series points.
      */
-    name: string
+    getXValue: (datum: Datum) => Date
+    getYValue: (datum: Datum) => number | null
 
     /**
      * Link for data series point. It may be used to make datum points with links

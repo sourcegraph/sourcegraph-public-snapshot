@@ -1,7 +1,6 @@
 package codeintel
 
 import (
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -11,21 +10,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // InitGitserverClient initializes and returns a gitserver client.
 func InitGitserverClient() (*gitserver.Client, error) {
-	conn, err := initGitserverClient.Init()
-	if err != nil {
-		return nil, err
-	}
-
-	return conn.(*gitserver.Client), err
+	return initGitserverClient.Init()
 }
 
-var initGitserverClient = memo.NewMemoizedConstructor(func() (interface{}, error) {
+var initGitserverClient = memo.NewMemoizedConstructor(func() (*gitserver.Client, error) {
 	observationContext := &observation.Context{
-		Logger:     log15.Root(),
+		Logger:     log.Scoped("client.gitserver", "gitserver client"),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
@@ -40,12 +35,12 @@ var initGitserverClient = memo.NewMemoizedConstructor(func() (interface{}, error
 
 func InitRepoUpdaterClient() *repoupdater.Client {
 	client, _ := initRepoUpdaterClient.Init()
-	return client.(*repoupdater.Client)
+	return client
 }
 
-var initRepoUpdaterClient = memo.NewMemoizedConstructor(func() (interface{}, error) {
+var initRepoUpdaterClient = memo.NewMemoizedConstructor(func() (*repoupdater.Client, error) {
 	observationContext := &observation.Context{
-		Logger:     log15.Root(),
+		Logger:     log.Scoped("client.repo-updater", "repo-updater client"),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}

@@ -2,7 +2,7 @@ import React from 'react'
 
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CancelIcon from 'mdi-react/CancelIcon'
-import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
+import CheckBoldIcon from 'mdi-react/CheckBoldIcon'
 import ContentSaveIcon from 'mdi-react/ContentSaveIcon'
 import LinkVariantRemoveIcon from 'mdi-react/LinkVariantRemoveIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
@@ -16,7 +16,10 @@ export interface WorkspaceStateIconProps {
     cachedResultFound: boolean
 }
 
-export const WorkspaceStateIcon: React.FunctionComponent<WorkspaceStateIconProps> = ({ state, cachedResultFound }) => {
+export const WorkspaceStateIcon: React.FunctionComponent<React.PropsWithChildren<WorkspaceStateIconProps>> = ({
+    state,
+    cachedResultFound,
+}) => {
     switch (state) {
         case BatchSpecWorkspaceState.PENDING:
             return null
@@ -76,7 +79,7 @@ export const WorkspaceStateIcon: React.FunctionComponent<WorkspaceStateIconProps
                 <Icon
                     className="text-success"
                     data-tooltip="Execution for this workspace succeeded."
-                    as={CheckCircleIcon}
+                    as={CheckBoldIcon}
                 />
             )
     }

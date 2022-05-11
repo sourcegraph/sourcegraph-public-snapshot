@@ -121,6 +121,7 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/telemetry").Methods("POST").Name(Telemetry)
 	base.Path("/lsif/upload").Methods("POST").Name(LSIFUpload)
 	base.Path("/search/stream").Methods("GET").Name(StreamingSearch)
+	base.Path("/compute/stream").Methods("GET").Name(ComputeStream)
 	addRegistryRoute(base)
 	addGraphQLRoute(base)
 

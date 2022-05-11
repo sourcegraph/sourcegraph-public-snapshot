@@ -13,7 +13,7 @@ import { ThemeWrapper } from '../ThemeWrapper'
 
 setLinkComponent(AnchorLink)
 
-const AfterInstallPage: React.FunctionComponent = () => (
+const AfterInstallPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <ThemeWrapper>
         {({ isLightTheme }) => (
             <WildcardThemeProvider isBranded={true}>

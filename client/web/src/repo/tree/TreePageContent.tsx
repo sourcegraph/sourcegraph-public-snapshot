@@ -88,7 +88,7 @@ interface TreePageContentProps extends ExtensionsControllerProps, ThemeProps, Te
     revision: string
 }
 
-export const TreePageContent: React.FunctionComponent<TreePageContentProps> = ({
+export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<TreePageContentProps>> = ({
     filePath,
     tree,
     repo,
@@ -151,7 +151,9 @@ export const TreePageContent: React.FunctionComponent<TreePageContentProps> = ({
         </div>
     )
 
-    const TotalCountSummary: React.FunctionComponent<{ totalCount: number }> = ({ totalCount }) => (
+    const TotalCountSummary: React.FunctionComponent<React.PropsWithChildren<{ totalCount: number }>> = ({
+        totalCount,
+    }) => (
         <div className="mt-2">
             {showOlderCommits ? (
                 <>
@@ -203,7 +205,7 @@ export const TreePageContent: React.FunctionComponent<TreePageContentProps> = ({
                 <h2>Changes</h2>
                 <FilteredConnection<
                     GitCommitFields,
-                    Pick<GitCommitNodeProps, 'className' | 'compact' | 'messageSubjectClassName'>
+                    Pick<GitCommitNodeProps, 'className' | 'compact' | 'messageSubjectClassName' | 'wrapperElement'>
                 >
                     location={props.location}
                     className="mt-2"
@@ -216,6 +218,7 @@ export const TreePageContent: React.FunctionComponent<TreePageContentProps> = ({
                         className: classNames('list-group-item', styles.gitCommitNode),
                         messageSubjectClassName: styles.gitCommitNodeMessageSubject,
                         compact: true,
+                        wrapperElement: 'li',
                     }}
                     updateOnChange={`${repo.name}:${revision}:${filePath}:${String(showOlderCommits)}`}
                     defaultFirst={7}

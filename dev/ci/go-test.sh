@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
 
+cd "$(dirname "${BASH_SOURCE[0]}")"/../..
+
 set -euo pipefail
+
+REPO_ROOT="$PWD"
 
 function usage {
   cat <<EOF
 Usage: go-test.sh [only|exclude package-path-1 package-path-2 ...]
 
-Run go tests, optionally restricting which ones based on the only and exclude coommands.
+Run go tests, optionally restricting which ones based on the only and exclude commands.
 
 EOF
 }
@@ -43,7 +47,7 @@ function go_test() {
     set -x
     echo "~~~ Creating test failures anotation"
     RICHGO_CONFIG="./.richstyle.yml"
-    cp "./dev/ci/go-test-failures.richstyle.yml" $RICHGO_CONFIG
+    cp "$REPO_ROOT/dev/ci/go-test-failures.richstyle.yml" $RICHGO_CONFIG
     mkdir -p ./annotations
     richgo testfilter <"$tmpfile" >>./annotations/go-test
     rm -rf $RICHGO_CONFIG
@@ -84,11 +88,11 @@ echo "--- comby install"
 ./dev/comby-install-or-upgrade.sh
 
 # Temporary fix to keep the backcompat test operational until the next release.
-# This is needed because the go-test.sh is protected and the backcompat tests are 
+# This is needed because the go-test.sh is protected and the backcompat tests are
 # not checking out the old version when the tests with the old code against the latest
 # commit database schema.
 # TODO @jhchabran remove this when we release the next version.
-if [ "v3.38.0" == "$(git describe --tags)" ];then
+if [ "v3.38.0" == "$(git describe --tags)" ]; then
   # For code insights test
   ./dev/codeinsights-db.sh &
   export CODEINSIGHTS_PGDATASOURCE=postgres://postgres:password@127.0.0.1:5435/postgres
@@ -107,7 +111,7 @@ declare -A IGNORED_DIRS=(
 )
 
 # We have multiple go.mod files and go list doesn't recurse into them.
-find . -name go.mod -exec dirname '{}' \; | while read -r d; do
+find . -name go.mod -type f -exec dirname '{}' \; | while read -r d; do
 
   # Skip any ignored directories.
   if [ -v "IGNORED_DIRS[$d]" ]; then

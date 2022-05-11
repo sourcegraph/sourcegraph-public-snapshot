@@ -57,7 +57,7 @@ interface RevisionListProps {
     query: string
 }
 
-const RevisionList: React.FunctionComponent<RevisionListProps> = ({
+const RevisionList: React.FunctionComponent<React.PropsWithChildren<RevisionListProps>> = ({
     repoName,
     type,
     onFilterClick,
@@ -140,7 +140,7 @@ const RevisionList: React.FunctionComponent<RevisionListProps> = ({
     )
 }
 
-export const Revisions: React.FunctionComponent<RevisionsProps> = React.memo(
+export const Revisions: React.FunctionComponent<React.PropsWithChildren<RevisionsProps>> = React.memo(
     ({ repoName, onFilterClick, query, _initialTab }) => {
         const [persistedTabIndex, setPersistedTabIndex] = useTemporarySetting('search.sidebar.revisions.tab')
         const onRevisionFilterClick = (value: string): void =>

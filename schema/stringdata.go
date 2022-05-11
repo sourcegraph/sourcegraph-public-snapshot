@@ -22,6 +22,10 @@ var BitbucketServerSchemaJSON string
 //go:embed changeset_spec.schema.json
 var ChangesetSpecSchemaJSON string
 
+// GerritSchemaJSON is the content of the file "gerrit.schema.json".
+//go:embed gerrit.schema.json
+var GerritSchemaJSON string
+
 // GitHubSchemaJSON is the content of the file "github.schema.json".
 //go:embed github.schema.json
 var GitHubSchemaJSON string
@@ -45,6 +49,10 @@ var JVMPackagesSchemaJSON string
 // NpmPackagesSchemaJSON is the content of the file "npm-packages.schema.json".
 //go:embed npm-packages.schema.json
 var NpmPackagesSchemaJSON string
+
+// PythonPackagesSchemaJSON is the content of the file "python-packages.schema.json".
+//go:embed python-packages.schema.json
+var PythonPackagesSchemaJSON string
 
 // OtherExternalServiceSchemaJSON is the content of the file "other_external_service.schema.json".
 //go:embed other_external_service.schema.json

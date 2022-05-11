@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { Redirect, RouteComponentProps } from 'react-router'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
@@ -61,6 +59,20 @@ export const enterpriseUserAreaRoutes: readonly UserAreaRoute[] = [
                 {...props}
                 initialNamespaceID={props.user.id}
                 batchChangeName={match.params.batchChangeName}
+            />
+        ),
+        condition: ({ batchChangesEnabled, batchChangesExecutionEnabled }) =>
+            batchChangesEnabled && batchChangesExecutionEnabled,
+        fullPage: true,
+    },
+    {
+        path: '/batch-changes/:batchChangeName/executions/:batchSpecID/configuration',
+        render: ({ match, ...props }: UserAreaRouteContext & RouteComponentProps<{ batchChangeName: string }>) => (
+            <CreateOrEditBatchChangePage
+                {...props}
+                initialNamespaceID={props.user.id}
+                batchChangeName={match.params.batchChangeName}
+                isReadOnly={true}
             />
         ),
         condition: ({ batchChangesEnabled, batchChangesExecutionEnabled }) =>

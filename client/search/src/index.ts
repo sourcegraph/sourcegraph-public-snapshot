@@ -21,6 +21,7 @@ export * from './searchQueryState'
 export * from './helpers'
 export * from './graphql-operations'
 export * from './helpers/queryExample'
+export * from './integration/streaming-search-mocks'
 
 export interface SearchPatternTypeProps {
     patternType: SearchPatternType

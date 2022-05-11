@@ -234,7 +234,7 @@ func (c *Client) httpPost(
 	ctx context.Context,
 	method string,
 	repo api.RepoName,
-	payload interface{},
+	payload any,
 ) (resp *http.Response, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "symbols.Client.httpPost")
 	defer func() {

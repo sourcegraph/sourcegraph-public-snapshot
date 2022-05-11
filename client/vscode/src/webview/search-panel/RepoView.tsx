@@ -12,7 +12,7 @@ import { QueryState } from '@sourcegraph/search'
 import { fetchTreeEntries } from '@sourcegraph/shared/src/backend/repo'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
-import { PageHeader, useObservable } from '@sourcegraph/wildcard'
+import { Icon, PageHeader, useObservable } from '@sourcegraph/wildcard'
 
 import { WebviewPageProps } from '../platform/context'
 
@@ -26,7 +26,7 @@ interface RepoViewProps extends Pick<WebviewPageProps, 'extensionCoreAPI' | 'pla
     setQueryState: (query: QueryState) => void
 }
 
-export const RepoView: React.FunctionComponent<RepoViewProps> = ({
+export const RepoView: React.FunctionComponent<React.PropsWithChildren<RepoViewProps>> = ({
     extensionCoreAPI,
     platformContext,
     repositoryMatch,
@@ -84,9 +84,9 @@ export const RepoView: React.FunctionComponent<RepoViewProps> = ({
             <button
                 type="button"
                 onClick={onBackToSearchResults}
-                className="btn btn-sm btn-link btn-outline-secondary text-decoration-none border-0"
+                className="test-back-to-search-view-btn btn btn-sm btn-link btn-outline-secondary text-decoration-none border-0"
             >
-                <ArrowLeftIcon className="icon-inline mr-1" />
+                <Icon role="img" aria-hidden={true} className="mr-1" as={ArrowLeftIcon} />
                 Back to search view
             </button>
             {directoryStack.length > 0 && (
@@ -95,7 +95,7 @@ export const RepoView: React.FunctionComponent<RepoViewProps> = ({
                     onClick={onPreviousDirectory}
                     className="btn btn-sm btn-link btn-outline-secondary text-decoration-none border-0"
                 >
-                    <ArrowLeftIcon className="icon-inline mr-1" />
+                    <Icon role="img" aria-hidden={true} className="mr-1" as={ArrowLeftIcon} />
                     Back to previous directory
                 </button>
             )}
@@ -132,12 +132,12 @@ export const RepoView: React.FunctionComponent<RepoViewProps> = ({
                                     )}
                                 >
                                     <span>
-                                        {entry.isDirectory && (
-                                            <FolderOutlineIcon className="icon-inline mr-1 text-muted" />
-                                        )}
-                                        {!entry.isDirectory && (
-                                            <FileDocumentOutlineIcon className="icon-inline mr-1 text-muted" />
-                                        )}
+                                        <Icon
+                                            role="img"
+                                            title={entry.isDirectory ? 'Folder' : 'File'}
+                                            className="mr-1 text-muted"
+                                            as={entry.isDirectory ? FolderOutlineIcon : FileDocumentOutlineIcon}
+                                        />
                                         {entry.name}
                                         {entry.isDirectory && '/'}
                                     </span>

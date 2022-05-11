@@ -9,14 +9,14 @@ import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { isRepoFilter } from '@sourcegraph/shared/src/search/query/validate'
 import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
-import { useObservable } from '@sourcegraph/wildcard'
+import { Icon, useObservable } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../../graphql-operations'
 import { HistorySidebarProps } from '../HistorySidebarView'
 
 import styles from '../../search/SearchSidebarView.module.scss'
 
-export const RecentRepositoriesSection: React.FunctionComponent<HistorySidebarProps> = ({
+export const RecentRepositoriesSection: React.FunctionComponent<React.PropsWithChildren<HistorySidebarProps>> = ({
     platformContext,
     authenticatedUser,
     extensionCoreAPI,
@@ -65,13 +65,15 @@ export const RecentRepositoriesSection: React.FunctionComponent<HistorySidebarPr
                 type="button"
                 className={classNames('btn btn-outline-secondary', styles.sidebarSectionCollapseButton)}
                 onClick={() => setCollapsed(!collapsed)}
+                aria-label={`${collapsed ? 'Expand' : 'Collapse'} recent files`}
             >
                 <h5 className="flex-grow-1">Recent Repositories</h5>
-                {collapsed ? (
-                    <ChevronLeftIcon className="icon-inline mr-1" />
-                ) : (
-                    <ChevronDownIcon className="icon-inline mr-1" />
-                )}
+                <Icon
+                    role="img"
+                    aria-hidden={true}
+                    className="mr-1"
+                    as={collapsed ? ChevronLeftIcon : ChevronDownIcon}
+                />
             </button>
 
             {!collapsed && (

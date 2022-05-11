@@ -25,7 +25,7 @@ type CreateOptions struct {
 }
 
 func (s *Service) CreateSandbox(ctx context.Context, opts CreateOptions) (_ *Sandbox, err error) {
-	_, endObservation := s.operations.createSandbox.With(ctx, &err, observation.Args{})
+	_, _, endObservation := s.operations.createSandbox.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	state := lua.NewState(lua.Options{
@@ -43,6 +43,11 @@ func (s *Service) CreateSandbox(ctx context.Context, opts CreateOptions) (_ *San
 	// Preload caller-supplied modules
 	for name, loader := range opts.Modules {
 		state.PreloadModule(name, loader)
+	}
+
+	// De-register global functions that could do something unwanted
+	for _, name := range globalsToUnset {
+		state.SetGlobal(name, lua.LNil)
 	}
 
 	return &Sandbox{

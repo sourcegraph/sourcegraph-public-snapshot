@@ -1,4 +1,4 @@
-import React, { FunctionComponent } from 'react'
+import { FunctionComponent } from 'react'
 
 import classNames from 'classnames'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
@@ -16,7 +16,10 @@ export interface CodeIntelAssociatedIndexProps {
     now?: () => Date
 }
 
-export const CodeIntelAssociatedIndex: FunctionComponent<CodeIntelAssociatedIndexProps> = ({ node, now }) =>
+export const CodeIntelAssociatedIndex: FunctionComponent<React.PropsWithChildren<CodeIntelAssociatedIndexProps>> = ({
+    node,
+    now,
+}) =>
     node.associatedIndex && node.projectRoot ? (
         <>
             <div className="list-group position-relative">

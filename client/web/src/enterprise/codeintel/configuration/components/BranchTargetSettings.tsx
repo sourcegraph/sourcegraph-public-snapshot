@@ -1,4 +1,4 @@
-import React, { FunctionComponent } from 'react'
+import { FunctionComponent } from 'react'
 
 import { GitObjectType } from '@sourcegraph/shared/src/graphql-operations'
 
@@ -20,7 +20,7 @@ export interface BranchTargetSettingsProps {
     disabled: boolean
 }
 
-export const BranchTargetSettings: FunctionComponent<BranchTargetSettingsProps> = ({
+export const BranchTargetSettings: FunctionComponent<React.PropsWithChildren<BranchTargetSettingsProps>> = ({
     repoId,
     policy,
     setPolicy,

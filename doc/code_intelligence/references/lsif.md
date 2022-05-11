@@ -222,3 +222,111 @@ docstring or what package it's defined it.
 
 
 
+
+
+### DiagnosticTag
+
+
+
+| Number | Name | Description |
+| ------ | ---- | ----------- |
+| 0 | UnspecifiedDiagnosticTag | 
+| 1 | Unnecessary | 
+| 2 | Deprecated | 
+
+
+### ProtocolVersion
+
+
+
+| Number | Name | Description |
+| ------ | ---- | ----------- |
+| 0 | UnspecifiedProtocolVersion | 
+
+
+### Severity
+
+
+
+| Number | Name | Description |
+| ------ | ---- | ----------- |
+| 0 | UnspecifiedSeverity | 
+| 1 | Error | 
+| 2 | Warning | 
+| 3 | Information | 
+| 4 | Hint | 
+
+
+### SymbolRole
+
+SymbolRole declares what "role" a symbol has in an occurrence.  A role is
+encoded as a bitmask where each bit represents a different role. For example,
+to determine if the `Import` role is set test whether the second bit of the
+enum value is defined. In psuedo-code, this can be implemented with the
+logic: `const isImportRole = (role.value & SymbolRole.Import.value) > 0`.
+
+| Number | Name | Description |
+| ------ | ---- | ----------- |
+| 0 | UnspecifiedSymbolRole | 
+| 1 | Definition | Is the symbol defined here? If not, then this is a symbol reference.
+| 2 | Import | Is the symbol imported here?
+| 4 | WriteAccess | Is the symbol written here?
+| 8 | ReadAccess | Is the symbol read here?
+| 16 | Generated | Is the symbol in generated code?
+| 32 | Test | Is the symbol in test code?
+
+
+### SyntaxKind
+
+
+
+| Number | Name | Description |
+| ------ | ---- | ----------- |
+| 0 | UnspecifiedSyntaxKind | 
+| 1 | Comment | Comment, including comment markers and text
+| 2 | PunctuationDelimiter | `;` `.` `,`
+| 3 | PunctuationBracket | (), {}, [] when used syntactically
+| 4 | IdentifierKeyword | `if`, `else`, `return`, `class`, etc.
+| 5 | IdentifierOperator | `+`, `*`, etc.
+| 6 | Identifier | non-specific catch-all for any identifier not better described elsewhere
+| 7 | IdentifierBuiltin | Identifiers builtin to the language: `min`, `print` in Python.
+| 8 | IdentifierNull | Identifiers representing `null`-like values: `None` in Python, `nil` in Go.
+| 9 | IdentifierConstant | `xyz` in `const xyz = "hello"`
+| 10 | IdentifierMutableGlobal | `var X = "hello"` in Go
+| 11 | IdentifierParameter | both parameter definition and references
+| 12 | IdentifierLocal | identifiers for variable definitions and references within a local scope
+| 13 | IdentifierShadowed | Used when identifier shadowes some other identifier within the scope
+| 14 | IdentifierModule | `package main`
+| 15 | IdentifierFunction | Function call/reference
+| 16 | IdentifierFunctionDefinition | Function definition only
+| 17 | IdentifierMacro | Macro call/reference
+| 18 | IdentifierMacroDefinition | Macro definition only
+| 19 | IdentifierType | non-builtin types, including namespaces
+| 20 | IdentifierBuiltinType | builtin types only, such as `str` for Python or `int` in Go
+| 21 | IdentifierAttribute | Python decorators, c-like __attribute__
+| 22 | RegexEscape | `\b`
+| 23 | RegexRepeated | `*`, `+`
+| 24 | RegexWildcard | `.`
+| 25 | RegexDelimiter | `(`, `)`, `[`, `]`
+| 26 | RegexJoin | `|`, `-`
+| 27 | StringLiteral | Literal strings: "Hello, world!"
+| 28 | StringLiteralEscape | non-regex escapes: "\t", "\n"
+| 29 | StringLiteralSpecial | datetimes within strings, special words within a string, `{}` in format strings
+| 30 | StringLiteralKey | "key" in { "key": "value" }, useful for example in JSON
+| 31 | CharacterLiteral | 'c' or similar, in languages that differentiate strings and characters
+| 32 | NumericLiteral | Literal numbers, both floats and integers
+| 33 | BooleanLiteral | `true`, `false`
+| 34 | Tag | Used for XML-like tags
+| 35 | TagAttribute | Attribute name in XML-like tags
+| 36 | TagDelimiter | Delimiters for XML-like tags
+
+
+### TextEncoding
+
+
+
+| Number | Name | Description |
+| ------ | ---- | ----------- |
+| 0 | UnspecifiedTextEncoding | 
+| 1 | UTF8 | 
+| 2 | UTF16 | 

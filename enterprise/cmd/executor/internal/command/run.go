@@ -34,7 +34,7 @@ func runCommand(ctx context.Context, command command, logger *Logger) (err error
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	ctx, endObservation := command.Operation.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := command.Operation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	log15.Info(fmt.Sprintf("Running command: %s", strings.Join(command.Command, " ")))

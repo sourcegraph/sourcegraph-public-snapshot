@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { storiesOf } from '@storybook/react'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'

@@ -1,4 +1,4 @@
-import React, { ReactElement, SVGProps, useMemo, useState } from 'react'
+import { ReactElement, SVGProps, useMemo, useState } from 'react'
 
 import { Group } from '@visx/group'
 import Pie, { PieArcDatum } from '@visx/shape/lib/shapes/Pie'

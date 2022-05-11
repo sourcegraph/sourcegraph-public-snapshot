@@ -11,7 +11,7 @@ import (
 
 // Unmarshal unmarshals the JSON using a fault-tolerant parser that allows comments and trailing
 // commas. If any unrecoverable faults are found, an error is returned.
-func Unmarshal(text string, v interface{}) error {
+func Unmarshal(text string, v any) error {
 	data, err := Parse(text)
 	if err != nil {
 		return err
@@ -58,7 +58,7 @@ func Remove(input string, path ...string) (string, error) {
 }
 
 // Edit returns the input JSON with the given path set to v.
-func Edit(input string, v interface{}, path ...string) (string, error) {
+func Edit(input string, v any, path ...string) (string, error) {
 	edits, _, err := jsonx.ComputePropertyEdit(input,
 		jsonx.PropertyPath(path...),
 		v,
@@ -74,7 +74,7 @@ func Edit(input string, v interface{}, path ...string) (string, error) {
 
 // ReadProperty attempts to read the value of the specified path, ignoring parse errors. it will only error if the path
 // doesn't exist
-func ReadProperty(input string, path ...string) (interface{}, error) {
+func ReadProperty(input string, path ...string) (any, error) {
 	root, _ := jsonx.ParseTree(input, jsonx.ParseOptions{Comments: true, TrailingCommas: true})
 	node := jsonx.FindNodeAtLocation(root, jsonx.PropertyPath(path...))
 	if node == nil {

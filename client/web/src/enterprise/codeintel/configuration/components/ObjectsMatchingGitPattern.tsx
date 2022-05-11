@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useEffect, useMemo, useState } from 'react'
+import { FunctionComponent, useEffect, useMemo, useState } from 'react'
 
 import { debounce } from 'lodash'
 
@@ -16,7 +16,7 @@ export interface ObjectsMatchingGitPatternProps {
     disabled: boolean
 }
 
-export const ObjectsMatchingGitPattern: FunctionComponent<ObjectsMatchingGitPatternProps> = ({
+export const ObjectsMatchingGitPattern: FunctionComponent<React.PropsWithChildren<ObjectsMatchingGitPatternProps>> = ({
     repoId,
     type,
     pattern,

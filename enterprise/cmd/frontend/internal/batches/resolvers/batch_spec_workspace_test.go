@@ -81,7 +81,7 @@ func TestBatchSpecWorkspaceResolver(t *testing.T) {
 	}
 
 	wantTmpl := apitest.BatchSpecWorkspace{
-		Typename: "BatchSpecWorkspace",
+		Typename: "VisibleBatchSpecWorkspace",
 		ID:       apiID,
 
 		Repository: apitest.Repository{
@@ -139,7 +139,7 @@ func TestBatchSpecWorkspaceResolver(t *testing.T) {
 func queryAndAssertBatchSpecWorkspace(t *testing.T, ctx context.Context, s *graphql.Schema, id string, want apitest.BatchSpecWorkspace) {
 	t.Helper()
 
-	input := map[string]interface{}{"batchSpecWorkspace": id}
+	input := map[string]any{"batchSpecWorkspace": id}
 
 	var response struct{ Node apitest.BatchSpecWorkspace }
 
@@ -158,12 +158,21 @@ query($batchSpecWorkspace: ID!) {
     ... on BatchSpecWorkspace {
       id
 
+      batchSpec {
+        id
+      }
+
+      onlyFetchWorkspace
+      unsupported
+      ignored
+
+      state
+      placeInQueue
+    }
+    ... on VisibleBatchSpecWorkspace {
       repository {
         id
         name
-      }
-      batchSpec {
-        id
       }
 
       searchResultPaths
@@ -175,17 +184,11 @@ query($batchSpecWorkspace: ID!) {
       }
 
       path
-      onlyFetchWorkspace
-      unsupported
-      ignored
 
       steps {
         run
         container
       }
-
-      state
-      placeInQueue
     }
   }
 }

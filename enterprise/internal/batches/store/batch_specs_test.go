@@ -588,7 +588,10 @@ func TestStoreGetBatchSpecStats(t *testing.T) {
 		}
 		specIDs = append(specIDs, spec.ID)
 
-		job := &btypes.BatchSpecResolutionJob{BatchSpecID: spec.ID}
+		job := &btypes.BatchSpecResolutionJob{
+			BatchSpecID: spec.ID,
+			InitiatorID: admin.ID,
+		}
 		if err := s.CreateBatchSpecResolutionJob(ctx, job); err != nil {
 			t.Fatal(err)
 		}

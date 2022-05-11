@@ -34,8 +34,10 @@ type Match struct {
 }
 
 type MatchContext struct {
-	Matches []Match `json:"matches"`
-	Path    string  `json:"path"`
+	Matches      []Match `json:"matches"`
+	Path         string  `json:"path"`
+	RepositoryID int32   `json:"repositoryID"`
+	Repository   string  `json:"repository"`
 }
 
 func newLocation(line, column, offset int) Location {

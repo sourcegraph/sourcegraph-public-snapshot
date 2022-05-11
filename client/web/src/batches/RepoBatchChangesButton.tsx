@@ -1,4 +1,4 @@
-import React, { FC, useMemo } from 'react'
+import { FC, useMemo } from 'react'
 
 import { encodeURIPathComponent } from '@sourcegraph/common'
 import { Badge, useObservable, Button, Link, Icon } from '@sourcegraph/wildcard'
@@ -13,7 +13,7 @@ interface RepoBatchChangesButtonProps {
     queryRepoChangesetsStats?: typeof _queryRepoChangesetsStats
 }
 
-export const RepoBatchChangesButton: FC<RepoBatchChangesButtonProps> = ({
+export const RepoBatchChangesButton: FC<React.PropsWithChildren<RepoBatchChangesButtonProps>> = ({
     className,
     repoName,
     queryRepoChangesetsStats = _queryRepoChangesetsStats,

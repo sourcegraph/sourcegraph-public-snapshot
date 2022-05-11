@@ -26,7 +26,7 @@ interface TabNavigationProps {
     batchChangesEnabled: boolean
 }
 
-export const TabNavigation: React.FunctionComponent<TabNavigationProps> = ({
+export const TabNavigation: React.FunctionComponent<React.PropsWithChildren<TabNavigationProps>> = ({
     setCurrentTab,
     repo,
     revision,

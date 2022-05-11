@@ -12,12 +12,12 @@ jobs:
           with:
              token: "${{ secrets.LABELER_GITHUB_TOKEN }}"
              recipients: |
-                  team/growth-and-integrations=@muratsu @jjinnii @ryankscott
+                  team/integrations=@muratsu @jjinnii @ryankscott
+                  team/growth=@muratsu @a-bergevin
                   team/cloud=@RafLeszczynski
                   team/search-product=@benvenker @lguychard
                   team/search-core=@jjeffwarner
                   [deprecated]team/search=@lguychard @benvenker @jjeffwarner
-                  team/code-intelligence=@macraig
                   team/code-insights=@joelkw @felixfbecker @vovakulikov @unclejustin
                   team/distribution=@dan-mckean
                   team/delivery=@caugustus-sourcegraph @kevinwojo @michaellzc

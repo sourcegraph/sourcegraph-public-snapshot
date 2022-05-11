@@ -60,7 +60,7 @@ const GET_STARTED_INFO_QUERY = gql`
 /**
  * Header for the organization area.
  */
-export const OrgHeader: React.FunctionComponent<Props> = ({
+export const OrgHeader: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     batchChangesEnabled,
     batchChangesExecutionEnabled,
     batchChangesWebhookLogsEnabled,

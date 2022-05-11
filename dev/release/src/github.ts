@@ -37,7 +37,7 @@ export enum IssueLabel {
     RELEASE = 'release',
     PATCH = 'patch',
     MANAGED = 'managed-instances',
-    DELIVERY_TEAM = 'team/delivery',
+    DEVOPS_TEAM = 'team/devops',
 }
 
 enum IssueTitleSuffix {
@@ -116,7 +116,7 @@ const getTemplates = () => {
         repo: 'handbook',
         path: 'content/departments/product-engineering/engineering/process/releases/upgrade_managed_issue_template.md',
         titleSuffix: IssueTitleSuffix.MANAGED_TRACKING,
-        labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.MANAGED, IssueLabel.DELIVERY_TEAM],
+        labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.MANAGED, IssueLabel.DEVOPS_TEAM],
     }
     return { releaseIssue, patchReleaseIssue, upgradeManagedInstanceIssue }
 }
@@ -522,7 +522,7 @@ async function cloneRepo(
 }> {
     const tmpdir = await mkdtemp(path.join(os.tmpdir(), `sg-release-${owner}-${repo}-`))
     console.log(`Created temp directory ${tmpdir}`)
-    const fetchFlags = '--depth 10'
+    const fetchFlags = '--depth 1'
 
     // Determine whether or not to create the base branch, or use the existing one
     let revisionExists = true
@@ -545,10 +545,16 @@ async function cloneRepo(
             : // create from HEAD and publish base branch if it does not yet exist
               `git checkout -b ${checkout.revision} ; git push origin ${checkout.revision}:${checkout.revision}`
 
+    // PERF: if we have a local clone using reference avoids needing to fetch
+    // all the objects from the remote. We assume the local clone will exist
+    // in the same directory as the current sourcegraph/sourcegraph clone.
+    const localSourcegraphRepo = `${process.cwd()}/../..`
+    const cloneFlags = `${fetchFlags} --reference-if-able ${localSourcegraphRepo}/../${repo}`
+
     // Set up repository
     const setupScript = `set -ex
 
-git clone ${fetchFlags} git@github.com:${owner}/${repo} || git clone ${fetchFlags} https://github.com/${owner}/${repo};
+git clone ${cloneFlags} git@github.com:${owner}/${repo} || git clone ${cloneFlags} https://github.com/${owner}/${repo};
 cd ${repo};
 ${checkoutCommand};`
     await execa('bash', ['-c', setupScript], { stdio: 'inherit', cwd: tmpdir })

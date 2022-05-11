@@ -349,7 +349,7 @@ export const isMinimalBatchSpec = (spec: string): boolean => {
  *
  * @param value the string value to inspect
  */
-function quoteYAMLString(value: string): string {
+export function quoteYAMLString(value: string): string {
     let needsQuotes = false
     // First we need to craft an AST where the value is the value to a key in an object.
     let ast = load('name: ' + value + '\n')

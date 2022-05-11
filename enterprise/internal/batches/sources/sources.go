@@ -263,6 +263,10 @@ func loadExternalService(ctx context.Context, s database.ExternalServiceStore, o
 			if cfg.Token != "" {
 				return e, nil
 			}
+		case *schema.BitbucketCloudConnection:
+			if cfg.AppPassword != "" {
+				return e, nil
+			}
 		}
 	}
 
@@ -280,6 +284,8 @@ func buildChangesetSource(cf *httpcli.Factory, externalService *types.ExternalSe
 		return NewGitLabSource(externalService, cf)
 	case extsvc.KindBitbucketServer:
 		return NewBitbucketServerSource(externalService, cf)
+	case extsvc.KindBitbucketCloud:
+		return NewBitbucketCloudSource(externalService, cf)
 	default:
 		return nil, errors.Errorf("unsupported external service type %q", extsvc.KindToType(externalService.Kind))
 	}
@@ -345,7 +351,7 @@ func setBasicAuth(u *vcs.URL, extSvcType, username, password string) error {
 	case extsvc.TypeGitHub, extsvc.TypeGitLab:
 		return errors.New("need token to push commits to " + extSvcType)
 
-	case extsvc.TypeBitbucketServer:
+	case extsvc.TypeBitbucketServer, extsvc.TypeBitbucketCloud:
 		u.User = url.UserPassword(username, password)
 
 	default:

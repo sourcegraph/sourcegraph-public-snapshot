@@ -93,7 +93,7 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 
 		for _, tc := range tests {
 			t.Run(fmt.Sprintf("First %d", tc.firstParam), func(t *testing.T) {
-				input := map[string]interface{}{"user": userAPIID, "first": int64(tc.firstParam)}
+				input := map[string]any{"user": userAPIID, "first": int64(tc.firstParam)}
 				var response struct {
 					BatchChangesCodeHosts apitest.BatchChangesCodeHostsConnection
 				}
@@ -121,7 +121,7 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 
 		var endCursor *string
 		for i := range nodes {
-			input := map[string]interface{}{"user": userAPIID, "first": 1}
+			input := map[string]any{"user": userAPIID, "first": 1}
 			if endCursor != nil {
 				input["after"] = *endCursor
 			}
@@ -214,7 +214,7 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 
 		for _, tc := range tests {
 			t.Run(fmt.Sprintf("First %d", tc.firstParam), func(t *testing.T) {
-				input := map[string]interface{}{"user": userAPIID, "first": int64(tc.firstParam)}
+				input := map[string]any{"user": userAPIID, "first": int64(tc.firstParam)}
 				var response struct{ Node apitest.User }
 				apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryUserCodeHostConnection)
 
@@ -240,7 +240,7 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 
 		var endCursor *string
 		for i := range nodes {
-			input := map[string]interface{}{"user": userAPIID, "first": 1}
+			input := map[string]any{"user": userAPIID, "first": 1}
 			if endCursor != nil {
 				input["after"] = *endCursor
 			}

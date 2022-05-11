@@ -7,7 +7,6 @@ require('ts-node').register({
 })
 
 const compression = require('compression')
-const log = require('fancy-log')
 const gulp = require('gulp')
 const { createProxyMiddleware } = require('http-proxy-middleware')
 const signale = require('signale')
@@ -30,28 +29,34 @@ const {
 
 const { build: buildEsbuild } = require('./dev/esbuild/build')
 const { esbuildDevelopmentServer } = require('./dev/esbuild/server')
-const { DEV_SERVER_LISTEN_ADDR, DEV_SERVER_PROXY_TARGET_ADDR, shouldCompressResponse } = require('./dev/utils')
-const { DEV_WEB_BUILDER } = require('./dev/utils/environment-config').environmentConfig
-const printSuccessBanner = require('./dev/utils/success-banner')
+const {
+  ENVIRONMENT_CONFIG,
+  HTTPS_WEB_SERVER_URL,
+  WEBPACK_STATS_OPTIONS,
+  DEV_SERVER_LISTEN_ADDR,
+  DEV_SERVER_PROXY_TARGET_ADDR,
+  shouldCompressResponse,
+  printSuccessBanner,
+} = require('./dev/utils')
 const webpackConfig = require('./webpack.config')
 
-const WEBPACK_STATS_OPTIONS = {
-  all: false,
-  timings: true,
-  errors: true,
-  warnings: true,
-  colors: true,
-}
+const { DEV_WEB_BUILDER, SOURCEGRAPH_HTTPS_DOMAIN, SOURCEGRAPH_HTTPS_PORT } = ENVIRONMENT_CONFIG
 
 /**
  * @param {import('webpack').Stats} stats
  */
 const logWebpackStats = stats => {
-  log(stats.toString(WEBPACK_STATS_OPTIONS))
+  signale.info(stats.toString(WEBPACK_STATS_OPTIONS))
+}
+
+function createWebApplicationCompiler() {
+  signale.info('Building web application with the environment config', ENVIRONMENT_CONFIG)
+
+  return createWebpackCompiler(webpackConfig)
 }
 
 async function webpack() {
-  const compiler = createWebpackCompiler(webpackConfig)
+  const compiler = createWebApplicationCompiler()
   /** @type {import('webpack').Stats} */
   const stats = await new Promise((resolve, reject) => {
     compiler.run((error, stats) => (error ? reject(error) : resolve(stats)))
@@ -68,24 +73,21 @@ const webBuild = DEV_WEB_BUILDER === 'webpack' ? webpack : buildEsbuild
  * Watch files and update the webpack bundle on disk without starting a dev server.
  */
 async function watchWebpack() {
-  const compiler = createWebpackCompiler(webpackConfig)
-  compiler.hooks.watchRun.tap('Notify', () => log('Webpack compiling...'))
+  const compiler = createWebApplicationCompiler()
+  compiler.hooks.watchRun.tap('Notify', () => signale.info('Webpack compiling...'))
   await new Promise(() => {
     compiler.watch({ aggregateTimeout: 300 }, (error, stats) => {
       logWebpackStats(stats)
       if (error || stats.hasErrors()) {
-        log.error('Webpack compilation error')
+        signale.error('Webpack compilation error')
       } else {
-        log('Webpack compilation done')
+        signale.info('Webpack compilation done')
       }
     })
   })
 }
 
 async function webpackDevelopmentServer() {
-  const sockHost = process.env.SOURCEGRAPH_HTTPS_DOMAIN || 'sourcegraph.test'
-  const sockPort = Number(process.env.SOURCEGRAPH_HTTPS_PORT || 3443)
-
   /** @type {import('webpack-dev-server').ProxyConfigMap } */
   const proxyConfig = {
     '/': {
@@ -105,7 +107,7 @@ async function webpackDevelopmentServer() {
   const options = {
     // react-refresh plugin triggers page reload if needed.
     liveReload: false,
-    hot: !process.env.NO_HOT,
+    hot: true,
     host: DEV_SERVER_LISTEN_ADDR.host,
     port: DEV_SERVER_LISTEN_ADDR.port,
     // Disable default DevServer compression. We need more fine grained compression to support streaming search.
@@ -119,8 +121,8 @@ async function webpackDevelopmentServer() {
       webSocketTransport: 'ws',
       logging: 'verbose',
       webSocketURL: {
-        hostname: sockHost,
-        port: sockPort,
+        hostname: SOURCEGRAPH_HTTPS_DOMAIN,
+        port: SOURCEGRAPH_HTTPS_PORT,
         protocol: 'wss',
       },
     },
@@ -138,7 +140,7 @@ async function webpackDevelopmentServer() {
     webpackConfig.plugins.push(new DevServerPlugin(options))
   }
 
-  const compiler = createWebpackCompiler(webpackConfig)
+  const compiler = createWebApplicationCompiler()
   let compilationDoneOnce = false
   compiler.hooks.done.tap('Print external URL', stats => {
     stats = stats.toJson()
@@ -151,7 +153,7 @@ async function webpackDevelopmentServer() {
     }
     compilationDoneOnce = true
 
-    printSuccessBanner(['✱ Sourcegraph is really ready now!', `Click here: https://${sockHost}:${sockPort}`])
+    printSuccessBanner(['✱ Sourcegraph is really ready now!', `Click here: ${HTTPS_WEB_SERVER_URL}`])
   })
 
   const server = new WebpackDevServer(options, compiler)

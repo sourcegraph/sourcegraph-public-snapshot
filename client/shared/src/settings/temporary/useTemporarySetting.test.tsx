@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import { useEffect } from 'react'
 
 import { gql } from '@apollo/client'
 import { createMockClient } from '@apollo/client/testing'

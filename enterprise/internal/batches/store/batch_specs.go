@@ -54,7 +54,7 @@ const batchSpecInsertColsFmt = `(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 
 // CreateBatchSpec creates the given BatchSpec.
 func (s *Store) CreateBatchSpec(ctx context.Context, c *btypes.BatchSpec) (err error) {
-	ctx, endObservation := s.operations.createBatchSpec.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.createBatchSpec.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	q, err := s.createBatchSpecQuery(c)
@@ -111,7 +111,7 @@ func (s *Store) createBatchSpecQuery(c *btypes.BatchSpec) (*sqlf.Query, error) {
 
 // UpdateBatchSpec updates the given BatchSpec.
 func (s *Store) UpdateBatchSpec(ctx context.Context, c *btypes.BatchSpec) (err error) {
-	ctx, endObservation := s.operations.updateBatchSpec.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.updateBatchSpec.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("ID", int(c.ID)),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -163,7 +163,7 @@ func (s *Store) updateBatchSpecQuery(c *btypes.BatchSpec) (*sqlf.Query, error) {
 
 // DeleteBatchSpec deletes the BatchSpec with the given ID.
 func (s *Store) DeleteBatchSpec(ctx context.Context, id int64) (err error) {
-	ctx, endObservation := s.operations.deleteBatchSpec.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.deleteBatchSpec.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("ID", int(id)),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -186,7 +186,7 @@ type CountBatchSpecsOpts struct {
 
 // CountBatchSpecs returns the number of code mods in the database.
 func (s *Store) CountBatchSpecs(ctx context.Context, opts CountBatchSpecsOpts) (count int, err error) {
-	ctx, endObservation := s.operations.countBatchSpecs.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.countBatchSpecs.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	q := countBatchSpecsQuery(opts)
@@ -243,7 +243,7 @@ type GetBatchSpecOpts struct {
 
 // GetBatchSpec gets a BatchSpec matching the given options.
 func (s *Store) GetBatchSpec(ctx context.Context, opts GetBatchSpecOpts) (spec *btypes.BatchSpec, err error) {
-	ctx, endObservation := s.operations.getBatchSpec.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.getBatchSpec.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("ID", int(opts.ID)),
 		log.String("randID", opts.RandID),
 	}})
@@ -311,7 +311,7 @@ type GetNewestBatchSpecOpts struct {
 // GetNewestBatchSpec returns the newest batch spec that matches the given
 // options.
 func (s *Store) GetNewestBatchSpec(ctx context.Context, opts GetNewestBatchSpecOpts) (spec *btypes.BatchSpec, err error) {
-	ctx, endObservation := s.operations.getNewestBatchSpec.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.getNewestBatchSpec.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	q := getNewestBatchSpecQuery(&opts)
@@ -379,7 +379,7 @@ type ListBatchSpecsOpts struct {
 
 // ListBatchSpecs lists BatchSpecs with the given filters.
 func (s *Store) ListBatchSpecs(ctx context.Context, opts ListBatchSpecsOpts) (cs []*btypes.BatchSpec, next int64, err error) {
-	ctx, endObservation := s.operations.listBatchSpecs.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.listBatchSpecs.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	q := listBatchSpecsQuery(&opts)
@@ -459,7 +459,7 @@ ON
 // - We could: Add execution_started_at to the batch_specs table and delete
 // all that are older than TIME_PERIOD and never started executing.
 func (s *Store) DeleteExpiredBatchSpecs(ctx context.Context) (err error) {
-	ctx, endObservation := s.operations.deleteExpiredBatchSpecs.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.deleteExpiredBatchSpecs.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	expirationTime := s.now().Add(-btypes.BatchSpecTTL)

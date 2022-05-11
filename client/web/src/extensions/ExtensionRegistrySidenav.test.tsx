@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 
 import { ExtensionRegistrySidenav } from './ExtensionRegistrySidenav'

@@ -1,4 +1,4 @@
-import React, { FunctionComponent } from 'react'
+import { FunctionComponent } from 'react'
 
 import classNames from 'classnames'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
@@ -19,7 +19,9 @@ export interface DependencyOrDependentNodeProps {
     now?: () => Date
 }
 
-export const DependencyOrDependentNode: FunctionComponent<DependencyOrDependentNodeProps> = ({ node }) => (
+export const DependencyOrDependentNode: FunctionComponent<React.PropsWithChildren<DependencyOrDependentNodeProps>> = ({
+    node,
+}) => (
     <>
         <span className={styles.separator} />
 

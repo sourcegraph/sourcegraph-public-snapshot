@@ -30,7 +30,7 @@ type tracingHooks struct{}
 var _ sqlhooks.Hooks = &tracingHooks{}
 var _ sqlhooks.OnErrorer = &tracingHooks{}
 
-func (h *tracingHooks) Before(ctx context.Context, query string, args ...interface{}) (context.Context, error) {
+func (h *tracingHooks) Before(ctx context.Context, query string, args ...any) (context.Context, error) {
 	if bulkInsertion(ctx) {
 		query = string(postgresBulkInsertRowsPattern.ReplaceAll([]byte(query), postgresBulkInsertRowsReplacement))
 	}
@@ -64,7 +64,7 @@ func (h *tracingHooks) Before(ctx context.Context, query string, args ...interfa
 	return ctx, nil
 }
 
-func (h *tracingHooks) After(ctx context.Context, query string, args ...interface{}) (context.Context, error) {
+func (h *tracingHooks) After(ctx context.Context, query string, args ...any) (context.Context, error) {
 	if tr := trace.TraceFromContext(ctx); tr != nil {
 		tr.Finish()
 	}
@@ -72,7 +72,7 @@ func (h *tracingHooks) After(ctx context.Context, query string, args ...interfac
 	return ctx, nil
 }
 
-func (h *tracingHooks) OnError(ctx context.Context, err error, query string, args ...interface{}) error {
+func (h *tracingHooks) OnError(ctx context.Context, err error, query string, args ...any) error {
 	if tr := trace.TraceFromContext(ctx); tr != nil {
 		tr.SetError(err)
 		tr.Finish()

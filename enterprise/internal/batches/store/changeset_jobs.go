@@ -58,7 +58,7 @@ var changesetJobColumns = SQLColumns{
 
 // CreateChangesetJob creates the given changeset jobs.
 func (s *Store) CreateChangesetJob(ctx context.Context, cs ...*btypes.ChangesetJob) (err error) {
-	ctx, endObservation := s.operations.createChangesetJob.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.createChangesetJob.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("count", len(cs)),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -126,7 +126,7 @@ type GetChangesetJobOpts struct {
 
 // GetChangesetJob gets a ChangesetJob matching the given options.
 func (s *Store) GetChangesetJob(ctx context.Context, opts GetChangesetJobOpts) (job *btypes.ChangesetJob, err error) {
-	ctx, endObservation := s.operations.getChangesetJob.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.getChangesetJob.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("ID", int(opts.ID)),
 	}})
 	defer endObservation(1, observation.Args{})

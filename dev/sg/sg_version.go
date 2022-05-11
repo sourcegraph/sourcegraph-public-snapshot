@@ -7,11 +7,13 @@ import (
 	"os/exec"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -51,7 +53,7 @@ var (
 )
 
 func versionExec(ctx context.Context, args []string) error {
-	stdout.Out.Write(BuildCommit)
+	std.Out.Write(BuildCommit)
 	return nil
 }
 
@@ -80,7 +82,7 @@ func changelogExec(ctx context.Context, args []string) error {
 			title = fmt.Sprintf("Changes in sg release %s", BuildCommit)
 		}
 	} else {
-		writeWarningLinef("Dev version detected - just showing recent changes.")
+		std.Out.WriteWarningf("Dev version detected - just showing recent changes.")
 		title = "Recent sg changes"
 	}
 
@@ -91,7 +93,7 @@ func changelogExec(ctx context.Context, args []string) error {
 		return err
 	}
 
-	block := stdout.Out.Block(output.Linef("", output.StyleSearchQuery, title))
+	block := std.Out.Block(output.Styled(output.StyleSearchQuery, title))
 	if len(out) == 0 {
 		block.Write("No changes found.")
 	} else {
@@ -99,20 +101,13 @@ func changelogExec(ctx context.Context, args []string) error {
 	}
 	block.Close()
 
-	stdout.Out.WriteLine(output.Linef("", output.StyleSuggestion,
+	std.Out.WriteLine(output.Styledf(output.StyleSuggestion,
 		"Only showing %d entries - configure with 'sg version changelog -limit=50'", versionChangelogEntries))
 	return nil
 }
 
-const sgOneLineCmd = `curl --proto '=https' --tlsv1.2 -sSLf https://install.sg.dev | sh`
-
 func checkSgVersionAndUpdate(ctx context.Context, skipUpdate bool) error {
-	_, err := root.RepositoryRoot()
-	if err != nil {
-		// Ignore the error, because we only want to check the version if we're
-		// in sourcegraph/sourcegraph
-		return nil
-	}
+	start := time.Now()
 
 	if BuildCommit == "dev" {
 		// If `sg` was built with a dirty `./dev/sg` directory it's a dev build
@@ -120,15 +115,22 @@ func checkSgVersionAndUpdate(ctx context.Context, skipUpdate bool) error {
 		return nil
 	}
 
-	if _, err = run.GitCmd("fetch", "origin", "main"); err != nil {
-		return errors.Newf("failed to update main: %s", err)
+	_, err := root.RepositoryRoot()
+	if err != nil {
+		// Ignore the error, because we only want to check the version if we're
+		// in sourcegraph/sourcegraph
+		return nil
 	}
 
 	rev := strings.TrimPrefix(BuildCommit, "dev-")
-	out, err := run.GitCmd("rev-list", fmt.Sprintf("%s..origin/main", rev), "./dev/sg")
+	out, err := run.GitCmd("rev-list", fmt.Sprintf("%s..origin/main", rev), "--", "./dev/sg")
 	if err != nil {
-		return errors.Newf("error checking for commits since %q in ./dev/sg: %s.\nTry reinstalling sg with:\n\t%s",
-			rev, err, sgOneLineCmd)
+		if strings.Contains(out, "bad revision") {
+			// installed revision is not available locally, that is fine - we wait for the
+			// user to eventually do a fetch
+			return errors.New("current sg version not found - you may want to run 'git fetch origin main'.")
+		}
+		return err
 	}
 
 	out = strings.TrimSpace(out)
@@ -138,23 +140,26 @@ func checkSgVersionAndUpdate(ctx context.Context, skipUpdate bool) error {
 	}
 
 	if skipUpdate {
-		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "╭──────────────────────────────────────────────────────────────────╮  "))
-		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "│                                                                  │░░"))
-		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "│ HEY! New version of sg available. Run 'sg update' to install it. │░░"))
-		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "│       To see what's new, run 'sg version changelog -next'.       │░░"))
-		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "│                                                                  │░░"))
-		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "╰──────────────────────────────────────────────────────────────────╯░░"))
-		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░"))
+		std.Out.WriteLine(output.Styled(output.StyleSearchMatch, "╭──────────────────────────────────────────────────────────────────╮  "))
+		std.Out.WriteLine(output.Styled(output.StyleSearchMatch, "│                                                                  │░░"))
+		std.Out.WriteLine(output.Styled(output.StyleSearchMatch, "│ HEY! New version of sg available. Run 'sg update' to install it. │░░"))
+		std.Out.WriteLine(output.Styled(output.StyleSearchMatch, "│       To see what's new, run 'sg version changelog -next'.       │░░"))
+		std.Out.WriteLine(output.Styled(output.StyleSearchMatch, "│                                                                  │░░"))
+		std.Out.WriteLine(output.Styled(output.StyleSearchMatch, "╰──────────────────────────────────────────────────────────────────╯░░"))
+		std.Out.WriteLine(output.Styled(output.StyleSearchMatch, "  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░"))
 		return nil
 	}
 
-	stdout.Out.WriteLine(output.Line(output.EmojiInfo, output.StyleSuggestion, "Auto updating sg ..."))
+	std.Out.WriteLine(output.Line(output.EmojiInfo, output.StyleSuggestion, "Auto updating sg ..."))
 	newPath, err := updateToPrebuiltSG(ctx)
 	if err != nil {
+		analytics.LogEvent(ctx, "auto_update", []string{"failed"}, start)
 		return errors.Newf("failed to install update: %s", err)
 	}
-	writeSuccessLinef("sg has been updated!")
-	stdout.Out.Write("To see what's new, run 'sg version changelog'.")
+	std.Out.WriteSuccessf("sg has been updated!")
+	std.Out.Write("To see what's new, run 'sg version changelog'.")
+
+	analytics.LogEvent(ctx, "auto_update", []string{"updated"}, start)
 
 	// Run command with new binary
 	return syscall.Exec(newPath, os.Args, os.Environ())

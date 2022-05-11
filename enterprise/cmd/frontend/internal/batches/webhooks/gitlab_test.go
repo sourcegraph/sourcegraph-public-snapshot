@@ -788,15 +788,15 @@ func TestValidateGitLabSecret(t *testing.T) {
 // error, the err field will be returned; otherwise nil will be returned.
 type brokenDB struct{ err error }
 
-func (db *brokenDB) QueryContext(ctx context.Context, q string, args ...interface{}) (*sql.Rows, error) {
+func (db *brokenDB) QueryContext(ctx context.Context, q string, args ...any) (*sql.Rows, error) {
 	return nil, db.err
 }
 
-func (db *brokenDB) ExecContext(ctx context.Context, q string, args ...interface{}) (sql.Result, error) {
+func (db *brokenDB) ExecContext(ctx context.Context, q string, args ...any) (sql.Result, error) {
 	return nil, db.err
 }
 
-func (db *brokenDB) QueryRowContext(ctx context.Context, q string, args ...interface{}) *sql.Row {
+func (db *brokenDB) QueryRowContext(ctx context.Context, q string, args ...any) *sql.Row {
 	return nil
 }
 
@@ -956,12 +956,12 @@ func createMergeRequestPayload(t *testing.T, repo *types.Repo, changeset *btypes
 	// We use an untyped set of maps here because the webhooks package doesn't
 	// export its internal mergeRequestEvent type that is used for
 	// unmarshalling. (Which is fine; it's an implementation detail.)
-	return ct.MarshalJSON(t, map[string]interface{}{
+	return ct.MarshalJSON(t, map[string]any{
 		"object_kind": "merge_request",
-		"project": map[string]interface{}{
+		"project": map[string]any{
 			"id": pid,
 		},
-		"object_attributes": map[string]interface{}{
+		"object_attributes": map[string]any{
 			"iid":    cid,
 			"action": action,
 		},

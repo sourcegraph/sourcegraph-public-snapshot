@@ -27,11 +27,13 @@ type LockoutStore interface {
 	IncreaseFailedAttempt(userID int32)
 	// Reset clears the failed login attempt count and releases the lockout.
 	Reset(userID int32)
-	// Creates the unlock account url with the signet unlock token
-	GenerateUnlockAccountUrl(userID int32) (string, string, error)
-	// Verifies the provided unlock token is valid
+	// GenerateUnlockAccountURL creates the URL to unlock account with a signet
+	// unlock token.
+	GenerateUnlockAccountURL(userID int32) (string, string, error)
+	// VerifyUnlockAccountTokenAndReset verifies the provided unlock token is valid.
 	VerifyUnlockAccountTokenAndReset(urlToken string) (bool, error)
-	// Sends an email to the locked account email providing a temporary unlock link
+	// SendUnlockAccountEmail sends an email to the locked account email providing a
+	// temporary unlock link.
 	SendUnlockAccountEmail(ctx context.Context, userID int32, userEmail string) error
 }
 
@@ -59,6 +61,8 @@ func (s *lockoutStore) IsLockedOut(userID int32) (reason string, locked bool) {
 }
 
 func (s *lockoutStore) IncreaseFailedAttempt(userID int32) {
+	metricsAccountFailedSignInAttempts.Inc()
+
 	key := strconv.Itoa(int(userID))
 	s.failedAttempts.Increase(key)
 
@@ -66,6 +70,7 @@ func (s *lockoutStore) IncreaseFailedAttempt(userID int32) {
 	v, _ := s.failedAttempts.Get(key)
 	count, _ := strconv.Atoi(string(v))
 	if count >= s.failedThreshold {
+		metricsAccountLockouts.Inc()
 		s.lockouts.Set(key, []byte("too many failed attempts"))
 	}
 }
@@ -75,11 +80,10 @@ type unlockAccountClaims struct {
 	jwt.RegisteredClaims
 }
 
-func (s *lockoutStore) GenerateUnlockAccountUrl(userID int32) (string, string, error) {
+func (s *lockoutStore) GenerateUnlockAccountURL(userID int32) (string, string, error) {
 	signingKey := conf.SiteConfig().AuthUnlockAccountLinkSigningKey
-
 	if signingKey == "" {
-		return "", "", errors.Newf("signing key not provided, cannot validate JWT on unlock account URL. Please add AuthUnlockAccountLinkSigningKey to site configuration.")
+		return "", "", errors.Newf(`signing key not provided, cannot validate JWT on unlock account URL. Please add "auth.unlockAccountLinkSigningKey" to site configuration.`)
 	}
 
 	defaultExpiryMinutes := 30
@@ -117,7 +121,7 @@ func (s *lockoutStore) GenerateUnlockAccountUrl(userID int32) (string, string, e
 }
 
 func (s *lockoutStore) SendUnlockAccountEmail(ctx context.Context, userID int32, recipientEmail string) error {
-	unlockUrl, _, err := s.GenerateUnlockAccountUrl(userID)
+	unlockUrl, _, err := s.GenerateUnlockAccountURL(userID)
 
 	if err != nil {
 		return err
@@ -143,7 +147,7 @@ func (s *lockoutStore) VerifyUnlockAccountTokenAndReset(urlToken string) (bool, 
 		return false, errors.Newf("signing key not provided, cannot validate JWT on account reset URL. Please add AuthUnlockAccountLinkSigningKey to site configuration.")
 	}
 
-	token, err := jwt.ParseWithClaims(urlToken, &unlockAccountClaims{}, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(urlToken, &unlockAccountClaims{}, func(token *jwt.Token) (any, error) {
 		return base64.StdEncoding.DecodeString(signingKey)
 	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS512.Name}))
 

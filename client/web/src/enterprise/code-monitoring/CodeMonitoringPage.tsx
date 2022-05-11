@@ -42,7 +42,7 @@ export interface CodeMonitoringPageProps extends SettingsCascadeProps<Settings>,
     testForceTab?: 'list' | 'getting-started' | 'logs'
 }
 
-export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps> = ({
+export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren<CodeMonitoringPageProps>> = ({
     authenticatedUser,
     fetchUserCodeMonitors = _fetchUserCodeMonitors,
     toggleCodeMonitorEnabled = _toggleCodeMonitorEnabled,

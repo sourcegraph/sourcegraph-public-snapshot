@@ -2,6 +2,7 @@ import assert from 'assert'
 
 import delay from 'delay'
 
+import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
@@ -49,6 +50,7 @@ describe('Code insight create insight page', () => {
         await driver.page.waitForSelector('[data-testid="explore-extensions"]')
 
         await percySnapshotWithVariants(driver.page, 'Create new insight page — Welcome popup')
+        await accessibilityAudit(driver.page)
     })
 
     it('is styled correctly, without welcome popup', async () => {
@@ -61,6 +63,7 @@ describe('Code insight create insight page', () => {
         await driver.page.waitForSelector('[data-testid="explore-extensions"]')
 
         await percySnapshotWithVariants(driver.page, 'Create new insight page')
+        await accessibilityAudit(driver.page)
     })
 
     it('should run a proper GQL mutation if code-stats insight has been created', async () => {
@@ -111,6 +114,7 @@ describe('Code insight create insight page', () => {
         await driver.page.type('input[name="title"]', 'Test insight title')
 
         await percySnapshotWithVariants(driver.page, 'Code insights create new language usage insight')
+        await accessibilityAudit(driver.page)
 
         const addToUserConfigRequest = await testContext.waitForGraphQLRequest(async () => {
             await driver.page.click('[data-testid="insight-save-button"]')

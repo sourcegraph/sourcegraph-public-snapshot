@@ -46,7 +46,12 @@ export const requestGraphQLFromVSCode = async <R, V = object>(
 
     try {
         const url = new URL(apiURL, sourcegraphURL).href
-        const response = checkOk(
+
+        // Debt: intercepted requests in integration tests
+        // have 0 status codes, so don't check in test environment.
+        const checkFunction = process.env.IS_TEST ? <T>(value: T): T => value : checkOk
+
+        const response = checkFunction(
             await fetch(url, {
                 body: JSON.stringify({
                     query: request,

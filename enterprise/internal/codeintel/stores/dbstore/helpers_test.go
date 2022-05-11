@@ -191,10 +191,16 @@ func insertRepo(t testing.TB, db *sql.DB, id int, name string) {
 		name = fmt.Sprintf("n-%d", id)
 	}
 
+	deletedAt := sqlf.Sprintf("NULL")
+	if strings.HasPrefix(name, "DELETED-") {
+		deletedAt = sqlf.Sprintf("%s", time.Unix(1587396557, 0).UTC())
+	}
+
 	query := sqlf.Sprintf(
-		`INSERT INTO repo (id, name) VALUES (%s, %s) ON CONFLICT (id) DO NOTHING`,
+		`INSERT INTO repo (id, name, deleted_at) VALUES (%s, %s, %s) ON CONFLICT (id) DO NOTHING`,
 		id,
 		name,
+		deletedAt,
 	)
 	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 		t.Fatalf("unexpected error while upserting repository: %s", err)

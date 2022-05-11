@@ -1,7 +1,8 @@
 // @ts-check
+const path = require('path')
+
 const logger = require('gulplog')
 const semver = require('semver')
-const path = require('path')
 
 /** @type {import('@babel/core').ConfigFunction} */
 module.exports = api => {
@@ -47,7 +48,12 @@ module.exports = api => {
         },
       ],
       '@babel/preset-typescript',
-      '@babel/preset-react',
+      [
+        '@babel/preset-react',
+        {
+          runtime: 'automatic',
+        },
+      ],
     ],
     plugins: [['@babel/plugin-transform-typescript', { isTSX: true }], 'babel-plugin-lodash'],
     // Required for d3-array v1.2 (dependency of recharts). See https://github.com/babel/babel/issues/11038

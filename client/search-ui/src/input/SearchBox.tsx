@@ -60,7 +60,7 @@ export interface SearchBoxProps
     onEditorCreated?: (editor: IEditor) => void
 }
 
-export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
+export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBoxProps>> = props => {
     const { queryState, onEditorCreated: onEditorCreatedCallback } = props
 
     const [editor, setEditor] = useState<IEditor>()
@@ -101,7 +101,11 @@ export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
                         <div className={styles.searchBoxSeparator} />
                     </>
                 )}
-                <div className={classNames(styles.searchBoxFocusContainer, 'flex-shrink-past-contents')}>
+                {/*
+                    To fix Rule: "region" (All page content should be contained by landmarks)
+                    Added role attribute to the following element to satisfy the rule.
+                */}
+                <div className={classNames(styles.searchBoxFocusContainer, 'flex-shrink-past-contents')} role="search">
                     <LazyMonacoQueryInput
                         {...props}
                         onHandleFuzzyFinder={props.onHandleFuzzyFinder}

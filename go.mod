@@ -1,17 +1,20 @@
 module github.com/sourcegraph/sourcegraph
 
-go 1.17
+go 1.18
 
 require (
 	cloud.google.com/go/kms v1.1.0
 	cloud.google.com/go/monitoring v1.2.0
 	cloud.google.com/go/profiler v0.2.0
 	cloud.google.com/go/pubsub v1.17.1
+	cloud.google.com/go/secretmanager v1.4.0
 	cloud.google.com/go/storage v1.19.0
+	github.com/BurntSushi/toml v0.4.1
 	github.com/Masterminds/semver v1.5.0
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/PuerkitoBio/rehttp v1.1.0
 	github.com/RoaringBitmap/roaring v0.9.4
+	github.com/agext/levenshtein v1.2.3
 	github.com/aws/aws-sdk-go-v2 v1.13.0
 	github.com/aws/aws-sdk-go-v2/config v1.13.1
 	github.com/aws/aws-sdk-go-v2/credentials v1.8.0
@@ -33,7 +36,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1
 	github.com/daviddengcn/go-colortext v1.0.0
 	github.com/derision-test/glock v1.0.0
-	github.com/derision-test/go-mockgen v1.1.5
+	github.com/derision-test/go-mockgen v1.2.0
 	github.com/dghubble/gologin v2.2.0+incompatible
 	github.com/dgraph-io/ristretto v0.1.0
 	github.com/dineshappavoo/basex v0.0.0-20170425072625-481a6f6dc663
@@ -41,7 +44,6 @@ require (
 	github.com/dnaeon/go-vcr v1.2.0
 	github.com/docker/docker-credential-helpers v0.6.4
 	github.com/fatih/color v1.13.0
-	github.com/fatih/structs v1.1.0
 	github.com/felixge/fgprof v0.9.2
 	github.com/felixge/httpsnoop v1.0.2
 	github.com/fsnotify/fsnotify v1.5.1
@@ -96,6 +98,7 @@ require (
 	github.com/keegancsmith/tmpfriend v0.0.0-20180423180255-86e88902a513
 	github.com/kr/text v0.2.0
 	github.com/kylelemons/godebug v1.1.0
+	github.com/layeh/gopher-json v0.0.0-20201124131017-552bb3c4c3bf
 	github.com/lib/pq v1.10.4
 	github.com/machinebox/graphql v0.2.2
 	github.com/mattn/go-sqlite3 v1.14.12
@@ -114,7 +117,7 @@ require (
 	github.com/peterhellberg/link v1.1.0
 	github.com/prometheus/alertmanager v0.23.0
 	github.com/prometheus/client_golang v1.12.1
-	github.com/prometheus/common v0.33.0
+	github.com/prometheus/common v0.32.1
 	github.com/pseudomuto/protoc-gen-doc v1.5.0
 	github.com/qustavo/sqlhooks/v2 v2.1.0
 	github.com/rjeczalik/notify v0.9.2
@@ -138,6 +141,7 @@ require (
 	github.com/sourcegraph/go-lsp v0.0.0-20200429204803-219e11d77f5d
 	github.com/sourcegraph/go-rendezvous v0.0.0-20210910070954-ef39ade5591d
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
+	github.com/sourcegraph/run v0.0.0-20220510161300-5e1166bfc1ee
 	github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images v0.0.0-20220203145655-4d2a39d3038a
 	github.com/sourcegraph/sourcegraph/lib v0.0.0-20220203145655-4d2a39d3038a
 	github.com/stretchr/testify v1.7.1
@@ -182,9 +186,9 @@ require (
 )
 
 require (
+	bitbucket.org/creachadair/shell v0.0.7 // indirect
 	cloud.google.com/go/compute v1.5.0 // indirect
-	cloud.google.com/go/iam v0.1.1 // indirect
-	github.com/BurntSushi/toml v0.4.1 // indirect
+	cloud.google.com/go/iam v0.3.0 // indirect
 	github.com/DataDog/datadog-agent/pkg/obfuscate v0.35.1 // indirect
 	github.com/DataDog/datadog-go v4.8.3+incompatible // indirect
 	github.com/DataDog/datadog-go/v5 v5.1.0 // indirect
@@ -192,7 +196,6 @@ require (
 	github.com/DataDog/sketches-go v1.4.1 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/sprig v2.22.0+incompatible // indirect
-	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/alecthomas/chroma v0.10.0 // indirect
 	github.com/cockroachdb/errors v1.8.9 // indirect
 	github.com/containerd/typeurl v1.0.2 // indirect
@@ -232,7 +235,7 @@ require (
 	github.com/spf13/cobra v1.2.1 // indirect
 	github.com/twitchtv/twirp v8.1.1+incompatible // indirect
 	go.uber.org/multierr v1.7.0 // indirect
-	go.uber.org/zap v1.20.0 // indirect
+	go.uber.org/zap v1.21.0
 )
 
 require (
@@ -383,7 +386,7 @@ require (
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/go-errors/errors v1.4.2 // indirect
 	github.com/go-kit/log v0.2.0 // indirect
-	github.com/go-logr/logr v1.2.2 // indirect
+	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-toast/toast v0.0.0-20190211030409-01e6764cf0a4 // indirect
 	github.com/godbus/dbus/v5 v5.0.6 // indirect
 	github.com/golang/glog v1.0.0 // indirect
@@ -409,7 +412,7 @@ require (
 // or intentional forks.
 replace (
 	// We maintain our own fork of Zoekt. Update with ./dev/zoekt/update
-	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20220413163148-ad62e0ac6243
+	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20220422165357-6e37d7b567a1
 	// We use a fork of Alertmanager to allow prom-wrapper to better manipulate Alertmanager configuration.
 	// See https://docs.sourcegraph.com/dev/background-information/observability/prometheus
 	github.com/prometheus/alertmanager => github.com/sourcegraph/alertmanager v0.21.1-0.20211110092431-863f5b1ee51b

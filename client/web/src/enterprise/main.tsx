@@ -5,9 +5,7 @@
 
 import '@sourcegraph/shared/src/polyfills'
 
-import '../sentry/init'
-
-import React from 'react'
+import '../monitoring/initMonitoring'
 
 import { render } from 'react-dom'
 

@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useEffect, useMemo, useState } from 'react'
+import { FunctionComponent, useEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import { debounce } from 'lodash'
@@ -18,7 +18,7 @@ export interface ReposMatchingPatternProps {
     disabled: boolean
 }
 
-export const ReposMatchingPattern: FunctionComponent<ReposMatchingPatternProps> = ({
+export const ReposMatchingPattern: FunctionComponent<React.PropsWithChildren<ReposMatchingPatternProps>> = ({
     index,
     pattern,
     setPattern,

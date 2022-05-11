@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"net/http/httptest"
-	"os"
 	"reflect"
 	"testing"
 	"time"
@@ -31,11 +30,7 @@ func init() {
 }
 
 func TestHandler(t *testing.T) {
-	tmpDir, err := os.MkdirTemp("", "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() { os.RemoveAll(tmpDir) }()
+	tmpDir := t.TempDir()
 
 	cache := diskcache.NewStore(tmpDir, "symbols", diskcache.WithBackgroundTimeout(20*time.Minute))
 

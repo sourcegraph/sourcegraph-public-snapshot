@@ -22,7 +22,7 @@ export interface PanelProps extends Omit<UseResizablePanelParameters, 'panelRef'
     className?: string
 }
 
-export const Panel: React.FunctionComponent<PanelProps> = ({
+export const Panel: React.FunctionComponent<React.PropsWithChildren<PanelProps>> = ({
     children,
     className,
     defaultSize = 200,

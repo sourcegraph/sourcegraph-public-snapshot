@@ -38,7 +38,7 @@ interface SearchTypeLinkProps extends SearchTypeLinksProps {
  * SearchTypeLink renders to a Link which immediately triggers a new search when
  * clicked.
  */
-const SearchTypeLink: React.FunctionComponent<SearchTypeLinkProps> = ({
+const SearchTypeLink: React.FunctionComponent<React.PropsWithChildren<SearchTypeLinkProps>> = ({
     type,
     query,
     selectedSearchContextSpec,
@@ -66,7 +66,10 @@ interface SearchTypeButtonProps {
  * SearchTypeButton renders to a button which updates the query state without
  * triggering a search. This allows users to adjust the query.
  */
-const SearchTypeButton: React.FunctionComponent<SearchTypeButtonProps> = ({ children, onClick }) => (
+const SearchTypeButton: React.FunctionComponent<React.PropsWithChildren<SearchTypeButtonProps>> = ({
+    children,
+    onClick,
+}) => (
     <Button
         className={classNames(styles.sidebarSectionListItem, styles.sidebarSectionButtonLink, 'flex-1')}
         value={children}
@@ -83,7 +86,7 @@ const SearchTypeButton: React.FunctionComponent<SearchTypeButtonProps> = ({ chil
  * patterns) or whether to allow the user to complete query and triggering it
  * themselves.
  */
-const SearchSymbol: React.FunctionComponent<Omit<SearchTypeLinkProps, 'type'>> = props => {
+const SearchSymbol: React.FunctionComponent<React.PropsWithChildren<Omit<SearchTypeLinkProps, 'type'>>> = props => {
     const type = 'symbol'
     const { query, onNavbarQueryChange } = props
 

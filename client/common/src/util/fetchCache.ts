@@ -4,7 +4,7 @@ interface CacheItem {
 }
 
 export interface FetchCacheResponse<T> {
-    data: T
+    data?: T
     status: number
     headers: Record<string, string>
 }
@@ -37,8 +37,14 @@ export const fetchCache = async <T = any>({
 }: FetchCacheRequest): Promise<FetchCacheResponse<T>> => {
     const fetchData = (): Promise<FetchCacheResponse<T>> =>
         fetch(url, requestInit).then(async response => {
-            const data = (await response.json()) as T
-            return { status: response.status, data, headers: Object.fromEntries(response.headers.entries()) }
+            const result = { status: response.status, headers: Object.fromEntries(response.headers.entries()) }
+
+            try {
+                const data = (await response.json()) as T
+                return { ...result, data }
+            } catch {
+                return result
+            }
         })
 
     if (!isEnabled || cacheMaxAge <= 0) {

@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func DownTo(commandName string, factory RunnerFactory, out *output.Output, development bool) *cli.Command {
+func DownTo(commandName string, factory RunnerFactory, outFactory func() *output.Output, development bool) *cli.Command {
 	flags := []cli.Flag{
 		&cli.StringFlag{
 			Name:     "db",
@@ -37,6 +37,8 @@ func DownTo(commandName string, factory RunnerFactory, out *output.Output, devel
 	}
 
 	action := func(cmd *cli.Context) error {
+		out := outFactory()
+
 		if cmd.NArg() != 0 {
 			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments"))
 			return flag.ErrHelp
@@ -83,7 +85,7 @@ func DownTo(commandName string, factory RunnerFactory, out *output.Output, devel
 	return &cli.Command{
 		Name:        "downto",
 		UsageText:   fmt.Sprintf("%s downto -db=<schema> -target=<target>,<target>,...", commandName),
-		Usage:       `Revert any applied migrations that are children of the given targets - this effectively "resets" the schmea to the target version`,
+		Usage:       `Revert any applied migrations that are children of the given targets - this effectively "resets" the schema to the target version`,
 		Description: ConstructLongHelp(),
 		Flags:       flags,
 		Action:      action,

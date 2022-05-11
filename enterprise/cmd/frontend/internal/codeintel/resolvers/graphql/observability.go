@@ -7,29 +7,31 @@ import (
 )
 
 type operations struct {
-	lsifUploadByID            *observation.Operation
-	lsifUploads               *observation.Operation
-	lsifUploadsByRepo         *observation.Operation
+	commitGraph               *observation.Operation
+	configurationPolicies     *observation.Operation
+	configurationPolicyByID   *observation.Operation
+	createConfigurationPolicy *observation.Operation
+	deleteConfigurationPolicy *observation.Operation
+	deleteLsifIndexes         *observation.Operation
 	deleteLsifUpload          *observation.Operation
+	gitBlobCodeIntelInfo      *observation.Operation
+	gitBlobLsifData           *observation.Operation
+	gitTreeCodeIntelInfo      *observation.Operation
+	indexConfiguration        *observation.Operation
 	lsifIndexByID             *observation.Operation
 	lsifIndexes               *observation.Operation
 	lsifIndexesByRepo         *observation.Operation
-	deleteLsifIndexes         *observation.Operation
-	commitGraph               *observation.Operation
-	queueAutoIndexJobsForRepo *observation.Operation
-	gitBlobLsifData           *observation.Operation
-	gitBlobCodeIntelInfo      *observation.Operation
-	gitTreeCodeIntelInfo      *observation.Operation
-	configurationPolicyByID   *observation.Operation
-	configurationPolicies     *observation.Operation
-	createConfigurationPolicy *observation.Operation
-	updateConfigurationPolicy *observation.Operation
-	deleteConfigurationPolicy *observation.Operation
-	indexConfiguration        *observation.Operation
-	updateIndexConfiguration  *observation.Operation
-	previewRepoFilter         *observation.Operation
+	lsifUploadByID            *observation.Operation
+	lsifUploads               *observation.Operation
+	lsifUploadsByRepo         *observation.Operation
 	previewGitObjectFilter    *observation.Operation
+	previewRepoFilter         *observation.Operation
+	queueAutoIndexJobsForRepo *observation.Operation
 	repositorySummary         *observation.Operation
+	requestedLanguageSupport  *observation.Operation
+	requestLanguageSupport    *observation.Operation
+	updateConfigurationPolicy *observation.Operation
+	updateIndexConfiguration  *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -46,28 +48,30 @@ func newOperations(observationContext *observation.Context) *operations {
 	}
 
 	return &operations{
-		lsifUploadByID:            op("LSIFUploadByID"),
-		lsifUploads:               op("LSIFUploads"),
-		lsifUploadsByRepo:         op("LSIFUploadsByRepo"),
+		commitGraph:               op("CommitGraph"),
+		configurationPolicies:     op("ConfigurationPolicies"),
+		configurationPolicyByID:   op("ConfigurationPolicyByID"),
+		createConfigurationPolicy: op("CreateConfigurationPolicy"),
+		deleteConfigurationPolicy: op("DeleteConfigurationPolicy"),
+		deleteLsifIndexes:         op("DeleteLSIFIndexes"),
 		deleteLsifUpload:          op("DeleteLSIFUpload"),
+		gitBlobCodeIntelInfo:      op("GitBlobCodeIntelInfo"),
+		gitBlobLsifData:           op("GitBlobLSIFData"),
+		gitTreeCodeIntelInfo:      op("GitTreeCodeIntelInfo"),
+		indexConfiguration:        op("IndexConfiguration"),
 		lsifIndexByID:             op("LSIFIndexByID"),
 		lsifIndexes:               op("LSIFIndexes"),
 		lsifIndexesByRepo:         op("LSIFIndexesByRepo"),
-		deleteLsifIndexes:         op("DeleteLSIFIndexes"),
-		commitGraph:               op("CommitGraph"),
-		queueAutoIndexJobsForRepo: op("QueueAutoIndexJobsForRepo"),
-		gitBlobLsifData:           op("GitBlobLSIFData"),
-		gitBlobCodeIntelInfo:      op("GitBlobCodeIntelInfo"),
-		gitTreeCodeIntelInfo:      op("GitTreeCodeIntelInfo"),
-		configurationPolicyByID:   op("ConfigurationPolicyByID"),
-		configurationPolicies:     op("ConfigurationPolicies"),
-		createConfigurationPolicy: op("CreateConfigurationPolicy"),
-		updateConfigurationPolicy: op("UpdateConfigurationPolicy"),
-		deleteConfigurationPolicy: op("DeleteConfigurationPolicy"),
-		indexConfiguration:        op("IndexConfiguration"),
-		updateIndexConfiguration:  op("UpdateIndexConfiguration"),
-		previewRepoFilter:         op("PreviewRepoFilter"),
+		lsifUploadByID:            op("LSIFUploadByID"),
+		lsifUploads:               op("LSIFUploads"),
+		lsifUploadsByRepo:         op("LSIFUploadsByRepo"),
 		previewGitObjectFilter:    op("PreviewGitObjectFilter"),
+		previewRepoFilter:         op("PreviewRepoFilter"),
+		queueAutoIndexJobsForRepo: op("QueueAutoIndexJobsForRepo"),
 		repositorySummary:         op("RepositorySummary"),
+		requestedLanguageSupport:  op("RequestedLanguageSupport"),
+		requestLanguageSupport:    op("RequestLanguageSupport"),
+		updateConfigurationPolicy: op("UpdateConfigurationPolicy"),
+		updateIndexConfiguration:  op("UpdateIndexConfiguration"),
 	}
 }

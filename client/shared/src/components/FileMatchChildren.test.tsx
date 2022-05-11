@@ -1,5 +1,3 @@
-import * as React from 'react'
-
 import { cleanup } from '@testing-library/react'
 import * as H from 'history'
 import _VisibilitySensor from 'react-visibility-sensor'

@@ -4,6 +4,7 @@ exports[`ErrorAlert should add a prefix if given 1`] = `
 <DocumentFragment>
   <div
     class=""
+    role="alert"
   >
     <strong>
       An error happened:
@@ -22,6 +23,7 @@ exports[`ErrorAlert should omit the icon if icon={false} 1`] = `
 <DocumentFragment>
   <div
     class=""
+    role="alert"
   >
      
     <span
@@ -37,6 +39,7 @@ exports[`ErrorAlert should render a Go multierror nicely 1`] = `
 <DocumentFragment>
   <div
     class=""
+    role="alert"
   >
      
     <span
@@ -65,6 +68,7 @@ exports[`ErrorAlert should render an Error object as an alert 1`] = `
 <DocumentFragment>
   <div
     class=""
+    role="alert"
   >
      
     <span

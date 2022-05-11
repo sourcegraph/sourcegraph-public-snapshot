@@ -6,27 +6,42 @@ import { CardBody, Card, Link } from '@sourcegraph/wildcard'
 
 import { SourcegraphIcon } from '../../../auth/icons'
 
+import { BatchChangesChangelogAlert } from './BatchChangesChangelogAlert'
+
 import styles from './BatchChangesListIntro.module.scss'
 
 export interface BatchChangesListIntroProps {
     isLicensed: boolean | undefined
 }
 
-export const BatchChangesListIntro: React.FunctionComponent<BatchChangesListIntroProps> = ({ isLicensed }) => {
-    if (isLicensed === undefined || isLicensed === true) {
+export const BatchChangesListIntro: React.FunctionComponent<React.PropsWithChildren<BatchChangesListIntroProps>> = ({
+    isLicensed,
+}) => {
+    if (isLicensed === undefined) {
         return null
     }
 
     return (
         <div className="row">
-            <div className="col-12 col-md-6 mb-3">
-                <BatchChangesUnlicensedAlert />
-            </div>
+            {isLicensed === true ? (
+                <div className="col-12">
+                    <BatchChangesChangelogAlert />
+                </div>
+            ) : (
+                <>
+                    <div className="col-12 col-md-6 mb-3">
+                        <BatchChangesUnlicensedAlert />
+                    </div>
+                    <div className="col-12 col-md-6 mb-3">
+                        <BatchChangesChangelogAlert />
+                    </div>
+                </>
+            )}
         </div>
     )
 }
 
-const BatchChangesUnlicensedAlert: React.FunctionComponent = () => (
+const BatchChangesUnlicensedAlert: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <div className={classNames(styles.batchChangesListIntroAlert, 'h-100')}>
         <Card className={classNames(styles.batchChangesListIntroCard, 'h-100')}>
             <CardBody className="d-flex align-items-start">

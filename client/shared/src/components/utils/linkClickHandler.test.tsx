@@ -1,7 +1,5 @@
 import assert from 'assert'
 
-import React from 'react'
-
 import { createMemoryHistory } from 'history'
 import ReactDOM from 'react-dom'
 import * as sinon from 'sinon'

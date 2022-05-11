@@ -19,14 +19,13 @@ import { initializeSourcegraphFileSystem } from './file-system/initialize'
 import { SourcegraphUri } from './file-system/SourcegraphUri'
 import { Event } from './graphql-operations'
 import { initializeCodeSharingCommands } from './link-commands/initialize'
-import polyfillEventSource from './polyfills/eventSource'
 import { accessTokenSetting, updateAccessTokenSetting } from './settings/accessTokenSetting'
-import { displayInstanceVersionWarnings } from './settings/displayWarnings'
 import { endpointRequestHeadersSetting, endpointSetting, updateEndpointSetting } from './settings/endpointSetting'
 import { invalidateContextOnSettingsChange } from './settings/invalidation'
 import { LocalStorageService, SELECTED_SEARCH_CONTEXT_SPEC_KEY } from './settings/LocalStorageService'
 import { watchUninstall } from './settings/uninstall'
 import { createVSCEStateMachine, VSCEQueryState } from './state'
+import polyfillEventSource from './vendor/eventSource'
 import { focusSearchPanel, registerWebviews } from './webview/commands'
 
 // Sourcegraph VS Code extension architecture
@@ -122,7 +121,8 @@ export function activate(context: vscode.ExtensionContext): void {
         focusSearchPanel,
         streamSearch,
         fetchStreamSuggestions: (query, sourcegraphURL) =>
-            proxySubscribable(fetchStreamSuggestions(query, sourcegraphURL)),
+            // Use api endpoint for stream search
+            proxySubscribable(fetchStreamSuggestions(query, `${sourcegraphURL}/.api`)),
         setSelectedSearchContextSpec: spec => {
             stateMachine.emit({ type: 'set_selected_search_context_spec', spec })
             return localStorageService.setValue(SELECTED_SEARCH_CONTEXT_SPEC_KEY, spec)
@@ -144,6 +144,5 @@ export function activate(context: vscode.ExtensionContext): void {
         instanceURL: initialInstanceURL,
     })
     initializeCodeSharingCommands(context, eventSourceType, localStorageService)
-    displayInstanceVersionWarnings(localStorageService)
     watchUninstall(eventSourceType, localStorageService)
 }

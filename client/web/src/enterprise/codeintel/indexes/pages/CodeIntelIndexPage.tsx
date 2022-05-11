@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
+import { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
 
 import { useApolloClient } from '@apollo/client'
 import { Redirect, RouteComponentProps } from 'react-router'
@@ -32,7 +32,7 @@ const variantByState = new Map<LSIFIndexState, CodeIntelStateBannerProps['varian
     [LSIFIndexState.ERRORED, 'danger'],
 ])
 
-export const CodeIntelIndexPage: FunctionComponent<CodeIntelIndexPageProps> = ({
+export const CodeIntelIndexPage: FunctionComponent<React.PropsWithChildren<CodeIntelIndexPageProps>> = ({
     match: {
         params: { id },
     },

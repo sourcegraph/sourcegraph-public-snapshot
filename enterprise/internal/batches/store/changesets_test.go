@@ -1740,7 +1740,7 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 		esType string,
 		repo *types.Repo,
 		externalID string,
-		metadata interface{},
+		metadata any,
 		spec *btypes.ChangesetSpec,
 	) *btypes.Changeset {
 		var specID int64
@@ -1848,7 +1848,7 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 		extsvc.TypeGitHub,
 		githubRepo,
 		"",
-		map[string]interface{}{},
+		map[string]any{},
 		createChangesetSpec("Eventually fix some bugs, but not a bunch"),
 	)
 

@@ -52,7 +52,7 @@ type GetBulkOperationOpts struct {
 
 // GetBulkOperation gets a BulkOperation matching the given options.
 func (s *Store) GetBulkOperation(ctx context.Context, opts GetBulkOperationOpts) (op *btypes.BulkOperation, err error) {
-	ctx, endObservation := s.operations.getBulkOperation.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.getBulkOperation.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("ID", opts.ID),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -112,7 +112,7 @@ type ListBulkOperationsOpts struct {
 
 // ListBulkOperations gets a list of BulkOperations matching the given options.
 func (s *Store) ListBulkOperations(ctx context.Context, opts ListBulkOperationsOpts) (bs []*btypes.BulkOperation, next int64, err error) {
-	ctx, endObservation := s.operations.listBulkOperations.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.listBulkOperations.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	q := listBulkOperationsQuery(&opts)
@@ -181,7 +181,7 @@ type CountBulkOperationsOpts struct {
 
 // CountBulkOperations gets the count of BulkOperations in the given batch change.
 func (s *Store) CountBulkOperations(ctx context.Context, opts CountBulkOperationsOpts) (count int, err error) {
-	ctx, endObservation := s.operations.countBulkOperations.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.countBulkOperations.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("batchChangeID", int(opts.BatchChangeID)),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -224,7 +224,7 @@ type ListBulkOperationErrorsOpts struct {
 
 // ListBulkOperationErrors gets a list of BulkOperationErrors in a given BulkOperation.
 func (s *Store) ListBulkOperationErrors(ctx context.Context, opts ListBulkOperationErrorsOpts) (es []*btypes.BulkOperationError, err error) {
-	ctx, endObservation := s.operations.listBulkOperationErrors.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.listBulkOperationErrors.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("bulkOperationID", opts.BulkOperationID),
 	}})
 	defer endObservation(1, observation.Args{})

@@ -258,27 +258,27 @@ func TestReducers(t *testing.T) {
 			{
 				name:   "authorMatches in or is merged",
 				input:  newOperator(Or, &AuthorMatches{Expr: "a"}, &AuthorMatches{Expr: "b"}),
-				output: newOperator(Or, &AuthorMatches{Expr: "(a)|(b)"}),
+				output: newOperator(Or, &AuthorMatches{Expr: "(?:a)|(?:b)"}),
 			},
 			{
 				name:   "committerMatches in or is merged",
 				input:  newOperator(Or, &CommitterMatches{Expr: "a"}, &CommitterMatches{Expr: "b"}),
-				output: newOperator(Or, &CommitterMatches{Expr: "(a)|(b)"}),
+				output: newOperator(Or, &CommitterMatches{Expr: "(?:a)|(?:b)"}),
 			},
 			{
 				name:   "diffMatches in or is merged",
 				input:  newOperator(Or, &DiffMatches{Expr: "a"}, &DiffMatches{Expr: "b"}),
-				output: newOperator(Or, &DiffMatches{Expr: "(a)|(b)"}),
+				output: newOperator(Or, &DiffMatches{Expr: "(?:a)|(?:b)"}),
 			},
 			{
 				name:   "diffModifiesFile in or is merged",
 				input:  newOperator(Or, &DiffModifiesFile{Expr: "a"}, &DiffModifiesFile{Expr: "b"}),
-				output: newOperator(Or, &DiffModifiesFile{Expr: "(a)|(b)"}),
+				output: newOperator(Or, &DiffModifiesFile{Expr: "(?:a)|(?:b)"}),
 			},
 			{
 				name:   "messageMatches in or is merged",
 				input:  newOperator(Or, &MessageMatches{Expr: "a"}, &MessageMatches{Expr: "b"}),
-				output: newOperator(Or, &MessageMatches{Expr: "(a)|(b)"}),
+				output: newOperator(Or, &MessageMatches{Expr: "(?:a)|(?:b)"}),
 			},
 			{
 				name:   "unmergeable are not merged",

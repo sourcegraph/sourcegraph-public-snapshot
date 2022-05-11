@@ -65,7 +65,7 @@ const undefinedIsLoading = <T extends any>(value: T | undefined): T | typeof LOA
 /**
  * Displays the payment section of the new product subscription form.
  */
-export const NewProductSubscriptionPaymentSection: React.FunctionComponent<Props> = ({
+export const NewProductSubscriptionPaymentSection: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     accountID,
     subscriptionID,
     productSubscription,

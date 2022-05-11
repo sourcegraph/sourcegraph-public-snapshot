@@ -15,7 +15,8 @@ func intPtr(v int) *int {
 
 func TestGenerateDeploymentTrace(t *testing.T) {
 	trace, err := GenerateDeploymentTrace(&DeploymentReport{
-		DeployedAt: time.RFC822Z,
+		Environment: "preprepod",
+		DeployedAt:  time.RFC822Z,
 		PullRequests: []*github.PullRequest{
 			{Number: intPtr(32996)},
 			{Number: intPtr(32871)},
@@ -37,4 +38,9 @@ func TestGenerateDeploymentTrace(t *testing.T) {
 	assert.NotEmpty(t, trace.ID)
 	assert.NotNil(t, trace.Root)
 	assert.Equal(t, expectPRSpans+expectServiceSpans, len(trace.Spans))
+
+	// Assert fields every event should have
+	for _, ev := range append(trace.Spans, trace.Root) {
+		assert.Equal(t, ev.Fields()["environment"], "preprepod")
+	}
 }

@@ -249,7 +249,7 @@ func (s *SubRepoPermsClient) getCompiledRules(ctx context.Context, userID int32)
 	// Slow path on cache miss or expiry. Ensure that only one goroutine is doing the
 	// work
 	groupKey := strconv.FormatInt(int64(userID), 10)
-	result, err, _ := s.group.Do(groupKey, func() (interface{}, error) {
+	result, err, _ := s.group.Do(groupKey, func() (any, error) {
 		repoPerms, err := s.permissionsGetter.GetByUser(ctx, userID)
 		if err != nil {
 			return nil, errors.Wrap(err, "fetching rules")
@@ -433,12 +433,21 @@ func FilterActorFileInfos(ctx context.Context, checker SubRepoPermissionChecker,
 }
 
 func FilterActorFileInfo(ctx context.Context, checker SubRepoPermissionChecker, a *actor.Actor, repo api.RepoName, fi fs.FileInfo) (bool, error) {
-	perms, err := ActorPermissions(ctx, checker, a, RepoContent{
-		Repo: repo,
-		Path: fi.Name(),
-	})
+	rc := repoContentFromFileInfo(repo, fi)
+	perms, err := ActorPermissions(ctx, checker, a, rc)
 	if err != nil {
 		return false, errors.Wrap(err, "checking sub-repo permissions")
 	}
 	return perms.Include(Read), nil
+}
+
+func repoContentFromFileInfo(repo api.RepoName, fi fs.FileInfo) RepoContent {
+	rc := RepoContent{
+		Repo: repo,
+		Path: fi.Name(),
+	}
+	if fi.IsDir() {
+		rc.Path += "/"
+	}
+	return rc
 }

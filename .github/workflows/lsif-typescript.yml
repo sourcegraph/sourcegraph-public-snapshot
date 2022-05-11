@@ -20,9 +20,9 @@ jobs:
       - name: Install lsif-typescript
         run: yarn global add @sourcegraph/lsif-typescript
       - name: Run lsif-typescript
-        run: lsif-typescript index --yarnWorkspaces
+        run: lsif-typescript index --yarn-workspaces
       - uses: actions/setup-go@v2
-        with: { go-version: '1.17' }
+        with: { go-version: '1.18' }
       - name: Convert LSIF Typed into LSIF Graph
         run: go run lib/codeintel/tools/lsif-typed/main.go dump.lsif-typed > dump.lsif
       - name: Upload lsif to Cloud

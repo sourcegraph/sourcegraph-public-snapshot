@@ -10,7 +10,7 @@ import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import TickIcon from 'mdi-react/TickIcon'
 
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
-import { Badge, LoadingSpinner, Link, Icon } from '@sourcegraph/wildcard'
+import { Badge, LoadingSpinner, Link, Icon, Checkbox } from '@sourcegraph/wildcard'
 
 import { ExternalServiceKind } from '../../../graphql-operations'
 
@@ -38,7 +38,7 @@ interface StatusIconProps {
     }
 }
 
-const StatusIcon: React.FunctionComponent<StatusIconProps> = ({ mirrorInfo }) => {
+const StatusIcon: React.FunctionComponent<React.PropsWithChildren<StatusIconProps>> = ({ mirrorInfo }) => {
     if (mirrorInfo === undefined) {
         return null
     }
@@ -70,7 +70,7 @@ interface CodeHostIconProps {
     hostType: string
 }
 
-const CodeHostIcon: React.FunctionComponent<CodeHostIconProps> = ({ hostType }) => {
+const CodeHostIcon: React.FunctionComponent<React.PropsWithChildren<CodeHostIconProps>> = ({ hostType }) => {
     switch (hostType) {
         case ExternalServiceKind.GITHUB:
             return (
@@ -99,7 +99,7 @@ const CodeHostIcon: React.FunctionComponent<CodeHostIconProps> = ({ hostType }) 
     }
 }
 
-export const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({
+export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<RepositoryNodeProps>> = ({
     name,
     mirrorInfo,
     url,
@@ -158,7 +158,7 @@ interface CheckboxRepositoryNodeProps {
     isPrivate: boolean
 }
 
-export const CheckboxRepositoryNode: React.FunctionComponent<CheckboxRepositoryNodeProps> = ({
+export const CheckboxRepositoryNode: React.FunctionComponent<React.PropsWithChildren<CheckboxRepositoryNodeProps>> = ({
     name,
     mirrorInfo,
     onClick,
@@ -184,9 +184,8 @@ export const CheckboxRepositoryNode: React.FunctionComponent<CheckboxRepositoryN
                 onClick={onClick}
             >
                 <div className="d-flex align-items-center">
-                    <input
+                    <Checkbox
                         className="mr-3"
-                        type="checkbox"
                         aria-label={`select ${name} repository`}
                         onChange={onClick}
                         checked={checked}

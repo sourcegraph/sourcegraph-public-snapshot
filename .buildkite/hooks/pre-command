@@ -8,7 +8,7 @@ set -eu
 echo "~~~ Setting up Honeycomb tracing for the build"
 
 # Record start time if we need to exit
-BUILD_START_TIME=$(curl --retry 5 -H "Authorization: Bearer $BUILDKITE_API_TOKEN" "https://api.buildkite.com/v2/organizations/$BUILDKITE_ORGANIZATION_SLUG/pipelines/$BUILDKITE_PIPELINE_SLUG/builds/$BUILDKITE_BUILD_NUMBER/" | jq -r .started_at)
+BUILD_START_TIME=$(curl --retry 10 --retry-delay 2 -H "Authorization: Bearer $BUILDKITE_API_TOKEN" "https://api.buildkite.com/v2/organizations/$BUILDKITE_ORGANIZATION_SLUG/pipelines/$BUILDKITE_PIPELINE_SLUG/builds/$BUILDKITE_BUILD_NUMBER/" | jq -r .started_at)
 
 # Convert to UTC & Epoch
 BUILD_START_TIME=$(TZ=UTC date -d "$BUILD_START_TIME" +'%s')

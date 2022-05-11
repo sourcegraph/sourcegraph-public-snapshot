@@ -23,4 +23,4 @@ export {
     getExperimentalFeatures,
     setExperimentalFeaturesFromSettings,
 } from './experimentalFeatures'
-export { useSearchStackState, useSearchStack } from './searchStack'
+export { useNotepadState, useNotepad } from './notepad'

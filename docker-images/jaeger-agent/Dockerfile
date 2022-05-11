@@ -3,7 +3,7 @@
 ARG JAEGER_VERSION
 FROM jaegertracing/jaeger-agent:${JAEGER_VERSION} as base
 
-FROM sourcegraph/alpine-3.12:137550_2022-03-17_32d45d6a2a7f@sha256:d67684c174c577e7d61b4d7ef9d173fb73973f5b941bd65401dad90fc5e74353
+FROM sourcegraph/alpine-3.14:142406_2022-04-14_8836ac3499f4@sha256:2a2d1cbaec78882661fe1aa5b0a4af0c23a37be2ea9ff8aadc2da5b80852c233
 USER root
 RUN apk --no-cache add bash curl apk-tools>=2.10.8-r0
 

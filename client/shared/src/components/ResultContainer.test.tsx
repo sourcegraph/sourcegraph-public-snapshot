@@ -1,5 +1,3 @@
-import * as React from 'react'
-
 import { cleanup, fireEvent, getByTestId, getByText } from '@testing-library/react'
 import * as H from 'history'
 import FileIcon from 'mdi-react/FileIcon'

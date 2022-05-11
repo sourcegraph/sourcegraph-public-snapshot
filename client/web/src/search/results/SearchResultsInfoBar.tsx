@@ -110,7 +110,9 @@ interface ExperimentalActionButtonProps extends ButtonDropdownCtaProps {
     className?: string
 }
 
-const ExperimentalActionButton: React.FunctionComponent<ExperimentalActionButtonProps> = props => {
+const ExperimentalActionButton: React.FunctionComponent<
+    React.PropsWithChildren<ExperimentalActionButtonProps>
+> = props => {
     if (props.showExperimentalVersion) {
         return <ButtonDropdownCta {...props} />
     }
@@ -135,7 +137,9 @@ const ExperimentalActionButton: React.FunctionComponent<ExperimentalActionButton
  * will be searching literally for `foobar` (without quotes). This notice
  * informs them that this may be the case to avoid confusion.
  */
-const QuotesInterpretedLiterallyNotice: React.FunctionComponent<SearchResultsInfoBarProps> = props =>
+const QuotesInterpretedLiterallyNotice: React.FunctionComponent<
+    React.PropsWithChildren<SearchResultsInfoBarProps>
+> = props =>
     props.patternType === SearchPatternType.literal && props.query && props.query.includes('"') ? (
         <small
             className={styles.notice}
@@ -152,7 +156,9 @@ const QuotesInterpretedLiterallyNotice: React.FunctionComponent<SearchResultsInf
  * The info bar shown over the search results list that displays metadata
  * and a few actions like expand all and save query
  */
-export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarProps> = props => {
+export const SearchResultsInfoBar: React.FunctionComponent<
+    React.PropsWithChildren<SearchResultsInfoBarProps>
+> = props => {
     const canCreateMonitorFromQuery = useMemo(() => {
         if (!props.query) {
             return false
@@ -227,12 +233,17 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                         : undefined
                 }
             >
+                {/*
+                    a11y-ignore
+                    Rule: "color-contrast" (Elements must have sufficient color contrast)
+                    GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
+                */}
                 <ExperimentalActionButton
                     showExperimentalVersion={showActionButtonExperimentalVersion}
                     nonExperimentalLinkTo={toURL}
                     isNonExperimentalLinkDisabled={!canCreateMonitorFromQuery}
                     onNonExperimentalLinkClick={onCreateCodeMonitorButtonSelect}
-                    className="create-code-monitor-button"
+                    className="a11y-ignore create-code-monitor-button"
                     button={
                         <>
                             <Icon className="mr-1" as={CodeMonitoringLogo} />

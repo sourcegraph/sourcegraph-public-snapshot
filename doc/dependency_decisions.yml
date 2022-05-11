@@ -95,6 +95,9 @@
   - WTFPL
   - *2
 - - :permit
+  - Public domain
+  - *2
+- - :permit
   - Apache*
   - *2
 - - :ignore_group
@@ -360,3 +363,10 @@
     :why:
     :versions: []
     :when: 2022-02-18 21:09:06.289293214 Z
+- - :license
+  - github.com/layeh/gopher-json
+  - Public domain
+  - :who:
+    :why:
+    :versions: []
+    :when: 2022-04-18 21:25:36.854878000 Z

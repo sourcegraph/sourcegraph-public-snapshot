@@ -1,4 +1,4 @@
-import React, { ReactElement, useMemo } from 'react'
+import { ReactElement, useMemo } from 'react'
 
 import { RenderTooltipParams } from '@visx/xychart/lib/components/Tooltip'
 

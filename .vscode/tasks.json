@@ -39,7 +39,7 @@
     {
       "label": "stylelint",
       "command": "yarn",
-      "args": ["-s", "run", "all:stylelint", "--", "--formatter", "compact"],
+      "args": ["-s", "run", "lint:css:all", "--", "--formatter", "compact"],
       "problemMatcher": {
         "owner": "stylelint",
         "applyTo": "closedDocuments",

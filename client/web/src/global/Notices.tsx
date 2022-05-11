@@ -21,13 +21,17 @@ interface NoticeAlertProps {
     testId?: string
 }
 
-const NoticeAlert: React.FunctionComponent<NoticeAlertProps> = ({ notice, className = '', testId }) => {
+const NoticeAlert: React.FunctionComponent<React.PropsWithChildren<NoticeAlertProps>> = ({
+    notice,
+    className = '',
+    testId,
+}) => {
     const content = <Markdown dangerousInnerHTML={renderMarkdown(notice.message)} />
 
     const sharedProps = {
         'data-testid': testId,
         variant: getAlertVariant(notice.location),
-        className: classNames(notice.location !== 'top' && 'bg transparent border', className),
+        className: classNames(notice.location !== 'top' && 'bg transparent border p-2', className),
     }
 
     return notice.dismissible ? (
@@ -52,7 +56,7 @@ interface Props extends SettingsCascadeProps {
 /**
  * Displays notices from settings for a specific location.
  */
-export const Notices: React.FunctionComponent<Props> = ({
+export const Notices: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     className = '',
     alertClassName,
     settingsCascade,

@@ -119,11 +119,13 @@ Foreign-key constraints:
  created_at        | timestamp with time zone |           | not null | now()
  updated_at        | timestamp with time zone |           | not null | now()
  queued_at         | timestamp with time zone |           |          | now()
+ initiator_id      | integer                  |           |          | 
 Indexes:
     "batch_spec_resolution_jobs_pkey" PRIMARY KEY, btree (id)
     "batch_spec_resolution_jobs_batch_spec_id_unique" UNIQUE CONSTRAINT, btree (batch_spec_id)
 Foreign-key constraints:
     "batch_spec_resolution_jobs_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE
+    "batch_spec_resolution_jobs_initiator_id_fkey" FOREIGN KEY (initiator_id) REFERENCES users(id) ON UPDATE CASCADE DEFERRABLE
 
 ```
 
@@ -647,6 +649,38 @@ Webhook actions configured on code monitors
 
 **url**: The webhook URL we send the code monitor event to
 
+# Table "public.codeintel_langugage_support_requests"
+```
+   Column    |  Type   | Collation | Nullable |                             Default                              
+-------------+---------+-----------+----------+------------------------------------------------------------------
+ id          | integer |           | not null | nextval('codeintel_langugage_support_requests_id_seq'::regclass)
+ user_id     | integer |           | not null | 
+ language_id | text    |           | not null | 
+Indexes:
+    "codeintel_langugage_support_requests_user_id_language" UNIQUE, btree (user_id, language_id)
+
+```
+
+# Table "public.configuration_policies_audit_logs"
+```
+       Column       |           Type           | Collation | Nullable |      Default      
+--------------------+--------------------------+-----------+----------+-------------------
+ log_timestamp      | timestamp with time zone |           |          | clock_timestamp()
+ record_deleted_at  | timestamp with time zone |           |          | 
+ policy_id          | integer                  |           | not null | 
+ transition_columns | USER-DEFINED[]           |           |          | 
+Indexes:
+    "configuration_policies_audit_logs_policy_id" btree (policy_id)
+    "configuration_policies_audit_logs_timestamp" brin (log_timestamp)
+
+```
+
+**log_timestamp**: Timestamp for this log entry.
+
+**record_deleted_at**: Set once the upload this entry is associated with is deleted. Once NOW() - record_deleted_at is above a certain threshold, this log entry will be deleted.
+
+**transition_columns**: Array of changes that occurred to the upload for this entry, in the form of {&#34;column&#34;=&gt;&#34;&lt;column name&gt;&#34;, &#34;old&#34;=&gt;&#34;&lt;previous value&gt;&#34;, &#34;new&#34;=&gt;&#34;&lt;new value&gt;&#34;}.
+
 # Table "public.critical_and_site_config"
 ```
    Column   |           Type           | Collation | Nullable |                       Default                        
@@ -1075,7 +1109,7 @@ Referenced by:
 
 ```
 
-See [enterprise/internal/insights/background/queryrunner/worker.go:Job](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/internal/insights/background/queryrunner/worker.go+type+Job&patternType=literal)
+See [enterprise/internal/insights/background/queryrunner/worker.go:Job](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/internal/insights/background/queryrunner/worker.go+type+Job&amp;patternType=literal)
 
 **cost**: Integer representing a cost approximation of executing this search query.
 
@@ -1143,6 +1177,10 @@ Stores data points for a code insight that do not need to be queried directly, b
 Indexes:
     "lsif_configuration_policies_pkey" PRIMARY KEY, btree (id)
     "lsif_configuration_policies_repository_id" btree (repository_id)
+Triggers:
+    trigger_configuration_policies_delete AFTER DELETE ON lsif_configuration_policies REFERENCING OLD TABLE AS old FOR EACH STATEMENT EXECUTE FUNCTION func_configuration_policies_delete()
+    trigger_configuration_policies_insert AFTER INSERT ON lsif_configuration_policies FOR EACH ROW EXECUTE FUNCTION func_configuration_policies_insert()
+    trigger_configuration_policies_update BEFORE UPDATE OF name, pattern, retention_enabled, retention_duration_hours, type, retain_intermediate_commits ON lsif_configuration_policies FOR EACH ROW EXECUTE FUNCTION func_configuration_policies_update()
 
 ```
 
@@ -1266,12 +1304,13 @@ Tracks jobs that scan imports of indexes to schedule auto-index jobs.
  dirty_token   | integer                  |           | not null | 
  update_token  | integer                  |           | not null | 
  updated_at    | timestamp with time zone |           |          | 
+ set_dirty_at  | timestamp with time zone |           | not null | now()
 Indexes:
     "lsif_dirty_repositories_pkey" PRIMARY KEY, btree (repository_id)
 
 ```
 
-Stores whether or not the nearest upload data for a repository is out of date (when update_token > dirty_token).
+Stores whether or not the nearest upload data for a repository is out of date (when update_token &gt; dirty_token).
 
 **dirty_token**: Set to the value of update_token visible to the transaction that updates the commit graph. Updates of dirty_token during this time will cause a second update.
 
@@ -1347,7 +1386,7 @@ Stores metadata about a code intel index job.
 
 **indexer**: The docker image used to run the index command (e.g. sourcegraph/lsif-go).
 
-**indexer_args**: The command run inside the indexer image to produce the index file (e.g. ['lsif-node', '-p', '.'])
+**indexer_args**: The command run inside the indexer image to produce the index file (e.g. [&#39;lsif-node&#39;, &#39;-p&#39;, &#39;.&#39;])
 
 **local_steps**: A list of commands to run inside the indexer image prior to running the indexer command.
 
@@ -1404,7 +1443,7 @@ Associates commits with the complete set of uploads visible from that commit. Ev
 
 **commit_bytea**: A 40-char revhash. Note that this commit may not be resolvable in the future.
 
-**uploads**: Encodes an {upload_id => distance} map that includes an entry for every upload visible from the commit. There is always at least one entry with a distance of zero.
+**uploads**: Encodes an {upload_id =&gt; distance} map that includes an entry for every upload visible from the commit. There is always at least one entry with a distance of zero.
 
 # Table "public.lsif_nearest_uploads_links"
 ```
@@ -1557,6 +1596,10 @@ Referenced by:
     TABLE "lsif_dependency_indexing_jobs" CONSTRAINT "lsif_dependency_indexing_jobs_upload_id_fkey1" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
     TABLE "lsif_packages" CONSTRAINT "lsif_packages_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
     TABLE "lsif_references" CONSTRAINT "lsif_references_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
+Triggers:
+    trigger_lsif_uploads_delete AFTER DELETE ON lsif_uploads REFERENCING OLD TABLE AS old FOR EACH STATEMENT EXECUTE FUNCTION func_lsif_uploads_delete()
+    trigger_lsif_uploads_insert AFTER INSERT ON lsif_uploads FOR EACH ROW EXECUTE FUNCTION func_lsif_uploads_insert()
+    trigger_lsif_uploads_update BEFORE UPDATE OF state, num_resets, num_failures, worker_hostname, expired, committed_at ON lsif_uploads FOR EACH ROW EXECUTE FUNCTION func_lsif_uploads_update()
 
 ```
 
@@ -1585,6 +1628,37 @@ Stores metadata about an LSIF index uploaded by a user.
 **upload_size**: The size of the index file (in bytes).
 
 **uploaded_parts**: The index of parts that have been successfully uploaded.
+
+# Table "public.lsif_uploads_audit_logs"
+```
+       Column        |           Type           | Collation | Nullable | Default  
+---------------------+--------------------------+-----------+----------+----------
+ log_timestamp       | timestamp with time zone |           |          | now()
+ record_deleted_at   | timestamp with time zone |           |          | 
+ upload_id           | integer                  |           | not null | 
+ commit              | text                     |           | not null | 
+ root                | text                     |           | not null | 
+ repository_id       | integer                  |           | not null | 
+ uploaded_at         | timestamp with time zone |           | not null | 
+ indexer             | text                     |           | not null | 
+ indexer_version     | text                     |           |          | 
+ upload_size         | integer                  |           |          | 
+ associated_index_id | integer                  |           |          | 
+ transition_columns  | USER-DEFINED[]           |           |          | 
+ reason              | text                     |           |          | ''::text
+Indexes:
+    "lsif_uploads_audit_logs_timestamp" brin (log_timestamp)
+    "lsif_uploads_audit_logs_upload_id" btree (upload_id)
+
+```
+
+**log_timestamp**: Timestamp for this log entry.
+
+**reason**: The reason/source for this entry.
+
+**record_deleted_at**: Set once the upload this entry is associated with is deleted. Once NOW() - record_deleted_at is above a certain threshold, this log entry will be deleted.
+
+**transition_columns**: Array of changes that occurred to the upload for this entry, in the form of {&#34;column&#34;=&gt;&#34;&lt;column name&gt;&#34;, &#34;old&#34;=&gt;&#34;&lt;previous value&gt;&#34;, &#34;new&#34;=&gt;&#34;&lt;new value&gt;&#34;}.
 
 # Table "public.lsif_uploads_visible_at_tip"
 ```
@@ -2098,8 +2172,10 @@ Indexes:
  updated_at    | timestamp with time zone |           | not null | 
  synced_at     | timestamp with time zone |           |          | 
  user_ids_ints | integer[]                |           | not null | '{}'::integer[]
+ unrestricted  | boolean                  |           | not null | false
 Indexes:
     "repo_permissions_perm_unique" UNIQUE CONSTRAINT, btree (repo_id, permission)
+    "repo_permissions_unrestricted_true_idx" btree (unrestricted) WHERE unrestricted
 
 ```
 
@@ -2457,6 +2533,7 @@ Referenced by:
     TABLE "batch_changes" CONSTRAINT "batch_changes_last_applier_id_fkey" FOREIGN KEY (last_applier_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "batch_changes" CONSTRAINT "batch_changes_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "batch_spec_execution_cache_entries" CONSTRAINT "batch_spec_execution_cache_entries_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
+    TABLE "batch_spec_resolution_jobs" CONSTRAINT "batch_spec_resolution_jobs_initiator_id_fkey" FOREIGN KEY (initiator_id) REFERENCES users(id) ON UPDATE CASCADE DEFERRABLE
     TABLE "batch_specs" CONSTRAINT "batch_specs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "changeset_jobs" CONSTRAINT "changeset_jobs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "changeset_specs" CONSTRAINT "changeset_specs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE

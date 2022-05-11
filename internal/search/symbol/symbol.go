@@ -13,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/repos"
@@ -30,10 +31,10 @@ const DefaultSymbolLimit = 100
 // repository at a specific commit. If it has it returns the branch name (for
 // use when querying zoekt). Otherwise an empty string is returned.
 func indexedSymbolsBranch(ctx context.Context, repo *types.MinimalRepo, commit string) string {
-	z := search.Indexed()
-	if z == nil {
+	if !conf.SearchIndexEnabled() {
 		return ""
 	}
+	z := search.Indexed()
 
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
@@ -230,13 +231,13 @@ func limitOrDefault(first *int32) int {
 	return int(*first)
 }
 
-type RepoUniverseSymbolSearch struct {
+type RepoUniverseSymbolSearchJob struct {
 	GlobalZoektQuery *zoektutil.GlobalZoektQuery
 	ZoektArgs        *search.ZoektParameters
 	RepoOptions      search.RepoOptions
 }
 
-func (s *RepoUniverseSymbolSearch) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+func (s *RepoUniverseSymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
@@ -257,6 +258,6 @@ func (s *RepoUniverseSymbolSearch) Run(ctx context.Context, clients job.RuntimeC
 	return nil, nil
 }
 
-func (*RepoUniverseSymbolSearch) Name() string {
-	return "RepoUniverseSymbolSearch"
+func (*RepoUniverseSymbolSearchJob) Name() string {
+	return "RepoUniverseSymbolSearchJob"
 }

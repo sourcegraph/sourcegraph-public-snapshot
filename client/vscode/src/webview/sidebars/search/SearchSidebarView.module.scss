@@ -1,6 +1,7 @@
 .sidebar-container {
     padding: 0.125rem 0 0 0 !important;
 
+    /* stylelint-disable-next-line scss/selector-no-redundant-nesting-selector */
     & [data-reach-tabs] {
         // Override our default background color.
         background: none;

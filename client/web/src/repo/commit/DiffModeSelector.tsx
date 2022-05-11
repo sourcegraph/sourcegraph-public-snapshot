@@ -11,7 +11,7 @@ interface DiffModeSelectorProps {
     diffMode: DiffMode
 }
 
-export const DiffModeSelector: React.FunctionComponent<DiffModeSelectorProps> = ({
+export const DiffModeSelector: React.FunctionComponent<React.PropsWithChildren<DiffModeSelectorProps>> = ({
     className,
     diffMode,
     onHandleDiffMode,

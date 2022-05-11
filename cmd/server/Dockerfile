@@ -1,19 +1,19 @@
 # Install p4 CLI (keep this up to date with cmd/gitserver/Dockerfile)
-FROM sourcegraph/alpine-3.12:137550_2022-03-17_32d45d6a2a7f@sha256:d67684c174c577e7d61b4d7ef9d173fb73973f5b941bd65401dad90fc5e74353 AS p4cli
+FROM sourcegraph/alpine-3.14:142406_2022-04-14_8836ac3499f4@sha256:2a2d1cbaec78882661fe1aa5b0a4af0c23a37be2ea9ff8aadc2da5b80852c233 AS p4cli
 
 # hadolint ignore=DL3003
-RUN wget http://cdist2.perforce.com/perforce/r20.1/bin.linux26x86_64/p4 && \
+RUN wget http://cdist2.perforce.com/perforce/r21.2/bin.linux26x86_64/p4 && \
     mv p4 /usr/local/bin/p4 && \
     chmod +x /usr/local/bin/p4
 
 # Install p4-fusion (keep this up to date with cmd/gitserver/Dockerfile)
-FROM sourcegraph/alpine-3.12:137550_2022-03-17_32d45d6a2a7f@sha256:d67684c174c577e7d61b4d7ef9d173fb73973f5b941bd65401dad90fc5e74353 AS p4-fusion
+FROM sourcegraph/alpine-3.14:142406_2022-04-14_8836ac3499f4@sha256:2a2d1cbaec78882661fe1aa5b0a4af0c23a37be2ea9ff8aadc2da5b80852c233 AS p4-fusion
 
 COPY p4-fusion-install-alpine.sh /p4-fusion-install-alpine.sh
 RUN /p4-fusion-install-alpine.sh
 
 # Install coursier (keep this up to date with cmd/gitserver/Dockerfile)
-FROM sourcegraph/alpine-3.12:137550_2022-03-17_32d45d6a2a7f@sha256:d67684c174c577e7d61b4d7ef9d173fb73973f5b941bd65401dad90fc5e74353 AS coursier
+FROM sourcegraph/alpine-3.14:142406_2022-04-14_8836ac3499f4@sha256:2a2d1cbaec78882661fe1aa5b0a4af0c23a37be2ea9ff8aadc2da5b80852c233 AS coursier
 
 # TODO(code-intel): replace with official streams when musl builds are upstreamed
 RUN wget -O coursier.zip https://github.com/sourcegraph/lsif-java/releases/download/v0.5.6/cs-musl.zip && \
@@ -21,7 +21,7 @@ RUN wget -O coursier.zip https://github.com/sourcegraph/lsif-java/releases/downl
     mv cs-musl /usr/local/bin/coursier && \
     chmod +x /usr/local/bin/coursier
 
-FROM sourcegraph/alpine-3.12:137550_2022-03-17_32d45d6a2a7f@sha256:d67684c174c577e7d61b4d7ef9d173fb73973f5b941bd65401dad90fc5e74353
+FROM sourcegraph/alpine-3.14:142406_2022-04-14_8836ac3499f4@sha256:2a2d1cbaec78882661fe1aa5b0a4af0c23a37be2ea9ff8aadc2da5b80852c233
 # TODO(security): This container should not be running as root!
 #
 # The default user in sourcegraph/alpine is a non-root `sourcegraph` user but because old deployments
@@ -49,14 +49,18 @@ RUN apk add --no-cache --verbose \
     # from our *Minimum Supported Version* which alone dictates
     # the features we can depend on. See this link for more information:
     # https://github.com/sourcegraph/sourcegraph/blob/main/doc/dev/postgresql.md#version-requirements
+    # You can't just bump the major version since that requires pgupgrade
+    # between Sourcegraph releases.
+    && apk add --no-cache --verbose \
+    postgresql=~12 \
+    postgresql-contrib=~12 \
+    --repository=http://dl-cdn.alpinelinux.org/alpine/v3.12/main  \
     && apk add --no-cache --verbose \
     'bash>=5.0.17' \
     'redis>=5.0' \
     python2 \
     python3 \
     'nginx>=1.18.0' openssh-client pcre sqlite-libs su-exec 'nodejs-current>=14.5.0' \
-    postgresql>=12.10-r0 \
-    postgresql-contrib \
     # We require libstdc++ for p4-fusion
     libstdc++
 
@@ -110,8 +114,7 @@ COPY --from=coursier /usr/local/bin/coursier /usr/local/bin/coursier
 
 # This is a trick to include libraries required by p4,
 # please refer to https://blog.tilander.org/docker-perforce/
-ADD https://github.com/jtilander/p4d/raw/4600d741720f85d77852dcca7c182e96ad613358/lib/lib-x64.tgz /
-RUN tar zxf /lib-x64.tgz --directory /
+RUN wget -O - https://github.com/jtilander/p4d/raw/4600d741720f85d77852dcca7c182e96ad613358/lib/lib-x64.tgz | tar zx --directory /
 
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/grafana:server /sg_config_grafana/provisioning/dashboards /sg_config_grafana/provisioning/dashboards
@@ -120,6 +123,9 @@ COPY --from=sourcegraph/grafana:server /sg_config_grafana/provisioning/dashboard
 COPY --from=sourcegraph/postgres_exporter:server /usr/local/bin/postgres_exporter /usr/local/bin/postgres_exporter
 
 RUN echo "hosts: files dns" > /etc/nsswitch.conf
+
+# symbols is cgo, ensure we have the requisite dynamic libraries
+RUN env SANITY_CHECK=true /usr/local/bin/symbols
 
 WORKDIR /
 

@@ -171,12 +171,12 @@ export const predicateCompletion = (field: string): Completion[] => {
                 asSnippet: true,
             },
             {
-                label: 'deps(...) Includes npm dependencies only (beta)',
+                label: 'deps(...)',
                 insertText: 'deps(${1})',
                 asSnippet: true,
             },
             {
-                label: 'dependencies(...) Includes npm dependencies only (beta)',
+                label: 'dependencies(...)',
                 insertText: 'dependencies(${1})',
                 asSnippet: true,
             },

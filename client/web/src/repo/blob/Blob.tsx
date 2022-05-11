@@ -85,7 +85,7 @@ const toPortalID = (line: number): string => `line-decoration-attachment-${line}
 
 export interface BlobProps
     extends SettingsCascadeProps,
-        PlatformContextProps,
+        PlatformContextProps<'urlToFile' | 'requestGraphQL' | 'settings' | 'forceUpdateTooltip'>,
         TelemetryProps,
         HoverThresholdProps,
         ExtensionsControllerProps,
@@ -176,7 +176,7 @@ const STATUS_BAR_VERTICAL_GAP_VAR = '--blob-status-bar-vertical-gap'
  * previous viewer (e.g. hoverifier subscription, line decorations). If we don't remove extension features
  * in this state, hovers can lead to errors like `DocumentNotFoundError`.
  */
-export const Blob: React.FunctionComponent<BlobProps> = props => {
+export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> = props => {
     const { location, isLightTheme, extensionsController, blobInfo, platformContext } = props
 
     // Element reference subjects passed to `hoverifier`

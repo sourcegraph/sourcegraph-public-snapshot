@@ -1,4 +1,4 @@
-import React, { FunctionComponent } from 'react'
+import { FunctionComponent } from 'react'
 
 import DeleteIcon from 'mdi-react/DeleteIcon'
 
@@ -12,7 +12,7 @@ export interface CodeIntelDeleteUploadProps {
     deletionOrError?: 'loading' | 'deleted' | ErrorLike
 }
 
-export const CodeIntelDeleteUpload: FunctionComponent<CodeIntelDeleteUploadProps> = ({
+export const CodeIntelDeleteUpload: FunctionComponent<React.PropsWithChildren<CodeIntelDeleteUploadProps>> = ({
     state,
     deleteUpload,
     deletionOrError,

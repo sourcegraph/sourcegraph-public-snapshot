@@ -14,12 +14,14 @@ interface Props extends ThemeProps {
 // Workaround for @types/stripe-v3 missing the new disabled attribute. See
 // https://github.com/stripe/react-stripe-elements/issues/136#issuecomment-424984951.
 type PatchedElementProps = ReactStripeElements.ElementProps & { disabled?: boolean }
-const PatchedCardElement: React.FunctionComponent<PatchedElementProps> = props => <CardElement {...props} />
+const PatchedCardElement: React.FunctionComponent<React.PropsWithChildren<PatchedElementProps>> = props => (
+    <CardElement {...props} />
+)
 
 /**
  * Displays a payment form control for the user to enter payment information to purchase a product subscription.
  */
-export const PaymentTokenFormControl: React.FunctionComponent<Props> = props => {
+export const PaymentTokenFormControl: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
     const textColor = props.isLightTheme ? '#2b3750' : 'white'
 
     return (

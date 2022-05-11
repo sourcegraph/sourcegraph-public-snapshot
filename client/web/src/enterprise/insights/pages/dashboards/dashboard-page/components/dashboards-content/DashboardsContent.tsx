@@ -9,8 +9,8 @@ import { Button } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../../../../../../../components/HeroPage'
 import { LimitedAccessLabel } from '../../../../../components/limited-access-label/LimitedAccessLabel'
-import { ALL_INSIGHTS_DASHBOARD } from '../../../../../core/constants'
-import { InsightDashboard, isVirtualDashboard } from '../../../../../core/types'
+import { InsightDashboard, isVirtualDashboard, ALL_INSIGHTS_DASHBOARD } from '../../../../../core'
+import { useCopyURLHandler } from '../../../../../hooks/use-copy-url-handler'
 import { useUiFeatures } from '../../../../../hooks/use-ui-features'
 import { AddInsightModal } from '../add-insight-modal/AddInsightModal'
 import { DashboardMenu, DashboardMenuAction } from '../dashboard-menu/DashboardMenu'
@@ -19,7 +19,6 @@ import { DeleteDashboardModal } from '../delete-dashboard-modal/DeleteDashboardM
 
 import { DashboardHeader } from './components/dashboard-header/DashboardHeader'
 import { DashboardInsights } from './components/dashboard-inisghts/DashboardInsights'
-import { useCopyURLHandler } from './hooks/use-copy-url-handler'
 import { isDashboardConfigurable } from './utils/is-dashboard-configurable'
 
 import styles from './DashboardsContent.module.scss'
@@ -35,7 +34,7 @@ export interface DashboardsContentProps extends TelemetryProps {
     dashboards: InsightDashboard[]
 }
 
-export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> = props => {
+export const DashboardsContent: React.FunctionComponent<React.PropsWithChildren<DashboardsContentProps>> = props => {
     const { dashboardID, telemetryService, dashboards } = props
     const currentDashboard = dashboards.find(dashboard => dashboard.id === dashboardID)
 
@@ -94,7 +93,7 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
     const addRemovePermissions = dashboardPermission.getAddRemoveInsightsPermission(currentDashboard)
 
     return (
-        <main className="pb-4">
+        <div className="pb-4">
             <DashboardHeader className="d-flex flex-wrap align-items-center mb-3">
                 <span className={styles.dashboardSelectLabel}>Dashboard:</span>
 
@@ -140,6 +139,7 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
                 <DashboardInsights
                     dashboard={currentDashboard}
                     telemetryService={telemetryService}
+                    className={styles.insights}
                     onAddInsightRequest={handleAddInsightRequest}
                 />
             ) : (
@@ -153,6 +153,6 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
             {isDeleteDashboardActive && isDashboardConfigurable(currentDashboard) && (
                 <DeleteDashboardModal dashboard={currentDashboard} onClose={() => setDeleteDashboardActive(false)} />
             )}
-        </main>
+        </div>
     )
 }

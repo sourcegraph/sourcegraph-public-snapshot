@@ -12,6 +12,9 @@ Sourcegraph's main features are:
 
 - [Code search](#code-search): fast, up-to-date, and scalable, with regexp support on any branch or commit without an indexing delay (and diff search)
 - [Code intelligence](#code-intelligence): jump-to-definition, find references, and other smart, IDE-like code browsing features on any branch, commit, or PR/code review
+- [Code Insights](../code_insights/index.md): reveal high-level information about your codebase at it's current state and over time, to track migrations, version usage, vulnerability remediation, ownership, and anything else you can search in Sourcegraph
+- [Batch Changes](../batch_changes/index.md): make large-scale code changes across many repositories and code hosts 
+- [Notebooks](../notebooks/index.md): pair code and markdown to create powerful live–and persistent–documentation
 - Easy and secure self-hosted installation (your code never touches our servers)
 - [Integrations](#integrations) with code hosts, code review tools, editors, web browsers, etc.
 
@@ -42,7 +45,7 @@ Also, both Facebook and Google provide an in-house Sourcegraph-like code search 
 
 ## How do I start using Sourcegraph?
 
-1. [Install Sourcegraph](../admin/install/index.md) inside your organization on your internal code, if nobody else has yet
+1. [Deploy and Configure Sourcegraph](../admin/deploy/index.md) inside your organization on your internal code, if nobody else has yet
 1. Install and configure the [web browser code host integrations](../integration/browser_extension.md) (recommended)
 1. Start searching and browsing code on Sourcegraph by visiting the URL of your organization's internal Sourcegraph instance
 1. [Personalize Sourcegraph](personalization/index.md) with themes, quick links, and badges!

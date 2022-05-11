@@ -50,12 +50,13 @@ const (
 )
 
 type DashboardQueryArgs struct {
-	UserID  []int
-	OrgID   []int
-	ID      []int
-	Deleted bool
-	Limit   int
-	After   int
+	UserID           []int
+	OrgID            []int
+	ID               []int
+	WithViewUniqueID *string
+	Deleted          bool
+	Limit            int
+	After            int
 
 	// This field will disable user level authorization checks on the dashboards. This should only be used interally,
 	// and not to return dashboards to users.
@@ -79,6 +80,9 @@ func (s *DBDashboardStore) GetDashboards(ctx context.Context, args DashboardQuer
 	if args.After > 0 {
 		preds = append(preds, sqlf.Sprintf("db.id > %s", args.After))
 	}
+	if args.WithViewUniqueID != nil {
+		preds = append(preds, sqlf.Sprintf("%s = ANY(t.uuid_array)", *args.WithViewUniqueID))
+	}
 
 	if !args.WithoutAuthorization {
 		preds = append(preds, sqlf.Sprintf("db.id in (%s)", visibleDashboardsQuery(args.UserID, args.OrgID)))
@@ -97,10 +101,18 @@ func (s *DBDashboardStore) GetDashboards(ctx context.Context, args DashboardQuer
 	return scanDashboard(s.Query(ctx, q))
 }
 
-func (s *DBDashboardStore) DeleteDashboard(ctx context.Context, id int64) error {
+func (s *DBDashboardStore) DeleteDashboard(ctx context.Context, id int) error {
 	err := s.Exec(ctx, sqlf.Sprintf(deleteDashboardSql, id))
 	if err != nil {
 		return errors.Wrapf(err, "failed to delete dashboard with id: %s", id)
+	}
+	return nil
+}
+
+func (s *DBDashboardStore) RestoreDashboard(ctx context.Context, id int) error {
+	err := s.Exec(ctx, sqlf.Sprintf(restoreDashboardSql, id))
+	if err != nil {
+		return errors.Wrapf(err, "failed to restore dashboard with id: %s", id)
 	}
 	return nil
 }
@@ -172,6 +184,11 @@ ORDER BY db.id
 const deleteDashboardSql = `
 -- source: enterprise/internal/insights/store/dashboard_store.go:DeleteDashboard
 update dashboard set deleted_at = NOW() where id = %s;
+`
+
+const restoreDashboardSql = `
+-- source: enterprise/internal/insights/store/dashboard_store.go:DeleteDashboard
+update dashboard set deleted_at = NULL where id = %s;
 `
 
 type CreateDashboardArgs struct {
@@ -362,6 +379,11 @@ func (s *DBDashboardStore) EnsureLimitedAccessModeDashboard(ctx context.Context)
 			return 0, err
 		}
 	}
+	// This dashboard may have been previously deleted.
+	tx.RestoreDashboard(ctx, id)
+	if err != nil {
+		return 0, errors.Wrap(err, "RestoreDashboard")
+	}
 	return id, nil
 }
 
@@ -431,7 +453,8 @@ type DashboardStore interface {
 	GetDashboards(ctx context.Context, args DashboardQueryArgs) ([]*types.Dashboard, error)
 	CreateDashboard(ctx context.Context, args CreateDashboardArgs) (_ *types.Dashboard, err error)
 	UpdateDashboard(ctx context.Context, args UpdateDashboardArgs) (_ *types.Dashboard, err error)
-	DeleteDashboard(ctx context.Context, id int64) error
+	DeleteDashboard(ctx context.Context, id int) error
+	RestoreDashboard(ctx context.Context, id int) error
 	HasDashboardPermission(ctx context.Context, dashboardId []int, userIds []int, orgIds []int) (bool, error)
 }
 

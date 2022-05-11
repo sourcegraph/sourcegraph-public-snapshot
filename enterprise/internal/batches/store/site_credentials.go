@@ -13,7 +13,7 @@ import (
 )
 
 func (s *Store) CreateSiteCredential(ctx context.Context, c *btypes.SiteCredential, credential auth.Authenticator) (err error) {
-	ctx, endObservation := s.operations.createSiteCredential.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.createSiteCredential.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	if c.CreatedAt.IsZero() {
@@ -65,7 +65,7 @@ func createSiteCredentialQuery(c *btypes.SiteCredential) *sqlf.Query {
 }
 
 func (s *Store) DeleteSiteCredential(ctx context.Context, id int64) (err error) {
-	ctx, endObservation := s.operations.deleteSiteCredential.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.deleteSiteCredential.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("ID", int(id)),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -106,7 +106,7 @@ type GetSiteCredentialOpts struct {
 }
 
 func (s *Store) GetSiteCredential(ctx context.Context, opts GetSiteCredentialOpts) (sc *btypes.SiteCredential, err error) {
-	ctx, endObservation := s.operations.getSiteCredential.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.getSiteCredential.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("ID", int(opts.ID)),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -168,7 +168,7 @@ type ListSiteCredentialsOpts struct {
 }
 
 func (s *Store) ListSiteCredentials(ctx context.Context, opts ListSiteCredentialsOpts) (cs []*btypes.SiteCredential, next int64, err error) {
-	ctx, endObservation := s.operations.listSiteCredentials.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.listSiteCredentials.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	q := listSiteCredentialsQuery(opts)
@@ -231,7 +231,7 @@ func listSiteCredentialsQuery(opts ListSiteCredentialsOpts) *sqlf.Query {
 }
 
 func (s *Store) UpdateSiteCredential(ctx context.Context, c *btypes.SiteCredential) (err error) {
-	ctx, endObservation := s.operations.updateSiteCredential.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.updateSiteCredential.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("ID", int(c.ID)),
 	}})
 	defer endObservation(1, observation.Args{})

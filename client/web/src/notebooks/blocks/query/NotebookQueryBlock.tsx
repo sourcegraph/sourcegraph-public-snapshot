@@ -53,7 +53,7 @@ interface NotebookQueryBlockProps
     hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
 }
 
-export const NotebookQueryBlock: React.FunctionComponent<NotebookQueryBlockProps> = React.memo(
+export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren<NotebookQueryBlockProps>> = React.memo(
     ({
         id,
         input,

@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"runtime"
@@ -11,7 +10,8 @@ import (
 
 	"github.com/urfave/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/download"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -28,8 +28,8 @@ Requires a local copy of the 'sourcegraph/sourcegraph' codebase.`,
 		if _, err := updateToPrebuiltSG(cmd.Context); err != nil {
 			return err
 		}
-		writeSuccessLinef("sg has been updated!")
-		stdout.Out.Write("To see what's new, run 'sg version changelog'.")
+		std.Out.WriteSuccessf("sg has been updated!")
+		std.Out.Write("To see what's new, run 'sg version changelog'.")
 		return nil
 	},
 }
@@ -55,43 +55,12 @@ func updateToPrebuiltSG(ctx context.Context) (string, error) {
 	location = strings.ReplaceAll(location, "/tag/", "/download/")
 	downloadURL := fmt.Sprintf("%s/sg_%s_%s", location, runtime.GOOS, runtime.GOARCH)
 
-	tmpDir, err := os.MkdirTemp("", "sg")
-	if err != nil {
-		return "", err
-	}
-	defer func() {
-		os.RemoveAll(tmpDir)
-	}()
-
-	resp, err = http.Get(downloadURL)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return "", errors.Newf("downloading sg: status %d", resp.StatusCode)
-	}
-
-	tmpSgPath := tmpDir + "/sg"
-	f, err := os.Create(tmpSgPath)
-	if err != nil {
-		return "", err
-	}
-
-	_, err = io.Copy(f, resp.Body)
-	if err != nil {
-		return "", err
-	}
-	err = os.Chmod(tmpSgPath, 0755)
-	if err != nil {
-		return "", err
-	}
-
 	currentExecPath, err := os.Executable()
 	if err != nil {
 		return "", err
 	}
-
-	return currentExecPath, os.Rename(tmpSgPath, currentExecPath)
+	if err := download.Exeuctable(downloadURL, currentExecPath); err != nil {
+		return "", err
+	}
+	return currentExecPath, nil
 }

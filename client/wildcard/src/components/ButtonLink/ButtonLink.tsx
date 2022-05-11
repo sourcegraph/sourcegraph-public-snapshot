@@ -123,3 +123,5 @@ export const ButtonLink = React.forwardRef((props, reference) => {
         </Button>
     )
 }) as ForwardReferenceComponent<typeof AnchorLink, ButtonLinkProps>
+
+ButtonLink.displayName = 'ButtonLink'

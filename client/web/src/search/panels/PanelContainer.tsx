@@ -2,6 +2,8 @@ import * as React from 'react'
 
 import classNames from 'classnames'
 
+import { H2, H4 } from '@sourcegraph/wildcard'
+
 import styles from './PanelContainer.module.scss'
 
 interface Props {
@@ -18,7 +20,7 @@ interface Props {
     insideTabPanel?: boolean
 }
 
-export const PanelContainer: React.FunctionComponent<Props> = ({
+export const PanelContainer: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     title,
     state,
     loadingContent = <></>,
@@ -31,7 +33,9 @@ export const PanelContainer: React.FunctionComponent<Props> = ({
     <div className={classNames(className, styles.panelContainer, 'd-flex', 'flex-column')}>
         {insideTabPanel !== true ? (
             <div className={classNames('d-flex border-bottom', styles.header)}>
-                <h4 className={styles.headerText}>{title}</h4>
+                <H4 as={H2} className={styles.headerText}>
+                    {title}
+                </H4>
                 {actionButtons}
             </div>
         ) : (

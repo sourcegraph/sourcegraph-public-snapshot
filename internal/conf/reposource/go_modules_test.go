@@ -2,8 +2,10 @@ package reposource
 
 import (
 	"fmt"
+	"sort"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/mod/module"
@@ -78,4 +80,45 @@ func TestParseGoDependencyFromRepoName(t *testing.T) {
 			assert.Equal(t, fmt.Sprint(err), test.err)
 		})
 	}
+}
+
+func TestGoDependency_Less(t *testing.T) {
+	deps := []*GoDependency{
+		parseGoDependencyOrPanic(t, "github.com/gorilla/mux@v1.1"),
+		parseGoDependencyOrPanic(t, "github.com/go-kit/kit@v0.1.0"),
+		parseGoDependencyOrPanic(t, "github.com/gorilla/mux@v1.8.0"),
+		parseGoDependencyOrPanic(t, "github.com/go-kit/kit@v0.12.0"),
+		parseGoDependencyOrPanic(t, "github.com/gorilla/mux@v1.6.1"),
+		parseGoDependencyOrPanic(t, "github.com/gorilla/mux@v1.8.0-beta"),
+	}
+
+	sort.Slice(deps, func(i, j int) bool {
+		return deps[i].Less(deps[j])
+	})
+
+	want := []string{
+		"github.com/gorilla/mux@v1.8.0",
+		"github.com/gorilla/mux@v1.8.0-beta",
+		"github.com/gorilla/mux@v1.6.1",
+		"github.com/gorilla/mux@v1.1",
+		"github.com/go-kit/kit@v0.12.0",
+		"github.com/go-kit/kit@v0.1.0",
+	}
+
+	have := make([]string, 0, len(deps))
+	for _, d := range deps {
+		have = append(have, d.PackageManagerSyntax())
+	}
+
+	if diff := cmp.Diff(want, have); diff != "" {
+		t.Fatalf("mismatch (-want, +have): %s", diff)
+	}
+}
+
+func parseGoDependencyOrPanic(t *testing.T, value string) *GoDependency {
+	dependency, err := ParseGoDependency(value)
+	if err != nil {
+		t.Fatalf("error=%s", err)
+	}
+	return dependency
 }

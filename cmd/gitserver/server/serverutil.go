@@ -103,7 +103,7 @@ type tlsConfig struct {
 	SSLCAInfo string
 }
 
-var tlsExternal = conf.Cached(func() interface{} {
+var tlsExternal = conf.Cached(func() any {
 	exp := conf.ExperimentalFeatures()
 	c := exp.TlsExternal
 
@@ -533,7 +533,7 @@ func (w *progressWriter) Bytes() []byte {
 }
 
 // mapToLog15Ctx translates a map to log15 context fields.
-func mapToLog15Ctx(m map[string]interface{}) []interface{} {
+func mapToLog15Ctx(m map[string]any) []any {
 	// sort so its stable
 	keys := make([]string, len(m))
 	i := 0
@@ -542,85 +542,13 @@ func mapToLog15Ctx(m map[string]interface{}) []interface{} {
 		i++
 	}
 	sort.Strings(keys)
-	ctx := make([]interface{}, len(m)*2)
+	ctx := make([]any, len(m)*2)
 	for i, k := range keys {
 		j := i * 2
 		ctx[j] = k
 		ctx[j+1] = m[k]
 	}
 	return ctx
-}
-
-// updateFileIfDifferent will atomically update the file if the contents are
-// different. If it does an update ok is true.
-func updateFileIfDifferent(path string, content []byte) (bool, error) {
-	current, err := os.ReadFile(path)
-	if err != nil && !os.IsNotExist(err) {
-		// If the file doesn't exist we write a new file.
-		return false, err
-	}
-
-	if bytes.Equal(current, content) {
-		return false, nil
-	}
-
-	// We write to a tempfile first to do the atomic update (via rename)
-	f, err := os.CreateTemp(filepath.Dir(path), filepath.Base(path))
-	if err != nil {
-		return false, err
-	}
-	// We always remove the tempfile. In the happy case it won't exist.
-	defer os.Remove(f.Name())
-
-	if n, err := f.Write(content); err != nil {
-		f.Close()
-		return false, err
-	} else if n != len(content) {
-		f.Close()
-		return false, io.ErrShortWrite
-	}
-
-	// fsync to ensure the disk contents are written. This is important, since
-	// we are not guaranteed that os.Rename is recorded to disk after f's
-	// contents.
-	if err := f.Sync(); err != nil {
-		f.Close()
-		return false, err
-	}
-	if err := f.Close(); err != nil {
-		return false, err
-	}
-	return true, renameAndSync(f.Name(), path)
-}
-
-// renameAndSync will do an os.Rename followed by fsync to ensure the rename
-// is recorded
-func renameAndSync(oldpath, newpath string) error {
-	err := os.Rename(oldpath, newpath)
-	if err != nil {
-		return err
-	}
-
-	oldparent, newparent := filepath.Dir(oldpath), filepath.Dir(newpath)
-	err = fsync(newparent)
-	if oldparent != newparent {
-		if err1 := fsync(oldparent); err == nil {
-			err = err1
-		}
-	}
-	return err
-}
-
-func fsync(path string) error {
-	f, err := os.Open(path)
-	if err != nil {
-		return err
-	}
-	err = f.Sync()
-	if err1 := f.Close(); err == nil {
-		err = err1
-	}
-	return err
 }
 
 // isPaused returns true if a file "SG_PAUSE" is present in dir. If the file is

@@ -87,12 +87,12 @@ func TestJsonUnmarshal(t *testing.T) {
 		"hello": "world",
 	}`
 
-	var actual interface{}
+	var actual any
 	if err := jsonUnmarshal(input, &actual); err != nil {
 		t.Fatalf("unexpected error unmarshalling payload: %s", err)
 	}
 
-	if diff := cmp.Diff(map[string]interface{}{"hello": "world"}, actual); diff != "" {
+	if diff := cmp.Diff(map[string]any{"hello": "world"}, actual); diff != "" {
 		t.Errorf("unexpected configuration (-want +got):\n%s", diff)
 	}
 }

@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 
@@ -18,7 +20,7 @@ func TestSearchIndexEnabled(t *testing.T) {
 		name string
 		sc   *Unified
 		env  []string
-		want interface{}
+		want any
 	}{{
 		name: "SearchIndex defaults to true in docker",
 		sc:   &Unified{},
@@ -208,6 +210,58 @@ func TestGitMaxConcurrentClones(t *testing.T) {
 			if got, want := GitMaxConcurrentClones(), test.want; got != want {
 				t.Fatalf("GitMaxConcurrentClones() = %v, want %v", got, want)
 			}
+		})
+	}
+}
+
+func TestAuthLockout(t *testing.T) {
+	defer Mock(nil)
+
+	tests := []struct {
+		name string
+		mock *schema.AuthLockout
+		want *schema.AuthLockout
+	}{
+		{
+			name: "missing entire config",
+			mock: nil,
+			want: &schema.AuthLockout{
+				ConsecutivePeriod:      3600,
+				FailedAttemptThreshold: 5,
+				LockoutPeriod:          1800,
+			},
+		},
+		{
+			name: "missing all fields",
+			mock: &schema.AuthLockout{},
+			want: &schema.AuthLockout{
+				ConsecutivePeriod:      3600,
+				FailedAttemptThreshold: 5,
+				LockoutPeriod:          1800,
+			},
+		},
+		{
+			name: "missing some fields",
+			mock: &schema.AuthLockout{
+				ConsecutivePeriod: 7200,
+			},
+			want: &schema.AuthLockout{
+				ConsecutivePeriod:      7200,
+				FailedAttemptThreshold: 5,
+				LockoutPeriod:          1800,
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			Mock(&Unified{
+				SiteConfiguration: schema.SiteConfiguration{
+					AuthLockout: test.mock,
+				},
+			})
+
+			got := AuthLockout()
+			assert.Equal(t, test.want, got)
 		})
 	}
 }

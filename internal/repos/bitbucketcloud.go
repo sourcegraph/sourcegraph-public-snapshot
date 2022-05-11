@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
@@ -25,8 +26,10 @@ type BitbucketCloudSource struct {
 	svc     *types.ExternalService
 	config  *schema.BitbucketCloudConnection
 	exclude excludeFunc
-	client  *bitbucketcloud.Client
+	client  bitbucketcloud.Client
 }
+
+var _ UserSource = &BitbucketCloudSource{}
 
 // NewBitbucketCloudSource returns a new BitbucketCloudSource from the given external service.
 func NewBitbucketCloudSource(svc *types.ExternalService, cf *httpcli.Factory) (*BitbucketCloudSource, error) {
@@ -219,4 +222,32 @@ func (s *BitbucketCloudSource) listAllRepos(ctx context.Context, results chan So
 			}
 		}
 	}
+}
+
+// WithAuthenticator returns a copy of the original Source configured to use
+// the given authenticator, provided that authenticator type is supported by
+// the code host.
+func (s *BitbucketCloudSource) WithAuthenticator(a auth.Authenticator) (Source, error) {
+	switch a.(type) {
+	case
+		*auth.BasicAuth,
+		*auth.BasicAuthWithSSH:
+		break
+
+	default:
+		return nil, newUnsupportedAuthenticatorError("BitbucketCloudSource", a)
+	}
+
+	sc := *s
+	sc.client = sc.client.WithAuthenticator(a)
+
+	return &sc, nil
+
+}
+
+// ValidateAuthenticator validates the currently set authenticator is usable.
+// Returns an error, when validating the Authenticator yielded an error.
+func (s *BitbucketCloudSource) ValidateAuthenticator(ctx context.Context) error {
+	_, err := s.client.CurrentUser(ctx)
+	return err
 }

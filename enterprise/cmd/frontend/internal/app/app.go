@@ -317,12 +317,6 @@ func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githu
 			return
 		}
 
-		err = db.ExternalServices().Upsert(r.Context(), svc)
-		if err != nil {
-			responseServerError("Failed to upsert code host connection", err)
-			return
-		}
-
 		http.Redirect(w, r, fmt.Sprintf("/organizations/%s/settings/code-hosts", org.Name), http.StatusFound)
 	})
 }

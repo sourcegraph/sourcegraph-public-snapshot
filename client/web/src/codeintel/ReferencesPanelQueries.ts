@@ -239,6 +239,18 @@ export const CODE_INTEL_SEARCH_QUERY = gql`
     }
 `
 
+export const LOCAL_CODE_INTEL_QUERY = gql`
+    query LocalCodeIntel($repository: String!, $commit: String!, $path: String!) {
+        repository(name: $repository) {
+            commit(rev: $commit) {
+                blob(path: $path) {
+                    localCodeIntel
+                }
+            }
+        }
+    }
+`
+
 export const RESOLVE_REPO_REVISION_BLOB_QUERY = gql`
     fragment RepoRevisionBlobFields on Repository {
         id
