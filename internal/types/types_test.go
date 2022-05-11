@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// TestExternalServiceFields confirms will fail if a new field is added to
+// TestExternalServiceFields will fail if a new field is added to
 // ExternalService to ensure that we update ToAPIService
 func TestExternalServiceFields(t *testing.T) {
 	v := reflect.ValueOf(ExternalService{})
