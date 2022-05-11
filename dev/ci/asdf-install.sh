@@ -53,3 +53,5 @@ else
   unset AWS_SHARED_CREDENTIALS_FILE
   unset AWS_CONFIG_FILE
 fi
+
+asdf reshim

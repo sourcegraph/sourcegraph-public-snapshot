@@ -134,7 +134,6 @@ fi
 # run the currently checked out version of the Go unit tests.
 echo "--- asdf install checked out tools"
 ./dev/ci/asdf-install.sh
-asdf reshim
 go version
 
 echo "--- run tests"
