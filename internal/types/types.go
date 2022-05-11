@@ -568,8 +568,26 @@ func (e *ExternalService) With(opts ...func(*ExternalService)) *ExternalService 
 	return clone
 }
 
-// ExternalServices is an utility type with
-// convenience methods for operating on lists of ExternalServices.
+func (e *ExternalService) ToAPIService() api.ExternalService {
+	return api.ExternalService{
+		ID:              e.ID,
+		Kind:            e.Kind,
+		DisplayName:     e.DisplayName,
+		Config:          e.Config,
+		CreatedAt:       e.CreatedAt,
+		UpdatedAt:       e.UpdatedAt,
+		DeletedAt:       e.DeletedAt,
+		LastSyncAt:      e.LastSyncAt,
+		NextSyncAt:      e.NextSyncAt,
+		NamespaceUserID: e.NamespaceUserID,
+		NamespaceOrgID:  e.NamespaceOrgID,
+		Unrestricted:    e.Unrestricted,
+		CloudDefault:    e.CloudDefault,
+	}
+}
+
+// ExternalServices is a utility type with convenience methods for operating on
+// lists of ExternalServices.
 type ExternalServices []*ExternalService
 
 // IDs returns the list of ids from all ExternalServices.
