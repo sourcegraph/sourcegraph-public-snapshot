@@ -23,7 +23,7 @@ mutation AddExternalService($input: AddExternalServiceInput!) {
 	}
 }
 `
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"input": input,
 	}
 	var resp struct {
@@ -57,7 +57,7 @@ mutation DeleteExternalService($externalService: ID!) {
 	}
 }
 `
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"externalService": id,
 	}
 	err := c.GraphQL("", query, variables, nil)

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/urfave/cli/v2"
@@ -70,7 +69,7 @@ func mainErr(ctx context.Context, args []string) error {
 
 func newRunnerFactory() func(ctx context.Context, schemaNames []string) (cliutil.Runner, error) {
 	observationContext := &observation.Context{
-		Logger:     log15.Root(),
+		Logger:     sglog.Scoped("runner", ""),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}

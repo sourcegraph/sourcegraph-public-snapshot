@@ -114,7 +114,13 @@ func (cm *CommitMatch) Select(path filter.SelectPath) Match {
 				return cm
 			}
 			if len(fields) == 2 {
-				return selectCommitDiffKind(cm, fields[1])
+				filteredMatch := selectCommitDiffKind(cm.DiffPreview, fields[1])
+				if filteredMatch == nil {
+					// no result after selecting, propagate no result.
+					return nil
+				}
+				cm.DiffPreview = filteredMatch
+				return cm
 			}
 			return nil
 		}
@@ -211,11 +217,7 @@ func modifiedLinesExist(lines []string, prefix string) bool {
 // applies to the modified lines selected by `field`. If there are no matches
 // (i.e., no highlight information) coresponding to modified lines, it is
 // removed from the result set (returns nil).
-func selectCommitDiffKind(c *CommitMatch, field string) Match {
-	diff := c.DiffPreview
-	if diff == nil {
-		return nil // Not a diff result.
-	}
+func selectCommitDiffKind(diffPreview *MatchedString, field string) *MatchedString {
 	var prefix string
 	if field == "added" {
 		prefix = "+"
@@ -223,19 +225,19 @@ func selectCommitDiffKind(c *CommitMatch, field string) Match {
 	if field == "removed" {
 		prefix = "-"
 	}
-	if len(diff.MatchedRanges) == 0 {
+	if len(diffPreview.MatchedRanges) == 0 {
 		// No highlights, implying no pattern was specified. Filter by
 		// whether there exists lines corresponding to additions or
 		// removals.
-		if modifiedLinesExist(strings.Split(diff.Content, "\n"), prefix) {
-			return c
+		if modifiedLinesExist(strings.Split(diffPreview.Content, "\n"), prefix) {
+			return diffPreview
 		}
 		return nil
 	}
-	diffHighlights := selectModifiedLines(strings.Split(diff.Content, "\n"), diff.MatchedRanges, prefix)
+	diffHighlights := selectModifiedLines(strings.Split(diffPreview.Content, "\n"), diffPreview.MatchedRanges, prefix)
 	if len(diffHighlights) > 0 {
-		c.DiffPreview.MatchedRanges = diffHighlights
-		return c
+		diffPreview.MatchedRanges = diffHighlights
+		return diffPreview
 	}
 	return nil // No matching lines.
 }

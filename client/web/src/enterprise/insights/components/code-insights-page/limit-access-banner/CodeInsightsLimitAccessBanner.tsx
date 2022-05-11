@@ -8,7 +8,9 @@ import styles from './CodeInsightsLimitAccessBanner.module.scss'
 
 interface CodeInsightsLimitAccessBannerProps extends React.HTMLAttributes<HTMLDivElement> {}
 
-export const CodeInsightsLimitAccessBanner: React.FunctionComponent<CodeInsightsLimitAccessBannerProps> = props => (
+export const CodeInsightsLimitAccessBanner: React.FunctionComponent<
+    React.PropsWithChildren<CodeInsightsLimitAccessBannerProps>
+> = props => (
     <div {...props} className={classNames(styles.banner, props.className)}>
         <div className={styles.content}>
             <Badge className={classNames('mb-2', styles.badge)}>LIMITED ACCESS</Badge>

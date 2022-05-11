@@ -25,7 +25,7 @@ type CreateOptions struct {
 }
 
 func (s *Service) CreateSandbox(ctx context.Context, opts CreateOptions) (_ *Sandbox, err error) {
-	_, endObservation := s.operations.createSandbox.With(ctx, &err, observation.Args{})
+	_, _, endObservation := s.operations.createSandbox.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	state := lua.NewState(lua.Options{

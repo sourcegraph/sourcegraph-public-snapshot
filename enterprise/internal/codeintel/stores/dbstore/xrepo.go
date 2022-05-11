@@ -22,7 +22,7 @@ var DefinitionDumpsLimit, _ = strconv.ParseInt(env.Get("PRECISE_CODE_INTEL_DEFIN
 
 // DefinitionDumps returns the set of dumps that define at least one of the given monikers.
 func (s *Store) DefinitionDumps(ctx context.Context, monikers []precise.QualifiedMonikerData) (_ []Dump, err error) {
-	ctx, trace, endObservation := s.operations.definitionDumps.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := s.operations.definitionDumps.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("numMonikers", len(monikers)),
 		log.String("monikers", monikersToString(monikers)),
 	}})
@@ -127,7 +127,7 @@ rank() OVER (
 // it can be seen from the given index; otherwise, an index is visible if it can be seen from the tip of
 // the default branch of its own repository.
 func (s *Store) ReferenceIDsAndFilters(ctx context.Context, repositoryID int, commit string, monikers []precise.QualifiedMonikerData, limit, offset int) (_ PackageReferenceScanner, _ int, err error) {
-	ctx, trace, endObservation := s.operations.referenceIDsAndFilters.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := s.operations.referenceIDsAndFilters.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 		log.String("commit", commit),
 		log.Int("numMonikers", len(monikers)),
@@ -238,7 +238,7 @@ func monikersToString(vs []precise.QualifiedMonikerData) string {
 // scanner will return nulls for the Filter field as it's expected to be unused (and rather heavy) by
 // callers.
 func (s *Store) ReferencesForUpload(ctx context.Context, uploadID int) (_ PackageReferenceScanner, err error) {
-	ctx, endObservation := s.operations.referencesForUpload.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.referencesForUpload.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("uploadID", uploadID),
 	}})
 	defer endObservation(1, observation.Args{})

@@ -2,6 +2,17 @@
   "extends": ["@sourcegraph/stylelint-config"],
   "plugins": ["@sourcegraph/stylelint-plugin-sourcegraph"],
   "rules": {
-    "filenames/match-regex": [2, "^.+\\.module(\\.scss)$"]
+    "@sourcegraph/filenames-match-regex": [
+      true,
+      {
+        "regexp": "^.+\\.module(\\.scss)$"
+      }
+    ],
+    "@sourcegraph/no-restricted-imports": [
+      true,
+      {
+        "paths": ["bootstrap*"]
+      }
+    ]
   }
 }

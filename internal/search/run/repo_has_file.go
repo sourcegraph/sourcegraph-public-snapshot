@@ -19,7 +19,7 @@ import (
 
 var MockReposContainingPath func() ([]*result.FileMatch, error)
 
-func (s *RepoSearch) reposContainingPath(ctx context.Context, clients job.RuntimeClients, repos []*search.RepositoryRevisions, pattern string) ([]*result.FileMatch, error) {
+func (s *RepoSearchJob) reposContainingPath(ctx context.Context, clients job.RuntimeClients, repos []*search.RepositoryRevisions, pattern string) ([]*result.FileMatch, error) {
 	if MockReposContainingPath != nil {
 		return MockReposContainingPath()
 	}
@@ -78,12 +78,12 @@ func (s *RepoSearch) reposContainingPath(ctx context.Context, clients job.Runtim
 				resultTypes = resultTypes.With(result.TypeFromString[t])
 			}
 		}
-		zoektQuery, err := search.QueryToZoektQuery(b, resultTypes, &s.Features, typ)
+		zoektQuery, err := zoektutil.QueryToZoektQuery(b, resultTypes, &s.Features, typ)
 		if err != nil {
 			return nil, err
 		}
 
-		zoektJob := &zoektutil.ZoektRepoSubsetSearch{
+		zoektJob := &zoektutil.ZoektRepoSubsetSearchJob{
 			Repos:          indexed,
 			Query:          zoektQuery,
 			Typ:            search.TextRequest,
@@ -101,7 +101,7 @@ func (s *RepoSearch) reposContainingPath(ctx context.Context, clients job.Runtim
 
 	// Concurrently run searcher for all unindexed repos regardless whether text or regexp.
 	g.Go(func() error {
-		searcherJob := &searcher.Searcher{
+		searcherJob := &searcher.SearcherJob{
 			PatternInfo:     searcherArgs.PatternInfo,
 			Repos:           unindexed,
 			Indexed:         false,
@@ -127,7 +127,7 @@ func (s *RepoSearch) reposContainingPath(ctx context.Context, clients job.Runtim
 
 // reposToAdd determines which repositories should be included in the result set based on whether they fit in the subset
 // of repostiories specified in the query's `repohasfile` and `-repohasfile` fields if they exist.
-func (s *RepoSearch) reposToAdd(ctx context.Context, clients job.RuntimeClients, repos []*search.RepositoryRevisions) ([]*search.RepositoryRevisions, error) {
+func (s *RepoSearchJob) reposToAdd(ctx context.Context, clients job.RuntimeClients, repos []*search.RepositoryRevisions) ([]*search.RepositoryRevisions, error) {
 	// matchCounts will contain the count of repohasfile patterns that matched.
 	// For negations, we will explicitly set this to -1 if it matches.
 	matchCounts := make(map[api.RepoID]int)

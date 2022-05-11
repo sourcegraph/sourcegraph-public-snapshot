@@ -56,7 +56,9 @@ export interface BulkOperationNodeProps {
     node: BulkOperationFields
 }
 
-export const BulkOperationNode: React.FunctionComponent<BulkOperationNodeProps> = ({ node }) => (
+export const BulkOperationNode: React.FunctionComponent<React.PropsWithChildren<BulkOperationNodeProps>> = ({
+    node,
+}) => (
     <>
         <div
             className={classNames(

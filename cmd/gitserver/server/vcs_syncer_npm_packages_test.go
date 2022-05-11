@@ -19,7 +19,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
+	livedependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
@@ -43,16 +43,14 @@ const (
 )
 
 func TestNoMaliciousFilesNpm(t *testing.T) {
-	dir, err := os.MkdirTemp("", "")
-	assert.Nil(t, err)
-	defer os.RemoveAll(dir)
+	dir := t.TempDir()
 
 	extractPath := path.Join(dir, "extracted")
 	assert.Nil(t, os.Mkdir(extractPath, os.ModePerm))
 
 	tgz := bytes.NewReader(createMaliciousTgz(t))
 
-	err = decompressTgz(tgz, extractPath)
+	err := decompressTgz(tgz, extractPath)
 	assert.Nil(t, err) // Malicious files are skipped
 
 	dirEntries, err := os.ReadDir(extractPath)
@@ -78,12 +76,7 @@ func createMaliciousTgz(t *testing.T) []byte {
 }
 
 func TestNpmCloneCommand(t *testing.T) {
-	dir, err := os.MkdirTemp("", "")
-	require.NoError(t, err)
-
-	t.Cleanup(func() {
-		require.NoError(t, os.RemoveAll(dir))
-	})
+	dir := t.TempDir()
 
 	tgz1 := createTgz(t, []fileInfo{{exampleJSFilepath, []byte(exampleJSFileContents)}})
 	tgz2 := createTgz(t, []fileInfo{{exampleTSFilepath, []byte(exampleTSFileContents)}})
@@ -107,7 +100,7 @@ func TestNpmCloneCommand(t *testing.T) {
 		},
 	}
 
-	depsSvc := live.TestService(database.NewDB(dbtest.NewDB(t)), nil)
+	depsSvc := livedependencies.TestService(database.NewDB(dbtest.NewDB(t)), livedependencies.NewSyncer())
 
 	s := NewNpmPackagesSyncer(
 		schema.NpmPackagesConnection{Dependencies: []string{}},
@@ -243,7 +236,7 @@ func (info *fileInfo) Size() int64        { return int64(len(info.contents)) }
 func (info *fileInfo) Mode() fs.FileMode  { return 0600 }
 func (info *fileInfo) ModTime() time.Time { return time.Unix(0, 0) }
 func (info *fileInfo) IsDir() bool        { return false }
-func (info *fileInfo) Sys() interface{}   { return nil }
+func (info *fileInfo) Sys() any           { return nil }
 
 func TestDecompressTgz(t *testing.T) {
 	table := []struct {
@@ -260,9 +253,7 @@ func TestDecompressTgz(t *testing.T) {
 
 	for i, testData := range table {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			dir, err := os.MkdirTemp("", "")
-			require.NoError(t, err)
-			t.Cleanup(func() { require.NoError(t, os.RemoveAll(dir)) })
+			dir := t.TempDir()
 
 			var fileInfos []fileInfo
 			for _, path := range testData.paths {
@@ -320,9 +311,7 @@ func testDecompressTgzNoOOBImpl(t *testing.T, entries []tar.Header) {
 
 	reader := bytes.NewReader(buffer.Bytes())
 
-	outDir, err := os.MkdirTemp("", "decompress-oobfix-")
-	require.Nil(t, err)
-	defer os.RemoveAll(outDir)
+	outDir := t.TempDir()
 
 	require.NotPanics(t, func() {
 		decompressTgz(reader, outDir)

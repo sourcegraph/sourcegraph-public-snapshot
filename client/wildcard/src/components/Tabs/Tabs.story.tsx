@@ -8,19 +8,19 @@ import { Tabs, Tab, TabList, TabPanel, TabPanels, TabsProps } from '.'
 export const TabsStory: Story<TabsProps & { actions: boolean }> = args => {
     usePrependStyles('branded-story-styles', brandedStyles)
 
-    const { actions, lazy, behavior, size, ...props } = args
-
     return (
-        <Tabs lazy={lazy} behavior={behavior} size={size} {...props}>
-            <TabList actions={actions ? <div>custom component rendered</div> : null}>
-                <Tab>Tab 1</Tab>
-                <Tab>Tab 2</Tab>
-            </TabList>
-            <TabPanels>
-                <TabPanel>Panel 1</TabPanel>
-                <TabPanel>Panel 2</TabPanel>
-            </TabPanels>
-        </Tabs>
+        <>
+            <h1>Tabs</h1>
+            <Container title="Standard">
+                <TabsVariant {...args} />
+            </Container>
+            <Container width={300} title="Limited width">
+                <TabsVariant {...args} />
+            </Container>
+            <Container width={300} title="Scrolled tab list">
+                <TabsVariant {...args} longTabList="scroll" />
+            </Container>
+        </>
     )
 }
 
@@ -67,5 +67,36 @@ const config: Meta = {
         },
     },
 }
+
+const TabsVariant: Story<TabsProps & { actions: boolean }> = args => {
+    const { actions, lazy, behavior, size, ...props } = args
+    return (
+        <Tabs lazy={lazy} behavior={behavior} size={size} {...props}>
+            <TabList actions={actions ? <div>custom component rendered</div> : null}>
+                <Tab>Tab 1</Tab>
+                <Tab>Tab 2</Tab>
+                <Tab>Third tab</Tab>
+                <Tab>Fourth tab</Tab>
+                <Tab>Fifth tab</Tab>
+                <Tab>Sixth tab</Tab>
+            </TabList>
+            <TabPanels>
+                <TabPanel>Panel 1</TabPanel>
+                <TabPanel>Panel 2</TabPanel>
+                <TabPanel>Panel 3</TabPanel>
+                <TabPanel>Panel 4</TabPanel>
+                <TabPanel>Panel 5</TabPanel>
+                <TabPanel>Panel 6</TabPanel>
+            </TabPanels>
+        </Tabs>
+    )
+}
+
+const Container: React.FunctionComponent<{ title: string; width?: number }> = ({ title, width, children }) => (
+    <>
+        <h2 style={{ margin: '30px 0 10px 0' }}>{title}</h2>
+        <div style={{ width: width ? `${width}px` : undefined }}>{children}</div>
+    </>
+)
 
 export default config

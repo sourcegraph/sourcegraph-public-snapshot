@@ -62,11 +62,7 @@ func (jvmPackagesSyncer) ParseDependency(dep string) (reposource.PackageDependen
 }
 
 func (jvmPackagesSyncer) ParseDependencyFromRepoName(repoName string) (reposource.PackageDependency, error) {
-	mod, err := reposource.ParseMavenModule(repoName)
-	if err != nil {
-		return nil, err
-	}
-	return &reposource.MavenDependency{MavenModule: mod}, nil
+	return reposource.ParseMavenDependencyFromRepoName(repoName)
 }
 
 func (s *jvmPackagesSyncer) Get(ctx context.Context, name, version string) (reposource.PackageDependency, error) {

@@ -10,7 +10,11 @@ export interface GitTypeSelectorProps {
     disabled: boolean
 }
 
-export const GitTypeSelector: FunctionComponent<GitTypeSelectorProps> = ({ type, setType, disabled }) => (
+export const GitTypeSelector: FunctionComponent<React.PropsWithChildren<GitTypeSelectorProps>> = ({
+    type,
+    setType,
+    disabled,
+}) => (
     <>
         <Select
             id="type"

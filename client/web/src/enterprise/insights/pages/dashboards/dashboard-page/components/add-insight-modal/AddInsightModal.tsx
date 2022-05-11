@@ -21,7 +21,7 @@ export interface AddInsightModalProps {
     onClose: () => void
 }
 
-export const AddInsightModal: React.FunctionComponent<AddInsightModalProps> = props => {
+export const AddInsightModal: React.FunctionComponent<React.PropsWithChildren<AddInsightModalProps>> = props => {
     const { dashboard, onClose } = props
     const { getAccessibleInsightsList, assignInsightsToDashboard } = useContext(CodeInsightsBackendContext)
 

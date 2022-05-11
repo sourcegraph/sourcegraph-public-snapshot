@@ -35,7 +35,7 @@ export function useTourQueryParameters(): ReturnType<typeof parseURIMarkers> | u
 /**
  * Component to track TourTaskStepType.completeAfterEvents and show info box for steps.
  */
-export const TourAgent: React.FunctionComponent<TourAgentProps> = React.memo(
+export const TourAgent: React.FunctionComponent<React.PropsWithChildren<TourAgentProps>> = React.memo(
     ({ tasks, telemetryService, onStepComplete }) => {
         // Agent 1: Track completion
         useEffect(() => {

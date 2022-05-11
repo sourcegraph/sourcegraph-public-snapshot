@@ -13,6 +13,9 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/lint"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/lint/linters"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -33,18 +36,44 @@ var lintCommand = &cli.Command{
 			Destination: &lintGenerateAnnotations,
 		},
 	},
+	Before: func(cmd *cli.Context) error {
+		// If more than 1 target is requested, hijack subcommands by setting it to nil
+		// so that the main lint command can handle it the run.
+		if cmd.Args().Len() > 1 {
+			cmd.App.Commands = nil
+		}
+		return nil
+	},
 	Action: func(cmd *cli.Context) error {
-		if cmd.NArg() > 0 {
-			writeFailureLinef("unrecognized command %q provided", cmd.Args().First())
-			return flag.ErrHelp
-		}
 		var fns []lint.Runner
-		for _, c := range allLintTargets {
-			fns = append(fns, c.Linters...)
+		targets := cmd.Args().Slice()
+
+		if len(targets) == 0 {
+			// If no args provided, run all
+			for _, c := range linters.Targets {
+				fns = append(fns, c.Linters...)
+				targets = append(targets, c.Name)
+			}
+		} else {
+			// Otherwise run requested set
+			allLintTargetsMap := make(map[string][]lint.Runner, len(linters.Targets))
+			for _, c := range linters.Targets {
+				allLintTargetsMap[c.Name] = c.Linters
+			}
+			for _, t := range targets {
+				runners, ok := allLintTargetsMap[t]
+				if !ok {
+					writeFailureLinef("unrecognized target %q provided", t)
+					return flag.ErrHelp
+				}
+				fns = append(fns, runners...)
+			}
 		}
+
+		writeFingerPointingLinef("Running checks from targets: %s", strings.Join(targets, ", "))
 		return runCheckScriptsAndReport(cmd.Context, fns...)
 	},
-	Subcommands: allLintTargets.Commands(),
+	Subcommands: lintTargets(linters.Targets).Commands(),
 }
 
 // runCheckScriptsAndReport concurrently runs all fns and report as each check finishes. Returns an error
@@ -55,6 +84,13 @@ func runCheckScriptsAndReport(ctx context.Context, fns ...lint.Runner) error {
 		return err
 	}
 
+	// Get currently checked out branch so linters can optimize
+	branch, err := run.TrimResult(run.GitCmd("branch", "--show-current"))
+	if err != nil {
+		return err
+	}
+	repoState := &repo.State{Branch: branch}
+
 	// We need the Verbose flag to print above the pending indicator.
 	out := output.NewOutput(os.Stdout, output.OutputOpts{
 		ForceColor: true,
@@ -62,7 +98,9 @@ func runCheckScriptsAndReport(ctx context.Context, fns ...lint.Runner) error {
 		Verbose:    true,
 	})
 
-	// Spawn a goroutine for each check and increment count to report completion.
+	// Spawn a goroutine for each check and increment count to report completion. We use
+	// a single start time for the sake of simplicity.
+	start := time.Now()
 	var count int64
 	total := len(fns)
 	pending := out.Pending(output.Linef("", output.StylePending, "Running linters (done: 0/%d)", total))
@@ -70,8 +108,8 @@ func runCheckScriptsAndReport(ctx context.Context, fns ...lint.Runner) error {
 	reportsCh := make(chan *lint.Report)
 	wg.Add(total)
 	for _, fn := range fns {
-		go func(fn func(context.Context) *lint.Report) {
-			reportsCh <- fn(ctx)
+		go func(fn lint.Runner) {
+			reportsCh <- fn(ctx, repoState)
 			wg.Done()
 		}(fn)
 	}
@@ -85,14 +123,15 @@ func runCheckScriptsAndReport(ctx context.Context, fns ...lint.Runner) error {
 	var messages []string
 	for report := range reportsCh {
 		count++
-		printLintReport(pending, report)
+		printLintReport(pending, start, report)
 		pending.Updatef("Running linters (done: %d/%d)", count, total)
 		if report.Err != nil {
 			messages = append(messages, report.Header)
 			hasErr = true
 		}
 	}
-	pending.Complete(output.Linef("", output.StyleBold, "Done running linters."))
+
+	pending.Complete(output.Linef(output.EmojiFingerPointRight, output.StyleBold, "Done running linters."))
 
 	// return the final error, if any
 	if hasErr {
@@ -101,11 +140,12 @@ func runCheckScriptsAndReport(ctx context.Context, fns ...lint.Runner) error {
 	return nil
 }
 
-func printLintReport(pending output.Pending, report *lint.Report) {
-	msg := fmt.Sprintf("%s (%ds)", report.Header, report.Duration/time.Second)
+func printLintReport(pending output.Pending, start time.Time, report *lint.Report) {
+	msg := fmt.Sprintf("%s (%ds)", report.Header, time.Since(start)/time.Second)
 	if report.Err != nil {
 		pending.VerboseLine(output.Linef(output.EmojiFailure, output.StyleWarning, msg))
-		pending.Verbose(report.Output)
+		pending.Verbose(report.Summary())
+
 		if lintGenerateAnnotations {
 			repoRoot, err := root.RepositoryRoot()
 			if err != nil {
@@ -113,7 +153,7 @@ func printLintReport(pending output.Pending, report *lint.Report) {
 			}
 			annotationPath := filepath.Join(repoRoot, "annotations")
 			os.MkdirAll(annotationPath, os.ModePerm)
-			if err := os.WriteFile(filepath.Join(annotationPath, report.Header), []byte(report.Output+"\n"), os.ModePerm); err != nil {
+			if err := os.WriteFile(filepath.Join(annotationPath, report.Header), []byte(report.Summary()+"\n"), os.ModePerm); err != nil {
 				return // do nothing
 			}
 		}
@@ -127,6 +167,7 @@ type lintTargets []lint.Target
 // Commands converts all lint targets to CLI commands
 func (lt lintTargets) Commands() (cmds []*cli.Command) {
 	for _, c := range lt {
+		c := c // local reference
 		cmds = append(cmds, &cli.Command{
 			Name:  c.Name,
 			Usage: c.Help,
@@ -137,6 +178,13 @@ func (lt lintTargets) Commands() (cmds []*cli.Command) {
 				}
 				return runCheckScriptsAndReport(cmd.Context, c.Linters...)
 			},
+			// Completions to chain multiple commands
+			BashComplete: completeOptions(func() (options []string) {
+				for _, c := range lt {
+					options = append(options, c.Name)
+				}
+				return options
+			}),
 		})
 	}
 	return cmds

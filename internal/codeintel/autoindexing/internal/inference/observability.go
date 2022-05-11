@@ -9,6 +9,7 @@ import (
 
 type operations struct {
 	createSandbox              *observation.Operation
+	inferIndexJobHints         *observation.Operation
 	inferIndexJobs             *observation.Operation
 	invokeLinearizedRecognizer *observation.Operation
 	invokeRecognizers          *observation.Operation
@@ -35,6 +36,7 @@ func newOperations(observationContext *observation.Context) *operations {
 
 	return &operations{
 		createSandbox:              op("createSandbox"),
+		inferIndexJobHints:         op("InferIndexJobHints"),
 		inferIndexJobs:             op("InferIndexJobs"),
 		invokeLinearizedRecognizer: op("invokeLinearizedRecognizer"),
 		invokeRecognizers:          op("invokeRecognizers"),

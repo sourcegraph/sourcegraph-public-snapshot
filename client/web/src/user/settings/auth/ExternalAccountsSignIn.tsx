@@ -29,7 +29,7 @@ interface GitLabExternalData {
 
 export interface NormalizedMinAccount {
     name: string
-    icon: React.ComponentType<{ className?: string }>
+    icon: React.ComponentType<React.PropsWithChildren<{ className?: string }>>
     // some data may be missing if account is not setup
     external?: {
         id: string
@@ -101,7 +101,7 @@ const getNormalizedAccount = (accounts: ExternalAccountsByType, kind: ExternalSe
     return normalizedAccount
 }
 
-export const ExternalAccountsSignIn: React.FunctionComponent<Props> = ({
+export const ExternalAccountsSignIn: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     supported,
     accounts,
     authProviders,

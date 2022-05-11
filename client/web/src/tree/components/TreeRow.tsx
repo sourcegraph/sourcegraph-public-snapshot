@@ -10,7 +10,7 @@ type TreeRowProps = HTMLAttributes<HTMLTableRowElement> & {
     isExpanded?: boolean
 }
 
-export const TreeRow: React.FunctionComponent<TreeRowProps> = ({
+export const TreeRow: React.FunctionComponent<React.PropsWithChildren<TreeRowProps>> = ({
     isActive,
     isSelected,
     isExpanded,

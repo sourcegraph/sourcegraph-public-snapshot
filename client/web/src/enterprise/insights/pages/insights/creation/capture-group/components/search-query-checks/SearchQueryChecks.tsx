@@ -19,7 +19,10 @@ interface SearchQueryChecksProps {
     }
 }
 
-const CheckListItem: React.FunctionComponent<{ valid: true | false | undefined }> = ({ children, valid }) => {
+const CheckListItem: React.FunctionComponent<React.PropsWithChildren<{ valid: true | false | undefined }>> = ({
+    children,
+    valid,
+}) => {
     if (valid === true) {
         return (
             <>
@@ -46,7 +49,9 @@ const CheckListItem: React.FunctionComponent<{ valid: true | false | undefined }
     )
 }
 
-export const SearchQueryChecks: React.FunctionComponent<SearchQueryChecksProps> = ({ checks }) => (
+export const SearchQueryChecks: React.FunctionComponent<React.PropsWithChildren<SearchQueryChecksProps>> = ({
+    checks,
+}) => (
     <div className={classNames(styles.checksWrapper)}>
         <ul className={classNames(styles.checks)}>
             <li>

@@ -28,10 +28,9 @@ interface SearchHelpDropdownButtonProps extends TelemetryProps {
  * A dropdown button that shows a menu with reference documentation for Sourcegraph search query
  * syntax.
  */
-export const SearchHelpDropdownButton: React.FunctionComponent<SearchHelpDropdownButtonProps> = ({
-    isSourcegraphDotCom,
-    telemetryService,
-}) => {
+export const SearchHelpDropdownButton: React.FunctionComponent<
+    React.PropsWithChildren<SearchHelpDropdownButtonProps>
+> = ({ isSourcegraphDotCom, telemetryService }) => {
     const [isOpen, setIsOpen] = useState(false)
     const toggleIsOpen = useCallback(() => setIsOpen(!isOpen), [isOpen])
     const onQueryDocumentationLinkClicked = useCallback(() => {

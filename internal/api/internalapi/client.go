@@ -141,11 +141,11 @@ func (c *internalClient) PhabricatorRepoCreate(ctx context.Context, repo api.Rep
 	}, nil)
 }
 
-var MockExternalServiceConfigs func(kind string, result interface{}) error
+var MockExternalServiceConfigs func(kind string, result any) error
 
 // ExternalServiceConfigs fetches external service configs of a single kind into the result parameter,
 // which should be a slice of the expected config type.
-func (c *internalClient) ExternalServiceConfigs(ctx context.Context, kind string, result interface{}) error {
+func (c *internalClient) ExternalServiceConfigs(ctx context.Context, kind string, result any) error {
 	if MockExternalServiceConfigs != nil {
 		return MockExternalServiceConfigs(kind, result)
 	}
@@ -163,16 +163,16 @@ func (c *internalClient) ExternalServicesList(
 	return extsvcs, c.postInternal(ctx, "external-services/list", &opts, &extsvcs)
 }
 
-func (c *internalClient) LogTelemetry(ctx context.Context, reqBody interface{}) error {
+func (c *internalClient) LogTelemetry(ctx context.Context, reqBody any) error {
 	return c.postInternal(ctx, "telemetry", reqBody, nil)
 }
 
 // postInternal sends an HTTP post request to the internal route.
-func (c *internalClient) postInternal(ctx context.Context, route string, reqBody, respBody interface{}) error {
+func (c *internalClient) postInternal(ctx context.Context, route string, reqBody, respBody any) error {
 	return c.meteredPost(ctx, "/.internal/"+route, reqBody, respBody)
 }
 
-func (c *internalClient) meteredPost(ctx context.Context, route string, reqBody, respBody interface{}) error {
+func (c *internalClient) meteredPost(ctx context.Context, route string, reqBody, respBody any) error {
 	start := time.Now()
 	statusCode, err := c.post(ctx, route, reqBody, respBody)
 	d := time.Since(start)
@@ -188,7 +188,7 @@ func (c *internalClient) meteredPost(ctx context.Context, route string, reqBody,
 // post sends an HTTP post request to the provided route. If reqBody is
 // non-nil it will Marshal it as JSON and set that as the Request body. If
 // respBody is non-nil the response body will be JSON unmarshalled to resp.
-func (c *internalClient) post(ctx context.Context, route string, reqBody, respBody interface{}) (int, error) {
+func (c *internalClient) post(ctx context.Context, route string, reqBody, respBody any) (int, error) {
 	var data []byte
 	if reqBody != nil {
 		var err error

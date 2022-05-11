@@ -17,7 +17,7 @@ import (
 // of monikers are attached to a single range. The order of the output slice is "outside-in", so that
 // the range attached to earlier monikers enclose the range attached to later monikers.
 func (s *Store) MonikersByPosition(ctx context.Context, bundleID int, path string, line, character int) (_ [][]precise.MonikerData, err error) {
-	ctx, trace, endObservation := s.operations.monikersByPosition.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := s.operations.monikersByPosition.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.String("path", path),
 		log.Int("line", line),
@@ -74,7 +74,7 @@ LIMIT 1
 // whose scheme+identifier matches one of the given monikers. This method also returns the size of the
 // complete result set to aid in pagination.
 func (s *Store) BulkMonikerResults(ctx context.Context, tableName string, uploadIDs []int, monikers []precise.MonikerData, limit, offset int) (_ []Location, _ int, err error) {
-	ctx, trace, endObservation := s.operations.bulkMonikerResults.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := s.operations.bulkMonikerResults.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("tableName", tableName),
 		log.Int("numUploadIDs", len(uploadIDs)),
 		log.String("uploadIDs", intsToString(uploadIDs)),

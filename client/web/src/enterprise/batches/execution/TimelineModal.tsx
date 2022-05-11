@@ -22,7 +22,10 @@ export interface TimelineModalProps {
     onCancel: () => void
 }
 
-export const TimelineModal: React.FunctionComponent<TimelineModalProps> = ({ node, onCancel }) => (
+export const TimelineModal: React.FunctionComponent<React.PropsWithChildren<TimelineModalProps>> = ({
+    node,
+    onCancel,
+}) => (
     <Modal className={styles.modalBody} onDismiss={onCancel} aria-label="Execution timeline">
         <div className="d-flex justify-content-between">
             <h3 className="mb-0">Execution timeline</h3>
@@ -50,7 +53,12 @@ interface ExecutionTimelineProps {
     expandStage?: string
 }
 
-const ExecutionTimeline: React.FunctionComponent<ExecutionTimelineProps> = ({ node, className, now, expandStage }) => {
+const ExecutionTimeline: React.FunctionComponent<React.PropsWithChildren<ExecutionTimelineProps>> = ({
+    node,
+    className,
+    now,
+    expandStage,
+}) => {
     const stages = useMemo(
         () => [
             { icon: <TimerSandIcon />, text: 'Queued', date: node.queuedAt, className: 'bg-success' },

@@ -16,7 +16,7 @@ export interface LoadingSpinnerProps {
     inline?: boolean
 }
 
-export const LoadingSpinner: React.FunctionComponent<LoadingSpinnerProps> = ({
+export const LoadingSpinner: React.FunctionComponent<React.PropsWithChildren<LoadingSpinnerProps>> = ({
     inline = true,
     className,
     ...props

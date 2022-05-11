@@ -20,8 +20,7 @@ import (
 )
 
 func TestPrepareZip(t *testing.T) {
-	s, cleanup := tmpStore(t)
-	defer cleanup()
+	s := tmpStore(t)
 
 	wantRepo := api.RepoName("foo")
 	wantCommit := api.CommitID("deadbeefdeadbeefdeadbeefdeadbeefdeadbeef")
@@ -86,8 +85,7 @@ func TestPrepareZip(t *testing.T) {
 
 func TestPrepareZip_fetchTarFail(t *testing.T) {
 	fetchErr := errors.New("test")
-	s, cleanup := tmpStore(t)
-	defer cleanup()
+	s := tmpStore(t)
 	s.FetchTar = func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
 		return nil, fetchErr
 	}
@@ -99,8 +97,7 @@ func TestPrepareZip_fetchTarFail(t *testing.T) {
 
 func TestPrepareZip_fetchTarReaderErr(t *testing.T) {
 	fetchErr := errors.New("test")
-	s, cleanup := tmpStore(t)
-	defer cleanup()
+	s := tmpStore(t)
 	s.FetchTar = func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
 		r, w := io.Pipe()
 		w.CloseWithError(fetchErr)
@@ -113,8 +110,7 @@ func TestPrepareZip_fetchTarReaderErr(t *testing.T) {
 }
 
 func TestPrepareZip_errHeader(t *testing.T) {
-	s, cleanup := tmpStore(t)
-	defer cleanup()
+	s := tmpStore(t)
 	s.FetchTar = func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
 		buf := new(bytes.Buffer)
 		w := tar.NewWriter(buf)
@@ -262,14 +258,11 @@ func tarArchive(dir string) (*tar.Reader, error) {
 	return tar.NewReader(&b), nil
 }
 
-func tmpStore(t *testing.T) (*Store, func()) {
-	d, err := os.MkdirTemp("", "store_test")
-	if err != nil {
-		t.Fatal(err)
-	}
+func tmpStore(t *testing.T) *Store {
+	d := t.TempDir()
 	return &Store{
 		Path: d,
-	}, func() { os.RemoveAll(d) }
+	}
 }
 
 func emptyTar(t *testing.T) io.ReadCloser {

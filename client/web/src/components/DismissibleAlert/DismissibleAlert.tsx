@@ -22,7 +22,7 @@ export interface DismissibleAlertProps extends AlertProps {
  * alert will never be shown again after it is dismissed. Otherwise, it will be shown
  * whenever unmounted and remounted.
  */
-export const DismissibleAlert: React.FunctionComponent<DismissibleAlertProps> = ({
+export const DismissibleAlert: React.FunctionComponent<React.PropsWithChildren<DismissibleAlertProps>> = ({
     partialStorageKey,
     className,
     testId,

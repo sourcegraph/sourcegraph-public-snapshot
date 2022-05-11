@@ -54,9 +54,9 @@ func ParseTemplate(input txtypes.Templates) (*txtypes.ParsedTemplates, error) {
 	return &txtypes.ParsedTemplates{Subj: st, Text: tt, Html: ht}, nil
 }
 
-func renderTemplate(t *txtypes.ParsedTemplates, data interface{}, m *email.Email) error {
+func renderTemplate(t *txtypes.ParsedTemplates, data any, m *email.Email) error {
 	render := func(tmpl interface {
-		Execute(io.Writer, interface{}) error
+		Execute(io.Writer, any) error
 	}) ([]byte, error) {
 		var buf bytes.Buffer
 		if err := tmpl.Execute(&buf, data); err != nil {
@@ -81,7 +81,7 @@ func renderTemplate(t *txtypes.ParsedTemplates, data interface{}, m *email.Email
 }
 
 var (
-	textFuncMap = map[string]interface{}{
+	textFuncMap = map[string]any{
 		// Removes HTML tags (which are valid Markdown) from the source, for display in a text-only
 		// setting.
 		"markdownToText": func(markdownSource string) string {
@@ -90,7 +90,7 @@ var (
 		},
 	}
 
-	htmlFuncMap = map[string]interface{}{
+	htmlFuncMap = map[string]any{
 		// Renders Markdown for display in an HTML email.
 		"markdownToSafeHTML": func(markdownSource string) htmltemplate.HTML {
 			unsafeHTML := gfm.Markdown([]byte(markdownSource))

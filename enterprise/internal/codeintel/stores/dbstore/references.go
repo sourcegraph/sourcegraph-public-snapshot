@@ -13,7 +13,7 @@ import (
 
 // UpdatePackageReferences inserts reference data tied to the given upload.
 func (s *Store) UpdatePackageReferences(ctx context.Context, dumpID int, references []precise.PackageReference) (err error) {
-	ctx, endObservation := s.operations.updatePackageReferences.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.updatePackageReferences.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("numReferences", len(references)),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -67,8 +67,8 @@ SELECT %s, source.scheme, source.name, source.version, source.filter
 FROM t_lsif_references source
 `
 
-func loadReferencesChannel(references []precise.PackageReference) <-chan []interface{} {
-	ch := make(chan []interface{}, len(references))
+func loadReferencesChannel(references []precise.PackageReference) <-chan []any {
+	ch := make(chan []any, len(references))
 
 	go func() {
 		defer close(ch)
@@ -80,7 +80,7 @@ func loadReferencesChannel(references []precise.PackageReference) <-chan []inter
 				filter = []byte{}
 			}
 
-			ch <- []interface{}{r.Scheme, r.Name, r.Version, filter}
+			ch <- []any{r.Scheme, r.Name, r.Version, filter}
 		}
 	}()
 

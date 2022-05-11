@@ -10,7 +10,7 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { Container, Icon, PageHeader } from '@sourcegraph/wildcard'
+import { Checkbox, Container, Icon, PageHeader } from '@sourcegraph/wildcard'
 
 import { CreateSavedSearchResult, CreateSavedSearchVariables, SavedSearchFields } from '../../../graphql-operations'
 import { WebviewPageProps } from '../../platform/context'
@@ -76,7 +76,9 @@ const createSavedSearchQuery = gql`
     ${savedSearchFragment}
 `
 
-export const SavedSearchCreateForm: React.FunctionComponent<SavedSearchCreateFormProps> = props => {
+export const SavedSearchCreateForm: React.FunctionComponent<
+    React.PropsWithChildren<SavedSearchCreateFormProps>
+> = props => {
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<any>()
     const onSubmit: SavedSearchFormProps['onSubmit'] = fields => {
@@ -121,7 +123,7 @@ export const SavedSearchCreateForm: React.FunctionComponent<SavedSearchCreateFor
     )
 }
 
-const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = props => {
+const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<SavedSearchFormProps>> = props => {
     const [values, setValues] = useState<Omit<SavedSearchFields, 'id' | 'namespace'>>(() => ({
         description: props.defaultValues?.description || '',
         query: props.defaultValues?.query || '',
@@ -215,16 +217,15 @@ const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = props => 
                                 Email notifications
                             </label>
                             <div aria-labelledby="saved-search-form-email-notifications">
-                                <label>
-                                    <input
-                                        type="checkbox"
-                                        name="Notify owner"
-                                        className={styles.checkbox}
-                                        defaultChecked={notify}
-                                        onChange={createInputChangeHandler('notify')}
-                                    />{' '}
-                                    <span>Send email notifications to my email</span>
-                                </label>
+                                <Checkbox
+                                    name="Notify owner"
+                                    id="SendEmailNotificationsCheck"
+                                    wrapperClassName="mb-2"
+                                    className={classNames(styles.checkbox, 'mr-0')}
+                                    defaultChecked={notify}
+                                    onChange={createInputChangeHandler('notify')}
+                                    label={<span className="ml-2">Send email notifications to my email</span>}
+                                />
                             </div>
                         </div>
                     )}

@@ -14,7 +14,7 @@ interface DeleteModalProps extends Pick<CodeMonitorFormProps, 'history' | 'codeM
     deleteCodeMonitor: (id: string) => Observable<void>
 }
 
-export const DeleteMonitorModal: React.FunctionComponent<DeleteModalProps> = ({
+export const DeleteMonitorModal: React.FunctionComponent<React.PropsWithChildren<DeleteModalProps>> = ({
     history,
     isOpen,
     deleteCodeMonitor,

@@ -206,7 +206,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	// End time is when PR1 was merged
 	end := parseJSONTime(t, "2019-10-07T13:13:45Z")
 
-	input := map[string]interface{}{
+	input := map[string]any{
 		"batchChange": string(marshalBatchChangeID(batchChange.ID)),
 		"from":        start,
 		"to":          end,

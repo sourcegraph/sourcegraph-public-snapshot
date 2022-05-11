@@ -43,9 +43,6 @@ export const ENVIRONMENT_CONFIG = {
     // Is reporting to Datadog/Sentry enabled.
     ENABLE_MONITORING: getEnvironmentBoolean('ENABLE_MONITORING'),
 
-    // Is event logging with `TelemetryService` enabled.
-    ENABLE_TELEMETRY: getEnvironmentBoolean('ENABLE_TELEMETRY'),
-
     /**
      * ----------------------------------------
      * Local environment configuration.

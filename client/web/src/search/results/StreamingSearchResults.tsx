@@ -178,7 +178,9 @@ function useCtaAlert(
     }
 }
 
-export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResultsProps> = props => {
+export const StreamingSearchResults: React.FunctionComponent<
+    React.PropsWithChildren<StreamingSearchResultsProps>
+> = props => {
     const {
         streamSearch,
         location,

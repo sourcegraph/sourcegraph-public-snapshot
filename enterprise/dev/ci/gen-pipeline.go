@@ -199,7 +199,7 @@ func renderPipelineDocs(w io.Writer) {
 	}
 }
 
-func printStepSummary(w io.Writer, indent string, rawStep interface{}) {
+func printStepSummary(w io.Writer, indent string, rawStep any) {
 	switch v := rawStep.(type) {
 	case *buildkite.Step:
 		fmt.Fprintf(w, "%s- %s\n", indent, trimEmoji(v.Label))

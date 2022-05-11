@@ -48,7 +48,7 @@ export function useLivePreview<D>(input: Input<D>): Output<D> {
         }
 
         return () => {
-            hasRequestCanceled = false
+            hasRequestCanceled = true
         }
     }, [debouncedInput, lastPreviewVersion])
 

@@ -62,7 +62,7 @@ const footerLinkSections: { name: string; links: { name: string; to: string; eve
 ]
 
 export const SearchPageFooter: React.FunctionComponent<
-    ThemeProps & TelemetryProps & { isSourcegraphDotCom: boolean }
+    React.PropsWithChildren<ThemeProps & TelemetryProps & { isSourcegraphDotCom: boolean }>
 > = ({ isLightTheme, telemetryService, isSourcegraphDotCom }) => {
     const assetsRoot = window.context?.assetsRoot || ''
 
@@ -107,7 +107,7 @@ export const SearchPageFooter: React.FunctionComponent<
                     >
                         <img
                             src={`${assetsRoot}/img/devtooltime-logo.svg`}
-                            alt="DevToolTime logo"
+                            alt=""
                             className={styles.devToolTimeImage}
                         />
                         <div className={styles.devToolTimeText}>

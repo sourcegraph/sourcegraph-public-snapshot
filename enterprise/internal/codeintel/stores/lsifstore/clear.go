@@ -26,7 +26,7 @@ var tableNames = []string{
 }
 
 func (s *Store) Clear(ctx context.Context, bundleIDs ...int) (err error) {
-	ctx, trace, endObservation := s.operations.clear.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := s.operations.clear.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("numBundleIDs", len(bundleIDs)),
 		log.String("bundleIDs", intsToString(bundleIDs)),
 	}})

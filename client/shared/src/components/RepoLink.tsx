@@ -19,7 +19,7 @@ interface Props {
     onClick?: React.MouseEventHandler<HTMLElement>
 }
 
-export const RepoLink: React.FunctionComponent<Props> = ({
+export const RepoLink: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     repoName: fullRepoName,
     to,
     className,

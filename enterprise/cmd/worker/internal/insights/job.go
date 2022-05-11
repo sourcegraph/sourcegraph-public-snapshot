@@ -47,7 +47,7 @@ func (s *insightsJob) Routines(ctx context.Context, logger log.Logger) ([]gorout
 		return nil, err
 	}
 
-	return background.GetBackgroundJobs(context.Background(), mainAppDb, insightsDB), nil
+	return background.GetBackgroundJobs(context.Background(), logger, mainAppDb, insightsDB), nil
 }
 
 func NewInsightsJob() job.Job {

@@ -25,3 +25,4 @@
 - [How to remove a repository from Sourcegraph](remove-repo.md)
 - [How to address common monorepo problems](monorepo-issues.md)
 - [How to Set a password for Redis using a ConfigMap](redis_configmap.md)
+- [How to import a set of internal repositories to Sourcegraph](internal_github_repos.md)

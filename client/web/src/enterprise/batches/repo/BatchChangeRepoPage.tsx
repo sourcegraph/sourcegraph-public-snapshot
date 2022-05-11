@@ -39,7 +39,7 @@ interface BatchChangeRepoPageProps extends ThemeProps {
     queryExternalChangesetWithFileDiffs?: typeof _queryExternalChangesetWithFileDiffs
 }
 
-export const BatchChangeRepoPage: React.FunctionComponent<BatchChangeRepoPageProps> = ({
+export const BatchChangeRepoPage: React.FunctionComponent<React.PropsWithChildren<BatchChangeRepoPageProps>> = ({
     repo,
     queryRepoBatchChangeStats = _queryRepoBatchChangeStats,
     ...context
@@ -89,7 +89,7 @@ interface StatsBarProps {
     stats: RepoBatchChangeStats['changesetsStats']
 }
 
-const StatsBar: React.FunctionComponent<StatsBarProps> = ({
+const StatsBar: React.FunctionComponent<React.PropsWithChildren<StatsBarProps>> = ({
     stats: { total, draft, open, unpublished, closed, merged },
 }) => (
     <div className="d-flex flex-wrap align-items-center">

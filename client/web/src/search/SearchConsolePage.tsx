@@ -61,7 +61,7 @@ const options: Monaco.editor.IStandaloneEditorConstructionOptions = {
     cursorWidth: 1,
 }
 
-export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> = props => {
+export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<SearchConsolePageProps>> = props => {
     const {
         globbing,
         streamSearch,

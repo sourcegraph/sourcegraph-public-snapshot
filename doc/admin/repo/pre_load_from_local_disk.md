@@ -6,12 +6,12 @@
 
 You can use repositories that are already cloned to disk on the host machine to speed up Sourcegraph's cloning. This is useful for very large repositories on which cloning exceeds the resources available to the Docker container. This is not intended for individual users who want to set up a personal Sourcegraph instance just for searching code on their own local disk; we recommend either using a CLI tool such as ripgrep instead, or simply connecting Sourcegraph to your code host with a limited set of repositories.
 
-The steps documented here are intended for [single-container Sourcegraph instances](../install/docker/index.md). The general process also applies for other deployment methods, with some differences:
+The steps documented here are intended for [single-container Sourcegraph instances](../deploy/docker-single-container/index.md). The general process also applies for other deployment methods, with some differences:
 
-- [Docker Compose](../install/docker-compose/index.md): you need to perform these steps on the relevant [Docker Compose volumes](../install/docker-compose/operations.md#manage-storage).
-- [Kubernetes](../install/kubernetes/index.md): you need to perform these steps on the underlying node hosting the `gitserver` pod, or on the persistent volume used by the `gitserver` deployment.
+- [Docker Compose](../deploy/docker-compose/index.md): you need to perform these steps on the relevant [Docker Compose volumes](../deploy/docker-compose/index.md#manage-storage).
+- [Kubernetes](../deploy/kubernetes/index.md): you need to perform these steps on the underlying node hosting the `gitserver` pod, or on the persistent volume used by the `gitserver` deployment.
 
-> WARNING: For [single-container Sourcegraph instances](../install/docker/index.md), Sourcegraph will alter the contents and structure of files under `/var/opt/sourcegraph` (Sourcegraph’s data volume inside the container), so do not mount repositories in use by other processes under that directory.
+> WARNING: For [single-container Sourcegraph instances](../deploy/docker-single-container/index.md), Sourcegraph will alter the contents and structure of files under `/var/opt/sourcegraph` (Sourcegraph’s data volume inside the container), so do not mount repositories in use by other processes under that directory.
 
 If you're using the default `--volume $HOME/.sourcegraph/data:/var/opt/sourcegraph` argument to run the `sourcegraph/server` Docker image, and the repository you want to add is named `github.com/my/repo`, then follow these steps:
 

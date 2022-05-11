@@ -78,6 +78,8 @@ func (s *SlackClient) PostMessage(b bytes.Buffer) error {
 
 // TemplateData represents all the data required to correctly render the template
 type TemplateData struct {
+	VersionAge string
+
 	Version     string
 	Environment string
 
@@ -95,14 +97,14 @@ func createMessage(td TemplateData) (bytes.Buffer, error) {
 	var msg bytes.Buffer
 
 	var slackTemplate = `:warning: *{{.Environment}}*'s version may be out of date.
-Current version: ` + "`{{ .Version }}`" + ` was committed *{{.Drift}} hours ago*. 
+Current version: ` + "`{{ .Version }}`" + ` was committed *{{ .VersionAge }} hours ago*. 
 
 *Alerts*:
 {{- if not .InAllowedCommits}} 
 • ` + "`{{.Version}}`" + ` was not found in the last ` + "`{{.NumCommits}}`" + ` commits.
 {{- end}}
 {{- if .CommitTooOld}}
-• ` + "`{{.Version}}`" + ` was committed ` + "`{{.Drift}}`" + ` hours ago and exceeds the threshold of ` + "`{{.Threshold}}`" + `
+• ` + "`{{.Version}}`" + ` is ` + "`{{.Drift}}`" + ` older than the tip of ` + "`main`" + `which exceeds the threshold of ` + "`{{.Threshold}}`" + `
 {{- end}}
 
 Check <https://github.com/sourcegraph/deploy-sourcegraph-cloud/pulls|deploy-sourcegraph-cloud> to see if a release is blocked.

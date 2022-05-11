@@ -188,7 +188,7 @@ func (f *RepoContainsPredicate) Plan(parent Basic) (Plan, error) {
 	}
 
 	nodes = append(nodes, nonPredicateRepos(parent)...)
-	return ToPlan(Dnf(nodes))
+	return BuildPlan(nodes), nil
 }
 
 /* repo:contains.content(pattern) */
@@ -265,7 +265,7 @@ func (f *RepoContainsCommitAfterPredicate) Plan(parent Basic) (Plan, error) {
 	})
 
 	nodes = append(nodes, nonPredicateRepos(parent)...)
-	return ToPlan(Dnf(nodes))
+	return BuildPlan(nodes), nil
 }
 
 // RepoDependenciesPredicate represents the `repo:dependencies(regex@rev)` predicate,
@@ -330,7 +330,7 @@ func (f *FileContainsContentPredicate) Plan(parent Basic) (Plan, error) {
 	})
 
 	nodes = append(nodes, nonPredicateRepos(parent)...)
-	return ToPlan(Dnf(nodes))
+	return BuildPlan(nodes), nil
 }
 
 // nonPredicateRepos returns the repo nodes in a query that aren't predicates,

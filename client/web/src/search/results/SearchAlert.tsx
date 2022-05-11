@@ -16,7 +16,7 @@ interface SearchAlertProps {
     children?: ReactNode[]
 }
 
-export const SearchAlert: React.FunctionComponent<SearchAlertProps> = ({
+export const SearchAlert: React.FunctionComponent<React.PropsWithChildren<SearchAlertProps>> = ({
     alert,
     patternType,
     caseSensitive,

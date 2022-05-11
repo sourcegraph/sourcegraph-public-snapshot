@@ -2,7 +2,6 @@ package repos
 
 import (
 	"context"
-	"os"
 	"sort"
 	"testing"
 
@@ -10,7 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
+	livedependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -81,7 +80,7 @@ func TestGetNpmDependencyRepos(t *testing.T) {
 func testDependenciesService(ctx context.Context, t *testing.T, dependencyRepos []dependencies.Repo) *dependencies.Service {
 	t.Helper()
 	db := database.NewDB(dbtest.NewDB(t))
-	depsSvc := live.TestService(db, nil)
+	depsSvc := livedependencies.TestService(db, nil)
 
 	_, err := depsSvc.UpsertDependencyRepos(ctx, dependencyRepos)
 	if err != nil {
@@ -121,10 +120,6 @@ var testDependencyRepos = func() []dependencies.Repo {
 func TestListRepos(t *testing.T) {
 	ctx := context.Background()
 	depsSvc := testDependenciesService(ctx, t, testDependencyRepos)
-
-	dir, err := os.MkdirTemp("", "")
-	require.Nil(t, err)
-	defer os.RemoveAll(dir)
 
 	svc := types.ExternalService{
 		Kind:   extsvc.KindNpmPackages,

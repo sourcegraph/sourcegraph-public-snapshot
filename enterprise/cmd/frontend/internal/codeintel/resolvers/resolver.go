@@ -190,7 +190,7 @@ const slowQueryResolverRequestThreshold = time.Second
 // given repository, commit, and path, then constructs a new query resolver instance which
 // can be used to answer subsequent queries.
 func (r *resolver) QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataArgs) (_ QueryResolver, err error) {
-	ctx, _, endObservation := observeResolver(ctx, &err, "QueryResolver", r.operations.queryResolver, slowQueryResolverRequestThreshold, observation.Args{
+	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.queryResolver, slowQueryResolverRequestThreshold, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", int(args.Repo.ID)),
 			log.String("commit", string(args.Commit)),

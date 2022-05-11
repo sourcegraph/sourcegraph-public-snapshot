@@ -90,7 +90,7 @@ func (p *progressTTY) Verbose(s string) {
 	}
 }
 
-func (p *progressTTY) Verbosef(format string, args ...interface{}) {
+func (p *progressTTY) Verbosef(format string, args ...any) {
 	if p.o.opts.Verbose {
 		p.Writef(format, args...)
 	}
@@ -112,7 +112,7 @@ func (p *progressTTY) Write(s string) {
 	p.draw()
 }
 
-func (p *progressTTY) Writef(format string, args ...interface{}) {
+func (p *progressTTY) Writef(format string, args ...any) {
 	p.o.Lock()
 	defer p.o.Unlock()
 

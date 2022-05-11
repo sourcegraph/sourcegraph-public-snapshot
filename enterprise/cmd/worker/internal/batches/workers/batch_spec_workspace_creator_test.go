@@ -193,7 +193,7 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 	executionResult := &execution.Result{
 		Diff:         testDiff,
 		ChangedFiles: &git.Changes{Modified: []string{"README.md", "urls.txt"}},
-		Outputs:      map[string]interface{}{},
+		Outputs:      map[string]any{},
 	}
 
 	createBatchSpec := func(t *testing.T, noCache bool) *btypes.BatchSpec {

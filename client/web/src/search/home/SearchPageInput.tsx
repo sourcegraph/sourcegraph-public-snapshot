@@ -67,7 +67,7 @@ const queryStateSelector = (
     patternType: state.searchPatternType,
 })
 
-export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) => {
+export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Props>> = (props: Props) => {
     /** The value entered by the user in the query input */
     const [userQueryState, setUserQueryState] = useState({
         query: props.queryPrefix ? props.queryPrefix : '',
