@@ -15,13 +15,18 @@ const getClasses = (selected: SeriesSortOptionsInput, value: SeriesSortOptionsIn
 }
 
 interface SortFilterSeriesPanelProps {
-    value: SeriesDisplayOptionsInputRequired
+    selectedOption: SeriesSortOptionsInput
+    limit: number
     onChange: (parameter: SeriesDisplayOptionsInputRequired) => void
 }
 
-export const SortFilterSeriesPanel: React.FunctionComponent<SortFilterSeriesPanelProps> = ({ value, onChange }) => {
-    const [selected, setSelected] = useState(value.sortOptions)
-    const [seriesCount, setSeriesCount] = useState(value.limit)
+export const SortFilterSeriesPanel: React.FunctionComponent<SortFilterSeriesPanelProps> = ({
+    selectedOption,
+    limit,
+    onChange,
+}) => {
+    const [selected, setSelected] = useState(selectedOption)
+    const [seriesCount, setSeriesCount] = useState(limit)
 
     const handleToggle = (value: SeriesSortOptionsInput): void => {
         setSelected(value)
@@ -41,14 +46,14 @@ export const SortFilterSeriesPanel: React.FunctionComponent<SortFilterSeriesPane
                     <small className={styles.label}>Sort by result count</small>
                     <ButtonGroup className={styles.toggleGroup}>
                         <ToggleButton
-                            selected={selected}
+                            selected={selectedOption}
                             value={{ mode: SeriesSortMode.RESULT_COUNT, direction: SeriesSortDirection.DESC }}
                             onClick={handleToggle}
                         >
                             Highest
                         </ToggleButton>
                         <ToggleButton
-                            selected={selected}
+                            selected={selectedOption}
                             value={{ mode: SeriesSortMode.RESULT_COUNT, direction: SeriesSortDirection.ASC }}
                             onClick={handleToggle}
                         >
@@ -60,14 +65,14 @@ export const SortFilterSeriesPanel: React.FunctionComponent<SortFilterSeriesPane
                     <small className={styles.label}>Sort by name</small>
                     <ButtonGroup className={styles.toggleGroup}>
                         <ToggleButton
-                            selected={selected}
+                            selected={selectedOption}
                             value={{ mode: SeriesSortMode.LEXICOGRAPHICAL, direction: SeriesSortDirection.ASC }}
                             onClick={handleToggle}
                         >
                             A-Z
                         </ToggleButton>
                         <ToggleButton
-                            selected={selected}
+                            selected={selectedOption}
                             value={{ mode: SeriesSortMode.LEXICOGRAPHICAL, direction: SeriesSortDirection.DESC }}
                             onClick={handleToggle}
                         >
@@ -79,14 +84,14 @@ export const SortFilterSeriesPanel: React.FunctionComponent<SortFilterSeriesPane
                     <small className={styles.label}>Sort by date added</small>
                     <ButtonGroup className={styles.toggleGroup}>
                         <ToggleButton
-                            selected={selected}
+                            selected={selectedOption}
                             value={{ mode: SeriesSortMode.DATE_ADDED, direction: SeriesSortDirection.ASC }}
                             onClick={handleToggle}
                         >
                             Latest
                         </ToggleButton>
                         <ToggleButton
-                            selected={selected}
+                            selected={selectedOption}
                             value={{ mode: SeriesSortMode.DATE_ADDED, direction: SeriesSortDirection.DESC }}
                             onClick={handleToggle}
                         >
@@ -100,7 +105,7 @@ export const SortFilterSeriesPanel: React.FunctionComponent<SortFilterSeriesPane
                 <input
                     type="number"
                     step="1"
-                    value={seriesCount}
+                    value={limit || seriesCount}
                     className="form-control form-control-sm"
                     onChange={handleChange}
                 />

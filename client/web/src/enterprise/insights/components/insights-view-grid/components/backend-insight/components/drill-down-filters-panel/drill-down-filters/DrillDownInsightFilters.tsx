@@ -132,6 +132,8 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
         contexts.input.onChange('')
         includeRegex.input.onChange('')
         excludeRegex.input.onChange('')
+        setSeriesDisplayOptions(originalSeriesDisplayOptions)
+        onSeriesDisplayOptionsChange(originalSeriesDisplayOptions)
     }
 
     const handleSeriesDisplayOptionsChange = (options: SeriesDisplayOptionsInputRequired): void => {
@@ -147,7 +149,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                 <h4 className={styles.heading}>Filter repositories</h4>
 
                 <Button
-                    disabled={!hasActiveFilters(values)}
+                    disabled={!hasActiveFilters(values) && !hasSeriesDisplayOptionsChanged}
                     variant="link"
                     size="sm"
                     className={styles.clearFilters}
@@ -168,7 +170,8 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                     onOpenChange={opened => handleCollapseState(FilterSection.SortFilter, opened)}
                 >
                     <SortFilterSeriesPanel
-                        value={parseSeriesDisplayOptions(seriesDisplayOptions)}
+                        limit={seriesDisplayOptions.limit}
+                        selectedOption={seriesDisplayOptions.sortOptions}
                         onChange={handleSeriesDisplayOptionsChange}
                     />
                 </FilterCollapseSection>
