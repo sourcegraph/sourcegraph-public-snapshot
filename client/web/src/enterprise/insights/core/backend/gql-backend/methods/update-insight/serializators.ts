@@ -48,7 +48,7 @@ export function getSearchInsightUpdateInput(insight: MinimalSearchBasedInsightDa
 export function getCaptureGroupInsightUpdateInput(
     insight: MinimalCaptureGroupInsightData
 ): UpdateLineChartSearchInsightInput {
-    const { step, filters, query, title, repositories, appliedSeriesDisplayOptions } = insight
+    const { step, filters, query, title, repositories, seriesDisplayOptions } = insight
     const [unit, value] = getStepInterval(step)
 
     return {
@@ -70,7 +70,7 @@ export function getCaptureGroupInsightUpdateInput(
                 excludeRepoRegex: filters.excludeRepoRegexp,
                 searchContexts: insight.filters.context ? [filters.context] : [],
             },
-            seriesDisplayOptions: parseSeriesDisplayOptions(appliedSeriesDisplayOptions),
+            seriesDisplayOptions: parseSeriesDisplayOptions(seriesDisplayOptions),
         },
     }
 }

@@ -1,3 +1,4 @@
+import { SeriesDisplayOptionsInput } from '../../../../../../../../../graphql-operations'
 import { DEFAULT_SERIES_DISPLAY_OPTIONS } from '../../../../../../../core'
 import { SeriesDisplayOptions, SeriesDisplayOptionsInputRequired } from '../../../../../../../core/types/insight/common'
 import { Validator } from '../../../../../../form/hooks/useField'
@@ -36,7 +37,9 @@ export function getSerializedSearchContextFilter(filter: InsightContextsFilter):
 }
 
 // To simplify logic on the front end we ensure that a value is always proved
-export const parseSeriesDisplayOptions = (options?: SeriesDisplayOptions): SeriesDisplayOptionsInputRequired => {
+export const parseSeriesDisplayOptions = (
+    options?: SeriesDisplayOptions | SeriesDisplayOptionsInput
+): SeriesDisplayOptionsInputRequired => {
     if (!options) {
         return DEFAULT_SERIES_DISPLAY_OPTIONS
     }
