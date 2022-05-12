@@ -58,7 +58,7 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
     // Original insight filters values that are stored in setting subject with insight
     // configuration object, They are updated  whenever the user clicks update/save button
     const [originalInsightFilters, setOriginalInsightFilters] = useState(cachedInsight.filters)
-    const [originalSeriesDisplayOptions] = useState(cachedInsight.seriesDisplayOptions)
+    const [originalSeriesDisplayOptions, setOriginalSeriesDisplayOptions] = useState(cachedInsight.seriesDisplayOptions)
 
     // Live valid filters from filter form. They are updated whenever the user is changing
     // filter value in filters fields.
@@ -125,6 +125,7 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
 
             telemetryService.log('CodeInsightsSearchBasedFilterInsightCreation')
             setOriginalInsightFilters(filters)
+            setSeriesDisplayOptions(originalSeriesDisplayOptions)
             setIsFiltersOpen(false)
         } catch (error) {
             return { [FORM_ERROR]: asError(error) }
