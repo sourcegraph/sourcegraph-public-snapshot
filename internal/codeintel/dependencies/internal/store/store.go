@@ -113,8 +113,8 @@ func makeLimit(limit int) *sqlf.Query {
 	return sqlf.Sprintf("LIMIT %s", limit)
 }
 
-// UpsertDependencyRepos creates the given dependency repos if they doesn't yet exist. The values that
-// did not exist previously are returned.
+// UpsertDependencyRepos creates the given dependency repos if they don'tt yet exist. The values
+// that did not exist previously are returned.
 func (s *Store) UpsertDependencyRepos(ctx context.Context, deps []shared.Repo) (newDeps []shared.Repo, err error) {
 	ctx, _, endObservation := s.operations.upsertDependencyRepos.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("numDeps", len(deps)),
