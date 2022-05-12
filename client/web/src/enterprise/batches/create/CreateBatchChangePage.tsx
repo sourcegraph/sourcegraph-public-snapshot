@@ -23,7 +23,7 @@ import layoutStyles from '../batch-spec/Layout.module.scss'
 export interface CreateBatchChangePageProps extends SettingsCascadeProps<Settings>, ThemeProps {
     // TODO: This can go away once we only have the new SSBC create page
     headingElement: 'h1' | 'h2'
-    initialNamespaceID: Scalars['ID']
+    initialNamespaceID?: Scalars['ID']
 }
 
 /**

@@ -24,7 +24,7 @@ const { add } = storiesOf('web/batches/create/CreateBatchChangePage', module)
 
 add('experimental execution disabled', () => (
     <WebStory>
-        {props => <CreateBatchChangePage headingElement="h1" {...props} settingsCascade={EMPTY_SETTINGS_CASCADE} />}
+        {props => <CreateBatchChangePage {...props} headingElement="h1" settingsCascade={EMPTY_SETTINGS_CASCADE} />}
     </WebStory>
 ))
 
@@ -48,8 +48,52 @@ add('experimental execution enabled', () => (
     <WebStory>
         {props => (
             <CreateBatchChangePage
-                headingElement="h1"
                 {...props}
+                headingElement="h1"
+                settingsCascade={{
+                    ...EMPTY_SETTINGS_CASCADE,
+                    final: {
+                        experimentalFeatures: { batchChangesExecution: true },
+                    },
+                    subjects: [
+                        { subject: FIXTURE_ORG, settings: { a: 1 }, lastID: 1 },
+                        { subject: FIXTURE_USER, settings: { b: 2 }, lastID: 2 },
+                    ],
+                }}
+            />
+        )}
+    </WebStory>
+))
+
+add('experimental execution enabled, from org namespace', () => (
+    <WebStory>
+        {props => (
+            <CreateBatchChangePage
+                {...props}
+                headingElement="h1"
+                initialNamespaceID="a"
+                settingsCascade={{
+                    ...EMPTY_SETTINGS_CASCADE,
+                    final: {
+                        experimentalFeatures: { batchChangesExecution: true },
+                    },
+                    subjects: [
+                        { subject: FIXTURE_ORG, settings: { a: 1 }, lastID: 1 },
+                        { subject: FIXTURE_USER, settings: { b: 2 }, lastID: 2 },
+                    ],
+                }}
+            />
+        )}
+    </WebStory>
+))
+
+add('experimental execution enabled, from user namespace', () => (
+    <WebStory>
+        {props => (
+            <CreateBatchChangePage
+                {...props}
+                headingElement="h1"
+                initialNamespaceID="b"
                 settingsCascade={{
                     ...EMPTY_SETTINGS_CASCADE,
                     final: {
