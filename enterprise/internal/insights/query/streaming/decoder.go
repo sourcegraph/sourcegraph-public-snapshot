@@ -137,7 +137,6 @@ func ComputeDecoder() (client.ComputeMatchContextStreamDecoder, *ComputeTabulati
 	}
 
 	return client.ComputeMatchContextStreamDecoder{
-<<<<<<< HEAD
 		OnResult: func(results []compute.MatchContext) {
 			for _, result := range results {
 				current := getRepoCounts(result)
@@ -146,18 +145,6 @@ func ComputeDecoder() (client.ComputeMatchContextStreamDecoder, *ComputeTabulati
 						value := data.Value
 						if len(value) > capturedValueMaxLength {
 							value = value[:capturedValueMaxLength]
-=======
-			OnResult: func(results []compute.MatchContext) {
-				for _, result := range results {
-					current := getRepoCounts(result)
-					for _, match := range result.Matches {
-						for _, data := range match.Environment {
-							value := data.Value
-							if len(value) > capturedValueMaxLength {
-								value = value[:capturedValueMaxLength]
-							}
-							current.ValueCounts[value] += 1
->>>>>>> 86c9b9bc2803bb289de2f8f8b54aaa80a72fcfa5
 						}
 						current.ValueCounts[value] += 1
 					}
@@ -168,9 +155,9 @@ func ComputeDecoder() (client.ComputeMatchContextStreamDecoder, *ComputeTabulati
 			if ea.Title == "No repositories found" {
 				// If we hit a case where we don't find a repository we don't want to error, just
 				// complete our search.
-				return
+			} else {
+				ctr.Alerts = append(ctr.Alerts, fmt.Sprintf("%s: %s", ea.Title, ea.Description))
 			}
-			ctr.Alerts = append(ctr.Alerts, fmt.Sprintf("%s: %s", ea.Title, ea.Description))
 		},
 		OnError: func(eventError *streamhttp.EventError) {
 			ctr.Errors = append(ctr.Errors, eventError.Message)

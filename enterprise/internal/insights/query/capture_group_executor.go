@@ -63,6 +63,9 @@ func streamCompute(ctx context.Context, query string) ([]GroupedResults, error) 
 	if err != nil {
 		return nil, err
 	}
+	if len(streamResults.Alerts) > 0 {
+		log15.Error("streaming.Compute", "alerts", streamResults.Alerts)
+	}
 	return computeTabulationResultToGroupedResults(streamResults), nil
 }
 
