@@ -100,7 +100,6 @@ export const FileDiffNode: React.FunctionComponent<React.PropsWithChildren<FileD
             {/*
                 a11y-ignore
                 Rule: "aria-hidden-focus" (ARIA hidden element must not contain focusable elements)
-                GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
             */}
             <Link className="a11y-ignore" to="" id={anchor} aria-hidden={true} />
             <li className={classNames('test-file-diff-node', styles.fileDiffNode, className)}>
