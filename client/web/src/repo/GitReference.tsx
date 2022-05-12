@@ -38,6 +38,7 @@ export interface GitReferenceNodeProps {
     icon?: React.ComponentType<{ className?: string }>
 
     onClick?: React.MouseEventHandler<HTMLAnchorElement>
+    nodeLinkClassName?: string
 }
 
 export const GitReferenceNode: React.FunctionComponent<React.PropsWithChildren<GitReferenceNodeProps>> = ({
@@ -48,6 +49,7 @@ export const GitReferenceNode: React.FunctionComponent<React.PropsWithChildren<G
     className,
     onClick,
     icon: ReferenceIcon,
+    nodeLinkClassName,
 }) => {
     const mostRecentSig =
         node.target.commit &&
@@ -60,7 +62,7 @@ export const GitReferenceNode: React.FunctionComponent<React.PropsWithChildren<G
     return (
         <li key={node.id} className={classNames('d-block list-group-item', styles.gitRefNode, className)}>
             <LinkOrSpan
-                className={styles.gitRefNodeLink}
+                className={classNames(styles.gitRefNodeLink, nodeLinkClassName)}
                 to={!ancestorIsLink ? url : undefined}
                 onClick={onClick}
                 data-testid="git-ref-node"
