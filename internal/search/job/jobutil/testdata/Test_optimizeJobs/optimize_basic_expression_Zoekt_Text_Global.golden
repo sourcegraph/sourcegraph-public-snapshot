@@ -9,24 +9,25 @@ BASE:
     20s
     (LIMIT
       500
-      (PARALLEL
-        ZoektGlobalSearchJob
-        (AND
-          (LIMIT
-            40000
-            (PARALLEL
-              RepoSearchJob
-              ComputeExcludedReposJob))
-          (LIMIT
-            40000
-            (PARALLEL
-              RepoSearchJob
-              ComputeExcludedReposJob))
-          (LIMIT
-            40000
-            (PARALLEL
-              RepoSearchJob
-              ComputeExcludedReposJob)))))))
+      (AND
+        (LIMIT
+          40000
+          (PARALLEL
+            ZoektGlobalSearchJob
+            RepoSearchJob
+            ComputeExcludedReposJob))
+        (LIMIT
+          40000
+          (PARALLEL
+            ZoektGlobalSearchJob
+            RepoSearchJob
+            ComputeExcludedReposJob))
+        (LIMIT
+          40000
+          (PARALLEL
+            ZoektGlobalSearchJob
+            RepoSearchJob
+            ComputeExcludedReposJob))))))
 
 OPTIMIZED:
 
@@ -37,21 +38,22 @@ OPTIMIZED:
       500
       (PARALLEL
         ZoektGlobalSearchJob
-        (PARALLEL
-          NoopJob
-          (AND
-            (LIMIT
-              40000
-              (PARALLEL
-                RepoSearchJob
-                ComputeExcludedReposJob))
-            (LIMIT
-              40000
-              (PARALLEL
-                RepoSearchJob
-                ComputeExcludedReposJob))
-            (LIMIT
-              40000
-              (PARALLEL
-                RepoSearchJob
-                ComputeExcludedReposJob))))))))
+        (AND
+          (LIMIT
+            40000
+            (PARALLEL
+              NoopJob
+              RepoSearchJob
+              ComputeExcludedReposJob))
+          (LIMIT
+            40000
+            (PARALLEL
+              NoopJob
+              RepoSearchJob
+              ComputeExcludedReposJob))
+          (LIMIT
+            40000
+            (PARALLEL
+              NoopJob
+              RepoSearchJob
+              ComputeExcludedReposJob)))))))
