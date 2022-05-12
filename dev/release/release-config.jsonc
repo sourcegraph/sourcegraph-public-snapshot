@@ -16,6 +16,7 @@
     "previousRelease": "3.39.0",
     "upcomingRelease": "3.39.1",
     // Release dates
+    "oneWorkingWeekBeforeRelease": "18 April 2022 10:00 PST",
     "oneWorkingDayBeforeRelease": "25 April 2022 10:00 PST",
     "releaseDate": "26 April 2022 10:00 PST",
     "oneWorkingDayAfterRelease": "27 April 2022 10:00 PST",

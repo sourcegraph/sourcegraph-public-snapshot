@@ -110,6 +110,14 @@ const steps: Step[] = [
             const name = releaseName(release)
             const events: EventOptions[] = [
                 {
+                    title: `Security Team to Review Release Container Image Scans ${name}`,
+                    description: '(This is not an actual event to attend, just a calendar marker.)',
+                    anyoneCanAddSelf: true,
+                    attendees: [config.teamEmail],
+                    transparency: 'transparent',
+                    ...calendarTime(config.oneWorkingWeekBeforeRelease),
+                },
+                {
                     title: `Cut Sourcegraph ${name}`,
                     description: '(This is not an actual event to attend, just a calendar marker.)',
                     anyoneCanAddSelf: true,
