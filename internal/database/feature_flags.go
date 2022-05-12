@@ -33,6 +33,9 @@ type FeatureFlagStore interface {
 	GetUserFlags(context.Context, int32) (map[string]bool, error)
 	GetAnonymousUserFlags(ctx context.Context, anonymousUID string) (map[string]bool, error)
 	GetGlobalFeatureFlags(context.Context) (map[string]bool, error)
+	GetUserFlag(ctx context.Context, userID int32, flagName string) (*bool, error)
+	GetAnonymousUserFlag(ctx context.Context, anonymousUID string, flagName string) (*bool, error)
+	GetGlobalFeatureFlag(ctx context.Context, flagName string) (*bool, error)
 	GetOrgFeatureFlag(ctx context.Context, orgID int32, flagName string) (bool, error)
 }
 
@@ -480,6 +483,7 @@ func scanFeatureFlagOverride(scanner rowScanner) (*ff.Override, error) {
 // GetUserFlags returns the calculated values for feature flags for the given userID. This should
 // be the primary entrypoint for getting the user flags since it handles retrieving all the flags,
 // the org overrides, and the user overrides, and merges them in priority order.
+// TODO: remove
 func (f *featureFlagStore) GetUserFlags(ctx context.Context, userID int32) (map[string]bool, error) {
 	g, ctx := errgroup.WithContext(ctx)
 
@@ -527,6 +531,7 @@ func (f *featureFlagStore) GetUserFlags(ctx context.Context, userID int32) (map[
 }
 
 // GetAnonymousUserFlags returns the calculated values for feature flags for the given anonymousUID
+// TODO: remove
 func (f *featureFlagStore) GetAnonymousUserFlags(ctx context.Context, anonymousUID string) (map[string]bool, error) {
 	flags, err := f.GetFeatureFlags(ctx)
 	if err != nil {
@@ -541,6 +546,7 @@ func (f *featureFlagStore) GetAnonymousUserFlags(ctx context.Context, anonymousU
 	return res, nil
 }
 
+// TODO: remove
 func (f *featureFlagStore) GetGlobalFeatureFlags(ctx context.Context) (map[string]bool, error) {
 	flags, err := f.GetFeatureFlags(ctx)
 	if err != nil {
@@ -555,6 +561,91 @@ func (f *featureFlagStore) GetGlobalFeatureFlags(ctx context.Context) (map[strin
 	}
 
 	return res, nil
+}
+
+// GetUserFlags returns the calculated values for feature flags for the given userID. This should
+// be the primary entrypoint for getting the user flags since it handles retrieving all the flags,
+// the org overrides, and the user overrides, and merges them in priority order.
+func (f *featureFlagStore) GetUserFlag(ctx context.Context, userID int32, flagName string) (*bool, error) {
+	g, ctx := errgroup.WithContext(ctx)
+
+	var flags []*ff.FeatureFlag
+	g.Go(func() error {
+		res, err := f.GetFeatureFlags(ctx)
+		flags = res
+		return err
+	})
+
+	var orgOverrides []*ff.Override
+	g.Go(func() error {
+		res, err := f.GetOrgOverridesForUser(ctx, userID)
+		orgOverrides = res
+		return err
+	})
+
+	var userOverrides []*ff.Override
+	g.Go(func() error {
+		res, err := f.GetUserOverrides(ctx, userID)
+		userOverrides = res
+		return err
+	})
+
+	if err := g.Wait(); err != nil {
+		return nil, err
+	}
+
+	for _, ff := range flags {
+		if (ff.Name != flagName) {
+			res := ff.EvaluateForUser(userID)
+
+			// Org overrides are higher priority than default
+			for _, oo := range orgOverrides {
+				res = oo.Value
+			}
+
+			// User overrides are higher priority than org overrides
+			for _, uo := range userOverrides {
+				res = uo.Value
+			}
+			return &res, nil
+		}
+	}
+
+	return nil, errors.Errorf("Feature \"%s\" flag not found", flagName)
+}
+
+// GetAnonymousUserFlags returns the calculated values for feature flags for the given anonymousUID
+func (f *featureFlagStore) GetAnonymousUserFlag(ctx context.Context, anonymousUID string, flagName string) (*bool, error) {
+	flags, err := f.GetFeatureFlags(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, ff := range flags {
+		if (ff.Name != flagName) {
+			res := ff.EvaluateForAnonymousUser(anonymousUID)
+			return &res, nil
+		}
+	}
+
+	return nil, errors.Errorf("Feature \"%s\" flag not found", flagName)
+}
+
+func (f *featureFlagStore) GetGlobalFeatureFlag(ctx context.Context, flagName string) (*bool, error) {
+	flags, err := f.GetFeatureFlags(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, ff := range flags {
+		if (ff.Name != flagName) {
+			if val, ok := ff.EvaluateGlobal(); ok {
+				return &val, nil
+			}
+		}
+	}
+
+	return nil, errors.Errorf("Feature \"%s\" flag not found", flagName)
 }
 
 // GetOrgFeatureFlag returns the calculated flag value for the given organization, taking potential override into account
