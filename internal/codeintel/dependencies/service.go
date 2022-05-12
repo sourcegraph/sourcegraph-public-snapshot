@@ -2,7 +2,6 @@ package dependencies
 
 import (
 	"context"
-	"errors"
 	"strings"
 	"sync"
 
@@ -17,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Service encapsulates the resolution and persistence of dependencies at the repository and package levels.
@@ -97,7 +97,7 @@ func (s *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]ty
 	// Write dependencies to database
 	newDependencies, err := s.dependenciesStore.UpsertDependencyRepos(ctx, dependencies)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "store.UpsertDependencyRepos")
 	}
 
 	// Determine the set of repo names that were recently inserted. Package and repository
@@ -148,7 +148,7 @@ func (s *Service) lockfileDependencies(ctx context.Context, repoRevs map[api.Rep
 			// Acquire semaphore before spawning goroutine to ensure that we limit the total number
 			// of concurrent _routines_, whether they are actively processing lockfiles or not.
 			if err := s.lockfilesSemaphore.Acquire(ctx, 1); err != nil {
-				return nil, err
+				return nil, errors.Wrap(err, "lockfiles semaphore")
 			}
 
 			g.Go(func() error {
@@ -156,7 +156,7 @@ func (s *Service) lockfileDependencies(ctx context.Context, repoRevs map[api.Rep
 
 				repoDeps, err := s.lockfilesSvc.ListDependencies(ctx, repoName, string(rev))
 				if err != nil {
-					return err
+					return errors.Wrap(err, "lockfiles.ListDependencies")
 				}
 
 				mu.Lock()
@@ -187,7 +187,7 @@ func (s *Service) sync(ctx context.Context, repos []api.RepoName) error {
 		// non-nil returned from here is a context timeout error, so we are guaranteed to clean
 		// up the errgroup on exit.
 		if err := s.syncerSemaphore.Acquire(ctx, 1); err != nil {
-			return err
+			return errors.Wrap(err, "syncer semaphore")
 		}
 
 		g.Go(func() error {
