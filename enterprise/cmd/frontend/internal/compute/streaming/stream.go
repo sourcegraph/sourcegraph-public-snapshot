@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -58,7 +57,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Always send a final done event so clients know the stream is shutting
 	// down.
-	defer eventWriter.Event("done", map[string]interface{}{})
+	defer eventWriter.Event("done", map[string]any{})
 
 	// Log events to trace
 	eventWriter.StatHook = eventStreamOTHook(tr.LogFields)
@@ -89,7 +88,6 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		// Instantly send results if we have not sent any yet.
 		if first && matchesBuf.Len() > 0 {
-			log15.Info("flushing first now")
 			first = false
 			matchesFlush()
 		}

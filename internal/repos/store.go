@@ -694,7 +694,7 @@ func scanJobs(rows *sql.Rows) ([]SyncJob, error) {
 	for rows.Next() {
 		// required field for the sync worker, but
 		// the value is thrown out here
-		var executionLogs *[]interface{}
+		var executionLogs *[]any
 
 		var job SyncJob
 		if err := rows.Scan(
@@ -722,7 +722,7 @@ func scanJobs(rows *sql.Rows) ([]SyncJob, error) {
 	return jobs, nil
 }
 
-func metadataColumn(metadata interface{}) (msg json.RawMessage, err error) {
+func metadataColumn(metadata any) (msg json.RawMessage, err error) {
 	switch m := metadata.(type) {
 	case nil:
 		msg = json.RawMessage("{}")

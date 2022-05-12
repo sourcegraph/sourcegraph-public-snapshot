@@ -227,7 +227,7 @@ func (c *Client) Heartbeat(ctx context.Context, queueName string, jobIDs []int) 
 
 const SchemeExecutorToken = "token-executor"
 
-func (c *Client) makeRequest(method, path string, payload interface{}) (*http.Request, error) {
+func (c *Client) makeRequest(method, path string, payload any) (*http.Request, error) {
 	u, err := makeRelativeURL(
 		c.options.EndpointOptions.URL,
 		c.options.PathPrefix,

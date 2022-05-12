@@ -84,7 +84,7 @@ func TestBatchChangeResolver(t *testing.T) {
 		ClosedAt: "",
 	}
 
-	input := map[string]interface{}{"batchChange": batchChangeAPIID}
+	input := map[string]any{"batchChange": batchChangeAPIID}
 	{
 		var response struct{ Node apitest.BatchChange }
 		apitest.MustExec(ctx, t, s, input, &response, queryBatchChange)
@@ -94,7 +94,7 @@ func TestBatchChangeResolver(t *testing.T) {
 		}
 	}
 	// Test resolver by namespace and name
-	byNameInput := map[string]interface{}{"name": batchChange.Name, "namespace": namespaceAPIID}
+	byNameInput := map[string]any{"name": batchChange.Name, "namespace": namespaceAPIID}
 	{
 		var response struct{ BatchChange apitest.BatchChange }
 		apitest.MustExec(ctx, t, s, byNameInput, &response, queryBatchChangeByName)
@@ -218,7 +218,7 @@ func assertBatchSpecsInResponse(t *testing.T, ctx context.Context, s *graphql.Sc
 
 	batchChangeAPIID := string(marshalBatchChangeID(batchChangeID))
 
-	input := map[string]interface{}{"batchChange": batchChangeAPIID}
+	input := map[string]any{"batchChange": batchChangeAPIID}
 
 	var res struct{ Node apitest.BatchChange }
 	apitest.MustExec(ctx, t, s, input, &res, queryBatchChangeBatchSpecs)

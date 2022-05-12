@@ -717,7 +717,7 @@ func TestBitbucketCloudSource_annotatePullRequest(t *testing.T) {
 		client.GetPullRequestStatusesFunc.SetDefaultHook(func(r *bitbucketcloud.Repo, i int64) (*bitbucketcloud.PaginatedResultSet, error) {
 			assert.Same(t, bbRepo, r)
 			assert.EqualValues(t, 420, i)
-			return bitbucketcloud.NewPaginatedResultSet(mockBitbucketCloudURL(), func(ctx context.Context, r *http.Request) (*bitbucketcloud.PageToken, []interface{}, error) {
+			return bitbucketcloud.NewPaginatedResultSet(mockBitbucketCloudURL(), func(ctx context.Context, r *http.Request) (*bitbucketcloud.PageToken, []any, error) {
 				return nil, nil, want
 			}), nil
 		})
@@ -741,9 +741,9 @@ func TestBitbucketCloudSource_annotatePullRequest(t *testing.T) {
 			assert.Same(t, bbRepo, r)
 			assert.EqualValues(t, 420, i)
 			first := true
-			return bitbucketcloud.NewPaginatedResultSet(mockBitbucketCloudURL(), func(ctx context.Context, r *http.Request) (*bitbucketcloud.PageToken, []interface{}, error) {
+			return bitbucketcloud.NewPaginatedResultSet(mockBitbucketCloudURL(), func(ctx context.Context, r *http.Request) (*bitbucketcloud.PageToken, []any, error) {
 				if first {
-					out := []interface{}{}
+					out := []any{}
 					for _, status := range want {
 						out = append(out, status)
 					}
@@ -862,7 +862,7 @@ func mockAnnotatePullRequestSuccess(client *MockBitbucketCloudClient) {
 }
 
 func mockEmptyResultSet() *bitbucketcloud.PaginatedResultSet {
-	return bitbucketcloud.NewPaginatedResultSet(mockBitbucketCloudURL(), func(ctx context.Context, r *http.Request) (*bitbucketcloud.PageToken, []interface{}, error) {
+	return bitbucketcloud.NewPaginatedResultSet(mockBitbucketCloudURL(), func(ctx context.Context, r *http.Request) (*bitbucketcloud.PageToken, []any, error) {
 		return &bitbucketcloud.PageToken{}, nil, nil
 	})
 }

@@ -20,7 +20,7 @@ func newResolver(svc *symbols.Service, observationContext *observation.Context) 
 	}
 }
 
-func (r *Resolver) Symbol(ctx context.Context, args struct{}) (_ interface{}, err error) {
+func (r *Resolver) Symbol(ctx context.Context, args struct{}) (_ any, err error) {
 	ctx, _, endObservation := r.operations.symbol.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 

@@ -15,7 +15,7 @@ import (
 const allPattern = "*"
 
 // simpleRule creates the simplest of rules for the given value: `"*": value`.
-func simpleRule(v interface{}) *rule {
+func simpleRule(v any) *rule {
 	r, err := newRule(allPattern, v)
 	if err != nil {
 		// Since we control the pattern being compiled, an error should never
@@ -26,7 +26,7 @@ func simpleRule(v interface{}) *rule {
 	return r
 }
 
-type complex []map[string]interface{}
+type complex []map[string]any
 
 type rule struct {
 	// pattern is the glob-syntax pattern, such as "a/b/ceee-*"
@@ -35,12 +35,12 @@ type rule struct {
 	patternSuffix string
 
 	compiled glob.Glob
-	value    interface{}
+	value    any
 }
 
 // newRule builds a new rule instance, ensuring that the glob pattern
 // is compiled.
-func newRule(pattern string, value interface{}) (*rule, error) {
+func newRule(pattern string, value any) (*rule, error) {
 	var suffix string
 	split := strings.SplitN(pattern, "@", 2)
 	if len(split) > 1 {
@@ -68,7 +68,7 @@ func (a rule) Equal(b rule) bool {
 type rules []*rule
 
 // Match matches the given repository name against all rules, returning the rule value that matches at last, or nil if none match.
-func (r rules) Match(name string) interface{} {
+func (r rules) Match(name string) any {
 	// We want the last match to win, so we'll iterate in reverse order.
 	for i := len(r) - 1; i >= 0; i-- {
 		if r[i].compiled.Match(name) {
@@ -81,7 +81,7 @@ func (r rules) Match(name string) interface{} {
 // MatchWithSuffix matches the given repository name against all rules and the
 // suffix against provided pattern suffix, returning the rule value that matches
 // at last, or nil if none match.
-func (r rules) MatchWithSuffix(name, suffix string) interface{} {
+func (r rules) MatchWithSuffix(name, suffix string) any {
 	// We want the last match to win, so we'll iterate in reverse order.
 	for i := len(r) - 1; i >= 0; i-- {
 		if r[i].compiled.Match(name) && (r[i].patternSuffix == "" || r[i].patternSuffix == suffix) {
@@ -98,9 +98,9 @@ func (r rules) MarshalJSON() ([]byte, error) {
 		return json.Marshal(r[0].value)
 	}
 
-	rules := []map[string]interface{}{}
+	rules := []map[string]any{}
 	for _, rule := range r {
-		rules = append(rules, map[string]interface{}{
+		rules = append(rules, map[string]any{
 			rule.pattern: rule.value,
 		})
 	}
@@ -108,7 +108,7 @@ func (r rules) MarshalJSON() ([]byte, error) {
 }
 
 // hydrateFromComplex builds an array of rules out of a complex value.
-func (r *rules) hydrateFromComplex(c []map[string]interface{}) error {
+func (r *rules) hydrateFromComplex(c []map[string]any) error {
 	*r = make(rules, len(c))
 	for i, rule := range c {
 		if len(rule) != 1 {

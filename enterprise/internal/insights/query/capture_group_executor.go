@@ -6,10 +6,12 @@ import (
 	"sort"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 
-	"github.com/grafana/regexp"
 	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
@@ -61,7 +63,7 @@ func streamCompute(ctx context.Context, query string) ([]GroupedResults, error) 
 	if err != nil {
 		return nil, err
 	}
-	return groupComputeStreamByMatch(streamResults), nil
+	return computeTabulationResultToGroupedResults(streamResults), nil
 }
 
 func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, repositories []string, interval timeseries.TimeInterval) ([]GeneratedTimeSeries, error) {
@@ -103,8 +105,10 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 				continue
 			}
 
-			modifiedQuery := withCountUnlimited(query)
-			modifiedQuery = fmt.Sprintf("%s repo:^%s$@%s", modifiedQuery, regexp.QuoteMeta(repository), commits[0].ID)
+			modifiedQuery, err := querybuilder.SingleRepoQuery(query, repository, string(commits[0].ID))
+			if err != nil {
+				return nil, errors.Wrap(err, "SingleRepoQuery")
+			}
 
 			log15.Debug("executing query", "query", modifiedQuery)
 			grouped, err := c.computeSearch(ctx, modifiedQuery)
@@ -160,21 +164,15 @@ func makeTimeSeries(pivoted map[string]timeCounts) []GeneratedTimeSeries {
 	return calculated
 }
 
-func groupComputeStreamByMatch(result *streaming.ComputeTabulationResult) []GroupedResults {
-	vals := make(map[string]int)
+func computeTabulationResultToGroupedResults(result *streaming.ComputeTabulationResult) []GroupedResults {
+	var grouped []GroupedResults
 	for _, match := range result.RepoCounts {
 		for value, count := range match.ValueCounts {
-			vals[value] += count
+			grouped = append(grouped, GroupedResults{
+				Value: value,
+				Count: count,
+			})
 		}
 	}
-
-	var grouped []GroupedResults
-	for value, count := range vals {
-		grouped = append(grouped, GroupedResults{
-			Value: value,
-			Count: count,
-		})
-	}
-
 	return grouped
 }

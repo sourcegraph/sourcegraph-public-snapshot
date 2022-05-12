@@ -453,7 +453,7 @@ type jsonIDsSet struct {
 }
 
 // Scan implements the Scanner interface.
-func (n *jsonIDsSet) Scan(value interface{}) error {
+func (n *jsonIDsSet) Scan(value any) error {
 	m := make(map[int64]struct{})
 
 	switch value := value.(type) {

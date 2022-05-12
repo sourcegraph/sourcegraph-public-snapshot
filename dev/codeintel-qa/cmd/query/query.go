@@ -40,7 +40,7 @@ func queryUploads(ctx context.Context) (_ map[string][]string, err error) {
 			} `json:"lsifUploads"`
 		} `json:"data"`
 	}
-	if err := queryGraphQL(ctx, "CodeIntelQA_Query_Uploads", uploadsQuery, map[string]interface{}{}, &payload); err != nil {
+	if err := queryGraphQL(ctx, "CodeIntelQA_Query_Uploads", uploadsQuery, map[string]any{}, &payload); err != nil {
 		return nil, err
 	}
 
@@ -101,7 +101,7 @@ pageInfo {
 
 // queryDefinitions returns all of the LSIF definitions for the given location.
 func queryDefinitions(ctx context.Context, location Location) (locations []Location, err error) {
-	variables := map[string]interface{}{
+	variables := map[string]any{
 		"repository": location.Repo,
 		"commit":     location.Rev,
 		"path":       location.Path,
@@ -147,7 +147,7 @@ const referencesQuery = `
 func queryReferences(ctx context.Context, location Location) (locations []Location, err error) {
 	endCursor := ""
 	for {
-		variables := map[string]interface{}{
+		variables := map[string]any{
 			"repository": location.Repo,
 			"commit":     location.Rev,
 			"path":       location.Path,

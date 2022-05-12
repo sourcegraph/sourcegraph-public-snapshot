@@ -32,7 +32,7 @@ func NewLocationsCountMigrator(store *lsifstore.Store, tableName string, batchSi
 
 // MigrateRowUp reads the payload of the given row and returns an updateSpec on how to
 // modify the record to conform to the new schema.
-func (m *locationsCountMigrator) MigrateRowUp(scanner scanner) ([]interface{}, error) {
+func (m *locationsCountMigrator) MigrateRowUp(scanner scanner) ([]any, error) {
 	var scheme, identifier string
 	var rawData []byte
 
@@ -45,11 +45,11 @@ func (m *locationsCountMigrator) MigrateRowUp(scanner scanner) ([]interface{}, e
 		return nil, err
 	}
 
-	return []interface{}{scheme, identifier, len(data)}, nil
+	return []any{scheme, identifier, len(data)}, nil
 }
 
 // MigrateRowDown sets num_locations back to zero to undo the migration up direction.
-func (m *locationsCountMigrator) MigrateRowDown(scanner scanner) ([]interface{}, error) {
+func (m *locationsCountMigrator) MigrateRowDown(scanner scanner) ([]any, error) {
 	var scheme, identifier string
 	var rawData []byte
 
@@ -57,5 +57,5 @@ func (m *locationsCountMigrator) MigrateRowDown(scanner scanner) ([]interface{},
 		return nil, err
 	}
 
-	return []interface{}{scheme, identifier, 0}, nil
+	return []any{scheme, identifier, 0}, nil
 }

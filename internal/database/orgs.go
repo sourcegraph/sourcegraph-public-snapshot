@@ -185,7 +185,7 @@ func (*orgStore) listSQL(opt OrgsListOptions) *sqlf.Query {
 	return sqlf.Sprintf("(%s)", sqlf.Join(conds, ") AND ("))
 }
 
-func (o *orgStore) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*types.Org, error) {
+func (o *orgStore) getBySQL(ctx context.Context, query string, args ...any) ([]*types.Org, error) {
 	rows, err := o.Handle().DB().QueryContext(ctx, "SELECT id, name, display_name, created_at, updated_at FROM orgs "+query, args...)
 	if err != nil {
 		return nil, err

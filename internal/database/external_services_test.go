@@ -45,7 +45,7 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 		wantQuery            string
 		onlyCloudDefault     bool
 		noCachedWebhooks     bool
-		wantArgs             []interface{}
+		wantArgs             []any
 	}{
 		{
 			name:      "no condition",
@@ -55,25 +55,25 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 			name:      "only one kind: GitHub",
 			kinds:     []string{extsvc.KindGitHub},
 			wantQuery: "deleted_at IS NULL AND kind IN ($1)",
-			wantArgs:  []interface{}{extsvc.KindGitHub},
+			wantArgs:  []any{extsvc.KindGitHub},
 		},
 		{
 			name:      "two kinds: GitHub and GitLab",
 			kinds:     []string{extsvc.KindGitHub, extsvc.KindGitLab},
 			wantQuery: "deleted_at IS NULL AND kind IN ($1 , $2)",
-			wantArgs:  []interface{}{extsvc.KindGitHub, extsvc.KindGitLab},
+			wantArgs:  []any{extsvc.KindGitHub, extsvc.KindGitLab},
 		},
 		{
 			name:            "has namespace user ID",
 			namespaceUserID: 1,
 			wantQuery:       "deleted_at IS NULL AND namespace_user_id = $1",
-			wantArgs:        []interface{}{int32(1)},
+			wantArgs:        []any{int32(1)},
 		},
 		{
 			name:           "has namespace org ID",
 			namespaceOrgID: 1,
 			wantQuery:      "deleted_at IS NULL AND namespace_org_id = $1",
-			wantArgs:       []interface{}{int32(1)},
+			wantArgs:       []any{int32(1)},
 		},
 		{
 			name:            "want no namespace",
@@ -91,13 +91,13 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 			name:      "has after ID",
 			afterID:   10,
 			wantQuery: "deleted_at IS NULL AND id < $1",
-			wantArgs:  []interface{}{int64(10)},
+			wantArgs:  []any{int64(10)},
 		},
 		{
 			name:         "has after updated_at",
 			updatedAfter: time.Date(2013, 04, 19, 0, 0, 0, 0, time.UTC),
 			wantQuery:    "deleted_at IS NULL AND updated_at > $1",
-			wantArgs:     []interface{}{time.Date(2013, 04, 19, 0, 0, 0, 0, time.UTC)},
+			wantArgs:     []any{time.Date(2013, 04, 19, 0, 0, 0, 0, time.UTC)},
 		},
 		{
 			name:             "has OnlyCloudDefault",
@@ -2181,7 +2181,7 @@ VALUES ($1,$2)
 
 func TestConfigurationHasWebhooks(t *testing.T) {
 	t.Run("supported kinds with webhooks", func(t *testing.T) {
-		for _, cfg := range []interface{}{
+		for _, cfg := range []any{
 			&schema.GitHubConnection{
 				Webhooks: []*schema.GitHubWebhook{
 					{Org: "org", Secret: "super secret"},
@@ -2207,7 +2207,7 @@ func TestConfigurationHasWebhooks(t *testing.T) {
 	})
 
 	t.Run("supported kinds without webhooks", func(t *testing.T) {
-		for _, cfg := range []interface{}{
+		for _, cfg := range []any{
 			&schema.GitHubConnection{},
 			&schema.GitLabConnection{},
 			&schema.BitbucketServerConnection{},
@@ -2219,7 +2219,7 @@ func TestConfigurationHasWebhooks(t *testing.T) {
 	})
 
 	t.Run("unsupported kinds", func(t *testing.T) {
-		for _, cfg := range []interface{}{
+		for _, cfg := range []any{
 			&schema.AWSCodeCommitConnection{},
 			&schema.BitbucketCloudConnection{},
 			&schema.GitoliteConnection{},
