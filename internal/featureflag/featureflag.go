@@ -1,7 +1,11 @@
 package featureflag
 
 import (
+	"context"
+
 	"encoding/binary"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"hash/fnv"
 	"time"
 )
@@ -19,15 +23,50 @@ type FeatureFlag struct {
 	DeletedAt *time.Time
 }
 
+func (f *FeatureFlag) CacheKey() string {
+	return GetFlagCacheKey(f.Name)
+}
+
+func GetEvaluatedFlagsFromContext(ctx context.Context, db database.DB) FlagSet {
+	flags, error := db.FeatureFlags().GetFeatureFlags(ctx)
+
+	if error != nil {
+		return FlagSet{}
+	}
+
+	var visitorID string
+
+	currentActor := actor.FromContext(ctx)
+
+	if currentActor.IsAuthenticated() {
+		visitorID = GetVisitorIDForUser(currentActor.UID)
+	} else if currentActor.AnonymousUID != "" {
+		visitorID = GetVisitorIDForAnonymousUser(currentActor.AnonymousUID)
+	} else {
+		return FlagSet{}
+	}
+
+	return GetEvaluatedFlagSetFromCache(flags, visitorID)
+}
+
 // EvaluateForUser evaluates the feature flag for a userID.
 func (f *FeatureFlag) EvaluateForUser(userID int32) bool {
+	var result bool
+
 	switch {
 	case f.Bool != nil:
-		return f.Bool.Value
+		result = f.Bool.Value
 	case f.Rollout != nil:
-		return hashUserAndFlag(userID, f.Name)%10000 < uint32(f.Rollout.Rollout)
+		result = hashUserAndFlag(userID, f.Name)%10000 < uint32(f.Rollout.Rollout)
 	}
-	panic("one of Bool or Rollout must be set")
+
+	if result == nil {
+		panic("one of Bool or Rollout must be set")
+	}
+
+	SetEvaluatedFlagToCache(f, GetVisitorIDForUser(userID), result)
+
+	return result
 }
 
 func hashUserAndFlag(userID int32, flagName string) uint32 {
@@ -39,13 +78,22 @@ func hashUserAndFlag(userID int32, flagName string) uint32 {
 
 // EvaluateForAnonymousUser evaluates the feature flag for an anonymous user ID.
 func (f *FeatureFlag) EvaluateForAnonymousUser(anonymousUID string) bool {
+	var result bool
+
 	switch {
 	case f.Bool != nil:
-		return f.Bool.Value
+		result = f.Bool.Value
 	case f.Rollout != nil:
-		return hashAnonymousUserAndFlag(anonymousUID, f.Name)%10000 < uint32(f.Rollout.Rollout)
+		result = hashAnonymousUserAndFlag(anonymousUID, f.Name)%10000 < uint32(f.Rollout.Rollout)
 	}
-	panic("one of Bool or Rollout must be set")
+
+	if result == nil {
+		panic("one of Bool or Rollout must be set")
+	}
+
+	SetEvaluatedFeatureFlagToCache(f, GetVisitorIDForAnonymousUser(anonymousUID), result)
+
+	return result
 }
 
 func hashAnonymousUserAndFlag(anonymousUID, flagName string) uint32 {
