@@ -72,7 +72,7 @@ const WithAdvancedSettings: Story = () => {
 
 export const AllOptionsPages: Story = () => (
     <div>
-        <h1 className="text-center mb-3">All Options Pages</h1>
+        <Typography.H1 className="text-center mb-3">All Options Pages</Typography.H1>
         <div>
             <div className="d-flex justify-content-center">
                 <div className="mx-4">
@@ -109,7 +109,7 @@ export const AllOptionsPages: Story = () => (
                 </div>
             </div>
 
-            <h2 className="mt-5 text-center">Not synced repository</h2>
+            <Typography.H2 className="mt-5 text-center">Not synced repository</Typography.H2>
             <div className="d-flex justify-content-center mb-3">
                 <div className="mx-4">
                     <Typography.H3 className="text-center">Sourcegraph Cloud</Typography.H3>

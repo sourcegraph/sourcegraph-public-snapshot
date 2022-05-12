@@ -143,7 +143,7 @@ export const PostSignUpPage: FunctionComponent<React.PropsWithChildren<PostSignU
                                         <Link to={PageRoutes.Search}>skip to code search</Link>.
                                     </Alert>
                                 )}
-                                <h2>Get started with Sourcegraph</h2>
+                                <Typography.H2>Get started with Sourcegraph</Typography.H2>
                                 <p className="text-muted pb-3">Follow these steps to set up your account</p>
                             </div>
                             <div className="mt-2 pb-3 d-flex flex-column align-items-center w-100">

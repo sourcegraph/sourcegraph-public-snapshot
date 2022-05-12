@@ -207,7 +207,7 @@ const _ProductSubscriptionForm: React.FunctionComponent<
                 <div className="row">
                     <div className="col-md-6">
                         <ProductSubscriptionUserCountFormControl value={userCount} onChange={setUserCount} />
-                        <h4 className="mt-2 mb-0">Plan</h4>
+                        <Typography.H4 className="mt-2 mb-0">Plan</Typography.H4>
                         <ProductPlanFormControl value={billingPlanID} onChange={setBillingPlanID} />
                     </div>
                     <div className="col-md-6 mt-3 mt-md-0">

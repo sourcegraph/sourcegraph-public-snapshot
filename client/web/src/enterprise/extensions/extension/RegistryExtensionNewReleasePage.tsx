@@ -139,7 +139,7 @@ export const RegistryExtensionNewReleasePage = withAuthenticatedUser<Props>(
         ) : (
             <div className="registry-extension-new-release-page">
                 <PageTitle title="Publish new release" />
-                <h2>Publish new release</h2>
+                <Typography.H2>Publish new release</Typography.H2>
                 <p>
                     Use the{' '}
                     <Link to="https://github.com/sourcegraph/src-cli" target="_blank" rel="noopener noreferrer">
@@ -153,7 +153,7 @@ export const RegistryExtensionNewReleasePage = withAuthenticatedUser<Props>(
                 {showEditor ? (
                     <>
                         <hr className="my-4" />
-                        <h2>Extension editor (experimental)</h2>
+                        <Typography.H2>Extension editor (experimental)</Typography.H2>
                         <p>
                             Edit or paste in an extension JSON manifest and JavaScript bundle. The JavaScript bundle
                             source must be self-contained; dependency bundling and TypeScript transpilation is not yet

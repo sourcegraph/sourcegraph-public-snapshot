@@ -136,7 +136,7 @@ export const CommunitySearchContextPage: React.FunctionComponent<
                             {props.communitySearchContextMetadata.description}
                         </p>
 
-                        <h2>Search examples</h2>
+                        <Typography.H2>Search examples</Typography.H2>
                         {props.communitySearchContextMetadata.examples.map(example => (
                             <div className="mt-3" key={example.title}>
                                 <Typography.H3 className="mb-3">{example.title}</Typography.H3>
@@ -166,10 +166,10 @@ export const CommunitySearchContextPage: React.FunctionComponent<
                     <div className={classNames('col-xs-12 col-lg-5', styles.column)}>
                         <div className="order-2-lg order-1-xs">
                             <Card className={styles.repoCard}>
-                                <h2>
+                                <Typography.H2>
                                     <Icon className="mr-2" as={SourceRepositoryMultipleIcon} />
                                     Repositories
-                                </h2>
+                                </Typography.H2>
                                 <p>
                                     Using the syntax{' '}
                                     <code>

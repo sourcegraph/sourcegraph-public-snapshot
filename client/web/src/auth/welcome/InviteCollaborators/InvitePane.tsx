@@ -120,7 +120,7 @@ export const InvitePane: React.FunctionComponent<React.PropsWithChildren<Props>>
             <div className="border overflow-hidden rounded">
                 <header>
                     <div className="py-3 px-3 d-flex justify-content-between align-items-center">
-                        <h4 className="flex-1 m-0">Collaborators</h4>
+                        <Typography.H4 className="flex-1 m-0">Collaborators</Typography.H4>
                         <Form
                             onSubmit={preventSubmit}
                             className="flex-1 d-inline-flex justify-content-between flex-row"
@@ -230,7 +230,7 @@ export const InvitePane: React.FunctionComponent<React.PropsWithChildren<Props>>
             <div>
                 <header>
                     <div className="py-3 d-flex justify-content-between align-items-center">
-                        <h4 className="m-0">Or invite by sending a link</h4>
+                        <Typography.H4 className="m-0">Or invite by sending a link</Typography.H4>
                     </div>
                 </header>
                 <CopyableText

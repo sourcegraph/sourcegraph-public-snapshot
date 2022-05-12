@@ -259,7 +259,7 @@ export const SiteAdminOverviewPage: React.FunctionComponent<React.PropsWithChild
                                             showLegend={false}
                                             header={
                                                 <div className="site-admin-overview-page__detail-header">
-                                                    <h2>Weekly unique users</h2>
+                                                    <Typography.H2>Weekly unique users</Typography.H2>
                                                     <Typography.H3>
                                                         <Button
                                                             to="/site-admin/usage-statistics"

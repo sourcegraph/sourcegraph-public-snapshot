@@ -17,6 +17,7 @@ export const Heading = React.forwardRef(
             )}
             {...props}
             ref={reference}
+            {...props}
         >
             {children}
         </Component>

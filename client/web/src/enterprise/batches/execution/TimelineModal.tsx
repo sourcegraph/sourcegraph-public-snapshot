@@ -37,7 +37,7 @@ export const TimelineModal: React.FunctionComponent<React.PropsWithChildren<Time
         <ExecutionTimeline node={node} />
         {node.executor && (
             <>
-                <h4 className="mt-2">Executor</h4>
+                <Typography.H4 className="mt-2">Executor</Typography.H4>
                 <ExecutorNode node={node.executor} />
             </>
         )}

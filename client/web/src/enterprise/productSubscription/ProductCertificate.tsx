@@ -44,7 +44,7 @@ export const ProductCertificate: React.FunctionComponent<React.PropsWithChildren
                 alt="Sourcegraph logo"
             />
             <div>
-                <h2 className="font-weight-normal mb-1">{title}</h2>
+                <Typography.H2 className="font-weight-normal mb-1">{title}</Typography.H2>
                 {subtitle && <Typography.H3 className="text-muted font-weight-normal">{subtitle}</Typography.H3>}
                 {detail && <p className="text-muted mb-0">{detail}</p>}
             </div>

@@ -337,7 +337,7 @@ export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadPro
             >
                 <span>
                     <NotepadIcon />
-                    <h2 className="px-1 d-inline">Notepad</h2>
+                    <Typography.H2 className="px-1 d-inline">Notepad</Typography.H2>
                     <small>
                         ({reversedEntries.length} note{reversedEntries.length === 1 ? '' : 's'})
                     </small>

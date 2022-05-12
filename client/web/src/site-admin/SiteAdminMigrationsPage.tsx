@@ -130,7 +130,7 @@ export const SiteAdminMigrationsPage: React.FunctionComponent<
             ) : (
                 <>
                     <PageTitle title="Out of band migrations - Admin" />
-                    <h2>Out-of-band migrations</h2>
+                    <Typography.H2>Out-of-band migrations</Typography.H2>
 
                     <p>
                         Out-of-band migrations run in the background of the Sourcegraph instance convert data from an

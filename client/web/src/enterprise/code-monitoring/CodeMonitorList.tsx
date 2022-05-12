@@ -25,7 +25,7 @@ const CodeMonitorEmptyList: React.FunctionComponent<
     React.PropsWithChildren<{ authenticatedUser: AuthenticatedUser | null }>
 > = ({ authenticatedUser }) => (
     <div className="text-center">
-        <h2 className="text-muted mb-2">No code monitors have been created.</h2>
+        <Typography.H2 className="text-muted mb-2">No code monitors have been created.</Typography.H2>
         {!authenticatedUser && (
             <CodeMonitorSignUpLink
                 className="my-3"

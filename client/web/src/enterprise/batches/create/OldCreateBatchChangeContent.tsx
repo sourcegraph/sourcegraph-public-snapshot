@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react'
 
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
-import { Container, Button, Link } from '@sourcegraph/wildcard'
+import { Container, Button, Link, Typography } from '@sourcegraph/wildcard'
 
 import { SidebarGroup, SidebarGroupHeader } from '../../../components/Sidebar'
 import { getFileName } from '../BatchSpec'
@@ -59,7 +59,7 @@ export const OldBatchChangePageContent: React.FunctionComponent<React.PropsWithC
 
     return (
         <>
-            <h2>1. Write a batch spec YAML file</h2>
+            <Typography.H2>1. Write a batch spec YAML file</Typography.H2>
             <Container className="mb-3">
                 <p className="mb-0">
                     The batch spec (
@@ -92,7 +92,7 @@ export const OldBatchChangePageContent: React.FunctionComponent<React.PropsWithC
                     <CodeSnippet code={selectedSample.file} language="yaml" className="mb-0" />
                 </Container>
             </div>
-            <h2>2. Preview the batch change with Sourcegraph CLI</h2>
+            <Typography.H2>2. Preview the batch change with Sourcegraph CLI</Typography.H2>
             <Container className="mb-3">
                 <p>
                     Use the{' '}

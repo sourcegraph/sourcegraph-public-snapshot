@@ -93,7 +93,7 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
                         </video>
                     </div>
                     <div className="col-12 col-md-6">
-                        <h2>Create living documentation effortlessly</h2>
+                        <Typography.H2>Create living documentation effortlessly</Typography.H2>
                         <p>
                             Notebooks make creating and sharing knowledge something you'll want to do, not something you
                             avoid.

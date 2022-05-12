@@ -247,7 +247,7 @@ export class SiteAdminUsageStatisticsPage extends React.Component<
         return (
             <div>
                 <PageTitle title="Usage statistics - Admin" />
-                <h2>Usage statistics</h2>
+                <Typography.H2>Usage statistics</Typography.H2>
                 {this.state.error && <ErrorAlert className="mb-3" error={this.state.error} />}
 
                 <Button

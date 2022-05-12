@@ -45,13 +45,13 @@ export default config
 
 export const Simple: Story = () => (
     <>
-        <h1>Cards</h1>
+        <Typography.H1>Cards</Typography.H1>
         <p>
             A card is a flexible and extensible content container. It includes options for headers and footers, a wide
             variety of content, contextual background colors, and powerful display options.{' '}
         </p>
 
-        <h2>Examples</h2>
+        <Typography.H2>Examples</Typography.H2>
 
         <Grid className="mb-3" columnCount={1}>
             <Card>
@@ -106,7 +106,7 @@ const cardItem = (
 
 export const InteractiveCard: Story = () => (
     <>
-        <h2>Interactive Cards</h2>
+        <Typography.H2>Interactive Cards</Typography.H2>
         {cardItem}
 
         <Typography.H3 className="mt-4">Cards List</Typography.H3>

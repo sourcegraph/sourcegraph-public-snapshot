@@ -123,7 +123,7 @@ type affiliateRepoProblemType = undefined | string | ErrorLike | ErrorLike[]
 
 const displayWarning = (warning: string, hint?: JSX.Element): JSX.Element => (
     <Alert className="my-3" role="alert" key={warning} variant="warning">
-        <h4 className="align-middle mb-1">{capitalize(warning)}</h4>
+        <Typography.H4 className="align-middle mb-1">{capitalize(warning)}</Typography.H4>
         <p className="align-middle mb-0">
             {hint} {hint ? 'for more details.' : null}
         </p>
@@ -132,7 +132,7 @@ const displayWarning = (warning: string, hint?: JSX.Element): JSX.Element => (
 
 const displayError = (error: ErrorLike, hint?: JSX.Element): JSX.Element => (
     <Alert className="my-3" role="alert" key={error.message} variant="danger">
-        <h4 className="align-middle mb-1">{capitalize(error.message)}</h4>
+        <Typography.H4 className="align-middle mb-1">{capitalize(error.message)}</Typography.H4>
         <p className="align-middle mb-0">
             {hint} {hint ? 'for more details.' : null}
         </p>
@@ -789,9 +789,9 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<React.P
     return (
         <UserSettingReposContainer>
             <PageTitle title="Manage Repositories" />
-            <h2 className="d-flex mb-2">
+            <Typography.H2 className="d-flex mb-2">
                 Manage Repositories <ProductStatusBadge status="beta" className="ml-2" linkToDocs={true} />
-            </h2>
+            </Typography.H2>
             <p className="text-muted">
                 Choose repositories to sync with Sourcegraph.
                 <Link

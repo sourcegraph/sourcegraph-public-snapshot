@@ -129,7 +129,7 @@ export const ExecutorNode: FunctionComponent<React.PropsWithChildren<ExecutorNod
             title={
                 <div className="d-flex justify-content-between">
                     <div>
-                        <h4 className="mb-0">
+                        <Typography.H4 className="mb-0">
                             {node.active ? (
                                 <Icon className="text-success mr-2" as={CheckboxBlankCircleIcon} />
                             ) : (
@@ -146,7 +146,7 @@ export const ExecutorNode: FunctionComponent<React.PropsWithChildren<ExecutorNod
                             >
                                 {node.queueName}
                             </Badge>
-                        </h4>
+                        </Typography.H4>
                     </div>
                     <span>
                         last seen <Timestamp date={node.lastSeenAt} />

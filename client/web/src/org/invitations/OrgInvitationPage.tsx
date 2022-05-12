@@ -200,7 +200,7 @@ export const OrgInvitationPage: React.FunctionComponent<React.PropsWithChildren<
                     icon={<OrgAvatar org={orgName} className="mt-3 mb-4" size="lg" />}
                 >
                     <Form className="text-center pr-4 pl-4 pb-4">
-                        <h2>You've been invited to join the {orgDisplayName} organization</h2>
+                        <Typography.H2>You've been invited to join the {orgDisplayName} organization</Typography.H2>
                         <div className="mt-4">
                             <UserAvatar className={classNames('mr-2', styles.userAvatar)} user={sender} size={24} />
                             <span>

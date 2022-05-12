@@ -66,13 +66,13 @@ export const AfterInstallPageContent: React.FunctionComponent<React.PropsWithChi
             </div>
 
             <div className="container mt-3">
-                <h1>🎉 You’ve just installed the Sourcegraph browser extension!</h1>
+                <Typography.H1>🎉 You’ve just installed the Sourcegraph browser extension!</Typography.H1>
                 <p className="lead mb-0">We’ve gathered the most important information that will get your started:</p>
             </div>
 
             <section className="border-bottom py-5">
                 <div className="container">
-                    <h2 className="mb-4">How do I use the extension?</h2>
+                    <Typography.H2 className="mb-4">How do I use the extension?</Typography.H2>
                     <div className="row">
                         <div className="col-md-6">
                             <Typography.H3>Code intelligence on your code host</Typography.H3>
@@ -101,7 +101,7 @@ export const AfterInstallPageContent: React.FunctionComponent<React.PropsWithChi
                 <div className="container">
                     <div className="row">
                         <div className="col-md-6 d-flex flex-column">
-                            <h2 className="mb-4">Make it work on your codehost</h2>
+                            <Typography.H2 className="mb-4">Make it work on your codehost</Typography.H2>
                             <div className="bg-2 rounded p-3 mb-3 d-flex flex-column justify-content-center">
                                 <Typography.H3 className={classNames('mb-3', styles.codeHostTitles)}>
                                     <Icon
@@ -187,7 +187,7 @@ export const AfterInstallPageContent: React.FunctionComponent<React.PropsWithChi
                 <div className="container">
                     <div className="row">
                         <div className="col-md-6 d-flex flex-column">
-                            <h2 className="mb-4">Make it work for private code</h2>
+                            <Typography.H2 className="mb-4">Make it work for private code</Typography.H2>
                             <p>By default, the browser extension works only for public code.</p>
                             <div className="d-flex align-items-center">
                                 <div className="bg-3 rounded-circle p-2">
@@ -236,7 +236,7 @@ export const AfterInstallPageContent: React.FunctionComponent<React.PropsWithChi
 
             <section className="py-5">
                 <div className="container">
-                    <h2 className="mb-4">Additional resources</h2>
+                    <Typography.H2 className="mb-4">Additional resources</Typography.H2>
                     <div className="d-flex w-100 align-items-center">
                         <div className="bg-3 rounded-circle p-2">
                             <Icon role="img" as={BookOpenPageVariantIcon} aria-hidden={true} />

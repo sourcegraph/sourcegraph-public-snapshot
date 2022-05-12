@@ -27,7 +27,7 @@ export const CodeInsightsLearnMore: React.FunctionComponent<
 
     return (
         <footer {...otherProps}>
-            <h2>Learn more about Code Insights</h2>
+            <Typography.H2>Learn more about Code Insights</Typography.H2>
 
             <div className={styles.cards}>
                 <article>

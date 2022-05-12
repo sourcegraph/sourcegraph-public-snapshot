@@ -73,9 +73,9 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
                         </aside>
 
                         <section className={styles.hereDescriptionBlock}>
-                            <h2 className={classNames(styles.heroTitle)}>
+                            <Typography.H2 className={classNames(styles.heroTitle)}>
                                 Draw insights from your codebase about how different initiatives are tracking over time
-                            </h2>
+                            </Typography.H2>
 
                             <p>
                                 Create customizable, visual dashboards with meaningful codebase signals your team can
@@ -119,7 +119,7 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
                     </Card>
 
                     <section className={styles.quoteSection}>
-                        <h2>Trusted by leading engineering teams around the world:</h2>
+                        <Typography.H2>Trusted by leading engineering teams around the world:</Typography.H2>
 
                         <q className={styles.quote}>
                             As we’ve grown, so has the need to better track and communicate our progress and goals

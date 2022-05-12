@@ -56,7 +56,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
     return (
         <div className="site-admin-pings-page">
             <PageTitle title="Pings - Admin" />
-            <h2>Pings</h2>
+            <Typography.H2>Pings</Typography.H2>
             <p>
                 Sourcegraph periodically sends a ping to Sourcegraph.com to help our product and customer teams. It
                 sends only the high-level data below. It never sends code, repository names, usernames, or any other

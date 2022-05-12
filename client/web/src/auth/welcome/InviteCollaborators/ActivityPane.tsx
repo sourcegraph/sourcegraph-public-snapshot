@@ -84,7 +84,7 @@ export const ActivityPane: React.FunctionComponent<React.PropsWithChildren<Props
             <div className="border overflow-hidden rounded">
                 <header>
                     <div className="py-4 px-3 d-flex justify-content-between align-items-center">
-                        <h4 className="m-0">Activity log</h4>
+                        <Typography.H4 className="m-0">Activity log</Typography.H4>
                         <small className="m-0 text-muted">{statusSummary}</small>
                     </div>
                 </header>

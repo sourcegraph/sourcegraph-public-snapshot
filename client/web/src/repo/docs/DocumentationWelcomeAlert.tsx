@@ -3,7 +3,7 @@ import React from 'react'
 import classNames from 'classnames'
 import BookOpenBlankVariantIcon from 'mdi-react/BookOpenBlankVariantIcon'
 
-import { CardBody, Card, Link, Icon } from '@sourcegraph/wildcard'
+import { CardBody, Card, Link, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../../components/DismissibleAlert'
 
@@ -16,10 +16,10 @@ export const DocumentationWelcomeAlert: React.FunctionComponent<React.PropsWithC
     >
         <Card>
             <CardBody>
-                <h1>
+                <Typography.H1>
                     <Icon className="mr-2" as={BookOpenBlankVariantIcon} />
                     API docs, for your code
-                </h1>
+                </Typography.H1>
                 <ul className="mb-0 pl-3">
                     <li>Use the navbar on the left to navigate all the API documentation for this repository.</li>
                     <li>Only the Go programming language is supported at this time.</li>

@@ -100,7 +100,7 @@ export const AddExternalServicePage: React.FunctionComponent<React.PropsWithChil
     return (
         <div className="mt-3">
             <PageTitle title="Add repositories" />
-            <h2>Add repositories</h2>
+            <Typography.H2>Add repositories</Typography.H2>
             {createdExternalService?.warning ? (
                 <div>
                     <div className="mb-3">
@@ -112,7 +112,7 @@ export const AddExternalServicePage: React.FunctionComponent<React.PropsWithChil
                         />
                     </div>
                     <Alert variant="warning">
-                        <h4>Warning</h4>
+                        <Typography.H4>Warning</Typography.H4>
                         <Markdown dangerousInnerHTML={renderMarkdown(createdExternalService.warning)} />
                     </Alert>
                 </div>

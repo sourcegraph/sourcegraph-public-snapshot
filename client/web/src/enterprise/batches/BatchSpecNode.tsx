@@ -97,7 +97,7 @@ export const BatchSpecNode: React.FunctionComponent<React.PropsWithChildren<Batc
             </div>
             {isExpanded && (
                 <div className={styles.nodeExpandedSection}>
-                    <h4>Input spec</h4>
+                    <Typography.H4>Input spec</Typography.H4>
                     <BatchSpec
                         isLightTheme={isLightTheme}
                         name={node.description.name}

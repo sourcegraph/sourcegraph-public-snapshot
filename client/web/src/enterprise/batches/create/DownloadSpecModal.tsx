@@ -65,7 +65,7 @@ export const DownloadSpecModal: React.FunctionComponent<React.PropsWithChildren<
             </div>
             <div className={styles.right}>
                 <div>
-                    <h4>About src-cli </h4>
+                    <Typography.H4>About src-cli </Typography.H4>
                     <p>
                         src cli is a command line interface to Sourcegraph. Its{' '}
                         <span className="text-monospace">batch</span> command allows to run batch specification files

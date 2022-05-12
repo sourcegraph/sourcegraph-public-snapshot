@@ -30,7 +30,7 @@ export const SearchAlert: React.FunctionComponent<React.PropsWithChildren<Search
 
         {alert.proposedQueries && (
             <>
-                <h4>Did you mean:</h4>
+                <Typography.H4>Did you mean:</Typography.H4>
                 <ul className="list-unstyled">
                     {alert.proposedQueries.map(proposedQuery => (
                         <li key={proposedQuery.query}>

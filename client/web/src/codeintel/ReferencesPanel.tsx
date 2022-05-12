@@ -47,6 +47,7 @@ import {
     CollapseHeader,
     CollapsePanel,
     Code,
+    Typography,
 } from '@sourcegraph/wildcard'
 
 import { ReferencesPanelHighlightedBlobResult, ReferencesPanelHighlightedBlobVariables } from '../graphql-operations'
@@ -521,7 +522,7 @@ const CollapsibleLocationList: React.FunctionComponent<
                         ) : (
                             <Icon aria-label="Expand" as={ChevronRightIcon} />
                         )}{' '}
-                        <h4 className="mb-0">{capitalize(props.name)}</h4>
+                        <Typography.H4 className="mb-0">{capitalize(props.name)}</Typography.H4>
                         <span className={classNames('ml-2 text-muted small', styles.cardHeaderSmallText)}>
                             ({props.locations.length} displayed{props.hasMore ? ', more available)' : ')'}
                         </span>

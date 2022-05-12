@@ -16,7 +16,7 @@ exports[`UserProductSubscriptionStatus toggle: license key hidden 1`] = `
       />
       <div>
         <h2
-          class="font-weight-normal mb-1"
+          class="h2 font-weight-normal mb-1"
         >
           P
         </h2>
@@ -82,7 +82,7 @@ exports[`UserProductSubscriptionStatus toggle: license key revealed 1`] = `
       />
       <div>
         <h2
-          class="font-weight-normal mb-1"
+          class="h2 font-weight-normal mb-1"
         >
           P
         </h2>
