@@ -1,0 +1,87 @@
+
+name: Issue Labeled
+on:
+  workflow_dispatch:
+    if: github.actor == github.event.repository.owner.login
+    branches: [ master ]
+  issues:
+    types: [labeled, reopened, opened]
+
+jobs:
+  # if manually triggered grab a random issue (will subtitute for cron when I figure out a good cadence)
+  issue-scheduled:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    outputs:
+      random-issue: ${{ steps.random_issue.outputs.random-issue }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "16"
+      - uses: actions/cache@v2
+        id: yarn-cache
+        with:
+          path: '**/node_modules'
+          key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}
+      - name: Install dependencies
+        if: steps.yarn-cache.outputs.cache-hit != 'true'
+        run: yarn --frozen-lockfile --ignore-scripts
+      - name: Get Random Issue
+        working-directory: dev/refinement-bot
+        id: random_issue
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TEAM: "team/frontend-platform"
+        run: |
+          npx ts-node getRandomIssue.ts
+
+  # Triggered when an issue is labeled or opened / reopened
+  issue-labeled:
+    if: >-
+      github.event_name != 'workflow_dispatch' &&
+      !github.event.issue.assignee &&
+      contains(github.event.issue.labels.*.name, 'frontend-platform') &&
+      !contains(github.event.issue.labels.*.name, 'tracking')
+    runs-on: ubuntu-latest
+    outputs:
+      labeled-issue: ${{github.event.issue}}
+    steps:
+      - name: 'Add to Project'
+        uses: leonsteinhaeuser/project-beta-automations@v1.2.1
+        with:
+          gh_token: ${{ secrets.GH_PROJECT_TOKEN }}
+          organization: sourcegraph
+          project_id: 222 # adds to project but doesn't set status.. if it's already there aborts out
+          resource_node_id: ${{ github.event.issue.node_id }}
+
+  # triggered after either one above finishes
+  issue-output:
+    if: ${{ always() }} # ensures this runs no matter what
+    runs-on: ubuntu-latest
+    needs: [issue-scheduled, issue-labeled] # one of these must finish
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "16"
+      - uses: actions/cache@v2
+        id: yarn-cache
+        with:
+          path: '**/node_modules'
+          key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}
+      - name: Install dependencies
+        if: steps.yarn-cache.outputs.cache-hit != 'true'
+        run: yarn --frozen-lockfile --ignore-scripts
+
+      # script to generate a slack message
+      - name: Generate Slack Message
+        working-directory: dev/refinement-bot
+        id: random_issue
+        env:
+          RANDOM_ISSUE: ${{needs.issue-scheduled.outputs.random-issue}}
+          LABELED_ISSUE: ${{needs.issue-labeled.outputs.labeled-issue}}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          CHECK_PRIORITY: true
+        run: |
+          npx ts-node sendMessage.ts
