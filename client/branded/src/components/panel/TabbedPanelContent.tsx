@@ -146,7 +146,7 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
     const isExperimentalReferencePanelEnabled =
         (!isErrorLike(props.settingsCascade.final) &&
             props.settingsCascade.final?.experimentalFeatures?.coolCodeIntel === true) ||
-        redesignedEnabled
+        redesignedEnabled === true
 
     const [tabIndex, setTabIndex] = useState(0)
     const location = useLocation()
