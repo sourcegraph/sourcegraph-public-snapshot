@@ -1,10 +1,12 @@
 package featureflag
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/gomodule/redigo/redis"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
 
@@ -12,14 +14,20 @@ var (
 	pool = redispool.Store
 )
 
-func GetEvaluatedFlagSetFromCache(flags []*FeatureFlag, visitorID string) FlagSet {
+func GetEvaluatedFlagSetFromCache(flags []*FeatureFlag, a *actor.Actor) FlagSet {
 	flagSet := FlagSet{}
 
 	c := pool.Get()
 	defer c.Close()
 
+	visitorID, err := getVisitorIDForActor(a)
+
+	if err != nil {
+		return flagSet
+	}
+
 	for _, flag := range flags {
-		value, _ := redis.Bool(c.Do("HGET", flag.CacheKey(), visitorID))
+		value, _ := redis.Bool(c.Do("HGET", getFlagCacheKey(flag.Name), visitorID))
 
 		flagSet[flag.Name] = value
 	}
@@ -27,28 +35,38 @@ func GetEvaluatedFlagSetFromCache(flags []*FeatureFlag, visitorID string) FlagSe
 	return flagSet
 }
 
-func SetEvaluatedFlagToCache(f *FeatureFlag, visitorID string, value bool) {
+func SetEvaluatedFlagToCache(name string, a *actor.Actor, value bool) {
 	c := pool.Get()
 	defer c.Close()
 
-	c.Do("HSET", f.CacheKey(), visitorID, fmt.Sprintf("%v", value))
+	var visitorID string
+
+	visitorID, err := getVisitorIDForActor(a)
+
+	if err != nil {
+		return
+	}
+
+	c.Do("HSET", getFlagCacheKey(name), visitorID, fmt.Sprintf("%v", value))
 }
 
 func ClearFlagFromCache(name string) {
 	c := pool.Get()
 	defer c.Close()
 
-	c.Do("DEL", GetFlagCacheKey(name))
+	c.Do("DEL", getFlagCacheKey(name))
 }
 
-func GetVisitorIDForUser(userID int32) string {
-	return fmt.Sprintf("uid_%v", userID)
+func getVisitorIDForActor(a *actor.Actor) (string, error) {
+	if a.IsAuthenticated() {
+		return fmt.Sprintf("uid_%v", a.UID), nil
+	} else if a.AnonymousUID != "" {
+		return "auid_" + a.AnonymousUID, nil
+	} else {
+		return "", errors.New("UID/AnonymousUID are emptry for the given actor.")
+	}
 }
 
-func GetVisitorIDForAnonymousUser(anonymousUID string) string {
-	return "auid_" + anonymousUID
-}
-
-func GetFlagCacheKey(name string) string {
+func getFlagCacheKey(name string) string {
 	return "ff_" + name
 }
