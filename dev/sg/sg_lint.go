@@ -161,7 +161,11 @@ func printLintReport(pending output.Pending, start time.Time, report *lint.Repor
 		}
 		return
 	}
+
 	pending.VerboseLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, msg))
+	if verbose {
+		pending.Verbose(report.Summary())
+	}
 }
 
 type lintTargets []lint.Target

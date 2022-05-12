@@ -40,8 +40,9 @@ func checkSVGCompression() lint.Runner {
 			}
 		}
 		if errs != nil {
-			output := fmt.Sprintf("%s\n\nFound SVG optimizations. Please run 'yarn optimize-svg-assets %s' and commit the result.",
-				errs.Error(), lintDir)
+			output := fmt.Sprintf("%s\n\nChecked %d files and found SVG optimizations. "+
+				"Please run 'yarn optimize-svg-assets %s' and commit the result.",
+				errs.Error(), len(diff), lintDir)
 			return &lint.Report{
 				Header: header,
 				Output: output,
@@ -51,7 +52,7 @@ func checkSVGCompression() lint.Runner {
 
 		return &lint.Report{
 			Header: header,
-			Output: "SVGs okay!",
+			Output: fmt.Sprintf("SVGs okay! (Checked: %d)", len(diff)),
 		}
 	}
 }
