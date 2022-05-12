@@ -3,7 +3,7 @@ import * as React from 'react'
 import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 
-import { Button, CardTitle, CardBody, Card, Icon } from '@sourcegraph/wildcard'
+import { Button, CardTitle, CardBody, Card, Icon, Typography } from '@sourcegraph/wildcard'
 
 import styles from './Toast.module.scss'
 
@@ -19,7 +19,7 @@ export const Toast: React.FunctionComponent<React.PropsWithChildren<ToastProps>>
     <Card className={styles.toast}>
         <CardBody>
             <CardTitle as="header" className={classNames(styles.header)}>
-                <h2 className="mb-0">{props.title}</h2>
+                <Typography.H2 className="mb-0">{props.title}</Typography.H2>
                 <Button
                     onClick={props.onDismiss}
                     variant="icon"

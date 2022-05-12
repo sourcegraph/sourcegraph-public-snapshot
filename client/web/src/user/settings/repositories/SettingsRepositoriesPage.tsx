@@ -18,6 +18,7 @@ import {
     Alert,
     Link,
     Icon,
+    Typography,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
@@ -92,7 +93,9 @@ export const SettingsRepositoriesPage: React.FunctionComponent<React.PropsWithCh
 
     const NoAddedReposBanner = (
         <Container className="text-center">
-            <h4>{owner.name ? `${owner.name} has` : 'You have'} not added any repositories to Sourcegraph</h4>
+            <Typography.H4>
+                {owner.name ? `${owner.name} has` : 'You have'} not added any repositories to Sourcegraph
+            </Typography.H4>
 
             {externalServices?.length !== 0 ? (
                 <span className="text-muted">
@@ -302,7 +305,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<React.PropsWithCh
 
     const getSearchContextBanner = (orgName: string): JSX.Element => (
         <Alert className="my-3" role="alert" key="add-repos" variant="success">
-            <h4 className="align-middle mb-1">Added repositories</h4>
+            <Typography.H4 className="align-middle mb-1">Added repositories</Typography.H4>
             <p className="align-middle mb-0">
                 Search across all repositories added by {orgName} with{' '}
                 <code className="user-code-hosts-page__code--inline">
@@ -402,7 +405,9 @@ export const SettingsRepositoriesPage: React.FunctionComponent<React.PropsWithCh
                 className="mb-3"
             />
             {isErrorLike(status) ? (
-                <h3 className="text-muted">Sorry, we couldn’t fetch your repositories. Try again?</h3>
+                <Typography.H3 className="text-muted">
+                    Sorry, we couldn’t fetch your repositories. Try again?
+                </Typography.H3>
             ) : !externalServices ? (
                 <div className="d-flex justify-content-center mt-4">
                     <LoadingSpinner />

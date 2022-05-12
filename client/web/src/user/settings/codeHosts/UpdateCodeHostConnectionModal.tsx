@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike } from '@sourcegraph/common'
-import { Button, Modal, Link, Alert } from '@sourcegraph/wildcard'
+import { Button, Modal, Link, Alert, Typography } from '@sourcegraph/wildcard'
 
 import { updateExternalService } from '../../../components/externalServices/backend'
 import { LoaderButton } from '../../../components/LoaderButton'
@@ -78,9 +78,9 @@ export const UpdateCodeHostConnectionModal: React.FunctionComponent<
     return (
         <Modal aria-labelledby={`heading--update-${serviceName}-code-host`} onDismiss={onDidCancel}>
             <div className="web-content">
-                <h3 id={`heading--update-${serviceName}-code-host`} className="mb-4">
+                <Typography.H3 id={`heading--update-${serviceName}-code-host`} className="mb-4">
                     Update {serviceName} connection
-                </h3>
+                </Typography.H3>
                 <Form onSubmit={onTokenSubmit}>
                     <div className="form-group mb-4">
                         <Alert variant="info" role="alert">

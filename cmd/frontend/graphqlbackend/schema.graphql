@@ -114,7 +114,7 @@ type Mutation {
     """
     Delete an external service. Only site admins may perform this mutation.
     """
-    deleteExternalService(externalService: ID!): EmptyResponse!
+    deleteExternalService(externalService: ID!, async: Boolean = false): EmptyResponse!
     """
     Tests the connection to a mirror repository's original source repository. This is an
     expensive and slow operation, so it should only be used for interactive diagnostics.
