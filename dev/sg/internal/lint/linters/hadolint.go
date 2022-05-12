@@ -12,9 +12,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/download"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/lint"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 func hadolint() lint.Runner {
@@ -78,7 +77,7 @@ func hadolint() lint.Runner {
 
 		// Download
 		os.MkdirAll("./.bin", os.ModePerm)
-		stdout.Out.WriteLine(output.Linef(output.EmojiHourglass, nil, "Downloading hadolint from %s", url))
+		std.Out.WriteNoticef("Downloading hadolint from %s", url)
 		if err := download.Exeuctable(url, hadolintBinary); err != nil {
 			return &lint.Report{
 				Header: header,

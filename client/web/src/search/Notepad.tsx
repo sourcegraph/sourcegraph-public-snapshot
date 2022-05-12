@@ -28,7 +28,7 @@ import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { appendContextFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { buildSearchURLQuery, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, TextArea, Icon } from '@sourcegraph/wildcard'
+import { Button, Link, TextArea, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { BlockInput } from '../notebooks'
 import {
@@ -337,7 +337,7 @@ export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadPro
             >
                 <span>
                     <NotepadIcon />
-                    <h2 className="px-1 d-inline">Notepad</h2>
+                    <Typography.H2 className="px-1 d-inline">Notepad</Typography.H2>
                     <small>
                         ({reversedEntries.length} note{reversedEntries.length === 1 ? '' : 's'})
                     </small>
@@ -350,13 +350,15 @@ export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadPro
                 <>
                     {newEntry && (
                         <div className={classNames(styles.newNote, 'p-2')}>
-                            <h3>Create new note from current {newEntry.type === 'file' ? 'file' : 'search'}:</h3>
+                            <Typography.H3>
+                                Create new note from current {newEntry.type === 'file' ? 'file' : 'search'}:
+                            </Typography.H3>
                             <AddEntryButton entry={newEntry} addEntry={addEntry} />
                         </div>
                     )}
-                    <h3 className="p-2">
+                    <Typography.H3 className="p-2">
                         Notes <small>({reversedEntries.length})</small>
-                    </h3>
+                    </Typography.H3>
                     <ul role="listbox" aria-multiselectable={true} onKeyDown={handleKey} tabIndex={0}>
                         {reversedEntries.map((entry, index) => {
                             const selected = selectedEntries.includes(index)

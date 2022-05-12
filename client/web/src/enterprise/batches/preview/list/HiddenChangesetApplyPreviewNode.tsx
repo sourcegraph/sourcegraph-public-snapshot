@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 
 import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
-import { Icon } from '@sourcegraph/wildcard'
+import { Icon, Typography } from '@sourcegraph/wildcard'
 
 import { InputTooltip } from '../../../../components/InputTooltip'
 import { ChangesetSpecType, HiddenChangesetApplyPreviewFields } from '../../../../graphql-operations'
@@ -56,7 +56,7 @@ export const HiddenChangesetApplyPreviewNode: React.FunctionComponent<
                 ' d-flex flex-column'
             )}
         >
-            <h3 className="text-muted">
+            <Typography.H3 className="text-muted">
                 {node.targets.__typename === 'HiddenApplyPreviewTargetsAttach' ||
                 node.targets.__typename === 'HiddenApplyPreviewTargetsUpdate' ? (
                     <>
@@ -70,7 +70,7 @@ export const HiddenChangesetApplyPreviewNode: React.FunctionComponent<
                 ) : (
                     <>Detach changeset in a private repository</>
                 )}
-            </h3>
+            </Typography.H3>
             <span className="text-danger">
                 No action will be taken on apply.{' '}
                 <Icon data-tooltip="You have no permissions to access this repository." as={InfoCircleOutlineIcon} />

@@ -8,7 +8,7 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -72,7 +72,7 @@ func listSecretExec(ctx context.Context, args []string) error {
 	if err != nil {
 		return err
 	}
-	stdout.Out.WriteLine(output.Linef("", output.StyleBold, "Secrets:"))
+	std.Out.WriteLine(output.Styled(output.StyleBold, "Secrets:"))
 	keys := secretsStore.Keys()
 	if secretListViewFlag {
 		for _, key := range keys {
@@ -84,11 +84,11 @@ func listSecretExec(ctx context.Context, args []string) error {
 			if err != nil {
 				return errors.Newf("Marshal %q: %w", key, err)
 			}
-			stdout.Out.WriteLine(output.Linef("", output.StyleYellow, "- %s:", key))
-			stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "  %s", string(data)))
+			std.Out.WriteLine(output.Styledf(output.StyleYellow, "- %s:", key))
+			std.Out.WriteLine(output.Styledf(output.StyleWarning, "  %s", string(data)))
 		}
 	} else {
-		stdout.Out.WriteLine(output.Linef("", output.StyleYellow, strings.Join(keys, ", ")))
+		std.Out.WriteLine(output.Styled(output.StyleYellow, strings.Join(keys, ", ")))
 	}
 	return nil
 }

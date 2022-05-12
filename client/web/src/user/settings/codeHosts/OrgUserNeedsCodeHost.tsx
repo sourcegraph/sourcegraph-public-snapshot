@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Container, Button, Link } from '@sourcegraph/wildcard'
+import { Container, Button, Link, Typography } from '@sourcegraph/wildcard'
 
 import { useExternalServices } from '../../../auth/useExternalServices'
 import { ListExternalServiceFields } from '../../../graphql-operations'
@@ -35,7 +35,7 @@ export const OrgUserNeedsCodeHost: React.FunctionComponent<React.PropsWithChildr
         const missingString = userMissing.join(' and ')
         return (
             <Container className="mb-4">
-                <h3>Just one more step...</h3>
+                <Typography.H3>Just one more step...</Typography.H3>
                 <p>
                     Connect with {missingString} to start searching across the {orgDisplayName} organization's private
                     repositories on Sourcegraph.

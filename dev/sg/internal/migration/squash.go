@@ -16,7 +16,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
@@ -55,7 +55,7 @@ func Squash(database db.Database, commit string) error {
 	privilegedUpMigration, unprivilegedUpMigration := splitPrivilegedMigrations(squashedUpMigration)
 
 	// Add newline after progress related to container
-	stdout.Out.Write("")
+	std.Out.Write("")
 
 	unprivilegedFiles, err := makeMigrationFilenames(database, newRoot.ID)
 	if err != nil {
@@ -120,7 +120,7 @@ func Squash(database db.Database, commit string) error {
 		return err
 	}
 
-	block := stdout.Out.Block(output.Linef("", output.StyleBold, "Updated filesystem"))
+	block := std.Out.Block(output.Styled(output.StyleBold, "Updated filesystem"))
 	defer block.Close()
 
 	for _, filename := range filenames {
@@ -197,7 +197,7 @@ func runTargetedUpMigrations(database db.Database, targetVersions []int, postgre
 	runner.DisableLogging()
 	defer runner.EnableLogging()
 
-	pending := stdout.Out.Pending(output.Line("", output.StylePending, "Migrating PostgreSQL schema..."))
+	pending := std.Out.Pending(output.Line("", output.StylePending, "Migrating PostgreSQL schema..."))
 	defer func() {
 		if err == nil {
 			pending.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Migrated PostgreSQL schema"))
@@ -234,7 +234,7 @@ func runTargetedUpMigrations(database db.Database, targetVersions []int, postgre
 // This method returns a teardown function that filters the error value of the calling
 // function, as well as any immediate synchronous error.
 func runPostgresContainer(databaseName string) (_ func(err error) error, err error) {
-	pending := stdout.Out.Pending(output.Line("", output.StylePending, "Starting PostgreSQL 12 in a container..."))
+	pending := std.Out.Pending(output.Line("", output.StylePending, "Starting PostgreSQL 12 in a container..."))
 	defer func() {
 		if err == nil {
 			pending.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Started PostgreSQL in a container"))
@@ -288,7 +288,7 @@ func runPostgresContainer(databaseName string) (_ func(err error) error, err err
 // generateSquashedUpMigration returns the contents of an up migration file containing the
 // current contents of the given database.
 func generateSquashedUpMigration(database db.Database, postgresDSN string) (_ string, err error) {
-	pending := stdout.Out.Pending(output.Line("", output.StylePending, "Dumping current database..."))
+	pending := std.Out.Pending(output.Line("", output.StylePending, "Dumping current database..."))
 	defer func() {
 		if err == nil {
 			pending.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Dumped current database"))

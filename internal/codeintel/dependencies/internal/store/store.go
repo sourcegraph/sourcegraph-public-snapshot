@@ -135,13 +135,8 @@ func (s *Store) UpsertDependencyRepos(ctx context.Context, deps []shared.Repo) (
 	}
 
 	returningScanner := func(rows dbutil.Scanner) error {
-		var dependencyRepo shared.Repo
-		if err = rows.Scan(
-			&dependencyRepo.ID,
-			&dependencyRepo.Scheme,
-			&dependencyRepo.Name,
-			&dependencyRepo.Version,
-		); err != nil {
+		dependencyRepo, err := scanDependencyRepo(rows)
+		if err != nil {
 			return err
 		}
 
