@@ -20,6 +20,7 @@ const (
 	CIScripts
 	Terraform
 	SVG
+	Shell
 
 	// All indicates all changes should be considered included in this diff, except None.
 	All
@@ -120,6 +121,11 @@ func ParseDiff(files []string) (diff Diff) {
 		if strings.HasSuffix(p, ".svg") {
 			diff |= SVG
 		}
+
+		// Affects scripts
+		if strings.HasSuffix(p, ".sh") {
+			diff |= Shell
+		}
 	}
 	return
 }
@@ -149,6 +155,8 @@ func (d Diff) String() string {
 		return "Terraform"
 	case SVG:
 		return "SVG"
+	case Shell:
+		return "Shell"
 
 	case All:
 		return "All"
