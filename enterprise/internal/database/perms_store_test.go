@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -539,6 +540,34 @@ func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
 					t.Fatal("repo_permissions:", err)
 				}
 			})
+		}
+	}
+}
+
+func testPermsStore_SetRepoPermissionsUnrestricted(db *sql.DB) func(*testing.T) {
+	return func(t *testing.T) {
+		// TOOD: Use this in other tests
+		s := setupTestPerms(t, db, clock)
+
+		rp := &authz.RepoPermissions{
+			RepoID:       1,
+			Perm:         authz.Read,
+			UserIDs:      toMapset(2),
+			Unrestricted: true,
+		}
+		if err := s.SetRepoPermissions(context.Background(), rp); err != nil {
+			t.Fatal(err)
+		}
+
+		rp = &authz.RepoPermissions{
+			RepoID: 1,
+			Perm:   authz.Read,
+		}
+		if err := s.LoadRepoPermissions(context.Background(), rp); err != nil {
+			t.Fatal(err)
+		}
+		if rp.Unrestricted != true {
+			t.Fatal("Want true")
 		}
 	}
 }
@@ -3045,4 +3074,13 @@ func testPermsStore_Metrics(db *sql.DB) func(*testing.T) {
 			t.Fatalf("mismatch (-want +got):\n%s", diff)
 		}
 	}
+}
+
+func setupTestPerms(t *testing.T, db dbutil.DB, clock func() time.Time) *permsStore {
+	t.Helper()
+	s := perms(db, clock)
+	t.Cleanup(func() {
+		cleanupPermsTables(t, s)
+	})
+	return s
 }

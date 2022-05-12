@@ -38,6 +38,7 @@ func TestIntegration_PermsStore(t *testing.T) {
 		{"LoadRepoPermissions", testPermsStore_LoadRepoPermissions(db)},
 		{"SetUserPermissions", testPermsStore_SetUserPermissions(db)},
 		{"SetRepoPermissions", testPermsStore_SetRepoPermissions(db)},
+		{"SetRepoPermissionsUnrestricted", testPermsStore_SetRepoPermissionsUnrestricted(db)},
 		{"TouchRepoPermissions", testPermsStore_TouchRepoPermissions(db)},
 		{"LoadUserPendingPermissions", testPermsStore_LoadUserPendingPermissions(db)},
 		{"SetRepoPendingPermissions", testPermsStore_SetRepoPendingPermissions(db)},
