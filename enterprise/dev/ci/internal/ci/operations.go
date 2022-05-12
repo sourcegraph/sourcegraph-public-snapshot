@@ -413,7 +413,6 @@ func addGoTestsBackcompat(minimumUpgradeableVersion string) func(pipeline *bk.Pi
 				bk.AnnotatedCmd("./dev/ci/go-backcompat/test.sh "+testSuffix, bk.AnnotatedCmdOpts{
 					Annotations: &bk.AnnotationOpts{},
 				}),
-				bk.Skip("Broken, see https://github.com/sourcegraph/sourcegraph/pull/35334"),
 			)
 		})
 	}
