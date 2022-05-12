@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react'
 
 import { gql, useMutation } from '@apollo/client'
 
-import { Link, Alert, AnchorLink, Checkbox } from '@sourcegraph/wildcard'
+import { Link, Alert, AnchorLink, Checkbox, Typography } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../components/LoaderButton'
 
@@ -47,7 +47,7 @@ export const TosConsentModal: React.FunctionComponent<React.PropsWithChildren<{ 
         <div className={styles.container}>
             <SourcegraphIcon className={styles.icon} />
             <div className={styles.content}>
-                <h1>We respect your data privacy</h1>
+                <Typography.H1>We respect your data privacy</Typography.H1>
                 <p className="mb-5">
                     We take data privacy seriously. We collect only what we need to provide a great experience, and we
                     never have access to your private data or code.

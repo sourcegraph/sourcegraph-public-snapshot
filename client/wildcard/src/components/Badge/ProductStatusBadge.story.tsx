@@ -43,7 +43,7 @@ export default config
 
 export const Badges = () => (
     <>
-        <h1>Product status badges</h1>
+        <Typography.H1>Product status badges</Typography.H1>
         <p>
             We often want to label different parts of our products with badges to ensure they are accurately presented
             to users.

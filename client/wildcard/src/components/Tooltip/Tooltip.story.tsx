@@ -55,7 +55,7 @@ Basic.parameters = {
 
 export const Positions: Story = () => (
     <>
-        <h1>Tooltip</h1>
+        <Typography.H1>Tooltip</Typography.H1>
         <Typography.H2>Positions</Typography.H2>
 
         <Grid columnCount={4}>

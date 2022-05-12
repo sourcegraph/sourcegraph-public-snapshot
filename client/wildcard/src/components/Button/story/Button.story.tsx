@@ -54,7 +54,7 @@ export const Simple: Story = () => (
 
 export const AllButtons: Story = () => (
     <div className="pb-3">
-        <h1>Buttons</h1>
+        <Typography.H1>Buttons</Typography.H1>
         <Typography.H2>Variants</Typography.H2>
         <ButtonVariants variants={BUTTON_VARIANTS} />
         <Typography.H2>Outline</Typography.H2>

@@ -44,7 +44,7 @@ export default Config
 
 export const Overview: Story = () => (
     <>
-        <h1>ButtonLink</h1>
+        <Typography.H1>ButtonLink</Typography.H1>
         <Typography.H2>Variants</Typography.H2>
         <Grid className="mb-3" columnCount={3}>
             {BUTTON_VARIANTS.map(variant => (

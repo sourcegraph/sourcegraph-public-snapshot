@@ -54,7 +54,7 @@ const BaseCheckbox = ({ name, ...props }: { name: string } & Pick<CheckboxProps,
 
 export const CheckboxExamples: Story = () => (
     <>
-        <h1>Checkbox</h1>
+        <Typography.H1>Checkbox</Typography.H1>
         <Grid columnCount={4}>
             <div>
                 <Typography.H2>Standard</Typography.H2>

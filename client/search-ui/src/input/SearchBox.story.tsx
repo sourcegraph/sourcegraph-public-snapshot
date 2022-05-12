@@ -59,7 +59,7 @@ add('SearchBox', () => (
 
                     return (
                         <div key={editorComponent}>
-                            <h1>{editorComponent}</h1>
+                            <Typography.H1>{editorComponent}</Typography.H1>
                             <Typography.H2>Default</Typography.H2>
                             <div className="w-100 d-flex my-2">
                                 <SearchBox {...searchBoxProps} isLightTheme={props.isLightTheme} />

@@ -66,7 +66,7 @@ export const AfterInstallPageContent: React.FunctionComponent<React.PropsWithChi
             </div>
 
             <div className="container mt-3">
-                <h1>🎉 You’ve just installed the Sourcegraph browser extension!</h1>
+                <Typography.H1>🎉 You’ve just installed the Sourcegraph browser extension!</Typography.H1>
                 <p className="lead mb-0">We’ve gathered the most important information that will get your started:</p>
             </div>
 

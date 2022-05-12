@@ -239,7 +239,7 @@ export const RepositoryDocumentationPage: React.FunctionComponent<React.PropsWit
                                     </PopoverTrigger>
                                 </FeedbackPrompt>
                             </div>
-                            <h1>
+                            <Typography.H1>
                                 <Icon className="mr-1" as={BookOpenBlankVariantIcon} />
                                 API docs
                                 <ProductStatusBadge
@@ -247,7 +247,7 @@ export const RepositoryDocumentationPage: React.FunctionComponent<React.PropsWit
                                     className="text-uppercase ml-2"
                                     linkToDocs={true}
                                 />
-                            </h1>
+                            </Typography.H1>
                             <p>API documentation generated for all your code</p>
                             <Container>
                                 <Typography.H2 className="text-muted mb-2">

@@ -29,7 +29,7 @@ export const Simple: Story = () => {
 
 export const AllPageSelectors: Story = () => (
     <>
-        <h1>Page Selector</h1>
+        <Typography.H1>Page Selector</Typography.H1>
         <Typography.H2>Short</Typography.H2>
         <Short />
         <Typography.H2>Long</Typography.H2>

@@ -78,7 +78,7 @@ export const Simple: Story = () => {
             <Grid columnCount={4}>
                 <div />
                 <div>
-                    <h1>Panel</h1>
+                    <Typography.H1>Panel</Typography.H1>
                     <Typography.H2>Positions</Typography.H2>
                     <div className="mb-2">
                         <Button variant="secondary" onClick={() => showPanelWithPosition('left')}>

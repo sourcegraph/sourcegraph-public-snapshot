@@ -76,7 +76,7 @@ const BaseRadio = ({ name, ...props }: Pick<RadioButtonProps, 'name' | 'isValid'
 
 export const RadioExamples: Story = () => (
     <>
-        <h1>Radio</h1>
+        <Typography.H1>Radio</Typography.H1>
         <Grid columnCount={4}>
             <div>
                 <Typography.H2>Standard</Typography.H2>

@@ -12,7 +12,7 @@ export const TabsStory: Story<TabsProps & { actions: boolean }> = args => {
 
     return (
         <>
-            <h1>Tabs</h1>
+            <Typography.H1>Tabs</Typography.H1>
             <Container title="Standard">
                 <TabsVariant {...args} />
             </Container>

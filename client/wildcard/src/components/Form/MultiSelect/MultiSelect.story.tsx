@@ -66,7 +66,7 @@ const SelectWithValues = () => {
 
 export const MultiSelectExamples: Story = () => (
     <>
-        <h1>Multi Select</h1>
+        <Typography.H1>Multi Select</Typography.H1>
         <Grid columnCount={4}>
             <div>
                 <Typography.H2>Standard</Typography.H2>

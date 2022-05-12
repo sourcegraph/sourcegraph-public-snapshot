@@ -80,7 +80,7 @@ const SelectVariants = ({ isCustomStyle }: Pick<SelectProps, 'isCustomStyle'>) =
 
 export const SelectExamples: Story = () => (
     <>
-        <h1>Select</h1>
+        <Typography.H1>Select</Typography.H1>
         <Typography.H2>Native</Typography.H2>
         <SelectVariants />
         <Typography.H2>Custom</Typography.H2>

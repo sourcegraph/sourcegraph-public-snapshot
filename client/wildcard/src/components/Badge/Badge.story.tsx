@@ -43,7 +43,7 @@ export default config
 
 export const Badges = () => (
     <>
-        <h1>Badges</h1>
+        <Typography.H1>Badges</Typography.H1>
         <Typography.H2>Variants</Typography.H2>
         <p>Our badges can be styled with different variants.</p>
         {BADGE_VARIANTS.map(variant => (

@@ -29,7 +29,7 @@ export default config
 
 export const GlobalAlerts: Story = () => (
     <div>
-        <h1>Global Alert</h1>
+        <Typography.H1>Global Alert</Typography.H1>
         <p>
             These alerts map to the <code>AlertType</code> returned from the backend API
         </p>
