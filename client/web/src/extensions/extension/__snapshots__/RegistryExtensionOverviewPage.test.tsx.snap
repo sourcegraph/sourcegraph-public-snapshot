@@ -52,7 +52,9 @@ exports[`RegistryExtensionOverviewPage renders 1`] = `
       <div
         class="sidebarSection"
       >
-        <h3>
+        <h3
+          class="h3"
+        >
           Resources
         </h3>
         <small>
@@ -84,7 +86,9 @@ exports[`RegistryExtensionOverviewPage renders 1`] = `
       <div
         class="sidebarSection"
       >
-        <h3>
+        <h3
+          class="h3"
+        >
           Extension ID
         </h3>
         <small
@@ -96,7 +100,9 @@ exports[`RegistryExtensionOverviewPage renders 1`] = `
       <div
         class="pb-0 sidebarSection"
       >
-        <h3>
+        <h3
+          class="h3"
+        >
           Categories
         </h3>
         <ul
@@ -128,7 +134,9 @@ exports[`RegistryExtensionOverviewPage renders 1`] = `
       <div
         class="pb-0 sidebarSection"
       >
-        <h3>
+        <h3
+          class="h3"
+        >
           Tags
         </h3>
         <ul
@@ -213,7 +221,9 @@ exports[`RegistryExtensionOverviewPage renders with no tags 1`] = `
       <div
         class="sidebarSection"
       >
-        <h3>
+        <h3
+          class="h3"
+        >
           Resources
         </h3>
         <small>
@@ -245,7 +255,9 @@ exports[`RegistryExtensionOverviewPage renders with no tags 1`] = `
       <div
         class="sidebarSection"
       >
-        <h3>
+        <h3
+          class="h3"
+        >
           Extension ID
         </h3>
         <small
@@ -257,7 +269,9 @@ exports[`RegistryExtensionOverviewPage renders with no tags 1`] = `
       <div
         class="pb-0 sidebarSection"
       >
-        <h3>
+        <h3
+          class="h3"
+        >
           Categories
         </h3>
         <ul

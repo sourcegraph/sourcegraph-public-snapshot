@@ -8,7 +8,7 @@ import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Card, CardBody, Link, LoadingSpinner, Icon } from '@sourcegraph/wildcard'
+import { Button, Card, CardBody, Link, LoadingSpinner, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { InvitableCollaborator } from '../../auth/welcome/InviteCollaborators/InviteCollaborators'
@@ -210,10 +210,10 @@ const CollaboratorsPanelInfo: React.FunctionComponent<React.PropsWithChildren<{ 
                 <Card>
                     <CardBody>
                         <div className={classNames('d-flex', 'align-content-start', 'mb-2')}>
-                            <h2 className={classNames(styles.infoBox, 'mb-0')}>
+                            <Typography.H2 className={classNames(styles.infoBox, 'mb-0')}>
                                 <Icon className="mr-2 text-muted" as={InformationOutlineIcon} />
                                 What is this?
-                            </h2>
+                            </Typography.H2>
                             <div className="flex-grow-1" />
                             <Button
                                 variant="icon"

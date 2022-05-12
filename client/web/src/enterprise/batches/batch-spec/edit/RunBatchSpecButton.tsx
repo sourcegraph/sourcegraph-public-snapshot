@@ -15,6 +15,7 @@ import {
     PopoverContent,
     PopoverTrigger,
     Icon,
+    Typography,
 } from '@sourcegraph/wildcard'
 
 import styles from './RunBatchSpecButton.module.scss'
@@ -66,7 +67,7 @@ export const RunBatchSpecButton: React.FunctionComponent<React.PropsWithChildren
             </ButtonGroup>
 
             <PopoverContent className={styles.menuList} position={Position.bottomEnd}>
-                <h3 className="pb-2 pt-3 pl-3 pr-3 m-0">Execution options</h3>
+                <Typography.H3 className="pb-2 pt-3 pl-3 pr-3 m-0">Execution options</Typography.H3>
                 <ExecutionOption moreInfo="When this batch spec is executed, it will not use cached results from any previous execution.">
                     <Checkbox
                         name="run-without-cache"

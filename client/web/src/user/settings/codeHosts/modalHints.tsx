@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Link } from '@sourcegraph/wildcard'
+import { Link, Typography } from '@sourcegraph/wildcard'
 
 import { ExternalServiceKind } from '../../../graphql-operations'
 
@@ -38,7 +38,7 @@ export const scopes: Partial<Record<ExternalServiceKind, React.ReactFragment>> =
 export const getMachineUserFragment = (serviceName: string): React.ReactFragment => (
     <div className={styles.alertBodyBg + ' p-2 border border-2 rounded'}>
         <div className="px-2 py-1">
-            <h4>
+            <Typography.H4>
                 We recommend setting up a machine user on {serviceName} to provide restricted access to repositories.{' '}
                 <Link
                     to="https://docs.sourcegraph.com/cloud/access_tokens_on_cloud"
@@ -48,7 +48,7 @@ export const getMachineUserFragment = (serviceName: string): React.ReactFragment
                     Learn more
                 </Link>
                 .
-            </h4>
+            </Typography.H4>
 
             <span className="text-muted">
                 Using your own personal access token may reveal your public and private repositories to other members of

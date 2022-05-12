@@ -211,7 +211,7 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
                     )}
                     {this.state.blobLinesOrError && isErrorLike(this.state.blobLinesOrError) && (
                         <div className={styles.codeExcerptAlert}>
-                            <Icon className="mr-2" as={AlertCircleIcon} />
+                            <Icon role="img" className="mr-2" as={AlertCircleIcon} aria-hidden={true} />
                             {this.state.blobLinesOrError.message}
                         </div>
                     )}

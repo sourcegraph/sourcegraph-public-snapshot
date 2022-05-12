@@ -3,6 +3,8 @@ import React from 'react'
 import { storiesOf } from '@storybook/react'
 import { upperFirst } from 'lodash'
 
+import { Typography } from '@sourcegraph/wildcard'
+
 import { WebStory } from '../../../components/WebStory'
 import { BatchChangeState, BatchSpecState } from '../../../graphql-operations'
 
@@ -43,11 +45,11 @@ add('BatchChangeStatePill', () => (
             <div className="d-flex flex-column align-items-start">
                 {STATE_COMBINATIONS.map(({ state, latestExecutionState, currentSpecID, latestSpecID }) => (
                     <React.Fragment key={`${state}-${latestExecutionState || ''}`}>
-                        <h3>
+                        <Typography.H3>
                             {upperFirst(state.toLowerCase())}
                             {latestExecutionState ? `, ${upperFirst(latestExecutionState.toLowerCase())}` : ''}
                             {currentSpecID === latestSpecID ? '' : ' (latest is not applied)'}
-                        </h3>
+                        </Typography.H3>
                         <BatchChangeStatePill
                             className="mt-1 mb-3"
                             {...props}
