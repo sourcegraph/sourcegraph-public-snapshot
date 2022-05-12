@@ -2,6 +2,7 @@ import { Meta, Story } from '@storybook/react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
+import { Typography } from '@sourcegraph/wildcard'
 
 import { AlertType } from '../graphql-operations'
 
@@ -28,7 +29,7 @@ export default config
 
 export const GlobalAlerts: Story = () => (
     <div>
-        <h1>Global Alert</h1>
+        <Typography.H1>Global Alert</Typography.H1>
         <p>
             These alerts map to the <code>AlertType</code> returned from the backend API
         </p>

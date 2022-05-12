@@ -12,7 +12,7 @@ import LockIcon from 'mdi-react/LockIcon'
 import { SourcegraphLogo } from '@sourcegraph/branded/src/components/SourcegraphLogo'
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Link, Icon } from '@sourcegraph/wildcard'
+import { Link, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { getPlatformName } from '../../shared/util/context'
 
@@ -66,7 +66,7 @@ export const AfterInstallPageContent: React.FunctionComponent<React.PropsWithChi
             </div>
 
             <div className="container mt-3">
-                <h1>🎉 You’ve just installed the Sourcegraph browser extension!</h1>
+                <Typography.H1>🎉 You’ve just installed the Sourcegraph browser extension!</Typography.H1>
                 <p className="lead mb-0">We’ve gathered the most important information that will get your started:</p>
             </div>
 

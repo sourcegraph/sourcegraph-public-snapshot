@@ -5,6 +5,7 @@ import { Meta, Story } from '@storybook/react'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
+import { Typography } from '../..'
 import { Grid } from '../../Grid/Grid'
 
 import { MultiSelect, MultiSelectProps, MultiSelectState, MultiSelectOption } from '.'
@@ -65,7 +66,7 @@ const SelectWithValues = () => {
 
 export const MultiSelectExamples: Story = () => (
     <>
-        <h1>Multi Select</h1>
+        <Typography.H1>Multi Select</Typography.H1>
         <Grid columnCount={4}>
             <div>
                 <h2>Standard</h2>

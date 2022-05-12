@@ -5,7 +5,7 @@ import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
 import ProgressCheckIcon from 'mdi-react/ProgressCheckIcon'
 
 import { pluralize } from '@sourcegraph/common'
-import { Badge, Icon } from '@sourcegraph/wildcard'
+import { Badge, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../components/diff/DiffStat'
 import { BatchChangeFields, ChangesetsStatsFields, DiffStatFields } from '../../../graphql-operations'
@@ -61,12 +61,13 @@ export const BatchChangeStatsCard: React.FunctionComponent<React.PropsWithChildr
                 </h2>
                 <div className={classNames(styles.batchChangeStatsCardDivider, 'mx-3')} />
                 <div className="d-flex align-items-center">
-                    <h1 className="d-inline mb-0" aria-label="Batch Change Status">
+                    <Typography.H1 className="d-inline mb-0" aria-label="Batch Change Status">
                         <Icon
                             className={classNames('mr-2', isCompleted ? 'text-success' : 'text-muted')}
                             as={BatchChangeStatusIcon}
+                            aria-label="Batch Change Status Icon"
                         />
-                    </h1>{' '}
+                    </Typography.H1>{' '}
                     <span className={classNames(styles.batchChangeStatsCardCompleteness, 'lead text-nowrap')}>
                         {formatDisplayPercent(percentComplete)} complete
                     </span>

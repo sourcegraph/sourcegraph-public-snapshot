@@ -5,6 +5,7 @@ import { Meta, Story } from '@storybook/react'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
+import { Typography } from '../..'
 import { Grid } from '../../Grid/Grid'
 
 import { Select, SelectProps } from './Select'
@@ -79,7 +80,7 @@ const SelectVariants = ({ isCustomStyle }: Pick<SelectProps, 'isCustomStyle'>) =
 
 export const SelectExamples: Story = () => (
     <>
-        <h1>Select</h1>
+        <Typography.H1>Select</Typography.H1>
         <h2>Native</h2>
         <SelectVariants />
         <h2>Custom</h2>

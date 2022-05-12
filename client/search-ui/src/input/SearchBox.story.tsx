@@ -9,6 +9,7 @@ import {
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTestHelpers'
+import { Typography } from '@sourcegraph/wildcard'
 
 import { LazyMonacoQueryInputProps } from './LazyMonacoQueryInput'
 import { SearchBox, SearchBoxProps } from './SearchBox'
@@ -58,7 +59,7 @@ add('SearchBox', () => (
 
                     return (
                         <div key={editorComponent}>
-                            <h1>{editorComponent}</h1>
+                            <Typography.H1>{editorComponent}</Typography.H1>
                             <h2>Default</h2>
                             <div className="w-100 d-flex my-2">
                                 <SearchBox {...searchBoxProps} isLightTheme={props.isLightTheme} />

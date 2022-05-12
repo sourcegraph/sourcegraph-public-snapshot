@@ -5,7 +5,7 @@ import SearchIcon from 'mdi-react/SearchIcon'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
-import { ButtonLink } from '..'
+import { ButtonLink, Typography } from '..'
 import { BUTTON_VARIANTS } from '../Button/constants'
 import { Grid } from '../Grid'
 import { Icon } from '../Icon'
@@ -44,7 +44,7 @@ export default Config
 
 export const Overview: Story = () => (
     <>
-        <h1>ButtonLink</h1>
+        <Typography.H1>ButtonLink</Typography.H1>
         <h2>Variants</h2>
         <Grid className="mb-3" columnCount={3}>
             {BUTTON_VARIANTS.map(variant => (
