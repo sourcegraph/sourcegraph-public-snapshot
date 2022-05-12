@@ -82,29 +82,31 @@ export function changelogURL(version: string): string {
 }
 
 function ensureBranchUpToDate(baseBranch: string, targetBranch: string): boolean {
-    const [behind, ahead] = execa.sync('git', ['rev-list', '--left-right', '--count', targetBranch + '...' + baseBranch]).stdout.split('\t')
+    const [behind, ahead] = execa
+        .sync('git', ['rev-list', '--left-right', '--count', targetBranch + '...' + baseBranch])
+        .stdout.split('\t')
 
     if (behind === '0' && ahead === '0') {
         return true
     }
 
     const countCommits = function (numberOfCommits: string, aheadOrBehind: string): string {
-        return numberOfCommits === '1' ? numberOfCommits + ' commit ' + aheadOrBehind
+        return numberOfCommits === '1'
+            ? numberOfCommits + ' commit ' + aheadOrBehind
             : numberOfCommits + ' commits ' + aheadOrBehind
     }
 
     if (behind !== '0' && ahead !== '0') {
         console.log(
-            `Your branch is ${countCommits(ahead, 'ahead')} and ${countCommits(behind, 'behind')} the branch ${targetBranch}.`
+            `Your branch is ${countCommits(ahead, 'ahead')} and ${countCommits(
+                behind,
+                'behind'
+            )} the branch ${targetBranch}.`
         )
     } else if (behind !== '0') {
-        console.log(
-            `Your branch is ${countCommits(behind, 'behind')} the branch ${targetBranch}.`
-        )
+        console.log(`Your branch is ${countCommits(behind, 'behind')} the branch ${targetBranch}.`)
     } else if (ahead !== '0') {
-        console.log(
-            `Your branch is ${countCommits(ahead, 'ahead')} the branch ${targetBranch}.`
-        )
+        console.log(`Your branch is ${countCommits(ahead, 'ahead')} the branch ${targetBranch}.`)
     }
 
     return false
