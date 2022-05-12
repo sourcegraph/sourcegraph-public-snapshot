@@ -23,10 +23,6 @@ type FeatureFlag struct {
 	DeletedAt *time.Time
 }
 
-func (f *FeatureFlag) CacheKey() string {
-	return GetFlagCacheKey(f.Name)
-}
-
 type FeatureFlagsStore interface {
 	GetFeatureFlags(ctx context.Context) ([]*FeatureFlag, error)
 }
@@ -38,19 +34,7 @@ func GetEvaluatedFlagsFromContext(ctx context.Context, store FeatureFlagsStore) 
 		return FlagSet{}
 	}
 
-	var visitorID string
-
-	currentActor := actor.FromContext(ctx)
-
-	if currentActor.IsAuthenticated() {
-		visitorID = GetVisitorIDForUser(currentActor.UID)
-	} else if currentActor.AnonymousUID != "" {
-		visitorID = GetVisitorIDForAnonymousUser(currentActor.AnonymousUID)
-	} else {
-		return FlagSet{}
-	}
-
-	return GetEvaluatedFlagSetFromCache(flags, visitorID)
+	return GetEvaluatedFlagSetFromCache(flags, actor.FromContext(ctx))
 }
 
 // EvaluateForUser evaluates the feature flag for a userID.
@@ -65,8 +49,6 @@ func (f *FeatureFlag) EvaluateForUser(userID int32) bool {
 	default:
 		panic("one of Bool or Rollout must be set")
 	}
-
-	SetEvaluatedFlagToCache(f, GetVisitorIDForUser(userID), result)
 
 	return result
 }
@@ -90,8 +72,6 @@ func (f *FeatureFlag) EvaluateForAnonymousUser(anonymousUID string) bool {
 	default:
 		panic("one of Bool or Rollout must be set")
 	}
-
-	SetEvaluatedFlagToCache(f, GetVisitorIDForAnonymousUser(anonymousUID), result)
 
 	return result
 }
