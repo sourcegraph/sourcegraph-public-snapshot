@@ -4,6 +4,7 @@ import { Meta } from '@storybook/react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
+import { Typography } from '@sourcegraph/wildcard'
 
 import { LogoAscii } from '../LogoAscii'
 
@@ -35,7 +36,7 @@ export const InProgress: FunctionComponent<React.PropsWithChildren<unknown>> = (
         <div className="border overflow-hidden rounded">
             <header>
                 <div className="py-3 px-4">
-                    <h3 className="d-inline-block m-0">Activity log</h3>
+                    <Typography.H3 className="d-inline-block m-0">Activity log</Typography.H3>
                     <span className="float-right m-0">1/3 done</span>
                 </div>
             </header>
@@ -67,7 +68,7 @@ export const Finished: FunctionComponent<React.PropsWithChildren<unknown>> = () 
         <div className="border overflow-hidden rounded">
             <header>
                 <div className="py-3 px-4">
-                    <h3 className="d-inline-block m-0">Activity log</h3>
+                    <Typography.H3 className="d-inline-block m-0">Activity log</Typography.H3>
                     <span className="float-right m-0">3/3 done</span>
                 </div>
             </header>

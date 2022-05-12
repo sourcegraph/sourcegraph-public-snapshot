@@ -3,6 +3,8 @@ import { Meta } from '@storybook/react'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
+import { Typography } from '..'
+
 import { PRODUCT_STATUSES } from './constants'
 import { ProductStatusBadge } from './ProductStatusBadge'
 
@@ -41,7 +43,7 @@ export default config
 
 export const Badges = () => (
     <>
-        <h1>Product status badges</h1>
+        <Typography.H1>Product status badges</Typography.H1>
         <p>
             We often want to label different parts of our products with badges to ensure they are accurately presented
             to users.
@@ -49,7 +51,7 @@ export const Badges = () => (
         {PRODUCT_STATUSES.map(status => (
             <ProductStatusBadge key={status} status={status} className="mr-2" />
         ))}
-        <h2 className="mt-4">Linked product status badges</h2>
+        <Typography.H2 className="mt-4">Linked product status badges</Typography.H2>
         <p>
             In some cases, we will want to automatically link to a relevant docs page for a particular status. This is
             also possible!

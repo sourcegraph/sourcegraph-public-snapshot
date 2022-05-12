@@ -60,6 +60,10 @@ type MockResolver struct {
 	// GetUploadByIDFunc is an instance of a mock function object
 	// controlling the behavior of the method GetUploadByID.
 	GetUploadByIDFunc *ResolverGetUploadByIDFunc
+	// GetUploadDocumentsForPathFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// GetUploadDocumentsForPath.
+	GetUploadDocumentsForPathFunc *ResolverGetUploadDocumentsForPathFunc
 	// GetUploadsByIDsFunc is an instance of a mock function object
 	// controlling the behavior of the method GetUploadsByIDs.
 	GetUploadsByIDsFunc *ResolverGetUploadsByIDsFunc
@@ -179,6 +183,11 @@ func NewMockResolver() *MockResolver {
 		},
 		GetUploadByIDFunc: &ResolverGetUploadByIDFunc{
 			defaultHook: func(context.Context, int) (r0 dbstore.Upload, r1 bool, r2 error) {
+				return
+			},
+		},
+		GetUploadDocumentsForPathFunc: &ResolverGetUploadDocumentsForPathFunc{
+			defaultHook: func(context.Context, int, string) (r0 []string, r1 int, r2 error) {
 				return
 			},
 		},
@@ -334,6 +343,11 @@ func NewStrictMockResolver() *MockResolver {
 				panic("unexpected invocation of MockResolver.GetUploadByID")
 			},
 		},
+		GetUploadDocumentsForPathFunc: &ResolverGetUploadDocumentsForPathFunc{
+			defaultHook: func(context.Context, int, string) ([]string, int, error) {
+				panic("unexpected invocation of MockResolver.GetUploadDocumentsForPath")
+			},
+		},
 		GetUploadsByIDsFunc: &ResolverGetUploadsByIDsFunc{
 			defaultHook: func(context.Context, ...int) ([]dbstore.Upload, error) {
 				panic("unexpected invocation of MockResolver.GetUploadsByIDs")
@@ -461,6 +475,9 @@ func NewMockResolverFrom(i resolvers.Resolver) *MockResolver {
 		},
 		GetUploadByIDFunc: &ResolverGetUploadByIDFunc{
 			defaultHook: i.GetUploadByID,
+		},
+		GetUploadDocumentsForPathFunc: &ResolverGetUploadDocumentsForPathFunc{
+			defaultHook: i.GetUploadDocumentsForPath,
 		},
 		GetUploadsByIDsFunc: &ResolverGetUploadsByIDsFunc{
 			defaultHook: i.GetUploadsByIDs,
@@ -1827,6 +1844,123 @@ func (c ResolverGetUploadByIDFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ResolverGetUploadByIDFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// ResolverGetUploadDocumentsForPathFunc describes the behavior when the
+// GetUploadDocumentsForPath method of the parent MockResolver instance is
+// invoked.
+type ResolverGetUploadDocumentsForPathFunc struct {
+	defaultHook func(context.Context, int, string) ([]string, int, error)
+	hooks       []func(context.Context, int, string) ([]string, int, error)
+	history     []ResolverGetUploadDocumentsForPathFuncCall
+	mutex       sync.Mutex
+}
+
+// GetUploadDocumentsForPath delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockResolver) GetUploadDocumentsForPath(v0 context.Context, v1 int, v2 string) ([]string, int, error) {
+	r0, r1, r2 := m.GetUploadDocumentsForPathFunc.nextHook()(v0, v1, v2)
+	m.GetUploadDocumentsForPathFunc.appendCall(ResolverGetUploadDocumentsForPathFuncCall{v0, v1, v2, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the
+// GetUploadDocumentsForPath method of the parent MockResolver instance is
+// invoked and the hook queue is empty.
+func (f *ResolverGetUploadDocumentsForPathFunc) SetDefaultHook(hook func(context.Context, int, string) ([]string, int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetUploadDocumentsForPath method of the parent MockResolver instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *ResolverGetUploadDocumentsForPathFunc) PushHook(hook func(context.Context, int, string) ([]string, int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ResolverGetUploadDocumentsForPathFunc) SetDefaultReturn(r0 []string, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, int, string) ([]string, int, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ResolverGetUploadDocumentsForPathFunc) PushReturn(r0 []string, r1 int, r2 error) {
+	f.PushHook(func(context.Context, int, string) ([]string, int, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *ResolverGetUploadDocumentsForPathFunc) nextHook() func(context.Context, int, string) ([]string, int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ResolverGetUploadDocumentsForPathFunc) appendCall(r0 ResolverGetUploadDocumentsForPathFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ResolverGetUploadDocumentsForPathFuncCall
+// objects describing the invocations of this function.
+func (f *ResolverGetUploadDocumentsForPathFunc) History() []ResolverGetUploadDocumentsForPathFuncCall {
+	f.mutex.Lock()
+	history := make([]ResolverGetUploadDocumentsForPathFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ResolverGetUploadDocumentsForPathFuncCall is an object that describes an
+// invocation of method GetUploadDocumentsForPath on an instance of
+// MockResolver.
+type ResolverGetUploadDocumentsForPathFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []string
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ResolverGetUploadDocumentsForPathFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ResolverGetUploadDocumentsForPathFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 

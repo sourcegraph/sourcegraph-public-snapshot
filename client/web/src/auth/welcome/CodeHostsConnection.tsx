@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 
 import { ErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Typography } from '@sourcegraph/wildcard'
 
 import { ListExternalServiceFields } from '../../graphql-operations'
 import { UserCodeHosts } from '../../user/settings/codeHosts/UserCodeHosts'
@@ -46,7 +46,7 @@ export const CodeHostsConnection: React.FunctionComponent<React.PropsWithChildre
     return (
         <>
             <div className="mb-4 mt-3">
-                <h3>Connect with code hosts</h3>
+                <Typography.H3>Connect with code hosts</Typography.H3>
                 <p className="text-muted">
                     Connect with providers where your source code is hosted. Then, choose the repositories you’d like to
                     search with Sourcegraph.

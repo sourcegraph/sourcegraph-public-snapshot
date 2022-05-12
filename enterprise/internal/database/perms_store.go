@@ -168,12 +168,14 @@ type PermsStore interface {
 	RepoIDsWithNoPerms(ctx context.Context) ([]api.RepoID, error)
 	// UserIDsWithOldestPerms returns a list of user ID and last updated pairs for
 	// users who have the least recent synced permissions in the database and capped
-	// results by the limit.
-	UserIDsWithOldestPerms(ctx context.Context, limit int) (map[int32]time.Time, error)
+	// results by the limit. If a user's permissions have been recently synced, based
+	// on "age" they are ignored.
+	UserIDsWithOldestPerms(ctx context.Context, limit int, age time.Duration) (map[int32]time.Time, error)
 	// ReposIDsWithOldestPerms returns a list of repository ID and last updated pairs
 	// for repositories that have the least recent synced permissions in the database
-	// and caps results by the limit.
-	ReposIDsWithOldestPerms(ctx context.Context, limit int) (map[api.RepoID]time.Time, error)
+	// and caps results by the limit. If a repo's permissions have been recently
+	// synced, based on "age" they are ignored.
+	ReposIDsWithOldestPerms(ctx context.Context, limit int, age time.Duration) (map[api.RepoID]time.Time, error)
 	// UserIsMemberOfOrgHasCodeHostConnection returns true if the user is a member of
 	// any organization that has added code host connection.
 	UserIsMemberOfOrgHasCodeHostConnection(ctx context.Context, userID int32) (has bool, err error)
@@ -1588,29 +1590,44 @@ AND repo.id NOT IN
 	return ids, nil
 }
 
-func (s *permsStore) UserIDsWithOldestPerms(ctx context.Context, limit int) (map[int32]time.Time, error) {
+// UserIDsWithOldestPerms lists the users with the oldest synced perms, limited
+// to limit. If age is non-zero, users that have synced within "age" since now
+// will be filtered out.
+func (s *permsStore) UserIDsWithOldestPerms(ctx context.Context, limit int, age time.Duration) (map[int32]time.Time, error) {
+	cutoffClause := sqlf.Sprintf("TRUE")
+	if age > 0 {
+		cutoff := s.clock().Add(-1 * age)
+		cutoffClause = sqlf.Sprintf("(perms.synced_at IS NULL OR perms.synced_at < %s)", cutoff)
+	}
 	q := sqlf.Sprintf(`
 -- source: enterprise/internal/database/perms_store.go:PermsStore.UserIDsWithOldestPerms
 SELECT perms.user_id, perms.synced_at FROM user_permissions AS perms
 WHERE perms.user_id IN
 	(SELECT users.id FROM users
 	 WHERE users.deleted_at IS NULL)
+AND %s
 ORDER BY perms.synced_at ASC NULLS FIRST
 LIMIT %s
-`, limit)
+`, cutoffClause, limit)
 	return s.loadIDsWithTime(ctx, q)
 }
 
-func (s *permsStore) ReposIDsWithOldestPerms(ctx context.Context, limit int) (map[api.RepoID]time.Time, error) {
+func (s *permsStore) ReposIDsWithOldestPerms(ctx context.Context, limit int, age time.Duration) (map[api.RepoID]time.Time, error) {
+	cutoffClause := sqlf.Sprintf("TRUE")
+	if age > 0 {
+		cutoff := s.clock().Add(-1 * age)
+		cutoffClause = sqlf.Sprintf("(perms.synced_at IS NULL OR perms.synced_at < %s)", cutoff)
+	}
 	q := sqlf.Sprintf(`
 -- source: enterprise/internal/database/perms_store.go:PermsStore.ReposIDsWithOldestPerms
 SELECT perms.repo_id, perms.synced_at FROM repo_permissions AS perms
 WHERE perms.repo_id IN
 	(SELECT repo.id FROM repo
 	 WHERE repo.deleted_at IS NULL)
+AND %s
 ORDER BY perms.synced_at ASC NULLS FIRST
 LIMIT %s
-`, limit)
+`, cutoffClause, limit)
 
 	pairs, err := s.loadIDsWithTime(ctx, q)
 	if err != nil {

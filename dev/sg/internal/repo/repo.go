@@ -26,7 +26,12 @@ func (s *State) GetDiff(paths string) (map[string][]DiffHunk, error) {
 		paths = "**/*"
 	}
 
-	target := "origin/main..." // compare from common ancestor
+	mergeBase, err := run.TrimResult(run.GitCmd("merge-base", "main", "HEAD"))
+	if err != nil {
+		return nil, err
+	}
+
+	target := mergeBase // compare from common ancestor
 	if s.Branch == "main" {
 		target = "@^" // previous commit
 	}

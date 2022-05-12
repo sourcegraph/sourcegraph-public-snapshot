@@ -14,7 +14,7 @@ type LogEvent struct {
 	Timestamp time.Time `json:"timestamp"`
 
 	Status   LogEventStatus `json:"status"`
-	Metadata interface{}    `json:"metadata,omitempty"`
+	Metadata any            `json:"metadata,omitempty"`
 }
 
 type logEventJSON struct {
@@ -86,7 +86,7 @@ func (l *LogEvent) UnmarshalJSON(data []byte) error {
 	}
 
 	wrapper := struct {
-		Metadata interface{} `json:"metadata"`
+		Metadata any `json:"metadata"`
 	}{
 		Metadata: l.Metadata,
 	}
@@ -245,8 +245,8 @@ type TaskStepMetadata struct {
 
 	Out string `json:"out,omitempty"`
 
-	Diff    string                 `json:"diff,omitempty"`
-	Outputs map[string]interface{} `json:"outputs,omitempty"`
+	Diff    string         `json:"diff,omitempty"`
+	Outputs map[string]any `json:"outputs,omitempty"`
 
 	ExitCode int    `json:"exitCode,omitempty"`
 	Error    string `json:"error,omitempty"`

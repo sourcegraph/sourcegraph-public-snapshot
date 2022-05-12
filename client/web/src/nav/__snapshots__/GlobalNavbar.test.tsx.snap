@@ -7,7 +7,7 @@ exports[`GlobalNavbar default 1`] = `
     class="navbar"
   >
     <h1
-      class="logo"
+      class="h1 logo"
     >
       <a
         class="d-flex align-items-center"
@@ -269,7 +269,7 @@ exports[`GlobalNavbar low-profile 1`] = `
     class="navbar"
   >
     <h1
-      class="logo"
+      class="h1 logo"
     >
       <a
         class="d-flex align-items-center"
