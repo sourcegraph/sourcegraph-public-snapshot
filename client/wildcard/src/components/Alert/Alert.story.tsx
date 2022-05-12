@@ -7,7 +7,6 @@ import { flow } from 'lodash'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
-import { Typography } from '@sourcegraph/wildcard'
 
 import 'storybook-addon-designs'
 
