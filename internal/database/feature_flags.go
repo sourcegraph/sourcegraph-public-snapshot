@@ -153,7 +153,13 @@ func (f *featureFlagStore) DeleteFeatureFlag(ctx context.Context, name string) e
 		WHERE flag_name = %s;
 	`
 
-	return f.Exec(ctx, sqlf.Sprintf(deleteFeatureFlagFmtStr, name))
+	err := f.Exec(ctx, sqlf.Sprintf(deleteFeatureFlagFmtStr, name))
+
+	if err == nil {
+		ff.ClearFlagFromCache(name)
+	}
+
+	return err
 }
 
 func (f *featureFlagStore) CreateRollout(ctx context.Context, name string, rollout int32) (*ff.FeatureFlag, error) {
