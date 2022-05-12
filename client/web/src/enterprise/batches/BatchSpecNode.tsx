@@ -13,7 +13,7 @@ import TimerSandIcon from 'mdi-react/TimerSandIcon'
 
 import { BatchSpecState } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, Link, Icon } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../components/time/Timestamp'
 import { BatchSpecListFields, Scalars } from '../../graphql-operations'
@@ -97,7 +97,7 @@ export const BatchSpecNode: React.FunctionComponent<React.PropsWithChildren<Batc
             </div>
             {isExpanded && (
                 <div className={styles.nodeExpandedSection}>
-                    <h4>Input spec</h4>
+                    <Typography.H4>Input spec</Typography.H4>
                     <BatchSpec
                         isLightTheme={isLightTheme}
                         name={node.description.name}

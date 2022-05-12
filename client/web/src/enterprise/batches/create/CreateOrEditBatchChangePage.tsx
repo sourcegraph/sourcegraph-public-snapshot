@@ -37,7 +37,7 @@ import {
     RadioButton,
     Card,
     CardBody,
-    H4,
+    Typography,
 } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
@@ -188,7 +188,7 @@ const CreatePage: React.FunctionComponent<React.PropsWithChildren<CreatePageProp
                         <div className="d-flex justify-content-between align-items-center">
                             <CodeInsightsBatchesIcon className="mr-4" />
                             <div className="flex-grow-1">
-                                <H4>You are creating a batch change from a code insight</H4>
+                                <Typography.H4>You are creating a batch change from a code insight</Typography.H4>
                                 <p className="mb-0">
                                     Let Sourcegraph help you with <strong>{codeInsightTitle}</strong> by preparing a
                                     relevant <strong>batch change</strong>.
@@ -578,14 +578,14 @@ const EditPage: React.FunctionComponent<React.PropsWithChildren<EditPageProps>> 
             <div className={classNames(styles.editorLayoutContainer, 'd-flex flex-1 mt-2')}>
                 <LibraryPane name={batchChange.name} onReplaceItem={clearErrorsAndHandleCodeChange} />
                 <div className={styles.editorContainer}>
-                    <h4 className={styles.header}>Batch spec</h4>
+                    <Typography.H4 className={styles.header}>Batch spec</Typography.H4>
                     {codeInsightTitle && (
                         <Card className={classNames('mb-3', styles.codeInsightsBanner)}>
                             <CardBody>
                                 <div className="d-flex justify-content-between align-items-center">
                                     <CodeInsightsBatchesIcon className="mr-4" />
                                     <div className="flex-grow-1">
-                                        <H4>Start from template for the {codeInsightTitle}</H4>
+                                        <Typography.H4>Start from template for the {codeInsightTitle}</Typography.H4>
                                         <p className="mb-0">
                                             Sourcegraph pre-selected a Batch Specification for the batch change started
                                             from {codeInsightTitle}.

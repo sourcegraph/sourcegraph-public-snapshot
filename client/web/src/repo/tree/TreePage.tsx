@@ -302,8 +302,9 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                                 outline={true}
                                 as={Link}
                                 className="ml-1"
+                                aria-label="Repository settings"
                             >
-                                <Icon as={SettingsIcon} />
+                                <Icon as={SettingsIcon} role="img" aria-hidden={true} />
                             </Button>
                         )}
                     </ButtonGroup>

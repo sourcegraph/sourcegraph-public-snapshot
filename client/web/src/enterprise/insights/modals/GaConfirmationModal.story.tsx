@@ -9,6 +9,7 @@ import {
     InMemoryMockSettingsBackend,
     TemporarySettingsStorage,
 } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
+import { Typography } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../components/WebStory'
 import { CodeInsightsBackendContext, CodeInsightsGqlBackend } from '../core'
@@ -51,7 +52,7 @@ export const GaConfirmationModalExample: React.FunctionComponent<React.PropsWith
         <CodeInsightsBackendContext.Provider value={api}>
             <TemporarySettingsContext.Provider value={settingsStorage}>
                 <div>
-                    <h2>Some content</h2>
+                    <Typography.H2>Some content</Typography.H2>
                     <GaConfirmationModal />
                 </div>
             </TemporarySettingsContext.Provider>

@@ -11,7 +11,7 @@ import { Subject } from 'rxjs'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, isErrorLike, pluralize } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Link, Alert, Icon } from '@sourcegraph/wildcard'
+import { Button, Link, Alert, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
@@ -125,7 +125,7 @@ export const SiteAdminOrgsPage: React.FunctionComponent<React.PropsWithChildren<
         <div className="site-admin-orgs-page">
             <PageTitle title="Organizations - Admin" />
             <div className="d-flex justify-content-between align-items-center mb-3">
-                <h2 className="mb-0">Organizations</h2>
+                <Typography.H2 className="mb-0">Organizations</Typography.H2>
                 <Button to="/organizations/new" className="test-create-org-button" variant="primary" as={Link}>
                     <Icon as={AddIcon} /> Create organization
                 </Button>

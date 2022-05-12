@@ -17,7 +17,7 @@ exports[`SiteInitPage normal 1`] = `
           src="/img/sourcegraph-logo-light.svg"
         />
         <h2
-          class="site-init-page__header"
+          class="h2 site-init-page__header"
         >
           Welcome
         </h2>

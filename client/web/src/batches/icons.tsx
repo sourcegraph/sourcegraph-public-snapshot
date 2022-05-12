@@ -39,6 +39,8 @@ const BaseBatchChangesIcon: BaseIcon = React.memo(function BaseBatchChangesIcon(
             viewBox={viewBox}
             {...props}
             xmlns="http://www.w3.org/2000/svg"
+            // this icon is used in a decorative manner, and as such should be hidden from screen readers
+            role="presentation"
         >
             <path
                 fillRule="evenodd"

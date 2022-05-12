@@ -13,7 +13,7 @@ import { parse as _parseVersion, SemVer } from 'semver'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, useObservable, Alert, Icon } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Alert, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../components/Collapsible'
 import { FilteredConnection, FilteredConnectionFilter, Connection } from '../components/FilteredConnection'
@@ -130,7 +130,7 @@ export const SiteAdminMigrationsPage: React.FunctionComponent<
             ) : (
                 <>
                     <PageTitle title="Out of band migrations - Admin" />
-                    <h2>Out-of-band migrations</h2>
+                    <Typography.H2>Out-of-band migrations</Typography.H2>
 
                     <p>
                         Out-of-band migrations run in the background of the Sourcegraph instance convert data from an

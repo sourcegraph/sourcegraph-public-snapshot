@@ -15,7 +15,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
@@ -73,7 +73,7 @@ func runChecks(ctx context.Context, checks map[string]check.CheckFunc) error {
 		return nil
 	}
 
-	stdout.Out.WriteLine(output.Linef(output.EmojiLightbulb, output.StyleBold, "Running %d checks...", len(checks)))
+	std.Out.WriteLine(output.Linef(output.EmojiLightbulb, output.StyleBold, "Running %d checks...", len(checks)))
 
 	ctx, err := usershell.Context(ctx)
 	if err != nil {
@@ -85,19 +85,20 @@ func runChecks(ctx context.Context, checks map[string]check.CheckFunc) error {
 	// users set up environments in both their shell and bash to avoid issues.
 	if !usershell.IsSupportedShell(ctx) {
 		shell := usershell.ShellType(ctx)
-		writeWarningLinef("You're running on unsupported shell '%s'.", shell)
-		writeWarningLinef("If you run into error, you may run 'SHELL=(which bash) sg setup' to setup your environment.")
+		std.Out.WriteWarningf("You're running on unsupported shell '%s'. "+
+			"If you run into error, you may run 'SHELL=(which bash) sg setup' to setup your environment.",
+			shell)
 	}
 
 	var failed []string
 
 	for name, check := range checks {
-		p := stdout.Out.Pending(output.Linef(output.EmojiLightbulb, output.StylePending, "Running check %q...", name))
+		p := std.Out.Pending(output.Linef(output.EmojiLightbulb, output.StylePending, "Running check %q...", name))
 
 		if err := check(ctx); err != nil {
 			p.Complete(output.Linef(output.EmojiFailure, output.StyleWarning, "Check %q failed with the following errors:", name))
 
-			stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "%s", err))
+			std.Out.WriteLine(output.Styledf(output.StyleWarning, "%s", err))
 
 			failed = append(failed, name)
 		} else {
@@ -109,15 +110,15 @@ func runChecks(ctx context.Context, checks map[string]check.CheckFunc) error {
 		return nil
 	}
 
-	stdout.Out.Write("")
-	stdout.Out.WriteLine(output.Linef(output.EmojiWarningSign, output.StyleBold, "The following checks failed:"))
+	std.Out.Write("")
+	std.Out.WriteLine(output.Linef(output.EmojiWarningSign, output.StyleBold, "The following checks failed:"))
 	for _, name := range failed {
-		stdout.Out.Writef("- %s", name)
+		std.Out.Writef("- %s", name)
 	}
 
-	stdout.Out.Write("")
-	writeFingerPointingLinef("Run 'sg setup' to make sure your system is setup correctly")
-	stdout.Out.Write("")
+	std.Out.Write("")
+	std.Out.WriteSuggestionf("Run 'sg setup' to make sure your system is setup correctly")
+	std.Out.Write("")
 
 	return errors.Newf("%d failed checks", len(failed))
 }
