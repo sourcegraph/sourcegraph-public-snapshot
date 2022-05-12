@@ -91,6 +91,10 @@ type PermsStore interface {
 	//  ---------+------------+---------------+------------+-----------
 	//         1 |       read |        {1, 2} |      NOW() |     NOW()
 	SetRepoPermissions(ctx context.Context, p *authz.RepoPermissions) error
+	// SetRepoPermissionsUnrestricted sets the unrestricted on the repo_permissions
+	// table for all the provided repos. Either all or non are updated. Passing a
+	// non-existent id is a noop.
+	SetRepoPermissionsUnrestricted(ctx context.Context, ids []int32, unrestricted bool) error
 	// TouchRepoPermissions only updates the value of both `updated_at` and
 	// `synced_at` columns of the `repo_permissions` table without modifying the
 	// permissions bits. It inserts a new row when the row does not yet exist. The
@@ -489,6 +493,22 @@ DO UPDATE SET
 		// and have to explicitly set what object IDs to be removed.
 		pq.Array(objectIDs),
 	), nil
+}
+
+func (s *permsStore) SetRepoPermissionsUnrestricted(ctx context.Context, ids []int32, unrestricted bool) error {
+	const format = `
+UPDATE repo_permissions
+SET unrestricted = %s
+WHERE repo_id IN (%s)
+`
+	idqs := make([]*sqlf.Query, len(ids))
+	for i := range ids {
+		idqs[i] = sqlf.Sprintf("%s", ids[i])
+	}
+
+	q := sqlf.Sprintf(format, unrestricted, sqlf.Join(idqs, ","))
+
+	return errors.Wrap(s.Exec(ctx, q), "setting unrestricted flag")
 }
 
 // upsertRepoPermissionsQuery upserts single row of repository permissions.

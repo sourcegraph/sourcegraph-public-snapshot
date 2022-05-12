@@ -546,29 +546,52 @@ func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
 
 func testPermsStore_SetRepoPermissionsUnrestricted(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
-		// TOOD: Use this in other tests
-		s := setupTestPerms(t, db, clock)
+		assertUnrestricted := func(ctx context.Context, t *testing.T, s *permsStore, id int32, want bool) {
+			t.Helper()
+			p := &authz.RepoPermissions{
+				RepoID: id,
+				Perm:   authz.Read,
+			}
+			if err := s.LoadRepoPermissions(ctx, p); err != nil {
+				t.Fatalf("loading permissions for %d: %v", id, err)
+			}
+			if p.Unrestricted != want {
+				t.Fatalf("Want %v, got %v for %d", want, p.Unrestricted, id)
+			}
+		}
 
-		rp := &authz.RepoPermissions{
-			RepoID:       1,
-			Perm:         authz.Read,
-			UserIDs:      toMapset(2),
-			Unrestricted: true,
-		}
-		if err := s.SetRepoPermissions(context.Background(), rp); err != nil {
-			t.Fatal(err)
-		}
+		t.Run("test simple set", func(t *testing.T) {
+			ctx := context.Background()
+			s := setupTestPerms(t, db, clock)
 
-		rp = &authz.RepoPermissions{
-			RepoID: 1,
-			Perm:   authz.Read,
-		}
-		if err := s.LoadRepoPermissions(context.Background(), rp); err != nil {
-			t.Fatal(err)
-		}
-		if rp.Unrestricted != true {
-			t.Fatal("Want true")
-		}
+			// Add a couple of repos
+			for i := 0; i < 2; i++ {
+				rp := &authz.RepoPermissions{
+					RepoID:  int32(i + 1),
+					Perm:    authz.Read,
+					UserIDs: toMapset(2),
+				}
+				if err := s.SetRepoPermissions(context.Background(), rp); err != nil {
+					t.Fatal(err)
+				}
+			}
+			assertUnrestricted(ctx, t, s, 1, false)
+			assertUnrestricted(ctx, t, s, 2, false)
+
+			// Set them both to unrestricted
+			if err := s.SetRepoPermissionsUnrestricted(ctx, []int32{1, 2}, true); err != nil {
+				t.Fatal(err)
+			}
+			assertUnrestricted(ctx, t, s, 1, true)
+			assertUnrestricted(ctx, t, s, 2, true)
+
+			// Set them back to false again
+			if err := s.SetRepoPermissionsUnrestricted(ctx, []int32{1, 2}, false); err != nil {
+				t.Fatal(err)
+			}
+			assertUnrestricted(ctx, t, s, 1, false)
+			assertUnrestricted(ctx, t, s, 2, false)
+		})
 	}
 }
 
@@ -703,6 +726,32 @@ func testPermsStore_SetRepoPermissions(db *sql.DB) func(*testing.T) {
 
 			if rp.SyncedAt.IsZero() {
 				t.Fatal("SyncedAt was not updated but supposed to")
+			}
+		})
+
+		t.Run("unrestricted columns should be set", func(t *testing.T) {
+			// TOOD: Use this in other tests
+			s := setupTestPerms(t, db, clock)
+
+			rp := &authz.RepoPermissions{
+				RepoID:       1,
+				Perm:         authz.Read,
+				UserIDs:      toMapset(2),
+				Unrestricted: true,
+			}
+			if err := s.SetRepoPermissions(context.Background(), rp); err != nil {
+				t.Fatal(err)
+			}
+
+			rp = &authz.RepoPermissions{
+				RepoID: 1,
+				Perm:   authz.Read,
+			}
+			if err := s.LoadRepoPermissions(context.Background(), rp); err != nil {
+				t.Fatal(err)
+			}
+			if rp.Unrestricted != true {
+				t.Fatal("Want true")
 			}
 		})
 
