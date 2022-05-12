@@ -64,14 +64,14 @@ export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<Get
                     <CardBody className="d-flex">
                         <FindReplaceIcon className="mr-3" />
                         <div>
-                            <h4>
+                            <Typography.H4>
                                 <Link
                                     to="/help/batch_changes/tutorials/search_and_replace_specific_terms"
                                     rel="noopener"
                                 >
                                     Finding and replacing exclusionary terms
                                 </Link>
-                            </h4>
+                            </Typography.H4>
                             <p className="text-muted mb-0">
                                 A Sourcegraph query plus a simple <code>sed</code> command creates changesets required
                                 to manage a large scale change.
@@ -85,11 +85,11 @@ export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<Get
                     <CardBody className="d-flex">
                         <RefactorCombyIcon className="mr-3" />
                         <div>
-                            <h4>
+                            <Typography.H4>
                                 <Link to="/help/batch_changes/tutorials/updating_go_import_statements" rel="noopener">
                                     Refactoring with language aware search
                                 </Link>
-                            </h4>
+                            </Typography.H4>
                             <p className="text-muted mb-0">
                                 Using{' '}
                                 <Link to="https://comby.dev/" rel="noopener">

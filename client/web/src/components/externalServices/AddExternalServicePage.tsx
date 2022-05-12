@@ -112,7 +112,7 @@ export const AddExternalServicePage: React.FunctionComponent<React.PropsWithChil
                         />
                     </div>
                     <Alert variant="warning">
-                        <h4>Warning</h4>
+                        <Typography.H4>Warning</Typography.H4>
                         <Markdown dangerousInnerHTML={renderMarkdown(createdExternalService.warning)} />
                     </Alert>
                 </div>

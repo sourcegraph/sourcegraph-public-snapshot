@@ -4,7 +4,16 @@ import { from } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Button, LoadingSpinner, useObservable, Link, CardHeader, CardBody, Alert } from '@sourcegraph/wildcard'
+import {
+    Button,
+    LoadingSpinner,
+    useObservable,
+    Link,
+    CardHeader,
+    CardBody,
+    Alert,
+    Typography,
+} from '@sourcegraph/wildcard'
 
 import { wrapRemoteObservable } from '../../api/client/api/common'
 
@@ -65,7 +74,7 @@ export const ActiveExtensionsPanel: React.FunctionComponent<
                 </CardBody>
             )}
             <CardBody className="border-top">
-                <h4>Sideload extension</h4>
+                <Typography.H4>Sideload extension</Typography.H4>
                 {sideloadedExtensionURL ? (
                     <div>
                         <p>

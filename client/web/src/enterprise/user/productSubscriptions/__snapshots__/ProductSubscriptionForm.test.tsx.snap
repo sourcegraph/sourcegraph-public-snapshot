@@ -39,7 +39,7 @@ exports[`ProductSubscriptionForm edit existing subscription 1`] = `
             </div>
           </div>
           <h4
-            class="mt-2 mb-0"
+            class="h4 mt-2 mb-0"
           >
             Plan
           </h4>
@@ -135,7 +135,7 @@ exports[`ProductSubscriptionForm new subscription for anonymous viewer (no accou
             </div>
           </div>
           <h4
-            class="mt-2 mb-0"
+            class="h4 mt-2 mb-0"
           >
             Plan
           </h4>
@@ -252,7 +252,7 @@ exports[`ProductSubscriptionForm new subscription for existing account 1`] = `
             </div>
           </div>
           <h4
-            class="mt-2 mb-0"
+            class="h4 mt-2 mb-0"
           >
             Plan
           </h4>

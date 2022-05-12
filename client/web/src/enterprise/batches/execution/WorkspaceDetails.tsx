@@ -356,7 +356,7 @@ const ChangesetSpecNode: React.FunctionComponent<React.PropsWithChildren<Changes
         return (
             <Card>
                 <CardBody>
-                    <h4>Changeset in a hidden repo</h4>
+                    <Typography.H4>Changeset in a hidden repo</Typography.H4>
                 </CardBody>
             </Card>
         )
@@ -372,14 +372,14 @@ const ChangesetSpecNode: React.FunctionComponent<React.PropsWithChildren<Changes
             title={
                 <div className="d-flex justify-content-between">
                     <div>
-                        <h4 className="mb-0 d-inline-block mr-2">
+                        <Typography.H4 className="mb-0 d-inline-block mr-2">
                             <h3 className={styles.result}>Result</h3>
                             {node.description.published !== null && (
                                 <Badge className="text-uppercase">
                                     {publishBadgeLabel(node.description.published)}
                                 </Badge>
                             )}{' '}
-                        </h4>
+                        </Typography.H4>
                         <span className="text-muted">
                             <Icon as={SourceBranchIcon} /> {node.description.headRef}
                         </span>
@@ -394,7 +394,7 @@ const ChangesetSpecNode: React.FunctionComponent<React.PropsWithChildren<Changes
             <Card className={classNames('mt-2', styles.resultCard)}>
                 <CardBody>
                     <h3>Changeset template</h3>
-                    <h4>{node.description.title}</h4>
+                    <Typography.H4>{node.description.title}</Typography.H4>
                     <p className="mb-0">{node.description.body}</p>
                     <p>
                         <strong>Published:</strong> <PublishedValue published={node.description.published} />
@@ -551,13 +551,13 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                                 <TabPanel className="pt-2" key="command-container">
                                     {step.ifCondition !== null && (
                                         <>
-                                            <h4>If condition</h4>
+                                            <Typography.H4>If condition</Typography.H4>
                                             <LogOutput text={step.ifCondition} className="mb-2" />
                                         </>
                                     )}
-                                    <h4>Command</h4>
+                                    <Typography.H4>Command</Typography.H4>
                                     <LogOutput text={step.run} className="mb-2" />
-                                    <h4>Container</h4>
+                                    <Typography.H4>Container</Typography.H4>
                                     <p className="text-monospace mb-0">{step.container}</p>
                                 </TabPanel>
                             </TabPanels>

@@ -123,7 +123,7 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
                 <div className="row">
                     <div className="col-4">
                         <div>
-                            <h4>Get started</h4>
+                            <Typography.H4>Get started</Typography.H4>
                             <p className="text-muted">
                                 Craft searches that will monitor your code and trigger actions such as email
                                 notifications.
@@ -135,7 +135,7 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
                     </div>
                     <div className="col-4">
                         <div>
-                            <h4>Starting points and ideas</h4>
+                            <Typography.H4>Starting points and ideas</Typography.H4>
                             <p className="text-muted">
                                 Find specific examples of useful code monitors to keep on top of security and
                                 consistency concerns.
@@ -148,7 +148,7 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
                     {isSignedIn ? (
                         <div className="col-4">
                             <div>
-                                <h4>Questions and feedback</h4>
+                                <Typography.H4>Questions and feedback</Typography.H4>
                                 <p className="text-muted">
                                     Have a question or idea about code monitoring? We want to hear your feedback!
                                 </p>
@@ -160,7 +160,7 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
                     ) : (
                         <div className="col-4">
                             <Card className={styles.signUpCard}>
-                                <h4>Free for registered users</h4>
+                                <Typography.H4>Free for registered users</Typography.H4>
                                 <p className="text-muted">Sign up and build your first code monitor today.</p>
                                 <CodeMonitorSignUpLink
                                     className={styles.createButton}

@@ -14,7 +14,6 @@ import {
     Link,
     Container,
     H3,
-    H4,
     Typography,
     screenReaderAnnounce,
 } from '@sourcegraph/wildcard'
@@ -169,9 +168,9 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                                     {`${lastTotalCount} batch changes`}
                                 </H3>
                             )}
-                            <H4 as={H3} className="mb-0 mr-2">
+                            <Typography.H4 as={H3} className="mb-0 mr-2">
                                 Status
-                            </H4>
+                            </Typography.H4>
                             <BatchChangeListFilters
                                 className="m-0"
                                 isExecutionEnabled={isExecutionEnabled}

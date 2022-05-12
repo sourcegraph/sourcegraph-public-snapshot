@@ -5,7 +5,7 @@ import { compact } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
-import { Icon } from '@sourcegraph/wildcard'
+import { Icon, Typography } from '@sourcegraph/wildcard'
 
 import styles from './EditorFeedbackPanel.module.scss'
 
@@ -30,9 +30,9 @@ export const EditorFeedbackPanel: React.FunctionComponent<React.PropsWithChildre
 
     return (
         <div className={classNames(styles.panel, 'rounded border bg-1 p-2 w-100 mt-2')}>
-            <h4 className="text-danger text-uppercase">
+            <Typography.H4 className="text-danger text-uppercase">
                 <Icon className="text-danger" as={AlertCircleIcon} /> {errorHeading}
-            </h4>
+            </Typography.H4>
             {compactedErrors.map(error => (
                 <ErrorMessage className="text-monospace" error={error} key={String(error)} />
             ))}

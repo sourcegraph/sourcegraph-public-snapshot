@@ -123,7 +123,7 @@ type affiliateRepoProblemType = undefined | string | ErrorLike | ErrorLike[]
 
 const displayWarning = (warning: string, hint?: JSX.Element): JSX.Element => (
     <Alert className="my-3" role="alert" key={warning} variant="warning">
-        <h4 className="align-middle mb-1">{capitalize(warning)}</h4>
+        <Typography.H4 className="align-middle mb-1">{capitalize(warning)}</Typography.H4>
         <p className="align-middle mb-0">
             {hint} {hint ? 'for more details.' : null}
         </p>
@@ -132,7 +132,7 @@ const displayWarning = (warning: string, hint?: JSX.Element): JSX.Element => (
 
 const displayError = (error: ErrorLike, hint?: JSX.Element): JSX.Element => (
     <Alert className="my-3" role="alert" key={error.message} variant="danger">
-        <h4 className="align-middle mb-1">{capitalize(error.message)}</h4>
+        <Typography.H4 className="align-middle mb-1">{capitalize(error.message)}</Typography.H4>
         <p className="align-middle mb-0">
             {hint} {hint ? 'for more details.' : null}
         </p>

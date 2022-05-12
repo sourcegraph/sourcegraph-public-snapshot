@@ -279,7 +279,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
                     )}
                     {!hiddenSectionIDs?.includes(SectionID.COMMON_PROBLEMS) && (
                         <Container sectionID={SectionID.COMMON_PROBLEMS} title="Common Problems" onClose={onClose}>
-                            <h4>Finding a specific repository</h4>
+                            <Typography.H4>Finding a specific repository</Typography.H4>
                             <p>Repositories are specified by their org/repository-name convention:</p>
                             <SearchInputExample
                                 showSearchContext={searchContextsEnabled && showSearchContext}
@@ -316,7 +316,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
                                 </small>
                             </p>
 
-                            <h4>AND, OR, NOT</h4>
+                            <Typography.H4>AND, OR, NOT</Typography.H4>
                             <p>Conditionals and grouping are possible within queries:</p>
                             <SearchInputExample
                                 showSearchContext={searchContextsEnabled && showSearchContext}
@@ -325,7 +325,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
                                 onRun={() => telemetryService.log('NoResultsCommonProblems', { search: 'and or' })}
                             />
 
-                            <h4>Escaping</h4>
+                            <Typography.H4>Escaping</Typography.H4>
                             <p>
                                 Because our default mode is literal, escaping requires a dedicated filter. Use the
                                 content filter to include spaces and filter keywords in searches.

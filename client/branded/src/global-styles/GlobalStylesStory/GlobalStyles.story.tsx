@@ -179,7 +179,7 @@ export const Layout: Story = () => (
         </p>
 
         <h3>Row layout</h3>
-        <h4>Equally distributed</h4>
+        <Typography.H4>Equally distributed</Typography.H4>
         <div
             className="d-flex p-1 border mb-2 overflow-hidden"
             style={{ resize: 'both', minWidth: '16rem', minHeight: '3rem' }}
@@ -189,7 +189,7 @@ export const Layout: Story = () => (
             <div className="p-1 m-1 flex-grow-1 d-flex justify-content-center align-items-center border">Column 3</div>
         </div>
 
-        <h4>Middle column growing</h4>
+        <Typography.H4>Middle column growing</Typography.H4>
         <div
             className="d-flex p-1 border mb-2 overflow-hidden"
             style={{ resize: 'both', minWidth: '16rem', minHeight: '3rem' }}

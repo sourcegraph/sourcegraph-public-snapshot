@@ -116,7 +116,7 @@ export const TextStory: React.FunctionComponent<React.PropsWithChildren<unknown>
 
         <h3>Unordered</h3>
 
-        <h4>Dots</h4>
+        <Typography.H4>Dots</Typography.H4>
         <ul>
             <li>
                 Ullamco exercitation voluptate veniam et in incididunt Lorem id consequat dolor reprehenderit amet. Id
@@ -133,7 +133,7 @@ export const TextStory: React.FunctionComponent<React.PropsWithChildren<unknown>
             </li>
         </ul>
 
-        <h4>Dashes</h4>
+        <Typography.H4>Dashes</Typography.H4>
         <p>
             Dashed lists are created using <code>list-dashed</code>.
         </p>
