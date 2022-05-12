@@ -88,8 +88,47 @@ func scanUpload(s dbutil.Scanner) (upload Upload, _ error) {
 	return upload, nil
 }
 
+func scanUploadWithCount(s dbutil.Scanner) (upload Upload, count int, _ error) {
+	var rawUploadedParts []sql.NullInt32
+	if err := s.Scan(
+		&upload.ID,
+		&upload.Commit,
+		&upload.Root,
+		&upload.VisibleAtTip,
+		&upload.UploadedAt,
+		&upload.State,
+		&upload.FailureMessage,
+		&upload.StartedAt,
+		&upload.FinishedAt,
+		&upload.ProcessAfter,
+		&upload.NumResets,
+		&upload.NumFailures,
+		&upload.RepositoryID,
+		&upload.RepositoryName,
+		&upload.Indexer,
+		&dbutil.NullString{S: &upload.IndexerVersion},
+		&upload.NumParts,
+		pq.Array(&rawUploadedParts),
+		&upload.UploadSize,
+		&upload.AssociatedIndexID,
+		&upload.Rank,
+		&count,
+	); err != nil {
+		return upload, 0, err
+	}
+
+	upload.UploadedParts = make([]int, 0, len(rawUploadedParts))
+	for _, uploadedPart := range rawUploadedParts {
+		upload.UploadedParts = append(upload.UploadedParts, int(uploadedPart.Int32))
+	}
+
+	return upload, count, nil
+}
+
 // scanUploads scans a slice of uploads from the return value of `*Store.query`.
 var scanUploads = basestore.NewSliceScanner(scanUpload)
+
+var scanUploadsWithCount = basestore.NewSliceWithCountScanner(scanUploadWithCount)
 
 // scanFirstUpload scans a slice of uploads from the return value of `*Store.query` and returns the first.
 var scanFirstUpload = basestore.NewFirstScanner(scanUpload)
@@ -397,18 +436,6 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 	}
 	conds = append(conds, authzConds)
 
-	totalCount, _, err := basestore.ScanFirstInt(tx.Store.Query(
-		ctx,
-		sqlf.Sprintf(
-			getUploadsCountQuery,
-			buildCTEPrefix(cteDefinitions),
-			sqlf.Join(conds, " AND "),
-		),
-	))
-	if err != nil {
-		return nil, 0, err
-	}
-
 	var orderExpression *sqlf.Query
 	if opts.OldestFirst {
 		orderExpression = sqlf.Sprintf("uploaded_at")
@@ -416,7 +443,7 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 		orderExpression = sqlf.Sprintf("uploaded_at DESC")
 	}
 
-	uploads, err := scanUploads(tx.Store.Query(ctx, sqlf.Sprintf(
+	uploads, totalCount, err := scanUploadsWithCount(tx.Store.Query(ctx, sqlf.Sprintf(
 		getUploadsQuery,
 		buildCTEPrefix(cteDefinitions),
 		sqlf.Join(conds, " AND "),
@@ -453,14 +480,6 @@ func buildCTEPrefix(cteDefinitions []cteDefinition) *sqlf.Query {
 	return sqlf.Sprintf("WITH\n%s", sqlf.Join(cteQueries, ",\n"))
 }
 
-const getUploadsCountQuery = `
--- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:GetUploads
-%s -- Dynamic CTE definitions for use in the WHERE clause
-SELECT COUNT(*) FROM lsif_uploads u
-JOIN repo ON repo.id = u.repository_id
-WHERE %s
-`
-
 const getUploadsQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:GetUploads
 %s -- Dynamic CTE definitions for use in the WHERE clause
@@ -485,7 +504,8 @@ SELECT
 	u.uploaded_parts,
 	u.upload_size,
 	u.associated_index_id,
-	s.rank
+	s.rank,
+	COUNT(*) OVER() AS count
 FROM lsif_uploads u
 LEFT JOIN (` + uploadRankQueryFragment + `) s
 ON u.id = s.id
