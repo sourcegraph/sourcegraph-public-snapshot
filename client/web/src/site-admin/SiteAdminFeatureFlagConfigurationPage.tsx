@@ -23,7 +23,6 @@ import {
     Icon,
     Modal,
     Input,
-    Label,
     Typography,
 } from '@sourcegraph/wildcard'
 
@@ -343,7 +342,7 @@ const AddFeatureFlagOverride: FunctionComponent<
             <Modal isOpen={showAddOverride} onDismiss={closeModal} aria-label="Add Feature Flag Override Modal">
                 <Typography.H3>Add feature flag override for {name}</Typography.H3>
                 <Form>
-                    <Label className="w-100 mt-4">
+                    <Typography.Label className="w-100 mt-4">
                         Override type
                         <RadioButtons
                             nodes={[
@@ -362,7 +361,7 @@ const AddFeatureFlagOverride: FunctionComponent<
                             }
                             selected={overrideType}
                         />
-                    </Label>
+                    </Typography.Label>
                     <Input
                         className="mt-2"
                         label={`${overrideType} ID`}
@@ -370,7 +369,7 @@ const AddFeatureFlagOverride: FunctionComponent<
                         value={namespaceID}
                         onChange={setInputValue}
                     />
-                    <Label className="w-100">
+                    <Typography.Label className="w-100">
                         <div className="mb-2 mt-2">Value</div>
                         <Toggle
                             title="Value"
@@ -380,7 +379,7 @@ const AddFeatureFlagOverride: FunctionComponent<
                             aria-describedby="add-feature-flag-override-value-toggle-description"
                         />
                         <span className="ml-1 text-capitalize">{Boolean(overrideValue).toString()}</span>
-                    </Label>
+                    </Typography.Label>
                     {error && <ErrorAlert prefix="Error adding override" error={error} />}
                     <div className="d-flex justify-content-end">
                         <Button onClick={closeModal} variant="secondary" className="mr-2">

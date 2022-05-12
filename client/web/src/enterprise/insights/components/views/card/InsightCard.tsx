@@ -3,7 +3,7 @@ import React, { forwardRef, HTMLAttributes, ReactNode } from 'react'
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
 
-import { Card, ForwardReferenceComponent, H2, Typography, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Card, ForwardReferenceComponent, Typography, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { getLineColor, LegendItem, LegendList, Series } from '../../../../../charts'
 import { ErrorBoundary } from '../../../../../components/ErrorBoundary'
@@ -39,7 +39,7 @@ const InsightCardHeader = forwardRef((props, reference) => {
     return (
         <Component {...attributes} ref={reference} className={classNames(styles.header, className)}>
             <div className={styles.headerContent}>
-                <Typography.H4 as={H2} title={title} className={styles.title}>
+                <Typography.H4 as={Typography.H2} title={title} className={styles.title}>
                     {title}
                 </Typography.H4>
 
