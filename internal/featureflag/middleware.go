@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"sync"
 
+	"sigs.k8s.io/kustomize/kyaml/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 )
 
@@ -15,6 +17,9 @@ type Store interface {
 	GetUserFlags(context.Context, int32) (map[string]bool, error)
 	GetAnonymousUserFlags(context.Context, string) (map[string]bool, error)
 	GetGlobalFeatureFlags(context.Context) (map[string]bool, error)
+	GetUserFlag(ctx context.Context, userID int32, flagName string) (*bool, error)
+	GetAnonymousUserFlag(ctx context.Context, anonymousUID string, flagName string) (*bool, error)
+	GetGlobalFeatureFlag(ctx context.Context, flagName string) (*bool, error)
 }
 
 // Middleware evaluates the feature flags for the current user and adds the
@@ -88,6 +93,45 @@ func FromContext(ctx context.Context) FlagSet {
 		return flags.(*flagSetFetcher).fetch(ctx)
 	}
 	return nil
+}
+// TODO: add description
+func (f *flagSetFetcher) evaluateForActor(ctx context.Context, a *actor.Actor, flagName string) (*bool, error) {
+	if a.IsAuthenticated() {
+		flag, err := f.ffs.GetUserFlag(ctx, a.UID, flagName)
+		if err == nil {
+			SetEvaluatedFlagToCache(flagName, a, *flag)
+			return flag, nil
+		}
+		// Continue if err != nil
+	}
+
+	if a.AnonymousUID != "" {
+		flag, err := f.ffs.GetAnonymousUserFlag(ctx, a.AnonymousUID, flagName)
+		if err == nil {
+			SetEvaluatedFlagToCache(flagName, a, *flag)
+			return flag, nil
+		}
+		// Continue if err != nil
+	}
+
+	flag, err := f.ffs.GetGlobalFeatureFlag(ctx, flagName)
+	if err == nil {
+		return flag, nil
+	}
+
+	return nil, errors.Errorf("Couldn't evaluate feature flag \"%s\" for the given actor", flagName)
+}
+
+func EvaluateForActorFromContext(ctx context.Context, flagName string) (result bool) {
+	result = false
+	if flags := ctx.Value(flagContextKey{}); flags != nil {
+		actor := actor.FromContext(ctx)
+		value, err := flags.(*flagSetFetcher).evaluateForActor(ctx, actor, flagName)
+		if err == nil {
+			result = *value
+		}
+	}
+	return result
 }
 
 // WithFlags adds a flag fetcher to the context so consumers of the

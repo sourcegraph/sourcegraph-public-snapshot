@@ -127,9 +127,16 @@ func (e *EvaluatedFeatureFlagResolver) Value() bool {
 	return e.value
 }
 
+// TODO: Remove and migrate to new API
 func (r *schemaResolver) ViewerFeatureFlags(ctx context.Context) []*EvaluatedFeatureFlagResolver {
 	f := featureflag.FromContext(ctx)
 	return evaluatedFlagsToResolvers(f)
+}
+
+func (r *schemaResolver) EvaluateFeatureFlag(ctx context.Context, args *struct {
+	FlagName string
+}) bool {
+	return featureflag.EvaluateForActorFromContext(ctx, args.FlagName)
 }
 
 func evaluatedFlagsToResolvers(input map[string]bool) []*EvaluatedFeatureFlagResolver {
