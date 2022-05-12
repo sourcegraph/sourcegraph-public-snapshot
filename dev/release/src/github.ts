@@ -38,7 +38,8 @@ export enum IssueLabel {
     PATCH = 'patch',
     MANAGED = 'managed-instances',
     DEVOPS_TEAM = 'team/devops',
-    SECURITY_TEAM = 'team/security'
+    SECURITY_TEAM = 'team/security',
+    RELEASE_BLOCKER = 'release-blocker'
 }
 
 enum IssueTitleSuffix {
@@ -125,7 +126,7 @@ const getTemplates = () => {
         repo: 'handbook',
         path: 'content/departments/product-engineering/engineering/process/releases/security_assessment.md',
         titleSuffix: IssueTitleSuffix.SECURITY_TRACKING,
-        labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.SECURITY_TEAM],
+        labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.SECURITY_TEAM, IssueLabel.RELEASE_BLOCKER],
     }
     return { releaseIssue, patchReleaseIssue, upgradeManagedInstanceIssue, securityAssessmentIssue }
 }
