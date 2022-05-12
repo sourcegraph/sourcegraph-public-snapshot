@@ -189,18 +189,21 @@ Data series that comprise code insights.
 
 # Table "public.insight_view"
 ```
-              Column               |          Type          | Collation | Nullable |                 Default                  
------------------------------------+------------------------+-----------+----------+------------------------------------------
- id                                | integer                |           | not null | nextval('insight_view_id_seq'::regclass)
- title                             | text                   |           |          | 
- description                       | text                   |           |          | 
- unique_id                         | text                   |           | not null | 
- default_filter_include_repo_regex | text                   |           |          | 
- default_filter_exclude_repo_regex | text                   |           |          | 
- other_threshold                   | double precision       |           |          | 
- presentation_type                 | presentation_type_enum |           | not null | 'LINE'::presentation_type_enum
- is_frozen                         | boolean                |           | not null | false
- default_filter_search_contexts    | text[]                 |           |          | 
+              Column               |            Type            | Collation | Nullable |                 Default                  
+-----------------------------------+----------------------------+-----------+----------+------------------------------------------
+ id                                | integer                    |           | not null | nextval('insight_view_id_seq'::regclass)
+ title                             | text                       |           |          | 
+ description                       | text                       |           |          | 
+ unique_id                         | text                       |           | not null | 
+ default_filter_include_repo_regex | text                       |           |          | 
+ default_filter_exclude_repo_regex | text                       |           |          | 
+ other_threshold                   | double precision           |           |          | 
+ presentation_type                 | presentation_type_enum     |           | not null | 'LINE'::presentation_type_enum
+ is_frozen                         | boolean                    |           | not null | false
+ default_filter_search_contexts    | text[]                     |           |          | 
+ series_sort_mode                  | series_sort_mode_enum      |           |          | 
+ series_sort_direction             | series_sort_direction_enum |           |          | 
+ series_limit                      | integer                    |           |          | 
 Indexes:
     "insight_view_pkey" PRIMARY KEY, btree (id)
     "insight_view_unique_id_unique_idx" UNIQUE, btree (unique_id)
@@ -414,6 +417,17 @@ Stores ephemeral snapshot data of insight recordings.
 
 - LINE
 - PIE
+
+# Type series_sort_direction_enum
+
+- ASC
+- DESC
+
+# Type series_sort_mode_enum
+
+- RESULT_COUNT
+- LEXICOGRAPHICAL
+- DATE_ADDED
 
 # Type time_unit
 
