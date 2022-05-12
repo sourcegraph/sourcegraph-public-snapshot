@@ -27,7 +27,7 @@ func lintLoggingLibraries() lint.Runner {
 
 		allowedFiles = map[string]struct{}{
 			// Banned imports will match on the linter here
-			"dev/sg/internal/lint/linters/liblog.go": {},
+			"dev/sg/linters/liblog.go": {},
 			// We re-export things here
 			"lib/log": {},
 			// We allow one usage of a direct zap import here

@@ -6,6 +6,8 @@ import (
 )
 
 // Targets lists all available linter targets. Each target consists of multiple linters.
+//
+// These should align with the names in 'enterprise/dev/ci/internal/ci/changed'
 var Targets = []lint.Target{
 	{
 		Name: "urls",
@@ -25,25 +27,19 @@ var Targets = []lint.Target{
 			goEnterpriseImport,
 			noLocalHost,
 			lintGoDirectives,
-		},
-	},
-	{
-		Name: "go-custom",
-		Help: "[WILL BE DEPRECATED] Custom checks for Go, will be migrated to the default go check set in the future",
-		Linters: []lint.Runner{
 			lintLoggingLibraries(),
 			goModGuards(),
 		},
 	},
 	{
-		Name: "docsite",
-		Help: "Check the code powering docs.sourcegraph.com for broken links and linting errors",
+		Name: "docs",
+		Help: "Documentation checks",
 		Linters: []lint.Runner{
 			lint.RunScript("Docsite lint", "dev/check/docsite.sh"),
 		},
 	},
 	{
-		Name: "docker",
+		Name: "dockerfiles",
 		Help: "Check Dockerfiles for Sourcegraph best practices",
 		Linters: []lint.Runner{
 			hadolint(),
@@ -57,6 +53,12 @@ var Targets = []lint.Target{
 			tsEnterpriseImport,
 			inlineTemplates,
 			lint.RunScript("Yarn duplicate", "dev/check/yarn-deduplicate.sh"),
+		},
+	},
+	{
+		Name: "svg",
+		Help: "Check svg assets",
+		Linters: []lint.Runner{
 			lint.RunScript("SVG Compression", "dev/check/svgo.sh"),
 		},
 	},
@@ -67,24 +69,6 @@ var Targets = []lint.Target{
 			shFmt,
 			shellCheck,
 			bashSyntax,
-		},
-	},
-	{
-		Name: "check-all-compat",
-		Help: "[WILL BE DEPRECATED] - 1:1 compatibility with the legacy ./dev/check/all.sh script",
-		Linters: []lint.Runner{
-			goFmt,
-			inlineTemplates,
-			goEnterpriseImport,
-			goDBConnImport,
-			lintGoGenerate,
-			goLint,
-			noLocalHost,
-			bashSyntax,
-			shFmt,
-			shellCheck,
-			submodules,
-			lintGoDirectives,
 		},
 	},
 }
