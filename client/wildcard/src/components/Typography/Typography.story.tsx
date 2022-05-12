@@ -4,8 +4,10 @@ import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
+import { Typography } from '..'
+
 import { TYPOGRAPHY_ALIGNMENTS, TYPOGRAPHY_MODES } from './constants'
-import { H1, H2, H3, H4, H5, H6 } from './Heading'
+import { H1, H2, H4, H5, H6 } from './Heading'
 import { Label } from './Label'
 
 import { Code, Text } from '.'
@@ -81,12 +83,12 @@ export const Simple: Story = () => (
                         </code>
                     </td>
                     <td>
-                        <H3
+                        <Typography.H3
                             mode={select('mode', TYPOGRAPHY_MODES, undefined)}
                             alignment={select('alignment', TYPOGRAPHY_ALIGNMENTS, undefined)}
                         >
                             This is H3
-                        </H3>
+                        </Typography.H3>
                     </td>
                 </tr>
                 <tr>

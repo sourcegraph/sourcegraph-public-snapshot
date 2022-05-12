@@ -5,7 +5,7 @@ import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 
 import { EventLogResult, fetchRecentFileViews } from '@sourcegraph/search'
-import { Icon, Link, useObservable } from '@sourcegraph/wildcard'
+import { Icon, Link, Typography, useObservable } from '@sourcegraph/wildcard'
 
 import { HistorySidebarProps } from '../HistorySidebarView'
 
@@ -61,7 +61,7 @@ export const RecentFilesSection: React.FunctionComponent<React.PropsWithChildren
                 onClick={() => setCollapsed(!collapsed)}
                 aria-label={`${collapsed ? 'Expand' : 'Collapse'} recent files`}
             >
-                <h5 className="flex-grow-1">Recent Files</h5>
+                <Typography.H5 className="flex-grow-1">Recent Files</Typography.H5>
                 <Icon
                     role="img"
                     aria-hidden={true}

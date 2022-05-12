@@ -6,7 +6,7 @@ import ChevronDoubleLeftIcon from 'mdi-react/ChevronDoubleLeftIcon'
 import FileTreeIcon from 'mdi-react/FileTreeIcon'
 
 import { ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { Button, useLocalStorage, Link, Icon, Panel } from '@sourcegraph/wildcard'
+import { Button, useLocalStorage, Link, Icon, Panel, Typography } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../components/Collapsible'
 import { RepositoryFields } from '../../graphql-operations'
@@ -171,7 +171,7 @@ export const RepositoryDocumentationSidebar: React.FunctionComponent<React.Props
                 >
                     {props.pathInfo.isIndex && (
                         <>
-                            <h4 className="text-nowrap">Index</h4>
+                            <Typography.H4 className="text-nowrap">Index</Typography.H4>
                             {props.pathInfo.children.length > 0 ? (
                                 <SubpagesList onToggle={onToggle} {...props} node={node} activePathID={activePathID} />
                             ) : (
@@ -181,7 +181,7 @@ export const RepositoryDocumentationSidebar: React.FunctionComponent<React.Props
                     )}
                     {!props.pathInfo.isIndex && props.pathInfo.children.length > 0 && (
                         <>
-                            <h4 className="text-nowrap">Subpages</h4>
+                            <Typography.H4 className="text-nowrap">Subpages</Typography.H4>
                             <SubpagesList onToggle={onToggle} {...props} node={node} activePathID={activePathID} />
                         </>
                     )}

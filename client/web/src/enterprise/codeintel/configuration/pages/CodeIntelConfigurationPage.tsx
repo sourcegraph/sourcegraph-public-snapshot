@@ -9,7 +9,7 @@ import { Subject } from 'rxjs'
 import { GitObjectType } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Container, PageHeader, Link } from '@sourcegraph/wildcard'
+import { Container, PageHeader, Link, Typography } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import {
@@ -149,7 +149,7 @@ export const PoliciesNode: FunctionComponent<React.PropsWithChildren<PoliciesNod
 
         <div className={classNames(styles.name, 'd-flex flex-column')}>
             <div className="m-0">
-                <h3 className="m-0 d-block d-md-inline">{policy.name}</h3>
+                <Typography.H3 className="m-0 d-block d-md-inline">{policy.name}</Typography.H3>
             </div>
 
             <div>

@@ -538,6 +538,8 @@ func CommitsExist(ctx context.Context, db database.DB, repoCommits []api.RepoCom
 	return exists, nil
 }
 
+var GetCommits = getCommits
+
 // getCommits returns a git commit object describing each of the give repository and commit pairs. This
 // function returns a slice of the same size as the input slice. Values in the output slice may be nil if
 // their associated repository or commit are unresolvable.

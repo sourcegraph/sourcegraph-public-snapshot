@@ -7,7 +7,7 @@ import { catchError } from 'rxjs/operators'
 
 import { gql } from '@sourcegraph/http-client'
 import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
-import { Icon, useObservable } from '@sourcegraph/wildcard'
+import { Icon, Typography, useObservable } from '@sourcegraph/wildcard'
 
 import { SavedSearchesResult, SavedSearchesVariables, SearchPatternType } from '../../../../graphql-operations'
 import { HistorySidebarProps } from '../HistorySidebarView'
@@ -91,7 +91,7 @@ export const SavedSearchesSection: React.FunctionComponent<React.PropsWithChildr
                 onClick={() => setCollapsed(!collapsed)}
                 aria-label={`${collapsed ? 'Expand' : 'Collapse'} saved searches`}
             >
-                <h5 className="flex-grow-1">Saved Searches</h5>
+                <Typography.H5 className="flex-grow-1">Saved Searches</Typography.H5>
                 <Icon
                     role="img"
                     aria-hidden={true}

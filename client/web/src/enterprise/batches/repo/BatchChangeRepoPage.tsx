@@ -4,7 +4,7 @@ import * as H from 'history'
 
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { PageHeader, useObservable } from '@sourcegraph/wildcard'
+import { PageHeader, Typography, useObservable } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import { DiffStat } from '../../../components/diff/DiffStat'
@@ -66,7 +66,7 @@ export const BatchChangeRepoPage: React.FunctionComponent<React.PropsWithChildre
             />
             {hasChangesets && stats?.batchChangesDiffStat && stats?.changesetsStats ? (
                 <div className="d-flex align-items-center mt-4 mb-3">
-                    <h2 className="mb-0 pb-1">{repoDisplayName}</h2>
+                    <Typography.H2 className="mb-0 pb-1">{repoDisplayName}</Typography.H2>
                     <DiffStat className="d-flex flex-1 ml-2" expandedCounts={true} {...stats.batchChangesDiffStat} />
                     <StatsBar stats={stats.changesetsStats} />
                 </div>

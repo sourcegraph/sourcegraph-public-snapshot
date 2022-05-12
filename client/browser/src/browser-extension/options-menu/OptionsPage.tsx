@@ -16,7 +16,7 @@ import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { IUser } from '@sourcegraph/shared/src/schema'
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 import { useInputValidation, deriveInputClassName } from '@sourcegraph/shared/src/util/useInputValidation'
-import { Button, Link, Icon } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { getPlatformName, isDefaultSourcegraphUrl } from '../../shared/util/context'
 
@@ -186,9 +186,9 @@ const PermissionAlert: React.FunctionComponent<React.PropsWithChildren<Permissio
     onClickGrantPermissions,
 }) => (
     <section className={classNames('bg-2', styles.section)}>
-        <h4>
+        <Typography.H4>
             {AlertIcon && <Icon role="img" className="mr-2" as={AlertIcon} aria-hidden={true} />} <span>{name}</span>
-        </h4>
+        </Typography.H4>
         <p className={styles.permissionText}>
             <strong>Grant permissions</strong> to use the Sourcegraph extension on {name}.
         </p>
@@ -212,10 +212,10 @@ const RepoSyncErrorAlert: React.FunctionComponent<
 
     return (
         <section className={classNames('bg-2', styles.section)}>
-            <h4>
+            <Typography.H4>
                 <Icon role="img" aria-hidden={true} className="mr-2" as={isDefaultURL ? LockIcon : BlockHelperIcon} />
                 {isDefaultURL ? 'Private repository' : 'Repository not found'}
-            </h4>
+            </Typography.H4>
             <p className="mb-0">
                 {isDefaultURL ? (
                     <>
@@ -262,10 +262,10 @@ const RepoSyncErrorAlert: React.FunctionComponent<
 
 const SourcegraphCloudAlert: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <section className={classNames('bg-2', styles.section)}>
-        <h4>
+        <Typography.H4>
             <Icon role="img" aria-hidden={true} className="mr-2" as={CheckCircleOutlineIcon} />
             You're on Sourcegraph Cloud
-        </h4>
+        </Typography.H4>
         <p>Naturally, the browser extension is not necessary to browse public code on sourcegraph.com.</p>
     </section>
 )

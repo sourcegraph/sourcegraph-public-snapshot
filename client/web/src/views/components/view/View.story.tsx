@@ -4,7 +4,7 @@ import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
 import { LineChartContent } from 'sourcegraph'
 
-import { Button, Menu, MenuButton, MenuItem, MenuList } from '@sourcegraph/wildcard'
+import { Button, Menu, MenuButton, MenuItem, MenuList, Typography } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../components/WebStory'
 
@@ -76,19 +76,19 @@ function ContextMenu() {
 export const ViewsShowcase: Story = () => (
     <main style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
         <section>
-            <h2>Empty view</h2>
+            <Typography.H2>Empty view</Typography.H2>
             <View.Root {...standardViewProps} title="Empty view" />
         </section>
 
         <section>
-            <h2>View with loading content</h2>
+            <Typography.H2>View with loading content</Typography.H2>
             <View.Root {...standardViewProps} title="Loading view">
                 <View.LoadingContent text="Loading insight" />
             </View.Root>
         </section>
 
         <section>
-            <h2>View with error-like content</h2>
+            <Typography.H2>View with error-like content</Typography.H2>
             <View.Root
                 style={{ width: '400px', height: '400px' }}
                 title="Error view"
@@ -102,14 +102,14 @@ export const ViewsShowcase: Story = () => (
         </section>
 
         <section>
-            <h2>View with chart content</h2>
+            <Typography.H2>View with chart content</Typography.H2>
             <View.Root {...standardViewProps} title="Chart view" subtitle="Subtitle chart description">
                 <View.Content content={[LINE_CHART_DATA]} />
             </View.Root>
         </section>
 
         <section>
-            <h2>View with context action item</h2>
+            <Typography.H2>View with context action item</Typography.H2>
             <View.Root
                 {...standardViewProps}
                 title="Chart view and looooooong loooooooooooooooong name of insight card block"

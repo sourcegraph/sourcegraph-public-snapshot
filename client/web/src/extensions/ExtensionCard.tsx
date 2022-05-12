@@ -14,7 +14,7 @@ import {
 } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { SettingsCascadeProps, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { useTimeoutManager, Link, CardBody, Card, Alert, Icon } from '@sourcegraph/wildcard'
+import { useTimeoutManager, Link, CardBody, Card, Alert, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 
@@ -214,9 +214,9 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                 {/* Section 2: Extension details. This should be the section that grows to fill remaining space. */}
                 <div className={classNames('w-100 flex-grow-1', styles.detailsSection)}>
                     <div className="mb-2">
-                        <h3 className="mb-0 mr-1 text-truncate flex-1">
+                        <Typography.H3 className="mb-0 mr-1 text-truncate flex-1">
                             <Link to={`/extensions/${extension.id}`}>{name}</Link>
-                        </h3>
+                        </Typography.H3>
                         <span>
                             by {publisher}
                             {isSourcegraphExtension && <Icon className={styles.logo} as={SourcegraphExtensionIcon} />}
