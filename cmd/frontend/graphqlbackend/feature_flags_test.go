@@ -225,3 +225,46 @@ func TestOrganizationFeatureFlagOverrides(t *testing.T) {
 		})
 	})
 }
+
+func TestEvaluateFeatureFlag(t *testing.T) {
+	t.Run("return flag value for user", func(t *testing.T) {
+		users := database.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+
+		orgs := database.NewMockOrgStore()
+		mockedOrg := types.Org{ID: 1, Name: "acme"}
+		orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
+		orgs.GetByIDFunc.SetDefaultReturn(&mockedOrg, nil)
+
+		flags := database.NewMockFeatureFlagStore()
+		flags.GetUserFlagFunc.SetDefaultHook(func(ctx context.Context, uid int32, flagName string) (*bool, error) {
+			value := true
+			return &value, nil
+		})
+
+		db := database.NewMockDB()
+		db.OrgsFunc.SetDefaultReturn(orgs)
+		db.UsersFunc.SetDefaultReturn(users)
+		db.FeatureFlagsFunc.SetDefaultReturn(flags)
+		ctx = featureflag.WithFlags(ctx, flags)
+
+		RunTests(t, []*Test{
+			{
+				Context: ctx,
+				Schema:  mustParseGraphQLSchema(t, db),
+				Query: `
+				{
+					evaluateFeatureFlag(flagName: "test-flag")
+				}
+				`,
+				ExpectedResult: `
+					{
+						"evaluateFeatureFlag": true
+					}
+				`,
+			},
+		})
+	})
+}
