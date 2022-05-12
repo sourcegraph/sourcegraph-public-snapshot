@@ -35,7 +35,7 @@ import (
 )
 
 // Run from integration_test.go
-func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
+func testBitbucketServerWebhook(db *sql.DB, userID int32) func(*testing.T) {
 	return func(t *testing.T) {
 		now := timeutil.Now()
 		clock := func() time.Time { return now }

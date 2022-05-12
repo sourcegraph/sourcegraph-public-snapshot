@@ -67,10 +67,16 @@ func (h *BitbucketCloudWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request
 	}
 	if m != nil {
 		respond(w, http.StatusInternalServerError, m)
+	} else {
+		respond(w, http.StatusNoContent, nil)
 	}
 }
 
 func (h *BitbucketCloudWebhook) parseEvent(r *http.Request) (interface{}, *types.ExternalService, *httpError) {
+	if r.Body == nil {
+		return nil, nil, &httpError{http.StatusBadRequest, errors.New("nil request body")}
+	}
+
 	payload, err := io.ReadAll(r.Body)
 	if err != nil {
 		return nil, nil, &httpError{http.StatusInternalServerError, err}
