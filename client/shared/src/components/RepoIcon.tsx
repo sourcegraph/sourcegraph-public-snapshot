@@ -27,7 +27,7 @@ export const RepoIcon: React.FunctionComponent<React.PropsWithChildren<{ repoNam
     if (CodehostIcon) {
         return (
             <span role="img" aria-label={hostName} title={hostName}>
-                <Icon className={className} as={CodehostIcon} />
+                <Icon role="img" className={className} as={CodehostIcon} aria-hidden={true} />
             </span>
         )
     }

@@ -78,8 +78,8 @@ export const NavGroup = ({ children }: NavGroupProps): JSX.Element => {
     return (
         <div className={navBarStyles.menu} ref={menuReference}>
             <Button className={navBarStyles.menuButton} onClick={() => setOpen(!open)} aria-label="Sections Navigation">
-                <Icon as={MenuIcon} />
-                <Icon as={open ? ChevronUpIcon : ChevronDownIcon} />
+                <Icon role="img" as={MenuIcon} aria-hidden={true} />
+                <Icon role="img" as={open ? ChevronUpIcon : ChevronDownIcon} aria-hidden={true} />
             </Button>
             <ul className={classNames(navBarStyles.list, { [navBarStyles.menuClose]: !open })}>{children}</ul>
         </div>
@@ -127,7 +127,7 @@ export const NavLink: React.FunctionComponent<React.PropsWithChildren<NavLinkPro
 }) => {
     const content = (
         <span className={classNames(navItemStyles.linkContent, className)}>
-            {LinkIcon ? <Icon className={navItemStyles.icon} as={LinkIcon} /> : null}
+            {LinkIcon ? <Icon role="img" className={navItemStyles.icon} as={LinkIcon} aria-hidden={true} /> : null}
             <span
                 className={classNames(navItemStyles.text, {
                     [navItemStyles.iconIncluded]: Icon,
