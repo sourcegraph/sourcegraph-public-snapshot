@@ -272,6 +272,7 @@ func getVerifiedEmails(ctx context.Context, ghClient *githubsvc.V3Client) (verif
 	return verifiedEmails
 }
 
+// verifyUserOrgs checks whether the authenticated user belongs to one of the GitHub orgs listed in auth.provider > allowOrgs configuration
 func (s *sessionIssuerHelper) verifyUserOrgs(ctx context.Context, ghClient *githubsvc.V3Client) bool {
 	userOrgs, err := ghClient.GetAuthenticatedUserOrgs(ctx)
 
@@ -294,6 +295,7 @@ func (s *sessionIssuerHelper) verifyUserOrgs(ctx context.Context, ghClient *gith
 	return false
 }
 
+// verifyUserTeams checks whether the authenticated user belongs to one of the GitHub teams listed in the auth.provider > allowOrgsMap configuration
 func (s *sessionIssuerHelper) verifyUserTeams(ctx context.Context, ghClient *githubsvc.V3Client) bool {
 	githubTeams, _, _, err := ghClient.GetAuthenticatedUserTeams(ctx, 1)
 
