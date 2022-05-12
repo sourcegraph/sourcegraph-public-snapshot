@@ -147,6 +147,8 @@ func checkSgVersionAndUpdate(ctx context.Context, skipUpdate bool) error {
 		std.Out.WriteLine(output.Styled(output.StyleSearchMatch, "│                                                                  │░░"))
 		std.Out.WriteLine(output.Styled(output.StyleSearchMatch, "╰──────────────────────────────────────────────────────────────────╯░░"))
 		std.Out.WriteLine(output.Styled(output.StyleSearchMatch, "  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░"))
+
+		analytics.LogEvent(ctx, "auto_update", []string{"skipped"}, start)
 		return nil
 	}
 
