@@ -176,15 +176,13 @@ func (s *Service) resolveRepoCommits(ctx context.Context, repoRevs map[api.RepoN
 
 // lockfileDependencies returns a flattened list of package dependencies for every repo and
 // revision pair specified in the given map.
-func (s *Service) lockfileDependencies(ctx context.Context, repoCommits []repoCommitResolvedCommit) ([]reposource.PackageDependency, error) {
-	var (
-		mu   sync.Mutex
-		deps []reposource.PackageDependency
-	)
-
+func (s *Service) lockfileDependencies(ctx context.Context, repoCommits []repoCommitResolvedCommit) (deps []reposource.PackageDependency, _ error) {
 	ctx, cancel := context.WithCancel(ctx)
 	g, ctx := errgroup.WithContext(ctx)
 	defer cancel()
+
+	// Protects appending to deps
+	var mu sync.Mutex
 
 	for _, repoCommit := range repoCommits {
 		// Capture outside of goroutine below
