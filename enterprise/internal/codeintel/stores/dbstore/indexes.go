@@ -83,7 +83,47 @@ func scanIndex(s dbutil.Scanner) (index Index, err error) {
 }
 
 // scanIndexes scans a slice of indexes from the return value of `*Store.query`.
+func scanIndexWithCount(s dbutil.Scanner) (index Index, count int, err error) {
+	var executionLogs []dbworkerstore.ExecutionLogEntry
+
+	if err := s.Scan(
+		&index.ID,
+		&index.Commit,
+		&index.QueuedAt,
+		&index.State,
+		&index.FailureMessage,
+		&index.StartedAt,
+		&index.FinishedAt,
+		&index.ProcessAfter,
+		&index.NumResets,
+		&index.NumFailures,
+		&index.RepositoryID,
+		&index.RepositoryName,
+		pq.Array(&index.DockerSteps),
+		&index.Root,
+		&index.Indexer,
+		pq.Array(&index.IndexerArgs),
+		&index.Outfile,
+		pq.Array(&executionLogs),
+		&index.Rank,
+		pq.Array(&index.LocalSteps),
+		&index.AssociatedUploadID,
+		&count,
+	); err != nil {
+		return index, 0, err
+	}
+
+	for _, entry := range executionLogs {
+		index.ExecutionLogs = append(index.ExecutionLogs, workerutil.ExecutionLogEntry(entry))
+	}
+
+	return index, count, nil
+}
+
+// scanIndexes scans a slice of indexes from the return value of `*Store.query`.
 var scanIndexes = basestore.NewSliceScanner(scanIndex)
+
+var scanIndexesWithCount = basestore.NewSliceWithCountScanner(scanIndexWithCount)
 
 // scanFirstIndex scans a slice of indexes from the return value of `*Store.query` and returns the first.
 var scanFirstIndex = basestore.NewFirstScanner(scanIndex)
@@ -253,12 +293,7 @@ func (s *Store) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Ind
 	}
 	conds = append(conds, authzConds)
 
-	totalCount, _, err := basestore.ScanFirstInt(tx.Store.Query(ctx, sqlf.Sprintf(getIndexesCountQuery, sqlf.Join(conds, " AND "))))
-	if err != nil {
-		return nil, 0, err
-	}
-
-	indexes, err := scanIndexes(tx.Store.Query(ctx, sqlf.Sprintf(getIndexesQuery, sqlf.Join(conds, " AND "), opts.Limit, opts.Offset)))
+	indexes, totalCount, err := scanIndexesWithCount(tx.Store.Query(ctx, sqlf.Sprintf(getIndexesQuery, sqlf.Join(conds, " AND "), opts.Limit, opts.Offset)))
 	if err != nil {
 		return nil, 0, err
 	}
@@ -269,14 +304,6 @@ func (s *Store) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Ind
 
 	return indexes, totalCount, nil
 }
-
-const getIndexesCountQuery = `
--- source: enterprise/internal/codeintel/stores/dbstore/indexes.go:GetIndexes
-SELECT COUNT(*)
-FROM lsif_indexes u
-JOIN repo ON repo.id = u.repository_id
-WHERE repo.deleted_at IS NULL AND %s
-`
 
 const getIndexesQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/indexes.go:GetIndexes
@@ -301,7 +328,8 @@ SELECT
 	u.execution_logs,
 	s.rank,
 	u.local_steps,
-	` + indexAssociatedUploadIDQueryFragment + `
+	` + indexAssociatedUploadIDQueryFragment + `,
+	COUNT(*) OVER() AS count
 FROM lsif_indexes u
 LEFT JOIN (` + indexRankQueryFragment + `) s
 ON u.id = s.id
