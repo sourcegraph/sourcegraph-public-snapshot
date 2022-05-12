@@ -54,6 +54,7 @@ type ListDependencyReposOpts struct {
 	NewestFirst bool
 }
 
+// ListDependencyRepos returns dependency repositories to be synced by gitserver.
 func (s *Store) ListDependencyRepos(ctx context.Context, opts ListDependencyReposOpts) (dependencyRepos []shared.Repo, err error) {
 	ctx, _, endObservation := s.operations.listDependencyRepos.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("scheme", opts.Scheme),
