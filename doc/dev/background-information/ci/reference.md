@@ -59,7 +59,7 @@ The default run type.
   - Upload build trace
 
 - Pipeline for `SVG` changes:
-  - **Linters and static analysis**: Prettier, Run sg lint
+  - **Linters and static analysis**: Prettier
   - Upload build trace
 
 - Pipeline for `Shell` changes:
