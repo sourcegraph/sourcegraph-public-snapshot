@@ -57,6 +57,9 @@ func NewSliceScanner[T any](f func(dbutil.Scanner) (T, error)) func(rows *sql.Ro
 // the values of the query result, as well as the count from the `COUNT(*) OVER()`
 // window function. The given function is invoked multiple times with a SQL rows
 // object to scan a single value.
+// Example query that would avail of this function, where we want only 10 rows but still
+// the count of everything that would have been returned, without performing two separate queries:
+// SELECT u.id, COUNT(*) OVER() as count FROM users LIMIT 10
 func NewSliceWithCountScanner[T any](f func(dbutil.Scanner) (T, int, error)) func(rows *sql.Rows, queryErr error) ([]T, int, error) {
 	return func(rows *sql.Rows, queryErr error) (values []T, totalCount int, err error) {
 		if queryErr != nil {
