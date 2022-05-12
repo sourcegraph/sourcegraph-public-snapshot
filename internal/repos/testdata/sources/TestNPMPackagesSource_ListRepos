@@ -1,0 +1,118 @@
+[
+  {
+   "ID": 0,
+   "Name": "npm/async",
+   "URI": "npm/async",
+   "Description": "Higher-order functions and common patterns for asynchronous code",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "npm/async",
+    "ServiceType": "npmPackages",
+    "ServiceID": "npmPackages"
+   },
+   "Sources": {
+    "extsvc:npmpackages:0": {
+     "ID": "extsvc:npmpackages:0",
+     "CloneURL": "npm/async"
+    }
+   },
+   "Metadata": {
+    "Package": {
+     "Scope": "",
+     "Name": "async"
+    }
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "npm/lodash",
+   "URI": "npm/lodash",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "npm/lodash",
+    "ServiceType": "npmPackages",
+    "ServiceID": "npmPackages"
+   },
+   "Sources": {
+    "extsvc:npmpackages:0": {
+     "ID": "extsvc:npmpackages:0",
+     "CloneURL": "npm/lodash"
+    }
+   },
+   "Metadata": {
+    "Package": {
+     "Scope": "",
+     "Name": "lodash"
+    }
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "npm/react",
+   "URI": "npm/react",
+   "Description": "React is a JavaScript library for building user interfaces.",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "npm/react",
+    "ServiceType": "npmPackages",
+    "ServiceID": "npmPackages"
+   },
+   "Sources": {
+    "extsvc:npmpackages:0": {
+     "ID": "extsvc:npmpackages:0",
+     "CloneURL": "npm/react"
+    }
+   },
+   "Metadata": {
+    "Package": {
+     "Scope": "",
+     "Name": "react"
+    }
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "npm/urql",
+   "URI": "npm/urql",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "npm/urql",
+    "ServiceType": "npmPackages",
+    "ServiceID": "npmPackages"
+   },
+   "Sources": {
+    "extsvc:npmpackages:0": {
+     "ID": "extsvc:npmpackages:0",
+     "CloneURL": "npm/urql"
+    }
+   },
+   "Metadata": {
+    "Package": {
+     "Scope": "",
+     "Name": "urql"
+    }
+   }
+  }
+ ]

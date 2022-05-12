@@ -40,7 +40,7 @@ export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<Get
                     </video>
                 </div>
                 <div className="col-12 col-md-5">
-                    <h2>Automate large-scale code changes</h2>
+                    <Typography.H2>Automate large-scale code changes</Typography.H2>
                     <p>
                         Batch Changes gives you a declarative structure for finding and modifying code across all of
                         your repositories. Its simple UI makes it easy to track and manage all of your changesets
@@ -164,7 +164,7 @@ export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<Get
                 </Card>
             </div>
         </div>
-        <h2>Batch changes demo</h2>
+        <Typography.H2>Batch changes demo</Typography.H2>
         <p>
             This 2 minute demo provides an overview of batch changes from editing a specification to managing
             changesets.
@@ -193,6 +193,7 @@ const FindReplaceIcon: React.FunctionComponent<React.PropsWithChildren<{ classNa
         fill="none"
         className={className}
         xmlns="http://www.w3.org/2000/svg"
+        role="presentation"
     >
         <rect width="54" height="8" rx="4" fill="#CAD2E2" />
         <rect x="57" width="32" height="8" rx="4" fill="#CAD2E2" />
@@ -240,6 +241,7 @@ const RefactorCombyIcon: React.FunctionComponent<React.PropsWithChildren<{ class
         fill="none"
         className={className}
         xmlns="http://www.w3.org/2000/svg"
+        role="presentation"
     >
         <rect width="54" height="8" rx="4" fill="#CAD2E2" />
         <rect x="57" width="32" height="8" rx="4" fill="#CAD2E2" />

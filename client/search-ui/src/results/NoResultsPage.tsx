@@ -205,7 +205,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
 
     return (
         <div className={styles.root}>
-            <h2>Sourcegraph basics</h2>
+            <Typography.H2>Sourcegraph basics</Typography.H2>
             <div className={styles.panels}>
                 {!hiddenSectionIDs?.includes(SectionID.VIDEOS) && (
                     <div className="mr-3">

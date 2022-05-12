@@ -75,7 +75,9 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
                     className={classNames('mr-lg-5', styles.heroImage)}
                 />
                 <div className="align-self-center">
-                    <h2 className={classNames('mb-3', styles.heading)}>Proactively monitor changes to your codebase</h2>
+                    <Typography.H2 className={classNames('mb-3', styles.heading)}>
+                        Proactively monitor changes to your codebase
+                    </Typography.H2>
                     <p className={classNames('mb-4')}>
                         With code monitoring, you can automatically track changes made across multiple code hosts and
                         repositories.

@@ -6,7 +6,7 @@ import { useLocation, useHistory } from 'react-router'
 import { ErrorLike } from '@sourcegraph/common'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Alert, Link } from '@sourcegraph/wildcard'
+import { Alert, Link, Typography } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BrandLogo } from '../components/branding/BrandLogo'
@@ -143,7 +143,7 @@ export const PostSignUpPage: FunctionComponent<React.PropsWithChildren<PostSignU
                                         <Link to={PageRoutes.Search}>skip to code search</Link>.
                                     </Alert>
                                 )}
-                                <h2>Get started with Sourcegraph</h2>
+                                <Typography.H2>Get started with Sourcegraph</Typography.H2>
                                 <p className="text-muted pb-3">Follow these steps to set up your account</p>
                             </div>
                             <div className="mt-2 pb-3 d-flex flex-column align-items-center w-100">

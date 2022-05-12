@@ -1,7 +1,7 @@
 import React from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Link, PopoverTrigger, FeedbackPrompt } from '@sourcegraph/wildcard'
+import { Button, Link, PopoverTrigger, FeedbackPrompt, Typography } from '@sourcegraph/wildcard'
 
 import { useHandleSubmitFeedback } from '../../../../../../../hooks'
 import { useLogEventName } from '../../../CodeInsightsLandingPageContext'
@@ -27,7 +27,7 @@ export const CodeInsightsLearnMore: React.FunctionComponent<
 
     return (
         <footer {...otherProps}>
-            <h2>Learn more about Code Insights</h2>
+            <Typography.H2>Learn more about Code Insights</Typography.H2>
 
             <div className={styles.cards}>
                 <article>
