@@ -33,136 +33,65 @@ func TestToSearchInputs(t *testing.T) {
 	autogold.Want("user search context", `
 (PARALLEL
   REPOPAGER
-    (PARALLEL
-      ZoektRepoSubsetSearchJob
-      SearcherJob))
-  RepoSearchJob
-  ComputeExcludedReposJob)
+    SearcherJob)
+  RepoSearchJob)
 `).Equal(t, test(`foo context:@userA`, search.Streaming, query.ParseLiteral))
 
-	autogold.Want("universal (AKA global) search context", `
-(PARALLEL
-  ZoektGlobalSearchJob
-  RepoSearchJob
-  ComputeExcludedReposJob)
-`).Equal(t, test(`foo context:global`, search.Streaming, query.ParseLiteral))
+	autogold.Want("universal (AKA global) search context", "\nRepoSearchJob\n").Equal(t, test(`foo context:global`, search.Streaming, query.ParseLiteral))
 
-	autogold.Want("universal (AKA global) search", `
-(PARALLEL
-  ZoektGlobalSearchJob
-  RepoSearchJob
-  ComputeExcludedReposJob)
-`).Equal(t, test(`foo`, search.Streaming, query.ParseLiteral))
+	autogold.Want("universal (AKA global) search", "\nRepoSearchJob\n").Equal(t, test(`foo`, search.Streaming, query.ParseLiteral))
 
 	autogold.Want("nonglobal repo", `
 (PARALLEL
   REPOPAGER
-    (PARALLEL
-      ZoektRepoSubsetSearchJob
-      SearcherJob))
-  RepoSearchJob
-  ComputeExcludedReposJob)
+    SearcherJob)
+  RepoSearchJob)
 `).Equal(t, test(`foo repo:sourcegraph/sourcegraph`, search.Streaming, query.ParseLiteral))
 
 	autogold.Want("nonglobal repo contains", `
 (PARALLEL
   REPOPAGER
-    (PARALLEL
-      ZoektRepoSubsetSearchJob
-      SearcherJob))
-  RepoSearchJob
-  ComputeExcludedReposJob)
+    SearcherJob)
+  RepoSearchJob)
 `).Equal(t, test(`foo repo:contains(bar)`, search.Streaming, query.ParseLiteral))
 
 	// Job generation support for implied `type:repo` queries.
-	autogold.Want("supported Repo job", `
-(PARALLEL
-  ZoektGlobalSearchJob
-  RepoSearchJob
-  ComputeExcludedReposJob)
-`).Equal(t, test("ok ok", search.Streaming, query.ParseRegexp))
+	autogold.Want("supported Repo job", "\nRepoSearchJob\n").Equal(t, test("ok ok", search.Streaming, query.ParseRegexp))
 
-	autogold.Want("supportedRepo job literal", `
-(PARALLEL
-  ZoektGlobalSearchJob
-  RepoSearchJob
-  ComputeExcludedReposJob)
-`).Equal(t, test("ok @thing", search.Streaming, query.ParseLiteral))
+	autogold.Want("supportedRepo job literal", "\nRepoSearchJob\n").Equal(t, test("ok @thing", search.Streaming, query.ParseLiteral))
 
-	autogold.Want("unsupported Repo job prefix", `
-(PARALLEL
-  ZoektGlobalSearchJob
-  ComputeExcludedReposJob)
-`).Equal(t, test("@nope", search.Streaming, query.ParseRegexp))
+	autogold.Want("unsupported Repo job prefix", "\nNoopJob\n").Equal(t, test("@nope", search.Streaming, query.ParseRegexp))
 
-	autogold.Want("unsupported Repo job regexp", `
-(PARALLEL
-  ZoektGlobalSearchJob
-  ComputeExcludedReposJob)
-`).Equal(t, test("foo @bar", search.Streaming, query.ParseRegexp))
+	autogold.Want("unsupported Repo job regexp", "\nNoopJob\n").Equal(t, test("foo @bar", search.Streaming, query.ParseRegexp))
 
 	// Job generation for other types of search
-	autogold.Want("symbol", `
-(PARALLEL
-  RepoUniverseSymbolSearchJob
-  ComputeExcludedReposJob)
-`).Equal(t, test("type:symbol test", search.Streaming, query.ParseRegexp))
+	autogold.Want("symbol", "\nNoopJob\n").Equal(t, test("type:symbol test", search.Streaming, query.ParseRegexp))
 
-	autogold.Want("commit", `
-(PARALLEL
-  CommitSearchJob
-  ComputeExcludedReposJob)
-`).Equal(t, test("type:commit test", search.Streaming, query.ParseRegexp))
+	autogold.Want("commit", "\nNoopJob\n").Equal(t, test("type:commit test", search.Streaming, query.ParseRegexp))
 
-	autogold.Want("diff", `
-(PARALLEL
-  DiffSearchJob
-  ComputeExcludedReposJob)
-`).Equal(t, test("type:diff test", search.Streaming, query.ParseRegexp))
+	autogold.Want("diff", "\nNoopJob\n").Equal(t, test("type:diff test", search.Streaming, query.ParseRegexp))
 
-	autogold.Want("Streaming: file or commit", `
-(PARALLEL
-  ZoektGlobalSearchJob
-  CommitSearchJob
-  ComputeExcludedReposJob)
-`).Equal(t, test("type:file type:commit test", search.Streaming, query.ParseRegexp))
+	autogold.Want("Streaming: file or commit", "\nNoopJob\n").Equal(t, test("type:file type:commit test", search.Streaming, query.ParseRegexp))
 
 	autogold.Want("Streaming: many types", `
 (PARALLEL
   REPOPAGER
-    (PARALLEL
-      ZoektRepoSubsetSearchJob
-      SearcherJob))
+    SearcherJob)
   REPOPAGER
-    (PARALLEL
-      ZoektSymbolSearchJob
-      SymbolSearcherJob))
-  CommitSearchJob
-  RepoSearchJob
-  ComputeExcludedReposJob)
+    SymbolSearcherJob)
+  RepoSearchJob)
 `).Equal(t, test("type:file type:path type:repo type:commit type:symbol repo:test test", search.Streaming, query.ParseRegexp))
 
 	// Priority jobs for Batched search.
-	autogold.Want("Batched: file or commit", `
-(PARALLEL
-  ZoektGlobalSearchJob
-  CommitSearchJob
-  ComputeExcludedReposJob)
-`).Equal(t, test("type:file type:commit test", search.Batch, query.ParseRegexp))
+	autogold.Want("Batched: file or commit", "\nNoopJob\n").Equal(t, test("type:file type:commit test", search.Batch, query.ParseRegexp))
 
 	autogold.Want("Batched: many types", `
 (PARALLEL
   REPOPAGER
-    (PARALLEL
-      ZoektRepoSubsetSearchJob
-      SearcherJob))
+    SearcherJob)
   REPOPAGER
-    (PARALLEL
-      ZoektSymbolSearchJob
-      SymbolSearcherJob))
-  CommitSearchJob
-  RepoSearchJob
-  ComputeExcludedReposJob)
+    SymbolSearcherJob)
+  RepoSearchJob)
 `).Equal(t, test("type:file type:path type:repo type:commit type:symbol repo:test test", search.Batch, query.ParseRegexp))
 }
 
@@ -177,74 +106,13 @@ func TestToEvaluateJob(t *testing.T) {
 		}
 
 		b, _ := query.ToBasicQuery(q)
-		j, _ := ToEvaluateJob(inputs, b)
+		j, _ := toFlatJobs(inputs, b)
 		return "\n" + PrettySexp(j) + "\n"
 	}
 
-	autogold.Want("root limit for streaming search", `
-(PARALLEL
-  ZoektGlobalSearchJob
-  RepoSearchJob
-  ComputeExcludedReposJob)
-`).Equal(t, test("foo", search.Streaming))
+	autogold.Want("root limit for streaming search", "\nRepoSearchJob\n").Equal(t, test("foo", search.Streaming))
 
-	autogold.Want("root limit for batch search", `
-(PARALLEL
-  ZoektGlobalSearchJob
-  RepoSearchJob
-  ComputeExcludedReposJob)
-`).Equal(t, test("foo", search.Batch))
-}
-
-func Test_optimizeJobs(t *testing.T) {
-	test := func(input string) string {
-		plan, _ := query.Pipeline(query.InitLiteral(input))
-		inputs := &run.SearchInputs{
-			UserSettings:        &schema.Settings{},
-			PatternType:         query.SearchTypeLiteralDefault,
-			Protocol:            search.Streaming,
-			OnSourcegraphDotCom: true,
-		}
-
-		baseJob, _ := NewJob(inputs, plan, IdentityPass)
-		optimizedJob, _ := NewJob(inputs, plan, OptimizationPass)
-		return "INPUT:\n\n" + input + "\n\nBASE:\n\n" + PrettySexp(baseJob) + "\n\nOPTIMIZED:\n\n" + PrettySexp(optimizedJob) + "\n"
-	}
-
-	cases := []struct {
-		name  string
-		query string
-	}{{
-		name:  "optimize basic expression Zoekt Text Global",
-		query: "foo and bar and not baz",
-	}, {
-		name:  "optimize repo-qualified expression Zoekt Text over repos",
-		query: "repo:derp foo and bar not baz",
-	}, {
-		name:  "optimize repo-qualified expression Zoekt Text over repos",
-		query: "repo:derp foo and bar not baz",
-	}, {
-		name:  "optimize qualified repo with type:symbol expression Zoekt Symbol over repos",
-		query: "repo:derp foo and bar not baz type:symbol",
-	}, {
-		name:  "commit with and",
-		query: "type:commit a and b",
-	}, {
-		name:  "commit with or",
-		query: "type:commit a or b",
-	}, {
-		name:  "diff with and",
-		query: "type:diff a and b",
-	}, {
-		name:  "diff with or",
-		query: "type:diff a or b",
-	}}
-
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			autogold.Equal(t, autogold.Raw(test(tc.query)))
-		})
-	}
+	autogold.Want("root limit for batch search", "\nRepoSearchJob\n").Equal(t, test("foo", search.Batch))
 }
 
 func TestToTextPatternInfo(t *testing.T) {
