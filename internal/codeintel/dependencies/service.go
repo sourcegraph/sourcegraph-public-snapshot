@@ -2,7 +2,6 @@ package dependencies
 
 import (
 	"context"
-	"errors"
 	"strings"
 	"sync"
 
@@ -17,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Service encapsulates the resolution and persistence of dependencies at the repository and package levels.
