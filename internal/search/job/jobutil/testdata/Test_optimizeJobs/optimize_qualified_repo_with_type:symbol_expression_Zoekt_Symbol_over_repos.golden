@@ -9,28 +9,31 @@ BASE:
     20s
     (LIMIT
       500
-      (PARALLEL
-        REPOPAGER
-          ZoektSymbolSearchJob)
-        (AND
-          (LIMIT
-            40000
-            (PARALLEL
-              REPOPAGER
-                SymbolSearcherJob)
-              ComputeExcludedReposJob))
-          (LIMIT
-            40000
-            (PARALLEL
-              REPOPAGER
-                SymbolSearcherJob)
-              ComputeExcludedReposJob))
-          (LIMIT
-            40000
-            (PARALLEL
-              REPOPAGER
-                SymbolSearcherJob)
-              ComputeExcludedReposJob)))))))
+      (AND
+        (LIMIT
+          40000
+          (PARALLEL
+            REPOPAGER
+              (PARALLEL
+                ZoektSymbolSearchJob
+                SymbolSearcherJob))
+            ComputeExcludedReposJob))
+        (LIMIT
+          40000
+          (PARALLEL
+            REPOPAGER
+              (PARALLEL
+                ZoektSymbolSearchJob
+                SymbolSearcherJob))
+            ComputeExcludedReposJob))
+        (LIMIT
+          40000
+          (PARALLEL
+            REPOPAGER
+              (PARALLEL
+                ZoektSymbolSearchJob
+                SymbolSearcherJob))
+            ComputeExcludedReposJob))))))
 
 OPTIMIZED:
 
@@ -42,24 +45,28 @@ OPTIMIZED:
       (PARALLEL
         REPOPAGER
           ZoektSymbolSearchJob)
-        (PARALLEL
-          NoopJob
-          (AND
-            (LIMIT
-              40000
-              (PARALLEL
-                REPOPAGER
-                  SymbolSearcherJob)
-                ComputeExcludedReposJob))
-            (LIMIT
-              40000
-              (PARALLEL
-                REPOPAGER
-                  SymbolSearcherJob)
-                ComputeExcludedReposJob))
-            (LIMIT
-              40000
-              (PARALLEL
-                REPOPAGER
-                  SymbolSearcherJob)
-                ComputeExcludedReposJob))))))))
+        (AND
+          (LIMIT
+            40000
+            (PARALLEL
+              REPOPAGER
+                (PARALLEL
+                  NoopJob
+                  SymbolSearcherJob))
+              ComputeExcludedReposJob))
+          (LIMIT
+            40000
+            (PARALLEL
+              REPOPAGER
+                (PARALLEL
+                  NoopJob
+                  SymbolSearcherJob))
+              ComputeExcludedReposJob))
+          (LIMIT
+            40000
+            (PARALLEL
+              REPOPAGER
+                (PARALLEL
+                  NoopJob
+                  SymbolSearcherJob))
+              ComputeExcludedReposJob)))))))

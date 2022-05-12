@@ -55,7 +55,16 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 	features := toFeatures(searchInputs.Features)
 	repoOptions := toRepoOptions(b, searchInputs.UserSettings)
 
-	repoUniverseSearch, skipRepoSubsetSearch, _ := jobMode(b, resultTypes, searchInputs.PatternType, searchInputs.OnSourcegraphDotCom)
+	builder := &jobBuilder{
+		query:          b,
+		resultTypes:    resultTypes,
+		repoOptions:    repoOptions,
+		features:       &features,
+		fileMatchLimit: fileMatchLimit,
+		selector:       selector,
+	}
+
+	repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos := jobMode(b, resultTypes, searchInputs.PatternType, searchInputs.OnSourcegraphDotCom)
 
 	var allJobs []job.Job
 	addJob := func(job job.Job) {
@@ -71,16 +80,34 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 
 		// Create Text Search Jobs
 		if resultTypes.Has(result.TypeFile | result.TypePath) {
+			// Create Global Text Search jobs.
+			if repoUniverseSearch {
+				job, err := builder.newZoektGlobalSearch(search.TextRequest)
+				if err != nil {
+					return nil, err
+				}
+				addJob(job)
+			}
+
 			// Create Text Search jobs over repo set.
 			if !skipRepoSubsetSearch {
-				searcherJob := &searcher.SearcherJob{
+				var textSearchJobs []job.Job
+				if runZoektOverRepos {
+					job, err := builder.newZoektSearch(search.TextRequest)
+					if err != nil {
+						return nil, err
+					}
+					textSearchJobs = append(textSearchJobs, job)
+				}
+
+				textSearchJobs = append(textSearchJobs, &searcher.SearcherJob{
 					PatternInfo:     patternInfo,
 					Indexed:         false,
 					UseFullDeadline: useFullDeadline,
-				}
+				})
 
 				addJob(&repoPagerJob{
-					child:            searcherJob,
+					child:            NewParallelJob(textSearchJobs...),
 					repoOptions:      repoOptions,
 					useIndex:         b.Index(),
 					containsRefGlobs: query.ContainsRefGlobs(b.ToParseTree()),
@@ -90,20 +117,51 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 
 		// Create Symbol Search Jobs
 		if resultTypes.Has(result.TypeSymbol) {
+			// Create Global Symbol Search jobs.
+			if repoUniverseSearch {
+				job, err := builder.newZoektGlobalSearch(search.SymbolRequest)
+				if err != nil {
+					return nil, err
+				}
+				addJob(job)
+			}
+
 			// Create Symbol Search jobs over repo set.
 			if !skipRepoSubsetSearch {
-				symbolSearchJob := &searcher.SymbolSearcherJob{
-					PatternInfo: patternInfo,
-					Limit:       maxResults,
+				var symbolSearchJobs []job.Job
+
+				if runZoektOverRepos {
+					job, err := builder.newZoektSearch(search.SymbolRequest)
+					if err != nil {
+						return nil, err
+					}
+					symbolSearchJobs = append(symbolSearchJobs, job)
 				}
 
+				symbolSearchJobs = append(symbolSearchJobs, &searcher.SymbolSearcherJob{
+					PatternInfo: patternInfo,
+					Limit:       maxResults,
+				})
+
 				addJob(&repoPagerJob{
-					child:            symbolSearchJob,
+					child:            NewParallelJob(symbolSearchJobs...),
 					repoOptions:      repoOptions,
 					useIndex:         b.Index(),
 					containsRefGlobs: query.ContainsRefGlobs(b.ToParseTree()),
 				})
 			}
+		}
+
+		if resultTypes.Has(result.TypeCommit) || resultTypes.Has(result.TypeDiff) {
+			diff := resultTypes.Has(result.TypeDiff)
+			addJob(&commit.CommitSearchJob{
+				Query:                commit.QueryToGitQuery(b, diff),
+				RepoOpts:             repoOptions,
+				Diff:                 diff,
+				HasTimeFilter:        b.Exists("after") || b.Exists("before"),
+				Limit:                int(fileMatchLimit),
+				IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker),
+			})
 		}
 
 		if resultTypes.Has(result.TypeStructural) {
@@ -228,7 +286,18 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 		}
 	}
 
-	return NewParallelJob(allJobs...), nil
+	addJob(&searchrepos.ComputeExcludedReposJob{
+		RepoOpts: repoOptions,
+	})
+
+	job := NewParallelJob(allJobs...)
+
+	checker := authz.DefaultSubRepoPermsChecker
+	if authz.SubRepoEnabled(checker) {
+		job = NewFilterJob(job)
+	}
+
+	return job, nil
 }
 
 func mapSlice(values []string, f func(string) string) []string {
@@ -608,7 +677,7 @@ func toPatternExpressionJob(inputs *run.SearchInputs, q query.Basic) (job.Job, e
 	return nil, errors.Errorf("unrecognized type %T in evaluatePatternExpression", q.Pattern)
 }
 
-func toFlatJobs(inputs *run.SearchInputs, q query.Basic) (job.Job, error) {
+func ToEvaluateJob(inputs *run.SearchInputs, q query.Basic) (job.Job, error) {
 	if q.Pattern == nil {
 		return ToSearchJob(inputs, q)
 	} else {
@@ -616,153 +685,167 @@ func toFlatJobs(inputs *run.SearchInputs, q query.Basic) (job.Job, error) {
 	}
 }
 
-func NewJob(inputs *run.SearchInputs, plan query.Plan) (job.Job, error) {
+// optimizeJobs optimizes a baseJob query with respect to an incoming basic
+// query. It checks that the incoming basic query has more expressive shape
+// (and/or/not expressions) and if so, converts it directly to native queries
+// for a backed. Currently that backend is Zoekt. It then removes unoptimized
+// Zoekt jobs from the baseJob and replaces them with the optimized ones.
+func optimizeJobs(baseJob job.Job, inputs *run.SearchInputs, q query.Basic) (job.Job, error) {
+	if _, ok := q.Pattern.(query.Pattern); ok {
+		// This job is already in it's simplest form, since the Pattern
+		// is just a single node and not an expression.
+		return baseJob, nil
+	}
+	candidateOptimizedJobs, err := ToSearchJob(inputs, q)
+	if err != nil {
+		return nil, err
+	}
+
+	var optimizedJobs []job.Job
+	collector := Mapper{
+		MapJob: func(currentJob job.Job) job.Job {
+			switch currentJob.(type) {
+			case
+				*zoekt.ZoektGlobalSearchJob,
+				*symbol.RepoUniverseSymbolSearchJob,
+				*zoekt.ZoektRepoSubsetSearchJob,
+				*zoekt.ZoektSymbolSearchJob,
+				*commit.CommitSearchJob:
+				optimizedJobs = append(optimizedJobs, currentJob)
+				return currentJob
+			default:
+				return currentJob
+			}
+		},
+	}
+
+	collector.Map(candidateOptimizedJobs)
+
+	// We've created optimized jobs. Now let's remove any unoptimized ones
+	// in the job expression tree. We trim off any jobs corresponding to
+	// optimized ones (if we created an optimized global zoekt jobs, we
+	// delete all global zoekt jobs created by the default strategy).
+
+	exists := func(name string) bool {
+		for _, j := range optimizedJobs {
+			if name == j.Name() {
+				return true
+			}
+		}
+		return false
+	}
+
+	trimmer := Mapper{
+		MapJob: func(currentJob job.Job) job.Job {
+			switch currentJob.(type) {
+			case *zoekt.ZoektGlobalSearchJob:
+				if exists("ZoektGlobalSearchJob") {
+					return &NoopJob{}
+				}
+				return currentJob
+
+			case *zoekt.ZoektRepoSubsetSearchJob:
+				if exists("ZoektRepoSubsetSearchJob") {
+					return &NoopJob{}
+				}
+				return currentJob
+
+			case *zoekt.ZoektSymbolSearchJob:
+				if exists("ZoektSymbolSearchJob") {
+					return &NoopJob{}
+				}
+				return currentJob
+
+			case *symbol.RepoUniverseSymbolSearchJob:
+				if exists("RepoUniverseSymbolSearchJob") {
+					return &NoopJob{}
+				}
+				return currentJob
+
+			case *commit.CommitSearchJob:
+				if exists("CommitSearchJob") || exists("DiffSearchJob") {
+					return &NoopJob{}
+				}
+				return currentJob
+
+			default:
+				return currentJob
+			}
+		},
+	}
+
+	trimmedJob := trimmer.Map(baseJob)
+
+	// wrap the optimized jobs that require repo pager
+	for i, job := range optimizedJobs {
+		switch job.(type) {
+		case
+			*zoekt.ZoektRepoSubsetSearchJob,
+			*zoekt.ZoektSymbolSearchJob:
+			optimizedJobs[i] = &repoPagerJob{
+				child:            job,
+				repoOptions:      toRepoOptions(q, inputs.UserSettings),
+				useIndex:         q.Index(),
+				containsRefGlobs: query.ContainsRefGlobs(q.ToParseTree()),
+			}
+		}
+	}
+
+	optimizedJob := NewParallelJob(optimizedJobs...)
+
+	// wrap optimized jobs in the permissions checker
+	checker := authz.DefaultSubRepoPermsChecker
+	if authz.SubRepoEnabled(checker) {
+		optimizedJob = NewFilterJob(optimizedJob)
+	}
+
+	return NewParallelJob(optimizedJob, trimmedJob), nil
+}
+
+// Pass represents an optimization pass over an incoming job. It exposes the
+// search inputs and basic query associated with the incoming job. After a pass
+// runs over the incoming job, it returns a (possibly modified) job.
+type Pass func(job.Job, *run.SearchInputs, query.Basic) (job.Job, error)
+
+func IdentityPass(j job.Job, _ *run.SearchInputs, _ query.Basic) (job.Job, error) {
+	return j, nil
+}
+
+var OptimizationPass = optimizeJobs
+
+func NewJob(inputs *run.SearchInputs, plan query.Plan, optimize Pass) (job.Job, error) {
 	children := make([]job.Job, 0, len(plan))
 	for _, q := range plan {
-		child, err := NewBasicJob(inputs, q)
+		child, err := ToEvaluateJob(inputs, q)
 		if err != nil {
 			return nil, err
 		}
+
+		child, err = optimize(child, inputs, q)
+		if err != nil {
+			return nil, err
+		}
+
+		// Apply selectors
+		if v, _ := q.ToParseTree().StringValue(query.FieldSelect); v != "" {
+			sp, _ := filter.SelectPathFromString(v) // Invariant: select already validated
+			child = NewSelectJob(sp, child)
+		}
+
+		// Apply limits and Timeouts.
+		maxResults := q.ToParseTree().MaxResults(inputs.DefaultLimit())
+		timeout := TimeoutDuration(q)
+		child = NewTimeoutJob(timeout, NewLimitJob(maxResults, child))
+
 		children = append(children, child)
 	}
 	return NewAlertJob(inputs, NewOrJob(children...)), nil
 }
 
-func NewBasicJob(inputs *run.SearchInputs, q query.Basic) (job.Job, error) {
-	var children []job.Job
-	addJob := func(j job.Job) {
-		children = append(children, j)
-	}
-
-	{
-		// This block generates jobs that can be built directly from
-		// a basic query rather than first being expanded into
-		// flat queries.
-		types, _ := q.IncludeExcludeValues(query.FieldType)
-		resultTypes := computeResultTypes(types, q, inputs.PatternType)
-		fileMatchLimit := int32(computeFileMatchLimit(q, inputs.Protocol))
-		selector, _ := filter.SelectPathFromString(q.FindValue(query.FieldSelect)) // Invariant: select is validated
-		features := toFeatures(inputs.Features)
-		repoOptions := toRepoOptions(q, inputs.UserSettings)
-		repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos := jobMode(q, resultTypes, inputs.PatternType, inputs.OnSourcegraphDotCom)
-
-		builder := &jobBuilder{
-			query:          q,
-			resultTypes:    resultTypes,
-			repoOptions:    repoOptions,
-			features:       &features,
-			fileMatchLimit: fileMatchLimit,
-			selector:       selector,
-		}
-
-		if resultTypes.Has(result.TypeFile | result.TypePath) {
-			// Create Global Text Search jobs.
-			if repoUniverseSearch {
-				job, err := builder.newZoektGlobalSearch(search.TextRequest)
-				if err != nil {
-					return nil, err
-				}
-				addJob(job)
-			}
-
-			if !skipRepoSubsetSearch && runZoektOverRepos {
-				job, err := builder.newZoektSearch(search.TextRequest)
-				if err != nil {
-					return nil, err
-				}
-				addJob(&repoPagerJob{
-					child:            job,
-					repoOptions:      repoOptions,
-					useIndex:         q.Index(),
-					containsRefGlobs: query.ContainsRefGlobs(q.ToParseTree()),
-				})
-			}
-		}
-
-		if resultTypes.Has(result.TypeSymbol) {
-			// Create Global Symbol Search jobs.
-			if repoUniverseSearch {
-				job, err := builder.newZoektGlobalSearch(search.SymbolRequest)
-				if err != nil {
-					return nil, err
-				}
-				addJob(job)
-			}
-
-			if !skipRepoSubsetSearch && runZoektOverRepos {
-				job, err := builder.newZoektSearch(search.SymbolRequest)
-				if err != nil {
-					return nil, err
-				}
-				addJob(&repoPagerJob{
-					child:            job,
-					repoOptions:      repoOptions,
-					useIndex:         q.Index(),
-					containsRefGlobs: query.ContainsRefGlobs(q.ToParseTree()),
-				})
-			}
-		}
-
-		if resultTypes.Has(result.TypeCommit) || resultTypes.Has(result.TypeDiff) {
-			diff := resultTypes.Has(result.TypeDiff)
-			addJob(&commit.CommitSearchJob{
-				Query:                commit.QueryToGitQuery(q, diff),
-				RepoOpts:             repoOptions,
-				Diff:                 diff,
-				HasTimeFilter:        q.Exists("after") || q.Exists("before"),
-				Limit:                int(fileMatchLimit),
-				IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker),
-			})
-		}
-
-		addJob(&searchrepos.ComputeExcludedReposJob{
-			RepoOpts: repoOptions,
-		})
-	}
-
-	{
-		// This block generates jobs using the expansion of a basic query into
-		// flat queries
-		flatJob, err := toFlatJobs(inputs, q)
-		if err != nil {
-			return nil, err
-		}
-		addJob(flatJob)
-	}
-
-	basicJob := NewParallelJob(children...)
-
-	{ // Apply selectors
-		if v, _ := q.ToParseTree().StringValue(query.FieldSelect); v != "" {
-			sp, _ := filter.SelectPathFromString(v) // Invariant: select already validated
-			basicJob = NewSelectJob(sp, basicJob)
-		}
-	}
-
-	{ // Apply subrepo permissions checks
-		checker := authz.DefaultSubRepoPermsChecker
-		if authz.SubRepoEnabled(checker) {
-			basicJob = NewFilterJob(basicJob)
-		}
-	}
-
-	{ // Apply limit
-		maxResults := q.ToParseTree().MaxResults(inputs.DefaultLimit())
-		basicJob = NewLimitJob(maxResults, basicJob)
-	}
-
-	{ // Apply timeout
-		timeout := TimeoutDuration(q)
-		basicJob = NewTimeoutJob(timeout, basicJob)
-	}
-
-	return basicJob, nil
-}
-
 // FromExpandedPlan takes a query plan that has had all predicates expanded,
 // and converts it to a job.
 func FromExpandedPlan(inputs *run.SearchInputs, plan query.Plan) (job.Job, error) {
-	return NewJob(inputs, plan)
+	return NewJob(inputs, plan, OptimizationPass)
 }
 
 var metricFeatureFlagUnavailable = promauto.NewCounter(prometheus.CounterOpts{
