@@ -188,7 +188,7 @@ func (s *Service) lockfileDependencies(ctx context.Context, repoCommits []repoCo
 
 	for _, repoCommit := range repoCommits {
 		// Capture outside of goroutine below
-		repoName, rev := repoCommit.Repo, repoCommit.CommitID
+		repoCommit := repoCommit
 
 		// Acquire semaphore before spawning goroutine to ensure that we limit the total number
 		// of concurrent _routines_, whether they are actively processing lockfiles or not.
@@ -199,7 +199,7 @@ func (s *Service) lockfileDependencies(ctx context.Context, repoCommits []repoCo
 		g.Go(func() error {
 			defer s.lockfilesSemaphore.Release(1)
 
-			repoDeps, err := s.lockfilesSvc.ListDependencies(ctx, repoName, string(rev))
+			repoDeps, err := s.lockfilesSvc.ListDependencies(ctx, repoCommit.Repo, string(repoCommit.CommitID))
 			if err != nil {
 				return errors.Wrap(err, "lockfiles.ListDependencies")
 			}
