@@ -38,12 +38,14 @@ export enum IssueLabel {
     PATCH = 'patch',
     MANAGED = 'managed-instances',
     DEVOPS_TEAM = 'team/devops',
+    SECURITY_TEAM = 'team/security'
 }
 
 enum IssueTitleSuffix {
     RELEASE_TRACKING = 'release tracking issue',
     PATCH_TRACKING = 'patch release tracking issue',
     MANAGED_TRACKING = 'upgrade managed instances tracking issue',
+    SECURITY_TRACKING = 'container image vulnerability assessment tracking issue'
 }
 
 /**
@@ -118,7 +120,14 @@ const getTemplates = () => {
         titleSuffix: IssueTitleSuffix.MANAGED_TRACKING,
         labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.MANAGED, IssueLabel.DEVOPS_TEAM],
     }
-    return { releaseIssue, patchReleaseIssue, upgradeManagedInstanceIssue }
+    const securityAssessmentIssue: IssueTemplate = {
+        owner: 'sourcegraph',
+        repo: 'handbook',
+        path: 'content/departments/product-engineering/engineering/process/releases/security_assessment.md',
+        titleSuffix: IssueTitleSuffix.SECURITY_TRACKING,
+        labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.SECURITY_TEAM],
+    }
+    return { releaseIssue, patchReleaseIssue, upgradeManagedInstanceIssue, securityAssessmentIssue }
 }
 
 function dateMarkdown(date: Date, name: string): string {
