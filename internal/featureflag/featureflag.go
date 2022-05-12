@@ -4,10 +4,10 @@ import (
 	"context"
 
 	"encoding/binary"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"hash/fnv"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 )
 
 type FeatureFlag struct {
@@ -27,8 +27,12 @@ func (f *FeatureFlag) CacheKey() string {
 	return GetFlagCacheKey(f.Name)
 }
 
-func GetEvaluatedFlagsFromContext(ctx context.Context, db database.DB) FlagSet {
-	flags, error := db.FeatureFlags().GetFeatureFlags(ctx)
+type FeatureFlagsStore interface {
+	GetFeatureFlags(ctx context.Context) ([]*FeatureFlag, error)
+}
+
+func GetEvaluatedFlagsFromContext(ctx context.Context, store FeatureFlagsStore) FlagSet {
+	flags, error := store.GetFeatureFlags(ctx)
 
 	if error != nil {
 		return FlagSet{}
@@ -58,9 +62,7 @@ func (f *FeatureFlag) EvaluateForUser(userID int32) bool {
 		result = f.Bool.Value
 	case f.Rollout != nil:
 		result = hashUserAndFlag(userID, f.Name)%10000 < uint32(f.Rollout.Rollout)
-	}
-
-	if result == nil {
+	default:
 		panic("one of Bool or Rollout must be set")
 	}
 
@@ -85,13 +87,11 @@ func (f *FeatureFlag) EvaluateForAnonymousUser(anonymousUID string) bool {
 		result = f.Bool.Value
 	case f.Rollout != nil:
 		result = hashAnonymousUserAndFlag(anonymousUID, f.Name)%10000 < uint32(f.Rollout.Rollout)
-	}
-
-	if result == nil {
+	default:
 		panic("one of Bool or Rollout must be set")
 	}
 
-	SetEvaluatedFeatureFlagToCache(f, GetVisitorIDForAnonymousUser(anonymousUID), result)
+	SetEvaluatedFlagToCache(f, GetVisitorIDForAnonymousUser(anonymousUID), result)
 
 	return result
 }
