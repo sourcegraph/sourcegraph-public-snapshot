@@ -76,6 +76,12 @@ export const DrillDownFiltersPopover: React.FunctionComponent<
         }
     }
 
+    const handleCreateInsight = (values: DrillDownInsightCreationFormValues): void => {
+        setStep(DrillDownFiltersStep.Filters)
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
+        onInsightCreate(values)
+    }
+
     return (
         <Popover isOpen={isOpen} anchor={anchor} onOpenChange={event => onVisibilityChange(event.isOpen)}>
             <PopoverTrigger
@@ -115,7 +121,7 @@ export const DrillDownFiltersPopover: React.FunctionComponent<
 
                 {step === DrillDownFiltersStep.ViewCreation && (
                     <DrillDownInsightCreationForm
-                        onCreateInsight={onInsightCreate}
+                        onCreateInsight={handleCreateInsight}
                         onCancel={() => setStep(DrillDownFiltersStep.Filters)}
                     />
                 )}
