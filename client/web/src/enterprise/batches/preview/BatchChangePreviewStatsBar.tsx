@@ -71,6 +71,7 @@ export const BatchChangePreviewStatsBar: React.FunctionComponent<
                     styles.batchChangePreviewStatsBarMetrics,
                     'flex-grow-1 d-flex justify-content-end'
                 )}
+                aria-label="Preview Stats"
             >
                 <PreviewStatsAdded count={stats.added} />
                 <PreviewStatsRemoved count={stats.removed} />
@@ -96,7 +97,7 @@ export const BatchChangePreviewStatsBar: React.FunctionComponent<
 
 export const PreviewStatsAdded: React.FunctionComponent<React.PropsWithChildren<{ count: number }>> = ({ count }) => (
     <div className={classNames(styles.batchChangePreviewStatsBarStat, 'd-flex flex-column mr-2 text-nowrap')}>
-        <div className="d-flex flex-column align-items-center justify-content-center">
+        <div className="d-flex flex-column align-items-center justify-content-center" aria-hidden={true}>
             <span className={styles.previewStatsAddedLine}>&nbsp;</span>
             <span
                 className={classNames(styles.previewStatsAddedIcon, 'd-flex justify-content-center align-items-center')}
@@ -105,14 +106,14 @@ export const PreviewStatsAdded: React.FunctionComponent<React.PropsWithChildren<
             </span>
             <span className={styles.previewStatsAddedLine}>&nbsp;</span>
         </div>
-        {count} Added
+        {`${count} Added`}
     </div>
 )
 export const PreviewStatsModified: React.FunctionComponent<React.PropsWithChildren<{ count: number }>> = ({
     count,
 }) => (
     <div className={classNames(styles.batchChangePreviewStatsBarStat, 'd-flex flex-column text-nowrap ml-2')}>
-        <div className="d-flex flex-column align-items-center">
+        <div className="d-flex flex-column align-items-center" aria-hidden={true}>
             <span className={styles.previewStatsModifiedLine}>&nbsp;</span>
             <span
                 className={classNames(
@@ -124,12 +125,12 @@ export const PreviewStatsModified: React.FunctionComponent<React.PropsWithChildr
             </span>
             <span className={styles.previewStatsModifiedLine}>&nbsp;</span>
         </div>
-        {count} Modified
+        {`${count} Modified`}
     </div>
 )
 export const PreviewStatsRemoved: React.FunctionComponent<React.PropsWithChildren<{ count: number }>> = ({ count }) => (
     <div className={classNames(styles.batchChangePreviewStatsBarStat, 'd-flex flex-column mx-2 text-nowrap')}>
-        <div className="d-flex flex-column align-items-center">
+        <div className="d-flex flex-column align-items-center" aria-hidden={true}>
             <span className={styles.previewStatsRemovedLine}>&nbsp;</span>
             <span
                 className={classNames(
@@ -141,6 +142,6 @@ export const PreviewStatsRemoved: React.FunctionComponent<React.PropsWithChildre
             </span>
             <span className={styles.previewStatsRemovedLine}>&nbsp;</span>
         </div>
-        {count} Removed
+        {`${count} Removed`}
     </div>
 )

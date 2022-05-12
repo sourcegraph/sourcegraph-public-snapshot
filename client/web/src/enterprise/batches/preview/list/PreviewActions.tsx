@@ -101,10 +101,16 @@ export const PreviewActionPublish: React.FunctionComponent<
     React.PropsWithChildren<{ label?: string; className?: string }>
 > = ({ label = 'Publish', className }) => (
     <div className={classNames(className, iconClassNames)}>
-        <Icon className="mr-1" data-tooltip="This changeset will be published to its code host" as={UploadIcon} />
+        <Icon
+            className="mr-1"
+            data-tooltip="This changeset will be published to its code host"
+            as={UploadIcon}
+            role="presentation"
+        />
         <span>{label}</span>
     </div>
 )
+
 export const PreviewActionPublishDraft: React.FunctionComponent<
     React.PropsWithChildren<{ label?: string; className?: string }>
 > = ({ label = 'Publish draft', className }) => (
@@ -113,10 +119,12 @@ export const PreviewActionPublishDraft: React.FunctionComponent<
             className="text-muted mr-1"
             data-tooltip="This changeset will be published as a draft to its code host"
             as={UploadIcon}
+            role="presentation"
         />
         <span>{label}</span>
     </div>
 )
+
 export const PreviewActionImport: React.FunctionComponent<
     React.PropsWithChildren<{ label?: string; className?: string }>
 > = ({ label = 'Import', className }) => (
@@ -125,10 +133,12 @@ export const PreviewActionImport: React.FunctionComponent<
             className="mr-1"
             data-tooltip="This changeset will be imported and tracked in this batch change"
             as={ImportIcon}
+            role="presentation"
         />
         <span>{label}</span>
     </div>
 )
+
 export const PreviewActionClose: React.FunctionComponent<
     React.PropsWithChildren<{ label?: string; className?: string }>
 > = ({ label = 'Close', className }) => (
@@ -137,10 +147,12 @@ export const PreviewActionClose: React.FunctionComponent<
             className="text-danger mr-1"
             data-tooltip="This changeset will be closed on the code host"
             as={CloseCircleOutlineIcon}
+            role="presentation"
         />
         <span>{label}</span>
     </div>
 )
+
 export const PreviewActionDetach: React.FunctionComponent<
     React.PropsWithChildren<{ label?: string; className?: string }>
 > = ({ label = 'Detach', className }) => (
@@ -149,10 +161,12 @@ export const PreviewActionDetach: React.FunctionComponent<
             className="text-danger mr-1"
             data-tooltip="This changeset will be removed from the batch change"
             as={TrashIcon}
+            role="presentation"
         />
         <span>{label}</span>
     </div>
 )
+
 export const PreviewActionReopen: React.FunctionComponent<
     React.PropsWithChildren<{ label?: string; className?: string }>
 > = ({ label = 'Reopen', className }) => (
@@ -161,10 +175,12 @@ export const PreviewActionReopen: React.FunctionComponent<
             className="text-success mr-1"
             data-tooltip="This changeset will be reopened on the code host"
             as={SourceBranchRefreshIcon}
+            role="presentation"
         />
         <span>{label}</span>
     </div>
 )
+
 export const PreviewActionUndraft: React.FunctionComponent<
     React.PropsWithChildren<{ label?: string; className?: string }>
 > = ({ label = 'Undraft', className }) => (
@@ -173,10 +189,12 @@ export const PreviewActionUndraft: React.FunctionComponent<
             className="text-success mr-1"
             data-tooltip="This changeset will be marked as ready for review on the code host"
             as={SourceBranchCheckIcon}
+            role="presentation"
         />
         <span>{label}</span>
     </div>
 )
+
 export const PreviewActionUpdate: React.FunctionComponent<
     React.PropsWithChildren<{ label?: string; className?: string }>
 > = ({ label = 'Update', className }) => (
@@ -185,18 +203,26 @@ export const PreviewActionUpdate: React.FunctionComponent<
             className="mr-1"
             data-tooltip="This changeset will be updated on the code host"
             as={SourceBranchSyncIcon}
+            role="presentation"
         />
         <span>{label}</span>
     </div>
 )
+
 export const PreviewActionPush: React.FunctionComponent<
     React.PropsWithChildren<{ label?: string; className?: string }>
 > = ({ label = 'Push', className }) => (
     <div className={classNames(className, iconClassNames)}>
-        <Icon className="mr-1" data-tooltip="A new commit will be pushed to the code host" as={UploadNetworkIcon} />
+        <Icon
+            className="mr-1"
+            data-tooltip="A new commit will be pushed to the code host"
+            as={UploadNetworkIcon}
+            role="presentation"
+        />
         <span>{label}</span>
     </div>
 )
+
 export const PreviewActionUnknown: React.FunctionComponent<
     React.PropsWithChildren<{ className?: string; operations: string }>
 > = ({ operations, className }) => (
@@ -205,10 +231,12 @@ export const PreviewActionUnknown: React.FunctionComponent<
             className="mr-1"
             data-tooltip={`The operation ${operations} can't yet be displayed.`}
             as={BeakerQuestionIcon}
+            role="presentation"
         />
         <span>Unknown</span>
     </div>
 )
+
 export const PreviewActionArchive: React.FunctionComponent<
     React.PropsWithChildren<{ label?: string; className?: string }>
 > = ({ label = 'Archive', className }) => (
@@ -217,21 +245,30 @@ export const PreviewActionArchive: React.FunctionComponent<
             className="text-muted mr-1"
             data-tooltip="This changeset will be kept and marked as archived in this batch change"
             as={ArchiveIcon}
+            role="presentation"
         />
         <span>{label}</span>
     </div>
 )
+
 export enum NoActionReason {
     NO_ACCESS = 'no-access',
 }
+
 export const NoActionReasonStrings: Record<NoActionReason, string> = {
     [NoActionReason.NO_ACCESS]: "You don't have access to the repository this changeset spec targets.",
 }
+
 export const PreviewActionNoAction: React.FunctionComponent<
     React.PropsWithChildren<{ className?: string; reason?: string }>
 > = ({ className, reason }) => (
     <div className={classNames(className, iconClassNames, 'text-muted')}>
-        <Icon className="mr-1" data-tooltip={reason} as={BlankCircleIcon} />
+        <Icon
+            className="mr-1"
+            data-tooltip={reason}
+            as={BlankCircleIcon}
+            role="presentation"
+        />
         <span>No action</span>
     </div>
 )
