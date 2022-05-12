@@ -1423,8 +1423,14 @@ type Query {
 
     """
     Retrieve the values of all feature flags for the current user
+    DEPRECATED: Use 'viewerFeatureFlag' instead
     """
     viewerFeatureFlags: [EvaluatedFeatureFlag!]!
+
+    """
+    Evaluates a feature flag for the current user
+    """
+    evaluateFeatureFlag(flagName: String!): Boolean!
 
     """
     Retrieve the value of a feature flag for the organization
