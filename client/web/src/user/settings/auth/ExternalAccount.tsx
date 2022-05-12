@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react'
 
 import { ErrorLike } from '@sourcegraph/common'
-import { Button, Link } from '@sourcegraph/wildcard'
+import { Button, Link, Typography } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
 import { AuthProvider } from '../../../jscontext'
@@ -50,7 +50,7 @@ export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Pr
                 <AccountIcon className="mb-0 mr-2" />
             </div>
             <div className="flex-1 flex-column">
-                <h3 className="m-0">{account.name}</h3>
+                <Typography.H3 className="m-0">{account.name}</Typography.H3>
                 <div className="text-muted">
                     {account.external ? (
                         <>

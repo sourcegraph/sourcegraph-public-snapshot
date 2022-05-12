@@ -3,7 +3,7 @@ import { FunctionComponent } from 'react'
 import classNames from 'classnames'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 
-import { Link } from '@sourcegraph/wildcard'
+import { Link, Typography } from '@sourcegraph/wildcard'
 
 import { LsifUploadFields } from '../../../../graphql-operations'
 import { CodeIntelState } from '../../shared/components/CodeIntelState'
@@ -26,7 +26,9 @@ export const CodeIntelAssociatedIndex: FunctionComponent<React.PropsWithChildren
                 <div className={classNames(styles.grid, 'mb-3')}>
                     <div className={classNames(styles.information, 'd-flex flex-column')}>
                         <div className="m-0">
-                            <h3 className="m-0 d-block d-md-inline">This upload was created by an auto-indexing job</h3>
+                            <Typography.H3 className="m-0 d-block d-md-inline">
+                                This upload was created by an auto-indexing job
+                            </Typography.H3>
                         </div>
 
                         <div>

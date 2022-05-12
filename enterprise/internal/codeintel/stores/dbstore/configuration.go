@@ -2,12 +2,12 @@ package dbstore
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -18,39 +18,20 @@ type IndexConfiguration struct {
 	Data         []byte `json:"data"`
 }
 
-// scanIndexConfigurations scans a slice of index configurations from the return value of `*Store.query`.
-func scanIndexConfigurations(rows *sql.Rows, queryErr error) (_ []IndexConfiguration, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	var indexConfigurations []IndexConfiguration
-	for rows.Next() {
-		var indexConfiguration IndexConfiguration
-		if err := rows.Scan(
-			&indexConfiguration.ID,
-			&indexConfiguration.RepositoryID,
-			&indexConfiguration.Data,
-		); err != nil {
-			return nil, err
-		}
-
-		indexConfigurations = append(indexConfigurations, indexConfiguration)
-	}
-
-	return indexConfigurations, nil
+func scanIndexConfiguration(s dbutil.Scanner) (indexConfiguration IndexConfiguration, err error) {
+	return indexConfiguration, s.Scan(
+		&indexConfiguration.ID,
+		&indexConfiguration.RepositoryID,
+		&indexConfiguration.Data,
+	)
 }
+
+// scanIndexConfigurations scans a slice of index configurations from the return value of `*Store.query`.
+var scanIndexConfigurations = basestore.NewSliceScanner(scanIndexConfiguration)
 
 // scanFirstIndexConfiguration scans a slice of index configurations from the return value of `*Store.query`
 // and returns the first.
-func scanFirstIndexConfiguration(rows *sql.Rows, err error) (IndexConfiguration, bool, error) {
-	indexConfigurations, err := scanIndexConfigurations(rows, err)
-	if err != nil || len(indexConfigurations) == 0 {
-		return IndexConfiguration{}, false, err
-	}
-	return indexConfigurations[0], true, nil
-}
+var scanFirstIndexConfiguration = basestore.NewFirstScanner(scanIndexConfiguration)
 
 // GetIndexConfigurationByRepositoryID returns the index configuration for a repository.
 func (s *Store) GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (_ IndexConfiguration, _ bool, err error) {

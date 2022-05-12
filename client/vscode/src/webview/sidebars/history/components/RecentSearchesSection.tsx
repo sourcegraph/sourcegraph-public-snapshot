@@ -7,7 +7,7 @@ import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import { EventLogResult, fetchRecentSearches } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
-import { Icon, useObservable } from '@sourcegraph/wildcard'
+import { Icon, Typography, useObservable } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../../graphql-operations'
 import { HistorySidebarProps } from '../HistorySidebarView'
@@ -63,7 +63,7 @@ export const RecentSearchesSection: React.FunctionComponent<React.PropsWithChild
                 onClick={() => setCollapsed(!collapsed)}
                 aria-label={`${collapsed ? 'Expand' : 'Collapse'} recent searches`}
             >
-                <h5 className="flex-grow-1">Recent Searches</h5>
+                <Typography.H5 className="flex-grow-1">Recent Searches</Typography.H5>
                 <Icon
                     role="img"
                     className="mr-1"

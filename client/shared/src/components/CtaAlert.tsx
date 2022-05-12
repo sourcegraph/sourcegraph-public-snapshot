@@ -61,10 +61,12 @@ export const CtaAlert: React.FunctionComponent<React.PropsWithChildren<CtaAlertP
             ) : null}
         </div>
         <Icon
+            role="img"
             className="position-absolute cursor-pointer"
             style={{ top: '1rem', right: '1rem' }}
             onClick={props.onClose}
             as={CloseIcon}
+            aria-label="Close"
         />
     </Card>
 )

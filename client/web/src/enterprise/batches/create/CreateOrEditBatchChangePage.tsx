@@ -6,11 +6,10 @@ import { noop } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 import LockIcon from 'mdi-react/LockIcon'
-import { useHistory, useLocation } from 'react-router'
+import { useHistory } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { isErrorLike } from '@sourcegraph/common'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import {
@@ -35,9 +34,7 @@ import {
     TabPanel,
     TabPanels,
     RadioButton,
-    Card,
-    CardBody,
-    H4,
+    Typography,
 } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
@@ -55,25 +52,25 @@ import {
     CreateBatchSpecFromRawVariables,
     CreateBatchSpecFromRawResult,
 } from '../../../graphql-operations'
+import { DownloadSpecModal } from '../batch-spec/edit/DownloadSpecModal'
+import { EditorFeedbackPanel } from '../batch-spec/edit/editor/EditorFeedbackPanel'
+import { MonacoBatchSpecEditor } from '../batch-spec/edit/editor/MonacoBatchSpecEditor'
+import { LibraryPane } from '../batch-spec/edit/library/LibraryPane'
+import { ExecutionOptions, RunBatchSpecButton } from '../batch-spec/edit/RunBatchSpecButton'
+import { useExecuteBatchSpec } from '../batch-spec/edit/useExecuteBatchSpec'
+import { useInitialBatchSpec } from '../batch-spec/edit/useInitialBatchSpec'
+import { useImportingChangesets } from '../batch-spec/edit/workspaces-preview/useImportingChangesets'
+import { useWorkspaces, WorkspacePreviewFilters } from '../batch-spec/edit/workspaces-preview/useWorkspaces'
+import { useWorkspacesPreview } from '../batch-spec/edit/workspaces-preview/useWorkspacesPreview'
+import { WorkspacesPreview } from '../batch-spec/edit/workspaces-preview/WorkspacesPreview'
+import { useBatchSpecCode } from '../batch-spec/useBatchSpecCode'
 import { BatchSpecDownloadLink } from '../BatchSpec'
 
 import { GET_BATCH_CHANGE_TO_EDIT, CREATE_EMPTY_BATCH_CHANGE, CREATE_BATCH_SPEC_FROM_RAW } from './backend'
-import { CodeInsightsBatchesIcon } from './CodeInsightsBatchesIcon'
-import { DownloadSpecModal } from './DownloadSpecModal'
-import { EditorFeedbackPanel } from './editor/EditorFeedbackPanel'
-import { MonacoBatchSpecEditor } from './editor/MonacoBatchSpecEditor'
-import { ExecutionOptions, ExecutionOptionsDropdown } from './ExecutionOptions'
-import { getTemplateRenderer } from './go-checker-templates'
-import { LibraryPane } from './library/LibraryPane'
+import { InsightTemplatesBanner } from './InsightTemplatesBanner'
 import { NamespaceSelector } from './NamespaceSelector'
-import { useBatchSpecCode } from './useBatchSpecCode'
-import { useExecuteBatchSpec } from './useExecuteBatchSpec'
-import { useInitialBatchSpec } from './useInitialBatchSpec'
+import { useInsightTemplates } from './useInsightTemplates'
 import { useNamespaces } from './useNamespaces'
-import { useWorkspacesPreview } from './useWorkspacesPreview'
-import { useImportingChangesets } from './workspaces-preview/useImportingChangesets'
-import { useWorkspaces, WorkspacePreviewFilters } from './workspaces-preview/useWorkspaces'
-import { WorkspacesPreview } from './workspaces-preview/WorkspacesPreview'
 
 import styles from './CreateOrEditBatchChangePage.module.scss'
 
@@ -166,38 +163,12 @@ interface CreatePageProps extends SettingsCascadeProps<Settings> {
 const CreatePage: React.FunctionComponent<React.PropsWithChildren<CreatePageProps>> = props => {
     const isNewBatchChange = props.batchChangeName === undefined && !props.isReadOnly
 
-    const location = useLocation()
-    const parameters = new URLSearchParams(location.search)
-    const templateRenderer = getTemplateRenderer(parameters.get('kind'))
-    const codeInsightTitle = parameters.get('title') ?? undefined
-
-    const enableInsightsTemplates =
-        (codeInsightTitle &&
-            templateRenderer &&
-            props.settingsCascade.final !== null &&
-            !isErrorLike(props.settingsCascade.final) &&
-            props.settingsCascade.final.experimentalFeatures?.goCodeCheckerTemplates) ??
-        false
+    const { renderTemplate, insightTitle } = useInsightTemplates(props.settingsCascade)
 
     return (
         <div className="w-100 p-4">
             <PageTitle title="Create new batch change" />
-            {enableInsightsTemplates && (
-                <Card className={classNames('mb-5', styles.codeInsightsBanner)}>
-                    <CardBody>
-                        <div className="d-flex justify-content-between align-items-center">
-                            <CodeInsightsBatchesIcon className="mr-4" />
-                            <div className="flex-grow-1">
-                                <H4>You are creating a batch change from a code insight</H4>
-                                <p className="mb-0">
-                                    Let Sourcegraph help you with <strong>{codeInsightTitle}</strong> by preparing a
-                                    relevant <strong>batch change</strong>.
-                                </p>
-                            </div>
-                        </div>
-                    </CardBody>
-                </Card>
-            )}
+            {insightTitle && <InsightTemplatesBanner insightTitle={insightTitle} type="create" className="mb-5" />}
             <PageHeader
                 path={[{ icon: BatchChangesIcon, to: '.' }, { text: 'Create batch change' }]}
                 className="flex-1 pb-2"
@@ -219,11 +190,7 @@ const CreatePage: React.FunctionComponent<React.PropsWithChildren<CreatePageProp
                 </TabList>
                 <TabPanels>
                     <TabPanel>
-                        <BatchConfigurationPage
-                            {...props}
-                            renderTemplate={templateRenderer}
-                            insightName={codeInsightTitle}
-                        />
+                        <BatchConfigurationPage {...props} renderTemplate={renderTemplate} insightName={insightTitle} />
                     </TabPanel>
 
                     <TabPanel>
@@ -362,9 +329,9 @@ const BatchConfigurationPage: React.FunctionComponent<React.PropsWithChildren<Ba
                     </span>
                 </small>
                 <hr className="my-3" />
-                <h3 className="text-muted">
+                <Typography.H3 className="text-muted">
                     Visibility <Icon data-tooltip="Coming soon" as={InfoCircleOutlineIcon} />
-                </h3>
+                </Typography.H3>
                 <div className="form-group mb-1">
                     <RadioButton
                         name="visibility"
@@ -414,7 +381,7 @@ const BatchConfigurationPage: React.FunctionComponent<React.PropsWithChildren<Ba
 const INVALID_BATCH_SPEC_TOOLTIP = "There's a problem with your batch spec."
 const WORKSPACES_PREVIEW_SIZE = 'batch-changes.ssbc-workspaces-preview-size'
 
-interface EditPageProps extends ThemeProps {
+interface EditPageProps extends ThemeProps, SettingsCascadeProps<Settings> {
     batchChange: EditBatchChangeFields
     refetchBatchChange: () => Promise<ApolloQueryResult<GetBatchChangeToEditResult>>
 }
@@ -423,10 +390,9 @@ const EditPage: React.FunctionComponent<React.PropsWithChildren<EditPageProps>> 
     batchChange,
     refetchBatchChange,
     isLightTheme,
+    settingsCascade,
 }) => {
-    const location = useLocation()
-    const parameters = new URLSearchParams(location.search)
-    const codeInsightTitle = parameters.get('title')
+    const { insightTitle } = useInsightTemplates(settingsCascade)
 
     // Get the latest batch spec for the batch change.
     const { batchSpec, isApplied: isLatestBatchSpecApplied, initialCode: initialBatchSpecCode } = useInitialBatchSpec(
@@ -548,7 +514,7 @@ const EditPage: React.FunctionComponent<React.PropsWithChildren<EditPageProps>> 
 
     const actionButtons = (
         <>
-            <ExecutionOptionsDropdown
+            <RunBatchSpecButton
                 execute={executeBatchSpec}
                 isExecutionDisabled={isExecutionDisabled}
                 executionTooltip={executionTooltip}
@@ -579,21 +545,8 @@ const EditPage: React.FunctionComponent<React.PropsWithChildren<EditPageProps>> 
                 <LibraryPane name={batchChange.name} onReplaceItem={clearErrorsAndHandleCodeChange} />
                 <div className={styles.editorContainer}>
                     <h4 className={styles.header}>Batch spec</h4>
-                    {codeInsightTitle && (
-                        <Card className={classNames('mb-3', styles.codeInsightsBanner)}>
-                            <CardBody>
-                                <div className="d-flex justify-content-between align-items-center">
-                                    <CodeInsightsBatchesIcon className="mr-4" />
-                                    <div className="flex-grow-1">
-                                        <H4>Start from template for the {codeInsightTitle}</H4>
-                                        <p className="mb-0">
-                                            Sourcegraph pre-selected a Batch Specification for the batch change started
-                                            from {codeInsightTitle}.
-                                        </p>
-                                    </div>
-                                </div>
-                            </CardBody>
-                        </Card>
+                    {insightTitle && (
+                        <InsightTemplatesBanner insightTitle={insightTitle} type="edit" className="mb-3" />
                     )}
                     <MonacoBatchSpecEditor
                         batchChangeName={batchChange.name}

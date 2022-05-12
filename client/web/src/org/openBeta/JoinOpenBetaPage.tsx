@@ -7,7 +7,17 @@ import { RouteComponentProps } from 'react-router'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { Badge, Button, Checkbox, Input, Link, LoadingSpinner, PageHeader, RadioButton } from '@sourcegraph/wildcard'
+import {
+    Badge,
+    Button,
+    Checkbox,
+    Input,
+    Link,
+    LoadingSpinner,
+    PageHeader,
+    RadioButton,
+    Typography,
+} from '@sourcegraph/wildcard'
 
 import { MarketingBlock } from '../../components/MarketingBlock'
 import { Page } from '../../components/Page'
@@ -179,11 +189,11 @@ export const JoinOpenBetaPage: React.FunctionComponent<React.PropsWithChildren<P
                 }
             />
             <MarketingBlock contentClassName={styles.marketingContent}>
-                <h3 className="pr-3">
+                <Typography.H3 className="pr-3">
                     <Badge variant="info" small={true}>
                         BETA
                     </Badge>
-                </h3>
+                </Typography.H3>
                 <div>
                     Sourcegraph Cloud for small teams is in open beta. During this time, it’s free to use for 30 days.{' '}
                     <Link to="https://docs.sourcegraph.com/cloud/organizations/beta-operations">
@@ -192,7 +202,7 @@ export const JoinOpenBetaPage: React.FunctionComponent<React.PropsWithChildren<P
                     .
                 </div>
             </MarketingBlock>
-            <h3 className="mt-4 mb-4">To get started, please tell us about your organization:</h3>
+            <Typography.H3 className="mt-4 mb-4">To get started, please tell us about your organization:</Typography.H3>
             <Form className="mb-5" onSubmit={onSubmit}>
                 {error && <ErrorAlert className="mb-3" error={error} />}
                 <div className={classNames('form-group', styles.formItem)}>

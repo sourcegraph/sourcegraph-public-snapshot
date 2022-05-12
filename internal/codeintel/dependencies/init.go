@@ -42,6 +42,7 @@ func GetService(db database.DB, gitService GitService, syncer Syncer) *Service {
 
 		svc = newService(
 			store.GetStore(db),
+			gitService,
 			lockfilesService,
 			lockfilesSemaphore,
 			syncer,
@@ -62,6 +63,7 @@ func TestService(db database.DB, gitService GitService, syncer Syncer) *Service 
 
 	return newService(
 		store.GetStore(db),
+		gitService,
 		lockfilesService,
 		lockfilesSemaphore,
 		syncer,
