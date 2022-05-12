@@ -285,7 +285,7 @@ const MigrationNode: React.FunctionComponent<React.PropsWithChildren<MigrationNo
 
         <div className={classNames('d-flex flex-column', styles.information)}>
             <div>
-                <h3>{node.description}</h3>
+                <Typography.H3>{node.description}</Typography.H3>
 
                 <p className="m-0">
                     <span className="text-muted">Team</span> <strong>{node.team}</strong>{' '}

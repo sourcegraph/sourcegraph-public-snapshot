@@ -138,7 +138,7 @@ export const SiteAdminOrgsPage: React.FunctionComponent<React.PropsWithChildren<
             {window.context.sourcegraphDotComMode ? (
                 <>
                     <Alert variant="info">Only organization members can view & modify organization settings.</Alert>
-                    <h3>Enable early access</h3>
+                    <Typography.H3>Enable early access</Typography.H3>
                     <div className="d-flex justify-content-between align-items-center mb-3">
                         <p>Enable early access for organization code host connections and repositories on Cloud.</p>
                         <Button to="./organizations/early-access-orgs-code" variant="primary" outline={true} as={Link}>

@@ -120,7 +120,9 @@ exports[`SiteAdminOverviewPage >= 2 users 1`] = `
             >
               Weekly unique users
             </h2>
-            <h3>
+            <h3
+              class="h3"
+            >
               <a
                 class="anchorLink btn btnSecondary"
                 href="/site-admin/usage-statistics"

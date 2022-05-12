@@ -46,7 +46,7 @@ interface UsageChartPageProps {
 
 export const UsageChart: React.FunctionComponent<UsageChartPageProps> = (props: UsageChartPageProps) => (
     <div>
-        {props.header ? props.header : <h3>{chartGeneratorOptions[props.chartID].label}</h3>}
+        {props.header ? props.header : <Typography.H3>{chartGeneratorOptions[props.chartID].label}</Typography.H3>}
         <BarChart
             showLabels={true}
             showLegend={props.showLegend === undefined ? true : props.showLegend}
@@ -274,7 +274,7 @@ export class SiteAdminUsageStatisticsPage extends React.Component<
                         <UsageChart {...this.props} chartID={this.state.chartID} stats={this.state.stats} />
                     </>
                 )}
-                <h3 className="mt-4">All registered users</h3>
+                <Typography.H3 className="mt-4">All registered users</Typography.H3>
                 {!this.state.error && (
                     <FilteredUserConnection
                         listComponent="table"

@@ -96,7 +96,7 @@ export const TextStory: React.FunctionComponent<React.PropsWithChildren<unknown>
         </div>
 
         <Typography.H2>Lists</Typography.H2>
-        <h3>Ordered</h3>
+        <Typography.H3>Ordered</Typography.H3>
         <ol>
             <li>
                 Dolor est laborum aute adipisicing quis duis mollit pariatur nostrud eiusmod Lorem pariatur elit mollit.
@@ -114,7 +114,7 @@ export const TextStory: React.FunctionComponent<React.PropsWithChildren<unknown>
             </li>
         </ol>
 
-        <h3>Unordered</h3>
+        <Typography.H3>Unordered</Typography.H3>
 
         <Typography.H4>Dots</Typography.H4>
         <ul>

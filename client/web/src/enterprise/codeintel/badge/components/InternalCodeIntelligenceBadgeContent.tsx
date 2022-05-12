@@ -2,7 +2,7 @@ import React from 'react'
 
 import { isErrorLike } from '@sourcegraph/common'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { MenuDivider } from '@sourcegraph/wildcard'
+import { MenuDivider, Typography } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../../../components/Collapsible'
 import { Timestamp } from '../../../../components/time/Timestamp'
@@ -37,7 +37,7 @@ export const InternalCodeIntelligenceBadgeContent: React.FunctionComponent<
             <MenuDivider />
 
             <div className="px-2 py-1">
-                <Collapsible titleAtStart={true} title={<h3>Activity (repo)</h3>}>
+                <Collapsible titleAtStart={true} title={<Typography.H3>Activity (repo)</Typography.H3>}>
                     <div>
                         <span>
                             Last auto-indexing job schedule attempt:{' '}
@@ -56,7 +56,7 @@ export const InternalCodeIntelligenceBadgeContent: React.FunctionComponent<
                     </div>
                 </Collapsible>
 
-                <Collapsible titleAtStart={true} title={<h3>Support (tree)</h3>}>
+                <Collapsible titleAtStart={true} title={<Typography.H3>Support (tree)</Typography.H3>}>
                     <ul>
                         {preciseSupportLevels.map(supportLevel => (
                             <li key={`precise-support-level-${supportLevel}`}>
@@ -96,21 +96,21 @@ export const InternalCodeIntelligenceBadgeContent: React.FunctionComponent<
                     </ul>
                 </Collapsible>
 
-                <Collapsible titleAtStart={true} title={<h3>Recent uploads (repo)</h3>}>
+                <Collapsible titleAtStart={true} title={<Typography.H3>Recent uploads (repo)</Typography.H3>}>
                     <UploadOrIndexMetaTable
                         prefix="recent-uploads"
                         nodes={data.recentUploads.flatMap(namespacedUploads => namespacedUploads.uploads)}
                     />
                 </Collapsible>
 
-                <Collapsible titleAtStart={true} title={<h3>Recent indexes (repo)</h3>}>
+                <Collapsible titleAtStart={true} title={<Typography.H3>Recent indexes (repo)</Typography.H3>}>
                     <UploadOrIndexMetaTable
                         prefix="recent-indexes"
                         nodes={data.recentIndexes.flatMap(namespacedIndexes => namespacedIndexes.indexes)}
                     />
                 </Collapsible>
 
-                <Collapsible titleAtStart={true} title={<h3>Uploads providing intel (tree)</h3>}>
+                <Collapsible titleAtStart={true} title={<Typography.H3>Uploads providing intel (tree)</Typography.H3>}>
                     <UploadOrIndexMetaTable prefix="active-uploads" nodes={data.activeUploads} />
                 </Collapsible>
             </div>

@@ -5,7 +5,7 @@ import CloseIcon from 'mdi-react/CloseIcon'
 import { useHistory } from 'react-router'
 import { RouteComponentProps } from 'react-router-dom'
 
-import { Button, Input, LoadingSpinner, Modal, Icon } from '@sourcegraph/wildcard'
+import { Button, Input, LoadingSpinner, Modal, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
 import { OrgAreaPageProps } from '../area/OrgArea'
@@ -64,9 +64,9 @@ export const DeleteOrgModal: React.FunctionComponent<React.PropsWithChildren<Del
             data-testid="delete-org-modal"
         >
             <div>
-                <h3 className="text-danger" id={deleteLabelId}>
+                <Typography.H3 className="text-danger" id={deleteLabelId}>
                     Delete organization?
-                </h3>
+                </Typography.H3>
                 <Icon
                     className="position-absolute cursor-pointer"
                     style={{ top: '1rem', right: '1rem' }}

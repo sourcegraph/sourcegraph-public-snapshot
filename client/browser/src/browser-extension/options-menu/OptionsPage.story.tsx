@@ -76,32 +76,32 @@ export const AllOptionsPages: Story = () => (
         <div>
             <div className="d-flex justify-content-center">
                 <div className="mx-4">
-                    <h3 className="text-center">Interactive</h3>
+                    <Typography.H3 className="text-center">Interactive</Typography.H3>
                     <Interactive />
                 </div>
                 <div className="mx-4">
-                    <h3 className="text-center">URL validation error</h3>
+                    <Typography.H3 className="text-center">URL validation error</Typography.H3>
                     <OptionsPageWrapper
                         validateSourcegraphUrl={invalidSourcegraphUrl}
                         sourcegraphUrl={text('sourcegraphUrl', 'https://not-sourcegraph.com')}
                     />
                 </div>
                 <div className="mx-4">
-                    <h3 className="text-center">With advanced settings</h3>
+                    <Typography.H3 className="text-center">With advanced settings</Typography.H3>
                     <WithAdvancedSettings />
                 </div>
             </div>
 
             <div className="d-flex justify-content-center mt-5">
                 <div className="mx-4">
-                    <h3 className="text-center">On Sourcegraph Cloud</h3>
+                    <Typography.H3 className="text-center">On Sourcegraph Cloud</Typography.H3>
                     <OptionsPageWrapper
                         requestPermissionsHandler={requestPermissionsHandler}
                         showSourcegraphCloudAlert={true}
                     />
                 </div>
                 <div className="mx-4">
-                    <h3 className="text-center">Asking for permission</h3>
+                    <Typography.H3 className="text-center">Asking for permission</Typography.H3>
                     <OptionsPageWrapper
                         permissionAlert={{ name: 'GitHub', icon: GithubIcon }}
                         requestPermissionsHandler={requestPermissionsHandler}
@@ -112,7 +112,7 @@ export const AllOptionsPages: Story = () => (
             <Typography.H2 className="mt-5 text-center">Not synced repository</Typography.H2>
             <div className="d-flex justify-content-center mb-3">
                 <div className="mx-4">
-                    <h3 className="text-center">Sourcegraph Cloud</h3>
+                    <Typography.H3 className="text-center">Sourcegraph Cloud</Typography.H3>
                     <OptionsPageWrapper
                         sourcegraphUrl="https://sourcegraph.com"
                         currentUser={{ settingsURL: '/users/john-doe/settings', siteAdmin: false }}
@@ -121,7 +121,7 @@ export const AllOptionsPages: Story = () => (
                     />
                 </div>
                 <div className="mx-4">
-                    <h3 className="text-center">Self-hosted</h3>
+                    <Typography.H3 className="text-center">Self-hosted</Typography.H3>
                     <OptionsPageWrapper
                         sourcegraphUrl={text('sourcegraphUrl', 'https://k8s.sgdev.org')}
                         currentUser={{ settingsURL: '/users/john-doe/settings', siteAdmin: false }}
@@ -130,7 +130,7 @@ export const AllOptionsPages: Story = () => (
                     />
                 </div>
                 <div className="mx-4">
-                    <h3 className="text-center">Self-hosted instance, user is admin</h3>
+                    <Typography.H3 className="text-center">Self-hosted instance, user is admin</Typography.H3>
                     <OptionsPageWrapper
                         sourcegraphUrl={text('sourcegraphUrl', 'https://k8s.sgdev.org')}
                         currentUser={{ settingsURL: '/users/john-doe/settings', siteAdmin: true }}

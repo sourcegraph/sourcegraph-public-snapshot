@@ -137,14 +137,14 @@ const Container: React.FunctionComponent<React.PropsWithChildren<ContainerProps>
     className = '',
 }) => (
     <div className={classNames(styles.container, className)}>
-        <h3 className={styles.title}>
+        <Typography.H3 className={styles.title}>
             <span className="flex-1">{title}</span>
             {sectionID && (
                 <Button variant="icon" aria-label="Hide Section" onClick={() => onClose?.(sectionID)}>
                     <Icon as={CloseIcon} />
                 </Button>
             )}
-        </h3>
+        </Typography.H3>
         <div className={styles.content}>{children}</div>
     </div>
 )

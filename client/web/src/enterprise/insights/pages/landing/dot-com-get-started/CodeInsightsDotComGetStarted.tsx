@@ -83,7 +83,9 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
                                 Anything you can search, you can create a Code Insight for.
                             </p>
 
-                            <h3 className={classNames(styles.hereBulletTitle)}>Use Code Insights to...</h3>
+                            <Typography.H3 className={classNames(styles.hereBulletTitle)}>
+                                Use Code Insights to...
+                            </Typography.H3>
 
                             <ul>
                                 <li>Track migrations, adoption, and deprecations</li>
@@ -141,7 +143,7 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
 
                     <section className={styles.installLocallySection}>
                         <Card as={CardBody} className={styles.installLocallyRequirements}>
-                            <h3>Code Insights requirements</h3>
+                            <Typography.H3>Code Insights requirements</Typography.H3>
                             <ul className={styles.installLocallyRequirementsList}>
                                 <li>On-prem installation</li>
                                 <li>Create up to 2 code insights for free</li>
@@ -152,7 +154,7 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
                         <Card as={CardBody} className={styles.installLocallyGetStarted}>
                             <SourcegraphInstallLocallyIcon className="flex-shrink-0" />
                             <div>
-                                <h3>Install locally to get started</h3>
+                                <Typography.H3>Install locally to get started</Typography.H3>
 
                                 <p>
                                     Code Insights requires a local Sourcegraph installation via Docker Compose or

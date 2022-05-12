@@ -76,7 +76,7 @@ export const ActivityPane: React.FunctionComponent<React.PropsWithChildren<Props
     return (
         <div className={classNames(className, 'mx-2')}>
             <div className={styles.titleDescription}>
-                <h3>Fetching repositories...</h3>
+                <Typography.H3>Fetching repositories...</Typography.H3>
                 <p className="text-muted mb-4">
                     We’re cloning your repos to Sourcegraph. In just a few moments, you can make your first search!
                 </p>

@@ -45,7 +45,7 @@ export const ProductCertificate: React.FunctionComponent<React.PropsWithChildren
             />
             <div>
                 <Typography.H2 className="font-weight-normal mb-1">{title}</Typography.H2>
-                {subtitle && <h3 className="text-muted font-weight-normal">{subtitle}</h3>}
+                {subtitle && <Typography.H3 className="text-muted font-weight-normal">{subtitle}</Typography.H3>}
                 {detail && <p className="text-muted mb-0">{detail}</p>}
             </div>
         </CardBody>

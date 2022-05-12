@@ -59,7 +59,7 @@ export const BatchSpecNode: React.FunctionComponent<React.PropsWithChildren<Batc
                 <span className="text-muted">{upperFirst(node.state.toLowerCase())}</span>
             </div>
             <div className="px-2 pb-1">
-                <h3 className="pr-2">
+                <Typography.H3 className="pr-2">
                     {currentSpecID === node.id && (
                         <>
                             <Icon className="text-warning" data-tooltip="Currently applied spec" as={StarIcon} />{' '}
@@ -84,7 +84,7 @@ export const BatchSpecNode: React.FunctionComponent<React.PropsWithChildren<Batc
                             </Link>
                         </>
                     )}
-                </h3>
+                </Typography.H3>
                 {!currentSpecID && (
                     <small className="text-muted d-block">
                         Executed by <strong>{node.creator?.username}</strong>{' '}

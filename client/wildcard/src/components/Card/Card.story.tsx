@@ -109,7 +109,7 @@ export const InteractiveCard: Story = () => (
         <Typography.H2>Interactive Cards</Typography.H2>
         {cardItem}
 
-        <h3 className="mt-4">Cards List</h3>
+        <Typography.H3 className="mt-4">Cards List</Typography.H3>
 
         <div className="d-flex flex-column">
             {cardItem}

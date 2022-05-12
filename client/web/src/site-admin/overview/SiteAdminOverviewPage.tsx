@@ -260,7 +260,7 @@ export const SiteAdminOverviewPage: React.FunctionComponent<React.PropsWithChild
                                             header={
                                                 <div className="site-admin-overview-page__detail-header">
                                                     <Typography.H2>Weekly unique users</Typography.H2>
-                                                    <h3>
+                                                    <Typography.H3>
                                                         <Button
                                                             to="/site-admin/usage-statistics"
                                                             variant="secondary"
@@ -268,7 +268,7 @@ export const SiteAdminOverviewPage: React.FunctionComponent<React.PropsWithChild
                                                         >
                                                             View all usage statistics <Icon as={OpenInNewIcon} />
                                                         </Button>
-                                                    </h3>
+                                                    </Typography.H3>
                                                 </div>
                                             }
                                         />

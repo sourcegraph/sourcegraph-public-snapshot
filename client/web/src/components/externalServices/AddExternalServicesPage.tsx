@@ -94,7 +94,7 @@ export const AddExternalServicesPage: React.FunctionComponent<
                             private on this installation.
                         </p>
                     )}
-                    <h3>This Sourcegraph installation will access your code host by:</h3>
+                    <Typography.H3>This Sourcegraph installation will access your code host by:</Typography.H3>
                     <ul>
                         <li>
                             Periodically fetching a list of repositories to ensure new, removed, and renamed
