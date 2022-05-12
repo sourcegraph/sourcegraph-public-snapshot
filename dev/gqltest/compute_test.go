@@ -3,6 +3,7 @@ package main
 import (
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
 )
 
@@ -39,7 +40,53 @@ func testComputeClient(t *testing.T, client computeClient) {
 }
 
 func TestCompute(t *testing.T) {
-	// TODO: clone some github repos.
+	if len(*githubToken) == 0 {
+		t.Skip("Environment variable GITHUB_TOKEN is not set")
+	}
+
+	// Set up external service
+	_, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "gqltest-github-search",
+		Config: mustMarshalJSONString(struct {
+			URL                   string   `json:"url"`
+			Token                 string   `json:"token"`
+			Repos                 []string `json:"repos"`
+			RepositoryPathPattern string   `json:"repositoryPathPattern"`
+		}{
+			URL:   "https://ghe.sgdev.org/",
+			Token: *githubToken,
+			Repos: []string{
+				"sgtest/java-langserver",
+				"sgtest/jsonrpc2",
+				"sgtest/go-diff",
+				"sgtest/appdash",
+				"sgtest/sourcegraph-typescript",
+			},
+			RepositoryPathPattern: "github.com/{nameWithOwner}",
+		}),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = client.WaitForReposToBeCloned(
+		"github.com/sgtest/java-langserver",
+		"github.com/sgtest/jsonrpc2",
+		"github.com/sgtest/go-diff",
+		"github.com/sgtest/appdash",
+		"github.com/sgtest/sourcegraph-typescript",
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = client.WaitForReposToBeIndexed(
+		"github.com/sgtest/java-langserver",
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	t.Run("graphql", func(t *testing.T) {
 		testComputeClient(t, client)
