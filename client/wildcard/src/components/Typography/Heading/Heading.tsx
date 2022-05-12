@@ -15,6 +15,7 @@ export const Heading = React.forwardRef(
                 alignment && getAlignmentStyle({ alignment }),
                 mode && getModeStyle({ mode })
             )}
+            {...props}
             ref={reference}
             {...props}
         >

@@ -18,9 +18,11 @@ export const LastSyncedIcon: React.FunctionComponent<React.PropsWithChildren<Pro
 
     return (
         <Icon
+            role="img"
             className={classNames(props.className, styles.lastSyncedIcon, 'text-muted')}
             data-tooltip={`Last synced: ${formattedTime}`}
             as={WeatherCloudyClockIcon}
+            aria-label={`Last synced: ${formattedTime}`}
         />
     )
 }

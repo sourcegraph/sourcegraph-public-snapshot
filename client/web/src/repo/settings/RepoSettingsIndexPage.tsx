@@ -12,7 +12,7 @@ import { createAggregateError, pluralize } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Container, PageHeader, LoadingSpinner, Link, Alert, Icon } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, Link, Alert, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
@@ -200,7 +200,7 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                                 )}
                                 {this.state.textSearchIndex.status && (
                                     <>
-                                        <h3>Statistics</h3>
+                                        <Typography.H3>Statistics</Typography.H3>
                                         <table className={classNames('table mb-0', styles.stats)}>
                                             <tbody>
                                                 <tr>

@@ -4,7 +4,7 @@ import { ApolloError } from '@apollo/client'
 import classNames from 'classnames'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Badge, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Badge, LoadingSpinner, Typography } from '@sourcegraph/wildcard'
 
 import { GitObjectType } from '../../../../graphql-operations'
 import { GitObjectPreviewResult, usePreviewGitObjectFilter } from '../hooks/usePreviewGitObjectFilter'
@@ -17,7 +17,7 @@ export interface GitObjectPreviewWrapperProps {
     pattern: string
 }
 
-const GitObjectHeader = <h3>Preview of Git object filter</h3>
+const GitObjectHeader = <Typography.H3>Preview of Git object filter</Typography.H3>
 
 export const GitObjectPreviewWrapper: FunctionComponent<React.PropsWithChildren<GitObjectPreviewWrapperProps>> = ({
     repoId,

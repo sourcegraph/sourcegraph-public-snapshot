@@ -3,7 +3,7 @@
 exports[`FormActionArea Error is shown if code monitor has empty description 1`] = `
 <DocumentFragment>
   <h3
-    class="mb-1"
+    class="h3 mb-1"
   >
     Actions
   </h3>

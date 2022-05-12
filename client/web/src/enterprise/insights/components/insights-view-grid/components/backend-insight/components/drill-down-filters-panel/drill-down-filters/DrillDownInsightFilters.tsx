@@ -6,7 +6,7 @@ import { isEqual } from 'lodash'
 import PlusIcon from 'mdi-react/PlusIcon'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Icon, Link } from '@sourcegraph/wildcard'
+import { Button, Icon, Link, Typography } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../../components/LoaderButton'
 import { useField } from '../../../../../../form/hooks/useField'
@@ -119,7 +119,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
         // eslint-disable-next-line react/forbid-elements
         <form ref={ref} onSubmit={handleSubmit} className={className}>
             <header className={styles.header}>
-                <h4 className={styles.heading}>Filter repositories</h4>
+                <Typography.H4 className={styles.heading}>Filter repositories</Typography.H4>
 
                 <Button
                     disabled={!hasActiveFilters(values)}

@@ -1,5 +1,7 @@
 import React from 'react'
 
+import { Typography } from '@sourcegraph/wildcard'
+
 import { Insight, InsightDashboard } from '../../../../core'
 import { useRemoveInsightFromDashboard } from '../../../../hooks/use-remove-insight'
 import { ConfirmationModal, ConfirmationModalProps } from '../../../modals/ConfirmationModal'
@@ -26,7 +28,7 @@ export const ConfirmRemoveModal: React.FunctionComponent<React.PropsWithChildren
             disabled={loading}
             variant="danger"
         >
-            <h3 className="text-danger mb-4">Remove Insight?</h3>
+            <Typography.H3 className="text-danger mb-4">Remove Insight?</Typography.H3>
             <p className="mb-4">
                 Are you sure you want to remove the insight <strong>{insight.title}</strong> from the dashboard{' '}
                 <strong>{dashboard?.title}</strong>?

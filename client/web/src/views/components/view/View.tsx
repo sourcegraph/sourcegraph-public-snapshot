@@ -3,7 +3,7 @@ import React, { PropsWithChildren, ReactNode } from 'react'
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
 
-import { Card } from '@sourcegraph/wildcard'
+import { Card, Typography } from '@sourcegraph/wildcard'
 
 import { ErrorBoundary } from '../../../components/ErrorBoundary'
 
@@ -44,9 +44,9 @@ export const View: React.FunctionComponent<React.PropsWithChildren<PropsWithChil
                 {hasHeader && (
                     <header className={styles.header}>
                         <div className={styles.headerContent}>
-                            <h4 title={title} className={styles.title}>
+                            <Typography.H4 title={title} className={styles.title}>
                                 {title}
-                            </h4>
+                            </Typography.H4>
 
                             {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events,jsx-a11y/no-static-element-interactions */}
                             <div

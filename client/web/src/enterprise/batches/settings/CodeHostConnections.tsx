@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Container, Link } from '@sourcegraph/wildcard'
+import { Container, Link, Typography } from '@sourcegraph/wildcard'
 
 import { UseConnectionResult } from '../../../components/FilteredConnection/hooks/useConnection'
 import {
@@ -48,7 +48,7 @@ const CodeHostConnections: React.FunctionComponent<React.PropsWithChildren<CodeH
     const { loading, hasNextPage, fetchMore, connection, error, refetchAll } = connectionResult
     return (
         <Container>
-            <h3>Code host tokens</h3>
+            <Typography.H3>Code host tokens</Typography.H3>
             {headerLine}
             <ConnectionContainer className="mb-3">
                 {error && <ConnectionError errors={[error.message]} />}

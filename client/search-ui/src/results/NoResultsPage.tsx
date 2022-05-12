@@ -12,7 +12,7 @@ import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, Icon } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { ModalVideo } from '../documentation/ModalVideo'
 
@@ -137,14 +137,14 @@ const Container: React.FunctionComponent<React.PropsWithChildren<ContainerProps>
     className = '',
 }) => (
     <div className={classNames(styles.container, className)}>
-        <h3 className={styles.title}>
+        <Typography.H3 className={styles.title}>
             <span className="flex-1">{title}</span>
             {sectionID && (
                 <Button variant="icon" aria-label="Hide Section" onClick={() => onClose?.(sectionID)}>
                     <Icon as={CloseIcon} />
                 </Button>
             )}
-        </h3>
+        </Typography.H3>
         <div className={styles.content}>{children}</div>
     </div>
 )
@@ -205,7 +205,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
 
     return (
         <div className={styles.root}>
-            <h2>Sourcegraph basics</h2>
+            <Typography.H2>Sourcegraph basics</Typography.H2>
             <div className={styles.panels}>
                 {!hiddenSectionIDs?.includes(SectionID.VIDEOS) && (
                     <div className="mr-3">
@@ -279,7 +279,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
                     )}
                     {!hiddenSectionIDs?.includes(SectionID.COMMON_PROBLEMS) && (
                         <Container sectionID={SectionID.COMMON_PROBLEMS} title="Common Problems" onClose={onClose}>
-                            <h4>Finding a specific repository</h4>
+                            <Typography.H4>Finding a specific repository</Typography.H4>
                             <p>Repositories are specified by their org/repository-name convention:</p>
                             <SearchInputExample
                                 showSearchContext={searchContextsEnabled && showSearchContext}
@@ -316,7 +316,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
                                 </small>
                             </p>
 
-                            <h4>AND, OR, NOT</h4>
+                            <Typography.H4>AND, OR, NOT</Typography.H4>
                             <p>Conditionals and grouping are possible within queries:</p>
                             <SearchInputExample
                                 showSearchContext={searchContextsEnabled && showSearchContext}
@@ -325,7 +325,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
                                 onRun={() => telemetryService.log('NoResultsCommonProblems', { search: 'and or' })}
                             />
 
-                            <h4>Escaping</h4>
+                            <Typography.H4>Escaping</Typography.H4>
                             <p>
                                 Because our default mode is literal, escaping requires a dedicated filter. Use the
                                 content filter to include spaces and filter keywords in searches.
