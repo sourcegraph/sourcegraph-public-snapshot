@@ -1,4 +1,5 @@
-DO $$ BEGIN
+DO $$
+BEGIN
     CREATE TYPE series_sort_mode_enum AS ENUM (
         'RESULT_COUNT',
         'LEXICOGRAPHICAL',
@@ -8,7 +9,8 @@ EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
 
-DO $$ BEGIN
+DO $$
+BEGIN
     CREATE TYPE series_sort_direction_enum AS ENUM (
         'ASC',
         'DESC'
