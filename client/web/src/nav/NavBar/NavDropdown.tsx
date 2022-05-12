@@ -32,7 +32,7 @@ interface NavDropdownProps {
     routeMatch?: string
 }
 
-export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({
+export const NavDropdown: React.FunctionComponent<React.PropsWithChildren<NavDropdownProps>> = ({
     toggleItem,
     mobileHomeItem,
     items,
@@ -136,7 +136,12 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({
                                         ref={linkReference}
                                     >
                                         <span className={navItemStyles.itemFocusableContent}>
-                                            <Icon className={navItemStyles.icon} as={toggleItem.icon} />
+                                            <Icon
+                                                role="img"
+                                                className={navItemStyles.icon}
+                                                as={toggleItem.icon}
+                                                aria-hidden={true}
+                                            />
                                             <span
                                                 className={classNames(navItemStyles.text, navItemStyles.iconIncluded)}
                                             >
@@ -154,8 +159,10 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({
                                     >
                                         <span className={navItemStyles.itemFocusableContent}>
                                             <Icon
+                                                role="img"
                                                 className={navItemStyles.icon}
                                                 as={isExpanded ? ChevronUpIcon : ChevronDownIcon}
+                                                aria-hidden={true}
                                             />
                                         </span>
                                     </MenuButton>

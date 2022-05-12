@@ -37,7 +37,7 @@ import {
     RadioButton,
     Card,
     CardBody,
-    H4,
+    Typography,
 } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
@@ -93,11 +93,9 @@ export interface CreateOrEditBatchChangePageProps extends ThemeProps, SettingsCa
  * CreateOrEditBatchChangePage is the new SSBC-oriented page for creating a new batch change
  * or editing and re-executing a new batch spec for an existing one.
  */
-export const CreateOrEditBatchChangePage: React.FunctionComponent<CreateOrEditBatchChangePageProps> = ({
-    initialNamespaceID,
-    batchChangeName,
-    ...props
-}) => {
+export const CreateOrEditBatchChangePage: React.FunctionComponent<
+    React.PropsWithChildren<CreateOrEditBatchChangePageProps>
+> = ({ initialNamespaceID, batchChangeName, ...props }) => {
     const { data, error, loading, refetch } = useQuery<GetBatchChangeToEditResult, GetBatchChangeToEditVariables>(
         GET_BATCH_CHANGE_TO_EDIT,
         {
@@ -165,7 +163,7 @@ interface CreatePageProps extends SettingsCascadeProps<Settings> {
     batchChangeName?: string
 }
 
-const CreatePage: React.FunctionComponent<CreatePageProps> = props => {
+const CreatePage: React.FunctionComponent<React.PropsWithChildren<CreatePageProps>> = props => {
     const isNewBatchChange = props.batchChangeName === undefined && !props.isReadOnly
 
     const location = useLocation()
@@ -190,7 +188,7 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = props => {
                         <div className="d-flex justify-content-between align-items-center">
                             <CodeInsightsBatchesIcon className="mr-4" />
                             <div className="flex-grow-1">
-                                <H4>You are creating a batch change from a code insight</H4>
+                                <Typography.H4>You are creating a batch change from a code insight</Typography.H4>
                                 <p className="mb-0">
                                     Let Sourcegraph help you with <strong>{codeInsightTitle}</strong> by preparing a
                                     relevant <strong>batch change</strong>.
@@ -265,7 +263,7 @@ interface BatchConfigurationPageProps extends SettingsCascadeProps<Settings> {
     insightName?: string
 }
 
-const BatchConfigurationPage: React.FunctionComponent<BatchConfigurationPageProps> = ({
+const BatchConfigurationPage: React.FunctionComponent<React.PropsWithChildren<BatchConfigurationPageProps>> = ({
     namespaceID,
     settingsCascade,
     isReadOnly,
@@ -364,9 +362,9 @@ const BatchConfigurationPage: React.FunctionComponent<BatchConfigurationPageProp
                     </span>
                 </small>
                 <hr className="my-3" />
-                <h3 className="text-muted">
+                <Typography.H3 className="text-muted">
                     Visibility <Icon data-tooltip="Coming soon" as={InfoCircleOutlineIcon} />
-                </h3>
+                </Typography.H3>
                 <div className="form-group mb-1">
                     <RadioButton
                         name="visibility"
@@ -421,7 +419,11 @@ interface EditPageProps extends ThemeProps {
     refetchBatchChange: () => Promise<ApolloQueryResult<GetBatchChangeToEditResult>>
 }
 
-const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetchBatchChange, isLightTheme }) => {
+const EditPage: React.FunctionComponent<React.PropsWithChildren<EditPageProps>> = ({
+    batchChange,
+    refetchBatchChange,
+    isLightTheme,
+}) => {
     const location = useLocation()
     const parameters = new URLSearchParams(location.search)
     const codeInsightTitle = parameters.get('title')
@@ -576,14 +578,14 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
             <div className={classNames(styles.editorLayoutContainer, 'd-flex flex-1 mt-2')}>
                 <LibraryPane name={batchChange.name} onReplaceItem={clearErrorsAndHandleCodeChange} />
                 <div className={styles.editorContainer}>
-                    <h4 className={styles.header}>Batch spec</h4>
+                    <Typography.H4 className={styles.header}>Batch spec</Typography.H4>
                     {codeInsightTitle && (
                         <Card className={classNames('mb-3', styles.codeInsightsBanner)}>
                             <CardBody>
                                 <div className="d-flex justify-content-between align-items-center">
                                     <CodeInsightsBatchesIcon className="mr-4" />
                                     <div className="flex-grow-1">
-                                        <H4>Start from template for the {codeInsightTitle}</H4>
+                                        <Typography.H4>Start from template for the {codeInsightTitle}</Typography.H4>
                                         <p className="mb-0">
                                             Sourcegraph pre-selected a Batch Specification for the batch change started
                                             from {codeInsightTitle}.
@@ -686,7 +688,7 @@ interface BatchChangePageProps {
  * BatchChangePage is a page layout component that renders a consistent header for
  * SSBC-style batch change pages and should wrap the other content contained on the page.
  */
-const BatchChangePage: React.FunctionComponent<BatchChangePageProps> = ({
+const BatchChangePage: React.FunctionComponent<React.PropsWithChildren<BatchChangePageProps>> = ({
     children,
     namespace,
     title,

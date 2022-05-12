@@ -10,75 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// NewPriorityJob creates a combinator job from a required job and an
-// optional job. When run, PriorityJob runs the required job and the
-// optional job in parallel, waits for the required job to complete, then gives
-// the optional job a short additional amount of time (currently 100ms) before
-// canceling the optional job.
-func NewPriorityJob(required job.Job, optional job.Job) job.Job {
-	if _, ok := optional.(*noopJob); ok {
-		return required
-	}
-	return &PriorityJob{
-		required: required,
-		optional: optional,
-	}
-}
-
-type PriorityJob struct {
-	required job.Job
-	optional job.Job
-}
-
-func (r *PriorityJob) Name() string {
-	return "PriorityJob"
-}
-
-func (r *PriorityJob) Run(ctx context.Context, clients job.RuntimeClients, s streaming.Sender) (alert *search.Alert, err error) {
-	tr, ctx, s, finish := job.StartSpan(ctx, s, r)
-	defer func() { finish(alert, err) }()
-
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	start := time.Now()
-
-	var (
-		maxAlerter    search.MaxAlerter
-		optionalGroup errors.Group
-		requiredGroup errors.Group
-	)
-	requiredGroup.Go(func() error {
-		alert, err := r.required.Run(ctx, clients, s)
-		maxAlerter.Add(alert)
-		return err
-	})
-	optionalGroup.Go(func() error {
-		alert, err := r.optional.Run(ctx, clients, s)
-		maxAlerter.Add(alert)
-		return err
-	})
-
-	var errs error
-	if err := requiredGroup.Wait(); err != nil {
-		errs = errors.Append(errs, err)
-	}
-	tr.LazyPrintf("required group completed")
-
-	// Give optional searches some minimum budget in case required searches return quickly.
-	// Cancel all remaining searches after this minimum budget.
-	budget := 100 * time.Millisecond
-	elapsed := time.Since(start)
-	time.AfterFunc(budget-elapsed, cancel)
-
-	if err := optionalGroup.Wait(); err != nil {
-		errs = errors.Append(errs, err)
-	}
-	tr.LazyPrintf("optional group completed")
-
-	return maxAlerter.Alert, errs
-}
-
 // NewSequentialJob will create a job that sequentially runs a list of jobs.
 // This is used to implement logic where we might like to order independent
 // search operations, favoring results returns by jobs earlier in the list to
@@ -86,7 +17,7 @@ func (r *PriorityJob) Run(ctx context.Context, clients job.RuntimeClients, s str
 // child job, it stops executing additional jobs and returns.
 func NewSequentialJob(children ...job.Job) job.Job {
 	if len(children) == 0 {
-		return &noopJob{}
+		return &NoopJob{}
 	}
 	if len(children) == 1 {
 		return children[0]
@@ -123,7 +54,7 @@ func (s *SequentialJob) Run(ctx context.Context, clients job.RuntimeClients, str
 // if any of the child jobs failed.
 func NewParallelJob(children ...job.Job) job.Job {
 	if len(children) == 0 {
-		return &noopJob{}
+		return &NoopJob{}
 	}
 	if len(children) == 1 {
 		return children[0]
@@ -161,7 +92,7 @@ func (p *ParallelJob) Run(ctx context.Context, clients job.RuntimeClients, s str
 // NewTimeoutJob creates a new job that is canceled after the
 // timeout is hit. The timer starts with `Run()` is called.
 func NewTimeoutJob(timeout time.Duration, child job.Job) job.Job {
-	if _, ok := child.(*noopJob); ok {
+	if _, ok := child.(*NoopJob); ok {
 		return child
 	}
 	return &TimeoutJob{
@@ -194,7 +125,7 @@ func (t *TimeoutJob) Name() string {
 // is incremented by the number of results in that event, and if it reaches
 // the limit, the context is canceled.
 func NewLimitJob(limit int, child job.Job) job.Job {
-	if _, ok := child.(*noopJob); ok {
+	if _, ok := child.(*NoopJob); ok {
 		return child
 	}
 	return &LimitJob{
@@ -228,14 +159,14 @@ func (l *LimitJob) Name() string {
 	return "LimitJob"
 }
 
-func NewNoopJob() *noopJob {
-	return &noopJob{}
+func NewNoopJob() *NoopJob {
+	return &NoopJob{}
 }
 
-type noopJob struct{}
+type NoopJob struct{}
 
-func (e *noopJob) Run(context.Context, job.RuntimeClients, streaming.Sender) (*search.Alert, error) {
+func (e *NoopJob) Run(context.Context, job.RuntimeClients, streaming.Sender) (*search.Alert, error) {
 	return nil, nil
 }
 
-func (e *noopJob) Name() string { return "NoopJob" }
+func (e *NoopJob) Name() string { return "NoopJob" }

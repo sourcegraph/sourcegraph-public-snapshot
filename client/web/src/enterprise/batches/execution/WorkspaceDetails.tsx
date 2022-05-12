@@ -32,6 +32,7 @@ import {
     CardBody,
     Card,
     Icon,
+    Typography,
 } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../../components/Collapsible'
@@ -72,7 +73,10 @@ export interface WorkspaceDetailsProps extends ThemeProps {
     queryChangesetSpecFileDiffs?: typeof _queryChangesetSpecFileDiffs
 }
 
-export const WorkspaceDetails: React.FunctionComponent<WorkspaceDetailsProps> = ({ id, ...props }) => {
+export const WorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<WorkspaceDetailsProps>> = ({
+    id,
+    ...props
+}) => {
     // Fetch and poll latest workspace information.
     const { loading, error, data } = useBatchSpecWorkspace(id)
 
@@ -102,14 +106,14 @@ interface WorkspaceHeaderProps extends Pick<WorkspaceDetailsProps, 'deselectWork
     toggleShowTimeline?: () => void
 }
 
-const WorkspaceHeader: React.FunctionComponent<WorkspaceHeaderProps> = ({
+const WorkspaceHeader: React.FunctionComponent<React.PropsWithChildren<WorkspaceHeaderProps>> = ({
     workspace,
     deselectWorkspace,
     toggleShowTimeline,
 }) => (
     <>
         <div className="d-flex align-items-center justify-content-between mb-2">
-            <h3 className={styles.workspaceName}>
+            <Typography.H3 className={styles.workspaceName}>
                 <WorkspaceStateIcon cachedResultFound={workspace.cachedResultFound} state={workspace.state} />{' '}
                 {workspace.__typename === 'VisibleBatchSpecWorkspace'
                     ? workspace.repository.name
@@ -119,7 +123,7 @@ const WorkspaceHeader: React.FunctionComponent<WorkspaceHeaderProps> = ({
                         <Icon as={ExternalLinkIcon} />
                     </Link>
                 )}
-            </h3>
+            </Typography.H3>
             <Button className="p-0 ml-2" onClick={deselectWorkspace} variant="icon">
                 <VisuallyHidden>Deselect Workspace</VisuallyHidden>
                 <Icon as={CloseIcon} />
@@ -165,16 +169,16 @@ interface HiddenWorkspaceDetailsProps extends Pick<WorkspaceDetailsProps, 'desel
     workspace: HiddenBatchSpecWorkspaceFields
 }
 
-const HiddenWorkspaceDetails: React.FunctionComponent<HiddenWorkspaceDetailsProps> = ({
+const HiddenWorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<HiddenWorkspaceDetailsProps>> = ({
     workspace,
     deselectWorkspace,
 }) => (
     <>
         <WorkspaceHeader deselectWorkspace={deselectWorkspace} workspace={workspace} />
-        <h1 className="text-center text-muted mt-5">
+        <Typography.H1 className="text-center text-muted mt-5">
             <Icon as={EyeOffOutlineIcon} />
             <VisuallyHidden>Hidden Workspace</VisuallyHidden>
-        </h1>
+        </Typography.H1>
         <p className="text-center">This workspace is hidden due to permissions.</p>
         <p className="text-center">Contact the owner of this batch change for more information.</p>
     </>
@@ -184,7 +188,7 @@ interface VisibleWorkspaceDetailsProps extends Omit<WorkspaceDetailsProps, 'id'>
     workspace: VisibleBatchSpecWorkspaceFields
 }
 
-const VisibleWorkspaceDetails: React.FunctionComponent<VisibleWorkspaceDetailsProps> = ({
+const VisibleWorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<VisibleWorkspaceDetailsProps>> = ({
     isLightTheme,
     workspace,
     deselectWorkspace,
@@ -275,16 +279,16 @@ interface IgnoredWorkspaceDetailsProps extends Pick<WorkspaceDetailsProps, 'dese
     workspace: VisibleBatchSpecWorkspaceFields
 }
 
-const IgnoredWorkspaceDetails: React.FunctionComponent<IgnoredWorkspaceDetailsProps> = ({
+const IgnoredWorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<IgnoredWorkspaceDetailsProps>> = ({
     workspace,
     deselectWorkspace,
 }) => (
     <>
         <WorkspaceHeader deselectWorkspace={deselectWorkspace} workspace={workspace} />
-        <h1 className="text-center text-muted mt-5">
+        <Typography.H1 className="text-center text-muted mt-5">
             <Icon as={LinkVariantRemoveIcon} />
             <VisuallyHidden>Ignored Workspace</VisuallyHidden>
-        </h1>
+        </Typography.H1>
         <p className="text-center">
             This workspace has been skipped because a <code>.batchignore</code> file is present in the workspace
             repository.
@@ -297,22 +301,21 @@ interface UnsupportedWorkspaceDetailsProps extends Pick<WorkspaceDetailsProps, '
     workspace: VisibleBatchSpecWorkspaceFields
 }
 
-const UnsupportedWorkspaceDetails: React.FunctionComponent<UnsupportedWorkspaceDetailsProps> = ({
-    workspace,
-    deselectWorkspace,
-}) => (
+const UnsupportedWorkspaceDetails: React.FunctionComponent<
+    React.PropsWithChildren<UnsupportedWorkspaceDetailsProps>
+> = ({ workspace, deselectWorkspace }) => (
     <>
         <WorkspaceHeader deselectWorkspace={deselectWorkspace} workspace={workspace} />
-        <h1 className="text-center text-muted mt-5">
+        <Typography.H1 className="text-center text-muted mt-5">
             <Icon as={LinkVariantRemoveIcon} />
             <VisuallyHidden>Unsupported Workspace</VisuallyHidden>
-        </h1>
+        </Typography.H1>
         <p className="text-center">This workspace has been skipped because it is from an unsupported codehost.</p>
         <p className="text-center">Enable the execution option to "allow unsupported" to override.</p>
     </>
 )
 
-const NumberInQueue: React.FunctionComponent<{ number: number }> = ({ number }) => {
+const NumberInQueue: React.FunctionComponent<React.PropsWithChildren<{ number: number }>> = ({ number }) => {
     let suffix: string
     console.log('NumberInQueue', number, number % 10)
     switch (number % 10) {
@@ -341,7 +344,7 @@ interface ChangesetSpecNodeProps extends ThemeProps {
     queryChangesetSpecFileDiffs?: typeof _queryChangesetSpecFileDiffs
 }
 
-const ChangesetSpecNode: React.FunctionComponent<ChangesetSpecNodeProps> = ({
+const ChangesetSpecNode: React.FunctionComponent<React.PropsWithChildren<ChangesetSpecNodeProps>> = ({
     node,
     isLightTheme,
     queryChangesetSpecFileDiffs = _queryChangesetSpecFileDiffs,
@@ -353,7 +356,7 @@ const ChangesetSpecNode: React.FunctionComponent<ChangesetSpecNodeProps> = ({
         return (
             <Card>
                 <CardBody>
-                    <h4>Changeset in a hidden repo</h4>
+                    <Typography.H4>Changeset in a hidden repo</Typography.H4>
                 </CardBody>
             </Card>
         )
@@ -369,14 +372,14 @@ const ChangesetSpecNode: React.FunctionComponent<ChangesetSpecNodeProps> = ({
             title={
                 <div className="d-flex justify-content-between">
                     <div>
-                        <h4 className="mb-0 d-inline-block mr-2">
-                            <h3 className={styles.result}>Result</h3>
+                        <Typography.H4 className="mb-0 d-inline-block mr-2">
+                            <Typography.H3 className={styles.result}>Result</Typography.H3>
                             {node.description.published !== null && (
                                 <Badge className="text-uppercase">
                                     {publishBadgeLabel(node.description.published)}
                                 </Badge>
                             )}{' '}
-                        </h4>
+                        </Typography.H4>
                         <span className="text-muted">
                             <Icon as={SourceBranchIcon} /> {node.description.headRef}
                         </span>
@@ -390,14 +393,14 @@ const ChangesetSpecNode: React.FunctionComponent<ChangesetSpecNodeProps> = ({
         >
             <Card className={classNames('mt-2', styles.resultCard)}>
                 <CardBody>
-                    <h3>Changeset template</h3>
-                    <h4>{node.description.title}</h4>
+                    <Typography.H3>Changeset template</Typography.H3>
+                    <Typography.H4>{node.description.title}</Typography.H4>
                     <p className="mb-0">{node.description.body}</p>
                     <p>
                         <strong>Published:</strong> <PublishedValue published={node.description.published} />
                     </p>
                     <Collapsible
-                        title={<h3 className="mb-0">Changes</h3>}
+                        title={<Typography.H3 className="mb-0">Changes</Typography.H3>}
                         titleClassName="flex-grow-1"
                         defaultExpanded={true}
                     >
@@ -426,7 +429,9 @@ function publishBadgeLabel(state: Scalars['PublishedValue']): string {
     }
 }
 
-const PublishedValue: React.FunctionComponent<{ published: Scalars['PublishedValue'] | null }> = ({ published }) => {
+const PublishedValue: React.FunctionComponent<
+    React.PropsWithChildren<{ published: Scalars['PublishedValue'] | null }>
+> = ({ published }) => {
     if (published === null) {
         return <i>select from UI when applying</i>
     }
@@ -444,7 +449,7 @@ interface WorkspaceStepProps extends ThemeProps {
     queryBatchSpecWorkspaceStepFileDiffs?: typeof _queryBatchSpecWorkspaceStepFileDiffs
 }
 
-const WorkspaceStep: React.FunctionComponent<WorkspaceStepProps> = ({
+const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceStepProps>> = ({
     step,
     isLightTheme,
     workspaceID,
@@ -479,7 +484,7 @@ const WorkspaceStep: React.FunctionComponent<WorkspaceStepProps> = ({
                 <>
                     <div className={classNames(styles.stepHeader, step.skipped && 'text-muted')}>
                         <StepStateIcon step={step} />
-                        <h3 className={styles.stepNumber}>Step {step.number}</h3>
+                        <Typography.H3 className={styles.stepNumber}>Step {step.number}</Typography.H3>
                         <span className={classNames('text-monospace text-muted', styles.stepCommand)}>{step.run}</span>
                     </div>
                     {step.diffStat && (
@@ -546,13 +551,13 @@ const WorkspaceStep: React.FunctionComponent<WorkspaceStepProps> = ({
                                 <TabPanel className="pt-2" key="command-container">
                                     {step.ifCondition !== null && (
                                         <>
-                                            <h4>If condition</h4>
+                                            <Typography.H4>If condition</Typography.H4>
                                             <LogOutput text={step.ifCondition} className="mb-2" />
                                         </>
                                     )}
-                                    <h4>Command</h4>
+                                    <Typography.H4>Command</Typography.H4>
                                     <LogOutput text={step.run} className="mb-2" />
-                                    <h4>Container</h4>
+                                    <Typography.H4>Container</Typography.H4>
                                     <p className="text-monospace mb-0">{step.container}</p>
                                 </TabPanel>
                             </TabPanels>
@@ -575,7 +580,7 @@ const WorkspaceStep: React.FunctionComponent<WorkspaceStepProps> = ({
 interface StepStateIconProps {
     step: BatchSpecWorkspaceStepFields
 }
-const StepStateIcon: React.FunctionComponent<StepStateIconProps> = ({ step }) => {
+const StepStateIcon: React.FunctionComponent<React.PropsWithChildren<StepStateIconProps>> = ({ step }) => {
     if (step.cachedResultFound) {
         return (
             <Icon
@@ -606,7 +611,9 @@ const StepStateIcon: React.FunctionComponent<StepStateIconProps> = ({ step }) =>
     )
 }
 
-const StepTimer: React.FunctionComponent<{ step: BatchSpecWorkspaceStepFields }> = ({ step }) => {
+const StepTimer: React.FunctionComponent<React.PropsWithChildren<{ step: BatchSpecWorkspaceStepFields }>> = ({
+    step,
+}) => {
     if (!step.startedAt) {
         return null
     }
@@ -619,7 +626,9 @@ interface WorkspaceStepFileDiffConnectionProps extends ThemeProps {
     queryBatchSpecWorkspaceStepFileDiffs?: typeof _queryBatchSpecWorkspaceStepFileDiffs
 }
 
-const WorkspaceStepFileDiffConnection: React.FunctionComponent<WorkspaceStepFileDiffConnectionProps> = ({
+const WorkspaceStepFileDiffConnection: React.FunctionComponent<
+    React.PropsWithChildren<WorkspaceStepFileDiffConnectionProps>
+> = ({
     workspaceID,
     step,
     isLightTheme,

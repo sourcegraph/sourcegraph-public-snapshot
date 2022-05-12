@@ -15,12 +15,12 @@ type Record interface {
 type Store interface {
 	// QueuedCount returns the number of records in the queued state. Any extra arguments supplied will be used in
 	// accordance with the concrete persistence layer (e.g. additional SQL conditions for a database layer).
-	QueuedCount(ctx context.Context, extraArguments interface{}) (int, error)
+	QueuedCount(ctx context.Context, extraArguments any) (int, error)
 
 	// Dequeue selects a record for processing. Any extra arguments supplied will be used in accordance with the
 	// concrete persistence layer (e.g. additional SQL conditions for a database layer). This method returns a boolean
 	// flag indicating the existence of a processable record.
-	Dequeue(ctx context.Context, workerHostname string, extraArguments interface{}) (Record, bool, error)
+	Dequeue(ctx context.Context, workerHostname string, extraArguments any) (Record, bool, error)
 
 	// Heartbeat updates last_heartbeat_at of all the given jobs, when they're processing. All IDs of records that were
 	// touched are returned.

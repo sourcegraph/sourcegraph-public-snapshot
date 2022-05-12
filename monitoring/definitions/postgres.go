@@ -13,7 +13,7 @@ func Postgres() *monitoring.Container {
 		// codeintel-db container is called codeintel-db Because of this, we track
 		// all database cAdvisor metrics in a single panel using this container
 		// name regex to ensure we have observability on all platforms.
-		containerName = "(pgsql|codeintel-db|codeinsights-db)"
+		containerName = "(pgsql|codeintel-db|codeinsights)"
 	)
 	return &monitoring.Container{
 		Name:                     "postgres",

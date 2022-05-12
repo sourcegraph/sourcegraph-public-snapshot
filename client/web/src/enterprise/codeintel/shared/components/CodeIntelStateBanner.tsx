@@ -15,7 +15,7 @@ export interface CodeIntelStateBannerProps {
     variant?: AlertProps['variant']
 }
 
-export const CodeIntelStateBanner: FunctionComponent<CodeIntelStateBannerProps> = ({
+export const CodeIntelStateBanner: FunctionComponent<React.PropsWithChildren<CodeIntelStateBannerProps>> = ({
     typeName,
     pluralTypeName,
     state,

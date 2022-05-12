@@ -5,7 +5,9 @@ exports[`Alert renders variant 'danger' correctly 1`] = `
   class=""
   role="alert"
 >
-  <h4>
+  <h4
+    class="h4"
+  >
     Too many matching repositories
   </h4>
   Use a 'repo:' or 'repogroup:' filter to narrow your search.
@@ -17,7 +19,9 @@ exports[`Alert renders variant 'info' correctly 1`] = `
   class=""
   role="alert"
 >
-  <h4>
+  <h4
+    class="h4"
+  >
     Too many matching repositories
   </h4>
   Use a 'repo:' or 'repogroup:' filter to narrow your search.
@@ -29,7 +33,9 @@ exports[`Alert renders variant 'merged' correctly 1`] = `
   class=""
   role="alert"
 >
-  <h4>
+  <h4
+    class="h4"
+  >
     Too many matching repositories
   </h4>
   Use a 'repo:' or 'repogroup:' filter to narrow your search.
@@ -41,7 +47,9 @@ exports[`Alert renders variant 'note' correctly 1`] = `
   class=""
   role="alert"
 >
-  <h4>
+  <h4
+    class="h4"
+  >
     Too many matching repositories
   </h4>
   Use a 'repo:' or 'repogroup:' filter to narrow your search.
@@ -53,7 +61,9 @@ exports[`Alert renders variant 'primary' correctly 1`] = `
   class=""
   role="alert"
 >
-  <h4>
+  <h4
+    class="h4"
+  >
     Too many matching repositories
   </h4>
   Use a 'repo:' or 'repogroup:' filter to narrow your search.
@@ -65,7 +75,9 @@ exports[`Alert renders variant 'secondary' correctly 1`] = `
   class=""
   role="alert"
 >
-  <h4>
+  <h4
+    class="h4"
+  >
     Too many matching repositories
   </h4>
   Use a 'repo:' or 'repogroup:' filter to narrow your search.
@@ -77,7 +89,9 @@ exports[`Alert renders variant 'success' correctly 1`] = `
   class=""
   role="alert"
 >
-  <h4>
+  <h4
+    class="h4"
+  >
     Too many matching repositories
   </h4>
   Use a 'repo:' or 'repogroup:' filter to narrow your search.
@@ -89,7 +103,9 @@ exports[`Alert renders variant 'waiting' correctly 1`] = `
   class=""
   role="alert"
 >
-  <h4>
+  <h4
+    class="h4"
+  >
     Too many matching repositories
   </h4>
   Use a 'repo:' or 'repogroup:' filter to narrow your search.
@@ -101,7 +117,9 @@ exports[`Alert renders variant 'warning' correctly 1`] = `
   class=""
   role="alert"
 >
-  <h4>
+  <h4
+    class="h4"
+  >
     Too many matching repositories
   </h4>
   Use a 'repo:' or 'repogroup:' filter to narrow your search.

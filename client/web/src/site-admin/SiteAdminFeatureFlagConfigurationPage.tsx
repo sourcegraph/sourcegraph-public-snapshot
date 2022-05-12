@@ -24,6 +24,7 @@ import {
     Modal,
     Input,
     Label,
+    Typography,
 } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../components/Collapsible'
@@ -41,11 +42,9 @@ export interface SiteAdminFeatureFlagConfigurationProps extends RouteComponentPr
     productVersion?: string
 }
 
-export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<SiteAdminFeatureFlagConfigurationProps> = ({
-    match: { params },
-    fetchFeatureFlags = defaultFetchFeatureFlags,
-    productVersion = window.context.version,
-}) => {
+export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<
+    React.PropsWithChildren<SiteAdminFeatureFlagConfigurationProps>
+> = ({ match: { params }, fetchFeatureFlags = defaultFetchFeatureFlags, productVersion = window.context.version }) => {
     const history = useHistory()
     const productGitVersion = parseProductReference(productVersion)
     const isCreateFeatureFlag = params.name === 'new'
@@ -279,11 +278,13 @@ interface CreateFeatureFlagOverrideVariables {
 type FeatureFlagValue = FeatureFlagBooleanValue | FeatureFlagRolloutValue
 type FeatureFlagOverrideType = 'User' | 'Org'
 
-const AddFeatureFlagOverride: FunctionComponent<{
-    name: string
-    value: boolean
-    onOverrideAdded: (override: FeatureFlagOverride) => void
-}> = ({ name, value, onOverrideAdded }) => {
+const AddFeatureFlagOverride: FunctionComponent<
+    React.PropsWithChildren<{
+        name: string
+        value: boolean
+        onOverrideAdded: (override: FeatureFlagOverride) => void
+    }>
+> = ({ name, value, onOverrideAdded }) => {
     const [showAddOverride, setShowAddOverride] = useState<boolean>(false)
     const [overrideValue, setOverrideValue] = useState<boolean>(!value)
     const [overrideType, setOverrideType] = useState<FeatureFlagOverrideType>('User')
@@ -340,7 +341,7 @@ const AddFeatureFlagOverride: FunctionComponent<{
     return (
         <div>
             <Modal isOpen={showAddOverride} onDismiss={closeModal} aria-label="Add Feature Flag Override Modal">
-                <h3>Add feature flag override for {name}</h3>
+                <Typography.H3>Add feature flag override for {name}</Typography.H3>
                 <Form>
                     <Label className="w-100 mt-4">
                         Override type
@@ -403,13 +404,15 @@ const AddFeatureFlagOverride: FunctionComponent<{
     )
 }
 
-const FeatureFlagOverridesHeader: FunctionComponent<{
-    name: string
-    type: FeatureFlagType
-    value: FeatureFlagValue
-    overrides: FeatureFlagOverride[]
-    onOverrideAdded: (flag: FeatureFlagOverride) => void
-}> = ({ name, type, value, overrides, onOverrideAdded }) => {
+const FeatureFlagOverridesHeader: FunctionComponent<
+    React.PropsWithChildren<{
+        name: string
+        type: FeatureFlagType
+        value: FeatureFlagValue
+        overrides: FeatureFlagOverride[]
+        onOverrideAdded: (flag: FeatureFlagOverride) => void
+    }>
+> = ({ name, type, value, overrides, onOverrideAdded }) => {
     const count = `${overrides.length} override${overrides.length === 1 ? '' : 's'}`
 
     return (
@@ -430,11 +433,13 @@ interface UpdateFeatureFlagOverrideResult {
     updateFeatureFlagOverride: FeatureFlagOverride
 }
 
-const FeatureFlagOverrideItem: FunctionComponent<{
-    override: FeatureFlagOverride
-    onUpdate: (value: boolean) => void
-    onDelete: () => void
-}> = ({ override, onUpdate, onDelete }) => {
+const FeatureFlagOverrideItem: FunctionComponent<
+    React.PropsWithChildren<{
+        override: FeatureFlagOverride
+        onUpdate: (value: boolean) => void
+        onDelete: () => void
+    }>
+> = ({ override, onUpdate, onDelete }) => {
     const { id, value } = override
 
     const [error, setError] = useState<Error>()
@@ -516,14 +521,16 @@ const FeatureFlagOverrideItem: FunctionComponent<{
 /**
  * Component with form fields for managing an existing feature flag.
  */
-const ManageFeatureFlag: FunctionComponent<{
-    name: string
-    type: FeatureFlagType
-    value: FeatureFlagValue
-    overrides?: FeatureFlagOverride[]
-    onOverridesUpdate: (overrides: FeatureFlagOverride[]) => void
-    setFlagValue: (flag: FeatureFlagValue) => void
-}> = ({ name, type, value, overrides, onOverridesUpdate, setFlagValue }) => {
+const ManageFeatureFlag: FunctionComponent<
+    React.PropsWithChildren<{
+        name: string
+        type: FeatureFlagType
+        value: FeatureFlagValue
+        overrides?: FeatureFlagOverride[]
+        onOverridesUpdate: (overrides: FeatureFlagOverride[]) => void
+        setFlagValue: (flag: FeatureFlagValue) => void
+    }>
+> = ({ name, type, value, overrides, onOverridesUpdate, setFlagValue }) => {
     const addOverride = useCallback(
         (override: FeatureFlagOverride): void => {
             const newOverrides = overrides?.slice() || []
@@ -557,16 +564,16 @@ const ManageFeatureFlag: FunctionComponent<{
 
     return (
         <>
-            <h3>Name</h3>
+            <Typography.H3>Name</Typography.H3>
             <p>{name}</p>
 
-            <h3>Type</h3>
+            <Typography.H3>Type</Typography.H3>
             <p>{type.slice('FeatureFlag'.length)}</p>
 
             <FeatureFlagValueSettings type={type} value={value} setFlagValue={setFlagValue} />
 
             <Collapsible
-                title={<h3>Overrides</h3>}
+                title={<Typography.H3>Overrides</Typography.H3>}
                 detail={
                     <FeatureFlagOverridesHeader
                         overrides={overrides || []}
@@ -602,18 +609,20 @@ const ManageFeatureFlag: FunctionComponent<{
 /**
  * Component with form fields for creating a feature flag.
  */
-const CreateFeatureFlag: React.FunctionComponent<{
-    name?: string
-    setFlagName: (s: string) => void
-    type?: FeatureFlagType
-    setFlagType: (t: FeatureFlagType) => void
-    value?: FeatureFlagValue
-    setFlagValue: (v: FeatureFlagValue) => void
-}> = ({ name, setFlagName, type, setFlagType, value, setFlagValue }) => (
+const CreateFeatureFlag: React.FunctionComponent<
+    React.PropsWithChildren<{
+        name?: string
+        setFlagName: (s: string) => void
+        type?: FeatureFlagType
+        setFlagType: (t: FeatureFlagType) => void
+        value?: FeatureFlagValue
+        setFlagValue: (v: FeatureFlagValue) => void
+    }>
+> = ({ name, setFlagName, type, setFlagType, value, setFlagValue }) => (
     <>
         <div className="form-group d-flex flex-column">
             <label htmlFor="name">
-                <h3>Name</h3>
+                <Typography.H3>Name</Typography.H3>
             </label>
             <input
                 id="name"
@@ -629,7 +638,7 @@ const CreateFeatureFlag: React.FunctionComponent<{
 
         <Select
             id="type"
-            label={<h3>Type</h3>}
+            label={<Typography.H3>Type</Typography.H3>}
             value={type}
             onChange={({ target: { value } }) => setFlagType(value as FeatureFlagType)}
             message="Required."
@@ -647,11 +656,13 @@ const CreateFeatureFlag: React.FunctionComponent<{
  * Displays a modal for configuring the flag value as a certain type. Can be provided an
  * undefined value to instantiate it based on type.
  */
-const FeatureFlagValueSettings: React.FunctionComponent<{
-    type: FeatureFlagType
-    value?: FeatureFlagValue
-    setFlagValue: (next: FeatureFlagValue) => void
-}> = ({ type, value, setFlagValue }) => {
+const FeatureFlagValueSettings: React.FunctionComponent<
+    React.PropsWithChildren<{
+        type: FeatureFlagType
+        value?: FeatureFlagValue
+        setFlagValue: (next: FeatureFlagValue) => void
+    }>
+> = ({ type, value, setFlagValue }) => {
     if (type === 'FeatureFlagRollout') {
         if (!value || !('rolloutBasisPoints' in value)) {
             value = { rolloutBasisPoints: 0 }
@@ -687,13 +698,15 @@ const FeatureFlagValueSettings: React.FunctionComponent<{
     )
 }
 
-const FeatureFlagRolloutValueSettings: React.FunctionComponent<{
-    value: FeatureFlagRolloutValue
-    update: (next: FeatureFlagRolloutValue) => void
-}> = ({ value, update }) => (
+const FeatureFlagRolloutValueSettings: React.FunctionComponent<
+    React.PropsWithChildren<{
+        value: FeatureFlagRolloutValue
+        update: (next: FeatureFlagRolloutValue) => void
+    }>
+> = ({ value, update }) => (
     <div className="form-group d-flex flex-column">
         <label htmlFor="rollout-value">
-            <h3>Value</h3>
+            <Typography.H3>Value</Typography.H3>
         </label>
         <input
             type="range"
@@ -718,13 +731,15 @@ const FeatureFlagRolloutValueSettings: React.FunctionComponent<{
     </div>
 )
 
-const FeatureFlagBooleanValueSettings: React.FunctionComponent<{
-    value: FeatureFlagBooleanValue
-    update: (next: FeatureFlagBooleanValue) => void
-}> = ({ value, update }) => (
+const FeatureFlagBooleanValueSettings: React.FunctionComponent<
+    React.PropsWithChildren<{
+        value: FeatureFlagBooleanValue
+        update: (next: FeatureFlagBooleanValue) => void
+    }>
+> = ({ value, update }) => (
     <div className="form-group d-flex flex-column">
         <label htmlFor="bool-value">
-            <h3>Value</h3>
+            <Typography.H3>Value</Typography.H3>
         </label>
         <div className="d-flex">
             <div>
@@ -754,10 +769,12 @@ const FeatureFlagBooleanValueSettings: React.FunctionComponent<{
  * been implemented yet, or if this Sourcegraph instance does not have a copy of the
  * Sourcegraph repository.
  */
-const ReferencesCollapsible: React.FunctionComponent<{
-    flagName: string | undefined
-    productGitVersion: string
-}> = ({ flagName, productGitVersion }) => {
+const ReferencesCollapsible: React.FunctionComponent<
+    React.PropsWithChildren<{
+        flagName: string | undefined
+        productGitVersion: string
+    }>
+> = ({ flagName, productGitVersion }) => {
     const references = useObservable(
         useMemo(() => (flagName ? getFeatureFlagReferences(flagName, productGitVersion) : of([])), [
             flagName,
@@ -769,7 +786,7 @@ const ReferencesCollapsible: React.FunctionComponent<{
     }
     return (
         <Collapsible
-            title={<h3>References</h3>}
+            title={<Typography.H3>References</Typography.H3>}
             detail={`${references.length} potential feature flag ${pluralize(
                 'reference',
                 references.length

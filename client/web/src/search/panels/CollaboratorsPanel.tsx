@@ -8,7 +8,7 @@ import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Card, CardBody, Link, LoadingSpinner, Icon } from '@sourcegraph/wildcard'
+import { Button, Card, CardBody, Link, LoadingSpinner, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { InvitableCollaborator } from '../../auth/welcome/InviteCollaborators/InviteCollaborators'
@@ -31,7 +31,7 @@ interface Props extends TelemetryProps {
 
 const emailEnabled = window.context?.emailEnabled ?? false
 
-export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
+export const CollaboratorsPanel: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     className,
     authenticatedUser,
     collaboratorsFragment,
@@ -154,10 +154,9 @@ export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
     )
 }
 
-const CollaboratorsPanelNullState: React.FunctionComponent<{ username: string; isSiteAdmin: boolean }> = ({
-    username,
-    isSiteAdmin,
-}) => {
+const CollaboratorsPanelNullState: React.FunctionComponent<
+    React.PropsWithChildren<{ username: string; isSiteAdmin: boolean }>
+> = ({ username, isSiteAdmin }) => {
     const inviteURL = `${window.context.externalURL}/sign-up?invitedBy=${username}`
 
     useEffect(() => {
@@ -200,7 +199,9 @@ const CollaboratorsPanelNullState: React.FunctionComponent<{ username: string; i
     )
 }
 
-const CollaboratorsPanelInfo: React.FunctionComponent<{ isSiteAdmin: boolean }> = ({ isSiteAdmin }) => {
+const CollaboratorsPanelInfo: React.FunctionComponent<React.PropsWithChildren<{ isSiteAdmin: boolean }>> = ({
+    isSiteAdmin,
+}) => {
     const [infoShown, setInfoShown] = useState<boolean>(false)
 
     if (infoShown) {
@@ -209,10 +210,10 @@ const CollaboratorsPanelInfo: React.FunctionComponent<{ isSiteAdmin: boolean }> 
                 <Card>
                     <CardBody>
                         <div className={classNames('d-flex', 'align-content-start', 'mb-2')}>
-                            <h2 className={classNames(styles.infoBox, 'mb-0')}>
+                            <Typography.H2 className={classNames(styles.infoBox, 'mb-0')}>
                                 <Icon className="mr-2 text-muted" as={InformationOutlineIcon} />
                                 What is this?
-                            </h2>
+                            </Typography.H2>
                             <div className="flex-grow-1" />
                             <Button
                                 variant="icon"

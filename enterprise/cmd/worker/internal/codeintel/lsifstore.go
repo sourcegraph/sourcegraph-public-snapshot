@@ -14,15 +14,10 @@ import (
 
 // InitLSIFStore initializes and returns an LSIF store instance.
 func InitLSIFStore() (*lsifstore.Store, error) {
-	conn, err := initLSFIStore.Init()
-	if err != nil {
-		return nil, err
-	}
-
-	return conn.(*lsifstore.Store), err
+	return initLSFIStore.Init()
 }
 
-var initLSFIStore = memo.NewMemoizedConstructor(func() (interface{}, error) {
+var initLSFIStore = memo.NewMemoizedConstructor(func() (*lsifstore.Store, error) {
 	observationContext := &observation.Context{
 		Logger:     log.Scoped("store.lsif", "lsif store"),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},

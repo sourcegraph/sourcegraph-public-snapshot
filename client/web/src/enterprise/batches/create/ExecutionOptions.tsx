@@ -15,6 +15,7 @@ import {
     PopoverContent,
     PopoverTrigger,
     Icon,
+    Typography,
 } from '@sourcegraph/wildcard'
 
 import styles from './ExecutionOptions.module.scss'
@@ -31,13 +32,9 @@ interface ExecutionOptionsDropdownProps {
     onChangeOptions: (newOptions: ExecutionOptions) => void
 }
 
-export const ExecutionOptionsDropdown: React.FunctionComponent<ExecutionOptionsDropdownProps> = ({
-    execute,
-    isExecutionDisabled,
-    executionTooltip,
-    options,
-    onChangeOptions,
-}) => {
+export const ExecutionOptionsDropdown: React.FunctionComponent<
+    React.PropsWithChildren<ExecutionOptionsDropdownProps>
+> = ({ execute, isExecutionDisabled, executionTooltip, options, onChangeOptions }) => {
     const [isOpen, setIsOpen] = useState(false)
 
     return (
@@ -66,7 +63,7 @@ export const ExecutionOptionsDropdown: React.FunctionComponent<ExecutionOptionsD
             </ButtonGroup>
 
             <PopoverContent className={styles.menuList} position={Position.bottomEnd}>
-                <h3 className="pb-2 pt-3 pl-3 pr-3 m-0">Execution options</h3>
+                <Typography.H3 className="pb-2 pt-3 pl-3 pr-3 m-0">Execution options</Typography.H3>
                 <ExecutionOption moreInfo="When this batch spec is executed, it will not use cached results from any previous execution.">
                     <Checkbox
                         name="run-without-cache"
@@ -100,7 +97,7 @@ type ExecutionOptionProps =
           disabledTooltip: string
       }
 
-const ExecutionOption: React.FunctionComponent<ExecutionOptionProps> = props => {
+const ExecutionOption: React.FunctionComponent<React.PropsWithChildren<ExecutionOptionProps>> = props => {
     const [infoReference, infoOpen, setInfoOpen, infoStyle] = useAccordion<HTMLParagraphElement>()
 
     const info = props.disabled ? (

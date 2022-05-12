@@ -4,7 +4,7 @@ import { ListboxGroup, ListboxGroupLabel, ListboxInput, ListboxList, ListboxPopo
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
-import { Input } from '@sourcegraph/wildcard'
+import { Input, Typography } from '@sourcegraph/wildcard'
 
 import {
     CodeInsightsBackendContext,
@@ -31,7 +31,7 @@ export interface DashboardSelectProps {
 /**
  * Renders dashboard select component for the code insights dashboard page selection UI.
  */
-export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = props => {
+export const DashboardSelect: React.FunctionComponent<React.PropsWithChildren<DashboardSelectProps>> = props => {
     const { value, dashboards: rawDashboards, onSelect, className } = props
     const [filter, setFilter] = useState('')
     const [dashboards, setDashboards] = useState(rawDashboards)
@@ -150,7 +150,7 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
                                 <hr />
 
                                 <div className={classNames(styles.limitedAccess)}>
-                                    <h3>Limited access</h3>
+                                    <Typography.H3>Limited access</Typography.H3>
                                     <p>Unlock for unlimited custom dashboards.</p>
                                 </div>
                             </ListboxGroup>

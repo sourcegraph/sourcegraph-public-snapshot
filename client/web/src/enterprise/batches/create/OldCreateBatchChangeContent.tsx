@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react'
 
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
-import { Container, Button, Link } from '@sourcegraph/wildcard'
+import { Container, Button, Link, Typography } from '@sourcegraph/wildcard'
 
 import { SidebarGroup, SidebarGroupHeader } from '../../../components/Sidebar'
 import { getFileName } from '../BatchSpec'
@@ -19,7 +19,11 @@ interface SampleTabHeaderProps {
     setSelectedSample: (sample: Sample) => void
 }
 
-const SampleTabHeader: React.FunctionComponent<SampleTabHeaderProps> = ({ sample, active, setSelectedSample }) => {
+const SampleTabHeader: React.FunctionComponent<React.PropsWithChildren<SampleTabHeaderProps>> = ({
+    sample,
+    active,
+    setSelectedSample,
+}) => {
     const onClick = useCallback<React.MouseEventHandler>(
         event => {
             event.preventDefault()
@@ -50,12 +54,12 @@ const samples: Sample[] = [
     { name: 'Minimal', file: minimalSample },
 ]
 
-export const OldBatchChangePageContent: React.FunctionComponent<{}> = () => {
+export const OldBatchChangePageContent: React.FunctionComponent<React.PropsWithChildren<{}>> = () => {
     const [selectedSample, setSelectedSample] = useState<Sample>(samples[0])
 
     return (
         <>
-            <h2>1. Write a batch spec YAML file</h2>
+            <Typography.H2>1. Write a batch spec YAML file</Typography.H2>
             <Container className="mb-3">
                 <p className="mb-0">
                     The batch spec (
@@ -88,7 +92,7 @@ export const OldBatchChangePageContent: React.FunctionComponent<{}> = () => {
                     <CodeSnippet code={selectedSample.file} language="yaml" className="mb-0" />
                 </Container>
             </div>
-            <h2>2. Preview the batch change with Sourcegraph CLI</h2>
+            <Typography.H2>2. Preview the batch change with Sourcegraph CLI</Typography.H2>
             <Container className="mb-3">
                 <p>
                     Use the{' '}

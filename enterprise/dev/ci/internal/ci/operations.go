@@ -72,7 +72,6 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 			frontendTests,                // ~4.5m
 			addWebApp,                    // ~5.5m
 			addBrowserExtensionUnitTests, // ~4.5m
-			addVsceIntegrationTests,      // ~5.5m
 			addTypescriptCheck,           // ~4m
 		)
 
@@ -89,7 +88,8 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 		// If there are any Graphql changes, they are impacting the backend as well.
 		ops.Merge(operations.NewNamedSet("Go checks",
 			addGoTests,
-			addGoBuild))
+			addGoBuild,
+			addCustomGoChecks))
 	}
 
 	if diff.Has(changed.DatabaseSchema) {
@@ -144,7 +144,7 @@ func addDocs(pipeline *bk.Pipeline) {
 func addCheck(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":clipboard: Misc linters",
 		withYarnCache(),
-		bk.AnnotatedCmd("./dev/check/all.sh", bk.AnnotatedCmdOpts{
+		bk.AnnotatedCmd("go run ./dev/sg lint -annotations check-all-compat", bk.AnnotatedCmdOpts{
 			Annotations: &bk.AnnotationOpts{IncludeNames: true},
 		}))
 }
@@ -413,6 +413,7 @@ func addGoTestsBackcompat(minimumUpgradeableVersion string) func(pipeline *bk.Pi
 				bk.AnnotatedCmd("./dev/ci/go-backcompat/test.sh "+testSuffix, bk.AnnotatedCmdOpts{
 					Annotations: &bk.AnnotationOpts{},
 				}),
+				bk.Skip("Broken, see https://github.com/sourcegraph/sourcegraph/pull/35334"),
 			)
 		})
 	}
@@ -449,6 +450,14 @@ func addGoBuild(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":go: Build",
 		bk.Cmd("./dev/ci/go-build.sh"),
 	)
+}
+
+// Add custom GO checks
+func addCustomGoChecks(pipeline *bk.Pipeline) {
+	pipeline.AddStep(":one-does-not-simply: Custom Go checks",
+		bk.AnnotatedCmd("go run ./dev/sg lint -annotations go-custom", bk.AnnotatedCmdOpts{
+			Annotations: &bk.AnnotationOpts{},
+		}))
 }
 
 // Lints the Dockerfiles.
@@ -714,7 +723,11 @@ func buildCandidateDockerImage(app, version, tag string) operations.Operation {
 			// Retag the local image for dev registry
 			bk.Cmd(fmt.Sprintf("docker tag %s %s", localImage, devImage)),
 			// Publish tagged image
-			bk.Cmd(fmt.Sprintf("docker push %s", devImage)),
+			bk.Cmd(fmt.Sprintf("docker push %s || exit 10", devImage)),
+			// Retry in case of flakes when pushing
+			bk.AutomaticRetryStatus(3, 10),
+			// Retry in case of flakes when pushing
+			bk.AutomaticRetryStatus(3, 222),
 		)
 
 		pipeline.AddStep(fmt.Sprintf(":docker: :construction: Build %s", app), cmds...)
@@ -888,8 +901,7 @@ func uploadBuildeventTrace() operations.Operation {
 func prPreview() operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":globe_with_meridians: Client PR preview",
-			// Soft-fail with code 222 if nothing has changed
-			bk.SoftFail(222),
+			bk.SoftFail(),
 			bk.Cmd("dev/ci/render-pr-preview.sh"))
 	}
 }

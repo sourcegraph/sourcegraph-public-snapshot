@@ -9,7 +9,7 @@ import (
 // PublishedValue is a wrapper type that supports the quadruple `true`, `false`,
 // `"draft"`, `nil`.
 type PublishedValue struct {
-	Val interface{}
+	Val any
 }
 
 // True is true if the enclosed value is a bool being true.
@@ -47,7 +47,7 @@ func (p *PublishedValue) Valid() bool {
 }
 
 // Value returns the underlying value stored in this wrapper.
-func (p *PublishedValue) Value() interface{} {
+func (p *PublishedValue) Value() any {
 	return p.Val
 }
 
@@ -76,7 +76,7 @@ func (p *PublishedValue) UnmarshalJSON(b []byte) error {
 }
 
 // UnmarshalYAML unmarshalls a YAML value into a Publish.
-func (p *PublishedValue) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (p *PublishedValue) UnmarshalYAML(unmarshal func(any) error) error {
 	if err := unmarshal(&p.Val); err != nil {
 		return err
 	}
@@ -84,7 +84,7 @@ func (p *PublishedValue) UnmarshalYAML(unmarshal func(interface{}) error) error 
 	return nil
 }
 
-func (p *PublishedValue) UnmarshalGraphQL(input interface{}) error {
+func (p *PublishedValue) UnmarshalGraphQL(input any) error {
 	p.Val = input
 	if !p.Valid() {
 		return errors.Errorf("invalid PublishedValue: %v", input)

@@ -31,7 +31,7 @@ local can_derive_node_version = function(root, paths, contents_by_path)
 
     for i = 1, #ancestors do
         local payload = json.decode(contents_by_path[path.join(ancestors[i], "package.json")] or "")
-        if payload and payload["engines"]["node"] ~= "" then
+        if payload and payload["engines"] and payload["engines"]["node"] then
             return true
         end
     end

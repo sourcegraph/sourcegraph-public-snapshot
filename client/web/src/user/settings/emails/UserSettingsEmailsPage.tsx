@@ -27,7 +27,7 @@ type UserEmail = (NonNullable<UserEmailsResult['node']> & { __typename: 'User' }
 type Status = undefined | 'loading' | 'loaded' | ErrorLike
 type EmailActionError = undefined | ErrorLike
 
-export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user }) => {
+export const UserSettingsEmailsPage: FunctionComponent<React.PropsWithChildren<Props>> = ({ user }) => {
     const [emails, setEmails] = useState<UserEmail[]>([])
     const [statusOrError, setStatusOrError] = useState<Status>()
     const [emailActionError, setEmailActionError] = useState<EmailActionError>()
@@ -74,7 +74,7 @@ export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user }) => {
     }
 
     return (
-        <div className={styles.userSettingsEmailsPage}>
+        <div className={styles.userSettingsEmailsPage} data-testid="user-settings-emails-page">
             <PageTitle title="Emails" />
             <PageHeader headingElement="h2" path={[{ text: 'Emails' }]} className="mb-3" />
 

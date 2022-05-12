@@ -62,6 +62,13 @@ func (e *ExternalService) RedactedConfig() (string, error) {
 				return "", err
 			}
 		}
+	case *schema.PythonPackagesConnection:
+		for i := range c.Urls {
+			err = es.redactURL(c.Urls[i], "urls", i)
+			if err != nil {
+				return "", err
+			}
+		}
 	case *schema.JVMPackagesConnection:
 		if c.Maven != nil {
 			es.redactString(c.Maven.Credentials, "maven", "credentials")
@@ -138,32 +145,14 @@ func (e *ExternalService) UnredactConfig(old *ExternalService) error {
 	case *schema.GitoliteConnection:
 		// Nothing to redact
 	case *schema.GoModulesConnection:
-		o := oldCfg.(*schema.GoModulesConnection)
-		m := make(map[string]string, len(o.Urls))
-
-		for _, oldURL := range o.Urls {
-			if oldURL == "" {
-				continue
-			}
-
-			redactedOldURL, err := redactedURL(oldURL)
-			if err != nil {
-				return err
-			}
-
-			m[redactedOldURL] = oldURL
+		err = es.unredactURLs(c.Urls, oldCfg.(*schema.GoModulesConnection).Urls)
+		if err != nil {
+			return err
 		}
-
-		for i := range c.Urls {
-			oldURL, ok := m[c.Urls[i]]
-			if !ok {
-				continue
-			}
-
-			err = es.unredactURL(c.Urls[i], oldURL, "urls", i)
-			if err != nil {
-				return err
-			}
+	case *schema.PythonPackagesConnection:
+		err = es.unredactURLs(c.Urls, oldCfg.(*schema.PythonPackagesConnection).Urls)
+		if err != nil {
+			return err
 		}
 	case *schema.JVMPackagesConnection:
 		o := oldCfg.(*schema.JVMPackagesConnection)
@@ -208,23 +197,23 @@ func (es edits) apply(input string) (output string, err error) {
 	return
 }
 
-func (es *edits) edit(v interface{}, path ...interface{}) {
+func (es *edits) edit(v any, path ...any) {
 	*es = append(*es, edit{jsonx.MakePath(path...), v})
 }
 
-func (es *edits) redactString(s string, path ...interface{}) {
+func (es *edits) redactString(s string, path ...any) {
 	if s != "" {
 		es.edit(redactedString(s), path...)
 	}
 }
 
-func (es *edits) unredactString(new, old string, path ...interface{}) {
+func (es *edits) unredactString(new, old string, path ...any) {
 	if new != "" && old != "" {
 		es.edit(unredactedString(new, old), path...)
 	}
 }
 
-func (es *edits) redactURL(s string, path ...interface{}) error {
+func (es *edits) redactURL(s string, path ...any) error {
 	if s == "" {
 		return nil
 	}
@@ -238,7 +227,38 @@ func (es *edits) redactURL(s string, path ...interface{}) error {
 	return nil
 }
 
-func (es *edits) unredactURL(new, old string, path ...interface{}) error {
+func (es *edits) unredactURLs(new, old []string) (err error) {
+	m := make(map[string]string, len(old))
+
+	for _, oldURL := range old {
+		if oldURL == "" {
+			continue
+		}
+
+		redactedOldURL, err := redactedURL(oldURL)
+		if err != nil {
+			return err
+		}
+
+		m[redactedOldURL] = oldURL
+	}
+
+	for i := range new {
+		oldURL, ok := m[new[i]]
+		if !ok {
+			continue
+		}
+
+		err = es.unredactURL(new[i], oldURL, "urls", i)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (es *edits) unredactURL(new, old string, path ...any) error {
 	if new == "" || old == "" {
 		return nil
 	}
@@ -254,7 +274,7 @@ func (es *edits) unredactURL(new, old string, path ...interface{}) error {
 
 type edit struct {
 	path  jsonx.Path
-	value interface{}
+	value any
 }
 
 func (p edit) apply(input string) (string, error) {

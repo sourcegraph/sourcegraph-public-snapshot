@@ -17,7 +17,7 @@ interface TextLabelProps {
     className?: string
 }
 
-const TextLabel: React.FunctionComponent<TextLabelProps> = props => {
+const TextLabel: React.FunctionComponent<React.PropsWithChildren<TextLabelProps>> = props => {
     const { size, weight, name, className } = props
     const label = `This is ${name} / ${size} / ${weight}`
 
@@ -39,7 +39,7 @@ interface TextVariantsProps {
     className?: string
 }
 
-const TextVariations: React.FunctionComponent<TextVariantsProps> = props => {
+const TextVariations: React.FunctionComponent<React.PropsWithChildren<TextVariantsProps>> = props => {
     const { component: Component, name, weights = ['Regular'], className } = props
 
     const textVariations = SIZE_VARIANTS.flatMap(size =>
@@ -59,7 +59,7 @@ const TextVariations: React.FunctionComponent<TextVariantsProps> = props => {
     return <>{textVariations}</>
 }
 
-export const TextVariants: React.FunctionComponent = () => (
+export const TextVariants: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <table className="table">
         <tbody>
             <tr>

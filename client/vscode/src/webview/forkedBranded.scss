@@ -94,6 +94,7 @@ $spacer: 1rem;
     --spacer: #{$spacer};
 }
 
+/* stylelint-disable @sourcegraph/no-restricted-imports */
 // Apply static variables before Bootstrap imports.
 @import 'bootstrap/scss/functions';
 @import 'bootstrap/scss/variables';
@@ -110,6 +111,7 @@ $spacer: 1rem;
 @import 'bootstrap/scss/forms';
 @import 'bootstrap/scss/custom-forms';
 @import 'bootstrap/scss/input-group';
+/* stylelint-enable @sourcegraph/no-restricted-imports */
 
 // Global styles provided by @reach packages. Should be imported once in the global scope.
 @import '@reach/tabs/styles';
@@ -178,4 +180,5 @@ $card-cap-bg: var(--color-bg-2);
     --card-spacer-x: #{$card-spacer-x};
 }
 
+/* stylelint-disable-next-line @sourcegraph/no-restricted-imports */
 @import 'bootstrap/scss/card';

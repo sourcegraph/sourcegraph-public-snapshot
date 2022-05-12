@@ -6,7 +6,7 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { RouteComponentProps, useHistory } from 'react-router'
 import { Subject } from 'rxjs'
 
-import { Badge, Container, Link, PageHeader, Icon } from '@sourcegraph/wildcard'
+import { Badge, Container, Link, PageHeader, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../components/Collapsible'
 import {
@@ -47,7 +47,7 @@ export interface ExecutorsListPageProps extends RouteComponentProps<{}> {
     queryExecutors?: typeof defaultQueryExecutors
 }
 
-export const ExecutorsListPage: FunctionComponent<ExecutorsListPageProps> = ({
+export const ExecutorsListPage: FunctionComponent<React.PropsWithChildren<ExecutorsListPageProps>> = ({
     queryExecutors = defaultQueryExecutors,
     ...props
 }) => {
@@ -78,7 +78,7 @@ export const ExecutorsListPage: FunctionComponent<ExecutorsListPageProps> = ({
             />
 
             <Container className="mb-3">
-                <h3>Setting up executors</h3>
+                <Typography.H3>Setting up executors</Typography.H3>
                 <p className="mb-0">
                     Executors enable{' '}
                     <Link to="/help/code_intelligence/explanations/auto_indexing" rel="noopener">
@@ -121,7 +121,7 @@ export interface ExecutorNodeProps {
     node: ExecutorFields
 }
 
-export const ExecutorNode: FunctionComponent<ExecutorNodeProps> = ({ node }) => (
+export const ExecutorNode: FunctionComponent<React.PropsWithChildren<ExecutorNodeProps>> = ({ node }) => (
     <li className="list-group-item">
         <Collapsible
             wholeTitleClickable={false}
@@ -129,7 +129,7 @@ export const ExecutorNode: FunctionComponent<ExecutorNodeProps> = ({ node }) => 
             title={
                 <div className="d-flex justify-content-between">
                     <div>
-                        <h4 className="mb-0">
+                        <Typography.H4 className="mb-0">
                             {node.active ? (
                                 <Icon className="text-success mr-2" as={CheckboxBlankCircleIcon} />
                             ) : (
@@ -146,7 +146,7 @@ export const ExecutorNode: FunctionComponent<ExecutorNodeProps> = ({ node }) => 
                             >
                                 {node.queueName}
                             </Badge>
-                        </h4>
+                        </Typography.H4>
                     </div>
                     <span>
                         last seen <Timestamp date={node.lastSeenAt} />
@@ -204,7 +204,7 @@ export const ExecutorNode: FunctionComponent<ExecutorNodeProps> = ({ node }) => 
     </li>
 )
 
-export const NoExecutors: React.FunctionComponent = () => (
+export const NoExecutors: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <p className="text-muted text-center w-100 mb-0 mt-1">
         <MapSearchIcon className="mb-2" />
         <br />
@@ -212,7 +212,7 @@ export const NoExecutors: React.FunctionComponent = () => (
     </p>
 )
 
-const TelemetryData: React.FunctionComponent<{ data: string }> = ({ data }) => {
+const TelemetryData: React.FunctionComponent<React.PropsWithChildren<{ data: string }>> = ({ data }) => {
     if (data) {
         return <>{data}</>
     }

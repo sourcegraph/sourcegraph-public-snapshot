@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { ProductStatusBadge, Button } from '@sourcegraph/wildcard'
+import { ProductStatusBadge, Button, Typography } from '@sourcegraph/wildcard'
 
 import { NotepadIcon } from '../../search/Notepad'
 import { ThemePreference } from '../../stores/themeState'
@@ -13,15 +13,18 @@ interface NotepadCTAProps {
     onCancel: () => void
 }
 
-export const NotepadCTA: React.FunctionComponent<NotepadCTAProps> = ({ onEnable, onCancel }) => {
+export const NotepadCTA: React.FunctionComponent<React.PropsWithChildren<NotepadCTAProps>> = ({
+    onEnable,
+    onCancel,
+}) => {
     const assetsRoot = window.context?.assetsRoot || ''
     const isLightTheme = useTheme().enhancedThemePreference === ThemePreference.Light
 
     return (
         <div>
-            <h3 id={NOTEPAD_CTA_ID} className="d-inline-block">
+            <Typography.H3 id={NOTEPAD_CTA_ID} className="d-inline-block">
                 <NotepadIcon /> Enable notepad
-            </h3>{' '}
+            </Typography.H3>{' '}
             <ProductStatusBadge status="beta" />
             <div className="d-flex align-items-center">
                 <img

@@ -237,7 +237,7 @@ func TestPermissionLevels(t *testing.T) {
 
 					var res struct{ Node apitest.BatchChange }
 
-					input := map[string]interface{}{"batchChange": graphqlID}
+					input := map[string]any{"batchChange": graphqlID}
 					queryBatchChange := `
 				  query($batchChange: ID!) {
 				    node(id: $batchChange) { ... on BatchChange { id, viewerCanAdminister } }
@@ -319,7 +319,7 @@ func TestPermissionLevels(t *testing.T) {
 
 					var res struct{ Node apitest.BatchSpec }
 
-					input := map[string]interface{}{"batchSpec": graphqlID}
+					input := map[string]any{"batchSpec": graphqlID}
 					queryBatchSpec := `
 				  query($batchSpec: ID!) {
 				    node(id: $batchSpec) { ... on BatchSpec { id, viewerCanAdminister } }
@@ -374,7 +374,7 @@ func TestPermissionLevels(t *testing.T) {
 
 					var res struct{ Node apitest.User }
 
-					input := map[string]interface{}{"user": graphqlID}
+					input := map[string]any{"user": graphqlID}
 					queryCodeHosts := `
 				  query($user: ID!) {
 				    node(id: $user) { ... on User { batchChangesCodeHosts { totalCount } } }
@@ -464,7 +464,7 @@ func TestPermissionLevels(t *testing.T) {
 						Node apitest.BatchChangesCredential
 					}
 
-					input := map[string]interface{}{"id": graphqlID}
+					input := map[string]any{"id": graphqlID}
 					queryCodeHosts := `
 				  query($id: ID!) {
 				    node(id: $id) { ... on BatchChangesCredential { id } }
@@ -664,7 +664,7 @@ func TestPermissionLevels(t *testing.T) {
 
 					var res struct{ Node apitest.BatchSpecWorkspace }
 
-					input := map[string]interface{}{"id": graphqlID}
+					input := map[string]any{"id": graphqlID}
 					query := `query($id: ID!) { node(id: $id) { ... on BatchSpecWorkspace { id } } }`
 
 					actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
@@ -1047,7 +1047,7 @@ func TestPermissionLevels(t *testing.T) {
 					pruneUserCredentials(t, db, key)
 					pruneSiteCredentials(t, cstore)
 
-					input := map[string]interface{}{
+					input := map[string]any{
 						"externalServiceKind": extsvc.KindGitHub,
 						"externalServiceURL":  "https://github.com/",
 						"credential":          "SOSECRET",
@@ -1139,7 +1139,7 @@ func TestPermissionLevels(t *testing.T) {
 						batchChangesCredentialID = marshalBatchChangesCredentialID(cred.ID, true)
 					}
 
-					input := map[string]interface{}{
+					input := map[string]any{
 						"batchChangesCredential": batchChangesCredentialID,
 					}
 					mutationDeleteBatchChangesCredential := `
@@ -1250,7 +1250,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		// Query batch change and check that we get all changesets
 		userCtx := actor.WithActor(ctx, actor.FromUser(userID))
 
-		input := map[string]interface{}{
+		input := map[string]any{
 			"batchChange": string(marshalBatchChangeID(batchChange.ID)),
 		}
 		testBatchChangeResponse(t, s, userCtx, input, wantBatchChangeResponse{
@@ -1303,7 +1303,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		// Now we query with more filters for the changesets. The hidden changesets
 		// should not be returned, since that would leak information about the
 		// hidden changesets.
-		input = map[string]interface{}{
+		input = map[string]any{
 			"batchChange": string(marshalBatchChangeID(batchChange.ID)),
 			"checkState":  string(btypes.ChangesetCheckStatePassed),
 		}
@@ -1315,7 +1315,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		}
 		testBatchChangeResponse(t, s, userCtx, input, wantCheckStateResponse)
 
-		input = map[string]interface{}{
+		input = map[string]any{
 			"batchChange": string(marshalBatchChangeID(batchChange.ID)),
 			"reviewState": string(btypes.ChangesetReviewStateChangesRequested),
 		}
@@ -1478,7 +1478,7 @@ type wantBatchChangeResponse struct {
 	batchChangeDiffStat apitest.DiffStat
 }
 
-func testBatchChangeResponse(t *testing.T, s *graphql.Schema, ctx context.Context, in map[string]interface{}, w wantBatchChangeResponse) {
+func testBatchChangeResponse(t *testing.T, s *graphql.Schema, ctx context.Context, in map[string]any, w wantBatchChangeResponse) {
 	t.Helper()
 
 	var response struct{ Node apitest.BatchChange }
@@ -1620,7 +1620,7 @@ type wantBatchSpecWorkspacesResponse struct {
 func testBatchSpecWorkspacesResponse(t *testing.T, s *graphql.Schema, ctx context.Context, batchSpecRandID string, w wantBatchSpecWorkspacesResponse) {
 	t.Helper()
 
-	in := map[string]interface{}{
+	in := map[string]any{
 		"batchSpec": string(marshalBatchSpecRandID(batchSpecRandID)),
 	}
 
@@ -1718,7 +1718,7 @@ type wantBatchSpecResponse struct {
 func testBatchSpecResponse(t *testing.T, s *graphql.Schema, ctx context.Context, batchSpecRandID string, w wantBatchSpecResponse) {
 	t.Helper()
 
-	in := map[string]interface{}{
+	in := map[string]any{
 		"batchSpec": string(marshalBatchSpecRandID(batchSpecRandID)),
 	}
 
@@ -1861,7 +1861,7 @@ func assertAuthorizationResponse(
 	t *testing.T,
 	ctx context.Context,
 	s *graphql.Schema,
-	input map[string]interface{},
+	input map[string]any,
 	mutation string,
 	userID int32,
 	restrictToAdmins, wantDisabledErr, wantAuthErr bool,

@@ -4,8 +4,6 @@ import copy from 'copy-to-clipboard'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
-import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
@@ -22,8 +20,10 @@ import {
     Icon,
     Link,
     ProductStatusBadge,
+    Typography,
 } from '@sourcegraph/wildcard'
 
+import { useExperimentalFeatures } from '../../../../../../../stores'
 import { CodeInsightsBackendContext, InsightType } from '../../../../../core'
 import { encodeCaptureInsightURL } from '../../../../insights/creation/capture-group'
 import { encodeSearchInsightUrl } from '../../../../insights/creation/search-insight'
@@ -47,16 +47,13 @@ function getTemplateURL(template: Template): string {
     }
 }
 
-interface CodeInsightsTemplates
-    extends TelemetryProps,
-        React.HTMLAttributes<HTMLElement>,
-        SettingsCascadeProps<Settings> {}
+interface CodeInsightsTemplates extends TelemetryProps, React.HTMLAttributes<HTMLElement> {}
 
-export const CodeInsightsTemplates: React.FunctionComponent<CodeInsightsTemplates> = props => {
+export const CodeInsightsTemplates: React.FunctionComponent<React.PropsWithChildren<CodeInsightsTemplates>> = props => {
     const { telemetryService, ...otherProps } = props
     const tabChangePingName = useLogEventName('InsightsGetStartedTabClick')
-
-    const templateSections = getTemplateSections(props)
+    const features = useExperimentalFeatures()
+    const templateSections = getTemplateSections(features)
 
     const handleTabChange = (index: number): void => {
         const template = templateSections[index]
@@ -66,7 +63,7 @@ export const CodeInsightsTemplates: React.FunctionComponent<CodeInsightsTemplate
 
     return (
         <section {...otherProps}>
-            <h2 id="code-insights-templates">Templates</h2>
+            <Typography.H2 id="code-insights-templates">Templates</Typography.H2>
             <p className="text-muted">
                 Some of the most popular{' '}
                 <Link to="/help/code_insights/references/common_use_cases" rel="noopener noreferrer" target="_blank">
@@ -104,7 +101,7 @@ interface TemplatesPanelProps extends TelemetryProps {
     templates: Template[]
 }
 
-const TemplatesPanel: React.FunctionComponent<TemplatesPanelProps> = props => {
+const TemplatesPanel: React.FunctionComponent<React.PropsWithChildren<TemplatesPanelProps>> = props => {
     const { templates, sectionTitle, telemetryService } = props
     const [allVisible, setAllVisible] = useState(false)
     const tabMoreClickPingName = useLogEventName('InsightsGetStartedTabMoreClick')
@@ -144,7 +141,7 @@ interface TemplateCardProps extends TelemetryProps {
     template: Template
 }
 
-const TemplateCard: React.FunctionComponent<TemplateCardProps> = props => {
+const TemplateCard: React.FunctionComponent<React.PropsWithChildren<TemplateCardProps>> = props => {
     const { template, telemetryService } = props
     const { mode } = useContext(CodeInsightsLandingPageContext)
 
@@ -198,7 +195,7 @@ interface QueryPanelProps extends TelemetryProps {
 const copyTooltip = 'Copy query'
 const copyCompletedTooltip = 'Copied!'
 
-const QueryPanel: React.FunctionComponent<QueryPanelProps> = props => {
+const QueryPanel: React.FunctionComponent<React.PropsWithChildren<QueryPanelProps>> = props => {
     const { query, telemetryService } = props
 
     const templateCopyClickEvenName = useLogEventName('InsightGetStartedTemplateCopyClick')

@@ -20,11 +20,9 @@ interface WorkspacesPreviewListItemProps {
     exclude: (repo: string, branch: string) => void
 }
 
-export const WorkspacesPreviewListItem: React.FunctionComponent<WorkspacesPreviewListItemProps> = ({
-    workspace,
-    isStale,
-    exclude,
-}) => {
+export const WorkspacesPreviewListItem: React.FunctionComponent<
+    React.PropsWithChildren<WorkspacesPreviewListItemProps>
+> = ({ workspace, isStale, exclude }) => {
     const [toBeExcluded, setToBeExcluded] = useState(false)
 
     const handleExclude = useCallback(() => {
@@ -53,7 +51,9 @@ export const WorkspacesPreviewListItem: React.FunctionComponent<WorkspacesPrevie
     )
 }
 
-const ExcludeButton: React.FunctionComponent<{ handleExclude: () => void }> = ({ handleExclude }) => (
+const ExcludeButton: React.FunctionComponent<React.PropsWithChildren<{ handleExclude: () => void }>> = ({
+    handleExclude,
+}) => (
     <Button className="p-0 my-0 mx-2" data-tooltip="Omit this repository from batch spec file" onClick={handleExclude}>
         <Icon as={CloseIcon} />
     </Button>

@@ -4,7 +4,18 @@ import classNames from 'classnames'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 
 import { EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
-import { Button, Link, Menu, MenuButton, MenuDivider, MenuItem, MenuList, Icon, H3, H4 } from '@sourcegraph/wildcard'
+import {
+    Button,
+    Link,
+    Menu,
+    MenuButton,
+    MenuDivider,
+    MenuItem,
+    MenuList,
+    Icon,
+    Typography,
+    Checkbox,
+} from '@sourcegraph/wildcard'
 
 import { SidebarGroup, SidebarGroupHeader } from '../components/Sidebar'
 
@@ -36,7 +47,7 @@ interface ExtensionsEnablementDropdownProps {
  * Includes category filter buttons and enablement filter dropdown.
  */
 export const ExtensionRegistrySidenav: React.FunctionComponent<
-    ExtensionsCategoryFiltersProps & ExtensionsEnablementDropdownProps
+    React.PropsWithChildren<ExtensionsCategoryFiltersProps & ExtensionsEnablementDropdownProps>
 > = ({
     selectedCategory,
     onSelectCategory,
@@ -91,8 +102,7 @@ export const ExtensionRegistrySidenav: React.FunctionComponent<
                         onSelect={toggleExperimentalExtensions}
                     >
                         <div className="d-flex align-items-center">
-                            <input
-                                type="checkbox"
+                            <Checkbox
                                 checked={showExperimentalExtensions}
                                 onChange={toggleExperimentalExtensions}
                                 className=""
@@ -111,13 +121,13 @@ export const ExtensionRegistrySidenav: React.FunctionComponent<
     )
 }
 
-const ExtensionSidenavBanner: React.FunctionComponent = () => (
+const ExtensionSidenavBanner: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <div className={classNames(styles.banner, 'mx-2')}>
         <img className={classNames(styles.bannerIcon, 'mb-2')} src={extensionBannerIconURL} alt="" />
         {/* Override h4 font-weight */}
-        <H4 as={H3} className="mt-2 font-weight-bold">
+        <Typography.H4 as={Typography.H3} className="mt-2 font-weight-bold">
             Create custom extensions!
-        </H4>
+        </Typography.H4>
         <small>
             You can improve your workflow by creating custom extensions. See{' '}
             <Link

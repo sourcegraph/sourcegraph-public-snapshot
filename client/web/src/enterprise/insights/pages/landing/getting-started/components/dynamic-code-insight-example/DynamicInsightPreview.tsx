@@ -40,7 +40,9 @@ interface DynamicInsightPreviewProps extends TelemetryProps {
     className?: string
 }
 
-export const DynamicInsightPreview: React.FunctionComponent<DynamicInsightPreviewProps> = props => {
+export const DynamicInsightPreview: React.FunctionComponent<
+    React.PropsWithChildren<DynamicInsightPreviewProps>
+> = props => {
     const { disabled, repositories, query, className, telemetryService } = props
 
     const { getSearchInsightContent } = useContext(CodeInsightsBackendContext)

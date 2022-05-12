@@ -28,7 +28,7 @@ import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { appendContextFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { buildSearchURLQuery, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, TextArea, Icon } from '@sourcegraph/wildcard'
+import { Button, Link, TextArea, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { BlockInput } from '../notebooks'
 import {
@@ -81,14 +81,19 @@ function useHasNewEntry(entries: NotepadEntry[]): boolean {
     return previous !== undefined && previous < entries.length
 }
 
-export const NotepadIcon: React.FunctionComponent = () => <Icon as={BookPlusOutlineIcon} />
+export const NotepadIcon: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
+    <Icon as={BookPlusOutlineIcon} />
+)
 
 export interface NotepadContainerProps {
     initialOpen?: boolean
     onCreateNotebook: (blocks: BlockInput[]) => void
 }
 
-export const NotepadContainer: React.FunctionComponent<NotepadContainerProps> = ({ initialOpen, onCreateNotebook }) => {
+export const NotepadContainer: React.FunctionComponent<React.PropsWithChildren<NotepadContainerProps>> = ({
+    initialOpen,
+    onCreateNotebook,
+}) => {
     const newEntry = useNotepadState(state => state.addableEntry)
     const entries = useNotepadState(state => state.entries)
     const canRestore = useNotepadState(state => state.canRestoreSession)
@@ -126,7 +131,7 @@ export interface NotepadProps {
     selectable?: boolean
 }
 
-export const Notepad: React.FunctionComponent<NotepadProps> = ({
+export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadProps>> = ({
     className,
     initialOpen = false,
     onCreateNotebook,
@@ -332,7 +337,7 @@ export const Notepad: React.FunctionComponent<NotepadProps> = ({
             >
                 <span>
                     <NotepadIcon />
-                    <h2 className="px-1 d-inline">Notepad</h2>
+                    <Typography.H2 className="px-1 d-inline">Notepad</Typography.H2>
                     <small>
                         ({reversedEntries.length} note{reversedEntries.length === 1 ? '' : 's'})
                     </small>
@@ -345,13 +350,15 @@ export const Notepad: React.FunctionComponent<NotepadProps> = ({
                 <>
                     {newEntry && (
                         <div className={classNames(styles.newNote, 'p-2')}>
-                            <h3>Create new note from current {newEntry.type === 'file' ? 'file' : 'search'}:</h3>
+                            <Typography.H3>
+                                Create new note from current {newEntry.type === 'file' ? 'file' : 'search'}:
+                            </Typography.H3>
                             <AddEntryButton entry={newEntry} addEntry={addEntry} />
                         </div>
                     )}
-                    <h3 className="p-2">
+                    <Typography.H3 className="p-2">
                         Notes <small>({reversedEntries.length})</small>
-                    </h3>
+                    </Typography.H3>
                     <ul role="listbox" aria-multiselectable={true} onKeyDown={handleKey} tabIndex={0}>
                         {reversedEntries.map((entry, index) => {
                             const selected = selectedEntries.includes(index)
@@ -443,7 +450,7 @@ interface AddEntryButtonProps {
     addEntry: typeof addNotepadEntry
 }
 
-const AddEntryButton: React.FunctionComponent<AddEntryButtonProps> = ({ entry, addEntry }) => {
+const AddEntryButton: React.FunctionComponent<React.PropsWithChildren<AddEntryButtonProps>> = ({ entry, addEntry }) => {
     let button: React.ReactElement
     switch (entry.type) {
         case 'search':
@@ -522,7 +529,7 @@ interface NotepadEntryComponentProps {
     onDelete: (entry: NotepadEntry) => void
 }
 
-const NotepadEntryComponent: React.FunctionComponent<NotepadEntryComponentProps> = ({
+const NotepadEntryComponent: React.FunctionComponent<React.PropsWithChildren<NotepadEntryComponentProps>> = ({
     entry,
     focus = false,
     selected,

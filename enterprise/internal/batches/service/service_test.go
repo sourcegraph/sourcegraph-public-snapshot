@@ -1531,7 +1531,7 @@ func TestService(t *testing.T) {
 				Name:        "test-batch-change",
 				Description: "only importing",
 				ImportChangesets: []batcheslib.ImportChangeset{
-					{Repository: string(rs[0].Name), ExternalIDs: []interface{}{true, false}},
+					{Repository: string(rs[0].Name), ExternalIDs: []any{true, false}},
 				},
 			}
 

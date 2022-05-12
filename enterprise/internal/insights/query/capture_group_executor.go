@@ -6,9 +6,10 @@ import (
 	"sort"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 
-	"github.com/grafana/regexp"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
@@ -62,9 +63,6 @@ func streamCompute(ctx context.Context, query string) ([]GroupedResults, error) 
 	if err != nil {
 		return nil, err
 	}
-	if len(streamResults.Errors) > 0 {
-		return nil, errors.Errorf("compute stream search: errors: %v", streamResults.Errors)
-	}
 	return computeTabulationResultToGroupedResults(streamResults), nil
 }
 
@@ -107,8 +105,10 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 				continue
 			}
 
-			modifiedQuery := withCountUnlimited(query)
-			modifiedQuery = fmt.Sprintf("%s repo:^%s$@%s", modifiedQuery, regexp.QuoteMeta(repository), commits[0].ID)
+			modifiedQuery, err := querybuilder.SingleRepoQuery(query, repository, string(commits[0].ID))
+			if err != nil {
+				return nil, errors.Wrap(err, "SingleRepoQuery")
+			}
 
 			log15.Debug("executing query", "query", modifiedQuery)
 			grouped, err := c.computeSearch(ctx, modifiedQuery)

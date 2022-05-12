@@ -20,7 +20,7 @@ func TestToSearchInputs(t *testing.T) {
 		require.NoError(t, err)
 		inputs := &run.SearchInputs{
 			UserSettings:        &schema.Settings{},
-			PatternType:         query.SearchTypeLiteral,
+			PatternType:         query.SearchTypeLiteralDefault,
 			Protocol:            protocol,
 			OnSourcegraphDotCom: true,
 		}
@@ -34,142 +34,135 @@ func TestToSearchInputs(t *testing.T) {
 (PARALLEL
   REPOPAGER
     (PARALLEL
-      ZoektRepoSubset
-      Searcher))
-  RepoSearch
-  ComputeExcludedRepos)
+      ZoektRepoSubsetSearchJob
+      SearcherJob))
+  RepoSearchJob
+  ComputeExcludedReposJob)
 `).Equal(t, test(`foo context:@userA`, search.Streaming, query.ParseLiteral))
 
 	autogold.Want("universal (AKA global) search context", `
 (PARALLEL
-  ZoektGlobalSearch
-  RepoSearch
-  ComputeExcludedRepos)
+  ZoektGlobalSearchJob
+  RepoSearchJob
+  ComputeExcludedReposJob)
 `).Equal(t, test(`foo context:global`, search.Streaming, query.ParseLiteral))
 
 	autogold.Want("universal (AKA global) search", `
 (PARALLEL
-  ZoektGlobalSearch
-  RepoSearch
-  ComputeExcludedRepos)
+  ZoektGlobalSearchJob
+  RepoSearchJob
+  ComputeExcludedReposJob)
 `).Equal(t, test(`foo`, search.Streaming, query.ParseLiteral))
 
 	autogold.Want("nonglobal repo", `
 (PARALLEL
   REPOPAGER
     (PARALLEL
-      ZoektRepoSubset
-      Searcher))
-  RepoSearch
-  ComputeExcludedRepos)
+      ZoektRepoSubsetSearchJob
+      SearcherJob))
+  RepoSearchJob
+  ComputeExcludedReposJob)
 `).Equal(t, test(`foo repo:sourcegraph/sourcegraph`, search.Streaming, query.ParseLiteral))
 
 	autogold.Want("nonglobal repo contains", `
 (PARALLEL
   REPOPAGER
     (PARALLEL
-      ZoektRepoSubset
-      Searcher))
-  RepoSearch
-  ComputeExcludedRepos)
+      ZoektRepoSubsetSearchJob
+      SearcherJob))
+  RepoSearchJob
+  ComputeExcludedReposJob)
 `).Equal(t, test(`foo repo:contains(bar)`, search.Streaming, query.ParseLiteral))
 
 	// Job generation support for implied `type:repo` queries.
 	autogold.Want("supported Repo job", `
 (PARALLEL
-  ZoektGlobalSearch
-  RepoSearch
-  ComputeExcludedRepos)
+  ZoektGlobalSearchJob
+  RepoSearchJob
+  ComputeExcludedReposJob)
 `).Equal(t, test("ok ok", search.Streaming, query.ParseRegexp))
 
 	autogold.Want("supportedRepo job literal", `
 (PARALLEL
-  ZoektGlobalSearch
-  RepoSearch
-  ComputeExcludedRepos)
+  ZoektGlobalSearchJob
+  RepoSearchJob
+  ComputeExcludedReposJob)
 `).Equal(t, test("ok @thing", search.Streaming, query.ParseLiteral))
 
 	autogold.Want("unsupported Repo job prefix", `
 (PARALLEL
-  ZoektGlobalSearch
-  ComputeExcludedRepos)
+  ZoektGlobalSearchJob
+  ComputeExcludedReposJob)
 `).Equal(t, test("@nope", search.Streaming, query.ParseRegexp))
 
 	autogold.Want("unsupported Repo job regexp", `
 (PARALLEL
-  ZoektGlobalSearch
-  ComputeExcludedRepos)
+  ZoektGlobalSearchJob
+  ComputeExcludedReposJob)
 `).Equal(t, test("foo @bar", search.Streaming, query.ParseRegexp))
 
 	// Job generation for other types of search
 	autogold.Want("symbol", `
 (PARALLEL
-  RepoUniverseSymbolSearch
-  ComputeExcludedRepos)
+  RepoUniverseSymbolSearchJob
+  ComputeExcludedReposJob)
 `).Equal(t, test("type:symbol test", search.Streaming, query.ParseRegexp))
 
 	autogold.Want("commit", `
 (PARALLEL
-  Commit
-  ComputeExcludedRepos)
+  CommitSearchJob
+  ComputeExcludedReposJob)
 `).Equal(t, test("type:commit test", search.Streaming, query.ParseRegexp))
 
 	autogold.Want("diff", `
 (PARALLEL
-  Diff
-  ComputeExcludedRepos)
+  DiffSearchJob
+  ComputeExcludedReposJob)
 `).Equal(t, test("type:diff test", search.Streaming, query.ParseRegexp))
 
 	autogold.Want("Streaming: file or commit", `
 (PARALLEL
-  ZoektGlobalSearch
-  Commit
-  ComputeExcludedRepos)
+  ZoektGlobalSearchJob
+  CommitSearchJob
+  ComputeExcludedReposJob)
 `).Equal(t, test("type:file type:commit test", search.Streaming, query.ParseRegexp))
 
 	autogold.Want("Streaming: many types", `
 (PARALLEL
   REPOPAGER
     (PARALLEL
-      ZoektRepoSubset
-      Searcher))
+      ZoektRepoSubsetSearchJob
+      SearcherJob))
   REPOPAGER
     (PARALLEL
-      ZoektSymbolSearch
-      SymbolSearcher))
-  Commit
-  RepoSearch
-  ComputeExcludedRepos)
+      ZoektSymbolSearchJob
+      SymbolSearcherJob))
+  CommitSearchJob
+  RepoSearchJob
+  ComputeExcludedReposJob)
 `).Equal(t, test("type:file type:path type:repo type:commit type:symbol repo:test test", search.Streaming, query.ParseRegexp))
 
 	// Priority jobs for Batched search.
 	autogold.Want("Batched: file or commit", `
-(PRIORITY
-  (REQUIRED
-    (PARALLEL
-      ZoektGlobalSearch
-      ComputeExcludedRepos))
-  (OPTIONAL
-    Commit))
+(PARALLEL
+  ZoektGlobalSearchJob
+  CommitSearchJob
+  ComputeExcludedReposJob)
 `).Equal(t, test("type:file type:commit test", search.Batch, query.ParseRegexp))
 
 	autogold.Want("Batched: many types", `
-(PRIORITY
-  (REQUIRED
+(PARALLEL
+  REPOPAGER
     (PARALLEL
-      REPOPAGER
-        (PARALLEL
-          ZoektRepoSubset
-          Searcher))
-      RepoSearch
-      ComputeExcludedRepos))
-  (OPTIONAL
+      ZoektRepoSubsetSearchJob
+      SearcherJob))
+  REPOPAGER
     (PARALLEL
-      REPOPAGER
-        (PARALLEL
-          ZoektSymbolSearch
-          SymbolSearcher))
-      Commit)))
+      ZoektSymbolSearchJob
+      SymbolSearcherJob))
+  CommitSearchJob
+  RepoSearchJob
+  ComputeExcludedReposJob)
 `).Equal(t, test("type:file type:path type:repo type:commit type:symbol repo:test test", search.Batch, query.ParseRegexp))
 }
 
@@ -178,7 +171,7 @@ func TestToEvaluateJob(t *testing.T) {
 		q, _ := query.ParseLiteral(input)
 		inputs := &run.SearchInputs{
 			UserSettings:        &schema.Settings{},
-			PatternType:         query.SearchTypeLiteral,
+			PatternType:         query.SearchTypeLiteralDefault,
 			Protocol:            protocol,
 			OnSourcegraphDotCom: true,
 		}
@@ -190,16 +183,16 @@ func TestToEvaluateJob(t *testing.T) {
 
 	autogold.Want("root limit for streaming search", `
 (PARALLEL
-  ZoektGlobalSearch
-  RepoSearch
-  ComputeExcludedRepos)
+  ZoektGlobalSearchJob
+  RepoSearchJob
+  ComputeExcludedReposJob)
 `).Equal(t, test("foo", search.Streaming))
 
 	autogold.Want("root limit for batch search", `
 (PARALLEL
-  ZoektGlobalSearch
-  RepoSearch
-  ComputeExcludedRepos)
+  ZoektGlobalSearchJob
+  RepoSearchJob
+  ComputeExcludedReposJob)
 `).Equal(t, test("foo", search.Batch))
 }
 
@@ -208,7 +201,7 @@ func Test_optimizeJobs(t *testing.T) {
 		plan, _ := query.Pipeline(query.InitLiteral(input))
 		inputs := &run.SearchInputs{
 			UserSettings:        &schema.Settings{},
-			PatternType:         query.SearchTypeLiteral,
+			PatternType:         query.SearchTypeLiteralDefault,
 			Protocol:            search.Streaming,
 			OnSourcegraphDotCom: true,
 		}
@@ -393,7 +386,7 @@ func TestToTextPatternInfo(t *testing.T) {
 	}}
 
 	test := func(input string) string {
-		searchType := overrideSearchType(input, query.SearchTypeLiteral)
+		searchType := overrideSearchType(input, query.SearchTypeLiteralDefault)
 		plan, err := query.Pipeline(query.Init(input, searchType))
 		if err != nil {
 			return "Error"
@@ -404,7 +397,7 @@ func TestToTextPatternInfo(t *testing.T) {
 		b := plan[0]
 		types, _ := b.ToParseTree().StringValues(query.FieldType)
 		mode := search.Batch
-		resultTypes := computeResultTypes(types, b, query.SearchTypeLiteral)
+		resultTypes := computeResultTypes(types, b, query.SearchTypeLiteralDefault)
 		p := toTextPatternInfo(b, resultTypes, mode)
 		v, _ := json.Marshal(p)
 		return string(v)
@@ -418,7 +411,7 @@ func TestToTextPatternInfo(t *testing.T) {
 }
 
 func overrideSearchType(input string, searchType query.SearchType) query.SearchType {
-	q, err := query.Parse(input, query.SearchTypeLiteral)
+	q, err := query.Parse(input, query.SearchTypeLiteralDefault)
 	q = query.LowercaseFieldNames(q)
 	if err != nil {
 		// If parsing fails, return the default search type. Any actual
@@ -430,7 +423,7 @@ func overrideSearchType(input string, searchType query.SearchType) query.SearchT
 		case "regex", "regexp":
 			searchType = query.SearchTypeRegex
 		case "literal":
-			searchType = query.SearchTypeLiteral
+			searchType = query.SearchTypeLiteralDefault
 		case "structural":
 			searchType = query.SearchTypeStructural
 		}

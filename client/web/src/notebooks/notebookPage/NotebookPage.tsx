@@ -24,6 +24,7 @@ import {
     ProductStatusBadge,
     Button,
     Icon,
+    Typography,
 } from '@sourcegraph/wildcard'
 
 import { Block } from '..'
@@ -80,7 +81,7 @@ function isNotebookLoaded(notebook: NotebookFields | Error | typeof LOADING | un
     return notebook !== undefined && !isErrorLike(notebook) && notebook !== LOADING
 }
 
-export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
+export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<NotebookPageProps>> = ({
     fetchNotebook = _fetchNotebook,
     updateNotebook = _updateNotebook,
     deleteNotebook = _deleteNotebook,
@@ -341,7 +342,7 @@ interface NotepadCTAProps {
     onClose: () => void
 }
 
-const NotepadCTA: React.FunctionComponent<NotepadCTAProps> = ({ onEnable, onClose }) => {
+const NotepadCTA: React.FunctionComponent<React.PropsWithChildren<NotepadCTAProps>> = ({ onEnable, onClose }) => {
     const assetsRoot = window.context?.assetsRoot || ''
     const isLightTheme = useTheme().enhancedThemePreference === ThemePreference.Light
 
@@ -349,7 +350,7 @@ const NotepadCTA: React.FunctionComponent<NotepadCTAProps> = ({ onEnable, onClos
         <MarketingBlock wrapperClassName={styles.notepadCta}>
             <aside className={styles.notepadCtaContent}>
                 <Button
-                    arial-label="Hide"
+                    aria-label="Hide"
                     variant="icon"
                     onClick={onClose}
                     size="sm"
@@ -363,9 +364,9 @@ const NotepadCTA: React.FunctionComponent<NotepadCTAProps> = ({ onEnable, onClos
                     alt=""
                 />
                 <div>
-                    <h3 className="d-inline-block">
+                    <Typography.H3 className="d-inline-block">
                         <NotepadIcon /> Enable notepad
-                    </h3>{' '}
+                    </Typography.H3>{' '}
                     <ProductStatusBadge status="beta" />
                     <p>
                         The notepad adds a toolbar to the bottom right of search results and file pages to help you

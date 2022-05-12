@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Button, Modal } from '@sourcegraph/wildcard'
+import { Button, Modal, Typography } from '@sourcegraph/wildcard'
 
 export interface ReplaceSpecModalProps {
     libraryItemName: string
@@ -8,13 +8,13 @@ export interface ReplaceSpecModalProps {
     onConfirm: () => void
 }
 
-export const ReplaceSpecModal: React.FunctionComponent<ReplaceSpecModalProps> = ({
+export const ReplaceSpecModal: React.FunctionComponent<React.PropsWithChildren<ReplaceSpecModalProps>> = ({
     libraryItemName,
     onCancel,
     onConfirm,
 }) => (
     <Modal onDismiss={onCancel} aria-labelledby={MODAL_LABEL_ID}>
-        <h3 id={MODAL_LABEL_ID}>Replace batch spec?</h3>
+        <Typography.H3 id={MODAL_LABEL_ID}>Replace batch spec?</Typography.H3>
         <p className="mb-4">
             Are you sure you want to replace your current batch spec with the template for{' '}
             <strong>{libraryItemName}</strong>?

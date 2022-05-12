@@ -8,10 +8,12 @@ import (
 	"golang.org/x/time/rate"
 
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/inference"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -20,6 +22,7 @@ type IndexEnqueuer struct {
 	dbStore            DBStore
 	gitserverClient    GitserverClient
 	repoUpdater        RepoUpdaterClient
+	inferenceService   InferenceService
 	config             *Config
 	gitserverLimiter   *rate.Limiter
 	repoUpdaterLimiter *rate.Limiter
@@ -33,10 +36,29 @@ func NewIndexEnqueuer(
 	config *Config,
 	observationContext *observation.Context,
 ) *IndexEnqueuer {
+	return newIndexEnqueuer(
+		dbStore,
+		gitClient,
+		repoUpdater,
+		autoindexing.GetInferenceService(database.NewDB(dbStore.Handle().DB())),
+		config,
+		observationContext,
+	)
+}
+
+func newIndexEnqueuer(
+	dbStore DBStore,
+	gitClient GitserverClient,
+	repoUpdater RepoUpdaterClient,
+	inferenceService InferenceService,
+	config *Config,
+	observationContext *observation.Context,
+) *IndexEnqueuer {
 	return &IndexEnqueuer{
 		dbStore:            dbStore,
 		gitserverClient:    gitClient,
 		repoUpdater:        repoUpdater,
+		inferenceService:   inferenceService,
 		config:             config,
 		gitserverLimiter:   rate.NewLimiter(config.MaximumRepositoriesInspectedPerSecond, 1),
 		repoUpdaterLimiter: rate.NewLimiter(config.MaximumRepositoriesUpdatedPerSecond, 1),
@@ -198,25 +220,14 @@ func (s *IndexEnqueuer) inferIndexJobsFromRepositoryStructure(ctx context.Contex
 		return nil, err
 	}
 
-	paths, err := s.gitserverClient.ListFiles(ctx, repositoryID, commit, inference.Patterns)
+	repoName, err := s.dbStore.RepoName(ctx, repositoryID)
 	if err != nil {
-		return nil, errors.Wrap(err, "gitserver.ListFiles")
+		return nil, err
 	}
 
-	gitclient := newGitClient(s.gitserverClient, repositoryID, commit)
-
-	var indexes []config.IndexJob
-	for _, recognizer := range inference.Recognizers {
-		recognizedPaths := []string{}
-		pattern := inference.OrPattern(recognizer.Patterns())
-		for _, path := range paths {
-			if pattern.MatchString(path) {
-				recognizedPaths = append(recognizedPaths, path)
-			}
-		}
-		if len(recognizedPaths) > 0 {
-			indexes = append(indexes, recognizer.InferIndexJobs(gitclient, recognizedPaths)...)
-		}
+	indexes, err := s.inferenceService.InferIndexJobs(ctx, api.RepoName(repoName), commit, "")
+	if err != nil {
+		return nil, err
 	}
 
 	if len(indexes) > s.config.MaximumIndexJobsPerInferredConfiguration {
@@ -233,25 +244,14 @@ func (s *IndexEnqueuer) inferIndexJobHintsFromRepositoryStructure(ctx context.Co
 		return nil, err
 	}
 
-	paths, err := s.gitserverClient.ListFiles(ctx, repositoryID, commit, inference.Patterns)
+	repoName, err := s.dbStore.RepoName(ctx, repositoryID)
 	if err != nil {
-		return nil, errors.Wrap(err, "gitserver.ListFiles")
+		return nil, err
 	}
 
-	gitclient := newGitClient(s.gitserverClient, repositoryID, commit)
-
-	var indexes []config.IndexJobHint
-	for _, recognizer := range inference.Recognizers {
-		recognizedPaths := []string{}
-		pattern := inference.OrPattern(recognizer.Patterns())
-		for _, path := range paths {
-			if pattern.MatchString(path) {
-				recognizedPaths = append(recognizedPaths, path)
-			}
-		}
-		if len(recognizedPaths) > 0 {
-			indexes = append(indexes, recognizer.InferIndexJobHints(gitclient, recognizedPaths)...)
-		}
+	indexes, err := s.inferenceService.InferIndexJobHints(ctx, api.RepoName(repoName), commit, "")
+	if err != nil {
+		return nil, err
 	}
 
 	return indexes, nil

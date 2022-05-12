@@ -7,7 +7,7 @@ import { animated, useSpring } from 'react-spring'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
-import { Button, useAccordion, useStopwatch, Icon } from '@sourcegraph/wildcard'
+import { Button, useAccordion, useStopwatch, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { Connection } from '../../../../components/FilteredConnection'
 import { UseConnectionResult } from '../../../../components/FilteredConnection/hooks/useConnection'
@@ -94,7 +94,7 @@ interface WorkspacesPreviewProps {
     setFilters: (filters: WorkspacePreviewFilters) => void
 }
 
-export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> = ({
+export const WorkspacesPreview: React.FunctionComponent<React.PropsWithChildren<WorkspacesPreviewProps>> = ({
     previewDisabled,
     preview,
     batchSpecStale,
@@ -190,10 +190,12 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
             })}
         </div>
     ) : batchSpecStale ? (
-        <h4 className={styles.instruction}>Finish editing your batch spec, then manually preview repositories.</h4>
+        <Typography.H4 className={styles.instruction}>
+            Finish editing your batch spec, then manually preview repositories.
+        </Typography.H4>
     ) : (
         <>
-            <h4 className={styles.instruction}>
+            <Typography.H4 className={styles.instruction}>
                 {hasPreviewed ? 'Modify your' : 'Add an'} <span className="text-monospace">on:</span> statement to
                 preview repositories.
                 <Button
@@ -203,7 +205,7 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
                 >
                     {exampleOpen ? 'Close example' : 'See example'}
                 </Button>
-            </h4>
+            </Typography.H4>
             <animated.div style={exampleStyle} className={styles.onExample}>
                 <div ref={exampleReference} className="pt-2 pb-3">
                     <CodeSnippet className="w-100 m-0" code={ON_STATEMENT} language="yaml" withCopyButton={true} />
@@ -258,7 +260,10 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
     )
 }
 
-const CTAInstruction: React.FunctionComponent<{ active: boolean }> = ({ active, children }) => {
+const CTAInstruction: React.FunctionComponent<React.PropsWithChildren<{ active: boolean }>> = ({
+    active,
+    children,
+}) => {
     // We use 3rem for the height, which is intentionally bigger than the parent (2rem) so
     // that if text is forced to wrap, it isn't cut off.
     const style = useSpring({ height: active ? '3rem' : '0rem', opacity: active ? 1 : 0 })

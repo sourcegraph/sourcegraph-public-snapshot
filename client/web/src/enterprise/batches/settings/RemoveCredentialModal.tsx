@@ -18,7 +18,7 @@ export interface RemoveCredentialModalProps {
     afterDelete: () => void
 }
 
-export const RemoveCredentialModal: React.FunctionComponent<RemoveCredentialModalProps> = ({
+export const RemoveCredentialModal: React.FunctionComponent<React.PropsWithChildren<RemoveCredentialModalProps>> = ({
     codeHost,
     credential,
     onCancel,

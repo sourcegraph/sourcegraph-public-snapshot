@@ -20,11 +20,13 @@ const clickCatcher = (event: React.MouseEvent<HTMLAnchorElement>): void => {
     event.stopPropagation()
 }
 
-export const MonitorLogNode: React.FunctionComponent<{
-    monitor: CodeMonitorWithEvents
-    now?: () => Date
-    startOpen?: boolean
-}> = ({ monitor, now, startOpen = false }) => {
+export const MonitorLogNode: React.FunctionComponent<
+    React.PropsWithChildren<{
+        monitor: CodeMonitorWithEvents
+        now?: () => Date
+        startOpen?: boolean
+    }>
+> = ({ monitor, now, startOpen = false }) => {
     const [expanded, setExpanded] = useState(startOpen)
 
     const toggleExpanded = useCallback(() => setExpanded(expanded => !expanded), [])

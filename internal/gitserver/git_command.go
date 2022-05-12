@@ -19,7 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// GitCommand is an interface describing a git command to be executed remotely.
+// GitCommand is an interface describing a git commands to be executed.
 type GitCommand interface {
 	// DividedOutput runs the command and returns its standard output and standard error.
 	DividedOutput(ctx context.Context) ([]byte, []byte, error)
@@ -154,7 +154,7 @@ type RemoteGitCommand struct {
 	args           []string
 	noTimeout      bool
 	exitStatus     int
-	execFn         func(ctx context.Context, repo api.RepoName, op string, payload interface{}) (resp *http.Response, err error)
+	execFn         func(ctx context.Context, repo api.RepoName, op string, payload any) (resp *http.Response, err error)
 }
 
 // DividedOutput runs the command and returns its standard output and standard error.
@@ -165,9 +165,11 @@ func (c *RemoteGitCommand) DividedOutput(ctx context.Context) ([]byte, []byte, e
 	}
 
 	stdout, err := io.ReadAll(rc)
-	rc.Close()
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, errors.Wrap(err, "reading exec output")
+	}
+	if err := rc.Close(); err != nil {
+		return nil, nil, errors.Wrap(err, "closing exec reader")
 	}
 
 	c.exitStatus, err = strconv.Atoi(trailer.Get("X-Exec-Exit-Status"))
