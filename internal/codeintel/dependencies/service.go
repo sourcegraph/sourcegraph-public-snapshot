@@ -199,9 +199,9 @@ func (s *Service) lockfileDependencies(ctx context.Context, repoCommits []repoCo
 		g.Go(func() error {
 			defer s.lockfilesSemaphore.Release(1)
 
-			repoDeps, err := s.lockfilesSvc.ListDependencies(ctx, repoCommit.Repo, string(repoCommit.CommitID))
+			repoDeps, err := s.listDependencies(ctx, repoCommit)
 			if err != nil {
-				return errors.Wrap(err, "lockfiles.ListDependencies")
+				return err
 			}
 
 			mu.Lock()
@@ -217,6 +217,16 @@ func (s *Service) lockfileDependencies(ctx context.Context, repoCommits []repoCo
 	}
 
 	return deps, nil
+}
+
+// listDependencies gathers dependencies from the lockfiles service for the given repo-commit pair.
+func (s *Service) listDependencies(ctx context.Context, repoCommit repoCommitResolvedCommit) ([]reposource.PackageDependency, error) {
+	repoDeps, err := s.lockfilesSvc.ListDependencies(ctx, repoCommit.Repo, string(repoCommit.CommitID))
+	if err != nil {
+		return nil, errors.Wrap(err, "lockfiles.ListDependencies")
+	}
+
+	return repoDeps, nil
 }
 
 // sync invokes the Syncer for every repo in the supplied slice.
