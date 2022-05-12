@@ -30,7 +30,7 @@ type SearchType int
 
 const (
 	SearchTypeRegex SearchType = iota
-	SearchTypeLiteral
+	SearchTypeLiteralDefault
 	SearchTypeStructural
 )
 
@@ -38,7 +38,7 @@ func (s SearchType) String() string {
 	switch s {
 	case SearchTypeRegex:
 		return "regex"
-	case SearchTypeLiteral:
+	case SearchTypeLiteralDefault:
 		return "literal"
 	case SearchTypeStructural:
 		return "structural"

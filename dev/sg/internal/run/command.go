@@ -8,7 +8,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 	"github.com/sourcegraph/sourcegraph/lib/process"
@@ -160,29 +160,29 @@ func startCmd(ctx context.Context, dir string, cmd Command, parentEnv map[string
 
 	secretsEnv, err := getSecrets(ctx, cmd)
 	if err != nil {
-		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "[%s] %s %s",
+		std.Out.WriteLine(output.Styledf(output.StyleWarning, "[%s] %s %s",
 			cmd.Name, output.EmojiFailure, err.Error()))
 	}
 
 	sc.Cmd.Env = makeEnv(parentEnv, secretsEnv, cmd.Env)
 
 	var stdoutWriter, stderrWriter io.Writer
-	logger := newCmdLogger(commandCtx, cmd.Name, stdout.Out)
+	logger := newCmdLogger(commandCtx, cmd.Name, std.Out.Output)
 	if cmd.IgnoreStdout {
-		stdout.Out.WriteLine(output.Linef("", output.StyleSuggestion, "Ignoring stdout of %s", cmd.Name))
+		std.Out.WriteLine(output.Styledf(output.StyleSuggestion, "Ignoring stdout of %s", cmd.Name))
 		stdoutWriter = sc.stdoutBuf
 	} else {
 		stdoutWriter = io.MultiWriter(logger, sc.stdoutBuf)
 	}
 	if cmd.IgnoreStderr {
-		stdout.Out.WriteLine(output.Linef("", output.StyleSuggestion, "Ignoring stderr of %s", cmd.Name))
+		std.Out.WriteLine(output.Styledf(output.StyleSuggestion, "Ignoring stderr of %s", cmd.Name))
 		stderrWriter = sc.stderrBuf
 	} else {
 		stderrWriter = io.MultiWriter(logger, sc.stderrBuf)
 	}
 
 	if cmd.Preamble != "" {
-		stdout.Out.WriteLine(output.Linef("", output.StyleOrange, "[%s] %s %s", cmd.Name, output.EmojiInfo, cmd.Preamble))
+		std.Out.WriteLine(output.Styledf(output.StyleOrange, "[%s] %s %s", cmd.Name, output.EmojiInfo, cmd.Preamble))
 	}
 	eg, err := process.PipeOutputUnbuffered(ctx, sc.Cmd, stdoutWriter, stderrWriter)
 	if err != nil {

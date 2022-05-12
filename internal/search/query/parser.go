@@ -1164,7 +1164,7 @@ func Parse(in string, searchType SearchType) ([]Node, error) {
 			nodes = hoistedNodes
 		}
 	}
-	if searchType == SearchTypeLiteral {
+	if searchType == SearchTypeLiteralDefault {
 		err = validatePureLiteralPattern(nodes, parser.balanced == 0)
 		if err != nil {
 			return nil, err
@@ -1178,7 +1178,7 @@ func ParseSearchType(in string, searchType SearchType) (Q, error) {
 }
 
 func ParseLiteral(in string) (Q, error) {
-	return Run(Init(in, SearchTypeLiteral))
+	return Run(Init(in, SearchTypeLiteralDefault))
 }
 
 func ParseRegexp(in string) (Q, error) {

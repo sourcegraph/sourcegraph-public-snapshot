@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -145,41 +146,77 @@ func TestIteratePurgeableRepos(t *testing.T) {
 	if err := Repos(db).Delete(ctx, deletedRepo.ID); err != nil {
 		t.Fatal(err)
 	}
-
 	// Blocking a repo is currently done manually
 	if _, err := db.ExecContext(ctx, `UPDATE repo set blocked = '{}' WHERE id = $1`, blockedRepo.ID); err != nil {
 		t.Fatal(err)
 	}
 
 	for _, tt := range []struct {
-		name          string
-		deletedBefore time.Time
-		wantCount     int
+		name         string
+		options      IteratePurgableReposOptions
+		blockedCount int
+		deletedCount int
 	}{
 		{
-			name:          "zero deletedBefore",
-			deletedBefore: time.Time{},
-			wantCount:     2,
+			name: "zero deletedBefore",
+			options: IteratePurgableReposOptions{
+				DeletedBefore: time.Time{},
+				Limit:         0,
+			},
+			blockedCount: 1,
+			deletedCount: 1,
 		},
 		{
-			name:          "deletedBefore",
-			deletedBefore: time.Now().Add(5 * time.Minute),
-			wantCount:     1,
+			name: "deletedBefore now",
+			options: IteratePurgableReposOptions{
+				DeletedBefore: time.Now(),
+				Limit:         0,
+			},
+
+			blockedCount: 1,
+			deletedCount: 1,
+		},
+		{
+			name: "deletedBefore 5 minutes ago",
+			options: IteratePurgableReposOptions{
+				DeletedBefore: time.Now().Add(-5 * time.Minute),
+				Limit:         0,
+			},
+			blockedCount: 1,
+			deletedCount: 0,
+		},
+		{
+			name: "test limit",
+			options: IteratePurgableReposOptions{
+				DeletedBefore: time.Time{},
+				Limit:         1,
+			},
+			blockedCount: 0,
+			deletedCount: 1,
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			var have []api.RepoName
-			haveCount := 0
-			if err := GitserverRepos(db).IteratePurgeableRepos(ctx, tt.deletedBefore, func(repo api.RepoName) error {
-				haveCount++
+			var blockedCount int
+			var deletedCount int
+			if err := GitserverRepos(db).IteratePurgeableRepos(ctx, tt.options, func(repo api.RepoName) error {
+				if repo == "blocked" {
+					blockedCount++
+				}
+				if strings.HasPrefix(string(repo), "DELETED") {
+					deletedCount++
+				}
 				have = append(have, repo)
 				return nil
 			}); err != nil {
 				t.Fatal(err)
 			}
-			if haveCount != tt.wantCount {
-				t.Log(have)
-				t.Fatalf("Want %d, have %d", tt.wantCount, haveCount)
+			t.Log(have)
+			if blockedCount != tt.blockedCount {
+				t.Fatalf("Want %d blocked repos, have %d", tt.blockedCount, blockedCount)
+			}
+			if deletedCount != tt.deletedCount {
+				t.Fatalf("Want %d deleted repos, have %d", tt.deletedCount, deletedCount)
 			}
 		})
 	}

@@ -7,7 +7,7 @@ import (
 	"github.com/agext/levenshtein"
 	"github.com/urfave/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 )
 
 // addSuggestionHooks adds an action that calculates and suggests similar commands for the
@@ -47,19 +47,19 @@ func suggestCommands(cmd *cli.Context, arg string) {
 	}
 
 	args := reconstructArgs(cmd)
-	writeOrangeLinef("command '%s %s' not found", args, arg)
+	std.Out.WriteAlertf("Command '%s %s' not found", args, arg)
 
 	suggestions := makeSuggestions(cmds, arg, 0.3, 3)
 	if len(suggestions) == 0 {
-		stdout.Out.Writef("try running '%s -h' for help", args)
+		std.Out.Writef("try running '%s -h' for help", args)
 		return
 	}
 
-	stdout.Out.Write("did you mean:")
+	std.Out.Write("Did you mean:")
 	for _, s := range suggestions {
-		writeFingerPointingLinef("  %s %s", args, s.name)
+		std.Out.WriteSuggestionf("%s %s", args, s.name)
 	}
-	stdout.Out.Write("learn more about each command with the '-h' flag")
+	std.Out.Write("Learn more about each command with the '-h' flag")
 }
 
 type commandSuggestion struct {
