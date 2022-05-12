@@ -22,7 +22,7 @@ export const LastSyncedIcon: React.FunctionComponent<React.PropsWithChildren<Pro
             className={classNames(props.className, styles.lastSyncedIcon, 'text-muted')}
             data-tooltip={`Last synced: ${formattedTime}`}
             as={WeatherCloudyClockIcon}
-            title={`Last synced: ${formattedTime}`}
+            aria-label={`Last synced: ${formattedTime}`}
         />
     )
 }

@@ -66,7 +66,7 @@ export const CtaAlert: React.FunctionComponent<React.PropsWithChildren<CtaAlertP
             style={{ top: '1rem', right: '1rem' }}
             onClick={props.onClose}
             as={CloseIcon}
-            title="Close"
+            aria-label="Close"
         />
     </Card>
 )

@@ -415,7 +415,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                     data-tooltip="Sorry, we couldn’t fetch notifications!"
                     as={CloudAlertIconRefresh}
                     size="md"
-                    title="Sorry, we couldn’t fetch notifications!"
+                    aria-label="Sorry, we couldn’t fetch notifications!"
                 />
             )
         }
@@ -433,7 +433,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                     as={CloudOffOutlineIcon}
                     size="md"
                     aria-hidden={this.state.isOpen}
-                    title={codeHostMessage}
+                    aria-label={codeHostMessage}
                 />
             )
         }
@@ -449,7 +449,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                     as={CloudAlertIconRefresh}
                     size="md"
                     aria-hidden={this.state.isOpen}
-                    title={codeHostMessage}
+                    aria-label={codeHostMessage}
                 />
             )
         }
@@ -462,7 +462,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                     as={CloudSyncIconRefresh}
                     size="md"
                     aria-hidden={this.state.isOpen}
-                    title={codeHostMessage}
+                    aria-label={codeHostMessage}
                 />
             )
         }
@@ -474,7 +474,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                 as={CloudCheckIconRefresh}
                 size="md"
                 aria-hidden={this.state.isOpen}
-                title={codeHostMessage}
+                aria-label={codeHostMessage}
             />
         )
     }

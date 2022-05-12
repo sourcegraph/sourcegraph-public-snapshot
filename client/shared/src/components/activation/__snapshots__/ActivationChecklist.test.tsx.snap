@@ -63,11 +63,11 @@ exports[`ActivationChecklist render 0/1 complete 1`] = `
             </div>
             <div>
               <svg
+                aria-label="Not completed"
                 class="mdi-icon iconInline text-muted"
                 fill="currentColor"
                 height="24"
                 role="img"
-                title="Not completed"
                 viewBox="0 0 24 24"
                 width="24"
               >
@@ -162,11 +162,11 @@ exports[`ActivationChecklist render 0/1 complete 2`] = `
             </div>
             <div>
               <svg
+                aria-label="Not completed"
                 class="mdi-icon iconInline text-muted"
                 fill="currentColor"
                 height="24"
                 role="img"
-                title="Not completed"
                 viewBox="0 0 24 24"
                 width="24"
               >
