@@ -3,7 +3,7 @@ import React, { useState, useCallback } from 'react'
 import InformationIcon from 'mdi-react/InformationIcon'
 import KeyIcon from 'mdi-react/KeyIcon'
 
-import { Button, CardFooter, Link, Icon } from '@sourcegraph/wildcard'
+import { Button, CardFooter, Link, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { CopyableText } from '../../../components/CopyableText'
 import { formatUserCount, mailtoSales } from '../../../productSubscription/helpers'
@@ -54,7 +54,7 @@ export const UserProductSubscriptionStatus: React.FunctionComponent<React.PropsW
                     </CardFooter>
                     {showLicenseKey && (
                         <CardFooter>
-                            <h3>License key</h3>
+                            <Typography.H3>License key</Typography.H3>
                             {licenseKey ? (
                                 <>
                                     <CopyableText text={licenseKey} className="d-block" />

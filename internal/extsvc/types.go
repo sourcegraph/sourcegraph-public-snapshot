@@ -172,6 +172,8 @@ func KindToType(kind string) string {
 		return TypeJVMPackages
 	case KindPythonPackages:
 		return TypePythonPackages
+	case KindNpmPackages:
+		return TypeNpmPackages
 	case KindGoModules:
 		return TypeGoModules
 	case KindPagure:

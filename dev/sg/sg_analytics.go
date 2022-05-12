@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 )
 
 var analyticsCommand = &cli.Command{
@@ -46,7 +47,7 @@ var analyticsCommand = &cli.Command{
 				if err := analytics.Submit(okayToken, cmd.Args().First()); err != nil {
 					return err
 				}
-				writeSuccessLinef("Analytics successfully submitted!")
+				std.Out.WriteSuccessf("Analytics successfully submitted!")
 				return analytics.Reset()
 			},
 		},
@@ -57,7 +58,7 @@ var analyticsCommand = &cli.Command{
 				if err := analytics.Reset(); err != nil {
 					return err
 				}
-				writeSuccessLinef("Analytics reset!")
+				std.Out.WriteSuccessf("Analytics reset!")
 				return nil
 			},
 		},
@@ -73,7 +74,7 @@ var analyticsCommand = &cli.Command{
 			Action: func(cmd *cli.Context) error {
 				events, err := analytics.Load()
 				if err != nil {
-					writeSkippedLinef("No analytics found: %s", err.Error())
+					std.Out.WriteSuccessf("No analytics found: %s", err.Error())
 					return nil
 				}
 
@@ -102,7 +103,7 @@ var analyticsCommand = &cli.Command{
 
 				out.WriteString("\nTo submit these events, use `sg analytics submit`.\n")
 
-				return writePrettyMarkdown(out.String())
+				return std.Out.WriteMarkdown(out.String())
 			},
 		},
 	},

@@ -18,7 +18,7 @@
    "Sources": {
     "extsvc:pythonpackages:0": {
      "ID": "extsvc:pythonpackages:0",
-     "CloneURL": "requests"
+     "CloneURL": "python/requests"
     }
    },
    "Metadata": {}
@@ -42,7 +42,7 @@
    "Sources": {
     "extsvc:pythonpackages:0": {
      "ID": "extsvc:pythonpackages:0",
-     "CloneURL": "lavaclient"
+     "CloneURL": "python/lavaclient"
     }
    },
    "Metadata": {}
@@ -66,7 +66,7 @@
    "Sources": {
     "extsvc:pythonpackages:0": {
      "ID": "extsvc:pythonpackages:0",
-     "CloneURL": "randio"
+     "CloneURL": "python/randio"
     }
    },
    "Metadata": {}
@@ -90,7 +90,7 @@
    "Sources": {
     "extsvc:pythonpackages:0": {
      "ID": "extsvc:pythonpackages:0",
-     "CloneURL": "pytimeparse"
+     "CloneURL": "python/pytimeparse"
     }
    },
    "Metadata": {}
@@ -114,7 +114,7 @@
    "Sources": {
     "extsvc:pythonpackages:0": {
      "ID": "extsvc:pythonpackages:0",
-     "CloneURL": "numpy"
+     "CloneURL": "python/numpy"
     }
    },
    "Metadata": {}

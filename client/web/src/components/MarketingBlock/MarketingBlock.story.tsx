@@ -1,7 +1,7 @@
 import { DecoratorFn, Meta } from '@storybook/react'
 import ArrowRightIcon from 'mdi-react/ArrowRightIcon'
 
-import { Link, Icon } from '@sourcegraph/wildcard'
+import { Link, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../WebStory'
 
@@ -18,7 +18,7 @@ export default config
 
 export const Basic = (): JSX.Element => (
     <MarketingBlock>
-        <h3 className="pr-3">Need help getting started?</h3>
+        <Typography.H3 className="pr-3">Need help getting started?</Typography.H3>
 
         <div>
             <Link to="https://sourcegraph.com/search">

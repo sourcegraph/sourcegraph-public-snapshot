@@ -4,7 +4,7 @@ import { ListboxGroup, ListboxGroupLabel, ListboxInput, ListboxList, ListboxPopo
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
-import { Input } from '@sourcegraph/wildcard'
+import { Input, Typography } from '@sourcegraph/wildcard'
 
 import {
     CodeInsightsBackendContext,
@@ -150,7 +150,7 @@ export const DashboardSelect: React.FunctionComponent<React.PropsWithChildren<Da
                                 <hr />
 
                                 <div className={classNames(styles.limitedAccess)}>
-                                    <h3>Limited access</h3>
+                                    <Typography.H3>Limited access</Typography.H3>
                                     <p>Unlock for unlimited custom dashboards.</p>
                                 </div>
                             </ListboxGroup>

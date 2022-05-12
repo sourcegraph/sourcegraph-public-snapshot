@@ -413,6 +413,7 @@ func addGoTestsBackcompat(minimumUpgradeableVersion string) func(pipeline *bk.Pi
 				bk.AnnotatedCmd("./dev/ci/go-backcompat/test.sh "+testSuffix, bk.AnnotatedCmdOpts{
 					Annotations: &bk.AnnotationOpts{},
 				}),
+				bk.Skip("Broken, see https://github.com/sourcegraph/sourcegraph/pull/35334"),
 			)
 		})
 	}
@@ -900,8 +901,7 @@ func uploadBuildeventTrace() operations.Operation {
 func prPreview() operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":globe_with_meridians: Client PR preview",
-			// Soft-fail with code 222 if nothing has changed
-			bk.SoftFail(222),
+			bk.SoftFail(),
 			bk.Cmd("dev/ci/render-pr-preview.sh"))
 	}
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 )
 
 // addAnalyticsHooks wraps command actions with analytics hooks. We reconstruct commandPath
@@ -64,7 +65,7 @@ func makeAnalyticsHook(start time.Time, commandPath []string) func(*cli.Context,
 		// Persist all tracked to disk
 		flagsUsed := cmd.FlagNames()
 		if err := analytics.Persist(cmd.Context, strings.Join(commandPath, " "), flagsUsed); err != nil {
-			writeSkippedLinef("failed to persist events: %s", err)
+			std.Out.WriteSkippedf("failed to persist events: %s", err)
 		}
 	}
 }

@@ -126,6 +126,7 @@ func run(logger log.Logger) error {
 			FilterTar:         search.NewFilter,
 			Path:              filepath.Join(cacheDir, "searcher-archives"),
 			MaxCacheSizeBytes: cacheSizeBytes,
+			Log:               logger,
 			DB:                db,
 		},
 		Log: logger,
