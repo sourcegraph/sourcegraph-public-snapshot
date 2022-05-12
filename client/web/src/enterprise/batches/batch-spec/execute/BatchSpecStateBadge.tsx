@@ -1,58 +1,42 @@
 import React from 'react'
 
-import { Badge } from '@sourcegraph/wildcard'
+import { Badge, BadgeVariantType } from '@sourcegraph/wildcard'
 
 import { BatchSpecState } from '../../../../graphql-operations'
 
 export interface BatchSpecStateBadgeProps {
+    className?: string
     state: BatchSpecState
 }
 
-export const BatchSpecStateBadge: React.FunctionComponent<React.PropsWithChildren<BatchSpecStateBadgeProps>> = ({
-    state,
-}) => {
+const getProps = (state: BatchSpecState): [variant: BadgeVariantType, tooltip: string] => {
     switch (state) {
         case BatchSpecState.PENDING:
-            return (
-                <Badge variant="secondary" tooltip="Awaiting execution to start">
-                    {state}
-                </Badge>
-            )
+            return ['secondary', 'Not started']
         case BatchSpecState.QUEUED:
-            return (
-                <Badge variant="secondary" tooltip="Waiting for executor">
-                    {state}
-                </Badge>
-            )
+            return ['secondary', 'Waiting for executor']
         case BatchSpecState.PROCESSING:
-            return (
-                <Badge variant="secondary" tooltip="Currently executing">
-                    {state}
-                </Badge>
-            )
+            return ['secondary', 'Currently executing']
         case BatchSpecState.CANCELED:
-            return (
-                <Badge variant="secondary" tooltip="Execution has been canceled">
-                    {state}
-                </Badge>
-            )
+            return ['secondary', 'Execution has been canceled']
         case BatchSpecState.CANCELING:
-            return (
-                <Badge variant="secondary" tooltip="Canceling execution">
-                    {state}
-                </Badge>
-            )
+            return ['secondary', 'Canceling execution']
         case BatchSpecState.FAILED:
-            return (
-                <Badge variant="danger" tooltip="Execution failed">
-                    {state}
-                </Badge>
-            )
+            return ['danger', 'Execution failed']
         case BatchSpecState.COMPLETED:
-            return (
-                <Badge variant="success" tooltip="Execution finished successfully">
-                    {state}
-                </Badge>
-            )
+            return ['success', 'Execution finished successfully']
     }
+}
+
+export const BatchSpecStateBadge: React.FunctionComponent<React.PropsWithChildren<BatchSpecStateBadgeProps>> = ({
+    className,
+    state,
+}) => {
+    const [variant, tooltip] = getProps(state)
+
+    return (
+        <Badge className={className} variant={variant} tooltip={tooltip}>
+            {state}
+        </Badge>
+    )
 }
