@@ -79,19 +79,19 @@ export const RadioExamples: Story = () => (
         <Typography.H1>Radio</Typography.H1>
         <Grid columnCount={4}>
             <div>
-                <h2>Standard</h2>
+                <Typography.H2>Standard</Typography.H2>
                 <BaseRadio name="standard-example" />
             </div>
             <div>
-                <h2>Valid</h2>
+                <Typography.H2>Valid</Typography.H2>
                 <BaseRadio name="valid-example" isValid={true} />
             </div>
             <div>
-                <h2>Invalid</h2>
+                <Typography.H2>Invalid</Typography.H2>
                 <BaseRadio name="invalid-example" isValid={false} />
             </div>
             <div>
-                <h2>Disabled</h2>
+                <Typography.H2>Disabled</Typography.H2>
                 <BaseRadio name="disabled-example" disabled={true} />
             </div>
         </Grid>

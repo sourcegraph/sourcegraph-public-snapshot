@@ -25,9 +25,9 @@ export const BatchChangeCloseHeaderWillCloseChangesets: React.FunctionComponent<
     React.PropsWithChildren<BatchChangeCloseHeaderProps>
 > = () => (
     <>
-        <h2 className={classNames(styles.batchChangeCloseHeaderRow, 'test-batches-close-willclose-header')}>
+        <Typography.H2 className={classNames(styles.batchChangeCloseHeaderRow, 'test-batches-close-willclose-header')}>
             Closing the batch change will close the following changesets:
-        </h2>
+        </Typography.H2>
         <BatchChangeCloseHeader />
     </>
 )
@@ -36,7 +36,9 @@ export const BatchChangeCloseHeaderWillKeepChangesets: React.FunctionComponent<
     React.PropsWithChildren<BatchChangeCloseHeaderProps>
 > = () => (
     <>
-        <h2 className={styles.batchChangeCloseHeaderRow}>The following changesets will remain open:</h2>
+        <Typography.H2 className={styles.batchChangeCloseHeaderRow}>
+            The following changesets will remain open:
+        </Typography.H2>
         <BatchChangeCloseHeader />
     </>
 )

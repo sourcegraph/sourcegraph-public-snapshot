@@ -250,10 +250,10 @@ export const RepositoryDocumentationPage: React.FunctionComponent<React.PropsWit
                             </Typography.H1>
                             <p>API documentation generated for all your code</p>
                             <Container>
-                                <h2 className="text-muted mb-2">
+                                <Typography.H2 className="text-muted mb-2">
                                     <Icon className="mr-2" as={MapSearchIcon} />
                                     Repository has no LSIF documentation data
-                                </h2>
+                                </Typography.H2>
                                 <p className="mt-3">
                                     Sourcegraph can use LSIF code intelligence to generate API documentation for all
                                     your code, giving you the ability to navigate and explore the APIs provided by this
@@ -306,7 +306,9 @@ export const RepositoryDocumentationPage: React.FunctionComponent<React.PropsWit
                                 {page.tree.detail.value === '' && <DocumentationWelcomeAlert />}
                                 {isExcluded(page.tree, excludingTags) ? (
                                     <div className="m-3">
-                                        <h2 className="text-muted">Looks like there's nothing to see here.</h2>
+                                        <Typography.H2 className="text-muted">
+                                            Looks like there's nothing to see here.
+                                        </Typography.H2>
                                         <p>API docs for private / unexported code is coming soon!</p>
                                     </div>
                                 ) : null}

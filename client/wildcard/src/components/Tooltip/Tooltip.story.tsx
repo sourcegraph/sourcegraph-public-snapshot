@@ -56,7 +56,7 @@ Basic.parameters = {
 export const Positions: Story = () => (
     <>
         <Typography.H1>Tooltip</Typography.H1>
-        <h2>Positions</h2>
+        <Typography.H2>Positions</Typography.H2>
 
         <Grid columnCount={4}>
             <div>
@@ -81,7 +81,7 @@ export const Positions: Story = () => (
             </div>
         </Grid>
 
-        <h2>Max width</h2>
+        <Typography.H2>Max width</Typography.H2>
         <Grid columnCount={1}>
             <div>
                 <Button
@@ -159,9 +159,9 @@ const ForceUpdateTooltip = () => {
 
     return (
         <>
-            <h2>
+            <Typography.H2>
                 Force update tooltip with <code>TooltipController.forceUpdate()</code>
-            </h2>
+            </Typography.H2>
             <p>
                 <Button variant="primary" onClick={onClick} data-tooltip={copied ? 'Copied!' : 'Click to copy'}>
                     Button

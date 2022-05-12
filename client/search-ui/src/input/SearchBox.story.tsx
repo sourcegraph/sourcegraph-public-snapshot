@@ -60,12 +60,12 @@ add('SearchBox', () => (
                     return (
                         <div key={editorComponent}>
                             <Typography.H1>{editorComponent}</Typography.H1>
-                            <h2>Default</h2>
+                            <Typography.H2>Default</Typography.H2>
                             <div className="w-100 d-flex my-2">
                                 <SearchBox {...searchBoxProps} isLightTheme={props.isLightTheme} />
                             </div>
 
-                            <h2>Regexp enabled</h2>
+                            <Typography.H2>Regexp enabled</Typography.H2>
                             <div className="w-100 d-flex my-2">
                                 <SearchBox
                                     {...searchBoxProps}
@@ -74,7 +74,7 @@ add('SearchBox', () => (
                                 />
                             </div>
 
-                            <h2>Structural enabled</h2>
+                            <Typography.H2>Structural enabled</Typography.H2>
                             <div className="w-100 d-flex my-2">
                                 <SearchBox
                                     {...searchBoxProps}
@@ -83,12 +83,12 @@ add('SearchBox', () => (
                                 />
                             </div>
 
-                            <h2>Case sensitivity enabled</h2>
+                            <Typography.H2>Case sensitivity enabled</Typography.H2>
                             <div className="w-100 d-flex my-2">
                                 <SearchBox {...searchBoxProps} caseSensitive={true} isLightTheme={props.isLightTheme} />
                             </div>
 
-                            <h2>With search contexts</h2>
+                            <Typography.H2>With search contexts</Typography.H2>
                             <div className="w-100 d-flex my-2">
                                 <SearchBox
                                     {...searchBoxProps}
@@ -98,7 +98,7 @@ add('SearchBox', () => (
                                 />
                             </div>
 
-                            <h2>With search contexts, user context selected</h2>
+                            <Typography.H2>With search contexts, user context selected</Typography.H2>
                             <div className="w-100 d-flex my-2">
                                 <SearchBox
                                     {...searchBoxProps}
@@ -108,7 +108,7 @@ add('SearchBox', () => (
                                 />
                             </div>
 
-                            <h2>With search contexts, disabled based on query</h2>
+                            <Typography.H2>With search contexts, disabled based on query</Typography.H2>
                             <div className="w-100 d-flex my-2">
                                 <SearchBox
                                     {...searchBoxProps}

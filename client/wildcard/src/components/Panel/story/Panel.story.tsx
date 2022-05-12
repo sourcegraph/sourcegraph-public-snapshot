@@ -79,7 +79,7 @@ export const Simple: Story = () => {
                 <div />
                 <div>
                     <Typography.H1>Panel</Typography.H1>
-                    <h2>Positions</h2>
+                    <Typography.H2>Positions</Typography.H2>
                     <div className="mb-2">
                         <Button variant="secondary" onClick={() => showPanelWithPosition('left')}>
                             Show left panel

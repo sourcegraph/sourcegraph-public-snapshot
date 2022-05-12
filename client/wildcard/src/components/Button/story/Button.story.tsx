@@ -55,18 +55,18 @@ export const Simple: Story = () => (
 export const AllButtons: Story = () => (
     <div className="pb-3">
         <Typography.H1>Buttons</Typography.H1>
-        <h2>Variants</h2>
+        <Typography.H2>Variants</Typography.H2>
         <ButtonVariants variants={BUTTON_VARIANTS} />
-        <h2>Outline</h2>
+        <Typography.H2>Outline</Typography.H2>
         <ButtonVariants variants={['primary', 'secondary', 'danger']} outline={true} />
-        <h2>Icons</h2>
+        <Typography.H2>Icons</Typography.H2>
         <p>We can use icons with our buttons.</p>
         <ButtonVariants variants={['danger']} icon={SearchIcon} />
         <ButtonVariants variants={['danger']} icon={SearchIcon} outline={true} />
-        <h2>Smaller</h2>
+        <Typography.H2>Smaller</Typography.H2>
         <p>We can make our buttons smaller.</p>
         <ButtonVariants variants={['primary']} size="sm" outline={true} />
-        <h2>Links</h2>
+        <Typography.H2>Links</Typography.H2>
         <p>Links can be made to look like buttons.</p>
         <Button
             variant="secondary"
@@ -80,7 +80,7 @@ export const AllButtons: Story = () => (
         </Button>
         <p>Buttons can be made to look like links.</p>
         <ButtonVariants variants={['link']} />
-        <h2>Button Display</h2>
+        <Typography.H2>Button Display</Typography.H2>
         <Button className="mb-3" size="sm" variant="secondary" display="inline">
             Inline
         </Button>
@@ -88,7 +88,7 @@ export const AllButtons: Story = () => (
             Block
         </Button>
 
-        <h2>Button Group</h2>
+        <Typography.H2>Button Group</Typography.H2>
         <ButtonGroup className="mb-3">
             <Button variant="secondary" display="block">
                 Grouped
@@ -100,7 +100,7 @@ export const AllButtons: Story = () => (
                 Grouped
             </Button>
         </ButtonGroup>
-        <h2>Tooltips</h2>
+        <Typography.H2>Tooltips</Typography.H2>
         <p>Buttons can have tooltips.</p>
         <Button variant="primary" className="mr-3" data-tooltip="Some extra context on the button.">
             Enabled

@@ -7,7 +7,7 @@ import DownloadIcon from 'mdi-react/DownloadIcon'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Link, Icon } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { MarketingBlock } from '../../components/MarketingBlock'
 
@@ -42,10 +42,10 @@ export const SelfHostInstructions: React.FunctionComponent<React.PropsWithChildr
     return (
         <div className={styles.wrapper}>
             <div className={styles.column}>
-                <h2>
+                <Typography.H2>
                     <Icon className={classNames('mr-2', styles.downloadIcon)} as={DownloadIcon} /> Self-hosted
                     deployment
-                </h2>
+                </Typography.H2>
                 <ul className={styles.featureList}>
                     <li>Free for up to 10 users</li>
                     <li>Supports additional (and local) code hosts</li>

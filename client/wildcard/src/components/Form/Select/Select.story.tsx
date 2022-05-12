@@ -59,19 +59,19 @@ const SelectVariants = ({ isCustomStyle }: Pick<SelectProps, 'isCustomStyle'>) =
     return (
         <Grid columnCount={4}>
             <div>
-                <h2>Standard</h2>
+                <Typography.H2>Standard</Typography.H2>
                 <BaseSelect id={`${idPrefix}-standard`} isCustomStyle={isCustomStyle} />
             </div>
             <div>
-                <h2>Valid</h2>
+                <Typography.H2>Valid</Typography.H2>
                 <BaseSelect id={`${idPrefix}-valid`} isCustomStyle={isCustomStyle} isValid={true} />
             </div>
             <div>
-                <h2>Invalid</h2>
+                <Typography.H2>Invalid</Typography.H2>
                 <BaseSelect id={`${idPrefix}-invalid`} isCustomStyle={isCustomStyle} isValid={false} />
             </div>
             <div>
-                <h2>Disabled</h2>
+                <Typography.H2>Disabled</Typography.H2>
                 <BaseSelect id={`${idPrefix}-disabled`} isCustomStyle={isCustomStyle} disabled={true} />
             </div>
         </Grid>
@@ -81,9 +81,9 @@ const SelectVariants = ({ isCustomStyle }: Pick<SelectProps, 'isCustomStyle'>) =
 export const SelectExamples: Story = () => (
     <>
         <Typography.H1>Select</Typography.H1>
-        <h2>Native</h2>
+        <Typography.H2>Native</Typography.H2>
         <SelectVariants />
-        <h2>Custom</h2>
+        <Typography.H2>Custom</Typography.H2>
         <SelectVariants isCustomStyle={true} />
     </>
 )

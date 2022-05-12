@@ -45,7 +45,7 @@ export default Config
 export const Overview: Story = () => (
     <>
         <Typography.H1>ButtonLink</Typography.H1>
-        <h2>Variants</h2>
+        <Typography.H2>Variants</Typography.H2>
         <Grid className="mb-3" columnCount={3}>
             {BUTTON_VARIANTS.map(variant => (
                 <div key={variant}>
@@ -55,7 +55,7 @@ export const Overview: Story = () => (
                 </div>
             ))}
         </Grid>
-        <h2>Outline</h2>
+        <Typography.H2>Outline</Typography.H2>
         <ButtonLink
             variant="danger"
             outline={true}
@@ -66,7 +66,7 @@ export const Overview: Story = () => (
         >
             Outline
         </ButtonLink>
-        <h2>Icons</h2>
+        <Typography.H2>Icons</Typography.H2>
         <p>We can use icons with our buttons.</p>{' '}
         <ButtonLink
             variant="secondary"
@@ -78,7 +78,7 @@ export const Overview: Story = () => (
             <Icon as={SearchIcon} className="mr-1" />
             Search
         </ButtonLink>
-        <h2>Smaller</h2>
+        <Typography.H2>Smaller</Typography.H2>
         <p>We can make our buttons smaller.</p>
         <ButtonLink
             variant="secondary"

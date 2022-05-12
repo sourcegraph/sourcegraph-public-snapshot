@@ -8,7 +8,7 @@ import { Subscription } from 'rxjs'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { UserActivePeriod } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, Icon } from '@sourcegraph/wildcard'
+import { Button, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { BarChart } from '../components/d3/BarChart'
 import { FilteredConnection, FilteredConnectionFilter } from '../components/FilteredConnection'
@@ -247,7 +247,7 @@ export class SiteAdminUsageStatisticsPage extends React.Component<
         return (
             <div>
                 <PageTitle title="Usage statistics - Admin" />
-                <h2>Usage statistics</h2>
+                <Typography.H2>Usage statistics</Typography.H2>
                 {this.state.error && <ErrorAlert className="mb-3" error={this.state.error} />}
 
                 <Button

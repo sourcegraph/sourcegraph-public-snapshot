@@ -69,24 +69,24 @@ export const MultiSelectExamples: Story = () => (
         <Typography.H1>Multi Select</Typography.H1>
         <Grid columnCount={4}>
             <div>
-                <h2>Standard</h2>
+                <Typography.H2>Standard</Typography.H2>
                 <BaseSelect />
             </div>
             <div>
-                <h2>Valid</h2>
+                <Typography.H2>Valid</Typography.H2>
                 <BaseSelect isValid={true} />
             </div>
             <div>
-                <h2>Invalid</h2>
+                <Typography.H2>Invalid</Typography.H2>
                 <BaseSelect isValid={false} />
             </div>
             <div>
-                <h2>Disabled</h2>
+                <Typography.H2>Disabled</Typography.H2>
                 <BaseSelect isDisabled={true} />
             </div>
         </Grid>
 
-        <h2>Pre-selected values (300px wide container)</h2>
+        <Typography.H2>Pre-selected values (300px wide container)</Typography.H2>
         <div style={{ width: '300px ' }}>
             <SelectWithValues />
         </div>

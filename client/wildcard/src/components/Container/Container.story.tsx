@@ -43,7 +43,7 @@ export const Overview: Story = () => (
         </Alert>
         <hr />
         <Typography.H1>Example 1</Typography.H1>
-        <h2>Some page explanation</h2>
+        <Typography.H2>Some page explanation</Typography.H2>
         <p className="text-muted">Optional: Add some descriptive text about what this page does.</p>
         <Container className="mb-3">
             <h3>Section I</h3>
@@ -65,7 +65,7 @@ export const Overview: Story = () => (
         </div>
         <hr />
         <Typography.H1>Example 2</Typography.H1>
-        <h2>Some page explanation</h2>
+        <Typography.H2>Some page explanation</Typography.H2>
         <p className="text-muted">Optional: Add some descriptive text about what this page does.</p>
         <Container className="mb-3">
             <h3>Section I</h3>

@@ -7,7 +7,17 @@ import { dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { PageHeader, CardBody, Card, Link, Container, H3, H2, H4, screenReaderAnnounce } from '@sourcegraph/wildcard'
+import {
+    PageHeader,
+    CardBody,
+    Card,
+    Link,
+    Container,
+    H3,
+    H4,
+    Typography,
+    screenReaderAnnounce,
+} from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { isBatchChangesExecutionEnabled } from '../../../batches'
@@ -155,7 +165,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                     <ConnectionContainer>
                         <div className={styles.filtersRow}>
                             {(licenseAndUsageInfo?.allBatchChanges.totalCount || 0) > 0 && (
-                                <H3 as={H2} className="align-self-end flex-1">
+                                <H3 as={Typography.H2} className="align-self-end flex-1">
                                     {`${lastTotalCount} batch changes`}
                                 </H3>
                             )}
@@ -311,11 +321,11 @@ const GettingStartedFooter: React.FunctionComponent<React.PropsWithChildren<{}>>
             <Card>
                 <CardBody className="text-center">
                     <p>Create your first batch change</p>
-                    <h2 className="mb-0">
+                    <Typography.H2 className="mb-0">
                         <Link to="/help/batch_changes/quickstart" target="_blank" rel="noopener">
                             Batch Changes quickstart
                         </Link>
-                    </h2>
+                    </Typography.H2>
                 </CardBody>
             </Card>
         </div>

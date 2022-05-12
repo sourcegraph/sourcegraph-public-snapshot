@@ -30,15 +30,15 @@ export const Simple: Story = () => {
 export const AllPageSelectors: Story = () => (
     <>
         <Typography.H1>Page Selector</Typography.H1>
-        <h2>Short</h2>
+        <Typography.H2>Short</Typography.H2>
         <Short />
-        <h2>Long</h2>
+        <Typography.H2>Long</Typography.H2>
         <Long />
-        <h2>Long active</h2>
+        <Typography.H2>Long active</Typography.H2>
         <LongActive />
-        <h2>Long complete</h2>
+        <Typography.H2>Long complete</Typography.H2>
         <LongComplete />
-        <h2>Long on mobile</h2>
+        <Typography.H2>Long on mobile</Typography.H2>
         <LongOnMobile />
     </>
 )

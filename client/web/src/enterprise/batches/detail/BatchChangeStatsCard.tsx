@@ -48,7 +48,7 @@ export const BatchChangeStatsCard: React.FunctionComponent<React.PropsWithChildr
     return (
         <div className={classNames(className)}>
             <div className="d-flex flex-wrap align-items-center flex-grow-1">
-                <h2 className="m-0">
+                <Typography.H2 className="m-0">
                     {/*
                         a11y-ignore
                         Rule: "color-contrast" (Elements must have sufficient color contrast)
@@ -58,7 +58,7 @@ export const BatchChangeStatsCard: React.FunctionComponent<React.PropsWithChildr
                         isClosed={!!closedAt}
                         className={classNames('a11y-ignore', styles.batchChangeStatsCardStateBadge)}
                     />
-                </h2>
+                </Typography.H2>
                 <div className={classNames(styles.batchChangeStatsCardDivider, 'mx-3')} />
                 <div className="d-flex align-items-center">
                     <Typography.H1 className="d-inline mb-0" aria-label="Batch Change Status">
