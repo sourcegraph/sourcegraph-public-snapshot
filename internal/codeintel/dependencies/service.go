@@ -183,9 +183,9 @@ func (s *Service) lockfileDependencies(ctx context.Context, repoCommits []repoCo
 	)
 
 	ctx, cancel := context.WithCancel(ctx)
+	g, ctx := errgroup.WithContext(ctx)
 	defer cancel()
 
-	g, ctx := errgroup.WithContext(ctx)
 	for _, repoCommit := range repoCommits {
 		// Capture outside of goroutine below
 		repoName, rev := repoCommit.Repo, repoCommit.CommitID
@@ -221,7 +221,10 @@ func (s *Service) lockfileDependencies(ctx context.Context, repoCommits []repoCo
 
 // sync invokes the Syncer for every repo in the supplied slice.
 func (s *Service) sync(ctx context.Context, repos []api.RepoName) error {
+	ctx, cancel := context.WithCancel(ctx)
 	g, ctx := errgroup.WithContext(ctx)
+	defer cancel()
+
 	for _, repo := range repos {
 		// Capture outside of goroutine below
 		repo := repo
