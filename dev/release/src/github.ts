@@ -39,14 +39,14 @@ export enum IssueLabel {
     MANAGED = 'managed-instances',
     DEVOPS_TEAM = 'team/devops',
     SECURITY_TEAM = 'team/security',
-    RELEASE_BLOCKER = 'release-blocker'
+    RELEASE_BLOCKER = 'release-blocker',
 }
 
 enum IssueTitleSuffix {
     RELEASE_TRACKING = 'release tracking issue',
     PATCH_TRACKING = 'patch release tracking issue',
     MANAGED_TRACKING = 'upgrade managed instances tracking issue',
-    SECURITY_TRACKING = 'container image vulnerability assessment tracking issue'
+    SECURITY_TRACKING = 'container image vulnerability assessment tracking issue',
 }
 
 /**
