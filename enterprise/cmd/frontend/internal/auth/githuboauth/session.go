@@ -323,8 +323,7 @@ func (s *sessionIssuerHelper) verifyUserTeams(ctx context.Context, ghClient *git
 	return false
 }
 
-// verifyUserOrgsAndTeams checks if the user belongs to one of the allowed listed orgs or teams.
-// If only one list is provided, that list will be used to verify the user.
+// verifyUserOrgsAndTeams checks if the user belongs to one of the allowed listed orgs or teams provided in the auth.provider configuration.
 func (s *sessionIssuerHelper) verifyUserOrgsAndTeams(ctx context.Context, ghClient *githubsvc.V3Client) (bool, bool) {
 	if len(s.allowOrgs) == 0 && len(s.allowOrgsMap) == 0 {
 		return true, true
