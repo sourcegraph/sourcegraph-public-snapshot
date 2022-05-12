@@ -10,6 +10,26 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
       <div
         class="fileLocations fileLocations"
       >
+        <div
+          class="alert alertInfo mr-4 container"
+          role="alert"
+        >
+          <span>
+            Try out our 
+            <button
+              class="btn btnLink m-0 p-0 border-0 button"
+              type="button"
+            >
+              brand new reference panel experience
+            </button>
+          </span>
+          <button
+            class="btn btnLink m-0 p-0 text-right button"
+            type="button"
+          >
+            Dismiss
+          </button>
+        </div>
         <div>
           <div
             class="test-search-result resultContainer resultContainer"
@@ -232,6 +252,26 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
       <div
         class="fileLocations fileLocations"
       >
+        <div
+          class="alert alertInfo mr-4 container"
+          role="alert"
+        >
+          <span>
+            Try out our 
+            <button
+              class="btn btnLink m-0 p-0 border-0 button"
+              type="button"
+            >
+              brand new reference panel experience
+            </button>
+          </span>
+          <button
+            class="btn btnLink m-0 p-0 text-right button"
+            type="button"
+          >
+            Dismiss
+          </button>
+        </div>
         <div>
           <div
             class="test-search-result resultContainer resultContainer"
@@ -410,6 +450,26 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
       <div
         class="fileLocations fileLocations"
       >
+        <div
+          class="alert alertInfo mr-4 container"
+          role="alert"
+        >
+          <span>
+            Try out our 
+            <button
+              class="btn btnLink m-0 p-0 border-0 button"
+              type="button"
+            >
+              brand new reference panel experience
+            </button>
+          </span>
+          <button
+            class="btn btnLink m-0 p-0 text-right button"
+            type="button"
+          >
+            Dismiss
+          </button>
+        </div>
         <div>
           <div
             class="test-search-result resultContainer resultContainer"
