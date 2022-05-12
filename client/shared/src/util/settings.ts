@@ -1,6 +1,7 @@
 import { isErrorLike } from '@sourcegraph/common'
 
-import { SettingsCascadeOrError, SettingsSubject } from '../settings/settings'
+import { SettingsSubject } from '../schema'
+import { SettingsCascadeOrError } from '../settings/settings'
 
 /**
  * Returns the allow only Sourcegraph authored extensions setting value from org or site settings.
