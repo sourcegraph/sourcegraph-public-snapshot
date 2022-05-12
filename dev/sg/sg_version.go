@@ -130,6 +130,9 @@ func checkSgVersionAndUpdate(ctx context.Context, skipUpdate bool) error {
 			// user to eventually do a fetch
 			return errors.New("current sg version not found - you may want to run 'git fetch origin main'.")
 		}
+
+		// Unexpected error occured
+		analytics.LogEvent(ctx, "auto_update", []string{"check_error"}, start)
 		return err
 	}
 
