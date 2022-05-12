@@ -172,7 +172,7 @@ func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*Empt
 			LastSourceURL:  args.LastSourceURL,
 			Source:         args.Source,
 			Argument:       argumentPayload,
-			FeatureFlags:   featureflag.GetEvaluatedFlagsFromContext(ctx, r.db),
+			FeatureFlags:   featureflag.GetEvaluatedFlagsFromContext(ctx, r.db.FeatureFlags()),
 			CohortID:       args.CohortID,
 			Referrer:       args.Referrer,
 			PublicArgument: publicArgumentPayload,
