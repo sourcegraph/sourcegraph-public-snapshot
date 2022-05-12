@@ -8,8 +8,7 @@ var diffsWithLinters = []Diff{
 	Go,
 	Dockerfiles,
 	Docs,
-	// Doesn't seem to work, TODO(@bobheadxi)
-	// SVG,
+	SVG,
 	Client,
 	Shell,
 }
