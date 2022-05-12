@@ -55,7 +55,7 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 		ghUserTeamsErr  error
 		allowSignup     bool
 		allowOrgs       []string
-		allowTeams      []string
+		allowOrgsMap    map[string][]string
 	}
 	cases := []struct {
 		inputs        []input
@@ -198,8 +198,8 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 		},
 		{
 			inputs: []input{{
-				description: "ghUser, verified email, not in allowed teams -> no session created",
-				allowTeams:  []string{"anotherteam"},
+				description:  "ghUser, verified email, team name matches, org name doesn't match -> no session created",
+				allowOrgsMap: map[string][]string{"org1": {"team1"}},
 				ghUser: &github.User{
 					ID:    github.Int64(101),
 					Login: github.String("alice"),
@@ -210,16 +210,15 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 					Verified: true,
 				}},
 				ghUserTeams: []*githubsvc.Team{
-					{Name: "myteam"},
+					{Name: "team1", Organization: &githubsvc.Org{Login: "org2"}},
 				},
 			}},
 			expErr: true,
 		},
 		{
 			inputs: []input{{
-				description: "ghUser, verified email, not in allowed teams but in allowed orgs -> session created",
-				allowTeams:  []string{"anotherteam"},
-				allowOrgs:   []string{"myorg"},
+				description:  "ghUser, verified email, team name doesn't match, org name matches -> no session created",
+				allowOrgsMap: map[string][]string{"org1": {"team1"}},
 				ghUser: &github.User{
 					ID:    github.Int64(101),
 					Login: github.String("alice"),
@@ -230,69 +229,15 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 					Verified: true,
 				}},
 				ghUserTeams: []*githubsvc.Team{
-					{Name: "myteam"},
+					{Name: "team2", Organization: &githubsvc.Org{Login: "org1"}},
 				},
-				ghUserOrgs: []*githubsvc.Org{
-					{Login: "myorg"},
-				},
-			}},
-			expActor: &actor.Actor{UID: 1},
-			expAuthUserOp: &auth.GetAndSaveUserOp{
-				UserProps:       u("alice", "alice@example.com", true),
-				ExternalAccount: acct(extsvc.TypeGitHub, "https://github.com/", clientID, "101"),
-			},
-		},
-		{
-			inputs: []input{{
-				description: "ghUser, verified email, not in allowed orgs but in allowed teams -> session created",
-				allowTeams:  []string{"myteam"},
-				allowOrgs:   []string{"myorg"},
-				ghUser: &github.User{
-					ID:    github.Int64(101),
-					Login: github.String("alice"),
-				},
-				ghUserEmails: []*githubsvc.UserEmail{{
-					Email:    "alice@example.com",
-					Primary:  true,
-					Verified: true,
-				}},
-				ghUserTeams: []*githubsvc.Team{
-					{Name: "myteam"},
-				},
-				ghUserOrgs: []*githubsvc.Org{
-					{Login: "anotherorg"},
-				},
-			}},
-			expActor: &actor.Actor{UID: 1},
-			expAuthUserOp: &auth.GetAndSaveUserOp{
-				UserProps:       u("alice", "alice@example.com", true),
-				ExternalAccount: acct(extsvc.TypeGitHub, "https://github.com/", clientID, "101"),
-			},
-		},
-		{
-			inputs: []input{{
-				description: "ghUser, verified email, error getting user teams -> no session created",
-				allowTeams:  []string{"myteam"},
-				ghUser: &github.User{
-					ID:    github.Int64(101),
-					Login: github.String("alice"),
-				},
-				ghUserEmails: []*githubsvc.UserEmail{{
-					Email:    "alice@example.com",
-					Primary:  true,
-					Verified: true,
-				}},
-				ghUserTeams: []*githubsvc.Team{
-					{Name: "myteam"},
-				},
-				ghUserTeamsErr: errors.New("boom"),
 			}},
 			expErr: true,
 		},
 		{
 			inputs: []input{{
-				description: "ghUser, verified email, allowed teams -> session created",
-				allowTeams:  []string{"myteam"},
+				description:  "ghUser, verified email, in allowed org > teams -> session created",
+				allowOrgsMap: map[string][]string{"org1": {"team1"}},
 				ghUser: &github.User{
 					ID:    github.Int64(101),
 					Login: github.String("alice"),
@@ -303,7 +248,7 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 					Verified: true,
 				}},
 				ghUserTeams: []*githubsvc.Team{
-					{Name: "myteam"},
+					{Name: "team1", Organization: &githubsvc.Org{Login: "org1"}},
 				},
 			}},
 			expActor: &actor.Actor{UID: 1},
@@ -348,11 +293,11 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 
 				ctx := githublogin.WithUser(context.Background(), ci.ghUser)
 				s := &sessionIssuerHelper{
-					CodeHost:    codeHost,
-					clientID:    clientID,
-					allowSignup: ci.allowSignup,
-					allowOrgs:   ci.allowOrgs,
-					allowTeams:  ci.allowTeams,
+					CodeHost:     codeHost,
+					clientID:     clientID,
+					allowSignup:  ci.allowSignup,
+					allowOrgs:    ci.allowOrgs,
+					allowOrgsMap: ci.allowOrgsMap,
 				}
 
 				tok := &oauth2.Token{AccessToken: "dummy-value-that-isnt-relevant-to-unit-correctness"}
