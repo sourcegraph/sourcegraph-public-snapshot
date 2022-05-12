@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { H3, Link, Typography } from '@sourcegraph/wildcard'
+import { Link, Typography } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { PageRoutes } from '../../routes.constants'
