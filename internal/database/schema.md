@@ -661,6 +661,62 @@ Indexes:
 
 ```
 
+# Table "public.codeintel_lockfile_references"
+```
+     Column      |  Type   | Collation | Nullable |                          Default                          
+-----------------+---------+-----------+----------+-----------------------------------------------------------
+ id              | integer |           | not null | nextval('codeintel_lockfile_references_id_seq'::regclass)
+ repository_name | text    |           | not null | 
+ revspec         | text    |           | not null | 
+ package_scheme  | text    |           | not null | 
+ package_name    | text    |           | not null | 
+ package_version | text    |           | not null | 
+ repository_id   | integer |           |          | 
+ commit_bytea    | bytea   |           |          | 
+Indexes:
+    "codeintel_lockfile_references_pkey" PRIMARY KEY, btree (id)
+    "codeintel_lockfile_references_repository_id_commit_bytea" UNIQUE, btree (repository_id, commit_bytea) WHERE repository_id IS NOT NULL AND commit_bytea IS NOT NULL
+    "codeintel_lockfile_references_repository_name_revspec_package" UNIQUE, btree (repository_name, revspec, package_scheme, package_name, package_version)
+
+```
+
+Tracks a lockfile dependency that might be resolvable to a specific repository-commit pair.
+
+**commit_bytea**: The resolved 40-char revhash of the associated revspec, if it is resolvable on this instance.
+
+**package_name**: Encodes `reposource.PackageDependency.PackageSyntax`. The name of the dependency as used by the package manager, excluding version information.
+
+**package_scheme**: Encodes `reposource.PackageDependency.Scheme`. The scheme of the dependency (e.g., semanticdb, npm).
+
+**package_version**: Encodes `reposource.PackageDependency.PackageVersion`. The version of the package.
+
+**repository_id**: The identifier of the repo that resolves the associated name, if it is resolvable on this instance.
+
+**repository_name**: Encodes `reposource.PackageDependency.RepoName`. A name that is &#34;globally unique&#34; for a Sourcegraph instance. Used in `repo:...` queries.
+
+**revspec**: Encodes `reposource.PackageDependency.GitTagFromVersion`. Returns the git tag associated with the given dependency version, used in `rev:` or `repo:foo@rev` queries.
+
+# Table "public.codeintel_lockfiles"
+```
+              Column              |   Type    | Collation | Nullable |                     Default                     
+----------------------------------+-----------+-----------+----------+-------------------------------------------------
+ id                               | integer   |           | not null | nextval('codeintel_lockfiles_id_seq'::regclass)
+ repository_id                    | integer   |           | not null | 
+ commit_bytea                     | bytea     |           | not null | 
+ codeintel_lockfile_reference_ids | integer[] |           | not null | 
+Indexes:
+    "codeintel_lockfiles_pkey" PRIMARY KEY, btree (id)
+    "codeintel_lockfiles_repository_id_commit_bytea" UNIQUE, btree (repository_id, commit_bytea)
+    "codeintel_lockfiles_codeintel_lockfile_reference_ids" gin (codeintel_lockfile_reference_ids gin__int_ops)
+
+```
+
+Associates a repository-commit pair with the set of repository-level dependencies parsed from lockfiles.
+
+**codeintel_lockfile_reference_ids**: A key to a resolved repository name-revspec pair. Not all repository names and revspecs are resolvable.
+
+**commit_bytea**: A 40-char revhash. Note that this commit may not be resolvable in the future.
+
 # Table "public.configuration_policies_audit_logs"
 ```
        Column       |           Type           | Collation | Nullable |      Default      
