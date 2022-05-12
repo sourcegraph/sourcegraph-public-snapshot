@@ -61,6 +61,7 @@ export const BatchChangeStatePill: React.FunctionComponent<React.PropsWithChildr
                 [styles.draft]: state === BatchChangeState.DRAFT,
                 [styles.closed]: state === BatchChangeState.CLOSED,
             })}
+            aria-label={`${state} status`}
         >
             <StatePill state={state} />
             {executionStatePill}
@@ -74,20 +75,20 @@ const StatePill: React.FunctionComponent<React.PropsWithChildren<Pick<BatchChang
     switch (state) {
         case BatchChangeState.OPEN:
             return (
-                <Badge variant="success" className={styles.statePill}>
+                <Badge variant="success" className={styles.statePill} aria-hidden={true}>
                     Open
                 </Badge>
             )
         case BatchChangeState.CLOSED:
             return (
-                <Badge variant="danger" className={styles.statePill}>
+                <Badge variant="danger" className={styles.statePill} aria-hidden={true}>
                     Closed
                 </Badge>
             )
         case BatchChangeState.DRAFT:
         default:
             return (
-                <Badge variant="secondary" className={styles.statePill}>
+                <Badge variant="secondary" className={styles.statePill} aria-hidden={true}>
                     Draft
                 </Badge>
             )

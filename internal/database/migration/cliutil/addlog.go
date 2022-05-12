@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func AddLog(commandName string, factory RunnerFactory, out *output.Output) *cli.Command {
+func AddLog(commandName string, factory RunnerFactory, outFactory OutputFactory) *cli.Command {
 	flags := []cli.Flag{
 		&cli.StringFlag{
 			Name:     "db",
@@ -31,6 +31,8 @@ func AddLog(commandName string, factory RunnerFactory, out *output.Output) *cli.
 	}
 
 	action := func(cmd *cli.Context) error {
+		out := outFactory()
+
 		if cmd.NArg() != 0 {
 			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments"))
 			return flag.ErrHelp

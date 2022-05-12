@@ -95,7 +95,10 @@ export class RepositoryCompareCommitsPage extends React.PureComponent<Props> {
             <div className="repository-compare-page">
                 <Card>
                     <CardHeader>Commits</CardHeader>
-                    <FilteredConnection<GitCommitFields, Pick<GitCommitNodeProps, 'className' | 'compact'>>
+                    <FilteredConnection<
+                        GitCommitFields,
+                        Pick<GitCommitNodeProps, 'className' | 'compact' | 'wrapperElement'>
+                    >
                         listClassName="list-group list-group-flush"
                         noun="commit"
                         pluralNoun="commits"
@@ -105,6 +108,7 @@ export class RepositoryCompareCommitsPage extends React.PureComponent<Props> {
                         nodeComponentProps={{
                             className: 'list-group-item',
                             compact: true,
+                            wrapperElement: 'li',
                         }}
                         defaultFirst={50}
                         hideSearch={true}

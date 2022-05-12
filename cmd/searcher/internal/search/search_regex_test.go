@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/pathmatch"
-	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
 
 func BenchmarkSearchRegex_large_fixed(b *testing.B) {
@@ -396,7 +395,7 @@ var githubStore = &Store{
 }
 
 func fetchTarFromGithub(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
-	r, err := testutil.FetchTarFromGithubWithPaths(ctx, repo, commit, []string{})
+	r, err := fetchTarFromGithubWithPaths(ctx, repo, commit, []string{})
 	return r, err
 }
 

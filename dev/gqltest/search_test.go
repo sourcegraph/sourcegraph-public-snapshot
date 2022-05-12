@@ -1359,7 +1359,30 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 	return func(t *testing.T) {
 		t.Helper()
 
+		// We are adding another GitHub external service here to make sure we don't
+		// pollute the other integration tests running earlier.
 		_, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
+			Kind:        extsvc.KindGitHub,
+			DisplayName: "gqltest-dependency-search",
+			Config: mustMarshalJSONString(struct {
+				URL                   string   `json:"url"`
+				Token                 string   `json:"token"`
+				Repos                 []string `json:"repos"`
+				RepositoryPathPattern string   `json:"repositoryPathPattern"`
+			}{
+				URL:   "https://ghe.sgdev.org/",
+				Token: *githubToken,
+				Repos: []string{
+					"sgtest/poetry-hw",
+				},
+				RepositoryPathPattern: "github.com/{nameWithOwner}",
+			}),
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		_, err = client.AddExternalService(gqltestutil.AddExternalServiceInput{
 			Kind:        extsvc.KindNpmPackages,
 			DisplayName: "gqltest-npm-search",
 			Config: mustMarshalJSONString(&schema.NpmPackagesConnection{
@@ -1407,8 +1430,8 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 			Config: mustMarshalJSONString(&schema.JVMPackagesConnection{
 				Maven: &schema.Maven{
 					Dependencies: []string{
-						"com.google.guava:guava:19",
-						"com.google.guava:guava:21",
+						"com.google.guava:guava:19.0",
+						"com.google.guava:guava:21.0",
 					},
 				},
 			}),
@@ -1422,6 +1445,7 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 			"go/github.com/oklog/ulid/v2",
 			"maven/com.google.guava/guava",
 			"python/rich",
+			"github.com/sgtest/poetry-hw",
 		)
 		if err != nil {
 			t.Fatal(err)
@@ -1438,12 +1462,14 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 			t.Run(tc.name+"/"+"repos", func(t *testing.T) {
 				began := time.Now()
 
-				const query = `(r:deps(^npm/urql$@v2.2.0) r:core|wonka) OR r:deps(oklog/ulid)`
+				const query = `(r:deps(^npm/urql$@v2.2.0) r:core|wonka) OR r:deps(oklog/ulid) OR (r:deps(^github\.com/sgtest/poetry-hw$) r:pluggy|attrs) `
 
 				want := []string{
 					"/go/github.com/pborman/getopt@v0.0.0-20170112200414-7148bc3a4c30",
 					"/npm/urql/core@v1.9.2",
 					"/npm/wonka@v4.0.7",
+					"/python/attrs@v21.4.0",
+					"/python/pluggy@v0.13.1",
 				}
 
 				for {

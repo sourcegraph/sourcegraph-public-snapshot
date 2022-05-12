@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func Validate(commandName string, factory RunnerFactory, out *output.Output) *cli.Command {
+func Validate(commandName string, factory RunnerFactory, outFactory func() *output.Output) *cli.Command {
 	flags := []cli.Flag{
 		&cli.StringFlag{
 			Name:  "db",
@@ -21,6 +21,8 @@ func Validate(commandName string, factory RunnerFactory, out *output.Output) *cl
 	}
 
 	action := func(cmd *cli.Context) error {
+		out := outFactory()
+
 		if cmd.NArg() != 0 {
 			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments"))
 			return flag.ErrHelp
