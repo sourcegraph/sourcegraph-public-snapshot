@@ -4,12 +4,11 @@ import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
 import { Container, Button, Link, Typography } from '@sourcegraph/wildcard'
 
 import { SidebarGroup, SidebarGroupHeader } from '../../../components/Sidebar'
+import combySample from '../batch-spec/edit/library/comby.batch.yaml'
+import goImportsSample from '../batch-spec/edit/library/go-imports.batch.yaml'
+import helloWorldSample from '../batch-spec/edit/library/hello-world.batch.yaml'
+import minimalSample from '../batch-spec/edit/library/minimal.batch.yaml'
 import { getFileName } from '../BatchSpec'
-
-import combySample from './library/comby.batch.yaml'
-import goImportsSample from './library/go-imports.batch.yaml'
-import helloWorldSample from './library/hello-world.batch.yaml'
-import minimalSample from './library/minimal.batch.yaml'
 
 // SampleTabHeader is superseded by ExampleTabs and can be removed when SSBC is rolled out
 // at the same time as this exported component from this file is removed

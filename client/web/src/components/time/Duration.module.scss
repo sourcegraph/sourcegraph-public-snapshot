@@ -1,0 +1,19 @@
+.stable-width {
+    position: relative;
+    isolation: isolate;
+
+    .filler {
+        height: 0;
+        visibility: hidden;
+        overflow: hidden;
+        user-select: none;
+        pointer-events: none;
+    }
+
+    .duration {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+}

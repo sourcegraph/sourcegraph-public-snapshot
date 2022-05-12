@@ -55,25 +55,25 @@ import {
     CreateBatchSpecFromRawVariables,
     CreateBatchSpecFromRawResult,
 } from '../../../graphql-operations'
+import { DownloadSpecModal } from '../batch-spec/edit/DownloadSpecModal'
+import { EditorFeedbackPanel } from '../batch-spec/edit/editor/EditorFeedbackPanel'
+import { MonacoBatchSpecEditor } from '../batch-spec/edit/editor/MonacoBatchSpecEditor'
+import { LibraryPane } from '../batch-spec/edit/library/LibraryPane'
+import { ExecutionOptions, RunBatchSpecButton } from '../batch-spec/edit/RunBatchSpecButton'
+import { useExecuteBatchSpec } from '../batch-spec/edit/useExecuteBatchSpec'
+import { useInitialBatchSpec } from '../batch-spec/edit/useInitialBatchSpec'
+import { useImportingChangesets } from '../batch-spec/edit/workspaces-preview/useImportingChangesets'
+import { useWorkspaces, WorkspacePreviewFilters } from '../batch-spec/edit/workspaces-preview/useWorkspaces'
+import { useWorkspacesPreview } from '../batch-spec/edit/workspaces-preview/useWorkspacesPreview'
+import { WorkspacesPreview } from '../batch-spec/edit/workspaces-preview/WorkspacesPreview'
+import { useBatchSpecCode } from '../batch-spec/useBatchSpecCode'
 import { BatchSpecDownloadLink } from '../BatchSpec'
 
 import { GET_BATCH_CHANGE_TO_EDIT, CREATE_EMPTY_BATCH_CHANGE, CREATE_BATCH_SPEC_FROM_RAW } from './backend'
 import { CodeInsightsBatchesIcon } from './CodeInsightsBatchesIcon'
-import { DownloadSpecModal } from './DownloadSpecModal'
-import { EditorFeedbackPanel } from './editor/EditorFeedbackPanel'
-import { MonacoBatchSpecEditor } from './editor/MonacoBatchSpecEditor'
-import { ExecutionOptions, ExecutionOptionsDropdown } from './ExecutionOptions'
 import { getTemplateRenderer } from './go-checker-templates'
-import { LibraryPane } from './library/LibraryPane'
 import { NamespaceSelector } from './NamespaceSelector'
-import { useBatchSpecCode } from './useBatchSpecCode'
-import { useExecuteBatchSpec } from './useExecuteBatchSpec'
-import { useInitialBatchSpec } from './useInitialBatchSpec'
 import { useNamespaces } from './useNamespaces'
-import { useWorkspacesPreview } from './useWorkspacesPreview'
-import { useImportingChangesets } from './workspaces-preview/useImportingChangesets'
-import { useWorkspaces, WorkspacePreviewFilters } from './workspaces-preview/useWorkspaces'
-import { WorkspacesPreview } from './workspaces-preview/WorkspacesPreview'
 
 import styles from './CreateOrEditBatchChangePage.module.scss'
 
@@ -548,7 +548,7 @@ const EditPage: React.FunctionComponent<React.PropsWithChildren<EditPageProps>> 
 
     const actionButtons = (
         <>
-            <ExecutionOptionsDropdown
+            <RunBatchSpecButton
                 execute={executeBatchSpec}
                 isExecutionDisabled={isExecutionDisabled}
                 executionTooltip={executionTooltip}
