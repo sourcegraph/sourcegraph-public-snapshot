@@ -7,7 +7,7 @@ import { debounce } from 'lodash'
 import CloseIcon from 'mdi-react/CloseIcon'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Alert, Button, ButtonProps, Link, Modal, Icon } from '@sourcegraph/wildcard'
+import { Alert, Button, ButtonProps, Link, Modal, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { CopyableText } from '../../components/CopyableText'
 import { InviteUserToOrganizationResult, InviteUserToOrganizationVariables } from '../../graphql-operations'
@@ -89,7 +89,7 @@ export const InviteMemberModal: React.FunctionComponent<React.PropsWithChildren<
     return (
         <Modal className={styles.modal} onDismiss={dismissWithLogging} position="center" aria-label={title}>
             <div className="d-flex flex-row align-items-end">
-                <h3>{title}</h3>
+                <Typography.H3>{title}</Typography.H3>
                 <Button className={classNames('btn-icon', styles.closeButton)} onClick={dismissWithLogging}>
                     <VisuallyHidden>Close</VisuallyHidden>
                     <CloseIcon />

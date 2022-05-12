@@ -9,34 +9,31 @@ BASE:
     20s
     (LIMIT
       500
-      (AND
-        (LIMIT
-          40000
-          (PARALLEL
-            REPOPAGER
-              (PARALLEL
-                ZoektRepoSubsetSearchJob
-                SearcherJob))
-            RepoSearchJob
-            ComputeExcludedReposJob))
-        (LIMIT
-          40000
-          (PARALLEL
-            REPOPAGER
-              (PARALLEL
-                ZoektRepoSubsetSearchJob
-                SearcherJob))
-            RepoSearchJob
-            ComputeExcludedReposJob))
-        (LIMIT
-          40000
-          (PARALLEL
-            REPOPAGER
-              (PARALLEL
-                ZoektRepoSubsetSearchJob
-                SearcherJob))
-            RepoSearchJob
-            ComputeExcludedReposJob))))))
+      (PARALLEL
+        REPOPAGER
+          ZoektRepoSubsetSearchJob)
+        (AND
+          (LIMIT
+            40000
+            (PARALLEL
+              REPOPAGER
+                SearcherJob)
+              RepoSearchJob
+              ComputeExcludedReposJob))
+          (LIMIT
+            40000
+            (PARALLEL
+              REPOPAGER
+                SearcherJob)
+              RepoSearchJob
+              ComputeExcludedReposJob))
+          (LIMIT
+            40000
+            (PARALLEL
+              REPOPAGER
+                SearcherJob)
+              RepoSearchJob
+              ComputeExcludedReposJob)))))))
 
 OPTIMIZED:
 
@@ -48,31 +45,27 @@ OPTIMIZED:
       (PARALLEL
         REPOPAGER
           ZoektRepoSubsetSearchJob)
-        (AND
-          (LIMIT
-            40000
-            (PARALLEL
-              REPOPAGER
-                (PARALLEL
-                  NoopJob
-                  SearcherJob))
-              RepoSearchJob
-              ComputeExcludedReposJob))
-          (LIMIT
-            40000
-            (PARALLEL
-              REPOPAGER
-                (PARALLEL
-                  NoopJob
-                  SearcherJob))
-              RepoSearchJob
-              ComputeExcludedReposJob))
-          (LIMIT
-            40000
-            (PARALLEL
-              REPOPAGER
-                (PARALLEL
-                  NoopJob
-                  SearcherJob))
-              RepoSearchJob
-              ComputeExcludedReposJob)))))))
+        (PARALLEL
+          NoopJob
+          (AND
+            (LIMIT
+              40000
+              (PARALLEL
+                REPOPAGER
+                  SearcherJob)
+                RepoSearchJob
+                ComputeExcludedReposJob))
+            (LIMIT
+              40000
+              (PARALLEL
+                REPOPAGER
+                  SearcherJob)
+                RepoSearchJob
+                ComputeExcludedReposJob))
+            (LIMIT
+              40000
+              (PARALLEL
+                REPOPAGER
+                  SearcherJob)
+                RepoSearchJob
+                ComputeExcludedReposJob))))))))

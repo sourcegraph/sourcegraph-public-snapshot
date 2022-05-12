@@ -167,6 +167,9 @@ func TestNPMPackagesSource_ListRepos(t *testing.T) {
 	src.SetDependenciesService(depsSvc)
 
 	repos, err := listAll(ctx, src)
+	sort.Slice(repos, func(i, j int) bool {
+		return repos[i].Name < repos[j].Name
+	})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -12,7 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/slack"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/team"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -48,7 +48,7 @@ var (
 				if err != nil {
 					return err
 				}
-				stdout.Out.Writef("%s's current time is %s",
+				std.Out.Writef("%s's current time is %s",
 					teammate.Name, timeAtLocation(teammate.SlackTimezone))
 				return nil
 			}),
@@ -68,7 +68,7 @@ var (
 				if err != nil {
 					return err
 				}
-				stdout.Out.Writef("Opening handbook link for %s: %s", teammate.Name, teammate.HandbookLink)
+				std.Out.Writef("Opening handbook link for %s: %s", teammate.Name, teammate.HandbookLink)
 				return open.URL(teammate.HandbookLink)
 			}),
 		}},

@@ -599,7 +599,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 		if err != nil {
 			return nil, err
 		}
-		j, err := jobutil.ToSearchJob(r.SearchInputs, b)
+		j, err := jobutil.NewBasicJob(r.SearchInputs, b)
 		if err != nil {
 			return nil, err
 		}

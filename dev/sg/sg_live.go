@@ -9,7 +9,7 @@ import (
 
 	"github.com/urfave/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -42,12 +42,12 @@ func constructLiveCmdLongHelp() string {
 
 func liveExec(ctx context.Context, args []string) error {
 	if len(args) == 0 {
-		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "No environment specified"))
+		std.Out.WriteLine(output.Styled(output.StyleWarning, "No environment specified"))
 		return flag.ErrHelp
 	}
 
 	if len(args) != 1 {
-		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments"))
+		std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: too many arguments"))
 		return flag.ErrHelp
 	}
 
@@ -56,7 +56,7 @@ func liveExec(ctx context.Context, args []string) error {
 		if customURL, err := url.Parse(args[0]); err == nil {
 			e = environment{Name: customURL.Host, URL: customURL.String()}
 		} else {
-			stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: environment %q not found, or is not a valid URL :(", args[0]))
+			std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: environment %q not found, or is not a valid URL :(", args[0]))
 			return flag.ErrHelp
 		}
 	}

@@ -4,7 +4,7 @@ import { VisuallyHidden } from '@reach/visually-hidden'
 import CloseIcon from 'mdi-react/CloseIcon'
 
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
-import { Button, Link, Modal } from '@sourcegraph/wildcard'
+import { Button, Link, Modal, Typography } from '@sourcegraph/wildcard'
 
 import { BatchSpecDownloadLink, getFileName } from '../BatchSpec'
 
@@ -33,7 +33,7 @@ export const DownloadSpecModal: React.FunctionComponent<React.PropsWithChildren<
         className={styles.modal}
     >
         <div>
-            <h3 id={MODAL_LABEL_ID}>Download spec for src-cli</h3>
+            <Typography.H3 id={MODAL_LABEL_ID}>Download spec for src-cli</Typography.H3>
             <Button
                 className={styles.close}
                 onClick={() => {
@@ -65,7 +65,7 @@ export const DownloadSpecModal: React.FunctionComponent<React.PropsWithChildren<
             </div>
             <div className={styles.right}>
                 <div>
-                    <h4>About src-cli </h4>
+                    <Typography.H4>About src-cli </Typography.H4>
                     <p>
                         src cli is a command line interface to Sourcegraph. Its{' '}
                         <span className="text-monospace">batch</span> command allows to run batch specification files

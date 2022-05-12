@@ -13,7 +13,7 @@ import { renderMarkdown } from '@sourcegraph/common'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { Skipped } from '@sourcegraph/shared/src/search/stream'
-import { Button, Collapse, CollapseHeader, CollapsePanel, Icon, Checkbox } from '@sourcegraph/wildcard'
+import { Button, Collapse, CollapseHeader, CollapsePanel, Icon, Checkbox, Typography } from '@sourcegraph/wildcard'
 
 import { StreamingProgressProps } from './StreamingProgress'
 
@@ -69,7 +69,7 @@ const SkippedMessage: React.FunctionComponent<React.PropsWithChildren<{ skipped:
                             outline={true}
                             variant={skipped.severity !== 'info' ? 'danger' : 'primary'}
                         >
-                            <h4 className="d-flex align-items-center mb-0 w-100">
+                            <Typography.H4 className="d-flex align-items-center mb-0 w-100">
                                 <Icon
                                     className={classNames(styles.icon, 'flex-shrink-0')}
                                     as={skipped.severity === 'info' ? InformationOutlineIcon : AlertCircleIcon}
@@ -83,7 +83,7 @@ const SkippedMessage: React.FunctionComponent<React.PropsWithChildren<{ skipped:
                                         as={isOpen ? ChevronDownIcon : ChevronLeftIcon}
                                     />
                                 )}
-                            </h4>
+                            </Typography.H4>
                         </CollapseHeader>
 
                         {skipped.message && (

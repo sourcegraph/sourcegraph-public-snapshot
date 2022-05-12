@@ -31,7 +31,7 @@ const NoticeAlert: React.FunctionComponent<React.PropsWithChildren<NoticeAlertPr
     const sharedProps = {
         'data-testid': testId,
         variant: getAlertVariant(notice.location),
-        className: classNames(notice.location !== 'top' && 'bg transparent border', className),
+        className: classNames(notice.location !== 'top' && 'bg transparent border p-2', className),
     }
 
     return notice.dismissible ? (

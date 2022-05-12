@@ -2,6 +2,7 @@ package dependencies
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"sync"
 
@@ -198,6 +199,13 @@ func (s *Service) sync(ctx context.Context, repos []api.RepoName) error {
 	}
 
 	return g.Wait()
+}
+
+// Dependents resolves the (transitive) inverse dependencies for a set of repository and revisions.
+// Both the input repoRevs and the output dependencyRevs are a map from repository names to revspecs.
+func (s *Service) Dependents(ctx context.Context, repoRevs map[api.RepoName]types.RevSpecSet) (dependencyRevs map[api.RepoName]types.RevSpecSet, err error) {
+	// To be implemented after #31643
+	return nil, errors.New("unimplemented: dependencies.Dependents")
 }
 
 func constructLogFields(repoRevs map[api.RepoName]types.RevSpecSet) []log.Field {
