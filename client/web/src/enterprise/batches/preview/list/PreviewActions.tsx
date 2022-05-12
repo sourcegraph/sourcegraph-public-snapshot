@@ -263,12 +263,7 @@ export const PreviewActionNoAction: React.FunctionComponent<
     React.PropsWithChildren<{ className?: string; reason?: string }>
 > = ({ className, reason }) => (
     <div className={classNames(className, iconClassNames, 'text-muted')}>
-        <Icon
-            className="mr-1"
-            data-tooltip={reason}
-            as={BlankCircleIcon}
-            role="presentation"
-        />
+        <Icon className="mr-1" data-tooltip={reason} as={BlankCircleIcon} role="presentation" />
         <span>No action</span>
     </div>
 )

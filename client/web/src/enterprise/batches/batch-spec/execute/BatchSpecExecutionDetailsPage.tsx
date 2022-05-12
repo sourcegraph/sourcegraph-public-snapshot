@@ -99,7 +99,7 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<
                     {
                         icon: BatchChangesIcon,
                         to: '/batch-changes',
-                        ariaLabel: 'Batch Changes Icon'
+                        ariaLabel: 'Batch Changes Icon',
                     },
                     {
                         to: `${batchSpec.namespace.url}/batch-changes`,

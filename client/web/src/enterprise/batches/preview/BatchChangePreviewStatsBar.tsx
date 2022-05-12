@@ -97,7 +97,7 @@ export const BatchChangePreviewStatsBar: React.FunctionComponent<
 
 export const PreviewStatsAdded: React.FunctionComponent<React.PropsWithChildren<{ count: number }>> = ({ count }) => (
     <div className={classNames(styles.batchChangePreviewStatsBarStat, 'd-flex flex-column mr-2 text-nowrap')}>
-        <div className="d-flex flex-column align-items-center justify-content-center" aria-hidden={true}>
+        <div className="d-flex flex-column align-items-center justify-content-center">
             <span className={styles.previewStatsAddedLine}>&nbsp;</span>
             <span
                 className={classNames(styles.previewStatsAddedIcon, 'd-flex justify-content-center align-items-center')}
@@ -113,7 +113,7 @@ export const PreviewStatsModified: React.FunctionComponent<React.PropsWithChildr
     count,
 }) => (
     <div className={classNames(styles.batchChangePreviewStatsBarStat, 'd-flex flex-column text-nowrap ml-2')}>
-        <div className="d-flex flex-column align-items-center" aria-hidden={true}>
+        <div className="d-flex flex-column align-items-center">
             <span className={styles.previewStatsModifiedLine}>&nbsp;</span>
             <span
                 className={classNames(
@@ -130,7 +130,7 @@ export const PreviewStatsModified: React.FunctionComponent<React.PropsWithChildr
 )
 export const PreviewStatsRemoved: React.FunctionComponent<React.PropsWithChildren<{ count: number }>> = ({ count }) => (
     <div className={classNames(styles.batchChangePreviewStatsBarStat, 'd-flex flex-column mx-2 text-nowrap')}>
-        <div className="d-flex flex-column align-items-center" aria-hidden={true}>
+        <div className="d-flex flex-column align-items-center">
             <span className={styles.previewStatsRemovedLine}>&nbsp;</span>
             <span
                 className={classNames(
