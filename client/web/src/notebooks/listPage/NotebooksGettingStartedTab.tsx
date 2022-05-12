@@ -98,7 +98,7 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
                             Notebooks make creating and sharing knowledge something you'll want to do, not something you
                             avoid.
                         </p>
-                        <h3>Use notebooks to&hellip;</h3>
+                        <Typography.H3>Use notebooks to&hellip;</Typography.H3>
                         <ul className={classNames(styles.narrowList, 'mb-0')}>
                             <li className="mb-1">Create focused onboarding docs that stay up to date</li>
                             <li className="mb-1">Prepare pull request walkthroughs for your teammates</li>
@@ -118,7 +118,7 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
                     </div>
                 </div>
             </Container>
-            <h3>Example notebooks</h3>
+            <Typography.H3>Example notebooks</Typography.H3>
             <div className={classNames(styles.row, 'row', 'mb-4')}>
                 <div className="col-12 col-md-6">
                     <Container>
@@ -145,7 +145,7 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
                     </Container>
                 </div>
             </div>
-            <h3>Powerful creation features</h3>
+            <Typography.H3>Powerful creation features</Typography.H3>
             <Container className="mb-4">
                 <div className={classNames(styles.row, 'row', 'mb-4')}>
                     <div className="col-12 col-md-6">
@@ -173,7 +173,7 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
                     </div>
                 </div>
             </Container>
-            <h3>Functionality</h3>
+            <Typography.H3>Functionality</Typography.H3>
             <div className={classNames(styles.row, 'row', 'mb-4')}>
                 {functionalityPanels.map(panel => (
                     <div key={panel.title} className="col-12 col-md-4">

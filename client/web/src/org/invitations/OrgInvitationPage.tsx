@@ -241,7 +241,7 @@ export const OrgInvitationPage: React.FunctionComponent<React.PropsWithChildren<
             )}
             {error && (
                 <ModalPage className={classNames(styles.orgInvitationPage, className, 'p-4')}>
-                    <h3>You've been invited to join an organization.</h3>
+                    <Typography.H3>You've been invited to join an organization.</Typography.H3>
                     <Alert variant="danger" className="mt-3">
                         Error: {error}
                     </Alert>

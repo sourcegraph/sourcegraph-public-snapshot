@@ -259,7 +259,7 @@ export const RepositoryDocumentationPage: React.FunctionComponent<React.PropsWit
                                     your code, giving you the ability to navigate and explore the APIs provided by this
                                     repository.
                                 </p>
-                                <h3>
+                                <Typography.H3>
                                     <Link
                                         target="_blank"
                                         rel="noopener"
@@ -267,7 +267,7 @@ export const RepositoryDocumentationPage: React.FunctionComponent<React.PropsWit
                                     >
                                         Learn more
                                     </Link>
-                                </h3>
+                                </Typography.H3>
                                 <p className="text-muted mt-3 mb-0">
                                     <strong>Note:</strong> only the Go programming language is currently supported.
                                 </p>

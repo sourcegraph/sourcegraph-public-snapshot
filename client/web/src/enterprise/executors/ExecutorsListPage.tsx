@@ -78,7 +78,7 @@ export const ExecutorsListPage: FunctionComponent<React.PropsWithChildren<Execut
             />
 
             <Container className="mb-3">
-                <h3>Setting up executors</h3>
+                <Typography.H3>Setting up executors</Typography.H3>
                 <p className="mb-0">
                     Executors enable{' '}
                     <Link to="/help/code_intelligence/explanations/auto_indexing" rel="noopener">

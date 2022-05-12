@@ -242,7 +242,7 @@ class SiteAdminSurveyResponsesSummary extends React.PureComponent<{}, SiteAdminS
         const roundAvg = Math.round(this.state.summary.averageScore * 10) / 10
         return (
             <div className="mb-2">
-                <h3>Summary</h3>
+                <Typography.H3>Summary</Typography.H3>
                 <div className={styles.container}>
                     <SingleValueCard
                         className={styles.item}
@@ -301,7 +301,7 @@ export const SiteAdminSurveyResponsesPage: React.FunctionComponent<React.PropsWi
 
             <SiteAdminSurveyResponsesSummary />
 
-            <h3>Responses</h3>
+            <Typography.H3>Responses</Typography.H3>
 
             <Tabs defaultIndex={persistedTabIndex} onChange={setPersistedTabIndex}>
                 <TabList>

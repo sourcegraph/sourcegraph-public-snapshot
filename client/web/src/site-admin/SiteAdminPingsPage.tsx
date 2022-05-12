@@ -62,7 +62,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                 sends only the high-level data below. It never sends code, repository names, usernames, or any other
                 specific data.
             </p>
-            <h3>Most recent ping</h3>
+            <Typography.H3>Most recent ping</Typography.H3>
             {latestPing === undefined ? (
                 <p>
                     <LoadingSpinner />
@@ -80,7 +80,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                     className="mb-3"
                 />
             )}
-            <h3>Critical telemetry</h3>
+            <Typography.H3>Critical telemetry</Typography.H3>
             <p>
                 Critical telemetry includes only the high-level data below required for billing, support, updates, and
                 security notices. This cannot be disabled.
@@ -102,7 +102,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                 <li>Total count of existing user accounts</li>
                 <li>Code Insights: total count of insights</li>
             </ul>
-            <h3>Other telemetry</h3>
+            <Typography.H3>Other telemetry</Typography.H3>
             <p>
                 By default, Sourcegraph also aggregates usage and performance metrics for some product features. No
                 personal or specific information is ever included.

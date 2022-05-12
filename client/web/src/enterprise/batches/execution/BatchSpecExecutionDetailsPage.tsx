@@ -29,6 +29,7 @@ import {
     Card,
     Icon,
     Panel,
+    Typography,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
@@ -445,7 +446,7 @@ const SelectedWorkspace: React.FunctionComponent<React.PropsWithChildren<Selecte
                         deselectWorkspace={deselectWorkspace}
                     />
                 ) : (
-                    <h3 className="text-center my-3">Select a workspace to view details.</h3>
+                    <Typography.H3 className="text-center my-3">Select a workspace to view details.</Typography.H3>
                 )}
             </CardBody>
         </div>

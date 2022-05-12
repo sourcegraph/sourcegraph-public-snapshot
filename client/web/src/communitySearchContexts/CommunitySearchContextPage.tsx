@@ -139,7 +139,7 @@ export const CommunitySearchContextPage: React.FunctionComponent<
                         <Typography.H2>Search examples</Typography.H2>
                         {props.communitySearchContextMetadata.examples.map(example => (
                             <div className="mt-3" key={example.title}>
-                                <h3 className="mb-3">{example.title}</h3>
+                                <Typography.H3 className="mb-3">{example.title}</Typography.H3>
                                 <p>{example.description}</p>
                                 <div className="d-flex mb-4">
                                     <small className={classNames('form-control text-monospace ', styles.exampleBar)}>
@@ -269,6 +269,8 @@ const CommunitySearchContextPageLogo: React.FunctionComponent<
 > = props => (
     <div className={classNames('d-flex align-items-center', styles.logoContainer)}>
         <img {...props} src={props.icon} alt="" />
-        <span className="h3 font-weight-normal mb-0 ml-1">{props.text}</span>
+        <Typography.H3 as="span" className="font-weight-normal mb-0 ml-1">
+            {props.text}
+        </Typography.H3>
     </div>
 )

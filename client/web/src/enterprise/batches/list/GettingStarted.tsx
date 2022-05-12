@@ -46,7 +46,7 @@ export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<Get
                         your repositories. Its simple UI makes it easy to track and manage all of your changesets
                         through checks and code reviews until each change is merged.
                     </p>
-                    <h3>Common use cases</h3>
+                    <Typography.H3>Common use cases</Typography.H3>
                     <ul className={classNames(styles.narrowList, 'mb-0')}>
                         <li>Update configuration files across many repositories</li>
                         <li>Update libraries which call your APIs</li>
@@ -57,7 +57,7 @@ export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<Get
                 </div>
             </div>
         </Container>
-        <h3 className="mb-3">Tutorials to help with your first batch change</h3>
+        <Typography.H3 className="mb-3">Tutorials to help with your first batch change</Typography.H3>
         <div className="row">
             <div className="col-12 col-md-6 mb-2">
                 <Card className="h-100">

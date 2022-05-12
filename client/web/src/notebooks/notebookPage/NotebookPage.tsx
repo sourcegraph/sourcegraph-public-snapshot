@@ -24,6 +24,7 @@ import {
     ProductStatusBadge,
     Button,
     Icon,
+    Typography,
 } from '@sourcegraph/wildcard'
 
 import { Block } from '..'
@@ -363,9 +364,9 @@ const NotepadCTA: React.FunctionComponent<React.PropsWithChildren<NotepadCTAProp
                     alt=""
                 />
                 <div>
-                    <h3 className="d-inline-block">
+                    <Typography.H3 className="d-inline-block">
                         <NotepadIcon /> Enable notepad
-                    </h3>{' '}
+                    </Typography.H3>{' '}
                     <ProductStatusBadge status="beta" />
                     <p>
                         The notepad adds a toolbar to the bottom right of search results and file pages to help you

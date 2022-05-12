@@ -211,7 +211,7 @@ const _ProductSubscriptionForm: React.FunctionComponent<
                         <ProductPlanFormControl value={billingPlanID} onChange={setBillingPlanID} />
                     </div>
                     <div className="col-md-6 mt-3 mt-md-0">
-                        <h3 className="mt-2 mb-0">Billing</h3>
+                        <Typography.H3 className="mt-2 mb-0">Billing</Typography.H3>
                         <NewProductSubscriptionPaymentSection
                             productSubscription={productSubscriptionInput}
                             accountID={accountID}

@@ -172,7 +172,7 @@ export const PostSignUpPage: FunctionComponent<React.PropsWithChildren<PostSignU
                                         </StepPanel>
                                         <StepPanel>
                                             <div className={classNames('mt-3', styles.container)}>
-                                                <h3>Add repositories</h3>
+                                                <Typography.H3>Add repositories</Typography.H3>
                                                 <p className="text-muted mb-4">
                                                     Choose repositories you own or collaborate on from your code hosts.
                                                     We’ll sync and index these repositories so you can search your code

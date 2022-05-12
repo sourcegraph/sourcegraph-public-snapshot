@@ -808,7 +808,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<React.P
                 <ul className="list-group">
                     <ListItemContainer key="from-code-hosts">
                         <div>
-                            <h3>{owner.name ? `${owner.name}'s` : 'Your'} repositories</h3>
+                            <Typography.H3>{owner.name ? `${owner.name}'s` : 'Your'} repositories</Typography.H3>
 
                             <p className="text-muted">
                                 Repositories{' '}
@@ -872,7 +872,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<React.P
                     {window.context.sourcegraphDotComMode && !isOrgOwner && (
                         <ListItemContainer key="add-textarea">
                             <div>
-                                <h3>Other public repositories</h3>
+                                <Typography.H3>Other public repositories</Typography.H3>
                                 <p className="text-muted">Public repositories on GitHub and GitLab</p>
                                 <Checkbox
                                     id="add-public-repos"

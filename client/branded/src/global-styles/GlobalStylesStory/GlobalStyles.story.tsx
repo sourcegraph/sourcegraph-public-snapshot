@@ -70,7 +70,7 @@ export const Code: Story = () => (
         <Typography.H2>Highlighted multi-line code</Typography.H2>
         <p>Custom highlight.js themes are defined for both light and dark themes.</p>
 
-        <h3>TypeScript</h3>
+        <Typography.H3>TypeScript</Typography.H3>
         <pre>
             <code
                 dangerouslySetInnerHTML={{
@@ -82,7 +82,7 @@ export const Code: Story = () => (
             />
         </pre>
 
-        <h3>JSON</h3>
+        <Typography.H3>JSON</Typography.H3>
         <pre>
             <code
                 dangerouslySetInnerHTML={{
@@ -94,7 +94,7 @@ export const Code: Story = () => (
             />
         </pre>
 
-        <h3>Diffs</h3>
+        <Typography.H3>Diffs</Typography.H3>
         <pre>
             <code
                 dangerouslySetInnerHTML={{
@@ -116,7 +116,7 @@ export const Code: Story = () => (
             Keyboard shortcuts should use <code>{'<kbd>'}</code>, not <code>{'<code>'}</code>. For example,{' '}
             <kbd>cmd</kbd>+<kbd>C</kbd> is used to copy text to the clipboard.
         </p>
-        <h3>Code snippets</h3>
+        <Typography.H3>Code snippets</Typography.H3>
         <p>
             Highlighted code pieces should go in a panel separating it from the surrounding content. Use{' '}
             <code>{'<CodeSnippet />'}</code> for these uses.
@@ -178,7 +178,7 @@ export const Layout: Story = () => (
             for simple flexbox layouts.
         </p>
 
-        <h3>Row layout</h3>
+        <Typography.H3>Row layout</Typography.H3>
         <Typography.H4>Equally distributed</Typography.H4>
         <div
             className="d-flex p-1 border mb-2 overflow-hidden"
@@ -201,7 +201,7 @@ export const Layout: Story = () => (
             <div className="p-1 m-1 d-flex justify-content-center align-items-center border border">Column 3</div>
         </div>
 
-        <h3>Column layout</h3>
+        <Typography.H3>Column layout</Typography.H3>
         <div
             className="d-flex flex-column p-1 border mb-2 overflow-hidden"
             style={{ minHeight: '8rem', height: '12rem', minWidth: '6rem', width: '12rem', resize: 'both' }}
@@ -586,22 +586,22 @@ export const Meter: Story = () => {
             <Typography.H2>Examples</Typography.H2>
             <hr />
             <div className="pb-3">
-                <h3>Optimum</h3>
+                <Typography.H3>Optimum</Typography.H3>
                 <meter min={0} max={1} optimum={1} value={1} />
             </div>
             <hr />
             <div className="pb-3">
-                <h3>Sub optimum</h3>
+                <Typography.H3>Sub optimum</Typography.H3>
                 <meter min={0} max={1} high={0.8} low={0.2} optimum={1} value={0.6} />
             </div>
             <hr />
             <div className="pb-3">
-                <h3>Sub sub optimum</h3>
+                <Typography.H3>Sub sub optimum</Typography.H3>
                 <meter min={0} max={1} high={0.8} low={0.2} optimum={1} value={0.1} />
             </div>
             <hr />
             <div className="pb-3">
-                <h3>Customize with knobs</h3>
+                <Typography.H3>Customize with knobs</Typography.H3>
                 <meter min={min} max={max} high={high} low={low} optimum={optimum} value={value} />
             </div>
         </>

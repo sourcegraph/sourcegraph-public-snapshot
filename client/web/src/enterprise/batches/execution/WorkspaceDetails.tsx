@@ -113,7 +113,7 @@ const WorkspaceHeader: React.FunctionComponent<React.PropsWithChildren<Workspace
 }) => (
     <>
         <div className="d-flex align-items-center justify-content-between mb-2">
-            <h3 className={styles.workspaceName}>
+            <Typography.H3 className={styles.workspaceName}>
                 <WorkspaceStateIcon cachedResultFound={workspace.cachedResultFound} state={workspace.state} />{' '}
                 {workspace.__typename === 'VisibleBatchSpecWorkspace'
                     ? workspace.repository.name
@@ -123,7 +123,7 @@ const WorkspaceHeader: React.FunctionComponent<React.PropsWithChildren<Workspace
                         <Icon as={ExternalLinkIcon} />
                     </Link>
                 )}
-            </h3>
+            </Typography.H3>
             <Button className="p-0 ml-2" onClick={deselectWorkspace} variant="icon">
                 <VisuallyHidden>Deselect Workspace</VisuallyHidden>
                 <Icon as={CloseIcon} />
@@ -373,7 +373,7 @@ const ChangesetSpecNode: React.FunctionComponent<React.PropsWithChildren<Changes
                 <div className="d-flex justify-content-between">
                     <div>
                         <Typography.H4 className="mb-0 d-inline-block mr-2">
-                            <h3 className={styles.result}>Result</h3>
+                            <Typography.H3 className={styles.result}>Result</Typography.H3>
                             {node.description.published !== null && (
                                 <Badge className="text-uppercase">
                                     {publishBadgeLabel(node.description.published)}
@@ -393,14 +393,14 @@ const ChangesetSpecNode: React.FunctionComponent<React.PropsWithChildren<Changes
         >
             <Card className={classNames('mt-2', styles.resultCard)}>
                 <CardBody>
-                    <h3>Changeset template</h3>
+                    <Typography.H3>Changeset template</Typography.H3>
                     <Typography.H4>{node.description.title}</Typography.H4>
                     <p className="mb-0">{node.description.body}</p>
                     <p>
                         <strong>Published:</strong> <PublishedValue published={node.description.published} />
                     </p>
                     <Collapsible
-                        title={<h3 className="mb-0">Changes</h3>}
+                        title={<Typography.H3 className="mb-0">Changes</Typography.H3>}
                         titleClassName="flex-grow-1"
                         defaultExpanded={true}
                     >
@@ -484,7 +484,7 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                 <>
                     <div className={classNames(styles.stepHeader, step.skipped && 'text-muted')}>
                         <StepStateIcon step={step} />
-                        <h3 className={styles.stepNumber}>Step {step.number}</h3>
+                        <Typography.H3 className={styles.stepNumber}>Step {step.number}</Typography.H3>
                         <span className={classNames('text-monospace text-muted', styles.stepCommand)}>{step.run}</span>
                     </div>
                     {step.diffStat && (

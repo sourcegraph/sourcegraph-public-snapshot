@@ -13,7 +13,6 @@ import {
     MenuItem,
     MenuList,
     Icon,
-    H3,
     Typography,
     Checkbox,
 } from '@sourcegraph/wildcard'
@@ -126,7 +125,7 @@ const ExtensionSidenavBanner: React.FunctionComponent<React.PropsWithChildren<un
     <div className={classNames(styles.banner, 'mx-2')}>
         <img className={classNames(styles.bannerIcon, 'mb-2')} src={extensionBannerIconURL} alt="" />
         {/* Override h4 font-weight */}
-        <Typography.H4 as={H3} className="mt-2 font-weight-bold">
+        <Typography.H4 as={Typography.H3} className="mt-2 font-weight-bold">
             Create custom extensions!
         </Typography.H4>
         <small>

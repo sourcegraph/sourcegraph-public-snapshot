@@ -28,7 +28,7 @@ export const TimelineModal: React.FunctionComponent<React.PropsWithChildren<Time
 }) => (
     <Modal className={styles.modalBody} onDismiss={onCancel} aria-label="Execution timeline">
         <div className="d-flex justify-content-between">
-            <h3 className="mb-0">Execution timeline</h3>
+            <Typography.H3 className="mb-0">Execution timeline</Typography.H3>
             <Button className="p-0 ml-2" onClick={onCancel} variant="icon">
                 <VisuallyHidden>Close</VisuallyHidden>
                 <Icon as={CloseIcon} />
