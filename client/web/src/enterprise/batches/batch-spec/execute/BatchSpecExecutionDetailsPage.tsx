@@ -242,23 +242,23 @@ const BatchSpecActions: React.FunctionComponent<React.PropsWithChildren<BatchSpe
                 <>
                     <div className={styles.workspacesStat}>
                         <Icon as={AlertCircleIcon} className="text-danger" role="presentation" />
-                        {`${workspacesStats.errored} ${pluralize('error', workspacesStats.errored)}`}
+                        {workspacesStats.errored} {pluralize('error', workspacesStats.errored)}
                     </div>
                     <div className={styles.workspacesStat}>
                         <Icon as={CheckBoldIcon} className="text-success" role="presentation" />
-                        {`${workspacesStats.completed} complete`}
+                        {workspacesStats.completed} complete
                     </div>
                     <div className={styles.workspacesStat}>
                         <Icon as={TimerSandIcon} role="presentation" />
-                        {`${workspacesStats.processing} working`}
+                        {workspacesStats.processing} working
                     </div>
                     <div className={styles.workspacesStat}>
                         <Icon as={TimelineClockOutlineIcon} role="presentation" />
-                        {`${workspacesStats.queued} queued`}
+                        {workspacesStats.queued} queued
                     </div>
                     <div className={styles.workspacesStat}>
                         <Icon as={CircleOffOutlineIcon} role="presentation" />
-                        {`${workspacesStats.ignored} ignored`}
+                        {workspacesStats.ignored} ignored
                     </div>
                 </>
             )}

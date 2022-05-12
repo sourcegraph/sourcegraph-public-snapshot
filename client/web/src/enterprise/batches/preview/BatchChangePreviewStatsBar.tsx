@@ -106,7 +106,7 @@ export const PreviewStatsAdded: React.FunctionComponent<React.PropsWithChildren<
             </span>
             <span className={styles.previewStatsAddedLine}>&nbsp;</span>
         </div>
-        {`${count} Added`}
+        {count} Added
     </div>
 )
 export const PreviewStatsModified: React.FunctionComponent<React.PropsWithChildren<{ count: number }>> = ({
@@ -125,7 +125,7 @@ export const PreviewStatsModified: React.FunctionComponent<React.PropsWithChildr
             </span>
             <span className={styles.previewStatsModifiedLine}>&nbsp;</span>
         </div>
-        {`${count} Modified`}
+        {count} Modified
     </div>
 )
 export const PreviewStatsRemoved: React.FunctionComponent<React.PropsWithChildren<{ count: number }>> = ({ count }) => (
@@ -142,6 +142,6 @@ export const PreviewStatsRemoved: React.FunctionComponent<React.PropsWithChildre
             </span>
             <span className={styles.previewStatsRemovedLine}>&nbsp;</span>
         </div>
-        {`${count} Removed`}
+        {count} Removed
     </div>
 )
