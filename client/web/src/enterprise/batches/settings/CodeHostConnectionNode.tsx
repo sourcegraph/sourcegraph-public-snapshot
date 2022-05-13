@@ -115,6 +115,15 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
                         {isEnabled ? (
                             <>
                                 <Button
+                                    className="text-primary text-nowrap"
+                                    onClick={onClickCheck}
+                                    variant="link"
+                                    aria-label={`Check credentials for ${codeHostDisplayName}`}
+                                    ref={buttonReference}
+                                >
+                                    {checkCredLoading ? <LoadingSpinner/> : 'Check'}
+                                </Button>
+                                <Button
                                     className="text-danger text-nowrap test-code-host-connection-node-btn-remove"
                                     onClick={onClickRemove}
                                     variant="link"
