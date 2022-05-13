@@ -29,9 +29,7 @@ export const PageTitle: React.FunctionComponent<PageTitleProps> = ({ title }) =>
             titleSet = false
             document.title = getBrandName()
         }
-        // Only run once, on mount
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
+    }, [title])
 
     return null
 }
