@@ -7,9 +7,8 @@ import { NavLink, RouteComponentProps } from 'react-router-dom'
 import { isErrorLike } from '@sourcegraph/common'
 import { isExtensionEnabled, splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
 import { ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
-import { isSourcegraphAuthoredExtension } from '@sourcegraph/shared/src/util/extensions'
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
-import { PageHeader, useTimeoutManager, Alert, Icon, AlertLink } from '@sourcegraph/wildcard'
+import { PageHeader, AlertLink, useTimeoutManager, Alert, Icon } from '@sourcegraph/wildcard'
 
 import { NavItemWithIconDescriptor } from '../../util/contributions'
 import { ExtensionToggle } from '../ExtensionToggle'
@@ -27,11 +26,6 @@ interface ExtensionAreaHeaderProps extends ExtensionAreaRouteContext, RouteCompo
 export type ExtensionAreaHeaderContext = Pick<ExtensionAreaHeaderProps, 'extension'>
 
 export interface ExtensionAreaHeaderNavItem extends NavItemWithIconDescriptor<ExtensionAreaHeaderContext> {}
-
-enum ToggleDisabledReason {
-    NotAuthenticated,
-    ForbiddenToInstallNonSourcegraphAuthoredExtensions,
-}
 
 /** ms after which to remove visual feedback */
 const FEEDBACK_DELAY = 5000
@@ -60,41 +54,31 @@ export const ExtensionAreaHeader: React.FunctionComponent<React.PropsWithChildre
      * Clear the timeout when the component unmounts or the extension is toggled again.
      */
     const [change, setChange] = useState<'enabled' | 'disabled' | null>(null)
-    const changeFeedbackTimeoutManager = useTimeoutManager()
+    const feedbackTimeoutManager = useTimeoutManager()
 
     const onToggleChange = React.useCallback(
         (enabled: boolean): void => {
             // Don't show change alert when the user is a site admin (two toggles)
             if (!isSiteAdmin) {
                 setChange(enabled ? 'enabled' : 'disabled')
-                changeFeedbackTimeoutManager.setTimeout(() => setChange(null), FEEDBACK_DELAY)
+                feedbackTimeoutManager.setTimeout(() => setChange(null), FEEDBACK_DELAY)
             }
         },
-        [changeFeedbackTimeoutManager, isSiteAdmin]
+        [feedbackTimeoutManager, isSiteAdmin]
     )
 
     /**
-     * If toggle is disabled, display visual feedback for $delay*2 seconds.
+     * Display a CTA on hover over the toggle only when the user is unauthenticated
      */
-    const [disabledReason, setDisabledReason] = useState<ToggleDisabledReason>()
-    const disabledFeedbackTimeoutManager = useTimeoutManager()
-
-    const toggleDisabledReason = !props.authenticatedUser
-        ? ToggleDisabledReason.NotAuthenticated
-        : window.context?.allowOnlySourcegraphAuthoredExtensions && !isSourcegraphAuthoredExtension(props.extension.id)
-        ? ToggleDisabledReason.ForbiddenToInstallNonSourcegraphAuthoredExtensions
-        : undefined
-
-    const userCannotToggle = toggleDisabledReason !== undefined
-    const isNotAllowed =
-        toggleDisabledReason === ToggleDisabledReason.ForbiddenToInstallNonSourcegraphAuthoredExtensions
+    const [showCta, setShowCta] = useState(false)
+    const ctaTimeoutManager = useTimeoutManager()
 
     const onHover = useCallback(() => {
-        if (!disabledReason) {
-            setDisabledReason(toggleDisabledReason)
-            disabledFeedbackTimeoutManager.setTimeout(() => setDisabledReason(undefined), FEEDBACK_DELAY * 2)
+        if (!props.authenticatedUser && !showCta) {
+            setShowCta(true)
+            ctaTimeoutManager.setTimeout(() => setShowCta(false), FEEDBACK_DELAY * 2)
         }
-    }, [disabledReason, toggleDisabledReason, disabledFeedbackTimeoutManager])
+    }, [ctaTimeoutManager, showCta, props.authenticatedUser])
 
     return (
         <div className={props.className}>
@@ -127,43 +111,19 @@ export const ExtensionAreaHeader: React.FunctionComponent<React.PropsWithChildre
                                     {change && (
                                         <Alert
                                             variant={change === 'enabled' ? 'success' : 'secondary'}
-                                            className={classNames('py-1 mb-0', styles.alert)}
+                                            className={classNames('px-2 py-1 mb-0', styles.alert)}
                                         >
                                             <span className="font-weight-medium">{name}</span> is {change}
                                         </Alert>
                                     )}
-
-                                    {disabledReason === ToggleDisabledReason.NotAuthenticated ? (
+                                    {showCta && (
                                         <Alert className={classNames('mb-0 py-1', styles.alert)} variant="info">
                                             An account is required to create and configure extensions.{' '}
                                             <AlertLink to={buildGetStartedURL('extension')}>Get started!</AlertLink>
                                         </Alert>
-                                    ) : disabledReason ===
-                                      ToggleDisabledReason.ForbiddenToInstallNonSourcegraphAuthoredExtensions ? (
-                                        <Alert
-                                            className={classNames(
-                                                'mb-0 py-1',
-                                                styles.alert,
-                                                isSiteAdmin && styles.alertBottom
-                                            )}
-                                            variant="info"
-                                        >
-                                            {isSiteAdmin ? (
-                                                <>
-                                                    To be able to install non-Sourcegraph authored extensions you need
-                                                    to disable
-                                                    <br />
-                                                    'extensions.allowOnlySourcegraphAuthored' in Site Admin {'>'} Global
-                                                    settings.
-                                                </>
-                                            ) : (
-                                                'Installing non-Sourcegraph authored extensions is disabled by site admin.'
-                                            )}
-                                        </Alert>
-                                    ) : null}
-
+                                    )}
                                     {/* If site admin, render user toggle and site toggle (both small) */}
-                                    {isSiteAdmin && siteSubject?.subject ? (
+                                    {props.authenticatedUser?.siteAdmin && siteSubject?.subject ? (
                                         (() => {
                                             const enabledForMe = isExtensionEnabled(
                                                 props.settingsCascade.final,
@@ -192,9 +152,8 @@ export const ExtensionAreaHeader: React.FunctionComponent<React.PropsWithChildre
                                                             onToggleChange={onToggleChange}
                                                             big={false}
                                                             onHover={onHover}
-                                                            userCannotToggle={userCannotToggle}
+                                                            userCannotToggle={!props.authenticatedUser}
                                                             subject={props.authenticatedUser}
-                                                            isNotAllowed={isNotAllowed}
                                                         />
                                                     </div>
                                                     {/* Site admin toggle */}
@@ -217,9 +176,8 @@ export const ExtensionAreaHeader: React.FunctionComponent<React.PropsWithChildre
                                                             onToggleChange={onToggleChange}
                                                             big={false}
                                                             onHover={onHover}
-                                                            userCannotToggle={userCannotToggle}
+                                                            userCannotToggle={!props.authenticatedUser}
                                                             subject={siteSubject.subject}
-                                                            isNotAllowed={isNotAllowed}
                                                         />
                                                     </div>
                                                 </div>
@@ -238,9 +196,8 @@ export const ExtensionAreaHeader: React.FunctionComponent<React.PropsWithChildre
                                             onToggleChange={onToggleChange}
                                             big={true}
                                             onHover={onHover}
-                                            userCannotToggle={userCannotToggle}
+                                            userCannotToggle={!props.authenticatedUser}
                                             subject={props.authenticatedUser}
-                                            isNotAllowed={isNotAllowed}
                                         />
                                     )}
                                 </div>

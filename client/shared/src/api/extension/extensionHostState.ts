@@ -1,6 +1,5 @@
 import * as comlink from 'comlink'
 import { BehaviorSubject, Observable, ReplaySubject, Subject } from 'rxjs'
-import { map } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 
 import { Contributions } from '@sourcegraph/client-api'
@@ -8,7 +7,6 @@ import { Context } from '@sourcegraph/template-parser'
 
 import { ConfiguredExtension } from '../../extensions/extension'
 import { SettingsCascade } from '../../settings/settings'
-import { isSourcegraphAuthoredExtension } from '../../util/extensions'
 import { MainThreadAPI } from '../contract'
 import { ExtensionViewer, ViewerUpdate } from '../viewerTypes'
 
@@ -101,12 +99,7 @@ export function createExtensionHostState(
             readonly { urlMatchPattern: string; provider: sourcegraph.LinkPreviewProvider }[]
         >([]),
 
-        // FIXIT: we can't access window from the extension host
-        activeExtensions: window.context?.allowOnlySourcegraphAuthoredExtensions
-            ? activeExtensions.pipe(
-                  map(extensions => extensions.filter(({ id }) => isSourcegraphAuthoredExtension(id)))
-              )
-            : activeExtensions,
+        activeExtensions,
         activeLoggers: new Set<string>(),
     }
 }

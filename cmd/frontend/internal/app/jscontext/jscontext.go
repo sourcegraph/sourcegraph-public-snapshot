@@ -100,8 +100,6 @@ type JSContext struct {
 	ProductResearchPageEnabled bool `json:"productResearchPageEnabled"`
 
 	ExperimentalFeatures schema.ExperimentalFeatures `json:"experimentalFeatures"`
-
-	AllowOnlySourcegraphAuthoredExtensions bool `json:"allowOnlySourcegraphAuthoredExtensions"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -159,11 +157,6 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	if envvar.SourcegraphDotComMode() && siteConfig.Dotcom != nil && siteConfig.Dotcom.GithubAppCloud != nil {
 		githubAppCloudSlug = siteConfig.Dotcom.GithubAppCloud.Slug
 		githubAppCloudClientID = siteConfig.Dotcom.GithubAppCloud.ClientID
-	}
-
-	var allowOnlySourcegraphAuthoredExtensions bool = false
-	if siteConfig.Extensions != nil {
-		allowOnlySourcegraphAuthoredExtensions = siteConfig.Extensions.AllowOnlySourcegraphAuthoredExtensions
 	}
 
 	// 🚨 SECURITY: This struct is sent to all users regardless of whether or
@@ -225,8 +218,6 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		ProductResearchPageEnabled: conf.ProductResearchPageEnabled(),
 
 		ExperimentalFeatures: conf.ExperimentalFeatures(),
-
-		AllowOnlySourcegraphAuthoredExtensions: allowOnlySourcegraphAuthoredExtensions,
 	}
 }
 

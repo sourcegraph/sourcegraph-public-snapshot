@@ -21,17 +21,7 @@ interface Props {
      */
     onToggle?: (value: boolean) => void
 
-    /**
-     * Called when the user hovers over the toggle.
-     */
-    onHover?: (value: boolean) => void
-
     onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void
-
-    /**
-     * Called when the user focuses on the toggle.
-     */
-    onFocus?: (value: boolean) => void
 
     /** The title attribute (tooltip). */
     title?: string
@@ -56,8 +46,6 @@ export const Toggle: React.FunctionComponent<React.PropsWithChildren<Props>> = (
     tabIndex,
     onToggle,
     onClick,
-    onHover,
-    onFocus,
     display = 'inline-center',
     'aria-label': ariaLabel,
     'aria-labelledby': ariaLabelledby,
@@ -74,18 +62,6 @@ export const Toggle: React.FunctionComponent<React.PropsWithChildren<Props>> = (
         }
     }
 
-    function onMouseOver(): void {
-        if (onHover) {
-            onHover(!value)
-        }
-    }
-
-    function onToggleFocus(): void {
-        if (onFocus) {
-            onFocus(!value)
-        }
-    }
-
     return (
         <button
             type="button"
@@ -94,8 +70,6 @@ export const Toggle: React.FunctionComponent<React.PropsWithChildren<Props>> = (
             title={title}
             value={value ? 1 : 0}
             onClick={onButtonClick}
-            onMouseOver={onMouseOver}
-            onFocus={onToggleFocus}
             tabIndex={tabIndex}
             disabled={disabled}
             role="switch"

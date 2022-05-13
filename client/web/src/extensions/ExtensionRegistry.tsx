@@ -12,7 +12,6 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { ExtensionCategory, EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { Settings, SettingsCascadeProps, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { isSourcegraphAuthoredExtension } from '@sourcegraph/shared/src/util/extensions'
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
 import { AlertLink, useLocalStorage, useEventObservable, Alert, Link } from '@sourcegraph/wildcard'
 
@@ -262,12 +261,7 @@ export const ExtensionRegistry: React.FunctionComponent<React.PropsWithChildren<
                         return {
                             error,
                             featuredExtensions,
-                            ...configureExtensionRegistry(
-                                window.context?.allowOnlySourcegraphAuthoredExtensions
-                                    ? nodes.filter(({ extensionID }) => isSourcegraphAuthoredExtension(extensionID))
-                                    : nodes,
-                                configuredExtensionCache
-                            ),
+                            ...configureExtensionRegistry(nodes, configuredExtensionCache),
                         }
                     }),
                     tap(() => {

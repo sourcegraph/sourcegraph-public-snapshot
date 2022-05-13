@@ -9,11 +9,6 @@
 
     /* hide alerts for narrow screens */
     display: none;
-
-    &-bottom {
-        top: calc(var(--toggle-height) * 2 + 1.5rem);
-        bottom: auto;
-    }
 }
 
 .actions {
