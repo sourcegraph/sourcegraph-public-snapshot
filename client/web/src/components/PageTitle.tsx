@@ -1,42 +1,35 @@
-import * as React from 'react'
+import React, { useEffect, useCallback } from 'react'
 
-interface Props {
+import { screenReaderAnnounce } from '@sourcegraph/wildcard'
+
+interface PageTitleProps {
     title?: string
 }
 
-export class PageTitle extends React.Component<Props, {}> {
-    public static titleSet = false
+let titleSet = false
 
-    public componentDidMount(): void {
-        if (PageTitle.titleSet) {
-            console.error('more than one PageTitle used at the same time')
-        }
-        PageTitle.titleSet = true
-        this.updateTitle(this.props.title)
-    }
-
-    public componentDidUpdate(): void {
-        this.updateTitle(this.props.title)
-    }
-
-    public componentWillUnmount(): void {
-        PageTitle.titleSet = false
-        document.title = this.brandName()
-    }
-
-    public render(): JSX.Element | null {
-        return null
-    }
-
-    private brandName(): string {
+export const PageTitle: React.FunctionComponent<PageTitleProps> = ({ title }) => {
+    const getBrandName = useCallback(() => {
         if (!window.context) {
             return 'Sourcegraph'
         }
         const { branding } = window.context
         return branding ? branding.brandName : 'Sourcegraph'
-    }
+    }, [])
 
-    private updateTitle(title?: string): void {
-        document.title = title ? `${title} - ${this.brandName()}` : this.brandName()
-    }
+    useEffect(() => {
+        if (titleSet) {
+            console.error('more than one PageTitle used at the same time')
+        }
+        titleSet = true
+        document.title = title ? `${title} - ${getBrandName()}` : getBrandName()
+        screenReaderAnnounce(document.title)
+
+        return () => {
+            titleSet = false
+            document.title = getBrandName()
+        }
+    }, [getBrandName, title])
+
+    return null
 }
