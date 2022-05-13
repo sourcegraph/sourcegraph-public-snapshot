@@ -9,9 +9,9 @@ import { GitCommitFields } from '../../graphql-operations'
 
 import { GitCommitNode } from './GitCommitNode'
 
-const { add } = storiesOf('web/GitCommitNode', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
+const { add } = storiesOf('web/GitCommitNode', module)
+    .addDecorator(story => <div className="p-3 container">{story()}</div>)
+    .addParameters({ disableSnapshot: false })
 
 const gitCommitNode: GitCommitFields = {
     id: 'commit123',

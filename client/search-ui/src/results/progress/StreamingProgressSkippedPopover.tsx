@@ -13,7 +13,7 @@ import { renderMarkdown } from '@sourcegraph/common'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { Skipped } from '@sourcegraph/shared/src/search/stream'
-import { Button, Collapse, CollapseHeader, CollapsePanel, Icon, Checkbox } from '@sourcegraph/wildcard'
+import { Button, Collapse, CollapseHeader, CollapsePanel, Icon, Checkbox, Typography } from '@sourcegraph/wildcard'
 
 import { StreamingProgressProps } from './StreamingProgress'
 
@@ -37,7 +37,10 @@ const sortBySeverity = (a: Skipped, b: Skipped): number => {
     return aSev - bSev
 }
 
-const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; startOpen: boolean }> = ({ skipped, startOpen }) => {
+const SkippedMessage: React.FunctionComponent<React.PropsWithChildren<{ skipped: Skipped; startOpen: boolean }>> = ({
+    skipped,
+    startOpen,
+}) => {
     // Reactstrap is preventing default behavior on all non-DropdownItem elements inside a Dropdown,
     // so we need to stop propagation to allow normal behavior (e.g. enter and space to activate buttons)
     // See Reactstrap bug: https://github.com/reactstrap/reactstrap/issues/2099
@@ -66,7 +69,7 @@ const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; startOpen: boo
                             outline={true}
                             variant={skipped.severity !== 'info' ? 'danger' : 'primary'}
                         >
-                            <h4 className="d-flex align-items-center mb-0 w-100">
+                            <Typography.H4 className="d-flex align-items-center mb-0 w-100">
                                 <Icon
                                     className={classNames(styles.icon, 'flex-shrink-0')}
                                     as={skipped.severity === 'info' ? InformationOutlineIcon : AlertCircleIcon}
@@ -80,7 +83,7 @@ const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; startOpen: boo
                                         as={isOpen ? ChevronDownIcon : ChevronLeftIcon}
                                     />
                                 )}
-                            </h4>
+                            </Typography.H4>
                         </CollapseHeader>
 
                         {skipped.message && (
@@ -100,7 +103,7 @@ const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; startOpen: boo
 }
 
 export const StreamingProgressSkippedPopover: React.FunctionComponent<
-    Pick<StreamingProgressProps, 'progress' | 'onSearchAgain'>
+    React.PropsWithChildren<Pick<StreamingProgressProps, 'progress' | 'onSearchAgain'>>
 > = ({ progress, onSearchAgain }) => {
     const [selectedSuggestedSearches, setSelectedSuggestedSearches] = useState(new Set<string>())
     const submitHandler = useCallback(

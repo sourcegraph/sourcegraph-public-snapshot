@@ -56,7 +56,7 @@ func TestReferenceCountMigrator(t *testing.T) {
 
 		for j := i - 1; j >= 0; j-- {
 			if err := store.Exec(context.Background(), sqlf.Sprintf(
-				"INSERT INTO lsif_references (scheme, name, version, filter, dump_id) VALUES ('test', %s, '1.2.3', '', %s)",
+				"INSERT INTO lsif_references (scheme, name, version, dump_id) VALUES ('test', %s, '1.2.3', %s)",
 				fmt.Sprintf("pkg-%03d", j),
 				i+1,
 			)); err != nil {

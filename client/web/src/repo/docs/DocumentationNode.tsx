@@ -12,7 +12,7 @@ import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExce
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { AnchorLink, ProductStatusBadge, Link, Icon } from '@sourcegraph/wildcard'
+import { AnchorLink, ProductStatusBadge, Link, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { RepositoryFields } from '../../graphql-operations'
@@ -61,7 +61,7 @@ interface Props extends Partial<RevisionSpec>, ResolvedRevisionSpec, BreadcrumbS
     onVisible: (node: GQLDocumentationNode, entry?: IntersectionObserverEntry) => void
 }
 
-export const DocumentationNode: React.FunctionComponent<Props> = React.memo(
+export const DocumentationNode: React.FunctionComponent<React.PropsWithChildren<Props>> = React.memo(
     ({ useBreadcrumb, node, depth, isFirstChild, onlyPathID, scrollingRoot, onVisible, ...props }) => {
         const repoRevision = {
             repoName: props.repo.name,
@@ -193,14 +193,14 @@ export const DocumentationNode: React.FunctionComponent<Props> = React.memo(
                         {!isExcluded(node, ['test', 'benchmark', 'example', 'license', 'owner', 'package']) &&
                             node.documentation.tags.length !== 0 && (
                                 <>
-                                    <h4 className="mt-4">
+                                    <Typography.H4 className="mt-4">
                                         Usage examples
                                         <Icon
                                             className="ml-1"
                                             data-tooltip="Usage examples from precise LSIF code intelligence index"
                                             as={HelpCircleOutlineIcon}
                                         />
-                                    </h4>
+                                    </Typography.H4>
                                     <DocumentationExamples {...props} pathID={node.pathID} count={onlyPathID ? 3 : 1} />
                                 </>
                             )}
@@ -231,8 +231,10 @@ export const DocumentationNode: React.FunctionComponent<Props> = React.memo(
     }
 )
 
-const Heading: React.FunctionComponent<{
-    level: number
-    children: React.ReactNode
-    [x: string]: any
-}> = ({ level, children, ...props }) => React.createElement(`h${level}`, props, children)
+const Heading: React.FunctionComponent<
+    React.PropsWithChildren<{
+        level: number
+        children: React.ReactNode
+        [x: string]: any
+    }>
+> = ({ level, children, ...props }) => React.createElement(`h${level}`, props, children)

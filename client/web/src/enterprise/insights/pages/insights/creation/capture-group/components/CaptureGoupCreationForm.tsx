@@ -3,7 +3,7 @@ import React, { useMemo } from 'react'
 import classNames from 'classnames'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Card, Checkbox, Input, Label, Link, useObservable } from '@sourcegraph/wildcard'
+import { Button, Card, Checkbox, Input, Typography, Link, useObservable } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../components/LoaderButton'
 import { CodeInsightTimeStepPicker, CodeInsightDashboardsVisibility } from '../../../../../components/creation-ui-kit'
@@ -41,7 +41,9 @@ interface CaptureGroupCreationFormProps {
     onFormReset: () => void
 }
 
-export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreationFormProps> = props => {
+export const CaptureGroupCreationForm: React.FunctionComponent<
+    React.PropsWithChildren<CaptureGroupCreationFormProps>
+> = props => {
     const {
         form,
         title,
@@ -138,7 +140,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
                 }
             >
                 <Card className="p-3">
-                    <Label className="w-100">
+                    <Typography.Label className="w-100">
                         <div className="mb-2">Search query</div>
                         <QueryFieldSubtitle className="mb-3" />
 
@@ -150,7 +152,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
                             className="mb-3"
                             {...getDefaultInputProps(query)}
                         />
-                    </Label>
+                    </Typography.Label>
 
                     <SearchQueryChecks checks={searchQueryValidator(query.input.value, query.meta.touched)} />
 
@@ -253,7 +255,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
     )
 }
 
-const QueryFieldSubtitle: React.FunctionComponent<{ className?: string }> = props => (
+const QueryFieldSubtitle: React.FunctionComponent<React.PropsWithChildren<{ className?: string }>> = props => (
     <small className={classNames(props.className, 'text-muted', 'd-block', 'font-weight-normal')}>
         Search query must contain a properly formatted regular expression with at least one{' '}
         <Link

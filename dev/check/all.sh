@@ -3,6 +3,12 @@
 set -ex
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
+echo "!!!!!!!!!!!!!!!!!!"
+echo "!!! DEPRECATED !!!"
+echo "!!!!!!!!!!!!!!!!!!"
+echo "This script is deprecated!"
+echo "Add your checks to 'dev/sg/linters' instead."
+
 parallel_run() {
   ../ci/parallel_run.sh "$@"
 }

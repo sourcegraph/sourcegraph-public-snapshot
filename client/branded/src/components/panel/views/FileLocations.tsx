@@ -21,21 +21,23 @@ import { LoadingSpinner, Alert, Icon } from '@sourcegraph/wildcard'
 
 import styles from './FileLocations.module.scss'
 
-export const FileLocationsError: React.FunctionComponent<{ error: ErrorLike }> = ({ error }) => (
+export const FileLocationsError: React.FunctionComponent<React.PropsWithChildren<{ error: ErrorLike }>> = ({
+    error,
+}) => (
     <Alert className="m-2" variant="danger">
         Error getting locations: {upperFirst(error.message)}
     </Alert>
 )
 
-export const FileLocationsNotFound: React.FunctionComponent = () => (
+export const FileLocationsNotFound: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <div className={classNames('m-2', styles.notFound)}>
-        <Icon as={MapSearchIcon} /> No locations found
+        <Icon role="img" as={MapSearchIcon} aria-hidden={true} /> No locations found
     </div>
 )
 
-export const FileLocationsNoGroupSelected: React.FunctionComponent = () => (
+export const FileLocationsNoGroupSelected: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <div className="m-2">
-        <Icon as={MapSearchIcon} /> No locations found in the current repository
+        <Icon role="img" as={MapSearchIcon} aria-hidden={true} /> No locations found in the current repository
     </div>
 )
 

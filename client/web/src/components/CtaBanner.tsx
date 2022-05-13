@@ -19,7 +19,7 @@ interface Props {
     onClick?: () => void
 }
 
-export const CtaBanner: React.FunctionComponent<Props> = ({
+export const CtaBanner: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     icon,
     className,
     bodyTextClassName,

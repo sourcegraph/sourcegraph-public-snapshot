@@ -2,12 +2,12 @@ import * as React from 'react'
 
 import classNames from 'classnames'
 
-import { H1, Link } from '@sourcegraph/wildcard'
+import { Typography, Link } from '@sourcegraph/wildcard'
 
 import styles from './HeroPage.module.scss'
 
 interface HeroPageProps {
-    icon?: React.ComponentType<any>
+    icon?: React.ComponentType<React.PropsWithChildren<any>>
     iconLinkTo?: string
     iconClassName?: string
     className?: string
@@ -19,7 +19,7 @@ interface HeroPageProps {
     lessPadding?: boolean
 }
 
-export const HeroPage: React.FunctionComponent<HeroPageProps> = props => (
+export const HeroPage: React.FunctionComponent<React.PropsWithChildren<HeroPageProps>> = props => (
     <div
         className={classNames(
             styles.heroPage,
@@ -39,7 +39,7 @@ export const HeroPage: React.FunctionComponent<HeroPageProps> = props => (
                 )}
             </div>
         )}
-        {props.title && <H1 className={styles.title}>{props.title}</H1>}
+        {props.title && <Typography.H1 className={styles.title}>{props.title}</Typography.H1>}
         {props.subtitle && (
             <div data-testid="hero-page-subtitle" className={styles.subtitle}>
                 {props.subtitle}

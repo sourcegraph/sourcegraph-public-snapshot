@@ -15,15 +15,10 @@ import (
 
 // InitGitserverClient initializes and returns a gitserver client.
 func InitGitserverClient() (*gitserver.Client, error) {
-	conn, err := initGitserverClient.Init()
-	if err != nil {
-		return nil, err
-	}
-
-	return conn.(*gitserver.Client), err
+	return initGitserverClient.Init()
 }
 
-var initGitserverClient = memo.NewMemoizedConstructor(func() (interface{}, error) {
+var initGitserverClient = memo.NewMemoizedConstructor(func() (*gitserver.Client, error) {
 	observationContext := &observation.Context{
 		Logger:     log.Scoped("client.gitserver", "gitserver client"),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
@@ -40,10 +35,10 @@ var initGitserverClient = memo.NewMemoizedConstructor(func() (interface{}, error
 
 func InitRepoUpdaterClient() *repoupdater.Client {
 	client, _ := initRepoUpdaterClient.Init()
-	return client.(*repoupdater.Client)
+	return client
 }
 
-var initRepoUpdaterClient = memo.NewMemoizedConstructor(func() (interface{}, error) {
+var initRepoUpdaterClient = memo.NewMemoizedConstructor(func() (*repoupdater.Client, error) {
 	observationContext := &observation.Context{
 		Logger:     log.Scoped("client.repo-updater", "repo-updater client"),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},

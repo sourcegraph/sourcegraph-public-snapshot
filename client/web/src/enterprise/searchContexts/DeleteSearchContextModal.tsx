@@ -8,7 +8,7 @@ import { asError, isErrorLike } from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { ISearchContext } from '@sourcegraph/shared/src/schema'
-import { Button, LoadingSpinner, useEventObservable, Modal, Alert } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, useEventObservable, Modal, Alert, Typography } from '@sourcegraph/wildcard'
 
 import { ALLOW_NAVIGATION } from '../../components/AwayPrompt'
 
@@ -20,13 +20,9 @@ interface DeleteSearchContextModalProps
     toggleDeleteModal: () => void
 }
 
-export const DeleteSearchContextModal: React.FunctionComponent<DeleteSearchContextModalProps> = ({
-    isOpen,
-    deleteSearchContext,
-    toggleDeleteModal,
-    searchContext,
-    platformContext,
-}) => {
+export const DeleteSearchContextModal: React.FunctionComponent<
+    React.PropsWithChildren<DeleteSearchContextModalProps>
+> = ({ isOpen, deleteSearchContext, toggleDeleteModal, searchContext, platformContext }) => {
     const LOADING = 'loading' as const
     const deleteLabelId = 'deleteSearchContextId'
     const history = useHistory()
@@ -57,9 +53,9 @@ export const DeleteSearchContextModal: React.FunctionComponent<DeleteSearchConte
             aria-labelledby={deleteLabelId}
             data-testid="delete-search-context-modal"
         >
-            <h3 className="text-danger" id={deleteLabelId}>
+            <Typography.H3 className="text-danger" id={deleteLabelId}>
                 Delete search context?
-            </h3>
+            </Typography.H3>
 
             <p>
                 <strong>This action cannot be undone.</strong>

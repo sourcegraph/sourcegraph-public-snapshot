@@ -55,7 +55,7 @@ describe('BrowserExtensionTracker', () => {
         jest.runOnlyPendingTimers()
         jest.useRealTimers()
         expect(localStorage.getItem(BROWSER_EXTENSION_LAST_DETECTION_KEY)).toBeNull()
-        const wrapper: React.FunctionComponent = ({ children }) => (
+        const wrapper: React.FunctionComponent<React.PropsWithChildren<unknown>> = ({ children }) => (
             <div>
                 {children}
                 <div id={BROWSER_EXTENSION_MARKER_ELEMENT} />

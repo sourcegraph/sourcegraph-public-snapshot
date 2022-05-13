@@ -6,10 +6,74 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
+
+func TestLockfileDependencies(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := context.Background()
+	db := database.NewDB(dbtest.NewDB(t))
+	store := TestStore(db)
+
+	if _, err := db.ExecContext(ctx, `INSERT INTO repo (name) VALUES ('foo')`); err != nil {
+		t.Fatalf(err.Error())
+	}
+
+	packageA := shared.TestPackageDependencyLiteral(api.RepoName("A"), "1", "2", "3", "4")
+	packageB := shared.TestPackageDependencyLiteral(api.RepoName("B"), "2", "3", "4", "5")
+	packageC := shared.TestPackageDependencyLiteral(api.RepoName("C"), "3", "4", "5", "6")
+	packageD := shared.TestPackageDependencyLiteral(api.RepoName("D"), "4", "5", "6", "7")
+	packageE := shared.TestPackageDependencyLiteral(api.RepoName("E"), "5", "6", "7", "8")
+	packageF := shared.TestPackageDependencyLiteral(api.RepoName("F"), "6", "7", "8", "9")
+
+	commits := map[string][]shared.PackageDependency{
+		"cafebabe": {packageA, packageB, packageC},
+		"deadbeef": {packageA, packageB, packageD, packageE},
+		"deadc0de": {packageB, packageF},
+		"deadd00d": nil,
+	}
+
+	for commit, deps := range commits {
+		if err := store.UpsertLockfileDependencies(ctx, "foo", commit, deps); err != nil {
+			t.Fatalf("unexpected error upserting lockfile dependencies: %s", err)
+		}
+	}
+
+	// Update twice to show idempotency
+	for commit, expected := range commits {
+		if err := store.UpsertLockfileDependencies(ctx, "foo", commit, expected); err != nil {
+			t.Fatalf("unexpected error upserting lockfile dependencies: %s", err)
+		}
+	}
+
+	for commit, expectedDeps := range commits {
+		deps, found, err := store.LockfileDependencies(ctx, "foo", commit)
+		if err != nil {
+			t.Fatalf("unexpected error querying lockfile dependencies of %s: %s", commit, err)
+		}
+		if !found {
+			t.Fatalf("expected dependencies to be cached for %s", commit)
+		}
+
+		if diff := cmp.Diff(expectedDeps, deps); diff != "" {
+			t.Fatalf("unexpected dependencies for commit %s (-have, +want): %s", commit, diff)
+		}
+	}
+
+	missingCommit := "d00dd00d"
+	_, found, err := store.LockfileDependencies(ctx, "foo", missingCommit)
+	if err != nil {
+		t.Fatalf("unexpected error querying lockfile dependencies: %s", err)
+	} else if found {
+		t.Fatalf("expected no dependencies to be cached for %s", missingCommit)
+	}
+}
 
 func TestUpsertDependencyRepo(t *testing.T) {
 	if testing.Short() {

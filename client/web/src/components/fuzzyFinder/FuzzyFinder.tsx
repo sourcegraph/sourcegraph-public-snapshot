@@ -35,7 +35,7 @@ export interface FuzzyFinderProps extends TelemetryProps {
     caseInsensitiveFileCountThreshold?: number
 }
 
-export const FuzzyFinder: React.FunctionComponent<FuzzyFinderProps> = ({
+export const FuzzyFinder: React.FunctionComponent<React.PropsWithChildren<FuzzyFinderProps>> = ({
     location: { search, pathname, hash },
     setCacheRetention,
     setIsVisible,

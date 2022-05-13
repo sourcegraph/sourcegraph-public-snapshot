@@ -140,7 +140,7 @@ export class RepositoryBranchesOverviewPage extends React.PureComponent<Props, S
                         {this.state.dataOrError.activeBranches.length > 0 && (
                             <Card className={styles.card}>
                                 <CardHeader>Active branches</CardHeader>
-                                <div className="list-group list-group-flush">
+                                <ul className="list-group list-group-flush" data-testid="active-branches-list">
                                     {this.state.dataOrError.activeBranches.map((gitReference, index) => (
                                         <GitReferenceNode key={index} node={gitReference} />
                                     ))}
@@ -153,7 +153,7 @@ export class RepositoryBranchesOverviewPage extends React.PureComponent<Props, S
                                             <Icon as={ChevronRightIcon} />
                                         </Link>
                                     )}
-                                </div>
+                                </ul>
                             </Card>
                         )}
                     </div>

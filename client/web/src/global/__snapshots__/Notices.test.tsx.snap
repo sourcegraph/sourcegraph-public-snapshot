@@ -8,9 +8,8 @@ exports[`Notices shows notices for location 1`] = `
     class="notices"
   >
     <div
-      class="alert bg transparent border"
+      class="alert bg transparent border p-2"
       data-testid="notice-alert"
-      role="alert"
     >
       <div
         class="markdown"
@@ -23,8 +22,7 @@ exports[`Notices shows notices for location 1`] = `
       </div>
     </div>
     <div
-      class="alert container bg transparent border"
-      role="alert"
+      class="alert container bg transparent border p-2"
     >
       <div
         class="content"

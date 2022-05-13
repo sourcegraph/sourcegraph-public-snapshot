@@ -1,6 +1,7 @@
 import React, { FunctionComponent } from 'react'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
+import { Typography } from '@sourcegraph/wildcard'
 
 import { RadioButtons } from '../../../../components/RadioButtons'
 import { CodeIntelligenceConfigurationPolicyFields, GitObjectType } from '../../../../graphql-operations'
@@ -19,7 +20,10 @@ export interface RetentionSettingsProps {
     ) => void
 }
 
-export const RetentionSettings: FunctionComponent<RetentionSettingsProps> = ({ policy, setPolicy }) => {
+export const RetentionSettings: FunctionComponent<React.PropsWithChildren<RetentionSettingsProps>> = ({
+    policy,
+    setPolicy,
+}) => {
     const updatePolicy = <K extends keyof CodeIntelligenceConfigurationPolicyFields>(
         updates: { [P in K]: CodeIntelligenceConfigurationPolicyFields[P] }
     ): void => {
@@ -44,7 +48,7 @@ export const RetentionSettings: FunctionComponent<RetentionSettingsProps> = ({ p
 
     return (
         <div className="form-group">
-            <h3>Retention</h3>
+            <Typography.H3>Retention</Typography.H3>
 
             <div className="form-group">
                 <RadioButtons

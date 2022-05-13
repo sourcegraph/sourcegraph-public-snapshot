@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func Up(commandName string, factory RunnerFactory, out *output.Output, development bool) *cli.Command {
+func Up(commandName string, factory RunnerFactory, outFactory func() *output.Output, development bool) *cli.Command {
 	flags := []cli.Flag{
 		&cli.StringFlag{
 			Name:  "db",
@@ -33,6 +33,8 @@ func Up(commandName string, factory RunnerFactory, out *output.Output, developme
 	}
 
 	action := func(cmd *cli.Context) error {
+		out := outFactory()
+
 		if cmd.NArg() != 0 {
 			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments"))
 			return flag.ErrHelp

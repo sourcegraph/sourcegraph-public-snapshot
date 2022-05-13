@@ -31,7 +31,7 @@ func update(name string) bool {
 // Note that assertGolden can only be called once in a single test. (It's safe
 // to use from multiple sub-tests at the same level, though, provided they have
 // unique names.)
-func assertGolden(t testing.TB, expected interface{}) {
+func assertGolden(t testing.TB, expected any) {
 	testutil.AssertGolden(
 		t,
 		filepath.Join("testdata/golden/", normalize(t.Name())),

@@ -14,8 +14,8 @@ import (
 func TestExternalService_RedactedConfig(t *testing.T) {
 	for i, tc := range []struct {
 		kind string
-		in   interface{}
-		out  interface{}
+		in   any
+		out  any
 	}{
 		{
 			kind: extsvc.KindGitHub,
@@ -121,6 +121,23 @@ func TestExternalService_RedactedConfig(t *testing.T) {
 				},
 			},
 		},
+		{
+			kind: extsvc.KindPythonPackages,
+			in: schema.PythonPackagesConnection{
+				Dependencies: []string{"requests=1.2.3"},
+				Urls: []string{
+					"https://user:password@pypi.corp/simple",
+					"https://pypi.org/simple",
+				},
+			},
+			out: schema.PythonPackagesConnection{
+				Dependencies: []string{"requests=1.2.3"},
+				Urls: []string{
+					"https://user:REDACTED@pypi.corp/simple",
+					"https://pypi.org/simple",
+				},
+			},
+		},
 	} {
 		t.Run(fmt.Sprintf("%s-%d", tc.kind, i), func(t *testing.T) {
 			cfg, err := json.Marshal(tc.in)
@@ -148,9 +165,9 @@ func TestExternalService_RedactedConfig(t *testing.T) {
 func TestExternalService_UnredactConfig(t *testing.T) {
 	for i, tc := range []struct {
 		kind string
-		old  interface{}
-		in   interface{}
-		out  interface{}
+		old  any
+		in   any
+		out  any
 	}{
 		{
 			kind: extsvc.KindGitHub,
@@ -291,6 +308,30 @@ func TestExternalService_UnredactConfig(t *testing.T) {
 				Urls: []string{
 					"https://user:password@athens.golang.org",
 					"https://proxy.golang.org",
+				},
+			},
+		},
+		{
+			kind: extsvc.KindPythonPackages,
+			old: schema.PythonPackagesConnection{
+				Dependencies: []string{"requests==1.2.3"},
+				Urls: []string{
+					"https://user:password@artifactory.corp/simple",
+					"https://pypi.org/simple",
+				},
+			},
+			in: schema.PythonPackagesConnection{
+				Dependencies: []string{"numpy==1.12.4"},
+				Urls: []string{
+					"https://user:REDACTED@artifactory.corp/simple",
+					"https://pypi.org/simple",
+				},
+			},
+			out: schema.PythonPackagesConnection{
+				Dependencies: []string{"numpy==1.12.4"},
+				Urls: []string{
+					"https://user:password@artifactory.corp/simple",
+					"https://pypi.org/simple",
 				},
 			},
 		},

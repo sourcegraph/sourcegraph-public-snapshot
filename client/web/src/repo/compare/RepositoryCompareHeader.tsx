@@ -14,12 +14,9 @@ interface RepositoryCompareHeaderProps extends RepositoryCompareAreaPageProps {
     className: string
 }
 
-export const RepositoryCompareHeader: React.FunctionComponent<RepositoryCompareHeaderProps> = ({
-    base,
-    head,
-    className,
-    repo,
-}) => (
+export const RepositoryCompareHeader: React.FunctionComponent<
+    React.PropsWithChildren<RepositoryCompareHeaderProps>
+> = ({ base, head, className, repo }) => (
     <div className={classNames(styles.repositoryCompareHeader, className)}>
         <PageHeader
             path={[{ text: 'Compare changes across revisions' }]}

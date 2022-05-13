@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -366,6 +367,641 @@ func TestGenerateComputeRecordings(t *testing.T) {
 			"github.com/sourcegraph/sourcegraph 11 2021-10-01 00:00:00 +0000 UTC 1.22 6.000000",
 			"github.com/sourcegraph/sourcegraph 11 2021-10-01 00:00:00 +0000 UTC 1.33 3.000000",
 		}).Equal(t, stringified)
+	})
+}
+
+func TestGenerateComputeRecordingsStream(t *testing.T) {
+	t.Run("compute stream job with no dependencies", func(t *testing.T) {
+		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
+		job := Job{
+			SeriesID:        "testseries1",
+			SearchQuery:     "searchit",
+			RecordTime:      &date,
+			PersistMode:     "record",
+			DependentFrames: nil,
+			ID:              1,
+			State:           "queued",
+		}
+
+		mocked := func(context.Context, string) (*streaming.ComputeTabulationResult, error) {
+			return &streaming.ComputeTabulationResult{
+				RepoCounts: map[string]*streaming.ComputeMatch{
+					"github.com/sourcegraph/sourcegraph": {
+						RepositoryID:   11,
+						RepositoryName: "github.com/sourcegraph/sourcegraph",
+						ValueCounts: map[string]int{
+							"1.15": 3,
+							"1.14": 1,
+						},
+					},
+				},
+			}, nil
+		}
+
+		handler := workHandler{
+			baseWorkerStore:     nil,
+			insightsStore:       nil,
+			metadadataStore:     nil,
+			limiter:             nil,
+			mu:                  sync.RWMutex{},
+			seriesCache:         nil,
+			computeSearchStream: mocked,
+		}
+
+		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date)
+		if err != nil {
+			t.Error(err)
+		}
+		stringified := stringify(recordings)
+		autogold.Want("compute stream job with no dependencies", []string{
+			"github.com/sourcegraph/sourcegraph 11 2021-12-01 00:00:00 +0000 UTC 1.14 1.000000",
+			"github.com/sourcegraph/sourcegraph 11 2021-12-01 00:00:00 +0000 UTC 1.15 3.000000",
+		}).Equal(t, stringified)
+	})
+
+	t.Run("compute stream job with sub-repo permissions", func(t *testing.T) {
+		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
+		job := Job{
+			SeriesID:        "testseries1",
+			SearchQuery:     "searchit",
+			RecordTime:      &date,
+			PersistMode:     "record",
+			DependentFrames: nil,
+			ID:              1,
+			State:           "queued",
+		}
+
+		mocked := func(context.Context, string) (*streaming.ComputeTabulationResult, error) {
+			return &streaming.ComputeTabulationResult{
+				RepoCounts: map[string]*streaming.ComputeMatch{
+					"github.com/sourcegraph/sourcegraph": {
+						RepositoryID:   11,
+						RepositoryName: "github.com/sourcegraph/sourcegraph",
+						ValueCounts: map[string]int{
+							"1.15": 3,
+							"1.14": 1,
+						},
+					},
+				},
+			}, nil
+		}
+
+		handler := workHandler{
+			baseWorkerStore:     nil,
+			insightsStore:       nil,
+			metadadataStore:     nil,
+			limiter:             nil,
+			mu:                  sync.RWMutex{},
+			seriesCache:         nil,
+			computeSearchStream: mocked,
+		}
+
+		checker := authz.NewMockSubRepoPermissionChecker()
+		checker.EnabledFunc.SetDefaultHook(func() bool {
+			return true
+		})
+		checker.EnabledForRepoIdFunc.SetDefaultHook(func(ctx context.Context, id api.RepoID) (bool, error) {
+			if id == 11 {
+				return true, nil
+			} else {
+				return false, errors.New("Wrong repoID, try again")
+			}
+		})
+
+		// sub-repo permissions are enabled
+		authz.DefaultSubRepoPermsChecker = checker
+
+		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date)
+		if err != nil {
+			t.Error(err)
+		}
+		if len(recordings) != 0 {
+			t.Error("No records should be returned as given repo has sub-repo permissions")
+		}
+
+		// Resetting DefaultSubRepoPermsChecker, so it won't affect further tests
+		authz.DefaultSubRepoPermsChecker = nil
+	})
+
+	t.Run("compute stream job with sub-repo permissions resulted in error", func(t *testing.T) {
+		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
+		job := Job{
+			SeriesID:        "testseries1",
+			SearchQuery:     "searchit",
+			RecordTime:      &date,
+			PersistMode:     "record",
+			DependentFrames: nil,
+			ID:              1,
+			State:           "queued",
+		}
+
+		mocked := func(context.Context, string) (*streaming.ComputeTabulationResult, error) {
+			return &streaming.ComputeTabulationResult{
+				RepoCounts: map[string]*streaming.ComputeMatch{
+					"github.com/sourcegraph/sourcegraph": {
+						RepositoryID:   11,
+						RepositoryName: "github.com/sourcegraph/sourcegraph",
+						ValueCounts: map[string]int{
+							"1.15": 3,
+							"1.14": 1,
+						},
+					},
+				},
+			}, nil
+		}
+
+		handler := workHandler{
+			baseWorkerStore:     nil,
+			insightsStore:       nil,
+			metadadataStore:     nil,
+			limiter:             nil,
+			mu:                  sync.RWMutex{},
+			seriesCache:         nil,
+			computeSearchStream: mocked,
+		}
+
+		checker := authz.NewMockSubRepoPermissionChecker()
+		checker.EnabledFunc.SetDefaultHook(func() bool {
+			return true
+		})
+		checker.EnabledForRepoIdFunc.SetDefaultHook(func(ctx context.Context, id api.RepoID) (bool, error) {
+			return false, errors.New("Oops")
+		})
+
+		// sub-repo permissions are enabled
+		authz.DefaultSubRepoPermsChecker = checker
+
+		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date)
+		if err != nil {
+			t.Error(err)
+		}
+		if len(recordings) != 0 {
+			t.Error("No records should be returned as given repo has an error during sub-repo permissions check")
+		}
+
+		// Resetting DefaultSubRepoPermsChecker, so it won't affect further tests
+		authz.DefaultSubRepoPermsChecker = nil
+	})
+
+	t.Run("compute stream job with no dependencies multirepo", func(t *testing.T) {
+		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
+		job := Job{
+			SeriesID:        "testseries1",
+			SearchQuery:     "searchit",
+			RecordTime:      &date,
+			PersistMode:     "record",
+			DependentFrames: nil,
+			ID:              1,
+			State:           "queued",
+		}
+
+		mocked := func(context.Context, string) (*streaming.ComputeTabulationResult, error) {
+			return &streaming.ComputeTabulationResult{
+				RepoCounts: map[string]*streaming.ComputeMatch{
+					"github.com/sourcegraph/sourcegraph": {
+						RepositoryID:   11,
+						RepositoryName: "github.com/sourcegraph/sourcegraph",
+						ValueCounts: map[string]int{
+							"1.11": 3,
+							"1.18": 1,
+						},
+					},
+					"github.com/sourcegraph/handbook": {
+						RepositoryID:   5,
+						RepositoryName: "github.com/sourcegraph/handbook",
+						ValueCounts: map[string]int{
+							"1.18": 2,
+							"1.20": 1,
+						},
+					},
+				},
+			}, nil
+		}
+
+		handler := workHandler{
+			baseWorkerStore:     nil,
+			insightsStore:       nil,
+			metadadataStore:     nil,
+			limiter:             nil,
+			mu:                  sync.RWMutex{},
+			seriesCache:         nil,
+			computeSearchStream: mocked,
+		}
+
+		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date)
+		if err != nil {
+			t.Error(err)
+		}
+		stringified := stringify(recordings)
+		autogold.Want("compute stream job with no dependencies multirepo", []string{
+			"github.com/sourcegraph/handbook 5 2021-12-01 00:00:00 +0000 UTC 1.18 2.000000",
+			"github.com/sourcegraph/handbook 5 2021-12-01 00:00:00 +0000 UTC 1.20 1.000000",
+			"github.com/sourcegraph/sourcegraph 11 2021-12-01 00:00:00 +0000 UTC 1.11 3.000000",
+			"github.com/sourcegraph/sourcegraph 11 2021-12-01 00:00:00 +0000 UTC 1.18 1.000000",
+		}).Equal(t, stringified)
+	})
+
+	t.Run("compute stream job with dependencies", func(t *testing.T) {
+		date := time.Date(2021, 8, 1, 0, 0, 0, 0, time.UTC)
+		job := Job{
+			SeriesID:        "testseries1",
+			SearchQuery:     "searchit",
+			RecordTime:      &date,
+			PersistMode:     "record",
+			DependentFrames: []time.Time{date.AddDate(0, 1, 0), date.AddDate(0, 2, 0)},
+			ID:              1,
+			State:           "queued",
+		}
+
+		mocked := func(context.Context, string) (*streaming.ComputeTabulationResult, error) {
+			return &streaming.ComputeTabulationResult{
+				RepoCounts: map[string]*streaming.ComputeMatch{
+					"github.com/sourcegraph/sourcegraph": {
+						RepositoryID:   11,
+						RepositoryName: "github.com/sourcegraph/sourcegraph",
+						ValueCounts: map[string]int{
+							"1.11": 3,
+							"1.18": 1,
+							"1.33": 6,
+						},
+					},
+				},
+			}, nil
+		}
+
+		handler := workHandler{
+			baseWorkerStore:     nil,
+			insightsStore:       nil,
+			metadadataStore:     nil,
+			limiter:             nil,
+			mu:                  sync.RWMutex{},
+			seriesCache:         nil,
+			computeSearchStream: mocked,
+		}
+
+		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date)
+		if err != nil {
+			t.Error(err)
+		}
+		stringified := stringify(recordings)
+		autogold.Want("compute stream job with dependencies", []string{
+			"github.com/sourcegraph/sourcegraph 11 2021-08-01 00:00:00 +0000 UTC 1.11 3.000000",
+			"github.com/sourcegraph/sourcegraph 11 2021-08-01 00:00:00 +0000 UTC 1.18 1.000000",
+			"github.com/sourcegraph/sourcegraph 11 2021-08-01 00:00:00 +0000 UTC 1.33 6.000000",
+			"github.com/sourcegraph/sourcegraph 11 2021-09-01 00:00:00 +0000 UTC 1.11 3.000000",
+			"github.com/sourcegraph/sourcegraph 11 2021-09-01 00:00:00 +0000 UTC 1.18 1.000000",
+			"github.com/sourcegraph/sourcegraph 11 2021-09-01 00:00:00 +0000 UTC 1.33 6.000000",
+			"github.com/sourcegraph/sourcegraph 11 2021-10-01 00:00:00 +0000 UTC 1.11 3.000000",
+			"github.com/sourcegraph/sourcegraph 11 2021-10-01 00:00:00 +0000 UTC 1.18 1.000000",
+			"github.com/sourcegraph/sourcegraph 11 2021-10-01 00:00:00 +0000 UTC 1.33 6.000000",
+		}).Equal(t, stringified)
+	})
+
+	t.Run("compute stream job returns errors", func(t *testing.T) {
+		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
+		job := Job{
+			SeriesID:        "testseries1",
+			SearchQuery:     "searchit",
+			RecordTime:      &date,
+			PersistMode:     "record",
+			DependentFrames: nil,
+			ID:              1,
+			State:           "queued",
+		}
+
+		mocked := func(context.Context, string) (*streaming.ComputeTabulationResult, error) {
+			return &streaming.ComputeTabulationResult{}, errors.New("error")
+		}
+
+		handler := workHandler{
+			baseWorkerStore:     nil,
+			insightsStore:       nil,
+			metadadataStore:     nil,
+			limiter:             nil,
+			mu:                  sync.RWMutex{},
+			seriesCache:         nil,
+			computeSearchStream: mocked,
+		}
+
+		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date)
+		if len(recordings) != 0 {
+			t.Error("No records should be returned as we errored on compute stream")
+		}
+		if err == nil {
+			t.Error("Expected error but received nil")
+		}
+	})
+}
+
+func TestGenerateSearchRecordingsStream(t *testing.T) {
+	t.Run("search stream job with no dependencies", func(t *testing.T) {
+		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
+		job := Job{
+			SeriesID:        "testseries1",
+			SearchQuery:     "searchit",
+			RecordTime:      &date,
+			PersistMode:     "record",
+			DependentFrames: nil,
+			ID:              1,
+			State:           "queued",
+		}
+
+		mocked := func(context.Context, string) (*streaming.TabulationResult, error) {
+			return &streaming.TabulationResult{
+				RepoCounts: map[string]*streaming.SearchMatch{
+					"github.com/sourcegraph/sourcegraph": {
+						RepositoryID:   11,
+						RepositoryName: "github.com/sourcegraph/sourcegraph",
+						MatchCount:     5,
+					},
+				},
+				TotalCount: 5,
+			}, nil
+		}
+
+		handler := workHandler{
+			baseWorkerStore: nil,
+			insightsStore:   nil,
+			metadadataStore: nil,
+			limiter:         nil,
+			mu:              sync.RWMutex{},
+			seriesCache:     nil,
+			searchStream:    mocked,
+		}
+
+		// We only use series data for inserting dirty queries in the non-stream path so we can
+		// ignore the argument here.
+		recordings, err := handler.generateSearchRecordingsStream(context.Background(), &job, nil, date)
+		if err != nil {
+			t.Error(err)
+		}
+		// Bearing in mind search series points don't store any values apart from count as the
+		// value is the query. This translates into an empty space.
+		stringified := stringify(recordings)
+		autogold.Want("search stream job with no dependencies", []string{
+			"github.com/sourcegraph/sourcegraph 11 2021-12-01 00:00:00 +0000 UTC  5.000000",
+		}).Equal(t, stringified)
+	})
+
+	t.Run("search stream job with sub-repo permissions", func(t *testing.T) {
+		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
+		job := Job{
+			SeriesID:        "testseries1",
+			SearchQuery:     "searchit",
+			RecordTime:      &date,
+			PersistMode:     "record",
+			DependentFrames: nil,
+			ID:              1,
+			State:           "queued",
+		}
+
+		mocked := func(context.Context, string) (*streaming.TabulationResult, error) {
+			return &streaming.TabulationResult{
+				RepoCounts: map[string]*streaming.SearchMatch{
+					"github.com/sourcegraph/sourcegraph": {
+						RepositoryID:   11,
+						RepositoryName: "github.com/sourcegraph/sourcegraph",
+						MatchCount:     5,
+					},
+				},
+				TotalCount: 5,
+			}, nil
+		}
+
+		handler := workHandler{
+			baseWorkerStore: nil,
+			insightsStore:   nil,
+			metadadataStore: nil,
+			limiter:         nil,
+			mu:              sync.RWMutex{},
+			seriesCache:     nil,
+			searchStream:    mocked,
+		}
+
+		checker := authz.NewMockSubRepoPermissionChecker()
+		checker.EnabledFunc.SetDefaultHook(func() bool {
+			return true
+		})
+		checker.EnabledForRepoIdFunc.SetDefaultHook(func(ctx context.Context, id api.RepoID) (bool, error) {
+			if id == 11 {
+				return true, nil
+			} else {
+				return false, errors.New("Wrong repoID, try again")
+			}
+		})
+
+		// sub-repo permissions are enabled
+		authz.DefaultSubRepoPermsChecker = checker
+
+		// We only use series data for inserting dirty queries in the non-stream path so we can
+		// ignore the argument here.
+		recordings, err := handler.generateSearchRecordingsStream(context.Background(), &job, nil, date)
+		if err != nil {
+			t.Error(err)
+		}
+		if len(recordings) != 0 {
+			t.Error("No records should be returned as given repo has sub-repo permissions")
+		}
+
+		// Resetting DefaultSubRepoPermsChecker, so it won't affect further tests
+		authz.DefaultSubRepoPermsChecker = nil
+	})
+
+	t.Run("search stream job with sub-repo permissions resulted in error", func(t *testing.T) {
+		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
+		job := Job{
+			SeriesID:        "testseries1",
+			SearchQuery:     "searchit",
+			RecordTime:      &date,
+			PersistMode:     "record",
+			DependentFrames: nil,
+			ID:              1,
+			State:           "queued",
+		}
+
+		mocked := func(context.Context, string) (*streaming.TabulationResult, error) {
+			return &streaming.TabulationResult{
+				RepoCounts: map[string]*streaming.SearchMatch{
+					"github.com/sourcegraph/sourcegraph": {
+						RepositoryID:   11,
+						RepositoryName: "github.com/sourcegraph/sourcegraph",
+						MatchCount:     5,
+					},
+				},
+				TotalCount: 5,
+			}, nil
+		}
+
+		handler := workHandler{
+			baseWorkerStore: nil,
+			insightsStore:   nil,
+			metadadataStore: nil,
+			limiter:         nil,
+			mu:              sync.RWMutex{},
+			seriesCache:     nil,
+			searchStream:    mocked,
+		}
+
+		checker := authz.NewMockSubRepoPermissionChecker()
+		checker.EnabledFunc.SetDefaultHook(func() bool {
+			return true
+		})
+		checker.EnabledForRepoIdFunc.SetDefaultHook(func(ctx context.Context, id api.RepoID) (bool, error) {
+			return false, errors.New("Oops")
+		})
+
+		// sub-repo permissions are enabled
+		authz.DefaultSubRepoPermsChecker = checker
+
+		// We only use series data for inserting dirty queries in the non-stream path so we can
+		// ignore the argument here.
+		recordings, err := handler.generateSearchRecordingsStream(context.Background(), &job, nil, date)
+		if err != nil {
+			t.Error(err)
+		}
+		if len(recordings) != 0 {
+			t.Error("No records should be returned as given repo has an error during sub-repo permissions check")
+		}
+
+		// Resetting DefaultSubRepoPermsChecker, so it won't affect further tests
+		authz.DefaultSubRepoPermsChecker = nil
+	})
+
+	t.Run("search stream job with no dependencies multirepo", func(t *testing.T) {
+		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
+		job := Job{
+			SeriesID:        "testseries1",
+			SearchQuery:     "searchit",
+			RecordTime:      &date,
+			PersistMode:     "record",
+			DependentFrames: nil,
+			ID:              1,
+			State:           "queued",
+		}
+
+		mocked := func(context.Context, string) (*streaming.TabulationResult, error) {
+			return &streaming.TabulationResult{
+				RepoCounts: map[string]*streaming.SearchMatch{
+					"github.com/sourcegraph/sourcegraph": {
+						RepositoryID:   11,
+						RepositoryName: "github.com/sourcegraph/sourcegraph",
+						MatchCount:     5,
+					},
+					"github.com/sourcegraph/handbook": {
+						RepositoryID:   5,
+						RepositoryName: "github.com/sourcegraph/handbook",
+						MatchCount:     20,
+					},
+				},
+				TotalCount: 25,
+			}, nil
+		}
+
+		handler := workHandler{
+			baseWorkerStore: nil,
+			insightsStore:   nil,
+			metadadataStore: nil,
+			limiter:         nil,
+			mu:              sync.RWMutex{},
+			seriesCache:     nil,
+			searchStream:    mocked,
+		}
+
+		// We only use series data for inserting dirty queries in the non-stream path so we can
+		// ignore the argument here.
+		recordings, err := handler.generateSearchRecordingsStream(context.Background(), &job, nil, date)
+		if err != nil {
+			t.Error(err)
+		}
+		stringified := stringify(recordings)
+		autogold.Want("search stream job with no dependencies multirepo", []string{
+			"github.com/sourcegraph/handbook 5 2021-12-01 00:00:00 +0000 UTC  20.000000",
+			"github.com/sourcegraph/sourcegraph 11 2021-12-01 00:00:00 +0000 UTC  5.000000",
+		}).Equal(t, stringified)
+	})
+
+	t.Run("search stream job with dependencies", func(t *testing.T) {
+		date := time.Date(2021, 8, 1, 0, 0, 0, 0, time.UTC)
+		job := Job{
+			SeriesID:        "testseries1",
+			SearchQuery:     "searchit",
+			RecordTime:      &date,
+			PersistMode:     "record",
+			DependentFrames: []time.Time{date.AddDate(0, 1, 0), date.AddDate(0, 2, 0)},
+			ID:              1,
+			State:           "queued",
+		}
+
+		mocked := func(context.Context, string) (*streaming.TabulationResult, error) {
+			return &streaming.TabulationResult{
+				RepoCounts: map[string]*streaming.SearchMatch{
+					"github.com/sourcegraph/sourcegraph": {
+						RepositoryID:   11,
+						RepositoryName: "github.com/sourcegraph/sourcegraph",
+						MatchCount:     5,
+					},
+				},
+				TotalCount: 5,
+			}, nil
+		}
+
+		handler := workHandler{
+			baseWorkerStore: nil,
+			insightsStore:   nil,
+			metadadataStore: nil,
+			limiter:         nil,
+			mu:              sync.RWMutex{},
+			seriesCache:     nil,
+			searchStream:    mocked,
+		}
+
+		// We only use series data for inserting dirty queries in the non-stream path so we can
+		// ignore the argument here.
+		recordings, err := handler.generateSearchRecordingsStream(context.Background(), &job, nil, date)
+		if err != nil {
+			t.Error(err)
+		}
+		stringified := stringify(recordings)
+		autogold.Want("search stream job with dependencies", []string{
+			"github.com/sourcegraph/sourcegraph 11 2021-08-01 00:00:00 +0000 UTC  5.000000",
+			"github.com/sourcegraph/sourcegraph 11 2021-09-01 00:00:00 +0000 UTC  5.000000",
+			"github.com/sourcegraph/sourcegraph 11 2021-10-01 00:00:00 +0000 UTC  5.000000",
+		}).Equal(t, stringified)
+	})
+
+	t.Run("search stream job returns errors", func(t *testing.T) {
+		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
+		job := Job{
+			SeriesID:        "testseries1",
+			SearchQuery:     "searchit",
+			RecordTime:      &date,
+			PersistMode:     "record",
+			DependentFrames: nil,
+			ID:              1,
+			State:           "queued",
+		}
+
+		mocked := func(context.Context, string) (*streaming.TabulationResult, error) {
+			return &streaming.TabulationResult{}, errors.New("error")
+		}
+
+		handler := workHandler{
+			baseWorkerStore: nil,
+			insightsStore:   nil,
+			metadadataStore: nil,
+			limiter:         nil,
+			mu:              sync.RWMutex{},
+			seriesCache:     nil,
+			searchStream:    mocked,
+		}
+
+		recordings, err := handler.generateSearchRecordingsStream(context.Background(), &job, nil, date)
+		if len(recordings) != 0 {
+			t.Error("No records should be returned as we errored on stream")
+		}
+		if err == nil {
+			t.Error("Expected error but received nil")
+		}
 	})
 }
 

@@ -63,7 +63,9 @@ interface CreationSearchInsightFormProps {
  * Displays creation code insight form (title, visibility, series, etc.)
  * UI layer only, all controlled data should be managed by consumer of this component.
  */
-export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchInsightFormProps> = props => {
+export const SearchInsightCreationForm: React.FunctionComponent<
+    React.PropsWithChildren<CreationSearchInsightFormProps>
+> = props => {
     const {
         mode,
         innerRef,

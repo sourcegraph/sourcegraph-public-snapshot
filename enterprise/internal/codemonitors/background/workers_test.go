@@ -11,6 +11,7 @@ import (
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 func TestActionRunner(t *testing.T) {
@@ -75,7 +76,7 @@ func TestActionRunner(t *testing.T) {
 			require.NoError(t, err)
 
 			a := actionRunner{s}
-			err = a.Handle(ctx, record)
+			err = a.Handle(ctx, logtest.Scoped(t), record)
 			require.NoError(t, err)
 
 			wantResultsPluralized := "results"

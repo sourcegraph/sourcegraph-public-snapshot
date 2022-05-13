@@ -26,7 +26,11 @@ export interface SiteAdminSidebarProps extends BatchChangesProps {
 /**
  * Sidebar for the site admin area.
  */
-export const SiteAdminSidebar: React.FunctionComponent<SiteAdminSidebarProps> = ({ className, groups, ...props }) => (
+export const SiteAdminSidebar: React.FunctionComponent<React.PropsWithChildren<SiteAdminSidebarProps>> = ({
+    className,
+    groups,
+    ...props
+}) => (
     <SidebarGroup className={classNames('site-admin-sidebar', className)}>
         <ul className="list-group">
             {groups.map(

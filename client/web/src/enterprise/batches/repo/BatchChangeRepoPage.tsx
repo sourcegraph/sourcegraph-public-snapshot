@@ -4,7 +4,7 @@ import * as H from 'history'
 
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { PageHeader, useObservable } from '@sourcegraph/wildcard'
+import { PageHeader, Typography, useObservable } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import { DiffStat } from '../../../components/diff/DiffStat'
@@ -39,7 +39,7 @@ interface BatchChangeRepoPageProps extends ThemeProps {
     queryExternalChangesetWithFileDiffs?: typeof _queryExternalChangesetWithFileDiffs
 }
 
-export const BatchChangeRepoPage: React.FunctionComponent<BatchChangeRepoPageProps> = ({
+export const BatchChangeRepoPage: React.FunctionComponent<React.PropsWithChildren<BatchChangeRepoPageProps>> = ({
     repo,
     queryRepoBatchChangeStats = _queryRepoBatchChangeStats,
     ...context
@@ -66,7 +66,7 @@ export const BatchChangeRepoPage: React.FunctionComponent<BatchChangeRepoPagePro
             />
             {hasChangesets && stats?.batchChangesDiffStat && stats?.changesetsStats ? (
                 <div className="d-flex align-items-center mt-4 mb-3">
-                    <h2 className="mb-0 pb-1">{repoDisplayName}</h2>
+                    <Typography.H2 className="mb-0 pb-1">{repoDisplayName}</Typography.H2>
                     <DiffStat className="d-flex flex-1 ml-2" expandedCounts={true} {...stats.batchChangesDiffStat} />
                     <StatsBar stats={stats.changesetsStats} />
                 </div>
@@ -89,7 +89,7 @@ interface StatsBarProps {
     stats: RepoBatchChangeStats['changesetsStats']
 }
 
-const StatsBar: React.FunctionComponent<StatsBarProps> = ({
+const StatsBar: React.FunctionComponent<React.PropsWithChildren<StatsBarProps>> = ({
     stats: { total, draft, open, unpublished, closed, merged },
 }) => (
     <div className="d-flex flex-wrap align-items-center">

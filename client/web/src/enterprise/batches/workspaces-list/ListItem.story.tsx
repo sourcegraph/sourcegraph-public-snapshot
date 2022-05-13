@@ -3,7 +3,7 @@ import React from 'react'
 import { storiesOf } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
-import { mockWorkspace } from '../create/workspaces-preview/WorkspacesPreview.mock'
+import { mockWorkspace } from '../batch-spec/edit/workspaces-preview/WorkspacesPreview.mock'
 
 import { Descriptor } from './Descriptor'
 import { CachedIcon, ExcludeIcon } from './Icons'
@@ -61,7 +61,7 @@ add('non-root path', () => (
     </WebStory>
 ))
 
-const STATUS_INDICATORS: [key: string, icon: React.FunctionComponent][] = [
+const STATUS_INDICATORS: [key: string, icon: React.FunctionComponent<React.PropsWithChildren<unknown>>][] = [
     ['cached', CachedIcon],
     ['exclude', ExcludeIcon],
 ]

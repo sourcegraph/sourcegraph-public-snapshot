@@ -1,14 +1,14 @@
 import React from 'react'
 import 'storybook-addon-designs'
 
-import { Link } from '@sourcegraph/wildcard'
+import { Link, Typography } from '@sourcegraph/wildcard'
 
 import { SEMANTIC_COLORS } from './constants'
 import { TextVariants } from './TextVariants'
 
-export const TextStory: React.FunctionComponent = () => (
+export const TextStory: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <>
-        <h2>Headings</h2>
+        <Typography.H2>Headings</Typography.H2>
         <table className="table">
             <tbody>
                 {(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'] as const).map(Heading => (
@@ -28,10 +28,10 @@ export const TextStory: React.FunctionComponent = () => (
             </tbody>
         </table>
 
-        <h2>Text variations</h2>
+        <Typography.H2>Text variations</Typography.H2>
         <TextVariants />
 
-        <h2>Prose</h2>
+        <Typography.H2>Prose</Typography.H2>
         <p>Text uses system fonts. The fonts should never be overridden.</p>
         <p>
             Minim nisi tempor Lorem do incididunt exercitation ipsum consectetur laboris elit est aute irure velit.
@@ -83,7 +83,7 @@ export const TextStory: React.FunctionComponent = () => (
             </small>
         </p>
 
-        <h2>Color variations</h2>
+        <Typography.H2>Color variations</Typography.H2>
         <p>
             <code>text-*</code> classes can be used to apply semantic coloring to text.
         </p>
@@ -95,8 +95,8 @@ export const TextStory: React.FunctionComponent = () => (
             ))}
         </div>
 
-        <h2>Lists</h2>
-        <h3>Ordered</h3>
+        <Typography.H2>Lists</Typography.H2>
+        <Typography.H3>Ordered</Typography.H3>
         <ol>
             <li>
                 Dolor est laborum aute adipisicing quis duis mollit pariatur nostrud eiusmod Lorem pariatur elit mollit.
@@ -114,9 +114,9 @@ export const TextStory: React.FunctionComponent = () => (
             </li>
         </ol>
 
-        <h3>Unordered</h3>
+        <Typography.H3>Unordered</Typography.H3>
 
-        <h4>Dots</h4>
+        <Typography.H4>Dots</Typography.H4>
         <ul>
             <li>
                 Ullamco exercitation voluptate veniam et in incididunt Lorem id consequat dolor reprehenderit amet. Id
@@ -133,7 +133,7 @@ export const TextStory: React.FunctionComponent = () => (
             </li>
         </ul>
 
-        <h4>Dashes</h4>
+        <Typography.H4>Dashes</Typography.H4>
         <p>
             Dashed lists are created using <code>list-dashed</code>.
         </p>

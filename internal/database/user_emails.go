@@ -34,7 +34,7 @@ func (email *UserEmail) NeedsVerificationCoolDown() bool {
 
 // userEmailNotFoundError is the error that is returned when a user email is not found.
 type userEmailNotFoundError struct {
-	args []interface{}
+	args []any
 }
 
 func (err userEmailNotFoundError) Error() string {
@@ -109,7 +109,7 @@ func (s *userEmailsStore) GetPrimaryEmail(ctx context.Context, id int32) (email 
 	if err := s.Handle().DB().QueryRowContext(ctx, "SELECT email, verified_at IS NOT NULL AS verified FROM user_emails WHERE user_id=$1 AND is_primary",
 		id,
 	).Scan(&email, &verified); err != nil {
-		return "", false, userEmailNotFoundError{[]interface{}{fmt.Sprintf("id %d", id)}}
+		return "", false, userEmailNotFoundError{[]any{fmt.Sprintf("id %d", id)}}
 	}
 	return email, verified, nil
 }
@@ -156,7 +156,7 @@ func (s *userEmailsStore) Get(ctx context.Context, userID int32, email string) (
 	if err := s.Handle().DB().QueryRowContext(ctx, "SELECT email, verified_at IS NOT NULL AS verified FROM user_emails WHERE user_id=$1 AND email=$2",
 		userID, email,
 	).Scan(&emailCanonicalCase, &verified); err != nil {
-		return "", false, userEmailNotFoundError{[]interface{}{fmt.Sprintf("userID %d email %q", userID, email)}}
+		return "", false, userEmailNotFoundError{[]any{fmt.Sprintf("userID %d email %q", userID, email)}}
 	}
 	return emailCanonicalCase, verified, nil
 }
@@ -269,7 +269,7 @@ LIMIT 1
 	if err != nil {
 		return nil, err
 	} else if len(emails) < 1 {
-		return nil, userEmailNotFoundError{[]interface{}{fmt.Sprintf("email %q", email)}}
+		return nil, userEmailNotFoundError{[]any{fmt.Sprintf("email %q", email)}}
 	}
 	return emails[0], nil
 }
@@ -311,7 +311,7 @@ func (s *userEmailsStore) ListByUser(ctx context.Context, opt UserEmailsListOpti
 }
 
 // getBySQL returns user emails matching the SQL query, if any exist.
-func (s *userEmailsStore) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*UserEmail, error) {
+func (s *userEmailsStore) getBySQL(ctx context.Context, query string, args ...any) ([]*UserEmail, error) {
 	rows, err := s.Handle().DB().QueryContext(ctx,
 		`SELECT user_emails.user_id, user_emails.email, user_emails.created_at, user_emails.verification_code,
 				user_emails.verified_at, user_emails.last_verification_sent_at, user_emails.is_primary FROM user_emails `+query, args...)

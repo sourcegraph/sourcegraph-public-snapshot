@@ -2,7 +2,6 @@ package query
 
 import (
 	"sort"
-	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
@@ -23,13 +22,6 @@ type justInTimeExecutor struct {
 	repoStore database.RepoStore
 	filter    compression.DataFrameFilter
 	clock     func() time.Time
-}
-
-func withCountUnlimited(s string) string {
-	if strings.Contains(s, "count:") {
-		return s
-	}
-	return s + " count:all"
 }
 
 func generateTimes(plan compression.BackfillPlan) map[time.Time]int {

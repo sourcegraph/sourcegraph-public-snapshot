@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Button, Modal } from '@sourcegraph/wildcard'
+import { Button, Modal, Typography } from '@sourcegraph/wildcard'
 
 import { BatchChangesCodeHostFields, BatchChangesCredentialFields } from '../../../graphql-operations'
 
@@ -14,7 +14,7 @@ interface ViewCredentialModalProps {
     onClose: () => void
 }
 
-export const ViewCredentialModal: React.FunctionComponent<ViewCredentialModalProps> = ({
+export const ViewCredentialModal: React.FunctionComponent<React.PropsWithChildren<ViewCredentialModalProps>> = ({
     credential,
     codeHost,
     onClose,
@@ -28,7 +28,7 @@ export const ViewCredentialModal: React.FunctionComponent<ViewCredentialModalPro
                 externalServiceURL={codeHost.externalServiceURL}
             />
 
-            <h4>Personal access token</h4>
+            <Typography.H4>Personal access token</Typography.H4>
             <div className="form-group">
                 <input
                     type="text"

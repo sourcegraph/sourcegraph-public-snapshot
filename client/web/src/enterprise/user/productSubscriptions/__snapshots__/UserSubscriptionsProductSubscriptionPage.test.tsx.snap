@@ -26,7 +26,9 @@ exports[`UserSubscriptionsProductSubscriptionPage renders 1`] = `
          All subscriptions
       </a>
     </div>
-    <h2>
+    <h2
+      class="h2"
+    >
       Subscription 
     </h2>
     <div

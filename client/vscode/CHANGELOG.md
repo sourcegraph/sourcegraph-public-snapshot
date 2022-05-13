@@ -6,7 +6,11 @@ The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release v
 
 ### Changes
 
+- Update Access Token headers setting method --thanks @ptxmac for the contribution! [issues/34338](https://github.com/sourcegraph/sourcegraph/issues/34338)
+
 ### Fixes
+
+- Windows file path issue [issues/34788](https://github.com/sourcegraph/sourcegraph/issues/34788)
 
 ## 2.2.2
 

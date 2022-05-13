@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // A Syncer periodically synchronizes available repositories from all its given Sources
@@ -115,7 +116,7 @@ type syncHandler struct {
 	minSyncInterval func() time.Duration
 }
 
-func (s *syncHandler) Handle(ctx context.Context, record workerutil.Record) (err error) {
+func (s *syncHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
 	sj, ok := record.(*SyncJob)
 	if !ok {
 		return errors.Errorf("expected repos.SyncJob, got %T", record)
@@ -293,22 +294,21 @@ func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background boo
 
 			// We don't care about the return value here, but we still want to ensure that
 			// only one is in flight at a time.
-			_, _, _ = s.syncGroup.Do(string(name), func() (interface{}, error) {
-				updatedRepo, err := s.syncRepo(ctx, codehost, name, repo)
-				if err != nil {
-					log15.Error("SyncRepo", "name", name, "error", err, "background", background)
-				}
-				return updatedRepo, nil
+			_, err, shared := s.syncGroup.Do(string(name), func() (any, error) {
+				return s.syncRepo(ctx, codehost, name, repo)
 			})
+			if err != nil {
+				log15.Error("SyncRepo", "name", name, "error", err, "background", background, "shared", shared)
+			}
 		}()
 		return repo, nil
 	}
 
-	updatedRepo, err, _ := s.syncGroup.Do(string(name), func() (interface{}, error) {
+	updatedRepo, err, shared := s.syncGroup.Do(string(name), func() (any, error) {
 		return s.syncRepo(ctx, codehost, name, repo)
 	})
 	if err != nil {
-		log15.Error("SyncRepo", "name", name, "error", err, "background", background)
+		log15.Error("SyncRepo", "name", name, "error", err, "background", background, "shared", shared)
 		return nil, err
 	}
 	return updatedRepo.(*types.Repo), nil
@@ -364,8 +364,7 @@ func (s *Syncer) syncRepo(
 
 	if stored != nil {
 		defer func() {
-			if errcode.IsNotFound(err) || errcode.IsUnauthorized(err) ||
-				errcode.IsForbidden(err) || errcode.IsAccountSuspended(err) {
+			if isDeleteableRepoError(err) {
 				err2 := s.Store.DeleteExternalServiceRepo(ctx, svc, stored.ID)
 				if err2 != nil {
 					s.log().Error(
@@ -395,6 +394,13 @@ func (s *Syncer) syncRepo(
 	}
 
 	return repo, nil
+}
+
+// isDeleteableRepoError checks whether the error returned from a repo sync
+// signals that we can safely delete the repo
+func isDeleteableRepoError(err error) bool {
+	return errcode.IsNotFound(err) || errcode.IsUnauthorized(err) ||
+		errcode.IsForbidden(err) || errcode.IsAccountSuspended(err) || errcode.IsUnavailableForLegalReasons(err)
 }
 
 // RepoLimitError is produced by Syncer.ExternalServiceSync when a user's sync job
@@ -861,6 +867,13 @@ func syncErrorReason(err error) string {
 		return "forbidden"
 	case errcode.IsTemporary(err):
 		return "temporary"
+	case strings.Contains(err.Error(), "expected path in npm/(scope/)?name"):
+		// This is a known issue which we can filter out for now
+		return "invalid_npm_path"
+	case strings.Contains(err.Error(), "internal rate limit exceeded"):
+		// We want to identify these as it's not an issue communicating with the code
+		// host and is most likely caused by temporary traffic spikes.
+		return "internal_rate_limit"
 	default:
 		return "unknown"
 	}

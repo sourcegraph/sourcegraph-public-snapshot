@@ -115,7 +115,7 @@ func TestAddOrgsOpenBetaStats(t *testing.T) {
 				addOrgsOpenBetaStats(stats: $stats) {}
 			}
 			`,
-			Variables: map[string]interface{}{
+			Variables: map[string]any{
 				"stats": `{"foo": "bar"}`,
 			},
 			ExpectedResult: fmt.Sprintf(`

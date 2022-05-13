@@ -11,7 +11,10 @@ interface RepositoryNodeProps {
     currentRepo?: Scalars['ID']
 }
 
-export const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({ node, currentRepo }) => (
+export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<RepositoryNodeProps>> = ({
+    node,
+    currentRepo,
+}) => (
     <ConnectionPopoverNode key={node.id}>
         <ConnectionPopoverNodeLink to={`/${node.name}`} active={node.id === currentRepo}>
             {displayRepoName(node.name)}

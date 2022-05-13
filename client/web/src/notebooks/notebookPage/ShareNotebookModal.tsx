@@ -3,7 +3,7 @@ import React, { useCallback, useMemo, useEffect } from 'react'
 import classNames from 'classnames'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Modal, Button, Checkbox } from '@sourcegraph/wildcard'
+import { Modal, Button, Checkbox, Typography } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 
@@ -31,7 +31,7 @@ function getSelectedShareOptionDescription(shareOption: ShareOption, isSourcegra
     return `Only members of the ${shareOption.namespaceName} organization can edit the notebook`
 }
 
-export const ShareNotebookModal: React.FunctionComponent<ShareNotebookModalProps> = ({
+export const ShareNotebookModal: React.FunctionComponent<React.PropsWithChildren<ShareNotebookModalProps>> = ({
     isOpen,
     isSourcegraphDotCom,
     selectedShareOption,
@@ -61,7 +61,7 @@ export const ShareNotebookModal: React.FunctionComponent<ShareNotebookModalProps
 
     return (
         <Modal isOpen={isOpen} position="top-third" onDismiss={toggleModal} aria-labelledby={shareLabelId}>
-            <h3 id={shareLabelId}>Share Notebook</h3>
+            <Typography.H3 id={shareLabelId}>Share Notebook</Typography.H3>
             <div className={classNames('mb-2', styles.body)}>
                 <NotebookShareOptionsDropdown
                     isSourcegraphDotCom={isSourcegraphDotCom}

@@ -17,7 +17,7 @@ func TestPipelineStructural(t *testing.T) {
 }
 
 func jsonFormatted(nodes []Node) string {
-	var jsons []interface{}
+	var jsons []any
 	for _, node := range nodes {
 		jsons = append(jsons, toJSON(node))
 	}

@@ -2,15 +2,13 @@ package run
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"os/exec"
 
-	secretmanager "cloud.google.com/go/secretmanager/apiv1"
 	"golang.org/x/sync/errgroup"
-	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 	"github.com/sourcegraph/sourcegraph/lib/process"
@@ -27,18 +25,13 @@ type Command struct {
 	IgnoreStderr        bool              `yaml:"ignoreStderr"`
 	DefaultArgs         string            `yaml:"defaultArgs"`
 	ContinueWatchOnExit bool              `yaml:"continueWatchOnExit"`
-	Secrets             map[string]Secret `yaml:"secrets"`
 	// Preamble is a short and visible message, displayed when the command is launched.
 	Preamble string `yaml:"preamble"`
 
+	ExternalSecrets map[string]secrets.ExternalSecret `yaml:"external_secrets"`
+
 	// ATTENTION: If you add a new field here, be sure to also handle that
 	// field in `Merge` (below).
-}
-
-type Secret struct {
-	Provider string `yaml:"provider"`
-	Project  string `yaml:"project"`
-	Name     string `yaml:"name"`
 }
 
 func (c Command) Merge(other Command) Command {
@@ -71,8 +64,8 @@ func (c Command) Merge(other Command) Command {
 		merged.Env[k] = v
 	}
 
-	for k, v := range other.Secrets {
-		merged.Secrets[k] = v
+	for k, v := range other.ExternalSecrets {
+		merged.ExternalSecrets[k] = v
 	}
 
 	if !equal(merged.Watch, other.Watch) && len(other.Watch) != 0 {
@@ -133,29 +126,24 @@ func (sc *startedCmd) CapturedStderr() string {
 func getSecrets(ctx context.Context, cmd Command) (map[string]string, error) {
 	secretsEnv := map[string]string{}
 
-	if len(cmd.Secrets) == 0 {
+	if len(cmd.ExternalSecrets) == 0 {
 		return secretsEnv, nil
 	}
 
-	client, err := secretmanager.NewClient(ctx)
+	secretsStore, err := secrets.FromContext(ctx)
 	if err != nil {
 		return nil, errors.Errorf("failed to create secretmanager client: %v", err)
 	}
-	for envName, secret := range cmd.Secrets {
-		if secret.Provider != "gcloud" {
-			errors.Newf("Unknown secrets provider %s", secret.Provider)
-		}
-		path := fmt.Sprintf("projects/%s/secrets/%s/versions/latest", secret.Project, secret.Name)
-		req := &secretmanagerpb.AccessSecretVersionRequest{
-			Name: path,
-		}
-		result, err := client.AccessSecretVersion(ctx, req)
+
+	var errs error
+	for envName, secret := range cmd.ExternalSecrets {
+		secretsEnv[envName], err = secretsStore.GetExternal(ctx, secret)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to access secret %s from %s", secret.Name, secret.Project)
+			errs = errors.Append(errs,
+				errors.Wrapf(err, "failed to access secret %q for command %q", envName, cmd.Name))
 		}
-		secretsEnv[envName] = string(result.Payload.Data)
 	}
-	return secretsEnv, nil
+	return secretsEnv, errs
 }
 
 func startCmd(ctx context.Context, dir string, cmd Command, parentEnv map[string]string) (*startedCmd, error) {
@@ -172,28 +160,29 @@ func startCmd(ctx context.Context, dir string, cmd Command, parentEnv map[string
 
 	secretsEnv, err := getSecrets(ctx, cmd)
 	if err != nil {
-		return nil, errors.Wrapf(err, "cannot fetch secrets")
+		std.Out.WriteLine(output.Styledf(output.StyleWarning, "[%s] %s %s",
+			cmd.Name, output.EmojiFailure, err.Error()))
 	}
 
 	sc.Cmd.Env = makeEnv(parentEnv, secretsEnv, cmd.Env)
 
 	var stdoutWriter, stderrWriter io.Writer
-	logger := newCmdLogger(commandCtx, cmd.Name, stdout.Out)
+	logger := newCmdLogger(commandCtx, cmd.Name, std.Out.Output)
 	if cmd.IgnoreStdout {
-		stdout.Out.WriteLine(output.Linef("", output.StyleSuggestion, "Ignoring stdout of %s", cmd.Name))
+		std.Out.WriteLine(output.Styledf(output.StyleSuggestion, "Ignoring stdout of %s", cmd.Name))
 		stdoutWriter = sc.stdoutBuf
 	} else {
 		stdoutWriter = io.MultiWriter(logger, sc.stdoutBuf)
 	}
 	if cmd.IgnoreStderr {
-		stdout.Out.WriteLine(output.Linef("", output.StyleSuggestion, "Ignoring stderr of %s", cmd.Name))
+		std.Out.WriteLine(output.Styledf(output.StyleSuggestion, "Ignoring stderr of %s", cmd.Name))
 		stderrWriter = sc.stderrBuf
 	} else {
 		stderrWriter = io.MultiWriter(logger, sc.stderrBuf)
 	}
 
 	if cmd.Preamble != "" {
-		stdout.Out.WriteLine(output.Linef("", output.StyleOrange, "[%s] %s %s", cmd.Name, output.EmojiInfo, cmd.Preamble))
+		std.Out.WriteLine(output.Styledf(output.StyleOrange, "[%s] %s %s", cmd.Name, output.EmojiInfo, cmd.Preamble))
 	}
 	eg, err := process.PipeOutputUnbuffered(ctx, sc.Cmd, stdoutWriter, stderrWriter)
 	if err != nil {
