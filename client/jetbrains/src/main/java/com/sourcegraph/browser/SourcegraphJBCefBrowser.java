@@ -5,11 +5,12 @@ import com.intellij.openapi.util.Disposer;
 import com.intellij.ui.jcef.JBCefBrowser;
 import com.sourcegraph.config.ThemeUtil;
 import org.cef.CefApp;
+import org.jetbrains.annotations.NotNull;
 
 public class SourcegraphJBCefBrowser extends JBCefBrowser {
     private final JSToJavaBridge jsToJavaBridge;
 
-    public SourcegraphJBCefBrowser(JSToJavaBridgeRequestHandler requestHandler, Project project) {
+    public SourcegraphJBCefBrowser(@NotNull JSToJavaBridgeRequestHandler requestHandler, @NotNull Project project) {
         super("http://sourcegraph/html/index.html");
         // Create and set up JCEF browser
         CefApp.getInstance().registerSchemeHandlerFactory("http", "sourcegraph", new HttpSchemeHandlerFactory());

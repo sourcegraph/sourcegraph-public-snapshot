@@ -12,8 +12,10 @@ setLinkComponent(AnchorLink)
 let isDarkTheme = false
 let instanceURL = 'https://sourcegraph.com'
 
+type RequestToJavaAction = 'getConfig' | 'getTheme' | 'saveLastSearch' | 'loadLastSearch'
+
 export interface RequestToJava {
-    action: string
+    action: RequestToJavaAction
     arguments: object
 }
 
@@ -89,16 +91,19 @@ async function getTheme(): Promise<Theme> {
 }
 
 function applyTheme(theme: Theme): void {
+    // Dark/light theme
     document.documentElement.classList.add('theme')
-    document.documentElement.classList.remove(isDarkTheme ? 'theme-light' : 'theme-dark')
-    document.documentElement.classList.add(isDarkTheme ? 'theme-dark' : 'theme-light')
-    const root = document.querySelector(':root') as HTMLElement
+    document.documentElement.classList.remove(theme.isDarkTheme ? 'theme-light' : 'theme-dark')
+    document.documentElement.classList.add(theme.isDarkTheme ? 'theme-dark' : 'theme-light')
+    isDarkTheme = theme.isDarkTheme
+
+    // Button color (test)
     const buttonColor = theme.buttonColor
+    const root = document.querySelector(':root') as HTMLElement
     if (buttonColor) {
         root.style.setProperty('--button-color', buttonColor)
     }
     root.style.setProperty('--primary', buttonColor)
-    isDarkTheme = theme.isDarkTheme
 }
 
 window.initializeSourcegraph = async () => {

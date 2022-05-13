@@ -4,6 +4,7 @@ import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.project.Project;
+import com.sourcegraph.find.Search;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -16,6 +17,10 @@ class SourcegraphConfig implements PersistentStateComponent<SourcegraphConfig> {
     public String url;
     public String defaultBranch;
     public String remoteUrlReplacements;
+    public String lastSearchQuery;
+    public boolean lastSearchCaseSensitive;
+    public String lastSearchPatternType;
+    public String lastSearchContextSpec;
 
     @Nullable
     public static SourcegraphConfig getInstance(@NotNull Project project) {
@@ -34,6 +39,10 @@ class SourcegraphConfig implements PersistentStateComponent<SourcegraphConfig> {
         return remoteUrlReplacements;
     }
 
+    public Search getLastSearch() {
+        return new Search(lastSearchQuery, lastSearchCaseSensitive, lastSearchPatternType, lastSearchContextSpec);
+    }
+
     @Nullable
     @Override
     public SourcegraphConfig getState() {
@@ -45,5 +54,9 @@ class SourcegraphConfig implements PersistentStateComponent<SourcegraphConfig> {
         this.url = config.url;
         this.defaultBranch = config.defaultBranch;
         this.remoteUrlReplacements = config.remoteUrlReplacements;
+        this.lastSearchQuery = config.lastSearchQuery;
+        this.lastSearchCaseSensitive = config.lastSearchCaseSensitive;
+        this.lastSearchPatternType = config.lastSearchPatternType;
+        this.lastSearchContextSpec = config.lastSearchContextSpec;
     }
 }

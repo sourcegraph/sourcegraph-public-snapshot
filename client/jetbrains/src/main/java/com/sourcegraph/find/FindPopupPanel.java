@@ -21,7 +21,7 @@ import java.awt.*;
 public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposable {
     private final SourcegraphJBCefBrowser browser;
 
-    public FindPopupPanel(Project project) {
+    public FindPopupPanel(@NotNull Project project) {
         super(new BorderLayout());
 
         setPreferredSize(JBUI.size(1200, 800));
