@@ -4,13 +4,20 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, Icon, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../../../../components/HeroPage'
-import { GetBatchChangeToEditResult, GetBatchChangeToEditVariables, Scalars } from '../../../../graphql-operations'
-// TODO: Move some of these to batch-spec/edit
-import { GET_BATCH_CHANGE_TO_EDIT } from '../../create/backend'
+import {
+    CheckExecutorsAccessTokenResult,
+    CheckExecutorsAccessTokenVariables,
+    GetBatchChangeToEditResult,
+    GetBatchChangeToEditVariables,
+    Scalars,
+} from '../../../../graphql-operations'
+import { BatchSpecDownloadLink } from '../../BatchSpec'
+import { EXECUTORS, GET_BATCH_CHANGE_TO_EDIT } from '../../create/backend'
 import { ConfigurationForm } from '../../create/ConfigurationForm'
 import { InsightTemplatesBanner } from '../../create/InsightTemplatesBanner'
 import { useInsightTemplates } from '../../create/useInsightTemplates'
@@ -19,10 +26,12 @@ import { ActionButtons } from '../header/ActionButtons'
 import { BatchChangeHeader } from '../header/BatchChangeHeader'
 import { TabBar, TabsConfig, TabKey } from '../TabBar'
 
+import { DownloadSpecModal } from './DownloadSpecModal'
 import { EditorFeedbackPanel } from './editor/EditorFeedbackPanel'
 import { MonacoBatchSpecEditor } from './editor/MonacoBatchSpecEditor'
 import { LibraryPane } from './library/LibraryPane'
 import { RunBatchSpecButton } from './RunBatchSpecButton'
+import { RunServerSideModal } from './RunServerSideModal'
 import { WorkspacesPreviewPanel } from './workspaces-preview/WorkspacesPreviewPanel'
 
 import layoutStyles from '../Layout.module.scss'
@@ -116,6 +125,73 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
         []
     )
 
+    // Check for active executors to tell if we are able to run batch changes server-side.
+    const { data } = useQuery<CheckExecutorsAccessTokenResult, CheckExecutorsAccessTokenVariables>(EXECUTORS, {})
+
+    const [isDownloadSpecModalOpen, setIsDownloadSpecModalOpen] = useState(false)
+    const [isRunServerSideModalOpen, setIsRunServerSideModalOpen] = useState(false)
+    const [downloadSpecModalDismissed, setDownloadSpecModalDismissed] = useTemporarySetting(
+        'batches.downloadSpecModalDismissed',
+        false
+    )
+
+    const activeExecutorsActionButtons = (
+        <>
+            <RunBatchSpecButton
+                execute={editor.execute}
+                isExecutionDisabled={editor.isExecutionDisabled}
+                options={editor.executionOptions}
+                onChangeOptions={editor.setExecutionOptions}
+            />
+            {downloadSpecModalDismissed ? (
+                <BatchSpecDownloadLink
+                    name={batchChange.name}
+                    originalInput={editor.code}
+                    isLightTheme={isLightTheme}
+                    asButton={false}
+                >
+                    or download for src-cli
+                </BatchSpecDownloadLink>
+            ) : (
+                <Button className={styles.downloadLink} variant="link" onClick={() => setIsDownloadSpecModalOpen(true)}>
+                    or download for src-cli
+                </Button>
+            )}
+        </>
+    )
+
+    const noActiveExecutorsActionButtons = (
+        <>
+            {downloadSpecModalDismissed ? (
+                <BatchSpecDownloadLink
+                    name={batchChange.name}
+                    originalInput={editor.code}
+                    isLightTheme={isLightTheme}
+                    asButton={true}
+                    className="mb-2"
+                >
+                    Download for src-cli
+                </BatchSpecDownloadLink>
+            ) : (
+                <Button className="mb-2" variant="primary" onClick={() => setIsDownloadSpecModalOpen(true)}>
+                    Download for src-cli
+                </Button>
+            )}
+
+            <Button className={styles.downloadLink} variant="link" onClick={() => setIsRunServerSideModalOpen(true)}>
+                or run server-side
+            </Button>
+        </>
+    )
+
+    // When graphql query is completed, check if the data from the query meets this condition and render approriate buttons
+    // Until the query is complete, this variable will be undefined and no buttons will show
+    const actionButtons = data
+        ? data.areExecutorsConfigured
+            ? activeExecutorsActionButtons
+            : noActiveExecutorsActionButtons
+        : undefined
+
     return (
         <div className={layoutStyles.pageContainer}>
             {insightTitle && <InsightTemplatesBanner insightTitle={insightTitle} type="create" className="mb-3" />}
@@ -128,27 +204,7 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
                     title={{ to: batchChange.url, text: batchChange.name }}
                     description={batchChange.description ?? undefined}
                 />
-                <ActionButtons>
-                    <RunBatchSpecButton
-                        execute={editor.execute}
-                        isExecutionDisabled={editor.isExecutionDisabled}
-                        options={editor.executionOptions}
-                        onChangeOptions={editor.setExecutionOptions}
-                    />
-                    {/* TODO: Come back to this after Adeola's PR is merged */}
-                    <Button className={styles.downloadLink} variant="link" onClick={() => alert('hi')}>
-                        or download for src-cli
-                    </Button>
-                    {/* {downloadSpecModalDismissed ? (
-                        <BatchSpecDownloadLink name={batchChange.name} originalInput={code} isLightTheme={isLightTheme}>
-                            or download for src-cli
-                        </BatchSpecDownloadLink>
-                    ) : (
-                        <Button className={styles.downloadLink} variant="link" onClick={() => setIsDownloadSpecModalOpen(true)}>
-                            or download for src-cli
-                        </Button>
-                    )} */}
-                </ActionButtons>
+                <ActionButtons>{actionButtons}</ActionButtons>
             </div>
             <TabBar activeTabKey={activeTabKey} tabsConfig={tabsConfig} />
 
@@ -171,6 +227,19 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
                     <WorkspacesPreviewPanel />
                 </div>
             )}
+
+            {isDownloadSpecModalOpen && !downloadSpecModalDismissed ? (
+                <DownloadSpecModal
+                    name={batchChange.name}
+                    originalInput={editor.code}
+                    isLightTheme={isLightTheme}
+                    setDownloadSpecModalDismissed={setDownloadSpecModalDismissed}
+                    setIsDownloadSpecModalOpen={setIsDownloadSpecModalOpen}
+                />
+            ) : null}
+            {isRunServerSideModalOpen ? (
+                <RunServerSideModal setIsRunServerSideModalOpen={setIsRunServerSideModalOpen} />
+            ) : null}
         </div>
     )
 })

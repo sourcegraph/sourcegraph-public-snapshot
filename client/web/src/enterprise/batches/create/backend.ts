@@ -229,3 +229,9 @@ export const IMPORTING_CHANGESETS = gql`
         id
     }
 `
+
+export const EXECUTORS = gql`
+    query CheckExecutorsAccessToken {
+        areExecutorsConfigured
+    }
+`
