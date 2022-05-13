@@ -52,7 +52,7 @@ func TestLockfileDependencies(t *testing.T) {
 		}
 
 		if diff := cmp.Diff(expectedDeps, deps); diff != "" {
-			t.Fatalf("commit %s - mismatch (-have, +want): %s", commit, diff)
+			t.Fatalf("unexpected dependencies for commit %s (-have, +want): %s", commit, diff)
 		}
 	}
 }
