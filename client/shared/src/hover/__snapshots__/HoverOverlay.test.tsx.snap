@@ -34,7 +34,6 @@ exports[`HoverOverlay actions and hover error 1`] = `
     >
       <div
         class="hoverError"
-        role="alert"
       >
         M2
       </div>
@@ -265,7 +264,6 @@ exports[`HoverOverlay actions, hover and alert present 1`] = `
     >
       <div
         class="alert"
-        role="alert"
       >
         <span
           class="hoverOverlayContent hoverOverlayContent"
@@ -331,7 +329,6 @@ exports[`HoverOverlay hover error 1`] = `
     >
       <div
         class="hoverError"
-        role="alert"
       >
         M
       </div>
@@ -353,7 +350,6 @@ exports[`HoverOverlay hover error, actions present 1`] = `
     >
       <div
         class="hoverError"
-        role="alert"
       >
         M
       </div>

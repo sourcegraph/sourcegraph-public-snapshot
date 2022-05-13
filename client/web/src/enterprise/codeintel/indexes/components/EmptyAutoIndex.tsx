@@ -9,7 +9,7 @@ export const EmptyAutoIndex: React.FunctionComponent<React.PropsWithChildren<unk
         <MapSearchIcon className="mb-2" />
         <br />
         {'No indexes yet.  Enable precise code intelligence by '}
-        <Link to="/help/code_intelligence/how-to/index_a_go_repository" target="_blank" rel="noreferrer noopener">
+        <Link to="/help/code_intelligence/how-to/enable_auto_indexing" target="_blank" rel="noreferrer noopener">
             auto-indexing LSIF data
         </Link>
         .

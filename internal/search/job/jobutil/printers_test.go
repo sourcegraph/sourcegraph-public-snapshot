@@ -183,31 +183,49 @@ func TestPrettyJSON(t *testing.T) {
   "PARALLEL": [
     {
       "REPOPAGER": {
-        "SearcherJob": {
-          "PatternInfo": {
-            "Pattern": "bar",
-            "IsNegated": false,
-            "IsRegExp": true,
-            "IsStructuralPat": false,
-            "CombyRule": "",
-            "IsWordMatch": false,
-            "IsCaseSensitive": false,
-            "FileMatchLimit": 500,
-            "Index": "yes",
-            "Select": [],
-            "IncludePatterns": null,
-            "ExcludePattern": "",
-            "FilePatternsReposMustInclude": null,
-            "FilePatternsReposMustExclude": null,
-            "PathPatternsAreCaseSensitive": false,
-            "PatternMatchesContent": true,
-            "PatternMatchesPath": true,
-            "Languages": null
+        "PARALLEL": [
+          {
+            "ZoektRepoSubsetSearchJob": {
+              "Repos": null,
+              "Query": {
+                "Pattern": "bar",
+                "CaseSensitive": false,
+                "FileName": false,
+                "Content": false
+              },
+              "Typ": "text",
+              "FileMatchLimit": 500,
+              "Select": []
+            }
           },
-          "Repos": null,
-          "Indexed": false,
-          "UseFullDeadline": true
-        }
+          {
+            "SearcherJob": {
+              "PatternInfo": {
+                "Pattern": "bar",
+                "IsNegated": false,
+                "IsRegExp": true,
+                "IsStructuralPat": false,
+                "CombyRule": "",
+                "IsWordMatch": false,
+                "IsCaseSensitive": false,
+                "FileMatchLimit": 500,
+                "Index": "yes",
+                "Select": [],
+                "IncludePatterns": null,
+                "ExcludePattern": "",
+                "FilePatternsReposMustInclude": null,
+                "FilePatternsReposMustExclude": null,
+                "PathPatternsAreCaseSensitive": false,
+                "PatternMatchesContent": true,
+                "PatternMatchesPath": true,
+                "Languages": null
+              },
+              "Repos": null,
+              "Indexed": false,
+              "UseFullDeadline": true
+            }
+          }
+        ]
       }
     },
     {
@@ -238,6 +256,29 @@ func TestPrettyJSON(t *testing.T) {
           "ContentBasedLangFilters": false
         },
         "Mode": 0
+      }
+    },
+    {
+      "ComputeExcludedReposJob": {
+        "RepoOpts": {
+          "RepoFilters": [
+            "foo"
+          ],
+          "MinusRepoFilters": null,
+          "Dependencies": null,
+          "CaseSensitiveRepoFilters": false,
+          "SearchContextSpec": "",
+          "CommitAfter": "",
+          "Visibility": "Any",
+          "Limit": 0,
+          "Cursors": null,
+          "ForkSet": false,
+          "NoForks": true,
+          "OnlyForks": false,
+          "ArchivedSet": false,
+          "NoArchived": true,
+          "OnlyArchived": false
+        }
       }
     }
   ]
