@@ -10,8 +10,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -221,7 +221,7 @@ func (r *CachedLocationResolver) resolveCommit(ctx context.Context, repositoryRe
 		return nil, err
 	}
 
-	commitID, err := git.ResolveRevision(ctx, r.db, repo.Name, commit, git.ResolveRevisionOptions{NoEnsureRevision: true})
+	commitID, err := gitserver.ResolveRevision(ctx, r.db, repo.Name, commit, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
 	if err != nil {
 		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 			return nil, nil

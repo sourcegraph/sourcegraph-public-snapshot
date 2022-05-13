@@ -22,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -282,7 +281,7 @@ func serveGitResolveRevision(db database.DB) func(w http.ResponseWriter, r *http
 		spec := vars["Spec"]
 
 		// Do not to trigger a repo-updater lookup since this is a batch job.
-		commitID, err := git.ResolveRevision(r.Context(), db, name, spec, git.ResolveRevisionOptions{})
+		commitID, err := gitserver.ResolveRevision(r.Context(), db, name, spec, gitserver.ResolveRevisionOptions{})
 		if err != nil {
 			return err
 		}
@@ -303,7 +302,7 @@ func serveGitTar(db database.DB) func(w http.ResponseWriter, r *http.Request) er
 		// Ensure commit exists. Do not want to trigger a repo-updater lookup since this is a batch job.
 		repo := api.RepoName(name)
 		ctx := r.Context()
-		commit, err := git.ResolveRevision(ctx, db, repo, spec, git.ResolveRevisionOptions{})
+		commit, err := gitserver.ResolveRevision(ctx, db, repo, spec, gitserver.ResolveRevisionOptions{})
 		if err != nil {
 			return err
 		}

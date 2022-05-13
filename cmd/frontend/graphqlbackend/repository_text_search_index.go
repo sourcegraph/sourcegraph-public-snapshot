@@ -9,8 +9,8 @@ import (
 	zoektquery "github.com/google/zoekt/query"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func (r *RepositoryResolver) TextSearchIndex() *repositoryTextSearchIndexResolver {
@@ -128,7 +128,7 @@ func (r *repositoryTextSearchIndexResolver) Refs(ctx context.Context) ([]*reposi
 	refByName := func(name string) *repositoryTextSearchIndexedRef {
 		possibleRefNames := []string{"refs/heads/" + name, "refs/tags/" + name}
 		for _, ref := range possibleRefNames {
-			if _, err := git.ResolveRevision(ctx, repoResolver.db, repoResolver.RepoName(), ref, git.ResolveRevisionOptions{NoEnsureRevision: true}); err == nil {
+			if _, err := gitserver.ResolveRevision(ctx, repoResolver.db, repoResolver.RepoName(), ref, gitserver.ResolveRevisionOptions{NoEnsureRevision: true}); err == nil {
 				name = ref
 				break
 			}

@@ -60,10 +60,11 @@ var (
 )
 
 var ClientMocks, emptyClientMocks struct {
-	GetObject      func(repo api.RepoName, objectName string) (*gitdomain.GitObject, error)
-	RepoInfo       func(ctx context.Context, repos ...api.RepoName) (*protocol.RepoInfoResponse, error)
-	Archive        func(ctx context.Context, repo api.RepoName, opt ArchiveOptions) (_ io.ReadCloser, err error)
-	LocalGitserver bool
+	GetObject               func(repo api.RepoName, objectName string) (*gitdomain.GitObject, error)
+	RepoInfo                func(ctx context.Context, repos ...api.RepoName) (*protocol.RepoInfoResponse, error)
+	Archive                 func(ctx context.Context, repo api.RepoName, opt ArchiveOptions) (_ io.ReadCloser, err error)
+	LocalGitserver          bool
+	LocalGitCommandReposDir string
 }
 
 // AddrsMock is a mock for Addrs() function. It is separated from ClientMocks
@@ -913,7 +914,11 @@ func repoNamesFromRepoCommits(repoCommits []api.RepoCommit) []string {
 
 func (c *ClientImplementor) GitCommand(repo api.RepoName, arg ...string) GitCommand {
 	if ClientMocks.LocalGitserver {
-		return NewLocalGitCommand(repo, arg...)
+		cmd := NewLocalGitCommand(repo, arg...)
+		if ClientMocks.LocalGitCommandReposDir != "" {
+			cmd.ReposDir = ClientMocks.LocalGitCommandReposDir
+		}
+		return cmd
 	}
 	return &RemoteGitCommand{
 		repo:   repo,

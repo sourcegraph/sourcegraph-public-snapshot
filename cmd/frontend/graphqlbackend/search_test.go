@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search/backend"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -23,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -37,7 +37,7 @@ func TestSearch(t *testing.T) {
 		searchQuery                  string
 		searchVersion                string
 		reposListMock                func(v0 context.Context, v1 database.ReposListOptions) ([]*types.Repo, error)
-		repoRevsMock                 func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error)
+		repoRevsMock                 func(spec string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error)
 		externalServicesListMock     func(_ context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error)
 		phabricatorGetRepoByNameMock func(_ context.Context, repo api.RepoName) (*types.PhabricatorRepo, error)
 		wantResults                  Results
@@ -48,7 +48,7 @@ func TestSearch(t *testing.T) {
 			reposListMock: func(v0 context.Context, v1 database.ReposListOptions) ([]*types.Repo, error) {
 				return nil, nil
 			},
-			repoRevsMock: func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
+			repoRevsMock: func(spec string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 				return "", nil
 			},
 			externalServicesListMock: func(_ context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
@@ -71,7 +71,7 @@ func TestSearch(t *testing.T) {
 
 					nil
 			},
-			repoRevsMock: func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
+			repoRevsMock: func(spec string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 				return "", nil
 			},
 			externalServicesListMock: func(_ context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
@@ -116,7 +116,7 @@ func TestSearch(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			git.Mocks.ResolveRevision = tc.repoRevsMock
+			gitserver.Mocks.ResolveRevision = tc.repoRevsMock
 			result := schema.Exec(context.Background(), testSearchGQLQuery, "", vars)
 			if len(result.Errors) > 0 {
 				t.Fatalf("graphQL query returned errors: %+v", result.Errors)

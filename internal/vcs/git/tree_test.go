@@ -411,7 +411,7 @@ func TestRepository_FileSystem_quoteChars(t *testing.T) {
 
 	client := gitserver.NewClient(db)
 	for label, test := range tests {
-		commitID, err := ResolveRevision(ctx, db, test.repo, "master", ResolveRevisionOptions{})
+		commitID, err := gitserver.ResolveRevision(ctx, db, test.repo, "master", gitserver.ResolveRevisionOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -472,7 +472,7 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 
 	client := gitserver.NewClient(db)
 	for label, test := range tests {
-		commitID, err := ResolveRevision(ctx, db, test.repo, "master", ResolveRevisionOptions{})
+		commitID, err := gitserver.ResolveRevision(ctx, db, test.repo, "master", gitserver.ResolveRevisionOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -52,7 +52,7 @@ type CommitsOptions struct {
 var recordGetCommitQueries = os.Getenv("RECORD_GET_COMMIT_QUERIES") == "1"
 
 // getCommit returns the commit with the given id.
-func getCommit(ctx context.Context, db database.DB, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions, checker authz.SubRepoPermissionChecker) (_ *gitdomain.Commit, err error) {
+func getCommit(ctx context.Context, db database.DB, repo api.RepoName, id api.CommitID, opt gitserver.ResolveRevisionOptions, checker authz.SubRepoPermissionChecker) (_ *gitdomain.Commit, err error) {
 	if Mocks.GetCommit != nil {
 		return Mocks.GetCommit(id)
 	}
@@ -109,7 +109,7 @@ func getCommit(ctx context.Context, db database.DB, repo api.RepoName, id api.Co
 // The remoteURLFunc is called to get the Git remote URL if it's not set in repo and if it is
 // needed. The Git remote URL is only required if the gitserver doesn't already contain a clone of
 // the repository or if the commit must be fetched from the remote.
-func GetCommit(ctx context.Context, db database.DB, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions, checker authz.SubRepoPermissionChecker) (*gitdomain.Commit, error) {
+func GetCommit(ctx context.Context, db database.DB, repo api.RepoName, id api.CommitID, opt gitserver.ResolveRevisionOptions, checker authz.SubRepoPermissionChecker) (*gitdomain.Commit, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: GetCommit")
 	span.SetTag("Commit", id)
 	defer span.Finish()
@@ -205,7 +205,7 @@ func CommitsUniqueToBranch(ctx context.Context, db database.DB, repo api.RepoNam
 func filterCommitsUniqueToBranch(ctx context.Context, db database.DB, repo api.RepoName, commitsMap map[string]time.Time, checker authz.SubRepoPermissionChecker) map[string]time.Time {
 	filtered := make(map[string]time.Time, len(commitsMap))
 	for commitID, timeStamp := range commitsMap {
-		if _, err := GetCommit(ctx, db, repo, api.CommitID(commitID), ResolveRevisionOptions{}, checker); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+		if _, err := GetCommit(ctx, db, repo, api.CommitID(commitID), gitserver.ResolveRevisionOptions{}, checker); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 			filtered[commitID] = timeStamp
 		}
 	}
@@ -251,7 +251,7 @@ func HasCommitAfter(ctx context.Context, db database.DB, repo api.RepoName, date
 		revspec = "HEAD"
 	}
 
-	commitid, err := ResolveRevision(ctx, db, repo, revspec, ResolveRevisionOptions{NoEnsureRevision: true})
+	commitid, err := gitserver.ResolveRevision(ctx, db, repo, revspec, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
 	if err != nil {
 		return false, err
 	}
@@ -506,12 +506,12 @@ func FirstEverCommit(ctx context.Context, db database.DB, repo api.RepoName, che
 	}
 	first := tokens[0]
 	id := api.CommitID(bytes.TrimSpace(first))
-	return GetCommit(ctx, db, repo, id, ResolveRevisionOptions{NoEnsureRevision: true}, checker)
+	return GetCommit(ctx, db, repo, id, gitserver.ResolveRevisionOptions{NoEnsureRevision: true}, checker)
 }
 
 // CommitExists determines if the given commit exists in the given repository.
 func CommitExists(ctx context.Context, db database.DB, repo api.RepoName, id api.CommitID, checker authz.SubRepoPermissionChecker) (bool, error) {
-	c, err := getCommit(ctx, db, repo, id, ResolveRevisionOptions{NoEnsureRevision: true}, checker)
+	c, err := getCommit(ctx, db, repo, id, gitserver.ResolveRevisionOptions{NoEnsureRevision: true}, checker)
 	if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 		return false, nil
 	}
@@ -646,7 +646,7 @@ func Head(ctx context.Context, db database.DB, repo api.RepoName, checker authz.
 	}
 	commitID := string(out)
 	if authz.SubRepoEnabled(checker) {
-		if _, err := GetCommit(ctx, db, repo, api.CommitID(commitID), ResolveRevisionOptions{}, checker); err != nil {
+		if _, err := GetCommit(ctx, db, repo, api.CommitID(commitID), gitserver.ResolveRevisionOptions{}, checker); err != nil {
 			return checkError(err)
 		}
 	}
@@ -751,7 +751,7 @@ func parseCommitFileNames(partsPerCommit int, parts [][]byte) ([]string, []byte)
 func BranchesContaining(ctx context.Context, db database.DB, repo api.RepoName, commit api.CommitID, checker authz.SubRepoPermissionChecker) ([]string, error) {
 	if authz.SubRepoEnabled(checker) {
 		// GetCommit to validate that the user has permissions to access it.
-		if _, err := GetCommit(ctx, db, repo, commit, ResolveRevisionOptions{}, checker); err != nil {
+		if _, err := GetCommit(ctx, db, repo, commit, gitserver.ResolveRevisionOptions{}, checker); err != nil {
 			return nil, err
 		}
 	}
@@ -839,7 +839,7 @@ func filterRefDescriptions(ctx context.Context,
 ) map[string][]gitdomain.RefDescription {
 	filtered := make(map[string][]gitdomain.RefDescription, len(refDescriptions))
 	for commitID, descriptions := range refDescriptions {
-		if _, err := GetCommit(ctx, db, repo, api.CommitID(commitID), ResolveRevisionOptions{}, checker); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+		if _, err := GetCommit(ctx, db, repo, api.CommitID(commitID), gitserver.ResolveRevisionOptions{}, checker); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 			filtered[commitID] = descriptions
 		}
 	}
@@ -929,7 +929,7 @@ lineLoop:
 func CommitDate(ctx context.Context, db database.DB, repo api.RepoName, commit api.CommitID, checker authz.SubRepoPermissionChecker) (_ string, _ time.Time, revisionExists bool, err error) {
 	if authz.SubRepoEnabled(checker) {
 		// GetCommit to validate that the user has permissions to access it.
-		if _, err := GetCommit(ctx, db, repo, commit, ResolveRevisionOptions{}, checker); err != nil {
+		if _, err := GetCommit(ctx, db, repo, commit, gitserver.ResolveRevisionOptions{}, checker); err != nil {
 			return "", time.Time{}, false, nil
 		}
 	}

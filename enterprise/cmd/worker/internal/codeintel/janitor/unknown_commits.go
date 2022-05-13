@@ -10,9 +10,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -111,7 +111,7 @@ func (j *unknownCommitJanitor) handleSourcedCommits(ctx context.Context, tx DBSt
 
 func (j *unknownCommitJanitor) handleCommit(ctx context.Context, tx DBStore, repositoryID int, repositoryName, commit string) error {
 	var shouldDelete bool
-	_, err := git.ResolveRevision(ctx, database.NewDBWith(tx), api.RepoName(repositoryName), commit, git.ResolveRevisionOptions{})
+	_, err := gitserver.ResolveRevision(ctx, database.NewDBWith(tx), api.RepoName(repositoryName), commit, gitserver.ResolveRevisionOptions{})
 	if err == nil {
 		// If we have no error then the commit is resolvable and we shouldn't touch it.
 		shouldDelete = false

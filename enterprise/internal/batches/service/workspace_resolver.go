@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	streamapi "github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
@@ -289,7 +290,7 @@ func (wr *workspaceResolver) resolveRepositoryNameAndBranch(ctx context.Context,
 		return nil, err
 	}
 
-	commit, err := git.ResolveRevision(ctx, database.NewDBWith(wr.store), repo.Name, branch, git.ResolveRevisionOptions{
+	commit, err := gitserver.ResolveRevision(ctx, database.NewDBWith(wr.store), repo.Name, branch, gitserver.ResolveRevisionOptions{
 		NoEnsureRevision: true,
 	})
 	if err != nil && errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {

@@ -419,7 +419,7 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 		// NoEnsureRevision. We do this, otherwise RepositoryResolver.Commit
 		// will try and fetch it from the remote host. However, this is not on
 		// the remote host since we created it.
-		_, err = git.ResolveRevision(ctx, db, repo.Name, targetRef, git.ResolveRevisionOptions{
+		_, err = gitserver.ResolveRevision(ctx, db, repo.Name, targetRef, gitserver.ResolveRevisionOptions{
 			NoEnsureRevision: true,
 		})
 		if err != nil {
