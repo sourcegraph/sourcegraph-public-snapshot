@@ -76,16 +76,16 @@ func TestDependencies(t *testing.T) {
 	})
 
 	// Return canned dependencies for repo `baz`
-	mockStore.LockfileDependenciesFunc.SetDefaultHook(func(ctx context.Context, repoName, commit string) ([]shared.PackageDependency, error) {
+	mockStore.LockfileDependenciesFunc.SetDefaultHook(func(ctx context.Context, repoName, commit string) ([]shared.PackageDependency, bool, error) {
 		if repoName != "github.com/example/baz" {
-			return nil, nil
+			return nil, false, nil
 		}
 
 		return []shared.PackageDependency{
 			shared.TestPackageDependencyLiteral("npm/leftpad", "1", "2", "3", "4"),
 			shared.TestPackageDependencyLiteral("npm/rightpad", "2", "3", "4", "5"),
 			shared.TestPackageDependencyLiteral("npm/centerpad", "3", "4", "5", "6"),
-		}, nil
+		}, true, nil
 	})
 
 	repoRevs := map[api.RepoName]types.RevSpecSet{

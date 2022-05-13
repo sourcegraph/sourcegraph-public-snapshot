@@ -216,14 +216,12 @@ func (s *Service) resolveLockfileDependenciesFromStore(ctx context.Context, repo
 
 	for _, repoCommit := range repoCommits {
 		// TODO - batch these requests in the store layer
-		repoDeps, err := s.dependenciesStore.LockfileDependencies(ctx, string(repoCommit.Repo), repoCommit.ResolvedCommit)
-		if err != nil {
+		if repoDeps, ok, err := s.dependenciesStore.LockfileDependencies(ctx, string(repoCommit.Repo), repoCommit.ResolvedCommit); err != nil {
 			return nil, 0, errors.Wrap(err, "store.LockfileDependencies")
-		}
-		if len(repoDeps) > 0 {
-			deps = append(deps, repoDeps...)
-		} else {
+		} else if !ok {
 			unqueried = append(unqueried, repoCommit)
+		} else {
+			deps = append(deps, repoDeps...)
 		}
 	}
 

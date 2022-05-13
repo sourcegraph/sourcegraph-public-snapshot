@@ -49,22 +49,47 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 // LockfileDependencies returns package dependencies from a previous lockfiles result for
 // the given repository and commit. It is assumed that the given commit is the canonical
 // 40-character hash.
-func (s *Store) LockfileDependencies(ctx context.Context, repoName, commit string) (deps []shared.PackageDependency, err error) {
+func (s *Store) LockfileDependencies(ctx context.Context, repoName, commit string) (deps []shared.PackageDependency, found bool, err error) {
 	ctx, _, endObservation := s.operations.lockfileDependencies.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repoName", repoName),
 		log.String("commit", commit),
 	}})
 	defer func() {
 		endObservation(1, observation.Args{LogFields: []log.Field{
+			log.Bool("found", found),
 			log.Int("numDeps", len(deps)),
 		}})
 	}()
 
-	return scanPackageDependencies(s.Query(ctx, sqlf.Sprintf(
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return nil, false, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	deps, err = scanPackageDependencies(tx.Query(ctx, sqlf.Sprintf(
 		lockfileDependenciesQuery,
 		repoName,
 		dbutil.CommitBytea(commit),
 	)))
+	if err != nil {
+		return nil, false, err
+	}
+	if len(deps) == 0 {
+		// No dependencies were found, but we could have already written a record
+		// that just had an empty references list. Check to see if this is the case
+		// so we don't attempt to re-parse the lockfiles of this repo/commit from the
+		// dependencies service.
+		_, found, err = basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(
+			lockfileDependenciesExistsQuery,
+			repoName,
+			dbutil.CommitBytea(commit),
+		)))
+
+		return nil, found, err
+	}
+
+	return deps, true, nil
 }
 
 const lockfileDependenciesQuery = `
@@ -81,6 +106,13 @@ WHERE id IN (
 	FROM codeintel_lockfiles
 	WHERE repository_id = (SELECT id FROM repo WHERE name = %s) AND commit_bytea = %s
 )
+`
+
+const lockfileDependenciesExistsQuery = `
+-- source: internal/codeintel/dependencies/internal/store/store.go:LockfileDependencies
+SELECT 1
+FROM codeintel_lockfiles
+WHERE repository_id = (SELECT id FROM repo WHERE name = %s) AND commit_bytea = %s
 `
 
 // UpsertLockfileDependencies inserts the given package dependencies if they do not exist
@@ -122,17 +154,15 @@ func (s *Store) UpsertLockfileDependencies(ctx context.Context, repoName, commit
 	if ids == nil {
 		ids = []int{}
 	}
+	idsArray := pq.Array(ids)
 
-	if err := tx.Exec(ctx, sqlf.Sprintf(
+	return tx.Exec(ctx, sqlf.Sprintf(
 		insertLockfilesQuery,
 		dbutil.CommitBytea(commit),
-		pq.Array(ids),
+		idsArray,
 		repoName,
-	)); err != nil {
-		return err
-	}
-
-	return nil
+		idsArray,
+	))
 }
 
 const temporaryLockfileReferencesTableQuery = `
@@ -180,6 +210,9 @@ INSERT INTO codeintel_lockfiles (
 SELECT id, %s, %s
 FROM repo
 WHERE name = %s
+-- Last write wins
+ON CONFLICT (repository_id, commit_bytea) DO UPDATE
+SET codeintel_lockfile_reference_ids = %s
 `
 
 // populatePackageDependencyChannel populates a channel with the given dependencies for bulk insertion.

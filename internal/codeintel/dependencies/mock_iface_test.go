@@ -212,7 +212,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		LockfileDependenciesFunc: &StoreLockfileDependenciesFunc{
-			defaultHook: func(context.Context, string, string) (r0 []shared.PackageDependency, r1 error) {
+			defaultHook: func(context.Context, string, string) (r0 []shared.PackageDependency, r1 bool, r2 error) {
 				return
 			},
 		},
@@ -244,7 +244,7 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		LockfileDependenciesFunc: &StoreLockfileDependenciesFunc{
-			defaultHook: func(context.Context, string, string) ([]shared.PackageDependency, error) {
+			defaultHook: func(context.Context, string, string) ([]shared.PackageDependency, bool, error) {
 				panic("unexpected invocation of MockStore.LockfileDependencies")
 			},
 		},
@@ -508,24 +508,24 @@ func (c StoreListDependencyReposFuncCall) Results() []interface{} {
 // StoreLockfileDependenciesFunc describes the behavior when the
 // LockfileDependencies method of the parent MockStore instance is invoked.
 type StoreLockfileDependenciesFunc struct {
-	defaultHook func(context.Context, string, string) ([]shared.PackageDependency, error)
-	hooks       []func(context.Context, string, string) ([]shared.PackageDependency, error)
+	defaultHook func(context.Context, string, string) ([]shared.PackageDependency, bool, error)
+	hooks       []func(context.Context, string, string) ([]shared.PackageDependency, bool, error)
 	history     []StoreLockfileDependenciesFuncCall
 	mutex       sync.Mutex
 }
 
 // LockfileDependencies delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockStore) LockfileDependencies(v0 context.Context, v1 string, v2 string) ([]shared.PackageDependency, error) {
-	r0, r1 := m.LockfileDependenciesFunc.nextHook()(v0, v1, v2)
-	m.LockfileDependenciesFunc.appendCall(StoreLockfileDependenciesFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
+func (m *MockStore) LockfileDependencies(v0 context.Context, v1 string, v2 string) ([]shared.PackageDependency, bool, error) {
+	r0, r1, r2 := m.LockfileDependenciesFunc.nextHook()(v0, v1, v2)
+	m.LockfileDependenciesFunc.appendCall(StoreLockfileDependenciesFuncCall{v0, v1, v2, r0, r1, r2})
+	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the LockfileDependencies
 // method of the parent MockStore instance is invoked and the hook queue is
 // empty.
-func (f *StoreLockfileDependenciesFunc) SetDefaultHook(hook func(context.Context, string, string) ([]shared.PackageDependency, error)) {
+func (f *StoreLockfileDependenciesFunc) SetDefaultHook(hook func(context.Context, string, string) ([]shared.PackageDependency, bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -533,7 +533,7 @@ func (f *StoreLockfileDependenciesFunc) SetDefaultHook(hook func(context.Context
 // LockfileDependencies method of the parent MockStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *StoreLockfileDependenciesFunc) PushHook(hook func(context.Context, string, string) ([]shared.PackageDependency, error)) {
+func (f *StoreLockfileDependenciesFunc) PushHook(hook func(context.Context, string, string) ([]shared.PackageDependency, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -541,20 +541,20 @@ func (f *StoreLockfileDependenciesFunc) PushHook(hook func(context.Context, stri
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreLockfileDependenciesFunc) SetDefaultReturn(r0 []shared.PackageDependency, r1 error) {
-	f.SetDefaultHook(func(context.Context, string, string) ([]shared.PackageDependency, error) {
-		return r0, r1
+func (f *StoreLockfileDependenciesFunc) SetDefaultReturn(r0 []shared.PackageDependency, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, string, string) ([]shared.PackageDependency, bool, error) {
+		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreLockfileDependenciesFunc) PushReturn(r0 []shared.PackageDependency, r1 error) {
-	f.PushHook(func(context.Context, string, string) ([]shared.PackageDependency, error) {
-		return r0, r1
+func (f *StoreLockfileDependenciesFunc) PushReturn(r0 []shared.PackageDependency, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, string, string) ([]shared.PackageDependency, bool, error) {
+		return r0, r1, r2
 	})
 }
 
-func (f *StoreLockfileDependenciesFunc) nextHook() func(context.Context, string, string) ([]shared.PackageDependency, error) {
+func (f *StoreLockfileDependenciesFunc) nextHook() func(context.Context, string, string) ([]shared.PackageDependency, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -601,7 +601,10 @@ type StoreLockfileDependenciesFuncCall struct {
 	Result0 []shared.PackageDependency
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 error
+	Result1 bool
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -613,7 +616,7 @@ func (c StoreLockfileDependenciesFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c StoreLockfileDependenciesFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // StoreUpsertDependencyReposFunc describes the behavior when the

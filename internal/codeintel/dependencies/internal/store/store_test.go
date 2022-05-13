@@ -45,15 +45,33 @@ func TestLockfileDependencies(t *testing.T) {
 		}
 	}
 
+	// Update twice to show idempotency
+	for commit, expected := range commits {
+		if err := store.UpsertLockfileDependencies(ctx, "foo", commit, expected); err != nil {
+			t.Fatalf("unexpected error upserting lockfile dependencies: %s", err)
+		}
+	}
+
 	for commit, expectedDeps := range commits {
-		deps, err := store.LockfileDependencies(ctx, "foo", commit)
+		deps, found, err := store.LockfileDependencies(ctx, "foo", commit)
 		if err != nil {
-			t.Fatalf("unexpected error querying lockfile dependencies: %s", err)
+			t.Fatalf("unexpected error querying lockfile dependencies of %s: %s", commit, err)
+		}
+		if !found {
+			t.Fatalf("expected dependencies to be cached for %s", commit)
 		}
 
 		if diff := cmp.Diff(expectedDeps, deps); diff != "" {
 			t.Fatalf("unexpected dependencies for commit %s (-have, +want): %s", commit, diff)
 		}
+	}
+
+	missingCommit := "d00dd00d"
+	_, found, err := store.LockfileDependencies(ctx, "foo", missingCommit)
+	if err != nil {
+		t.Fatalf("unexpected error querying lockfile dependencies: %s", err)
+	} else if found {
+		t.Fatalf("expected no dependencies to be cached for %s", missingCommit)
 	}
 }
 
