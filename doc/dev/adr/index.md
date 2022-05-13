@@ -1,6 +1,5 @@
 <!-- DO NOT EDIT: generated via: go generate ./dev/adr-docs -->
 
-[[# 1. Record architecture decisions 1 Record architecture decisions]]
 # Usage of Architecture Decision Records (ADRs)
 
 This page is an ADR log. Read the first entry to learn about the reasoning and context behind the adoption of ADRs.
