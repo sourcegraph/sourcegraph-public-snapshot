@@ -16,7 +16,7 @@ import {
     PreviewVisibleBatchSpecWorkspaceFields,
 } from '../../../../../graphql-operations'
 import { Header as WorkspacesListHeader } from '../../../workspaces-list'
-import { useBatchSpecContext } from '../../BatchSpecContext'
+import { BatchSpecContextState, useBatchSpecContext } from '../../BatchSpecContext'
 
 import { ImportingChangesetsPreviewList } from './ImportingChangesetsPreviewList'
 import { PreviewLoadingSpinner } from './PreviewLoadingSpinner'
@@ -47,10 +47,31 @@ const WAITING_MESSAGES = [
 /* The time to wait until we display the next waiting message, in seconds. */
 const WAITING_MESSAGE_INTERVAL = 10
 
-export const WorkspacesPreview: React.FunctionComponent<React.PropsWithChildren<{ isReadOnly?: boolean }>> = ({
+interface WorkspacesPreviewProps {
+    isReadOnly?: boolean
+}
+
+export const WorkspacesPreview: React.FunctionComponent<React.PropsWithChildren<WorkspacesPreviewProps>> = ({
     isReadOnly = false,
 }) => {
     const { batchSpec, editor, workspacesPreview } = useBatchSpecContext()
+
+    return (
+        <MemoizedWorkspacesPreview
+            batchSpec={batchSpec}
+            editor={editor}
+            workspacesPreview={workspacesPreview}
+            isReadOnly={isReadOnly}
+        />
+    )
+}
+
+type MemoizedWorkspacesPreviewProps = WorkspacesPreviewProps &
+    Pick<BatchSpecContextState, 'batchSpec' | 'editor' | 'workspacesPreview'>
+
+const MemoizedWorkspacesPreview: React.FunctionComponent<
+    React.PropsWithChildren<MemoizedWorkspacesPreviewProps>
+> = React.memo(({ isReadOnly, batchSpec, editor, workspacesPreview }) => {
     const { debouncedCode, excludeRepo, isServerStale } = editor
     const {
         resolutionState,
@@ -232,7 +253,7 @@ export const WorkspacesPreview: React.FunctionComponent<React.PropsWithChildren<
             )}
         </div>
     )
-}
+})
 
 const CTAInstruction: React.FunctionComponent<React.PropsWithChildren<{ active: boolean }>> = ({
     active,

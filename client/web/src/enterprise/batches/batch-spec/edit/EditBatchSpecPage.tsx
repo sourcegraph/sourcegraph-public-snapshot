@@ -14,7 +14,7 @@ import { GET_BATCH_CHANGE_TO_EDIT } from '../../create/backend'
 import { ConfigurationForm } from '../../create/ConfigurationForm'
 import { InsightTemplatesBanner } from '../../create/InsightTemplatesBanner'
 import { useInsightTemplates } from '../../create/useInsightTemplates'
-import { BatchSpecContextProvider, useBatchSpecContext } from '../BatchSpecContext'
+import { BatchSpecContextProvider, useBatchSpecContext, BatchSpecContextState } from '../BatchSpecContext'
 import { ActionButtons } from '../header/ActionButtons'
 import { BatchChangeHeader } from '../header/BatchChangeHeader'
 import { TabBar, TabsConfig, TabKey } from '../TabBar'
@@ -78,12 +78,19 @@ export const EditBatchSpecPage: React.FunctionComponent<React.PropsWithChildren<
 
 interface EditBatchSpecPageContentProps extends SettingsCascadeProps<Settings>, ThemeProps {}
 
-const EditBatchSpecPageContent: React.FunctionComponent<React.PropsWithChildren<EditBatchSpecPageContentProps>> = ({
-    settingsCascade,
-    isLightTheme,
-}) => {
+const EditBatchSpecPageContent: React.FunctionComponent<
+    React.PropsWithChildren<EditBatchSpecPageContentProps>
+> = props => {
     const { batchChange, editor, errors } = useBatchSpecContext()
+    return <MemoizedEditBatchSpecPageContent {...props} batchChange={batchChange} editor={editor} errors={errors} />
+}
 
+type MemoizedEditBatchSpecPageContentProps = EditBatchSpecPageContentProps &
+    Pick<BatchSpecContextState, 'batchChange' | 'editor' | 'errors'>
+
+const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
+    React.PropsWithChildren<MemoizedEditBatchSpecPageContentProps>
+> = React.memo(({ settingsCascade, isLightTheme, batchChange, editor, errors }) => {
     const { insightTitle } = useInsightTemplates(settingsCascade)
 
     const [activeTabKey, setActiveTabKey] = useState<TabKey>('spec')
@@ -166,4 +173,4 @@ const EditBatchSpecPageContent: React.FunctionComponent<React.PropsWithChildren<
             )}
         </div>
     )
-}
+})

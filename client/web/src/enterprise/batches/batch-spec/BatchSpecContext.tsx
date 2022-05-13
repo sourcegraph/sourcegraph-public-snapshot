@@ -72,7 +72,7 @@ const DEFAULT_EXECUTION_OPTIONS: ExecutionOptions = {
     runWithoutCache: false,
 }
 
-export interface BatchSpecContextState<BatchSpecFields extends MinimalBatchSpecFields> {
+export interface BatchSpecContextState<BatchSpecFields extends MinimalBatchSpecFields = MinimalBatchSpecFields> {
     readonly batchChange: EditBatchChangeFields
     readonly batchSpec: NewBatchSpecState<BatchSpecFields>
 

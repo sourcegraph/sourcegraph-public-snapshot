@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import React, { useCallback } from 'react'
 
 import { useHistory } from 'react-router'
 
@@ -7,7 +7,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Card, CardBody, Panel } from '@sourcegraph/wildcard'
 
 import { BatchSpecExecutionFields } from '../../../../../graphql-operations'
-import { useBatchSpecContext } from '../../BatchSpecContext'
+import { BatchSpecContextState, useBatchSpecContext } from '../../BatchSpecContext'
 
 import { WorkspaceDetails } from './WorkspaceDetails'
 import { Workspaces } from './Workspaces'
@@ -20,12 +20,20 @@ interface ExecutionWorkspacesProps extends ThemeProps {
     selectedWorkspaceID?: string
 }
 
-export const ExecutionWorkspaces: React.FunctionComponent<React.PropsWithChildren<ExecutionWorkspacesProps>> = ({
-    selectedWorkspaceID,
-    isLightTheme,
-}) => {
-    const history = useHistory()
+export const ExecutionWorkspaces: React.FunctionComponent<
+    React.PropsWithChildren<ExecutionWorkspacesProps>
+> = props => {
     const { batchSpec, errors } = useBatchSpecContext<BatchSpecExecutionFields>()
+
+    return <MemoizedExecutionWorkspaces {...props} batchSpec={batchSpec} errors={errors} />
+}
+
+type MemoizedExecutionWorkspacesProps = ExecutionWorkspacesProps & Pick<BatchSpecContextState, 'batchSpec' | 'errors'>
+
+const MemoizedExecutionWorkspaces: React.FunctionComponent<
+    React.PropsWithChildren<MemoizedExecutionWorkspacesProps>
+> = React.memo(({ selectedWorkspaceID, isLightTheme, batchSpec, errors }) => {
+    const history = useHistory()
 
     const deselectWorkspace = useCallback(() => history.push(batchSpec.executionURL), [batchSpec.executionURL, history])
 
@@ -59,4 +67,4 @@ export const ExecutionWorkspaces: React.FunctionComponent<React.PropsWithChildre
             </div>
         </div>
     )
-}
+})

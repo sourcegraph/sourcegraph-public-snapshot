@@ -12,7 +12,7 @@ import {
     CancelBatchSpecExecutionVariables,
 } from '../../../../graphql-operations'
 import { BatchSpec } from '../../BatchSpec'
-import { useBatchSpecContext } from '../BatchSpecContext'
+import { BatchSpecContextState, useBatchSpecContext } from '../BatchSpecContext'
 import { LibraryPane } from '../edit/library/LibraryPane'
 import { WorkspacesPreviewPanel } from '../edit/workspaces-preview/WorkspacesPreviewPanel'
 
@@ -26,9 +26,25 @@ interface ReadOnlyBatchSpecFormProps extends ThemeProps {}
 export const ReadOnlyBatchSpecForm: React.FunctionComponent<React.PropsWithChildren<ReadOnlyBatchSpecFormProps>> = ({
     isLightTheme,
 }) => {
-    const history = useHistory()
-
     const { batchChange, batchSpec, setActionsError } = useBatchSpecContext<BatchSpecExecutionFields>()
+
+    return (
+        <MemoizedReadOnlyBatchSpecForm
+            isLightTheme={isLightTheme}
+            batchChange={batchChange}
+            batchSpec={batchSpec}
+            setActionsError={setActionsError}
+        />
+    )
+}
+
+type MemoizedReadOnlyBatchSpecFormProps = ReadOnlyBatchSpecFormProps &
+    Pick<BatchSpecContextState, 'batchChange' | 'batchSpec' | 'setActionsError'>
+
+const MemoizedReadOnlyBatchSpecForm: React.FunctionComponent<
+    React.PropsWithChildren<MemoizedReadOnlyBatchSpecFormProps>
+> = React.memo(({ isLightTheme, batchChange, batchSpec, setActionsError }) => {
+    const history = useHistory()
 
     const [showCancelModal, setShowCancelModal] = useState(false)
     const [cancelBatchSpecExecution, { loading: isCancelLoading }] = useMutation<
@@ -88,4 +104,4 @@ export const ReadOnlyBatchSpecForm: React.FunctionComponent<React.PropsWithChild
             />
         </div>
     )
-}
+})

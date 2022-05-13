@@ -18,7 +18,7 @@ import {
     RetryBatchSpecExecutionResult,
     RetryBatchSpecExecutionVariables,
 } from '../../../../graphql-operations'
-import { useBatchSpecContext } from '../BatchSpecContext'
+import { BatchSpecContextState, useBatchSpecContext } from '../BatchSpecContext'
 
 import { CANCEL_BATCH_SPEC_EXECUTION, RETRY_BATCH_SPEC_EXECUTION } from './backend'
 import { CancelExecutionModal } from './CancelExecutionModal'
@@ -26,10 +26,17 @@ import { CancelExecutionModal } from './CancelExecutionModal'
 import styles from './ActionsMenu.module.scss'
 
 export const ActionsMenu: React.FunctionComponent<React.PropsWithChildren<{}>> = () => {
+    const { batchChange, batchSpec, setActionsError } = useBatchSpecContext<BatchSpecExecutionFields>()
+
+    return <MemoizedActionsMenu batchChange={batchChange} batchSpec={batchSpec} setActionsError={setActionsError} />
+}
+
+const MemoizedActionsMenu: React.FunctionComponent<
+    React.PropsWithChildren<Pick<BatchSpecContextState, 'batchChange' | 'batchSpec' | 'setActionsError'>>
+> = React.memo(({ batchChange, batchSpec, setActionsError }) => {
     const history = useHistory()
     const location = useLocation()
 
-    const { batchChange, batchSpec, setActionsError } = useBatchSpecContext<BatchSpecExecutionFields>()
     const { url } = batchChange
     const { isExecuting, state } = batchSpec
 
@@ -132,4 +139,4 @@ export const ActionsMenu: React.FunctionComponent<React.PropsWithChildren<{}>> =
             />
         </div>
     )
-}
+})
