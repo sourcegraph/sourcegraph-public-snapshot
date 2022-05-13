@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 
 import { Observable, of, Subscription } from 'rxjs'
 
@@ -29,6 +29,7 @@ import styles from './App.module.scss'
 
 interface Props {
     isDarkTheme: boolean
+    instanceURL: string
     onPreviewChange: (match: ContentMatch, lineIndex: number) => void
     onPreviewClear: () => void
     onOpen: (match: ContentMatch, lineIndex: number) => void
@@ -50,6 +51,7 @@ const platformContext = {
 
 export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     isDarkTheme,
+    instanceURL,
     onPreviewChange,
     onPreviewClear,
     onOpen,
@@ -64,6 +66,11 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
         query: '',
     })
     const [subscription, setSubscription] = useState<Subscription>()
+
+    const isSourcegraphDotCom = useMemo(() => {
+        const hostname = new URL(instanceURL).hostname
+        return hostname === 'sourcegraph.com' || hostname === 'www.sourcegraph.com'
+    }, [instanceURL])
 
     const onSubmit = useCallback(
         (options?: { caseSensitive?: boolean; patternType?: SearchPatternType }) => {
@@ -124,7 +131,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                             setCaseSensitivity={caseSensitive => onSubmit({ caseSensitive })}
                             patternType={lastSearchedQuery.patternType}
                             setPatternType={patternType => onSubmit({ patternType })}
-                            isSourcegraphDotCom={true} // TODO: Make this dynamic. See VS Code's SearchResultsView.tsx
+                            isSourcegraphDotCom={isSourcegraphDotCom}
                             hasUserAddedExternalServices={false}
                             hasUserAddedRepositories={true} // Used for search context CTA, which we won't show here.
                             structuralSearchDisabled={false}

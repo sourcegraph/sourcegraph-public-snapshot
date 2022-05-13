@@ -2,7 +2,9 @@ package com.sourcegraph.browser;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.intellij.openapi.project.Project;
 import com.intellij.ui.jcef.JBCefJSQuery;
+import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.ThemeUtil;
 import com.sourcegraph.find.PreviewContent;
 import com.sourcegraph.find.PreviewPanel;
@@ -10,8 +12,9 @@ import org.jetbrains.annotations.Nullable;
 
 public class JSToJavaBridgeRequestHandler {
     private final PreviewPanel previewPanel;
+    private final Project project;
 
-    public JSToJavaBridgeRequestHandler(PreviewPanel previewPanel) {
+    public JSToJavaBridgeRequestHandler(PreviewPanel previewPanel, Project project) {
         this.previewPanel = previewPanel;
     }
 
@@ -21,6 +24,10 @@ public class JSToJavaBridgeRequestHandler {
         Gson gson = new Gson();
         PreviewContent previewContent;
         switch (action) {
+            case "getConfig":
+                JsonObject configAsJson = new JsonObject();
+                configAsJson.addProperty("instanceURL", ConfigUtil.getSourcegraphUrl(this.project));
+                return createResponse(configAsJson);
             case "getTheme":
                 JsonObject currentThemeAsJson = ThemeUtil.getCurrentThemeAsJson();
                 return createResponse(currentThemeAsJson);

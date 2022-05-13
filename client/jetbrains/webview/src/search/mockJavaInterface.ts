@@ -19,7 +19,9 @@ function handleRequest(
     onSuccessCallback: (responseAsString: string) => void,
     onFailureCallback: (errorCode: number, errorMessage: string) => void
 ): void {
-    if (request.action === 'getTheme') {
+    if (request.action === 'getConfig') {
+        onSuccessCallback(JSON.stringify({ instanceURL: 'https://sourcegraph.com' }))
+    } else if (request.action === 'getTheme') {
         onSuccessCallback(
             JSON.stringify({
                 isDarkTheme: true,
