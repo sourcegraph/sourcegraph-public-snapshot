@@ -10,8 +10,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Properties;
 
-public class PropertiesFileBasedConfig {
-    public static String getDefaultBranchNameSetting() {
+public class UserLevelConfig {
+    public static String getDefaultBranchName() {
         Properties properties = readProperties();
         return properties.getProperty("defaultBranch", null);
     }

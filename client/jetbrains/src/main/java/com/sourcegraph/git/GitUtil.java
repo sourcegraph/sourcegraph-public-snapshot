@@ -18,7 +18,7 @@ public class GitUtil {
         String remoteUrl = "";
         String branchName = "";
         try {
-            String defaultBranchNameSetting = ConfigUtil.getDefaultBranchNameSetting(project);
+            String defaultBranchNameSetting = ConfigUtil.getDefaultBranchName(project);
             String repoRootPath = getRepoRootPath(filePath);
 
             // Determine file path, relative to repository root.

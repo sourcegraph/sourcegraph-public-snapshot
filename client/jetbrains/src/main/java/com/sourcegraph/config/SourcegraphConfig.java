@@ -8,24 +8,27 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @State(
-  name = "Config",
-  storages = {@Storage("sourcegraph.xml")})
+    name = "Config",
+    storages = {@Storage("sourcegraph.xml")})
 public
 class SourcegraphConfig implements PersistentStateComponent<SourcegraphConfig> {
 
     public String url;
+    public String defaultBranch;
+    public String remoteUrlReplacements;
 
-    public String getUrl() {
+    @Nullable
+    public static SourcegraphConfig getInstance(@NotNull Project project) {
+        return project.getService(SourcegraphConfig.class);
+    }
+
+    public String getSourcegraphUrl() {
         return url;
     }
 
-    public String defaultBranch;
-
-    public String getDefaultBranch() {
+    public String getDefaultBranchName() {
         return defaultBranch;
     }
-
-    public String remoteUrlReplacements;
 
     public String getRemoteUrlReplacements() {
         return remoteUrlReplacements;
@@ -42,10 +45,5 @@ class SourcegraphConfig implements PersistentStateComponent<SourcegraphConfig> {
         this.url = config.url;
         this.defaultBranch = config.defaultBranch;
         this.remoteUrlReplacements = config.remoteUrlReplacements;
-    }
-
-    @Nullable
-    public static SourcegraphConfig getInstance(Project project) {
-        return project.getService(SourcegraphConfig.class);
     }
 }
