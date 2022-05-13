@@ -5,7 +5,6 @@ import (
 
 	"github.com/urfave/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -26,17 +25,13 @@ func Validate(commandName string, factory RunnerFactory, outFactory func() *outp
 			return flag.ErrHelp
 		}
 
-		var schemaNames = cmd.StringSlice("db")
+		var (
+			schemaNames = cmd.StringSlice("db")
+		)
 
-		if len(schemaNames) == 1 || schemaNames[0] == "" {
-			schemaNames = nil
-		}
-		if len(schemaNames) == 1 || schemaNames[0] == "all" {
-			schemaNames = schemas.SchemaNames
-		}
-		if len(schemaNames) == 0 {
-			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: supply a schema via -db"))
-			return flag.ErrHelp
+		schemaNames, err := parseSchemaNames(schemaNames, out)
+		if err != nil {
+			return err
 		}
 
 		ctx := cmd.Context

@@ -43,7 +43,7 @@ func DownTo(commandName string, factory RunnerFactory, outFactory func() *output
 		}
 
 		var (
-			schemaNameFlag           = cmd.String("db")
+			schemaName               = cmd.String("db")
 			unprivilegedOnlyFlag     = cmd.Bool("unprivileged-only")
 			ignoreSingleDirtyLogFlag = cmd.Bool("ignore-single-dirty-log")
 			targets                  = cmd.StringSlice("target")
@@ -55,7 +55,7 @@ func DownTo(commandName string, factory RunnerFactory, outFactory func() *output
 		}
 
 		ctx := cmd.Context
-		r, err := factory(ctx, []string{schemaNameFlag})
+		r, err := factory(ctx, []string{schemaName})
 		if err != nil {
 			return err
 		}
@@ -63,7 +63,7 @@ func DownTo(commandName string, factory RunnerFactory, outFactory func() *output
 		return r.Run(ctx, runner.Options{
 			Operations: []runner.MigrationOperation{
 				{
-					SchemaName:     schemaNameFlag,
+					SchemaName:     schemaName,
 					Type:           runner.MigrationOperationTypeTargetedDown,
 					TargetVersions: versions,
 				},

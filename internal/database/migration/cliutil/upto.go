@@ -44,7 +44,7 @@ func UpTo(commandName string, factory RunnerFactory, outFactory func() *output.O
 		}
 
 		var (
-			schemaNameFlag           = cmd.String("db")
+			schemaName               = cmd.String("db")
 			unprivilegedOnlyFlag     = cmd.Bool("unprivileged-only")
 			ignoreSingleDirtyLogFlag = cmd.Bool("ignore-single-dirty-log")
 			targets                  = cmd.StringSlice("target")
@@ -56,7 +56,7 @@ func UpTo(commandName string, factory RunnerFactory, outFactory func() *output.O
 		}
 
 		ctx := cmd.Context
-		r, err := factory(ctx, []string{schemaNameFlag})
+		r, err := factory(ctx, []string{schemaName})
 		if err != nil {
 			return err
 		}
@@ -64,7 +64,7 @@ func UpTo(commandName string, factory RunnerFactory, outFactory func() *output.O
 		return r.Run(ctx, runner.Options{
 			Operations: []runner.MigrationOperation{
 				{
-					SchemaName:     schemaNameFlag,
+					SchemaName:     schemaName,
 					Type:           runner.MigrationOperationTypeTargetedUp,
 					TargetVersions: versions,
 				},
@@ -85,7 +85,7 @@ func UpTo(commandName string, factory RunnerFactory, outFactory func() *output.O
 }
 
 func parseTargets(targets []string, out *output.Output) ([]int, error) {
-	if len(targets) == 1 || targets[0] == "" {
+	if len(targets) == 1 && targets[0] == "" {
 		targets = nil
 	}
 	if len(targets) == 0 {

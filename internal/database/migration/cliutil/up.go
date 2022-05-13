@@ -44,15 +44,9 @@ func Up(commandName string, factory RunnerFactory, outFactory func() *output.Out
 			ignoreSingleDirtyLogFlag = cmd.Bool("ignore-single-dirty-log")
 		)
 
-		if len(schemaNames) == 1 || schemaNames[0] == "" {
-			schemaNames = nil
-		}
-		if len(schemaNames) == 1 || schemaNames[0] == "all" {
-			schemaNames = schemas.SchemaNames
-		}
-		if len(schemaNames) == 0 {
-			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: supply a schema via -db"))
-			return flag.ErrHelp
+		schemaNames, err := parseSchemaNames(schemaNames, out)
+		if err != nil {
+			return err
 		}
 
 		operations := []runner.MigrationOperation{}
@@ -84,4 +78,21 @@ func Up(commandName string, factory RunnerFactory, outFactory func() *output.Out
 		Action:      action,
 		Description: ConstructLongHelp(),
 	}
+}
+
+func parseSchemaNames(schemaNames []string, out *output.Output) ([]string, error) {
+	if len(schemaNames) == 1 && schemaNames[0] == "" {
+		schemaNames = nil
+	}
+
+	if len(schemaNames) == 1 && schemaNames[0] == "all" {
+		schemaNames = schemas.SchemaNames
+	}
+
+	if len(schemaNames) == 0 {
+		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: supply a schema via -db"))
+		return nil, flag.ErrHelp
+	}
+
+	return schemaNames, nil
 }
