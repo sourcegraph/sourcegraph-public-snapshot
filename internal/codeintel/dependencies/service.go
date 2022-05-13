@@ -173,9 +173,35 @@ func (s *Service) resolveRepoCommits(ctx context.Context, repoRevs map[api.RepoN
 	return resolvedCommits, nil
 }
 
-// lockfileDependencies returns a flattened list of package dependencies for every repo and
-// revision pair specified in the given map.
+// lockfileDependencies returns a flattened list of package dependencies for every repo-commit pair.
 func (s *Service) lockfileDependencies(ctx context.Context, repoCommits []repoCommitResolvedCommit) (deps []shared.PackageDependency, _ error) {
+	// resolverFunc describes internal functions that perform bulk queries to gather the dependencies of
+	// some portion of the input. It is expected that if there are any unqueried repo-commit pairs remain
+	// that they are moved to the front of the given slice, and the number of unqueried elements returned.
+	type resolverFunc func(ctx context.Context, repoCommits []repoCommitResolvedCommit) ([]shared.PackageDependency, int, error)
+
+	resolvers := []resolverFunc{
+		s.resolveLockfileDependenciesFromArchive,
+	}
+
+	for _, resolver := range resolvers {
+		resolvedDeps, n, err := resolver(ctx, repoCommits)
+		if err != nil {
+			return nil, err
+		}
+
+		deps = append(deps, resolvedDeps...)
+		repoCommits = repoCommits[:n]
+	}
+
+	return deps, nil
+}
+
+// resolveLockfileDependenciesFromArchive is a resolverFunc. It returns a flattened list of package dependencies
+// for each of the given repo-commit pairs from an archive of relevant files from the git repository. The returned
+// `numUnqueried` value is always zero as we make a request for every input, thus no fallback resolver will
+// ever be triggered.
+func (s *Service) resolveLockfileDependenciesFromArchive(ctx context.Context, repoCommits []repoCommitResolvedCommit) (deps []shared.PackageDependency, numUnqueried int, err error) {
 	ctx, cancel := context.WithCancel(ctx)
 	g, ctx := errgroup.WithContext(ctx)
 	defer cancel()
@@ -190,7 +216,7 @@ func (s *Service) lockfileDependencies(ctx context.Context, repoCommits []repoCo
 		// Acquire semaphore before spawning goroutine to ensure that we limit the total number
 		// of concurrent _routines_, whether they are actively processing lockfiles or not.
 		if err := s.lockfilesSemaphore.Acquire(ctx, 1); err != nil {
-			return nil, errors.Wrap(err, "lockfiles semaphore")
+			return nil, 0, errors.Wrap(err, "lockfiles semaphore")
 		}
 
 		g.Go(func() error {
@@ -210,10 +236,10 @@ func (s *Service) lockfileDependencies(ctx context.Context, repoCommits []repoCo
 	}
 
 	if err := g.Wait(); err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	return deps, nil
+	return deps, 0, nil
 }
 
 // listAndPersistLockfileDependencies gathers dependencies from the lockfiles service for the
