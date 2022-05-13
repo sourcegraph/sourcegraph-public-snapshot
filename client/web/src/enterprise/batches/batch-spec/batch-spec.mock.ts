@@ -1,5 +1,5 @@
 import { subDays, subHours, subMinutes } from 'date-fns'
-import { MATCH_ANY_PARAMETERS, MockedResponses } from 'wildcard-mock-link'
+import { MATCH_ANY_PARAMETERS, MockedResponses, WildcardMockedResponse } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 
@@ -21,7 +21,7 @@ import {
     BatchSpecExecutionFields,
     BatchSpecWorkspacesResult,
 } from '../../../graphql-operations'
-import { IMPORTING_CHANGESETS, WORKSPACES, WORKSPACE_RESOLUTION_STATUS } from '../create/backend'
+import { EXECUTORS, IMPORTING_CHANGESETS, WORKSPACES, WORKSPACE_RESOLUTION_STATUS } from '../create/backend'
 
 const now = new Date()
 
@@ -498,6 +498,24 @@ export const mockBatchSpecImportingChangesets = (importsCount: number): BatchSpe
         },
     },
 })
+
+export const ACTIVE_EXECUTORS_MOCK: WildcardMockedResponse = {
+    request: {
+        query: getDocumentNode(EXECUTORS),
+        variables: MATCH_ANY_PARAMETERS,
+    },
+    result: { data: { areExecutorsConfigured: true } },
+    nMatches: Number.POSITIVE_INFINITY,
+}
+
+export const NO_ACTIVE_EXECUTORS_MOCK: WildcardMockedResponse = {
+    request: {
+        query: getDocumentNode(EXECUTORS),
+        variables: MATCH_ANY_PARAMETERS,
+    },
+    result: { data: { areExecutorsConfigured: false } },
+    nMatches: Number.POSITIVE_INFINITY,
+}
 
 export const UNSTARTED_CONNECTION_MOCKS: MockedResponses = [
     {

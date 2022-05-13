@@ -26,8 +26,6 @@ import {
     GetBatchChangeToEditVariables,
     Scalars,
 } from '../../../../graphql-operations'
-// TODO: Move some of these to batch-spec/edit
-// TODO: Make sure fields on GraphQL queries are all still needed
 import { GET_BATCH_CHANGE_TO_EDIT } from '../../create/backend'
 import { ConfigurationForm } from '../../create/ConfigurationForm'
 import { NewBatchChangePreviewPage } from '../../preview/BatchChangePreviewPage'
