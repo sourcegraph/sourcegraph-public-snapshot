@@ -204,6 +204,13 @@ func (s *Service) lockfileDependencies(ctx context.Context, repoCommits []repoCo
 // It is expected that the remaining elements be passed to the fallback dependencies resolver, if one is
 // registered.
 func (s *Service) resolveLockfileDependenciesFromStore(ctx context.Context, repoCommits []repoCommitResolvedCommit) (deps []shared.PackageDependency, numUnqueried int, err error) {
+	ctx, _, endObservation := s.operations.resolveLockfileDependenciesFromStore.With(ctx, &err, observation.Args{})
+	defer func() {
+		endObservation(1, observation.Args{LogFields: []log.Field{
+			log.Int("numUnqueried", numUnqueried),
+		}})
+	}()
+
 	// Filter in-place
 	unqueried := repoCommits[:0]
 
@@ -228,6 +235,9 @@ func (s *Service) resolveLockfileDependenciesFromStore(ctx context.Context, repo
 // `numUnqueried` value is always zero as we make a request for every input, thus no fallback resolver will
 // ever be triggered.
 func (s *Service) resolveLockfileDependenciesFromArchive(ctx context.Context, repoCommits []repoCommitResolvedCommit) (deps []shared.PackageDependency, numUnqueried int, err error) {
+	ctx, _, endObservation := s.operations.resolveLockfileDependenciesFromArchive.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
 	ctx, cancel := context.WithCancel(ctx)
 	g, ctx := errgroup.WithContext(ctx)
 	defer cancel()
