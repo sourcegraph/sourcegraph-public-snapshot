@@ -44,6 +44,7 @@ public class JSToJavaBridgeRequestHandler {
                 return createResponse(null);
             default:
                 return createResponse(2, "Unknown action: " + action);
+        // JsonObject arguments = request.getAsJsonObject("arguments");
         }
     }
 

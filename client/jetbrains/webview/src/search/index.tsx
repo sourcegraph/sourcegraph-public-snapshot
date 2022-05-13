@@ -63,6 +63,19 @@ function renderReactApp(): void {
     )
 }
 
+async function getConfig(): Promise<PluginConfig> {
+    try {
+        return (await window.callJava({ action: 'getConfig', arguments: {} })) as PluginConfig
+    } catch (error) {
+        console.error(`Failed to get config: ${(error as Error).message}`)
+        return { instanceURL: 'https://sourcegraph.com' }
+    }
+}
+
+function applyConfig(config: PluginConfig): void {
+    instanceURL = config.instanceURL
+}
+
 async function getTheme(): Promise<Theme> {
     try {
         return (await window.callJava({ action: 'getTheme', arguments: {} })) as Theme
@@ -88,23 +101,10 @@ function applyTheme(theme: Theme): void {
     isDarkTheme = theme.isDarkTheme
 }
 
-async function getConfig(): Promise<PluginConfig> {
-    try {
-        return (await window.callJava({ action: 'getConfig', arguments: {} })) as PluginConfig
-    } catch (error) {
-        console.error(`Failed to get config: ${(error as Error).message}`)
-        return { instanceURL: 'https://sourcegraph.com' }
-    }
-}
-
-function applyConfig(config: PluginConfig): void {
-    instanceURL = config.instanceURL
-}
-
 window.initializeSourcegraph = async () => {
     const [theme, config] = await Promise.all([getTheme(), getConfig()])
-    applyTheme(theme)
     applyConfig(config)
+    applyTheme(theme)
     renderReactApp()
 }
 
