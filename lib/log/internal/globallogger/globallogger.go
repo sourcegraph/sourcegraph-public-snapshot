@@ -11,9 +11,12 @@ import (
 )
 
 var (
+	devMode          bool
 	globalLogger     *zap.Logger
 	globalLoggerInit sync.Once
 )
+
+func DevMode() bool { return devMode }
 
 // Get retrieves the initialized global logger, or panics otherwise (unless safe is true,
 // in which case a no-op logger is returned)
@@ -43,6 +46,7 @@ func IsInitialized() bool {
 }
 
 func initLogger(r otfields.Resource, level zap.AtomicLevel, format encoders.OutputFormat, development bool) *zap.Logger {
+	devMode = development
 	cfg := zap.Config{
 		Level:            level,
 		EncoderConfig:    encoders.OpenTelemetryConfig,

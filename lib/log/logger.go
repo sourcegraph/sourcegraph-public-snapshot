@@ -69,7 +69,8 @@ type Logger interface {
 //
 // Scopes should be static values, NOT dynamic values like identifiers or parameters.
 func Scoped(scope string, description string) Logger {
-	safeGet := !development // do not panic in prod
+	devMode := globallogger.DevMode()
+	safeGet := !devMode // do not panic in prod
 	root := globallogger.Get(safeGet)
 	adapted := &zapAdapter{
 		Logger:            root,
@@ -77,7 +78,7 @@ func Scoped(scope string, description string) Logger {
 		fromPackageScoped: true,
 	}
 
-	if development {
+	if devMode {
 		// In development, don't add the OpenTelemetry "Attributes" namespace which gets
 		// rather difficult to read.
 		return adapted.Scoped(scope, description)
