@@ -7,3 +7,4 @@ Are you considering adding an ADR? Check out the [How-to page](how-to.md)!
 To preserve order, individual documents are prefixed by the **current epoch Unix timestamp**.
 
 1. [Record architecture decisions](1650968652-record-architecture-decisions.md)
+2. [Use Go for scripting purposes](1652433602-use-go-for-scripting.md)
