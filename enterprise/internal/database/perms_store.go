@@ -496,6 +496,10 @@ DO UPDATE SET
 }
 
 func (s *permsStore) SetRepoPermissionsUnrestricted(ctx context.Context, ids []int32, unrestricted bool) error {
+	if len(ids) == 0 {
+		return nil
+	}
+
 	const format = `
 UPDATE repo_permissions
 SET unrestricted = %s
