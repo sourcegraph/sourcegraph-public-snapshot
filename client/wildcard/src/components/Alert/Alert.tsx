@@ -10,17 +10,27 @@ import { getAlertStyle } from './utils'
 
 import styles from './Alert.module.scss'
 
+type AlertVariant = typeof ALERT_VARIANTS[number]
+
 export interface AlertProps extends React.HTMLAttributes<HTMLDivElement> {
-    variant?: typeof ALERT_VARIANTS[number]
+    variant?: AlertVariant
 }
 
+const userShouldBeNotified = (variant?: AlertVariant): boolean => variant === 'danger' || variant === 'warning'
+
 export const Alert = React.forwardRef(
-    ({ children, as: Component = 'div', variant, className, ...attributes }, reference) => {
+    ({ children, as: Component = 'div', variant, className, role, ...attributes }, reference) => {
         const { isBranded } = useWildcardTheme()
         const brandedClassName = isBranded && classNames(styles.alert, variant && getAlertStyle({ variant }))
+        const alertRole = role || userShouldBeNotified(variant) ? 'alert' : undefined
 
         return (
-            <Component ref={reference} className={classNames(brandedClassName, className)} role="alert" {...attributes}>
+            <Component
+                ref={reference}
+                className={classNames(brandedClassName, className)}
+                role={alertRole}
+                {...attributes}
+            >
                 {children}
             </Component>
         )
