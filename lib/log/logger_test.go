@@ -31,7 +31,7 @@ func TestInitLogger(t *testing.T) {
 	logs := exportLogs()
 	assert.Len(t, logs, 5)
 	for _, l := range logs {
-		assert.Equal(t, l.Scope, "TestInitLogger") // scope is always applied
+		assert.Equal(t, "TestInitLogger", l.Scope) // scope is always applied
 	}
 
 	assert.Equal(t, map[string]any{
