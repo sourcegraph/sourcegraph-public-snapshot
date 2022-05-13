@@ -173,3 +173,8 @@ type Range struct {
 func (r Range) String() string {
 	return fmt.Sprintf("%d:%d:%d", r.Row, r.Column, r.Length)
 }
+
+type SymbolInfo struct {
+	Definition RepoCommitPathRange `json:"definition"`
+	Hover      *string             `json:"hover,omitempty"`
+}

@@ -15,6 +15,7 @@ import (
 	"github.com/inconshreveable/log15"
 	sitter "github.com/smacker/go-tree-sitter"
 
+	symbolsTypes "github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -73,6 +74,37 @@ func LocalCodeIntelHandler(w http.ResponseWriter, r *http.Request) {
 		log15.Error("failed to write response: %s", "error", err)
 		http.Error(w, fmt.Sprintf("failed to generate local code intel payload: %s", err), http.StatusInternalServerError)
 		return
+	}
+}
+
+// Responds to /symbolInfo
+func NewSymbolInfoHandler(symbolSearch symbolsTypes.SearchFunc) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Read the args from the request body.
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			log15.Error("failed to read request body", "err", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		var args types.RepoCommitPathPoint
+		if err := json.NewDecoder(bytes.NewReader(body)).Decode(&args); err != nil {
+			log15.Error("failed to decode request body", "err", err, "body", string(body))
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		// TODO find the symbol.
+		var result *types.SymbolInfo
+
+		// Write the response.
+		w.Header().Set("Content-Type", "application/json")
+		err = json.NewEncoder(w).Encode(result)
+		if err != nil {
+			log15.Error("failed to write response: %s", "error", err)
+			http.Error(w, fmt.Sprintf("failed to get definition: %s", err), http.StatusInternalServerError)
+			return
+		}
 	}
 }
 
