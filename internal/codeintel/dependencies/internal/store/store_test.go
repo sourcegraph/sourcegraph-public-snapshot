@@ -36,7 +36,7 @@ func TestLockfileDependencies(t *testing.T) {
 		"cafebabe": {packageA, packageB, packageC},
 		"deadbeef": {packageA, packageB, packageD, packageE},
 		"deadc0de": {packageB, packageF},
-		"deadd00d": {},
+		"deadd00d": nil,
 	}
 
 	for commit, deps := range commits {
