@@ -13,7 +13,6 @@ import { ExtensionCategory, EXTENSION_CATEGORIES } from '@sourcegraph/shared/src
 import { Settings, SettingsCascadeProps, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { isSourcegraphAuthoredExtension } from '@sourcegraph/shared/src/util/extensions'
-import { allowOnlySourcegraphAuthoredExtensionsFromSettings } from '@sourcegraph/shared/src/util/settings'
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
 import { AlertLink, useLocalStorage, useEventObservable, Alert, Link } from '@sourcegraph/wildcard'
 
@@ -121,7 +120,7 @@ export type ConfiguredExtensionCache = Map<string, MinimalConfiguredRegistryExte
 export const ExtensionRegistry: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
     useEffect(() => eventLogger.logViewEvent('ExtensionsOverview'), [])
 
-    const { history, location, settingsCascade, platformContext, authenticatedUser, isSourcegraphDotCom } = props
+    const { history, location, settingsCascade, platformContext, authenticatedUser } = props
 
     // Update the cache after each response. This speeds up client-side filtering.
     // Lazy initialize cache ref. Don't mind the `useState` abuse:
@@ -167,10 +166,6 @@ export const ExtensionRegistry: React.FunctionComponent<React.PropsWithChildren<
         }
         setShowExperimentalExtensions(!showExperimentalExtensions)
     }
-
-    const { value: allowOnlySourcegraphAuthoredExtensions } = allowOnlySourcegraphAuthoredExtensionsFromSettings(
-        settingsCascade
-    )
 
     /**
      * Note: pass `settingsCascade` instead of making it a dependency to prevent creating
@@ -268,7 +263,7 @@ export const ExtensionRegistry: React.FunctionComponent<React.PropsWithChildren<
                             error,
                             featuredExtensions,
                             ...configureExtensionRegistry(
-                                allowOnlySourcegraphAuthoredExtensions
+                                window.context?.allowOnlySourcegraphAuthoredExtensions
                                     ? nodes.filter(({ extensionID }) => isSourcegraphAuthoredExtension(extensionID))
                                     : nodes,
                                 configuredExtensionCache
@@ -280,7 +275,7 @@ export const ExtensionRegistry: React.FunctionComponent<React.PropsWithChildren<
                         setChangedCategory(false)
                     })
                 ),
-            [platformContext, history, configuredExtensionCache, allowOnlySourcegraphAuthoredExtensions]
+            [platformContext, history, configuredExtensionCache]
         )
     )
 

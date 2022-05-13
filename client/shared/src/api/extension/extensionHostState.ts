@@ -9,7 +9,6 @@ import { Context } from '@sourcegraph/template-parser'
 import { ConfiguredExtension } from '../../extensions/extension'
 import { SettingsCascade } from '../../settings/settings'
 import { isSourcegraphAuthoredExtension } from '../../util/extensions'
-import { allowOnlySourcegraphAuthoredExtensionsFromSettings } from '../../util/settings'
 import { MainThreadAPI } from '../contract'
 import { ExtensionViewer, ViewerUpdate } from '../viewerTypes'
 
@@ -102,7 +101,8 @@ export function createExtensionHostState(
             readonly { urlMatchPattern: string; provider: sourcegraph.LinkPreviewProvider }[]
         >([]),
 
-        activeExtensions: allowOnlySourcegraphAuthoredExtensionsFromSettings(initData.initialSettings).value
+        // FIXIT: we can't access window from the extension host
+        activeExtensions: window.context?.allowOnlySourcegraphAuthoredExtensions
             ? activeExtensions.pipe(
                   map(extensions => extensions.filter(({ id }) => isSourcegraphAuthoredExtension(id)))
               )
