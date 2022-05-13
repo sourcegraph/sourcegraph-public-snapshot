@@ -37,6 +37,7 @@ import {
     Typography,
 } from '@sourcegraph/wildcard'
 
+import { H4 } from '@sourcegraph/wildcard/src/components/Typography'
 import { BatchChangesIcon } from '../../../batches/icons'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
@@ -544,7 +545,7 @@ const EditPage: React.FunctionComponent<React.PropsWithChildren<EditPageProps>> 
             <div className={classNames(styles.editorLayoutContainer, 'd-flex flex-1 mt-2')}>
                 <LibraryPane name={batchChange.name} onReplaceItem={clearErrorsAndHandleCodeChange} />
                 <div className={styles.editorContainer}>
-                    <h4 className={styles.header}>Batch spec</h4>
+                    <H4 className={styles.header}>Batch spec</H4>
                     {insightTitle && (
                         <InsightTemplatesBanner insightTitle={insightTitle} type="edit" className="mb-3" />
                     )}
