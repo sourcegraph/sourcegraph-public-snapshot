@@ -2,8 +2,8 @@ import React from 'react'
 
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
-
 import { useHistory, useLocation } from 'react-router'
+
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Badge, Container, Icon } from '@sourcegraph/wildcard'
