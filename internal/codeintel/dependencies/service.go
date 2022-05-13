@@ -181,6 +181,7 @@ func (s *Service) lockfileDependencies(ctx context.Context, repoCommits []repoCo
 	type resolverFunc func(ctx context.Context, repoCommits []repoCommitResolvedCommit) ([]shared.PackageDependency, int, error)
 
 	resolvers := []resolverFunc{
+		s.resolveLockfileDependenciesFromStore,
 		s.resolveLockfileDependenciesFromArchive,
 	}
 
@@ -195,6 +196,31 @@ func (s *Service) lockfileDependencies(ctx context.Context, repoCommits []repoCo
 	}
 
 	return deps, nil
+}
+
+// resolveLockfileDependenciesFromStore returns a flattened list of package dependencies for each
+// of the given repo-commit pairs from the database. The given `repoCommits` slice is altered in-place.
+// The returned `numUnqueried` value is the number of elements at the prefix of the slice that had no data.
+// It is expected that the remaining elements be passed to the fallback dependencies resolver, if one is
+// registered.
+func (s *Service) resolveLockfileDependenciesFromStore(ctx context.Context, repoCommits []repoCommitResolvedCommit) (deps []shared.PackageDependency, numUnqueried int, err error) {
+	// Filter in-place
+	unqueried := repoCommits[:0]
+
+	for _, repoCommit := range repoCommits {
+		// TODO - batch these requests in the store layer
+		repoDeps, err := s.dependenciesStore.LockfileDependencies(ctx, string(repoCommit.Repo), repoCommit.ResolvedCommit)
+		if err != nil {
+			return nil, 0, errors.Wrap(err, "store.LockfileDependencies")
+		}
+		if len(repoDeps) > 0 {
+			deps = append(deps, repoDeps...)
+		} else {
+			unqueried = append(unqueried, repoCommit)
+		}
+	}
+
+	return nil, len(unqueried), nil
 }
 
 // resolveLockfileDependenciesFromArchive is a resolverFunc. It returns a flattened list of package dependencies
