@@ -196,7 +196,7 @@ func (s *Service) lockfileDependencies(ctx context.Context, repoCommits []repoCo
 		g.Go(func() error {
 			defer s.lockfilesSemaphore.Release(1)
 
-			repoDeps, err := s.listDependencies(ctx, repoCommit)
+			repoDeps, err := s.listAndPersistLockfileDependencies(ctx, repoCommit)
 			if err != nil {
 				return err
 			}
@@ -216,14 +216,27 @@ func (s *Service) lockfileDependencies(ctx context.Context, repoCommits []repoCo
 	return deps, nil
 }
 
-// listDependencies gathers dependencies from the lockfiles service for the given repo-commit pair.
-func (s *Service) listDependencies(ctx context.Context, repoCommit repoCommitResolvedCommit) ([]shared.PackageDependency, error) {
+// listAndPersistLockfileDependencies gathers dependencies from the lockfiles service for the
+// given repo-commit pair and persists the result to the database. This aids in both caching
+// and building an inverted index to power dependents search.
+func (s *Service) listAndPersistLockfileDependencies(ctx context.Context, repoCommit repoCommitResolvedCommit) ([]shared.PackageDependency, error) {
 	repoDeps, err := s.lockfilesSvc.ListDependencies(ctx, repoCommit.Repo, string(repoCommit.CommitID))
 	if err != nil {
 		return nil, errors.Wrap(err, "lockfiles.ListDependencies")
 	}
 
-	return shared.SerializePackageDependencies(repoDeps), nil
+	serializableRepoDeps := shared.SerializePackageDependencies(repoDeps)
+
+	if err := s.dependenciesStore.UpsertLockfileDependencies(
+		ctx,
+		string(repoCommit.Repo),
+		repoCommit.ResolvedCommit,
+		serializableRepoDeps,
+	); err != nil {
+		return nil, errors.Wrap(err, "store.UpsertLockfileDependencies")
+	}
+
+	return serializableRepoDeps, nil
 }
 
 // sync invokes the Syncer for every repo in the supplied slice.
