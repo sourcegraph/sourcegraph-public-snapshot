@@ -46,7 +46,6 @@ import {
     Collapse,
     CollapseHeader,
     CollapsePanel,
-    Code,
     Typography,
 } from '@sourcegraph/wildcard'
 
@@ -371,9 +370,9 @@ export const ReferencesList: React.FunctionComponent<
         <div className={classNames('align-items-stretch', styles.panel)}>
             <div className={classNames('px-0', styles.leftSubPanel)}>
                 <CardHeader className={classNames('d-flex align-items-center', styles.cardHeader)}>
-                    <Code size="base" weight="bold">
+                    <Typography.Code size="base" weight="bold">
                         {props.searchToken}
-                    </Code>
+                    </Typography.Code>
                     {canShowSpinner && (
                         <small className="ml-3 text-muted d-flex align-items-center">
                             <Icon as={LoadingSpinner} size="sm" inline={true} className="mr-1" />
