@@ -57,12 +57,9 @@ export interface AuthenticatedExecuteBatchSpecPageProps
     testContextState?: Partial<BatchSpecContextState<BatchSpecExecutionFields>>
 }
 
-export const AuthenticatedExecuteBatchSpecPage: React.FunctionComponent<AuthenticatedExecuteBatchSpecPageProps> = ({
-    batchChange,
-    batchSpecID,
-    testContextState,
-    ...props
-}) => {
+export const AuthenticatedExecuteBatchSpecPage: React.FunctionComponent<
+    React.PropsWithChildren<AuthenticatedExecuteBatchSpecPageProps>
+> = ({ batchChange, batchSpecID, testContextState, ...props }) => {
     const { data: batchChangeData, error: batchChangeError, loading: batchChangeLoading } = useQuery<
         GetBatchChangeToEditResult,
         GetBatchChangeToEditVariables

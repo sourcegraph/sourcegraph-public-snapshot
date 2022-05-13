@@ -57,7 +57,7 @@ interface ConfigurationFormProps extends SettingsCascadeProps<Settings> {
     initialNamespaceID?: Scalars['ID']
 }
 
-export const ConfigurationForm: React.FunctionComponent<ConfigurationFormProps> = ({
+export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<ConfigurationFormProps>> = ({
     settingsCascade,
     isReadOnly,
     batchChange,

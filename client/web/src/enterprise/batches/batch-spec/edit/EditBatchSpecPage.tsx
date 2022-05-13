@@ -32,7 +32,10 @@ export interface EditBatchSpecPageProps extends SettingsCascadeProps<Settings>, 
     batchChange: { name: string; namespace: Scalars['ID'] }
 }
 
-export const EditBatchSpecPage: React.FunctionComponent<EditBatchSpecPageProps> = ({ batchChange, ...props }) => {
+export const EditBatchSpecPage: React.FunctionComponent<React.PropsWithChildren<EditBatchSpecPageProps>> = ({
+    batchChange,
+    ...props
+}) => {
     const { data, error, loading, refetch } = useQuery<GetBatchChangeToEditResult, GetBatchChangeToEditVariables>(
         GET_BATCH_CHANGE_TO_EDIT,
         {

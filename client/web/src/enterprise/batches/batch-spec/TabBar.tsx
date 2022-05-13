@@ -37,7 +37,12 @@ interface TabBarProps {
     className?: string
 }
 
-export const TabBar: React.FunctionComponent<TabBarProps> = ({ activeTabKey, tabsConfig, matchURL, className }) => {
+export const TabBar: React.FunctionComponent<React.PropsWithChildren<TabBarProps>> = ({
+    activeTabKey,
+    tabsConfig,
+    matchURL,
+    className,
+}) => {
     // uniqBy removes duplicates by taking the first item it finds with a given 'name', so we spread the defaults last
     const fullTabsConfig = useMemo<TabsConfig[]>(() => uniqBy([...tabsConfig, ...DEFAULT_TABS], 'key'), [tabsConfig])
     return (

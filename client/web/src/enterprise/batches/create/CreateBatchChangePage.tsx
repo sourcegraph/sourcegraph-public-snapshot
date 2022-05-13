@@ -59,10 +59,9 @@ export const CreateBatchChangePage: React.FunctionComponent<React.PropsWithChild
 
 const TABS_CONFIG: TabsConfig[] = [{ key: 'configuration', isEnabled: true }]
 
-const NewBatchChangePageContent: React.FunctionComponent<Omit<CreateBatchChangePageProps, 'headingElement'>> = ({
-    settingsCascade,
-    initialNamespaceID,
-}) => {
+const NewBatchChangePageContent: React.FunctionComponent<
+    React.PropsWithChildren<Omit<CreateBatchChangePageProps, 'headingElement'>>
+> = ({ settingsCascade, initialNamespaceID }) => {
     const { renderTemplate, insightTitle } = useInsightTemplates(settingsCascade)
     return (
         <div className={layoutStyles.pageContainer}>
