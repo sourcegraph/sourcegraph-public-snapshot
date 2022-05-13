@@ -3,7 +3,6 @@ package cliutil
 import (
 	"flag"
 	"fmt"
-	"strconv"
 
 	"github.com/urfave/cli/v2"
 
@@ -50,22 +49,9 @@ func DownTo(commandName string, factory RunnerFactory, outFactory func() *output
 			targets                  = cmd.StringSlice("target")
 		)
 
-		if len(targets) == 1 || targets[0] == "" {
-			targets = nil
-		}
-		if len(targets) == 0 {
-			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: supply a target via -target"))
-			return flag.ErrHelp
-		}
-
-		versions := make([]int, 0, len(targets))
-		for _, target := range targets {
-			version, err := strconv.Atoi(target)
-			if err != nil {
-				return err
-			}
-
-			versions = append(versions, version)
+		versions, err := parseTargets(targets, out)
+		if err != nil {
+			return err
 		}
 
 		ctx := cmd.Context

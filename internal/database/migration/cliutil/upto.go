@@ -50,22 +50,9 @@ func UpTo(commandName string, factory RunnerFactory, outFactory func() *output.O
 			targets                  = cmd.StringSlice("target")
 		)
 
-		if len(targets) == 1 || targets[0] == "" {
-			targets = nil
-		}
-		if len(targets) == 0 {
-			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: supply a target via -target"))
-			return flag.ErrHelp
-		}
-
-		versions := make([]int, 0, len(targets))
-		for _, target := range targets {
-			version, err := strconv.Atoi(target)
-			if err != nil {
-				return err
-			}
-
-			versions = append(versions, version)
+		versions, err := parseTargets(targets, out)
+		if err != nil {
+			return err
 		}
 
 		ctx := cmd.Context
@@ -95,4 +82,26 @@ func UpTo(commandName string, factory RunnerFactory, outFactory func() *output.O
 		Flags:       flags,
 		Action:      exec,
 	}
+}
+
+func parseTargets(targets []string, out *output.Output) ([]int, error) {
+	if len(targets) == 1 || targets[0] == "" {
+		targets = nil
+	}
+	if len(targets) == 0 {
+		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: supply a target via -target"))
+		return nil, flag.ErrHelp
+	}
+
+	versions := make([]int, 0, len(targets))
+	for _, target := range targets {
+		version, err := strconv.Atoi(target)
+		if err != nil {
+			return nil, err
+		}
+
+		versions = append(versions, version)
+	}
+
+	return versions, nil
 }
