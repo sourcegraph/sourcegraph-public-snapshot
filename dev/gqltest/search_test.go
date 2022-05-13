@@ -102,7 +102,8 @@ func TestSearch(t *testing.T) {
 // based search API. It only supports the methods that streaming supports.
 type searchClient interface {
 	AddExternalService(input gqltestutil.AddExternalServiceInput) (string, error)
-	DeleteExternalService(id string) error
+	UpdateExternalService(input gqltestutil.UpdateExternalServiceInput) (string, error)
+	DeleteExternalService(id string, async bool) error
 
 	SearchRepositories(query string) (gqltestutil.SearchRepositoryResults, error)
 	SearchFiles(query string) (*gqltestutil.SearchFileResults, error)

@@ -12,7 +12,7 @@ import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExce
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { AnchorLink, ProductStatusBadge, Link, Icon } from '@sourcegraph/wildcard'
+import { AnchorLink, ProductStatusBadge, Link, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { RepositoryFields } from '../../graphql-operations'
@@ -193,14 +193,14 @@ export const DocumentationNode: React.FunctionComponent<React.PropsWithChildren<
                         {!isExcluded(node, ['test', 'benchmark', 'example', 'license', 'owner', 'package']) &&
                             node.documentation.tags.length !== 0 && (
                                 <>
-                                    <h4 className="mt-4">
+                                    <Typography.H4 className="mt-4">
                                         Usage examples
                                         <Icon
                                             className="ml-1"
                                             data-tooltip="Usage examples from precise LSIF code intelligence index"
                                             as={HelpCircleOutlineIcon}
                                         />
-                                    </h4>
+                                    </Typography.H4>
                                     <DocumentationExamples {...props} pathID={node.pathID} count={onlyPathID ? 3 : 1} />
                                 </>
                             )}

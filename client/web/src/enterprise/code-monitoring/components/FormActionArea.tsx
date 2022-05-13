@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 
-import { Link } from '@sourcegraph/wildcard'
+import { Link, Typography } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { CodeMonitorFields } from '../../../graphql-operations'
@@ -80,7 +80,7 @@ export const FormActionArea: React.FunctionComponent<React.PropsWithChildren<Act
 
     return (
         <>
-            <h3 className="mb-1">Actions</h3>
+            <Typography.H3 className="mb-1">Actions</Typography.H3>
             <span className="text-muted">Run any number of actions in response to an event</span>
 
             <EmailAction

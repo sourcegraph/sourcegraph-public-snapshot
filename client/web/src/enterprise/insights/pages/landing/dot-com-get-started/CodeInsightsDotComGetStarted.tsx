@@ -3,7 +3,7 @@ import React, { useEffect } from 'react'
 import classNames from 'classnames'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Card, CardBody, Link, PageHeader } from '@sourcegraph/wildcard'
+import { Button, Card, CardBody, Link, PageHeader, Typography } from '@sourcegraph/wildcard'
 
 import { Page } from '../../../../../components/Page'
 import { PageTitle } from '../../../../../components/PageTitle'
@@ -73,9 +73,9 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
                         </aside>
 
                         <section className={styles.hereDescriptionBlock}>
-                            <h2 className={classNames(styles.heroTitle)}>
+                            <Typography.H2 className={classNames(styles.heroTitle)}>
                                 Draw insights from your codebase about how different initiatives are tracking over time
-                            </h2>
+                            </Typography.H2>
 
                             <p>
                                 Create customizable, visual dashboards with meaningful codebase signals your team can
@@ -83,7 +83,9 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
                                 Anything you can search, you can create a Code Insight for.
                             </p>
 
-                            <h3 className={classNames(styles.hereBulletTitle)}>Use Code Insights to...</h3>
+                            <Typography.H3 className={classNames(styles.hereBulletTitle)}>
+                                Use Code Insights to...
+                            </Typography.H3>
 
                             <ul>
                                 <li>Track migrations, adoption, and deprecations</li>
@@ -117,7 +119,7 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
                     </Card>
 
                     <section className={styles.quoteSection}>
-                        <h2>Trusted by leading engineering teams around the world:</h2>
+                        <Typography.H2>Trusted by leading engineering teams around the world:</Typography.H2>
 
                         <q className={styles.quote}>
                             As we’ve grown, so has the need to better track and communicate our progress and goals
@@ -141,7 +143,7 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
 
                     <section className={styles.installLocallySection}>
                         <Card as={CardBody} className={styles.installLocallyRequirements}>
-                            <h3>Code Insights requirements</h3>
+                            <Typography.H3>Code Insights requirements</Typography.H3>
                             <ul className={styles.installLocallyRequirementsList}>
                                 <li>On-prem installation</li>
                                 <li>Create up to 2 code insights for free</li>
@@ -152,7 +154,7 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
                         <Card as={CardBody} className={styles.installLocallyGetStarted}>
                             <SourcegraphInstallLocallyIcon className="flex-shrink-0" />
                             <div>
-                                <h3>Install locally to get started</h3>
+                                <Typography.H3>Install locally to get started</Typography.H3>
 
                                 <p>
                                     Code Insights requires a local Sourcegraph installation via Docker Compose or

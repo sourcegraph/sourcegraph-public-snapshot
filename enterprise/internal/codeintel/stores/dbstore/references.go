@@ -39,7 +39,7 @@ func (s *Store) UpdatePackageReferences(ctx context.Context, dumpID int, referen
 		tx.Handle().DB(),
 		"t_lsif_references",
 		batch.MaxNumPostgresParameters,
-		[]string{"scheme", "name", "version", "filter"},
+		[]string{"scheme", "name", "version"},
 		loadReferencesChannel(references),
 	); err != nil {
 		return err
@@ -55,15 +55,14 @@ const updateReferencesTemporaryTableQuery = `
 CREATE TEMPORARY TABLE t_lsif_references (
 	scheme text NOT NULL,
 	name text NOT NULL,
-	version text NOT NULL,
-	filter bytea NOT NULL
+	version text NOT NULL
 ) ON COMMIT DROP
 `
 
 const updateReferencesInsertQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/references.go:UpdatePackageReferences
-INSERT INTO lsif_references (dump_id, scheme, name, version, filter)
-SELECT %s, source.scheme, source.name, source.version, source.filter
+INSERT INTO lsif_references (dump_id, scheme, name, version)
+SELECT %s, source.scheme, source.name, source.version
 FROM t_lsif_references source
 `
 
@@ -74,13 +73,7 @@ func loadReferencesChannel(references []precise.PackageReference) <-chan []any {
 		defer close(ch)
 
 		for _, r := range references {
-			filter := r.Filter
-			if filter == nil {
-				// avoid not null constraint
-				filter = []byte{}
-			}
-
-			ch <- []any{r.Scheme, r.Name, r.Version, filter}
+			ch <- []any{r.Scheme, r.Name, r.Version}
 		}
 	}()
 

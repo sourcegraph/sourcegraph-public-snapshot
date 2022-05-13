@@ -46,7 +46,7 @@ import {
     Collapse,
     CollapseHeader,
     CollapsePanel,
-    Code,
+    Typography,
 } from '@sourcegraph/wildcard'
 
 import { ReferencesPanelHighlightedBlobResult, ReferencesPanelHighlightedBlobVariables } from '../graphql-operations'
@@ -368,24 +368,19 @@ export const ReferencesList: React.FunctionComponent<
     }
 
     return (
-        <>
-            <ReferencesPanelFeedbackCta />
-            <div className={classNames('align-items-stretch', styles.panel)}>
-                <div className={classNames('px-0', styles.leftSubPanel)}>
-                    <CardHeader className={classNames('d-flex align-items-center', styles.cardHeader)}>
-                        <Code size="base" weight="bold">
-                            {props.searchToken}
-                        </Code>
-                        {canShowSpinner && (
-                            <small className="ml-3 text-muted d-flex align-items-center">
-                                <Icon as={LoadingSpinner} size="sm" inline={true} className="mr-1" />
-                                <i>Loading...</i>
-                            </small>
-                        )}
-                    </CardHeader>
-                    <div className={classNames('d-flex justify-content-start', styles.filter)}>
-                        <small>
-                            <Icon as={FilterOutlineIcon} size="sm" className={styles.filterIcon} />
+      <>
+        <ReferencesPanelFeedbackCta />
+        <div className={classNames('align-items-stretch', styles.panel)}>
+            <div className={classNames('px-0', styles.leftSubPanel)}>
+                <CardHeader className={classNames('d-flex align-items-center', styles.cardHeader)}>
+                    <Typography.Code size="base" weight="bold">
+                        {props.searchToken}
+                    </Typography.Code>
+                    {canShowSpinner && (
+                        <small className="ml-3 text-muted d-flex align-items-center">
+                            <Icon as={LoadingSpinner} size="sm" inline={true} className="mr-1" />
+                            <i>Loading...</i>
+
                         </small>
                         <Input
                             className={classNames('py-0 my-0 w-100 text-small')}
@@ -526,7 +521,7 @@ const CollapsibleLocationList: React.FunctionComponent<
                         ) : (
                             <Icon aria-label="Expand" as={ChevronRightIcon} />
                         )}{' '}
-                        <h4 className="mb-0">{capitalize(props.name)}</h4>
+                        <Typography.H4 className="mb-0">{capitalize(props.name)}</Typography.H4>
                         <span className={classNames('ml-2 text-muted small', styles.cardHeaderSmallText)}>
                             ({props.locations.length} displayed{props.hasMore ? ', more available)' : ')'}
                         </span>

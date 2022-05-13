@@ -3,7 +3,7 @@ import React from 'react'
 import { Redirect } from 'react-router'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { CardBody, Card } from '@sourcegraph/wildcard'
+import { CardBody, Card, Typography } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { SignUpArguments, SignUpForm } from '../../auth/SignUpForm'
@@ -88,7 +88,7 @@ export const SiteInitPage: React.FunctionComponent<React.PropsWithChildren<Props
                         </p>
                     ) : (
                         <>
-                            <h2 className="site-init-page__header">Welcome</h2>
+                            <Typography.H2 className="site-init-page__header">Welcome</Typography.H2>
                             <p>Create an admin account to start using Sourcegraph.</p>
                             <SignUpForm
                                 className="w-100"

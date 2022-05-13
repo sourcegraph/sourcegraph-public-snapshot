@@ -14,11 +14,11 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
 import { HeroPage } from '../../../components/HeroPage'
+import type { BatchSpecExecutionDetailsPageProps } from '../batch-spec/execute/BatchSpecExecutionDetailsPage'
 import type { BatchChangeClosePageProps } from '../close/BatchChangeClosePage'
 import type { CreateBatchChangePageProps } from '../create/CreateBatchChangePage'
 import type { BatchChangeDetailsPageProps } from '../detail/BatchChangeDetailsPage'
 import { TabName } from '../detail/BatchChangeDetailsTabs'
-import type { BatchSpecExecutionDetailsPageProps } from '../execution/BatchSpecExecutionDetailsPage'
 import type { BatchChangeListPageProps, NamespaceBatchChangeListPageProps } from '../list/BatchChangeListPage'
 import type { BatchChangePreviewPageProps } from '../preview/BatchChangePreviewPage'
 
@@ -51,7 +51,7 @@ const BatchChangeClosePage = lazyComponent<BatchChangeClosePageProps, 'BatchChan
 const BatchSpecExecutionDetailsPage = lazyComponent<
     BatchSpecExecutionDetailsPageProps,
     'BatchSpecExecutionDetailsPage'
->(() => import('../execution/BatchSpecExecutionDetailsPage'), 'BatchSpecExecutionDetailsPage')
+>(() => import('../batch-spec/execute/BatchSpecExecutionDetailsPage'), 'BatchSpecExecutionDetailsPage')
 const DotcomGettingStartedPage = lazyComponent<DotcomGettingStartedPageProps, 'DotcomGettingStartedPage'>(
     () => import('./DotcomGettingStartedPage'),
     'DotcomGettingStartedPage'

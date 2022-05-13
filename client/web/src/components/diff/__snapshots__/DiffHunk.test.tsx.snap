@@ -23,7 +23,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
         </td>
       </tr>
       <tr
-        class="lineBoth"
+        class="a11y-ignore lineBoth"
         data-hunk-line-kind="UNCHANGED"
       >
         <td
@@ -66,7 +66,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
         </td>
       </tr>
       <tr
-        class="lineBoth"
+        class="a11y-ignore lineBoth"
         data-hunk-line-kind="UNCHANGED"
       >
         <td
@@ -109,7 +109,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
         </td>
       </tr>
       <tr
-        class="lineBoth"
+        class="a11y-ignore lineBoth"
         data-hunk-line-kind="UNCHANGED"
       >
         <td
@@ -152,7 +152,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
         </td>
       </tr>
       <tr
-        class="lineDeletion"
+        class="a11y-ignore lineDeletion"
         data-hunk-line-kind="DELETED"
       >
         <td
@@ -184,7 +184,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
         </td>
       </tr>
       <tr
-        class="lineAddition"
+        class="a11y-ignore lineAddition"
         data-hunk-line-kind="ADDED"
       >
         <td
@@ -216,7 +216,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
         </td>
       </tr>
       <tr
-        class="lineBoth"
+        class="a11y-ignore lineBoth"
         data-hunk-line-kind="UNCHANGED"
       >
         <td
@@ -259,7 +259,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
         </td>
       </tr>
       <tr
-        class="lineBoth"
+        class="a11y-ignore lineBoth"
         data-hunk-line-kind="UNCHANGED"
       >
         <td
@@ -302,7 +302,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
         </td>
       </tr>
       <tr
-        class="lineBoth"
+        class="a11y-ignore lineBoth"
         data-hunk-line-kind="UNCHANGED"
       >
         <td
@@ -372,7 +372,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
         </td>
       </tr>
       <tr
-        class="lineBoth"
+        class="a11y-ignore lineBoth"
         data-hunk-line-kind="UNCHANGED"
       >
         <td
@@ -424,7 +424,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
         </td>
       </tr>
       <tr
-        class="lineBoth"
+        class="a11y-ignore lineBoth"
         data-hunk-line-kind="UNCHANGED"
       >
         <td
@@ -467,7 +467,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
         </td>
       </tr>
       <tr
-        class="lineBoth"
+        class="a11y-ignore lineBoth"
         data-hunk-line-kind="UNCHANGED"
       >
         <td
@@ -510,7 +510,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
         </td>
       </tr>
       <tr
-        class="lineDeletion"
+        class="a11y-ignore lineDeletion"
         data-hunk-line-kind="DELETED"
       >
         <td
@@ -551,7 +551,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
         </td>
       </tr>
       <tr
-        class="lineAddition"
+        class="a11y-ignore lineAddition"
         data-hunk-line-kind="ADDED"
       >
         <td
@@ -583,7 +583,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
         </td>
       </tr>
       <tr
-        class="lineBoth"
+        class="a11y-ignore lineBoth"
         data-hunk-line-kind="UNCHANGED"
       >
         <td
@@ -626,7 +626,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
         </td>
       </tr>
       <tr
-        class="lineBoth"
+        class="a11y-ignore lineBoth"
         data-hunk-line-kind="UNCHANGED"
       >
         <td
@@ -669,7 +669,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
         </td>
       </tr>
       <tr
-        class="lineBoth"
+        class="a11y-ignore lineBoth"
         data-hunk-line-kind="UNCHANGED"
       >
         <td
@@ -739,7 +739,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
         </td>
       </tr>
       <tr
-        class="lineBoth"
+        class="a11y-ignore lineBoth"
         data-hunk-line-kind="UNCHANGED"
       >
         <td
@@ -791,7 +791,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
         </td>
       </tr>
       <tr
-        class="lineBoth"
+        class="a11y-ignore lineBoth"
         data-hunk-line-kind="UNCHANGED"
       >
         <td
@@ -834,7 +834,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
         </td>
       </tr>
       <tr
-        class="lineBoth"
+        class="a11y-ignore lineBoth"
         data-hunk-line-kind="UNCHANGED"
       >
         <td
@@ -877,7 +877,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
         </td>
       </tr>
       <tr
-        class="lineDeletion"
+        class="a11y-ignore lineDeletion"
         data-hunk-line-kind="DELETED"
       >
         <td
@@ -918,7 +918,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
         </td>
       </tr>
       <tr
-        class="lineAddition"
+        class="a11y-ignore lineAddition"
         data-hunk-line-kind="ADDED"
       >
         <td
@@ -950,7 +950,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
         </td>
       </tr>
       <tr
-        class="lineBoth"
+        class="a11y-ignore lineBoth"
         data-hunk-line-kind="UNCHANGED"
       >
         <td
@@ -993,7 +993,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
         </td>
       </tr>
       <tr
-        class="lineBoth"
+        class="a11y-ignore lineBoth"
         data-hunk-line-kind="UNCHANGED"
       >
         <td
@@ -1036,7 +1036,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
         </td>
       </tr>
       <tr
-        class="lineBoth"
+        class="a11y-ignore lineBoth"
         data-hunk-line-kind="UNCHANGED"
       >
         <td

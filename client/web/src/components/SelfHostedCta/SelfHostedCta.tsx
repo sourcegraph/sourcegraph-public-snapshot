@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import ArrowRightIcon from 'mdi-react/ArrowRightIcon'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, Icon } from '@sourcegraph/wildcard'
+import { Link, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { MarketingBlock } from '../MarketingBlock'
 
@@ -71,7 +71,7 @@ export const SelfHostedCta: React.FunctionComponent<React.PropsWithChildren<Self
             </div>
 
             <MarketingBlock wrapperClassName="flex-md-shrink-0 mt-md-0 mt-sm-2 w-sm-100">
-                <h3 className="pr-3">Need help getting started?</h3>
+                <Typography.H3 className="pr-3">Need help getting started?</Typography.H3>
 
                 <div>
                     <Link

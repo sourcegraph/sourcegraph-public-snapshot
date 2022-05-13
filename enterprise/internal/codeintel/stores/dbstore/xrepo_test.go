@@ -153,7 +153,7 @@ func TestDefinitionDumps(t *testing.T) {
 	})
 }
 
-func TestReferenceIDsAndFilters(t *testing.T) {
+func TestReferenceIDs(t *testing.T) {
 	db := dbtest.NewDB(t)
 	store := testStore(db)
 
@@ -197,11 +197,11 @@ func TestReferenceIDsAndFilters(t *testing.T) {
 	})
 
 	insertPackageReferences(t, store, []shared.PackageReference{
-		{Package: shared.Package{DumpID: 1, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f1")},
-		{Package: shared.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f2")},
-		{Package: shared.Package{DumpID: 3, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f3")},
-		{Package: shared.Package{DumpID: 4, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f4")},
-		{Package: shared.Package{DumpID: 5, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f5")},
+		{Package: shared.Package{DumpID: 1, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
+		{Package: shared.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
+		{Package: shared.Package{DumpID: 3, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
+		{Package: shared.Package{DumpID: 4, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
+		{Package: shared.Package{DumpID: 5, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
 	})
 
 	moniker := precise.QualifiedMonikerData{
@@ -215,11 +215,11 @@ func TestReferenceIDsAndFilters(t *testing.T) {
 	}
 
 	refs := []shared.PackageReference{
-		{Package: shared.Package{DumpID: 1, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f1")},
-		{Package: shared.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f2")},
-		{Package: shared.Package{DumpID: 3, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f3")},
-		{Package: shared.Package{DumpID: 4, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f4")},
-		{Package: shared.Package{DumpID: 5, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f5")},
+		{Package: shared.Package{DumpID: 1, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
+		{Package: shared.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
+		{Package: shared.Package{DumpID: 3, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
+		{Package: shared.Package{DumpID: 4, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
+		{Package: shared.Package{DumpID: 5, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
 	}
 
 	testCases := []struct {
@@ -235,9 +235,9 @@ func TestReferenceIDsAndFilters(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("i=%d", i), func(t *testing.T) {
-			scanner, totalCount, err := store.ReferenceIDsAndFilters(context.Background(), 50, makeCommit(1), []precise.QualifiedMonikerData{moniker}, testCase.limit, testCase.offset)
+			scanner, totalCount, err := store.ReferenceIDs(context.Background(), 50, makeCommit(1), []precise.QualifiedMonikerData{moniker}, testCase.limit, testCase.offset)
 			if err != nil {
-				t.Fatalf("unexpected error getting filters: %s", err)
+				t.Fatalf("unexpected error getting scanner: %s", err)
 			}
 
 			if totalCount != 5 {
@@ -263,7 +263,7 @@ func TestReferenceIDsAndFilters(t *testing.T) {
 		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
 		defer globals.SetPermissionsUserMapping(before)
 
-		_, totalCount, err := store.ReferenceIDsAndFilters(context.Background(), 50, makeCommit(1), []precise.QualifiedMonikerData{moniker}, 50, 0)
+		_, totalCount, err := store.ReferenceIDs(context.Background(), 50, makeCommit(1), []precise.QualifiedMonikerData{moniker}, 50, 0)
 		if err != nil {
 			t.Fatalf("unexpected error getting filters: %s", err)
 		}
@@ -273,7 +273,7 @@ func TestReferenceIDsAndFilters(t *testing.T) {
 	})
 }
 
-func TestReferenceIDsAndFiltersVisibility(t *testing.T) {
+func TestReferenceIDsVisibility(t *testing.T) {
 	db := dbtest.NewDB(t)
 	store := testStore(db)
 
@@ -295,11 +295,11 @@ func TestReferenceIDsAndFiltersVisibility(t *testing.T) {
 	})
 
 	insertPackageReferences(t, store, []shared.PackageReference{
-		{Package: shared.Package{DumpID: 1, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f1")},
-		{Package: shared.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f2")},
-		{Package: shared.Package{DumpID: 3, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f3")},
-		{Package: shared.Package{DumpID: 4, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f4")},
-		{Package: shared.Package{DumpID: 5, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f5")},
+		{Package: shared.Package{DumpID: 1, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
+		{Package: shared.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
+		{Package: shared.Package{DumpID: 3, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
+		{Package: shared.Package{DumpID: 4, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
+		{Package: shared.Package{DumpID: 5, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
 	})
 
 	moniker := precise.QualifiedMonikerData{
@@ -312,7 +312,7 @@ func TestReferenceIDsAndFiltersVisibility(t *testing.T) {
 		},
 	}
 
-	scanner, totalCount, err := store.ReferenceIDsAndFilters(context.Background(), 50, makeCommit(6), []precise.QualifiedMonikerData{moniker}, 5, 0)
+	scanner, totalCount, err := store.ReferenceIDs(context.Background(), 50, makeCommit(6), []precise.QualifiedMonikerData{moniker}, 5, 0)
 	if err != nil {
 		t.Fatalf("unexpected error getting filters: %s", err)
 	}
@@ -327,16 +327,16 @@ func TestReferenceIDsAndFiltersVisibility(t *testing.T) {
 	}
 
 	expected := []shared.PackageReference{
-		{Package: shared.Package{DumpID: 3, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f3")},
-		{Package: shared.Package{DumpID: 4, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f4")},
-		{Package: shared.Package{DumpID: 5, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f5")},
+		{Package: shared.Package{DumpID: 3, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
+		{Package: shared.Package{DumpID: 4, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
+		{Package: shared.Package{DumpID: 5, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
 	}
 	if diff := cmp.Diff(expected, filters); diff != "" {
 		t.Errorf("unexpected filters (-want +got):\n%s", diff)
 	}
 }
 
-func TestReferenceIDsAndFiltersRemoteVisibility(t *testing.T) {
+func TestReferenceIDsRemoteVisibility(t *testing.T) {
 	db := dbtest.NewDB(t)
 	store := testStore(db)
 
@@ -359,14 +359,14 @@ func TestReferenceIDsAndFiltersRemoteVisibility(t *testing.T) {
 	insertVisibleAtTipNonDefaultBranch(t, db, 57, 8)
 
 	insertPackageReferences(t, store, []shared.PackageReference{
-		{Package: shared.Package{DumpID: 1, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f1")}, // same repo, not visible in git
-		{Package: shared.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f2")},
-		{Package: shared.Package{DumpID: 3, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f3")},
-		{Package: shared.Package{DumpID: 4, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f4")},
-		{Package: shared.Package{DumpID: 5, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f5")},
-		{Package: shared.Package{DumpID: 6, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f6")}, // remote repo not visible at tip
-		{Package: shared.Package{DumpID: 7, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f7")},
-		{Package: shared.Package{DumpID: 8, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f8")}, // visible on non-default branch
+		{Package: shared.Package{DumpID: 1, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}}, // same repo, not visible in git
+		{Package: shared.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
+		{Package: shared.Package{DumpID: 3, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
+		{Package: shared.Package{DumpID: 4, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
+		{Package: shared.Package{DumpID: 5, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
+		{Package: shared.Package{DumpID: 6, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}}, // remote repo not visible at tip
+		{Package: shared.Package{DumpID: 7, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
+		{Package: shared.Package{DumpID: 8, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}}, // visible on non-default branch
 	})
 
 	moniker := precise.QualifiedMonikerData{
@@ -379,7 +379,7 @@ func TestReferenceIDsAndFiltersRemoteVisibility(t *testing.T) {
 		},
 	}
 
-	scanner, totalCount, err := store.ReferenceIDsAndFilters(context.Background(), 50, makeCommit(6), []precise.QualifiedMonikerData{moniker}, 5, 0)
+	scanner, totalCount, err := store.ReferenceIDs(context.Background(), 50, makeCommit(6), []precise.QualifiedMonikerData{moniker}, 5, 0)
 	if err != nil {
 		t.Fatalf("unexpected error getting filters: %s", err)
 	}
@@ -394,11 +394,11 @@ func TestReferenceIDsAndFiltersRemoteVisibility(t *testing.T) {
 	}
 
 	expected := []shared.PackageReference{
-		{Package: shared.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f2")},
-		{Package: shared.Package{DumpID: 3, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f3")},
-		{Package: shared.Package{DumpID: 4, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f4")},
-		{Package: shared.Package{DumpID: 5, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f5")},
-		{Package: shared.Package{DumpID: 7, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f7")},
+		{Package: shared.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
+		{Package: shared.Package{DumpID: 3, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
+		{Package: shared.Package{DumpID: 4, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
+		{Package: shared.Package{DumpID: 5, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
+		{Package: shared.Package{DumpID: 7, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
 	}
 	if diff := cmp.Diff(expected, filters); diff != "" {
 		t.Errorf("unexpected filters (-want +got):\n%s", diff)
@@ -418,11 +418,11 @@ func TestReferencesForUpload(t *testing.T) {
 	)
 
 	insertPackageReferences(t, store, []shared.PackageReference{
-		{Package: shared.Package{DumpID: 1, Scheme: "gomod", Name: "leftpad", Version: "1.1.0"}, Filter: []byte("f1")},
-		{Package: shared.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "2.1.0"}, Filter: []byte("f2")},
-		{Package: shared.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "3.1.0"}, Filter: []byte("f3")},
-		{Package: shared.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "4.1.0"}, Filter: []byte("f4")},
-		{Package: shared.Package{DumpID: 3, Scheme: "gomod", Name: "leftpad", Version: "5.1.0"}, Filter: []byte("f5")},
+		{Package: shared.Package{DumpID: 1, Scheme: "gomod", Name: "leftpad", Version: "1.1.0"}},
+		{Package: shared.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "2.1.0"}},
+		{Package: shared.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "3.1.0"}},
+		{Package: shared.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "4.1.0"}},
+		{Package: shared.Package{DumpID: 3, Scheme: "gomod", Name: "leftpad", Version: "5.1.0"}},
 	})
 
 	scanner, err := store.ReferencesForUpload(context.Background(), 2)
@@ -436,9 +436,9 @@ func TestReferencesForUpload(t *testing.T) {
 	}
 
 	expected := []shared.PackageReference{
-		{Package: shared.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "2.1.0"}, Filter: nil},
-		{Package: shared.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "3.1.0"}, Filter: nil},
-		{Package: shared.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "4.1.0"}, Filter: nil},
+		{Package: shared.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "2.1.0"}},
+		{Package: shared.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "3.1.0"}},
+		{Package: shared.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "4.1.0"}},
 	}
 	if diff := cmp.Diff(expected, filters); diff != "" {
 		t.Errorf("unexpected filters (-want +got):\n%s", diff)

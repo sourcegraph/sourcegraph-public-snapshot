@@ -41,9 +41,11 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
               class="header"
             >
               <svg
+                aria-hidden="true"
                 class="mdi-icon iconInline flex-shrink-0"
                 fill="currentColor"
                 height="24"
+                role="img"
                 viewBox="0 0 24 24"
                 width="24"
               >
@@ -64,9 +66,11 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                   title="github.com"
                 >
                   <svg
+                    aria-hidden="true"
                     class="mdi-icon iconInline text-muted flex-shrink-0"
                     fill="currentColor"
                     height="24"
+                    role="img"
                     viewBox="0 0 24 24"
                     width="24"
                   >
@@ -283,9 +287,11 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
               class="header"
             >
               <svg
+                aria-hidden="true"
                 class="mdi-icon iconInline flex-shrink-0"
                 fill="currentColor"
                 height="24"
+                role="img"
                 viewBox="0 0 24 24"
                 width="24"
               >
@@ -306,9 +312,11 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                   title="github.com"
                 >
                   <svg
+                    aria-hidden="true"
                     class="mdi-icon iconInline text-muted flex-shrink-0"
                     fill="currentColor"
                     height="24"
+                    role="img"
                     viewBox="0 0 24 24"
                     width="24"
                   >
@@ -481,9 +489,11 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
               class="header"
             >
               <svg
+                aria-hidden="true"
                 class="mdi-icon iconInline flex-shrink-0"
                 fill="currentColor"
                 height="24"
+                role="img"
                 viewBox="0 0 24 24"
                 width="24"
               >
@@ -504,9 +514,11 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                   title="github.com"
                 >
                   <svg
+                    aria-hidden="true"
                     class="mdi-icon iconInline text-muted flex-shrink-0"
                     fill="currentColor"
                     height="24"
+                    role="img"
                     viewBox="0 0 24 24"
                     width="24"
                   >
