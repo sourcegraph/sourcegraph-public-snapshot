@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
@@ -21,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 // A global limiter on number of concurrent searcher searches.
@@ -170,7 +170,7 @@ func searchFilesInRepo(
 	// backend.{GitRepo,Repos.ResolveRev}) because that would slow this operation
 	// down by a lot (if we're looping over many repos). This means that it'll fail if a
 	// repo is not on gitserver.
-	commit, err := git.ResolveRevision(ctx, db, gitserverRepo, rev, git.ResolveRevisionOptions{NoEnsureRevision: true})
+	commit, err := gitserver.ResolveRevision(ctx, db, gitserverRepo, rev, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
 	if err != nil {
 		return false, err
 	}

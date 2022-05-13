@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
@@ -19,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 type SymbolSearcherJob struct {
@@ -94,7 +94,7 @@ func searchInRepo(ctx context.Context, db database.DB, repoRevs *search.Reposito
 	// backend.{GitRepo,Repos.ResolveRev}) because that would slow this operation
 	// down by a lot (if we're looping over many repos). This means that it'll fail if a
 	// repo is not on gitserver.
-	commitID, err := git.ResolveRevision(ctx, db, repoRevs.GitserverRepo(), inputRev, git.ResolveRevisionOptions{})
+	commitID, err := gitserver.ResolveRevision(ctx, db, repoRevs.GitserverRepo(), inputRev, gitserver.ResolveRevisionOptions{})
 	if err != nil {
 		return nil, err
 	}

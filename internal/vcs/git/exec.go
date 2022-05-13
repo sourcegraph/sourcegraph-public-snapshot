@@ -54,18 +54,3 @@ func checkSpecArgSafety(spec string) error {
 	}
 	return nil
 }
-
-func gitserverCmdFunc(repo api.RepoName, db database.DB) cmdFunc {
-	return func(args []string) cmd {
-		return gitserver.NewClient(db).GitCommand(repo, args...)
-	}
-}
-
-// cmdFunc is a func that creates a new executable Git command.
-type cmdFunc func(args []string) cmd
-
-// cmd is an executable Git command.
-type cmd interface {
-	Output(context.Context) ([]byte, error)
-	String() string
-}

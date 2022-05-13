@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -29,7 +30,7 @@ func (s *repos) ResolveRev(ctx context.Context, repo *types.Repo, rev string) (c
 	ctx, done := trace(ctx, "Repos", "ResolveRev", map[string]any{"repo": repo.Name, "rev": rev}, &err)
 	defer done()
 
-	return git.ResolveRevision(ctx, s.db, repo.Name, rev, git.ResolveRevisionOptions{})
+	return gitserver.ResolveRevision(ctx, s.db, repo.Name, rev, gitserver.ResolveRevisionOptions{})
 }
 
 func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.CommitID) (res *gitdomain.Commit, err error) {
@@ -42,9 +43,9 @@ func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.Co
 
 	log15.Debug("svc.local.repos.GetCommit", "repo", repo.Name, "commitID", commitID)
 
-	if !git.IsAbsoluteRevision(string(commitID)) {
+	if !gitserver.IsAbsoluteRevision(string(commitID)) {
 		return nil, errors.Errorf("non-absolute CommitID for Repos.GetCommit: %v", commitID)
 	}
 
-	return git.GetCommit(ctx, s.db, repo.Name, commitID, git.ResolveRevisionOptions{}, authz.DefaultSubRepoPermsChecker)
+	return git.GetCommit(ctx, s.db, repo.Name, commitID, gitserver.ResolveRevisionOptions{}, authz.DefaultSubRepoPermsChecker)
 }

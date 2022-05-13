@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
 func TestMerger_MergeBase(t *testing.T) {
@@ -44,19 +45,19 @@ func TestMerger_MergeBase(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		a, err := ResolveRevision(ctx, db, test.repo, test.a, ResolveRevisionOptions{})
+		a, err := gitserver.ResolveRevision(ctx, db, test.repo, test.a, gitserver.ResolveRevisionOptions{})
 		if err != nil {
 			t.Errorf("%s: ResolveRevision(%q) on a: %s", label, test.a, err)
 			continue
 		}
 
-		b, err := ResolveRevision(ctx, db, test.repo, test.b, ResolveRevisionOptions{})
+		b, err := gitserver.ResolveRevision(ctx, db, test.repo, test.b, gitserver.ResolveRevisionOptions{})
 		if err != nil {
 			t.Errorf("%s: ResolveRevision(%q) on b: %s", label, test.b, err)
 			continue
 		}
 
-		want, err := ResolveRevision(ctx, db, test.repo, test.wantMergeBase, ResolveRevisionOptions{})
+		want, err := gitserver.ResolveRevision(ctx, db, test.repo, test.wantMergeBase, gitserver.ResolveRevisionOptions{})
 		if err != nil {
 			t.Errorf("%s: ResolveRevision(%q) on wantMergeBase: %s", label, test.wantMergeBase, err)
 			continue

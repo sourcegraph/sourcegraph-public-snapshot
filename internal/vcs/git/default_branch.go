@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -50,7 +51,7 @@ func getDefaultBranch(ctx context.Context, db database.DB, repo api.RepoName, sh
 
 	if err == nil && exitCode == 0 {
 		// Check that our repo is not empty
-		commit, err = ResolveRevision(ctx, db, repo, "HEAD", ResolveRevisionOptions{NoEnsureRevision: true})
+		commit, err = gitserver.ResolveRevision(ctx, db, repo, "HEAD", gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
 	}
 
 	// If we fail to get the default branch due to cloning or being empty, we return nothing.

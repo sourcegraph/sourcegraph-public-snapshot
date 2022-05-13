@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -39,11 +40,11 @@ func TestCachedLocationResolver(t *testing.T) {
 	db.ReposFunc.SetDefaultReturn(repos)
 
 	t.Cleanup(func() {
-		git.Mocks.ResolveRevision = nil
+		gitserver.Mocks.ResolveRevision = nil
 		backend.Mocks.Repos.GetCommit = nil
 	})
 
-	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
+	gitserver.Mocks.ResolveRevision = func(spec string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		return api.CommitID(spec), nil
 	}
 
@@ -202,10 +203,10 @@ func TestCachedLocationResolverUnknownCommit(t *testing.T) {
 	db := database.NewStrictMockDB()
 	db.ReposFunc.SetDefaultReturn(repos)
 
-	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
+	gitserver.Mocks.ResolveRevision = func(spec string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		return "", &gitdomain.RevisionNotFoundError{}
 	}
-	t.Cleanup(func() { git.Mocks.ResolveRevision = nil })
+	t.Cleanup(func() { gitserver.Mocks.ResolveRevision = nil })
 
 	commitResolver, err := NewCachedLocationResolver(db).Commit(context.Background(), 50, "deadbeef")
 	if err != nil {
@@ -236,11 +237,11 @@ func TestResolveLocations(t *testing.T) {
 	db.ReposFunc.SetDefaultReturn(repos)
 
 	t.Cleanup(func() {
-		git.Mocks.ResolveRevision = nil
+		gitserver.Mocks.ResolveRevision = nil
 		backend.Mocks.Repos.GetCommit = nil
 	})
 
-	git.Mocks.ResolveRevision = func(spec string, _ git.ResolveRevisionOptions) (api.CommitID, error) {
+	gitserver.Mocks.ResolveRevision = func(spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		if spec == "deadbeef3" {
 			return "", &gitdomain.RevisionNotFoundError{}
 		}

@@ -40,7 +40,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -254,7 +253,7 @@ func (sr *SearchResultsResolver) blameFileMatch(ctx context.Context, fm *result.
 		return time.Time{}, nil
 	}
 	lm := fm.LineMatches[0]
-	hunks, err := git.BlameFile(ctx, sr.db, fm.Repo.Name, fm.Path, &git.BlameOptions{
+	hunks, err := gitserver.BlameFile(ctx, sr.db, fm.Repo.Name, fm.Path, &gitserver.BlameOptions{
 		NewestCommit: fm.CommitID,
 		StartLine:    int(lm.LineNumber),
 		EndLine:      int(lm.LineNumber),

@@ -22,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -659,7 +658,7 @@ func computeRev(ctx context.Context, db database.DB, repo api.RepoName, getOid, 
 
 	// Resolve the revision to make sure it's on gitserver and, in case we did
 	// the fallback to ref, to get the specific revision.
-	gitRev, err := git.ResolveRevision(ctx, db, repo, rev, git.ResolveRevisionOptions{})
+	gitRev, err := gitserver.ResolveRevision(ctx, db, repo, rev, gitserver.ResolveRevisionOptions{})
 	return string(gitRev), err
 }
 
