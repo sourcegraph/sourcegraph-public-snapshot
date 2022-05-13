@@ -7,6 +7,7 @@ import (
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"go.uber.org/zap/zaptest"
 	"go.uber.org/zap/zaptest/observer"
 
 	"github.com/sourcegraph/sourcegraph/lib/log"
@@ -63,10 +64,7 @@ type CapturedLog struct {
 	Fields  map[string]any
 }
 
-// Get retrieves a logger from scoped to the the given test.
-//
-// Unlike log.Scoped(), logtest.Scoped() is safe to use without initialization.
-func Scoped(t testing.TB) log.Logger {
+func scopedTestLogger(t testing.TB) log.Logger {
 	// initialize just in case - the underlying call to log.Init is no-op if this has
 	// already been done. We allow this in testing for convenience.
 	Init(nil)
@@ -74,16 +72,32 @@ func Scoped(t testing.TB) log.Logger {
 	// On cleanup, flush the global logger.
 	t.Cleanup(func() { globallogger.Get(true).Sync() })
 
-	return log.Scoped(t.Name(), "")
+	root := log.Scoped(t.Name(), "")
+
+	// Cast into internal API
+	configurable := root.(configurableAdapter)
+
+	// Core that writes to test output
+	testCore := zaptest.NewLogger(t).Core()
+
+	// Hook test logger
+	return configurable.WithCore(func(c zapcore.Core) zapcore.Core {
+		return testCore // replace the core entirely
+	})
+}
+
+// Get retrieves a logger from scoped to the the given test.
+//
+// Unlike log.Scoped(), logtest.Scoped() is safe to use without initialization.
+func Scoped(t testing.TB) log.Logger {
+	return scopedTestLogger(t)
 }
 
 // Captured retrieves a logger from scoped to the the given test, and returns a callback,
 // dumpLogs, which flushes the logger buffer and returns log entries.
 func Captured(t testing.TB) (logger log.Logger, exportLogs func() []CapturedLog) {
-	root := Scoped(t)
-
-	// Cast into internal API
-	configurable := root.(configurableAdapter)
+	// Cast into internal APIs
+	configurable := scopedTestLogger(t).(configurableAdapter)
 
 	observerCore, entries := observer.New(zap.DebugLevel) // capture all levels
 	logger = configurable.WithCore(func(c zapcore.Core) zapcore.Core {
