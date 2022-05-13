@@ -129,6 +129,11 @@
     }
 }
 
+.is-compact {
+    @media (--lg-breakpoint-down) {
+        display: none;
+    }
+}
 .text {
     color: var(--body-color);
 }

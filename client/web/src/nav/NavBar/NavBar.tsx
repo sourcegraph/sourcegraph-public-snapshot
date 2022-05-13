@@ -34,9 +34,10 @@ interface NavActionsProps {
     children: React.ReactNode
 }
 
-interface NavLinkProps extends NavItemProps, Pick<LinkProps<H.LocationState>, 'to'> {
+export interface NavLinkProps extends NavItemProps, Pick<LinkProps<H.LocationState>, 'to'> {
     external?: boolean
     className?: string
+    variant?: 'compact'
 }
 
 const useOutsideClickDetector = (
@@ -123,6 +124,7 @@ export const NavLink: React.FunctionComponent<React.PropsWithChildren<NavLinkPro
     children,
     to,
     external,
+    variant,
     className,
 }) => {
     const content = (
@@ -131,6 +133,7 @@ export const NavLink: React.FunctionComponent<React.PropsWithChildren<NavLinkPro
             <span
                 className={classNames(navItemStyles.text, {
                     [navItemStyles.iconIncluded]: Icon,
+                    [navItemStyles.isCompact]: variant === 'compact',
                 })}
             >
                 {children}

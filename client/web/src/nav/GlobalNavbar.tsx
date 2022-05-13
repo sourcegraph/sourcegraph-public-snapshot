@@ -108,6 +108,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
     isRepositoryRelatedPage,
     codeInsightsEnabled,
     searchContextsEnabled,
+    activation,
     ...props
 }) => {
     // Workaround: can't put this in optional parameter value because of https://github.com/babel/babel/issues/11166
@@ -204,6 +205,10 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
         return items.filter<NavDropdownItem>((item): item is NavDropdownItem => !!item)
     }, [searchContextsEnabled, showSearchContext])
 
+    activation = undefined
+    const shouldShowBatchChanges = true // props.batchChangesEnabled || isSourcegraphDotCom
+    const navLinkVariant = shouldShowBatchChanges && activation ? 'compact' : undefined
+
     return (
         <>
             <NavBar
@@ -223,6 +228,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
                             altPath: PageRoutes.RepoContainer,
                             icon: MagnifyIcon,
                             content: 'Code Search',
+                            variant: navLinkVariant,
                         }}
                         routeMatch={routeMatch}
                         mobileHomeItem={{ content: 'Search home' }}
@@ -230,29 +236,37 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
                     />
                     {showSearchNotebook && (
                         <NavItem icon={BookOutlineIcon}>
-                            <NavLink to={PageRoutes.Notebooks}>Notebooks</NavLink>
+                            <NavLink variant={navLinkVariant} to={PageRoutes.Notebooks}>
+                                Notebooks
+                            </NavLink>
                         </NavItem>
                     )}
                     {enableCodeMonitoring && (
                         <NavItem icon={CodeMonitoringLogo}>
-                            <NavLink to="/code-monitoring">Monitoring</NavLink>
+                            <NavLink variant={navLinkVariant} to="/code-monitoring">
+                                Monitoring
+                            </NavLink>
                         </NavItem>
                     )}
                     {/* This is the only circumstance where we show something
                          batch-changes-related even if the instance does not have batch
                          changes enabled, for marketing purposes on sourcegraph.com */}
-                    {(props.batchChangesEnabled || isSourcegraphDotCom) && <BatchChangesNavItem />}
+                    {shouldShowBatchChanges && <BatchChangesNavItem variant={navLinkVariant} />}
                     {codeInsights && (
                         <NavItem icon={BarChartIcon}>
-                            <NavLink to="/insights">Insights</NavLink>
+                            <NavLink variant={navLinkVariant} to="/insights">
+                                Insights
+                            </NavLink>
                         </NavItem>
                     )}
                     <NavItem icon={PuzzleOutlineIcon}>
-                        <NavLink to="/extensions">Extensions</NavLink>
+                        <NavLink variant={navLinkVariant} to="/extensions">
+                            Extensions
+                        </NavLink>
                     </NavItem>
-                    {props.activation && (
+                    {activation && (
                         <NavItem>
-                            <ActivationDropdown activation={props.activation} history={history} />
+                            <ActivationDropdown activation={activation} history={history} />
                         </NavItem>
                     )}
                 </NavGroup>
