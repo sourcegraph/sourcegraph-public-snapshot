@@ -122,7 +122,7 @@ func (f *flagSetFetcher) evaluateForActor(ctx context.Context, a *actor.Actor, f
 	return nil, errors.Errorf("Couldn't evaluate feature flag \"%s\" for the given actor", flagName)
 }
 
-func EvaluateForActorFromContext(ctx context.Context, flagName string) (result bool) {
+func EvaluateForActor(ctx context.Context, flagName string) (result bool) {
 	result = false
 	if flags := ctx.Value(flagContextKey{}); flags != nil {
 		actor := actor.FromContext(ctx)

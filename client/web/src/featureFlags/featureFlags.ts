@@ -119,3 +119,8 @@ export interface FeatureFlagProps {
 }
 
 export const EMPTY_FEATURE_FLAGS = new Map<FeatureFlagName, boolean>()
+
+// TODO: add VN JS version
+// TODO: add React hook version
+// TODO: replace all old usage to new
+// TODO: rename featureFlags to feature-flags

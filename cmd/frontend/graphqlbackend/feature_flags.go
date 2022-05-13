@@ -133,10 +133,16 @@ func (r *schemaResolver) ViewerFeatureFlags(ctx context.Context) []*EvaluatedFea
 	return evaluatedFlagsToResolvers(f)
 }
 
+// TODO: Remove and migrate to new API
+func (r *schemaResolver) EvaluatedFeatureFlags(ctx context.Context) []*EvaluatedFeatureFlagResolver {
+	f := featureflag.GetEvaluatedFlagsFromContext(ctx, r.db.FeatureFlags())
+	return evaluatedFlagsToResolvers(f)
+}
+
 func (r *schemaResolver) EvaluateFeatureFlag(ctx context.Context, args *struct {
 	FlagName string
 }) bool {
-	return featureflag.EvaluateForActorFromContext(ctx, args.FlagName)
+	return featureflag.EvaluateForActor(ctx, args.FlagName)
 }
 
 func evaluatedFlagsToResolvers(input map[string]bool) []*EvaluatedFeatureFlagResolver {

@@ -1428,6 +1428,11 @@ type Query {
     viewerFeatureFlags: [EvaluatedFeatureFlag!]!
 
     """
+    Retrieve the values of all evaluated feature flags for the current user
+    """
+    evaluatedFeatureFlags: [EvaluatedFeatureFlag!]!
+
+    """
     Evaluates a feature flag for the current user
     """
     evaluateFeatureFlag(flagName: String!): Boolean!
