@@ -1843,6 +1843,11 @@ extend type Query {
         """
         after: String
     ): BatchSpecConnection!
+
+    """
+    TODO
+    """
+    checkBatchChangesCredential(batchChangesCredential: ID!): EmptyResponse!
 }
 
 """
