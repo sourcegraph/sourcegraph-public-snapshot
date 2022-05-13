@@ -60,11 +60,19 @@ func (s *Store) LockfileDependencies(ctx context.Context, repoName, commit strin
 		}})
 	}()
 
-	return scanPackageDependencies(s.Query(ctx, sqlf.Sprintf(
+	deps, err = scanPackageDependencies(s.Query(ctx, sqlf.Sprintf(
 		lockfileDependenciesQuery,
 		repoName,
 		dbutil.CommitBytea(commit),
 	)))
+	if err != nil {
+		return nil, err
+	}
+	if deps == nil {
+		return []shared.PackageDependency{}, nil
+	}
+
+	return deps, err
 }
 
 const lockfileDependenciesQuery = `
@@ -118,6 +126,9 @@ func (s *Store) UpsertLockfileDependencies(ctx context.Context, repoName, commit
 	ids, err := basestore.ScanInts(tx.Query(ctx, sqlf.Sprintf(upsertLockfileReferencesQuery)))
 	if err != nil {
 		return err
+	}
+	if ids == nil {
+		ids = []int{}
 	}
 
 	if err := tx.Exec(ctx, sqlf.Sprintf(

@@ -36,6 +36,7 @@ func TestLockfileDependencies(t *testing.T) {
 		"cafebabe": {packageA, packageB, packageC},
 		"deadbeef": {packageA, packageB, packageD, packageE},
 		"deadc0de": {packageB, packageF},
+		"deadd00d": {},
 	}
 
 	for commit, deps := range commits {
@@ -51,7 +52,7 @@ func TestLockfileDependencies(t *testing.T) {
 		}
 
 		if diff := cmp.Diff(expectedDeps, deps); diff != "" {
-			t.Fatalf("mismatch (-have, +want): %s", diff)
+			t.Fatalf("commit %s - mismatch (-have, +want): %s", commit, diff)
 		}
 	}
 }
