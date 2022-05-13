@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,6 +16,9 @@ import (
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 	"github.com/google/go-github/v41/github"
 	libhoney "github.com/honeycombio/libhoney-go"
+
+	"github.com/sourcegraph/sourcegraph/dev/okay"
+
 	"github.com/slack-go/slack"
 	"golang.org/x/oauth2"
 
@@ -61,6 +65,7 @@ func main() {
 	flag.StringVar(&historyFlags.resultsCsvPath, "csv", "", "path for CSV results exports")
 	flag.StringVar(&historyFlags.honeycombDataset, "honeycomb.dataset", "", "honeycomb dataset to publish to")
 	flag.StringVar(&historyFlags.honeycombToken, "honeycomb.token", "", "honeycomb API token")
+	flag.StringVar(&historyFlags.okayHQToken, "okayhq.token", "", "okayhq API token")
 
 	flags.Parse()
 
@@ -174,6 +179,8 @@ type cmdHistoryFlags struct {
 	resultsCsvPath   string
 	honeycombDataset string
 	honeycombToken   string
+
+	okayHQToken string
 }
 
 func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags) {
@@ -286,7 +293,7 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 		FailuresThreshold: flags.FailuresThreshold,
 		BuildTimeout:      time.Duration(flags.FailuresTimeoutMins) * time.Minute,
 	}
-	log.Printf("running analyses with options: %+v\n", checkOpts)
+	log.Printf("running analysis with options: %+v\n", checkOpts)
 	totals, flakes, incidents := generateHistory(builds, createdTo, checkOpts)
 
 	// Prepare output
@@ -342,7 +349,47 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 		}
 	}
 
+	if historyFlags.okayHQToken != "" {
+		okayCli := okay.NewClient(http.DefaultClient, historyFlags.okayHQToken)
+
+		for _, record := range mapToRecords(totals) {
+			recordDateString := record[0]
+			eventTime, _ := time.Parse("2006-01-02T00:00:00Z", recordDateString+"T00:00:00Z")
+			event := okay.Event{
+				Name:      "buildStats",
+				Timestamp: eventTime,
+				UniqueKey: []string{"unique_key"},
+				Properties: map[string]string{
+					"unique_key":   eventTime.Format(time.RFC3339),
+					"organization": "sourcegraph",
+					"pipeline":     "sourcegraph",
+					"branch":       "main",
+				},
+				Metrics: map[string]okay.Metric{
+					"totalCount": {
+						Type:  "count",
+						Value: float64(totals[recordDateString]),
+					},
+					"incidentDuration": {
+						Type:  "durationMs",
+						Value: float64(incidents[recordDateString] * 60000),
+					},
+					"flakeCount": {
+						Type:  "count",
+						Value: float64(flakes[recordDateString]),
+					},
+				},
+			}
+			err := okayCli.Push(&event)
+			if err != nil {
+				log.Fatal("okay.NewClient: ", err)
+			}
+		}
+		okayCli.Flush()
+	}
+
 	log.Println("done!")
+
 }
 
 func writeCSV(p string, records [][]string) error {
