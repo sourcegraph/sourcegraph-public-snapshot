@@ -8,9 +8,9 @@ import { pluralize } from '@sourcegraph/common'
 import { Badge, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../components/diff/DiffStat'
-import { BatchChangeFields, ChangesetsStatsFields, DiffStatFields } from '../../../graphql-operations'
+import { BatchChangeFields } from '../../../graphql-operations'
+import { BatchChangeStatePill } from '../list/BatchChangeStatePill'
 
-import { BatchChangeStateBadge } from './BatchChangeStateBadge'
 import {
     ChangesetStatusUnpublished,
     ChangesetStatusOpen,
@@ -23,9 +23,7 @@ import {
 import styles from './BatchChangeStatsCard.module.scss'
 
 interface BatchChangeStatsCardProps {
-    stats: ChangesetsStatsFields
-    diff: DiffStatFields
-    closedAt: BatchChangeFields['closedAt']
+    batchChange: Pick<BatchChangeFields, 'diffStat' | 'changesetsStats' | 'state'>
     className?: string
 }
 
@@ -34,11 +32,10 @@ interface BatchChangeStatsCardProps {
 const formatDisplayPercent = (percent: number): string => `${Math.floor(percent)}%`
 
 export const BatchChangeStatsCard: React.FunctionComponent<React.PropsWithChildren<BatchChangeStatsCardProps>> = ({
-    stats,
-    diff,
-    closedAt,
+    batchChange,
     className,
 }) => {
+    const { changesetsStats: stats, diffStat } = batchChange
     const percentComplete = stats.total === 0 ? 0 : ((stats.closed + stats.merged + stats.deleted) / stats.total) * 100
     const isCompleted = stats.closed + stats.merged + stats.deleted === stats.total
     let BatchChangeStatusIcon = ProgressCheckIcon
@@ -54,8 +51,8 @@ export const BatchChangeStatsCard: React.FunctionComponent<React.PropsWithChildr
                         Rule: "color-contrast" (Elements must have sufficient color contrast)
                         GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
                     */}
-                    <BatchChangeStateBadge
-                        isClosed={!!closedAt}
+                    <BatchChangeStatePill
+                        state={batchChange.state}
                         className={classNames('a11y-ignore', styles.batchChangeStatsCardStateBadge)}
                     />
                 </Typography.H2>
@@ -73,7 +70,7 @@ export const BatchChangeStatsCard: React.FunctionComponent<React.PropsWithChildr
                     </span>
                 </div>
                 <div className={classNames(styles.batchChangeStatsCardDivider, 'd-none d-md-block mx-3')} />
-                <DiffStatStack className={styles.batchChangeStatsCardDiffStat} {...diff} />
+                <DiffStatStack className={styles.batchChangeStatsCardDiffStat} {...diffStat} />
                 <div className="d-flex flex-wrap justify-content-end flex-grow-1">
                     <BatchChangeStatsTotalAction count={stats.total} />
                     <ChangesetStatusUnpublished

@@ -43,7 +43,9 @@ func (s *eventStore) Persist(command string, flagsUsed []string) error {
 		// Context
 		ev.Properties["command"] = command
 		ev.Properties["sg_version"] = s.sgVersion
-		ev.Properties["flags_used"] = strings.Join(flagsUsed, ",")
+		if len(flagsUsed) > 0 {
+			ev.Properties["flags_used"] = strings.Join(flagsUsed, ",")
+		}
 	}
 
 	// Persist events to disk

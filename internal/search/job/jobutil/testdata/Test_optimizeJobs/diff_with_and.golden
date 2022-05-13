@@ -9,14 +9,16 @@ BASE:
     20s
     (LIMIT
       500
-      (PARALLEL
-        DiffSearchJob
-        (AND
-          (LIMIT
-            40000
-            ComputeExcludedReposJob)
-          (LIMIT
-            40000
+      (AND
+        (LIMIT
+          40000
+          (PARALLEL
+            DiffSearchJob
+            ComputeExcludedReposJob))
+        (LIMIT
+          40000
+          (PARALLEL
+            DiffSearchJob
             ComputeExcludedReposJob))))))
 
 OPTIMIZED:
@@ -28,12 +30,14 @@ OPTIMIZED:
       500
       (PARALLEL
         DiffSearchJob
-        (PARALLEL
-          NoopJob
-          (AND
-            (LIMIT
-              40000
-              ComputeExcludedReposJob)
-            (LIMIT
-              40000
+        (AND
+          (LIMIT
+            40000
+            (PARALLEL
+              NoopJob
+              ComputeExcludedReposJob))
+          (LIMIT
+            40000
+            (PARALLEL
+              NoopJob
               ComputeExcludedReposJob)))))))

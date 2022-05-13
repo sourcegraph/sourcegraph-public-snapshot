@@ -9,7 +9,7 @@ import GithubIcon from 'mdi-react/GithubIcon'
 import { isErrorLike, isDefined, isEncodedImage } from '@sourcegraph/common'
 import { splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
 import { ExtensionCategory, ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
-import { Button, Link, Icon, H2, Typography } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
@@ -108,7 +108,7 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<React.PropsW
                 {/* Publisher */}
                 {publisher && (
                     <div className="pt-2 pb-3">
-                        <Typography.H3 as={H2}>Publisher</Typography.H3>
+                        <Typography.H3 as={Typography.H2}>Publisher</Typography.H3>
                         <small
                             data-tooltip={isSourcegraphExtension ? 'Created and maintained by Sourcegraph' : undefined}
                         >

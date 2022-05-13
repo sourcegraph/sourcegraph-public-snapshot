@@ -13,15 +13,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestDependencies(t *testing.T) {
 	ctx := context.Background()
 	mockStore := NewMockStore()
+	gitService := NewMockLocalGitService()
 	lockfilesService := NewMockLockfilesService()
 	syncer := NewMockSyncer()
-	service := testService(mockStore, lockfilesService, syncer)
+	service := testService(mockStore, gitService, lockfilesService, syncer)
 
 	endsWithEvenDigit := func(name string) bool {
 		if name == "" {
@@ -47,6 +49,13 @@ func TestDependencies(t *testing.T) {
 		}
 
 		return filtered, nil
+	})
+
+	gitService.GetCommitsFunc.SetDefaultHook(func(ctx context.Context, repoCommits []api.RepoCommit, _ bool) (commits []*gitdomain.Commit, _ error) {
+		for _, repoCommit := range repoCommits {
+			commits = append(commits, &gitdomain.Commit{ID: repoCommit.CommitID})
+		}
+		return commits, nil
 	})
 
 	lockfilesService.ListDependenciesFunc.SetDefaultHook(func(ctx context.Context, repoName api.RepoName, rev string) ([]reposource.PackageDependency, error) {
@@ -113,9 +122,10 @@ func TestDependencies(t *testing.T) {
 	}
 }
 
-func testService(store Store, lockfilesService LockfilesService, syncer Syncer) *Service {
+func testService(store Store, gitService localGitService, lockfilesService LockfilesService, syncer Syncer) *Service {
 	return newService(
 		store,
+		gitService,
 		lockfilesService,
 		semaphore.NewWeighted(100),
 		syncer,

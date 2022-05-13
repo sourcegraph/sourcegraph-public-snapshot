@@ -37,6 +37,9 @@ export interface BatchChangeNodeProps {
 const StateBadge: React.FunctionComponent<React.PropsWithChildren<{ state: BatchChangeState }>> = ({ state }) => {
     switch (state) {
         case BatchChangeState.OPEN:
+        // DRAFT should only be possible if SSBC is enabled; if we do find a batch change
+        // in this state when it isn't, just treat it as OPEN
+        case BatchChangeState.DRAFT:
             return (
                 /*
                         a11y-ignore
@@ -54,13 +57,6 @@ const StateBadge: React.FunctionComponent<React.PropsWithChildren<{ state: Batch
             return (
                 <Badge variant="danger" className={classNames(styles.batchChangeNodeBadge, 'text-uppercase')}>
                     Closed
-                </Badge>
-            )
-        case BatchChangeState.DRAFT:
-        default:
-            return (
-                <Badge variant="secondary" className={classNames(styles.batchChangeNodeBadge, 'text-uppercase')}>
-                    Draft
                 </Badge>
             )
     }

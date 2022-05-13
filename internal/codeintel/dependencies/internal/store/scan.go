@@ -6,10 +6,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
-var scanDependencyRepos = basestore.NewSliceScanner(scanDependencyRepo)
-
-func scanDependencyRepo(s dbutil.Scanner) (shared.Repo, error) {
-	var v shared.Repo
-	err := s.Scan(&v.ID, &v.Scheme, &v.Name, &v.Version)
-	return v, err
+func scanDependencyRepo(s dbutil.Scanner) (dependencyRepo shared.Repo, err error) {
+	return dependencyRepo, s.Scan(
+		&dependencyRepo.ID,
+		&dependencyRepo.Scheme,
+		&dependencyRepo.Name,
+		&dependencyRepo.Version,
+	)
 }
+
+var scanDependencyRepos = basestore.NewSliceScanner(scanDependencyRepo)
