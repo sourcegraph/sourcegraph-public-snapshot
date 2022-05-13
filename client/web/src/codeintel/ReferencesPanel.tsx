@@ -57,6 +57,7 @@ import { parseBrowserRepoURL } from '../util/url'
 import { findLanguageSpec } from './language-specs/languages'
 import { LanguageSpec } from './language-specs/languagespec'
 import { Location, LocationGroup, locationGroupQuality, buildRepoLocationGroups, RepoLocationGroup } from './location'
+import { ReferencesPanelFeedbackCta } from './ReferencesPanelFeedbackCta'
 import { FETCH_HIGHLIGHTED_BLOB } from './ReferencesPanelQueries'
 import { newSettingsGetter } from './settings'
 import { findSearchToken } from './token'
@@ -367,113 +368,117 @@ export const ReferencesList: React.FunctionComponent<
     }
 
     return (
-        <div className={classNames('align-items-stretch', styles.panel)}>
-            <div className={classNames('px-0', styles.leftSubPanel)}>
-                <CardHeader className={classNames('d-flex align-items-center', styles.cardHeader)}>
-                    <Code size="base" weight="bold">
-                        {props.searchToken}
-                    </Code>
-                    {canShowSpinner && (
-                        <small className="ml-3 text-muted d-flex align-items-center">
-                            <Icon as={LoadingSpinner} size="sm" inline={true} className="mr-1" />
-                            <i>Loading...</i>
+        <>
+            <ReferencesPanelFeedbackCta />
+            <div className={classNames('align-items-stretch', styles.panel)}>
+                <div className={classNames('px-0', styles.leftSubPanel)}>
+                    <CardHeader className={classNames('d-flex align-items-center', styles.cardHeader)}>
+                        <Code size="base" weight="bold">
+                            {props.searchToken}
+                        </Code>
+                        {canShowSpinner && (
+                            <small className="ml-3 text-muted d-flex align-items-center">
+                                <Icon as={LoadingSpinner} size="sm" inline={true} className="mr-1" />
+                                <i>Loading...</i>
+                            </small>
+                        )}
+                    </CardHeader>
+                    <div className={classNames('d-flex justify-content-start', styles.filter)}>
+                        <small>
+                            <Icon as={FilterOutlineIcon} size="sm" className={styles.filterIcon} />
                         </small>
-                    )}
-                </CardHeader>
-                <div className={classNames('d-flex justify-content-start', styles.filter)}>
-                    <small>
-                        <Icon as={FilterOutlineIcon} size="sm" className={styles.filterIcon} />
-                    </small>
-                    <Input
-                        className={classNames('py-0 my-0 w-100 text-small')}
-                        type="text"
-                        placeholder="Type to filter by filename"
-                        value={filter === undefined ? '' : filter}
-                        onChange={event => setFilter(event.target.value)}
-                    />
-                </div>
-                <div className={styles.locationLists}>
-                    <CollapsibleLocationList
-                        {...props}
-                        name="definitions"
-                        locations={definitions}
-                        hasMore={false}
-                        loadingMore={false}
-                        filter={debouncedFilter}
-                        navigateToUrl={navigateToUrl}
-                        isActiveLocation={isActiveLocation}
-                        setActiveLocation={onReferenceClick}
-                        handleOpenChange={handleOpenChange}
-                        isOpen={isOpen}
-                    />
-                    <CollapsibleLocationList
-                        {...props}
-                        name="references"
-                        locations={references}
-                        hasMore={referencesHasNextPage}
-                        fetchMore={fetchMoreReferences}
-                        loadingMore={fetchMoreReferencesLoading}
-                        filter={debouncedFilter}
-                        navigateToUrl={navigateToUrl}
-                        setActiveLocation={onReferenceClick}
-                        isActiveLocation={isActiveLocation}
-                        handleOpenChange={handleOpenChange}
-                        isOpen={isOpen}
-                    />
-                    {implementations.length > 0 && (
+                        <Input
+                            className={classNames('py-0 my-0 w-100 text-small')}
+                            type="text"
+                            placeholder="Type to filter by filename"
+                            value={filter === undefined ? '' : filter}
+                            onChange={event => setFilter(event.target.value)}
+                        />
+                    </div>
+
+                    <div className={styles.locationLists}>
                         <CollapsibleLocationList
                             {...props}
-                            name="implementations"
-                            locations={implementations}
-                            hasMore={implementationsHasNextPage}
-                            fetchMore={fetchMoreImplementations}
-                            loadingMore={fetchMoreImplementationsLoading}
-                            setActiveLocation={onReferenceClick}
+                            name="definitions"
+                            locations={definitions}
+                            hasMore={false}
+                            loadingMore={false}
                             filter={debouncedFilter}
-                            isActiveLocation={isActiveLocation}
                             navigateToUrl={navigateToUrl}
+                            isActiveLocation={isActiveLocation}
+                            setActiveLocation={onReferenceClick}
                             handleOpenChange={handleOpenChange}
                             isOpen={isOpen}
                         />
-                    )}
+                        <CollapsibleLocationList
+                            {...props}
+                            name="references"
+                            locations={references}
+                            hasMore={referencesHasNextPage}
+                            fetchMore={fetchMoreReferences}
+                            loadingMore={fetchMoreReferencesLoading}
+                            filter={debouncedFilter}
+                            navigateToUrl={navigateToUrl}
+                            setActiveLocation={onReferenceClick}
+                            isActiveLocation={isActiveLocation}
+                            handleOpenChange={handleOpenChange}
+                            isOpen={isOpen}
+                        />
+                        {implementations.length > 0 && (
+                            <CollapsibleLocationList
+                                {...props}
+                                name="implementations"
+                                locations={implementations}
+                                hasMore={implementationsHasNextPage}
+                                fetchMore={fetchMoreImplementations}
+                                loadingMore={fetchMoreImplementationsLoading}
+                                setActiveLocation={onReferenceClick}
+                                filter={debouncedFilter}
+                                isActiveLocation={isActiveLocation}
+                                navigateToUrl={navigateToUrl}
+                                handleOpenChange={handleOpenChange}
+                                isOpen={isOpen}
+                            />
+                        )}
+                    </div>
                 </div>
+                {activeLocation !== undefined && (
+                    <div className={classNames('px-0 border-left', styles.rightSubPanel)}>
+                        <CardHeader className={classNames('d-flex', styles.cardHeader)}>
+                            <small>
+                                <Button
+                                    onClick={() => setActiveLocation(undefined)}
+                                    className={classNames('btn-icon p-0', styles.sideBlobCollapseButton)}
+                                    title="Close code view"
+                                    data-tooltip="Close code view"
+                                    data-placement="left"
+                                    size="sm"
+                                >
+                                    <Icon size="sm" as={ArrowCollapseRightIcon} className="border-0" />
+                                </Button>
+                                <Link
+                                    to={activeLocation.url}
+                                    onClick={event => {
+                                        event.preventDefault()
+                                        navigateToUrl(activeLocation.url)
+                                    }}
+                                    className={styles.sideBlobFilename}
+                                >
+                                    {activeLocation.file}{' '}
+                                </Link>
+                            </small>
+                        </CardHeader>
+                        <SideBlob
+                            {...props}
+                            blobNav={onBlobNav}
+                            history={blobMemoryHistory}
+                            location={blobMemoryHistory.location}
+                            activeLocation={activeLocation}
+                        />
+                    </div>
+                )}
             </div>
-            {activeLocation !== undefined && (
-                <div className={classNames('px-0 border-left', styles.rightSubPanel)}>
-                    <CardHeader className={classNames('d-flex', styles.cardHeader)}>
-                        <small>
-                            <Button
-                                onClick={() => setActiveLocation(undefined)}
-                                className={classNames('btn-icon p-0', styles.sideBlobCollapseButton)}
-                                title="Close code view"
-                                data-tooltip="Close code view"
-                                data-placement="left"
-                                size="sm"
-                            >
-                                <Icon size="sm" as={ArrowCollapseRightIcon} className="border-0" />
-                            </Button>
-                            <Link
-                                to={activeLocation.url}
-                                onClick={event => {
-                                    event.preventDefault()
-                                    navigateToUrl(activeLocation.url)
-                                }}
-                                className={styles.sideBlobFilename}
-                            >
-                                {activeLocation.file}{' '}
-                            </Link>
-                        </small>
-                    </CardHeader>
-                    <SideBlob
-                        {...props}
-                        blobNav={onBlobNav}
-                        history={blobMemoryHistory}
-                        location={blobMemoryHistory.location}
-                        activeLocation={activeLocation}
-                    />
-                </div>
-            )}
-        </div>
+        </>
     )
 }
 

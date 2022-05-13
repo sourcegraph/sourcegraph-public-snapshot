@@ -37,6 +37,7 @@ export interface TemporarySettingsSchema {
     'codeintel.badge.used': boolean
     'codeintel.referencePanel.ctaDismissed': boolean
     'codeintel.referencePanel.redesignedEnabled': boolean
+    'codeintel.referencePanelFeedback.ctaDismissed': boolean
 }
 
 /**
