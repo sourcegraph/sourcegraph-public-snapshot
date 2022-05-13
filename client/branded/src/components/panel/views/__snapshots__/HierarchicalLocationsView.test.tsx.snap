@@ -12,7 +12,6 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
       >
         <div
           class="alert alertInfo mr-4 container"
-          role="alert"
         >
           <span>
             Try out our 
@@ -258,7 +257,6 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
       >
         <div
           class="alert alertInfo mr-4 container"
-          role="alert"
         >
           <span>
             Try out our 
@@ -460,7 +458,6 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
       >
         <div
           class="alert alertInfo mr-4 container"
-          role="alert"
         >
           <span>
             Try out our 
