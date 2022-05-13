@@ -51,12 +51,17 @@ export const RepoSettingsPermissionsPage: React.FunctionComponent<
             <Container className="repo-settings-permissions-page">
                 {!repo.isPrivate ? (
                     <Alert className="mb-0" variant="info">
-                        Access to this repository is not restricted, all Sourcegraph users have access.
+                        Access to this repository is <strong>not restricted</strong>, all Sourcegraph users have access.
                     </Alert>
                 ) : !permissionsInfo ? (
                     <Alert className="mb-0" variant="info">
                         This repository is queued to sync permissions, only site admins will have access to it until
                         syncing is finished.
+                    </Alert>
+                ) : permissionsInfo.unrestricted ? (
+                    <Alert className="mb-0" variant="info">
+                        This repository has been marked as <strong>unrestricted</strong>, all Sourcegraph user have
+                        access.
                     </Alert>
                 ) : (
                     <div>

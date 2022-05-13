@@ -949,6 +949,7 @@ func TestResolver_RepositoryPermissionsInfo(t *testing.T) {
 							permissions
 							syncedAt
 							updatedAt
+							unrestricted
 						}
 					}
 				}
@@ -959,7 +960,8 @@ func TestResolver_RepositoryPermissionsInfo(t *testing.T) {
 						"permissionsInfo": {
 							"permissions": ["READ"],
 							"syncedAt": "%[1]s",
-							"updatedAt": "%[1]s"
+							"updatedAt": "%[1]s",
+							"unrestricted": false
 						}
     				}
 				}
