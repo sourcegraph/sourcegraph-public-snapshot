@@ -227,7 +227,7 @@ func (s *Service) resolveLockfileDependenciesFromStore(ctx context.Context, repo
 		}
 	}
 
-	return nil, len(unqueried), nil
+	return deps, len(unqueried), nil
 }
 
 // resolveLockfileDependenciesFromArchive is a resolverFunc. It returns a flattened list of package dependencies
