@@ -5,73 +5,94 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsiftyped"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
+
+	"github.com/sourcegraph/scip/bindings/go/scip"
 )
 
-var exampleLsifTypedIndex = lsiftyped.Index{
-	Metadata: &lsiftyped.Metadata{
-		TextDocumentEncoding: lsiftyped.TextEncoding_UTF8,
-		ToolInfo: &lsiftyped.ToolInfo{
+var exampleSCIPIndex = scip.Index{
+	Metadata: &scip.Metadata{
+		TextDocumentEncoding: scip.TextEncoding_UTF8,
+		ToolInfo: &scip.ToolInfo{
 			Name:    "hello",
 			Version: "1.0.0",
 		},
 	},
 }
 
-var exampleLsifGraphString = `{"id":1,"version":"0.4.3","positionEncoding":"utf-8","toolInfo":{"name":"hello","version":"1.0.0"},"type":"vertex","label":"metaData"}
+var exampleLSIFString = `{"id":1,"version":"0.4.3","positionEncoding":"utf-8","toolInfo":{"name":"hello","version":"1.0.0"},"type":"vertex","label":"metaData"}
 `
 
-func exampleLsifTypedBytes(t *testing.T) []byte {
-	bytes, err := proto.Marshal(&exampleLsifTypedIndex)
+func exampleSCIPBytes(t *testing.T) []byte {
+	bytes, err := proto.Marshal(&exampleSCIPIndex)
 	if err != nil {
 		t.Fatal(err)
 	}
 	return bytes
 }
 
-func createTempLsifTypedFile(t *testing.T) (typedFile, graphFile string) {
+func createTempSCIPFile(t *testing.T, scipFileName string) (scipFilePath string, lsifFilePath string) {
 	dir := t.TempDir()
-	typedFile = filepath.Join(dir, "dump.lsif-typed")
-	graphFile = filepath.Join(dir, "dump.lsif")
-	err := os.WriteFile(typedFile, exampleLsifTypedBytes(t), 0755)
+	require.NotEqual(t, "", scipFileName)
+	scipFilePath = filepath.Join(dir, scipFileName)
+	lsifFilePath = filepath.Join(dir, "dump.lsif")
+	err := os.WriteFile(scipFilePath, exampleSCIPBytes(t), 0755)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return typedFile, graphFile
+	return scipFilePath, lsifFilePath
 }
 
-func assertLsifGraphOutput(t *testing.T, lsifGraphFile, expectedGraphString string) {
+func assertLSIFOutput(t *testing.T, lsifFile, expectedLSIFString string) {
 	out := lsifUploadOutput()
-	handleLSIFTyped(out)
-	lsifGraph, err := os.ReadFile(lsifGraphFile)
+	handleSCIP(out)
+	lsif, err := os.ReadFile(lsifFile)
 	if err != nil {
 		t.Fatal(err)
 	}
-	obtained := string(lsifGraph)
-	if obtained != expectedGraphString {
+	obtained := string(lsif)
+	if obtained != expectedLSIFString {
 		t.Fatalf("unexpected LSIF output %s", obtained)
 	}
-	if lsifGraphFile != lsifUploadFlags.file {
-		t.Fatalf("unexpected lsifUploadFlag.file value %s, expected %s", lsifUploadFlags.file, lsifGraphFile)
+	if lsifFile != lsifUploadFlags.file {
+		t.Fatalf("unexpected lsifUploadFlag.file value %s, expected %s", lsifUploadFlags.file, lsifFile)
 	}
 }
 
-func TestImplicitlyConvertLsifTypedIntoGraph(t *testing.T) {
-	_, graphFile := createTempLsifTypedFile(t)
-	lsifUploadFlags.file = graphFile
-	assertLsifGraphOutput(t, graphFile, exampleLsifGraphString)
+func TestImplicitlyConvertSCIPIntoLSIF(t *testing.T) {
+	for _, filename := range []string{"index.scip", "dump.scip", "dump.lsif-typed"} {
+		_, lsifFile := createTempSCIPFile(t, filename)
+		lsifUploadFlags.file = lsifFile
+		assertLSIFOutput(t, lsifFile, exampleLSIFString)
+	}
 }
 
-func TestImplicitlyIgnoreLsifTyped(t *testing.T) {
-	_, graphFile := createTempLsifTypedFile(t)
-	lsifUploadFlags.file = graphFile
-	os.WriteFile(graphFile, []byte("hello world"), 0755)
-	assertLsifGraphOutput(t, graphFile, "hello world")
+func TestImplicitlyIgnoreSCIP(t *testing.T) {
+	for _, filename := range []string{"index.scip", "dump.scip", "dump.lsif-typed"} {
+		_, lsifFile := createTempSCIPFile(t, filename)
+		lsifUploadFlags.file = lsifFile
+		os.WriteFile(lsifFile, []byte("hello world"), 0755)
+		assertLSIFOutput(t, lsifFile, "hello world")
+	}
 }
 
-func TestExplicitlyConvertLsifTypedIntoGraph(t *testing.T) {
-	typedFile, graphFile := createTempLsifTypedFile(t)
-	lsifUploadFlags.file = typedFile
-	assertLsifGraphOutput(t, graphFile, exampleLsifGraphString)
+func TestExplicitlyConvertSCIPIntoGraph(t *testing.T) {
+	for _, filename := range []string{"index.scip", "dump.scip", "dump.lsif-typed"} {
+		scipFile, lsifFile := createTempSCIPFile(t, filename)
+		lsifUploadFlags.file = scipFile
+		assertLSIFOutput(t, lsifFile, exampleLSIFString)
+	}
+}
+
+func TestReplaceExtension(t *testing.T) {
+	require.Panics(t, func() { replaceExtension("foo", ".xyz") })
+	require.Equal(t, "foo.xyz", replaceExtension("foo.abc", ".xyz"))
+}
+
+func TestReplaceBaseName(t *testing.T) {
+	require.Panics(t, func() { replaceBaseName("mydir", filepath.Join("dir", "file")) })
+
+	require.Equal(t, filepath.Join("a", "d.e"),
+		replaceBaseName(filepath.Join("a", "b.c"), "d.e"))
 }

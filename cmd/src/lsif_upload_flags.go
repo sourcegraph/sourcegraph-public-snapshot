@@ -4,14 +4,16 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/sourcegraph/scip/bindings/go/scip"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/reader"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsiftyped"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/upload"
 
 	"github.com/sourcegraph/src-cli/internal/api"
@@ -111,7 +113,7 @@ func parseAndValidateLSIFUploadFlags(args []string) (*output.Output, error) {
 		return nil, err
 	}
 
-	if err := handleLSIFTyped(out); err != nil {
+	if err := handleSCIP(out); err != nil {
 		return nil, err
 	}
 
@@ -155,35 +157,68 @@ type argumentInferenceError struct {
 	err      error
 }
 
-func handleLSIFTyped(out *output.Output) error {
-	if strings.HasSuffix(lsifUploadFlags.file, ".lsif-typed") {
-		// The user explicitly passed in a -file flag that points to an LSIF Typed index.
-		inputFile := lsifUploadFlags.file
-		outputFile := strings.TrimSuffix(inputFile, "-typed")
+func replaceExtension(oldPath string, newExtension string) string {
+	oldExtLen := len(path.Ext(oldPath))
+	if oldExtLen == 0 {
+		panic(fmt.Sprintf("Expected path %s to have an extension", oldPath))
+	}
+	return oldPath[:len(oldPath)-oldExtLen] + newExtension
+}
+
+func replaceBaseName(oldPath string, newBaseName string) string {
+	if filepath.Dir(newBaseName) != "." {
+		panic(fmt.Sprintf("Expected bare file name but found %s", newBaseName))
+	}
+	return filepath.Join(filepath.Dir(oldPath), newBaseName)
+}
+
+func handleSCIP(out *output.Output) error {
+	fileExt := path.Ext(lsifUploadFlags.file)
+	if len(fileExt) == 0 {
+		return errors.Newf("missing file extension for %s; expected .scip", lsifUploadFlags.file)
+	}
+	inputFile := lsifUploadFlags.file
+	if fileExt == ".scip" || fileExt == ".lsif-typed" {
+		// The user explicitly passed in a -file flag that points to an SCIP index.
+		outputFile := replaceExtension(inputFile, ".lsif")
+		if filepath.Base(inputFile) == "index.scip" {
+			outputFile = replaceBaseName(inputFile, "dump.lsif")
+		}
+		// HACK: Modify the flags to point to the output file, because
+		// that field of the flags is read when performing the upload.
 		lsifUploadFlags.file = outputFile
-		return convertLSIFTypedToLSIFGraph(out, inputFile, outputFile)
+		return convertSCIPToLSIFGraph(out, inputFile, outputFile)
 	}
 
-	if _, err := os.Stat(lsifUploadFlags.file); err == nil {
+	if _, err := os.Stat(inputFile); err == nil {
 		// Do nothing, the provided -flag flag points to an existing
-		// file that does not have the file extension `*.lsif-typed`.
+		// file that does not have the file extension `.lsif-typed` or `.scip`.
 		return nil
 	}
 
-	lsifTypedFile := lsifUploadFlags.file + "-typed"
-	if _, err := os.Stat(lsifTypedFile); os.IsNotExist(err) {
-		// The inferred path of the sibling `*.lsif-typed` file does not exist.
-		return nil
+	scipFile := replaceExtension(inputFile, ".scip")
+	if _, err := os.Stat(scipFile); os.IsNotExist(err) {
+		// The input may be named 'dump.lsif', but the default name for SCIP
+		// indexes is 'index.scip', not 'dump.scip'.
+		scipFile = replaceBaseName(inputFile, "index.scip")
+		if _, err := os.Stat(scipFile); os.IsNotExist(err) {
+			lsifTypedFile := replaceExtension(inputFile, ".lsif-typed")
+			if _, err := os.Stat(lsifTypedFile); os.IsNotExist(err) {
+				// There is no `*.scip` or `*.lsif-typed` file for the inferred path.
+				return nil
+			}
+			scipFile = lsifTypedFile
+		}
 	}
 
 	// The provided -file flag points to an `*.lsif` file that doesn't exist
-	// so we convert the sibling `*.lsif-typed` file (which we confirmed exists).
-	return convertLSIFTypedToLSIFGraph(out, lsifTypedFile, lsifUploadFlags.file)
+	// so we convert the sibling file (which we confirmed exists).
+	return convertSCIPToLSIFGraph(out, scipFile, lsifUploadFlags.file)
 }
 
-// Reads the LSIF Typed encoded input file and writes the corresponding LSIF
+// Reads the SCIP encoded input file and writes the corresponding LSIF
 // Graph encoded output file.
-func convertLSIFTypedToLSIFGraph(out *output.Output, inputFile, outputFile string) error {
+func convertSCIPToLSIFGraph(out *output.Output, inputFile, outputFile string) error {
 	if out != nil {
 		out.Writef("%s  Converting %s into %s", output.EmojiInfo, inputFile, outputFile)
 	}
@@ -197,12 +232,12 @@ func convertLSIFTypedToLSIFGraph(out *output.Output, inputFile, outputFile strin
 	if err != nil {
 		panic(err)
 	}
-	index := lsiftyped.Index{}
+	index := scip.Index{}
 	err = proto.Unmarshal(data, &index)
 	if err != nil {
 		panic(errors.Wrapf(err, "failed to parse protobuf file '%s'", inputFile))
 	}
-	els, err := reader.ConvertTypedIndexToGraphIndex(&index)
+	els, err := scip.ConvertSCIPToLSIF(&index)
 	if err != nil {
 		panic(errors.Wrapf(err, "failed reader.ConvertTypedIndexToGraphIndex"))
 	}
