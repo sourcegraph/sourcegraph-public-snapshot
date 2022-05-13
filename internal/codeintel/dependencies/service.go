@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
-	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -176,7 +175,7 @@ func (s *Service) resolveRepoCommits(ctx context.Context, repoRevs map[api.RepoN
 
 // lockfileDependencies returns a flattened list of package dependencies for every repo and
 // revision pair specified in the given map.
-func (s *Service) lockfileDependencies(ctx context.Context, repoCommits []repoCommitResolvedCommit) (deps []reposource.PackageDependency, _ error) {
+func (s *Service) lockfileDependencies(ctx context.Context, repoCommits []repoCommitResolvedCommit) (deps []shared.PackageDependency, _ error) {
 	ctx, cancel := context.WithCancel(ctx)
 	g, ctx := errgroup.WithContext(ctx)
 	defer cancel()
@@ -218,13 +217,13 @@ func (s *Service) lockfileDependencies(ctx context.Context, repoCommits []repoCo
 }
 
 // listDependencies gathers dependencies from the lockfiles service for the given repo-commit pair.
-func (s *Service) listDependencies(ctx context.Context, repoCommit repoCommitResolvedCommit) ([]reposource.PackageDependency, error) {
+func (s *Service) listDependencies(ctx context.Context, repoCommit repoCommitResolvedCommit) ([]shared.PackageDependency, error) {
 	repoDeps, err := s.lockfilesSvc.ListDependencies(ctx, repoCommit.Repo, string(repoCommit.CommitID))
 	if err != nil {
 		return nil, errors.Wrap(err, "lockfiles.ListDependencies")
 	}
 
-	return repoDeps, nil
+	return shared.SerializePackageDependencies(repoDeps), nil
 }
 
 // sync invokes the Syncer for every repo in the supplied slice.
