@@ -1859,6 +1859,32 @@ func (r *Resolver) AvailableBulkOperations(ctx context.Context, args *graphqlbac
 	return availableBulkOperations, nil
 }
 
+func (r *Resolver) CheckBatchChangesCredential(ctx context.Context, args *graphqlbackend.CheckBatchChangesCredentialArgs) (_ *graphqlbackend.EmptyResponse, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.CheckBatchChangesCredential", fmt.Sprintf("Credential: %q", args.BatchChangesCredential))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+		return nil, err
+	}
+
+	dbID, isSiteCredential, err := unmarshalBatchChangesCredentialID(args.BatchChangesCredential)
+	if err != nil {
+		return nil, err
+	}
+
+	if dbID == 0 {
+		return nil, ErrIDIsZero{}
+	}
+
+	if isSiteCredential {
+		// TODO
+	}
+
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
 func parseBatchChangeStates(ss *[]string) ([]btypes.BatchChangeState, error) {
 	states := []btypes.BatchChangeState{}
 	if ss == nil || len(*ss) == 0 {
