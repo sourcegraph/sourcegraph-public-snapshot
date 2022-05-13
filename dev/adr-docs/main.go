@@ -41,7 +41,7 @@ func main() {
 	}
 
 	var adrs []adr
-	re := regexp.MustCompile(`(\d+)-.+\.md`)
+	re := regexp.MustCompile(`^(\d+)-.+\.md`)
 	for _, entry := range entries {
 		if !re.MatchString(entry.Name()) {
 			continue
