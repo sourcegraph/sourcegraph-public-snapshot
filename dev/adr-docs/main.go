@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"bytes"
-	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -25,7 +24,7 @@ type presenter struct {
 	Adrs []adr
 }
 
-//go:generate sh -c "cd ../.. && echo <!-- DO NOT EDIT: generated via: go generate ./enterprise/dev/ci -->\n > doc/dev/adr/index.md"
+//go:generate sh -c "cd ../.. && echo '<!-- DO NOT EDIT: generated via: go generate ./dev/adr-docs -->\n' > doc/dev/adr/index.md"
 //go:generate sh -c "cd ../.. && go run ./dev/adr-docs/main.go >> doc/dev/adr/index.md"
 func main() {
 	repoRoot, err := root.RepositoryRoot()
@@ -61,7 +60,6 @@ func main() {
 		for s.Scan() {
 			matches := reHeader.FindAllStringSubmatch(s.Text(), 1)
 			if len(matches) > 0 {
-				fmt.Println(matches)
 				number, _ = strconv.Atoi(matches[0][1]) // We can ignore the err because we know from the regexp it's only digits.
 				title = matches[0][2]
 				adrs = append(adrs, adr{
