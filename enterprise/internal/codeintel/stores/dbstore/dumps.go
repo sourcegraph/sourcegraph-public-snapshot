@@ -2,7 +2,6 @@ package dbstore
 
 import (
 	"context"
-	"database/sql"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -38,42 +37,29 @@ type Dump struct {
 }
 
 // scanDumps scans a slice of dumps from the return value of `*Store.query`.
-func scanDumps(rows *sql.Rows, queryErr error) (_ []Dump, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	var dumps []Dump
-	for rows.Next() {
-		var dump Dump
-		if err := rows.Scan(
-			&dump.ID,
-			&dump.Commit,
-			&dump.Root,
-			&dump.VisibleAtTip,
-			&dump.UploadedAt,
-			&dump.State,
-			&dump.FailureMessage,
-			&dump.StartedAt,
-			&dump.FinishedAt,
-			&dump.ProcessAfter,
-			&dump.NumResets,
-			&dump.NumFailures,
-			&dump.RepositoryID,
-			&dump.RepositoryName,
-			&dump.Indexer,
-			&dbutil.NullString{S: &dump.IndexerVersion},
-			&dump.AssociatedIndexID,
-		); err != nil {
-			return nil, err
-		}
-
-		dumps = append(dumps, dump)
-	}
-
-	return dumps, nil
+func scanDump(s dbutil.Scanner) (dump Dump, err error) {
+	return dump, s.Scan(
+		&dump.ID,
+		&dump.Commit,
+		&dump.Root,
+		&dump.VisibleAtTip,
+		&dump.UploadedAt,
+		&dump.State,
+		&dump.FailureMessage,
+		&dump.StartedAt,
+		&dump.FinishedAt,
+		&dump.ProcessAfter,
+		&dump.NumResets,
+		&dump.NumFailures,
+		&dump.RepositoryID,
+		&dump.RepositoryName,
+		&dump.Indexer,
+		&dbutil.NullString{S: &dump.IndexerVersion},
+		&dump.AssociatedIndexID,
+	)
 }
+
+var scanDumps = basestore.NewSliceScanner(scanDump)
 
 // GetDumpsByIDs returns a set of dumps by identifiers.
 func (s *Store) GetDumpsByIDs(ctx context.Context, ids []int) (_ []Dump, err error) {

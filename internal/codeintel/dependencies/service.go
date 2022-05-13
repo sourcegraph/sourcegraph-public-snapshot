@@ -2,7 +2,6 @@ package dependencies
 
 import (
 	"context"
-	"errors"
 	"strings"
 	"sync"
 
@@ -17,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Service encapsulates the resolution and persistence of dependencies at the repository and package levels.
@@ -60,8 +60,14 @@ func (s *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]ty
 		}})
 	}()
 
+	// Resolve the revhashes for the source repo-commit pairs
+	repoCommits, err := s.resolveRepoCommits(ctx, repoRevs)
+	if err != nil {
+		return nil, err
+	}
+
 	// Parse lockfile contents for the given repository and revision pairs
-	deps, err := s.lockfileDependencies(ctx, repoRevs)
+	deps, err := s.lockfileDependencies(ctx, repoCommits)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +103,7 @@ func (s *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]ty
 	// Write dependencies to database
 	newDependencies, err := s.dependenciesStore.UpsertDependencyRepos(ctx, dependencies)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "store.UpsertDependencyRepos")
 	}
 
 	// Determine the set of repo names that were recently inserted. Package and repository
@@ -123,49 +129,87 @@ func (s *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]ty
 	return dependencyRevs, nil
 }
 
-// lockfileDependencies returns a flattened list of package dependencies for every repo and
-// revision pair specified in the given map.
-func (s *Service) lockfileDependencies(ctx context.Context, repoRevs map[api.RepoName]types.RevSpecSet) ([]reposource.PackageDependency, error) {
+type repoCommitResolvedCommit struct {
+	api.RepoCommit
+	ResolvedCommit string
+}
+
+// resolveRepoCommits flattens the given map into a slice of api.RepoCommits with an extra
+// field indicating the canonical 40-character commit hash of the given revlike, which is
+// often symbolic.
+func (s *Service) resolveRepoCommits(ctx context.Context, repoRevs map[api.RepoName]types.RevSpecSet) ([]repoCommitResolvedCommit, error) {
 	n := 0
 	for _, revs := range repoRevs {
 		n += len(revs)
 	}
 
+	repoCommits := make([]api.RepoCommit, 0, n)
+	for repoName, revs := range repoRevs {
+		for rev := range revs {
+			repoCommits = append(repoCommits, api.RepoCommit{
+				Repo:     repoName,
+				CommitID: api.CommitID(rev),
+			})
+		}
+	}
+
+	commits, err := s.gitSvc.GetCommits(ctx, repoCommits, false)
+	if err != nil {
+		return nil, errors.Wrap(err, "git.GetCommits")
+	}
+	if len(commits) != len(repoCommits) {
+		// Add assertion here so that the blast radius of new or newly discovered errors
+		// southbound from the internal/vcs/git package does not leak into code intelligence.
+		return nil, errors.Newf("expected slice returned from git.GetCommits to have len %d, but has len %d", len(repoCommits), len(commits))
+	}
+
+	resolvedCommits := make([]repoCommitResolvedCommit, 0, len(repoCommits))
+	for i, repoCommit := range repoCommits {
+		resolvedCommits = append(resolvedCommits, repoCommitResolvedCommit{
+			RepoCommit:     repoCommit,
+			ResolvedCommit: string(commits[i].ID),
+		})
+	}
+
+	return resolvedCommits, nil
+}
+
+// lockfileDependencies returns a flattened list of package dependencies for every repo and
+// revision pair specified in the given map.
+func (s *Service) lockfileDependencies(ctx context.Context, repoCommits []repoCommitResolvedCommit) ([]reposource.PackageDependency, error) {
 	var (
 		mu   sync.Mutex
-		deps = make([]reposource.PackageDependency, 0, n)
+		deps []reposource.PackageDependency
 	)
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	g, ctx := errgroup.WithContext(ctx)
-	for repoName, revs := range repoRevs {
-		for rev := range revs {
-			// Capture outside of goroutine below
-			repoName, rev := repoName, rev
+	for _, repoCommit := range repoCommits {
+		// Capture outside of goroutine below
+		repoName, rev := repoCommit.Repo, repoCommit.CommitID
 
-			// Acquire semaphore before spawning goroutine to ensure that we limit the total number
-			// of concurrent _routines_, whether they are actively processing lockfiles or not.
-			if err := s.lockfilesSemaphore.Acquire(ctx, 1); err != nil {
-				return nil, err
+		// Acquire semaphore before spawning goroutine to ensure that we limit the total number
+		// of concurrent _routines_, whether they are actively processing lockfiles or not.
+		if err := s.lockfilesSemaphore.Acquire(ctx, 1); err != nil {
+			return nil, errors.Wrap(err, "lockfiles semaphore")
+		}
+
+		g.Go(func() error {
+			defer s.lockfilesSemaphore.Release(1)
+
+			repoDeps, err := s.lockfilesSvc.ListDependencies(ctx, repoName, string(rev))
+			if err != nil {
+				return errors.Wrap(err, "lockfiles.ListDependencies")
 			}
 
-			g.Go(func() error {
-				defer s.lockfilesSemaphore.Release(1)
+			mu.Lock()
+			deps = append(deps, repoDeps...)
+			mu.Unlock()
 
-				repoDeps, err := s.lockfilesSvc.ListDependencies(ctx, repoName, string(rev))
-				if err != nil {
-					return err
-				}
-
-				mu.Lock()
-				deps = append(deps, repoDeps...)
-				mu.Unlock()
-
-				return nil
-			})
-		}
+			return nil
+		})
 	}
 
 	if err := g.Wait(); err != nil {
@@ -187,7 +231,7 @@ func (s *Service) sync(ctx context.Context, repos []api.RepoName) error {
 		// non-nil returned from here is a context timeout error, so we are guaranteed to clean
 		// up the errgroup on exit.
 		if err := s.syncerSemaphore.Acquire(ctx, 1); err != nil {
-			return err
+			return errors.Wrap(err, "syncer semaphore")
 		}
 
 		g.Go(func() error {
