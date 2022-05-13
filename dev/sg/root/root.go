@@ -78,7 +78,7 @@ func GetSGHomePath() (string, error) {
 		return "", err
 	}
 
-    return createSGHome(homeDir)
+	return createSGHome(homeDir)
 }
 
 func createSGHome(home string) (string, error) {
