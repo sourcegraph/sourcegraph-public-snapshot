@@ -185,9 +185,16 @@ type MockStore struct {
 	// ListDependencyReposFunc is an instance of a mock function object
 	// controlling the behavior of the method ListDependencyRepos.
 	ListDependencyReposFunc *StoreListDependencyReposFunc
+	// LockfileDependenciesFunc is an instance of a mock function object
+	// controlling the behavior of the method LockfileDependencies.
+	LockfileDependenciesFunc *StoreLockfileDependenciesFunc
 	// UpsertDependencyReposFunc is an instance of a mock function object
 	// controlling the behavior of the method UpsertDependencyRepos.
 	UpsertDependencyReposFunc *StoreUpsertDependencyReposFunc
+	// UpsertLockfileDependenciesFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// UpsertLockfileDependencies.
+	UpsertLockfileDependenciesFunc *StoreUpsertLockfileDependenciesFunc
 }
 
 // NewMockStore creates a new mock of the Store interface. All methods
@@ -204,8 +211,18 @@ func NewMockStore() *MockStore {
 				return
 			},
 		},
+		LockfileDependenciesFunc: &StoreLockfileDependenciesFunc{
+			defaultHook: func(context.Context, string, string) (r0 []shared.PackageDependency, r1 bool, r2 error) {
+				return
+			},
+		},
 		UpsertDependencyReposFunc: &StoreUpsertDependencyReposFunc{
 			defaultHook: func(context.Context, []shared.Repo) (r0 []shared.Repo, r1 error) {
+				return
+			},
+		},
+		UpsertLockfileDependenciesFunc: &StoreUpsertLockfileDependenciesFunc{
+			defaultHook: func(context.Context, string, string, []shared.PackageDependency) (r0 error) {
 				return
 			},
 		},
@@ -226,9 +243,19 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.ListDependencyRepos")
 			},
 		},
+		LockfileDependenciesFunc: &StoreLockfileDependenciesFunc{
+			defaultHook: func(context.Context, string, string) ([]shared.PackageDependency, bool, error) {
+				panic("unexpected invocation of MockStore.LockfileDependencies")
+			},
+		},
 		UpsertDependencyReposFunc: &StoreUpsertDependencyReposFunc{
 			defaultHook: func(context.Context, []shared.Repo) ([]shared.Repo, error) {
 				panic("unexpected invocation of MockStore.UpsertDependencyRepos")
+			},
+		},
+		UpsertLockfileDependenciesFunc: &StoreUpsertLockfileDependenciesFunc{
+			defaultHook: func(context.Context, string, string, []shared.PackageDependency) error {
+				panic("unexpected invocation of MockStore.UpsertLockfileDependencies")
 			},
 		},
 	}
@@ -244,8 +271,14 @@ func NewMockStoreFrom(i Store) *MockStore {
 		ListDependencyReposFunc: &StoreListDependencyReposFunc{
 			defaultHook: i.ListDependencyRepos,
 		},
+		LockfileDependenciesFunc: &StoreLockfileDependenciesFunc{
+			defaultHook: i.LockfileDependencies,
+		},
 		UpsertDependencyReposFunc: &StoreUpsertDependencyReposFunc{
 			defaultHook: i.UpsertDependencyRepos,
+		},
+		UpsertLockfileDependenciesFunc: &StoreUpsertLockfileDependenciesFunc{
+			defaultHook: i.UpsertLockfileDependencies,
 		},
 	}
 }
@@ -472,6 +505,120 @@ func (c StoreListDependencyReposFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
+// StoreLockfileDependenciesFunc describes the behavior when the
+// LockfileDependencies method of the parent MockStore instance is invoked.
+type StoreLockfileDependenciesFunc struct {
+	defaultHook func(context.Context, string, string) ([]shared.PackageDependency, bool, error)
+	hooks       []func(context.Context, string, string) ([]shared.PackageDependency, bool, error)
+	history     []StoreLockfileDependenciesFuncCall
+	mutex       sync.Mutex
+}
+
+// LockfileDependencies delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockStore) LockfileDependencies(v0 context.Context, v1 string, v2 string) ([]shared.PackageDependency, bool, error) {
+	r0, r1, r2 := m.LockfileDependenciesFunc.nextHook()(v0, v1, v2)
+	m.LockfileDependenciesFunc.appendCall(StoreLockfileDependenciesFuncCall{v0, v1, v2, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the LockfileDependencies
+// method of the parent MockStore instance is invoked and the hook queue is
+// empty.
+func (f *StoreLockfileDependenciesFunc) SetDefaultHook(hook func(context.Context, string, string) ([]shared.PackageDependency, bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// LockfileDependencies method of the parent MockStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *StoreLockfileDependenciesFunc) PushHook(hook func(context.Context, string, string) ([]shared.PackageDependency, bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreLockfileDependenciesFunc) SetDefaultReturn(r0 []shared.PackageDependency, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, string, string) ([]shared.PackageDependency, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreLockfileDependenciesFunc) PushReturn(r0 []shared.PackageDependency, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, string, string) ([]shared.PackageDependency, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *StoreLockfileDependenciesFunc) nextHook() func(context.Context, string, string) ([]shared.PackageDependency, bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreLockfileDependenciesFunc) appendCall(r0 StoreLockfileDependenciesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreLockfileDependenciesFuncCall objects
+// describing the invocations of this function.
+func (f *StoreLockfileDependenciesFunc) History() []StoreLockfileDependenciesFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreLockfileDependenciesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreLockfileDependenciesFuncCall is an object that describes an
+// invocation of method LockfileDependencies on an instance of MockStore.
+type StoreLockfileDependenciesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []shared.PackageDependency
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 bool
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreLockfileDependenciesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreLockfileDependenciesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
 // StoreUpsertDependencyReposFunc describes the behavior when the
 // UpsertDependencyRepos method of the parent MockStore instance is invoked.
 type StoreUpsertDependencyReposFunc struct {
@@ -578,6 +725,120 @@ func (c StoreUpsertDependencyReposFuncCall) Args() []interface{} {
 // invocation.
 func (c StoreUpsertDependencyReposFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// StoreUpsertLockfileDependenciesFunc describes the behavior when the
+// UpsertLockfileDependencies method of the parent MockStore instance is
+// invoked.
+type StoreUpsertLockfileDependenciesFunc struct {
+	defaultHook func(context.Context, string, string, []shared.PackageDependency) error
+	hooks       []func(context.Context, string, string, []shared.PackageDependency) error
+	history     []StoreUpsertLockfileDependenciesFuncCall
+	mutex       sync.Mutex
+}
+
+// UpsertLockfileDependencies delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockStore) UpsertLockfileDependencies(v0 context.Context, v1 string, v2 string, v3 []shared.PackageDependency) error {
+	r0 := m.UpsertLockfileDependenciesFunc.nextHook()(v0, v1, v2, v3)
+	m.UpsertLockfileDependenciesFunc.appendCall(StoreUpsertLockfileDependenciesFuncCall{v0, v1, v2, v3, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// UpsertLockfileDependencies method of the parent MockStore instance is
+// invoked and the hook queue is empty.
+func (f *StoreUpsertLockfileDependenciesFunc) SetDefaultHook(hook func(context.Context, string, string, []shared.PackageDependency) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UpsertLockfileDependencies method of the parent MockStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *StoreUpsertLockfileDependenciesFunc) PushHook(hook func(context.Context, string, string, []shared.PackageDependency) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreUpsertLockfileDependenciesFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, string, string, []shared.PackageDependency) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreUpsertLockfileDependenciesFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, string, string, []shared.PackageDependency) error {
+		return r0
+	})
+}
+
+func (f *StoreUpsertLockfileDependenciesFunc) nextHook() func(context.Context, string, string, []shared.PackageDependency) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreUpsertLockfileDependenciesFunc) appendCall(r0 StoreUpsertLockfileDependenciesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreUpsertLockfileDependenciesFuncCall
+// objects describing the invocations of this function.
+func (f *StoreUpsertLockfileDependenciesFunc) History() []StoreUpsertLockfileDependenciesFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreUpsertLockfileDependenciesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreUpsertLockfileDependenciesFuncCall is an object that describes an
+// invocation of method UpsertLockfileDependencies on an instance of
+// MockStore.
+type StoreUpsertLockfileDependenciesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 []shared.PackageDependency
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreUpsertLockfileDependenciesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreUpsertLockfileDependenciesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // MockSyncer is a mock implementation of the Syncer interface (from the
