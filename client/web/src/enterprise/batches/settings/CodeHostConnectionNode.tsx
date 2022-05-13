@@ -4,12 +4,20 @@ import classNames from 'classnames'
 import CheckboxBlankCircleOutlineIcon from 'mdi-react/CheckboxBlankCircleOutlineIcon'
 import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
 
-import { Badge, Button, Icon } from '@sourcegraph/wildcard'
+import {ErrorAlert} from '@sourcegraph/branded/src/components/alerts';
+import {useLazyQuery} from '@sourcegraph/http-client';
+import {Alert, Badge, Button, Icon, LoadingSpinner} from '@sourcegraph/wildcard'
 
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
-import { BatchChangesCodeHostFields, Scalars } from '../../../graphql-operations'
+import {
+    BatchChangesCodeHostFields,
+    CheckBatchChangesCredentialResult,
+    CheckBatchChangesCredentialVariables,
+    Scalars
+} from '../../../graphql-operations'
 
 import { AddCredentialModal } from './AddCredentialModal'
+import {CHECK_BATCH_CHANGES_CREDENTIAL} from './backend';
 import { RemoveCredentialModal } from './RemoveCredentialModal'
 import { ViewCredentialModal } from './ViewCredentialModal'
 
@@ -31,12 +39,25 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
     const ExternalServiceIcon = defaultExternalServices[node.externalServiceKind].icon
     const codeHostDisplayName = defaultExternalServices[node.externalServiceKind].defaultDisplayName
 
+    const [checkCred, { data: checkCredData, loading: checkCredLoading, error: checkCredError }] = useLazyQuery<CheckBatchChangesCredentialResult, CheckBatchChangesCredentialVariables>(
+        CHECK_BATCH_CHANGES_CREDENTIAL,
+        {}
+    );
+
     const buttonReference = useRef<HTMLButtonElement | null>(null)
 
     const [openModal, setOpenModal] = useState<OpenModal | undefined>()
     const onClickAdd = useCallback(() => {
         setOpenModal('add')
     }, [])
+    const onClickCheck = useCallback<React.MouseEventHandler>(async event => {
+        event.preventDefault()
+        try {
+            await checkCred({variables: {id: node?.credential?.id ?? ''}})
+        } catch (error) {
+            console.log(error)
+        }
+    }, [node, checkCred])
     const onClickRemove = useCallback<React.MouseEventHandler>(event => {
         event.preventDefault()
         setOpenModal('delete')
@@ -72,6 +93,15 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
                     'list-group-item test-code-host-connection-node'
                 )}
             >
+                {
+                    checkCredError && <ErrorAlert error={checkCredError} />
+                }
+                {
+                    checkCredData && !checkCredError &&
+                    <Alert variant="success">
+                        Credentials is valid
+                    </Alert>
+                }
                 <div
                     className={classNames(
                         styles.wrapper,
