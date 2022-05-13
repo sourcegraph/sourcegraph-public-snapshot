@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from 'react'
+import React, { useEffect } from 'react'
 
 import { screenReaderAnnounce } from '@sourcegraph/wildcard'
 
@@ -6,17 +6,17 @@ interface PageTitleProps {
     title?: string
 }
 
+const getBrandName = (): string => {
+    if (!window.context) {
+        return 'Sourcegraph'
+    }
+    const { branding } = window.context
+    return branding ? branding.brandName : 'Sourcegraph'
+}
+
 let titleSet = false
 
 export const PageTitle: React.FunctionComponent<PageTitleProps> = ({ title }) => {
-    const getBrandName = useCallback(() => {
-        if (!window.context) {
-            return 'Sourcegraph'
-        }
-        const { branding } = window.context
-        return branding ? branding.brandName : 'Sourcegraph'
-    }, [])
-
     useEffect(() => {
         if (titleSet) {
             console.error('more than one PageTitle used at the same time')
@@ -29,7 +29,9 @@ export const PageTitle: React.FunctionComponent<PageTitleProps> = ({ title }) =>
             titleSet = false
             document.title = getBrandName()
         }
-    }, [getBrandName, title])
+        // Only run once, on mount
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
 
     return null
 }
