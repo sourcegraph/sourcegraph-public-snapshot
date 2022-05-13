@@ -244,7 +244,6 @@ func insertPackageReferences(t testing.TB, store *Store, packageReferences []sha
 					Name:    packageReference.Name,
 					Version: packageReference.Version,
 				},
-				Filter: packageReference.Filter,
 			},
 		}); err != nil {
 			t.Fatalf("unexpected error updating package references: %s", err)
