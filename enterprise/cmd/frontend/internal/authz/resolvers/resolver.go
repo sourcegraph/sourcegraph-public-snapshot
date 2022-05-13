@@ -157,6 +157,34 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
+func (r *Resolver) SetRepositoryPermissionsUnrestricted(ctx context.Context, args *graphqlbackend.RepoUnrestrictedArgs) (*graphqlbackend.EmptyResponse, error) {
+	if envvar.SourcegraphDotComMode() {
+		return nil, errDisabledSourcegraphDotCom
+	}
+	if err := r.checkLicense(); err != nil {
+		return nil, err
+	}
+	// 🚨 SECURITY: Only site admins can mutate repository permissions.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	ids := make([]int32, 0, len(args.Repositories))
+	for _, id := range args.Repositories {
+		repoID, err := graphqlbackend.UnmarshalRepositoryID(id)
+		if err != nil {
+			return nil, errors.Wrap(err, "unmarshalling id")
+		}
+		ids = append(ids, int32(repoID))
+	}
+
+	if err := r.db.Perms().SetRepoPermissionsUnrestricted(ctx, ids, args.Unrestricted); err != nil {
+		return nil, errors.Wrap(err, "setting unrestricted field")
+	}
+
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
 func (r *Resolver) ScheduleRepositoryPermissionsSync(ctx context.Context, args *graphqlbackend.RepositoryIDArgs) (*graphqlbackend.EmptyResponse, error) {
 	if err := r.checkLicense(); err != nil {
 		return nil, err
