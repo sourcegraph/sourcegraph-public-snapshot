@@ -163,9 +163,9 @@ export const RegistryExtensionNewReleasePage = withAuthenticatedUser<Props>(
                             <div className="row">
                                 <div className="col-lg-6">
                                     <div className="form-group">
-                                        <label htmlFor="registry-extension-new-release-page__manifest">
+                                        <Typography.Label htmlFor="registry-extension-new-release-page__manifest">
                                             <Typography.H3>Manifest</Typography.H3>
-                                        </label>
+                                        </Typography.Label>
                                         <DynamicallyImportedMonacoSettingsEditor
                                             id="registry-extension-new-release-page__manifest"
                                             className="d-block"
@@ -181,9 +181,9 @@ export const RegistryExtensionNewReleasePage = withAuthenticatedUser<Props>(
                                 </div>
                                 <div className="col-lg-6">
                                     <div className="form-group">
-                                        <label htmlFor="registry-extension-new-release-page__bundle">
+                                        <Typography.Label htmlFor="registry-extension-new-release-page__bundle">
                                             <Typography.H3>Source</Typography.H3>
-                                        </label>
+                                        </Typography.Label>
                                         {bundleOrError === undefined ? (
                                             <div>
                                                 <LoadingSpinner />

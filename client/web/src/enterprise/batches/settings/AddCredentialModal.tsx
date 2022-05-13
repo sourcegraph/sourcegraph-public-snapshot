@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { Button, Modal, Link } from '@sourcegraph/wildcard'
+import { Button, Modal, Link, Typography } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
 import { ExternalServiceKind, Scalars } from '../../../graphql-operations'
@@ -179,7 +179,7 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
                             <div className="form-group">
                                 {requiresUsername && (
                                     <>
-                                        <label htmlFor="username">Username</label>
+                                        <Typography.Label htmlFor="username">Username</Typography.Label>
                                         <input
                                             id="username"
                                             name="username"
@@ -194,7 +194,7 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
                                         />
                                     </>
                                 )}
-                                <label htmlFor="token">{patLabel}</label>
+                                <Typography.Label htmlFor="token">{patLabel}</Typography.Label>
                                 <input
                                     id="token"
                                     name="token"

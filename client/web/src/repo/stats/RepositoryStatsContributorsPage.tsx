@@ -12,7 +12,7 @@ import { gql } from '@sourcegraph/http-client'
 import { Scalars, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Button, ButtonGroup, Link, CardHeader, CardBody, Card } from '@sourcegraph/wildcard'
+import { Button, ButtonGroup, Link, CardHeader, CardBody, Card, Typography } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
@@ -229,12 +229,12 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                             <div className={classNames(styles.row, 'form-inline')}>
                                 <div className="input-group mb-2 mr-sm-2">
                                     <div className="input-group-prepend">
-                                        <label
+                                        <Typography.Label
                                             htmlFor={RepositoryStatsContributorsPage.AFTER_INPUT_ID}
                                             className="input-group-text"
                                         >
                                             Time period
-                                        </label>
+                                        </Typography.Label>
                                     </div>
                                     <input
                                         type="text"
@@ -286,12 +286,12 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                             <div className={classNames(styles.row, 'form-inline')}>
                                 <div className="input-group mt-2 mr-sm-2">
                                     <div className="input-group-prepend">
-                                        <label
+                                        <Typography.Label
                                             htmlFor={RepositoryStatsContributorsPage.REVISION_RANGE_INPUT_ID}
                                             className="input-group-text"
                                         >
                                             Revision range
-                                        </label>
+                                        </Typography.Label>
                                     </div>
                                     <input
                                         type="text"
@@ -310,12 +310,12 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                                 </div>
                                 <div className="input-group mt-2 mr-sm-2">
                                     <div className="input-group-prepend">
-                                        <label
+                                        <Typography.Label
                                             htmlFor={RepositoryStatsContributorsPage.PATH_INPUT_ID}
                                             className="input-group-text"
                                         >
                                             Path
-                                        </label>
+                                        </Typography.Label>
                                     </div>
                                     <input
                                         type="text"
