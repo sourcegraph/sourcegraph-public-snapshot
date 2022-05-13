@@ -63,41 +63,43 @@ func (squirrel *SquirrelService) symbolInfo(ctx context.Context, point types.Rep
 		}
 
 		// Now find the definition.
-		foundPkgOrNode, err := squirrel.getDef(ctx, WithNodePtr(*root, startNode))
+		found, err := squirrel.getDef(ctx, WithNodePtr(*root, startNode))
 		if err != nil {
 			return nil, err
 		}
-		if foundPkgOrNode == nil {
+		if found == nil {
 			return nil, nil
 		}
-		if foundPkgOrNode.Node != nil {
+		if found.Node != nil {
 			def = &types.RepoCommitPathRange{
-				RepoCommitPath: foundPkgOrNode.Node.RepoCommitPath,
-				Range:          nodeToRange(foundPkgOrNode.Node.Node),
+				RepoCommitPath: found.Node.RepoCommitPath,
+				Range:          nodeToRange(found.Node.Node),
 			}
 		}
 	}
 
-	// Then get the hover if it exists.
-	var hover *string
-	if def != nil {
-		// Parse the END file and find the end node.
-		root, err := squirrel.parse(ctx, def.RepoCommitPath)
-		if err != nil {
-			return nil, err
-		}
-		endNode := root.NamedDescendantForPointRange(
-			sitter.Point{Row: uint32(def.Row), Column: uint32(def.Column)},
-			sitter.Point{Row: uint32(def.Row), Column: uint32(def.Column)},
-		)
-		if endNode == nil {
-			return nil, errors.Newf("no node at %d:%d", def.Row, def.Column)
-		}
-
-		// Now find the hover.
-		s := findHover(WithNode(*root, endNode))
-		hover = &s
+	if def == nil {
+		return nil, nil
 	}
+
+	// Then get the hover if it exists.
+
+	// Parse the END file and find the end node.
+	root, err := squirrel.parse(ctx, def.RepoCommitPath)
+	if err != nil {
+		return nil, err
+	}
+	endNode := root.NamedDescendantForPointRange(
+		sitter.Point{Row: uint32(def.Row), Column: uint32(def.Column)},
+		sitter.Point{Row: uint32(def.Row), Column: uint32(def.Column)},
+	)
+	if endNode == nil {
+		return nil, errors.Newf("no node at %d:%d", def.Row, def.Column)
+	}
+
+	// Now find the hover.
+	result := findHover(WithNode(*root, endNode))
+	hover := &result
 
 	// We have a def, and maybe a hover.
 	return &types.SymbolInfo{
