@@ -2163,8 +2163,8 @@ github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf h1:oAdWFqhStsWii
 github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf/go.mod h1:ppFaPm6kpcHnZGqQTFhUIAQRIEhdQDWP1PCv4/ON354=
 github.com/sourcegraph/oauth2 v0.0.0-20210825125341-77c1d99ece3c h1:HGa4iJr6MGKnB5qbU7tI511NdGuHUHnNCqP67G6KmfE=
 github.com/sourcegraph/oauth2 v0.0.0-20210825125341-77c1d99ece3c/go.mod h1:KelEdhl1UZF7XfJ4dDtk6s++YSgaE7mD/BuKKDLBl4A=
-github.com/sourcegraph/run v0.3.1-0.20220512213419-82861f1a6fec h1:DuxczI3CZee7HiefqlFjq6l6vW+Z3hJEdsl50xsqgVQ=
-github.com/sourcegraph/run v0.3.1-0.20220512213419-82861f1a6fec/go.mod h1:tiCENR4q/qc+3+Kyzfwine52XA1HNQL87O1L6NgoUT0=
+github.com/sourcegraph/run v0.4.0 h1:O+Fn1WhfEqII0vISeCJt4yuYwAKu86JWOE3M1IvXkHs=
+github.com/sourcegraph/run v0.4.0/go.mod h1:tiCENR4q/qc+3+Kyzfwine52XA1HNQL87O1L6NgoUT0=
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e h1:qpG93cPwA5f7s/ZPBJnGOYQNK/vKsaDaseuKT5Asee8=
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e/go.mod h1:HuIsMU8RRBOtsCgI77wP899iHVBQpCmg4ErYMZB+2IA=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152 h1:z/MpntplPaW6QW95pzcAR/72Z5TWDyDnSo0EOcyij9o=
