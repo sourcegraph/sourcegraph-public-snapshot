@@ -1,4 +1,6 @@
 ./src
+./cmd/src/src
+*.zip
 release
 ./vendor
 .idea
