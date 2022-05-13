@@ -544,7 +544,7 @@ const EditPage: React.FunctionComponent<React.PropsWithChildren<EditPageProps>> 
             <div className={classNames(styles.editorLayoutContainer, 'd-flex flex-1 mt-2')}>
                 <LibraryPane name={batchChange.name} onReplaceItem={clearErrorsAndHandleCodeChange} />
                 <div className={styles.editorContainer}>
-                    <h4 className={styles.header}>Batch spec</h4>
+                    <Typography.H4 className={styles.header}>Batch spec</Typography.H4>
                     {insightTitle && (
                         <InsightTemplatesBanner insightTitle={insightTitle} type="edit" className="mb-3" />
                     )}

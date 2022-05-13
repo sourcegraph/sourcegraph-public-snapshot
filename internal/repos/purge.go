@@ -49,7 +49,7 @@ func RunRepositoryPurgeWorker(ctx context.Context, db database.DB) {
 // than zero.
 func PurgeOldestRepos(db database.DB, limit int, perSecond float64) error {
 	if limit <= 0 {
-		return errors.Errorf("limit must be greated than zero, got %d", limit)
+		return errors.Errorf("limit must be greater than zero, got %d", limit)
 	}
 	log := log15.Root().New("request", "repo-purge")
 	go func() {

@@ -3,7 +3,7 @@ import React, { useCallback, useState } from 'react'
 import { useHistory, useLocation } from 'react-router'
 import { of } from 'rxjs'
 
-import { Button, Container, H2, Link, Typography } from '@sourcegraph/wildcard'
+import { Button, Container, Link, Typography } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { FilteredConnection } from '../../components/FilteredConnection'
@@ -68,7 +68,7 @@ export const CodeMonitorList: React.FunctionComponent<React.PropsWithChildren<Co
         <>
             <div className="row mb-5">
                 <div className="d-flex flex-column col-2 mr-2">
-                    <Typography.H3 as={H2}>Filters</Typography.H3>
+                    <Typography.H3 as={Typography.H2}>Filters</Typography.H3>
                     <Button
                         className="text-left"
                         onClick={() => setMonitorListFilter('all')}

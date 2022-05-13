@@ -32,6 +32,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Sourcegraph is now built with Go 1.18. [#34899](https://github.com/sourcegraph/sourcegraph/pull/34899)
 - Capture group Code Insights now use the Compute streaming endpoint. [#34905](https://github.com/sourcegraph/sourcegraph/pull/34905)
 - Code Insights will now automatically generate queries with a default value of `fork:no` and `archived:no` if these fields are not specified by the user. This removes the need to manually add these fields to have consistent behavior from historical to non-historical results. [#30204](https://github.com/sourcegraph/sourcegraph/issues/30204)
+- Search Code Insights now use the Search streaming endpoint. [#35286](https://github.com/sourcegraph/sourcegraph/pull/35286)
 
 ### Fixed
 

@@ -23,12 +23,12 @@ The default run type.
   - **Pipeline setup**: Trigger async
   - Client PR preview
   - **Linters and static analysis**: Prettier, Run sg lint
-  - **Client checks**: Puppeteer tests prep, Puppeteer tests for chrome extension, Puppeteer tests chunk #1, Puppeteer tests chunk #2, Puppeteer tests chunk #3, Puppeteer tests chunk #4, Puppeteer tests chunk #5, Puppeteer tests chunk #6, Puppeteer tests chunk #7, Puppeteer tests chunk #8, Puppeteer tests chunk #9, Puppeteer tests chunk #10, Upload Storybook to Chromatic, Test (all), Build, Enterprise build, Test (client/web), Test (client/browser), Build TS, ESLint (changed), Stylelint (changed)
+  - **Client checks**: Puppeteer tests prep, Puppeteer tests for chrome extension, Puppeteer tests chunk #1, Puppeteer tests chunk #2, Puppeteer tests chunk #3, Puppeteer tests chunk #4, Puppeteer tests chunk #5, Puppeteer tests chunk #6, Puppeteer tests chunk #7, Puppeteer tests chunk #8, Puppeteer tests chunk #9, Puppeteer tests chunk #10, Upload Storybook to Chromatic, Test (all), Build, Enterprise build, Test (client/web), Test (client/browser), Build TS, ESLint (all), Stylelint (all)
   - Upload build trace
 
 - Pipeline for `GraphQL` changes:
   - **Linters and static analysis**: Prettier, GraphQL lint
-  - **Client checks**: Puppeteer tests prep, Puppeteer tests for chrome extension, Puppeteer tests chunk #1, Puppeteer tests chunk #2, Puppeteer tests chunk #3, Puppeteer tests chunk #4, Puppeteer tests chunk #5, Puppeteer tests chunk #6, Puppeteer tests chunk #7, Puppeteer tests chunk #8, Puppeteer tests chunk #9, Puppeteer tests chunk #10, Upload Storybook to Chromatic, Test (all), Build, Enterprise build, Test (client/web), Test (client/browser), Build TS, ESLint (changed), Stylelint (changed)
+  - **Client checks**: Puppeteer tests prep, Puppeteer tests for chrome extension, Puppeteer tests chunk #1, Puppeteer tests chunk #2, Puppeteer tests chunk #3, Puppeteer tests chunk #4, Puppeteer tests chunk #5, Puppeteer tests chunk #6, Puppeteer tests chunk #7, Puppeteer tests chunk #8, Puppeteer tests chunk #9, Puppeteer tests chunk #10, Upload Storybook to Chromatic, Test (all), Build, Enterprise build, Test (client/web), Test (client/browser), Build TS, ESLint (all), Stylelint (all)
   - **Go checks**: Test (all), Test (enterprise/internal/codeintel/stores/dbstore), Test (enterprise/internal/codeintel/stores/lsifstore), Test (enterprise/internal/insights), Test (internal/database), Test (internal/repos), Test (enterprise/internal/batches), Test (cmd/frontend), Test (enterprise/internal/database), Test (enterprise/cmd/frontend/internal/batches/resolvers), Build
   - Upload build trace
 
