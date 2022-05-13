@@ -14,7 +14,6 @@
 - [How to monitor your Sourcegraph instance](monitoring-guide.md)
 - [How to troubleshoot a repository that is not being updated](repo-not-updated.md)
 - [How to troubleshoot a Sourcegraph extension](troubleshoot-sg-extension.md)
-- [How to troubleshoot a repository that is not being updated](repo-not-updated.md)
 - [How to configure submodules](submodule-configuration.md)
 - [How to remove users or edit users with the GraphQL API](mutate-user-api.md)
 - [How to setup HTTPS connection with Ingress controller on your Kubernetes instance](setup-https.md)
