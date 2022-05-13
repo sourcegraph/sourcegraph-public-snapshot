@@ -2,12 +2,9 @@ package cliutil
 
 import (
 	"flag"
-	"sort"
-	"strings"
 
 	"github.com/urfave/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -30,15 +27,11 @@ func Validate(commandName string, factory RunnerFactory, outFactory func() *outp
 
 		var schemaNameFlag = cmd.String("db")
 
-		schemaNames := strings.Split(schemaNameFlag, ",")
-		if len(schemaNames) == 0 {
+		if schemaNameFlag == "" {
 			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: supply a schema via -db"))
 			return flag.ErrHelp
 		}
-		if len(schemaNames) == 1 && schemaNames[0] == "all" {
-			schemaNames = schemas.SchemaNames
-		}
-		sort.Strings(schemaNames)
+		schemaNames := parseSchemas(schemaNameFlag)
 
 		ctx := cmd.Context
 		r, err := factory(ctx, schemaNames)

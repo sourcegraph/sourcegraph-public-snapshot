@@ -51,6 +51,10 @@ func DownTo(commandName string, factory RunnerFactory, outFactory func() *output
 			targetsFlag              = cmd.String("target")
 		)
 
+		if targetsFlag == "" {
+			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: supply a target via -target"))
+			return flag.ErrHelp
+		}
 		targets := strings.Split(targetsFlag, ",")
 
 		versions := make([]int, 0, len(targets))

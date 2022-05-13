@@ -46,15 +46,11 @@ func Up(commandName string, factory RunnerFactory, outFactory func() *output.Out
 			ignoreSingleDirtyLogFlag = cmd.Bool("ignore-single-dirty-log")
 		)
 
-		schemaNames := strings.Split(schemaNameFlag, ",")
-		if len(schemaNames) == 0 {
+		if schemaNameFlag == "" {
 			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: supply a schema via -db"))
 			return flag.ErrHelp
 		}
-		if len(schemaNames) == 1 && schemaNames[0] == "all" {
-			schemaNames = schemas.SchemaNames
-		}
-		sort.Strings(schemaNames)
+		schemaNames := parseSchemas(schemaNameFlag)
 
 		operations := []runner.MigrationOperation{}
 		for _, schemaName := range schemaNames {
@@ -85,4 +81,14 @@ func Up(commandName string, factory RunnerFactory, outFactory func() *output.Out
 		Action:      action,
 		Description: ConstructLongHelp(),
 	}
+}
+
+func parseSchemas(schemaNameFlag string) []string {
+	if schemaNames := strings.Split(schemaNameFlag, ","); len(schemaNames) != 1 || schemaNames[0] != "all" {
+		sort.Strings(schemaNames)
+		return schemaNames
+	}
+
+	// Return "all" schemas
+	return schemas.SchemaNames
 }
