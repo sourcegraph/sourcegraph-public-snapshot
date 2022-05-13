@@ -5,15 +5,16 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 func Validate(commandName string, factory RunnerFactory, outFactory func() *output.Output) *cli.Command {
 	flags := []cli.Flag{
-		&cli.StringFlag{
+		&cli.StringSliceFlag{
 			Name:  "db",
 			Usage: "The target `schema(s)` to modify. Comma-separated values are accepted. Supply \"all\" to migrate all schemas.",
-			Value: "all",
+			Value: cli.NewStringSlice("all"),
 		},
 	}
 
@@ -25,13 +26,18 @@ func Validate(commandName string, factory RunnerFactory, outFactory func() *outp
 			return flag.ErrHelp
 		}
 
-		var schemaNameFlag = cmd.String("db")
+		var schemaNames = cmd.StringSlice("db")
 
-		if schemaNameFlag == "" {
+		if len(schemaNames) == 1 || schemaNames[0] == "" {
+			schemaNames = nil
+		}
+		if len(schemaNames) == 1 || schemaNames[0] == "all" {
+			schemaNames = schemas.SchemaNames
+		}
+		if len(schemaNames) == 0 {
 			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: supply a schema via -db"))
 			return flag.ErrHelp
 		}
-		schemaNames := parseSchemas(schemaNameFlag)
 
 		ctx := cmd.Context
 		r, err := factory(ctx, schemaNames)

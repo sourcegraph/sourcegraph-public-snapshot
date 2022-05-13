@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"strconv"
-	"strings"
 
 	"github.com/urfave/cli/v2"
 
@@ -19,7 +18,7 @@ func UpTo(commandName string, factory RunnerFactory, outFactory func() *output.O
 			Usage:    "The target `schema` to modify.",
 			Required: true,
 		},
-		&cli.StringFlag{
+		&cli.StringSliceFlag{
 			Name:     "target",
 			Usage:    "The `migration` to apply. Comma-separated values are accepted.",
 			Required: true,
@@ -48,14 +47,16 @@ func UpTo(commandName string, factory RunnerFactory, outFactory func() *output.O
 			schemaNameFlag           = cmd.String("db")
 			unprivilegedOnlyFlag     = cmd.Bool("unprivileged-only")
 			ignoreSingleDirtyLogFlag = cmd.Bool("ignore-single-dirty-log")
-			targetsFlag              = cmd.String("target")
+			targets                  = cmd.StringSlice("target")
 		)
 
-		if targetsFlag == "" {
+		if len(targets) == 1 || targets[0] == "" {
+			targets = nil
+		}
+		if len(targets) == 0 {
 			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: supply a target via -target"))
 			return flag.ErrHelp
 		}
-		targets := strings.Split(targetsFlag, ",")
 
 		versions := make([]int, 0, len(targets))
 		for _, target := range targets {
