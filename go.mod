@@ -9,7 +9,7 @@ require (
 	cloud.google.com/go/pubsub v1.17.1
 	cloud.google.com/go/secretmanager v1.4.0
 	cloud.google.com/go/storage v1.22.0
-	github.com/BurntSushi/toml v0.4.1
+	github.com/BurntSushi/toml v1.1.0
 	github.com/Masterminds/semver v1.5.0
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/PuerkitoBio/rehttp v1.1.0
@@ -141,7 +141,7 @@ require (
 	github.com/sourcegraph/go-lsp v0.0.0-20200429204803-219e11d77f5d
 	github.com/sourcegraph/go-rendezvous v0.0.0-20210910070954-ef39ade5591d
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
-	github.com/sourcegraph/run v0.0.0-20220510161300-5e1166bfc1ee
+	github.com/sourcegraph/run v0.4.0
 	github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images v0.0.0-20220203145655-4d2a39d3038a
 	github.com/sourcegraph/sourcegraph/lib v0.0.0-20220203145655-4d2a39d3038a
 	github.com/stretchr/testify v1.7.1
@@ -155,7 +155,7 @@ require (
 	github.com/uber/gonduit v0.13.0
 	github.com/uber/jaeger-client-go v2.30.0+incompatible
 	github.com/uber/jaeger-lib v2.4.1+incompatible
-	github.com/urfave/cli/v2 v2.4.0
+	github.com/urfave/cli/v2 v2.6.0
 	github.com/xeipuuv/gojsonschema v1.2.0
 	github.com/xeonx/timeago v1.0.0-rc4
 	github.com/xhit/go-str2duration/v2 v2.0.0
@@ -208,6 +208,8 @@ require (
 	github.com/googleapis/go-type-adapters v1.0.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/huandu/xstrings v1.3.2 // indirect
+	github.com/itchyny/gojq v0.12.7 // indirect
+	github.com/itchyny/timefmt-go v0.1.3 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect

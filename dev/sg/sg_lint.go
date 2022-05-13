@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -26,9 +27,9 @@ var lintGenerateAnnotations bool
 
 var lintCommand = &cli.Command{
 	Name:        "lint",
-	ArgsUsage:   "[target]",
-	Usage:       "Run all or specified linter on the codebase",
-	Description: `Run all or specified linter on the codebase and display failures, if any. To run all checks, don't provide an argument.`,
+	ArgsUsage:   "[targets...]",
+	Usage:       "Run all or specified linters on the codebase",
+	Description: `Run all or specified linters on the codebase and display failures, if any. To run all checks, don't provide an argument.`,
 	Category:    CategoryDev,
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
@@ -72,14 +73,14 @@ var lintCommand = &cli.Command{
 		}
 
 		std.Out.WriteNoticef("Running checks from targets: %s", strings.Join(targets, ", "))
-		return runCheckScriptsAndReport(cmd.Context, fns...)
+		return runCheckScriptsAndReport(cmd.Context, cmd.App.Writer, fns...)
 	},
 	Subcommands: lintTargets(linters.Targets).Commands(),
 }
 
 // runCheckScriptsAndReport concurrently runs all fns and report as each check finishes. Returns an error
 // if any of the fns fails.
-func runCheckScriptsAndReport(ctx context.Context, fns ...lint.Runner) error {
+func runCheckScriptsAndReport(ctx context.Context, dst io.Writer, fns ...lint.Runner) error {
 	_, err := root.RepositoryRoot()
 	if err != nil {
 		return err
@@ -93,7 +94,7 @@ func runCheckScriptsAndReport(ctx context.Context, fns ...lint.Runner) error {
 	repoState := &repo.State{Branch: branch}
 
 	// We need the Verbose flag to print above the pending indicator.
-	out := output.NewOutput(os.Stdout, output.OutputOpts{
+	out := output.NewOutput(dst, output.OutputOpts{
 		ForceColor: true,
 		ForceTTY:   true,
 		Verbose:    true,
@@ -160,7 +161,11 @@ func printLintReport(pending output.Pending, start time.Time, report *lint.Repor
 		}
 		return
 	}
+
 	pending.VerboseLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, msg))
+	if verbose {
+		pending.Verbose(report.Summary())
+	}
 }
 
 type lintTargets []lint.Target
@@ -178,7 +183,7 @@ func (lt lintTargets) Commands() (cmds []*cli.Command) {
 					return flag.ErrHelp
 				}
 				std.Out.WriteNoticef("Running checks from target: %s", c.Name)
-				return runCheckScriptsAndReport(cmd.Context, c.Linters...)
+				return runCheckScriptsAndReport(cmd.Context, cmd.App.Writer, c.Linters...)
 			},
 			// Completions to chain multiple commands
 			BashComplete: completeOptions(func() (options []string) {
