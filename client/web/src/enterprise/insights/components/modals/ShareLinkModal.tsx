@@ -1,4 +1,4 @@
-import { MouseEventHandler, useState } from 'react'
+import { MouseEventHandler } from 'react'
 
 import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
@@ -62,7 +62,8 @@ const ShareLinkModalContent: React.FunctionComponent<Pick<ShareLinkModalProps, '
     const permission = getLeastRestrictivePermissions(currentDashboard)
 
     if (permission === 'organization') {
-        return <OrganizationContent organizations={['Test', 'Other']} />
+        const organizations = currentDashboard?.grants.organizations.map(organization => organization) as string[]
+        return <OrganizationContent organizations={organizations} />
     }
 
     if (permission === 'private') {
