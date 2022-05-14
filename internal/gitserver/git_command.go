@@ -9,7 +9,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime/debug"
 	"strconv"
+	"sync"
 	"syscall"
 
 	"github.com/inconshreveable/log15"
@@ -18,6 +20,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+var GitCommandMocks struct {
+	Local bool
+	// This is a kind of "thread local" for parallel test run
+	ReposDir sync.Map
+}
+
+// ResetGitCommandMocks removes reposDir of current goroutine, but doesn't
+// reset Local flag because basically all tests which use GitCommandMocks are
+// using local git commands.
+func ResetGitCommandMocks() {
+	// Removing only the dir of current goroutine
+	GitCommandMocks.ReposDir.Delete(string(bytes.Fields(debug.Stack())[1]))
+}
 
 // GitCommand is an interface describing a git commands to be executed.
 type GitCommand interface {

@@ -15,6 +15,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -60,11 +61,9 @@ var (
 )
 
 var ClientMocks, emptyClientMocks struct {
-	GetObject               func(repo api.RepoName, objectName string) (*gitdomain.GitObject, error)
-	RepoInfo                func(ctx context.Context, repos ...api.RepoName) (*protocol.RepoInfoResponse, error)
-	Archive                 func(ctx context.Context, repo api.RepoName, opt ArchiveOptions) (_ io.ReadCloser, err error)
-	LocalGitserver          bool
-	LocalGitCommandReposDir string
+	GetObject func(repo api.RepoName, objectName string) (*gitdomain.GitObject, error)
+	RepoInfo  func(ctx context.Context, repos ...api.RepoName) (*protocol.RepoInfoResponse, error)
+	Archive   func(ctx context.Context, repo api.RepoName, opt ArchiveOptions) (_ io.ReadCloser, err error)
 }
 
 // AddrsMock is a mock for Addrs() function. It is separated from ClientMocks
@@ -913,10 +912,10 @@ func repoNamesFromRepoCommits(repoCommits []api.RepoCommit) []string {
 }
 
 func (c *ClientImplementor) GitCommand(repo api.RepoName, arg ...string) GitCommand {
-	if ClientMocks.LocalGitserver {
+	if GitCommandMocks.Local {
 		cmd := NewLocalGitCommand(repo, arg...)
-		if ClientMocks.LocalGitCommandReposDir != "" {
-			cmd.ReposDir = ClientMocks.LocalGitCommandReposDir
+		if dir, ok := GitCommandMocks.ReposDir.Load(string(bytes.Fields(debug.Stack())[1])); ok && dir != "" {
+			cmd.ReposDir = dir.(string)
 		}
 		return cmd
 	}

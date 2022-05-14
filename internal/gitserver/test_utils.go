@@ -1,11 +1,13 @@
 package gitserver
 
 import (
+	"bytes"
 	"encoding/json"
 	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
+	"runtime/debug"
 	"strings"
 	"testing"
 	"time"
@@ -69,7 +71,7 @@ func InitGitRepository(t *testing.T, cmds ...string) string {
 	}
 
 	// setting git repo which is needed for successful run of git command against local file system
-	ClientMocks.LocalGitCommandReposDir = remotes
+	GitCommandMocks.ReposDir.Store(string(bytes.Fields(debug.Stack())[1]), remotes)
 
 	cmds = append([]string{"git init"}, cmds...)
 	for _, cmd := range cmds {
