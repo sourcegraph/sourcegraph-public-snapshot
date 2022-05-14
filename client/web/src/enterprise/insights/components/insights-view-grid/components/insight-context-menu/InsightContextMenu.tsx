@@ -162,7 +162,13 @@ export const InsightContextMenu: React.FunctionComponent<React.PropsWithChildren
                 showModal={showRemoveConfirm}
                 onCancel={() => setShowRemoveConfirm(false)}
             />
-            <ShareLinkModal aria-label="Share insight" isOpen={showShareModal} />
+            <ShareLinkModal
+                aria-label="Share insight"
+                insight={insight}
+                dashboard={dashboard}
+                isOpen={showShareModal}
+                onDismiss={() => setShowShareModal(false)}
+            />
         </>
     )
 }

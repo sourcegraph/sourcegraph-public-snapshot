@@ -47,6 +47,17 @@ export const INSIGHT_VIEW_FRAGMENT = gql`
             searchContexts
         }
         dashboardReferenceCount
+        dashboards {
+            nodes {
+                id
+                title
+                grants {
+                    users
+                    organizations
+                    global
+                }
+            }
+        }
         ...InsightViewSeries
     }
 
