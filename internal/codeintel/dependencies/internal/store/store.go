@@ -236,6 +236,75 @@ func populatePackageDependencyChannel(deps []shared.PackageDependency) <-chan []
 	return ch
 }
 
+func (s *Store) SelectRepoRevisionsToResolve(ctx context.Context) (_ map[string][]string, err error) {
+	// TODO - observe
+
+	rows, err := s.Query(ctx, sqlf.Sprintf(selectRepoRevisionsToResolveQuery))
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	m := map[string][]string{}
+	for rows.Next() {
+		var repositoryName, commit string
+		if err := rows.Scan(&repositoryName, &commit); err != nil {
+			return nil, err
+		}
+
+		m[repositoryName] = append(m[repositoryName], commit)
+	}
+
+	return m, nil
+}
+
+const selectRepoRevisionsToResolveQuery = `
+-- source: internal/codeintel/dependencies/internal/store/store.go:SelectRepoRevisionsToResolve
+SELECT
+	-- TODO - ensure distinct
+	repository_name,
+	revspec
+FROM codeintel_lockfile_references
+WHERE
+	-- TODO - also recheck after some configured period of time
+	repository_id IS NULL AND commit_bytea IS NULL
+-- TOOD - make batch size configurable
+LIMIT 100
+`
+
+func (s *Store) UpdateResolvedRevisions(ctx context.Context, repoRevsToResolvedRevs map[string]map[string]string) (err error) {
+	// TODO - observe
+
+	for repoName, resolvedRevs := range repoRevsToResolvedRevs {
+		for commit, resolvedCommit := range resolvedRevs {
+			// TODO - batch these updates
+			if err := s.Exec(ctx, sqlf.Sprintf(
+				updateResolvedRevisionsQuery,
+				repoName,
+				dbutil.CommitBytea(resolvedCommit),
+				repoName,
+				commit,
+			)); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+const updateResolvedRevisionsQuery = `
+-- source: internal/codeintel/dependencies/internal/store/store.go:UpdateResolvedRevisions
+UPDATE
+	codeintel_lockfile_references
+SET
+	repository_id = (SELECT id FROM repo WHERE name = %s),
+	commit_bytea = %s
+WHERE
+	repository_name = %s AND
+	revspec = %s
+`
+
 type ListDependencyReposOpts struct {
 	Scheme      string
 	Name        string
