@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -46,73 +47,95 @@ func (i Index) RecordID() int {
 	return i.ID
 }
 
-// scanIndexes scans a slice of indexes from the return value of `*Store.query`.
-func scanIndexes(rows *sql.Rows, queryErr error) (_ []Index, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	var indexes []Index
-	for rows.Next() {
-		var index Index
-		var executionLogs []dbworkerstore.ExecutionLogEntry
-
-		if err := rows.Scan(
-			&index.ID,
-			&index.Commit,
-			&index.QueuedAt,
-			&index.State,
-			&index.FailureMessage,
-			&index.StartedAt,
-			&index.FinishedAt,
-			&index.ProcessAfter,
-			&index.NumResets,
-			&index.NumFailures,
-			&index.RepositoryID,
-			&index.RepositoryName,
-			pq.Array(&index.DockerSteps),
-			&index.Root,
-			&index.Indexer,
-			pq.Array(&index.IndexerArgs),
-			&index.Outfile,
-			pq.Array(&executionLogs),
-			&index.Rank,
-			pq.Array(&index.LocalSteps),
-			&index.AssociatedUploadID,
-		); err != nil {
-			return nil, err
-		}
-
-		for _, entry := range executionLogs {
-			index.ExecutionLogs = append(index.ExecutionLogs, workerutil.ExecutionLogEntry(entry))
-		}
-
-		indexes = append(indexes, index)
+func scanIndex(s dbutil.Scanner) (index Index, err error) {
+	var executionLogs []dbworkerstore.ExecutionLogEntry
+	if err := s.Scan(
+		&index.ID,
+		&index.Commit,
+		&index.QueuedAt,
+		&index.State,
+		&index.FailureMessage,
+		&index.StartedAt,
+		&index.FinishedAt,
+		&index.ProcessAfter,
+		&index.NumResets,
+		&index.NumFailures,
+		&index.RepositoryID,
+		&index.RepositoryName,
+		pq.Array(&index.DockerSteps),
+		&index.Root,
+		&index.Indexer,
+		pq.Array(&index.IndexerArgs),
+		&index.Outfile,
+		pq.Array(&executionLogs),
+		&index.Rank,
+		pq.Array(&index.LocalSteps),
+		&index.AssociatedUploadID,
+	); err != nil {
+		return index, err
 	}
 
-	return indexes, nil
+	for _, entry := range executionLogs {
+		index.ExecutionLogs = append(index.ExecutionLogs, workerutil.ExecutionLogEntry(entry))
+	}
+
+	return index, nil
 }
+
+// scanIndexes scans a slice of indexes from the return value of `*Store.query`.
+func scanIndexWithCount(s dbutil.Scanner) (index Index, count int, err error) {
+	var executionLogs []dbworkerstore.ExecutionLogEntry
+
+	if err := s.Scan(
+		&index.ID,
+		&index.Commit,
+		&index.QueuedAt,
+		&index.State,
+		&index.FailureMessage,
+		&index.StartedAt,
+		&index.FinishedAt,
+		&index.ProcessAfter,
+		&index.NumResets,
+		&index.NumFailures,
+		&index.RepositoryID,
+		&index.RepositoryName,
+		pq.Array(&index.DockerSteps),
+		&index.Root,
+		&index.Indexer,
+		pq.Array(&index.IndexerArgs),
+		&index.Outfile,
+		pq.Array(&executionLogs),
+		&index.Rank,
+		pq.Array(&index.LocalSteps),
+		&index.AssociatedUploadID,
+		&count,
+	); err != nil {
+		return index, 0, err
+	}
+
+	for _, entry := range executionLogs {
+		index.ExecutionLogs = append(index.ExecutionLogs, workerutil.ExecutionLogEntry(entry))
+	}
+
+	return index, count, nil
+}
+
+// scanIndexes scans a slice of indexes from the return value of `*Store.query`.
+var scanIndexes = basestore.NewSliceScanner(scanIndex)
+
+var scanIndexesWithCount = basestore.NewSliceWithCountScanner(scanIndexWithCount)
 
 // scanFirstIndex scans a slice of indexes from the return value of `*Store.query` and returns the first.
-func scanFirstIndex(rows *sql.Rows, err error) (Index, bool, error) {
-	indexes, err := scanIndexes(rows, err)
-	if err != nil || len(indexes) == 0 {
-		return Index{}, false, err
-	}
-	return indexes[0], true, nil
-}
+var scanFirstIndex = basestore.NewFirstScanner(scanIndex)
 
 // scanFirstIndexInterface scans a slice of indexes from the return value of `*Store.query` and returns the first.
 func scanFirstIndexRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
 	return scanFirstIndex(rows, err)
 }
 
-var ScanFirstIndexRecord = scanFirstIndexRecord
-
 // GetIndexByID returns an index by its identifier and boolean flag indicating its existence.
 func (s *Store) GetIndexByID(ctx context.Context, id int) (_ Index, _ bool, err error) {
-	ctx, endObservation := s.operations.getIndexByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.getIndexByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("id", id),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -153,7 +176,7 @@ SELECT
 	u.num_resets,
 	u.num_failures,
 	u.repository_id,
-	u.repository_name,
+	repo.name,
 	u.docker_steps,
 	u.root,
 	u.indexer,
@@ -163,17 +186,17 @@ SELECT
 	s.rank,
 	u.local_steps,
 	` + indexAssociatedUploadIDQueryFragment + `
-FROM lsif_indexes_with_repository_name u
+FROM lsif_indexes u
 LEFT JOIN (` + indexRankQueryFragment + `) s
 ON u.id = s.id
 JOIN repo ON repo.id = u.repository_id
-WHERE u.id = %s AND %s
+WHERE repo.deleted_at IS NULL AND u.id = %s AND %s
 `
 
 // GetIndexesByIDs returns an index for each of the given identifiers. Not all given ids will necessarily
 // have a corresponding element in the returned list.
 func (s *Store) GetIndexesByIDs(ctx context.Context, ids ...int) (_ []Index, err error) {
-	ctx, endObservation := s.operations.getIndexesByIDs.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.getIndexesByIDs.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("ids", intsToString(ids)),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -209,7 +232,7 @@ SELECT
 	u.num_resets,
 	u.num_failures,
 	u.repository_id,
-	u.repository_name,
+	repo.name,
 	u.docker_steps,
 	u.root,
 	u.indexer,
@@ -219,11 +242,11 @@ SELECT
 	s.rank,
 	u.local_steps,
 	` + indexAssociatedUploadIDQueryFragment + `
-FROM lsif_indexes_with_repository_name u
+FROM lsif_indexes u
 LEFT JOIN (` + indexRankQueryFragment + `) s
 ON u.id = s.id
 JOIN repo ON repo.id = u.repository_id
-WHERE u.id IN (%s) AND %s
+WHERE repo.deleted_at IS NULL AND u.id IN (%s) AND %s
 ORDER BY u.id
 `
 
@@ -237,7 +260,7 @@ type GetIndexesOptions struct {
 
 // GetIndexes returns a list of indexes and the total count of records matching the given conditions.
 func (s *Store) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Index, _ int, err error) {
-	ctx, trace, endObservation := s.operations.getIndexes.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := s.operations.getIndexes.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", opts.RepositoryID),
 		log.String("state", opts.State),
 		log.String("term", opts.Term),
@@ -270,12 +293,7 @@ func (s *Store) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Ind
 	}
 	conds = append(conds, authzConds)
 
-	totalCount, _, err := basestore.ScanFirstInt(tx.Store.Query(ctx, sqlf.Sprintf(getIndexesCountQuery, sqlf.Join(conds, " AND "))))
-	if err != nil {
-		return nil, 0, err
-	}
-
-	indexes, err := scanIndexes(tx.Store.Query(ctx, sqlf.Sprintf(getIndexesQuery, sqlf.Join(conds, " AND "), opts.Limit, opts.Offset)))
+	indexes, totalCount, err := scanIndexesWithCount(tx.Store.Query(ctx, sqlf.Sprintf(getIndexesQuery, sqlf.Join(conds, " AND "), opts.Limit, opts.Offset)))
 	if err != nil {
 		return nil, 0, err
 	}
@@ -286,14 +304,6 @@ func (s *Store) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Ind
 
 	return indexes, totalCount, nil
 }
-
-const getIndexesCountQuery = `
--- source: enterprise/internal/codeintel/stores/dbstore/indexes.go:GetIndexes
-SELECT COUNT(*)
-FROM lsif_indexes_with_repository_name u
-JOIN repo ON repo.id = u.repository_id
-WHERE %s
-`
 
 const getIndexesQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/indexes.go:GetIndexes
@@ -309,7 +319,7 @@ SELECT
 	u.num_resets,
 	u.num_failures,
 	u.repository_id,
-	u.repository_name,
+	repo.name,
 	u.docker_steps,
 	u.root,
 	u.indexer,
@@ -318,12 +328,13 @@ SELECT
 	u.execution_logs,
 	s.rank,
 	u.local_steps,
-	` + indexAssociatedUploadIDQueryFragment + `
-FROM lsif_indexes_with_repository_name u
+	` + indexAssociatedUploadIDQueryFragment + `,
+	COUNT(*) OVER() AS count
+FROM lsif_indexes u
 LEFT JOIN (` + indexRankQueryFragment + `) s
 ON u.id = s.id
 JOIN repo ON repo.id = u.repository_id
-WHERE %s ORDER BY queued_at DESC, u.id LIMIT %d OFFSET %d
+WHERE repo.deleted_at IS NULL AND %s ORDER BY queued_at DESC, u.id LIMIT %d OFFSET %d
 `
 
 // makeIndexSearchCondition returns a disjunction of LIKE clauses against all searchable columns of an index.
@@ -332,7 +343,7 @@ func makeIndexSearchCondition(term string) *sqlf.Query {
 		"u.commit",
 		"(u.state)::text",
 		"u.failure_message",
-		`u.repository_name`,
+		`repo.name`,
 		"u.root",
 		"u.indexer",
 	}
@@ -347,7 +358,7 @@ func makeIndexSearchCondition(term string) *sqlf.Query {
 
 // IsQueued returns true if there is an index or an upload for the repository and commit.
 func (s *Store) IsQueued(ctx context.Context, repositoryID int, commit string) (_ bool, err error) {
-	ctx, endObservation := s.operations.isQueued.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.isQueued.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 		log.String("commit", commit),
 	}})
@@ -368,7 +379,7 @@ SELECT COUNT(*) WHERE EXISTS (
 
 // InsertIndexes inserts a new index and returns the hydrated index models.
 func (s *Store) InsertIndexes(ctx context.Context, indexes []Index) (_ []Index, err error) {
-	ctx, endObservation := s.operations.insertIndex.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.insertIndex.With(ctx, &err, observation.Args{})
 	defer func() {
 		endObservation(1, observation.Args{LogFields: []log.Field{
 			log.Int("numIndexes", len(indexes)),
@@ -465,7 +476,7 @@ var IndexColumnsWithNullRank = indexColumnsWithNullRank
 
 // DeleteIndexByID deletes an index by its identifier.
 func (s *Store) DeleteIndexByID(ctx context.Context, id int) (_ bool, err error) {
-	ctx, endObservation := s.operations.deleteIndexByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.deleteIndexByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("id", id),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -489,7 +500,7 @@ DELETE FROM lsif_indexes WHERE id = %s RETURNING repository_id
 // DeletedRepositoryGracePeriod ago. This returns the repository identifier mapped to the number of indexes
 // that were removed for that repository.
 func (s *Store) DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error) {
-	ctx, trace, endObservation := s.operations.deleteIndexesWithoutRepository.WithAndLogger(ctx, &err, observation.Args{})
+	ctx, trace, endObservation := s.operations.deleteIndexesWithoutRepository.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	// TODO(efritz) - this would benefit from an index on repository_id. We currently have
@@ -536,7 +547,7 @@ SELECT d.repository_id, COUNT(*) FROM deleted d GROUP BY d.repository_id
 // LastIndexScanForRepository returns the last timestamp, if any, that the repository with the given
 // identifier was considered for auto-indexing scheduling.
 func (s *Store) LastIndexScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error) {
-	ctx, endObservation := s.operations.lastIndexScanForRepository.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.lastIndexScanForRepository.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -565,7 +576,7 @@ type IndexesWithRepositoryNamespace struct {
 // include the set of unprocessed records as well as the latest finished record. These values allow users to
 // quickly determine if a particular root/indexer pair os up-to-date or having issues processing.
 func (s *Store) RecentIndexesSummary(ctx context.Context, repositoryID int) (summaries []IndexesWithRepositoryNamespace, err error) {
-	ctx, logger, endObservation := s.operations.recentIndexesSummary.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, logger, endObservation := s.operations.recentIndexesSummary.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 	}})
 	defer endObservation(1, observation.Args{})

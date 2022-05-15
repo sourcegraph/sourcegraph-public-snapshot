@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react'
 
 import { ErrorLike } from '@sourcegraph/common'
-import { Button, Link } from '@sourcegraph/wildcard'
+import { Button, Link, Typography } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
 import { AuthProvider } from '../../../jscontext'
@@ -16,7 +16,12 @@ interface Props {
     onDidError: (error: ErrorLike) => void
 }
 
-export const ExternalAccount: React.FunctionComponent<Props> = ({ account, authProvider, onDidRemove, onDidError }) => {
+export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    account,
+    authProvider,
+    onDidRemove,
+    onDidError,
+}) => {
     const [isLoading, setIsLoading] = useState(false)
     const [isRemoveAccountModalOpen, setIsRemoveAccountModalOpen] = useState(false)
     const toggleRemoveAccountModal = useCallback(() => setIsRemoveAccountModalOpen(!isRemoveAccountModalOpen), [
@@ -45,7 +50,7 @@ export const ExternalAccount: React.FunctionComponent<Props> = ({ account, authP
                 <AccountIcon className="mb-0 mr-2" />
             </div>
             <div className="flex-1 flex-column">
-                <h3 className="m-0">{account.name}</h3>
+                <Typography.H3 className="m-0">{account.name}</Typography.H3>
                 <div className="text-muted">
                     {account.external ? (
                         <>

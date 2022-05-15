@@ -335,7 +335,7 @@ func TestChangesetResolver(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			apiID := marshalChangesetID(tc.changeset.ID)
-			input := map[string]interface{}{"changeset": apiID}
+			input := map[string]any{"changeset": apiID}
 
 			var response struct{ Node apitest.Changeset }
 			apitest.MustExec(ctx, t, s, input, &response, queryChangeset)

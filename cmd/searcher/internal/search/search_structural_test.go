@@ -57,11 +57,7 @@ func foo(go string) {}
 	if err != nil {
 		t.Fatal(err)
 	}
-	zf, cleanup, err := tempZipFileOnDisk(zipData)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer cleanup()
+	zf := tempZipFileOnDisk(t, zipData)
 
 	t.Run("group", func(t *testing.T) {
 		for _, tt := range cases {
@@ -123,11 +119,7 @@ func foo(go.txt) {}
 	if err != nil {
 		t.Fatal(err)
 	}
-	zf, cleanup, err := tempZipFileOnDisk(zipData)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer cleanup()
+	zf := tempZipFileOnDisk(t, zipData)
 
 	test := func(language, filename string) string {
 		var languages []string
@@ -215,11 +207,7 @@ func foo(real string) {}
 	if err != nil {
 		t.Fatal(err)
 	}
-	zPath, cleanup, err := tempZipFileOnDisk(zipData)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer cleanup()
+	zPath := tempZipFileOnDisk(t, zipData)
 
 	zFile, _ := mockZipFile(zipData)
 	if err != nil {
@@ -327,11 +315,7 @@ func TestIncludePatterns(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	zf, cleanup, err := tempZipFileOnDisk(zipData)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer cleanup()
+	zf := tempZipFileOnDisk(t, zipData)
 
 	p := &protocol.PatternInfo{
 		Pattern:         "",
@@ -369,11 +353,7 @@ func TestRule(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	zf, cleanup, err := tempZipFileOnDisk(zipData)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer cleanup()
+	zf := tempZipFileOnDisk(t, zipData)
 
 	p := &protocol.PatternInfo{
 		Pattern:         "func :[[fn]](:[args])",
@@ -439,9 +419,7 @@ func bar() {
 	zipData, err := createZip(input)
 	require.NoError(t, err)
 
-	zf, cleanup, err := tempZipFileOnDisk(zipData)
-	require.NoError(t, err)
-	defer cleanup()
+	zf := tempZipFileOnDisk(t, zipData)
 
 	count := func(matches []protocol.FileMatch) int {
 		c := 0
@@ -589,11 +567,7 @@ func bar() {
 	if err != nil {
 		t.Fatal(err)
 	}
-	zf, cleanup, err := tempZipFileOnDisk(zipData)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer cleanup()
+	zf := tempZipFileOnDisk(t, zipData)
 
 	t.Run("Strutural search match count", func(t *testing.T) {
 		ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)

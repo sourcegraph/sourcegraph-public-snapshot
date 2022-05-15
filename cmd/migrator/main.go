@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/urfave/cli/v2"
@@ -52,16 +51,17 @@ func mainErr(ctx context.Context, args []string) error {
 	defer syncLogs()
 
 	runnerFactory := newRunnerFactory()
+	outputFactory := func() *output.Output { return out }
 	command := &cli.App{
 		Name:   appName,
 		Usage:  "Validates and runs schema migrations",
 		Action: cli.ShowSubcommandHelp,
 		Commands: []*cli.Command{
-			cliutil.Up(appName, runnerFactory, out, false),
-			cliutil.UpTo(appName, runnerFactory, out, false),
-			cliutil.DownTo(appName, runnerFactory, out, false),
-			cliutil.Validate(appName, runnerFactory, out),
-			cliutil.AddLog(appName, runnerFactory, out),
+			cliutil.Up(appName, runnerFactory, outputFactory, false),
+			cliutil.UpTo(appName, runnerFactory, outputFactory, false),
+			cliutil.DownTo(appName, runnerFactory, outputFactory, false),
+			cliutil.Validate(appName, runnerFactory, outputFactory),
+			cliutil.AddLog(appName, runnerFactory, outputFactory),
 		},
 	}
 
@@ -70,7 +70,7 @@ func mainErr(ctx context.Context, args []string) error {
 
 func newRunnerFactory() func(ctx context.Context, schemaNames []string) (cliutil.Runner, error) {
 	observationContext := &observation.Context{
-		Logger:     log15.Root(),
+		Logger:     sglog.Scoped("runner", ""),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}

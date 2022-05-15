@@ -661,6 +661,82 @@ Indexes:
 
 ```
 
+# Table "public.codeintel_lockfile_references"
+```
+     Column      |  Type   | Collation | Nullable |                          Default                          
+-----------------+---------+-----------+----------+-----------------------------------------------------------
+ id              | integer |           | not null | nextval('codeintel_lockfile_references_id_seq'::regclass)
+ repository_name | text    |           | not null | 
+ revspec         | text    |           | not null | 
+ package_scheme  | text    |           | not null | 
+ package_name    | text    |           | not null | 
+ package_version | text    |           | not null | 
+ repository_id   | integer |           |          | 
+ commit_bytea    | bytea   |           |          | 
+Indexes:
+    "codeintel_lockfile_references_pkey" PRIMARY KEY, btree (id)
+    "codeintel_lockfile_references_repository_id_commit_bytea" UNIQUE, btree (repository_id, commit_bytea) WHERE repository_id IS NOT NULL AND commit_bytea IS NOT NULL
+    "codeintel_lockfile_references_repository_name_revspec_package" UNIQUE, btree (repository_name, revspec, package_scheme, package_name, package_version)
+
+```
+
+Tracks a lockfile dependency that might be resolvable to a specific repository-commit pair.
+
+**commit_bytea**: The resolved 40-char revhash of the associated revspec, if it is resolvable on this instance.
+
+**package_name**: Encodes `reposource.PackageDependency.PackageSyntax`. The name of the dependency as used by the package manager, excluding version information.
+
+**package_scheme**: Encodes `reposource.PackageDependency.Scheme`. The scheme of the dependency (e.g., semanticdb, npm).
+
+**package_version**: Encodes `reposource.PackageDependency.PackageVersion`. The version of the package.
+
+**repository_id**: The identifier of the repo that resolves the associated name, if it is resolvable on this instance.
+
+**repository_name**: Encodes `reposource.PackageDependency.RepoName`. A name that is &#34;globally unique&#34; for a Sourcegraph instance. Used in `repo:...` queries.
+
+**revspec**: Encodes `reposource.PackageDependency.GitTagFromVersion`. Returns the git tag associated with the given dependency version, used in `rev:` or `repo:foo@rev` queries.
+
+# Table "public.codeintel_lockfiles"
+```
+              Column              |   Type    | Collation | Nullable |                     Default                     
+----------------------------------+-----------+-----------+----------+-------------------------------------------------
+ id                               | integer   |           | not null | nextval('codeintel_lockfiles_id_seq'::regclass)
+ repository_id                    | integer   |           | not null | 
+ commit_bytea                     | bytea     |           | not null | 
+ codeintel_lockfile_reference_ids | integer[] |           | not null | 
+Indexes:
+    "codeintel_lockfiles_pkey" PRIMARY KEY, btree (id)
+    "codeintel_lockfiles_repository_id_commit_bytea" UNIQUE, btree (repository_id, commit_bytea)
+    "codeintel_lockfiles_codeintel_lockfile_reference_ids" gin (codeintel_lockfile_reference_ids gin__int_ops)
+
+```
+
+Associates a repository-commit pair with the set of repository-level dependencies parsed from lockfiles.
+
+**codeintel_lockfile_reference_ids**: A key to a resolved repository name-revspec pair. Not all repository names and revspecs are resolvable.
+
+**commit_bytea**: A 40-char revhash. Note that this commit may not be resolvable in the future.
+
+# Table "public.configuration_policies_audit_logs"
+```
+       Column       |           Type           | Collation | Nullable |      Default      
+--------------------+--------------------------+-----------+----------+-------------------
+ log_timestamp      | timestamp with time zone |           |          | clock_timestamp()
+ record_deleted_at  | timestamp with time zone |           |          | 
+ policy_id          | integer                  |           | not null | 
+ transition_columns | USER-DEFINED[]           |           |          | 
+Indexes:
+    "configuration_policies_audit_logs_policy_id" btree (policy_id)
+    "configuration_policies_audit_logs_timestamp" brin (log_timestamp)
+
+```
+
+**log_timestamp**: Timestamp for this log entry.
+
+**record_deleted_at**: Set once the upload this entry is associated with is deleted. Once NOW() - record_deleted_at is above a certain threshold, this log entry will be deleted.
+
+**transition_columns**: Array of changes that occurred to the upload for this entry, in the form of {&#34;column&#34;=&gt;&#34;&lt;column name&gt;&#34;, &#34;old&#34;=&gt;&#34;&lt;previous value&gt;&#34;, &#34;new&#34;=&gt;&#34;&lt;new value&gt;&#34;}.
+
 # Table "public.critical_and_site_config"
 ```
    Column   |           Type           | Collation | Nullable |                       Default                        
@@ -1157,6 +1233,10 @@ Stores data points for a code insight that do not need to be queried directly, b
 Indexes:
     "lsif_configuration_policies_pkey" PRIMARY KEY, btree (id)
     "lsif_configuration_policies_repository_id" btree (repository_id)
+Triggers:
+    trigger_configuration_policies_delete AFTER DELETE ON lsif_configuration_policies REFERENCING OLD TABLE AS old FOR EACH STATEMENT EXECUTE FUNCTION func_configuration_policies_delete()
+    trigger_configuration_policies_insert AFTER INSERT ON lsif_configuration_policies FOR EACH ROW EXECUTE FUNCTION func_configuration_policies_insert()
+    trigger_configuration_policies_update BEFORE UPDATE OF name, pattern, retention_enabled, retention_duration_hours, type, retain_intermediate_commits ON lsif_configuration_policies FOR EACH ROW EXECUTE FUNCTION func_configuration_policies_update()
 
 ```
 
@@ -1280,6 +1360,7 @@ Tracks jobs that scan imports of indexes to schedule auto-index jobs.
  dirty_token   | integer                  |           | not null | 
  update_token  | integer                  |           | not null | 
  updated_at    | timestamp with time zone |           |          | 
+ set_dirty_at  | timestamp with time zone |           | not null | now()
 Indexes:
     "lsif_dirty_repositories_pkey" PRIMARY KEY, btree (repository_id)
 
@@ -1478,7 +1559,7 @@ Associates an upload with the set of packages they provide within a given packag
  scheme  | text    |           | not null | 
  name    | text    |           | not null | 
  version | text    |           |          | 
- filter  | bytea   |           | not null | 
+ filter  | bytea   |           |          | 
  dump_id | integer |           | not null | 
 Indexes:
     "lsif_references_pkey" PRIMARY KEY, btree (id)
@@ -1606,8 +1687,8 @@ Stores metadata about an LSIF index uploaded by a user.
 
 # Table "public.lsif_uploads_audit_logs"
 ```
-       Column        |           Type           | Collation | Nullable | Default 
----------------------+--------------------------+-----------+----------+---------
+       Column        |           Type           | Collation | Nullable | Default  
+---------------------+--------------------------+-----------+----------+----------
  log_timestamp       | timestamp with time zone |           |          | now()
  record_deleted_at   | timestamp with time zone |           |          | 
  upload_id           | integer                  |           | not null | 
@@ -1619,8 +1700,8 @@ Stores metadata about an LSIF index uploaded by a user.
  indexer_version     | text                     |           |          | 
  upload_size         | integer                  |           |          | 
  associated_index_id | integer                  |           |          | 
- committed_at        | timestamp with time zone |           |          | 
  transition_columns  | USER-DEFINED[]           |           |          | 
+ reason              | text                     |           |          | ''::text
 Indexes:
     "lsif_uploads_audit_logs_timestamp" brin (log_timestamp)
     "lsif_uploads_audit_logs_upload_id" btree (upload_id)
@@ -1628,6 +1709,8 @@ Indexes:
 ```
 
 **log_timestamp**: Timestamp for this log entry.
+
+**reason**: The reason/source for this entry.
 
 **record_deleted_at**: Set once the upload this entry is associated with is deleted. Once NOW() - record_deleted_at is above a certain threshold, this log entry will be deleted.
 
@@ -2145,8 +2228,10 @@ Indexes:
  updated_at    | timestamp with time zone |           | not null | 
  synced_at     | timestamp with time zone |           |          | 
  user_ids_ints | integer[]                |           | not null | '{}'::integer[]
+ unrestricted  | boolean                  |           | not null | false
 Indexes:
     "repo_permissions_perm_unique" UNIQUE CONSTRAINT, btree (repo_id, permission)
+    "repo_permissions_unrestricted_true_idx" btree (unrestricted) WHERE unrestricted
 
 ```
 

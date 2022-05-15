@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Button, Modal } from '@sourcegraph/wildcard'
+import { Button, Modal, Typography } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../components/LoaderButton'
 import { Scalars } from '../../../../graphql-operations'
@@ -18,7 +18,7 @@ export interface CloseChangesetsModalProps {
     closeChangesets?: typeof _closeChangesets
 }
 
-export const CloseChangesetsModal: React.FunctionComponent<CloseChangesetsModalProps> = ({
+export const CloseChangesetsModal: React.FunctionComponent<React.PropsWithChildren<CloseChangesetsModalProps>> = ({
     onCancel,
     afterCreate,
     batchChangeID,
@@ -39,7 +39,7 @@ export const CloseChangesetsModal: React.FunctionComponent<CloseChangesetsModalP
 
     return (
         <Modal onDismiss={onCancel} aria-labelledby={MODAL_LABEL_ID}>
-            <h3 id={MODAL_LABEL_ID}>Close changesets</h3>
+            <Typography.H3 id={MODAL_LABEL_ID}>Close changesets</Typography.H3>
             <p className="mb-4">Are you sure you want to close all the selected changesets on the code hosts?</p>
             {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
             <div className="d-flex justify-content-end">

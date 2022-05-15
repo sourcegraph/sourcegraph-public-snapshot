@@ -36,7 +36,7 @@ func (s *Store) Implementations(ctx context.Context, bundleID int, path string, 
 }
 
 func (s *Store) definitionsReferences(ctx context.Context, extractor func(r precise.RangeData) precise.ID, operation *observation.Operation, bundleID int, path string, line, character, limit, offset int) (_ []Location, _ int, err error) {
-	ctx, trace, endObservation := operation.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := operation.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.String("path", path),
 		log.Int("line", line),
@@ -72,7 +72,7 @@ func (s *Store) definitionsReferences(ctx context.Context, extractor func(r prec
 // method returns a map from result set identifiers to another map from document paths to locations
 // within that document, as well as a total count of locations within the map.
 func (s *Store) locations(ctx context.Context, bundleID int, ids []precise.ID, limit, offset int) (_ map[precise.ID][]Location, _ int, err error) {
-	ctx, trace, endObservation := s.operations.locations.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := s.operations.locations.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.Int("numIDs", len(ids)),
 		log.String("ids", idsToString(ids)),

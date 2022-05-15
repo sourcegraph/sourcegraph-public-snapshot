@@ -10,6 +10,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -33,35 +34,18 @@ func (u DependencySyncingJob) RecordID() int {
 	return u.ID
 }
 
-// scanDependencySyncingJobs scans a slice of dependency syncing jobs from the return value of
-// `*Store.query`.
-func scanDependencySyncingJobs(rows *sql.Rows, queryErr error) (_ []DependencySyncingJob, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	var jobs []DependencySyncingJob
-	for rows.Next() {
-		var job DependencySyncingJob
-		if err := rows.Scan(
-			&job.ID,
-			&job.State,
-			&job.FailureMessage,
-			&job.StartedAt,
-			&job.FinishedAt,
-			&job.ProcessAfter,
-			&job.NumResets,
-			&job.NumFailures,
-			&job.UploadID,
-		); err != nil {
-			return nil, err
-		}
-
-		jobs = append(jobs, job)
-	}
-
-	return jobs, nil
+func scanDependencySyncingJob(s dbutil.Scanner) (job DependencySyncingJob, err error) {
+	return job, s.Scan(
+		&job.ID,
+		&job.State,
+		&job.FailureMessage,
+		&job.StartedAt,
+		&job.FinishedAt,
+		&job.ProcessAfter,
+		&job.NumResets,
+		&job.NumFailures,
+		&job.UploadID,
+	)
 }
 
 var dependencySyncingJobColumns = []*sqlf.Query{
@@ -76,15 +60,13 @@ var dependencySyncingJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("j.upload_id"),
 }
 
+// scanDependencySyncingJobs scans a slice of dependency syncing jobs from the return value of
+// `*Store.query`.
+var scanDependencySyncingJobs = basestore.NewSliceScanner(scanDependencySyncingJob)
+
 // scanFirstDependencySyncingingJob scans a slice of dependency indexing jobs from the return
 // value of `*Store.query` and returns the first.
-func scanFirstDependencySyncingingJob(rows *sql.Rows, err error) (DependencySyncingJob, bool, error) {
-	jobs, err := scanDependencySyncingJobs(rows, err)
-	if err != nil || len(jobs) == 0 {
-		return DependencySyncingJob{}, false, err
-	}
-	return jobs[0], true, nil
-}
+var scanFirstDependencySyncingingJob = basestore.NewFirstScanner(scanDependencySyncingJob)
 
 // scanFirstDependencySyncingJobRecord scans a slice of dependency indexing jobs from the
 // return value of `*Store.query` and returns the first.
@@ -112,37 +94,20 @@ func (u DependencyIndexingJob) RecordID() int {
 	return u.ID
 }
 
-// scanDependencyIndexingJobs scans a slice of dependency indexing jobs from the return value of
-// `*Store.query`.
-func scanDependencyIndexingJobs(rows *sql.Rows, queryErr error) (_ []DependencyIndexingJob, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	var jobs []DependencyIndexingJob
-	for rows.Next() {
-		var job DependencyIndexingJob
-		if err := rows.Scan(
-			&job.ID,
-			&job.State,
-			&job.FailureMessage,
-			&job.StartedAt,
-			&job.FinishedAt,
-			&job.ProcessAfter,
-			&job.NumResets,
-			&job.NumFailures,
-			&job.UploadID,
-			&job.ExternalServiceKind,
-			&job.ExternalServiceSync,
-		); err != nil {
-			return nil, err
-		}
-
-		jobs = append(jobs, job)
-	}
-
-	return jobs, nil
+func scanDependencyIndexingJob(s dbutil.Scanner) (job DependencyIndexingJob, err error) {
+	return job, s.Scan(
+		&job.ID,
+		&job.State,
+		&job.FailureMessage,
+		&job.StartedAt,
+		&job.FinishedAt,
+		&job.ProcessAfter,
+		&job.NumResets,
+		&job.NumFailures,
+		&job.UploadID,
+		&job.ExternalServiceKind,
+		&job.ExternalServiceSync,
+	)
 }
 
 var dependencyIndexingJobColumns = []*sqlf.Query{
@@ -159,15 +124,13 @@ var dependencyIndexingJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("j.external_service_sync"),
 }
 
+// scanDependencyIndexingJobs scans a slice of dependency indexing jobs from the return value of
+// `*Store.query`.
+var scanDependencyIndexingJobs = basestore.NewSliceScanner(scanDependencyIndexingJob)
+
 // scanFirstDependencyIndexingJob scans a slice of dependency indexing jobs from the return
 // value of `*Store.query` and returns the first.
-func scanFirstDependencyIndexingJob(rows *sql.Rows, err error) (DependencyIndexingJob, bool, error) {
-	jobs, err := scanDependencyIndexingJobs(rows, err)
-	if err != nil || len(jobs) == 0 {
-		return DependencyIndexingJob{}, false, err
-	}
-	return jobs[0], true, nil
-}
+var scanFirstDependencyIndexingJob = basestore.NewFirstScanner(scanDependencyIndexingJob)
 
 // scanFirstDependencyIndexingJobRecord scans a slice of dependency indexing jobs from the
 // return value of `*Store.query` and returns the first.
@@ -177,7 +140,7 @@ func scanFirstDependencyIndexingJobRecord(rows *sql.Rows, err error) (workerutil
 
 // InsertDependencySyncingJob inserts a new dependency syncing job and returns its identifier.
 func (s *Store) InsertDependencySyncingJob(ctx context.Context, uploadID int) (id int, err error) {
-	ctx, endObservation := s.operations.insertDependencySyncingJob.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.insertDependencySyncingJob.With(ctx, &err, observation.Args{})
 	defer func() {
 		endObservation(1, observation.Args{LogFields: []log.Field{
 			log.Int("id", id),
@@ -195,7 +158,7 @@ RETURNING id
 `
 
 func (s *Store) InsertCloneableDependencyRepo(ctx context.Context, dependency precise.Package) (new bool, err error) {
-	ctx, endObservation := s.operations.insertCloneableDependencyRepo.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.insertCloneableDependencyRepo.With(ctx, &err, observation.Args{})
 	defer func() {
 		endObservation(1, observation.Args{LogFields: []log.Field{
 			log.Bool("new", new),
@@ -216,7 +179,7 @@ RETURNING 1
 `
 
 func (s *Store) InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (id int, err error) {
-	ctx, endObservation := s.operations.insertDependencyIndexingJob.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.insertDependencyIndexingJob.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("uploadId", uploadID),
 		log.String("extSvcKind", externalServiceKind),
 	}})

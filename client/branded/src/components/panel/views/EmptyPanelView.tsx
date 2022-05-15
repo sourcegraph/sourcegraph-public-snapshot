@@ -11,14 +11,14 @@ interface EmptyPanelViewProps {
     className?: string
 }
 
-export const EmptyPanelView: React.FunctionComponent<EmptyPanelViewProps> = props => {
+export const EmptyPanelView: React.FunctionComponent<React.PropsWithChildren<EmptyPanelViewProps>> = props => {
     const { className, children } = props
 
     return (
         <div className={classNames(styles.emptyPanel, className)}>
             {children || (
                 <>
-                    <Icon className="mr-2" as={CancelIcon} /> Nothing to show here
+                    <Icon role="img" className="mr-2" as={CancelIcon} aria-hidden={true} /> Nothing to show here
                 </>
             )}
         </div>

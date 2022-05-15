@@ -15,7 +15,7 @@ The Sourcegraph repository relies on code generation triggered by `go generate`.
 To generate everything, just run:
 
 ```bash
-./dev/generate.sh
+sg generate
 ```
 
 Note: Sometimes, there are erroneous diffs. This occurs for a few

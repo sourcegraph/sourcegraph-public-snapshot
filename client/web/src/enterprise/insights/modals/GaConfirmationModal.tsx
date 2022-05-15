@@ -1,7 +1,7 @@
 import React, { useContext } from 'react'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import { Button, Modal, Link } from '@sourcegraph/wildcard'
+import { Button, Modal, Link, Typography } from '@sourcegraph/wildcard'
 
 import { CodeInsightsBackendContext } from '../core'
 
@@ -9,7 +9,7 @@ import { FourLineChart, LangStatsInsightChart, ThreeLineChart } from './componen
 
 import styles from './GaConfirmationModal.module.scss'
 
-export const GaConfirmationModal: React.FunctionComponent = () => {
+export const GaConfirmationModal: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => {
     const [isGaAccepted, setGaAccepted] = useTemporarySetting('insights.freeGaExpiredAccepted', false)
     const {
         UIFeatures: { licensed },
@@ -41,12 +41,14 @@ interface GaConfirmationModalContentProps {
  * Exported especially for storybook story component cause chromatic has a problem of rendering modals
  * on CI.
  */
-export const GaConfirmationModalContent: React.FunctionComponent<GaConfirmationModalContentProps> = props => {
+export const GaConfirmationModalContent: React.FunctionComponent<
+    React.PropsWithChildren<GaConfirmationModalContentProps>
+> = props => {
     const { onAccept } = props
 
     return (
         <>
-            <h1 className={styles.title}>Thank you for trying Code Insights!</h1>
+            <Typography.H1 className={styles.title}>Thank you for trying Code Insights!</Typography.H1>
 
             <div className={styles.mediaHeroWrapper}>
                 <div className={styles.mediaHeroContent}>

@@ -137,7 +137,7 @@ func (u *orgMemberStore) AutocompleteMembersSearch(ctx context.Context, orgID in
 // ErrOrgMemberNotFound is the error that is returned when
 // a user is not in an org.
 type ErrOrgMemberNotFound struct {
-	args []interface{}
+	args []any
 }
 
 func (err *ErrOrgMemberNotFound) Error() string {
@@ -146,7 +146,7 @@ func (err *ErrOrgMemberNotFound) Error() string {
 
 func (ErrOrgMemberNotFound) NotFound() bool { return true }
 
-func (m *orgMemberStore) getOneBySQL(ctx context.Context, query string, args ...interface{}) (*types.OrgMembership, error) {
+func (m *orgMemberStore) getOneBySQL(ctx context.Context, query string, args ...any) (*types.OrgMembership, error) {
 	members, err := m.getBySQL(ctx, query, args...)
 	if err != nil {
 		return nil, err
@@ -157,7 +157,7 @@ func (m *orgMemberStore) getOneBySQL(ctx context.Context, query string, args ...
 	return members[0], nil
 }
 
-func (m *orgMemberStore) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*types.OrgMembership, error) {
+func (m *orgMemberStore) getBySQL(ctx context.Context, query string, args ...any) ([]*types.OrgMembership, error) {
 	rows, err := m.Handle().DB().QueryContext(ctx, "SELECT org_members.id, org_members.org_id, org_members.user_id, org_members.created_at, org_members.updated_at FROM org_members "+query, args...)
 	if err != nil {
 		return nil, err

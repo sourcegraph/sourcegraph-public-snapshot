@@ -22,7 +22,7 @@ func New(observationContext *observation.Context) *Client {
 }
 
 func (c *Client) RepoLookup(ctx context.Context, name api.RepoName) (repo *protocol.RepoInfo, err error) {
-	ctx, endObservation := c.operations.repoLookup.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	ctx, _, endObservation := c.operations.repoLookup.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
 	defer func() {
 		var logFields []log.Field
 		if repo != nil {
@@ -40,7 +40,7 @@ func (c *Client) RepoLookup(ctx context.Context, name api.RepoName) (repo *proto
 }
 
 func (c *Client) EnqueueRepoUpdate(ctx context.Context, name api.RepoName) (resp *protocol.RepoUpdateResponse, err error) {
-	ctx, endObservation := c.operations.enqueueRepoUpdate.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	ctx, _, endObservation := c.operations.enqueueRepoUpdate.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
 	defer func() {
 		var logFields []log.Field
 		if resp != nil {

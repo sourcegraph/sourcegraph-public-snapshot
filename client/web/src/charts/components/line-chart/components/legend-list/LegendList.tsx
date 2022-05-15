@@ -8,7 +8,7 @@ interface LegendListProps extends React.HTMLAttributes<HTMLUListElement> {
     className?: string
 }
 
-export const LegendList: React.FunctionComponent<LegendListProps> = props => {
+export const LegendList: React.FunctionComponent<React.PropsWithChildren<LegendListProps>> = props => {
     const { className, ...attributes } = props
 
     return (
@@ -23,7 +23,12 @@ interface LegendItemProps extends LiHTMLAttributes<HTMLLIElement> {
     name: string
 }
 
-export const LegendItem: React.FunctionComponent<LegendItemProps> = ({ color, name, className, ...attributes }) => (
+export const LegendItem: React.FunctionComponent<React.PropsWithChildren<LegendItemProps>> = ({
+    color,
+    name,
+    className,
+    ...attributes
+}) => (
     <li {...attributes} className={classNames(styles.legendItem, className)}>
         <div
             /* eslint-disable-next-line react/forbid-dom-props */

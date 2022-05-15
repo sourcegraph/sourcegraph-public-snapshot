@@ -6,7 +6,7 @@ import ChevronDoubleLeftIcon from 'mdi-react/ChevronDoubleLeftIcon'
 import FileTreeIcon from 'mdi-react/FileTreeIcon'
 
 import { ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { Button, useLocalStorage, Link, Icon, Panel } from '@sourcegraph/wildcard'
+import { Button, useLocalStorage, Link, Icon, Panel, Typography } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../components/Collapsible'
 import { RepositoryFields } from '../../graphql-operations'
@@ -57,7 +57,7 @@ function nonIndexPathIDs(depth: number, pathInfo: GQLDocumentationPathInfo): str
     return paths
 }
 
-const SubpagesList: React.FunctionComponent<Props> = ({ ...props }) => {
+const SubpagesList: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ ...props }) => {
     const childPagePathIDs = nonIndexPathIDs(0, props.pathInfo)
 
     const max = 10
@@ -105,7 +105,7 @@ const SubpagesList: React.FunctionComponent<Props> = ({ ...props }) => {
 /**
  * The sidebar for a specific repo revision that shows the index of all documentation.
  */
-export const RepositoryDocumentationSidebar: React.FunctionComponent<Props> = ({
+export const RepositoryDocumentationSidebar: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     onToggle,
     node,
     activePathID,
@@ -171,7 +171,7 @@ export const RepositoryDocumentationSidebar: React.FunctionComponent<Props> = ({
                 >
                     {props.pathInfo.isIndex && (
                         <>
-                            <h4 className="text-nowrap">Index</h4>
+                            <Typography.H4 className="text-nowrap">Index</Typography.H4>
                             {props.pathInfo.children.length > 0 ? (
                                 <SubpagesList onToggle={onToggle} {...props} node={node} activePathID={activePathID} />
                             ) : (
@@ -181,7 +181,7 @@ export const RepositoryDocumentationSidebar: React.FunctionComponent<Props> = ({
                     )}
                     {!props.pathInfo.isIndex && props.pathInfo.children.length > 0 && (
                         <>
-                            <h4 className="text-nowrap">Subpages</h4>
+                            <Typography.H4 className="text-nowrap">Subpages</Typography.H4>
                             <SubpagesList onToggle={onToggle} {...props} node={node} activePathID={activePathID} />
                         </>
                     )}

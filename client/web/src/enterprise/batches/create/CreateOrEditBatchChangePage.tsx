@@ -34,6 +34,7 @@ import {
     TabPanel,
     TabPanels,
     RadioButton,
+    Typography,
 } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
@@ -48,24 +49,28 @@ import {
     CreateEmptyBatchChangeResult,
     Scalars,
     BatchSpecWorkspaceResolutionState,
+    CreateBatchSpecFromRawVariables,
+    CreateBatchSpecFromRawResult,
 } from '../../../graphql-operations'
+import { DownloadSpecModal } from '../batch-spec/edit/DownloadSpecModal'
+import { EditorFeedbackPanel } from '../batch-spec/edit/editor/EditorFeedbackPanel'
+import { MonacoBatchSpecEditor } from '../batch-spec/edit/editor/MonacoBatchSpecEditor'
+import { LibraryPane } from '../batch-spec/edit/library/LibraryPane'
+import { ExecutionOptions, RunBatchSpecButton } from '../batch-spec/edit/RunBatchSpecButton'
+import { useExecuteBatchSpec } from '../batch-spec/edit/useExecuteBatchSpec'
+import { useInitialBatchSpec } from '../batch-spec/edit/useInitialBatchSpec'
+import { useImportingChangesets } from '../batch-spec/edit/workspaces-preview/useImportingChangesets'
+import { useWorkspaces, WorkspacePreviewFilters } from '../batch-spec/edit/workspaces-preview/useWorkspaces'
+import { useWorkspacesPreview } from '../batch-spec/edit/workspaces-preview/useWorkspacesPreview'
+import { WorkspacesPreview } from '../batch-spec/edit/workspaces-preview/WorkspacesPreview'
+import { useBatchSpecCode } from '../batch-spec/useBatchSpecCode'
 import { BatchSpecDownloadLink } from '../BatchSpec'
 
-import { GET_BATCH_CHANGE_TO_EDIT, CREATE_EMPTY_BATCH_CHANGE } from './backend'
-import { DownloadSpecModal } from './DownloadSpecModal'
-import { EditorFeedbackPanel } from './editor/EditorFeedbackPanel'
-import { MonacoBatchSpecEditor } from './editor/MonacoBatchSpecEditor'
-import { ExecutionOptions, ExecutionOptionsDropdown } from './ExecutionOptions'
-import { LibraryPane } from './library/LibraryPane'
+import { GET_BATCH_CHANGE_TO_EDIT, CREATE_EMPTY_BATCH_CHANGE, CREATE_BATCH_SPEC_FROM_RAW } from './backend'
+import { InsightTemplatesBanner } from './InsightTemplatesBanner'
 import { NamespaceSelector } from './NamespaceSelector'
-import { useBatchSpecCode } from './useBatchSpecCode'
-import { useExecuteBatchSpec } from './useExecuteBatchSpec'
-import { useInitialBatchSpec } from './useInitialBatchSpec'
+import { useInsightTemplates } from './useInsightTemplates'
 import { useNamespaces } from './useNamespaces'
-import { useWorkspacesPreview } from './useWorkspacesPreview'
-import { useImportingChangesets } from './workspaces-preview/useImportingChangesets'
-import { useWorkspaces, WorkspacePreviewFilters } from './workspaces-preview/useWorkspaces'
-import { WorkspacesPreview } from './workspaces-preview/WorkspacesPreview'
 
 import styles from './CreateOrEditBatchChangePage.module.scss'
 
@@ -85,11 +90,9 @@ export interface CreateOrEditBatchChangePageProps extends ThemeProps, SettingsCa
  * CreateOrEditBatchChangePage is the new SSBC-oriented page for creating a new batch change
  * or editing and re-executing a new batch spec for an existing one.
  */
-export const CreateOrEditBatchChangePage: React.FunctionComponent<CreateOrEditBatchChangePageProps> = ({
-    initialNamespaceID,
-    batchChangeName,
-    ...props
-}) => {
+export const CreateOrEditBatchChangePage: React.FunctionComponent<
+    React.PropsWithChildren<CreateOrEditBatchChangePageProps>
+> = ({ initialNamespaceID, batchChangeName, ...props }) => {
     const { data, error, loading, refetch } = useQuery<GetBatchChangeToEditResult, GetBatchChangeToEditVariables>(
         GET_BATCH_CHANGE_TO_EDIT,
         {
@@ -157,12 +160,15 @@ interface CreatePageProps extends SettingsCascadeProps<Settings> {
     batchChangeName?: string
 }
 
-const CreatePage: React.FunctionComponent<CreatePageProps> = props => {
+const CreatePage: React.FunctionComponent<React.PropsWithChildren<CreatePageProps>> = props => {
     const isNewBatchChange = props.batchChangeName === undefined && !props.isReadOnly
+
+    const { renderTemplate, insightTitle } = useInsightTemplates(props.settingsCascade)
 
     return (
         <div className="w-100 p-4">
             <PageTitle title="Create new batch change" />
+            {insightTitle && <InsightTemplatesBanner insightTitle={insightTitle} type="create" className="mb-5" />}
             <PageHeader
                 path={[{ icon: BatchChangesIcon, to: '.' }, { text: 'Create batch change' }]}
                 className="flex-1 pb-2"
@@ -184,7 +190,7 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = props => {
                 </TabList>
                 <TabPanels>
                     <TabPanel>
-                        <BatchConfigurationPage {...props} />
+                        <BatchConfigurationPage {...props} renderTemplate={renderTemplate} insightName={insightTitle} />
                     </TabPanel>
 
                     <TabPanel>
@@ -214,18 +220,35 @@ interface BatchConfigurationPageProps extends SettingsCascadeProps<Settings> {
     isReadOnly?: boolean
     /** Batch change when in read-only mode */
     batchChangeName?: string
+
+    /**
+     * When set, apply a template to the batch spec before redirecting to the edit page.
+     */
+    renderTemplate?: (name: string) => string
+
+    /** The name of the insight this was created from, if any. */
+    insightName?: string
 }
 
-const BatchConfigurationPage: React.FunctionComponent<BatchConfigurationPageProps> = ({
+const BatchConfigurationPage: React.FunctionComponent<React.PropsWithChildren<BatchConfigurationPageProps>> = ({
     namespaceID,
     settingsCascade,
     isReadOnly,
     batchChangeName,
+    renderTemplate,
+    insightName,
 }) => {
-    const [createEmptyBatchChange, { loading, error }] = useMutation<
+    const [createEmptyBatchChange, { loading: batchChangeLoading, error: batchChangeError }] = useMutation<
         CreateEmptyBatchChangeResult,
         CreateEmptyBatchChangeVariables
     >(CREATE_EMPTY_BATCH_CHANGE)
+    const [createBatchSpecFromRaw, { loading: batchSpecLoading, error: batchSpecError }] = useMutation<
+        CreateBatchSpecFromRawResult,
+        CreateBatchSpecFromRawVariables
+    >(CREATE_BATCH_SPEC_FROM_RAW)
+
+    const loading = batchChangeLoading || batchSpecLoading
+    const error = batchChangeError || batchSpecError
 
     const { namespaces, defaultSelectedNamespace } = useNamespaces(settingsCascade, namespaceID)
 
@@ -245,10 +268,35 @@ const BatchConfigurationPage: React.FunctionComponent<BatchConfigurationPageProp
     const history = useHistory()
     const handleCancel = (): void => history.goBack()
     const handleCreate = (): void => {
+        const redirectSearchParameters = new URLSearchParams()
+        if (insightName) {
+            redirectSearchParameters.set('title', insightName)
+        }
+        let serializedRedirectSearchParameters = redirectSearchParameters.toString()
+        if (serializedRedirectSearchParameters.length > 0) {
+            serializedRedirectSearchParameters = '?' + serializedRedirectSearchParameters
+        }
         createEmptyBatchChange({
             variables: { namespace: selectedNamespace.id, name: nameInput },
         })
-            .then(({ data }) => (data ? history.push(`${data.createEmptyBatchChange.url}/edit`) : noop()))
+            .then(args => {
+                if (!renderTemplate) {
+                    return Promise.resolve(args)
+                }
+
+                const template = renderTemplate(nameInput)
+
+                return args.data?.createEmptyBatchChange.id && template
+                    ? createBatchSpecFromRaw({
+                          variables: { namespace: selectedNamespace.id, spec: template, noCache: false },
+                      }).then(() => Promise.resolve(args))
+                    : Promise.resolve(args)
+            })
+            .then(({ data }) =>
+                data
+                    ? history.push(`${data.createEmptyBatchChange.url}/edit${serializedRedirectSearchParameters}`)
+                    : noop()
+            )
             // We destructure and surface the error from `useMutation` instead.
             .catch(noop)
     }
@@ -281,9 +329,9 @@ const BatchConfigurationPage: React.FunctionComponent<BatchConfigurationPageProp
                     </span>
                 </small>
                 <hr className="my-3" />
-                <h3 className="text-muted">
+                <Typography.H3 className="text-muted">
                     Visibility <Icon data-tooltip="Coming soon" as={InfoCircleOutlineIcon} />
-                </h3>
+                </Typography.H3>
                 <div className="form-group mb-1">
                     <RadioButton
                         name="visibility"
@@ -333,12 +381,19 @@ const BatchConfigurationPage: React.FunctionComponent<BatchConfigurationPageProp
 const INVALID_BATCH_SPEC_TOOLTIP = "There's a problem with your batch spec."
 const WORKSPACES_PREVIEW_SIZE = 'batch-changes.ssbc-workspaces-preview-size'
 
-interface EditPageProps extends ThemeProps {
+interface EditPageProps extends ThemeProps, SettingsCascadeProps<Settings> {
     batchChange: EditBatchChangeFields
     refetchBatchChange: () => Promise<ApolloQueryResult<GetBatchChangeToEditResult>>
 }
 
-const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetchBatchChange, isLightTheme }) => {
+const EditPage: React.FunctionComponent<React.PropsWithChildren<EditPageProps>> = ({
+    batchChange,
+    refetchBatchChange,
+    isLightTheme,
+    settingsCascade,
+}) => {
+    const { insightTitle } = useInsightTemplates(settingsCascade)
+
     // Get the latest batch spec for the batch change.
     const { batchSpec, isApplied: isLatestBatchSpecApplied, initialCode: initialBatchSpecCode } = useInitialBatchSpec(
         batchChange
@@ -459,7 +514,7 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
 
     const actionButtons = (
         <>
-            <ExecutionOptionsDropdown
+            <RunBatchSpecButton
                 execute={executeBatchSpec}
                 isExecutionDisabled={isExecutionDisabled}
                 executionTooltip={executionTooltip}
@@ -489,7 +544,10 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
             <div className={classNames(styles.editorLayoutContainer, 'd-flex flex-1 mt-2')}>
                 <LibraryPane name={batchChange.name} onReplaceItem={clearErrorsAndHandleCodeChange} />
                 <div className={styles.editorContainer}>
-                    <h4 className={styles.header}>Batch spec</h4>
+                    <Typography.H4 className={styles.header}>Batch spec</Typography.H4>
+                    {insightTitle && (
+                        <InsightTemplatesBanner insightTitle={insightTitle} type="edit" className="mb-3" />
+                    )}
                     <MonacoBatchSpecEditor
                         batchChangeName={batchChange.name}
                         className={styles.editor}
@@ -583,7 +641,7 @@ interface BatchChangePageProps {
  * BatchChangePage is a page layout component that renders a consistent header for
  * SSBC-style batch change pages and should wrap the other content contained on the page.
  */
-const BatchChangePage: React.FunctionComponent<BatchChangePageProps> = ({
+const BatchChangePage: React.FunctionComponent<React.PropsWithChildren<BatchChangePageProps>> = ({
     children,
     namespace,
     title,

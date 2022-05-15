@@ -95,7 +95,7 @@ func TestRepoShouldBeAdded(t *testing.T) {
 // of repostiories specified in the query's `repohasfile` and `-repohasfile` fields if they exist.
 func repoShouldBeAdded(ctx context.Context, clients job.RuntimeClients, repo *search.RepositoryRevisions, filePatternsInclude, filePatternsExclude []string) (bool, error) {
 	repos := []*search.RepositoryRevisions{repo}
-	s := RepoSearch{
+	s := RepoSearchJob{
 		FilePatternsReposMustInclude: filePatternsInclude,
 		FilePatternsReposMustExclude: filePatternsExclude,
 	}

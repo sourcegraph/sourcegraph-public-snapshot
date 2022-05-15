@@ -10,14 +10,16 @@ interface ExtensionsLoadingPanelViewProps {
     className?: string
 }
 
-export const ExtensionsLoadingPanelView: React.FunctionComponent<ExtensionsLoadingPanelViewProps> = props => {
+export const ExtensionsLoadingPanelView: React.FunctionComponent<
+    React.PropsWithChildren<ExtensionsLoadingPanelViewProps>
+> = props => {
     const { className } = props
 
     return (
         <EmptyPanelView className={className}>
             <LoadingSpinner inline={false} />
             <span className="mx-2">Loading Sourcegraph extensions</span>
-            <Icon as={PuzzleIcon} />
+            <Icon role="img" as={PuzzleIcon} aria-hidden={true} />
         </EmptyPanelView>
     )
 }

@@ -2,7 +2,6 @@ package dbstore
 
 import (
 	"context"
-	"database/sql"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -38,46 +37,33 @@ type Dump struct {
 }
 
 // scanDumps scans a slice of dumps from the return value of `*Store.query`.
-func scanDumps(rows *sql.Rows, queryErr error) (_ []Dump, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	var dumps []Dump
-	for rows.Next() {
-		var dump Dump
-		if err := rows.Scan(
-			&dump.ID,
-			&dump.Commit,
-			&dump.Root,
-			&dump.VisibleAtTip,
-			&dump.UploadedAt,
-			&dump.State,
-			&dump.FailureMessage,
-			&dump.StartedAt,
-			&dump.FinishedAt,
-			&dump.ProcessAfter,
-			&dump.NumResets,
-			&dump.NumFailures,
-			&dump.RepositoryID,
-			&dump.RepositoryName,
-			&dump.Indexer,
-			&dbutil.NullString{S: &dump.IndexerVersion},
-			&dump.AssociatedIndexID,
-		); err != nil {
-			return nil, err
-		}
-
-		dumps = append(dumps, dump)
-	}
-
-	return dumps, nil
+func scanDump(s dbutil.Scanner) (dump Dump, err error) {
+	return dump, s.Scan(
+		&dump.ID,
+		&dump.Commit,
+		&dump.Root,
+		&dump.VisibleAtTip,
+		&dump.UploadedAt,
+		&dump.State,
+		&dump.FailureMessage,
+		&dump.StartedAt,
+		&dump.FinishedAt,
+		&dump.ProcessAfter,
+		&dump.NumResets,
+		&dump.NumFailures,
+		&dump.RepositoryID,
+		&dump.RepositoryName,
+		&dump.Indexer,
+		&dbutil.NullString{S: &dump.IndexerVersion},
+		&dump.AssociatedIndexID,
+	)
 }
+
+var scanDumps = basestore.NewSliceScanner(scanDump)
 
 // GetDumpsByIDs returns a set of dumps by identifiers.
 func (s *Store) GetDumpsByIDs(ctx context.Context, ids []int) (_ []Dump, err error) {
-	ctx, trace, endObservation := s.operations.getDumpsByIDs.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := s.operations.getDumpsByIDs.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("numIDs", len(ids)),
 		log.String("ids", intsToString(ids)),
 	}})
@@ -146,7 +132,7 @@ FROM lsif_dumps_with_repository_name u WHERE u.id IN (%s)
 // splits the repository into multiple dumps. For this reason, the returned dumps are always sorted in most-recently-finished order to
 // prevent returning data from stale dumps.
 func (s *Store) FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) (_ []Dump, err error) {
-	ctx, trace, endObservation := s.operations.findClosestDumps.WithAndLogger(ctx, &err, observation.Args{
+	ctx, trace, endObservation := s.operations.findClosestDumps.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", repositoryID),
 			log.String("commit", commit),
@@ -200,7 +186,7 @@ ORDER BY u.finished_at DESC
 // FindClosestDumpsFromGraphFragment returns the set of dumps that can most accurately answer queries for the given repository, commit,
 // path, and optional indexer by only considering the given fragment of the full git graph. See FindClosestDumps for additional details.
 func (s *Store) FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, commitGraph *gitdomain.CommitGraph) (_ []Dump, err error) {
-	ctx, trace, endObservation := s.operations.findClosestDumpsFromGraphFragment.WithAndLogger(ctx, &err, observation.Args{
+	ctx, trace, endObservation := s.operations.findClosestDumpsFromGraphFragment.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", repositoryID),
 			log.String("commit", commit),
@@ -372,7 +358,7 @@ func makeFindClosestDumpConditions(path string, rootMustEnclosePath bool, indexe
 // commit, root, and indexer. This is necessary to perform during conversions before changing
 // the state of a processing upload to completed as there is a unique index on these four columns.
 func (s *Store) DeleteOverlappingDumps(ctx context.Context, repositoryID int, commit, root, indexer string) (err error) {
-	ctx, trace, endObservation := s.operations.deleteOverlappingDumps.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := s.operations.deleteOverlappingDumps.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 		log.String("commit", commit),
 		log.String("root", root),
@@ -380,6 +366,8 @@ func (s *Store) DeleteOverlappingDumps(ctx context.Context, repositoryID int, co
 	}})
 	defer endObservation(1, observation.Args{})
 
+	unset, _ := s.Store.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "upload overlapping with a newer upload")
+	defer unset(ctx)
 	count, _, err := basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(deleteOverlappingDumpsQuery, repositoryID, commit, root, indexer)))
 	if err != nil {
 		return err

@@ -9,7 +9,10 @@ interface ClosedNoticeProps {
     className?: string
 }
 
-export const ClosedNotice: React.FunctionComponent<ClosedNoticeProps> = ({ closedAt, className }) => {
+export const ClosedNotice: React.FunctionComponent<React.PropsWithChildren<ClosedNoticeProps>> = ({
+    closedAt,
+    className,
+}) => {
     if (!closedAt) {
         return null
     }

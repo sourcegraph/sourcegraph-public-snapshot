@@ -60,7 +60,7 @@ export interface SearchBoxProps
     onEditorCreated?: (editor: IEditor) => void
 }
 
-export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
+export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBoxProps>> = props => {
     const { queryState, onEditorCreated: onEditorCreatedCallback } = props
 
     const [editor, setEditor] = useState<IEditor>()

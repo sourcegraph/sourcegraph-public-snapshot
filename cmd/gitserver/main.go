@@ -6,7 +6,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/base64"
-	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -20,6 +19,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/tidwall/gjson"
+	"go.uber.org/zap"
 	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 
@@ -41,6 +41,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gomodproxy"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/pypi"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -57,7 +59,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	sglog "github.com/sourcegraph/sourcegraph/lib/log"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -82,7 +84,7 @@ func main() {
 
 	conf.Init()
 	logging.Init()
-	syncLogs := sglog.Init(sglog.Resource{
+	syncLogs := log.Init(log.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
@@ -93,21 +95,23 @@ func main() {
 	trace.Init()
 	profiler.Init()
 
+	logger := log.Scoped("server", "the gitserver service")
+
 	if reposDir == "" {
-		log.Fatal("git-server: SRC_REPOS_DIR is required")
+		logger.Fatal("SRC_REPOS_DIR is required")
 	}
 	if err := os.MkdirAll(reposDir, os.ModePerm); err != nil {
-		log.Fatalf("failed to create SRC_REPOS_DIR: %s", err)
+		logger.Fatal("failed to create SRC_REPOS_DIR", zap.Error(err))
 	}
 
 	wantPctFree2, err := getPercent(wantPctFree)
 	if err != nil {
-		log.Fatalf("SRC_REPOS_DESIRED_PERCENT_FREE is out of range: %v", err)
+		logger.Fatal("SRC_REPOS_DESIRED_PERCENT_FREE is out of range", zap.Error(err))
 	}
 
 	sqlDB, err := getDB()
 	if err != nil {
-		log.Fatalf("failed to initialize database stores: %v", err)
+		logger.Fatal("failed to initialize database stores", zap.Error(err))
 	}
 	db := database.NewDB(sqlDB)
 
@@ -117,7 +121,7 @@ func main() {
 
 	err = keyring.Init(ctx)
 	if err != nil {
-		log.Fatalf("failed to initialise keyring: %s", err)
+		logger.Fatal("failed to initialise keyring", zap.Error(err))
 	}
 
 	gitserver := server.Server{
@@ -136,18 +140,18 @@ func main() {
 	}
 
 	observationContext := &observation.Context{
-		Logger:     log15.Root(),
+		Logger:     logger,
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
 	gitserver.RegisterMetrics(db, observationContext)
 
 	if tmpDir, err := gitserver.SetupAndClearTmp(); err != nil {
-		log.Fatalf("failed to setup temporary directory: %s", err)
+		logger.Fatal("failed to setup temporary directory", log.Error(err))
 	} else if err := os.Setenv("TMP_DIR", tmpDir); err != nil {
 		// Additionally, set TMP_DIR so other temporary files we may accidentally
 		// create are on the faster RepoDir mount.
-		log.Fatalf("Setting TMP_DIR: %s", err)
+		logger.Fatal("Setting TMP_DIR", log.Error(err))
 	}
 
 	// Create Handler now since it also initializes state
@@ -166,7 +170,7 @@ func main() {
 	// Best effort attempt to sync rate limiters for site level external services
 	// early on. If it fails, we'll try again in the background sync below.
 	if err := syncSiteLevelExternalServiceRateLimiters(ctx, externalServiceStore); err != nil {
-		log15.Warn("error performing initial site level rate limit sync", "error", err)
+		logger.Warn("error performing initial site level rate limit sync", log.Error(err))
 	}
 
 	go syncRateLimiters(ctx, externalServiceStore, rateLimitSyncerLimitPerSecond)
@@ -189,12 +193,12 @@ func main() {
 		Addr:    addr,
 		Handler: handler,
 	}
-	log15.Info("git-server: listening", "addr", srv.Addr)
+	logger.Info("git-server: listening", log.String("addr", srv.Addr))
 
 	go func() {
 		err := srv.ListenAndServe()
 		if err != http.ErrServerClosed {
-			log.Fatal(err)
+			logger.Fatal(err.Error())
 		}
 	}()
 
@@ -217,7 +221,7 @@ func main() {
 	defer cancel()
 	// Stop accepting requests.
 	if err := srv.Shutdown(ctx); err != nil {
-		log15.Error("shutting down http server", "error", err)
+		logger.Error("shutting down http server", log.Error(err))
 	}
 
 	// The most important thing this does is kill all our clones. If we just
@@ -406,7 +410,7 @@ func getVCSSyncer(
 		return nil, errors.Wrap(err, "get repository")
 	}
 
-	extractOptions := func(connection interface{}) (string, error) {
+	extractOptions := func(connection any) (string, error) {
 		for _, info := range r.Sources {
 			extSvc, err := externalServiceStore.GetByID(ctx, info.ExternalServiceID())
 			if err != nil {
@@ -447,7 +451,8 @@ func getVCSSyncer(
 		if err != nil {
 			return nil, err
 		}
-		return server.NewNpmPackagesSyncer(c, depsSvc, nil, urn), nil
+		cli := npm.NewHTTPClient(urn, c.Registry, c.Credentials, httpcli.ExternalDoer)
+		return server.NewNpmPackagesSyncer(c, depsSvc, cli), nil
 	case extsvc.TypeGoModules:
 		var c schema.GoModulesConnection
 		urn, err := extractOptions(&c)
@@ -456,6 +461,14 @@ func getVCSSyncer(
 		}
 		cli := gomodproxy.NewClient(urn, c.Urls, httpcli.ExternalDoer)
 		return server.NewGoModulesSyncer(&c, depsSvc, cli), nil
+	case extsvc.TypePythonPackages:
+		var c schema.PythonPackagesConnection
+		urn, err := extractOptions(&c)
+		if err != nil {
+			return nil, err
+		}
+		cli := pypi.NewClient(urn, c.Urls, httpcli.ExternalDoer)
+		return server.NewPythonPackagesSyncer(&c, depsSvc, cli), nil
 	}
 	return &server.GitRepoSyncer{}, nil
 }

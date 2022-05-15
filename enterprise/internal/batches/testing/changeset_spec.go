@@ -29,7 +29,7 @@ type TestSpecOpts struct {
 
 	// If this is set along with headRef, the changesetSpec will have Published
 	// set.
-	Published interface{}
+	Published any
 
 	Title             string
 	Body              string

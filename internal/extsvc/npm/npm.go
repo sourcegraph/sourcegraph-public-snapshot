@@ -13,16 +13,13 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -43,25 +40,15 @@ type Client interface {
 	FetchTarball(ctx context.Context, dep *reposource.NpmDependency) (io.ReadCloser, error)
 }
 
-var (
-	observationContext *observation.Context
-	operations         *Operations
-)
-
 func init() {
-	observationContext = &observation.Context{
-		Logger:     log15.Root(),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
-	operations = NewOperations(observationContext)
-
 	// The HTTP client will transparently handle caching,
 	// so we don't need to set up any on-disk caching here.
 }
 
 func FetchSources(ctx context.Context, client Client, dependency *reposource.NpmDependency) (tarball io.ReadCloser, err error) {
-	ctx, endObservation := operations.fetchSources.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+	operations := getOperations()
+
+	ctx, _, endObservation := operations.fetchSources.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("dependency", dependency.PackageManagerSyntax()),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -76,10 +63,10 @@ type HTTPClient struct {
 	credentials string
 }
 
-func NewHTTPClient(urn string, registryURL string, credentials string) *HTTPClient {
+func NewHTTPClient(urn string, registryURL string, credentials string, doer httpcli.Doer) *HTTPClient {
 	return &HTTPClient{
 		registryURL: registryURL,
-		doer:        httpcli.ExternalDoer,
+		doer:        doer,
 		limiter:     ratelimit.DefaultRegistry.Get(urn),
 		credentials: credentials,
 	}
@@ -107,7 +94,8 @@ func (client *HTTPClient) GetPackageInfo(ctx context.Context, pkg *reposource.Np
 }
 
 type DependencyInfo struct {
-	Dist DependencyInfoDist `json:"dist"`
+	Description string             `json:"description"`
+	Dist        DependencyInfoDist `json:"dist"`
 }
 
 type DependencyInfoDist struct {

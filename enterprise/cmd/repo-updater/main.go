@@ -37,7 +37,7 @@ func main() {
 
 func enterpriseInit(
 	db ossDB.DB,
-	repoStore *repos.Store,
+	repoStore repos.Store,
 	keyring keyring.Ring,
 	cf *httpcli.Factory,
 	server *repoupdater.Server,

@@ -7,7 +7,7 @@ exports[`GlobalNavbar default 1`] = `
     class="navbar"
   >
     <h1
-      class="logo"
+      class="h1 logo"
     >
       <a
         class="d-flex align-items-center"
@@ -20,6 +20,7 @@ exports[`GlobalNavbar default 1`] = `
       </a>
     </h1>
     <hr
+      aria-hidden="true"
       class="divider"
     />
     <div
@@ -31,9 +32,11 @@ exports[`GlobalNavbar default 1`] = `
         type="button"
       >
         <svg
+          aria-hidden="true"
           class="mdi-icon iconInline"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >
@@ -42,9 +45,11 @@ exports[`GlobalNavbar default 1`] = `
           />
         </svg>
         <svg
+          aria-hidden="true"
           class="mdi-icon iconInline"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >
@@ -61,6 +66,8 @@ exports[`GlobalNavbar default 1`] = `
         >
           <div
             class="link d-flex align-items-center p-0"
+            data-test-active="false"
+            data-test-id="/search"
           >
             <div
               class="h-100 d-flex linkContent navDropdownWrapper"
@@ -73,9 +80,11 @@ exports[`GlobalNavbar default 1`] = `
                   class="itemFocusableContent"
                 >
                   <svg
+                    aria-hidden="true"
                     class="mdi-icon iconInline icon"
                     fill="currentColor"
                     height="24"
+                    role="img"
                     viewBox="0 0 24 24"
                     width="24"
                   >
@@ -103,9 +112,11 @@ exports[`GlobalNavbar default 1`] = `
                   class="itemFocusableContent"
                 >
                   <svg
+                    aria-hidden="true"
                     class="mdi-icon iconInline icon"
                     fill="currentColor"
                     height="24"
+                    role="img"
                     viewBox="0 0 24 24"
                     width="24"
                   >
@@ -129,9 +140,11 @@ exports[`GlobalNavbar default 1`] = `
               class="linkContent"
             >
               <svg
+                aria-hidden="true"
                 class="mdi-icon iconInline icon"
                 fill="currentColor"
                 height="24"
+                role="img"
                 viewBox="0 0 24 24"
                 width="24"
               >
@@ -176,9 +189,11 @@ exports[`GlobalNavbar default 1`] = `
               class="linkContent"
             >
               <svg
+                aria-hidden="true"
                 class="mdi-icon iconInline icon"
                 fill="currentColor"
                 height="24"
+                role="img"
                 viewBox="0 0 24 24"
                 width="24"
               >
@@ -266,7 +281,7 @@ exports[`GlobalNavbar low-profile 1`] = `
     class="navbar"
   >
     <h1
-      class="logo"
+      class="h1 logo"
     >
       <a
         class="d-flex align-items-center"
@@ -279,6 +294,7 @@ exports[`GlobalNavbar low-profile 1`] = `
       </a>
     </h1>
     <hr
+      aria-hidden="true"
       class="divider"
     />
     <div
@@ -290,9 +306,11 @@ exports[`GlobalNavbar low-profile 1`] = `
         type="button"
       >
         <svg
+          aria-hidden="true"
           class="mdi-icon iconInline"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >
@@ -301,9 +319,11 @@ exports[`GlobalNavbar low-profile 1`] = `
           />
         </svg>
         <svg
+          aria-hidden="true"
           class="mdi-icon iconInline"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >
@@ -320,6 +340,8 @@ exports[`GlobalNavbar low-profile 1`] = `
         >
           <div
             class="link d-flex align-items-center p-0"
+            data-test-active="false"
+            data-test-id="/search"
           >
             <div
               class="h-100 d-flex linkContent navDropdownWrapper"
@@ -332,9 +354,11 @@ exports[`GlobalNavbar low-profile 1`] = `
                   class="itemFocusableContent"
                 >
                   <svg
+                    aria-hidden="true"
                     class="mdi-icon iconInline icon"
                     fill="currentColor"
                     height="24"
+                    role="img"
                     viewBox="0 0 24 24"
                     width="24"
                   >
@@ -362,9 +386,11 @@ exports[`GlobalNavbar low-profile 1`] = `
                   class="itemFocusableContent"
                 >
                   <svg
+                    aria-hidden="true"
                     class="mdi-icon iconInline icon"
                     fill="currentColor"
                     height="24"
+                    role="img"
                     viewBox="0 0 24 24"
                     width="24"
                   >
@@ -388,9 +414,11 @@ exports[`GlobalNavbar low-profile 1`] = `
               class="linkContent"
             >
               <svg
+                aria-hidden="true"
                 class="mdi-icon iconInline icon"
                 fill="currentColor"
                 height="24"
+                role="img"
                 viewBox="0 0 24 24"
                 width="24"
               >
@@ -435,9 +463,11 @@ exports[`GlobalNavbar low-profile 1`] = `
               class="linkContent"
             >
               <svg
+                aria-hidden="true"
                 class="mdi-icon iconInline icon"
                 fill="currentColor"
                 height="24"
+                role="img"
                 viewBox="0 0 24 24"
                 width="24"
               >

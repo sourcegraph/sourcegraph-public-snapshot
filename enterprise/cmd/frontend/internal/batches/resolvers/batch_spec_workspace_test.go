@@ -139,7 +139,7 @@ func TestBatchSpecWorkspaceResolver(t *testing.T) {
 func queryAndAssertBatchSpecWorkspace(t *testing.T, ctx context.Context, s *graphql.Schema, id string, want apitest.BatchSpecWorkspace) {
 	t.Helper()
 
-	input := map[string]interface{}{"batchSpecWorkspace": id}
+	input := map[string]any{"batchSpecWorkspace": id}
 
 	var response struct{ Node apitest.BatchSpecWorkspace }
 

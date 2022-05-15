@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { Container, CardBody, Card, Link } from '@sourcegraph/wildcard'
+import { Container, CardBody, Card, Link, Typography } from '@sourcegraph/wildcard'
 
 import styles from './GettingStarted.module.scss'
 
@@ -11,7 +11,10 @@ export interface GettingStartedProps {
     className?: string
 }
 
-export const GettingStarted: React.FunctionComponent<GettingStartedProps> = ({ footer, className }) => (
+export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<GettingStartedProps>> = ({
+    footer,
+    className,
+}) => (
     <div className={className} data-testid="test-getting-started">
         <Container className="mb-4">
             <div className={classNames(styles.videoRow, 'row')}>
@@ -37,13 +40,13 @@ export const GettingStarted: React.FunctionComponent<GettingStartedProps> = ({ f
                     </video>
                 </div>
                 <div className="col-12 col-md-5">
-                    <h2>Automate large-scale code changes</h2>
+                    <Typography.H2>Automate large-scale code changes</Typography.H2>
                     <p>
                         Batch Changes gives you a declarative structure for finding and modifying code across all of
                         your repositories. Its simple UI makes it easy to track and manage all of your changesets
                         through checks and code reviews until each change is merged.
                     </p>
-                    <h3>Common use cases</h3>
+                    <Typography.H3>Common use cases</Typography.H3>
                     <ul className={classNames(styles.narrowList, 'mb-0')}>
                         <li>Update configuration files across many repositories</li>
                         <li>Update libraries which call your APIs</li>
@@ -54,21 +57,21 @@ export const GettingStarted: React.FunctionComponent<GettingStartedProps> = ({ f
                 </div>
             </div>
         </Container>
-        <h3 className="mb-3">Tutorials to help with your first batch change</h3>
+        <Typography.H3 className="mb-3">Tutorials to help with your first batch change</Typography.H3>
         <div className="row">
             <div className="col-12 col-md-6 mb-2">
                 <Card className="h-100">
                     <CardBody className="d-flex">
                         <FindReplaceIcon className="mr-3" />
                         <div>
-                            <h4>
+                            <Typography.H4>
                                 <Link
                                     to="/help/batch_changes/tutorials/search_and_replace_specific_terms"
                                     rel="noopener"
                                 >
                                     Finding and replacing exclusionary terms
                                 </Link>
-                            </h4>
+                            </Typography.H4>
                             <p className="text-muted mb-0">
                                 A Sourcegraph query plus a simple <code>sed</code> command creates changesets required
                                 to manage a large scale change.
@@ -82,11 +85,11 @@ export const GettingStarted: React.FunctionComponent<GettingStartedProps> = ({ f
                     <CardBody className="d-flex">
                         <RefactorCombyIcon className="mr-3" />
                         <div>
-                            <h4>
+                            <Typography.H4>
                                 <Link to="/help/batch_changes/tutorials/updating_go_import_statements" rel="noopener">
                                     Refactoring with language aware search
                                 </Link>
-                            </h4>
+                            </Typography.H4>
                             <p className="text-muted mb-0">
                                 Using{' '}
                                 <Link to="https://comby.dev/" rel="noopener">
@@ -161,7 +164,7 @@ export const GettingStarted: React.FunctionComponent<GettingStartedProps> = ({ f
                 </Card>
             </div>
         </div>
-        <h2>Batch changes demo</h2>
+        <Typography.H2>Batch changes demo</Typography.H2>
         <p>
             This 2 minute demo provides an overview of batch changes from editing a specification to managing
             changesets.
@@ -182,7 +185,7 @@ export const GettingStarted: React.FunctionComponent<GettingStartedProps> = ({ f
     </div>
 )
 
-const FindReplaceIcon: React.FunctionComponent<{ className?: string }> = ({ className }) => (
+const FindReplaceIcon: React.FunctionComponent<React.PropsWithChildren<{ className?: string }>> = ({ className }) => (
     <svg
         width="103"
         height="60"
@@ -190,6 +193,7 @@ const FindReplaceIcon: React.FunctionComponent<{ className?: string }> = ({ clas
         fill="none"
         className={className}
         xmlns="http://www.w3.org/2000/svg"
+        role="presentation"
     >
         <rect width="54" height="8" rx="4" fill="#CAD2E2" />
         <rect x="57" width="32" height="8" rx="4" fill="#CAD2E2" />
@@ -229,7 +233,7 @@ const FindReplaceIcon: React.FunctionComponent<{ className?: string }> = ({ clas
     </svg>
 )
 
-const RefactorCombyIcon: React.FunctionComponent<{ className?: string }> = ({ className }) => (
+const RefactorCombyIcon: React.FunctionComponent<React.PropsWithChildren<{ className?: string }>> = ({ className }) => (
     <svg
         width="111"
         height="60"
@@ -237,6 +241,7 @@ const RefactorCombyIcon: React.FunctionComponent<{ className?: string }> = ({ cl
         fill="none"
         className={className}
         xmlns="http://www.w3.org/2000/svg"
+        role="presentation"
     >
         <rect width="54" height="8" rx="4" fill="#CAD2E2" />
         <rect x="57" width="32" height="8" rx="4" fill="#CAD2E2" />

@@ -10,6 +10,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"strconv"
 	"time"
 
 	"golang.org/x/time/rate"
@@ -60,13 +61,14 @@ var stateHTMLTemplate string
 
 // EnterpriseInit is a function that allows enterprise code to be triggered when dependencies
 // created in Main are ready for use.
-type EnterpriseInit func(db database.DB, store *repos.Store, keyring keyring.Ring, cf *httpcli.Factory, server *repoupdater.Server) []debugserver.Dumper
+type EnterpriseInit func(db database.DB, store repos.Store, keyring keyring.Ring, cf *httpcli.Factory, server *repoupdater.Server) []debugserver.Dumper
 
 type LazyDebugserverEndpoint struct {
 	repoUpdaterStateEndpoint     http.HandlerFunc
 	listAuthzProvidersEndpoint   http.HandlerFunc
 	gitserverReposStatusEndpoint http.HandlerFunc
 	rateLimiterStateEndpoint     http.HandlerFunc
+	manualPurgeEndpoint          http.HandlerFunc
 }
 
 func Main(enterpriseInit EnterpriseInit) {
@@ -98,7 +100,6 @@ func Main(enterpriseInit EnterpriseInit) {
 	go debugServerRoutine.Start()
 
 	clock := func() time.Time { return time.Now().UTC() }
-
 	if err := keyring.Init(ctx); err != nil {
 		log.Fatalf("error initialising encryption keyring: %v", err)
 	}
@@ -124,7 +125,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	{
 		m := repos.NewStoreMetrics()
 		m.MustRegister(prometheus.DefaultRegisterer)
-		store.Metrics = m
+		store.SetMetrics(m)
 	}
 
 	cf := httpcli.ExternalClientFactory
@@ -144,7 +145,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		Scheduler:             updateScheduler,
 		GitserverClient:       gitserver.NewClient(db),
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
-		RateLimitSyncer:       repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, store.ExternalServiceStore, repos.RateLimitSyncerOpts{}),
+		RateLimitSyncer:       repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, store.ExternalServiceStore(), repos.RateLimitSyncerOpts{}),
 	}
 
 	// Attempt to perform an initial sync with all external services
@@ -225,6 +226,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	debugserverEndpoints.listAuthzProvidersEndpoint = listAuthzProvidersHandler()
 	debugserverEndpoints.gitserverReposStatusEndpoint = gitserverReposStatusHandler(db)
 	debugserverEndpoints.rateLimiterStateEndpoint = rateLimiterStateHandler
+	debugserverEndpoints.manualPurgeEndpoint = manualPurgeHandler(db)
 
 	// We mark the service as ready now AFTER assigning the additional endpoints in
 	// the debugserver constructed at the top of this function. This ensures we don't
@@ -287,6 +289,14 @@ func createDebugServerRoutine(ready chan struct{}, debugserverEndpoints *LazyDeb
 				debugserverEndpoints.rateLimiterStateEndpoint(w, r)
 			}),
 		},
+		debugserver.Endpoint{
+			Name: "Manual Repo Purge",
+			Path: "/manual-purge",
+			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				<-ready
+				debugserverEndpoints.manualPurgeEndpoint(w, r)
+			}),
+		},
 	)
 }
 
@@ -311,6 +321,44 @@ func gitserverReposStatusHandler(db database.DB) http.HandlerFunc {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write(resp)
+	}
+}
+
+func manualPurgeHandler(db database.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		limit, err := strconv.Atoi(r.FormValue("limit"))
+		if err != nil {
+			http.Error(w, fmt.Sprintf("invalid limit: %v", err), http.StatusBadRequest)
+			return
+		}
+		if limit <= 0 {
+			http.Error(w, "limit must be greater than 0", http.StatusBadRequest)
+			return
+		}
+		if limit > 10000 {
+			http.Error(w, "limit must be less than 10000", http.StatusBadRequest)
+			return
+		}
+		var perSecond = 1.0 // Default value
+		perSecondParam := r.FormValue("perSecond")
+		if perSecondParam != "" {
+			perSecond, err = strconv.ParseFloat(perSecondParam, 64)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("invalid per second rate limit: %v", err), http.StatusBadRequest)
+				return
+			}
+			// Set a sane lower bound
+			if perSecond <= 0.1 {
+				http.Error(w, fmt.Sprintf("invalid per second rate limit. Must be > 0.1, got %f", perSecond), http.StatusBadRequest)
+				return
+			}
+		}
+		err = repos.PurgeOldestRepos(db, limit, perSecond)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("starting manual purge: %v", err), http.StatusInternalServerError)
+			return
+		}
+		_, _ = w.Write([]byte(fmt.Sprintf("manual purge started with limit of %d and rate of %f", limit, perSecond)))
 	}
 }
 
@@ -359,7 +407,7 @@ func listAuthzProvidersHandler() http.HandlerFunc {
 
 func repoUpdaterStatsHandler(db database.DB, scheduler *repos.UpdateScheduler, debugDumpers []debugserver.Dumper) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		dumps := []interface{}{
+		dumps := []any{
 			scheduler.DebugDump(r.Context(), db),
 		}
 		for _, dumper := range debugDumpers {
@@ -466,7 +514,7 @@ func getPrivateAddedOrModifiedRepos(diff repos.Diff) []api.RepoID {
 // syncScheduler will periodically list the cloned repositories on gitserver and
 // update the scheduler with the list. It also ensures that if any of our default
 // repos are missing from the cloned list they will be added for cloning ASAP.
-func syncScheduler(ctx context.Context, sched *repos.UpdateScheduler, store *repos.Store) {
+func syncScheduler(ctx context.Context, sched *repos.UpdateScheduler, store repos.Store) {
 	baseRepoStore := database.ReposWith(store)
 
 	doSync := func() {

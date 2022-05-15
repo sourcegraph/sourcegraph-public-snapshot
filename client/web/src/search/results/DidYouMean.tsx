@@ -9,7 +9,7 @@ import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { createLiteral, Pattern, Token } from '@sourcegraph/shared/src/search/query/token'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Link } from '@sourcegraph/wildcard'
+import { Link, Typography } from '@sourcegraph/wildcard'
 
 import styles from './DidYouMean.module.scss'
 
@@ -122,7 +122,7 @@ interface DidYouMeanProps
     query: string
 }
 
-export const DidYouMean: React.FunctionComponent<DidYouMeanProps> = ({
+export const DidYouMean: React.FunctionComponent<React.PropsWithChildren<DidYouMeanProps>> = ({
     telemetryService,
     query,
     patternType,
@@ -140,7 +140,7 @@ export const DidYouMean: React.FunctionComponent<DidYouMeanProps> = ({
     if (suggestions.length > 0) {
         return (
             <div className={styles.root}>
-                <h3>Did you mean:</h3>
+                <Typography.H3>Did you mean:</Typography.H3>
                 <ul className={styles.container}>
                     {suggestions.map(suggestion => {
                         const builtURLQuery = buildSearchURLQuery(

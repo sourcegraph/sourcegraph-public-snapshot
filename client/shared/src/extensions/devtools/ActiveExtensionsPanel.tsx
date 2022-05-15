@@ -4,13 +4,24 @@ import { from } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Button, LoadingSpinner, useObservable, Link, CardHeader, CardBody, Alert } from '@sourcegraph/wildcard'
+import {
+    Button,
+    LoadingSpinner,
+    useObservable,
+    Link,
+    CardHeader,
+    CardBody,
+    Alert,
+    Typography,
+} from '@sourcegraph/wildcard'
 
 import { wrapRemoteObservable } from '../../api/client/api/common'
 
 import { ExtensionsDevelopmentToolsProps } from '.'
 
-export const ActiveExtensionsPanel: React.FunctionComponent<ExtensionsDevelopmentToolsProps> = props => {
+export const ActiveExtensionsPanel: React.FunctionComponent<
+    React.PropsWithChildren<ExtensionsDevelopmentToolsProps>
+> = props => {
     const extensionsOrError = useObservable(
         useMemo(
             () =>
@@ -63,7 +74,7 @@ export const ActiveExtensionsPanel: React.FunctionComponent<ExtensionsDevelopmen
                 </CardBody>
             )}
             <CardBody className="border-top">
-                <h4>Sideload extension</h4>
+                <Typography.H4>Sideload extension</Typography.H4>
                 {sideloadedExtensionURL ? (
                     <div>
                         <p>

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -45,6 +46,13 @@ func TestIterateRepoGitserverStatus(t *testing.T) {
 			ExternalRepo: api.ExternalRepoSpec{},
 			Sources:      nil,
 		},
+		&types.Repo{
+			Name:         "github.com/sourcegraph/repo3",
+			URI:          "github.com/sourcegraph/repo3",
+			Description:  "",
+			ExternalRepo: api.ExternalRepoSpec{},
+			Sources:      nil,
+		},
 	}
 	createTestRepos(ctx, t, db, repos)
 
@@ -60,47 +68,157 @@ func TestIterateRepoGitserverStatus(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var repoCount int
-	var statusCount int
+	// Soft delete one of the repos
+	if err := Repos(db).Delete(ctx, repos[2].ID); err != nil {
+		t.Fatal(err)
+	}
 
-	// Iterate
-	err := GitserverRepos(db).IterateRepoGitserverStatus(ctx, IterateRepoGitserverStatusOptions{}, func(repo types.RepoGitserverStatus) error {
-		repoCount++
-		if repo.GitserverRepo != nil {
-			statusCount++
-			if repo.GitserverRepo.RepoID == 0 {
-				t.Fatal("GitServerRepo has zero id")
+	assert := func(t *testing.T, wantRepoCount, wantStatusCount int, options IterateRepoGitserverStatusOptions) {
+		var statusCount int
+		var seen []api.RepoName
+		err := GitserverRepos(db).IterateRepoGitserverStatus(ctx, options, func(repo types.RepoGitserverStatus) error {
+			seen = append(seen, repo.Name)
+			if repo.GitserverRepo != nil {
+				statusCount++
+				if repo.GitserverRepo.RepoID == 0 {
+					t.Fatal("GitServerRepo has zero id")
+				}
 			}
+			return nil
+		})
+		if err != nil {
+			t.Fatal(err)
 		}
-		return nil
+
+		t.Logf("Seen: %v", seen)
+		if len(seen) != wantRepoCount {
+			t.Fatalf("Expected %d repos, got %d", wantRepoCount, len(seen))
+		}
+
+		if statusCount != wantStatusCount {
+			t.Fatalf("Expected %d statuses, got %d", wantStatusCount, statusCount)
+		}
+	}
+
+	t.Run("iterate with default options", func(t *testing.T) {
+		assert(t, 2, 1, IterateRepoGitserverStatusOptions{})
 	})
-	if err != nil {
+	t.Run("iterate only repos without shard", func(t *testing.T) {
+		assert(t, 1, 0, IterateRepoGitserverStatusOptions{OnlyWithoutShard: true})
+	})
+	t.Run("include deleted", func(t *testing.T) {
+		assert(t, 3, 1, IterateRepoGitserverStatusOptions{IncludeDeleted: true})
+	})
+	t.Run("include deleted and without shard", func(t *testing.T) {
+		assert(t, 2, 0, IterateRepoGitserverStatusOptions{OnlyWithoutShard: true, IncludeDeleted: true})
+	})
+}
+
+func TestIteratePurgeableRepos(t *testing.T) {
+	ctx := context.Background()
+	db := dbtest.NewDB(t)
+
+	normalRepo := &types.Repo{
+		Name: "normal",
+	}
+	blockedRepo := &types.Repo{
+		Name: "blocked",
+	}
+	deletedRepo := &types.Repo{
+		Name: "deleted",
+	}
+	notCloned := &types.Repo{
+		Name: "notCloned",
+	}
+
+	createTestRepos(ctx, t, db, types.Repos{
+		normalRepo,
+		blockedRepo,
+		deletedRepo,
+		notCloned,
+	})
+	for _, repo := range []*types.Repo{normalRepo, blockedRepo, deletedRepo} {
+		createTestGitserverRepos(ctx, t, db, false, types.CloneStatusCloned, repo.ID)
+	}
+	for _, repo := range []*types.Repo{notCloned} {
+		createTestGitserverRepos(ctx, t, db, false, types.CloneStatusNotCloned, repo.ID)
+	}
+	if err := Repos(db).Delete(ctx, deletedRepo.ID); err != nil {
+		t.Fatal(err)
+	}
+	// Blocking a repo is currently done manually
+	if _, err := db.ExecContext(ctx, `UPDATE repo set blocked = '{}' WHERE id = $1`, blockedRepo.ID); err != nil {
 		t.Fatal(err)
 	}
 
-	wantRepoCount := 2
-	if repoCount != wantRepoCount {
-		t.Fatalf("Expected %d repos, got %d", wantRepoCount, repoCount)
-	}
+	for _, tt := range []struct {
+		name         string
+		options      IteratePurgableReposOptions
+		blockedCount int
+		deletedCount int
+	}{
+		{
+			name: "zero deletedBefore",
+			options: IteratePurgableReposOptions{
+				DeletedBefore: time.Time{},
+				Limit:         0,
+			},
+			blockedCount: 1,
+			deletedCount: 1,
+		},
+		{
+			name: "deletedBefore now",
+			options: IteratePurgableReposOptions{
+				DeletedBefore: time.Now(),
+				Limit:         0,
+			},
 
-	wantStatusCount := 1
-	if statusCount != wantStatusCount {
-		t.Fatalf("Expected %d statuses, got %d", wantStatusCount, statusCount)
-	}
-
-	var noShardCount int
-	// Iterate again against repos with no shard
-	err = GitserverRepos(db).IterateRepoGitserverStatus(ctx, IterateRepoGitserverStatusOptions{OnlyWithoutShard: true}, func(_ types.RepoGitserverStatus) error {
-		noShardCount++
-		return nil
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	wantNoShardCount := 1
-	if noShardCount != wantNoShardCount {
-		t.Fatalf("Want %d, got %d", wantNoShardCount, noShardCount)
+			blockedCount: 1,
+			deletedCount: 1,
+		},
+		{
+			name: "deletedBefore 5 minutes ago",
+			options: IteratePurgableReposOptions{
+				DeletedBefore: time.Now().Add(-5 * time.Minute),
+				Limit:         0,
+			},
+			blockedCount: 1,
+			deletedCount: 0,
+		},
+		{
+			name: "test limit",
+			options: IteratePurgableReposOptions{
+				DeletedBefore: time.Time{},
+				Limit:         1,
+			},
+			blockedCount: 0,
+			deletedCount: 1,
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			var have []api.RepoName
+			var blockedCount int
+			var deletedCount int
+			if err := GitserverRepos(db).IteratePurgeableRepos(ctx, tt.options, func(repo api.RepoName) error {
+				if repo == "blocked" {
+					blockedCount++
+				}
+				if strings.HasPrefix(string(repo), "DELETED") {
+					deletedCount++
+				}
+				have = append(have, repo)
+				return nil
+			}); err != nil {
+				t.Fatal(err)
+			}
+			t.Log(have)
+			if blockedCount != tt.blockedCount {
+				t.Fatalf("Want %d blocked repos, have %d", tt.blockedCount, blockedCount)
+			}
+			if deletedCount != tt.deletedCount {
+				t.Fatalf("Want %d deleted repos, have %d", tt.deletedCount, deletedCount)
+			}
+		})
 	}
 }
 
@@ -197,8 +315,7 @@ func TestIterateWithNonemptyLastError(t *testing.T) {
 					)
 				}
 				createTestRepos(ctx, t, db, types.Repos{testRepo})
-
-				createTestGitserverRepos(ctx, t, db, tr.hasLastError, testRepo.ID)
+				createTestGitserverRepos(ctx, t, db, tr.hasLastError, types.CloneStatusNotCloned, testRepo.ID)
 			}
 
 			foundRepos := make([]types.RepoGitserverStatus, 0, len(tc.testRepos))
@@ -926,12 +1043,12 @@ func createTestRepos(ctx context.Context, t *testing.T, db dbutil.DB, repos type
 	}
 }
 
-func createTestGitserverRepos(ctx context.Context, t *testing.T, db *sql.DB, hasLastError bool, repoID api.RepoID) {
+func createTestGitserverRepos(ctx context.Context, t *testing.T, db *sql.DB, hasLastError bool, cloneStatus types.CloneStatus, repoID api.RepoID) {
 	t.Helper()
 	gitserverRepo := &types.GitserverRepo{
 		RepoID:      repoID,
 		ShardID:     fmt.Sprintf("gitserver%d", repoID),
-		CloneStatus: types.CloneStatusNotCloned,
+		CloneStatus: cloneStatus,
 	}
 	if hasLastError {
 		gitserverRepo.LastError = "an error occurred"

@@ -205,7 +205,7 @@ SELECT sub.series_id, sub.interval_time, SUM(sub.value) as value, sub.metadata, 
 	ORDER BY sp.series_id, interval_time, sp.repo_name_id
 ) sub
 GROUP BY sub.series_id, sub.interval_time, sub.metadata, sub.capture
-ORDER BY sub.series_id, sub.interval_time DESC
+ORDER BY sub.series_id, sub.interval_time ASC
 `
 
 // Note that the series_points table may contain duplicate points, or points recorded at irregular
@@ -384,7 +384,7 @@ type RecordSeriesPointArgs struct {
 	//
 	// See the DB schema comments for intended use cases. This should generally be small,
 	// low-cardinality data to avoid inflating the table.
-	Metadata interface{}
+	Metadata any
 
 	PersistMode PersistMode
 }
@@ -534,7 +534,7 @@ func (s *Store) query(ctx context.Context, q *sqlf.Query, sc scanFunc) error {
 
 // scanner captures the Scan method of sql.Rows and sql.Row
 type scanner interface {
-	Scan(dst ...interface{}) error
+	Scan(dst ...any) error
 }
 
 // a scanFunc scans one or more rows from a scanner, returning

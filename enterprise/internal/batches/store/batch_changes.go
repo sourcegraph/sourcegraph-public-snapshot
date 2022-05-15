@@ -52,7 +52,7 @@ var batchChangeInsertColumns = []*sqlf.Query{
 
 // CreateBatchChange creates the given batch change.
 func (s *Store) CreateBatchChange(ctx context.Context, c *btypes.BatchChange) (err error) {
-	ctx, endObservation := s.operations.createBatchChange.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.createBatchChange.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	q := s.createBatchChangeQuery(c)
@@ -98,7 +98,7 @@ func (s *Store) createBatchChangeQuery(c *btypes.BatchChange) *sqlf.Query {
 
 // UpdateBatchChange updates the given bach change.
 func (s *Store) UpdateBatchChange(ctx context.Context, c *btypes.BatchChange) (err error) {
-	ctx, endObservation := s.operations.updateBatchChange.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.updateBatchChange.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("ID", int(c.ID)),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -140,7 +140,7 @@ func (s *Store) updateBatchChangeQuery(c *btypes.BatchChange) *sqlf.Query {
 
 // DeleteBatchChange deletes the batch change with the given ID.
 func (s *Store) DeleteBatchChange(ctx context.Context, id int64) (err error) {
-	ctx, endObservation := s.operations.deleteBatchChange.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.deleteBatchChange.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("ID", int(id)),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -170,7 +170,7 @@ type CountBatchChangesOpts struct {
 
 // CountBatchChanges returns the number of batch changes in the database.
 func (s *Store) CountBatchChanges(ctx context.Context, opts CountBatchChangesOpts) (count int, err error) {
-	ctx, endObservation := s.operations.countBatchChanges.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.countBatchChanges.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	repoAuthzConds, err := database.AuthzQueryConds(ctx, database.NewDB(s.Handle().DB()))
@@ -281,7 +281,7 @@ type GetBatchChangeOpts struct {
 
 // GetBatchChange gets a batch change matching the given options.
 func (s *Store) GetBatchChange(ctx context.Context, opts GetBatchChangeOpts) (bc *btypes.BatchChange, err error) {
-	ctx, endObservation := s.operations.getBatchChange.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.getBatchChange.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("ID", int(opts.ID)),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -353,7 +353,7 @@ type GetBatchChangeDiffStatOpts struct {
 }
 
 func (s *Store) GetBatchChangeDiffStat(ctx context.Context, opts GetBatchChangeDiffStatOpts) (stat *diff.Stat, err error) {
-	ctx, endObservation := s.operations.getBatchChangeDiffStat.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.getBatchChangeDiffStat.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("batchChangeID", int(opts.BatchChangeID)),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -396,7 +396,7 @@ func getBatchChangeDiffStatQuery(opts GetBatchChangeDiffStatOpts, authzConds *sq
 }
 
 func (s *Store) GetRepoDiffStat(ctx context.Context, repoID api.RepoID) (stat *diff.Stat, err error) {
-	ctx, endObservation := s.operations.getRepoDiffStat.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.getRepoDiffStat.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repoID", int(repoID)),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -457,7 +457,7 @@ type ListBatchChangesOpts struct {
 
 // ListBatchChanges lists batch changes with the given filters.
 func (s *Store) ListBatchChanges(ctx context.Context, opts ListBatchChangesOpts) (cs []*btypes.BatchChange, next int64, err error) {
-	ctx, endObservation := s.operations.listBatchChanges.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.listBatchChanges.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	repoAuthzConds, err := database.AuthzQueryConds(ctx, database.NewDB(s.Handle().DB()))

@@ -302,6 +302,14 @@
           "!go": {
             "pointer": true
           }
+        },
+        "goCodeCheckerTemplates": {
+          "description": "Shows a panel with code insights templates for go code checker results.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
         }
       },
       "group": "Experimental"

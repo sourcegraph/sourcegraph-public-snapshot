@@ -18,7 +18,9 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
          All subscriptions
       </a>
     </div>
-    <h2>
+    <h2
+      class="h2"
+    >
       Product subscription 
     </h2>
     <div

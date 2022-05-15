@@ -10,6 +10,7 @@ import React, {
 
 import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
+// eslint-disable-next-line no-restricted-imports
 import { DropdownItem } from 'reactstrap'
 import { BehaviorSubject, combineLatest, of, timer } from 'rxjs'
 import { catchError, debounce, switchMap, tap } from 'rxjs/operators'
@@ -27,16 +28,18 @@ import { HighlightedSearchContextSpec } from './HighlightedSearchContextSpec'
 import styles from './SearchContextMenu.module.scss'
 
 export const SearchContextMenuItem: React.FunctionComponent<
-    {
-        spec: string
-        description: string
-        query: string
-        selected: boolean
-        isDefault: boolean
-        selectSearchContextSpec: (spec: string) => void
-        searchFilter: string
-        onKeyDown: (key: string) => void
-    } & TelemetryProps
+    React.PropsWithChildren<
+        {
+            spec: string
+            description: string
+            query: string
+            selected: boolean
+            isDefault: boolean
+            selectSearchContextSpec: (spec: string) => void
+            searchFilter: string
+            onKeyDown: (key: string) => void
+        } & TelemetryProps
+    >
 > = ({
     spec,
     description,
@@ -113,7 +116,7 @@ const searchContextsPerPageToLoad = 15
 const getSearchContextMenuItem = (spec: string): HTMLButtonElement | null =>
     document.querySelector(`[data-search-context-spec="${spec}"]`)
 
-export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> = ({
+export const SearchContextMenu: React.FunctionComponent<React.PropsWithChildren<SearchContextMenuProps>> = ({
     authenticatedUser,
     selectedSearchContextSpec,
     defaultSearchContextSpec,

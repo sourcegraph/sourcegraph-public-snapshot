@@ -39,7 +39,7 @@ var BatchSpecExecutionCacheEntryColums = SQLColumns{
 
 // CreateBatchSpecExecutionCacheEntry creates the given batch spec workspace jobs.
 func (s *Store) CreateBatchSpecExecutionCacheEntry(ctx context.Context, ce *btypes.BatchSpecExecutionCacheEntry) (err error) {
-	ctx, endObservation := s.operations.createBatchSpecExecutionCacheEntry.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.createBatchSpecExecutionCacheEntry.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("Key", ce.Key),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -100,7 +100,7 @@ type ListBatchSpecExecutionCacheEntriesOpts struct {
 
 // ListBatchSpecExecutionCacheEntries gets the BatchSpecExecutionCacheEntries matching the given options.
 func (s *Store) ListBatchSpecExecutionCacheEntries(ctx context.Context, opts ListBatchSpecExecutionCacheEntriesOpts) (cs []*btypes.BatchSpecExecutionCacheEntry, err error) {
-	ctx, endObservation := s.operations.listBatchSpecExecutionCacheEntries.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.listBatchSpecExecutionCacheEntries.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("Count", len(opts.Keys)),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -160,7 +160,7 @@ WHERE
 
 // MarkUsedBatchSpecExecutionCacheEntries updates the LastUsedAt of the given cache entries.
 func (s *Store) MarkUsedBatchSpecExecutionCacheEntries(ctx context.Context, ids []int64) (err error) {
-	ctx, endObservation := s.operations.markUsedBatchSpecExecutionCacheEntries.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.markUsedBatchSpecExecutionCacheEntries.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("count", len(ids)),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -212,7 +212,7 @@ DELETE FROM batch_spec_execution_cache_entries WHERE id IN (SELECT id FROM ids)
 `
 
 func (s *Store) CleanBatchSpecExecutionCacheEntries(ctx context.Context, maxCacheSize int64) (err error) {
-	ctx, endObservation := s.operations.cleanBatchSpecExecutionCacheEntries.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.cleanBatchSpecExecutionCacheEntries.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("MaxTableSize", int(maxCacheSize)),
 	}})
 	defer endObservation(1, observation.Args{})

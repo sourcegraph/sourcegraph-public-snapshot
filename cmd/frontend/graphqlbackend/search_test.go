@@ -29,7 +29,7 @@ import (
 
 func TestSearch(t *testing.T) {
 	type Results struct {
-		Results    []interface{}
+		Results    []any
 		MatchCount int
 	}
 	tcs := []struct {
@@ -91,7 +91,7 @@ func TestSearch(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			conf.Mock(&conf.Unified{})
 			defer conf.Mock(nil)
-			vars := map[string]interface{}{"query": tc.searchQuery, "version": tc.searchVersion}
+			vars := map[string]any{"query": tc.searchQuery, "version": tc.searchVersion}
 
 			MockDecodedViewerFinalSettings = &schema.Settings{}
 			defer func() { MockDecodedViewerFinalSettings = nil }()

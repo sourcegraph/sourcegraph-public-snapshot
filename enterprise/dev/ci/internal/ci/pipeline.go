@@ -100,8 +100,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			}
 		}
 		ops.Merge(CoreTestOperations(c.Diff, CoreTestOperationsOptions{
-			MinimumUpgradeableVersion:  minimumUpgradeableVersion,
-			ClientLintOnlyChangedFiles: c.RunType.Is(runtype.PullRequest),
+			MinimumUpgradeableVersion: minimumUpgradeableVersion,
+			// TODO: (@umpox, @valerybugakov) Figure out if we can reliably enable this in PRs.
+			ClientLintOnlyChangedFiles: false,
 		}))
 
 	case runtype.ReleaseNightly:
@@ -130,6 +131,14 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			wait,
 			addBrowserExtensionReleaseSteps)
 
+	case runtype.VsceReleaseBranch:
+		// If this is a vs code extension release branch, run the vscode-extension tests and release
+		ops = operations.NewSet(
+			addClientLintersForAllFiles,
+			addVsceIntegrationTests,
+			wait,
+			addVsceReleaseSteps(buildOptions))
+
 	case runtype.BextNightly:
 		// If this is a browser extension nightly build, run the browser-extension tests and
 		// e2e tests.
@@ -140,6 +149,12 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			frontendTests,
 			wait,
 			addBrowserExtensionE2ESteps)
+
+	case runtype.VsceNightly:
+		// If this is a VS Code extension nightly build, run the vsce-extension integration tests
+		ops = operations.NewSet(
+			addClientLintersForAllFiles,
+			addVsceIntegrationTests)
 
 	case runtype.ImagePatch:
 		// only build image for the specified image in the branch name

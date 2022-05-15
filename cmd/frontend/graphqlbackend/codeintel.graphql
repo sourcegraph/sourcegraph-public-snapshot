@@ -580,6 +580,63 @@ extend type GitBlob {
     Experimental: This API is likely to change in the future.
     """
     localCodeIntel: JSONValue
+
+    """
+    A wrapper around syntactic hover and definition query methods.
+
+    Experimental: This API is likely to change in the future.
+    """
+    symbolInfo(line: Int!, character: Int!): SymbolInfo
+}
+
+"""
+SymbolInfo contains hover and definition methods. It's returned by GitBlob.symbolInfo(line, character).
+"""
+type SymbolInfo {
+    """
+    The definition of the symbol.
+    """
+    definition: SymbolLocation
+
+    """
+    The hover for the symbol.
+    """
+    hover: String
+}
+
+"""
+SymbolLocation is a single-line range within a repository. It's returned by SymbolInfo.definition.
+"""
+type SymbolLocation {
+    """
+    The repo.
+    """
+    repo: String!
+
+    """
+    The commit.
+    """
+    commit: String!
+
+    """
+    The path.
+    """
+    path: String!
+
+    """
+    The line.
+    """
+    line: Int!
+
+    """
+    The character.
+    """
+    character: Int!
+
+    """
+    The length.
+    """
+    length: Int!
 }
 
 """
@@ -1296,6 +1353,12 @@ type LSIFUpload implements Node {
         """
         first: Int
     ): CodeIntelligenceRetentionPolicyMatchesConnection!
+
+    """
+    The list of documents contained in this processed upload, matching the Postgres
+    pattern. Pattern type is subject to change.
+    """
+    documentPaths(pattern: String!): LSIFUploadDocumentPathsConnection!
 }
 
 """
@@ -1316,6 +1379,21 @@ type LSIFUploadConnection {
     Pagination information.
     """
     pageInfo: PageInfo!
+}
+
+"""
+A list of document paths in an LSIF upload.
+"""
+type LSIFUploadDocumentPathsConnection {
+    """
+    The first 100 document paths. Pagination to be added at a later date.
+    """
+    nodes: [String!]!
+
+    """
+    The total number of docuemnt paths.
+    """
+    totalCount: Int
 }
 
 """

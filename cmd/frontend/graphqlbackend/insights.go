@@ -20,6 +20,7 @@ type InsightsResolver interface {
 	InsightViews(ctx context.Context, args *InsightViewQueryArgs) (InsightViewConnectionResolver, error)
 
 	SearchInsightLivePreview(ctx context.Context, args SearchInsightLivePreviewArgs) ([]SearchInsightLivePreviewSeriesResolver, error)
+	SearchInsightPreview(ctx context.Context, args SearchInsightPreviewArgs) ([]SearchInsightLivePreviewSeriesResolver, error)
 
 	// Mutations
 	CreateInsightsDashboard(ctx context.Context, args *CreateInsightsDashboardArgs) (InsightsDashboardPayloadResolver, error)
@@ -42,6 +43,22 @@ type InsightsResolver interface {
 
 type SearchInsightLivePreviewArgs struct {
 	Input SearchInsightLivePreviewInput
+}
+
+type SearchInsightPreviewArgs struct {
+	Input SearchInsightPreviewInput
+}
+
+type SearchInsightPreviewInput struct {
+	RepositoryScope RepositoryScopeInput
+	TimeScope       TimeScopeInput
+	Series          []SearchSeriesPreviewInput
+}
+
+type SearchSeriesPreviewInput struct {
+	Query                      string
+	Label                      string
+	GeneratedFromCaptureGroups bool
 }
 
 type SearchInsightLivePreviewInput struct {
@@ -175,6 +192,7 @@ type InsightViewResolver interface {
 	DataSeriesDefinitions(ctx context.Context) ([]InsightDataSeriesDefinition, error)
 	DashboardReferenceCount(ctx context.Context) (int32, error)
 	IsFrozen(ctx context.Context) (bool, error)
+	Dashboards(ctx context.Context, args *InsightsDashboardsArgs) InsightsDashboardConnectionResolver
 }
 
 type InsightDataSeriesDefinition interface {

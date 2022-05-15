@@ -8,8 +8,7 @@ type Package struct {
 	Version string
 }
 
-// PackageReference pairs a package scheme+name+version with a dump that depends on it.
+// PackageReference is a package scheme+name+version
 type PackageReference struct {
 	Package
-	Filter []byte // a bloom filter of identifiers imported by the dependent dump
 }

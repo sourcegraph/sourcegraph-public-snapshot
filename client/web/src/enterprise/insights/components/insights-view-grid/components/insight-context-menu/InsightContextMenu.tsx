@@ -4,12 +4,23 @@ import classNames from 'classnames'
 import { noop } from 'lodash'
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 
-import { Link, Menu, MenuButton, MenuDivider, MenuItem, MenuLink, MenuList, Position } from '@sourcegraph/wildcard'
+import {
+    Link,
+    Menu,
+    MenuButton,
+    MenuDivider,
+    MenuItem,
+    MenuLink,
+    MenuList,
+    Position,
+    Checkbox,
+} from '@sourcegraph/wildcard'
 
-import { Insight, InsightDashboard, isVirtualDashboard } from '../../../../core'
+import { useExperimentalFeatures } from '../../../../../../stores'
+import { Insight, InsightDashboard, InsightType, isVirtualDashboard } from '../../../../core'
 import { useUiFeatures } from '../../../../hooks/use-ui-features'
+import { ConfirmDeleteModal } from '../../../modals/ConfirmDeleteModal'
 
-import { ConfirmDeleteModal } from './ConfirmDeleteModal'
 import { ConfirmRemoveModal } from './ConfirmRemoveModal'
 
 import styles from './InsightContextMenu.module.scss'
@@ -25,7 +36,7 @@ export interface InsightCardMenuProps {
 /**
  * Renders context menu (three dots menu) for particular insight card.
  */
-export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> = props => {
+export const InsightContextMenu: React.FunctionComponent<React.PropsWithChildren<InsightCardMenuProps>> = props => {
     const { insight, dashboard, zeroYAxisMin, menuButtonClassName, onToggleZeroYAxisMin = noop } = props
 
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -38,6 +49,14 @@ export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> =
     const editUrl = dashboard?.id
         ? `/insights/edit/${insightID}?dashboardId=${dashboard.id}`
         : `/insights/edit/${insightID}`
+
+    const features = useExperimentalFeatures()
+    const showQuickFix = insight.title.includes('[quickfix]') && features?.goCodeCheckerTemplates
+
+    const quickFixUrl =
+        insight.type === InsightType.SearchBased
+            ? `/batch-changes/create?kind=goChecker${insight.series[0]?.name}&title=${insight.title}`
+            : undefined
 
     const withinVirtualDashboard = !!dashboard && isVirtualDashboard(dashboard)
 
@@ -71,22 +90,25 @@ export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> =
                                 <MenuItem
                                     role="menuitemcheckbox"
                                     data-testid="InsightContextMenuEditLink"
-                                    className={classNames(
-                                        'd-flex align-items-center justify-content-between',
-                                        styles.item
-                                    )}
+                                    className={classNames('d-flex align-items-center justify-content-end', styles.item)}
                                     onSelect={onToggleZeroYAxisMin}
                                     aria-checked={zeroYAxisMin}
                                 >
-                                    <input
-                                        type="checkbox"
+                                    <Checkbox
                                         aria-hidden="true"
                                         checked={zeroYAxisMin}
                                         onChange={noop}
                                         tabIndex={-1}
+                                        id="InsightContextMenuEditInput"
+                                        label={<span className="font-weight-normal">Start Y Axis at 0</span>}
                                     />
-                                    <span>Start Y Axis at 0</span>
                                 </MenuItem>
+                            )}
+
+                            {quickFixUrl && showQuickFix && (
+                                <MenuLink as={Link} className={styles.item} to={quickFixUrl}>
+                                    Golang quick fixes
+                                </MenuLink>
                             )}
 
                             {dashboard && (

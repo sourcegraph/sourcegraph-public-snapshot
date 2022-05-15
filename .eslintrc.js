@@ -71,6 +71,11 @@ const config = {
             message:
               'Our Zustand stores should be created in a single place. Create this store in client/web/src/stores',
           },
+          {
+            name: 'reactstrap',
+            message:
+              'Please use components from the Wildcard component library instead. We work on removing `reactstrap` dependency.',
+          },
         ],
         patterns: [
           {
@@ -112,6 +117,30 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
           {
             element: 'a',
             message: 'Use the <Link /> component from @sourcegraph/wildcard instead.',
+          },
+          {
+            element: 'h1',
+            message: 'Use the <Typography.H1 /> component from @sourcegraph/wildcard instead.',
+          },
+          {
+            element: 'h2',
+            message: 'Use the <Typography.H2 /> component from @sourcegraph/wildcard instead.',
+          },
+          {
+            element: 'h3',
+            message: 'Use the <Typography.H3 /> component from @sourcegraph/wildcard instead.',
+          },
+          {
+            element: 'h4',
+            message: 'Use the <Typography.H4 /> component from @sourcegraph/wildcard instead.',
+          },
+          {
+            element: 'h5',
+            message: 'Use the <Typography.H5 /> component from @sourcegraph/wildcard instead.',
+          },
+          {
+            element: 'h6',
+            message: 'Use the <Typography.H6 /> component from @sourcegraph/wildcard instead.',
           },
         ],
       },

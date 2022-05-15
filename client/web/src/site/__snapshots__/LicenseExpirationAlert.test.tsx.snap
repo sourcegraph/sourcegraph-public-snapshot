@@ -4,6 +4,7 @@ exports[`LicenseExpirationAlert expired 1`] = `
 <DocumentFragment>
   <div
     class="alert alertWarning container align-items-center"
+    role="alert"
   >
     <div
       class="content"
@@ -56,6 +57,7 @@ exports[`LicenseExpirationAlert expiring soon 1`] = `
 <DocumentFragment>
   <div
     class="alert alertWarning container align-items-center"
+    role="alert"
   >
     <div
       class="content"

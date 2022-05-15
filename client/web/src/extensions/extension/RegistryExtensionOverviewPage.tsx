@@ -9,7 +9,7 @@ import GithubIcon from 'mdi-react/GithubIcon'
 import { isErrorLike, isDefined, isEncodedImage } from '@sourcegraph/common'
 import { splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
 import { ExtensionCategory, ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
-import { Button, Link, Icon } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
@@ -24,10 +24,9 @@ import styles from './RegistryExtensionOverviewPage.module.scss'
 
 interface Props extends Pick<ExtensionAreaRouteContext, 'extension' | 'telemetryService' | 'isLightTheme'> {}
 
-const RegistryExtensionOverviewIcon: React.FunctionComponent<Pick<Props, 'extension' | 'isLightTheme'>> = ({
-    extension,
-    isLightTheme,
-}) => {
+const RegistryExtensionOverviewIcon: React.FunctionComponent<
+    React.PropsWithChildren<Pick<Props, 'extension' | 'isLightTheme'>>
+> = ({ extension, isLightTheme }) => {
     const manifest: ExtensionManifest | undefined =
         extension.manifest && !isErrorLike(extension.manifest) ? extension.manifest : undefined
 
@@ -63,7 +62,7 @@ const RegistryExtensionOverviewIcon: React.FunctionComponent<Pick<Props, 'extens
 }
 
 /** A page that displays overview information about a registry extension. */
-export const RegistryExtensionOverviewPage: React.FunctionComponent<Props> = ({
+export const RegistryExtensionOverviewPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     telemetryService,
     extension,
     isLightTheme,
@@ -109,7 +108,7 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<Props> = ({
                 {/* Publisher */}
                 {publisher && (
                     <div className="pt-2 pb-3">
-                        <h3>Publisher</h3>
+                        <Typography.H3 as={Typography.H2}>Publisher</Typography.H3>
                         <small
                             data-tooltip={isSourcegraphExtension ? 'Created and maintained by Sourcegraph' : undefined}
                         >
@@ -124,7 +123,7 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<Props> = ({
                 {extension.registryExtension &&
                     (extension.registryExtension.updatedAt || extension.registryExtension.publishedAt) && (
                         <div className={styles.sidebarSection}>
-                            <h3>Last updated</h3>
+                            <Typography.H3>Last updated</Typography.H3>
                             <small className="text-muted">
                                 <Timestamp
                                     date={maxDate(
@@ -138,7 +137,7 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<Props> = ({
                     )}
                 {/* Resources */}
                 <div className={styles.sidebarSection}>
-                    <h3>Resources</h3>
+                    <Typography.H3>Resources</Typography.H3>
                     <small>
                         {extension.registryExtension && (
                             <Link to={`${extension.registryExtension.url}/-/manifest`} className="d-block mb-1">
@@ -172,13 +171,13 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<Props> = ({
                 </div>
                 {/* Full extension ID */}
                 <div className={styles.sidebarSection}>
-                    <h3>Extension ID</h3>
+                    <Typography.H3>Extension ID</Typography.H3>
                     <small className="text-muted">{extension.id}</small>
                 </div>
                 {/* Categories */}
                 {categories && (
                     <div className={classNames('pb-0', styles.sidebarSection)}>
-                        <h3>Categories</h3>
+                        <Typography.H3>Categories</Typography.H3>
                         <ul className="list-inline" data-testid="test-registry-extension-categories">
                             {categories.map(category => (
                                 <li key={category} className="list-inline-item mb-2">
@@ -202,7 +201,7 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<Props> = ({
                     extension.manifest.tags &&
                     extension.manifest.tags.length > 0 && (
                         <div className={classNames('pb-0', styles.sidebarSection)}>
-                            <h3>Tags</h3>
+                            <Typography.H3>Tags</Typography.H3>
                             <ul className="list-inline">
                                 {extension.manifest.tags.map(tag => (
                                     <li key={tag} className="list-inline-item mb-2">

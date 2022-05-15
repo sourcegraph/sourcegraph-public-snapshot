@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func Undo(commandName string, factory RunnerFactory, out *output.Output, development bool) *cli.Command {
+func Undo(commandName string, factory RunnerFactory, outFactory func() *output.Output, development bool) *cli.Command {
 	flags := []cli.Flag{
 		&cli.StringFlag{
 			Name:     "db",
@@ -25,23 +25,20 @@ func Undo(commandName string, factory RunnerFactory, out *output.Output, develop
 	}
 
 	action := func(cmd *cli.Context) error {
+		out := outFactory()
+
 		if cmd.NArg() != 0 {
 			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments"))
 			return flag.ErrHelp
 		}
 
 		var (
-			schemaNameFlag           = cmd.String("db")
+			schemaName               = cmd.String("db")
 			ignoreSingleDirtyLogFlag = cmd.Bool("ignore-single-dirty-log")
 		)
 
-		if schemaNameFlag == "" {
-			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: supply a schema via -db"))
-			return flag.ErrHelp
-		}
-
 		ctx := cmd.Context
-		r, err := factory(ctx, []string{schemaNameFlag})
+		r, err := factory(ctx, []string{schemaName})
 		if err != nil {
 			return err
 		}
@@ -49,7 +46,7 @@ func Undo(commandName string, factory RunnerFactory, out *output.Output, develop
 		return r.Run(ctx, runner.Options{
 			Operations: []runner.MigrationOperation{
 				{
-					SchemaName: schemaNameFlag,
+					SchemaName: schemaName,
 					Type:       runner.MigrationOperationTypeRevert,
 				},
 			},

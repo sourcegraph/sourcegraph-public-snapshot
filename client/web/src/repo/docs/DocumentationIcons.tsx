@@ -29,7 +29,7 @@ interface Props {
 /**
  * Renders icons for the given documentation tags on a single node.
  */
-export const DocumentationIcons: React.FunctionComponent<Props> = ({ tags, className }) => (
+export const DocumentationIcons: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ tags, className }) => (
     <>
         {pickIconTags(tags).map(tag => (
             <DocumentationIcon key={tag} tag={tag} className={className} />

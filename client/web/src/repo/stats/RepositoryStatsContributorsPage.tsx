@@ -39,7 +39,7 @@ interface RepositoryContributorNodeProps extends QuerySpec {
     globbing: boolean
 }
 
-const RepositoryContributorNode: React.FunctionComponent<RepositoryContributorNodeProps> = ({
+const RepositoryContributorNode: React.FunctionComponent<React.PropsWithChildren<RepositoryContributorNodeProps>> = ({
     node,
     repoName,
     revisionRange,
@@ -60,7 +60,7 @@ const RepositoryContributorNode: React.FunctionComponent<RepositoryContributorNo
         .replace(/\s+/, ' ')
 
     return (
-        <div className={classNames('list-group-item py-2', styles.repositoryContributorNode)}>
+        <li className={classNames('list-group-item py-2', styles.repositoryContributorNode)}>
             <div className={styles.person}>
                 <UserAvatar inline={true} className="mr-2" user={node.person} />
                 <PersonLink userClassName="font-weight-bold" person={node.person} />
@@ -93,7 +93,7 @@ const RepositoryContributorNode: React.FunctionComponent<RepositoryContributorNo
                     </Link>
                 </div>
             </div>
-        </div>
+        </li>
     )
 }
 
@@ -247,7 +247,7 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                                         onChange={this.onChange}
                                     />
                                     <div className="input-group-append">
-                                        <ButtonGroup>
+                                        <ButtonGroup aria-label="Time period presets">
                                             <Button
                                                 className={classNames(
                                                     styles.btnNoLeftRoundedCorners,
@@ -352,7 +352,7 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                     </CardBody>
                 </Card>
                 <FilteredContributorsConnection
-                    listClassName="list-group list-group-flush"
+                    listClassName="list-group list-group-flush test-filtered-contributors-connection"
                     noun="contributor"
                     pluralNoun="contributors"
                     queryConnection={this.queryRepositoryContributors}

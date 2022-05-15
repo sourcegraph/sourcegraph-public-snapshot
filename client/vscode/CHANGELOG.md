@@ -2,13 +2,27 @@
 
 The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release versions and major.ODD_NUMBER.patch (eg. 2.1.1) for pre-release versions.
 
-## Next Release - 2.2.2
+## Next Release
 
 ### Changes
+
+- Update Access Token headers setting method --thanks @ptxmac for the contribution! [issues/34338](https://github.com/sourcegraph/sourcegraph/issues/34338)
+
+### Fixes
+
+- Windows file path issue [issues/34788](https://github.com/sourcegraph/sourcegraph/issues/34788)
+
+## 2.2.2
+
+### Changes
+
+- Display current extension version and instance version in frontend [issues/34729](https://github.com/sourcegraph/sourcegraph/issues/34729)
 
 ### Fixes
 
 - Remove incorrect unsupported instance error messages on first load [issues/34207](https://github.com/sourcegraph/sourcegraph/issues/34207)
+- Links to open remote file in Sourcegraph web are now decoded correctly [issues/34630](https://github.com/sourcegraph/sourcegraph/issues/34630)
+- Remove pattern restriction for basePath [issues/34731](https://github.com/sourcegraph/sourcegraph/issues/34731)
 
 ## 2.2.1
 

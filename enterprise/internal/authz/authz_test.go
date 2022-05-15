@@ -464,7 +464,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 		t.Run(test.description, func(t *testing.T) {
 			externalServices := database.NewMockExternalServiceStore()
 			externalServices.ListFunc.SetDefaultHook(func(ctx context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-				mustMarshalJSONString := func(v interface{}) string {
+				mustMarshalJSONString := func(v any) string {
 					str, err := jsoniter.MarshalToString(v)
 					require.NoError(t, err)
 					return str
