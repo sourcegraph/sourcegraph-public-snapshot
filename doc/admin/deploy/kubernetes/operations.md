@@ -193,7 +193,7 @@ kubectl scale --replicas=0 deployment/sourcegraph-frontend
 kubectl delete deployment sourcegraph-frontend
 ```
 
-C. Check for corrupt database indexes.  If amcheck returns errors, please reach out to [support@sourcegraph.com](mailto:support@sourcegraph.com)
+C. Check for corrupt database indexes.  If amcheck returns errors, please reach out to [support@sourcegraph.com](mailto:support@sourcegraph.com).
 
 ```sql
 create extension amcheck;
