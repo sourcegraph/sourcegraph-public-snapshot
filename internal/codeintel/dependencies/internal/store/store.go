@@ -239,11 +239,11 @@ func populatePackageDependencyChannel(deps []shared.PackageDependency) <-chan []
 
 // SelectRepoRevisionsToResolve selects the references lockfile packages to
 // possibly resolve them to repositories on the Sourcegraph instance.
-func (s *Store) SelectRepoRevisionsToResolve(ctx context.Context) (_ map[string][]string, err error) {
-	return s.selectRepoRevisionsToResolveAtTime(ctx, time.Now(), 24, 100)
+func (s *Store) SelectRepoRevisionsToResolve(ctx context.Context, batchSize int, minimumCheckInterval time.Duration) (_ map[string][]string, err error) {
+	return s.selectRepoRevisionsToResolve(ctx, batchSize, minimumCheckInterval, time.Now())
 }
 
-func (s *Store) selectRepoRevisionsToResolveAtTime(ctx context.Context, time time.Time, ageHours, batchSize int) (_ map[string][]string, err error) {
+func (s *Store) selectRepoRevisionsToResolve(ctx context.Context, batchSize int, minimumCheckInterval time.Duration, now time.Time) (_ map[string][]string, err error) {
 	var count int
 	ctx, _, endObservation := s.operations.selectRepoRevisionsToResolve.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{
@@ -252,7 +252,7 @@ func (s *Store) selectRepoRevisionsToResolveAtTime(ctx context.Context, time tim
 		},
 	})
 
-	rows, err := s.Query(ctx, sqlf.Sprintf(selectRepoRevisionsToResolveQuery, time, ageHours, batchSize, time))
+	rows, err := s.Query(ctx, sqlf.Sprintf(selectRepoRevisionsToResolveQuery, now, int64(minimumCheckInterval/time.Hour), batchSize, now))
 	if err != nil {
 		return nil, err
 	}
@@ -265,8 +265,8 @@ func (s *Store) selectRepoRevisionsToResolveAtTime(ctx context.Context, time tim
 			return nil, err
 		}
 
+		count++
 		m[repositoryName] = append(m[repositoryName], commit)
-		count += 1
 	}
 
 	return m, nil
@@ -280,8 +280,7 @@ WITH candidates AS (
 		revspec
 	FROM codeintel_lockfile_references
 	WHERE
-		last_check_at IS NULL
-	OR
+		last_check_at IS NULL OR
 		%s - last_check_at >= (%s * '1 hour'::interval)
 	GROUP BY repository_name, revspec
 	ORDER BY repository_name, revspec

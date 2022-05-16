@@ -206,7 +206,7 @@ func TestSelectRepoRevisionsToResolve(t *testing.T) {
 
 	now := timeutil.Now()
 
-	selected, err := store.selectRepoRevisionsToResolveAtTime(ctx, now, 24, 3)
+	selected, err := store.selectRepoRevisionsToResolve(ctx, 3, 24*time.Hour, now)
 	if err != nil {
 		t.Fatalf("unexpected error selecting repo revisions to resolve: %s", err)
 	}
@@ -220,7 +220,7 @@ func TestSelectRepoRevisionsToResolve(t *testing.T) {
 		t.Errorf("unexpected sourced commits (-want +got):\n%s", diff)
 	}
 
-	selected, err = store.selectRepoRevisionsToResolveAtTime(ctx, now, 24, 3)
+	selected, err = store.selectRepoRevisionsToResolve(ctx, 3, 24*time.Hour, now)
 	if err != nil {
 		t.Fatalf("unexpected error selecting repo revisions to resolve: %s", err)
 	}
@@ -234,7 +234,7 @@ func TestSelectRepoRevisionsToResolve(t *testing.T) {
 	}
 
 	// Run it again, but all should be resolved in timeframe
-	selected, err = store.selectRepoRevisionsToResolveAtTime(ctx, now, 24, 6)
+	selected, err = store.selectRepoRevisionsToResolve(ctx, 6, 24*time.Hour, now)
 	if err != nil {
 		t.Fatalf("unexpected error selecting repo revisions to resolve: %s", err)
 	}
@@ -247,7 +247,7 @@ func TestSelectRepoRevisionsToResolve(t *testing.T) {
 	// Run it again, but in the future, all should be resolved in timeframe
 	now = now.Add(24 * time.Hour)
 
-	selected, err = store.selectRepoRevisionsToResolveAtTime(ctx, now, 24, 6)
+	selected, err = store.selectRepoRevisionsToResolve(ctx, 6, 24*time.Hour, now)
 	if err != nil {
 		t.Fatalf("unexpected error selecting repo revisions to resolve: %s", err)
 	}

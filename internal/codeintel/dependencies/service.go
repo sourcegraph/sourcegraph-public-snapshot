@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
@@ -358,8 +359,8 @@ func constructLogFields(repoRevs map[api.RepoName]types.RevSpecSet) []log.Field 
 	}
 }
 
-func (s *Service) SelectRepoRevisionsToResolve(ctx context.Context) (map[string][]string, error) {
-	return s.dependenciesStore.SelectRepoRevisionsToResolve(ctx)
+func (s *Service) SelectRepoRevisionsToResolve(ctx context.Context, batchSize int, minimumCheckInterval time.Duration) (map[string][]string, error) {
+	return s.dependenciesStore.SelectRepoRevisionsToResolve(ctx, batchSize, minimumCheckInterval)
 }
 
 func (s *Service) UpdateResolvedRevisions(ctx context.Context, repoRevsToResolvedRevs map[string]map[string]string) error {

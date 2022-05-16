@@ -19,7 +19,7 @@ var _ goroutine.Handler = &resolver{}
 var _ goroutine.ErrorHandler = &resolver{}
 
 func (r *resolver) Handle(ctx context.Context) error {
-	repoRevs, err := r.dependenciesSvc.SelectRepoRevisionsToResolve(ctx)
+	repoRevs, err := r.dependenciesSvc.SelectRepoRevisionsToResolve(ctx, ConfigInst.BatchSize, ConfigInst.MinimumCheckInterval)
 	if err != nil {
 		return errors.Wrap(err, "dependencies.SelectRepoRevisionsToResolve")
 	}
