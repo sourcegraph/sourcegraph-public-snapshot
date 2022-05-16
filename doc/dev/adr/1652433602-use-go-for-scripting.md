@@ -16,16 +16,16 @@ Bash scripts are also notoriously complicated to incorporate code reuse and are 
 
 After discussing the topic, it became clear that using Go to write those scripts is beneficial, including things like portable execution, strong types, testing primitives, packaging capabilities, and integration with existing code. However, Go also includes some tedium, especially when it comes to composing and executing commands and operating on their output.
 
-We have explored using an existing library in the preprod restore state script which surfaced incovenience at the API level, that we can address we a custom package of our own.
+We have [explored using an existing library](https://github.com/bitfield/script) in the [preprod restore state script](https://github.com/sourcegraph/deploy-sourcegraph-cloud/blob/53ab1c80dcdb10955b09f0b0858fbeb20f07b903/restorepreprod/main.go) which surfaced [incovenience at the API level](https://github.com/sourcegraph/sourcegraph/discussions/33903#discussioncomment-2639015), that we can address we a custom package of our own.
 
 ## Decision
 
-- Create our own package for wrapping Go scripts, focused at this stage on providing an opionated API for running commands: sourcegraph/run.
+- Create our own package for wrapping Go scripts, focused at this stage on providing an opionated API for running commands: [github.com/sourcegraph/run](https://github.com/sourcegraph/run).
 - Use the above mentioned package to create new scripts going forward, and replace existing shell scripts opportunistically.
 
 ## Consequences
 
 - Improve the maintainability of our scripts in time.
 - Lower the entry barrier to contributions on those scripts for all team mates.
-- Possible adoption from the Cloud DevOps team of this solution in the context of building a CLI for managed instances.
+- Possible adoption from the Cloud DevOps team of this solution in the context of [building a CLI for managed instances](https://github.com/sourcegraph/sourcegraph/discussions/34803).
 
