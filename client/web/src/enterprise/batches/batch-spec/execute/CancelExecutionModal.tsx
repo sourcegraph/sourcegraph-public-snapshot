@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Button, Modal } from '@sourcegraph/wildcard'
+import { Button, Modal, Typography } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../components/LoaderButton'
 
@@ -24,7 +24,7 @@ export const CancelExecutionModal: React.FunctionComponent<React.PropsWithChildr
     onConfirm,
 }) => (
     <Modal isOpen={isOpen} position="center" aria-labelledby="modal-header">
-        <h3 id="modal-header">{modalHeader}</h3>
+        <Typography.H3 id="modal-header">{modalHeader}</Typography.H3>
         {modalBody}
         <div className="d-flex justify-content-end">
             <Button className="mr-2" onClick={onCancel} outline={true} variant="secondary">

@@ -4,7 +4,7 @@ import { useHistory } from 'react-router'
 
 import { useMutation } from '@sourcegraph/http-client'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Alert, Button } from '@sourcegraph/wildcard'
+import { Alert, Button, Typography } from '@sourcegraph/wildcard'
 
 import {
     BatchSpecExecutionFields,
@@ -62,7 +62,7 @@ const MemoizedReadOnlyBatchSpecForm: React.FunctionComponent<
     const alert = batchSpec.isExecuting ? (
         <Alert variant="warning" className="d-flex align-items-center pr-3">
             <div className="flex-grow-1">
-                <h4>The execution is still running</h4>
+                <Typography.H4>The execution is still running</Typography.H4>
                 You are unable to edit the spec when an execution is running.
             </div>
             <Button variant="danger" onClick={() => setShowCancelModal(true)}>
@@ -72,7 +72,7 @@ const MemoizedReadOnlyBatchSpecForm: React.FunctionComponent<
     ) : (
         <Alert variant="info" className="d-flex align-items-center pr-3">
             <div className="flex-grow-1">
-                <h4>This spec is read-only</h4>
+                <Typography.H4>This spec is read-only</Typography.H4>
                 We've preserved the original batch spec from this execution for you to inspect.
             </div>
             <Button variant="primary" as="a" href={`${batchChange.url}/edit`} target="_blank" rel="noopener noreferrer">
@@ -85,7 +85,7 @@ const MemoizedReadOnlyBatchSpecForm: React.FunctionComponent<
         <div className={editorStyles.form}>
             <LibraryPane name={batchChange.name} isReadOnly={true} />
             <div className={editorStyles.editorContainer}>
-                <h4 className={editorStyles.header}>Batch spec</h4>
+                <Typography.H4 className={editorStyles.header}>Batch spec</Typography.H4>
                 {alert}
                 <BatchSpec
                     name={batchChange.name}

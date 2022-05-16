@@ -4,7 +4,7 @@ import { useHistory } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Card, CardBody, Panel } from '@sourcegraph/wildcard'
+import { Card, CardBody, Panel, Typography } from '@sourcegraph/wildcard'
 
 import { BatchSpecExecutionFields } from '../../../../../graphql-operations'
 import { BatchSpecContextState, useBatchSpecContext } from '../../BatchSpecContext'
@@ -59,7 +59,9 @@ const MemoizedExecutionWorkspaces: React.FunctionComponent<
                                     deselectWorkspace={deselectWorkspace}
                                 />
                             ) : (
-                                <h3 className="text-center my-3">Select a workspace to view details.</h3>
+                                <Typography.H3 className="text-center my-3">
+                                    Select a workspace to view details.
+                                </Typography.H3>
                             )}
                         </CardBody>
                     </div>

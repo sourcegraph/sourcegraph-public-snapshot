@@ -3,7 +3,7 @@ import React from 'react'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import CloseIcon from 'mdi-react/CloseIcon'
 
-import { Button, Link, Modal } from '@sourcegraph/wildcard'
+import { Button, Link, Modal, Typography } from '@sourcegraph/wildcard'
 
 import styles from './RunServerSideModal.module.scss'
 
@@ -21,7 +21,7 @@ export const RunServerSideModal: React.FunctionComponent<RunServerSideModalProps
         aria-labelledby={MODAL_LABEL_ID}
         className={styles.modal}
     >
-        <h3 id={MODAL_LABEL_ID}>Running batch changes server-side is not enabled</h3>
+        <Typography.H3 id={MODAL_LABEL_ID}>Running batch changes server-side is not enabled</Typography.H3>
         <Button
             className={styles.close}
             onClick={() => {
@@ -43,7 +43,7 @@ export const RunServerSideModal: React.FunctionComponent<RunServerSideModalProps
             </div>
             <div className={styles.right}>
                 <div className={styles.rightTop}>
-                    <h4>Resources</h4>
+                    <Typography.H4>Resources</Typography.H4>
                     <ul>
                         <Link to="https://docs.sourcegraph.com/batch_changes/explanations/server_side">
                             <li>Running batch changes server-side</li>
@@ -56,7 +56,7 @@ export const RunServerSideModal: React.FunctionComponent<RunServerSideModalProps
 
                 <div className={styles.rightBottom}>
                     <div className={styles.blank}>
-                        <h4>Request a demo</h4>
+                        <Typography.H4>Request a demo</Typography.H4>
                         <p>Learn more about this free feature of batch changes.</p>
 
                         <Button variant="primary">Request Demo</Button>
