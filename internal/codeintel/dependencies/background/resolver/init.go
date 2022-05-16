@@ -12,5 +12,6 @@ import (
 func NewResolver(db database.DB, syncer dependencies.Syncer) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(context.Background(), ConfigInst.Interval, &resolver{
 		dependenciesSvc: livedependencies.GetService(db, syncer),
+		gitSvc:          livedependencies.NewGitService(db),
 	})
 }
