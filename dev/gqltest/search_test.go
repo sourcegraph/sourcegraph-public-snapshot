@@ -1462,58 +1462,19 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 		} {
 			tc := tc
 
-			h := func(query string, want []string) {
-				t.Helper()
-				began := time.Now()
-				for {
-					results, err := tc.client.SearchRepositories(query)
-					require.NoError(t, err)
-
-					var have []string
-					for _, r := range results {
-						have = append(have, r.URL)
-					}
-
-					sort.Strings(have)
-
-					if diff := cmp.Diff(have, want); diff != "" {
-						if time.Since(began) >= time.Minute {
-							t.Fatalf("missing repositories after 1m: %v", diff)
-						}
-
-						t.Logf("still missing repositories: %v", diff)
-						time.Sleep(time.Second)
-						continue
-					}
-					break
-				}
-			}
-
-			t.Run(tc.name+"/"+"repos-npm", func(t *testing.T) {
-				const query = `r:deps(^npm/urql$@v2.2.0)`
-
-				want := []string{
+			for _, listDepsTc := range []struct {
+				name  string
+				query string
+				want  []string
+			}{
+				{"repos-npm", `r:deps(^npm/urql$@v2.2.0)`, []string{
 					"/npm/urql/core@v1.9.2",
 					"/npm/wonka@v4.0.7",
-				}
-
-				h(query, want)
-			})
-
-			t.Run(tc.name+"/"+"repos-go", func(t *testing.T) {
-				const query = `r:deps(oklog/ulid)`
-
-				want := []string{
+				}},
+				{"repos-go", `r:deps(oklog/ulid)`, []string{
 					"/go/github.com/pborman/getopt@v0.0.0-20170112200414-7148bc3a4c30",
-				}
-
-				h(query, want)
-			})
-
-			t.Run(tc.name+"/"+"repos-python-poetry", func(t *testing.T) {
-				const query = `r:deps(^github\.com/sgtest/poetry-hw$)`
-
-				want := []string{
+				}},
+				{"repos-python-poetry", `r:deps(^github\.com/sgtest/poetry-hw$)`, []string{
 					"/python/atomicwrites@v1.4.0",
 					"/python/attrs@v21.4.0",
 					"/python/colorama@v0.4.4",
@@ -1525,24 +1486,43 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 					"/python/pytest@v5.4.3",
 					"/python/tqdm@v4.64.0",
 					"/python/wcwidth@v0.2.5",
-				}
-
-				h(query, want)
-			})
-
-			t.Run(tc.name+"/"+"repos-python-pipenv", func(t *testing.T) {
-				const query = `r:deps(^github\.com/sgtest/pipenv-hw$)`
-
-				want := []string{
+				}},
+				{"repos-python-pipenv", `r:deps(^github\.com/sgtest/pipenv-hw$)`, []string{
 					"/python/certifi@v2021.10.8",
 					"/python/charset-normalizer@v2.0.12",
 					"/python/idna@v3.3",
 					"/python/requests@v2.27.1",
 					"/python/urllib3@v1.26.9",
-				}
+				}},
+			} {
+				listDepsTc := listDepsTc
 
-				h(query, want)
-			})
+				t.Run(tc.name+"/"+listDepsTc.name, func(t *testing.T) {
+					began := time.Now()
+					for {
+						results, err := tc.client.SearchRepositories(listDepsTc.query)
+						require.NoError(t, err)
+
+						var have []string
+						for _, r := range results {
+							have = append(have, r.URL)
+						}
+
+						sort.Strings(have)
+
+						if diff := cmp.Diff(have, listDepsTc.want); diff != "" {
+							if time.Since(began) >= time.Minute {
+								t.Fatalf("missing repositories after 1m: %v", diff)
+							}
+
+							t.Logf("still missing repositories: %v", diff)
+							time.Sleep(time.Second)
+							continue
+						}
+						break
+					}
+				})
+			}
 
 			t.Run(tc.name+"/"+"no-alert", func(t *testing.T) {
 				const query = `r:deps(^npm/urql$@v2.2.0) split`
