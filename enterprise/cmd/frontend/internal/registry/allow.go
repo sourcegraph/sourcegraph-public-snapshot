@@ -1,8 +1,6 @@
 package registry
 
 import (
-	"strings"
-
 	frontendregistry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
 	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/client"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
@@ -11,10 +9,6 @@ import (
 
 func init() {
 	frontendregistry.IsRemoteExtensionAllowed = func(extensionID string) bool {
-		if getAllowOnlySourcegraphAuthoredExtensionsFromSiteConfig() && !strings.HasPrefix(extensionID, "sourcegraph/") {
-			return false
-		}
-
 		allowedExtensions := getAllowedExtensionsFromSiteConfig()
 		if allowedExtensions == nil {
 			// Default is to allow all extensions.
@@ -29,12 +23,20 @@ func init() {
 		return false
 	}
 
+	frontendregistry.IsRemoteExtensionPublisherAllowed = func(x *registry.Extension) bool {
+		if getAllowOnlySourcegraphAuthoredExtensionsFromSiteConfig() {
+			return isSourcegraphAuthoredExtension(x)
+		}
+
+		return true
+	}
+
 	frontendregistry.FilterRemoteExtensions = func(extensions []*registry.Extension) []*registry.Extension {
 		var extensionsWithAllowedPublisher []*registry.Extension
 
 		if getAllowOnlySourcegraphAuthoredExtensionsFromSiteConfig() {
 			for _, x := range extensions {
-				if strings.HasPrefix(x.ExtensionID, "sourcegraph/") {
+				if isSourcegraphAuthoredExtension(x) {
 					extensionsWithAllowedPublisher = append(extensionsWithAllowedPublisher, x)
 				}
 			}
@@ -77,9 +79,13 @@ func getAllowedExtensionsFromSiteConfig() []string {
 }
 
 func getAllowOnlySourcegraphAuthoredExtensionsFromSiteConfig() bool {
-	if c := conf.Get().Extensions; c != nil {
+	if c := conf.Get().Extensions; c != nil && (c.RemoteRegistry == nil || c.RemoteRegistry == conf.DefaultRemoteRegistry) {
 		return c.AllowOnlySourcegraphAuthoredExtensions
 	}
 
 	return false
+}
+
+func isSourcegraphAuthoredExtension(x *registry.Extension) bool {
+	return x.Publisher.Name == "sourcegraph"
 }
