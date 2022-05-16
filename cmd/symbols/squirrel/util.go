@@ -254,7 +254,12 @@ func fatalIfError(t *testing.T, err error) {
 
 func fatalIfErrorLabel(t *testing.T, err error, label string) {
 	if err != nil {
-		t.Fatalf("%s: %s", label, err)
+		_, file, no, ok := runtime.Caller(1)
+		if !ok {
+			t.Fatalf("%s: %s\n", label, err)
+		}
+		fmt.Printf("%s:%d %s\n", file, no, err)
+		t.FailNow()
 	}
 }
 
