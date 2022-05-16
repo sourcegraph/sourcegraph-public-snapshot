@@ -20,7 +20,7 @@ type adr struct {
 	Date   string
 }
 
-type presenter struct {
+type templateData struct {
 	Adrs []adr
 }
 
@@ -73,7 +73,7 @@ func main() {
 		}
 	}
 
-	presenter := presenter{
+	presenter := templateData{
 		Adrs: adrs,
 	}
 
