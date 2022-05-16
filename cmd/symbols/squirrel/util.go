@@ -257,3 +257,11 @@ func fatalIfErrorLabel(t *testing.T, err error, label string) {
 		t.Fatalf("%s: %s", label, err)
 	}
 }
+
+func children(node *sitter.Node) []*sitter.Node {
+	var children []*sitter.Node
+	for i := 0; i < int(node.NamedChildCount()); i++ {
+		children = append(children, node.NamedChild(i))
+	}
+	return children
+}
