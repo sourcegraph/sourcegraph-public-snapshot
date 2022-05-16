@@ -274,6 +274,17 @@ func getAndMarshalCodeMonitoringUsageJSON(ctx context.Context, db database.DB) (
 	return json.Marshal(codeMonitoringUsage)
 }
 
+func getAndMarshalNotebooksUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalNotebooksUsageJSON")
+
+	notebooksUsage, err := usagestats.GetNotebooksUsageStatistics(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(notebooksUsage)
+}
+
 func getAndMarshalCodeHostIntegrationUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalCodeHostIntegrationUsageJSON")
 
@@ -393,6 +404,7 @@ func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 		CodeInsightsUsage:             []byte("{}"),
 		CodeInsightsCriticalTelemetry: []byte("{}"),
 		CodeMonitoringUsage:           []byte("{}"),
+		NotebooksUsage:                []byte("{}"),
 		CodeHostIntegrationUsage:      []byte("{}"),
 		IDEExtensionsUsage:            []byte("{}"),
 	}
@@ -503,6 +515,11 @@ func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 		r.CodeMonitoringUsage, err = getAndMarshalCodeMonitoringUsageJSON(ctx, db)
 		if err != nil {
 			logFunc("telemetry: updatecheck.getAndMarshalCodeMonitoringUsageJSON failed", "error", err)
+		}
+
+		r.NotebooksUsage, err = getAndMarshalNotebooksUsageJSON(ctx, db)
+		if err != nil {
+			logFunc("telemetry: updatecheck.getAndMarshalNotebooksUsageJSON failed", "error", err)
 		}
 
 		r.CodeHostIntegrationUsage, err = getAndMarshalCodeHostIntegrationUsageJSON(ctx, db)
