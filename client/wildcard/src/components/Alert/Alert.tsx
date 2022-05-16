@@ -19,6 +19,13 @@ export interface AlertProps extends React.HTMLAttributes<HTMLDivElement> {
 const userShouldBeImmediatelyNotified = (variant?: AlertVariant): boolean =>
     variant === 'danger' || variant === 'warning'
 
+/**
+ * Renders a styled alert on the page.
+ *
+ * Note: These alerts will be automatically read out by screen readers.
+ * If this is not desired behavior, you should pass `aria-live="off"` to this component.
+ * Further details: https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Roles/alert_role
+ */
 export const Alert = React.forwardRef(
     ({ children, as: Component = 'div', variant, className, role = 'alert', ...attributes }, reference) => {
         const { isBranded } = useWildcardTheme()
