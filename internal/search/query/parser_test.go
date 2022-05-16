@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/hexops/autogold"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -720,4 +721,24 @@ func TestScanBalancedPattern(t *testing.T) {
 	autogold.Want("(foo not bar)", "ERROR").Equal(t, test("(foo not bar)"))
 	autogold.Want("repo:foo AND bar", "ERROR").Equal(t, test("repo:foo AND bar"))
 	autogold.Want("repo:foo bar", "ERROR").Equal(t, test("repo:foo bar"))
+}
+
+func Test_newOperator(t *testing.T) {
+	cases := []struct {
+		query string
+		want  autogold.Value
+	}{{
+		query: `(repo:a and repo:b) (repo:d or repo:e) repo:f`,
+		want:  autogold.Want("failing", `(and "repo:a" "repo:b" "repo:f")`),
+	}}
+
+	for _, tc := range cases {
+		t.Run(tc.want.Name(), func(t *testing.T) {
+			q, err := ParseRegexp(tc.query)
+			require.NoError(t, err)
+
+			got := newOperator(q, And)
+			tc.want.Equal(t, Q(got).String())
+		})
+	}
 }
