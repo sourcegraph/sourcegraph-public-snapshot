@@ -237,7 +237,13 @@ func populatePackageDependencyChannel(deps []shared.PackageDependency) <-chan []
 }
 
 func (s *Store) SelectRepoRevisionsToResolve(ctx context.Context) (_ map[string][]string, err error) {
-	// TODO - observe
+	var count int
+	ctx, _, endObservation := s.operations.selectRepoRevisionsToResolve.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{
+		LogFields: []log.Field{
+			log.Int("count", count),
+		},
+	})
 
 	rows, err := s.Query(ctx, sqlf.Sprintf(selectRepoRevisionsToResolveQuery))
 	if err != nil {
@@ -253,6 +259,7 @@ func (s *Store) SelectRepoRevisionsToResolve(ctx context.Context) (_ map[string]
 		}
 
 		m[repositoryName] = append(m[repositoryName], commit)
+		count += 1
 	}
 
 	return m, nil
