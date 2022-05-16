@@ -6,11 +6,14 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
@@ -258,5 +261,69 @@ func TestSelectRepoRevisionsToResolve(t *testing.T) {
 	}
 	if diff := cmp.Diff(selected, expectedRepoRevisions); diff != "" {
 		t.Errorf("unexpected sourced commits (-want +got):\n%s", diff)
+	}
+}
+
+func TestUpdateResolvedRevisions(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := context.Background()
+	db := database.NewDB(dbtest.NewDB(t))
+	store := TestStore(db)
+
+	for _, repo := range []string{"repo-1", "repo-2", "repo-3"} {
+		if err := store.Exec(ctx, sqlf.Sprintf(`INSERT INTO repo (name) VALUES (%s)`, repo)); err != nil {
+			t.Fatalf(err.Error())
+		}
+	}
+
+	packageA := shared.TestPackageDependencyLiteral(api.RepoName("A"), "v1", "2", "3", "4")
+	packageB := shared.TestPackageDependencyLiteral(api.RepoName("repo-2"), "v2", "3", "4", "5")
+	packageC := shared.TestPackageDependencyLiteral(api.RepoName("repo-3"), "v3", "4", "5", "6")
+	packageD := shared.TestPackageDependencyLiteral(api.RepoName("D"), "v4", "5", "6", "7")
+
+	commit := "d34df00d"
+	repoName := "repo-1"
+	packages := []shared.PackageDependency{packageA, packageB, packageC, packageD}
+
+	if err := store.UpsertLockfileDependencies(ctx, repoName, commit, packages); err != nil {
+		t.Fatalf("unexpected error upserting lockfile dependencies: %s", err)
+	}
+
+	resolvedRevisions := map[string]map[string]string{
+		"repo-2": {"v2": "d34df00d"},
+		"repo-3": {"v3": "d34db33f"},
+	}
+
+	if err := store.UpdateResolvedRevisions(ctx, resolvedRevisions); err != nil {
+		t.Fatalf("unexpected error updating resolved revisions: %s", err)
+	}
+
+	for repoName, resolvedRevs := range resolvedRevisions {
+		for revspec, commit := range resolvedRevs {
+			q := sqlf.Sprintf(`
+			SELECT 1 FROM codeintel_lockfile_references
+			WHERE
+				repository_id = (SELECT id FROM repo WHERE name = %s)
+			AND
+				revspec = %s
+			AND
+				commit_bytea = %s
+			`,
+				repoName,
+				revspec,
+				dbutil.CommitBytea(commit),
+			)
+
+			_, ok, err := basestore.ScanFirstInt(store.Query(ctx, q))
+			if err != nil {
+				t.Fatalf("failed to query resolved revisions for repo %s: %s", repoName, err)
+			}
+			if !ok {
+				t.Fatalf("revspec %q for repo %q was not updated to commit %s", revspec, repoName, commit)
+			}
+		}
 	}
 }

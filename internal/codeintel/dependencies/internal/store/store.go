@@ -237,6 +237,8 @@ func populatePackageDependencyChannel(deps []shared.PackageDependency) <-chan []
 	return ch
 }
 
+// SelectRepoRevisionsToResolve selects the references lockfile packages to
+// possibly resolve them to repositories on the Sourcegraph instance.
 func (s *Store) SelectRepoRevisionsToResolve(ctx context.Context) (_ map[string][]string, err error) {
 	return s.selectRepoRevisionsToResolveAtTime(ctx, time.Now(), 24, 100)
 }
@@ -293,8 +295,11 @@ updated AS (
 SELECT * FROM candidates
 `
 
+// UpdateResolvedRevisions updates the lockfile packages that were resolved to
+// repositories/revisions pairs on the Sourcegraph instance.
 func (s *Store) UpdateResolvedRevisions(ctx context.Context, repoRevsToResolvedRevs map[string]map[string]string) (err error) {
-	// TODO - observe
+	ctx, _, endObservation := s.operations.selectRepoRevisionsToResolve.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
 
 	for repoName, resolvedRevs := range repoRevsToResolvedRevs {
 		for commit, resolvedCommit := range resolvedRevs {
