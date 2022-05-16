@@ -3,8 +3,6 @@ package resolver
 import (
 	"context"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -70,5 +68,5 @@ func (r *resolver) Handle(ctx context.Context) error {
 
 func (r *resolver) HandleError(err error) {
 	// TODO - add additional metrics
-	log15.Error("Failed to resolve dependency information", "err", error)
+	// log.Error("Failed to resolve dependency information", "error", err)
 }
