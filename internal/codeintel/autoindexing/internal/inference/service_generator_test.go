@@ -61,10 +61,12 @@ func TestOverrideGenerators(t *testing.T) {
 				"baz/sg-test": "",
 			},
 			expected: []config.IndexJob{
+				// sg.test -> emits jobs with `test` indexer
 				{Indexer: "test", Root: ""},
 				{Indexer: "test", Root: "bar"},
 				{Indexer: "test", Root: "baz"},
 				{Indexer: "test", Root: "foo"},
+				// mycompany.test -> emits jobs with `text-override` indexer
 				{Indexer: "test-override", Root: ""},
 				{Indexer: "test-override", Root: "bar"},
 				{Indexer: "test-override", Root: "baz"},
@@ -99,8 +101,8 @@ func TestOverrideGenerators(t *testing.T) {
 				}
 
 				local recognizers = {}
-				recognizers["sg.test"] = false
-				recognizers["custom.test"] = custom_recognizer
+				recognizers["sg.test"] = false -- Disable builtin recognizer
+				recognizers["mycompany.test"] = custom_recognizer
 				return recognizers
 			`,
 			repositoryContents: map[string]string{
@@ -110,6 +112,10 @@ func TestOverrideGenerators(t *testing.T) {
 				"baz/sg-test": "",
 			},
 			expected: []config.IndexJob{
+				// sg.test -> emits jobs with `test` indexer
+				// No jobs should have been generated
+
+				// mycompany.test -> emits jobs with `text-override` indexer
 				{Indexer: "test-override", Root: ""},
 				{Indexer: "test-override", Root: "bar"},
 				{Indexer: "test-override", Root: "baz"},
