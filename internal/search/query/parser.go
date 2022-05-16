@@ -1021,11 +1021,9 @@ func reduce(left, right []Node, kind operatorKind) ([]Node, bool) {
 			}
 			return left, true
 		}
-		if len(left) == 1 {
-			if operator, ok := left[0].(Operator); ok && operator.Kind == kind {
-				// Reduce left node.
-				return append(operator.Operands, right...), true
-			}
+		if operator, ok := left[0].(Operator); ok && operator.Kind == kind {
+			// Reduce left node.
+			return append(operator.Operands, right...), true
 		}
 	case Pattern:
 		if term.Value == "" {
@@ -1035,18 +1033,16 @@ func reduce(left, right []Node, kind operatorKind) ([]Node, bool) {
 			}
 			return left, true
 		}
-		if len(left) == 1 {
-			if operator, ok := left[0].(Operator); ok && operator.Kind == kind {
-				// Reduce left node.
-				return append(operator.Operands, right...), true
-			}
+		if operator, ok := left[0].(Operator); ok && operator.Kind == kind {
+			// Reduce left node.
+			return append(operator.Operands, right...), true
 		}
 	}
 	if len(right) > 1 {
 		// Reduce right list.
-		reduced, changed := reduce(append(left, right[0]), right[1:], kind)
+		reduced, changed := reduce([]Node{right[0]}, right[1:], kind)
 		if changed {
-			return reduced, true
+			return append(left, reduced...), true
 		}
 	}
 	return append(left, right...), false
