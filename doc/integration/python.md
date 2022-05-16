@@ -8,7 +8,7 @@ Feature | Supported?
 [Repository syncing](#repository-syncing) | ✅
 [Credentials](#credentials) | ✅
 [Rate limiting](#rate-limiting) | ✅
-[Repository permissions](#repository-syncing) | ❌
+Repository permissions | ❌
 
 ## Repository syncing
 
