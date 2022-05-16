@@ -3,7 +3,10 @@ import * as path from 'path'
 import execa from 'execa'
 import vscode, { TextEditor } from 'vscode'
 
+import { gql } from '@sourcegraph/http-client'
+
 import { version } from '../../package.json'
+import { requestGraphQLFromVSCode } from '../backend/requestGraphQl'
 import { log } from '../log'
 
 interface RepositoryInfo extends Branch, RemoteName {
@@ -41,17 +44,15 @@ export async function repoInfo(filePath: string): Promise<RepositoryInfo | undef
         // Determine repository root directory.
         const fileDirectory = path.dirname(filePath)
         const repoRoot = await gitHelpers.rootDirectory(fileDirectory)
-
         // Determine file path relative to repository root, then replace slashes
         // as \\ does not work in Sourcegraphl links
         const fileRelative = filePath.slice(repoRoot.length + 1).replace(/\\/g, '/')
-
         let { branch, remoteName } = await gitRemoteNameAndBranch(repoRoot, gitHelpers, log)
-
-        branch = getDefaultBranch() || branch
-
         const remoteURL = await gitRemoteUrlWithReplacements(repoRoot, remoteName, gitHelpers, log)
-
+        // check if current branch exists on sourcegraph. If not, open in HEAD instead
+        const validatedBranch = await checkBranch(remoteURL, branch)
+        // Use default branch if set. If not, use validated branch instead
+        branch = getDefaultBranch() || validatedBranch
         return { remoteURL, branch, fileRelative, remoteName }
     } catch {
         return undefined
@@ -216,4 +217,45 @@ export function getDefaultBranch(): string {
     const branch = vscode.workspace.getConfiguration('sourcegraph').get<string>('defaultBranch')!
 
     return branch
+}
+
+export async function checkBranch(remoteURL: string, currentBranch: string): Promise<string> {
+    const repoNameRegex = /(\w+(:\/\/|@))(.+@)*([\w.]+)(:?)(\d+){0,1}\/*(.*)(\.git)(\/)?/
+    const repoNameRegexMatches = remoteURL.match(repoNameRegex)
+    const repoName =
+        repoNameRegexMatches?.[4] && repoNameRegexMatches?.[7]
+            ? repoNameRegexMatches?.[4] + '/' + repoNameRegexMatches?.[7]
+            : remoteURL.replace('git@', '').replace('https://', '').replace('.git', '').replace(':', '/')
+
+    const foundBranches = await requestGraphQLFromVSCode<CheckBranchResult>(checkBranchQuery, {
+        repoName,
+        branchName: currentBranch,
+    })
+        .then(response => response.data?.repository.branches.nodes)
+        .then(nodes => nodes?.filter(branch => branch.name.replace('refs/heads/', '') === currentBranch))
+        .catch(error => console.error(error))
+    if (foundBranches?.length === 1) {
+        return currentBranch
+    }
+    return 'HEAD'
+}
+
+const checkBranchQuery = gql`
+    query CheckBranch($repoName: String!, $branchName: String) {
+        repository(name: $repoName) {
+            branches(query: $branchName) {
+                nodes {
+                    name
+                }
+            }
+        }
+    }
+`
+
+interface CheckBranchResult {
+    repository: {
+        branches: {
+            nodes: { name: string }[]
+        }
+    }
 }
