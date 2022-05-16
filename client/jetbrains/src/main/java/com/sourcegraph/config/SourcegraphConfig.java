@@ -22,6 +22,7 @@ class SourcegraphConfig implements PersistentStateComponent<SourcegraphConfig> {
     public String lastSearchPatternType;
     public String lastSearchContextSpec;
     public boolean isGlobbingEnabled;
+    public String accessToken;
 
     @Nullable
     public static SourcegraphConfig getInstance(@NotNull Project project) {
@@ -53,6 +54,11 @@ class SourcegraphConfig implements PersistentStateComponent<SourcegraphConfig> {
     }
 
     @Nullable
+    public String getAccessToken() {
+        return accessToken;
+    }
+
+    @Nullable
     @Override
     public SourcegraphConfig getState() {
         return this;
@@ -68,5 +74,6 @@ class SourcegraphConfig implements PersistentStateComponent<SourcegraphConfig> {
         this.lastSearchPatternType = config.lastSearchPatternType;
         this.lastSearchContextSpec = config.lastSearchContextSpec;
         this.isGlobbingEnabled = config.isGlobbingEnabled;
+        this.accessToken = config.accessToken;
     }
 }

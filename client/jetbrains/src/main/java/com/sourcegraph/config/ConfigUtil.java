@@ -53,6 +53,11 @@ public class ConfigUtil {
         return getProjectLevelConfig(project).isGlobbingEnabled();
     }
 
+    @Nullable
+    public static String getAccessToken(Project project) {
+        return getProjectLevelConfig(project).getAccessToken();
+    }
+
     @NotNull
     @Contract(pure = true)
     public static String getVersion() {

@@ -12,6 +12,7 @@ setLinkComponent(AnchorLink)
 let isDarkTheme = false
 let instanceURL = 'https://sourcegraph.com'
 let isGlobbingEnabled = false
+let accessToken: string | null = null
 
 type RequestToJavaAction = 'getConfig' | 'getTheme' | 'saveLastSearch' | 'loadLastSearch'
 
@@ -28,6 +29,7 @@ export interface Theme {
 export interface PluginConfig {
     instanceURL: string
     isGlobbingEnabled: boolean
+    accessToken: string | null
 }
 
 /* Add global functions to global window object */
@@ -66,6 +68,7 @@ function renderReactApp(): void {
             isDarkTheme={isDarkTheme}
             instanceURL={instanceURL}
             isGlobbingEnabled={isGlobbingEnabled}
+            accessToken={accessToken}
             onOpen={onOpen}
             onPreviewChange={onPreviewChange}
             onPreviewClear={onPreviewClear}
@@ -82,6 +85,7 @@ async function getConfig(): Promise<PluginConfig> {
         return {
             instanceURL: 'https://sourcegraph.com',
             isGlobbingEnabled: false,
+            accessToken: null,
         }
     }
 }
@@ -89,6 +93,7 @@ async function getConfig(): Promise<PluginConfig> {
 function applyConfig(config: PluginConfig): void {
     instanceURL = config.instanceURL
     isGlobbingEnabled = config.isGlobbingEnabled || false
+    accessToken = config.accessToken || null
 }
 
 async function getTheme(): Promise<Theme> {

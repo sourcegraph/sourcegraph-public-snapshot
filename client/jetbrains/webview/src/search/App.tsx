@@ -11,6 +11,8 @@ import {
     SearchPatternType,
 } from '@sourcegraph/search'
 import { SearchBox } from '@sourcegraph/search-ui'
+import { AuthenticatedUser, currentAuthStateQuery } from '@sourcegraph/shared/src/auth'
+import { CurrentAuthStateResult, CurrentAuthStateVariables } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import {
     aggregateStreamingSearch,
@@ -31,23 +33,14 @@ interface Props {
     isDarkTheme: boolean
     instanceURL: string
     isGlobbingEnabled: boolean
+    accessToken: string | null
     onPreviewChange: (match: ContentMatch, lineIndex: number) => void
     onPreviewClear: () => void
     onOpen: (match: ContentMatch, lineIndex: number) => void
 }
 
-const requestGraphQL: PlatformContext['requestGraphQL'] = args =>
-    requestGraphQLCommon({
-        ...args,
-        baseUrl: 'https://sourcegraph.com',
-    })
-
 function fetchStreamSuggestionsWithStaticUrl(query: string): Observable<SearchMatch[]> {
     return fetchStreamSuggestions(query, 'https://sourcegraph.com/.api')
-}
-
-const platformContext = {
-    requestGraphQL,
 }
 
 interface Search {
@@ -61,10 +54,56 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     isDarkTheme,
     instanceURL,
     isGlobbingEnabled,
+    accessToken,
     onPreviewChange,
     onPreviewClear,
     onOpen,
 }: Props) => {
+    const [authState, setAuthState] = useState<'initial' | 'validating' | 'success' | 'failure'>('initial')
+    const [authenticatedUser, setAuthenticatedUser] = useState<AuthenticatedUser | null>(null)
+
+    const requestGraphQL = useCallback<PlatformContext['requestGraphQL']>(
+        args =>
+            requestGraphQLCommon({
+                ...args,
+                baseUrl: instanceURL,
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-Sourcegraph-Should-Trace': new URLSearchParams(window.location.search).get('trace') || 'false',
+                    ...(accessToken && { Authorization: `token ${accessToken}` }),
+                },
+            }),
+        [instanceURL, accessToken]
+    )
+
+    useEffect(() => {
+        setAuthState('validating')
+        requestGraphQL<CurrentAuthStateResult, CurrentAuthStateVariables>({
+            request: currentAuthStateQuery,
+            variables: {},
+            mightContainPrivateInfo: true,
+        })
+            .toPromise()
+            .then(({ data }) => {
+                if (data?.currentUser) {
+                    setAuthState('success')
+                    setAuthenticatedUser(data.currentUser)
+                } else {
+                    setAuthState('failure')
+                    console.warn(`No authenticated user with access token “${accessToken || ''}”`)
+                }
+            })
+            .catch(() => {
+                setAuthState('failure')
+                console.warn(`Failed to validate authentication with access token “${accessToken || ''}”`)
+            })
+    }, [accessToken, requestGraphQL])
+
+    const platformContext = {
+        requestGraphQL,
+    }
+
     const [results, setResults] = useState<SearchMatch[]>([])
     const [lastSearch, setLastSearch] = useState<Search>({
         query: '',
@@ -175,7 +214,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                             queryState={userQueryState}
                             onChange={setUserQueryState}
                             onSubmit={onSubmit}
-                            authenticatedUser={null} // TODO: Add authenticated user once we have authentication
+                            authenticatedUser={authenticatedUser}
                             searchContextsEnabled={true}
                             showSearchContext={true}
                             showSearchContextManagement={false}
@@ -199,6 +238,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                         />
                     </form>
                 </div>
+                <div>Auth state: {authState}</div>
                 {/* We reset the search result list whenever a new search is started using key={lastSearchedQuery} */}
                 <SearchResultList
                     results={results}

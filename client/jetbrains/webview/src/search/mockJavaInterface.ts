@@ -47,6 +47,7 @@ function handleRequest(
             JSON.stringify({
                 instanceURL: 'https://sourcegraph.com',
                 isGlobbingEnabled: true,
+                accessToken: null,
             })
         )
     } else {
