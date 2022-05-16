@@ -25,7 +25,7 @@ func init() {
 
 	frontendregistry.IsRemoteExtensionPublisherAllowed = func(x *registry.Extension) bool {
 		if getAllowOnlySourcegraphAuthoredExtensionsFromSiteConfig() {
-			return isSourcegraphAuthoredExtension(x)
+			return isSourcegraphAuthoredExtension(x.Publisher)
 		}
 
 		return true
@@ -36,7 +36,7 @@ func init() {
 
 		if getAllowOnlySourcegraphAuthoredExtensionsFromSiteConfig() {
 			for _, x := range extensions {
-				if isSourcegraphAuthoredExtension(x) {
+				if isSourcegraphAuthoredExtension(x.Publisher) {
 					extensionsWithAllowedPublisher = append(extensionsWithAllowedPublisher, x)
 				}
 			}
@@ -86,6 +86,6 @@ func getAllowOnlySourcegraphAuthoredExtensionsFromSiteConfig() bool {
 	return false
 }
 
-func isSourcegraphAuthoredExtension(x *registry.Extension) bool {
-	return x.Publisher.Name == "sourcegraph"
+func isSourcegraphAuthoredExtension(p registry.Publisher) bool {
+	return p.Name == "sourcegraph"
 }
