@@ -47,6 +47,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Carets in textareas in Firefox are now visible. [#34888](https://github.com/sourcegraph/sourcegraph/pull/34888)
 - Changesets to GitHub code hosts could fail with a confusing, non actionable error message. [#35048](https://github.com/sourcegraph/sourcegraph/pull/35048)
 - An issue causing search expressions to not work in conjunction with `type:symbol`. [#35126](https://github.com/sourcegraph/sourcegraph/pull/35126)
+- Reduced database load when viewing or previewing a batch change. [#35501](https://github.com/sourcegraph/sourcegraph/pull/35501)
 
 ### Removed
 
