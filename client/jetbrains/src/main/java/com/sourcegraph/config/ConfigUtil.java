@@ -4,11 +4,13 @@ import com.intellij.openapi.project.Project;
 import com.sourcegraph.find.Search;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
 public class ConfigUtil {
-    public static String getDefaultBranchName(Project project) {
+    @Nullable
+    public static String getDefaultBranchName(@NotNull Project project) {
         String defaultBranch = Objects.requireNonNull(SourcegraphConfig.getInstance(project)).getDefaultBranchName();
         if (defaultBranch == null || defaultBranch.length() == 0) {
             return UserLevelConfig.getDefaultBranchName();
@@ -16,7 +18,8 @@ public class ConfigUtil {
         return defaultBranch;
     }
 
-    public static String getRemoteUrlReplacements(Project project) {
+    @Nullable
+    public static String getRemoteUrlReplacements(@NotNull Project project) {
         String replacements = Objects.requireNonNull(SourcegraphConfig.getInstance(project)).getRemoteUrlReplacements();
         if (replacements == null || replacements.length() == 0) {
             return UserLevelConfig.getRemoteUrlReplacements();
@@ -24,7 +27,8 @@ public class ConfigUtil {
         return replacements;
     }
 
-    public static String getSourcegraphUrl(Project project) {
+    @NotNull
+    public static String getSourcegraphUrl(@NotNull Project project) {
         String url = Objects.requireNonNull(SourcegraphConfig.getInstance(project)).getSourcegraphUrl();
         if (url == null || url.length() == 0) {
             return UserLevelConfig.getSourcegraphUrl();
@@ -32,16 +36,21 @@ public class ConfigUtil {
         return url.endsWith("/") ? url : url + "/";
     }
 
-    public static Search getLastSearch(Project project) {
+    @NotNull
+    public static Search getLastSearch(@NotNull Project project) {
         return getProjectLevelConfig(project).getLastSearch();
     }
 
-    public static void setLastSearch(Project project, Search lastSearch) {
+    public static void setLastSearch(@NotNull Project project, @NotNull Search lastSearch) {
         SourcegraphConfig config = getProjectLevelConfig(project);
         config.lastSearchQuery = lastSearch.getQuery() != null ? lastSearch.getQuery() : "";
         config.lastSearchCaseSensitive = lastSearch.isCaseSensitive();
         config.lastSearchPatternType = lastSearch.getPatternType() != null ? lastSearch.getPatternType() : "literal";
         config.lastSearchContextSpec = lastSearch.getSelectedSearchContextSpec() != null ? lastSearch.getSelectedSearchContextSpec() : "global";
+    }
+
+    public static boolean isGlobbingEnabled(@NotNull Project project) {
+        return getProjectLevelConfig(project).isGlobbingEnabled();
     }
 
     @NotNull

@@ -11,6 +11,7 @@ setLinkComponent(AnchorLink)
 
 let isDarkTheme = false
 let instanceURL = 'https://sourcegraph.com'
+let isGlobbingEnabled = false
 
 type RequestToJavaAction = 'getConfig' | 'getTheme' | 'saveLastSearch' | 'loadLastSearch'
 
@@ -26,6 +27,7 @@ export interface Theme {
 
 export interface PluginConfig {
     instanceURL: string
+    isGlobbingEnabled: boolean
 }
 
 /* Add global functions to global window object */
@@ -36,6 +38,12 @@ declare global {
     }
 }
 
+// eslint-disable-next-line @typescript-eslint/require-await
+async function onOpen(match: ContentMatch, lineIndex: number): Promise<void> {
+    console.log('open', match.lineMatches[lineIndex])
+}
+
+// eslint-disable-next-line @typescript-eslint/require-await
 async function onPreviewChange(match: ContentMatch, lineMatchIndex: number): Promise<void> {
     await window.callJava(await createRequestForMatch(match, lineMatchIndex, 'preview'))
 }
@@ -57,6 +65,7 @@ function renderReactApp(): void {
         <App
             isDarkTheme={isDarkTheme}
             instanceURL={instanceURL}
+            isGlobbingEnabled={isGlobbingEnabled}
             onOpen={onOpen}
             onPreviewChange={onPreviewChange}
             onPreviewClear={onPreviewClear}
@@ -70,12 +79,16 @@ async function getConfig(): Promise<PluginConfig> {
         return (await window.callJava({ action: 'getConfig', arguments: {} })) as PluginConfig
     } catch (error) {
         console.error(`Failed to get config: ${(error as Error).message}`)
-        return { instanceURL: 'https://sourcegraph.com' }
+        return {
+            instanceURL: 'https://sourcegraph.com',
+            isGlobbingEnabled: false,
+        }
     }
 }
 
 function applyConfig(config: PluginConfig): void {
     instanceURL = config.instanceURL
+    isGlobbingEnabled = config.isGlobbingEnabled || false
 }
 
 async function getTheme(): Promise<Theme> {

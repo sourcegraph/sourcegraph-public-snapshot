@@ -33,6 +33,7 @@ public class JSToJavaBridgeRequestHandler {
                 try {
                     JsonObject configAsJson = new JsonObject();
                     configAsJson.addProperty("instanceURL", ConfigUtil.getSourcegraphUrl(this.project));
+                    configAsJson.addProperty("isGlobbingEnabled", ConfigUtil.isGlobbingEnabled(this.project));
                     return createSuccessResponse(configAsJson);
                 } catch (Exception e) {
                     return createErrorResponse(3, e.getClass().getName() + ": " + e.getMessage());

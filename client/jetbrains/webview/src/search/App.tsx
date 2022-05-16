@@ -30,6 +30,7 @@ import styles from './App.module.scss'
 interface Props {
     isDarkTheme: boolean
     instanceURL: string
+    isGlobbingEnabled: boolean
     onPreviewChange: (match: ContentMatch, lineIndex: number) => void
     onPreviewClear: () => void
     onOpen: (match: ContentMatch, lineIndex: number) => void
@@ -59,6 +60,7 @@ interface Search {
 export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     isDarkTheme,
     instanceURL,
+    isGlobbingEnabled,
     onPreviewChange,
     onPreviewClear,
     onOpen,
@@ -185,7 +187,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                             getUserSearchContextNamespaces={getUserSearchContextNamespaces}
                             fetchStreamSuggestions={fetchStreamSuggestionsWithStaticUrl}
                             settingsCascade={EMPTY_SETTINGS_CASCADE} // TODO: Implement this. See VS Code's SearchResultsView.tsx
-                            globbing={false} // TODO: Wire it up to plugin settings
+                            globbing={isGlobbingEnabled}
                             isLightTheme={!isDarkTheme}
                             telemetryService={NOOP_TELEMETRY_SERVICE} // TODO: Fix this, see VS Code's SearchResultsView.tsx
                             platformContext={platformContext}

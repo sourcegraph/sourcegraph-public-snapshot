@@ -1,6 +1,7 @@
 package com.sourcegraph.config;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -11,16 +12,19 @@ import java.nio.file.Paths;
 import java.util.Properties;
 
 public class UserLevelConfig {
+    @Nullable
     public static String getDefaultBranchName() {
         Properties properties = readProperties();
         return properties.getProperty("defaultBranch", null);
     }
 
+    @Nullable
     public static String getRemoteUrlReplacements() {
         Properties properties = readProperties();
         return properties.getProperty("remoteUrlReplacements", null);
     }
 
+    @NotNull
     public static String getSourcegraphUrl() {
         Properties properties = readProperties();
         String url = properties.getProperty("url", "https://sourcegraph.com/");

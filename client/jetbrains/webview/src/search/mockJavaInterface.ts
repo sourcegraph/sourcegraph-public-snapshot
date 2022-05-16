@@ -42,6 +42,13 @@ function handleRequest(
     } else if (request.action === 'open') {
         const { path } = request.arguments as { path: string }
         console.log(`Opening "${path}"`)
+    } else if (request.action === 'getConfig') {
+        onSuccessCallback(
+            JSON.stringify({
+                instanceURL: 'https://sourcegraph.com',
+                isGlobbingEnabled: true,
+            })
+        )
     } else {
         onFailureCallback(2, `Unknown action: ${request.action}`)
     }

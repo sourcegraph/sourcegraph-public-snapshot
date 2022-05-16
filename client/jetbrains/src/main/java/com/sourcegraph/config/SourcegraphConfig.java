@@ -21,26 +21,35 @@ class SourcegraphConfig implements PersistentStateComponent<SourcegraphConfig> {
     public boolean lastSearchCaseSensitive;
     public String lastSearchPatternType;
     public String lastSearchContextSpec;
+    public boolean isGlobbingEnabled;
 
     @Nullable
     public static SourcegraphConfig getInstance(@NotNull Project project) {
         return project.getService(SourcegraphConfig.class);
     }
 
+    @Nullable
     public String getSourcegraphUrl() {
         return url;
     }
 
+    @Nullable
     public String getDefaultBranchName() {
         return defaultBranch;
     }
 
+    @Nullable
     public String getRemoteUrlReplacements() {
         return remoteUrlReplacements;
     }
 
+    @NotNull
     public Search getLastSearch() {
         return new Search(lastSearchQuery, lastSearchCaseSensitive, lastSearchPatternType, lastSearchContextSpec);
+    }
+
+    public boolean isGlobbingEnabled() {
+        return this.isGlobbingEnabled;
     }
 
     @Nullable
@@ -58,5 +67,6 @@ class SourcegraphConfig implements PersistentStateComponent<SourcegraphConfig> {
         this.lastSearchCaseSensitive = config.lastSearchCaseSensitive;
         this.lastSearchPatternType = config.lastSearchPatternType;
         this.lastSearchContextSpec = config.lastSearchContextSpec;
+        this.isGlobbingEnabled = config.isGlobbingEnabled;
     }
 }
