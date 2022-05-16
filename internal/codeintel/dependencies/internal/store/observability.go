@@ -8,11 +8,13 @@ import (
 )
 
 type operations struct {
-	deleteDependencyReposByID  *observation.Operation
-	listDependencyRepos        *observation.Operation
-	lockfileDependencies       *observation.Operation
-	upsertDependencyRepos      *observation.Operation
-	upsertLockfileDependencies *observation.Operation
+	deleteDependencyReposByID    *observation.Operation
+	listDependencyRepos          *observation.Operation
+	lockfileDependencies         *observation.Operation
+	upsertDependencyRepos        *observation.Operation
+	upsertLockfileDependencies   *observation.Operation
+	selectRepoRevisionsToResolve *observation.Operation
+	updateResolvedRevisions      *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -32,10 +34,12 @@ func newOperations(observationContext *observation.Context) *operations {
 	}
 
 	return &operations{
-		deleteDependencyReposByID:  op("DeleteDependencyReposByID"),
-		listDependencyRepos:        op("ListDependencyRepos"),
-		lockfileDependencies:       op("LockfileDependencies"),
-		upsertDependencyRepos:      op("UpsertDependencyRepos"),
-		upsertLockfileDependencies: op("UpsertLockfileDependencies"),
+		deleteDependencyReposByID:    op("DeleteDependencyReposByID"),
+		listDependencyRepos:          op("ListDependencyRepos"),
+		lockfileDependencies:         op("LockfileDependencies"),
+		upsertDependencyRepos:        op("UpsertDependencyRepos"),
+		upsertLockfileDependencies:   op("UpsertLockfileDependencies"),
+		selectRepoRevisionsToResolve: op("SelectRepoRevisionsToResolve"),
+		updateResolvedRevisions:      op("UpdateResolvedRevisions"),
 	}
 }
