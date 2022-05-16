@@ -235,6 +235,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Merge(CoreTestOperations(changed.All, CoreTestOperationsOptions{
 			ChromaticShouldAutoAccept: c.RunType.Is(runtype.MainBranch),
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
+			ForceRunChromatic:         c.MessageFlags.ForceRunStepChromatic,
 		}))
 
 		// Integration tests
