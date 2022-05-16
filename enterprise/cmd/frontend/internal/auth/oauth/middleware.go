@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"io"
-	stdlog "log"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -268,7 +267,10 @@ func withOAuthExternalClient(r *http.Request) *http.Request {
 	client := httpcli.ExternalClient
 	if traceLogEnabled {
 		loggingClient := *client
-		loggingClient.Transport = &loggingRoundTripper{underlying: client.Transport}
+		loggingClient.Transport = &loggingRoundTripper{
+			log:        log.Scoped("oauth_external.transport", "transport logger for withOAuthExternalClient"),
+			underlying: client.Transport,
+		}
 		client = &loggingClient
 	}
 	ctx := context.WithValue(r.Context(), oauth2.HTTPClient, client)
@@ -278,6 +280,7 @@ func withOAuthExternalClient(r *http.Request) *http.Request {
 var traceLogEnabled, _ = strconv.ParseBool(env.Get("INSECURE_OAUTH2_LOG_TRACES", "false", "Log all OAuth2-related HTTP requests and responses. Only use during testing because the log messages will contain sensitive data."))
 
 type loggingRoundTripper struct {
+	log        log.Logger
 	underlying http.RoundTripper
 }
 
@@ -303,15 +306,26 @@ func (l *loggingRoundTripper) RoundTrip(req *http.Request) (*http.Response, erro
 		var preview string
 		preview, req.Body, err = previewAndDuplicateReader(req.Body)
 		if err != nil {
-			log15.Error("Unexpected error in OAuth2 debug log", "operation", "reading request body", "error", err)
+			l.log.Error("Unexpected error in OAuth2 debug log",
+				log.String("operation", "reading request body"),
+				log.Error(err))
 			return nil, errors.Wrap(err, "Unexpected error in OAuth2 debug log, reading request body")
 		}
-		stdlog.Printf(">>>>> HTTP Request: %s %s\n      Header: %v\n      Body: %s", req.Method, req.URL.String(), req.Header, preview)
+
+		headerFields := make([]log.Field, 0, len(req.Header))
+		for k, v := range req.Header {
+			headerFields = append(headerFields, log.Strings(k, v))
+		}
+		l.log.Info("HTTP request",
+			log.String("method", req.Method),
+			log.String("url", req.URL.String()),
+			log.Object("header", headerFields...),
+			log.String("body", preview))
 	}
 
 	resp, err := l.underlying.RoundTrip(req)
 	if err != nil {
-		stdlog.Printf("<<<<< Error getting HTTP response: %s", err)
+		l.log.Error("Error getting HTTP response", log.Error(err))
 		return resp, err
 	}
 
@@ -320,10 +334,20 @@ func (l *loggingRoundTripper) RoundTrip(req *http.Request) (*http.Response, erro
 		var preview string
 		preview, resp.Body, err = previewAndDuplicateReader(resp.Body)
 		if err != nil {
-			log15.Error("Unexpected error in OAuth2 debug log", "operation", "reading response body", "error", err)
+			l.log.Error("Unexpected error in OAuth2 debug log", log.String("operation", "reading response body"), log.Error(err))
 			return nil, errors.Wrap(err, "Unexpected error in OAuth2 debug log, reading response body")
 		}
-		stdlog.Printf("<<<<< HTTP Response: %s %s\n      Header: %v\n      Body: %s", req.Method, req.URL.String(), resp.Header, preview)
+
+		headerFields := make([]log.Field, 0, len(resp.Header))
+		for k, v := range resp.Header {
+			headerFields = append(headerFields, log.Strings(k, v))
+		}
+		l.log.Info("HTTP response",
+			log.String("method", req.Method),
+			log.String("url", req.URL.String()),
+			log.Object("header", headerFields...),
+			log.String("body", preview))
+
 		return resp, err
 	}
 }
