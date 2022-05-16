@@ -2,6 +2,7 @@ package dependencies
 
 import (
 	"context"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/lockfiles"
@@ -14,6 +15,8 @@ import (
 type Store interface {
 	LockfileDependencies(ctx context.Context, repoName, commit string) ([]shared.PackageDependency, bool, error)
 	UpsertLockfileDependencies(ctx context.Context, repoName, commit string, deps []shared.PackageDependency) error
+	SelectRepoRevisionsToResolve(ctx context.Context, batchSize int, minimumCheckInterval time.Duration) (map[string][]string, error)
+	UpdateResolvedRevisions(ctx context.Context, repoRevsToResolvedRevs map[string]map[string]string) error
 	ListDependencyRepos(ctx context.Context, opts store.ListDependencyReposOpts) ([]Repo, error)
 	UpsertDependencyRepos(ctx context.Context, deps []Repo) ([]Repo, error)
 	DeleteDependencyReposByID(ctx context.Context, ids ...int) error

@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -235,6 +236,101 @@ func populatePackageDependencyChannel(deps []shared.PackageDependency) <-chan []
 
 	return ch
 }
+
+// SelectRepoRevisionsToResolve selects the references lockfile packages to
+// possibly resolve them to repositories on the Sourcegraph instance.
+func (s *Store) SelectRepoRevisionsToResolve(ctx context.Context, batchSize int, minimumCheckInterval time.Duration) (_ map[string][]string, err error) {
+	return s.selectRepoRevisionsToResolve(ctx, batchSize, minimumCheckInterval, time.Now())
+}
+
+func (s *Store) selectRepoRevisionsToResolve(ctx context.Context, batchSize int, minimumCheckInterval time.Duration, now time.Time) (_ map[string][]string, err error) {
+	var count int
+	ctx, _, endObservation := s.operations.selectRepoRevisionsToResolve.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{
+		LogFields: []log.Field{
+			log.Int("count", count),
+		},
+	})
+
+	rows, err := s.Query(ctx, sqlf.Sprintf(selectRepoRevisionsToResolveQuery, now, int64(minimumCheckInterval/time.Hour), batchSize, now))
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	m := map[string][]string{}
+	for rows.Next() {
+		var repositoryName, commit string
+		if err := rows.Scan(&repositoryName, &commit); err != nil {
+			return nil, err
+		}
+
+		count++
+		m[repositoryName] = append(m[repositoryName], commit)
+	}
+
+	return m, nil
+}
+
+const selectRepoRevisionsToResolveQuery = `
+-- source: internal/codeintel/dependencies/internal/store/store.go:SelectRepoRevisionsToResolve
+WITH candidates AS (
+	SELECT
+		repository_name,
+		revspec
+	FROM codeintel_lockfile_references
+	WHERE
+		last_check_at IS NULL OR
+		%s - last_check_at >= (%s * '1 hour'::interval)
+	GROUP BY repository_name, revspec
+	ORDER BY repository_name, revspec
+	-- TODO - select for update to reduce contention
+	LIMIT %s
+),
+updated AS (
+	UPDATE codeintel_lockfile_references
+	SET last_check_at = %s
+	WHERE (repository_name, revspec) IN (SELECT * FROM candidates)
+)
+SELECT * FROM candidates
+`
+
+// UpdateResolvedRevisions updates the lockfile packages that were resolved to
+// repositories/revisions pairs on the Sourcegraph instance.
+func (s *Store) UpdateResolvedRevisions(ctx context.Context, repoRevsToResolvedRevs map[string]map[string]string) (err error) {
+	ctx, _, endObservation := s.operations.selectRepoRevisionsToResolve.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	for repoName, resolvedRevs := range repoRevsToResolvedRevs {
+		for commit, resolvedCommit := range resolvedRevs {
+			// TODO - batch these updates
+			if err := s.Exec(ctx, sqlf.Sprintf(
+				updateResolvedRevisionsQuery,
+				repoName,
+				dbutil.CommitBytea(resolvedCommit),
+				repoName,
+				commit,
+			)); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+const updateResolvedRevisionsQuery = `
+-- source: internal/codeintel/dependencies/internal/store/store.go:UpdateResolvedRevisions
+UPDATE
+	codeintel_lockfile_references
+SET
+	repository_id = (SELECT id FROM repo WHERE name = %s),
+	commit_bytea = %s
+WHERE
+	repository_name = %s AND
+	revspec = %s
+-- TODO - order before update to reduce contention
+`
 
 type ListDependencyReposOpts struct {
 	Scheme      string

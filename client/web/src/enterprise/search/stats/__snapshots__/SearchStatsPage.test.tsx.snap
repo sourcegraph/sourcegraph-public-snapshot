@@ -53,6 +53,7 @@ exports[`SearchStatsPage limitHit 1`] = `
       class="my-3"
     />
     <div
+      aria-live="assertive"
       class=""
       role="alert"
     >

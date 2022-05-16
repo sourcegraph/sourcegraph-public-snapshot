@@ -5,6 +5,7 @@ package dependencies
 import (
 	"context"
 	"sync"
+	"time"
 
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/store"
@@ -188,6 +189,13 @@ type MockStore struct {
 	// LockfileDependenciesFunc is an instance of a mock function object
 	// controlling the behavior of the method LockfileDependencies.
 	LockfileDependenciesFunc *StoreLockfileDependenciesFunc
+	// SelectRepoRevisionsToResolveFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// SelectRepoRevisionsToResolve.
+	SelectRepoRevisionsToResolveFunc *StoreSelectRepoRevisionsToResolveFunc
+	// UpdateResolvedRevisionsFunc is an instance of a mock function object
+	// controlling the behavior of the method UpdateResolvedRevisions.
+	UpdateResolvedRevisionsFunc *StoreUpdateResolvedRevisionsFunc
 	// UpsertDependencyReposFunc is an instance of a mock function object
 	// controlling the behavior of the method UpsertDependencyRepos.
 	UpsertDependencyReposFunc *StoreUpsertDependencyReposFunc
@@ -213,6 +221,16 @@ func NewMockStore() *MockStore {
 		},
 		LockfileDependenciesFunc: &StoreLockfileDependenciesFunc{
 			defaultHook: func(context.Context, string, string) (r0 []shared.PackageDependency, r1 bool, r2 error) {
+				return
+			},
+		},
+		SelectRepoRevisionsToResolveFunc: &StoreSelectRepoRevisionsToResolveFunc{
+			defaultHook: func(context.Context, int, time.Duration) (r0 map[string][]string, r1 error) {
+				return
+			},
+		},
+		UpdateResolvedRevisionsFunc: &StoreUpdateResolvedRevisionsFunc{
+			defaultHook: func(context.Context, map[string]map[string]string) (r0 error) {
 				return
 			},
 		},
@@ -248,6 +266,16 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.LockfileDependencies")
 			},
 		},
+		SelectRepoRevisionsToResolveFunc: &StoreSelectRepoRevisionsToResolveFunc{
+			defaultHook: func(context.Context, int, time.Duration) (map[string][]string, error) {
+				panic("unexpected invocation of MockStore.SelectRepoRevisionsToResolve")
+			},
+		},
+		UpdateResolvedRevisionsFunc: &StoreUpdateResolvedRevisionsFunc{
+			defaultHook: func(context.Context, map[string]map[string]string) error {
+				panic("unexpected invocation of MockStore.UpdateResolvedRevisions")
+			},
+		},
 		UpsertDependencyReposFunc: &StoreUpsertDependencyReposFunc{
 			defaultHook: func(context.Context, []shared.Repo) ([]shared.Repo, error) {
 				panic("unexpected invocation of MockStore.UpsertDependencyRepos")
@@ -273,6 +301,12 @@ func NewMockStoreFrom(i Store) *MockStore {
 		},
 		LockfileDependenciesFunc: &StoreLockfileDependenciesFunc{
 			defaultHook: i.LockfileDependencies,
+		},
+		SelectRepoRevisionsToResolveFunc: &StoreSelectRepoRevisionsToResolveFunc{
+			defaultHook: i.SelectRepoRevisionsToResolve,
+		},
+		UpdateResolvedRevisionsFunc: &StoreUpdateResolvedRevisionsFunc{
+			defaultHook: i.UpdateResolvedRevisions,
 		},
 		UpsertDependencyReposFunc: &StoreUpsertDependencyReposFunc{
 			defaultHook: i.UpsertDependencyRepos,
@@ -617,6 +651,226 @@ func (c StoreLockfileDependenciesFuncCall) Args() []interface{} {
 // invocation.
 func (c StoreLockfileDependenciesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// StoreSelectRepoRevisionsToResolveFunc describes the behavior when the
+// SelectRepoRevisionsToResolve method of the parent MockStore instance is
+// invoked.
+type StoreSelectRepoRevisionsToResolveFunc struct {
+	defaultHook func(context.Context, int, time.Duration) (map[string][]string, error)
+	hooks       []func(context.Context, int, time.Duration) (map[string][]string, error)
+	history     []StoreSelectRepoRevisionsToResolveFuncCall
+	mutex       sync.Mutex
+}
+
+// SelectRepoRevisionsToResolve delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockStore) SelectRepoRevisionsToResolve(v0 context.Context, v1 int, v2 time.Duration) (map[string][]string, error) {
+	r0, r1 := m.SelectRepoRevisionsToResolveFunc.nextHook()(v0, v1, v2)
+	m.SelectRepoRevisionsToResolveFunc.appendCall(StoreSelectRepoRevisionsToResolveFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// SelectRepoRevisionsToResolve method of the parent MockStore instance is
+// invoked and the hook queue is empty.
+func (f *StoreSelectRepoRevisionsToResolveFunc) SetDefaultHook(hook func(context.Context, int, time.Duration) (map[string][]string, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SelectRepoRevisionsToResolve method of the parent MockStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *StoreSelectRepoRevisionsToResolveFunc) PushHook(hook func(context.Context, int, time.Duration) (map[string][]string, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreSelectRepoRevisionsToResolveFunc) SetDefaultReturn(r0 map[string][]string, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, time.Duration) (map[string][]string, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreSelectRepoRevisionsToResolveFunc) PushReturn(r0 map[string][]string, r1 error) {
+	f.PushHook(func(context.Context, int, time.Duration) (map[string][]string, error) {
+		return r0, r1
+	})
+}
+
+func (f *StoreSelectRepoRevisionsToResolveFunc) nextHook() func(context.Context, int, time.Duration) (map[string][]string, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreSelectRepoRevisionsToResolveFunc) appendCall(r0 StoreSelectRepoRevisionsToResolveFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreSelectRepoRevisionsToResolveFuncCall
+// objects describing the invocations of this function.
+func (f *StoreSelectRepoRevisionsToResolveFunc) History() []StoreSelectRepoRevisionsToResolveFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreSelectRepoRevisionsToResolveFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreSelectRepoRevisionsToResolveFuncCall is an object that describes an
+// invocation of method SelectRepoRevisionsToResolve on an instance of
+// MockStore.
+type StoreSelectRepoRevisionsToResolveFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 time.Duration
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 map[string][]string
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreSelectRepoRevisionsToResolveFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreSelectRepoRevisionsToResolveFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// StoreUpdateResolvedRevisionsFunc describes the behavior when the
+// UpdateResolvedRevisions method of the parent MockStore instance is
+// invoked.
+type StoreUpdateResolvedRevisionsFunc struct {
+	defaultHook func(context.Context, map[string]map[string]string) error
+	hooks       []func(context.Context, map[string]map[string]string) error
+	history     []StoreUpdateResolvedRevisionsFuncCall
+	mutex       sync.Mutex
+}
+
+// UpdateResolvedRevisions delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockStore) UpdateResolvedRevisions(v0 context.Context, v1 map[string]map[string]string) error {
+	r0 := m.UpdateResolvedRevisionsFunc.nextHook()(v0, v1)
+	m.UpdateResolvedRevisionsFunc.appendCall(StoreUpdateResolvedRevisionsFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// UpdateResolvedRevisions method of the parent MockStore instance is
+// invoked and the hook queue is empty.
+func (f *StoreUpdateResolvedRevisionsFunc) SetDefaultHook(hook func(context.Context, map[string]map[string]string) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UpdateResolvedRevisions method of the parent MockStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *StoreUpdateResolvedRevisionsFunc) PushHook(hook func(context.Context, map[string]map[string]string) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreUpdateResolvedRevisionsFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, map[string]map[string]string) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreUpdateResolvedRevisionsFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, map[string]map[string]string) error {
+		return r0
+	})
+}
+
+func (f *StoreUpdateResolvedRevisionsFunc) nextHook() func(context.Context, map[string]map[string]string) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreUpdateResolvedRevisionsFunc) appendCall(r0 StoreUpdateResolvedRevisionsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreUpdateResolvedRevisionsFuncCall
+// objects describing the invocations of this function.
+func (f *StoreUpdateResolvedRevisionsFunc) History() []StoreUpdateResolvedRevisionsFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreUpdateResolvedRevisionsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreUpdateResolvedRevisionsFuncCall is an object that describes an
+// invocation of method UpdateResolvedRevisions on an instance of MockStore.
+type StoreUpdateResolvedRevisionsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 map[string]map[string]string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreUpdateResolvedRevisionsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreUpdateResolvedRevisionsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // StoreUpsertDependencyReposFunc describes the behavior when the

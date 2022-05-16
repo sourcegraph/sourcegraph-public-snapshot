@@ -39,22 +39,22 @@ func AddLog(commandName string, factory RunnerFactory, outFactory OutputFactory)
 		}
 
 		var (
-			schemaNameFlag = cmd.String("db")
-			versionFlag    = cmd.Int("version")
-			upFlag         = cmd.Bool("up")
+			schemaName  = cmd.String("db")
+			versionFlag = cmd.Int("version")
+			upFlag      = cmd.Bool("up")
 		)
 
 		ctx := cmd.Context
-		r, err := factory(ctx, []string{schemaNameFlag})
+		r, err := factory(ctx, []string{schemaName})
 		if err != nil {
 			return err
 		}
-		store, err := r.Store(ctx, schemaNameFlag)
+		store, err := r.Store(ctx, schemaName)
 		if err != nil {
 			return err
 		}
 
-		log15.Info("Writing new completed migration log", "schema", schemaNameFlag, "version", versionFlag, "up", upFlag)
+		log15.Info("Writing new completed migration log", "schema", schemaName, "version", versionFlag, "up", upFlag)
 		return store.WithMigrationLog(ctx, definition.Definition{ID: versionFlag}, upFlag, noop)
 	}
 
