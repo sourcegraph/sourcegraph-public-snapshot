@@ -208,7 +208,7 @@ func testBitbucketCloudWebhook(db *sql.DB, userID int32) func(*testing.T) {
 				u, err := extsvc.WebhookURL(extsvc.KindBitbucketCloud, es.ID, cfg, esURL)
 				assert.Nil(t, err)
 
-				req, err := http.NewRequest("POST", u, bytes.NewBufferString("invalid JSON"))
+				req, err := http.NewRequest("POST", u, bytes.NewBufferString("{}"))
 				assert.Nil(t, err)
 				req.Header.Add("X-Event-Key", "not a real key")
 
