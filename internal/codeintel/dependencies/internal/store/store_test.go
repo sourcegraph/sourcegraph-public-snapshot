@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 func TestLockfileDependencies(t *testing.T) {
@@ -169,5 +171,92 @@ func TestDeleteDependencyReposByID(t *testing.T) {
 	}
 	if diff := cmp.Diff(have, want); diff != "" {
 		t.Fatalf("mismatch (-have, +want): %s", diff)
+	}
+}
+
+func TestSelectRepoRevisionsToResolve(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := context.Background()
+	db := database.NewDB(dbtest.NewDB(t))
+	store := TestStore(db)
+
+	if _, err := db.ExecContext(ctx, `INSERT INTO repo (name) VALUES ('repo-1')`); err != nil {
+		t.Fatalf(err.Error())
+	}
+
+	packageA := shared.TestPackageDependencyLiteral(api.RepoName("A"), "v1", "2", "3", "4")
+	packageB := shared.TestPackageDependencyLiteral(api.RepoName("B"), "v2", "3", "4", "5")
+	packageC := shared.TestPackageDependencyLiteral(api.RepoName("C"), "v3", "4", "5", "6")
+	packageD := shared.TestPackageDependencyLiteral(api.RepoName("D"), "v4", "5", "6", "7")
+	packageE := shared.TestPackageDependencyLiteral(api.RepoName("E"), "v5", "6", "7", "8")
+
+	commit := "d34df00d"
+	repoName := "repo-1"
+	packages := []shared.PackageDependency{packageA, packageB, packageC, packageD, packageE}
+
+	if err := store.UpsertLockfileDependencies(ctx, repoName, commit, packages); err != nil {
+		t.Fatalf("unexpected error upserting lockfile dependencies: %s", err)
+	}
+
+	now := timeutil.Now()
+
+	selected, err := store.selectRepoRevisionsToResolveAtTime(ctx, now, 24, 3)
+	if err != nil {
+		t.Fatalf("unexpected error selecting repo revisions to resolve: %s", err)
+	}
+
+	expectedRepoRevisions := map[string][]string{
+		"A": {"v1"},
+		"B": {"v2"},
+		"C": {"v3"},
+	}
+	if diff := cmp.Diff(selected, expectedRepoRevisions); diff != "" {
+		t.Errorf("unexpected sourced commits (-want +got):\n%s", diff)
+	}
+
+	selected, err = store.selectRepoRevisionsToResolveAtTime(ctx, now, 24, 3)
+	if err != nil {
+		t.Fatalf("unexpected error selecting repo revisions to resolve: %s", err)
+	}
+
+	expectedRepoRevisions = map[string][]string{
+		"D": {"v4"},
+		"E": {"v5"},
+	}
+	if diff := cmp.Diff(selected, expectedRepoRevisions); diff != "" {
+		t.Errorf("unexpected sourced commits (-want +got):\n%s", diff)
+	}
+
+	// Run it again, but all should be resolved in timeframe
+	selected, err = store.selectRepoRevisionsToResolveAtTime(ctx, now, 24, 6)
+	if err != nil {
+		t.Fatalf("unexpected error selecting repo revisions to resolve: %s", err)
+	}
+
+	expectedRepoRevisions = map[string][]string{}
+	if diff := cmp.Diff(selected, expectedRepoRevisions); diff != "" {
+		t.Errorf("unexpected sourced commits (-want +got):\n%s", diff)
+	}
+
+	// Run it again, but in the future, all should be resolved in timeframe
+	now = now.Add(24 * time.Hour)
+
+	selected, err = store.selectRepoRevisionsToResolveAtTime(ctx, now, 24, 6)
+	if err != nil {
+		t.Fatalf("unexpected error selecting repo revisions to resolve: %s", err)
+	}
+
+	expectedRepoRevisions = map[string][]string{
+		"A": {"v1"},
+		"B": {"v2"},
+		"C": {"v3"},
+		"D": {"v4"},
+		"E": {"v5"},
+	}
+	if diff := cmp.Diff(selected, expectedRepoRevisions); diff != "" {
+		t.Errorf("unexpected sourced commits (-want +got):\n%s", diff)
 	}
 }

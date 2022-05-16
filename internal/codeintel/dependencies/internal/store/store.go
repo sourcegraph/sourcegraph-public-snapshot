@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -237,6 +238,10 @@ func populatePackageDependencyChannel(deps []shared.PackageDependency) <-chan []
 }
 
 func (s *Store) SelectRepoRevisionsToResolve(ctx context.Context) (_ map[string][]string, err error) {
+	return s.selectRepoRevisionsToResolveAtTime(ctx, time.Now(), 24, 100)
+}
+
+func (s *Store) selectRepoRevisionsToResolveAtTime(ctx context.Context, time time.Time, ageHours, batchSize int) (_ map[string][]string, err error) {
 	var count int
 	ctx, _, endObservation := s.operations.selectRepoRevisionsToResolve.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{
@@ -245,7 +250,7 @@ func (s *Store) SelectRepoRevisionsToResolve(ctx context.Context) (_ map[string]
 		},
 	})
 
-	rows, err := s.Query(ctx, sqlf.Sprintf(selectRepoRevisionsToResolveQuery))
+	rows, err := s.Query(ctx, sqlf.Sprintf(selectRepoRevisionsToResolveQuery, time, ageHours, batchSize, time))
 	if err != nil {
 		return nil, err
 	}
@@ -267,16 +272,25 @@ func (s *Store) SelectRepoRevisionsToResolve(ctx context.Context) (_ map[string]
 
 const selectRepoRevisionsToResolveQuery = `
 -- source: internal/codeintel/dependencies/internal/store/store.go:SelectRepoRevisionsToResolve
-SELECT
-	-- TODO - ensure distinct
-	repository_name,
-	revspec
-FROM codeintel_lockfile_references
-WHERE
-	-- TODO - also recheck after some configured period of time
-	repository_id IS NULL AND commit_bytea IS NULL
--- TOOD - make batch size configurable
-LIMIT 100
+WITH candidates AS (
+	SELECT
+		repository_name,
+		revspec
+	FROM codeintel_lockfile_references
+	WHERE
+		last_check_at IS NULL
+	OR
+		%s - last_check_at >= (%s * '1 hour'::interval)
+	GROUP BY repository_name, revspec
+	ORDER BY repository_name, revspec
+	LIMIT %s
+),
+updated AS (
+	UPDATE codeintel_lockfile_references
+	SET last_check_at = %s
+	WHERE (repository_name, revspec) IN (SELECT * FROM candidates)
+)
+SELECT * FROM candidates
 `
 
 func (s *Store) UpdateResolvedRevisions(ctx context.Context, repoRevsToResolvedRevs map[string]map[string]string) (err error) {
