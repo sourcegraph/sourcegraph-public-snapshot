@@ -60,7 +60,7 @@ export const RepoSettingsPermissionsPage: React.FunctionComponent<
                     </Alert>
                 ) : permissionsInfo.unrestricted ? (
                     <Alert className="mb-0" variant="info">
-                        Access to this repository is <strong>unrestricted</strong>, all Sourcegraph users have access.
+                        This repository has been explicitly flagged as unrestricted, all Sourcegraph users have access.
                     </Alert>
                 ) : (
                     <div>
