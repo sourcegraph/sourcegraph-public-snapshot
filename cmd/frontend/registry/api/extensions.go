@@ -146,7 +146,7 @@ var IsRemoteExtensionAllowed = func(extensionID string) bool {
 // certain publisher by extension ID.
 //
 // It can be overridden to use custom logic.
-var IsRemoteExtensionPublisherAllowed = func(x *registry.Extension) bool {
+var IsRemoteExtensionPublisherAllowed = func(p registry.Publisher) bool {
 	// By default, all remote extensions are allowed.
 	return true
 }
@@ -182,7 +182,7 @@ func getRemoteRegistryExtension(ctx context.Context, field, value string) (*regi
 		return nil, errors.Errorf("extension is not allowed in site configuration: %q", x.ExtensionID)
 	}
 
-	if x != nil && !IsRemoteExtensionPublisherAllowed(x) {
+	if x != nil && !IsRemoteExtensionPublisherAllowed(x.Publisher) {
 		return nil, errors.Errorf("non Sourcegraph authored extensions are not allowed in site configuration")
 	}
 
