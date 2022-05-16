@@ -369,7 +369,7 @@ func testBitbucketCloudWebhook(db *sql.DB, userID int32) func(*testing.T) {
 								RepoCommitStatusEvent: bitbucketcloud.RepoCommitStatusEvent{
 									RepoEvent: pullRequestEvent.RepoEvent,
 									CommitStatus: bitbucketcloud.CommitStatus{
-										Commit: bitbucketcloud.Commit{Hash: bitbucketCloudSourceHash[0:7]},
+										Commit: bitbucketcloud.Commit{Hash: bitbucketCloudSourceHash},
 										State:  bitbucketcloud.PullRequestStatusStateSuccessful,
 									},
 								},
@@ -404,11 +404,6 @@ func testBitbucketCloudWebhook(db *sql.DB, userID int32) func(*testing.T) {
 
 						rec := httptest.NewRecorder()
 						h.ServeHTTP(rec, req)
-
-						// cs, _, _ := store.ListChangesets(ctx, bstore.ListChangesetsOpts{
-						// 	RepoID: repo.ID,
-						// })
-						// t.Log(spew.Sdump(cs))
 
 						assert.EqualValues(t, http.StatusNoContent, rec.Result().StatusCode)
 						assertChangesetEventForChangeset(t, ctx, store, changeset, tc.want)
@@ -484,16 +479,17 @@ func createBitbucketCloudChangeset(t *testing.T, ctx context.Context, store *bst
 		ExternalServiceType: extsvc.TypeBitbucketCloud,
 		Metadata: &bbcs.AnnotatedPullRequest{
 			PullRequest: &bitbucketcloud.PullRequest{
+				ID:        id,
 				CreatedOn: time.Now(),
 				Source: bitbucketcloud.PullRequestEndpoint{
 					Repo:   bitbucketcloud.Repo{UUID: bitbucketCloudRepoUUID},
 					Branch: bitbucketcloud.PullRequestBranch{Name: "branch"},
-					Commit: bitbucketcloud.PullRequestCommit{Hash: bitbucketCloudSourceHash},
+					Commit: bitbucketcloud.PullRequestCommit{Hash: bitbucketCloudSourceHash[0:12]},
 				},
 				Destination: bitbucketcloud.PullRequestEndpoint{
 					Repo:   bitbucketcloud.Repo{UUID: bitbucketCloudRepoUUID},
 					Branch: bitbucketcloud.PullRequestBranch{Name: "main"},
-					Commit: bitbucketcloud.PullRequestCommit{Hash: bitbucketCloudDestinationHash},
+					Commit: bitbucketcloud.PullRequestCommit{Hash: bitbucketCloudDestinationHash[0:12]},
 				},
 			},
 		},

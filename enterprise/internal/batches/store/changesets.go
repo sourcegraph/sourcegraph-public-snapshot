@@ -615,11 +615,11 @@ func listChangesetsQuery(opts *ListChangesetsOpts, authzConds *sqlf.Query) *sqlf
 		preds = append(preds, sqlf.Sprintf("repo.id = %s", opts.RepoID))
 	}
 	if len(opts.BitbucketCloudCommit) >= 12 {
-		// Bitbucket Cloud commits are generally truncated to 12 characters, but
-		// this isn't actually documented in the API documentation: they may be
-		// anything from 7 up. In practice, we've only observed 12. Given that,
-		// we'll look for 7, 12, and the full hash — since this hits an index,
-		// this should be relatively cheap.
+		// Bitbucket Cloud commit hashes in PR objects are generally truncated
+		// to 12 characters, but this isn't actually documented in the API
+		// documentation: they may be anything from 7 up. In practice, we've
+		// only observed 12. Given that, we'll look for 7, 12, and the full hash
+		// — since this hits an index, this should be relatively cheap.
 		preds = append(preds, sqlf.Sprintf(
 			"changesets.metadata->'source'->'commit'->>'hash' IN (%s, %s, %s)",
 			opts.BitbucketCloudCommit[0:7],
