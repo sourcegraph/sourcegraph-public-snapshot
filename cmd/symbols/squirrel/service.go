@@ -26,7 +26,7 @@ type SquirrelService struct {
 }
 
 // Creates a new SquirrelService.
-func NewSquirrelService(readFile ReadFileFunc, symbolSearch symbolsTypes.SearchFunc) *SquirrelService {
+func New(readFile ReadFileFunc, symbolSearch symbolsTypes.SearchFunc) *SquirrelService {
 	return &SquirrelService{
 		readFile:     readFile,
 		symbolSearch: symbolSearch,

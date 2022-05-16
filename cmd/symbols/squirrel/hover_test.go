@@ -65,7 +65,7 @@ namespace Foo {
 		return nil, errors.Newf("path %s not found", path.Path)
 	}
 
-	squirrel := NewSquirrelService(readFile, nil)
+	squirrel := New(readFile, nil)
 	defer squirrel.Close()
 
 	for _, test := range tests {

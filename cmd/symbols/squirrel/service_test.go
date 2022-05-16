@@ -52,7 +52,7 @@ func TestNonLocalDefinition(t *testing.T) {
 		return contents, nil
 	}
 
-	squirrel := NewSquirrelService(readFile, nil)
+	squirrel := New(readFile, nil)
 	defer squirrel.Close()
 
 	for symbol, m := range groupBySymbolAndKind(annotations) {
