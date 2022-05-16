@@ -317,7 +317,7 @@ func serveHome(db database.DB) handlerFunc {
 			return nil
 		}
 
-		// Homepage redirects to /search.
+		// On non-Sourcegraph.com instances, there is no separate homepage, so redirect to /search.
 		r.URL.Path = "/search"
 		http.Redirect(w, r, r.URL.String(), http.StatusTemporaryRedirect)
 		return nil
