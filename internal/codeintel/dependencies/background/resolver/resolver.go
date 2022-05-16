@@ -2,7 +2,8 @@ package resolver
 
 import (
 	"context"
-	"fmt"
+
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
@@ -43,7 +44,7 @@ func (r *resolver) Handle(ctx context.Context) error {
 	for i, commit := range repoCommits {
 		resolvedCommit := resolvedCommits[i]
 		if resolvedCommit == nil {
-			// TODO: UpdateResolvedRevisions should accepted nil-values to
+			// TODO - UpdateResolvedRevisions should accepted nil-values to
 			// "unresolve" revisions
 			continue
 		}
@@ -68,6 +69,6 @@ func (r *resolver) Handle(ctx context.Context) error {
 }
 
 func (r *resolver) HandleError(err error) {
-	// TODO
-	fmt.Printf("OH NOOOOO %v\n", err)
+	// TODO - add additional metrics
+	log15.Error("Failed to resolve dependency information", "err", error)
 }
