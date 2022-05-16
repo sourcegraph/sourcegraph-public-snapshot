@@ -326,23 +326,6 @@ func (i *insightViewResolver) IsFrozen(ctx context.Context) (bool, error) {
 	return i.view.IsFrozen, nil
 }
 
-func (i *insightViewResolver) SeriesCount(ctx context.Context) (int32, error) {
-	count := 0
-	for _, series := range i.view.Series {
-		if series.GeneratedFromCaptureGroups {
-			addCount, err := i.timeSeriesStore.CountCaptureGroupsForSeries(ctx, series.SeriesID)
-			if err != nil {
-				return 0, errors.Wrap(err, "CountCaptureGroupsForSeries")
-			}
-
-			count += addCount
-		} else {
-			count++
-		}
-	}
-	return int32(count), nil
-}
-
 type searchInsightDataSeriesDefinitionResolver struct {
 	series *types.InsightViewSeries
 }

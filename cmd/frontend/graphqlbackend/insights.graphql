@@ -897,11 +897,6 @@ type InsightView implements Node {
     isFrozen: Boolean!
 
     """
-    The total number of series on this insight.
-    """
-    seriesCount: Int!
-
-    """
     The default series display options saved on the insight. This will differ from the applied options if they are overwritten but not saved.
     """
     defaultSeriesDisplayOptions: SeriesDisplayOptions!
