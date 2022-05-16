@@ -228,6 +228,10 @@ func (s *Service) setupRecognizers(ctx context.Context, sandbox *luasandbox.Sand
 			return nil, err
 		}
 
+		// Allow false values here, which will be indicated by a nil recognizer. In the loop below we will
+		// add (or replace) any recognizer with the same name. To _unset_ a recognize, we allow a user to
+		// add nil as the table value.
+
 		overrideRecognizerMap, err := luatypes.NamedRecognizersFromUserDataMap(rawRecognizers, true)
 		if err != nil {
 			return nil, err
