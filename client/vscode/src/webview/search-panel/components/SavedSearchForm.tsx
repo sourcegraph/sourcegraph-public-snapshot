@@ -10,7 +10,7 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { Checkbox, Container, Icon, PageHeader } from '@sourcegraph/wildcard'
+import { Checkbox, Container, Icon, PageHeader, Typography } from '@sourcegraph/wildcard'
 
 import { CreateSavedSearchResult, CreateSavedSearchVariables, SavedSearchFields } from '../../../graphql-operations'
 import { WebviewPageProps } from '../../platform/context'
@@ -252,7 +252,8 @@ const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<SavedSear
                     {isUnsupportedNotifyQuery && (
                         <div className="alert alert-warning mt-3 mb-0">
                             <strong>Warning:</strong> non-commit searches do not currently support notifications.
-                            Consider adding <code>type:diff</code> or <code>type:commit</code> to your query.
+                            Consider adding <Typography.Code>type:diff</Typography.Code> or{' '}
+                            <Typography.Code>type:commit</Typography.Code> to your query.
                         </div>
                     )}
                     {notify && !isUnsupportedNotifyQuery && (

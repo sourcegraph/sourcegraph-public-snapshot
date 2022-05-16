@@ -6,7 +6,7 @@ import { RepoFileLink } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { getFileMatchUrl, getRepositoryUrl, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
 import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Typography } from '@sourcegraph/wildcard'
 
 import { BlockProps, SymbolBlockInput } from '../..'
 import { SearchTypeSuggestionsInput } from '../suggestions/SearchTypeSuggestionsInput'
@@ -108,10 +108,10 @@ const SymbolSuggestions: React.FunctionComponent<
                         data-testid="symbol-suggestion-button"
                     >
                         <SymbolIcon kind={symbol.kind} className="mr-1" />
-                        <code>
+                        <Typography.Code>
                             {symbol.name}{' '}
                             {symbol.containerName && <span className="text-muted">{symbol.containerName}</span>}
-                        </code>
+                        </Typography.Code>
                     </Button>
                 ))}
             </div>

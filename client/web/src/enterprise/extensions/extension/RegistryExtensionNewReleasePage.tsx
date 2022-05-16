@@ -143,12 +143,12 @@ export const RegistryExtensionNewReleasePage = withAuthenticatedUser<Props>(
                 <p>
                     Use the{' '}
                     <Link to="https://github.com/sourcegraph/src-cli" target="_blank" rel="noopener noreferrer">
-                        <code>src</code> CLI tool
+                        <Typography.Code>src</Typography.Code> CLI tool
                     </Link>{' '}
                     to publish a new release:
                 </p>
                 <pre>
-                    <code>$ src extensions publish</code>
+                    <Typography.Code>$ src extensions publish</Typography.Code>
                 </pre>
                 {showEditor ? (
                     <>

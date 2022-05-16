@@ -799,7 +799,7 @@ const ReferencesCollapsible: React.FunctionComponent<
                 {references.map(reference => (
                     <div key={(flagName || '') + reference.file}>
                         <Link target="_blank" rel="noopener noreferrer" to={reference.searchURL}>
-                            <code>{reference.file}</code>
+                            <Typography.Code>{reference.file}</Typography.Code>
                         </Link>
                     </div>
                 ))}

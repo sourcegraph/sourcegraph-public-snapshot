@@ -5,7 +5,7 @@ import copy from 'copy-to-clipboard'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 
 import { highlightCodeSafe } from '@sourcegraph/common'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Typography } from '@sourcegraph/wildcard'
 
 import styles from './CodeSnippet.module.scss'
 
@@ -34,7 +34,7 @@ export const CodeSnippet: React.FunctionComponent<React.PropsWithChildren<CodeSn
                     <ContentCopyIcon className="pr-2 pt-2" />
                 </Button>
             )}
-            <code dangerouslySetInnerHTML={highlightedInput} />
+            <Typography.Code dangerouslySetInnerHTML={highlightedInput} />
         </pre>
     )
 }
