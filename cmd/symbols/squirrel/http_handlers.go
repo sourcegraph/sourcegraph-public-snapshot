@@ -36,7 +36,7 @@ func LocalCodeIntelHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	squirrel := NewSquirrelService(readFileFromGitserver)
+	squirrel := New(readFileFromGitserver, nil)
 	defer squirrel.Close()
 
 	// Compute the local code intel payload.
@@ -94,8 +94,29 @@ func NewSymbolInfoHandler(symbolSearch symbolsTypes.SearchFunc) func(w http.Resp
 			return
 		}
 
-		// TODO find the symbol.
-		var result *types.SymbolInfo
+		// Find the symbol.
+		squirrel := New(readFileFromGitserver, symbolSearch)
+		defer squirrel.Close()
+		result, err := squirrel.symbolInfo(r.Context(), args)
+		if os.Getenv("SQUIRREL_DEBUG") == "true" {
+			debugStringBuilder := &strings.Builder{}
+			fmt.Fprintln(debugStringBuilder, "👉 /symbolInfo repo:", args.Repo, "commit:", args.Commit, "path:", args.Path, "row:", args.Row, "column:", args.Column)
+			prettyPrintBreadcrumbs(debugStringBuilder, squirrel.breadcrumbs, readFileFromGitserver)
+			if result == nil {
+				fmt.Fprintln(debugStringBuilder, "❌ no definition found")
+			} else {
+				fmt.Fprintln(debugStringBuilder, "✅ /symbolInfo", *result)
+			}
+
+			fmt.Println(" ")
+			fmt.Println(bracket(debugStringBuilder.String()))
+			fmt.Println(" ")
+		}
+		if err != nil {
+			_ = json.NewEncoder(w).Encode(nil)
+			log15.Error("failed to get definition", "err", err)
+			return
+		}
 
 		// Write the response.
 		w.Header().Set("Content-Type", "application/json")
@@ -130,7 +151,7 @@ func DebugLocalCodeIntelHandler(w http.ResponseWriter, r *http.Request) {
 		return os.ReadFile("/tmp/squirrel-example.txt")
 	}
 
-	squirrel := NewSquirrelService(readFile)
+	squirrel := New(readFile, nil)
 	defer squirrel.Close()
 
 	rangeToSymbolIx := map[types.Range]int{}

@@ -297,6 +297,21 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                     </ul>
                 </li>
                 <li>
+                    Notebooks usage data
+                    <ul>
+                        <li>Total number of views of the notebook page</li>
+                        <li>Total number of views of the notebooks list page</li>
+                        <li>Total number of views of the embedded notebook page</li>
+                        <li>Total number of created notebooks</li>
+                        <li>Total number of added notebook stars</li>
+                        <li>Total number of added notebook markdown blocks</li>
+                        <li>Total number of added notebook query blocks</li>
+                        <li>Total number of added notebook file blocks</li>
+                        <li>Total number of added notebook symbol blocks</li>
+                        <li>Total number of added notebook compute blocks</li>
+                    </ul>
+                </li>
+                <li>
                     CTA usage data
                     <ul>
                         <li>

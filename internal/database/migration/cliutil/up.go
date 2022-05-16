@@ -3,8 +3,6 @@ package cliutil
 import (
 	"flag"
 	"fmt"
-	"sort"
-	"strings"
 
 	"github.com/urfave/cli/v2"
 
@@ -15,10 +13,10 @@ import (
 
 func Up(commandName string, factory RunnerFactory, outFactory func() *output.Output, development bool) *cli.Command {
 	flags := []cli.Flag{
-		&cli.StringFlag{
+		&cli.StringSliceFlag{
 			Name:  "db",
 			Usage: "The target `schema(s)` to modify. Comma-separated values are accepted. Supply \"all\" to migrate all schemas.",
-			Value: "all",
+			Value: cli.NewStringSlice("all"),
 		},
 		&cli.BoolFlag{
 			Name:  "unprivileged-only",
@@ -41,20 +39,15 @@ func Up(commandName string, factory RunnerFactory, outFactory func() *output.Out
 		}
 
 		var (
-			schemaNameFlag           = cmd.String("db")
+			schemaNames              = cmd.StringSlice("db")
 			unprivilegedOnlyFlag     = cmd.Bool("unprivileged-only")
 			ignoreSingleDirtyLogFlag = cmd.Bool("ignore-single-dirty-log")
 		)
 
-		schemaNames := strings.Split(schemaNameFlag, ",")
-		if len(schemaNames) == 0 {
-			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: supply a schema via -db"))
-			return flag.ErrHelp
+		schemaNames, err := parseSchemaNames(schemaNames, out)
+		if err != nil {
+			return err
 		}
-		if len(schemaNames) == 1 && schemaNames[0] == "all" {
-			schemaNames = schemas.SchemaNames
-		}
-		sort.Strings(schemaNames)
 
 		operations := []runner.MigrationOperation{}
 		for _, schemaName := range schemaNames {
@@ -85,4 +78,21 @@ func Up(commandName string, factory RunnerFactory, outFactory func() *output.Out
 		Action:      action,
 		Description: ConstructLongHelp(),
 	}
+}
+
+func parseSchemaNames(schemaNames []string, out *output.Output) ([]string, error) {
+	if len(schemaNames) == 1 && schemaNames[0] == "" {
+		schemaNames = nil
+	}
+
+	if len(schemaNames) == 1 && schemaNames[0] == "all" {
+		schemaNames = schemas.SchemaNames
+	}
+
+	if len(schemaNames) == 0 {
+		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: supply a schema via -db"))
+		return nil, flag.ErrHelp
+	}
+
+	return schemaNames, nil
 }
