@@ -9,21 +9,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/lib/group"
 )
-
-func toComputeResultStream(ctx context.Context, db database.DB, cmd compute.Command, matches []result.Match, f func(compute.Result)) error {
-	for _, m := range matches {
-		result, err := cmd.Run(ctx, db, m)
-		if err != nil {
-			return err
-		}
-		f(result)
-	}
-	return nil
-}
 
 func NewComputeStream(ctx context.Context, db database.DB, query string) (<-chan Event, func() (*search.Alert, error)) {
 	computeQuery, err := compute.Parse(query)
@@ -53,17 +41,11 @@ func NewComputeStream(ctx context.Context, db database.DB, query string) (<-chan
 		eventsC <- Event{Results: []compute.Result{r.res}}
 	})
 	stream := streaming.StreamFunc(func(event streaming.SearchEvent) {
-		if len(event.Results) > 0 {
-			callback := func(result compute.Result) {
-				eventsC <- Event{Results: []compute.Result{result}}
-			}
-			err = toComputeResultStream(ctx, db, computeQuery.Command, event.Results, callback)
-			if err != nil {
-				select {
-				case errorC <- err:
-				default:
-				}
-			}
+		for _, match := range event.Results {
+			g.Submit(func() groupResult {
+				res, err := computeQuery.Command.Run(ctx, db, match)
+				return groupResult{res, err}
+			})
 		}
 	})
 
@@ -93,6 +75,7 @@ func NewComputeStream(ctx context.Context, db database.DB, query string) (<-chan
 		defer close(final)
 		defer close(eventsC)
 		defer close(errorC)
+		defer g.Done()
 
 		alert, err := searchClient.Execute(ctx, stream, inputs)
 		final <- finalResult{alert: alert, err: err}
