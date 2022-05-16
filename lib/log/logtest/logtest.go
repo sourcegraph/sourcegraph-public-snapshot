@@ -7,7 +7,6 @@ import (
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"go.uber.org/zap/zaptest"
 	"go.uber.org/zap/zaptest/observer"
 
 	"github.com/sourcegraph/sourcegraph/lib/log"
@@ -46,7 +45,7 @@ func InitWithLevel(_ *testing.M, level log.Level) {
 
 func initGlobal(level zapcore.Level) {
 	// use an empty resource, we don't log output Resource in dev mode anyway
-	globallogger.Init(otfields.Resource{}, zap.NewAtomicLevelAt(level), encoders.OutputConsole, true)
+	globallogger.Init(otfields.Resource{}, level, encoders.OutputConsole, true)
 }
 
 // configurableAdapter exposes internal APIs on zapAdapter.
@@ -64,7 +63,14 @@ type CapturedLog struct {
 	Fields  map[string]any
 }
 
-func scopedTestLogger(t testing.TB) log.Logger {
+type LoggerOptions struct {
+	// Level configures the minimum log level to output.
+	Level log.Level
+	// FailOnErrorLogs indicates that the test should fail if an error log is output.
+	FailOnErrorLogs bool
+}
+
+func scopedTestLogger(t testing.TB, options LoggerOptions) log.Logger {
 	// initialize just in case - the underlying call to log.Init is no-op if this has
 	// already been done. We allow this in testing for convenience.
 	Init(nil)
@@ -77,27 +83,37 @@ func scopedTestLogger(t testing.TB) log.Logger {
 	// Cast into internal API
 	configurable := root.(configurableAdapter)
 
-	// Core that writes to test output
-	testCore := zaptest.NewLogger(t).Core()
-
-	// Hook test logger
+	// Hook test output
 	return configurable.WithCore(func(c zapcore.Core) zapcore.Core {
-		return testCore // replace the core entirely
+		var level zapcore.LevelEnabler = c // by default, use the parent core's leveller
+		if options.Level != "" {
+			level = zap.NewAtomicLevelAt(options.Level.Parse())
+		}
+
+		return newTestingCore(t, level, options.FailOnErrorLogs) // replace the core entirely
 	})
 }
 
-// Get retrieves a logger from scoped to the the given test.
+// Scoped retrieves a logger scoped to the the given test. It writes to testing.TB.
 //
 // Unlike log.Scoped(), logtest.Scoped() is safe to use without initialization.
 func Scoped(t testing.TB) log.Logger {
-	return scopedTestLogger(t)
+	return scopedTestLogger(t, LoggerOptions{})
+}
+
+// Scoped retrieves a logger scoped to the the given test, configured with additional
+// options. It writes to testing.TB.
+//
+// Unlike log.Scoped(), logtest.Scoped() is safe to use without initialization.
+func ScopedWith(t testing.TB, options LoggerOptions) log.Logger {
+	return scopedTestLogger(t, options)
 }
 
 // Captured retrieves a logger from scoped to the the given test, and returns a callback,
 // dumpLogs, which flushes the logger buffer and returns log entries.
 func Captured(t testing.TB) (logger log.Logger, exportLogs func() []CapturedLog) {
 	// Cast into internal APIs
-	configurable := scopedTestLogger(t).(configurableAdapter)
+	configurable := scopedTestLogger(t, LoggerOptions{}).(configurableAdapter)
 
 	observerCore, entries := observer.New(zap.DebugLevel) // capture all levels
 	logger = configurable.WithCore(func(c zapcore.Core) zapcore.Core {
