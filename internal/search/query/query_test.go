@@ -44,6 +44,7 @@ func TestSubstituteSearchContexts(t *testing.T) {
 		return plan.ToParseTree().String()
 	}
 
+	autogold.Want("failing", `(or (and "repo:primary" "repo:protobuf" "select:repo") (and "repo:secondary" "repo:protobuf" "select:repo") (and "repo:primary" "repo:PROTOBUF" "select:repo") (and "repo:secondary" "repo:PROTOBUF" "select:repo"))`).Equal(t, test("context:go-deps (r:protobuf OR r:PROTOBUF) select:repo", false))
 	autogold.Want("basic", `(or (and "repo:primary" "scamaz") (and "repo:secondary" "scamaz"))`).Equal(t, test("context:gordo scamaz", false))
 
 	autogold.Want("preserve predicate label", `[
