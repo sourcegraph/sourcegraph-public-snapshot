@@ -82,11 +82,15 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
     }, [telemetryService])
 
     /** Get the token description from the url parameters if any */
-    const urlParameters = new URLSearchParams(history.location.search).get('description')
+    const requestFrom = new URLSearchParams(history.location.search).get('requestFrom')
+    const nonce = new URLSearchParams(history.location.search).get('nonce')
     /** The contents of the note input field. */
-    const [note, setNote] = useState<string>(urlParameters || '')
+    const [note, setNote] = useState<string>('')
     /** The selected scopes checkboxes. */
     const [scopes, setScopes] = useState<string[]>([AccessTokenScopes.UserAll])
+
+    const submits = useMemo(() => new Subject<React.FormEvent<HTMLFormElement>>(), [])
+    const onSubmit = useCallback<React.FormEventHandler<HTMLFormElement>>(event => submits.next(event), [submits])
 
     const onNoteChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
         setNote(event.currentTarget.value)
@@ -98,8 +102,31 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
         setScopes(previous => (checked ? [...previous, value] : previous.filter(scope => scope !== value)))
     }, [])
 
-    const submits = useMemo(() => new Subject<React.FormEvent<HTMLFormElement>>(), [])
-    const onSubmit = useCallback<React.FormEventHandler<HTMLFormElement>>(event => submits.next(event), [submits])
+    /** We use this to handle token creation request from redirections. */
+    const requestOrError = useObservable(
+        useMemo(
+            () =>
+                createAccessToken(
+                    user.id,
+                    scopes,
+                    'Click on the pop-up to sent token back to VS Code automatically'
+                ).pipe(
+                    tap(result => {
+                        if (requestFrom === 'LOGINVSCE' && nonce) {
+                            // Go back to access tokens list page and display the token secret value.
+                            history.push(`${match.url.replace(/\/new$/, '')}`)
+                            onDidCreateAccessToken(result)
+                            // TODO: ENCRYPT TOKEN
+                            window.location.replace(
+                                `vscode://sourcegraph.sourcegraph?code=${result.token}&nonce=${nonce}`
+                            )
+                        }
+                    }),
+                    catchError(error => [asError(error)])
+                ),
+            [history, match.url, nonce, onDidCreateAccessToken, requestFrom, scopes, user.id]
+        )
+    )
 
     const creationOrError = useObservable(
         useMemo(
@@ -130,7 +157,6 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
         <div className="user-settings-create-access-token-page">
             <PageTitle title="Create access token" />
             <PageHeader path={[{ text: 'New access token' }]} headingElement="h2" className="mb-3" />
-
             {siteAdminViewingOtherUser && (
                 <SiteAdminAlert className="sidebar__alert">
                     Creating access token for other user <strong>{user.username}</strong>
@@ -146,10 +172,10 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
                             className="form-control test-create-access-token-description"
                             id="user-settings-create-access-token-page__note"
                             onChange={onNoteChange}
-                            value={note}
                             required={true}
                             autoFocus={true}
                             placeholder="What's this token for?"
+                            value={note}
                         />
                     </div>
                     <div className="form-group mb-0">
@@ -211,8 +237,8 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
                     </Button>
                 </div>
             </Form>
-
             {isErrorLike(creationOrError) && <ErrorAlert className="my-3" error={creationOrError} />}
+            {isErrorLike(requestOrError) && requestFrom && <ErrorAlert className="my-3" error={requestOrError} />}
         </div>
     )
 }

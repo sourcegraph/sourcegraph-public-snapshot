@@ -57,6 +57,7 @@ export const requestGraphQLFromVSCode = async <R, V = object>(
                     query: request,
                     variables,
                 }),
+                credentials: 'include',
                 method: 'POST',
                 headers,
             })

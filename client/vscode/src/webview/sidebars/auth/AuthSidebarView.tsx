@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react'
 
+import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
@@ -138,6 +139,22 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
                 </a>{' '}
                 for a video guide on how to create an access token.
             </p>
+            <p className={classNames(styles.ctaParagraph)}>
+                <a href="https://sourcegraph.test:3443/sign-in?returnTo=user/settings/tokens/new?requestFrom=LOGINVSCE&nonce=NONCEVSCE">
+                    {/* <a href="https://sourcegraph.com/sign-in?returnTo=user/settings/tokens/new?requestFrom=LOGINVSCE"> */}
+                    <VSCodeButton
+                        type="button"
+                        className={classNames(
+                            'btn my-1 p-0',
+                            styles.ctaButton,
+                            styles.ctaButtonWrapperWithContextBelow
+                        )}
+                        autofocus={false}
+                    >
+                        Sign in with a browser
+                    </VSCodeButton>
+                </a>
+            </p>
             <p className={classNames(styles.ctaButtonWrapperWithContextBelow)}>
                 <LoaderInput loading={state === 'validating'}>
                     <label htmlFor="access-token-input">Access Token</label>
@@ -172,13 +189,13 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
                     </LoaderInput>
                 </p>
             )}
-            <button
+            <VSCodeButton
                 type="submit"
                 disabled={state === 'validating'}
-                className={classNames('btn my-1', styles.ctaButton, styles.ctaButtonWrapperWithContextBelow)}
+                className={classNames('btn my-1 p-0', styles.ctaButton, styles.ctaButtonWrapperWithContextBelow)}
             >
                 Authenticate account
-            </button>
+            </VSCodeButton>
             {state === 'failure' && (
                 <Alert variant="danger" className={classNames(styles.ctaParagraph, 'my-1')}>
                     Unable to verify your access token for {hostname}. Please try again with a new access token.
