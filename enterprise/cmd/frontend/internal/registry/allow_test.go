@@ -117,7 +117,7 @@ func TestFilterRemoteExtensions(t *testing.T) {
 	run(
 		&schema.Extensions{
 			AllowOnlySourcegraphAuthoredExtensions: true,
-			AllowRemoteExtensions:                  []string{"b"},
+			AllowRemoteExtensions:                  []string{"b", "c"},
 		},
 		[]*registry.Extension{
 			{
@@ -132,6 +132,13 @@ func TestFilterRemoteExtensions(t *testing.T) {
 				Publisher: registry.Publisher{
 					Name: "sourcegraph",
 					URL:  "https://sourcegraph.com/extensions/registry/publishers/organizations/sourcegraph",
+				},
+			},
+			{
+				ExtensionID: "c",
+				Publisher: registry.Publisher{
+					Name: "tobias",
+					URL:  "https://sourcegraph.com/extensions/registry/publishers/users/tobias",
 				},
 			},
 		},
