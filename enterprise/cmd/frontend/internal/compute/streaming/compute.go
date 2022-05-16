@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
 func toComputeResultStream(ctx context.Context, db database.DB, cmd compute.Command, matches []result.Match, f func(compute.Result)) error {
@@ -37,6 +38,20 @@ func NewComputeStream(ctx context.Context, db database.DB, query string) (<-chan
 
 	eventsC := make(chan Event)
 	errorC := make(chan error, 1)
+	type groupResult struct {
+		res compute.Result
+		err error
+	}
+	g := group.NewParallelOrdered(8, func(r groupResult) {
+		if r.err != nil {
+			select {
+			case errorC <- err:
+			default:
+			}
+			return
+		}
+		eventsC <- Event{Results: []compute.Result{r.res}}
+	})
 	stream := streaming.StreamFunc(func(event streaming.SearchEvent) {
 		if len(event.Results) > 0 {
 			callback := func(result compute.Result) {
