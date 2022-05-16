@@ -617,7 +617,7 @@ func (b *jobBuilder) newZoektGlobalSearch(typ search.IndexedRequestType) (job.Jo
 		return &zoekt.ZoektGlobalSearchJob{
 			GlobalZoektQuery: globalZoektQuery,
 			ZoektArgs:        zoektArgs,
-			RepoOptions:      b.repoOptions,
+			RepoOpts:         b.repoOptions,
 		}, nil
 	}
 	return nil, errors.Errorf("attempt to create unrecognized zoekt global search with value %v", typ)
