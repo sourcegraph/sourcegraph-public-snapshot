@@ -204,7 +204,7 @@ func (e *InsightsPingEmitter) emitInsightsPerDashboard(ctx context.Context) erro
 }
 
 func (e *InsightsPingEmitter) SaveEvent(ctx context.Context, name string, argument json.RawMessage) error {
-	store := database.EventLogs(e.postgresDb)
+	store := database.EventLogsWith(database.NewDB(e.postgresDb))
 
 	err := store.Insert(ctx, &database.Event{
 		Name:            name,

@@ -13,7 +13,6 @@ import (
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -129,11 +128,6 @@ type accessTokenStore struct {
 }
 
 var _ AccessTokenStore = (*accessTokenStore)(nil)
-
-// AccessTokens instantiates and returns a new AccessTokenStore with prepared statements.
-func AccessTokens(db dbutil.DB) AccessTokenStore {
-	return &accessTokenStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
-}
 
 // AccessTokensWith instantiates and returns a new AccessTokenStore using the other store handle.
 func AccessTokensWith(other basestore.ShareableStore) AccessTokenStore {
