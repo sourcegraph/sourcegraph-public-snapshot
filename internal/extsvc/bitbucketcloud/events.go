@@ -6,8 +6,8 @@ import (
 	"time"
 )
 
-func ParseWebhookEvent(eventKey string, payload []byte) (interface{}, error) {
-	var target interface{}
+func ParseWebhookEvent(eventKey string, payload []byte) (any, error) {
+	var target any
 	switch eventKey {
 	case "pullrequest:approved":
 		target = &PullRequestApprovedEvent{}
