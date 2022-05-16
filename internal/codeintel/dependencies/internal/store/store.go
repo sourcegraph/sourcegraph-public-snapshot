@@ -285,6 +285,7 @@ WITH candidates AS (
 		%s - last_check_at >= (%s * '1 hour'::interval)
 	GROUP BY repository_name, revspec
 	ORDER BY repository_name, revspec
+	-- TODO - select for update to reduce contention
 	LIMIT %s
 ),
 updated AS (
@@ -329,6 +330,7 @@ SET
 WHERE
 	repository_name = %s AND
 	revspec = %s
+-- TODO - order before update to reduce contention
 `
 
 type ListDependencyReposOpts struct {
