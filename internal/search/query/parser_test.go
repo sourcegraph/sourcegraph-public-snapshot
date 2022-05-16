@@ -729,7 +729,13 @@ func Test_newOperator(t *testing.T) {
 		want  autogold.Value
 	}{{
 		query: `(repo:a and repo:b) (repo:d or repo:e) repo:f`,
-		want:  autogold.Want("failing", `(and (and "repo:a" "repo:b") (or "repo:d" "repo:e") "repo:f")`),
+		want:  autogold.Want("parameters", `(and (and "repo:a" "repo:b") (or "repo:d" "repo:e") "repo:f")`),
+	}, {
+		query: `(a and b) and (d or e) and f`,
+		want:  autogold.Want("patterns", `(and (and "a" "b") (or "d" "e") "f")`),
+	}, {
+		query: `a and (b and c)`,
+		want:  autogold.Want("reducible", `(and "a" "b" "c")`),
 	}}
 
 	for _, tc := range cases {
