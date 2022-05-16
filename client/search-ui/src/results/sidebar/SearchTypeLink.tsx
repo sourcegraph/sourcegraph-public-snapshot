@@ -108,6 +108,7 @@ const SearchSymbol: React.FunctionComponent<React.PropsWithChildren<Omit<SearchT
 
 const repoExample = createQueryExampleFromString('{regexp-pattern}')
 const repoDependenciesExample = createQueryExampleFromString('deps({})')
+const repoDependentsExample = createQueryExampleFromString('revdeps({})')
 
 export const getSearchTypeLinks = (props: SearchTypeLinksProps): ReactElement[] => {
     function updateQueryWithRepoExample(): void {
@@ -140,6 +141,21 @@ export const getSearchTypeLinks = (props: SearchTypeLinksProps): ReactElement[] 
         })
     }
 
+    function updateQueryWithRepoDependentsExample(): void {
+        const updatedQuery = updateQueryWithFilterAndExample(props.query, FilterType.repo, repoDependentsExample, {
+            singular: true,
+            negate: false,
+            emptyValue: false,
+        })
+        props.onNavbarQueryChange({
+            changeSource: QueryChangeSource.searchTypes,
+            query: updatedQuery.query,
+            selectionRange: updatedQuery.placeholderRange,
+            revealRange: updatedQuery.filterRange,
+            showSuggestions: false,
+        })
+    }
+
     const SearchTypeLinkOrButton = props.forceButton ? SearchTypeButton : SearchTypeLink
 
     /** Click handler for `SearchTypeLinkOrButton` (when rendered as button) */
@@ -155,6 +171,9 @@ export const getSearchTypeLinks = (props: SearchTypeLinksProps): ReactElement[] 
         </SearchTypeButton>,
         <SearchTypeButton onClick={updateQueryWithRepoDependenciesExample} key="repo-dependencies">
             Search repo dependencies
+        </SearchTypeButton>,
+        <SearchTypeButton onClick={updateQueryWithRepoDependentsExample} key="repo-dependents">
+            Search repo dependents
         </SearchTypeButton>,
         <SearchSymbol {...props} key="symbol">
             Find a symbol

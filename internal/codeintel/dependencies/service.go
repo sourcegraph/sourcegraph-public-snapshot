@@ -377,7 +377,6 @@ func (s *Service) Dependents(ctx context.Context, repoRevs map[api.RepoName]type
 			return nil, errors.Wrap(err, "store.LockfileDependents")
 		}
 		deps = append(deps, repoDeps...)
-
 	}
 
 	dependentsRevs = map[api.RepoName]types.RevSpecSet{}

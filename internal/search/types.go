@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	zoektquery "github.com/google/zoekt/query"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -227,6 +228,7 @@ type RepoOptions struct {
 	RepoFilters              []string
 	MinusRepoFilters         []string
 	Dependencies             []string
+	Dependents               []string
 	CaseSensitiveRepoFilters bool
 	SearchContextSpec        string
 

@@ -547,6 +547,7 @@ func toRepoOptions(b query.Basic, userSettings *schema.Settings) search.RepoOpti
 		RepoFilters:       repoFilters,
 		MinusRepoFilters:  minusRepoFilters,
 		Dependencies:      b.Dependencies(),
+		Dependents:        b.Dependents(),
 		SearchContextSpec: searchContextSpec,
 		ForkSet:           b.Fork() != nil,
 		OnlyForks:         fork == query.Only,

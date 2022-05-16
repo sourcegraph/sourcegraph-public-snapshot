@@ -15,6 +15,7 @@ const filterCompletionItemKind = Monaco.languages.CompletionItemKind.Issue
 type PartialCompletionItem = Omit<Monaco.languages.CompletionItem, 'range'>
 
 export const REPO_DEPS_PREDICATE_REGEX = /^(deps|dependencies)\((.*?)\)?$/
+export const REPO_REVDEPS_PREDICATE_REGEX = /^(revdeps|dependents)\((.*?)\)?$/
 export const PREDICATE_REGEX = /^([.A-Za-z]+)\((.*?)\)?$/
 
 /**
@@ -101,6 +102,14 @@ export const repositoryInsertText = (
     if (depsPredicateMatches) {
         // depsPredicateMatches[1] contains either `deps` or `dependencies` predicate based on the matched value.
         return `${depsPredicateMatches[1]}(${insertText})`
+    }
+
+    const reverseDepsPredicateMatches = options.filterValue
+        ? options.filterValue.match(REPO_REVDEPS_PREDICATE_REGEX)
+        : null
+    if (reverseDepsPredicateMatches) {
+        // depsPredicateMatches[1] contains either `deps` or `dependencies` predicate based on the matched value.
+        return `${reverseDepsPredicateMatches[1]}(${insertText})`
     }
 
     return insertText
