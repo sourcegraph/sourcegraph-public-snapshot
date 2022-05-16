@@ -1,0 +1,30 @@
+"name","ring","quadrant","isNew","description"
+Go,Adopt,Languages,TRUE,
+GRPC ,Trial,Backend,TRUE,
+Datadog,Trial,Tooling,TRUE,
+Buf,Assess,Backend,TRUE,<p>Bla bla it has proven to be ask the Frontend Platform team</p>
+Mocha,Hold,Frontend,TRUE,
+Jest,Adopt,Frontend,TRUE,<p>Bla bla it has proven to be ask the Frontend Platform team</p>
+Typescript,Adopt,Languages,TRUE,
+Buildkite ,Adopt,Tooling,TRUE,
+GitHub Actions,Adopt,Tooling,TRUE,
+log15,Hold,Backend,TRUE,<p>It sucks</p>
+cockroachdb/errors,Hold,Backend,TRUE,
+Preprod Application tests,Trial,Tooling,TRUE,
+CI: Stateless agents,Adopt,Tooling,TRUE,
+Rust,Adopt,Languages,TRUE,"kinda, it was already there in syntax-highlighter"
+tree-sitter,Adopt,Backend,TRUE,
+Elm,Trial,Languages,TRUE,"compute notebooks, codestat.dev, doctree"
+Next.js,Adopt,Frontend,TRUE,
+Tailwind CSS,Adopt,Frontend,TRUE,
+Ruttl,Trial,Frontend,TRUE,
+Svelte,Hold,Frontend,TRUE,
+SvelteKit,Hold,Frontend,TRUE,
+CSS modules,Adopt,Frontend,TRUE,
+Apollo Client,Adopt,Frontend,TRUE,
+@testing-library/react,Adopt,Frontend,TRUE,
+esbuild,Trial,Frontend,TRUE,
+Playwright,Trial,Frontend,TRUE,
+Sentry,Hold,Tooling,TRUE,
+Bootstrap,Hold,Frontend,TRUE,
+Enzyme,Hold,Frontend,TRUE,
