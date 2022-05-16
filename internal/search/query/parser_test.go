@@ -729,7 +729,7 @@ func Test_newOperator(t *testing.T) {
 		want  autogold.Value
 	}{{
 		query: `(repo:a and repo:b) (repo:d or repo:e) repo:f`,
-		want:  autogold.Want("failing", `(and "repo:a" "repo:b" "repo:f")`),
+		want:  autogold.Want("failing", `(and (and "repo:a" "repo:b") (or "repo:d" "repo:e") "repo:f")`),
 	}}
 
 	for _, tc := range cases {
