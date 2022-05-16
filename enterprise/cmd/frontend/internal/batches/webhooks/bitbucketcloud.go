@@ -169,7 +169,7 @@ func (h *BitbucketCloudWebhook) convertEvent(ctx context.Context, theirs interfa
 func bitbucketCloudPullRequestEventPRs(e *bitbucketcloud.PullRequestEvent) []PR {
 	return []PR{
 		{
-			ID:             int64(e.PullRequest.ID),
+			ID:             e.PullRequest.ID,
 			RepoExternalID: e.Repository.UUID,
 		},
 	}
