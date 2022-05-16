@@ -27,6 +27,9 @@ export const PageTitle: React.FunctionComponent<PageTitleProps> = ({ title }) =>
 
         return () => {
             titleSet = false
+
+            // This is a fallback, in case the next page does *not* set the title.
+            // Ideally, we should always overwrite this, so we don't announce it to screen readers to reduce noise.
             document.title = getBrandName()
         }
     }, [title])
