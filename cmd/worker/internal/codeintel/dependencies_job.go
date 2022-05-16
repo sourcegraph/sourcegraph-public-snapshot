@@ -14,24 +14,24 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
-type dependenciesIndexerJob struct{}
+type dependenciesJob struct{}
 
-func NewDependenciesIndexerJob() job.Job {
-	return &dependenciesIndexerJob{}
+func NewDependenciesJob() job.Job {
+	return &dependenciesJob{}
 }
 
-func (j *dependenciesIndexerJob) Description() string {
+func (j *dependenciesJob) Description() string {
 	return ""
 }
 
-func (j *dependenciesIndexerJob) Config() []env.Config {
+func (j *dependenciesJob) Config() []env.Config {
 	return []env.Config{
 		indexer.ConfigInst,
 		resolver.ConfigInst,
 	}
 }
 
-func (j *dependenciesIndexerJob) Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
+func (j *dependenciesJob) Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	db, err := workerdb.Init()
 	if err != nil {
 		return nil, err
