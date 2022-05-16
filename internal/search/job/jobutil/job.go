@@ -30,32 +30,169 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// ToSearchJob converts a query parse tree to the _internal_ representation
-// needed to run a search routine. To understand why this conversion matters, think
-// about the fact that the query parse tree doesn't know anything about our
-// backends or architecture. It doesn't decide certain defaults, like whether we
-// should return multiple result types (pattern matches content, or a file name,
-// or a repo name). If we want to optimize a Sourcegraph query parse tree for a
-// particular backend (e.g., skip repository resolution and just run a Zoekt
-// query on all indexed repositories) then we need to convert our tree to
-// Zoekt's internal inputs and representation. These concerns are all handled by
-// toSearchJob.
-func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error) {
-	maxResults := b.MaxResults(searchInputs.DefaultLimit())
-	types, _ := b.IncludeExcludeValues(query.FieldType)
-	resultTypes := computeResultTypes(types, b, searchInputs.PatternType)
-	patternInfo := toTextPatternInfo(b, resultTypes, searchInputs.Protocol)
+// NewPlanJob converts a query.Plan into its job tree representation.
+func NewPlanJob(inputs *run.SearchInputs, plan query.Plan) (job.Job, error) {
+	children := make([]job.Job, 0, len(plan))
+	for _, q := range plan {
+		child, err := NewBasicJob(inputs, q)
+		if err != nil {
+			return nil, err
+		}
+		children = append(children, child)
+	}
+	return NewAlertJob(inputs, NewOrJob(children...)), nil
+}
+
+// NewBasicJob converts a query.Basic into its job tree representation.
+func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
+	var children []job.Job
+	addJob := func(j job.Job) {
+		children = append(children, j)
+	}
+
+	{
+		// This block generates jobs that can be built directly from
+		// a basic query rather than first being expanded into
+		// flat queries.
+		types, _ := b.IncludeExcludeValues(query.FieldType)
+		resultTypes := computeResultTypes(types, b, inputs.PatternType)
+		fileMatchLimit := int32(computeFileMatchLimit(b, inputs.Protocol))
+		selector, _ := filter.SelectPathFromString(b.FindValue(query.FieldSelect)) // Invariant: select is validated
+		features := toFeatures(inputs.Features)
+		repoOptions := toRepoOptions(b, inputs.UserSettings)
+		repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos := jobMode(b, resultTypes, inputs.PatternType, inputs.OnSourcegraphDotCom)
+
+		builder := &jobBuilder{
+			query:          b,
+			resultTypes:    resultTypes,
+			repoOptions:    repoOptions,
+			features:       &features,
+			fileMatchLimit: fileMatchLimit,
+			selector:       selector,
+		}
+
+		if resultTypes.Has(result.TypeFile | result.TypePath) {
+			// Create Global Text Search jobs.
+			if repoUniverseSearch {
+				job, err := builder.newZoektGlobalSearch(search.TextRequest)
+				if err != nil {
+					return nil, err
+				}
+				addJob(job)
+			}
+
+			if !skipRepoSubsetSearch && runZoektOverRepos {
+				job, err := builder.newZoektSearch(search.TextRequest)
+				if err != nil {
+					return nil, err
+				}
+				addJob(&repoPagerJob{
+					child:            job,
+					repoOptions:      repoOptions,
+					useIndex:         b.Index(),
+					containsRefGlobs: query.ContainsRefGlobs(b.ToParseTree()),
+				})
+			}
+		}
+
+		if resultTypes.Has(result.TypeSymbol) {
+			// Create Global Symbol Search jobs.
+			if repoUniverseSearch {
+				job, err := builder.newZoektGlobalSearch(search.SymbolRequest)
+				if err != nil {
+					return nil, err
+				}
+				addJob(job)
+			}
+
+			if !skipRepoSubsetSearch && runZoektOverRepos {
+				job, err := builder.newZoektSearch(search.SymbolRequest)
+				if err != nil {
+					return nil, err
+				}
+				addJob(&repoPagerJob{
+					child:            job,
+					repoOptions:      repoOptions,
+					useIndex:         b.Index(),
+					containsRefGlobs: query.ContainsRefGlobs(b.ToParseTree()),
+				})
+			}
+		}
+
+		if resultTypes.Has(result.TypeCommit) || resultTypes.Has(result.TypeDiff) {
+			diff := resultTypes.Has(result.TypeDiff)
+			addJob(&commit.CommitSearchJob{
+				Query:                commit.QueryToGitQuery(b, diff),
+				RepoOpts:             repoOptions,
+				Diff:                 diff,
+				HasTimeFilter:        b.Exists("after") || b.Exists("before"),
+				Limit:                int(fileMatchLimit),
+				IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker),
+			})
+		}
+
+		addJob(&searchrepos.ComputeExcludedReposJob{
+			RepoOpts: repoOptions,
+		})
+	}
+
+	{
+		// This block generates a job for all the backend types that cannot
+		// directly use a query.Basic and need to be split into query.Flat
+		// first.
+		flatJob, err := toFlatJobs(inputs, b)
+		if err != nil {
+			return nil, err
+		}
+		addJob(flatJob)
+	}
+
+	basicJob := NewParallelJob(children...)
+
+	{ // Apply selectors
+		if v, _ := b.ToParseTree().StringValue(query.FieldSelect); v != "" {
+			sp, _ := filter.SelectPathFromString(v) // Invariant: select already validated
+			basicJob = NewSelectJob(sp, basicJob)
+		}
+	}
+
+	{ // Apply subrepo permissions checks
+		checker := authz.DefaultSubRepoPermsChecker
+		if authz.SubRepoEnabled(checker) {
+			basicJob = NewFilterJob(basicJob)
+		}
+	}
+
+	{ // Apply limit
+		maxResults := b.ToParseTree().MaxResults(inputs.DefaultLimit())
+		basicJob = NewLimitJob(maxResults, basicJob)
+	}
+
+	{ // Apply timeout
+		timeout := timeoutDuration(b)
+		basicJob = NewTimeoutJob(timeout, basicJob)
+	}
+
+	return basicJob, nil
+}
+
+// NewFlatJob creates all jobs that are built from a query.Flat.
+func NewFlatJob(searchInputs *run.SearchInputs, f query.Flat) (job.Job, error) {
+	maxResults := f.MaxResults(searchInputs.DefaultLimit())
+	types, _ := f.IncludeExcludeValues(query.FieldType)
+	resultTypes := computeResultTypes(types, f.ToBasic(), searchInputs.PatternType)
+	patternInfo := toTextPatternInfo(f.ToBasic(), resultTypes, searchInputs.Protocol)
 
 	// searcher to use full deadline if timeout: set or we are streaming.
-	useFullDeadline := b.GetTimeout() != nil || b.Count() != nil || searchInputs.Protocol == search.Streaming
+	useFullDeadline := f.GetTimeout() != nil || f.Count() != nil || searchInputs.Protocol == search.Streaming
 
-	fileMatchLimit := int32(computeFileMatchLimit(b, searchInputs.Protocol))
-	selector, _ := filter.SelectPathFromString(b.FindValue(query.FieldSelect)) // Invariant: select is validated
+	fileMatchLimit := int32(computeFileMatchLimit(f.ToBasic(), searchInputs.Protocol))
+	selector, _ := filter.SelectPathFromString(f.FindValue(query.FieldSelect)) // Invariant: select is validated
 
 	features := toFeatures(searchInputs.Features)
-	repoOptions := toRepoOptions(b, searchInputs.UserSettings)
+	repoOptions := toRepoOptions(f.ToBasic(), searchInputs.UserSettings)
 
-	repoUniverseSearch, skipRepoSubsetSearch, _ := jobMode(b, resultTypes, searchInputs.PatternType, searchInputs.OnSourcegraphDotCom)
+	repoUniverseSearch, skipRepoSubsetSearch, _ := jobMode(f.ToBasic(), resultTypes, searchInputs.PatternType, searchInputs.OnSourcegraphDotCom)
 
 	var allJobs []job.Job
 	addJob := func(job job.Job) {
@@ -82,8 +219,8 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 				addJob(&repoPagerJob{
 					child:            searcherJob,
 					repoOptions:      repoOptions,
-					useIndex:         b.Index(),
-					containsRefGlobs: query.ContainsRefGlobs(b.ToParseTree()),
+					useIndex:         f.Index(),
+					containsRefGlobs: query.ContainsRefGlobs(f.ToBasic().ToParseTree()),
 				})
 			}
 		}
@@ -100,15 +237,15 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 				addJob(&repoPagerJob{
 					child:            symbolSearchJob,
 					repoOptions:      repoOptions,
-					useIndex:         b.Index(),
-					containsRefGlobs: query.ContainsRefGlobs(b.ToParseTree()),
+					useIndex:         f.Index(),
+					containsRefGlobs: query.ContainsRefGlobs(f.ToBasic().ToParseTree()),
 				})
 			}
 		}
 
 		if resultTypes.Has(result.TypeStructural) {
 			typ := search.TextRequest
-			zoektQuery, err := zoekt.QueryToZoektQuery(b, resultTypes, &features, typ)
+			zoektQuery, err := zoekt.QueryToZoektQuery(f.ToBasic(), resultTypes, &features, typ)
 			if err != nil {
 				return nil, err
 			}
@@ -127,8 +264,8 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 			addJob(&structural.StructuralSearchJob{
 				ZoektArgs:        zoektArgs,
 				SearcherArgs:     searcherArgs,
-				UseIndex:         b.Index(),
-				ContainsRefGlobs: query.ContainsRefGlobs(b.ToParseTree()),
+				UseIndex:         f.Index(),
+				ContainsRefGlobs: query.ContainsRefGlobs(f.ToBasic().ToParseTree()),
 				RepoOpts:         repoOptions,
 			})
 		}
@@ -155,7 +292,7 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 
 				// Don't run a repo search if the search contains fields that aren't on the allowlist.
 				exists := true
-				query.VisitParameter(b.ToParseTree(), func(field, _ string, _ bool, _ query.Annotation) {
+				query.VisitParameter(f.ToBasic().ToParseTree(), func(field, _ string, _ bool, _ query.Annotation) {
 					if _, ok := fieldAllowlist[field]; !ok {
 						exists = false
 					}
@@ -172,7 +309,7 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 				}
 
 				opts.RepoFilters = append(make([]string, 0, len(opts.RepoFilters)), opts.RepoFilters...)
-				opts.CaseSensitiveRepoFilters = b.IsCaseSensitive()
+				opts.CaseSensitiveRepoFilters = f.IsCaseSensitive()
 
 				patternPrefix := strings.SplitN(pattern, "@", 2)
 				if len(patternPrefix) == 1 {
@@ -208,7 +345,7 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 			}
 
 			if valid() {
-				if repoOptions, ok := addPatternAsRepoFilter(b.PatternString(), repoOptions); ok {
+				if repoOptions, ok := addPatternAsRepoFilter(f.ToBasic().PatternString(), repoOptions); ok {
 					var mode search.GlobalSearchMode
 					if repoUniverseSearch {
 						mode = search.ZoektGlobalSearch
@@ -231,6 +368,45 @@ func ToSearchJob(searchInputs *run.SearchInputs, b query.Basic) (job.Job, error)
 	return NewParallelJob(allJobs...), nil
 }
 
+var metricFeatureFlagUnavailable = promauto.NewCounter(prometheus.CounterOpts{
+	Name: "src_search_featureflag_unavailable",
+	Help: "temporary counter to check if we have feature flag available in practice.",
+})
+
+func computeFileMatchLimit(b query.Basic, p search.Protocol) int {
+	if count := b.Count(); count != nil {
+		return *count
+	}
+
+	if b.IsStructural() {
+		return limits.DefaultMaxSearchResults
+	}
+
+	switch p {
+	case search.Batch:
+		return limits.DefaultMaxSearchResults
+	case search.Streaming:
+		return limits.DefaultMaxSearchResultsStreaming
+	}
+	panic("unreachable")
+}
+
+func timeoutDuration(b query.Basic) time.Duration {
+	d := limits.DefaultTimeout
+	maxTimeout := time.Duration(limits.SearchLimits(conf.Get()).MaxTimeoutSeconds) * time.Second
+	timeout := b.GetTimeout()
+	if timeout != nil {
+		d = *timeout
+	} else if b.Count() != nil {
+		// If `count:` is set but `timeout:` is not explicitly set, use the max timeout
+		d = maxTimeout
+	}
+	if d > maxTimeout {
+		d = maxTimeout
+	}
+	return d
+}
+
 func mapSlice(values []string, f func(string) string) []string {
 	result := make([]string, len(values))
 	for i, v := range values {
@@ -239,12 +415,12 @@ func mapSlice(values []string, f func(string) string) []string {
 	return result
 }
 
-func count(q query.Basic, p search.Protocol) int {
-	if count := q.Count(); count != nil {
+func count(b query.Basic, p search.Protocol) int {
+	if count := b.Count(); count != nil {
 		return *count
 	}
 
-	if q.IsStructural() {
+	if b.IsStructural() {
 		return limits.DefaultMaxSearchResults
 	}
 
@@ -261,40 +437,40 @@ func count(q query.Basic, p search.Protocol) int {
 // text search. An atomic query is a Basic query where the Pattern is either
 // nil, or comprises only one Pattern node (hence, an atom, and not an
 // expression). See TextPatternInfo for the values it computes and populates.
-func toTextPatternInfo(q query.Basic, resultTypes result.Types, p search.Protocol) *search.TextPatternInfo {
+func toTextPatternInfo(b query.Basic, resultTypes result.Types, p search.Protocol) *search.TextPatternInfo {
 	// Handle file: and -file: filters.
-	filesInclude, filesExclude := q.IncludeExcludeValues(query.FieldFile)
+	filesInclude, filesExclude := b.IncludeExcludeValues(query.FieldFile)
 	// Handle lang: and -lang: filters.
-	langInclude, langExclude := q.IncludeExcludeValues(query.FieldLang)
+	langInclude, langExclude := b.IncludeExcludeValues(query.FieldLang)
 	filesInclude = append(filesInclude, mapSlice(langInclude, query.LangToFileRegexp)...)
 	filesExclude = append(filesExclude, mapSlice(langExclude, query.LangToFileRegexp)...)
-	filesReposMustInclude, filesReposMustExclude := q.IncludeExcludeValues(query.FieldRepoHasFile)
-	selector, _ := filter.SelectPathFromString(q.FindValue(query.FieldSelect)) // Invariant: select is validated
-	count := count(q, p)
+	filesReposMustInclude, filesReposMustExclude := b.IncludeExcludeValues(query.FieldRepoHasFile)
+	selector, _ := filter.SelectPathFromString(b.FindValue(query.FieldSelect)) // Invariant: select is validated
+	count := count(b, p)
 
 	// Ugly assumption: for a literal search, the IsRegexp member of
 	// TextPatternInfo must be set true. The logic assumes that a literal
 	// pattern is an escaped regular expression.
-	isRegexp := q.IsLiteral() || q.IsRegexp()
+	isRegexp := b.IsLiteral() || b.IsRegexp()
 
-	if q.Pattern == nil {
+	if b.Pattern == nil {
 		// For compatibility: A nil pattern implies isRegexp is set to
 		// true. This has no effect on search logic.
 		isRegexp = true
 	}
 
 	negated := false
-	if p, ok := q.Pattern.(query.Pattern); ok {
+	if p, ok := b.Pattern.(query.Pattern); ok {
 		negated = p.Negated
 	}
 
 	return &search.TextPatternInfo{
 		// Values dependent on pattern atom.
 		IsRegExp:        isRegexp,
-		IsStructuralPat: q.IsStructural(),
-		IsCaseSensitive: q.IsCaseSensitive(),
+		IsStructuralPat: b.IsStructural(),
+		IsCaseSensitive: b.IsCaseSensitive(),
 		FileMatchLimit:  int32(count),
-		Pattern:         q.PatternString(),
+		Pattern:         b.PatternString(),
 		IsNegated:       negated,
 
 		// Values dependent on parameters.
@@ -305,9 +481,9 @@ func toTextPatternInfo(q query.Basic, resultTypes result.Types, p search.Protoco
 		PatternMatchesPath:           resultTypes.Has(result.TypePath),
 		PatternMatchesContent:        resultTypes.Has(result.TypeFile),
 		Languages:                    langInclude,
-		PathPatternsAreCaseSensitive: q.IsCaseSensitive(),
-		CombyRule:                    q.FindValue(query.FieldCombyRule),
-		Index:                        q.Index(),
+		PathPatternsAreCaseSensitive: b.IsCaseSensitive(),
+		CombyRule:                    b.FindValue(query.FieldCombyRule),
+		Index:                        b.Index(),
 		Select:                       selector,
 	}
 }
@@ -541,10 +717,10 @@ func toFeatures(flags featureflag.FlagSet) search.Features {
 }
 
 // toAndJob creates a new job from a basic query whose pattern is an And operator at the root.
-func toAndJob(inputs *run.SearchInputs, q query.Basic) (job.Job, error) {
+func toAndJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 	// Invariant: this function is only reachable from callers that
 	// guarantee a root node with one or more queryOperands.
-	queryOperands := q.Pattern.(query.Operator).Operands
+	queryOperands := b.Pattern.(query.Operator).Operands
 
 	// Limit the number of results from each child to avoid a huge amount of memory bloat.
 	// With streaming, we should re-evaluate this number.
@@ -556,7 +732,7 @@ func toAndJob(inputs *run.SearchInputs, q query.Basic) (job.Job, error) {
 
 	operands := make([]job.Job, 0, len(queryOperands))
 	for _, queryOperand := range queryOperands {
-		operand, err := toPatternExpressionJob(inputs, q.MapPattern(queryOperand))
+		operand, err := toPatternExpressionJob(inputs, b.MapPattern(queryOperand))
 		if err != nil {
 			return nil, err
 		}
@@ -567,14 +743,14 @@ func toAndJob(inputs *run.SearchInputs, q query.Basic) (job.Job, error) {
 }
 
 // toOrJob creates a new job from a basic query whose pattern is an Or operator at the top level
-func toOrJob(inputs *run.SearchInputs, q query.Basic) (job.Job, error) {
+func toOrJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 	// Invariant: this function is only reachable from callers that
 	// guarantee a root node with one or more queryOperands.
-	queryOperands := q.Pattern.(query.Operator).Operands
+	queryOperands := b.Pattern.(query.Operator).Operands
 
 	operands := make([]job.Job, 0, len(queryOperands))
 	for _, term := range queryOperands {
-		operand, err := toPatternExpressionJob(inputs, q.MapPattern(term))
+		operand, err := toPatternExpressionJob(inputs, b.MapPattern(term))
 		if err != nil {
 			return nil, err
 		}
@@ -583,8 +759,8 @@ func toOrJob(inputs *run.SearchInputs, q query.Basic) (job.Job, error) {
 	return NewOrJob(operands...), nil
 }
 
-func toPatternExpressionJob(inputs *run.SearchInputs, q query.Basic) (job.Job, error) {
-	switch term := q.Pattern.(type) {
+func toPatternExpressionJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
+	switch term := b.Pattern.(type) {
 	case query.Operator:
 		if len(term.Operands) == 0 {
 			return NewNoopJob(), nil
@@ -592,214 +768,26 @@ func toPatternExpressionJob(inputs *run.SearchInputs, q query.Basic) (job.Job, e
 
 		switch term.Kind {
 		case query.And:
-			return toAndJob(inputs, q)
+			return toAndJob(inputs, b)
 		case query.Or:
-			return toOrJob(inputs, q)
-		case query.Concat:
-			return ToSearchJob(inputs, q)
+			return toOrJob(inputs, b)
 		}
 	case query.Pattern:
-		return ToSearchJob(inputs, q)
+		return NewFlatJob(inputs, query.Flat{Parameters: b.Parameters, Pattern: &term})
 	case query.Parameter:
 		// evaluatePatternExpression does not process Parameter nodes.
 		return NewNoopJob(), nil
 	}
 	// Unreachable.
-	return nil, errors.Errorf("unrecognized type %T in evaluatePatternExpression", q.Pattern)
+	return nil, errors.Errorf("unrecognized type %T in evaluatePatternExpression", b.Pattern)
 }
 
-func toFlatJobs(inputs *run.SearchInputs, q query.Basic) (job.Job, error) {
-	if q.Pattern == nil {
-		return ToSearchJob(inputs, q)
+// toFlatJobs takes a query.Basic and expands it into a set query.Flat that are converted
+// to jobs and joined with AndJob and OrJob.
+func toFlatJobs(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
+	if b.Pattern == nil {
+		return NewFlatJob(inputs, query.Flat{Parameters: b.Parameters, Pattern: nil})
 	} else {
-		return toPatternExpressionJob(inputs, q)
+		return toPatternExpressionJob(inputs, b)
 	}
-}
-
-func NewJob(inputs *run.SearchInputs, plan query.Plan) (job.Job, error) {
-	children := make([]job.Job, 0, len(plan))
-	for _, q := range plan {
-		child, err := NewBasicJob(inputs, q)
-		if err != nil {
-			return nil, err
-		}
-		children = append(children, child)
-	}
-	return NewAlertJob(inputs, NewOrJob(children...)), nil
-}
-
-func NewBasicJob(inputs *run.SearchInputs, q query.Basic) (job.Job, error) {
-	var children []job.Job
-	addJob := func(j job.Job) {
-		children = append(children, j)
-	}
-
-	{
-		// This block generates jobs that can be built directly from
-		// a basic query rather than first being expanded into
-		// flat queries.
-		types, _ := q.IncludeExcludeValues(query.FieldType)
-		resultTypes := computeResultTypes(types, q, inputs.PatternType)
-		fileMatchLimit := int32(computeFileMatchLimit(q, inputs.Protocol))
-		selector, _ := filter.SelectPathFromString(q.FindValue(query.FieldSelect)) // Invariant: select is validated
-		features := toFeatures(inputs.Features)
-		repoOptions := toRepoOptions(q, inputs.UserSettings)
-		repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos := jobMode(q, resultTypes, inputs.PatternType, inputs.OnSourcegraphDotCom)
-
-		builder := &jobBuilder{
-			query:          q,
-			resultTypes:    resultTypes,
-			repoOptions:    repoOptions,
-			features:       &features,
-			fileMatchLimit: fileMatchLimit,
-			selector:       selector,
-		}
-
-		if resultTypes.Has(result.TypeFile | result.TypePath) {
-			// Create Global Text Search jobs.
-			if repoUniverseSearch {
-				job, err := builder.newZoektGlobalSearch(search.TextRequest)
-				if err != nil {
-					return nil, err
-				}
-				addJob(job)
-			}
-
-			if !skipRepoSubsetSearch && runZoektOverRepos {
-				job, err := builder.newZoektSearch(search.TextRequest)
-				if err != nil {
-					return nil, err
-				}
-				addJob(&repoPagerJob{
-					child:            job,
-					repoOptions:      repoOptions,
-					useIndex:         q.Index(),
-					containsRefGlobs: query.ContainsRefGlobs(q.ToParseTree()),
-				})
-			}
-		}
-
-		if resultTypes.Has(result.TypeSymbol) {
-			// Create Global Symbol Search jobs.
-			if repoUniverseSearch {
-				job, err := builder.newZoektGlobalSearch(search.SymbolRequest)
-				if err != nil {
-					return nil, err
-				}
-				addJob(job)
-			}
-
-			if !skipRepoSubsetSearch && runZoektOverRepos {
-				job, err := builder.newZoektSearch(search.SymbolRequest)
-				if err != nil {
-					return nil, err
-				}
-				addJob(&repoPagerJob{
-					child:            job,
-					repoOptions:      repoOptions,
-					useIndex:         q.Index(),
-					containsRefGlobs: query.ContainsRefGlobs(q.ToParseTree()),
-				})
-			}
-		}
-
-		if resultTypes.Has(result.TypeCommit) || resultTypes.Has(result.TypeDiff) {
-			diff := resultTypes.Has(result.TypeDiff)
-			addJob(&commit.CommitSearchJob{
-				Query:                commit.QueryToGitQuery(q, diff),
-				RepoOpts:             repoOptions,
-				Diff:                 diff,
-				HasTimeFilter:        q.Exists("after") || q.Exists("before"),
-				Limit:                int(fileMatchLimit),
-				IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker),
-			})
-		}
-
-		addJob(&searchrepos.ComputeExcludedReposJob{
-			RepoOpts: repoOptions,
-		})
-	}
-
-	{
-		// This block generates jobs using the expansion of a basic query into
-		// flat queries
-		flatJob, err := toFlatJobs(inputs, q)
-		if err != nil {
-			return nil, err
-		}
-		addJob(flatJob)
-	}
-
-	basicJob := NewParallelJob(children...)
-
-	{ // Apply selectors
-		if v, _ := q.ToParseTree().StringValue(query.FieldSelect); v != "" {
-			sp, _ := filter.SelectPathFromString(v) // Invariant: select already validated
-			basicJob = NewSelectJob(sp, basicJob)
-		}
-	}
-
-	{ // Apply subrepo permissions checks
-		checker := authz.DefaultSubRepoPermsChecker
-		if authz.SubRepoEnabled(checker) {
-			basicJob = NewFilterJob(basicJob)
-		}
-	}
-
-	{ // Apply limit
-		maxResults := q.ToParseTree().MaxResults(inputs.DefaultLimit())
-		basicJob = NewLimitJob(maxResults, basicJob)
-	}
-
-	{ // Apply timeout
-		timeout := TimeoutDuration(q)
-		basicJob = NewTimeoutJob(timeout, basicJob)
-	}
-
-	return basicJob, nil
-}
-
-// FromExpandedPlan takes a query plan that has had all predicates expanded,
-// and converts it to a job.
-func FromExpandedPlan(inputs *run.SearchInputs, plan query.Plan) (job.Job, error) {
-	return NewJob(inputs, plan)
-}
-
-var metricFeatureFlagUnavailable = promauto.NewCounter(prometheus.CounterOpts{
-	Name: "src_search_featureflag_unavailable",
-	Help: "temporary counter to check if we have feature flag available in practice.",
-})
-
-func computeFileMatchLimit(q query.Basic, p search.Protocol) int {
-	if count := q.Count(); count != nil {
-		return *count
-	}
-
-	if q.IsStructural() {
-		return limits.DefaultMaxSearchResults
-	}
-
-	switch p {
-	case search.Batch:
-		return limits.DefaultMaxSearchResults
-	case search.Streaming:
-		return limits.DefaultMaxSearchResultsStreaming
-	}
-	panic("unreachable")
-}
-
-func TimeoutDuration(b query.Basic) time.Duration {
-	d := limits.DefaultTimeout
-	maxTimeout := time.Duration(limits.SearchLimits(conf.Get()).MaxTimeoutSeconds) * time.Second
-	timeout := b.GetTimeout()
-	if timeout != nil {
-		d = *timeout
-	} else if b.Count() != nil {
-		// If `count:` is set but `timeout:` is not explicitly set, use the max timeout
-		d = maxTimeout
-	}
-	if d > maxTimeout {
-		d = maxTimeout
-	}
-	return d
 }

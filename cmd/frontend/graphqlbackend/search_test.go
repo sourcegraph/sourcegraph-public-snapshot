@@ -335,7 +335,7 @@ func BenchmarkSearchResults(b *testing.B) {
 			db: db,
 			SearchInputs: &run.SearchInputs{
 				Plan:         plan,
-				Query:        plan.ToParseTree(),
+				Query:        plan.ToQ(),
 				UserSettings: &schema.Settings{},
 			},
 			zoekt: z,
