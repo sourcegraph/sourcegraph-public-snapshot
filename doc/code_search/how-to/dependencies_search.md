@@ -22,6 +22,7 @@ Search only npm dependencies:
 ```sgquery
 r:deps(^github\.com/sourcegraph/sourcegraph$@3.37) r:^npm throw
 ```
+
 Search only Go dependencies:
 
 ```sgquery
@@ -31,7 +32,7 @@ r:deps(^github\.com/sourcegraph/sourcegraph$@3.37) r:^go fmt.Println
 Search only Python dependencies:
 
 ```sgquery
-repo:deps(^github\.com/firecracker-microvm/firecracker$) r:^python
+r:deps(^github\.com/firecracker-microvm/firecracker$) r:^python
 ```
 
 ### Compatibility
