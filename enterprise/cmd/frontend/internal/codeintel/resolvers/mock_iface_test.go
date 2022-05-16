@@ -114,9 +114,9 @@ type MockDBStore struct {
 	// RecentUploadsSummaryFunc is an instance of a mock function object
 	// controlling the behavior of the method RecentUploadsSummary.
 	RecentUploadsSummaryFunc *DBStoreRecentUploadsSummaryFunc
-	// ReferenceIDsAndFiltersFunc is an instance of a mock function object
-	// controlling the behavior of the method ReferenceIDsAndFilters.
-	ReferenceIDsAndFiltersFunc *DBStoreReferenceIDsAndFiltersFunc
+	// ReferenceIDsFunc is an instance of a mock function object controlling
+	// the behavior of the method ReferenceIDs.
+	ReferenceIDsFunc *DBStoreReferenceIDsFunc
 	// RepoIDsByGlobPatternsFunc is an instance of a mock function object
 	// controlling the behavior of the method RepoIDsByGlobPatterns.
 	RepoIDsByGlobPatternsFunc *DBStoreRepoIDsByGlobPatternsFunc
@@ -278,7 +278,7 @@ func NewMockDBStore() *MockDBStore {
 				return
 			},
 		},
-		ReferenceIDsAndFiltersFunc: &DBStoreReferenceIDsAndFiltersFunc{
+		ReferenceIDsFunc: &DBStoreReferenceIDsFunc{
 			defaultHook: func(context.Context, int, string, []precise.QualifiedMonikerData, int, int) (r0 dbstore.PackageReferenceScanner, r1 int, r2 error) {
 				return
 			},
@@ -455,9 +455,9 @@ func NewStrictMockDBStore() *MockDBStore {
 				panic("unexpected invocation of MockDBStore.RecentUploadsSummary")
 			},
 		},
-		ReferenceIDsAndFiltersFunc: &DBStoreReferenceIDsAndFiltersFunc{
+		ReferenceIDsFunc: &DBStoreReferenceIDsFunc{
 			defaultHook: func(context.Context, int, string, []precise.QualifiedMonikerData, int, int) (dbstore.PackageReferenceScanner, int, error) {
-				panic("unexpected invocation of MockDBStore.ReferenceIDsAndFilters")
+				panic("unexpected invocation of MockDBStore.ReferenceIDs")
 			},
 		},
 		RepoIDsByGlobPatternsFunc: &DBStoreRepoIDsByGlobPatternsFunc{
@@ -578,8 +578,8 @@ func NewMockDBStoreFrom(i DBStore) *MockDBStore {
 		RecentUploadsSummaryFunc: &DBStoreRecentUploadsSummaryFunc{
 			defaultHook: i.RecentUploadsSummary,
 		},
-		ReferenceIDsAndFiltersFunc: &DBStoreReferenceIDsAndFiltersFunc{
-			defaultHook: i.ReferenceIDsAndFilters,
+		ReferenceIDsFunc: &DBStoreReferenceIDsFunc{
+			defaultHook: i.ReferenceIDs,
 		},
 		RepoIDsByGlobPatternsFunc: &DBStoreRepoIDsByGlobPatternsFunc{
 			defaultHook: i.RepoIDsByGlobPatterns,
@@ -3622,36 +3622,35 @@ func (c DBStoreRecentUploadsSummaryFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// DBStoreReferenceIDsAndFiltersFunc describes the behavior when the
-// ReferenceIDsAndFilters method of the parent MockDBStore instance is
-// invoked.
-type DBStoreReferenceIDsAndFiltersFunc struct {
+// DBStoreReferenceIDsFunc describes the behavior when the ReferenceIDs
+// method of the parent MockDBStore instance is invoked.
+type DBStoreReferenceIDsFunc struct {
 	defaultHook func(context.Context, int, string, []precise.QualifiedMonikerData, int, int) (dbstore.PackageReferenceScanner, int, error)
 	hooks       []func(context.Context, int, string, []precise.QualifiedMonikerData, int, int) (dbstore.PackageReferenceScanner, int, error)
-	history     []DBStoreReferenceIDsAndFiltersFuncCall
+	history     []DBStoreReferenceIDsFuncCall
 	mutex       sync.Mutex
 }
 
-// ReferenceIDsAndFilters delegates to the next hook function in the queue
-// and stores the parameter and result values of this invocation.
-func (m *MockDBStore) ReferenceIDsAndFilters(v0 context.Context, v1 int, v2 string, v3 []precise.QualifiedMonikerData, v4 int, v5 int) (dbstore.PackageReferenceScanner, int, error) {
-	r0, r1, r2 := m.ReferenceIDsAndFiltersFunc.nextHook()(v0, v1, v2, v3, v4, v5)
-	m.ReferenceIDsAndFiltersFunc.appendCall(DBStoreReferenceIDsAndFiltersFuncCall{v0, v1, v2, v3, v4, v5, r0, r1, r2})
+// ReferenceIDs delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockDBStore) ReferenceIDs(v0 context.Context, v1 int, v2 string, v3 []precise.QualifiedMonikerData, v4 int, v5 int) (dbstore.PackageReferenceScanner, int, error) {
+	r0, r1, r2 := m.ReferenceIDsFunc.nextHook()(v0, v1, v2, v3, v4, v5)
+	m.ReferenceIDsFunc.appendCall(DBStoreReferenceIDsFuncCall{v0, v1, v2, v3, v4, v5, r0, r1, r2})
 	return r0, r1, r2
 }
 
-// SetDefaultHook sets function that is called when the
-// ReferenceIDsAndFilters method of the parent MockDBStore instance is
-// invoked and the hook queue is empty.
-func (f *DBStoreReferenceIDsAndFiltersFunc) SetDefaultHook(hook func(context.Context, int, string, []precise.QualifiedMonikerData, int, int) (dbstore.PackageReferenceScanner, int, error)) {
+// SetDefaultHook sets function that is called when the ReferenceIDs method
+// of the parent MockDBStore instance is invoked and the hook queue is
+// empty.
+func (f *DBStoreReferenceIDsFunc) SetDefaultHook(hook func(context.Context, int, string, []precise.QualifiedMonikerData, int, int) (dbstore.PackageReferenceScanner, int, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// ReferenceIDsAndFilters method of the parent MockDBStore instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *DBStoreReferenceIDsAndFiltersFunc) PushHook(hook func(context.Context, int, string, []precise.QualifiedMonikerData, int, int) (dbstore.PackageReferenceScanner, int, error)) {
+// ReferenceIDs method of the parent MockDBStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *DBStoreReferenceIDsFunc) PushHook(hook func(context.Context, int, string, []precise.QualifiedMonikerData, int, int) (dbstore.PackageReferenceScanner, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -3659,20 +3658,20 @@ func (f *DBStoreReferenceIDsAndFiltersFunc) PushHook(hook func(context.Context, 
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *DBStoreReferenceIDsAndFiltersFunc) SetDefaultReturn(r0 dbstore.PackageReferenceScanner, r1 int, r2 error) {
+func (f *DBStoreReferenceIDsFunc) SetDefaultReturn(r0 dbstore.PackageReferenceScanner, r1 int, r2 error) {
 	f.SetDefaultHook(func(context.Context, int, string, []precise.QualifiedMonikerData, int, int) (dbstore.PackageReferenceScanner, int, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *DBStoreReferenceIDsAndFiltersFunc) PushReturn(r0 dbstore.PackageReferenceScanner, r1 int, r2 error) {
+func (f *DBStoreReferenceIDsFunc) PushReturn(r0 dbstore.PackageReferenceScanner, r1 int, r2 error) {
 	f.PushHook(func(context.Context, int, string, []precise.QualifiedMonikerData, int, int) (dbstore.PackageReferenceScanner, int, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *DBStoreReferenceIDsAndFiltersFunc) nextHook() func(context.Context, int, string, []precise.QualifiedMonikerData, int, int) (dbstore.PackageReferenceScanner, int, error) {
+func (f *DBStoreReferenceIDsFunc) nextHook() func(context.Context, int, string, []precise.QualifiedMonikerData, int, int) (dbstore.PackageReferenceScanner, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -3685,27 +3684,26 @@ func (f *DBStoreReferenceIDsAndFiltersFunc) nextHook() func(context.Context, int
 	return hook
 }
 
-func (f *DBStoreReferenceIDsAndFiltersFunc) appendCall(r0 DBStoreReferenceIDsAndFiltersFuncCall) {
+func (f *DBStoreReferenceIDsFunc) appendCall(r0 DBStoreReferenceIDsFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of DBStoreReferenceIDsAndFiltersFuncCall
-// objects describing the invocations of this function.
-func (f *DBStoreReferenceIDsAndFiltersFunc) History() []DBStoreReferenceIDsAndFiltersFuncCall {
+// History returns a sequence of DBStoreReferenceIDsFuncCall objects
+// describing the invocations of this function.
+func (f *DBStoreReferenceIDsFunc) History() []DBStoreReferenceIDsFuncCall {
 	f.mutex.Lock()
-	history := make([]DBStoreReferenceIDsAndFiltersFuncCall, len(f.history))
+	history := make([]DBStoreReferenceIDsFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// DBStoreReferenceIDsAndFiltersFuncCall is an object that describes an
-// invocation of method ReferenceIDsAndFilters on an instance of
-// MockDBStore.
-type DBStoreReferenceIDsAndFiltersFuncCall struct {
+// DBStoreReferenceIDsFuncCall is an object that describes an invocation of
+// method ReferenceIDs on an instance of MockDBStore.
+type DBStoreReferenceIDsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -3737,13 +3735,13 @@ type DBStoreReferenceIDsAndFiltersFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c DBStoreReferenceIDsAndFiltersFuncCall) Args() []interface{} {
+func (c DBStoreReferenceIDsFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c DBStoreReferenceIDsAndFiltersFuncCall) Results() []interface{} {
+func (c DBStoreReferenceIDsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 

@@ -59,7 +59,7 @@ var Targets = []lint.Target{
 		Name: "svg",
 		Help: "Check svg assets",
 		Linters: []lint.Runner{
-			lint.RunScript("SVG Compression", "dev/check/svgo.sh"),
+			checkSVGCompression(),
 		},
 	},
 	{

@@ -139,6 +139,7 @@ func TestIngoreSizeMax(t *testing.T) {
 		"foo_*",
 		"*.foo",
 		"bar.baz",
+		"**/*.bam",
 	}
 	tests := []struct {
 		name    string
@@ -150,10 +151,14 @@ func TestIngoreSizeMax(t *testing.T) {
 		{"foo_bar", true},
 		{"bar.baz", true},
 		{"bar.foo", true},
+		{"hello.bam", true},
+		{"sub/dir/hello.bam", true},
+		{"/sub/dir/hello.bam", true},
 		// Fail
 		{"baz.foo.bar", false},
 		{"bar_baz", false},
 		{"baz.baz", false},
+		{"sub/dir/bar.foo", false},
 	}
 
 	for _, test := range tests {

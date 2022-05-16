@@ -33,17 +33,12 @@ func Undo(commandName string, factory RunnerFactory, outFactory func() *output.O
 		}
 
 		var (
-			schemaNameFlag           = cmd.String("db")
+			schemaName               = cmd.String("db")
 			ignoreSingleDirtyLogFlag = cmd.Bool("ignore-single-dirty-log")
 		)
 
-		if schemaNameFlag == "" {
-			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: supply a schema via -db"))
-			return flag.ErrHelp
-		}
-
 		ctx := cmd.Context
-		r, err := factory(ctx, []string{schemaNameFlag})
+		r, err := factory(ctx, []string{schemaName})
 		if err != nil {
 			return err
 		}
@@ -51,7 +46,7 @@ func Undo(commandName string, factory RunnerFactory, outFactory func() *output.O
 		return r.Run(ctx, runner.Options{
 			Operations: []runner.MigrationOperation{
 				{
-					SchemaName: schemaNameFlag,
+					SchemaName: schemaName,
 					Type:       runner.MigrationOperationTypeRevert,
 				},
 			},

@@ -6,10 +6,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/bloomfilter"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion/datastructures"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // resultsPerResultChunk is the number of target keys in a single result chunk. This may
@@ -443,18 +441,12 @@ func gatherPackageReferences(state *State, packageDefinitions []precise.Package)
 
 	packageReferences := make([]precise.PackageReference, 0, len(uniques))
 	for _, v := range uniques {
-		filter, err := bloomfilter.CreateFilter(v.Identifiers)
-		if err != nil {
-			return nil, errors.Wrap(err, "bloomfilter.CreateFilter")
-		}
-
 		packageReferences = append(packageReferences, precise.PackageReference{
 			Package: precise.Package{
 				Scheme:  v.Scheme,
 				Name:    v.Name,
 				Version: v.Version,
 			},
-			Filter: filter,
 		})
 	}
 
