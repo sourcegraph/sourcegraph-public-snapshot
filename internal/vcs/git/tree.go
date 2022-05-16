@@ -36,7 +36,7 @@ func Stat(ctx context.Context, db database.DB, checker authz.SubRepoPermissionCh
 
 	path = util.Rel(path)
 
-	fi, err := gitserver.LStat(ctx, db, checker, repo, commit, path)
+	fi, err := gitserver.NewClient(db).LStat(ctx, checker, repo, commit, path)
 	if err != nil {
 		return nil, err
 	}

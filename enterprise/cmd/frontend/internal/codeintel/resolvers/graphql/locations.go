@@ -221,7 +221,7 @@ func (r *CachedLocationResolver) resolveCommit(ctx context.Context, repositoryRe
 		return nil, err
 	}
 
-	commitID, err := gitserver.ResolveRevision(ctx, r.db, repo.Name, commit, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
+	commitID, err := gitserver.NewClient(r.db).ResolveRevision(ctx, repo.Name, commit, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
 	if err != nil {
 		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 			return nil, nil

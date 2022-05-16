@@ -348,8 +348,9 @@ func TestRepository_BlameFile(t *testing.T) {
 		},
 	}
 
+	client := NewClient(database.NewMockDB())
 	for label, test := range tests {
-		newestCommitID, err := ResolveRevision(ctx, database.NewMockDB(), test.repo, string(test.opt.NewestCommit), ResolveRevisionOptions{})
+		newestCommitID, err := client.ResolveRevision(ctx, test.repo, string(test.opt.NewestCommit), ResolveRevisionOptions{})
 		if err != nil {
 			t.Errorf("%s: ResolveRevision(%q) on base: %s", label, test.opt.NewestCommit, err)
 			continue
@@ -387,7 +388,7 @@ func TestRepository_BlameFile(t *testing.T) {
 func runBlameFileTest(ctx context.Context, t *testing.T, repo api.RepoName, path string, opt *BlameOptions,
 	checker authz.SubRepoPermissionChecker, label string, wantHunks []*Hunk) {
 	t.Helper()
-	hunks, err := BlameFile(ctx, database.NewMockDB(), repo, path, opt, checker)
+	hunks, err := NewClient(database.NewMockDB()).BlameFile(ctx, repo, path, opt, checker)
 	if err != nil {
 		t.Errorf("%s: BlameFile(%s, %+v): %s", label, path, opt, err)
 		return
@@ -432,7 +433,7 @@ func TestRepository_ResolveBranch(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := ResolveRevision(context.Background(), database.NewMockDB(), test.repo, test.branch, ResolveRevisionOptions{})
+		commitID, err := NewClient(database.NewMockDB()).ResolveRevision(context.Background(), test.repo, test.branch, ResolveRevisionOptions{})
 		if err != nil {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue
@@ -464,7 +465,7 @@ func TestRepository_ResolveBranch_error(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := ResolveRevision(context.Background(), database.NewMockDB(), test.repo, test.branch, ResolveRevisionOptions{})
+		commitID, err := NewClient(database.NewMockDB()).ResolveRevision(context.Background(), test.repo, test.branch, ResolveRevisionOptions{})
 		if !test.wantErr(err) {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue
@@ -497,7 +498,7 @@ func TestRepository_ResolveTag(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := ResolveRevision(context.Background(), database.NewMockDB(), test.repo, test.tag, ResolveRevisionOptions{})
+		commitID, err := NewClient(database.NewMockDB()).ResolveRevision(context.Background(), test.repo, test.tag, ResolveRevisionOptions{})
 		if err != nil {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue
@@ -529,7 +530,7 @@ func TestRepository_ResolveTag_error(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := ResolveRevision(context.Background(), database.NewMockDB(), test.repo, test.tag, ResolveRevisionOptions{})
+		commitID, err := NewClient(database.NewMockDB()).ResolveRevision(context.Background(), test.repo, test.tag, ResolveRevisionOptions{})
 		if !test.wantErr(err) {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue

@@ -317,7 +317,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 				}
 
 				trimmedRefSpec := strings.TrimPrefix(rev.RevSpec, "^") // handle negated revisions, such as ^<branch>, ^<tag>, or ^<commit>
-				commitID, err := gitserver.ResolveRevision(ctx, r.DB, repoRev.Repo.Name, trimmedRefSpec, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
+				commitID, err := gitserver.NewClient(r.DB).ResolveRevision(ctx, repoRev.Repo.Name, trimmedRefSpec, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
 				if err != nil {
 					if errors.Is(err, context.DeadlineExceeded) || errors.HasType(err, gitdomain.BadCommitError{}) {
 						return err

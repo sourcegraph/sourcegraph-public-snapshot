@@ -290,7 +290,7 @@ func (wr *workspaceResolver) resolveRepositoryNameAndBranch(ctx context.Context,
 		return nil, err
 	}
 
-	commit, err := gitserver.ResolveRevision(ctx, database.NewDBWith(wr.store), repo.Name, branch, gitserver.ResolveRevisionOptions{
+	commit, err := gitserver.NewClient(database.NewDBWith(wr.store)).ResolveRevision(ctx, repo.Name, branch, gitserver.ResolveRevisionOptions{
 		NoEnsureRevision: true,
 	})
 	if err != nil && errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {

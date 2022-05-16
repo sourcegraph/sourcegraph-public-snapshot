@@ -658,7 +658,7 @@ func computeRev(ctx context.Context, db database.DB, repo api.RepoName, getOid, 
 
 	// Resolve the revision to make sure it's on gitserver and, in case we did
 	// the fallback to ref, to get the specific revision.
-	gitRev, err := gitserver.ResolveRevision(ctx, db, repo, rev, gitserver.ResolveRevisionOptions{})
+	gitRev, err := gitserver.NewClient(db).ResolveRevision(ctx, repo, rev, gitserver.ResolveRevisionOptions{})
 	return string(gitRev), err
 }
 

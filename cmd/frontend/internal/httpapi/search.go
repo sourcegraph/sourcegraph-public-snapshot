@@ -158,7 +158,7 @@ func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.
 		getVersion := func(branch string) (string, error) {
 			metricGetVersion.Inc()
 			// Do not to trigger a repo-updater lookup since this is a batch job.
-			commitID, err := gitserver.ResolveRevision(ctx, h.db, repo.Name, branch, gitserver.ResolveRevisionOptions{
+			commitID, err := gitserver.NewClient(h.db).ResolveRevision(ctx, repo.Name, branch, gitserver.ResolveRevisionOptions{
 				NoEnsureRevision: true,
 			})
 			if err != nil && errcode.HTTP(err) == http.StatusNotFound {

@@ -51,7 +51,7 @@ func getDefaultBranch(ctx context.Context, db database.DB, repo api.RepoName, sh
 
 	if err == nil && exitCode == 0 {
 		// Check that our repo is not empty
-		commit, err = gitserver.ResolveRevision(ctx, db, repo, "HEAD", gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
+		commit, err = gitserver.NewClient(db).ResolveRevision(ctx, repo, "HEAD", gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
 	}
 
 	// If we fail to get the default branch due to cloning or being empty, we return nothing.

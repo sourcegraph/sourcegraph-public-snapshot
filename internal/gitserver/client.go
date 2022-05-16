@@ -181,6 +181,9 @@ type Client interface {
 	// to abort processing further results.
 	BatchLog(ctx context.Context, opts BatchLogOptions, callback BatchLogCallback) error
 
+	// BlameFile returns Git blame information about a file.
+	BlameFile(ctx context.Context, repo api.RepoName, path string, opt *BlameOptions, checker authz.SubRepoPermissionChecker) ([]*Hunk, error)
+
 	// GitCommand creates a new GitCommand.
 	GitCommand(repo api.RepoName, args ...string) GitCommand
 
@@ -216,6 +219,16 @@ type Client interface {
 	RendezvousAddrForRepo(api.RepoName) string
 
 	RepoCloneProgress(context.Context, ...api.RepoName) (*protocol.RepoCloneProgressResponse, error)
+
+	// ResolveRevision will return the absolute commit for a commit-ish spec. If spec is empty, HEAD is
+	// used.
+	//
+	// Error cases:
+	// * Repo does not exist: gitdomain.RepoNotExistError
+	// * Commit does not exist: gitdomain.RevisionNotFoundError
+	// * Empty repository: gitdomain.RevisionNotFoundError
+	// * Other unexpected errors.
+	ResolveRevision(ctx context.Context, repo api.RepoName, spec string, opt ResolveRevisionOptions) (api.CommitID, error)
 
 	// ResolveRevisions expands a set of RevisionSpecifiers (which may include hashes, globs, refs, or glob exclusions)
 	// into an equivalent set of commit hashes

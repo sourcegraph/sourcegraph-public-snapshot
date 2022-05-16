@@ -251,7 +251,7 @@ func HasCommitAfter(ctx context.Context, db database.DB, repo api.RepoName, date
 		revspec = "HEAD"
 	}
 
-	commitid, err := gitserver.ResolveRevision(ctx, db, repo, revspec, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
+	commitid, err := gitserver.NewClient(db).ResolveRevision(ctx, repo, revspec, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
 	if err != nil {
 		return false, err
 	}

@@ -356,7 +356,7 @@ func (c *ClientImplementor) ReadDir(
 		// to list the dir's tree entry in its parent dir).
 		path = filepath.Clean(util.Rel(path)) + "/"
 	}
-	files, err := lsTree(ctx, db, repo, commit, path, recurse)
+	files, err := c.lsTree(ctx, repo, commit, path, recurse)
 
 	if err != nil || !authz.SubRepoEnabled(checker) {
 		return files, err
@@ -382,9 +382,8 @@ var (
 )
 
 // lsTree returns ls of tree at path.
-func lsTree(
+func (c *ClientImplementor) lsTree(
 	ctx context.Context,
-	db database.DB,
 	repo api.RepoName,
 	commit api.CommitID,
 	path string,
@@ -392,7 +391,7 @@ func lsTree(
 ) (files []fs.FileInfo, err error) {
 	if path != "" || !recurse {
 		// Only cache the root recursive ls-tree.
-		return lsTreeUncached(ctx, db, repo, commit, path, recurse)
+		return c.lsTreeUncached(ctx, repo, commit, path, recurse)
 	}
 
 	key := string(repo) + ":" + string(commit) + ":" + path
@@ -407,7 +406,7 @@ func lsTree(
 		// Cache miss.
 		var err error
 		start := time.Now()
-		entries, err = lsTreeUncached(ctx, db, repo, commit, path, recurse)
+		entries, err = c.lsTreeUncached(ctx, repo, commit, path, recurse)
 		if err != nil {
 			return nil, err
 		}
@@ -430,7 +429,7 @@ func (oid objectInfo) OID() gitdomain.OID { return gitdomain.OID(oid) }
 // LStat returns a FileInfo describing the named file at commit. If the file is a symbolic link, the
 // returned FileInfo describes the symbolic link.  lStat makes no attempt to follow the link.
 // TODO(sashaostrikov): make private when git.Stat is moved here as well
-func LStat(ctx context.Context, db database.DB, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
+func (c *ClientImplementor) LStat(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: lStat")
 	span.SetTag("Commit", commit)
 	span.SetTag("Path", path)
@@ -444,14 +443,14 @@ func LStat(ctx context.Context, db database.DB, checker authz.SubRepoPermissionC
 
 	if path == "." {
 		// Special case root, which is not returned by `git ls-tree`.
-		obj, err := NewClient(db).GetObject(ctx, repo, string(commit)+"^{tree}")
+		obj, err := c.GetObject(ctx, repo, string(commit)+"^{tree}")
 		if err != nil {
 			return nil, err
 		}
 		return &util.FileInfo{Mode_: os.ModeDir, Sys_: objectInfo(obj.ID)}, nil
 	}
 
-	fis, err := lsTree(ctx, db, repo, commit, path, false)
+	fis, err := c.lsTree(ctx, repo, commit, path, false)
 	if err != nil {
 		return nil, err
 	}
@@ -477,7 +476,7 @@ func LStat(ctx context.Context, db database.DB, checker authz.SubRepoPermissionC
 	}
 }
 
-func lsTreeUncached(ctx context.Context, db database.DB, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error) {
+func (c *ClientImplementor) lsTreeUncached(ctx context.Context, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error) {
 	if err := gitdomain.EnsureAbsoluteCommit(commit); err != nil {
 		return nil, err
 	}
@@ -502,7 +501,7 @@ func lsTreeUncached(ctx context.Context, db database.DB, repo api.RepoName, comm
 	if path != "" {
 		args = append(args, "--", filepath.ToSlash(path))
 	}
-	cmd := NewClient(db).GitCommand(repo, args...)
+	cmd := c.GitCommand(repo, args...)
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
 		if bytes.Contains(out, []byte("exists on disk, but not in")) {
@@ -580,7 +579,7 @@ func lsTreeUncached(ctx context.Context, db database.DB, repo api.RepoName, comm
 			}
 		case "commit":
 			mode = mode | gitdomain.ModeSubmodule
-			cmd := NewClient(db).GitCommand(repo, "show", fmt.Sprintf("%s:.gitmodules", commit))
+			cmd := c.GitCommand(repo, "show", fmt.Sprintf("%s:.gitmodules", commit))
 			var submodule gitdomain.Submodule
 			if out, err := cmd.Output(ctx); err == nil {
 
@@ -666,13 +665,13 @@ type Hunk struct {
 }
 
 // BlameFile returns Git blame information about a file.
-func BlameFile(ctx context.Context, db database.DB, repo api.RepoName, path string, opt *BlameOptions, checker authz.SubRepoPermissionChecker) ([]*Hunk, error) {
+func (c *ClientImplementor) BlameFile(ctx context.Context, repo api.RepoName, path string, opt *BlameOptions, checker authz.SubRepoPermissionChecker) ([]*Hunk, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: BlameFile")
 	span.SetTag("repo", repo)
 	span.SetTag("path", path)
 	span.SetTag("opt", opt)
 	defer span.Finish()
-	return blameFileCmd(ctx, gitserverGitCommandFunc(repo, db), path, opt, repo, checker)
+	return blameFileCmd(ctx, c.gitserverGitCommandFunc(repo), path, opt, repo, checker)
 }
 
 func blameFileCmd(ctx context.Context, command gitCommandFunc, path string, opt *BlameOptions, repo api.RepoName, checker authz.SubRepoPermissionChecker) ([]*Hunk, error) {
@@ -806,9 +805,9 @@ func blameFileCmd(ctx context.Context, command gitCommandFunc, path string, opt 
 	return hunks, nil
 }
 
-func gitserverGitCommandFunc(repo api.RepoName, db database.DB) gitCommandFunc {
+func (c *ClientImplementor) gitserverGitCommandFunc(repo api.RepoName) gitCommandFunc {
 	return func(args []string) GitCommand {
-		return NewClient(db).GitCommand(repo, args...)
+		return c.GitCommand(repo, args...)
 	}
 }
 
@@ -852,7 +851,7 @@ var resolveRevisionCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 // * Commit does not exist: gitdomain.RevisionNotFoundError
 // * Empty repository: gitdomain.RevisionNotFoundError
 // * Other unexpected errors.
-func ResolveRevision(ctx context.Context, db database.DB, repo api.RepoName, spec string, opt ResolveRevisionOptions) (api.CommitID, error) {
+func (c *ClientImplementor) ResolveRevision(ctx context.Context, repo api.RepoName, spec string, opt ResolveRevisionOptions) (api.CommitID, error) {
 	if Mocks.ResolveRevision != nil {
 		return Mocks.ResolveRevision(spec, opt)
 	}
@@ -882,7 +881,7 @@ func ResolveRevision(ctx context.Context, db database.DB, repo api.RepoName, spe
 		spec = spec + "^0"
 	}
 
-	cmd := NewClient(db).GitCommand(repo, "rev-parse", spec)
+	cmd := c.GitCommand(repo, "rev-parse", spec)
 	cmd.SetEnsureRevision(spec)
 
 	// We don't ever need to ensure that HEAD is in git-server.

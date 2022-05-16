@@ -111,7 +111,7 @@ func (j *unknownCommitJanitor) handleSourcedCommits(ctx context.Context, tx DBSt
 
 func (j *unknownCommitJanitor) handleCommit(ctx context.Context, tx DBStore, repositoryID int, repositoryName, commit string) error {
 	var shouldDelete bool
-	_, err := gitserver.ResolveRevision(ctx, database.NewDBWith(tx), api.RepoName(repositoryName), commit, gitserver.ResolveRevisionOptions{})
+	_, err := gitserver.NewClient(database.NewDBWith(tx)).ResolveRevision(ctx, api.RepoName(repositoryName), commit, gitserver.ResolveRevisionOptions{})
 	if err == nil {
 		// If we have no error then the commit is resolvable and we shouldn't touch it.
 		shouldDelete = false

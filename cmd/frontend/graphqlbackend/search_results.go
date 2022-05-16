@@ -253,7 +253,7 @@ func (sr *SearchResultsResolver) blameFileMatch(ctx context.Context, fm *result.
 		return time.Time{}, nil
 	}
 	lm := fm.LineMatches[0]
-	hunks, err := gitserver.BlameFile(ctx, sr.db, fm.Repo.Name, fm.Path, &gitserver.BlameOptions{
+	hunks, err := gitserver.NewClient(sr.db).BlameFile(ctx, fm.Repo.Name, fm.Path, &gitserver.BlameOptions{
 		NewestCommit: fm.CommitID,
 		StartLine:    int(lm.LineNumber),
 		EndLine:      int(lm.LineNumber),

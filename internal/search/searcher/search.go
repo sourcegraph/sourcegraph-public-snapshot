@@ -170,7 +170,7 @@ func searchFilesInRepo(
 	// backend.{GitRepo,Repos.ResolveRev}) because that would slow this operation
 	// down by a lot (if we're looping over many repos). This means that it'll fail if a
 	// repo is not on gitserver.
-	commit, err := gitserver.ResolveRevision(ctx, db, gitserverRepo, rev, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
+	commit, err := gitserver.NewClient(db).ResolveRevision(ctx, gitserverRepo, rev, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
 	if err != nil {
 		return false, err
 	}
