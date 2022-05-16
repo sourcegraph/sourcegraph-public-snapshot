@@ -203,6 +203,11 @@ type PermissionsInfo {
     change to the database row (i.e. incremental update).
     """
     updatedAt: DateTime!
+    """
+    If true for a repo, it indicates access to the repo is allowed for all users.
+    It will always be false for users.
+    """
+    unrestricted: Boolean!
 }
 
 """

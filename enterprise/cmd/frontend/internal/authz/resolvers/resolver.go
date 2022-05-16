@@ -411,9 +411,10 @@ func (r *Resolver) AuthorizedUsers(ctx context.Context, args *graphqlbackend.Rep
 }
 
 type permissionsInfoResolver struct {
-	perms     authz.Perms
-	syncedAt  time.Time
-	updatedAt time.Time
+	perms        authz.Perms
+	syncedAt     time.Time
+	updatedAt    time.Time
+	unrestricted bool
 }
 
 func (r *permissionsInfoResolver) Permissions() []string {
@@ -429,6 +430,10 @@ func (r *permissionsInfoResolver) SyncedAt() *graphqlbackend.DateTime {
 
 func (r *permissionsInfoResolver) UpdatedAt() graphqlbackend.DateTime {
 	return graphqlbackend.DateTime{Time: r.updatedAt}
+}
+
+func (r *permissionsInfoResolver) Unrestricted() bool {
+	return r.unrestricted
 }
 
 func (r *Resolver) RepositoryPermissionsInfo(ctx context.Context, id graphql.ID) (graphqlbackend.PermissionsInfoResolver, error) {
@@ -460,9 +465,10 @@ func (r *Resolver) RepositoryPermissionsInfo(ctx context.Context, id graphql.ID)
 	}
 
 	return &permissionsInfoResolver{
-		perms:     p.Perm,
-		syncedAt:  p.SyncedAt,
-		updatedAt: p.UpdatedAt,
+		perms:        p.Perm,
+		syncedAt:     p.SyncedAt,
+		updatedAt:    p.UpdatedAt,
+		unrestricted: p.Unrestricted,
 	}, nil
 }
 
