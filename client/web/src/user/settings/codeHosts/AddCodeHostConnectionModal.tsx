@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike } from '@sourcegraph/common'
-import { Button, Modal } from '@sourcegraph/wildcard'
+import { Button, Modal, Typography } from '@sourcegraph/wildcard'
 
 import { addExternalService } from '../../../components/externalServices/backend'
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
@@ -27,16 +27,18 @@ const getServiceConfig = (kind: ExternalServiceKind, token: string): string => {
     return JSON.stringify(config, null, 2)
 }
 
-export const AddCodeHostConnectionModal: React.FunctionComponent<{
-    ownerID: Scalars['ID']
-    serviceName: string
-    serviceKind: ExternalServiceKind
-    onDidAdd: (service: ListExternalServiceFields) => void
-    onDidCancel: () => void
-    onDidError: (error: ErrorLike) => void
+export const AddCodeHostConnectionModal: React.FunctionComponent<
+    React.PropsWithChildren<{
+        ownerID: Scalars['ID']
+        serviceName: string
+        serviceKind: ExternalServiceKind
+        onDidAdd: (service: ListExternalServiceFields) => void
+        onDidCancel: () => void
+        onDidError: (error: ErrorLike) => void
 
-    hintFragment?: React.ReactFragment
-}> = ({ ownerID, serviceName, serviceKind, hintFragment, onDidAdd, onDidCancel, onDidError }) => {
+        hintFragment?: React.ReactFragment
+    }>
+> = ({ ownerID, serviceName, serviceKind, hintFragment, onDidAdd, onDidCancel, onDidError }) => {
     const [token, setToken] = useState<string>('')
     const [isLoading, setIsLoading] = useState(false)
     const [didAckMachineUserHint, setAckMachineUserHint] = useState(false)
@@ -84,9 +86,9 @@ export const AddCodeHostConnectionModal: React.FunctionComponent<{
             onDismiss={onDidCancel}
         >
             <div className="web-content">
-                <h3 id={`heading--connect-with-${serviceName}`} className="mb-4">
+                <Typography.H3 id={`heading--connect-with-${serviceName}`} className="mb-4">
                     Connect with {serviceName}
-                </h3>
+                </Typography.H3>
                 <Form onSubmit={onTokenSubmit}>
                     <div className="form-group mb-4">
                         {didAckMachineUserHint ? (

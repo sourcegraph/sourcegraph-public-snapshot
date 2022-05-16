@@ -59,12 +59,17 @@ func InsertCommit(ctx context.Context, db dbutil.DB, repoId int, commitHash stri
 	return id, errors.Wrap(err, "InsertCommit")
 }
 
-func GetSymbol(ctx context.Context, db dbutil.DB, repoId int, path string, name string, hop CommitId) (id int, found bool, err error) {
+func GetSymbol(ctx context.Context, db dbutil.DB, repoId int, path string, name string, hops []CommitId) (id int, found bool, err error) {
 	err = db.QueryRowContext(ctx, `
 		SELECT id
 		FROM rockskip_symbols
-		WHERE repo_id = $1 AND path = $2 AND name = $3 AND $4 && added AND NOT $4 && deleted
-	`, repoId, path, name, pg.Array([]int{hop})).Scan(&id)
+		WHERE
+			repo_id = $1 AND
+			path = $2 AND
+			name = $3 AND
+		    $4 && added AND
+			NOT $4 && deleted
+	`, repoId, path, name, pg.Array(hops)).Scan(&id)
 	if err == sql.ErrNoRows {
 		return 0, false, nil
 	} else if err != nil {

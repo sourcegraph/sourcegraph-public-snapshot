@@ -12,7 +12,7 @@ import { FilterType, resolveFilter, validateFilter } from '@sourcegraph/shared/s
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, Card, Icon } from '@sourcegraph/wildcard'
+import { Button, Link, Card, Icon, Checkbox, Typography } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../graphql-operations'
 import { useExperimentalFeatures } from '../../../stores'
@@ -34,44 +34,58 @@ interface TriggerAreaProps extends ThemeProps {
 const isDiffOrCommit = (value: string): boolean => value === 'diff' || value === 'commit'
 const isLiteralOrRegexp = (value: string): boolean => value === 'literal' || value === 'regexp'
 
-const ValidQueryChecklistItem: React.FunctionComponent<{
-    checked: boolean
-    hint?: string
-    className?: string
-    dataTestid?: string
-}> = ({ checked, children, hint, className, dataTestid }) => (
-    <label className={classNames('d-flex align-items-center mb-1 text-muted', className)}>
-        <input className="sr-only" type="checkbox" disabled={true} checked={checked} data-testid={dataTestid} />
-
-        {checked ? (
-            <Icon className={classNames('text-success', styles.checklistCheckbox)} aria-hidden={true} as={CheckIcon} />
-        ) : (
-            <Icon
-                className={classNames(styles.checklistCheckbox, styles.checklistCheckboxUnchecked)}
-                aria-hidden={true}
-                as={RadioboxBlankIcon}
-            />
-        )}
-
-        <small className={checked ? styles.checklistChildrenFaded : ''}>{children}</small>
-
-        {hint && (
-            <>
-                <span className="sr-only"> {hint}</span>
-
-                <span data-tooltip={hint} data-placement="bottom" className="d-flex">
+const ValidQueryChecklistItem: React.FunctionComponent<
+    React.PropsWithChildren<{
+        checked: boolean
+        hint?: string
+        className?: string
+        dataTestid?: string
+    }>
+> = ({ checked, children, hint, className, dataTestid }) => (
+    <Checkbox
+        wrapperClassName={classNames('d-flex align-items-center text-muted pl-0', className)}
+        className="sr-only"
+        disabled={true}
+        checked={checked}
+        data-testid={dataTestid}
+        id={dataTestid || 'ValidQueryCheckListInput'}
+        label={
+            <div className="d-flex align-items-center mb-1">
+                {checked ? (
                     <Icon
-                        className={classNames(styles.checklistHint, checked && styles.checklistHintFaded)}
+                        className={classNames('text-success', styles.checklistCheckbox)}
                         aria-hidden={true}
-                        as={HelpCircleIcon}
+                        as={CheckIcon}
                     />
-                </span>
-            </>
-        )}
-    </label>
+                ) : (
+                    <Icon
+                        className={classNames(styles.checklistCheckbox, styles.checklistCheckboxUnchecked)}
+                        aria-hidden={true}
+                        as={RadioboxBlankIcon}
+                    />
+                )}
+
+                <small className={checked ? styles.checklistChildrenFaded : ''}>{children}</small>
+
+                {hint && (
+                    <>
+                        <span className="sr-only"> {hint}</span>
+
+                        <span data-tooltip={hint} data-placement="bottom" className="d-inline-flex">
+                            <Icon
+                                className={classNames(styles.checklistHint, checked && styles.checklistHintFaded)}
+                                aria-hidden={true}
+                                as={HelpCircleIcon}
+                            />
+                        </span>
+                    </>
+                )}
+            </div>
+        }
+    />
 )
 
-export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
+export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<TriggerAreaProps>> = ({
     query,
     onQueryChange,
     triggerCompleted,
@@ -190,7 +204,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
 
     return (
         <>
-            <h3>Trigger</h3>
+            <Typography.H3 as={Typography.H2}>Trigger</Typography.H3>
             {showQueryForm && (
                 <Card className={classNames(cardClassName, 'p-3')}>
                     <div className="font-weight-bold">When there are new search results</div>

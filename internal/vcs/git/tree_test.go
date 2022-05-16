@@ -18,10 +18,64 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+func TestReadDir_SubRepoFiltering(t *testing.T) {
+	ctx := actor.WithActor(context.Background(), &actor.Actor{
+		UID: 1,
+	})
+	gitCommands := []string{
+		"touch file1",
+		"git add file1",
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"mkdir app",
+		"touch app/file2",
+		"git add app",
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit2 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+	}
+	repo := MakeGitRepository(t, gitCommands...)
+	commitID := api.CommitID("b1c725720de2bbd0518731b4a61959797ff345f3")
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			ExperimentalFeatures: &schema.ExperimentalFeatures{
+				SubRepoPermissions: &schema.SubRepoPermissions{
+					Enabled: true,
+				},
+			},
+		},
+	})
+	defer conf.Mock(nil)
+	srpGetter := database.NewMockSubRepoPermsStore()
+	testSubRepoPerms := map[api.RepoName]authz.SubRepoPermissions{
+		repo: {
+			PathIncludes: []string{"**"},
+			PathExcludes: []string{"app/**"},
+		},
+	}
+	srpGetter.GetByUserFunc.SetDefaultReturn(testSubRepoPerms, nil)
+	checker, err := authz.NewSubRepoPermsClient(srpGetter)
+	if err != nil {
+		t.Fatalf("unexpected error creating sub-repo perms client: %s", err)
+	}
+
+	db := database.NewMockDB()
+	client := gitserver.NewClient(db)
+	files, err := client.ReadDir(ctx, db, checker, repo, commitID, "", false)
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+	if len(files) != 1 {
+		t.Fatalf("expected only one file to be returned, got %d", len(files))
+	}
+	if files[0].Name() != "file1" {
+		t.Errorf("unexpected file returned from ReadDir: %s", files[0].Name())
+	}
+}
 
 func TestRepository_FileSystem_Symlinks(t *testing.T) {
 	t.Parallel()
@@ -219,7 +273,7 @@ func TestRepository_FileSystem(t *testing.T) {
 		}
 
 		// dir1/file1 should exist, contain "infile1", have the right mtime, and be a file.
-		file1Data, err := ReadFile(ctx, db, test.repo, test.first, "dir1/file1", 0, nil)
+		file1Data, err := ReadFile(ctx, db, test.repo, test.first, "dir1/file1", nil)
 		if err != nil {
 			t.Errorf("%s: fs1.ReadFile(dir1/file1): %s", label, err)
 			continue
@@ -243,13 +297,13 @@ func TestRepository_FileSystem(t *testing.T) {
 		}
 
 		// file 2 shouldn't exist in the 1st commit.
-		_, err = ReadFile(ctx, db, test.repo, test.first, "file 2", 0, nil)
+		_, err = ReadFile(ctx, db, test.repo, test.first, "file 2", nil)
 		if !os.IsNotExist(err) {
 			t.Errorf("%s: fs1.Open(file 2): got err %v, want os.IsNotExist (file 2 should not exist in this commit)", label, err)
 		}
 
 		// file 2 should exist in the 2nd commit.
-		_, err = ReadFile(ctx, db, test.repo, test.second, "file 2", 0, nil)
+		_, err = ReadFile(ctx, db, test.repo, test.second, "file 2", nil)
 		if err != nil {
 			t.Errorf("%s: fs2.Open(file 2): %s", label, err)
 			continue
@@ -260,7 +314,7 @@ func TestRepository_FileSystem(t *testing.T) {
 			t.Errorf("%s: fs2.Stat(dir1/file1): %s", label, err)
 			continue
 		}
-		if _, err := ReadFile(ctx, db, test.repo, test.second, "dir1/file1", 0, nil); err != nil {
+		if _, err := ReadFile(ctx, db, test.repo, test.second, "dir1/file1", nil); err != nil {
 			t.Errorf("%s: fs2.Open(dir1/file1): %s", label, err)
 			continue
 		}
@@ -466,7 +520,7 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 		// .gitmodules file is entries[0]
 		checkSubmoduleFileInfo(label+" (ReadDir)", entries[1])
 
-		_, err = ReadFile(ctx, db, test.repo, commitID, "submod", 0, nil)
+		_, err = ReadFile(ctx, db, test.repo, commitID, "submod", nil)
 		if err != nil {
 			t.Errorf("%s: fs.Open(submod): %s", label, err)
 			continue

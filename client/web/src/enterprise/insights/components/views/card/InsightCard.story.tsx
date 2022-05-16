@@ -1,12 +1,10 @@
-import React from 'react'
-
 import { Meta, Story } from '@storybook/react'
 import { noop } from 'lodash'
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Menu, MenuButton, MenuItem, MenuList } from '@sourcegraph/wildcard'
+import { Button, Menu, MenuButton, MenuItem, MenuList, Typography } from '@sourcegraph/wildcard'
 
 import { getLineColor, LegendItem, LegendList, ParentSize, Series } from '../../../../../charts'
 import { WebStory } from '../../../../../components/WebStory'
@@ -23,14 +21,14 @@ export default {
 export const InsightCardShowcase: Story = () => (
     <main style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
         <section>
-            <h2>Empty view</h2>
+            <Typography.H2>Empty view</Typography.H2>
             <Card.Root style={{ width: '400px', height: '400px' }}>
                 <Card.Header title="Empty card" />
             </Card.Root>
         </section>
 
         <section>
-            <h2>View with loading content</h2>
+            <Typography.H2>View with loading content</Typography.H2>
             <Card.Root style={{ width: '400px', height: '400px' }}>
                 <Card.Header title="Loading insight card" subtitle="View with loading content example" />
                 <Card.Loading>Loading insight</Card.Loading>
@@ -38,7 +36,7 @@ export const InsightCardShowcase: Story = () => (
         </section>
 
         <section>
-            <h2>View with error-like content</h2>
+            <Typography.H2>View with error-like content</Typography.H2>
             <Card.Root style={{ width: '400px', height: '400px' }}>
                 <Card.Header title="Loading insight card" subtitle="View with errored content example" />
                 <ErrorAlert error={new Error("We couldn't find code insight")} />
@@ -46,7 +44,7 @@ export const InsightCardShowcase: Story = () => (
         </section>
 
         <section>
-            <h2>Card with banner content (resizing state)</h2>
+            <Typography.H2>Card with banner content (resizing state)</Typography.H2>
             <Card.Root style={{ width: '400px', height: '400px' }}>
                 <Card.Header title="Resizing insight card" subtitle="Resizing insight card" />
                 <Card.Banner>Resizing</Card.Banner>
@@ -54,12 +52,12 @@ export const InsightCardShowcase: Story = () => (
         </section>
 
         <section>
-            <h2>Card with insight chart</h2>
+            <Typography.H2>Card with insight chart</Typography.H2>
             <InsightCardWithChart />
         </section>
 
         <section>
-            <h2>View with context action item</h2>
+            <Typography.H2>View with context action item</Typography.H2>
             <Card.Root style={{ width: 400, height: 400 }}>
                 <Card.Header
                     title="Chart view and looooooong loooooooooooooooong name of insight card block"
@@ -85,64 +83,57 @@ export const InsightCardShowcase: Story = () => (
 )
 
 interface StandardDatum {
-    a: number | null
-    b: number | null
-    c: number | null
+    value: number
     x: number
 }
 
-const DATA: StandardDatum[] = [
-    {
-        x: 1588965700286 - 4 * 24 * 60 * 60 * 1000,
-        a: 4000,
-        b: 15000,
-        c: 5000,
-    },
-    {
-        x: 1588965700286 - 3 * 24 * 60 * 60 * 1000,
-        a: 4000,
-        b: 26000,
-        c: 5000,
-    },
-    {
-        x: 1588965700286 - 2 * 24 * 60 * 60 * 1000,
-        a: 5600,
-        b: 20000,
-        c: 5000,
-    },
-    {
-        x: 1588965700286 - 24 * 60 * 60 * 1000,
-        a: 9800,
-        b: 19000,
-        c: 5000,
-    },
-    {
-        x: 1588965700286,
-        a: 6000,
-        b: 17000,
-        c: 5000,
-    },
-]
+const getXValue = (datum: StandardDatum): Date => new Date(datum.x)
+const getYValue = (datum: StandardDatum): number => datum.value
 
 const SERIES: Series<StandardDatum>[] = [
     {
-        dataKey: 'a',
+        id: 'series_001',
+        data: [
+            { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: 4000 },
+            { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: 4000 },
+            { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 5600 },
+            { x: 1588965700286 - 24 * 60 * 60 * 1000, value: 9800 },
+            { x: 1588965700286, value: 6000 },
+        ],
         name: 'A metric',
         color: 'var(--blue)',
+        getXValue,
+        getYValue,
     },
     {
-        dataKey: 'b',
+        id: 'series_002',
+        data: [
+            { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: 15000 },
+            { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: 26000 },
+            { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 20000 },
+            { x: 1588965700286 - 24 * 60 * 60 * 1000, value: 19000 },
+            { x: 1588965700286, value: 17000 },
+        ],
         name: 'B metric',
         color: 'var(--orange)',
+        getXValue,
+        getYValue,
     },
     {
-        dataKey: 'c',
+        id: 'series_003',
+        data: [
+            { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: 5000 },
+            { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: 5000 },
+            { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: 5000 },
+            { x: 1588965700286 - 24 * 60 * 60 * 1000, value: 5000 },
+            { x: 1588965700286, value: 5000 },
+        ],
         name: 'C metric',
         color: 'var(--indigo)',
+        getXValue,
+        getYValue,
     },
 ]
-
-const getXValue = (datum: { x: number }) => new Date(datum.x)
 
 function InsightCardWithChart() {
     return (
@@ -166,9 +157,7 @@ function InsightCardWithChart() {
                 {parent => (
                     <SeriesChart
                         type={SeriesBasedChartTypes.Line}
-                        data={DATA}
                         series={SERIES}
-                        getXValue={getXValue}
                         width={parent.width}
                         height={parent.height}
                     />
@@ -176,7 +165,7 @@ function InsightCardWithChart() {
             </ParentSize>
             <LegendList className="mt-3">
                 {SERIES.map(line => (
-                    <LegendItem key={line.dataKey.toString()} color={getLineColor(line)} name={line.name} />
+                    <LegendItem key={line.id} color={getLineColor(line)} name={line.name} />
                 ))}
             </LegendList>
         </Card.Root>

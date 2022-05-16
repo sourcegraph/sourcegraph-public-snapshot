@@ -1,10 +1,10 @@
-import React from 'react'
-
 import { number } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
 import { of } from 'rxjs'
 
-import { BulkOperationType } from '../../../../../../shared/src/graphql-operations'
+import { BulkOperationType } from '@sourcegraph/shared/src/graphql-operations'
+import { Typography } from '@sourcegraph/wildcard'
+
 import { WebStory } from '../../../../components/WebStory'
 import { MultiSelectContextProvider } from '../../MultiSelectContext'
 import {
@@ -43,7 +43,7 @@ add('all states', () => {
         <WebStory>
             {props => (
                 <>
-                    <h3>Configurable</h3>
+                    <Typography.H3>Configurable</Typography.H3>
                     <MultiSelectContextProvider initialSelected={initialSelected} initialVisible={initialVisible}>
                         <ChangesetSelectRow
                             {...props}
@@ -63,7 +63,7 @@ add('all states', () => {
                         />
                     </MultiSelectContextProvider>
                     <hr />
-                    <h3 className="mt-3">All visible, all selectable, none selected</h3>
+                    <Typography.H3 className="mt-3">All visible, all selectable, none selected</Typography.H3>
                     <MultiSelectContextProvider initialSelected={[]} initialVisible={CHANGESET_IDS}>
                         <ChangesetSelectRow
                             {...props}
@@ -83,7 +83,7 @@ add('all states', () => {
                         />
                     </MultiSelectContextProvider>
                     <hr />
-                    <h3 className="mt-3">All visible, all selectable, half selected</h3>
+                    <Typography.H3 className="mt-3">All visible, all selectable, half selected</Typography.H3>
                     <MultiSelectContextProvider initialSelected={HALF_CHANGESET_IDS} initialVisible={CHANGESET_IDS}>
                         <ChangesetSelectRow
                             {...props}
@@ -103,7 +103,7 @@ add('all states', () => {
                         />
                     </MultiSelectContextProvider>
                     <hr />
-                    <h3 className="mt-3">All visible, all selectable, all selected</h3>
+                    <Typography.H3 className="mt-3">All visible, all selectable, all selected</Typography.H3>
                     <MultiSelectContextProvider initialSelected={CHANGESET_IDS} initialVisible={CHANGESET_IDS}>
                         <ChangesetSelectRow
                             {...props}
@@ -123,7 +123,7 @@ add('all states', () => {
                         />
                     </MultiSelectContextProvider>
                     <hr />
-                    <h3 className="mt-3">All visible, half selectable, none selected</h3>
+                    <Typography.H3 className="mt-3">All visible, half selectable, none selected</Typography.H3>
                     <MultiSelectContextProvider initialSelected={[]} initialVisible={CHANGESET_IDS}>
                         <ChangesetSelectRow
                             {...props}
@@ -143,7 +143,7 @@ add('all states', () => {
                         />
                     </MultiSelectContextProvider>
                     <hr />
-                    <h3 className="mt-3">All visible, half selectable, half selected</h3>
+                    <Typography.H3 className="mt-3">All visible, half selectable, half selected</Typography.H3>
                     <MultiSelectContextProvider initialSelected={HALF_CHANGESET_IDS} initialVisible={CHANGESET_IDS}>
                         <ChangesetSelectRow
                             {...props}
@@ -163,7 +163,7 @@ add('all states', () => {
                         />
                     </MultiSelectContextProvider>
                     <hr />
-                    <h3 className="mt-3">Half visible, all selectable, none selected</h3>
+                    <Typography.H3 className="mt-3">Half visible, all selectable, none selected</Typography.H3>
                     <MultiSelectContextProvider initialSelected={[]} initialVisible={HALF_CHANGESET_IDS}>
                         <ChangesetSelectRow
                             {...props}
@@ -183,7 +183,7 @@ add('all states', () => {
                         />
                     </MultiSelectContextProvider>
                     <hr />
-                    <h3 className="mt-3">Half visible, all selectable, half selected</h3>
+                    <Typography.H3 className="mt-3">Half visible, all selectable, half selected</Typography.H3>
                     <MultiSelectContextProvider
                         initialSelected={HALF_CHANGESET_IDS}
                         initialVisible={HALF_CHANGESET_IDS}
@@ -206,7 +206,7 @@ add('all states', () => {
                         />
                     </MultiSelectContextProvider>
                     <hr />
-                    <h3 className="mt-3">Half visible, all selectable, all selected</h3>
+                    <Typography.H3 className="mt-3">Half visible, all selectable, all selected</Typography.H3>
                     <MultiSelectContextProvider initialSelected={CHANGESET_IDS} initialVisible={HALF_CHANGESET_IDS}>
                         <ChangesetSelectRow
                             {...props}
@@ -226,7 +226,7 @@ add('all states', () => {
                         />
                     </MultiSelectContextProvider>
                     <hr />
-                    <h3 className="mt-3">Half visible, half selectable, none selected</h3>
+                    <Typography.H3 className="mt-3">Half visible, half selectable, none selected</Typography.H3>
                     <MultiSelectContextProvider initialSelected={[]} initialVisible={HALF_CHANGESET_IDS}>
                         <ChangesetSelectRow
                             {...props}
@@ -246,7 +246,7 @@ add('all states', () => {
                         />
                     </MultiSelectContextProvider>
                     <hr />
-                    <h3 className="mt-3">Half visible, half selectable, half selected</h3>
+                    <Typography.H3 className="mt-3">Half visible, half selectable, half selected</Typography.H3>
                     <MultiSelectContextProvider
                         initialSelected={HALF_CHANGESET_IDS}
                         initialVisible={HALF_CHANGESET_IDS}

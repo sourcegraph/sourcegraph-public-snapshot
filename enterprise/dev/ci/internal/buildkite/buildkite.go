@@ -21,8 +21,10 @@ import (
 
 type Pipeline struct {
 	Env    map[string]string `json:"env,omitempty"`
-	Steps  []interface{}     `json:"steps"`
 	Notify []slackNotifier   `json:"notify,omitempty"`
+
+	// Steps are *Step or *Pipeline with Group set.
+	Steps []any `json:"steps"`
 
 	// Group, if provided, indicates this Pipeline is actually a group of steps.
 	// See: https://buildkite.com/docs/pipelines/group-step
@@ -39,14 +41,23 @@ type Pipeline struct {
 
 var nonAlphaNumeric = regexp.MustCompile("[^a-zA-Z0-9]+")
 
-func (p *Pipeline) EnsureUniqueKeys() error {
-	occurences := map[string]int{}
+// EnsureUniqueKeys validates generated pipeline have unique keys, and provides a key
+// based on the label if not available.
+func (p *Pipeline) EnsureUniqueKeys(occurences map[string]int) error {
 	for _, step := range p.Steps {
 		if s, ok := step.(*Step); ok {
 			if s.Key == "" {
 				s.Key = nonAlphaNumeric.ReplaceAllString(s.Label, "")
 			}
 			occurences[s.Key] += 1
+		}
+		if p, ok := step.(*Pipeline); ok {
+			if p.Group.Key == "" || p.Group.Group == "" {
+				return errors.Newf("group %+v must have key and group name", p)
+			}
+			if err := p.EnsureUniqueKeys(occurences); err != nil {
+				return err
+			}
 		}
 	}
 	for k, count := range occurences {
@@ -63,11 +74,11 @@ type Group struct {
 }
 
 type BuildOptions struct {
-	Message  string                 `json:"message,omitempty"`
-	Commit   string                 `json:"commit,omitempty"`
-	Branch   string                 `json:"branch,omitempty"`
-	MetaData map[string]interface{} `json:"meta_data,omitempty"`
-	Env      map[string]string      `json:"env,omitempty"`
+	Message  string            `json:"message,omitempty"`
+	Commit   string            `json:"commit,omitempty"`
+	Branch   string            `json:"branch,omitempty"`
+	MetaData map[string]any    `json:"meta_data,omitempty"`
+	Env      map[string]string `json:"env,omitempty"`
 }
 
 func (bo BuildOptions) MarshalJSON() ([]byte, error) {
@@ -101,35 +112,36 @@ func (bo BuildOptions) MarshalYAML() ([]byte, error) {
 // Matches Buildkite pipeline JSON schema:
 // https://github.com/buildkite/pipeline-schema/blob/master/schema.json
 type Step struct {
-	Label                  string                   `json:"label"`
-	Key                    string                   `json:"key,omitempty"`
-	Command                []string                 `json:"command,omitempty"`
-	DependsOn              []string                 `json:"depends_on,omitempty"`
-	AllowDependencyFailure bool                     `json:"allow_dependency_failure,omitempty"`
-	TimeoutInMinutes       string                   `json:"timeout_in_minutes,omitempty"`
-	Trigger                string                   `json:"trigger,omitempty"`
-	Async                  bool                     `json:"async,omitempty"`
-	Build                  *BuildOptions            `json:"build,omitempty"`
-	Env                    map[string]string        `json:"env,omitempty"`
-	Plugins                []map[string]interface{} `json:"plugins,omitempty"`
-	ArtifactPaths          string                   `json:"artifact_paths,omitempty"`
-	ConcurrencyGroup       string                   `json:"concurrency_group,omitempty"`
-	Concurrency            int                      `json:"concurrency,omitempty"`
-	Parallelism            int                      `json:"parallelism,omitempty"`
-	Skip                   string                   `json:"skip,omitempty"`
-	SoftFail               []softFailExitStatus     `json:"soft_fail,omitempty"`
-	Retry                  *RetryOptions            `json:"retry,omitempty"`
-	Agents                 map[string]string        `json:"agents,omitempty"`
-	If                     string                   `json:"if,omitempty"`
+	Label                  string               `json:"label"`
+	Key                    string               `json:"key,omitempty"`
+	Command                []string             `json:"command,omitempty"`
+	DependsOn              []string             `json:"depends_on,omitempty"`
+	AllowDependencyFailure bool                 `json:"allow_dependency_failure,omitempty"`
+	TimeoutInMinutes       string               `json:"timeout_in_minutes,omitempty"`
+	Trigger                string               `json:"trigger,omitempty"`
+	Async                  bool                 `json:"async,omitempty"`
+	Build                  *BuildOptions        `json:"build,omitempty"`
+	Env                    map[string]string    `json:"env,omitempty"`
+	Plugins                []map[string]any     `json:"plugins,omitempty"`
+	ArtifactPaths          string               `json:"artifact_paths,omitempty"`
+	ConcurrencyGroup       string               `json:"concurrency_group,omitempty"`
+	Concurrency            int                  `json:"concurrency,omitempty"`
+	Parallelism            int                  `json:"parallelism,omitempty"`
+	Skip                   string               `json:"skip,omitempty"`
+	SoftFail               []softFailExitStatus `json:"soft_fail,omitempty"`
+	Retry                  *RetryOptions        `json:"retry,omitempty"`
+	Agents                 map[string]string    `json:"agents,omitempty"`
+	If                     string               `json:"if,omitempty"`
 }
 
 type RetryOptions struct {
-	Automatic *AutomaticRetryOptions `json:"automatic,omitempty"`
-	Manual    *ManualRetryOptions    `json:"manual,omitempty"`
+	Automatic []AutomaticRetryOptions `json:"automatic,omitempty"`
+	Manual    *ManualRetryOptions     `json:"manual,omitempty"`
 }
 
 type AutomaticRetryOptions struct {
-	Limit int `json:"limit,omitempty"`
+	Limit      int `json:"limit,omitempty"`
+	ExitStatus any `json:"exit_status,omitempty"`
 }
 
 type ManualRetryOptions struct {
@@ -142,7 +154,7 @@ func (p *Pipeline) AddStep(label string, opts ...StepOpt) {
 		Label:   label,
 		Env:     make(map[string]string),
 		Agents:  make(map[string]string),
-		Plugins: make([]map[string]interface{}, 0),
+		Plugins: make([]map[string]any, 0),
 	}
 	for _, opt := range p.BeforeEveryStepOpts {
 		opt(step)
@@ -436,11 +448,36 @@ func SoftFail(exitCodes ...int) StepOpt {
 // Docs: https://buildkite.com/docs/pipelines/command-step#automatic-retry-attributes
 func AutomaticRetry(limit int) StepOpt {
 	return func(step *Step) {
-		step.Retry = &RetryOptions{
-			Automatic: &AutomaticRetryOptions{
-				Limit: limit,
-			},
+		if step.Retry == nil {
+			step.Retry = &RetryOptions{}
 		}
+		if step.Retry.Automatic == nil {
+			step.Retry.Automatic = []AutomaticRetryOptions{}
+		}
+		step.Retry.Automatic = append(step.Retry.Automatic, AutomaticRetryOptions{
+			Limit:      limit,
+			ExitStatus: "*",
+		})
+	}
+}
+
+// AutomaticRetryStatus enables automatic retry for the step with the number of times this job can be retried
+// when the given exitStatus is encountered.
+//
+// The maximum value this can be set to is 10.
+// Docs: https://buildkite.com/docs/pipelines/command-step#automatic-retry-attributes
+func AutomaticRetryStatus(limit int, exitStatus int) StepOpt {
+	return func(step *Step) {
+		if step.Retry == nil {
+			step.Retry = &RetryOptions{}
+		}
+		if step.Retry.Automatic == nil {
+			step.Retry.Automatic = []AutomaticRetryOptions{}
+		}
+		step.Retry.Automatic = append(step.Retry.Automatic, AutomaticRetryOptions{
+			Limit:      limit,
+			ExitStatus: strconv.Itoa(exitStatus),
+		})
 	}
 }
 
@@ -480,9 +517,9 @@ func Key(key string) StepOpt {
 	}
 }
 
-func Plugin(name string, plugin interface{}) StepOpt {
+func Plugin(name string, plugin any) StepOpt {
 	return func(step *Step) {
-		wrapper := map[string]interface{}{}
+		wrapper := map[string]any{}
 		wrapper[name] = plugin
 		step.Plugins = append(step.Plugins, wrapper)
 	}

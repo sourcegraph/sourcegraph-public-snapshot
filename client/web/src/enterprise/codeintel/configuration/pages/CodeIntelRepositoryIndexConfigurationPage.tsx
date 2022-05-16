@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useEffect } from 'react'
+import { FunctionComponent, useEffect } from 'react'
 
 import * as H from 'history'
 
@@ -17,13 +17,9 @@ export interface CodeIntelRepositoryIndexConfigurationPageProps extends ThemePro
     history: H.History
 }
 
-export const CodeIntelRepositoryIndexConfigurationPage: FunctionComponent<CodeIntelRepositoryIndexConfigurationPageProps> = ({
-    repo,
-    authenticatedUser,
-    history,
-    telemetryService,
-    ...props
-}) => {
+export const CodeIntelRepositoryIndexConfigurationPage: FunctionComponent<
+    React.PropsWithChildren<CodeIntelRepositoryIndexConfigurationPageProps>
+> = ({ repo, authenticatedUser, history, telemetryService, ...props }) => {
     useEffect(() => telemetryService.logViewEvent('CodeIntelRepositoryIndexConfiguration'), [telemetryService])
 
     return (

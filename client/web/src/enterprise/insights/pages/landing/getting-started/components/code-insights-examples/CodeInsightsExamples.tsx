@@ -6,7 +6,7 @@ import { useLocation } from 'react-router'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Link } from '@sourcegraph/wildcard'
+import { Button, Link, Typography } from '@sourcegraph/wildcard'
 
 import * as View from '../../../../../../../views'
 import { LegendBlock, LegendItem } from '../../../../../../../views'
@@ -14,8 +14,7 @@ import {
     getLineStroke,
     LineChart,
 } from '../../../../../../../views/components/view/content/chart-view-content/charts/line/components/LineChartContent'
-import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
-import { InsightType } from '../../../../../core/types'
+import { CodeInsightsBackendContext, InsightType } from '../../../../../core'
 import { CodeInsightTrackType, useCodeInsightViewPings } from '../../../../../pings'
 import { encodeCaptureInsightURL } from '../../../../insights/creation/capture-group'
 import { encodeSearchInsightUrl } from '../../../../insights/creation/search-insight'
@@ -44,13 +43,15 @@ const CAPTURE_GROUP_INSIGHT_CREATION_UI_URL_PARAMETERS = encodeCaptureInsightURL
     groupSearchQuery: ALPINE_VERSIONS_INSIGHT.groupSearch,
 })
 
-export const CodeInsightsExamples: React.FunctionComponent<CodeInsightsExamplesProps> = props => {
+export const CodeInsightsExamples: React.FunctionComponent<
+    React.PropsWithChildren<CodeInsightsExamplesProps>
+> = props => {
     const { telemetryService, ...otherProps } = props
     const { pathname, search } = useLocation()
 
     return (
         <section {...otherProps}>
-            <h2>Example insights</h2>
+            <Typography.H2>Example insights</Typography.H2>
             <p className="text-muted">
                 Here are a few example insights to show you what the tool can do.{' '}
                 <Link to={`${pathname}${search}#code-insights-templates`}>Explore more use cases.</Link>
@@ -85,7 +86,7 @@ interface CodeInsightExampleCommonProps {
 export type CodeInsightExampleProps = (CodeInsightSearchExampleProps | CodeInsightCaptureExampleProps) &
     CodeInsightExampleCommonProps
 
-export const CodeInsightExample: React.FunctionComponent<CodeInsightExampleProps> = props => {
+export const CodeInsightExample: React.FunctionComponent<React.PropsWithChildren<CodeInsightExampleProps>> = props => {
     if (props.type === InsightType.SearchBased) {
         return <CodeInsightSearchExample {...props} />
     }
@@ -100,7 +101,9 @@ interface CodeInsightSearchExampleProps extends TelemetryProps {
     className?: string
 }
 
-const CodeInsightSearchExample: React.FunctionComponent<CodeInsightSearchExampleProps> = props => {
+const CodeInsightSearchExample: React.FunctionComponent<
+    React.PropsWithChildren<CodeInsightSearchExampleProps>
+> = props => {
     const { templateLink, className, content, telemetryService } = props
 
     const { mode } = useContext(CodeInsightsLandingPageContext)
@@ -175,7 +178,9 @@ interface CodeInsightCaptureExampleProps extends TelemetryProps {
     className?: string
 }
 
-const CodeInsightCaptureExample: React.FunctionComponent<CodeInsightCaptureExampleProps> = props => {
+const CodeInsightCaptureExample: React.FunctionComponent<
+    React.PropsWithChildren<CodeInsightCaptureExampleProps>
+> = props => {
     const { content, templateLink, className, telemetryService } = props
 
     const {

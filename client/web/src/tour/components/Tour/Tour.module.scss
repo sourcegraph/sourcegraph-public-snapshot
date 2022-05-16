@@ -1,3 +1,4 @@
+@import 'wildcard/src/global-styles/breakpoints';
 :global(.theme-light) {
     --getting-started-tour-oc-blue-bg: var(--oc-blue-1);
     --getting-started-tour-oc-blue-border: var(--oc-blue-2);
@@ -24,15 +25,7 @@
 
 .task-list {
     &::-webkit-scrollbar {
-        /* stylelint-disable-next-line declaration-property-unit-allowed-list */
-        width: 4px;
-        /* stylelint-disable-next-line declaration-property-unit-allowed-list */
-        height: 4px;
-    }
-
-    &::-webkit-scrollbar-thumb {
-        border-radius: 3px;
-        box-shadow: inset 0 0 6px var(--text-muted);
+        display: none;
     }
 
     &.is-horizontal {
@@ -41,14 +34,6 @@
         scroll-snap-type: x mandatory;
         scroll-behavior: smooth;
         padding-bottom: 0.5rem;
-
-        &::-webkit-scrollbar-thumb {
-            visibility: hidden;
-        }
-
-        &:hover::-webkit-scrollbar-thumb {
-            visibility: visible;
-        }
 
         > * {
             flex: 1 0 19rem;
@@ -65,7 +50,6 @@
     &:not(.is-horizontal) {
         overflow-y: auto;
         flex-grow: 1;
-        padding-right: 0.25rem;
 
         > :not(:last-child)::after {
             content: ' ';
@@ -77,15 +61,7 @@
 
     // Firefox custom scrollbar
     @-moz-document url-prefix('') {
-        scrollbar-width: thin;
-        scrollbar-color: var(--text-muted);
-        &.is-horizontal {
-            padding-bottom: 1rem;
-        }
-
-        &:not(.is-horizontal) {
-            padding-right: 0.5rem;
-        }
+        scrollbar-width: none;
     }
 }
 
@@ -113,6 +89,18 @@
     }
 }
 
+.completed-items {
+    flex-grow: 2 !important;
+
+    &-inner {
+        display: flex;
+        gap: 7.5rem;
+
+        @media (--md-breakpoint-down) {
+            gap: 2rem;
+        }
+    }
+}
 .completed-check-icon {
     margin-top: 0.125rem;
 }
@@ -126,7 +114,11 @@
         color: var(--link-color);
         font-weight: bold;
         display: inline-block;
-        padding: 0 0.25rem 0 0.5rem;
+        padding: 0 0.25rem 0 0;
+
+        .is-small & {
+            padding-left: 0.5rem;
+        }
     }
 
     .step-list-item {

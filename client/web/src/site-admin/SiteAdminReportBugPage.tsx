@@ -6,11 +6,12 @@ import { RouteComponentProps } from 'react-router'
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { LoadingSpinner, useObservable, Alert, Link } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Alert, Link, Typography } from '@sourcegraph/wildcard'
 
 import awsCodeCommitJSON from '../../../../schema/aws_codecommit.schema.json'
 import bitbucketCloudSchemaJSON from '../../../../schema/bitbucket_cloud.schema.json'
 import bitbucketServerSchemaJSON from '../../../../schema/bitbucket_server.schema.json'
+import gerritSchemaJSON from '../../../../schema/gerrit.schema.json'
 import githubSchemaJSON from '../../../../schema/github.schema.json'
 import gitlabSchemaJSON from '../../../../schema/gitlab.schema.json'
 import gitoliteSchemaJSON from '../../../../schema/gitolite.schema.json'
@@ -21,6 +22,7 @@ import otherExternalServiceSchemaJSON from '../../../../schema/other_external_se
 import pagureSchemaJSON from '../../../../schema/pagure.schema.json'
 import perforceSchemaJSON from '../../../../schema/perforce.schema.json'
 import phabricatorSchemaJSON from '../../../../schema/phabricator.schema.json'
+import pythonPackagesSchemaJSON from '../../../../schema/python-packages.schema.json'
 import settingsSchemaJSON from '../../../../schema/settings.schema.json'
 import siteSchemaJSON from '../../../../schema/site.schema.json'
 import { PageTitle } from '../components/PageTitle'
@@ -41,12 +43,14 @@ const externalServices: Record<ExternalServiceKind, JSONSchema> = {
     AWSCODECOMMIT: awsCodeCommitJSON,
     BITBUCKETCLOUD: bitbucketCloudSchemaJSON,
     BITBUCKETSERVER: bitbucketServerSchemaJSON,
+    GERRIT: gerritSchemaJSON,
     GITHUB: githubSchemaJSON,
     GITLAB: gitlabSchemaJSON,
     GITOLITE: gitoliteSchemaJSON,
     GOMODULES: goModulesSchemaJSON,
     JVMPACKAGES: jvmPackagesSchemaJSON,
     NPMPACKAGES: npmPackagesSchemaJSON,
+    PYTHONPACKAGES: pythonPackagesSchemaJSON,
     OTHER: otherExternalServiceSchemaJSON,
     PERFORCE: perforceSchemaJSON,
     PHABRICATOR: phabricatorSchemaJSON,
@@ -102,14 +106,18 @@ const allConfigSchema = {
 
 interface Props extends RouteComponentProps, ThemeProps, TelemetryProps {}
 
-export const SiteAdminReportBugPage: React.FunctionComponent<Props> = ({ isLightTheme, telemetryService, history }) => {
+export const SiteAdminReportBugPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    isLightTheme,
+    telemetryService,
+    history,
+}) => {
     const monitoringDaysBack = 7
     const monitoringStats = useObservable(useMemo(() => fetchMonitoringStats(monitoringDaysBack), []))
     const allConfig = useObservable(useMemo(fetchAllConfigAndSettings, []))
     return (
         <div>
             <PageTitle title="Report a bug - Admin" />
-            <h2>Report a bug</h2>
+            <Typography.H2>Report a bug</Typography.H2>
             <p>
                 <Link
                     target="_blank"

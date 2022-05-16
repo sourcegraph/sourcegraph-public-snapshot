@@ -197,7 +197,7 @@ func (l *Logger) syncLogEntry(handle *entryHandle, entryID int, old workerutil.E
 			continue
 		}
 
-		logArgs := make([]interface{}, 0, 16)
+		logArgs := make([]any, 0, 16)
 		logArgs = append(
 			logArgs,
 			"jobID", l.job.ID,

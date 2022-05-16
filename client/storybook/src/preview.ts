@@ -20,6 +20,7 @@ export const parameters = {
     options: {
         storySort: {
             order: ['wildcard', 'shared', 'branded', '*'],
+            method: 'alphabetical',
         },
     },
     darkMode: {

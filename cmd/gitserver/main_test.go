@@ -17,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	dependenciesStore "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -149,7 +149,7 @@ func TestGetVCSSyncer(t *testing.T) {
 	repo := api.RepoName("foo/bar")
 	extsvcStore := database.NewMockExternalServiceStore()
 	repoStore := database.NewMockRepoStore()
-	codeIntelDB := new(dependenciesStore.Store)
+	depsSvc := new(dependencies.Service)
 
 	repoStore.GetByNameFunc.SetDefaultHook(func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
 		return &types.Repo{
@@ -174,7 +174,7 @@ func TestGetVCSSyncer(t *testing.T) {
 		}, nil
 	})
 
-	s, err := getVCSSyncer(context.Background(), extsvcStore, repoStore, codeIntelDB, repo)
+	s, err := getVCSSyncer(context.Background(), extsvcStore, repoStore, depsSvc, repo)
 	if err != nil {
 		t.Fatal(err)
 	}

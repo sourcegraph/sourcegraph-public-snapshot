@@ -34,7 +34,9 @@ export type BlockMenuActionComponentProps = {
 } & BlockMenuAction &
     Pick<ButtonProps, 'variant'>
 
-const BlockMenuActionComponent: React.FunctionComponent<BlockMenuActionComponentProps> = props => {
+const BlockMenuActionComponent: React.FunctionComponent<
+    React.PropsWithChildren<BlockMenuActionComponentProps>
+> = props => {
     const { className, label, type, id, isDisabled, icon, iconClassName, variant } = props
 
     const element = type === 'button' ? 'button' : 'a'
@@ -73,8 +75,17 @@ export interface NotebookBlockMenuProps {
     actions: BlockMenuAction[]
 }
 
-export const NotebookBlockMenu: React.FunctionComponent<NotebookBlockMenuProps> = ({ id, mainAction, actions }) => (
-    <div className={classNames('block-menu', styles.blockMenu)} role="menu">
+export const NotebookBlockMenu: React.FunctionComponent<React.PropsWithChildren<NotebookBlockMenuProps>> = ({
+    id,
+    mainAction,
+    actions,
+}) => (
+    <div
+        className={classNames('block-menu', styles.blockMenu)}
+        // To fix Rule: "aria-required-children"
+        // Fails accessibility rule when div has no children with role="menu"
+        role={!!mainAction || actions.length > 0 ? 'menu' : undefined}
+    >
         {mainAction && (
             <div className={classNames(actions.length > 0 && styles.mainActionButtonWrapper)}>
                 <BlockMenuActionComponent variant="primary" className="w-100" id={id} {...mainAction} />

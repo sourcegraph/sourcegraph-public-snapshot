@@ -9,8 +9,12 @@ import { HeroPage } from '../../../../../components/HeroPage'
 import { PageTitle } from '../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../../../insights/Icons'
 import { CodeInsightsPage } from '../../../components/code-insights-page/CodeInsightsPage'
-import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
-import { isCaptureGroupInsight, isLangStatsInsight, isSearchBasedInsight } from '../../../core/types'
+import {
+    CodeInsightsBackendContext,
+    isCaptureGroupInsight,
+    isLangStatsInsight,
+    isSearchBasedInsight,
+} from '../../../core'
 
 import { EditCaptureGroupInsight } from './components/EditCaptureGroupInsight'
 import { EditLangStatsInsight } from './components/EditLangStatsInsight'
@@ -28,7 +32,7 @@ export interface EditInsightPageProps {
     authenticatedUser: Pick<AuthenticatedUser, 'id' | 'organizations' | 'username'>
 }
 
-export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = props => {
+export const EditInsightPage: React.FunctionComponent<React.PropsWithChildren<EditInsightPageProps>> = props => {
     const { insightID, authenticatedUser } = props
 
     const { getInsightById } = useContext(CodeInsightsBackendContext)

@@ -38,7 +38,7 @@ export interface ViewContentProps extends React.HTMLAttributes<HTMLElement> {
  * Support for non-MarkupContent elements is experimental and subject to change or removal
  * without notice.
  */
-export const ViewContent: React.FunctionComponent<ViewContentProps> = props => {
+export const ViewContent: React.FunctionComponent<React.PropsWithChildren<ViewContentProps>> = props => {
     const { content, alert, layout, className, onDatumLinkClick, locked = false, ...attributes } = props
 
     return (
@@ -78,7 +78,7 @@ export interface ViewErrorContentProps {
     error: ErrorLike
 }
 
-export const ViewErrorContent: React.FunctionComponent<ViewErrorContentProps> = props => {
+export const ViewErrorContent: React.FunctionComponent<React.PropsWithChildren<ViewErrorContentProps>> = props => {
     const { error, title, children } = props
 
     return (
@@ -92,7 +92,7 @@ export interface ViewLoadingContentProps {
     text: string
 }
 
-export const ViewLoadingContent: React.FunctionComponent<ViewLoadingContentProps> = props => {
+export const ViewLoadingContent: React.FunctionComponent<React.PropsWithChildren<ViewLoadingContentProps>> = props => {
     const { text } = props
 
     return (
@@ -104,6 +104,6 @@ export const ViewLoadingContent: React.FunctionComponent<ViewLoadingContentProps
     )
 }
 
-export const ViewBannerContent: React.FunctionComponent = ({ children }) => (
+export const ViewBannerContent: React.FunctionComponent<React.PropsWithChildren<unknown>> = ({ children }) => (
     <div className="h-100 w-100 d-flex flex-column justify-content-center align-items-center">{children}</div>
 )

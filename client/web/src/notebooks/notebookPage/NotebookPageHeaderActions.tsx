@@ -54,7 +54,9 @@ export interface NotebookPageHeaderActionsProps extends TelemetryProps {
     deleteNotebookStar: typeof _deleteNotebookStar
 }
 
-export const NotebookPageHeaderActions: React.FunctionComponent<NotebookPageHeaderActionsProps> = ({
+export const NotebookPageHeaderActions: React.FunctionComponent<
+    React.PropsWithChildren<NotebookPageHeaderActionsProps>
+> = ({
     isSourcegraphDotCom,
     authenticatedUser,
     notebookId,
@@ -148,7 +150,7 @@ interface NotebookSettingsDropdownProps extends TelemetryProps {
     deleteNotebook: typeof _deleteNotebook
 }
 
-const NotebookSettingsDropdown: React.FunctionComponent<NotebookSettingsDropdownProps> = ({
+const NotebookSettingsDropdown: React.FunctionComponent<React.PropsWithChildren<NotebookSettingsDropdownProps>> = ({
     notebookId,
     deleteNotebook,
     telemetryService,
@@ -159,7 +161,7 @@ const NotebookSettingsDropdown: React.FunctionComponent<NotebookSettingsDropdown
     return (
         <>
             <Menu>
-                <MenuButton outline={true}>
+                <MenuButton outline={true} aria-label="Notebook action">
                     <DotsHorizontalIcon />
                 </MenuButton>
                 <MenuList position={Position.bottomEnd}>
@@ -195,7 +197,7 @@ interface NotebookStarsButtonProps extends TelemetryProps {
     deleteNotebookStar: typeof _deleteNotebookStar
 }
 
-const NotebookStarsButton: React.FunctionComponent<NotebookStarsButtonProps> = ({
+const NotebookStarsButton: React.FunctionComponent<React.PropsWithChildren<NotebookStarsButtonProps>> = ({
     notebookId,
     disabled,
     starsCount: initialStarsCount,
@@ -244,7 +246,7 @@ const NotebookStarsButton: React.FunctionComponent<NotebookStarsButtonProps> = (
 
     return (
         <Button
-            className="d-flex align-items-center"
+            className="d-flex align-items-center pl-0"
             outline={true}
             disabled={disabled}
             onClick={() => onStarToggle(viewerHasStarred)}

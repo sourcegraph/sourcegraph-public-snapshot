@@ -33,17 +33,17 @@ var (
 	// non-cluster, non-docker-compose, and non-pure-docker installations what the latest
 	// version is. The version here _must_ be available at https://hub.docker.com/r/sourcegraph/server/tags/
 	// before landing in master.
-	latestReleaseDockerServerImageBuild = newBuild("3.38.1")
+	latestReleaseDockerServerImageBuild = newBuild("3.39.1")
 
 	// latestReleaseKubernetesBuild is only used by sourcegraph.com to tell existing Sourcegraph
 	// cluster deployments what the latest version is. The version here _must_ be available in
 	// a tag at https://github.com/sourcegraph/deploy-sourcegraph before landing in master.
-	latestReleaseKubernetesBuild = newBuild("3.38.1")
+	latestReleaseKubernetesBuild = newBuild("3.39.1")
 
 	// latestReleaseDockerComposeOrPureDocker is only used by sourcegraph.com to tell existing Sourcegraph
 	// Docker Compose or Pure Docker deployments what the latest version is. The version here _must_ be
 	// available in a tag at https://github.com/sourcegraph/deploy-sourcegraph-docker before landing in master.
-	latestReleaseDockerComposeOrPureDocker = newBuild("3.38.1")
+	latestReleaseDockerComposeOrPureDocker = newBuild("3.39.1")
 )
 
 func getLatestRelease(deployType string) build {
@@ -436,8 +436,13 @@ func reserializeNewCodeIntelUsage(payload json.RawMessage) (json.RawMessage, err
 	}
 
 	var eventSummaries []jsonEventSummary
-	for _, es := range codeIntelUsage.EventSummaries {
-		eventSummaries = append(eventSummaries, translateEventSummary(es))
+	for _, event := range codeIntelUsage.EventSummaries {
+		eventSummaries = append(eventSummaries, translateEventSummary(event))
+	}
+
+	var investigationEvents []jsonCodeIntelInvestigationEvent
+	for _, event := range codeIntelUsage.InvestigationEvents {
+		investigationEvents = append(investigationEvents, translateInvestigationEvent(event))
 	}
 
 	countsByLanguage := make([]jsonCodeIntelRepositoryCountsByLanguage, 0, len(codeIntelUsage.CountsByLanguage))
@@ -469,6 +474,17 @@ func reserializeNewCodeIntelUsage(payload json.RawMessage) (json.RawMessage, err
 		numRepositoriesWithoutUploadRecords = &val
 	}
 
+	languageRequests := make([]jsonLanguageRequest, 0, len(codeIntelUsage.LanguageRequests))
+	for _, request := range codeIntelUsage.LanguageRequests {
+		// note: do not capture loop var by ref
+		request := request
+
+		languageRequests = append(languageRequests, jsonLanguageRequest{
+			LanguageID:  &request.LanguageID,
+			NumRequests: &request.NumRequests,
+		})
+	}
+
 	return json.Marshal(jsonCodeIntelUsage{
 		StartOfWeek:                                  codeIntelUsage.StartOfWeek,
 		WAUs:                                         codeIntelUsage.WAUs,
@@ -487,6 +503,8 @@ func reserializeNewCodeIntelUsage(payload json.RawMessage) (json.RawMessage, err
 		NumRepositoriesWithIndexConfigurationRecords: codeIntelUsage.NumRepositoriesWithAutoIndexConfigurationRecords,
 		CountsByLanguage:                             countsByLanguage,
 		SettingsPageViewCount:                        codeIntelUsage.SettingsPageViewCount,
+		LanguageRequests:                             languageRequests,
+		InvestigationEvents:                          investigationEvents,
 	})
 }
 
@@ -544,6 +562,8 @@ type jsonCodeIntelUsage struct {
 	NumRepositoriesWithIndexConfigurationRecords *int32                                    `json:"num_repositories_with_index_configuration_records"`
 	CountsByLanguage                             []jsonCodeIntelRepositoryCountsByLanguage `json:"counts_by_language"`
 	SettingsPageViewCount                        *int32                                    `json:"settings_page_view_count"`
+	LanguageRequests                             []jsonLanguageRequest                     `json:"language_requests"`
+	InvestigationEvents                          []jsonCodeIntelInvestigationEvent         `json:"investigation_events"`
 }
 
 type jsonCodeIntelRepositoryCountsByLanguage struct {
@@ -552,6 +572,17 @@ type jsonCodeIntelRepositoryCountsByLanguage struct {
 	NumRepositoriesWithFreshUploadRecords *int32  `json:"num_repositories_with_fresh_upload_records"`
 	NumRepositoriesWithIndexRecords       *int32  `json:"num_repositories_with_index_records"`
 	NumRepositoriesWithFreshIndexRecords  *int32  `json:"num_repositories_with_fresh_index_records"`
+}
+
+type jsonLanguageRequest struct {
+	LanguageID  *string `json:"language_id"`
+	NumRequests *int32  `json:"num_requests"`
+}
+
+type jsonCodeIntelInvestigationEvent struct {
+	Type  string `json:"type"`
+	WAUs  int32  `json:"waus"`
+	Total int32  `json:"total"`
 }
 
 type jsonEventSummary struct {
@@ -574,14 +605,28 @@ var codeIntelSourceNames = map[types.CodeIntelSource]string{
 	types.SearchSource:  "search",
 }
 
-func translateEventSummary(es types.CodeIntelEventSummary) jsonEventSummary {
+var codeIntelInvestigationTypeNames = map[types.CodeIntelInvestigationType]string{
+	types.CodeIntelIndexerSetupInvestigationType: "CodeIntelligenceIndexerSetupInvestigated",
+	types.CodeIntelUploadErrorInvestigationType:  "CodeIntelligenceUploadErrorInvestigated",
+	types.CodeIntelIndexErrorInvestigationType:   "CodeIntelligenceIndexErrorInvestigated",
+}
+
+func translateEventSummary(event types.CodeIntelEventSummary) jsonEventSummary {
 	return jsonEventSummary{
-		Action:          codeIntelActionNames[es.Action],
-		Source:          codeIntelSourceNames[es.Source],
-		LanguageID:      es.LanguageID,
-		CrossRepository: es.CrossRepository,
-		WAUs:            es.WAUs,
-		TotalActions:    es.TotalActions,
+		Action:          codeIntelActionNames[event.Action],
+		Source:          codeIntelSourceNames[event.Source],
+		LanguageID:      event.LanguageID,
+		CrossRepository: event.CrossRepository,
+		WAUs:            event.WAUs,
+		TotalActions:    event.TotalActions,
+	}
+}
+
+func translateInvestigationEvent(event types.CodeIntelInvestigationEvent) jsonCodeIntelInvestigationEvent {
+	return jsonCodeIntelInvestigationEvent{
+		Type:  codeIntelInvestigationTypeNames[event.Type],
+		WAUs:  event.WAUs,
+		Total: event.Total,
 	}
 }
 

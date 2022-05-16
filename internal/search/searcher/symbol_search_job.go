@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -22,15 +22,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-type SymbolSearcher struct {
+type SymbolSearcherJob struct {
 	PatternInfo *search.TextPatternInfo
 	Repos       []*search.RepositoryRevisions // the set of repositories to search with searcher.
 	Limit       int
 }
 
 // Run calls the searcher service to search symbols.
-func (s *SymbolSearcher) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
-	tr, ctx, stream, finish := jobutil.StartSpan(ctx, stream, s)
+func (s *SymbolSearcherJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -50,7 +50,7 @@ func (s *SymbolSearcher) Run(ctx context.Context, db database.DB, stream streami
 		goroutine.Go(func() {
 			defer run.Release()
 
-			matches, err := searchInRepo(ctx, db, repoRevs, s.PatternInfo, s.Limit)
+			matches, err := searchInRepo(ctx, clients.DB, repoRevs, s.PatternInfo, s.Limit)
 			status, limitHit, err := search.HandleRepoSearchResult(repoRevs, len(matches) > s.Limit, false, err)
 			stream.Send(streaming.SearchEvent{
 				Results: matches,
@@ -73,8 +73,8 @@ func (s *SymbolSearcher) Run(ctx context.Context, db database.DB, stream streami
 	return nil, run.Wait()
 }
 
-func (s *SymbolSearcher) Name() string {
-	return "SymbolSearcher"
+func (s *SymbolSearcherJob) Name() string {
+	return "SymbolSearcherJob"
 }
 
 func searchInRepo(ctx context.Context, db database.DB, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []result.Match, err error) {

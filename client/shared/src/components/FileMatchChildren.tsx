@@ -33,7 +33,7 @@ import { MatchGroup } from './ranking/PerFileResultRanking'
 import styles from './FileMatchChildren.module.scss'
 
 interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
-    location: H.Location
+    location?: H.Location
     result: ContentMatch | SymbolMatch | PathMatch
     grouped: MatchGroup[]
     /* Clicking on a match opens the link in a new tab */
@@ -41,7 +41,6 @@ interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
     /* Called when the first result has fully loaded. */
     onFirstResultLoad?: () => void
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
-
     extensionsController?: Pick<ExtensionsController, 'extHostAPI'>
     hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
 }
@@ -148,7 +147,7 @@ function navigateToFileOnMiddleMouseButtonClick(event: MouseEvent<HTMLElement>):
     }
 }
 
-export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props => {
+export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<FileMatchProps>> = props => {
     // If optimizeHighlighting is enabled, compile a list of the highlighted file ranges we want to
     // fetch (instead of the entire file.)
     const optimizeHighlighting =

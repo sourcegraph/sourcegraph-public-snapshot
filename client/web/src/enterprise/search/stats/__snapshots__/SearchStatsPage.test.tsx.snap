@@ -9,7 +9,7 @@ exports[`SearchStatsPage limitHit 1`] = `
       class="d-flex align-items-center justify-content-between mb-3"
     >
       <h2
-        class="d-flex align-items-center mb-0"
+        class="h2 d-flex align-items-center mb-0"
       >
         <svg
           class="mdi-icon iconInline mr-2"
@@ -53,7 +53,9 @@ exports[`SearchStatsPage limitHit 1`] = `
       class="my-3"
     />
     <div
+      aria-live="assertive"
       class=""
+      role="alert"
     >
       Limit hit. Add 
       <code>
@@ -74,7 +76,7 @@ exports[`SearchStatsPage renders 1`] = `
       class="d-flex align-items-center justify-content-between mb-3"
     >
       <h2
-        class="d-flex align-items-center mb-0"
+        class="h2 d-flex align-items-center mb-0"
       >
         <svg
           class="mdi-icon iconInline mr-2"

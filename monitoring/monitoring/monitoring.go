@@ -3,6 +3,7 @@ package monitoring
 import (
 	"fmt"
 	"math/rand"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -65,6 +66,20 @@ func (c *Container) validate() error {
 	return nil
 }
 
+// noAlertsDefined indicates if a dashboard no alerts defined.
+func (c *Container) noAlertsDefined() bool {
+	for _, g := range c.Groups {
+		for _, r := range g.Rows {
+			for _, o := range r {
+				if !o.NoAlert {
+					return false
+				}
+			}
+		}
+	}
+	return true
+}
+
 // renderDashboard generates the Grafana renderDashboard for this container.
 func (c *Container) renderDashboard() *sdk.Board {
 	board := sdk.NewBoard(c.Title)
@@ -78,29 +93,33 @@ func (c *Container) renderDashboard() *sdk.Board {
 	board.SharedCrosshair = true
 	board.Editable = false
 	board.AddTags("builtin")
-	alertLevelVariable := ContainerVariable{
-		Label: "Alert level",
-		Name:  "alert_level",
-		Options: ContainerVariableOptions{
-			Options: []string{"critical", "warning"},
-		},
+	if !c.noAlertsDefined() {
+		alertLevelVariable := ContainerVariable{
+			Label: "Alert level",
+			Name:  "alert_level",
+			Options: ContainerVariableOptions{
+				Options: []string{"critical", "warning"},
+			},
+		}
+		board.Templating.List = []sdk.TemplateVar{alertLevelVariable.toGrafanaTemplateVar()}
 	}
-	board.Templating.List = []sdk.TemplateVar{alertLevelVariable.toGrafanaTemplateVar()}
 	for _, variable := range c.Variables {
 		board.Templating.List = append(board.Templating.List, variable.toGrafanaTemplateVar())
 	}
-	board.Annotations.List = []sdk.Annotation{{
-		Name:       "Alert events",
-		Datasource: StringPtr("Prometheus"),
-		// Show alerts matching the selected alert_level (see template variable above)
-		Expr:        fmt.Sprintf(`ALERTS{service_name=%q,level=~"$alert_level",alertstate="firing"}`, c.Name),
-		Step:        "60s",
-		TitleFormat: "{{ description }} ({{ name }})",
-		TagKeys:     "level,owner",
-		IconColor:   "rgba(255, 96, 96, 1)",
-		Enable:      false, // disable by default for now
-		Type:        "tags",
-	}}
+	if !c.noAlertsDefined() {
+		board.Annotations.List = []sdk.Annotation{{
+			Name:       "Alert events",
+			Datasource: StringPtr("Prometheus"),
+			// Show alerts matching the selected alert_level (see template variable above)
+			Expr:        fmt.Sprintf(`ALERTS{service_name=%q,level=~"$alert_level",alertstate="firing"}`, c.Name),
+			Step:        "60s",
+			TitleFormat: "{{ description }} ({{ name }})",
+			TagKeys:     "level,owner",
+			IconColor:   "rgba(255, 96, 96, 1)",
+			Enable:      false, // disable by default for now
+			Type:        "tags",
+		}}
+	}
 	// Annotation layers that require a service to export information required by the
 	// Sourcegraph debug server - see the `NoSourcegraphDebugServer` docstring.
 	if !c.NoSourcegraphDebugServer {
@@ -132,55 +151,57 @@ func (c *Container) renderDashboard() *sdk.Board {
 	`, c.Name, c.Description)
 	board.Panels = append(board.Panels, description)
 
-	alertsDefined := grafana.NewContainerAlertsDefinedTable(sdk.Target{
-		Expr: fmt.Sprintf(`label_replace(
-			sum(max by (level,service_name,name,description,grafana_panel_id)(alert_count{service_name="%s",name!="",level=~"$alert_level"})) by (level,description,service_name,grafana_panel_id),
-			"description", "$1", "description", ".*: (.*)"
-		)`, c.Name),
-		Format:  "table",
-		Instant: true,
-	})
-	setPanelSize(alertsDefined, 9, 5)
-	setPanelPos(alertsDefined, 0, 3)
-	board.Panels = append(board.Panels, alertsDefined)
+	if !c.noAlertsDefined() {
+		alertsDefined := grafana.NewContainerAlertsDefinedTable(sdk.Target{
+			Expr: fmt.Sprintf(`label_replace(
+				sum(max by (level,service_name,name,description,grafana_panel_id)(alert_count{service_name="%s",name!="",level=~"$alert_level"})) by (level,description,service_name,grafana_panel_id),
+				"description", "$1", "description", ".*: (.*)"
+			)`, c.Name),
+			Format:  "table",
+			Instant: true,
+		})
+		setPanelSize(alertsDefined, 9, 5)
+		setPanelPos(alertsDefined, 0, 3)
+		board.Panels = append(board.Panels, alertsDefined)
 
-	alertsFiring := sdk.NewGraph("Alerts firing")
-	setPanelSize(alertsFiring, 15, 5)
-	setPanelPos(alertsFiring, 9, 3)
-	alertsFiring.GraphPanel.Legend.Show = true
-	alertsFiring.GraphPanel.Fill = 1
-	alertsFiring.GraphPanel.Bars = true
-	alertsFiring.GraphPanel.NullPointMode = "null"
-	alertsFiring.GraphPanel.Pointradius = 2
-	alertsFiring.GraphPanel.AliasColors = map[string]string{}
-	alertsFiring.GraphPanel.Xaxis = sdk.Axis{
-		Show: true,
+		alertsFiring := sdk.NewGraph("Alerts firing")
+		setPanelSize(alertsFiring, 15, 5)
+		setPanelPos(alertsFiring, 9, 3)
+		alertsFiring.GraphPanel.Legend.Show = true
+		alertsFiring.GraphPanel.Fill = 1
+		alertsFiring.GraphPanel.Bars = true
+		alertsFiring.GraphPanel.NullPointMode = "null"
+		alertsFiring.GraphPanel.Pointradius = 2
+		alertsFiring.GraphPanel.AliasColors = map[string]string{}
+		alertsFiring.GraphPanel.Xaxis = sdk.Axis{
+			Show: true,
+		}
+		alertsFiring.GraphPanel.Yaxes = []sdk.Axis{
+			{
+				Decimals: 0,
+				Format:   "short",
+				LogBase:  1,
+				Max:      sdk.NewFloatString(1),
+				Min:      sdk.NewFloatString(0),
+				Show:     false,
+			},
+			{
+				Format:  "short",
+				LogBase: 1,
+				Show:    true,
+			},
+		}
+		alertsFiring.AddTarget(&sdk.Target{
+			Expr:         fmt.Sprintf(`sum by (service_name,level,name,grafana_panel_id)(max by (level,service_name,name,description,grafana_panel_id)(alert_count{service_name="%s",name!="",level=~"$alert_level"}) >= 1)`, c.Name),
+			LegendFormat: "{{level}}: {{name}}",
+		})
+		alertsFiring.GraphPanel.FieldConfig = &sdk.FieldConfig{}
+		alertsFiring.GraphPanel.FieldConfig.Defaults.Links = []sdk.Link{{
+			Title: "Graph panel",
+			URL:   StringPtr("/-/debug/grafana/d/${__field.labels.service_name}/${__field.labels.service_name}?viewPanel=${__field.labels.grafana_panel_id}"),
+		}}
+		board.Panels = append(board.Panels, alertsFiring)
 	}
-	alertsFiring.GraphPanel.Yaxes = []sdk.Axis{
-		{
-			Decimals: 0,
-			Format:   "short",
-			LogBase:  1,
-			Max:      sdk.NewFloatString(1),
-			Min:      sdk.NewFloatString(0),
-			Show:     false,
-		},
-		{
-			Format:  "short",
-			LogBase: 1,
-			Show:    true,
-		},
-	}
-	alertsFiring.AddTarget(&sdk.Target{
-		Expr:         fmt.Sprintf(`sum by (service_name,level,name,grafana_panel_id)(max by (level,service_name,name,description,grafana_panel_id)(alert_count{service_name="%s",name!="",level=~"$alert_level"}) >= 1)`, c.Name),
-		LegendFormat: "{{level}}: {{name}}",
-	})
-	alertsFiring.GraphPanel.FieldConfig = &sdk.FieldConfig{}
-	alertsFiring.GraphPanel.FieldConfig.Defaults.Links = []sdk.Link{{
-		Title: "Graph panel",
-		URL:   StringPtr("/-/debug/grafana/d/${__field.labels.service_name}/${__field.labels.service_name}?viewPanel=${__field.labels.grafana_panel_id}"),
-	}}
-	board.Panels = append(board.Panels, alertsFiring)
 
 	baseY := 8
 	offsetY := baseY
@@ -315,7 +336,7 @@ func (c *Container) renderRules() (*promRulesFile, error) {
 						"level":        level,
 						"service_name": c.Name,
 						"description":  description,
-						"owner":        string(o.Owner),
+						"owner":        o.Owner.identifier,
 
 						// in the corresponding dashboard, this label should indicate
 						// the panel associated with this rule
@@ -540,49 +561,80 @@ func (r Row) validate() error {
 
 // ObservableOwner denotes a team that owns an Observable. The current teams are described in
 // the handbook: https://handbook.sourcegraph.com/engineering/eng_org#current-organization
-type ObservableOwner string
+type ObservableOwner struct {
+	// identifier is the team's name on OpsGenie and is used for routing alerts.
+	identifier       string
+	handbookSlug     string
+	handbookTeamName string
+}
 
-const (
-	ObservableOwnerSearch          ObservableOwner = "search"
-	ObservableOwnerSearchCore      ObservableOwner = "search-core"
-	ObservableOwnerBatches         ObservableOwner = "batches"
-	ObservableOwnerCodeIntel       ObservableOwner = "code-intel"
-	ObservableOwnerSecurity        ObservableOwner = "security"
-	ObservableOwnerWeb             ObservableOwner = "web"
-	ObservableOwnerCoreApplication ObservableOwner = "core application"
-	ObservableOwnerCodeInsights    ObservableOwner = "code-insights"
-	ObservableOwnerDevOps          ObservableOwner = "devops"
-	ObservableOwnerCloudSaaS       ObservableOwner = "cloud-saas"
+// identifer must be all lowercase, and optionally  hyphenated.
+//
+// Some examples of valid identifiers:
+// foo
+// foo-bar
+// foo-bar-baz
+//
+// Some examples of invalid identifiers:
+// Foo
+// FOO
+// Foo-Bar
+// foo_bar
+var identifierPattern = regexp.MustCompile("^([a-z]+)(-[a-z]+)*?$")
+
+var (
+	ObservableOwnerSearch = ObservableOwner{
+		identifier:       "search",
+		handbookSlug:     "code-graph/search/product",
+		handbookTeamName: "Search",
+	}
+	ObservableOwnerSearchCore = ObservableOwner{
+		identifier:       "search-core",
+		handbookSlug:     "code-graph/search/core",
+		handbookTeamName: "Search Core",
+	}
+	ObservableOwnerBatches = ObservableOwner{
+		identifier:       "batch-changes",
+		handbookSlug:     "code-graph/batch-changes",
+		handbookTeamName: "Batch Changes",
+	}
+	ObservableOwnerCodeIntel = ObservableOwner{
+		identifier:       "code-intel",
+		handbookSlug:     "code-graph/code-intelligence",
+		handbookTeamName: "Code intelligence",
+	}
+	ObservableOwnerSecurity = ObservableOwner{
+		identifier:       "security",
+		handbookSlug:     "cloud/security",
+		handbookTeamName: "Security",
+	}
+	ObservableOwnerRepoManagement = ObservableOwner{
+		identifier:       "repo-management",
+		handbookSlug:     "enablement/repo-management",
+		handbookTeamName: "Repo Management",
+	}
+	ObservableOwnerCodeInsights = ObservableOwner{
+		identifier:       "code-insights",
+		handbookSlug:     "code-graph/code-insights",
+		handbookTeamName: "Code Insights",
+	}
+	ObservableOwnerDevOps = ObservableOwner{
+		identifier:       "devops",
+		handbookSlug:     "cloud/devops",
+		handbookTeamName: "Cloud DevOps",
+	}
+	ObservableOwnerCloudSaaS = ObservableOwner{
+		identifier:       "cloud-saas",
+		handbookSlug:     "cloud/saas",
+		handbookTeamName: "Cloud Software-as-a-Service",
+	}
 )
 
-// toMarkdown returns a Markdown string that also links to the owner's team page
+// toMarkdown returns a Markdown string that also links to the owner's team page in the handbook.
 func (o ObservableOwner) toMarkdown() string {
-	var slug string
-
-	team := upperFirst(string(o))
-
-	// special cases for differences in how a team is named in ObservableOwner and how
-	// they are named in the handbook.
-	// see https://handbook.sourcegraph.com/engineering/eng_org#current-organization
-	switch o {
-	case ObservableOwnerCodeIntel:
-		slug = "code-intelligence"
-	case ObservableOwnerCodeInsights:
-		slug = "developer-insights/code-insights"
-	case ObservableOwnerDevOps:
-		slug = "cloud/devops"
-	case ObservableOwnerSearchCore:
-		slug = "search/core"
-	case ObservableOwnerCloudSaaS:
-		slug = "cloud/saas"
-		team = "Cloud Software-as-a-Service"
-	default:
-		slug = strings.ReplaceAll(string(o), " ", "-")
-	}
-
 	return fmt.Sprintf(
-		"[Sourcegraph %s team](https://handbook.sourcegraph.com/engineering/%s)",
-		team, slug,
+		"[Sourcegraph %s team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/%s)",
+		o.handbookTeamName, o.handbookSlug,
 	)
 }
 
@@ -716,9 +768,15 @@ func (o Observable) validate() error {
 	if first, second := string([]rune(o.Description)[0]), string([]rune(o.Description)[1]); first != strings.ToLower(first) && second == strings.ToLower(second) {
 		return errors.Errorf("Description must be lowercase except for acronyms; found \"%s\"", o.Description)
 	}
-	if o.Owner == "" && !o.NoAlert {
-		return errors.New("Owner must be defined for observables with alerts")
+	if o.Owner.identifier == "" && !o.NoAlert {
+		return errors.New("Owner.identifier must be defined for observables with alerts")
 	}
+
+	// In some cases, the identifier is an empty string. We don't want to run it through the regex.
+	if o.Owner.identifier != "" && !identifierPattern.Match([]byte(o.Owner.identifier)) {
+		return errors.Errorf(`Owner.identifier has invalid format: "%v"`, []byte(o.Owner.identifier))
+	}
+
 	if !o.Panel.panelType.validate() {
 		return errors.New(`Panel.panelType must be "graph" or "heatmap"`)
 	}

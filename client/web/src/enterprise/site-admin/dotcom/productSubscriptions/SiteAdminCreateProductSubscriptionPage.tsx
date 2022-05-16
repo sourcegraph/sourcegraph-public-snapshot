@@ -10,7 +10,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, useEventObservable, Link, Alert, Icon } from '@sourcegraph/wildcard'
+import { Button, useEventObservable, Link, Alert, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import { mutateGraphQL, queryGraphQL } from '../../../../backend/graphql'
@@ -49,7 +49,7 @@ const createProductSubscription = (
         map(data => data.dotcom.createProductSubscription)
     )
 
-const UserCreateSubscriptionNode: React.FunctionComponent<UserCreateSubscriptionNodeProps> = (
+const UserCreateSubscriptionNode: React.FunctionComponent<React.PropsWithChildren<UserCreateSubscriptionNodeProps>> = (
     props: UserCreateSubscriptionNodeProps
 ) => {
     const [onSubmit, createdSubscription] = useEventObservable(
@@ -123,14 +123,16 @@ interface Props extends RouteComponentProps<{}> {
  *
  * For use on Sourcegraph.com by Sourcegraph teammates only.
  */
-export const SiteAdminCreateProductSubscriptionPage: React.FunctionComponent<Props> = props => {
+export const SiteAdminCreateProductSubscriptionPage: React.FunctionComponent<
+    React.PropsWithChildren<Props>
+> = props => {
     useEffect(() => {
         eventLogger.logViewEvent('SiteAdminCreateProductSubscription')
     })
     return (
         <div className="site-admin-create-product-subscription-page">
             <PageTitle title="Create product subscription" />
-            <h2>Create product subscription</h2>
+            <Typography.H2>Create product subscription</Typography.H2>
             <FilteredUserConnection
                 {...props}
                 className="list-group list-group-flush mt-3"

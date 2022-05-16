@@ -14,13 +14,13 @@ import { PageTitle } from '../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../components'
 import { CodeInsightsPage } from '../../../components/code-insights-page/CodeInsightsPage'
 import { FORM_ERROR, SubmissionErrors } from '../../../components/form/hooks/useForm'
-import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
 import {
+    CodeInsightsBackendContext,
     CustomInsightDashboard,
     InsightsDashboardOwner,
     isPersonalOwner,
     isVirtualDashboard,
-} from '../../../core/types'
+} from '../../../core'
 import {
     DashboardCreationFields,
     InsightsDashboardCreationContent,
@@ -36,7 +36,7 @@ interface EditDashboardPageProps {
 /**
  * Displays the edit (configure) dashboard page.
  */
-export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> = props => {
+export const EditDashboardPage: React.FunctionComponent<React.PropsWithChildren<EditDashboardPageProps>> = props => {
     const { dashboardId, authenticatedUser } = props
     const history = useHistory()
 

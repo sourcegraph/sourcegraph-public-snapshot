@@ -31,7 +31,7 @@ function getHeadingStyle(depth: number): string {
     return ''
 }
 
-export const NotebookOutline: React.FunctionComponent<NotebookOutlineProps> = React.memo(
+export const NotebookOutline: React.FunctionComponent<React.PropsWithChildren<NotebookOutlineProps>> = React.memo(
     ({ notebookElement, outlineContainerElement, blocks }) => {
         const scrollableContainer = useRef<HTMLUListElement>(null)
         const [visibleHeadings, setVisibleHeadings] = useState<string[]>([])
@@ -178,15 +178,13 @@ export const NotebookOutline: React.FunctionComponent<NotebookOutlineProps> = Re
                             )}
                             aria-current={highlightedHeading === heading.id}
                         >
-                            <Link
-                                className={classNames(styles.headingLink)}
-                                to={`#${heading.id}`}
-                                data-tooltip={heading.text}
-                            >
+                            <Link className={classNames(styles.headingLink)} to={`#${heading.id}`}>
                                 {highlightedHeading === heading.id && (
                                     <span className={styles.highlightDot}>&middot;</span>
                                 )}
-                                <span>{heading.text}</span>
+                                <span data-tooltip={heading.text} className={classNames(styles.headingLinkText)}>
+                                    {heading.text}
+                                </span>
                             </Link>
                         </li>
                     ))}

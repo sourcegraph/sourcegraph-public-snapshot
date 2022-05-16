@@ -3,16 +3,27 @@ package server
 import (
 	"fmt"
 
+	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type operations struct {
-	batchLog       *observation.Operation
-	batchLogSingle *observation.Operation
+	batchLogSemaphoreWait prometheus.Histogram
+	batchLog              *observation.Operation
+	batchLogSingle        *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
+	batchLogSemaphoreWait := prometheus.NewHistogram(prometheus.HistogramOpts{
+		Namespace: "src",
+		Name:      "batch_log_semaphore_wait_duration_seconds",
+		Help:      "Time in seconds spent waiting for the global batch log semaphore",
+		Buckets:   prometheus.DefBuckets,
+	})
+	observationContext.Registerer.MustRegister(batchLogSemaphoreWait)
+
 	metrics := metrics.NewREDMetrics(
 		observationContext.Registerer,
 		"gitserver_api",
@@ -38,7 +49,8 @@ func newOperations(observationContext *observation.Context) *operations {
 	}
 
 	return &operations{
-		batchLog:       op("BatchLog"),
-		batchLogSingle: subOp("batchLogSingle"),
+		batchLogSemaphoreWait: batchLogSemaphoreWait,
+		batchLog:              op("BatchLog"),
+		batchLogSingle:        subOp("batchLogSingle"),
 	}
 }

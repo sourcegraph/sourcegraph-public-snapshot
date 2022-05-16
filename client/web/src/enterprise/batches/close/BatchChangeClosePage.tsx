@@ -54,7 +54,7 @@ export interface BatchChangeClosePageProps
     closeBatchChange?: typeof _closeBatchChange
 }
 
-export const BatchChangeClosePage: React.FunctionComponent<BatchChangeClosePageProps> = ({
+export const BatchChangeClosePage: React.FunctionComponent<React.PropsWithChildren<BatchChangeClosePageProps>> = ({
     namespaceID,
     batchChangeName,
     history,

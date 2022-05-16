@@ -2,16 +2,20 @@ package search
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 
-	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+)
+
+type Protocol int
+
+const (
+	Streaming Protocol = iota
+	Batch
 )
 
 type SymbolsParameters struct {
@@ -101,16 +105,13 @@ type ZoektParameters struct {
 	Typ            IndexedRequestType
 	FileMatchLimit int32
 	Select         filter.SelectPath
-
-	Zoekt zoekt.Streamer
 }
 
 // SearcherParameters the inputs for a search fulfilled by the Searcher service
 // (cmd/searcher). Searcher fulfills (1) unindexed literal and regexp searches
 // and (2) structural search requests.
 type SearcherParameters struct {
-	SearcherURLs *endpoint.Map
-	PatternInfo  *TextPatternInfo
+	PatternInfo *TextPatternInfo
 
 	// UseFullDeadline indicates that the search should try do as much work as
 	// it can within context.Deadline. If false the search should try and be
@@ -228,54 +229,62 @@ type RepoOptions struct {
 	Dependencies             []string
 	CaseSensitiveRepoFilters bool
 	SearchContextSpec        string
-	NoForks                  bool
-	OnlyForks                bool
-	NoArchived               bool
-	OnlyArchived             bool
-	CommitAfter              string
-	Visibility               query.RepoVisibility
-	Limit                    int
-	Cursors                  []*types.Cursor
-	Query                    query.Q
+
+	CommitAfter string
+	Visibility  query.RepoVisibility
+	Limit       int
+	Cursors     []*types.Cursor
+
+	// ForkSet indicates whether `fork:` was set explicitly in the query,
+	// or whether the values were set from defaults.
+	ForkSet   bool
+	NoForks   bool
+	OnlyForks bool
+
+	// ArchivedSet indicates whether `archived:` was set explicitly in the query,
+	// or whether the values were set from defaults.
+	ArchivedSet  bool
+	NoArchived   bool
+	OnlyArchived bool
 }
 
 func (op *RepoOptions) String() string {
 	var b strings.Builder
-	if len(op.RepoFilters) == 0 {
-		b.WriteString("r=[]")
+
+	if len(op.RepoFilters) > 0 {
+		fmt.Fprintf(&b, "RepoFilters: %q\n", op.RepoFilters)
+	} else {
+		b.WriteString("RepoFilters: []\n")
 	}
-	for i, r := range op.RepoFilters {
-		if i != 0 {
-			b.WriteByte(' ')
-		}
-		b.WriteString(strconv.Quote(r))
+	if len(op.MinusRepoFilters) > 0 {
+		fmt.Fprintf(&b, "MinusRepoFilters: %q\n", op.MinusRepoFilters)
+	} else {
+		b.WriteString("MinusRepoFilters: []\n")
 	}
 
-	if len(op.MinusRepoFilters) > 0 {
-		_, _ = fmt.Fprintf(&b, " -r=%v", op.MinusRepoFilters)
-	}
-	if op.CommitAfter != "" {
-		_, _ = fmt.Fprintf(&b, " CommitAfter=%q", op.CommitAfter)
-	}
+	fmt.Fprintf(&b, "CommitAfter: %s\n", op.CommitAfter)
+	fmt.Fprintf(&b, "Visibility: %s\n", string(op.Visibility))
 
 	if op.CaseSensitiveRepoFilters {
-		b.WriteString(" CaseSensitiveRepoFilters")
+		fmt.Fprintf(&b, "CaseSensitiveRepoFilters: %t\n", op.CaseSensitiveRepoFilters)
 	}
-
+	if op.ForkSet {
+		fmt.Fprintf(&b, "ForkSet: %t\n", op.ForkSet)
+	}
 	if op.NoForks {
-		b.WriteString(" NoForks")
+		fmt.Fprintf(&b, "NoForks: %t\n", op.NoForks)
 	}
 	if op.OnlyForks {
-		b.WriteString(" OnlyForks")
+		fmt.Fprintf(&b, "OnlyForks: %t\n", op.OnlyForks)
+	}
+	if op.ArchivedSet {
+		fmt.Fprintf(&b, "ArchivedSet: %t\n", op.ArchivedSet)
 	}
 	if op.NoArchived {
-		b.WriteString(" NoArchived")
+		fmt.Fprintf(&b, "NoArchived: %t\n", op.NoArchived)
 	}
 	if op.OnlyArchived {
-		b.WriteString(" OnlyArchived")
-	}
-	if op.Visibility != query.Any {
-		b.WriteString(" Visibility" + string(op.Visibility))
+		fmt.Fprintf(&b, "OnlyArchived: %t\n", op.OnlyArchived)
 	}
 
 	return b.String()

@@ -65,6 +65,12 @@ Other tips:
 
   Query syntax: https://about.sourcegraph.com/docs/search/query-syntax/
 
+  Be careful with search strings including negation: a search with an initial
+  negated term may be parsed as a flag rather than as a search string. You can
+  use -- to ensure that src parses this correctly, eg:
+
+    	$ src search -- '-repo:github.com/foo/bar error'
+
 
 ```
 	

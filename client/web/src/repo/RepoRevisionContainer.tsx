@@ -135,11 +135,9 @@ interface RepoRevisionBreadcrumbProps extends Pick<RepoRevisionContainerProps, '
     resolvedRevisionOrError: ResolvedRevision
 }
 
-const RepoRevisionContainerBreadcrumb: React.FunctionComponent<RepoRevisionBreadcrumbProps> = ({
-    revision,
-    resolvedRevisionOrError,
-    repo,
-}) => {
+const RepoRevisionContainerBreadcrumb: React.FunctionComponent<
+    React.PropsWithChildren<RepoRevisionBreadcrumbProps>
+> = ({ revision, resolvedRevisionOrError, repo }) => {
     const [popoverOpen, setPopoverOpen] = useState(false)
     const togglePopover = useCallback(() => setPopoverOpen(previous => !previous), [])
     return (
@@ -180,7 +178,7 @@ const RepoRevisionContainerBreadcrumb: React.FunctionComponent<RepoRevisionBread
  * A container for a repository page that incorporates revisioned Git data. (For example,
  * blob and tree pages are revisioned, but the repository settings page is not.)
  */
-export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContainerProps> = ({
+export const RepoRevisionContainer: React.FunctionComponent<React.PropsWithChildren<RepoRevisionContainerProps>> = ({
     useBreadcrumb,
     ...props
 }) => {

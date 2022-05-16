@@ -34,7 +34,7 @@ func createCodeHostConnectionHelper(t *testing.T, serviceExists bool) {
 	db := database.NewMockDB()
 	s := &sessionIssuerHelper{db: db}
 	t.Run("Unauthenticated request", func(t *testing.T) {
-		_, err := s.CreateCodeHostConnection(ctx, nil, "")
+		_, _, err := s.CreateCodeHostConnection(ctx, nil, "")
 		assert.Error(t, err)
 	})
 
@@ -95,7 +95,7 @@ func createCodeHostConnectionHelper(t *testing.T, serviceExists bool) {
 	})
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
-	_, err := s.CreateCodeHostConnection(ctx, tok, mockGitLabCom.ConfigID().ID)
+	fromCreation, _, err := s.CreateCodeHostConnection(ctx, tok, mockGitLabCom.ConfigID().ID)
 	require.NoError(t, err)
 
 	want := &types.ExternalService{
@@ -114,4 +114,5 @@ func createCodeHostConnectionHelper(t *testing.T, serviceExists bool) {
 		UpdatedAt:       now,
 	}
 	assert.Equal(t, want, got)
+	assert.Equal(t, want, fromCreation)
 }

@@ -27,6 +27,7 @@ const SearchConsolePage = lazyComponent(() => import('./search/SearchConsolePage
 const NotebookPage = lazyComponent(() => import('./notebooks/notebookPage/NotebookPage'), 'NotebookPage')
 const SignInPage = lazyComponent(() => import('./auth/SignInPage'), 'SignInPage')
 const SignUpPage = lazyComponent(() => import('./auth/SignUpPage'), 'SignUpPage')
+const UnlockAccountPage = lazyComponent(() => import('./auth/UnlockAccount'), 'UnlockAccountPage')
 const PostSignUpPage = lazyComponent(() => import('./auth/PostSignUpPage'), 'PostSignUpPage')
 const SiteInitPage = lazyComponent(() => import('./site-admin/init/SiteInitPage'), 'SiteInitPage')
 
@@ -140,6 +141,11 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: PageRoutes.SignUp,
         render: props => <SignUpPage {...props} context={window.context} />,
+        exact: true,
+    },
+    {
+        path: PageRoutes.UnlockAccount,
+        render: props => <UnlockAccountPage {...props} context={window.context} />,
         exact: true,
     },
     {

@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import { throttle } from 'lodash'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Card, CardBody, Link } from '@sourcegraph/wildcard'
+import { Button, Card, CardBody, Link, Typography } from '@sourcegraph/wildcard'
 
 import { CodeInsightExample } from '../../../getting-started/components/code-insights-examples/CodeInsightsExamples'
 
@@ -15,9 +15,9 @@ import styles from './CodeInsightsExamplesPicker.module.scss'
 
 interface CodeInsightsExamplesPickerProps extends TelemetryProps {}
 
-export const CodeInsightsExamplesPicker: React.FunctionComponent<CodeInsightsExamplesPickerProps> = ({
-    telemetryService,
-}) => {
+export const CodeInsightsExamplesPicker: React.FunctionComponent<
+    React.PropsWithChildren<CodeInsightsExamplesPickerProps>
+> = ({ telemetryService }) => {
     const [activeExampleIndex, setActiveExampleIndex] = useState(0)
     const [windowSize, setWindowSize] = useState(0)
 
@@ -40,7 +40,7 @@ export const CodeInsightsExamplesPicker: React.FunctionComponent<CodeInsightsExa
     return (
         <Card as={CardBody} className={classNames(styles.root, { [styles.rootMobile]: isMobileLayout })}>
             <div className={styles.section}>
-                <h2>How engineering teams and leaders use Code Insights</h2>
+                <Typography.H2>How engineering teams and leaders use Code Insights</Typography.H2>
 
                 <p className="text-muted">
                     We've created a few common simple insights to show you what the tool can do.{' '}

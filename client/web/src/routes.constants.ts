@@ -5,6 +5,7 @@ export enum PageRoutes {
     SearchNotebook = '/search/notebook',
     SignIn = '/sign-in',
     SignUp = '/sign-up',
+    UnlockAccount = '/unlock-account/:token',
     Welcome = '/welcome',
     Settings = '/settings',
     User = '/user',

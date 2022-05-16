@@ -3,22 +3,24 @@ package repos
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/opentracing/opentracing-go/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-type ComputeExcludedRepos struct {
-	Options search.RepoOptions
+type ComputeExcludedReposJob struct {
+	RepoOpts search.RepoOptions
 }
 
-func (c *ComputeExcludedRepos) Run(ctx context.Context, db database.DB, s streaming.Sender) (alert *search.Alert, err error) {
-	_, ctx, s, finish := jobutil.StartSpan(ctx, s, c)
+func (c *ComputeExcludedReposJob) Run(ctx context.Context, clients job.RuntimeClients, s streaming.Sender) (alert *search.Alert, err error) {
+	tr, ctx, s, finish := job.StartSpan(ctx, s, c)
 	defer func() { finish(alert, err) }()
+	tr.TagFields(trace.LazyFields(c.Tags))
 
-	repositoryResolver := Resolver{DB: db}
-	excluded, err := repositoryResolver.Excluded(ctx, c.Options)
+	excluded, err := computeExcludedRepos(ctx, clients.DB, c.RepoOpts)
 	if err != nil {
 		return nil, err
 	}
@@ -33,6 +35,12 @@ func (c *ComputeExcludedRepos) Run(ctx context.Context, db database.DB, s stream
 	return nil, nil
 }
 
-func (c *ComputeExcludedRepos) Name() string {
-	return "ComputeExcludedRepos"
+func (c *ComputeExcludedReposJob) Name() string {
+	return "ComputeExcludedReposJob"
+}
+
+func (c *ComputeExcludedReposJob) Tags() []log.Field {
+	return []log.Field{
+		trace.Stringer("repoOpts", &c.RepoOpts),
+	}
 }

@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { useMemo } from '@storybook/addons'
 import { storiesOf } from '@storybook/react'
 

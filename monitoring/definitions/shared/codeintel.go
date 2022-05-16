@@ -862,6 +862,13 @@ func (codeIntelligence) NewJanitorGroup(containerName string) monitoring.Group {
 				`).Observable(),
 			},
 			{
+				Standard.Count("records deleted")(ObservableConstructorOptions{
+					MetricNameRoot:        "codeintel_background_audit_log_records_expired",
+					MetricDescriptionRoot: "lsif upload audit log",
+				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+					Number of LSIF upload audit log records deleted due to expiration every 5m
+				`).Observable(),
+
 				Observation.Errors(ObservableConstructorOptions{
 					MetricNameRoot:        "codeintel_background",
 					MetricDescriptionRoot: "janitor",

@@ -62,7 +62,7 @@ export interface Form<FormValues> {
      * Values of all inputs in the form.
      */
 
-    values: Partial<FormValues>
+    values: FormValues
     /**
      * State and methods of form, used in consumers to create filed by useField(formAPI)
      */

@@ -12,12 +12,12 @@ import sinon from 'sinon'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
 
-import { CodeInsightsBackend } from '../core/backend/code-insights-backend'
 import {
+    CodeInsightsBackend,
     CodeInsightsBackendContext,
     FakeDefaultCodeInsightsBackend,
-} from '../core/backend/code-insights-backend-context'
-import { ALL_INSIGHTS_DASHBOARD } from '../core/constants'
+    ALL_INSIGHTS_DASHBOARD,
+} from '../core'
 
 import { CodeInsightsRootPage, CodeInsightsRootPageTab } from './CodeInsightsRootPage'
 
@@ -46,7 +46,10 @@ const mockTelemetryService = {
 
 const fakeApi = new FakeDefaultCodeInsightsBackend()
 
-const Wrapper: React.FunctionComponent<{ api: Partial<CodeInsightsBackend> }> = ({ children, api = {} }) => {
+const Wrapper: React.FunctionComponent<React.PropsWithChildren<{ api: Partial<CodeInsightsBackend> }>> = ({
+    children,
+    api = {},
+}) => {
     const extendedApi: CodeInsightsBackend = {
         ...fakeApi,
         ...api,

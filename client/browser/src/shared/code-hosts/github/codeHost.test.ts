@@ -4,7 +4,7 @@ import fetch from 'jest-fetch-mock'
 import { startCase } from 'lodash'
 import { readFile } from 'mz/fs'
 
-import { disableFetchCache, enableFetchCache, fetchCache } from '@sourcegraph/common'
+import { disableFetchCache, enableFetchCache, fetchCache, LineOrPositionOrRange } from '@sourcegraph/common'
 
 import { testCodeHostMountGetters, testToolbarMountGetter } from '../shared/codeHostTestUtils'
 import { CodeView } from '../shared/codeViews'
@@ -15,6 +15,7 @@ import {
     githubCodeHost,
     checkIsGitHubDotCom,
     isPrivateRepository,
+    parseHash,
 } from './codeHost'
 
 const testCodeHost = (fixturePath: string): void => {
@@ -243,40 +244,45 @@ describe('isPrivateRepository', () => {
 
         it('fallbacks to DOM check on unsuccessful request', async () => {
             fetch.mockRejectOnce(new Error('Error happened'))
-
             document.body.innerHTML = '<span id="public-flag">Public</span>'
             expect(await isPrivateRepository('test-org/test-repo', fetchCache, '#public-flag')).toBeFalsy()
 
+            fetch.mockRejectOnce(new Error('Error happened'))
             document.body.innerHTML = '<span>Public</span>'
             expect(await isPrivateRepository('test-org/test-repo', fetchCache, '#public-flag')).toBeTruthy()
 
             expect(fetch).toHaveBeenCalledTimes(2)
         })
 
-        it('returns [private=true] if empty response', async () => {
-            fetch.mockResponseOnce(JSON.stringify({}))
-
-            expect(await isPrivateRepository('test-org/test-repo', fetchCache)).toBeTruthy()
-            expect(fetch).toHaveBeenCalledTimes(1)
-        })
-
-        it('returns [private=true] if rate-limit exceeded', async () => {
-            fetch.mockResponseOnce(JSON.stringify({ private: false }), {
-                headers: { 'X-RateLimit-Remaining': '0' },
-            })
-
-            expect(await isPrivateRepository('test-org/test-repo', fetchCache)).toBeTruthy()
-            expect(fetch).toHaveBeenCalledTimes(1)
-        })
-
         it('returns correctly from API response', async () => {
-            fetch.mockResponseOnce(JSON.stringify({ private: true }))
+            fetch.mockResponseOnce(() => Promise.resolve({ status: 404 }))
             expect(await isPrivateRepository('test-org/test-repo', fetchCache)).toBeTruthy()
 
-            fetch.mockResponseOnce(JSON.stringify({ private: false }))
+            fetch.mockResponseOnce(() => Promise.resolve({ status: 200 }))
             expect(await isPrivateRepository('test-org/test-repo', fetchCache)).toBeFalsy()
 
             expect(fetch).toHaveBeenCalledTimes(2)
         })
     })
+})
+
+describe('parseHash', () => {
+    const entries: [string, LineOrPositionOrRange][] = [
+        ['#L143', { line: 143 }],
+        ['#helloL143', { line: 143 }],
+        ['#L143-L162', { line: 143, endLine: 162 }],
+        ['#L143L162', { line: 143, endLine: 162 }],
+        ['#L143+L162', { line: 143, endLine: 162 }],
+        ['#L143/L162', { line: 143, endLine: 162 }],
+        ['#L143fooL162', { line: 143, endLine: 162 }],
+        ['#L143fooL162bar', { line: 143, endLine: 162 }],
+        ['#helloL143fooL162bar', { line: 143, endLine: 162 }],
+        ['#L143-L162-L172', {}],
+    ]
+
+    for (const [hash, expectedValue] of entries) {
+        test(`given "${hash}" as argument returns ${JSON.stringify(expectedValue)}`, () => {
+            expect(parseHash(hash)).toEqual(expectedValue)
+        })
+    }
 })

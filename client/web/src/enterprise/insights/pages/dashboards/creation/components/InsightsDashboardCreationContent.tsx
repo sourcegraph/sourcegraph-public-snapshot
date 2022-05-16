@@ -12,8 +12,13 @@ import { useField } from '../../../../components/form/hooks/useField'
 import { FORM_ERROR, FormAPI, SubmissionErrors, useForm } from '../../../../components/form/hooks/useForm'
 import { createRequiredValidator } from '../../../../components/form/validators'
 import { LimitedAccessLabel } from '../../../../components/limited-access-label/LimitedAccessLabel'
-import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
-import { InsightsDashboardOwner, isGlobalOwner, isOrganizationOwner, isPersonalOwner } from '../../../../core/types'
+import {
+    CodeInsightsBackendContext,
+    InsightsDashboardOwner,
+    isGlobalOwner,
+    isOrganizationOwner,
+    isPersonalOwner,
+} from '../../../../core'
 
 import styles from './InsightsDashboardCreationContent.module.scss'
 
@@ -39,7 +44,9 @@ export interface InsightsDashboardCreationContentProps {
 /**
  * Renders creation UI form content (fields, submit and cancel buttons).
  */
-export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsDashboardCreationContentProps> = props => {
+export const InsightsDashboardCreationContent: React.FunctionComponent<
+    React.PropsWithChildren<InsightsDashboardCreationContentProps>
+> = props => {
     const { initialValues, owners, onSubmit, children } = props
 
     const { UIFeatures } = useContext(CodeInsightsBackendContext)

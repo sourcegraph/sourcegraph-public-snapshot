@@ -370,7 +370,7 @@ func updateProgress(ctx context.Context, store storeIface, migration *Migration,
 }
 
 func runMigrationUp(ctx context.Context, migration *Migration, migrator Migrator, operations *operations) (err error) {
-	ctx, endObservation := operations.upForMigration(migration.ID).With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := operations.upForMigration(migration.ID).With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("migrationID", migration.ID),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -380,7 +380,7 @@ func runMigrationUp(ctx context.Context, migration *Migration, migrator Migrator
 }
 
 func runMigrationDown(ctx context.Context, migration *Migration, migrator Migrator, operations *operations) (err error) {
-	ctx, endObservation := operations.downForMigration(migration.ID).With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := operations.downForMigration(migration.ID).With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("migrationID", migration.ID),
 	}})
 	defer endObservation(1, observation.Args{})

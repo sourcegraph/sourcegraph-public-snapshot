@@ -25,11 +25,11 @@ const config: Meta = {
 
 export default config
 
-export const VisitorsDefault: React.FunctionComponent = () => (
+export const VisitorsDefault: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <Tour telemetryService={NOOP_TELEMETRY_SERVICE} id="TourStorybook" tasks={visitorsTasks} />
 )
 
-export const AuthenticatedDefault: React.FunctionComponent = () => (
+export const AuthenticatedDefault: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <Tour
         telemetryService={NOOP_TELEMETRY_SERVICE}
         id="TourStorybook"

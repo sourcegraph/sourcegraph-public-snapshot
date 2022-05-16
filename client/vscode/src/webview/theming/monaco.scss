@@ -1,0 +1,10 @@
+// Remove cursor focus shadow.
+.monaco-editor textarea:focus {
+    box-shadow: none !important;
+}
+
+// Used for <MonacoQueryInput/>
+.flex-shrink-past-contents {
+    flex-shrink: 1;
+    min-width: 0;
+}

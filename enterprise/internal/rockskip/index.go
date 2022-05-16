@@ -2,13 +2,17 @@ package rockskip
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 
 	"github.com/inconshreveable/log15"
+	pg "github.com/lib/pq"
 	"k8s.io/utils/lru"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/database/batch"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -78,7 +82,7 @@ func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit s
 
 	tasklog.Start("Log")
 	entriesIndexed := 0
-	err = s.git.LogReverseEach(repo, db, givenCommit, missingCount, func(entry git.LogEntry) error {
+	err = s.git.LogReverseEach(repo, db, givenCommit, missingCount, func(entry gitdomain.LogEntry) error {
 		defer tasklog.Continue("Log")
 
 		threadStatus.SetProgress(entriesIndexed, missingCount)
@@ -120,10 +124,10 @@ func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit s
 		deletedPaths := []string{}
 		addedPaths := []string{}
 		for _, pathStatus := range entry.PathStatuses {
-			if pathStatus.Status == git.DeletedAMD || pathStatus.Status == git.ModifiedAMD {
+			if pathStatus.Status == gitdomain.DeletedAMD || pathStatus.Status == gitdomain.ModifiedAMD {
 				deletedPaths = append(deletedPaths, pathStatus.Path)
 			}
-			if pathStatus.Status == git.AddedAMD || pathStatus.Status == git.ModifiedAMD {
+			if pathStatus.Status == gitdomain.AddedAMD || pathStatus.Status == gitdomain.ModifiedAMD {
 				addedPaths = append(addedPaths, pathStatus.Path)
 			}
 		}
@@ -196,11 +200,11 @@ func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit s
 		addedSymbols := map[string]map[string]struct{}{}
 		for _, pathStatus := range entry.PathStatuses {
 			switch pathStatus.Status {
-			case git.DeletedAMD:
+			case gitdomain.DeletedAMD:
 				deletedSymbols[pathStatus.Path] = symbolsFromDeletedFiles[pathStatus.Path]
-			case git.AddedAMD:
+			case gitdomain.AddedAMD:
 				addedSymbols[pathStatus.Path] = symbolsFromAddedFiles[pathStatus.Path]
-			case git.ModifiedAMD:
+			case gitdomain.ModifiedAMD:
 				deletedSymbols[pathStatus.Path] = map[string]struct{}{}
 				addedSymbols[pathStatus.Path] = map[string]struct{}{}
 				for name := range symbolsFromDeletedFiles[pathStatus.Path] {
@@ -221,17 +225,9 @@ func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit s
 				id := 0
 				ok := false
 				if id, ok = symbolCache.get(path, symbol); !ok {
+					tasklog.Start("GetSymbol")
 					found := false
-					for _, hop := range hops {
-						tasklog.Start("GetSymbol")
-						id, found, err = GetSymbol(ctx, tx, repoId, path, symbol, hop)
-						if err != nil {
-							return err
-						}
-						if found {
-							break
-						}
-					}
+					id, found, err = GetSymbol(ctx, tx, repoId, path, symbol, hops)
 					if !found {
 						// We did not find the symbol that (supposedly) has been deleted, so ignore the
 						// deletion. This will probably lead to extra symbols in search results.
@@ -254,15 +250,10 @@ func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit s
 			}
 		}
 
-		for path, symbols := range addedSymbols {
-			for symbol := range symbols {
-				tasklog.Start("InsertSymbol")
-				id, err := InsertSymbol(ctx, tx, commit, repoId, path, symbol)
-				if err != nil {
-					return errors.Wrap(err, "InsertSymbol")
-				}
-				symbolCache.set(path, symbol, id)
-			}
+		tasklog.Start("BatchInsertSymbols")
+		err = BatchInsertSymbols(ctx, tasklog, tx, repoId, commit, symbolCache, addedSymbols)
+		if err != nil {
+			return errors.Wrap(err, "BatchInsertSymbols")
 		}
 
 		tasklog.Start("DeleteRedundant")
@@ -290,6 +281,43 @@ func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit s
 	threadStatus.SetProgress(entriesIndexed, missingCount)
 
 	return nil
+}
+
+func BatchInsertSymbols(ctx context.Context, tasklog *TaskLog, tx *sql.Tx, repoId, commit int, symbolCache *symbolIdCache, symbols map[string]map[string]struct{}) error {
+	callback := func(inserter *batch.Inserter) error {
+		for path, pathSymbols := range symbols {
+			for symbol := range pathSymbols {
+				if err := inserter.Insert(ctx, pg.Array([]int{commit}), pg.Array([]int{}), repoId, path, symbol); err != nil {
+					return err
+				}
+			}
+		}
+
+		return nil
+	}
+
+	returningScanner := func(rows dbutil.Scanner) error {
+		var path string
+		var symbol string
+		var id int
+		if err := rows.Scan(&path, &symbol, &id); err != nil {
+			return err
+		}
+		symbolCache.set(path, symbol, id)
+		return nil
+	}
+
+	return batch.WithInserterWithReturn(
+		ctx,
+		tx,
+		"rockskip_symbols",
+		batch.MaxNumPostgresParameters,
+		[]string{"added", "deleted", "repo_id", "path", "name"},
+		"",
+		[]string{"path", "name", "id"},
+		returningScanner,
+		callback,
+	)
 }
 
 type repoCommit struct {

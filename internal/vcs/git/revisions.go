@@ -83,15 +83,14 @@ func ResolveRevision(ctx context.Context, db database.DB, repo api.RepoName, spe
 		spec = spec + "^0"
 	}
 
-	cmd := gitserver.NewClient(db).Command("git", "rev-parse", spec)
-	cmd.Repo = repo
-	cmd.EnsureRevision = spec
+	cmd := gitserver.NewClient(db).GitCommand(repo, "rev-parse", spec)
+	cmd.SetEnsureRevision(spec)
 
 	// We don't ever need to ensure that HEAD is in git-server.
 	// HEAD is always there once a repo is cloned
 	// (except empty repos, but we don't need to ensure revision on those).
 	if opt.NoEnsureRevision || spec == "HEAD" {
-		cmd.EnsureRevision = ""
+		cmd.SetEnsureRevision("")
 	}
 
 	return runRevParse(ctx, cmd, spec)
@@ -99,16 +98,16 @@ func ResolveRevision(ctx context.Context, db database.DB, repo api.RepoName, spe
 
 // runRevParse sends the git rev-parse command to gitserver. It interprets
 // missing revision responses and converts them into RevisionNotFoundError.
-func runRevParse(ctx context.Context, cmd *gitserver.Cmd, spec string) (api.CommitID, error) {
+func runRevParse(ctx context.Context, cmd gitserver.GitCommand, spec string) (api.CommitID, error) {
 	stdout, stderr, err := cmd.DividedOutput(ctx)
 	if err != nil {
 		if gitdomain.IsRepoNotExist(err) {
 			return "", err
 		}
 		if bytes.Contains(stderr, []byte("unknown revision")) {
-			return "", &gitdomain.RevisionNotFoundError{Repo: cmd.Repo, Spec: spec}
+			return "", &gitdomain.RevisionNotFoundError{Repo: cmd.Repo(), Spec: spec}
 		}
-		return "", errors.WithMessage(err, fmt.Sprintf("git command %v failed (stderr: %q)", cmd.Args, stderr))
+		return "", errors.WithMessage(err, fmt.Sprintf("git command %v failed (stderr: %q)", cmd.Args(), stderr))
 	}
 	commit := api.CommitID(bytes.TrimSpace(stdout))
 	if !IsAbsoluteRevision(string(commit)) {
@@ -117,9 +116,9 @@ func runRevParse(ctx context.Context, cmd *gitserver.Cmd, spec string) (api.Comm
 			// if HEAD doesn't point to anything git just returns `HEAD` as the
 			// output of rev-parse. An example where this occurs is an empty
 			// repository.
-			return "", &gitdomain.RevisionNotFoundError{Repo: cmd.Repo, Spec: spec}
+			return "", &gitdomain.RevisionNotFoundError{Repo: cmd.Repo(), Spec: spec}
 		}
-		return "", gitdomain.BadCommitError{Spec: spec, Commit: commit, Repo: cmd.Repo}
+		return "", gitdomain.BadCommitError{Spec: spec, Commit: commit, Repo: cmd.Repo()}
 	}
 	return commit, nil
 }

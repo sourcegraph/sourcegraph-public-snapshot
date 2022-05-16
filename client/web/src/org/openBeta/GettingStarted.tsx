@@ -8,7 +8,7 @@ import { RouteComponentProps } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { Link, LoadingSpinner, PageHeader, Badge } from '@sourcegraph/wildcard'
+import { Link, LoadingSpinner, PageHeader, Badge, Typography } from '@sourcegraph/wildcard'
 
 import { MarketingBlock } from '../../components/MarketingBlock'
 import { PageTitle } from '../../components/PageTitle'
@@ -123,7 +123,7 @@ interface Props extends RouteComponentProps, FeatureFlagProps {
     isSourcegraphDotCom: boolean
 }
 
-const LinkableContainer: React.FunctionComponent<{ to?: string; onClick?: () => void }> = ({
+const LinkableContainer: React.FunctionComponent<React.PropsWithChildren<{ to?: string; onClick?: () => void }>> = ({
     to,
     onClick,
     children,
@@ -139,27 +139,29 @@ const LinkableContainer: React.FunctionComponent<{ to?: string; onClick?: () => 
     return <>{children}</>
 }
 
-const Step: React.FunctionComponent<{
-    complete: boolean
-    textMuted: boolean
-    label: string
-    to?: string
-    onClick?: () => void
-}> = ({ complete, label, textMuted, to, onClick }) => (
+const Step: React.FunctionComponent<
+    React.PropsWithChildren<{
+        complete: boolean
+        textMuted: boolean
+        label: string
+        to?: string
+        onClick?: () => void
+    }>
+> = ({ complete, label, textMuted, to, onClick }) => (
     <li className={styles.entryItem}>
         <LinkableContainer to={to} onClick={onClick}>
             <div className={styles.iconContainer}>
                 {complete && <CheckCircleIcon className="text-success" size={14} />}
                 {!complete && <div className={styles.emptyCircle} />}
             </div>
-            <h3
+            <Typography.H3
                 className={classNames({
                     [`${styles.stepText}`]: true,
                     'text-muted': textMuted,
                 })}
             >
                 {label}
-            </h3>
+            </Typography.H3>
             {to && (
                 <div className={styles.linkContainer}>
                     <ArrowRightIcon />
@@ -169,11 +171,9 @@ const Step: React.FunctionComponent<{
     </li>
 )
 
-const InviteLink: React.FunctionComponent<{ orgName: string; orgId: string; membersCount: number }> = ({
-    membersCount,
-    orgId,
-    orgName,
-}) => {
+const InviteLink: React.FunctionComponent<
+    React.PropsWithChildren<{ orgName: string; orgId: string; membersCount: number }>
+> = ({ membersCount, orgId, orgName }) => {
     const preText = membersCount === 1 ? 'It’s just you so far! ' : null
     const linkText = membersCount === 1 ? 'Invite your teammates' : 'Invite the rest of your teammates'
     return (
@@ -216,7 +216,7 @@ const setSearchStep = (orgName: string, status: 'complete' | 'incomplete'): void
     }
 }
 
-export const OpenBetaGetStartedPage: React.FunctionComponent<Props> = ({
+export const OpenBetaGetStartedPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     authenticatedUser,
     org,
     featureFlags,

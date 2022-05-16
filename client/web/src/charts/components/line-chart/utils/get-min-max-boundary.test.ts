@@ -3,63 +3,68 @@ import { getMinMaxBoundaries } from './get-min-max-boundary'
 
 interface Datum {
     x: Date
-    a: number | null
-    b: number | null
-    c: number | null
+    value: number | null
 }
+
+const getXValue = (datum: Datum): Date => datum.x
+const getYValue = (datum: Datum): number | null => datum.value
 
 const testSeriesWithData: SeriesWithData<Datum>[] = [
     {
         type: SeriesType.Independent,
-        dataKey: 'a',
+        id: 'a',
         name: 'Series a',
+        getXValue,
+        getYValue,
         data: [
             {
                 y: null,
                 x: new Date(2022, 2, 2),
-                datum: { x: new Date(2022, 2, 2), a: null, b: null, c: null },
+                datum: { x: new Date(2022, 2, 2), value: null },
             },
             {
                 y: null,
                 x: new Date(2022, 2, 3),
-                datum: { x: new Date(2022, 2, 3), a: null, b: 2, c: 3 },
+                datum: { x: new Date(2022, 2, 3), value: null },
             },
             {
                 y: 1,
                 x: new Date(2022, 2, 4),
-                datum: { x: new Date(2022, 2, 4), a: 1, b: 2, c: 3 },
+                datum: { x: new Date(2022, 2, 4), value: 1 },
             },
             {
                 y: 2,
                 x: new Date(2022, 2, 6),
-                datum: { x: new Date(2022, 2, 6), a: 2, b: 2, c: null },
+                datum: { x: new Date(2022, 2, 6), value: 2 },
             },
         ],
     },
     {
         type: SeriesType.Independent,
-        dataKey: 'c',
+        id: 'c',
         name: 'Series c',
+        getXValue,
+        getYValue,
         data: [
             {
                 y: null,
                 x: new Date(2022, 2, 2),
-                datum: { x: new Date(2022, 2, 2), a: null, b: null, c: null },
+                datum: { x: new Date(2022, 2, 2), value: null },
             },
             {
                 y: 3,
                 x: new Date(2022, 2, 3),
-                datum: { x: new Date(2022, 2, 3), a: null, b: 2, c: 3 },
+                datum: { x: new Date(2022, 2, 3), value: 3 },
             },
             {
                 y: 3,
                 x: new Date(2022, 2, 4),
-                datum: { x: new Date(2022, 2, 4), a: 1, b: 2, c: 3 },
+                datum: { x: new Date(2022, 2, 4), value: 3 },
             },
             {
                 y: 3,
                 x: new Date(2022, 2, 5),
-                datum: { x: new Date(2022, 2, 5), a: null, b: null, c: 3 },
+                datum: { x: new Date(2022, 2, 5), value: 3 },
             },
         ],
     },

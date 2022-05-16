@@ -8,12 +8,16 @@ import * as uuid from 'uuid'
 
 import { renderMarkdown, asError, isErrorLike } from '@sourcegraph/common'
 import { transformSearchQuery } from '@sourcegraph/shared/src/api/client/search'
-import { aggregateStreamingSearch, emptyAggregateResults, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
+import {
+    aggregateStreamingSearch,
+    emptyAggregateResults,
+    LATEST_VERSION,
+    SymbolMatch,
+} from '@sourcegraph/shared/src/search/stream'
 import { UIRangeSpec } from '@sourcegraph/shared/src/util/url'
 
 import { Block, BlockInit, BlockDependencies, BlockInput, BlockDirection, SymbolBlockInput } from '..'
 import { NotebookFields, SearchPatternType } from '../../graphql-operations'
-import { LATEST_VERSION } from '../../search/results/StreamingSearchResults'
 import { parseBrowserRepoURL } from '../../util/url'
 import { createNotebook } from '../backend'
 import { fetchSuggestions } from '../blocks/suggestions/suggestions'

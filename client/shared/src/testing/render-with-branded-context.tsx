@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react'
+import { ReactNode } from 'react'
 
 import { RenderResult, render } from '@testing-library/react'
 import { MemoryHistory, createMemoryHistory } from 'history'

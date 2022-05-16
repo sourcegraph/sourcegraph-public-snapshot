@@ -13,6 +13,7 @@ var Router *mux.Router
 const (
 	RouteSignIn             = "sign-in"
 	RouteSignUp             = "sign-up"
+	RouteUnlockAccount      = "unlock-account"
 	RoutePasswordReset      = "password-reset"
 	RouteRaw                = "raw"
 	RoutePingFromSelfHosted = "ping-from-self-hosted"

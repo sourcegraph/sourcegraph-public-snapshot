@@ -12,11 +12,11 @@ exports[`PanelContainer loading state 1`] = `
     <div
       class="d-flex border-bottom header"
     >
-      <h4
-        class="headerText"
+      <h2
+        class="h2 h4 headerText"
       >
         Test Panel
-      </h4>
+      </h2>
     </div>
     <div
       class="h-100 content"
@@ -37,11 +37,11 @@ exports[`PanelContainer with action buttons 1`] = `
     <div
       class="d-flex border-bottom header"
     >
-      <h4
-        class="headerText"
+      <h2
+        class="h2 h4 headerText"
       >
         Test Panel
-      </h4>
+      </h2>
       <button
         type="button"
       >

@@ -1,0 +1,249 @@
+---
+version: 1
+interactions:
+- request:
+    body: '{"message":"This is a merge commit from Sourcegraph''s test suite.","close_source_branch":true,"merge_strategy":"squash"}'
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/0/merge
+    method: POST
+  response:
+    body: Not Found
+    headers:
+      Cache-Control:
+      - no-cache, no-store, must-revalidate, max-age=0
+      Content-Length:
+      - "9"
+      Content-Type:
+      - text/plain
+      Date:
+      - Wed, 06 Apr 2022 17:10:30 GMT
+      Expires:
+      - Wed, 06 Apr 2022 17:10:30 GMT
+      Server:
+      - nginx
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Vary:
+      - Authorization, Origin, cookie, user-context
+      X-Accepted-Oauth-Scopes:
+      - pullrequest:write
+      X-B3-Traceid:
+      - e1ae37a5f7f2f009
+      X-Credential-Type:
+      - apppassword
+      X-Dc-Location:
+      - Micros
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Oauth-Scopes:
+      - pipeline, pullrequest:write, account
+      X-Render-Time:
+      - "0.0905809402466"
+      X-Request-Count:
+      - "1204"
+      X-Served-By:
+      - 46aea4082ad8
+      X-Static-Version:
+      - 48514960f20e
+      X-Usage-Input-Ops:
+      - "0"
+      X-Usage-Output-Ops:
+      - "0"
+      X-Usage-System-Time:
+      - "0.001704"
+      X-Usage-User-Time:
+      - "0.050927"
+      X-Version:
+      - 48514960f20e
+      X-View-Name:
+      - bitbucket.apps.pullrequests.api.v20.handlers.PullRequestMergeHandler
+    status: 404 Not Found
+    code: 404
+    duration: ""
+- request:
+    body: '{"message":"This is a merge commit from Sourcegraph''s test suite.","close_source_branch":true,"merge_strategy":"squash"}'
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/4/merge
+    method: POST
+  response:
+    body: '{"rendered": {"description": {"raw": "* commit 1\r\n* commit 2\r\n\r\n‌",
+      "markup": "markdown", "html": "<ul>\n<li>commit 1</li>\n<li>commit 2</li>\n</ul>\n<p>‌</p>",
+      "type": "rendered"}, "title": {"raw": "Merge test 01", "markup": "markdown",
+      "html": "<p>Merge test 01</p>", "type": "rendered"}}, "links": {"decline": {"href":
+      "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/4/decline"},
+      "diffstat": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/diffstat/sourcegraph-testing/src-cli:b70b4c18ed5c%0D12fba599d6b6?from_pullrequest_id=4"},
+      "commits": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/4/commits"},
+      "self": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/4"},
+      "comments": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/4/comments"},
+      "merge": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/4/merge"},
+      "html": {"href": "https://bitbucket.org/sourcegraph-testing/src-cli/pull-requests/4"},
+      "activity": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/4/activity"},
+      "request-changes": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/4/request-changes"},
+      "diff": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/diff/sourcegraph-testing/src-cli:b70b4c18ed5c%0D12fba599d6b6?from_pullrequest_id=4"},
+      "approve": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/4/approve"},
+      "statuses": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/4/statuses"}},
+      "close_source_branch": true, "reviewers": [], "created_on": "2022-04-06T17:09:57.476877+00:00",
+      "id": 4, "closed_on": "2022-04-06T17:10:35.140957+00:00", "title": "Merge test
+      01", "destination": {"commit": {"hash": "12fba599d6b6", "type": "commit", "links":
+      {"self": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/commit/12fba599d6b6"},
+      "html": {"href": "https://bitbucket.org/sourcegraph-testing/src-cli/commits/12fba599d6b6"}}},
+      "repository": {"links": {"self": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli"},
+      "html": {"href": "https://bitbucket.org/sourcegraph-testing/src-cli"}, "avatar":
+      {"href": "https://bytebucket.org/ravatar/%7Bb090a669-ac7b-44cd-9610-02d027cb39f3%7D?ts=default"}},
+      "type": "repository", "name": "src-cli", "full_name": "sourcegraph-testing/src-cli",
+      "uuid": "{b090a669-ac7b-44cd-9610-02d027cb39f3}"}, "branch": {"name": "master"}},
+      "comment_count": 0, "source": {"commit": {"hash": "d55a513a597c", "type": "commit",
+      "links": {"self": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/commit/d55a513a597c"},
+      "html": {"href": "https://bitbucket.org/sourcegraph-testing/src-cli/commits/d55a513a597c"}}},
+      "repository": {"links": {"self": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli"},
+      "html": {"href": "https://bitbucket.org/sourcegraph-testing/src-cli"}, "avatar":
+      {"href": "https://bytebucket.org/ravatar/%7Bb090a669-ac7b-44cd-9610-02d027cb39f3%7D?ts=default"}},
+      "type": "repository", "name": "src-cli", "full_name": "sourcegraph-testing/src-cli",
+      "uuid": "{b090a669-ac7b-44cd-9610-02d027cb39f3}"}, "branch": {"name": "merge-test-01"}},
+      "state": "MERGED", "type": "pullrequest", "description": "* commit 1\r\n* commit
+      2\r\n\r\n‌", "reason": "", "task_count": 0, "merge_commit": {"hash": "b70b4c18ed5c9a34896aed92e56688057859a68f",
+      "links": {"self": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/commit/b70b4c18ed5c9a34896aed92e56688057859a68f"},
+      "html": {"href": "https://bitbucket.org/sourcegraph-testing/src-cli/commits/b70b4c18ed5c9a34896aed92e56688057859a68f"}},
+      "author": {"raw": "Adam Harvey <aharvey@sourcegraph.com>", "type": "author",
+      "user": {"display_name": "Adam Harvey", "uuid": "{39a35a46-ae0c-4017-91ec-1562988daa73}",
+      "links": {"self": {"href": "https://api.bitbucket.org/2.0/users/%7B39a35a46-ae0c-4017-91ec-1562988daa73%7D"},
+      "html": {"href": "https://bitbucket.org/%7B39a35a46-ae0c-4017-91ec-1562988daa73%7D/"},
+      "avatar": {"href": "https://secure.gravatar.com/avatar/94883264abf62a96cbe120877ab0f087?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAH-2.png"}},
+      "type": "user", "nickname": "Adam Harvey", "account_id": "70121:96070aaa-b19c-4c9e-82fe-cfdd7dca533e"}},
+      "summary": {"raw": "This is a merge commit from Sourcegraph''s test suite.",
+      "markup": "markdown", "html": "<p>This is a merge commit from Sourcegraph''s
+      test suite.</p>", "type": "rendered"}, "date": "2022-04-06T17:10:31+00:00",
+      "message": "This is a merge commit from Sourcegraph''s test suite.", "type":
+      "commit"}, "closed_by": {"display_name": "Sourcegraph Testing", "uuid": "{4b85b785-1433-4092-8512-20302f4a03be}",
+      "links": {"self": {"href": "https://api.bitbucket.org/2.0/users/%7B4b85b785-1433-4092-8512-20302f4a03be%7D"},
+      "html": {"href": "https://bitbucket.org/%7B4b85b785-1433-4092-8512-20302f4a03be%7D/"},
+      "avatar": {"href": "https://secure.gravatar.com/avatar/f964dc31564db8243e952bdaeabbe884?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FST-2.png"}},
+      "type": "user", "nickname": "Sourcegraph Testing", "account_id": "623316f53fbb880068413f6b"},
+      "author": {"display_name": "Adam Harvey", "uuid": "{39a35a46-ae0c-4017-91ec-1562988daa73}",
+      "links": {"self": {"href": "https://api.bitbucket.org/2.0/users/%7B39a35a46-ae0c-4017-91ec-1562988daa73%7D"},
+      "html": {"href": "https://bitbucket.org/%7B39a35a46-ae0c-4017-91ec-1562988daa73%7D/"},
+      "avatar": {"href": "https://secure.gravatar.com/avatar/94883264abf62a96cbe120877ab0f087?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FAH-2.png"}},
+      "type": "user", "nickname": "Adam Harvey", "account_id": "70121:96070aaa-b19c-4c9e-82fe-cfdd7dca533e"},
+      "summary": {"raw": "* commit 1\r\n* commit 2\r\n\r\n‌", "markup": "markdown",
+      "html": "<ul>\n<li>commit 1</li>\n<li>commit 2</li>\n</ul>\n<p>‌</p>", "type":
+      "rendered"}, "participants": [], "updated_on": "2022-04-06T17:10:35.140966+00:00"}'
+    headers:
+      Cache-Control:
+      - no-cache, no-store, must-revalidate, max-age=0
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Wed, 06 Apr 2022 17:10:35 GMT
+      Expires:
+      - Wed, 06 Apr 2022 17:10:35 GMT
+      Server:
+      - nginx
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Vary:
+      - Authorization, Origin, cookie, user-context
+      - Accept-Encoding
+      X-Accepted-Oauth-Scopes:
+      - pullrequest:write
+      X-B3-Traceid:
+      - f96d5893d220e2e9
+      X-Credential-Type:
+      - apppassword
+      X-Dc-Location:
+      - Micros
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Oauth-Scopes:
+      - pipeline, pullrequest:write, account
+      X-Render-Time:
+      - "5.08899402618"
+      X-Request-Count:
+      - "981"
+      X-Served-By:
+      - c3b07eed5c02
+      X-Static-Version:
+      - 48514960f20e
+      X-Usage-Input-Ops:
+      - "112"
+      X-Usage-Output-Ops:
+      - "0"
+      X-Usage-System-Time:
+      - "0.002019"
+      X-Usage-User-Time:
+      - "0.127600"
+      X-Version:
+      - 48514960f20e
+      X-View-Name:
+      - bitbucket.apps.pullrequests.api.v20.handlers.PullRequestMergeHandler
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: '{"message":"This is a merge commit from Sourcegraph''s test suite.","close_source_branch":true,"merge_strategy":"squash"}'
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests/4/merge
+    method: POST
+  response:
+    body: '{"type": "error", "error": {"fields": {"newstatus": ["This pull request
+      is already closed."]}, "message": "newstatus: This pull request is already closed."}}'
+    headers:
+      Cache-Control:
+      - no-cache, no-store, must-revalidate, max-age=0
+      Content-Length:
+      - "157"
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Wed, 06 Apr 2022 17:10:36 GMT
+      Expires:
+      - Wed, 06 Apr 2022 17:10:36 GMT
+      Server:
+      - nginx
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Vary:
+      - Authorization, Origin
+      X-Accepted-Oauth-Scopes:
+      - pullrequest:write
+      X-B3-Traceid:
+      - 7a57ba9fc7bca851
+      X-Credential-Type:
+      - apppassword
+      X-Dc-Location:
+      - Micros
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Oauth-Scopes:
+      - pipeline, pullrequest:write, account
+      X-Render-Time:
+      - "0.539712905884"
+      X-Request-Count:
+      - "1900"
+      X-Served-By:
+      - f964d0d0cdd5
+      X-Static-Version:
+      - 48514960f20e
+      X-Usage-Input-Ops:
+      - "64"
+      X-Usage-Output-Ops:
+      - "0"
+      X-Usage-System-Time:
+      - "0.000609"
+      X-Usage-User-Time:
+      - "0.046515"
+      X-Version:
+      - 48514960f20e
+      X-View-Name:
+      - bitbucket.apps.pullrequests.api.v20.handlers.PullRequestMergeHandler
+    status: 400 Bad Request
+    code: 400
+    duration: ""

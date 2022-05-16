@@ -94,7 +94,3 @@ func (r *CommitSearchResultResolver) ToFileMatch() (*FileMatchResolver, bool)   
 func (r *CommitSearchResultResolver) ToCommitSearchResult() (*CommitSearchResultResolver, bool) {
 	return r, true
 }
-
-func (r *CommitSearchResultResolver) ResultCount() int32 {
-	return 1
-}

@@ -59,26 +59,26 @@ func TestTextSearchRank(t *testing.T) {
 		subStringMatches bool
 		want             autogold.Value
 	}{
-		{"", true, autogold.Want("empty string", [2]interface{}{"0", []interface{}{}})},
-		{"mux Router", true, autogold.Want("basic", [2]interface{}{
+		{"", true, autogold.Want("empty string", [2]any{"0", []any{}})},
+		{"mux Router", true, autogold.Want("basic", [2]any{
 			"ts_rank_cd(column, $1, 2) + ts_rank_cd(column, $2, 2)",
-			[]interface{}{
+			[]any{
 				"mux:*",
 				"Router:*",
 			},
 		})},
-		{"public struct github.com/gorilla/mux mux.Router", true, autogold.Want("complex", [2]interface{}{
+		{"public struct github.com/gorilla/mux mux.Router", true, autogold.Want("complex", [2]any{
 			"ts_rank_cd(column, $1, 2) + ts_rank_cd(column, $2, 2) + ts_rank_cd(column, $3, 2) + ts_rank_cd(column, $4, 2)",
-			[]interface{}{
+			[]any{
 				"public:*",
 				"struct:*",
 				"github <-> . <-> com <-> / <-> gorilla <-> / <-> mux:*",
 				"mux <-> . <-> Router:*",
 			},
 		})},
-		{"public struct github.com/gorilla/mux mux.Router", false, autogold.Want("complex no substring matching", [2]interface{}{
+		{"public struct github.com/gorilla/mux mux.Router", false, autogold.Want("complex no substring matching", [2]any{
 			"ts_rank_cd(column, $1, 2) + ts_rank_cd(column, $2, 2) + ts_rank_cd(column, $3, 2) + ts_rank_cd(column, $4, 2)",
-			[]interface{}{
+			[]any{
 				"public",
 				"struct",
 				"github <-> . <-> com <-> / <-> gorilla <-> / <-> mux",
@@ -90,7 +90,7 @@ func TestTextSearchRank(t *testing.T) {
 		t.Run(tc.want.Name(), func(t *testing.T) {
 			q := TextSearchRank("column", tc.input, tc.subStringMatches)
 			query := q.Query(sqlf.PostgresBindVar)
-			got := [2]interface{}{query, q.Args()}
+			got := [2]any{query, q.Args()}
 			tc.want.Equal(t, got)
 		})
 	}
@@ -102,20 +102,20 @@ func TestTextSearchQuery(t *testing.T) {
 		subStringMatches bool
 		want             autogold.Value
 	}{
-		{"", true, autogold.Want("empty string", [2]interface{}{"false", []interface{}{}})},
-		{"mux Router", true, autogold.Want("basic", [2]interface{}{
+		{"", true, autogold.Want("empty string", [2]any{"false", []any{}})},
+		{"mux Router", true, autogold.Want("basic", [2]any{
 			"(column @@ $1 OR column @@ $2 OR column @@ $3 OR column @@ $4)",
-			[]interface{}{
+			[]any{
 				"mux:* <-> Router:*",
 				"mux:* <2> Router:*",
 				"mux:* <4> Router:*",
 				"mux:* <5> Router:*",
 			},
 		})},
-		{"github.com/gorilla/mux", true, autogold.Want("whole query terms are matched in exact sequence using <->", [2]interface{}{"(column @@ $1)", []interface{}{"github <-> . <-> com <-> / <-> gorilla <-> / <-> mux:*"}})},
-		{"github.com gorilla mux", true, autogold.Want("separate query terms are matched even if there is distance between using <N>", [2]interface{}{
+		{"github.com/gorilla/mux", true, autogold.Want("whole query terms are matched in exact sequence using <->", [2]any{"(column @@ $1)", []any{"github <-> . <-> com <-> / <-> gorilla <-> / <-> mux:*"}})},
+		{"github.com gorilla mux", true, autogold.Want("separate query terms are matched even if there is distance between using <N>", [2]any{
 			"(column @@ $1 OR column @@ $2 OR column @@ $3 OR column @@ $4 OR column @@ $5)",
-			[]interface{}{
+			[]any{
 				"github <-> . <-> com:*",
 				"gorilla:* <-> mux:*",
 				"gorilla:* <2> mux:*",
@@ -123,9 +123,9 @@ func TestTextSearchQuery(t *testing.T) {
 				"gorilla:* <5> mux:*",
 			},
 		})},
-		{"public struct github.com/gorilla/mux mux.Router", true, autogold.Want("complex", [2]interface{}{
+		{"public struct github.com/gorilla/mux mux.Router", true, autogold.Want("complex", [2]any{
 			"(column @@ $1 OR column @@ $2 OR column @@ $3 OR column @@ $4 OR column @@ $5 OR column @@ $6)",
-			[]interface{}{
+			[]any{
 				"github <-> . <-> com <-> / <-> gorilla <-> / <-> mux:*",
 				"mux <-> . <-> Router:*",
 				"public:* <-> struct:*",
@@ -134,9 +134,9 @@ func TestTextSearchQuery(t *testing.T) {
 				"public:* <5> struct:*",
 			},
 		})},
-		{"public struct github.com/gorilla/mux mux.Router", false, autogold.Want("complex no substring matching", [2]interface{}{
+		{"public struct github.com/gorilla/mux mux.Router", false, autogold.Want("complex no substring matching", [2]any{
 			"(column @@ $1 OR column @@ $2 OR column @@ $3 OR column @@ $4 OR column @@ $5 OR column @@ $6)",
-			[]interface{}{
+			[]any{
 				"github <-> . <-> com <-> / <-> gorilla <-> / <-> mux",
 				"mux <-> . <-> Router",
 				"public <-> struct",
@@ -150,7 +150,7 @@ func TestTextSearchQuery(t *testing.T) {
 		t.Run(tc.want.Name(), func(t *testing.T) {
 			q := TextSearchQuery("column", tc.input, tc.subStringMatches)
 			query := q.Query(sqlf.PostgresBindVar)
-			got := [2]interface{}{query, q.Args()}
+			got := [2]any{query, q.Args()}
 			tc.want.Equal(t, got)
 		})
 	}
@@ -161,35 +161,35 @@ func TestRepoSearchQuery(t *testing.T) {
 		possibleRepos []string
 		want          autogold.Value
 	}{
-		{nil, autogold.Want("empty repos list", [2]interface{}{"false", []interface{}{}})},
+		{nil, autogold.Want("empty repos list", [2]any{"false", []any{}})},
 		{
 			[]string{"golang/go"},
-			autogold.Want("unqualified repo, single", [2]interface{}{
+			autogold.Want("unqualified repo, single", [2]any{
 				"(column @@ $1)",
-				[]interface{}{"golang <-> / <-> go"},
+				[]any{"golang <-> / <-> go"},
 			}),
 		}, {
 			[]string{"github.com/golang/go"},
-			autogold.Want("qualified repo, single", [2]interface{}{
+			autogold.Want("qualified repo, single", [2]any{
 				"(column @@ $1)",
-				[]interface{}{"github <-> . <-> com <-> / <-> golang <-> / <-> go"},
+				[]any{"github <-> . <-> com <-> / <-> golang <-> / <-> go"},
 			}),
 		}, {
 			[]string{"golang/go", "net/http"},
-			autogold.Want("unqualified repo and not a repo, should use OR", [2]interface{}{
+			autogold.Want("unqualified repo and not a repo, should use OR", [2]any{
 				"(column @@ $1 OR column @@ $2)",
-				[]interface{}{"golang <-> / <-> go", "net <-> / <-> http"},
+				[]any{"golang <-> / <-> go", "net <-> / <-> http"},
 			}),
 		}, {
 			[]string{"golang/go", "sourcegraph/sourcegraph"},
-			autogold.Want("unqualified repo, multiple, should use OR", [2]interface{}{
+			autogold.Want("unqualified repo, multiple, should use OR", [2]any{
 				"(column @@ $1 OR column @@ $2)",
-				[]interface{}{"golang <-> / <-> go", "sourcegraph <-> / <-> sourcegraph"},
+				[]any{"golang <-> / <-> go", "sourcegraph <-> / <-> sourcegraph"},
 			}),
 		}, {
 			[]string{"github.com/golang/go", "sourcegraph/sourcegraph"},
-			autogold.Want("qualified and unqualified, should use OR", [2]interface{}{
-				"(column @@ $1 OR column @@ $2)", []interface{}{
+			autogold.Want("qualified and unqualified, should use OR", [2]any{
+				"(column @@ $1 OR column @@ $2)", []any{
 					"github <-> . <-> com <-> / <-> golang <-> / <-> go",
 					"sourcegraph <-> / <-> sourcegraph"},
 			}),
@@ -199,7 +199,7 @@ func TestRepoSearchQuery(t *testing.T) {
 		t.Run(tc.want.Name(), func(t *testing.T) {
 			q := RepoSearchQuery("column", tc.possibleRepos)
 			query := q.Query(sqlf.PostgresBindVar)
-			got := [2]interface{}{query, q.Args()}
+			got := [2]any{query, q.Args()}
 			tc.want.Equal(t, got)
 		})
 	}

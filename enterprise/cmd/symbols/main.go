@@ -22,6 +22,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -171,8 +173,8 @@ func NewGitserver(repositoryFetcher fetcher.RepositoryFetcher) Gitserver {
 	return Gitserver{repositoryFetcher: repositoryFetcher}
 }
 
-func (g Gitserver) LogReverseEach(repo string, db database.DB, commit string, n int, onLogEntry func(entry git.LogEntry) error) error {
-	return git.LogReverseEach(repo, db, commit, n, onLogEntry)
+func (g Gitserver) LogReverseEach(repo string, db database.DB, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error {
+	return gitserver.NewClient(db).LogReverseEach(repo, commit, n, onLogEntry)
 }
 
 func (g Gitserver) RevListEach(repo string, db database.DB, commit string, onCommit func(commit string) (shouldContinue bool, err error)) error {

@@ -6,11 +6,11 @@ import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { setupExtensionMocking, simpleHoverProvider } from '@sourcegraph/shared/src/testing/integration/mockExtension'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
-import { retry } from '@sourcegraph/shared/src/testing/utils'
+import { readEnvironmentBoolean, readEnvironmentString, retry } from '@sourcegraph/shared/src/testing/utils'
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 
 import { BrowserIntegrationTestContext, createBrowserIntegrationTestContext } from './context'
-import { closeInstallPageTab } from './shared'
+import { closeInstallPageTab, percySnapshot } from './shared'
 
 describe('GitHub', () => {
     let driver: Driver
@@ -37,7 +37,12 @@ describe('GitHub', () => {
             directory: __dirname,
         })
 
-        mockUrls(['https://api.github.com/_private/browser/*', 'https://collector.github.com/*path'])
+        mockUrls([
+            'https://api.github.com/_private/browser/*',
+            'https://collector.github.com/*path',
+            'https://github.com/favicon.ico',
+            'https://github.githubassets.com/favicons/*path',
+        ])
 
         testContext.server.any('https://api.github.com/repos/*').intercept((request, response) => {
             response
@@ -244,10 +249,6 @@ describe('GitHub', () => {
                 hasRedirectedToDefinition = true
             })
 
-        testContext.server.get('https://github.com/favicon.ico').intercept((request, response) => {
-            response.sendStatus(200)
-        })
-
         const openPageAndGetToken = async () => {
             await driver.page.goto(
                 'https://github.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go'
@@ -285,6 +286,8 @@ describe('GitHub', () => {
                 timeout: 6000,
             },
         })
+
+        await percySnapshot(driver.page, 'Browser extension: GitHub - blob view with code intel popup')
 
         // 2. Check that token click does not do anything by default
         await token.click()
@@ -757,57 +760,16 @@ describe('GitHub', () => {
     describe('Search pages', () => {
         const sourcegraphSearchPage = 'https://sourcegraph.com/search'
 
-        describe('Simple and advanced search pages', () => {
-            beforeEach(() => {
-                mockUrls(['https://github.githubassets.com/favicons/*path'])
-            })
+        const pages = [
+            { name: 'Simple search page', url: 'https://github.com/search' },
+            { name: 'Advanced search page', url: 'https://github.com/search/advanced' },
+        ]
 
-            const pages = ['https://github.com/search', 'https://github.com/search/advanced']
-
-            it('render "Search on Sourcegraph" button', async () => {
-                for (const page of pages) {
+        for (const page of pages) {
+            describe(page.name, () => {
+                it('if search input has value "Search on Sourcegraph" click navigates to Sourcegraph search page with type "repo" and search query', async () => {
                     await driver.newPage()
-                    await driver.page.goto(page)
-
-                    const linkToSourcegraph = await driver.page.waitForSelector(
-                        '[data-testid="search-on-sourcegraph"]',
-                        { timeout: 3000 }
-                    )
-
-                    assert(linkToSourcegraph, 'Expected link to Sourcegraph search page exists')
-                }
-            })
-
-            it('if search input is empty "Search on Sourcegraph" click navigates to Sourcegraph search page with type "repo" and empty search query', async () => {
-                for (const page of pages) {
-                    await driver.newPage()
-                    await driver.page.goto(page)
-
-                    const linkToSourcegraph = await driver.page.waitForSelector(
-                        '[data-testid="search-on-sourcegraph"]',
-                        { timeout: 3000 }
-                    )
-                    let hasRedirectedToSourcegraphSearch = false
-                    testContext.server.get(sourcegraphSearchPage).intercept(request => {
-                        if (request.query.q === 'type:repo') {
-                            hasRedirectedToSourcegraphSearch = true
-                        }
-                    })
-
-                    await linkToSourcegraph?.click()
-                    await driver.page.waitForTimeout(3000)
-
-                    assert(
-                        hasRedirectedToSourcegraphSearch,
-                        'Expected to be redirected to Sourcegraph search page with type "repo" and empty query'
-                    )
-                }
-            })
-
-            it('if search input has value "Search on Sourcegraph" click navigates to Sourcegraph search page with type "repo" and search query', async () => {
-                for (const page of pages) {
-                    await driver.newPage()
-                    await driver.page.goto(page)
+                    await driver.page.goto(page.url)
 
                     const query = 'Hello world!'
                     const searchInput = await driver.page.waitForSelector('#search_form input[type="text"]')
@@ -815,6 +777,9 @@ describe('GitHub', () => {
                         '[data-testid="search-on-sourcegraph"]',
                         { timeout: 3000 }
                     )
+
+                    assert(linkToSourcegraph, 'Expected link to Sourcegraph search page exists')
+
                     let hasRedirectedToSourcegraphSearch = false
                     testContext.server.get(sourcegraphSearchPage).intercept(request => {
                         if (['type:repo', query].every(value => request.query.q?.includes(value))) {
@@ -830,15 +795,18 @@ describe('GitHub', () => {
                         hasRedirectedToSourcegraphSearch,
                         'Expected to be redirected to Sourcegraph search page with type "repo" and search query'
                     )
-                }
+                })
             })
-        })
+        }
+
+        const isRecordMode = readEnvironmentString({ variable: 'POLLYJS_MODE', defaultValue: 'replay' }) === 'record'
+        const isCI = readEnvironmentBoolean({ variable: 'CI', defaultValue: false }) === true
 
         // global and repository search pages
-        describe('Search results page', () => {
+        // do not record in CI (see https://github.com/sourcegraph/sourcegraph/pull/34171)
+        ;(isRecordMode && isCI ? describe.skip : describe)('Search results page', () => {
             beforeEach(() => {
                 mockUrls([
-                    'https://github.githubassets.com/favicons/*path',
                     'https://github.com/_graphql/GetSuggestedNavigationDestinations',
                     'https://github.com/**/commits/checks-statuses-rollups',
                     'https://github.com/commits/badges',
@@ -856,16 +824,8 @@ describe('GitHub', () => {
             const repoSearchPage = `https://github.com/${repo}/search`
 
             const pages = [
-                {
-                    url: globalSearchPage,
-                    htmlResultLangSelector: 'ul.filter-list li:nth-child(1) a.filter-item',
-                    commitResultTypeSelector: 'nav.menu .menu-item:nth-child(3)',
-                },
-                {
-                    url: repoSearchPage,
-                    htmlResultLangSelector: 'ul.filter-list li:nth-child(2) a.filter-item',
-                    commitResultTypeSelector: 'nav.menu .menu-item:nth-child(2)',
-                },
+                { name: 'Global search page', url: globalSearchPage },
+                { name: 'Repo search page', url: repoSearchPage },
             ]
 
             const viewportM = { width: 768, height: 1024 }
@@ -873,11 +833,13 @@ describe('GitHub', () => {
 
             const viewportConfigs = [
                 {
+                    name: 'M',
                     viewport: viewportM,
                     sourcegraphButtonSelector: '#pageSearchFormSourcegraphButton [data-testid="search-on-sourcegraph"]',
                     searchInputSelector: ".application-main form.js-site-search-form input.form-control[name='q']",
                 },
                 {
+                    name: 'L',
                     viewport: viewportL,
                     searchInputSelector: "header form.js-site-search-form input.form-control[name='q']",
                     sourcegraphButtonSelector:
@@ -885,92 +847,61 @@ describe('GitHub', () => {
                 },
             ]
 
-            it('renders "Search on Sourcegraph" button', async () => {
-                for (const page of pages) {
-                    const url = buildGitHubSearchResultsURL(page.url, 'hello')
+            for (let index = 0; index < pages.length; index++) {
+                // Reduce the number of tests for search results pages.
+                // We record and run the global search results page test on a smaller viewport (M) and repo search results page on a larger (L).
+                // As these two pages follow the same logic and use similar search input elements per viewport we're still able to catch regressions, but reduce:
+                // - the number of calls to GitHub search API which can result in 429 HTTP Errors (Too Many Requests)
+                // - the size of recordings added to the repository.
+                const page = pages[index]
+                const viewportConfig = viewportConfigs[index]
 
-                    for (const { sourcegraphButtonSelector } of viewportConfigs) {
-                        await driver.page.goto(url)
+                describe(`${page.name}: viewport ${viewportConfig.name}`, () => {
+                    it('"Search on Sourcegraph" click navigates to Sourcegraph search page with proper result type, language and search query from search input', async () => {
+                        const initialQuery = 'fix'
 
-                        const linkToSourcegraph = await driver.page.waitForSelector(sourcegraphButtonSelector, {
-                            timeout: 3000,
-                        })
+                        const url = buildGitHubSearchResultsURL(page.url, initialQuery)
+                        const query = 'issue'
 
-                        assert(linkToSourcegraph, 'Expected link to Sourcegraph search page exists')
-                    }
-                }
-            })
-
-            it('"Search on Sourcegraph" click navigates to Sourcegraph search page with proper type and query', async () => {
-                const searchTerm = 'hello'
-
-                for (const page of pages) {
-                    const url = buildGitHubSearchResultsURL(page.url, searchTerm)
-
-                    for (const { viewport, sourcegraphButtonSelector } of viewportConfigs) {
                         await driver.newPage()
                         await driver.page.goto(url)
-                        await driver.page.setViewport(viewport)
-
-                        const linkToSourcegraph = await driver.page.waitForSelector(sourcegraphButtonSelector, {
-                            timeout: 3000,
-                        })
+                        await driver.page.setViewport(viewportConfig.viewport)
 
                         let hasRedirectedToSourcegraphSearch = false
-                        testContext.server.get(sourcegraphSearchPage).intercept(request => {
-                            if (page.url === globalSearchPage) {
-                                hasRedirectedToSourcegraphSearch = ['type:repo', searchTerm].every(value =>
-                                    request.query.q?.includes(value)
-                                )
-                            } else if (page.url === repoSearchPage) {
-                                hasRedirectedToSourcegraphSearch = [`repo:${repo}`, searchTerm].every(value =>
-                                    request.query.q?.includes(value)
-                                )
-                            }
-                        })
-
-                        await linkToSourcegraph?.click()
-                        await driver.page.waitForTimeout(3000)
-
-                        assert(
-                            hasRedirectedToSourcegraphSearch,
-                            'Expected to be redirected to Sourcegraph search page with proper result type and query'
-                        )
-                    }
-                }
-            })
-
-            it('"Search on Sourcegraph" click navigates to Sourcegraph search page with proper type and search query from search input', async () => {
-                const initialQuery = 'hello'
-
-                for (const page of pages) {
-                    const url = buildGitHubSearchResultsURL(page.url, initialQuery)
-                    const query = 'world'
-
-                    for (const { viewport, sourcegraphButtonSelector, searchInputSelector } of viewportConfigs) {
-                        await driver.newPage()
-                        await driver.page.goto(url.toString())
-                        await driver.page.setViewport(viewport)
-
-                        const searchInput = await driver.page.waitForSelector(searchInputSelector)
-                        const linkToSourcegraph = await driver.page.waitForSelector(sourcegraphButtonSelector, {
-                            timeout: 3000,
-                        })
-                        let hasRedirectedToSourcegraphSearch = false
+                        let lang = ''
                         testContext.server.get(sourcegraphSearchPage).intercept(request => {
                             const resultQuery = `${initialQuery} ${query}`
+                            const parameters = ['type:commit', `lang:${lang}`, resultQuery]
 
-                            if (page.url === globalSearchPage) {
-                                hasRedirectedToSourcegraphSearch = ['type:repo', resultQuery].every(value =>
-                                    request.query.q?.includes(value)
-                                )
-                            } else if (page.url === repoSearchPage) {
-                                hasRedirectedToSourcegraphSearch = [`repo:${repo}`, resultQuery].every(value =>
-                                    request.query.q?.includes(value)
-                                )
+                            if (page.url === repoSearchPage) {
+                                parameters.push(`repo:${repo}`)
                             }
+
+                            hasRedirectedToSourcegraphSearch = parameters.every(value =>
+                                request.query.q?.includes(value)
+                            )
                         })
 
+                        // filter results by language (handled by client-side routing)
+                        const langLinkHandle = await driver.page.$('ul.filter-list li:first-child a.filter-item')
+                        assert(langLinkHandle, 'Expected language result type link to exist')
+                        lang = await langLinkHandle.evaluate(node => {
+                            if (!(node instanceof HTMLAnchorElement) || !node.href) {
+                                return ''
+                            }
+
+                            return new URL(node.href).searchParams.get('l') || ''
+                        })
+                        await langLinkHandle.click()
+                        await driver.page.waitForTimeout(3000)
+
+                        // filter results by type (handled by client-side routing)
+                        const commitsLinkHandle = await driver.page.$("nav.menu a.menu-item[href*='type=commits']")
+                        assert(commitsLinkHandle, 'Expected commits result type link to exist')
+                        await commitsLinkHandle.click()
+                        await driver.page.waitForTimeout(3000)
+
+                        const searchInput = await driver.page.waitForSelector(viewportConfig.searchInputSelector)
                         // For some reason puppeteer when typing into input field prepends the exising value.
                         // To replicate the natural behavior we navigate to the end of exisiting value and then start typing.
                         await searchInput?.focus()
@@ -980,57 +911,23 @@ describe('GitHub', () => {
                         await searchInput?.type(` ${query}`, { delay: 100 })
                         await driver.page.keyboard.press('Escape') // if input focus opened dropdown, ensure the latter is closed
 
+                        const linkToSourcegraph = await driver.page.waitForSelector(
+                            viewportConfig.sourcegraphButtonSelector,
+                            {
+                                timeout: 3000,
+                            }
+                        )
+                        assert(linkToSourcegraph, 'Expected link to Sourcegraph search page exists')
                         await linkToSourcegraph?.click()
-                        await driver.page.waitForTimeout(1000)
+                        await driver.page.waitForTimeout(3000)
 
                         assert(
                             hasRedirectedToSourcegraphSearch,
-                            'Expected to be redirected to Sourcegraph search page with type "repo" and input search query'
+                            'Expected to be redirected to Sourcegraph search page with type "commit", language "HTML" and search query'
                         )
-                    }
-                }
-            })
-
-            it('"Search on Sourcegraph" click navigates to Sourcegraph search page with proper result type and language', async () => {
-                const searchTerm = 'hello'
-
-                for (const page of pages) {
-                    const url = buildGitHubSearchResultsURL(page.url, searchTerm)
-
-                    await driver.newPage()
-                    await driver.page.goto(url)
-                    await driver.page.setViewport(viewportL)
-
-                    let hasRedirectedToSourcegraphSearch = false
-                    testContext.server.get(sourcegraphSearchPage).intercept(request => {
-                        if (['type:commit', 'lang:HTML', searchTerm].every(value => request.query.q?.includes(value))) {
-                            hasRedirectedToSourcegraphSearch = true
-                        }
                     })
-
-                    // filter results by language (handled by client-side routing)
-                    const htmlButton = await driver.page.waitForSelector(page.htmlResultLangSelector)
-                    await htmlButton?.click()
-                    await driver.page.waitForTimeout(3000)
-
-                    // filter results by type (handled by client-side routing)
-                    const commitsButton = await driver.page.waitForSelector(page.commitResultTypeSelector)
-                    commitsButton?.click()
-                    await driver.page.waitForTimeout(3000)
-
-                    const linkToSourcegraph = await driver.page.waitForSelector(
-                        '#headerSearchInputSourcegraphButton [data-testid="search-on-sourcegraph"]',
-                        { timeout: 3000 }
-                    )
-                    await linkToSourcegraph?.click()
-                    await driver.page.waitForTimeout(3000)
-
-                    assert(
-                        hasRedirectedToSourcegraphSearch,
-                        'Expected to be redirected to Sourcegraph search page with type "commit", language "HTML" and search query'
-                    )
-                }
-            })
+                })
+            }
         })
     })
 })

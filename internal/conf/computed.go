@@ -268,6 +268,14 @@ func ExperimentalFeatures() schema.ExperimentalFeatures {
 	return *val
 }
 
+func Tracer() string {
+	ot := Get().ObservabilityTracing
+	if ot == nil {
+		return ""
+	}
+	return ot.Type
+}
+
 // AuthMinPasswordLength returns the value of minimum password length requirement.
 // If not set, it returns the default value 12.
 func AuthMinPasswordLength() int {
@@ -287,6 +295,30 @@ func AuthPasswordResetLinkExpiry() int {
 	val := Get().AuthPasswordResetLinkExpiry
 	if val <= 0 {
 		return defaultPasswordLinkExpiry
+	}
+	return val
+}
+
+// AuthLockout populates and returns the *schema.AuthLockout with default values
+// for fields that are not initialized.
+func AuthLockout() *schema.AuthLockout {
+	val := Get().AuthLockout
+	if val == nil {
+		return &schema.AuthLockout{
+			ConsecutivePeriod:      3600,
+			FailedAttemptThreshold: 5,
+			LockoutPeriod:          1800,
+		}
+	}
+
+	if val.ConsecutivePeriod <= 0 {
+		val.ConsecutivePeriod = 3600
+	}
+	if val.FailedAttemptThreshold <= 0 {
+		val.FailedAttemptThreshold = 5
+	}
+	if val.LockoutPeriod <= 0 {
+		val.LockoutPeriod = 1800
 	}
 	return val
 }

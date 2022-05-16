@@ -56,4 +56,29 @@ Additional notes on **{{ .Name }}**:
 {{ end -}}
 
 {{ end -}}
+
+{{ range .Enums -}}
+{{ $EnumName := .LongName -}}
+{{ if eq (splitList "." $EnumName | len) 1 }}
+
+##{{ repeat (splitList "." $EnumName | len) "#" }} {{ splitList "." $EnumName | last }}
+
+{{ .Description }}
+
+| Number | Name | Description |
+| ------ | ---- | ----------- |
+{{ range .Values -}}
+	| {{ .Number }} | {{ .Name }} | {{ splitList "\n\n" .Description | first | replace "\n" " " }}
+{{ end -}}
+
+{{ range .Values -}}
+{{ if ne (splitList "\n\n" .Description | len) 1 }}
+Additional notes on **{{ .Name }}**:
+
+{{ .Description }}
+{{ end -}}
+{{ end -}}
+{{ end -}}
+{{ end -}}
+
 {{ end -}}

@@ -14,6 +14,7 @@ import (
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -277,6 +278,204 @@ func TestAddExternalService(t *testing.T) {
 			// We want to check the namespace field is populated
 			if result.externalService.NamespaceOrgID != 42 {
 				t.Fatal("NamespaceOrgID: want 42 but got #{result.externalService.NamespaceOrgID}")
+			}
+		})
+	})
+
+	t.Run("cloud mode, org namespace requested", func(t *testing.T) {
+		envvar.MockSourcegraphDotComMode(true)
+		defer envvar.MockSourcegraphDotComMode(false)
+
+		userID := int32(3)
+		orgID := int32(45)
+		users := database.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: userID, SiteAdmin: true}, nil)
+
+		orgMembers := database.NewMockOrgMemberStore()
+		orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(
+			&types.OrgMembership{ID: 2, OrgID: orgID, UserID: 3},
+			nil,
+		)
+
+		featureFlags := database.NewMockFeatureFlagStore()
+		featureFlags.GetOrgFeatureFlagFunc.SetDefaultReturn(true, nil)
+
+		externalServices := database.NewMockExternalServiceStore()
+		externalServices.CreateFunc.SetDefaultReturn(nil)
+
+		db := database.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(users)
+		db.OrgMembersFunc.SetDefaultReturn(orgMembers)
+		db.ExternalServicesFunc.SetDefaultReturn(externalServices)
+		db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: userID})
+		marshaledOrgID := MarshalOrgID(orgID)
+
+		t.Run("service kind is not supported", func(t *testing.T) {
+			result, err := newSchemaResolver(db).AddExternalService(ctx, &addExternalServiceArgs{
+				Input: addExternalServiceInput{
+					Namespace:   &marshaledOrgID,
+					Kind:        extsvc.KindBitbucketCloud,
+					DisplayName: "Bitbucket",
+				},
+			})
+
+			if want := backend.ErrExternalServiceKindNotSupported; err != want {
+				t.Errorf("got err %v, want %v", err, want)
+			}
+			if result != nil {
+				t.Errorf("got result %v, want nil", result)
+			}
+		})
+
+		t.Run("org can still add external services", func(t *testing.T) {
+			svcs := []*types.ExternalService{
+				{Kind: extsvc.KindGitHub, NamespaceOrgID: orgID},
+			}
+
+			externalServices := database.NewMockExternalServiceStore()
+			externalServices.ListFunc.SetDefaultReturn(svcs, nil)
+			db.ExternalServicesFunc.SetDefaultReturn(externalServices)
+
+			_, err := newSchemaResolver(db).AddExternalService(ctx, &addExternalServiceArgs{
+				Input: addExternalServiceInput{
+					Namespace:   &marshaledOrgID,
+					Kind:        extsvc.KindGitLab,
+					DisplayName: "GitLab",
+					Config:      "{\n  \"url\": \"https://gitlab.com\",\n  \"token\": \"dfdf\",\n  \"projectQuery\": [\n    \"projects?membership=true&archived=no\"\n  ]\n}",
+				},
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+		})
+
+		t.Run("org has reached the limit for a given kind of service", func(t *testing.T) {
+			svcs := []*types.ExternalService{
+				{Kind: extsvc.KindGitLab, NamespaceOrgID: orgID},
+			}
+
+			externalServices := database.NewMockExternalServiceStore()
+			externalServices.ListFunc.SetDefaultReturn(svcs, nil)
+			db.ExternalServicesFunc.SetDefaultReturn(externalServices)
+
+			result, err := newSchemaResolver(db).AddExternalService(ctx, &addExternalServiceArgs{
+				Input: addExternalServiceInput{
+					Namespace:   &marshaledOrgID,
+					Kind:        extsvc.KindGitLab,
+					DisplayName: "GitLab",
+					Config:      "{\n  \"url\": \"https://gitlab.com\",\n  \"token\": \"dfdf\",\n  \"projectQuery\": [\n    \"projects?membership=true&archived=no\"\n  ]\n}",
+				},
+			})
+			if want := backend.ErrExternalServiceLimitPerKindReached; err != want {
+				t.Errorf("got err %v, want %v", err, want)
+			}
+			if result != nil {
+				t.Errorf("got result %v, want nil", result)
+			}
+		})
+	})
+
+	t.Run("cloud mode, user mode enabled, user namespace requested", func(t *testing.T) {
+		envvar.MockSourcegraphDotComMode(true)
+		defer envvar.MockSourcegraphDotComMode(false)
+
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				ExternalServiceUserMode: "public",
+			},
+		})
+		defer conf.Mock(nil)
+
+		userID := int32(4)
+		orgID := int32(46)
+		users := database.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: userID, SiteAdmin: true}, nil)
+		users.CurrentUserAllowedExternalServicesFunc.SetDefaultReturn(conf.ExternalServiceModePublic, nil)
+
+		orgMembers := database.NewMockOrgMemberStore()
+		orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(
+			&types.OrgMembership{ID: 2, OrgID: orgID, UserID: 3},
+			nil,
+		)
+
+		featureFlags := database.NewMockFeatureFlagStore()
+		featureFlags.GetOrgFeatureFlagFunc.SetDefaultReturn(true, nil)
+
+		externalServices := database.NewMockExternalServiceStore()
+		externalServices.CreateFunc.SetDefaultReturn(nil)
+
+		db := database.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(users)
+		db.OrgMembersFunc.SetDefaultReturn(orgMembers)
+		db.ExternalServicesFunc.SetDefaultReturn(externalServices)
+		db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: userID})
+		marshaledUserID := MarshalUserID(userID)
+
+		t.Run("service kind is not supported", func(t *testing.T) {
+			result, err := newSchemaResolver(db).AddExternalService(ctx, &addExternalServiceArgs{
+				Input: addExternalServiceInput{
+					Namespace:   &marshaledUserID,
+					Kind:        extsvc.KindBitbucketCloud,
+					DisplayName: "Bitbucket",
+				},
+			})
+
+			if want := backend.ErrExternalServiceKindNotSupported; err != want {
+				t.Errorf("got err %v, want %v", err, want)
+			}
+			if result != nil {
+				t.Errorf("got result %v, want nil", result)
+			}
+		})
+
+		t.Run("user can still add external services", func(t *testing.T) {
+			svcs := []*types.ExternalService{
+				{Kind: extsvc.KindGitHub, NamespaceOrgID: orgID},
+			}
+
+			externalServices := database.NewMockExternalServiceStore()
+			externalServices.ListFunc.SetDefaultReturn(svcs, nil)
+			db.ExternalServicesFunc.SetDefaultReturn(externalServices)
+
+			_, err := newSchemaResolver(db).AddExternalService(ctx, &addExternalServiceArgs{
+				Input: addExternalServiceInput{
+					Namespace:   &marshaledUserID,
+					Kind:        extsvc.KindGitLab,
+					DisplayName: "GitLab",
+					Config:      "{\n  \"url\": \"https://gitlab.com\",\n  \"token\": \"dfdf\",\n  \"projectQuery\": [\n    \"projects?membership=true&archived=no\"\n  ]\n}",
+				},
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+		})
+
+		t.Run("user has reached the limit for a given kind of service", func(t *testing.T) {
+			svcs := []*types.ExternalService{
+				{Kind: extsvc.KindGitLab, NamespaceOrgID: orgID},
+			}
+
+			externalServices := database.NewMockExternalServiceStore()
+			externalServices.ListFunc.SetDefaultReturn(svcs, nil)
+			db.ExternalServicesFunc.SetDefaultReturn(externalServices)
+
+			result, err := newSchemaResolver(db).AddExternalService(ctx, &addExternalServiceArgs{
+				Input: addExternalServiceInput{
+					Namespace:   &marshaledUserID,
+					Kind:        extsvc.KindGitLab,
+					DisplayName: "GitLab",
+					Config:      "{\n  \"url\": \"https://gitlab.com\",\n  \"token\": \"dfdf\",\n  \"projectQuery\": [\n    \"projects?membership=true&archived=no\"\n  ]\n}",
+				},
+			})
+			if want := backend.ErrExternalServiceLimitPerKindReached; err != want {
+				t.Errorf("got err %v, want %v", err, want)
+			}
+			if result != nil {
+				t.Errorf("got result %v, want nil", result)
 			}
 		})
 	})
@@ -947,7 +1146,7 @@ func TestExternalServices(t *testing.T) {
 		`,
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
-					Path:          []interface{}{"externalServices"},
+					Path:          []any{"externalServices"},
 					Message:       backend.ErrNoAccessExternalService.Error(),
 					ResolverError: backend.ErrNoAccessExternalService,
 				},
@@ -1126,7 +1325,7 @@ func TestSyncExternalService_ContextTimeout(t *testing.T) {
 	ctx := context.Background()
 	svc := &types.ExternalService{}
 
-	err := syncExternalService(ctx, svc, 0*time.Millisecond, repoupdater.NewClient(s.URL))
+	err := backend.SyncExternalService(ctx, svc, 0*time.Millisecond, repoupdater.NewClient(s.URL))
 
 	if err == nil {
 		t.Error("Expected error but got nil")

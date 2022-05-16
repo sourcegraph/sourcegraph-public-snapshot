@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import { useMemo } from 'react'
 
 import { number } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'

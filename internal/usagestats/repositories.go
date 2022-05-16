@@ -6,6 +6,7 @@ import (
 	"github.com/google/zoekt"
 	"github.com/google/zoekt/query"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -49,7 +50,7 @@ func GetRepositories(ctx context.Context, db database.DB) (*Repositories, error)
 		total.GitDirBytes += uint64(stat.GitDirBytes)
 	}
 
-	if search.Indexed() == nil {
+	if !conf.SearchIndexEnabled() {
 		return &total, nil
 	}
 

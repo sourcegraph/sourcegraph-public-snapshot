@@ -3,7 +3,9 @@
 exports[`LicenseExpirationAlert expired 1`] = `
 <DocumentFragment>
   <div
+    aria-live="assertive"
     class="alert alertWarning container align-items-center"
+    role="alert"
   >
     <div
       class="content"
@@ -55,7 +57,9 @@ exports[`LicenseExpirationAlert expired 1`] = `
 exports[`LicenseExpirationAlert expiring soon 1`] = `
 <DocumentFragment>
   <div
+    aria-live="assertive"
     class="alert alertWarning container align-items-center"
+    role="alert"
   >
     <div
       class="content"

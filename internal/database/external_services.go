@@ -193,16 +193,18 @@ var ExternalServiceKinds = map[string]ExternalServiceKind{
 	extsvc.KindAWSCodeCommit:   {CodeHost: true, JSONSchema: schema.AWSCodeCommitSchemaJSON},
 	extsvc.KindBitbucketCloud:  {CodeHost: true, JSONSchema: schema.BitbucketCloudSchemaJSON},
 	extsvc.KindBitbucketServer: {CodeHost: true, JSONSchema: schema.BitbucketServerSchemaJSON},
+	extsvc.KindGerrit:          {CodeHost: true, JSONSchema: schema.GerritSchemaJSON},
 	extsvc.KindGitHub:          {CodeHost: true, JSONSchema: schema.GitHubSchemaJSON},
 	extsvc.KindGitLab:          {CodeHost: true, JSONSchema: schema.GitLabSchemaJSON},
 	extsvc.KindGitolite:        {CodeHost: true, JSONSchema: schema.GitoliteSchemaJSON},
 	extsvc.KindGoModules:       {CodeHost: true, JSONSchema: schema.GoModulesSchemaJSON},
 	extsvc.KindJVMPackages:     {CodeHost: true, JSONSchema: schema.JVMPackagesSchemaJSON},
+	extsvc.KindNpmPackages:     {CodeHost: true, JSONSchema: schema.NpmPackagesSchemaJSON},
 	extsvc.KindOther:           {CodeHost: true, JSONSchema: schema.OtherExternalServiceSchemaJSON},
 	extsvc.KindPagure:          {CodeHost: true, JSONSchema: schema.PagureSchemaJSON},
-	extsvc.KindNpmPackages:     {CodeHost: true, JSONSchema: schema.NpmPackagesSchemaJSON},
 	extsvc.KindPerforce:        {CodeHost: true, JSONSchema: schema.PerforceSchemaJSON},
 	extsvc.KindPhabricator:     {CodeHost: true, JSONSchema: schema.PhabricatorSchemaJSON},
+	extsvc.KindPythonPackages:  {CodeHost: true, JSONSchema: schema.PythonPackagesSchemaJSON},
 }
 
 // ExternalServiceKind describes a kind of external service.
@@ -233,6 +235,9 @@ type ExternalServicesListOptions struct {
 	// When specified, only include external services with ID below this number
 	// (because we're sorting results by ID in descending order).
 	AfterID int64
+	// When specified, only include external services with that were updated after
+	// the specified time.
+	UpdatedAfter time.Time
 	// Possible values are ASC or DESC. Defaults to DESC.
 	OrderByDirection string
 	// When true, will only return services that have the cloud_default flag set to
@@ -281,6 +286,9 @@ func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 	}
 	if o.AfterID > 0 {
 		conds = append(conds, sqlf.Sprintf(`id < %d`, o.AfterID))
+	}
+	if !o.UpdatedAfter.IsZero() {
+		conds = append(conds, sqlf.Sprintf(`updated_at > %s`, o.UpdatedAfter))
 	}
 	if o.OnlyCloudDefault {
 		conds = append(conds, sqlf.Sprintf("cloud_default = true"))
@@ -1404,7 +1412,7 @@ func (e *externalServiceStore) recalculateFields(es *types.ExternalService, rawC
 	return nil
 }
 
-func configurationHasWebhooks(config interface{}) bool {
+func configurationHasWebhooks(config any) bool {
 	switch v := config.(type) {
 	case *schema.GitHubConnection:
 		return len(v.Webhooks) > 0

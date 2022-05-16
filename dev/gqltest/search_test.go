@@ -102,7 +102,8 @@ func TestSearch(t *testing.T) {
 // based search API. It only supports the methods that streaming supports.
 type searchClient interface {
 	AddExternalService(input gqltestutil.AddExternalServiceInput) (string, error)
-	DeleteExternalService(id string) error
+	UpdateExternalService(input gqltestutil.UpdateExternalServiceInput) (string, error)
+	DeleteExternalService(id string, async bool) error
 
 	SearchRepositories(query string) (gqltestutil.SearchRepositoryResults, error)
 	SearchFiles(query string) (*gqltestutil.SearchFileResults, error)
@@ -1276,7 +1277,6 @@ func testSearchClient(t *testing.T, client searchClient) {
 				counts: counts{Commit: 1},
 			},
 			{
-				// https://github.com/sourcegraph/sourcegraph/issues/21031
 				name:   `search diffs with file filter and time filters`,
 				query:  `repo:go-diff patterntype:literal type:diff lang:go before:"May 10 2020" after:"May 5 2020" unquotedOrigName`,
 				counts: counts{Commit: 1},
@@ -1360,7 +1360,30 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 	return func(t *testing.T) {
 		t.Helper()
 
+		// We are adding another GitHub external service here to make sure we don't
+		// pollute the other integration tests running earlier.
 		_, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
+			Kind:        extsvc.KindGitHub,
+			DisplayName: "gqltest-dependency-search",
+			Config: mustMarshalJSONString(struct {
+				URL                   string   `json:"url"`
+				Token                 string   `json:"token"`
+				Repos                 []string `json:"repos"`
+				RepositoryPathPattern string   `json:"repositoryPathPattern"`
+			}{
+				URL:   "https://ghe.sgdev.org/",
+				Token: *githubToken,
+				Repos: []string{
+					"sgtest/poetry-hw",
+				},
+				RepositoryPathPattern: "github.com/{nameWithOwner}",
+			}),
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		_, err = client.AddExternalService(gqltestutil.AddExternalServiceInput{
 			Kind:        extsvc.KindNpmPackages,
 			DisplayName: "gqltest-npm-search",
 			Config: mustMarshalJSONString(&schema.NpmPackagesConnection{
@@ -1388,7 +1411,43 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 			t.Fatal(err)
 		}
 
-		err = client.WaitForReposToBeCloned("npm/urql", "go/github.com/oklog/ulid/v2")
+		_, err = client.AddExternalService(gqltestutil.AddExternalServiceInput{
+			Kind:        extsvc.KindPythonPackages,
+			DisplayName: "gqltest-python-search",
+			Config: mustMarshalJSONString(&schema.PythonPackagesConnection{
+				Urls: []string{"https://pypi.org/simple"},
+				Dependencies: []string{
+					"rich == 12.3.0",
+				},
+			}),
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		_, err = client.AddExternalService(gqltestutil.AddExternalServiceInput{
+			Kind:        extsvc.KindJVMPackages,
+			DisplayName: "gqltest-jvm-search",
+			Config: mustMarshalJSONString(&schema.JVMPackagesConnection{
+				Maven: &schema.Maven{
+					Dependencies: []string{
+						"com.google.guava:guava:19.0",
+						"com.google.guava:guava:21.0",
+					},
+				},
+			}),
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = client.WaitForReposToBeCloned(
+			"npm/urql",
+			"go/github.com/oklog/ulid/v2",
+			"maven/com.google.guava/guava",
+			"python/rich",
+			"github.com/sgtest/poetry-hw",
+		)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1404,12 +1463,14 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 			t.Run(tc.name+"/"+"repos", func(t *testing.T) {
 				began := time.Now()
 
-				const query = `(r:deps(^npm/urql$@v2.2.0) r:core|wonka) OR r:deps(oklog/ulid)`
+				const query = `(r:deps(^npm/urql$@v2.2.0) r:core|wonka) OR r:deps(oklog/ulid) OR (r:deps(^github\.com/sgtest/poetry-hw$) r:pluggy|attrs) `
 
 				want := []string{
 					"/go/github.com/pborman/getopt@v0.0.0-20170112200414-7148bc3a4c30",
 					"/npm/urql/core@v1.9.2",
 					"/npm/wonka@v4.0.7",
+					"/python/attrs@v21.4.0",
+					"/python/pluggy@v0.13.1",
 				}
 
 				for {
@@ -1455,7 +1516,7 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 				require.Zero(t, results.MatchCount)
 				require.Equal(t, results.Alert, &gqltestutil.SearchAlert{
 					Title:       "No dependency repositories found",
-					Description: "Dependency repos are cloned on-demand when first searched. Try again in a few seconds if you know the given repositories have dependencies.\n\nOnly npm dependencies from `package-lock.json` and `yarn.lock` files are currently supported.",
+					Description: "Dependency repos are cloned on-demand when first searched. Try again in a few seconds if you know the given repositories have dependencies.\n\nRead more about dependencies search [here](https://docs.sourcegraph.com/code_search/how-to/dependencies_search).",
 				})
 			})
 		}

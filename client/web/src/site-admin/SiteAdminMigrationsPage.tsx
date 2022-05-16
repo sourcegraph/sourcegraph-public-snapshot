@@ -13,7 +13,7 @@ import { parse as _parseVersion, SemVer } from 'semver'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, useObservable, Alert, Icon } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Alert, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../components/Collapsible'
 import { FilteredConnection, FilteredConnectionFilter, Connection } from '../components/FilteredConnection'
@@ -71,7 +71,9 @@ const UPGRADE_RANGE = 1
 /* How many (minor) versions we can downgrade at once. */
 const DOWNGRADE_RANGE = 1
 
-export const SiteAdminMigrationsPage: React.FunctionComponent<SiteAdminMigrationsPageProps> = ({
+export const SiteAdminMigrationsPage: React.FunctionComponent<
+    React.PropsWithChildren<SiteAdminMigrationsPageProps>
+> = ({
     fetchAllMigrations = defaultFetchAllMigrations,
     fetchSiteUpdateCheck = defaultFetchSiteUpdateCheck,
     now,
@@ -128,7 +130,7 @@ export const SiteAdminMigrationsPage: React.FunctionComponent<SiteAdminMigration
             ) : (
                 <>
                     <PageTitle title="Out of band migrations - Admin" />
-                    <h2>Out-of-band migrations</h2>
+                    <Typography.H2>Out-of-band migrations</Typography.H2>
 
                     <p>
                         Out-of-band migrations run in the background of the Sourcegraph instance convert data from an
@@ -163,7 +165,7 @@ interface MigrationBannersProps {
     fetchSiteUpdateCheck?: () => Observable<{ productVersion: string }>
 }
 
-const MigrationBanners: React.FunctionComponent<MigrationBannersProps> = ({
+const MigrationBanners: React.FunctionComponent<React.PropsWithChildren<MigrationBannersProps>> = ({
     migrations,
     fetchSiteUpdateCheck = defaultFetchSiteUpdateCheck,
 }) => {
@@ -202,7 +204,9 @@ interface MigrationInvalidBannerProps {
     migrations: OutOfBandMigrationFields[]
 }
 
-const MigrationInvalidBanner: React.FunctionComponent<MigrationInvalidBannerProps> = ({ migrations }) => (
+const MigrationInvalidBanner: React.FunctionComponent<React.PropsWithChildren<MigrationInvalidBannerProps>> = ({
+    migrations,
+}) => (
     <Alert variant="danger">
         <p>
             <Icon className="mr-2" as={AlertCircleIcon} />
@@ -224,7 +228,9 @@ interface MigrationUpgradeWarningBannerProps {
     migrations: OutOfBandMigrationFields[]
 }
 
-const MigrationUpgradeWarningBanner: React.FunctionComponent<MigrationUpgradeWarningBannerProps> = ({ migrations }) => (
+const MigrationUpgradeWarningBanner: React.FunctionComponent<
+    React.PropsWithChildren<MigrationUpgradeWarningBannerProps>
+> = ({ migrations }) => (
     <Alert variant="warning">
         <p>
             The next version of Sourcegraph removes support for reading an old data format. Your Sourcegraph instance
@@ -244,9 +250,9 @@ interface MigrationDowngradeWarningBannerProps {
     migrations: OutOfBandMigrationFields[]
 }
 
-const MigrationDowngradeWarningBanner: React.FunctionComponent<MigrationDowngradeWarningBannerProps> = ({
-    migrations,
-}) => (
+const MigrationDowngradeWarningBanner: React.FunctionComponent<
+    React.PropsWithChildren<MigrationDowngradeWarningBannerProps>
+> = ({ migrations }) => (
     <Alert variant="warning">
         <p>
             <Icon className="mr-2" as={WarningIcon} />
@@ -273,13 +279,13 @@ interface MigrationNodeProps {
     now?: () => Date
 }
 
-const MigrationNode: React.FunctionComponent<MigrationNodeProps> = ({ node, now }) => (
+const MigrationNode: React.FunctionComponent<React.PropsWithChildren<MigrationNodeProps>> = ({ node, now }) => (
     <React.Fragment key={node.id}>
         <span className={styles.separator} />
 
         <div className={classNames('d-flex flex-column', styles.information)}>
             <div>
-                <h3>{node.description}</h3>
+                <Typography.H3>{node.description}</Typography.H3>
 
                 <p className="m-0">
                     <span className="text-muted">Team</span> <strong>{node.team}</strong>{' '}

@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { boolean } from '@storybook/addon-knobs'
 import { Meta, Story } from '@storybook/react'
 import { of } from 'rxjs'

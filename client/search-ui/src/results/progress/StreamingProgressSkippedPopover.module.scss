@@ -30,6 +30,7 @@
 
     // Border should appear directly under the width of the icon
     // Halfway past the icon, minus half the border size
+    /* stylelint-disable scss/operator-no-newline-after */
     margin-left: calc(
         var(--icon-inline-size) / 2 - var(--streaming-skipped-item-message-border-size) / 2 +
             var(--streaming-skipped-item-button-margin)
@@ -39,6 +40,7 @@
         var(--icon-inline-size) / 2 - var(--streaming-skipped-item-message-border-size) / 2 +
             var(--streaming-skipped-item-button-margin)
     );
+    /* stylelint-enable scss/operator-no-newline-after */
 
     margin-right: var(--streaming-skipped-item-button-margin);
 }

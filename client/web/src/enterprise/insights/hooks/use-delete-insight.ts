@@ -3,11 +3,10 @@ import { useCallback, useContext, useState } from 'react'
 import { ErrorLike } from '@sourcegraph/common'
 
 import { eventLogger } from '../../../tracking/eventLogger'
-import { CodeInsightsBackendContext } from '../core/backend/code-insights-backend-context'
-import { Insight } from '../core/types'
+import { CodeInsightsBackendContext, Insight } from '../core'
 import { getTrackingTypeByInsightType } from '../pings'
 
-type DeletionInsight = Pick<Insight, 'id' | 'title' | 'type'>
+type DeletionInsight = Pick<Insight, 'id' | 'type'>
 
 export interface UseDeleteInsightAPI {
     delete: (insight: DeletionInsight) => Promise<void>
@@ -27,10 +26,8 @@ export function useDeleteInsight(): UseDeleteInsightAPI {
 
     const handleDelete = useCallback(
         async (insight: DeletionInsight) => {
-            const shouldDelete = window.confirm(`Are you sure you want to delete the insight "${insight.title}"?`)
-
             // Prevent double call if we already have ongoing request
-            if (loading || !shouldDelete) {
+            if (loading) {
                 return
             }
 

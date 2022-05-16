@@ -44,7 +44,7 @@ const getReposForCodeHost = (selectedRepos: MinSelectedRepo[] = [], codeHostId: 
           }, [] as string[])
         : []
 
-export const InviteCollaborators: React.FunctionComponent<InviteCollaborators> = ({
+export const InviteCollaborators: React.FunctionComponent<React.PropsWithChildren<InviteCollaborators>> = ({
     user,
     repoSelectionMode,
     setSelectedSearchContextSpec,

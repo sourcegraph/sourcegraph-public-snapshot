@@ -4,13 +4,28 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/lockfiles"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/store"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 type Store interface {
-	ListDependencyRepos(ctx context.Context, opts store.ListDependencyReposOpts) ([]store.DependencyRepo, error)
-	UpsertDependencyRepos(ctx context.Context, deps []store.DependencyRepo) ([]store.DependencyRepo, error)
+	LockfileDependencies(ctx context.Context, repoName, commit string) ([]shared.PackageDependency, bool, error)
+	UpsertLockfileDependencies(ctx context.Context, repoName, commit string, deps []shared.PackageDependency) error
+	ListDependencyRepos(ctx context.Context, opts store.ListDependencyReposOpts) ([]Repo, error)
+	UpsertDependencyRepos(ctx context.Context, deps []Repo) ([]Repo, error)
+	DeleteDependencyReposByID(ctx context.Context, ids ...int) error
+}
+
+type localGitService interface {
+	GetCommits(ctx context.Context, repoCommits []api.RepoCommit, ignoreErrors bool) ([]*gitdomain.Commit, error)
+}
+
+type GitService interface {
+	localGitService
+	lockfiles.GitService
 }
 
 type LockfilesService interface {

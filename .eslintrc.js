@@ -14,7 +14,7 @@ const config = {
       jsx: true,
     },
     EXPERIMENTAL_useSourceOfProjectReferenceRedirect: true,
-    project: __dirname + '/tsconfig.json',
+    project: __dirname + '/tsconfig.eslint.json',
   },
   settings: {
     react: {
@@ -71,6 +71,11 @@ const config = {
             message:
               'Our Zustand stores should be created in a single place. Create this store in client/web/src/stores',
           },
+          {
+            name: 'reactstrap',
+            message:
+              'Please use components from the Wildcard component library instead. We work on removing `reactstrap` dependency.',
+          },
         ],
         patterns: [
           {
@@ -113,6 +118,30 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
             element: 'a',
             message: 'Use the <Link /> component from @sourcegraph/wildcard instead.',
           },
+          {
+            element: 'h1',
+            message: 'Use the <Typography.H1 /> component from @sourcegraph/wildcard instead.',
+          },
+          {
+            element: 'h2',
+            message: 'Use the <Typography.H2 /> component from @sourcegraph/wildcard instead.',
+          },
+          {
+            element: 'h3',
+            message: 'Use the <Typography.H3 /> component from @sourcegraph/wildcard instead.',
+          },
+          {
+            element: 'h4',
+            message: 'Use the <Typography.H4 /> component from @sourcegraph/wildcard instead.',
+          },
+          {
+            element: 'h5',
+            message: 'Use the <Typography.H5 /> component from @sourcegraph/wildcard instead.',
+          },
+          {
+            element: 'h6',
+            message: 'Use the <Typography.H6 /> component from @sourcegraph/wildcard instead.',
+          },
         ],
       },
     ],
@@ -132,6 +161,17 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
       },
     ],
     'react/jsx-no-target-blank': ['error', { allowReferrer: true }],
+    'no-restricted-syntax': [
+      'warn',
+      {
+        selector: 'CallExpression[callee.name="useLocalStorage"]',
+        message:
+          'Consider using useTemporarySetting instead of useLocalStorage so settings are synced when users log in elsewhere. More info at https://docs.sourcegraph.com/dev/background-information/web/temporary_settings',
+      },
+    ],
+    // https://reactjs.org/blog/2020/09/22/introducing-the-new-jsx-transform.html#eslint
+    'react/jsx-uses-react': 'off',
+    'react/react-in-jsx-scope': 'off',
   },
   overrides: [
     {

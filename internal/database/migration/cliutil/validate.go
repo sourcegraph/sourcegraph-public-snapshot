@@ -1,40 +1,40 @@
 package cliutil
 
 import (
-	"context"
 	"flag"
-	"fmt"
-	"sort"
-	"strings"
 
-	"github.com/peterbourgon/ff/v3/ffcli"
+	"github.com/urfave/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func Validate(commandName string, factory RunnerFactory, out *output.Output) *ffcli.Command {
-	var (
-		flagSet        = flag.NewFlagSet(fmt.Sprintf("%s validate", commandName), flag.ExitOnError)
-		schemaNameFlag = flagSet.String("db", "all", `The target schema(s) to validate. Comma-separated values are accepted. Supply "all" (the default) to validate all schemas.`)
-	)
+func Validate(commandName string, factory RunnerFactory, outFactory func() *output.Output) *cli.Command {
+	flags := []cli.Flag{
+		&cli.StringSliceFlag{
+			Name:  "db",
+			Usage: "The target `schema(s)` to modify. Comma-separated values are accepted. Supply \"all\" to migrate all schemas.",
+			Value: cli.NewStringSlice("all"),
+		},
+	}
 
-	exec := func(ctx context.Context, args []string) error {
-		if len(args) != 0 {
+	action := func(cmd *cli.Context) error {
+		out := outFactory()
+
+		if cmd.NArg() != 0 {
 			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments"))
 			return flag.ErrHelp
 		}
 
-		schemaNames := strings.Split(*schemaNameFlag, ",")
-		if len(schemaNames) == 0 {
-			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: supply a schema via -db"))
-			return flag.ErrHelp
-		}
-		if len(schemaNames) == 1 && schemaNames[0] == "all" {
-			schemaNames = schemas.SchemaNames
-		}
-		sort.Strings(schemaNames)
+		var (
+			schemaNames = cmd.StringSlice("db")
+		)
 
+		schemaNames, err := parseSchemaNames(schemaNames, out)
+		if err != nil {
+			return err
+		}
+
+		ctx := cmd.Context
 		r, err := factory(ctx, schemaNames)
 		if err != nil {
 			return err
@@ -43,12 +43,11 @@ func Validate(commandName string, factory RunnerFactory, out *output.Output) *ff
 		return r.Validate(ctx, schemaNames...)
 	}
 
-	return &ffcli.Command{
-		Name:       "validate",
-		ShortUsage: fmt.Sprintf("%s validate [-db=<schema>]", commandName),
-		ShortHelp:  "Validate the current schema",
-		FlagSet:    flagSet,
-		Exec:       exec,
-		LongHelp:   ConstructLongHelp(),
+	return &cli.Command{
+		Name:        "validate",
+		Usage:       "Validate the current schema",
+		Description: ConstructLongHelp(),
+		Flags:       flags,
+		Action:      action,
 	}
 }

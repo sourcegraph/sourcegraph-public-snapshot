@@ -1,9 +1,9 @@
-import React, { FunctionComponent, useCallback, useState } from 'react'
+import { FunctionComponent, useCallback, useState } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { gql, useLazyQuery, useMutation } from '@sourcegraph/http-client'
 import { IFeatureFlagOverride } from '@sourcegraph/shared/src/schema'
-import { Input, Alert } from '@sourcegraph/wildcard'
+import { Input, Alert, Typography } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../components/LoaderButton'
 import { Maybe, OrganizationVariables } from '../../graphql-operations'
@@ -51,7 +51,7 @@ export const CREATE_FEATURE_FLAG_OVERRIDE = gql`
  * This implementation is a quick hack for making our lives easier while in early access
  * stage. IMO it's not worth a lot of effort as it is throwaway work once we are in GA.
  */
-export const EarlyAccessOrgsCodeForm: FunctionComponent<any> = () => {
+export const EarlyAccessOrgsCodeForm: FunctionComponent<React.PropsWithChildren<any>> = () => {
     const [name, setName] = useState<string>('')
 
     const [updateFeatureFlag, { data, loading: flagLoading, error: flagError }] = useMutation<
@@ -108,7 +108,7 @@ export const EarlyAccessOrgsCodeForm: FunctionComponent<any> = () => {
 
     return (
         <Form onSubmit={onSubmit}>
-            <h2>Organizations code early access</h2>
+            <Typography.H2>Organizations code early access</Typography.H2>
             <p>Type in an organization name to enable early access for organization code host and repositories.</p>
 
             <div className="d-flex justify-content-start align-items-end">

@@ -6,7 +6,7 @@ import { useLocation, useHistory } from 'react-router'
 import { ErrorLike } from '@sourcegraph/common'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Alert, Link } from '@sourcegraph/wildcard'
+import { Alert, Link, Typography } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BrandLogo } from '../components/branding/BrandLogo'
@@ -24,7 +24,6 @@ import { useExternalServices } from './useExternalServices'
 import { CodeHostsConnection } from './welcome/CodeHostsConnection'
 import { Footer } from './welcome/Footer'
 import { InviteCollaborators } from './welcome/InviteCollaborators/InviteCollaborators'
-import { TeamsBeta } from './welcome/TeamsBeta'
 
 import styles from './PostSignUpPage.module.scss'
 import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
@@ -54,7 +53,7 @@ export type FinishWelcomeFlow = (event: React.MouseEvent<HTMLElement>, payload: 
 
 export const getPostSignUpEvent = (action?: string): string => `PostSignUp${action ? '_' + action : ''}`
 
-export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
+export const PostSignUpPage: FunctionComponent<React.PropsWithChildren<PostSignUpPage>> = ({
     authenticatedUser: user,
     context,
     telemetryService,
@@ -137,23 +136,22 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                     className="text-left"
                     body={
                         <div className="pb-1 d-flex flex-column align-items-center w-100">
-                            <div className={styles.progress}>
+                            <div className={styles.container}>
                                 {hasErrors && (
                                     <Alert className="mb-4" role="alert" variant="danger">
                                         Sorry, something went wrong. Try refreshing the page or{' '}
                                         <Link to={PageRoutes.Search}>skip to code search</Link>.
                                     </Alert>
                                 )}
-                                <h2>Get started with Sourcegraph</h2>
+                                <Typography.H2>Get started with Sourcegraph</Typography.H2>
                                 <p className="text-muted pb-3">Follow these steps to set up your account</p>
                             </div>
                             <div className="mt-2 pb-3 d-flex flex-column align-items-center w-100">
-                                <Steps initialStep={debug ? parseInt(debug, 10) : 1} totalSteps={4}>
-                                    <StepList numeric={true} className={styles.progress}>
+                                <Steps initialStep={debug ? parseInt(debug, 10) : 1} totalSteps={3}>
+                                    <StepList numeric={true} className={styles.container}>
                                         <Step borderColor="purple">Connect with code hosts</Step>
                                         <Step borderColor="blue">Add repositories</Step>
-                                        <Step borderColor="orange">Teams beta</Step>
-                                        <Step borderColor="green">Invite collaborators</Step>
+                                        <Step borderColor="orange">Invite collaborators</Step>
                                     </StepList>
                                     <StepPanels>
                                         <StepPanel>
@@ -174,7 +172,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                         </StepPanel>
                                         <StepPanel>
                                             <div className={classNames('mt-3', styles.container)}>
-                                                <h3>Add repositories</h3>
+                                                <Typography.H3>Add repositories</Typography.H3>
                                                 <p className="text-muted mb-4">
                                                     Choose repositories you own or collaborate on from your code hosts.
                                                     We’ll sync and index these repositories so you can search your code
@@ -197,13 +195,6 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                                 />
                                                 <Footer onFinish={finishWelcomeFlow} isSkippable={true} />
                                             </div>
-                                        </StepPanel>
-                                        <StepPanel>
-                                            <TeamsBeta
-                                                onFinish={finishWelcomeFlow}
-                                                onError={onError}
-                                                username={user.username}
-                                            />
                                         </StepPanel>
                                         <StepPanel>
                                             <InviteCollaborators

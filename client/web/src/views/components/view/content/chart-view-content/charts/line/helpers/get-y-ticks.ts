@@ -10,10 +10,13 @@ const HEIGHT_PER_TICK = 40
  * Number of lines (ticks) is based on chart height value and our expectation
  * around label density on the chart (no more than 1 tick in each 40px, see
  * HEIGHT_PER_TICK const)
+ *
+ * Ticks are constrained to integers.
  */
+
 export function getYTicks(scale: AnyD3Scale, height: number): number[] {
     // Generate max density ticks (d3 scale generation)
-    const ticks: number[] = getTicks(scale)
+    const ticks: number[] = getTicks(scale).filter(Number.isInteger)
 
     if (ticks.length <= 2) {
         return ticks

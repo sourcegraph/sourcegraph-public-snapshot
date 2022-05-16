@@ -20,10 +20,9 @@ interface NotebookAddBlockButtonsProps {
     index: number
 }
 
-export const NotebookAddBlockButtons: React.FunctionComponent<NotebookAddBlockButtonsProps> = ({
-    index,
-    onAddBlock,
-}) => {
+export const NotebookAddBlockButtons: React.FunctionComponent<
+    React.PropsWithChildren<NotebookAddBlockButtonsProps>
+> = ({ index, onAddBlock }) => {
     const showComputeComponent = useExperimentalFeatures(features => features.showComputeComponent)
     const addBlock = useCallback((blockInput: BlockInput) => onAddBlock(index, blockInput), [index, onAddBlock])
     return (
@@ -31,6 +30,7 @@ export const NotebookAddBlockButtons: React.FunctionComponent<NotebookAddBlockBu
             <Button
                 className={styles.addBlockButton}
                 data-tooltip="Add Markdown text"
+                aria-label="Add markdown"
                 onClick={() => addBlock({ type: 'md', input: { text: '', initialFocusInput: true } })}
                 data-testid="add-md-block"
             >
@@ -39,6 +39,7 @@ export const NotebookAddBlockButtons: React.FunctionComponent<NotebookAddBlockBu
             <Button
                 className={styles.addBlockButton}
                 data-tooltip="Add a Sourcegraph query"
+                aria-label="Add query"
                 onClick={() => addBlock({ type: 'query', input: { query: '', initialFocusInput: true } })}
                 data-testid="add-query-block"
             >
@@ -47,6 +48,7 @@ export const NotebookAddBlockButtons: React.FunctionComponent<NotebookAddBlockBu
             <Button
                 className={styles.addBlockButton}
                 data-tooltip="Add code from a file"
+                aria-label="Add code from file"
                 onClick={() => addBlock({ type: 'file', input: EMPTY_FILE_BLOCK_INPUT })}
                 data-testid="add-file-block"
             >
@@ -55,6 +57,7 @@ export const NotebookAddBlockButtons: React.FunctionComponent<NotebookAddBlockBu
             <Button
                 className={styles.addBlockButton}
                 data-tooltip="Add a symbol"
+                aria-label="Add symbol"
                 onClick={() => addBlock({ type: 'symbol', input: EMPTY_SYMBOL_BLOCK_INPUT })}
                 data-testid="add-symbol-block"
             >
@@ -64,6 +67,7 @@ export const NotebookAddBlockButtons: React.FunctionComponent<NotebookAddBlockBu
                 <Button
                     className={styles.addBlockButton}
                     data-tooltip="Add compute block"
+                    aria-label="Add compute block"
                     onClick={() => addBlock({ type: 'compute', input: '' })}
                     data-testid="add-compute-block"
                 >

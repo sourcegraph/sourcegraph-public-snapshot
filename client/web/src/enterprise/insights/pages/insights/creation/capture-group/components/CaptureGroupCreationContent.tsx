@@ -8,7 +8,7 @@ import { useAsyncInsightTitleValidator } from '../../../../../components/form/ho
 import { useField } from '../../../../../components/form/hooks/useField'
 import { FormChangeEvent, SubmissionErrors, useForm } from '../../../../../components/form/hooks/useForm'
 import { createRequiredValidator } from '../../../../../components/form/validators'
-import { Insight } from '../../../../../core/types'
+import { Insight } from '../../../../../core'
 import {
     repositoriesExistValidator,
     repositoriesFieldValidator,
@@ -44,7 +44,9 @@ interface CaptureGroupCreationContentProps {
     onCancel: () => void
 }
 
-export const CaptureGroupCreationContent: React.FunctionComponent<CaptureGroupCreationContentProps> = props => {
+export const CaptureGroupCreationContent: React.FunctionComponent<
+    React.PropsWithChildren<CaptureGroupCreationContentProps>
+> = props => {
     const { mode, className, initialValues = {}, onSubmit, onChange = noop, onCancel, insight } = props
 
     // Search query validators

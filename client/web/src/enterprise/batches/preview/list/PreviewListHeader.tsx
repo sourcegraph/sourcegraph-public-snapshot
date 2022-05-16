@@ -1,5 +1,7 @@
 import React from 'react'
 
+import { Typography } from '@sourcegraph/wildcard'
+
 import { InputTooltip } from '../../../../components/InputTooltip'
 
 export interface PreviewListHeaderProps {
@@ -7,7 +9,7 @@ export interface PreviewListHeaderProps {
     toggleSelectAll?: () => void
 }
 
-export const PreviewListHeader: React.FunctionComponent<PreviewListHeaderProps> = ({
+export const PreviewListHeader: React.FunctionComponent<React.PropsWithChildren<PreviewListHeaderProps>> = ({
     allSelected,
     toggleSelectAll,
 }) => (
@@ -25,13 +27,23 @@ export const PreviewListHeader: React.FunctionComponent<PreviewListHeaderProps> 
                 <span className="pl-2 d-block d-sm-none">Select all</span>
             </div>
         )}
-        <h5 className="p-2 d-none d-sm-block text-uppercase text-center">Current state</h5>
-        <h5 className="d-none d-sm-block text-uppercase text-center">
+        <Typography.H5 as={Typography.H3} className="p-2 d-none d-sm-block text-uppercase text-center">
+            Current state
+        </Typography.H5>
+        <Typography.H5 as={Typography.H3} className="d-none d-sm-block text-uppercase text-center">
             +<br />-
-        </h5>
-        <h5 className="p-2 d-none d-sm-block text-uppercase text-nowrap">Actions</h5>
-        <h5 className="p-2 d-none d-sm-block text-uppercase text-nowrap">Changeset information</h5>
-        <h5 className="p-2 d-none d-sm-block text-uppercase text-center text-nowrap">Commit changes</h5>
-        <h5 className="p-2 d-none d-sm-block text-uppercase text-center text-nowrap">Change state</h5>
+        </Typography.H5>
+        <Typography.H5 as={Typography.H3} className="p-2 d-none d-sm-block text-uppercase text-nowrap">
+            Actions
+        </Typography.H5>
+        <Typography.H5 as={Typography.H3} className="p-2 d-none d-sm-block text-uppercase text-nowrap">
+            Changeset information
+        </Typography.H5>
+        <Typography.H5 as={Typography.H3} className="p-2 d-none d-sm-block text-uppercase text-center text-nowrap">
+            Commit changes
+        </Typography.H5>
+        <Typography.H5 as={Typography.H3} className="p-2 d-none d-sm-block text-uppercase text-center text-nowrap">
+            Change state
+        </Typography.H5>
     </>
 )

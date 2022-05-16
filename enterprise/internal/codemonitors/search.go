@@ -3,11 +3,10 @@ package codemonitors
 import (
 	"bytes"
 	"context"
-	"encoding/binary"
 	"encoding/json"
-	"hash/fnv"
 	"net/http"
 	"net/url"
+	"sort"
 
 	"github.com/graphql-go/graphql/gqlerrors"
 	"github.com/opentracing/opentracing-go"
@@ -15,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/predicate"
 	"github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -55,7 +56,7 @@ func Settings(ctx context.Context) (_ *schema.Settings, err error) {
 		span.Finish()
 	}()
 
-	reqBody, err := json.Marshal(map[string]interface{}{"query": gqlSettingsQuery})
+	reqBody, err := json.Marshal(map[string]any{"query": gqlSettingsQuery})
 	if err != nil {
 		return nil, errors.Wrap(err, "marshal request body")
 	}
@@ -113,20 +114,45 @@ func Search(ctx context.Context, db database.DB, query string, monitorID int64, 
 	}
 
 	// Inline job creation so we can mutate the commit job before running it
-	jobArgs := searchClient.JobArgs(inputs)
-	plan, err := predicate.Expand(ctx, db, jobArgs, inputs.Plan)
+	clients := searchClient.JobClients()
+	plan, err := predicate.Expand(ctx, clients, inputs, inputs.Plan)
 	if err != nil {
 		return nil, err
 	}
 
-	planJob, err := job.FromExpandedPlan(jobArgs, plan, db)
+	planJob, err := jobutil.FromExpandedPlan(inputs, plan)
 	if err != nil {
 		return nil, err
 	}
 
 	if featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", false) {
-		hook := func(ctx context.Context, db database.DB, gs commit.GitserverClient, args *gitprotocol.SearchRequest, doSearch commit.DoSearchFunc) error {
-			return hookWithID(ctx, db, gs, args, doSearch, monitorID)
+		hook := func(ctx context.Context, db database.DB, gs commit.GitserverClient, args *gitprotocol.SearchRequest, repoID api.RepoID, doSearch commit.DoSearchFunc) error {
+			return hookWithID(ctx, db, gs, monitorID, repoID, args, doSearch)
+		}
+		{
+			// This block is a transitional block that can be removed in a
+			// future version. We need this block to exist when we transition
+			// from timestamp-based code monitors to commit-hash-based
+			// (repo-aware) code monitors.
+			//
+			// When we flip the switch to repo-aware, all existing code
+			// monitors will start executing as repo-aware code monitors.
+			// Without this block, this  would mean all repos would be detected
+			// as "unsearched" and we would start searching from the beginning
+			// of the repo's history, flooding every code monitor user with a
+			// notification with many results.
+			//
+			// Instead, this detects if this monitor has ever been run as a
+			// repo-aware monitor before and snapshots the current state of the
+			// searched repos rather than searching them.
+			hasAnyLastSearched, err := edb.NewEnterpriseDB(db).CodeMonitors().HasAnyLastSearched(ctx, monitorID)
+			if err != nil {
+				return nil, err
+			} else if !hasAnyLastSearched {
+				hook = func(ctx context.Context, db database.DB, gs commit.GitserverClient, args *gitprotocol.SearchRequest, repoID api.RepoID, _ commit.DoSearchFunc) error {
+					return snapshotHook(ctx, db, gs, args, monitorID, repoID)
+				}
+			}
 		}
 		planJob, err = addCodeMonitorHook(planJob, hook)
 		if err != nil {
@@ -136,7 +162,7 @@ func Search(ctx context.Context, db database.DB, query string, monitorID int64, 
 
 	// Execute the search
 	agg := streaming.NewAggregatingStream()
-	_, err = planJob.Run(ctx, db, agg)
+	_, err = planJob.Run(ctx, clients, agg)
 	if err != nil {
 		return nil, err
 	}
@@ -163,38 +189,46 @@ func Snapshot(ctx context.Context, db database.DB, query string, monitorID int64
 		return err
 	}
 
-	jobArgs := searchClient.JobArgs(inputs)
-	plan, err := predicate.Expand(ctx, db, jobArgs, inputs.Plan)
+	clients := searchClient.JobClients()
+	plan, err := predicate.Expand(ctx, clients, inputs, inputs.Plan)
 	if err != nil {
 		return err
 	}
 
-	planJob, err := job.FromExpandedPlan(jobArgs, plan, db)
+	planJob, err := jobutil.FromExpandedPlan(inputs, plan)
 	if err != nil {
 		return err
 	}
 
-	hook := func(ctx context.Context, db database.DB, gs commit.GitserverClient, args *gitprotocol.SearchRequest, _ commit.DoSearchFunc) error {
-		return snapshotHook(ctx, db, gs, args, monitorID)
+	hook := func(ctx context.Context, db database.DB, gs commit.GitserverClient, args *gitprotocol.SearchRequest, repoID api.RepoID, _ commit.DoSearchFunc) error {
+		return snapshotHook(ctx, db, gs, args, monitorID, repoID)
 	}
+
 	planJob, err = addCodeMonitorHook(planJob, hook)
 	if err != nil {
 		return err
 	}
 
-	_, err = planJob.Run(ctx, db, streaming.NewNullStream())
+	_, err = planJob.Run(ctx, clients, streaming.NewNullStream())
 	return err
 }
 
+var ErrInvalidMonitorQuery = errors.New("code monitor cannot use different patterns for different repos")
+
 func addCodeMonitorHook(in job.Job, hook commit.CodeMonitorHook) (_ job.Job, err error) {
-	return job.MapAtom(in, func(atom job.Job) job.Job {
+	commitSearchJobCount := 0
+	return jobutil.MapAtom(in, func(atom job.Job) job.Job {
 		switch typedAtom := atom.(type) {
-		case *commit.CommitSearch:
+		case *commit.CommitSearchJob:
+			commitSearchJobCount++
+			if commitSearchJobCount > 1 {
+				err = errors.Append(err, ErrInvalidMonitorQuery)
+			}
 			jobCopy := *typedAtom
 			jobCopy.CodeMonitorSearchWrapper = hook
 			return &jobCopy
-		case *repos.ComputeExcludedRepos:
-			// ComputeExcludedRepos is fine for code monitor jobs
+		case *repos.ComputeExcludedReposJob, *jobutil.NoopJob:
+			// ComputeExcludedReposJob is fine for code monitor jobs
 			return atom
 		default:
 			err = errors.Append(err, errors.Errorf("found invalid atom job type %T for code monitor search", atom))
@@ -207,9 +241,10 @@ func hookWithID(
 	ctx context.Context,
 	db database.DB,
 	gs commit.GitserverClient,
+	monitorID int64,
+	repoID api.RepoID,
 	args *gitprotocol.SearchRequest,
 	doSearch commit.DoSearchFunc,
-	monitorID int64,
 ) error {
 	cm := edb.NewEnterpriseDB(db).CodeMonitors()
 
@@ -220,10 +255,13 @@ func hookWithID(
 	}
 
 	// Look up the previously searched set of commit hashes
-	argsHash := hashArgs(args)
-	lastSearched, err := cm.GetLastSearched(ctx, monitorID, argsHash)
+	lastSearched, err := cm.GetLastSearched(ctx, monitorID, repoID)
 	if err != nil {
 		return err
+	}
+	if stringsEqual(commitHashes, lastSearched) {
+		// Early return if the repo hasn't changed since last search
+		return nil
 	}
 
 	// Merge requested hashes and excluded hashes
@@ -241,13 +279,15 @@ func hookWithID(
 
 	// Execute the search
 	err = doSearch(&argsCopy)
+	// ignore any errors from early cancellation
+	err = errors.Ignore(err, errors.IsContextError)
 	if err != nil {
 		return err
 	}
 
 	// If the search was successful, store the resolved hashes
 	// as the new "last searched" hashes
-	return cm.UpsertLastSearched(ctx, monitorID, argsHash, commitHashes)
+	return cm.UpsertLastSearched(ctx, monitorID, repoID, commitHashes)
 }
 
 func snapshotHook(
@@ -256,6 +296,7 @@ func snapshotHook(
 	gs commit.GitserverClient,
 	args *gitprotocol.SearchRequest,
 	monitorID int64,
+	repoID api.RepoID,
 ) error {
 	cm := edb.NewEnterpriseDB(db).CodeMonitors()
 
@@ -265,25 +306,7 @@ func snapshotHook(
 		return err
 	}
 
-	argsHash := hashArgs(args)
-	return cm.UpsertLastSearched(ctx, monitorID, argsHash, commitHashes)
-}
-
-func hashArgs(args *gitprotocol.SearchRequest) int64 {
-	hasher := fnv.New64()
-	hasher.Write([]byte(args.Repo))
-	for _, rev := range args.Revisions {
-		hasher.Write([]byte(rev.RevSpec))
-		hasher.Write([]byte{'|'})
-		hasher.Write([]byte(rev.RefGlob))
-		hasher.Write([]byte{'|'})
-		hasher.Write([]byte(rev.ExcludeRefGlob))
-	}
-	if args.Query != nil {
-		hasher.Write([]byte(args.Query.String()))
-	}
-	binary.Write(hasher, binary.LittleEndian, args.IncludeDiff)
-	return int64(hasher.Sum64())
+	return cm.UpsertLastSearched(ctx, monitorID, repoID, commitHashes)
 }
 
 func gqlURL(queryName string) (string, error) {
@@ -294,4 +317,20 @@ func gqlURL(queryName string) (string, error) {
 	u.Path = "/.internal/graphql"
 	u.RawQuery = queryName
 	return u.String(), nil
+}
+
+func stringsEqual(left, right []string) bool {
+	if len(left) != len(right) {
+		return false
+	}
+
+	sort.Strings(left)
+	sort.Strings(right)
+
+	for i := range left {
+		if right[i] != left[i] {
+			return false
+		}
+	}
+	return true
 }

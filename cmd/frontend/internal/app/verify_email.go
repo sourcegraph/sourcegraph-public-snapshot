@@ -89,7 +89,7 @@ func logEmailVerified(ctx context.Context, db database.DB, r *http.Request, user
 	database.SecurityEventLogs(db).LogEvent(ctx, event)
 }
 
-func httpLogAndError(w http.ResponseWriter, msg string, code int, errArgs ...interface{}) {
+func httpLogAndError(w http.ResponseWriter, msg string, code int, errArgs ...any) {
 	log15.Error(msg, errArgs...)
 	http.Error(w, msg, code)
 }

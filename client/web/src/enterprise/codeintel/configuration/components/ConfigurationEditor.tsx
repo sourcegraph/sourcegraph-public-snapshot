@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useCallback, useMemo, useState } from 'react'
+import { FunctionComponent, useCallback, useMemo, useState } from 'react'
 
 import * as H from 'history'
 import { editor } from 'monaco-editor'
@@ -24,7 +24,7 @@ export interface ConfigurationEditorProps extends ThemeProps, TelemetryProps {
     history: H.History
 }
 
-export const ConfigurationEditor: FunctionComponent<ConfigurationEditorProps> = ({
+export const ConfigurationEditor: FunctionComponent<React.PropsWithChildren<ConfigurationEditorProps>> = ({
     repoId,
     authenticatedUser,
     isLightTheme,

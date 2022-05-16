@@ -173,19 +173,9 @@ export function useWebActionItems(): Pick<ActionItemsBarProps, 'useActionItemsBa
     }
 }
 
-export interface ActionItemsBarProps extends ExtensionsControllerProps, PlatformContextProps, TelemetryProps {
+export interface ActionItemsBarProps extends ExtensionsControllerProps, TelemetryProps, PlatformContextProps {
     useActionItemsBar: () => { isOpen: boolean | undefined; barReference: React.RefCallback<HTMLElement> }
     location: H.Location
-}
-
-export interface ActionItemsToggleProps extends ExtensionsControllerProps<'extHostAPI'> {
-    useActionItemsToggle: () => {
-        isOpen: boolean | undefined
-        toggle: () => void
-        toggleReference: React.RefCallback<HTMLElement>
-        barInPage: boolean
-    }
-    className?: string
 }
 
 const actionItemClassName = classNames(
@@ -194,9 +184,9 @@ const actionItemClassName = classNames(
 )
 
 /**
- *
+ * TODO: description
  */
-export const ActionItemsBar = React.memo<ActionItemsBarProps>(props => {
+export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionItemsBar(props) {
     const { isOpen, barReference } = props.useActionItemsBar()
 
     const {
@@ -308,7 +298,17 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(props => {
     )
 })
 
-export const ActionItemsToggle: React.FunctionComponent<ActionItemsToggleProps> = ({
+export interface ActionItemsToggleProps extends ExtensionsControllerProps<'extHostAPI'> {
+    useActionItemsToggle: () => {
+        isOpen: boolean | undefined
+        toggle: () => void
+        toggleReference: React.RefCallback<HTMLElement>
+        barInPage: boolean
+    }
+    className?: string
+}
+
+export const ActionItemsToggle: React.FunctionComponent<React.PropsWithChildren<ActionItemsToggleProps>> = ({
     useActionItemsToggle,
     extensionsController,
     className,
@@ -321,7 +321,7 @@ export const ActionItemsToggle: React.FunctionComponent<ActionItemsToggleProps> 
 
     return barInPage ? (
         <>
-            <div className={styles.dividerVertical} />
+            <li className={styles.dividerVertical} />
             <li className={classNames('nav-item mr-2', className)}>
                 <div className={classNames(styles.toggleContainer, isOpen && styles.toggleContainerOpen)}>
                     <ButtonLink
@@ -344,6 +344,6 @@ export const ActionItemsToggle: React.FunctionComponent<ActionItemsToggleProps> 
     ) : null
 }
 
-const ActionItemsDivider: React.FunctionComponent<{ className?: string }> = ({ className }) => (
-    <li className={classNames('position-relative rounded-sm d-flex', styles.dividerHorizontal, className)} />
-)
+const ActionItemsDivider: React.FunctionComponent<React.PropsWithChildren<{ className?: string }>> = ({
+    className,
+}) => <div className={classNames('position-relative rounded-sm d-flex', styles.dividerHorizontal, className)} />

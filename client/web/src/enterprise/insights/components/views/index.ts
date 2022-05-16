@@ -1,4 +1,6 @@
-export { InsightCard, InsightCardHeader, InsightCardBanner, InsightCardLoading } from './card/InsightCard'
+export * from './card/InsightCard'
 
 export { SeriesChart, CategoricalChart } from './chart'
 export { CategoricalBasedChartTypes, SeriesBasedChartTypes } from './types'
+
+export type { SeriesChartProps, CategoricalChartProps } from './chart'

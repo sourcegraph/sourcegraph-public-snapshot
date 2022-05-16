@@ -40,7 +40,7 @@ export interface SearchSidebarProps
 
     /**
      * Not yet implemented in the VS Code extension (blocked on Apollo Client integration).
-     * */
+     */
     getRevisions?: (revisionsProps: Omit<RevisionsProps, 'query'>) => (query: string) => JSX.Element
 
     /**
@@ -71,7 +71,7 @@ const selectFromQueryState = ({
     submitSearch,
 })
 
-export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props => {
+export const SearchSidebar: React.FunctionComponent<React.PropsWithChildren<SearchSidebarProps>> = props => {
     const history = useHistory()
     const [collapsedSections, setCollapsedSections] = useTemporarySetting('search.collapsedSidebarSections', {})
 

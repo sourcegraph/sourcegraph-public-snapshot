@@ -48,6 +48,9 @@ var (
 	StyleSearchCommitSubject = Fg256Color(68)
 	StyleSearchCommitDate    = Fg256Color(23)
 
+	StyleWhiteOnPurple  = CombineStyles(Fg256Color(255), Bg256Color(55))
+	StyleGreyBackground = CombineStyles(Fg256Color(0), Bg256Color(242))
+
 	// Search alert specific colors.
 	StyleSearchAlertTitle               = Fg256Color(124)
 	StyleSearchAlertDescription         = Fg256Color(124)

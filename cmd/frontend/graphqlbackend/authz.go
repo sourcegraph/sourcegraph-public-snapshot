@@ -9,6 +9,7 @@ import (
 type AuthzResolver interface {
 	// Mutations
 	SetRepositoryPermissionsForUsers(ctx context.Context, args *RepoPermsArgs) (*EmptyResponse, error)
+	SetRepositoryPermissionsUnrestricted(ctx context.Context, args *RepoUnrestrictedArgs) (*EmptyResponse, error)
 	ScheduleRepositoryPermissionsSync(ctx context.Context, args *RepositoryIDArgs) (*EmptyResponse, error)
 	ScheduleUserPermissionsSync(ctx context.Context, args *UserPermissionsSyncArgs) (*EmptyResponse, error)
 	SetSubRepositoryPermissionsForUsers(ctx context.Context, args *SubRepoPermsArgs) (*EmptyResponse, error)
@@ -42,6 +43,11 @@ type RepoPermsArgs struct {
 	}
 }
 
+type RepoUnrestrictedArgs struct {
+	Repositories []graphql.ID
+	Unrestricted bool
+}
+
 type SubRepoPermsArgs struct {
 	Repository      graphql.ID
 	UserPermissions []struct {
@@ -63,4 +69,5 @@ type PermissionsInfoResolver interface {
 	Permissions() []string
 	SyncedAt() *DateTime
 	UpdatedAt() DateTime
+	Unrestricted() bool
 }

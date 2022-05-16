@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import ArrowRightIcon from 'mdi-react/ArrowRightIcon'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, Icon } from '@sourcegraph/wildcard'
+import { Link, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { MarketingBlock } from '../MarketingBlock'
 
@@ -17,7 +17,7 @@ export interface SelfHostedCtaProps extends TelemetryProps {
     page: string
 }
 
-export const SelfHostedCta: React.FunctionComponent<SelfHostedCtaProps> = ({
+export const SelfHostedCta: React.FunctionComponent<React.PropsWithChildren<SelfHostedCtaProps>> = ({
     className,
     contentClassName,
     telemetryService,
@@ -71,12 +71,12 @@ export const SelfHostedCta: React.FunctionComponent<SelfHostedCtaProps> = ({
             </div>
 
             <MarketingBlock wrapperClassName="flex-md-shrink-0 mt-md-0 mt-sm-2 w-sm-100">
-                <h3 className="pr-3">Need help getting started?</h3>
+                <Typography.H3 className="pr-3">Need help getting started?</Typography.H3>
 
                 <div>
                     <Link
                         onClick={helpGettingStartedCTAOnClick}
-                        to=" https://info.sourcegraph.com/talk-to-a-developer?form_submission_source=inproduct&utm_campaign=inproduct-talktoadev&utm_medium=direct_traffic&utm_source=in-product&utm_term=null&utm_content=talktoadevform"
+                        to="https://info.sourcegraph.com/talk-to-a-developer?form_submission_source=inproduct&utm_campaign=inproduct-talktoadev&utm_medium=direct_traffic&utm_source=in-product&utm_term=null&utm_content=talktoadevform"
                         {...linkProps}
                     >
                         Speak to an engineer

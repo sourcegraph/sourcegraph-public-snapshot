@@ -110,7 +110,7 @@ export interface Props {
 /**
  * The container component for a result in the SearchResults component.
  */
-export const ResultContainer: React.FunctionComponent<Props> = ({
+export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     defaultExpanded,
     allExpanded,
     collapsible,
@@ -154,7 +154,7 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
             role="none"
         >
             <div className={styles.header}>
-                <Icon className="flex-shrink-0" as={icon} />
+                <Icon role="img" className="flex-shrink-0" as={icon} aria-hidden={true} />
                 <div className={classNames('mx-1', styles.headerDivider)} />
                 <div className={classNames(styles.headerTitle, titleClassName)} data-testid="result-container-header">
                     {title}
@@ -176,15 +176,19 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
                     >
                         {expanded ? (
                             <>
-                                {collapseLabel && <Icon className="mr-1" as={ArrowCollapseUpIcon} />}
+                                {collapseLabel && (
+                                    <Icon role="img" className="mr-1" as={ArrowCollapseUpIcon} aria-hidden={true} />
+                                )}
                                 {collapseLabel}
-                                {!collapseLabel && <Icon as={ChevronDownIcon} />}
+                                {!collapseLabel && <Icon role="img" as={ChevronDownIcon} aria-hidden={true} />}
                             </>
                         ) : (
                             <>
-                                {expandLabel && <Icon className="mr-1" as={ArrowExpandDownIcon} />}
+                                {expandLabel && (
+                                    <Icon role="img" className="mr-1" as={ArrowExpandDownIcon} aria-hidden={true} />
+                                )}
                                 {expandLabel}
-                                {!expandLabel && <Icon as={ChevronLeftIcon} />}
+                                {!expandLabel && <Icon role="img" as={ChevronLeftIcon} aria-hidden={true} />}
                             </>
                         )}
                     </Button>

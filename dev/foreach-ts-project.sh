@@ -29,7 +29,6 @@ DIRS=(
   client/storybook
   client/client-api
   dev/release
-  dev/ts-morph
 )
 
 run_command() {

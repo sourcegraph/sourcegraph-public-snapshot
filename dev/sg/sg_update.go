@@ -2,39 +2,35 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"runtime"
 	"strings"
 
-	"github.com/peterbourgon/ff/v3/ffcli"
+	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/download"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var (
-	updateFlags = flag.NewFlagSet("sg update", flag.ExitOnError)
-	// TODO: These are deprecated flags and can be removed May 1st 2022
-	_ = updateFlags.Bool("local", false, "Update to local copy of 'dev/sg'")
-	_ = updateFlags.Bool("download", true, "Download a prebuilt binary of 'sg' instead of compiling it locally")
-)
-
-var updateCommand = &ffcli.Command{
-	Name:       "update",
-	FlagSet:    updateFlags,
-	ShortUsage: "sg update",
-	ShortHelp:  "Update sg.",
-	LongHelp: `Update local sg installation with the latest changes. To see what's new, run:
+var updateCommand = &cli.Command{
+	Name:  "update",
+	Usage: "Update local sg installation",
+	Description: `Update local sg installation with the latest changes. To see what's new, run:
 
   sg version changelog -next
 
 Requires a local copy of the 'sourcegraph/sourcegraph' codebase.`,
-	Exec: func(ctx context.Context, args []string) error {
-		_, err := updateToPrebuiltSG(ctx)
-		return err
+	Category: CategoryUtil,
+	Action: func(cmd *cli.Context) error {
+		if _, err := updateToPrebuiltSG(cmd.Context); err != nil {
+			return err
+		}
+		std.Out.WriteSuccessf("sg has been updated!")
+		std.Out.Write("To see what's new, run 'sg version changelog'.")
+		return nil
 	},
 }
 
@@ -59,43 +55,12 @@ func updateToPrebuiltSG(ctx context.Context) (string, error) {
 	location = strings.ReplaceAll(location, "/tag/", "/download/")
 	downloadURL := fmt.Sprintf("%s/sg_%s_%s", location, runtime.GOOS, runtime.GOARCH)
 
-	tmpDir, err := os.MkdirTemp("", "sg")
-	if err != nil {
-		return "", err
-	}
-	defer func() {
-		os.RemoveAll(tmpDir)
-	}()
-
-	resp, err = http.Get(downloadURL)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return "", errors.Newf("downloading sg: status %d", resp.StatusCode)
-	}
-
-	tmpSgPath := tmpDir + "/sg"
-	f, err := os.Create(tmpSgPath)
-	if err != nil {
-		return "", err
-	}
-
-	_, err = io.Copy(f, resp.Body)
-	if err != nil {
-		return "", err
-	}
-	err = os.Chmod(tmpSgPath, 0755)
-	if err != nil {
-		return "", err
-	}
-
 	currentExecPath, err := os.Executable()
 	if err != nil {
 		return "", err
 	}
-
-	return currentExecPath, os.Rename(tmpSgPath, currentExecPath)
+	if err := download.Exeuctable(downloadURL, currentExecPath); err != nil {
+		return "", err
+	}
+	return currentExecPath, nil
 }

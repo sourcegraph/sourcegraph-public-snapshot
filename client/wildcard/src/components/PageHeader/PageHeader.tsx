@@ -13,6 +13,7 @@ type Breadcrumb = {
     to?: string
     icon?: BreadcrumbIcon
     text?: React.ReactNode
+    ariaLabel?: string
 } & (
     | {
           icon: BreadcrumbIcon
@@ -38,7 +39,7 @@ interface Props {
     className?: string
 }
 
-export const PageHeader: React.FunctionComponent<Props> = ({
+export const PageHeader: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     annotation,
     path,
     byline,
@@ -56,10 +57,10 @@ export const PageHeader: React.FunctionComponent<Props> = ({
             <div>
                 {annotation && <small className={styles.annotation}>{annotation}</small>}
                 <HeadingX className={styles.heading}>
-                    {path.map(({ to, text, icon: Icon }, index) => (
+                    {path.map(({ to, text, icon: Icon, ariaLabel }, index) => (
                         <React.Fragment key={index}>
                             {index !== 0 && <span className={styles.divider}>/</span>}
-                            <LinkOrSpan to={to} className={styles.path}>
+                            <LinkOrSpan to={to} className={styles.path} aria-label={ariaLabel}>
                                 {Icon && <Icon className={styles.pathIcon} />}
                                 {text && <span className={styles.pathText}>{text}</span>}
                             </LinkOrSpan>
@@ -69,7 +70,7 @@ export const PageHeader: React.FunctionComponent<Props> = ({
                 {byline && <small className={styles.byline}>{byline}</small>}
                 {description && <p className={styles.description}>{description}</p>}
             </div>
-            {actions && <div className={styles.actions}>{actions}</div>}
+            {actions && <div>{actions}</div>}
         </div>
     )
 }

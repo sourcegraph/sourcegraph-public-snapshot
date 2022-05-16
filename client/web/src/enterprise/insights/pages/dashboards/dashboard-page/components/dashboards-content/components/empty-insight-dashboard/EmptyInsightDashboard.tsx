@@ -4,8 +4,7 @@ import PlusIcon from 'mdi-react/PlusIcon'
 
 import { Button, Link, Card } from '@sourcegraph/wildcard'
 
-import { ALL_INSIGHTS_DASHBOARD } from '../../../../../../../core/constants'
-import { InsightDashboard } from '../../../../../../../core/types'
+import { ALL_INSIGHTS_DASHBOARD, InsightDashboard } from '../../../../../../../core'
 import { useUiFeatures } from '../../../../../../../hooks/use-ui-features'
 import { isDashboardConfigurable } from '../../utils/is-dashboard-configurable'
 
@@ -16,7 +15,9 @@ interface EmptyInsightDashboardProps {
     onAddInsight: () => void
 }
 
-export const EmptyInsightDashboard: React.FunctionComponent<EmptyInsightDashboardProps> = props => {
+export const EmptyInsightDashboard: React.FunctionComponent<
+    React.PropsWithChildren<EmptyInsightDashboardProps>
+> = props => {
     const { onAddInsight, dashboard } = props
 
     return isDashboardConfigurable(dashboard) ? (
@@ -31,7 +32,9 @@ export const EmptyInsightDashboard: React.FunctionComponent<EmptyInsightDashboar
  * Since all insights within built-in dashboards are calculated there's no ability to add insight to
  * this type of dashboard.
  */
-export const EmptyBuiltInDashboard: React.FunctionComponent<{ dashboard: InsightDashboard }> = props => (
+export const EmptyBuiltInDashboard: React.FunctionComponent<
+    React.PropsWithChildren<{ dashboard: InsightDashboard }>
+> = props => (
     <section className={styles.emptySection}>
         <Card as={Link} to={`/insights/create?dashboardId=${props.dashboard.id}`} className={styles.itemCard}>
             <PlusIcon size="2rem" />
@@ -51,7 +54,9 @@ export const EmptyBuiltInDashboard: React.FunctionComponent<{ dashboard: Insight
  * Settings based empty dashboard state provides button for adding existing insights to the dashboard.
  * Since it is possible with settings based dashboard to add existing insights to it.
  */
-export const EmptySettingsBasedDashboard: React.FunctionComponent<EmptyInsightDashboardProps> = props => {
+export const EmptySettingsBasedDashboard: React.FunctionComponent<
+    React.PropsWithChildren<EmptyInsightDashboardProps>
+> = props => {
     const { onAddInsight, dashboard } = props
     const {
         dashboard: { getAddRemoveInsightsPermission },

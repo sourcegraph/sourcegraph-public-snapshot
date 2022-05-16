@@ -132,8 +132,11 @@ fi
 
 # Re-run asdf to ensure we have the correct set of utilities to
 # run the currently checked out version of the Go unit tests.
+echo "--- asdf install checked out tools"
 ./dev/ci/asdf-install.sh
+go version
 
+echo "--- run tests"
 if ! ./dev/ci/go-test.sh "$@"; then
   annotation=$(
     cat <<EOF

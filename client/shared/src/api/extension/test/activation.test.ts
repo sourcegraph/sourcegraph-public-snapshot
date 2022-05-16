@@ -1,4 +1,4 @@
-import { BehaviorSubject } from 'rxjs'
+import { BehaviorSubject, of } from 'rxjs'
 import { filter, first } from 'rxjs/operators'
 import sinon from 'sinon'
 import sourcegraph from 'sourcegraph'
@@ -51,6 +51,7 @@ describe('Extension activation', () => {
                 function createExtensionAPI() {
                     return {} as typeof sourcegraph
                 },
+                of(true),
                 noopPromise,
                 noopPromise
             )

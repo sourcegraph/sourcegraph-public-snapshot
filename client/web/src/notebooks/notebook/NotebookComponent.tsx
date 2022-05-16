@@ -14,8 +14,7 @@ import { catchError, delay, filter, map, startWith, switchMap, tap, withLatestFr
 import { HoverMerged } from '@sourcegraph/client-api'
 import { createHoverifier } from '@sourcegraph/codeintellify'
 import { asError, isDefined, isErrorLike, property } from '@sourcegraph/common'
-import { useQueryIntelligence } from '@sourcegraph/search'
-import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
+import { StreamingSearchResultsListProps, useQueryIntelligence } from '@sourcegraph/search-ui'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
@@ -99,7 +98,7 @@ function downloadTextAsFile(text: string, fileName: string): void {
     window.URL.revokeObjectURL(blobURL)
 }
 
-export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> = React.memo(
+export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<NotebookComponentProps>> = React.memo(
     ({
         onSerializeBlocks,
         onCopyNotebook,

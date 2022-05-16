@@ -32,7 +32,10 @@ const ManageCodeMonitorPage = lazyComponent(() => import('../ManageCodeMonitorPa
 /**
  * The global code monitoring area.
  */
-export const GlobalCodeMonitoringArea: React.FunctionComponent<Props> = ({ match, ...outerProps }) => (
+export const GlobalCodeMonitoringArea: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    match,
+    ...outerProps
+}) => (
     <div className="w-100">
         <Page>
             <Switch>

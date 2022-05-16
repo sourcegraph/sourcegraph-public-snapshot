@@ -1,10 +1,10 @@
-import React, { FunctionComponent } from 'react'
+import { FunctionComponent } from 'react'
 
 import classNames from 'classnames'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 
 import { pluralize } from '@sourcegraph/common'
-import { Link, Icon } from '@sourcegraph/wildcard'
+import { Link, Icon, Typography } from '@sourcegraph/wildcard'
 
 import {
     NormalizedUploadRetentionMatch,
@@ -21,7 +21,7 @@ export interface RetentionMatchNodeProps {
 export const retentionByUploadTitle = 'Retention by reference'
 export const retentionByBranchTipTitle = 'Retention by tip of default branch'
 
-export const RetentionMatchNode: FunctionComponent<RetentionMatchNodeProps> = ({ node }) => {
+export const RetentionMatchNode: FunctionComponent<React.PropsWithChildren<RetentionMatchNodeProps>> = ({ node }) => {
     if (node.matchType === 'RetentionPolicy') {
         return <RetentionPolicyRetentionMatchNode match={node} />
     }
@@ -32,7 +32,9 @@ export const RetentionMatchNode: FunctionComponent<RetentionMatchNodeProps> = ({
     throw new Error(`invalid node type ${JSON.stringify(node as object)}`)
 }
 
-const RetentionPolicyRetentionMatchNode: FunctionComponent<{ match: RetentionPolicyMatch }> = ({ match }) => (
+const RetentionPolicyRetentionMatchNode: FunctionComponent<
+    React.PropsWithChildren<{ match: RetentionPolicyMatch }>
+> = ({ match }) => (
     <>
         <span className={styles.separator} />
 
@@ -40,10 +42,12 @@ const RetentionPolicyRetentionMatchNode: FunctionComponent<{ match: RetentionPol
             <div className="m-0">
                 {match.configurationPolicy ? (
                     <Link to={`../configuration/${match.configurationPolicy.id}`} className="p-0">
-                        <h3 className="m-0 d-block d-md-inline">{match.configurationPolicy.name}</h3>
+                        <Typography.H3 className="m-0 d-block d-md-inline">
+                            {match.configurationPolicy.name}
+                        </Typography.H3>
                     </Link>
                 ) : (
-                    <h3 className="m-0 d-block d-md-inline">{retentionByBranchTipTitle}</h3>
+                    <Typography.H3 className="m-0 d-block d-md-inline">{retentionByBranchTipTitle}</Typography.H3>
                 )}
                 <div className="mr-2 d-block d-mdinline-block">
                     Retained: {match.matches ? 'yes' : 'no'}
@@ -75,13 +79,15 @@ const RetentionPolicyRetentionMatchNode: FunctionComponent<{ match: RetentionPol
     </>
 )
 
-const UploadReferenceRetentionMatchNode: FunctionComponent<{ match: UploadReferenceMatch }> = ({ match }) => (
+const UploadReferenceRetentionMatchNode: FunctionComponent<
+    React.PropsWithChildren<{ match: UploadReferenceMatch }>
+> = ({ match }) => (
     <>
         <span className={styles.separator} />
 
         <div className={classNames(styles.information, 'd-flex flex-column')}>
             <div className="m-0">
-                <h3 className="m-0 d-block d-md-inline">{retentionByUploadTitle}</h3>
+                <Typography.H3 className="m-0 d-block d-md-inline">{retentionByUploadTitle}</Typography.H3>
                 <div className="mr-2 d-block d-mdinline-block">
                     Referenced by {match.total} {pluralize('upload', match.total, 'uploads')}, including{' '}
                     {match.uploadSlice

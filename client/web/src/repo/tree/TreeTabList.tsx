@@ -9,9 +9,8 @@ import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import TagIcon from 'mdi-react/TagIcon'
 
+import { TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import { Icon, Link } from '@sourcegraph/wildcard'
-
-import { TreeFields } from '../../graphql-operations'
 
 interface TreeTabList {
     tree: TreeFields
@@ -19,7 +18,11 @@ interface TreeTabList {
     setSelectedTab: (tab: string) => void
 }
 
-export const TreeTabList: React.FunctionComponent<TreeTabList> = ({ tree, selectedTab, setSelectedTab }) => {
+export const TreeTabList: React.FunctionComponent<React.PropsWithChildren<TreeTabList>> = ({
+    tree,
+    selectedTab,
+    setSelectedTab,
+}) => {
     type Tabs = { tab: string; title: string; isActive: boolean; logName: string; icon: JSX.Element; url: string }[]
 
     const tabs: Tabs = useMemo(

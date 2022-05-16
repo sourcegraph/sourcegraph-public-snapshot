@@ -20,6 +20,7 @@ type InsightsResolver interface {
 	InsightViews(ctx context.Context, args *InsightViewQueryArgs) (InsightViewConnectionResolver, error)
 
 	SearchInsightLivePreview(ctx context.Context, args SearchInsightLivePreviewArgs) ([]SearchInsightLivePreviewSeriesResolver, error)
+	SearchInsightPreview(ctx context.Context, args SearchInsightPreviewArgs) ([]SearchInsightLivePreviewSeriesResolver, error)
 
 	// Mutations
 	CreateInsightsDashboard(ctx context.Context, args *CreateInsightsDashboardArgs) (InsightsDashboardPayloadResolver, error)
@@ -42,6 +43,22 @@ type InsightsResolver interface {
 
 type SearchInsightLivePreviewArgs struct {
 	Input SearchInsightLivePreviewInput
+}
+
+type SearchInsightPreviewArgs struct {
+	Input SearchInsightPreviewInput
+}
+
+type SearchInsightPreviewInput struct {
+	RepositoryScope RepositoryScopeInput
+	TimeScope       TimeScopeInput
+	Series          []SearchSeriesPreviewInput
+}
+
+type SearchSeriesPreviewInput struct {
+	Query                      string
+	Label                      string
+	GeneratedFromCaptureGroups bool
 }
 
 type SearchInsightLivePreviewInput struct {
@@ -175,6 +192,7 @@ type InsightViewResolver interface {
 	DataSeriesDefinitions(ctx context.Context) ([]InsightDataSeriesDefinition, error)
 	DashboardReferenceCount(ctx context.Context) (int32, error)
 	IsFrozen(ctx context.Context) (bool, error)
+	Dashboards(ctx context.Context, args *InsightsDashboardsArgs) InsightsDashboardConnectionResolver
 }
 
 type InsightDataSeriesDefinition interface {
@@ -279,6 +297,7 @@ type InsightSeriesQueryStatusResolver interface {
 type InsightViewFiltersResolver interface {
 	IncludeRepoRegex(ctx context.Context) (*string, error)
 	ExcludeRepoRegex(ctx context.Context) (*string, error)
+	SearchContexts(ctx context.Context) (*[]string, error)
 }
 
 type CreateLineChartSearchInsightArgs struct {
@@ -337,6 +356,7 @@ type InsightViewControlsInput struct {
 type InsightViewFiltersInput struct {
 	IncludeRepoRegex *string
 	ExcludeRepoRegex *string
+	SearchContexts   *[]string
 }
 
 type LineChartSearchInsightDataSeriesInput struct {
@@ -375,10 +395,11 @@ type InsightViewPayloadResolver interface {
 }
 
 type InsightViewQueryArgs struct {
-	First   *int32
-	After   *string
-	Id      *graphql.ID
-	Filters *InsightViewFiltersInput
+	First    *int32
+	After    *string
+	Id       *graphql.ID
+	IsFrozen *bool
+	Filters  *InsightViewFiltersInput
 }
 
 type DeleteInsightViewArgs struct {

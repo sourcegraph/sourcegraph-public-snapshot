@@ -11,7 +11,7 @@ import { ActivationProps, percentageDone } from '@sourcegraph/shared/src/compone
 import { ActivationChecklist } from '@sourcegraph/shared/src/components/activation/ActivationChecklist'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { LoadingSpinner, useObservable, Button, Link, Icon } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Button, Link, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { Collapsible } from '../../components/Collapsible'
@@ -21,7 +21,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { UsageChart } from '../SiteAdminUsageStatisticsPage'
 
 interface Props extends ActivationProps, ThemeProps {
-    overviewComponents: readonly React.ComponentType[]
+    overviewComponents: readonly React.ComponentType<React.PropsWithChildren<unknown>>[]
 
     /** For testing only */
     _fetchOverview?: () => Observable<{
@@ -107,7 +107,7 @@ const fetchWeeklyActiveUsers = (): Observable<GQL.ISiteUsageStatistics> =>
 /**
  * A page displaying an overview of site admin information.
  */
-export const SiteAdminOverviewPage: React.FunctionComponent<Props> = ({
+export const SiteAdminOverviewPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     isLightTheme,
     activation,
     overviewComponents,
@@ -259,8 +259,8 @@ export const SiteAdminOverviewPage: React.FunctionComponent<Props> = ({
                                             showLegend={false}
                                             header={
                                                 <div className="site-admin-overview-page__detail-header">
-                                                    <h2>Weekly unique users</h2>
-                                                    <h3>
+                                                    <Typography.H2>Weekly unique users</Typography.H2>
+                                                    <Typography.H3>
                                                         <Button
                                                             to="/site-admin/usage-statistics"
                                                             variant="secondary"
@@ -268,7 +268,7 @@ export const SiteAdminOverviewPage: React.FunctionComponent<Props> = ({
                                                         >
                                                             View all usage statistics <Icon as={OpenInNewIcon} />
                                                         </Button>
-                                                    </h3>
+                                                    </Typography.H3>
                                                 </div>
                                             }
                                         />

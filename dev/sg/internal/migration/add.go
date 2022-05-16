@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -63,7 +63,7 @@ func add(database db.Database, migrationName, upMigrationFileTemplate, downMigra
 		return err
 	}
 
-	block := stdout.Out.Block(output.Linef("", output.StyleBold, "Migration files created"))
+	block := std.Out.Block(output.Styled(output.StyleBold, "Migration files created"))
 	block.Writef("Up query file: %s", rootRelative(files.UpFile))
 	block.Writef("Down query file: %s", rootRelative(files.DownFile))
 	block.Writef("Metadata file: %s", rootRelative(files.MetadataFile))

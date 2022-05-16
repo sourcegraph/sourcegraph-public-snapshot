@@ -70,9 +70,11 @@ func IndexedEndpoints() *endpoint.Map {
 	return indexedEndpoints
 }
 
+var ErrIndexDisabled = errors.New("indexed search has been disabled")
+
 func Indexed() zoekt.Streamer {
 	if !conf.SearchIndexEnabled() {
-		return nil
+		return &backend.FakeSearcher{SearchError: ErrIndexDisabled, ListError: ErrIndexDisabled}
 	}
 
 	indexedSearchOnce.Do(func() {

@@ -12,9 +12,9 @@ func TestUnmarshal(t *testing.T) {
 /* another comment */
 "hello": "world",
 }`
-	want := map[string]interface{}{"hello": "world"}
+	want := map[string]any{"hello": "world"}
 
-	var got interface{}
+	var got any
 	if err := Unmarshal(input, &got); err != nil {
 		t.Fatal(err)
 	}

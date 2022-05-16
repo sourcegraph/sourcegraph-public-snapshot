@@ -7,10 +7,23 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/sourcegraph/sourcegraph/internal/gosyntect"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsiftyped"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+func TestIdentifyError(t *testing.T) {
+	errs := []error{gosyntect.ErrPanic, gosyntect.ErrHSSWorkerTimeout, gosyntect.ErrRequestTooLarge}
+	for _, err := range errs {
+		wrappedErr := errors.Wrap(err, "some other information")
+		known, problem := identifyError(wrappedErr)
+		require.True(t, known)
+		require.NotEqual(t, "", problem)
+	}
+}
 
 func TestDeserialize(t *testing.T) {
 	original := new(lsiftyped.Document)

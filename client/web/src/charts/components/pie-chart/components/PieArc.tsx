@@ -1,10 +1,12 @@
-import React, { PointerEventHandler, ReactElement } from 'react'
+import { PointerEventHandler, ReactElement } from 'react'
 
 import { Annotation, HtmlLabel, Connector } from '@visx/annotation'
 import { Group } from '@visx/group'
 import { PieArcDatum } from '@visx/shape/lib/shapes/Pie'
 import classNames from 'classnames'
 import { Arc as ArcType } from 'd3-shape'
+
+import { Typography } from '@sourcegraph/wildcard'
 
 import { DEFAULT_FALLBACK_COLOR } from '../../../constants'
 
@@ -64,7 +66,7 @@ export function PieArc<Datum>(props: PieArcProps<Datum>): ReactElement {
                 <Connector className={styles.labelLine} type="line" />
 
                 <HtmlLabel showAnchorLine={false} className={styles.label}>
-                    <h3 className={styles.labelTitle}>{title}</h3>
+                    <Typography.H3 className={styles.labelTitle}>{title}</Typography.H3>
                     <small className={styles.labelSubTitle}>{subtitle}</small>
                 </HtmlLabel>
             </Annotation>

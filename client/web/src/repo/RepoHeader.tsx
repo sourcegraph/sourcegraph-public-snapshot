@@ -170,7 +170,12 @@ interface Props extends PlatformContextProps, TelemetryProps, BreadcrumbsProps, 
  *
  * Other components can contribute items to the repository header using RepoHeaderContribution.
  */
-export const RepoHeader: React.FunctionComponent<Props> = ({ onLifecyclePropsChange, resolvedRev, repo, ...props }) => {
+export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    onLifecyclePropsChange,
+    resolvedRev,
+    repo,
+    ...props
+}) => {
     const [repoHeaderContributions, setRepoHeaderContributions] = useState<RepoHeaderContribution[]>([])
     const repoHeaderContributionStore = useMemo(
         () => new RepoHeaderContributionStore(contributions => setRepoHeaderContributions(contributions)),
@@ -251,7 +256,12 @@ export const RepoHeader: React.FunctionComponent<Props> = ({ onLifecyclePropsCha
                                 </RepoHeaderActionDropdownToggle>
                                 <MenuList position={Position.bottomEnd}>
                                     {rightActions.map((a, index) => (
-                                        <MenuItem className="p-0" key={a.id || index} onSelect={noop}>
+                                        <MenuItem
+                                            className="p-0"
+                                            key={a.id || index}
+                                            onSelect={noop}
+                                            onMouseUp={event => event.preventDefault()}
+                                        >
                                             {a.element}
                                         </MenuItem>
                                     ))}

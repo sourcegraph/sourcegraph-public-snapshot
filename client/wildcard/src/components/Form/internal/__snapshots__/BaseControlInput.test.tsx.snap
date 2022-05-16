@@ -1,6 +1,19 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`BaseControlInput checkbox input renders correctly 1`] = `
+exports[`BaseControlInput checkbox input renders correctly with a hidden label 1`] = `
+<div
+  class="form-check"
+>
+  <input
+    aria-label="Hello world"
+    class="form-check-input"
+    id="test"
+    type="checkbox"
+  />
+</div>
+`;
+
+exports[`BaseControlInput checkbox input renders correctly with a visible label 1`] = `
 <div
   class="form-check"
 >
@@ -16,6 +29,26 @@ exports[`BaseControlInput checkbox input renders correctly 1`] = `
   >
     Hello world
   </label>
+</div>
+`;
+
+exports[`BaseControlInput checkbox input renders correctly with an externally provided label 1`] = `
+<div>
+  <span
+    id="test-label"
+  >
+    Hello world
+  </span>
+  <div
+    class="form-check"
+  >
+    <input
+      aria-labelledby="test-label"
+      class="form-check-input"
+      id="test"
+      type="checkbox"
+    />
+  </div>
 </div>
 `;
 
@@ -91,7 +124,20 @@ exports[`BaseControlInput checkbox input renders with message correctly 1`] = `
 </div>
 `;
 
-exports[`BaseControlInput radio input renders correctly 1`] = `
+exports[`BaseControlInput radio input renders correctly with a hidden label 1`] = `
+<div
+  class="form-check"
+>
+  <input
+    aria-label="Hello world"
+    class="form-check-input"
+    id="test"
+    type="radio"
+  />
+</div>
+`;
+
+exports[`BaseControlInput radio input renders correctly with a visible label 1`] = `
 <div
   class="form-check"
 >
@@ -107,6 +153,26 @@ exports[`BaseControlInput radio input renders correctly 1`] = `
   >
     Hello world
   </label>
+</div>
+`;
+
+exports[`BaseControlInput radio input renders correctly with an externally provided label 1`] = `
+<div>
+  <span
+    id="test-label"
+  >
+    Hello world
+  </span>
+  <div
+    class="form-check"
+  >
+    <input
+      aria-labelledby="test-label"
+      class="form-check-input"
+      id="test"
+      type="radio"
+    />
+  </div>
 </div>
 `;
 

@@ -4,9 +4,11 @@ import path from 'path'
 import { subDays } from 'date-fns'
 import expect from 'expect'
 
+import { highlightFileResult, mixedSearchStreamEvents } from '@sourcegraph/search'
 import { NotebookBlockType, SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { NotebookBlock, SymbolKind } from '@sourcegraph/shared/src/schema'
 import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
+import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
@@ -17,7 +19,6 @@ import { WebIntegrationTestContext, createWebIntegrationTestContext } from './co
 import { createRepositoryRedirectResult, createResolveRevisionResult } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { siteGQLID, siteID } from './jscontext'
-import { highlightFileResult, mixedSearchStreamEvents } from './streaming-search-mocks'
 import { percySnapshotWithVariants } from './utils'
 
 const viewerSettings: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
@@ -168,6 +169,17 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
     ...commonWebGraphQlResults,
     ...highlightFileResult,
     ...viewerSettings,
+    GetTemporarySettings: () => ({
+        temporarySettings: {
+            __typename: 'TemporarySettings',
+            contents: JSON.stringify({
+                'user.daysActiveCount': 1,
+                'user.lastDayActive': new Date().toDateString(),
+                'search.usedNonGlobalContext': true,
+                'search.notebooks.gettingStartedTabSeen': true,
+            }),
+        },
+    }),
     RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
     ResolveRev: () => createResolveRevisionResult('/github.com/sourcegraph/sourcegraph'),
     FetchNotebook: ({ id }) => ({
@@ -180,7 +192,11 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
         updateNotebook: notebookFixture(id, notebook.title, notebook.blocks.map(GQLBlockInputToResponse)),
     }),
     ListNotebooks: () => ({
-        notebooks: { totalCount: 0, nodes: [], pageInfo: { endCursor: null, hasNextPage: false } },
+        notebooks: {
+            totalCount: 1,
+            nodes: [notebookFixture('id', 'Title', [])],
+            pageInfo: { endCursor: null, hasNextPage: false },
+        },
     }),
 }
 
@@ -249,6 +265,7 @@ describe('Search Notebook', () => {
         const blockIds = await getBlockIds()
         expect(blockIds).toHaveLength(2)
         await percySnapshotWithVariants(driver.page, 'Search notebook')
+        await accessibilityAudit(driver.page)
     })
 
     it('Should move, duplicate, and delete blocks', async () => {
@@ -319,6 +336,7 @@ describe('Search Notebook', () => {
         )
         expect(isResultContainerVisible).toBeTruthy()
         await percySnapshotWithVariants(driver.page, 'Search notebook with markdown and query blocks')
+        await accessibilityAudit(driver.page)
     })
 
     it('Should add file block and edit it', async () => {
@@ -748,5 +766,11 @@ https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph@branch/-/blob/c
 
         // The "Title 2" heading in the outline should be highlighted
         expect(await getHighlightedOutlineHeading()).toEqual('title-2-id-1')
+    })
+    it('Notebook explore page should be accessible', async () => {
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks?tab=explore')
+        await driver.page.waitForSelector('[data-testid="filtered-connection-nodes"]', { visible: true })
+        await percySnapshotWithVariants(driver.page, 'Explore notebooks')
+        await accessibilityAudit(driver.page)
     })
 })

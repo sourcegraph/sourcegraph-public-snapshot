@@ -76,7 +76,7 @@ func matchOnly(fm *result.FileMatch, r *regexp.Regexp) *MatchContext {
 			matches = append(matches, fromRegexpMatches(submatches, r.SubexpNames(), l.Preview, int(l.LineNumber)))
 		}
 	}
-	return &MatchContext{Matches: matches, Path: fm.Path}
+	return &MatchContext{Matches: matches, Path: fm.Path, RepositoryID: int32(fm.Repo.ID), Repository: string(fm.Repo.Name)}
 }
 
 func (c *MatchOnly) Run(_ context.Context, db database.DB, r result.Match) (Result, error) {

@@ -8,6 +8,7 @@ import { ContributableMenu } from '@sourcegraph/client-api'
 import { asError, ErrorLike, isErrorLike, hasProperty } from '@sourcegraph/common'
 import { ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Typography } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -26,10 +27,9 @@ interface ContributionGroup {
     rows: (React.ReactFragment | null)[][]
 }
 
-const ContributionsTable: React.FunctionComponent<{ contributionGroups: ContributionGroup[]; history: H.History }> = ({
-    contributionGroups,
-    history,
-}) => (
+const ContributionsTable: React.FunctionComponent<
+    React.PropsWithChildren<{ contributionGroups: ContributionGroup[]; history: H.History }>
+> = ({ contributionGroups, history }) => (
     <div>
         {contributionGroups.length === 0 && (
             <p>This extension doesn't define any settings or actions. No configuration is required to use it.</p>
@@ -38,9 +38,9 @@ const ContributionsTable: React.FunctionComponent<{ contributionGroups: Contribu
             (group, index) =>
                 (group.error || group.rows.length > 0) && (
                     <React.Fragment key={index}>
-                        <h3>
+                        <Typography.H3>
                             {group.title} ({group.rows.length})
-                        </h3>
+                        </Typography.H3>
                         {group.error && <ErrorAlert className="mt-1" error={group.error} />}
                         <table className="table mb-5">
                             <thead>

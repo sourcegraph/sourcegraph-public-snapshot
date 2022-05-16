@@ -1,9 +1,8 @@
-import * as React from 'react'
-
 import { storiesOf } from '@storybook/react'
 import sinon from 'sinon'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
+import { Typography } from '@sourcegraph/wildcard'
 
 import { StreamingProgress } from './StreamingProgress'
 
@@ -21,7 +20,7 @@ add('StreamingProgress', () => (
     <BrandedStory>
         {() => (
             <>
-                <h2>0 results, in progress</h2>
+                <Typography.H2>0 results, in progress</Typography.H2>
                 <div className="d-flex align-items-center my-2">
                     <StreamingProgress
                         progress={{
@@ -34,7 +33,7 @@ add('StreamingProgress', () => (
                     />
                 </div>
 
-                <h2>0 results, in progress, traced</h2>
+                <Typography.H2>0 results, in progress, traced</Typography.H2>
                 <div className="d-flex align-items-center  my-2">
                     <StreamingProgress
                         progress={{
@@ -49,7 +48,7 @@ add('StreamingProgress', () => (
                     />
                 </div>
 
-                <h2>1 result from 1 repository, in progress</h2>
+                <Typography.H2>1 result from 1 repository, in progress</Typography.H2>
                 <div className="d-flex align-items-center  my-2">
                     <StreamingProgress
                         progress={{
@@ -63,7 +62,7 @@ add('StreamingProgress', () => (
                     />
                 </div>
 
-                <h2>Big numbers, done</h2>
+                <Typography.H2>Big numbers, done</Typography.H2>
                 <div className="d-flex align-items-center my-2">
                     <StreamingProgress
                         progress={{
@@ -77,7 +76,7 @@ add('StreamingProgress', () => (
                     />
                 </div>
 
-                <h2>Big numbers, done, traced</h2>
+                <Typography.H2>Big numbers, done, traced</Typography.H2>
                 <div className="d-flex align-items-center my-2">
                     <StreamingProgress
                         progress={{
@@ -93,7 +92,7 @@ add('StreamingProgress', () => (
                     />
                 </div>
 
-                <h2>2 results from 2 repositories, complete, skipped with info</h2>
+                <Typography.H2>2 results from 2 repositories, complete, skipped with info</Typography.H2>
                 <div className="d-flex align-items-center my-2">
                     <StreamingProgress
                         progress={{
@@ -128,7 +127,7 @@ add('StreamingProgress', () => (
                     />
                 </div>
 
-                <h2>2 results from 2 repositories, loading, skipped with info</h2>
+                <Typography.H2>2 results from 2 repositories, loading, skipped with info</Typography.H2>
                 <div className="d-flex align-items-center my-2">
                     <StreamingProgress
                         progress={{
@@ -163,7 +162,7 @@ add('StreamingProgress', () => (
                     />
                 </div>
 
-                <h2>2 results from 2 repositories, complete, skipped with warning</h2>
+                <Typography.H2>2 results from 2 repositories, complete, skipped with warning</Typography.H2>
                 <div className="d-flex align-items-center my-2">
                     <StreamingProgress
                         progress={{
@@ -208,7 +207,7 @@ add('StreamingProgress', () => (
                     />
                 </div>
 
-                <h2>2 results from 2 repositories, loading, skipped with warning</h2>
+                <Typography.H2>2 results from 2 repositories, loading, skipped with warning</Typography.H2>
                 <div className="d-flex align-items-center my-2">
                     <StreamingProgress
                         progress={{

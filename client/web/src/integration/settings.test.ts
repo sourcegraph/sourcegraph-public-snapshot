@@ -1,5 +1,6 @@
 import assert from 'assert'
 
+import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { settingsID, testUserID } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
@@ -113,6 +114,7 @@ describe('Settings', () => {
             )
 
             await percySnapshotWithVariants(driver.page, 'Settings page')
+            await accessibilityAudit(driver.page)
 
             // Replace with new settings
             const newSettings = '{ /* These are new settings */}'

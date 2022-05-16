@@ -2,7 +2,6 @@ package generate
 
 import (
 	"context"
-	"flag"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
@@ -11,7 +10,7 @@ import (
 // Runner is a generate runner. It can run generators or call out to a bash script,
 // or anything you want, using the provided writers to handle the output.
 // act upon.
-type Runner func(context.Context, []string) *Report
+type Runner func(ctx context.Context, args []string) *Report
 
 // Report describes the result of a generate runner.
 type Report struct {
@@ -26,17 +25,16 @@ type Report struct {
 
 // Target denotes a generate task that can be run by `sg generate`
 type Target struct {
-	Name    string
-	Help    string
-	FlagSet *flag.FlagSet
-	Runner  Runner
+	Name   string
+	Help   string
+	Runner Runner
 }
 
 // RunScript runs the given script from the root of sourcegraph/sourcegraph.
 // If arguments are to be to passed down the script, they should be incorporated
 // in the script variable.
 func RunScript(header string, script string) Runner {
-	return Runner(func(ctx context.Context, _ []string) *Report {
+	return Runner(func(ctx context.Context, args []string) *Report {
 		start := time.Now()
 		out, err := run.BashInRoot(ctx, script, nil)
 		return &Report{

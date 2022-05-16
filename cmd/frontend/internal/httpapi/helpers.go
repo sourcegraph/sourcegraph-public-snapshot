@@ -8,10 +8,10 @@ import (
 
 // writeJSON writes a JSON Content-Type header and a JSON-encoded object to the
 // http.ResponseWriter.
-func writeJSON(w http.ResponseWriter, v interface{}) error {
+func writeJSON(w http.ResponseWriter, v any) error {
 	// Return "[]" instead of "null" if v is a nil slice.
 	if reflect.TypeOf(v).Kind() == reflect.Slice && reflect.ValueOf(v).IsNil() {
-		v = []interface{}{}
+		v = []any{}
 	}
 
 	// MarshalIndent takes about 30-50% longer, which

@@ -1,0 +1,42 @@
+{
+  "slug": "src-cli-fork-00",
+  "name": "src-cli-fork-00",
+  "full_name": "sourcegraph-testing/src-cli-fork-00",
+  "uuid": "{c9514714-1168-4b80-8de1-d3d8359cc293}",
+  "scm": "git",
+  "description": "",
+  "parent": {
+   "slug": "",
+   "name": "src-cli",
+   "full_name": "sourcegraph-testing/src-cli",
+   "uuid": "{b090a669-ac7b-44cd-9610-02d027cb39f3}",
+   "scm": "",
+   "description": "",
+   "parent": null,
+   "is_private": false,
+   "links": {
+    "clone": null,
+    "html": {
+     "href": "https://bitbucket.org/sourcegraph-testing/src-cli"
+    }
+   },
+   "fork_policy": ""
+  },
+  "is_private": true,
+  "links": {
+   "clone": [
+    {
+     "href": "https://sourcegraph-testing@bitbucket.org/sourcegraph-testing/src-cli-fork-00.git",
+     "name": "https"
+    },
+    {
+     "href": "git@bitbucket.org:sourcegraph-testing/src-cli-fork-00.git",
+     "name": "ssh"
+    }
+   ],
+   "html": {
+    "href": "https://bitbucket.org/sourcegraph-testing/src-cli-fork-00"
+   }
+  },
+  "fork_policy": "no_public_forks"
+ }

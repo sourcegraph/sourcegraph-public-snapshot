@@ -7,12 +7,12 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-var out = stdout.Out
+var out = std.Out
 
 type slackToken struct {
 	Token string `json:"token"`
@@ -28,9 +28,12 @@ func NewClient(ctx context.Context) (*slack.Client, error) {
 
 // retrieveToken obtains a token either from the cached configuration or by asking the user for it.
 func retrieveToken(ctx context.Context) (string, error) {
-	sec := secrets.FromContext(ctx)
+	sec, err := secrets.FromContext(ctx)
+	if err != nil {
+		return "", err
+	}
 	tok := slackToken{}
-	err := sec.Get("slack", &tok)
+	err = sec.Get("slack", &tok)
 	if errors.Is(err, secrets.ErrSecretNotFound) {
 		str, err := getTokenFromUser()
 		if err != nil {

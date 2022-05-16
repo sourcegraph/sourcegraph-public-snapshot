@@ -309,6 +309,10 @@ func (e *executor) reopenChangeset(ctx context.Context) (err error) {
 	}
 
 	cs := sources.Changeset{
+		Title:      e.spec.Spec.Title,
+		Body:       e.spec.Spec.Body,
+		BaseRef:    e.spec.Spec.BaseRef,
+		HeadRef:    e.spec.Spec.HeadRef,
 		RemoteRepo: e.remoteRepo,
 		TargetRepo: e.targetRepo,
 		Changeset:  e.ch,

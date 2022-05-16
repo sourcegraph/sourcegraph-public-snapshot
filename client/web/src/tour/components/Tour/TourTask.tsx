@@ -24,7 +24,13 @@ type TourTaskProps = TourTaskType & {
 /**
  * Tour task smart component. Handles all TourTaskStepType.type options.
  */
-export const TourTask: React.FunctionComponent<TourTaskProps> = ({ title, steps, completed, icon, variant }) => {
+export const TourTask: React.FunctionComponent<React.PropsWithChildren<TourTaskProps>> = ({
+    title,
+    steps,
+    completed,
+    icon,
+    variant,
+}) => {
     const [selectedStep, setSelectedStep] = useState<TourTaskStepType>()
     const [showLanguagePicker, setShowLanguagePicker] = useState(false)
     const { language, onLanguageSelect, onStepClick, onRestart } = useContext(TourContext)
@@ -73,7 +79,13 @@ export const TourTask: React.FunctionComponent<TourTaskProps> = ({ title, steps,
 
     if (showLanguagePicker) {
         return (
-            <ItemPicker items={Object.values(TourLanguage)} onClose={onLanguageClose} onSelect={handleLanguageSelect} />
+            <ItemPicker
+                title="Please select a language:"
+                className={classNames(variant !== 'small' && 'pl-2')}
+                items={Object.values(TourLanguage)}
+                onClose={onLanguageClose}
+                onSelect={handleLanguageSelect}
+            />
         )
     }
 
@@ -94,7 +106,7 @@ export const TourTask: React.FunctionComponent<TourTaskProps> = ({ title, steps,
                     className={classNames(
                         styles.stepList,
                         'm-0',
-                        variant !== 'small' && 'flex-grow-1 d-flex flex-column justify-content-center',
+                        variant !== 'small' && 'flex-grow-1 d-flex flex-column',
                         isMultiStep && styles.isMultiStep
                     )}
                 >

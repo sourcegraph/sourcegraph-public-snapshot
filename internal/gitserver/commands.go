@@ -16,21 +16,20 @@ import (
 	"sync"
 	"time"
 
-	"gopkg.in/src-d/go-git.v4/plumbing/format/config"
-
+	"github.com/go-git/go-git/v5/plumbing/format/config"
 	"github.com/golang/groupcache/lru"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/go-diff/diff"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -131,8 +130,7 @@ func (c *ClientImplementor) ShortLog(ctx context.Context, repo api.RepoName, opt
 	if opt.Path != "" {
 		args = append(args, opt.Path)
 	}
-	cmd := c.Command("git", args...)
-	cmd.Repo = repo
+	cmd := c.GitCommand(repo, args...)
 	out, err := cmd.Output(ctx)
 	if err != nil {
 		return nil, errors.Errorf("exec `git shortlog -s -n -e` failed: %v", err)
@@ -157,9 +155,8 @@ func (c *ClientImplementor) execReader(ctx context.Context, repo api.RepoName, a
 	if !gitdomain.IsAllowedGitCmd(args) {
 		return nil, errors.Errorf("command failed: %v is not a allowed git command", args)
 	}
-	cmd := c.Command("git", args...)
-	cmd.Repo = repo
-	return StdoutReader(ctx, cmd)
+	cmd := c.GitCommand(repo, args...)
+	return cmd.StdoutReader(ctx)
 }
 
 // logEntryPattern is the regexp pattern that matches entries in the output of the `git shortlog
@@ -278,8 +275,7 @@ func (c *ClientImplementor) CommitGraph(ctx context.Context, repo api.RepoName, 
 		args = append(args, fmt.Sprintf("-%d", opts.Limit))
 	}
 
-	cmd := c.Command("git", args...)
-	cmd.Repo = repo
+	cmd := c.GitCommand(repo, args...)
 
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
@@ -324,8 +320,7 @@ func (c *ClientImplementor) DiffPath(ctx context.Context, repo api.RepoName, sou
 
 // DiffSymbols performs a diff command which is expected to be parsed by our symbols package
 func (c *ClientImplementor) DiffSymbols(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) ([]byte, error) {
-	command := c.Command("git", "diff", "-z", "--name-status", "--no-renames", string(commitA), string(commitB))
-	command.Repo = repo
+	command := c.GitCommand(repo, "diff", "-z", "--name-status", "--no-renames", string(commitA), string(commitB))
 	return command.Output(ctx)
 }
 
@@ -504,14 +499,13 @@ func lsTreeUncached(ctx context.Context, db database.DB, repo api.RepoName, comm
 	if path != "" {
 		args = append(args, "--", filepath.ToSlash(path))
 	}
-	cmd := NewClient(db).Command("git", args...)
-	cmd.Repo = repo
+	cmd := NewClient(db).GitCommand(repo, args...)
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
 		if bytes.Contains(out, []byte("exists on disk, but not in")) {
 			return nil, &os.PathError{Op: "ls-tree", Path: filepath.ToSlash(path), Err: os.ErrNotExist}
 		}
-		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args, out))
+		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
 	}
 
 	if len(out) == 0 {
@@ -566,7 +560,7 @@ func lsTreeUncached(ctx context.Context, db database.DB, repo api.RepoName, comm
 			}
 		}
 
-		var sys interface{}
+		var sys any
 		modeVal, err := strconv.ParseInt(info[0], 8, 32)
 		if err != nil {
 			return nil, err
@@ -574,17 +568,16 @@ func lsTreeUncached(ctx context.Context, db database.DB, repo api.RepoName, comm
 		mode := os.FileMode(modeVal)
 		switch typ {
 		case "blob":
-			const gitModeSymlink = 020000
+			const gitModeSymlink = 0o20000
 			if mode&gitModeSymlink != 0 {
 				mode = os.ModeSymlink
 			} else {
 				// Regular file.
-				mode = mode | 0644
+				mode = mode | 0o644
 			}
 		case "commit":
 			mode = mode | gitdomain.ModeSubmodule
-			cmd := NewClient(db).Command("git", "show", fmt.Sprintf("%s:.gitmodules", commit))
-			cmd.Repo = repo
+			cmd := NewClient(db).GitCommand(repo, "show", fmt.Sprintf("%s:.gitmodules", commit))
 			var submodule gitdomain.Submodule
 			if out, err := cmd.Output(ctx); err == nil {
 
@@ -628,4 +621,22 @@ func decodeOID(sha string) (gitdomain.OID, error) {
 	var oid gitdomain.OID
 	copy(oid[:], oidBytes)
 	return oid, nil
+}
+
+func (c *ClientImplementor) LogReverseEach(repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	command := c.GitCommand(api.RepoName(repo), gitdomain.LogReverseArgs(n, commit)...)
+
+	// We run a single `git log` command and stream the output while the repo is being processed, which
+	// can take much longer than 1 minute (the default timeout).
+	command.DisableTimeout()
+	stdout, err := command.StdoutReader(ctx)
+	if err != nil {
+		return err
+	}
+	defer stdout.Close()
+
+	return errors.Wrap(gitdomain.ParseLogReverseEach(stdout, onLogEntry), "ParseLogReverseEach")
 }

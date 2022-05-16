@@ -1,4 +1,4 @@
-import React, { FunctionComponent } from 'react'
+import { FunctionComponent } from 'react'
 
 import { Timestamp } from '../../../../components/time/Timestamp'
 import { LsifIndexFields, LsifUploadFields } from '../../../../graphql-operations'
@@ -11,10 +11,9 @@ export interface CodeIntelUploadOrIndexLastActivityProps {
     now?: () => Date
 }
 
-export const CodeIntelUploadOrIndexLastActivity: FunctionComponent<CodeIntelUploadOrIndexLastActivityProps> = ({
-    node,
-    now,
-}) =>
+export const CodeIntelUploadOrIndexLastActivity: FunctionComponent<
+    React.PropsWithChildren<CodeIntelUploadOrIndexLastActivityProps>
+> = ({ node, now }) =>
     node.finishedAt ? (
         <span>
             Completed <Timestamp date={node.finishedAt} now={now} noAbout={true} />

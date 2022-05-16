@@ -3,7 +3,8 @@ import { Observable } from 'rxjs'
 import { filter, first } from 'rxjs/operators'
 import * as vscode from 'vscode'
 
-import { ExtensionCoreAPI, SearchPanelAPI, SearchSidebarAPI } from '../contract'
+import { ExtensionCoreAPI, HelpSidebarAPI, SearchPanelAPI, SearchSidebarAPI } from '../contract'
+import { endpointSetting } from '../settings/endpointSetting'
 
 import { createEndpointsForWebview } from './comlink/extensionEndpoint'
 
@@ -25,6 +26,7 @@ export async function initializeSearchPanelWebview({
     const panel = vscode.window.createWebviewPanel('sourcegraphSearch', 'Sourcegraph', vscode.ViewColumn.One, {
         enableScripts: true,
         retainContextWhenHidden: true,
+        enableFindWidget: true,
         localResourceRoots: [vscode.Uri.joinPath(extensionUri, 'dist', 'webview')],
     })
 
@@ -33,6 +35,7 @@ export async function initializeSearchPanelWebview({
     const scriptSource = panel.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'searchPanel.js'))
     const cssModuleSource = panel.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'searchPanel.css'))
     const styleSource = panel.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'style.css'))
+    const codiconFontSource = panel.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'codicon.ttf'))
 
     const { proxy, expose, panelId } = createEndpointsForWebview(panel)
 
@@ -57,19 +60,30 @@ export async function initializeSearchPanelWebview({
 
     // Apply Content-Security-Policy
     // panel.webview.cspSource comes from the webview object
+    // debt: load codicon ourselves.
     panel.webview.html = `<!DOCTYPE html>
     <html lang="en" data-panel-id="${panelId}">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data: vscode-resource: vscode-webview: https:; script-src 'nonce-${nonce}' vscode-webview:; style-src data: ${
+        <style nonce="${nonce}">
+            @font-face {
+                font-family: 'codicon';
+                src: url(${codiconFontSource.toString()})
+            }
+        </style>
+        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; child-src data: ${
+            panel.webview.cspSource
+        }; img-src data: vscode-resource: https:; script-src 'nonce-${nonce}'; style-src data: ${
         panel.webview.cspSource
-    } vscode-resource: vscode-webview: 'unsafe-inline' http: https: data:; connect-src 'self' vscode-webview: http: https:; frame-src https:; font-src: https: vscode-resource: vscode-webview:;">
+    } vscode-resource: 'unsafe-inline' http: https: data:; connect-src 'self' http: https:; frame-src https:; font-src ${
+        panel.webview.cspSource
+    };">
         <title>Sourcegraph Search</title>
         <link rel="stylesheet" href="${styleSource.toString()}" />
         <link rel="stylesheet" href="${cssModuleSource.toString()}" />
     </head>
-    <body>
+    <body class="search-panel">
         <div id="root" />
         <script nonce="${nonce}" src="${scriptSource.toString()}"></script>
     </body>
@@ -95,6 +109,7 @@ export function initializeSearchSidebarWebview({
 } {
     webviewView.webview.options = {
         enableScripts: true,
+        localResourceRoots: [vscode.Uri.joinPath(extensionUri, 'dist', 'webview')],
     }
 
     const webviewPath = vscode.Uri.joinPath(extensionUri, 'dist', 'webview')
@@ -102,6 +117,7 @@ export function initializeSearchSidebarWebview({
     const scriptSource = webviewView.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'searchSidebar.js'))
     const cssModuleSource = webviewView.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'searchSidebar.css'))
     const styleSource = webviewView.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'style.css'))
+    const codiconFontSource = webviewView.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'codicon.ttf'))
 
     const { proxy, expose, panelId } = createEndpointsForWebview(webviewView)
 
@@ -111,31 +127,87 @@ export function initializeSearchSidebarWebview({
     // Expose the Sourcegraph VS Code Extension API to the Webview.
     Comlink.expose(extensionCoreAPI, expose)
 
-    // Specific scripts to run using nonce
-    const nonce = getNonce()
-
     // Apply Content-Security-Policy
-    // panel.webview.cspSource comes from the webview object
+    // debt: load codicon ourselves.
     webviewView.webview.html = `<!DOCTYPE html>
-    <html lang="en" data-panel-id="${panelId}">
+    <html lang="en" data-panel-id="${panelId}" data-instance-url=${endpointSetting()}>
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data: vscode-webview: vscode-resource: https:; script-src 'nonce-${nonce}' vscode-webview:; style-src data: ${
+        <style>
+            @font-face {
+                font-family: 'codicon';
+                src: url(${codiconFontSource.toString()})
+            }
+        </style>
+        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; child-src data: ${
+            webviewView.webview.cspSource
+        }; worker-src blob: data:; img-src data: https:; script-src blob: https:; style-src 'unsafe-inline' ${
         webviewView.webview.cspSource
-    } vscode-resource: http: https: data:; connect-src 'self' http: https:; font-src: https: vscode-resource: vscode-webview:;">
+    } http: https: data:; connect-src 'self' http: https:; font-src vscode-resource: blob: https:;">
         <title>Sourcegraph Search</title>
         <link rel="stylesheet" href="${styleSource.toString()}" />
         <link rel="stylesheet" href="${cssModuleSource.toString()}" />
     </head>
-    <body>
+    <body class="search-sidebar">
         <div id="root" />
-        <script nonce="${nonce}" src="${scriptSource.toString()}"></script>
+        <script src="${scriptSource.toString()}"></script>
     </body>
     </html>`
 
     return {
         searchSidebarAPI,
+    }
+}
+
+export function initializeHelpSidebarWebview({
+    extensionUri,
+    extensionCoreAPI,
+    webviewView,
+}: SourcegraphWebviewConfig & {
+    webviewView: vscode.WebviewView
+}): {
+    helpSidebarAPI: Comlink.Remote<HelpSidebarAPI>
+} {
+    webviewView.webview.options = {
+        enableScripts: true,
+        localResourceRoots: [vscode.Uri.joinPath(extensionUri, 'dist', 'webview')],
+    }
+
+    const webviewPath = vscode.Uri.joinPath(extensionUri, 'dist', 'webview')
+
+    const scriptSource = webviewView.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'helpSidebar.js'))
+    const cssModuleSource = webviewView.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'helpSidebar.css'))
+    const styleSource = webviewView.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'style.css'))
+
+    const { proxy, expose, panelId } = createEndpointsForWebview(webviewView)
+
+    // Get a proxy for the Sourcegraph Webview API to communicate with the Webview.
+    const helpSidebarAPI = Comlink.wrap<HelpSidebarAPI>(proxy)
+
+    // Expose the Sourcegraph VS Code Extension API to the Webview.
+    Comlink.expose(extensionCoreAPI, expose)
+
+    // Apply Content-Security-Policy
+    webviewView.webview.html = `<!DOCTYPE html>
+    <html lang="en" data-panel-id="${panelId}" >
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data: https:; font-src ${
+            webviewView.webview.cspSource
+        }; style-src ${webviewView.webview.cspSource}; script-src ${webviewView.webview.cspSource};">
+        <title>Help and Feedback</title>
+        <link rel="stylesheet" href="${styleSource.toString()}" />
+        <link rel="stylesheet" href="${cssModuleSource.toString()}" />
+    </head>
+        <div id="root" />
+        <script src="${scriptSource.toString()}"></script>
+    </body>
+    </html>`
+
+    return {
+        helpSidebarAPI,
     }
 }
 

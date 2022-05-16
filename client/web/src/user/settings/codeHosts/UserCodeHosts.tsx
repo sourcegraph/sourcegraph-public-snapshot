@@ -31,7 +31,7 @@ const cloudSupportedServices = {
     gitlabcom: codeHostExternalServices.gitlabcom,
 }
 
-export const UserCodeHosts: React.FunctionComponent<UserCodeHosts> = ({
+export const UserCodeHosts: React.FunctionComponent<React.PropsWithChildren<UserCodeHosts>> = ({
     user,
     externalServices,
     context,
@@ -66,7 +66,7 @@ export const UserCodeHosts: React.FunctionComponent<UserCodeHosts> = ({
 
             if (authProvider) {
                 onNavigation?.(true)
-                eventLogger.log('UserAttemptConnectCodeHost', { kind }, { kind })
+                eventLogger.log('ConnectUserCodeHostClicked', { kind }, { kind })
                 window.location.assign(
                     `${authProvider.authenticationURL as string}&redirect=${
                         window.location.href

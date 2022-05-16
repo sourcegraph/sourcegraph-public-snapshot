@@ -1,22 +1,21 @@
 import React, { useCallback } from 'react'
 
 import classNames from 'classnames'
-import * as H from 'history'
 import AlphaSBoxIcon from 'mdi-react/AlphaSBoxIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import FileIcon from 'mdi-react/FileIcon'
 import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
-import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
+import { useLocation } from 'react-router'
 import { Observable } from 'rxjs'
 
 import { HoverMerged } from '@sourcegraph/client-api'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import { SearchContextProps } from '@sourcegraph/search'
-import { SearchResult } from '@sourcegraph/search-ui'
+import { CommitSearchResult, RepoSearchResult } from '@sourcegraph/search-ui'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
-import { FileMatch } from '@sourcegraph/shared/src/components/FileMatch'
+import { FileSearchResult } from '@sourcegraph/shared/src/components/FileSearchResult'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
@@ -48,7 +47,6 @@ export interface StreamingSearchResultsListProps
         PlatformContextProps<'requestGraphQL'> {
     isSourcegraphDotCom: boolean
     results?: AggregateStreamingSearchResults
-    location: H.Location
     allExpanded: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     authenticatedUser: AuthenticatedUser | null
@@ -73,9 +71,10 @@ export interface StreamingSearchResultsListProps
     resultClassName?: string
 }
 
-export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearchResultsListProps> = ({
+export const StreamingSearchResultsList: React.FunctionComponent<
+    React.PropsWithChildren<StreamingSearchResultsListProps>
+> = ({
     results,
-    location,
     allExpanded,
     fetchHighlightedFileLineRanges,
     settingsCascade,
@@ -96,6 +95,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
 }) => {
     const resultsNumber = results?.results.length || 0
     const { itemsToShow, handleBottomHit } = useItemsToShow(executedQuery, resultsNumber)
+    const location = useLocation()
 
     const logSearchResultClicked = useCallback(
         (index: number, type: string) => {
@@ -114,7 +114,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                 case 'path':
                 case 'symbol':
                     return (
-                        <FileMatch
+                        <FileSearchResult
                             location={location}
                             telemetryService={telemetryService}
                             icon={getFileMatchIcon(result)}
@@ -134,7 +134,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                     )
                 case 'commit':
                     return (
-                        <SearchResult
+                        <CommitSearchResult
                             icon={SourceCommitIcon}
                             result={result}
                             repoName={result.repository}
@@ -146,11 +146,9 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                     )
                 case 'repo':
                     return (
-                        <SearchResult
-                            icon={SourceRepositoryIcon}
+                        <RepoSearchResult
                             result={result}
                             repoName={result.repository}
-                            platformContext={platformContext}
                             onSelect={() => logSearchResultClicked(index, 'repo')}
                             containerClassName={resultClassName}
                         />

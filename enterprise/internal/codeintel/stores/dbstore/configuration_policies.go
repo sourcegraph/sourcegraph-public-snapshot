@@ -2,7 +2,6 @@ package dbstore
 
 import (
 	"context"
-	"database/sql"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -40,64 +40,48 @@ type ConfigurationPolicy struct {
 	IndexIntermediateCommits  bool
 }
 
-// scanConfigurationPolicies scans a slice of configuration policies from the return value of `*Store.query`.
-func scanConfigurationPolicies(rows *sql.Rows, queryErr error) (_ []ConfigurationPolicy, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+func scanConfigurationPolicy(s dbutil.Scanner) (configurationPolicy ConfigurationPolicy, err error) {
+	var repositoryPatterns []string
+	var retentionDurationHours, indexCommitMaxAgeHours *int
 
-	var configurationPolicies []ConfigurationPolicy
-	for rows.Next() {
-		var repositoryPatterns []string
-		var configurationPolicy ConfigurationPolicy
-		var retentionDurationHours, indexCommitMaxAgeHours *int
-
-		if err := rows.Scan(
-			&configurationPolicy.ID,
-			&configurationPolicy.RepositoryID,
-			pq.Array(&repositoryPatterns),
-			&configurationPolicy.Name,
-			&configurationPolicy.Type,
-			&configurationPolicy.Pattern,
-			&configurationPolicy.Protected,
-			&configurationPolicy.RetentionEnabled,
-			&retentionDurationHours,
-			&configurationPolicy.RetainIntermediateCommits,
-			&configurationPolicy.IndexingEnabled,
-			&indexCommitMaxAgeHours,
-			&configurationPolicy.IndexIntermediateCommits,
-		); err != nil {
-			return nil, err
-		}
-
-		if len(repositoryPatterns) != 0 {
-			configurationPolicy.RepositoryPatterns = &repositoryPatterns
-		}
-		if retentionDurationHours != nil {
-			duration := time.Duration(*retentionDurationHours) * time.Hour
-			configurationPolicy.RetentionDuration = &duration
-		}
-		if indexCommitMaxAgeHours != nil {
-			duration := time.Duration(*indexCommitMaxAgeHours) * time.Hour
-			configurationPolicy.IndexCommitMaxAge = &duration
-		}
-
-		configurationPolicies = append(configurationPolicies, configurationPolicy)
+	if err := s.Scan(
+		&configurationPolicy.ID,
+		&configurationPolicy.RepositoryID,
+		pq.Array(&repositoryPatterns),
+		&configurationPolicy.Name,
+		&configurationPolicy.Type,
+		&configurationPolicy.Pattern,
+		&configurationPolicy.Protected,
+		&configurationPolicy.RetentionEnabled,
+		&retentionDurationHours,
+		&configurationPolicy.RetainIntermediateCommits,
+		&configurationPolicy.IndexingEnabled,
+		&indexCommitMaxAgeHours,
+		&configurationPolicy.IndexIntermediateCommits,
+	); err != nil {
+		return configurationPolicy, err
 	}
 
-	return configurationPolicies, nil
+	if len(repositoryPatterns) != 0 {
+		configurationPolicy.RepositoryPatterns = &repositoryPatterns
+	}
+	if retentionDurationHours != nil {
+		duration := time.Duration(*retentionDurationHours) * time.Hour
+		configurationPolicy.RetentionDuration = &duration
+	}
+	if indexCommitMaxAgeHours != nil {
+		duration := time.Duration(*indexCommitMaxAgeHours) * time.Hour
+		configurationPolicy.IndexCommitMaxAge = &duration
+	}
+	return configurationPolicy, nil
 }
+
+// scanConfigurationPolicies scans a slice of configuration policies from the return value of `*Store.query`.
+var scanConfigurationPolicies = basestore.NewSliceScanner(scanConfigurationPolicy)
 
 // scanFirstConfigurationPolicy scans a slice of configuration policies from the return value of `*Store.query`
 // and returns the first.
-func scanFirstConfigurationPolicy(rows *sql.Rows, err error) (ConfigurationPolicy, bool, error) {
-	scanConfigurationPolicies, err := scanConfigurationPolicies(rows, err)
-	if err != nil || len(scanConfigurationPolicies) == 0 {
-		return ConfigurationPolicy{}, false, err
-	}
-	return scanConfigurationPolicies[0], true, nil
-}
+var scanFirstConfigurationPolicy = basestore.NewFirstScanner(scanConfigurationPolicy)
 
 type GetConfigurationPoliciesOptions struct {
 	// RepositoryID indicates that only configuration policies that apply to the
@@ -127,7 +111,7 @@ type GetConfigurationPoliciesOptions struct {
 // If a repository identifier is supplied (is non-zero), then only the configuration policies that apply
 // to repository are returned. If repository is not supplied, then all policies may be returned.
 func (s *Store) GetConfigurationPolicies(ctx context.Context, opts GetConfigurationPoliciesOptions) (_ []ConfigurationPolicy, totalCount int, err error) {
-	ctx, trace, endObservation := s.operations.getConfigurationPolicies.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := s.operations.getConfigurationPolicies.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", opts.RepositoryID),
 		log.String("term", opts.Term),
 		log.Bool("forDataRetention", opts.ForDataRetention),
@@ -242,7 +226,7 @@ func makeConfigurationPolicySearchCondition(term string) *sqlf.Query {
 
 // GetConfigurationPolicyByID retrieves the configuration policy with the given identifier.
 func (s *Store) GetConfigurationPolicyByID(ctx context.Context, id int) (_ ConfigurationPolicy, _ bool, err error) {
-	ctx, endObservation := s.operations.getConfigurationPolicyByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.getConfigurationPolicyByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("id", id),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -281,7 +265,7 @@ WHERE p.id = %s AND (p.repository_id IS NULL OR (%s))
 // CreateConfigurationPolicy creates a configuration policy with the given fields (ignoring ID). The hydrated
 // configuration policy record is returned.
 func (s *Store) CreateConfigurationPolicy(ctx context.Context, configurationPolicy ConfigurationPolicy) (_ ConfigurationPolicy, err error) {
-	ctx, endObservation := s.operations.createConfigurationPolicy.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.createConfigurationPolicy.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	var retentionDurationHours *int
@@ -296,7 +280,7 @@ func (s *Store) CreateConfigurationPolicy(ctx context.Context, configurationPoli
 		indexingCommitMaxAgeHours = &duration
 	}
 
-	var repositoryPatterns interface{}
+	var repositoryPatterns any
 	if configurationPolicy.RepositoryPatterns != nil {
 		repositoryPatterns = pq.Array(*configurationPolicy.RepositoryPatterns)
 	}
@@ -361,7 +345,7 @@ var (
 
 // UpdateConfigurationPolicy updates the fields of the configuration policy record with the given identifier.
 func (s *Store) UpdateConfigurationPolicy(ctx context.Context, policy ConfigurationPolicy) (err error) {
-	ctx, endObservation := s.operations.updateConfigurationPolicy.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.updateConfigurationPolicy.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("id", policy.ID),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -401,7 +385,7 @@ func (s *Store) UpdateConfigurationPolicy(ctx context.Context, policy Configurat
 		}
 	}
 
-	var repositoryPatterns interface{}
+	var repositoryPatterns any
 	if policy.RepositoryPatterns != nil {
 		repositoryPatterns = pq.Array(*policy.RepositoryPatterns)
 	}
@@ -460,7 +444,7 @@ WHERE id = %s
 
 // DeleteConfigurationPolicyByID deletes the configuration policy with the given identifier.
 func (s *Store) DeleteConfigurationPolicyByID(ctx context.Context, id int) (err error) {
-	ctx, endObservation := s.operations.deleteConfigurationPolicyByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.deleteConfigurationPolicyByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("id", id),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -497,7 +481,7 @@ SELECT protected FROM candidate
 // SelectPoliciesForRepositoryMembershipUpdate returns a slice of configuration policies that should be considered
 // for repository membership updates. Configuration policies are returned in the order of least recently updated.
 func (s *Store) SelectPoliciesForRepositoryMembershipUpdate(ctx context.Context, batchSize int) (configurationPolicies []ConfigurationPolicy, err error) {
-	ctx, trace, endObservation := s.operations.selectPoliciesForRepositoryMembershipUpdate.WithAndLogger(ctx, &err, observation.Args{})
+	ctx, trace, endObservation := s.operations.selectPoliciesForRepositoryMembershipUpdate.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	configurationPolicies, err = scanConfigurationPolicies(s.Store.Query(ctx, sqlf.Sprintf(selectPoliciesForRepositoryMembershipUpdate, batchSize, timeutil.Now())))

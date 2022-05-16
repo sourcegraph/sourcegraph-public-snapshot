@@ -9,11 +9,12 @@ import (
 	"path/filepath"
 
 	"github.com/Masterminds/semver"
-	"github.com/peterbourgon/ff/v3/ffcli"
+	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/migration"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/cliutil"
@@ -26,70 +27,71 @@ import (
 )
 
 var (
-	addFlagSet          = flag.NewFlagSet("sg migration add", flag.ExitOnError)
-	addDatabaseNameFlag = addFlagSet.String("db", db.DefaultDatabase.Name, "The target schema to modify")
-	addCommand          = &ffcli.Command{
-		Name:       "add",
-		ShortUsage: fmt.Sprintf("sg migration add [-db=%s] <name>", db.DefaultDatabase.Name),
-		ShortHelp:  "Add a new migration file",
-		FlagSet:    addFlagSet,
-		Exec:       addExec,
-		LongHelp:   cliutil.ConstructLongHelp(),
+	migrateTargetDatabase     string
+	migrateTargetDatabaseFlag = &cli.StringFlag{
+		Name:        "db",
+		Usage:       "The target database `schema` to modify",
+		Value:       db.DefaultDatabase.Name,
+		Destination: &migrateTargetDatabase,
+	}
+)
+
+var (
+	addCommand = &cli.Command{
+		Name:        "add",
+		ArgsUsage:   "<name>",
+		Usage:       "Add a new migration file",
+		Description: cliutil.ConstructLongHelp(),
+		Flags:       []cli.Flag{migrateTargetDatabaseFlag},
+		Action:      execAdapter(addExec),
 	}
 
-	migrationRevertFlagSet = flag.NewFlagSet("sg migration revert", flag.ExitOnError)
-	revertCommand          = &ffcli.Command{
-		Name:       "revert",
-		ShortUsage: "sg migration revert <commit>",
-		ShortHelp:  "Revert the migrations defined on the given commit",
-		FlagSet:    migrationRevertFlagSet,
-		Exec:       revertExec,
-		LongHelp:   cliutil.ConstructLongHelp(),
+	revertCommand = &cli.Command{
+		Name:        "revert",
+		ArgsUsage:   "<commit>",
+		Usage:       "Revert the migrations defined on the given commit",
+		Description: cliutil.ConstructLongHelp(),
+		Action:      execAdapter(revertExec),
 	}
 
-	upCommand       = cliutil.Up("sg migration", makeRunner, stdout.Out, true)
-	upToCommand     = cliutil.UpTo("sg migration", makeRunner, stdout.Out, true)
-	UndoCommand     = cliutil.Undo("sg migration", makeRunner, stdout.Out, true)
-	downToCommand   = cliutil.DownTo("sg migration", makeRunner, stdout.Out, true)
-	validateCommand = cliutil.Validate("sg validate", makeRunner, stdout.Out)
-	addLogCommand   = cliutil.AddLog("sg migration", makeRunner, stdout.Out)
+	// outputFactory lazily retrieves the global output that might not yet be instantiated
+	// at compile-time in sg.
+	outputFactory = func() *output.Output { return std.Out.Output }
 
-	leavesFlagSet = flag.NewFlagSet("sg migration leaves", flag.ExitOnError)
-	leavesCommand = &ffcli.Command{
-		Name:       "leaves",
-		ShortUsage: "sg migration leaves <commit>",
-		ShortHelp:  "Identiy the migration leaves for the given commit",
-		FlagSet:    leavesFlagSet,
-		Exec:       leavesExec,
-		LongHelp:   cliutil.ConstructLongHelp(),
+	upCommand       = cliutil.Up("sg migration", makeRunner, outputFactory, true)
+	upToCommand     = cliutil.UpTo("sg migration", makeRunner, outputFactory, true)
+	undoCommand     = cliutil.Undo("sg migration", makeRunner, outputFactory, true)
+	downToCommand   = cliutil.DownTo("sg migration", makeRunner, outputFactory, true)
+	validateCommand = cliutil.Validate("sg validate", makeRunner, outputFactory)
+	addLogCommand   = cliutil.AddLog("sg migration", makeRunner, outputFactory)
+
+	leavesCommand = &cli.Command{
+		Name:        "leaves",
+		ArgsUsage:   "<commit>",
+		Usage:       "Identiy the migration leaves for the given commit",
+		Description: cliutil.ConstructLongHelp(),
+		Action:      execAdapter(leavesExec),
 	}
 
-	squashFlagSet          = flag.NewFlagSet("sg migration squash", flag.ExitOnError)
-	squashDatabaseNameFlag = squashFlagSet.String("db", db.DefaultDatabase.Name, "The target schema to modify")
-	squashCommand          = &ffcli.Command{
-		Name:       "squash",
-		ShortUsage: fmt.Sprintf("sg migration squash [-db=%s] <current-release>", db.DefaultDatabase.Name),
-		ShortHelp:  "Collapse migration files from historic releases together",
-		FlagSet:    squashFlagSet,
-		Exec:       squashExec,
-		LongHelp:   cliutil.ConstructLongHelp(),
+	squashCommand = &cli.Command{
+		Name:        "squash",
+		ArgsUsage:   "<current-release>",
+		Usage:       "Collapse migration files from historic releases together",
+		Description: cliutil.ConstructLongHelp(),
+		Flags:       []cli.Flag{migrateTargetDatabaseFlag},
+		Action:      execAdapter(squashExec),
 	}
 
-	migrationFlagSet = flag.NewFlagSet("sg migration", flag.ExitOnError)
-	migrationCommand = &ffcli.Command{
-		Name:       "migration",
-		ShortUsage: "sg migration <command>",
-		ShortHelp:  "Modifies and runs database migrations",
-		FlagSet:    migrationFlagSet,
-		Exec: func(ctx context.Context, args []string) error {
-			return flag.ErrHelp
-		},
-		Subcommands: []*ffcli.Command{
+	migrationCommand = &cli.Command{
+		Name:     "migration",
+		Usage:    "Modifies and runs database migrations",
+		Category: CategoryDev,
+		Subcommands: []*cli.Command{
 			addCommand,
 			revertCommand,
 			upCommand,
 			upToCommand,
-			UndoCommand,
+			undoCommand,
 			downToCommand,
 			validateCommand,
 			addLogCommand,
@@ -103,9 +105,9 @@ func makeRunner(ctx context.Context, schemaNames []string) (cliutil.Runner, erro
 	// Try to read the `sg` configuration so we can read ENV vars from the
 	// configuration and use process env as fallback.
 	var getEnv func(string) string
-	ok, _ := parseConf(*configFlag, *overwriteConfigFlag)
-	if ok {
-		getEnv = globalConf.GetEnv
+	config, _ := sgconf.Get(configFile, configOverwriteFile)
+	if config != nil {
+		getEnv = config.GetEnv
 	} else {
 		getEnv = os.Getenv
 	}
@@ -156,20 +158,20 @@ func resolveSchema(name string) (*schemas.Schema, error) {
 
 func addExec(ctx context.Context, args []string) error {
 	if len(args) == 0 {
-		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "No migration name specified"))
+		std.Out.WriteLine(output.Styled(output.StyleWarning, "No migration name specified"))
 		return flag.ErrHelp
 	}
 	if len(args) != 1 {
-		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments"))
+		std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: too many arguments"))
 		return flag.ErrHelp
 	}
 
 	var (
-		databaseName = *addDatabaseNameFlag
+		databaseName = migrateTargetDatabase
 		database, ok = db.DatabaseByName(databaseName)
 	)
 	if !ok {
-		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: database %q not found :(", databaseName))
+		std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: database %q not found :(", databaseName))
 		return flag.ErrHelp
 	}
 
@@ -178,11 +180,11 @@ func addExec(ctx context.Context, args []string) error {
 
 func revertExec(ctx context.Context, args []string) error {
 	if len(args) == 0 {
-		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "No commit specified"))
+		std.Out.WriteLine(output.Styled(output.StyleWarning, "No commit specified"))
 		return flag.ErrHelp
 	}
 	if len(args) != 1 {
-		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments"))
+		std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: too many arguments"))
 		return flag.ErrHelp
 	}
 
@@ -191,20 +193,20 @@ func revertExec(ctx context.Context, args []string) error {
 
 func squashExec(ctx context.Context, args []string) (err error) {
 	if len(args) == 0 {
-		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "No current-version specified"))
+		std.Out.WriteLine(output.Styled(output.StyleWarning, "No current-version specified"))
 		return flag.ErrHelp
 	}
 	if len(args) != 1 {
-		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments"))
+		std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: too many arguments"))
 		return flag.ErrHelp
 	}
 
 	var (
-		databaseName = *squashDatabaseNameFlag
+		databaseName = migrateTargetDatabase
 		database, ok = db.DatabaseByName(databaseName)
 	)
 	if !ok {
-		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: database %q not found :(", databaseName))
+		std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: database %q not found :(", databaseName))
 		return flag.ErrHelp
 	}
 
@@ -213,18 +215,18 @@ func squashExec(ctx context.Context, args []string) (err error) {
 	if err != nil {
 		return err
 	}
-	stdout.Out.Writef("Squashing migration files defined up through %s", commit)
+	std.Out.Writef("Squashing migration files defined up through %s", commit)
 
 	return migration.Squash(database, commit)
 }
 
 func leavesExec(ctx context.Context, args []string) (err error) {
 	if len(args) == 0 {
-		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "No commit specified"))
+		std.Out.WriteLine(output.Styled(output.StyleWarning, "No commit specified"))
 		return flag.ErrHelp
 	}
 	if len(args) != 1 {
-		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments"))
+		std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: too many arguments"))
 		return flag.ErrHelp
 	}
 

@@ -1,6 +1,7 @@
-import React, { ReactElement, useMemo } from 'react'
+import { ReactElement, useMemo } from 'react'
 
 import { isDefined } from '@sourcegraph/common'
+import { Typography } from '@sourcegraph/wildcard'
 
 import { DEFAULT_FALLBACK_COLOR } from '../../../../constants'
 import { Series } from '../../../../types'
@@ -17,7 +18,7 @@ export function getLineStroke<Datum>(line: Series<Datum>): string {
 
 const MAX_ITEMS_IN_TOOLTIP = 10
 
-export type MinimumPointInfo<Datum> = Pick<Point<Datum>, 'datum' | 'seriesKey' | 'value' | 'time'>
+export type MinimumPointInfo<Datum> = Pick<Point<Datum>, 'seriesId' | 'value' | 'time'>
 
 export interface TooltipContentProps<Datum> {
     series: Series<Datum>[]
@@ -39,7 +40,10 @@ export function TooltipContent<Datum>(props: TooltipContentProps<Datum>): ReactE
 
         const sortedSeries = series
             .map(line => {
-                const value = activePoint.datum[line.dataKey]
+                const seriesDatum = line.data.find(
+                    datum => line.getXValue(datum).getTime() === activePoint.time.getTime()
+                )
+                const value = seriesDatum ? line.getYValue(seriesDatum) : null
 
                 if (!isValidNumber(value)) {
                     return
@@ -51,7 +55,7 @@ export function TooltipContent<Datum>(props: TooltipContentProps<Datum>): ReactE
             .sort((lineA, lineB) => (!stacked ? lineB.value - lineA.value : -1))
 
         // Find index of hovered point
-        const hoveredSeriesIndex = sortedSeries.findIndex(line => line.dataKey === activePoint.seriesKey)
+        const hoveredSeriesIndex = sortedSeries.findIndex(line => line.id === activePoint.seriesId)
 
         // Normalize index of hovered point
         const centerIndex = hoveredSeriesIndex !== -1 ? hoveredSeriesIndex : Math.floor(sortedSeries.length / 2)
@@ -61,19 +65,19 @@ export function TooltipContent<Datum>(props: TooltipContentProps<Datum>): ReactE
 
     return (
         <>
-            <h3>{activePoint.time.toDateString()}</h3>
+            <Typography.H3>{activePoint.time.toDateString()}</Typography.H3>
 
             <ul className={styles.tooltipList}>
                 {lines.leftRemaining > 0 && <li className={styles.item}>... and {lines.leftRemaining} more</li>}
                 {lines.window.map(line => {
                     const value = formatYTick(line.value)
-                    const isActiveLine = activePoint.seriesKey === line.dataKey
+                    const isActiveLine = activePoint.seriesId === line.id
                     const stackedValue = isActiveLine && stacked ? formatYTick(activePoint.value) : null
                     const backgroundColor = isActiveLine ? 'var(--secondary-2)' : ''
 
                     /* eslint-disable react/forbid-dom-props */
                     return (
-                        <li key={line.dataKey as string} className={styles.item} style={{ backgroundColor }}>
+                        <li key={line.id} className={styles.item} style={{ backgroundColor }}>
                             <div style={{ backgroundColor: getLineStroke(line) }} className={styles.mark} />
 
                             <span className={styles.legendText}>{line.name}</span>

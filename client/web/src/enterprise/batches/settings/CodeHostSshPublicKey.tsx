@@ -16,6 +16,7 @@ const configInstructionLinks: Record<ExternalServiceKind, string> = {
         'https://confluence.atlassian.com/bitbucketserver/ssh-user-keys-for-personal-use-776639793.html',
     [ExternalServiceKind.AWSCODECOMMIT]: 'unsupported',
     [ExternalServiceKind.BITBUCKETCLOUD]: 'unsupported',
+    [ExternalServiceKind.GERRIT]: 'unsupported',
     [ExternalServiceKind.GITOLITE]: 'unsupported',
     [ExternalServiceKind.GOMODULES]: 'unsupported',
     [ExternalServiceKind.JVMPACKAGES]: 'unsupported',
@@ -24,6 +25,7 @@ const configInstructionLinks: Record<ExternalServiceKind, string> = {
     [ExternalServiceKind.PERFORCE]: 'unsupported',
     [ExternalServiceKind.PAGURE]: 'unsupported',
     [ExternalServiceKind.PHABRICATOR]: 'unsupported',
+    [ExternalServiceKind.PYTHONPACKAGES]: 'unsupported',
 }
 
 export interface CodeHostSshPublicKeyProps {
@@ -34,7 +36,7 @@ export interface CodeHostSshPublicKeyProps {
     showCopyButton?: boolean
 }
 
-export const CodeHostSshPublicKey: React.FunctionComponent<CodeHostSshPublicKeyProps> = ({
+export const CodeHostSshPublicKey: React.FunctionComponent<React.PropsWithChildren<CodeHostSshPublicKeyProps>> = ({
     externalServiceKind,
     sshPublicKey,
     showInstructionsLink = true,

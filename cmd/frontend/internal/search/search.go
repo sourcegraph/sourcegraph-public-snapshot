@@ -83,7 +83,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Always send a final done event so clients know the stream is shutting
 	// down.
-	defer eventWriter.Event("done", map[string]interface{}{})
+	defer eventWriter.Event("done", map[string]any{})
 
 	// Log events to trace
 	eventWriter.StatHook = eventStreamOTHook(tr.LogFields)
@@ -108,7 +108,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	progress := progressAggregator{
 		Start:        start,
 		Limit:        inputs.MaxResults(),
-		Trace:        trace.URL(trace.ID(ctx), conf.ExternalURL()),
+		Trace:        trace.URL(trace.ID(ctx), conf.ExternalURL(), conf.Tracer()),
 		DisplayLimit: displayLimit,
 		RepoNamer:    repoNamer(ctx, h.db),
 	}

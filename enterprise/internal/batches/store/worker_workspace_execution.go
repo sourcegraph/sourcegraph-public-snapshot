@@ -226,7 +226,7 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 		return false, err
 	}
 
-	rollbackAndMarkFailed := func(err error, fmtStr string, args ...interface{}) (bool, error) {
+	rollbackAndMarkFailed := func(err error, fmtStr string, args ...any) (bool, error) {
 		// Rollback transaction but ignore rollback errors
 		tx.Done(err)
 		return s.Store.MarkFailed(ctx, id, fmt.Sprintf(fmtStr, args...), options)

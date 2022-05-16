@@ -11,8 +11,6 @@ import {
     CaseSensitivityProps,
     SearchPatternTypeProps,
     SearchContextProps,
-    useQueryIntelligence,
-    useQueryDiagnostics,
 } from '@sourcegraph/search'
 import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
@@ -23,6 +21,7 @@ import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@source
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { IEditor } from './LazyMonacoQueryInput'
+import { useQueryDiagnostics, useQueryIntelligence } from './useQueryIntelligence'
 
 import styles from './MonacoQueryInput.module.scss'
 
@@ -153,7 +152,7 @@ export const toMonacoSelection = (range: Monaco.IRange): Monaco.ISelection => ({
  * This component should not be imported directly: use {@link LazyMonacoQueryInput} instead
  * to avoid bundling the Monaco editor on every page.
  */
-export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = ({
+export const MonacoQueryInput: React.FunctionComponent<React.PropsWithChildren<MonacoQueryInputProps>> = ({
     queryState,
     onFocus,
     onBlur,

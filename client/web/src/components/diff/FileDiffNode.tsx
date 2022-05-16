@@ -38,7 +38,7 @@ export interface FileDiffNodeProps extends ThemeProps {
 }
 
 /** A file diff. */
-export const FileDiffNode: React.FunctionComponent<FileDiffNodeProps> = ({
+export const FileDiffNode: React.FunctionComponent<React.PropsWithChildren<FileDiffNodeProps>> = ({
     history,
     isLightTheme,
     lineNumbers,
@@ -65,8 +65,8 @@ export const FileDiffNode: React.FunctionComponent<FileDiffNodeProps> = ({
         path = <span title={node.newPath}>{node.newPath}</span>
     } else if (node.newPath && node.oldPath && node.newPath !== node.oldPath) {
         path = (
-            <span title={`${node.oldPath} ⟶ ${node.newPath}`}>
-                {node.oldPath} ⟶ {node.newPath}
+            <span title={`${node.oldPath} → ${node.newPath}`}>
+                {node.oldPath} → {node.newPath}
             </span>
         )
     } else {
@@ -97,10 +97,20 @@ export const FileDiffNode: React.FunctionComponent<FileDiffNodeProps> = ({
     return (
         <>
             {/* The empty <a> tag is to allow users to anchor links to the top of this file diff node */}
-            <Link to="" id={anchor} aria-hidden={true} />
-            <div className={classNames('test-file-diff-node', styles.fileDiffNode, className)}>
+            {/*
+                a11y-ignore
+                Rule: "aria-hidden-focus" (ARIA hidden element must not contain focusable elements)
+            */}
+            <Link className="a11y-ignore" to="" id={anchor} aria-hidden={true} />
+            <li className={classNames('test-file-diff-node', styles.fileDiffNode, className)}>
                 <div className={styles.header}>
-                    <Button variant="icon" className="mr-2" onClick={toggleExpand} size="sm">
+                    <Button
+                        aria-label={expanded ? 'Hide file diff' : 'Show file diff'}
+                        variant="icon"
+                        className="mr-2"
+                        onClick={toggleExpand}
+                        size="sm"
+                    >
                         <Icon as={expanded ? ChevronDownIcon : ChevronRightIcon} />
                     </Button>
                     <div className={classNames('align-items-baseline', styles.headerPathStat)}>
@@ -120,23 +130,25 @@ export const FileDiffNode: React.FunctionComponent<FileDiffNodeProps> = ({
                             </Badge>
                         )}
                         {stat}
-                        <Link to={{ ...location, hash: anchor }} className={classNames('ml-2', styles.headerPath)}>
-                            {path}
-                        </Link>
-                    </div>
-                    <div className={styles.headerActions}>
-                        {/* We only have a 'view' component for GitBlobs, but not for `VirtualFile`s. */}
-                        {node.mostRelevantFile.__typename === 'GitBlob' && (
-                            <Button
+                        {node.mostRelevantFile.__typename === 'GitBlob' ? (
+                            <Link
                                 to={node.mostRelevantFile.url}
                                 data-tooltip="View file at revision"
-                                variant="link"
-                                size="sm"
-                                as={Link}
+                                className="mr-0 ml-2 fw-bold"
                             >
-                                View
-                            </Button>
+                                <strong>{path}</strong>
+                            </Link>
+                        ) : (
+                            <span className="ml-2">{path}</span>
                         )}
+                        <Link
+                            to={{ ...location, hash: anchor }}
+                            className={classNames('ml-2', styles.headerPath)}
+                            data-tooltip="Pin diff"
+                            aria-label="Pin diff"
+                        >
+                            #
+                        </Link>
                     </div>
                 </div>
                 {expanded &&
@@ -177,7 +189,7 @@ export const FileDiffNode: React.FunctionComponent<FileDiffNodeProps> = ({
                             diffMode={diffMode}
                         />
                     ))}
-            </div>
+            </li>
         </>
     )
 }

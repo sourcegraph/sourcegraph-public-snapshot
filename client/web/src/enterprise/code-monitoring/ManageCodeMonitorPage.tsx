@@ -37,7 +37,9 @@ interface ManageCodeMonitorPageProps extends RouteComponentProps<{ id: Scalars['
     isSourcegraphDotCom: boolean
 }
 
-const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<ManageCodeMonitorPageProps> = ({
+const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<
+    React.PropsWithChildren<ManageCodeMonitorPageProps>
+> = ({
     authenticatedUser,
     history,
     location,

@@ -10,11 +10,11 @@ exports[`ErrorBoundary passes through if non-error 1`] = `
     >
       <alertcircleicon />
     </div>
-    <div
-      class="title"
+    <h1
+      class="h1 title"
     >
       Error
-    </div>
+    </h1>
     <div
       class="subtitle"
       data-testid="hero-page-subtitle"
@@ -56,11 +56,11 @@ exports[`ErrorBoundary renders reload page if chunk error 1`] = `
     >
       <reloadicon />
     </div>
-    <div
-      class="title"
+    <h1
+      class="h1 title"
     >
       Reload required
-    </div>
+    </h1>
     <div
       class="subtitle"
       data-testid="hero-page-subtitle"

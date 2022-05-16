@@ -1,4 +1,4 @@
-import React, { FunctionComponent } from 'react'
+import { FunctionComponent } from 'react'
 
 import { CardSubtitle, CardText, CardTitle, CardBody, Card } from '@sourcegraph/wildcard'
 
@@ -14,7 +14,10 @@ export interface CodeIntelUploadMetaProps {
     now?: () => Date
 }
 
-export const CodeIntelUploadMeta: FunctionComponent<CodeIntelUploadMetaProps> = ({ node, now }) => (
+export const CodeIntelUploadMeta: FunctionComponent<React.PropsWithChildren<CodeIntelUploadMetaProps>> = ({
+    node,
+    now,
+}) => (
     <Card>
         <CardBody>
             <CardTitle>

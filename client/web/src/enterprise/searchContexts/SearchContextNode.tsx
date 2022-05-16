@@ -17,7 +17,7 @@ export interface SearchContextNodeProps {
     history: H.History
 }
 
-export const SearchContextNode: React.FunctionComponent<SearchContextNodeProps> = ({
+export const SearchContextNode: React.FunctionComponent<React.PropsWithChildren<SearchContextNodeProps>> = ({
     node,
 }: SearchContextNodeProps) => (
     <div className={classNames('py-3 d-flex align-items-center', styles.searchContextNode)}>

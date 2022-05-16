@@ -13,7 +13,7 @@ import (
 
 // UpdatePackageReferences inserts reference data tied to the given upload.
 func (s *Store) UpdatePackageReferences(ctx context.Context, dumpID int, references []precise.PackageReference) (err error) {
-	ctx, endObservation := s.operations.updatePackageReferences.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.updatePackageReferences.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("numReferences", len(references)),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -39,7 +39,7 @@ func (s *Store) UpdatePackageReferences(ctx context.Context, dumpID int, referen
 		tx.Handle().DB(),
 		"t_lsif_references",
 		batch.MaxNumPostgresParameters,
-		[]string{"scheme", "name", "version", "filter"},
+		[]string{"scheme", "name", "version"},
 		loadReferencesChannel(references),
 	); err != nil {
 		return err
@@ -55,32 +55,25 @@ const updateReferencesTemporaryTableQuery = `
 CREATE TEMPORARY TABLE t_lsif_references (
 	scheme text NOT NULL,
 	name text NOT NULL,
-	version text NOT NULL,
-	filter bytea NOT NULL
+	version text NOT NULL
 ) ON COMMIT DROP
 `
 
 const updateReferencesInsertQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/references.go:UpdatePackageReferences
-INSERT INTO lsif_references (dump_id, scheme, name, version, filter)
-SELECT %s, source.scheme, source.name, source.version, source.filter
+INSERT INTO lsif_references (dump_id, scheme, name, version)
+SELECT %s, source.scheme, source.name, source.version
 FROM t_lsif_references source
 `
 
-func loadReferencesChannel(references []precise.PackageReference) <-chan []interface{} {
-	ch := make(chan []interface{}, len(references))
+func loadReferencesChannel(references []precise.PackageReference) <-chan []any {
+	ch := make(chan []any, len(references))
 
 	go func() {
 		defer close(ch)
 
 		for _, r := range references {
-			filter := r.Filter
-			if filter == nil {
-				// avoid not null constraint
-				filter = []byte{}
-			}
-
-			ch <- []interface{}{r.Scheme, r.Name, r.Version, filter}
+			ch <- []any{r.Scheme, r.Name, r.Version}
 		}
 	}()
 
