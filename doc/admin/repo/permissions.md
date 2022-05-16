@@ -452,7 +452,7 @@ After you enable the permissions API, you must [set permissions](#settings-repos
 
 ### Setting a repository as unrestricted
 
-Sometimes it can be useful to mark a repository as `unrestricted`, meaning that it is available to all Sourcegraph users. This can be done with the `setRepositoryPermissionsUnrestricted` mutation. Marking a repository as unrestricted will override any previously set explicit or synced permissions. Setting `unrestricted` back to `false` will restore the previous behaviour.
+Sometimes it can be useful to mark a repository as `unrestricted`, meaning that it is available to all Sourcegraph users. This can be done with the `setRepositoryPermissionsUnrestricted` mutation. Marking a repository as unrestricted will disregard any previously set explicit or synced permissions. Setting `unrestricted` back to `false` will restore the previous behaviour.
 
 For example:
 
