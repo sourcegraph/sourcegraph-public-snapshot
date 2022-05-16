@@ -23,7 +23,7 @@ export const BatchChangesChangelogAlert: React.FunctionComponent<React.PropsWith
                             rel="noopener"
                             target="_blank"
                         >
-                            Bitbucket Cloud is now supported with Batch Changes
+                            Bitbucket Cloud is now supported with Batch Changes.
                         </Link>
                     </li>
                 </ul>
