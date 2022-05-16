@@ -9,6 +9,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
@@ -107,6 +108,7 @@ WHERE id IN (
 	FROM codeintel_lockfiles
 	WHERE repository_id = (SELECT id FROM repo WHERE name = %s) AND commit_bytea = %s
 )
+ORDER BY repository_name, revspec
 `
 
 const lockfileDependenciesExistsQuery = `
@@ -330,6 +332,36 @@ WHERE
 	repository_name = %s AND
 	revspec = %s
 -- TODO - order before update to reduce contention
+`
+
+// LockfileDependents returns the set of repositories that have lockfile results pointing to the
+// given repo and commit (related to a particular resolved repo/commit of a lockfile reference).
+func (s *Store) LockfileDependents(ctx context.Context, repoName, commit string) (deps []api.RepoCommit, err error) {
+	ctx, _, endObservation := s.operations.lockfileDependents.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("repoName", repoName),
+		log.String("commit", commit),
+	}})
+	defer func() {
+		endObservation(1, observation.Args{LogFields: []log.Field{
+			log.Int("numDependencies", len(deps)),
+		}})
+	}()
+
+	return scanRepoCommits(s.Query(ctx, sqlf.Sprintf(lockfileDependentsQuery, repoName, dbutil.CommitBytea(commit))))
+}
+
+const lockfileDependentsQuery = `
+-- source: internal/codeintel/dependencies/internal/store/store.go:LockfileDependents
+SELECT r.name, encode(lf.commit_bytea, 'hex') AS commit
+FROM codeintel_lockfiles lf
+JOIN repo r ON r.id = lf.repository_id
+WHERE lf.codeintel_lockfile_reference_ids @> (
+	SELECT array_agg(lr.id)
+	FROM codeintel_lockfile_references lr
+	JOIN repo r ON r.id = lr.repository_id
+	WHERE r.name = %s AND commit_bytea = %s
+)
+ORDER BY r.name, lf.commit_bytea
 `
 
 type ListDependencyReposOpts struct {
