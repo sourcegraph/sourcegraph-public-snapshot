@@ -10,6 +10,8 @@ Because [Buildkite agents are stateless](../background-information/ci/developmen
 
 A common strategy to address this problem of having to rebuild everything is to store objects that are commonly reused accross jobs and to download them again rather than rebuilding everything from scratch. 
 
+Cached artefacts *are automatically expired after 30 days* (by an object lifecycle policy on the bucket).
+
 ## What and when to cache?
 
 In order to determine what we can cache and when to do it, we need to make sure to cover the following questions:

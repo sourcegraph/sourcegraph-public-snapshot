@@ -6,6 +6,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/sourcegraph/run"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -19,6 +21,20 @@ var ErrNotInsideSourcegraph = errors.New("not running inside sourcegraph/sourceg
 func RepositoryRoot() (string, error) {
 	once.Do(func() { repositoryRootValue, repositoryRootError = findRootFromCwd() })
 	return repositoryRootValue, repositoryRootError
+}
+
+// Run executes the given command in repository root. Optionally, path segments relative
+// to the repository root can also be provided.
+func Run(cmd *run.Command, path ...string) run.Output {
+	root, err := RepositoryRoot()
+	if err != nil {
+		return run.NewErrorOutput(err)
+	}
+	if len(path) > 0 {
+		dir := filepath.Join(append([]string{root}, path...)...)
+		return cmd.Dir(dir).Run()
+	}
+	return cmd.Dir(root).Run()
 }
 
 // findRootFromCwd finds root path of the sourcegraph/sourcegraph repository from

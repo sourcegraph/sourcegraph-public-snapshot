@@ -130,6 +130,9 @@ func checkSgVersionAndUpdate(ctx context.Context, skipUpdate bool) error {
 			// user to eventually do a fetch
 			return errors.New("current sg version not found - you may want to run 'git fetch origin main'.")
 		}
+
+		// Unexpected error occured
+		analytics.LogEvent(ctx, "auto_update", []string{"check_error"}, start)
 		return err
 	}
 
@@ -147,6 +150,8 @@ func checkSgVersionAndUpdate(ctx context.Context, skipUpdate bool) error {
 		std.Out.WriteLine(output.Styled(output.StyleSearchMatch, "│                                                                  │░░"))
 		std.Out.WriteLine(output.Styled(output.StyleSearchMatch, "╰──────────────────────────────────────────────────────────────────╯░░"))
 		std.Out.WriteLine(output.Styled(output.StyleSearchMatch, "  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░"))
+
+		analytics.LogEvent(ctx, "auto_update", []string{"skipped"}, start)
 		return nil
 	}
 
@@ -160,6 +165,10 @@ func checkSgVersionAndUpdate(ctx context.Context, skipUpdate bool) error {
 	std.Out.Write("To see what's new, run 'sg version changelog'.")
 
 	analytics.LogEvent(ctx, "auto_update", []string{"updated"}, start)
+
+	// syscall.Exec will cause the current command's finalizer to not run, so we make a
+	// custom call to persist to make sure the auto_update event is tracked.
+	analytics.Persist(ctx, "sg", nil)
 
 	// Run command with new binary
 	return syscall.Exec(newPath, os.Args, os.Environ())

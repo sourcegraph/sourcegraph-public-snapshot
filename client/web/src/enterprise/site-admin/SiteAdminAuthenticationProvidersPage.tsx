@@ -7,7 +7,7 @@ import { map } from 'rxjs/operators'
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, Badge, Link } from '@sourcegraph/wildcard'
+import { Button, Badge, Link, Typography } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
@@ -80,7 +80,7 @@ export class SiteAdminAuthenticationProvidersPage extends React.Component<Props>
         return (
             <div className="site-admin-authentication-page">
                 <PageTitle title="Authentication providers - Admin" />
-                <h2>Authentication providers</h2>
+                <Typography.H2>Authentication providers</Typography.H2>
                 <p>
                     Authentication providers allow users to sign into Sourcegraph. See{' '}
                     <Link to="/help/admin/auth">authentication documentation</Link> about configuring single-sign-on

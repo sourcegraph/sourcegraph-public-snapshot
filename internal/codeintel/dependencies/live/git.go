@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -22,6 +23,10 @@ func NewGitService(db database.DB) dependencies.GitService {
 		db:      db,
 		checker: authz.DefaultSubRepoPermsChecker,
 	}
+}
+
+func (s *gitService) GetCommits(ctx context.Context, repoCommits []api.RepoCommit, ignoreErrors bool) ([]*gitdomain.Commit, error) {
+	return git.GetCommits(ctx, s.db, repoCommits, ignoreErrors, s.checker)
 }
 
 func (s *gitService) LsFiles(ctx context.Context, repo api.RepoName, commits api.CommitID, pathspecs ...gitserver.Pathspec) ([]string, error) {

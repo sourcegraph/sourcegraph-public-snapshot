@@ -21,6 +21,7 @@ import {
     CardBody,
     Card,
     Icon,
+    Typography,
 } from '@sourcegraph/wildcard'
 
 import { queryGraphQL, requestGraphQL } from '../../../../backend/graphql'
@@ -153,7 +154,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                 <ErrorAlert className="my-2" error={productSubscription} />
             ) : (
                 <>
-                    <h2>Product subscription {productSubscription.name}</h2>
+                    <Typography.H2>Product subscription {productSubscription.name}</Typography.H2>
                     <div className="mb-3">
                         <Button onClick={nextArchival} disabled={archival === LOADING} variant="danger">
                             Archive

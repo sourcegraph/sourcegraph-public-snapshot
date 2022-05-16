@@ -8,7 +8,7 @@ import { RouteComponentProps } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { Link, LoadingSpinner, PageHeader, Badge } from '@sourcegraph/wildcard'
+import { Link, LoadingSpinner, PageHeader, Badge, Typography } from '@sourcegraph/wildcard'
 
 import { MarketingBlock } from '../../components/MarketingBlock'
 import { PageTitle } from '../../components/PageTitle'
@@ -154,14 +154,14 @@ const Step: React.FunctionComponent<
                 {complete && <CheckCircleIcon className="text-success" size={14} />}
                 {!complete && <div className={styles.emptyCircle} />}
             </div>
-            <h3
+            <Typography.H3
                 className={classNames({
                     [`${styles.stepText}`]: true,
                     'text-muted': textMuted,
                 })}
             >
                 {label}
-            </h3>
+            </Typography.H3>
             {to && (
                 <div className={styles.linkContainer}>
                     <ArrowRightIcon />

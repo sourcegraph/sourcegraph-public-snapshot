@@ -158,6 +158,13 @@ Also see [Buildkite infrastructure](#buildkite-infrastructure).
 
 See [Pipeline development](./development.md) to get started with contributing to our Buildkite pipelines!
 
+### Deployment notifications
+
+When a pull request is deployed, an automated notification will be posted in either [#alerts-cloud-preprod](https://sourcegraph.slack.com/archives/C039JKERFBN) or [#deployments-cloud](https://sourcegraph.slack.com/archives/C03BGBR796H) depending in which environment it happened.
+Notifications include a list of the pull-request that were shipped as well as a list of which services specifically were rolled out.
+
+If you want to be explictly notified (through a Slack ping) when your pull request reaches _preprod_ or _cloud production_, add the label `notify-on-deploy`.
+
 ## GitHub Actions
 
 ### `buildchecker`

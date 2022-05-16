@@ -9,7 +9,7 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError } from '@sourcegraph/common'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, Link, Alert } from '@sourcegraph/wildcard'
+import { Button, Link, Alert, Typography } from '@sourcegraph/wildcard'
 
 import { EmailInput, UsernameInput } from '../auth/SignInSignUpCommon'
 import { CopyableText } from '../components/CopyableText'
@@ -94,7 +94,7 @@ export class SiteAdminCreateUserPage extends React.Component<RouteComponentProps
         return (
             <div className="site-admin-create-user-page">
                 <PageTitle title="Create user - Admin" />
-                <h2>Create user account</h2>
+                <Typography.H2>Create user account</Typography.H2>
                 <p>
                     Create a new user account
                     {window.context.resetPasswordEnabled
