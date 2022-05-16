@@ -21,9 +21,11 @@ import {
     SearchMatch,
 } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
-import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
+import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { WildcardThemeContext } from '@sourcegraph/wildcard'
+import { useObservable, WildcardThemeContext } from '@sourcegraph/wildcard'
+
+import { initializeSourcegraphSettings } from '../sourcegraphSettings'
 
 import { SearchResultList } from './results/SearchResultList'
 
@@ -76,6 +78,10 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
             }),
         [instanceURL, accessToken]
     )
+
+    const settingsCascade: SettingsCascadeOrError =
+        useObservable(useMemo(() => initializeSourcegraphSettings(requestGraphQL).settings, [requestGraphQL])) ||
+        EMPTY_SETTINGS_CASCADE
 
     useEffect(() => {
         setAuthState('validating')
@@ -225,7 +231,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                             fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
                             getUserSearchContextNamespaces={getUserSearchContextNamespaces}
                             fetchStreamSuggestions={fetchStreamSuggestionsWithStaticUrl}
-                            settingsCascade={EMPTY_SETTINGS_CASCADE} // TODO: Implement this. See VS Code's SearchResultsView.tsx
+                            settingsCascade={settingsCascade}
                             globbing={isGlobbingEnabled}
                             isLightTheme={!isDarkTheme}
                             telemetryService={NOOP_TELEMETRY_SERVICE} // TODO: Fix this, see VS Code's SearchResultsView.tsx
