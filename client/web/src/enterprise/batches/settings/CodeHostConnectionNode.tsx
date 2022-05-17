@@ -94,10 +94,10 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
                 )}
             >
                 {
-                    checkCredError && <ErrorAlert error={checkCredError} />
+                    !checkCredLoading && node.credential && checkCredError && <ErrorAlert error={checkCredError} />
                 }
                 {
-                    checkCredData && !checkCredError &&
+                    !checkCredLoading && node.credential && checkCredData && !checkCredError &&
                     <Alert variant="success">
                         Credentials is valid
                     </Alert>
