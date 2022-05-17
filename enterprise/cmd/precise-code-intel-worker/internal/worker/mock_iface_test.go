@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	dbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
+	dbstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	types "github.com/sourcegraph/sourcegraph/internal/types"
 	precise "github.com/sourcegraph/sourcegraph/lib/codeintel/precise"

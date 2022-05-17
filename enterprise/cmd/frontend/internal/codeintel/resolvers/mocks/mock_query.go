@@ -7,8 +7,8 @@ import (
 	"sync"
 
 	resolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
-	dbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
-	lsifstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+	dbstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	lsifstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
 	precise "github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 

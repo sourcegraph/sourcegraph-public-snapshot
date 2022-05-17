@@ -3,7 +3,7 @@ package policies
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 )
 
 // Extractor returns a max age and include intermediate commits flags from a policy. These fields exist for
