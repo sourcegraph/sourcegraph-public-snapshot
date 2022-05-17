@@ -126,6 +126,23 @@ func (s *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]ty
 		return nil, err
 	}
 
+	for _, repoCommit := range repoCommits {
+		// TODO - batch these requests in the store layer
+		preciseDeps, err := s.dependenciesStore.PreciseDependencies(ctx, string(repoCommit.Repo), repoCommit.ResolvedCommit)
+		if err != nil {
+			return nil, errors.Wrap(err, "store.PreciseDependencies")
+		}
+
+		for repoName, commits := range preciseDeps {
+			if _, ok := dependencyRevs[repoName]; !ok {
+				dependencyRevs[repoName] = types.RevSpecSet{}
+			}
+			for commit := range commits {
+				dependencyRevs[repoName][commit] = struct{}{}
+			}
+		}
+	}
+
 	return dependencyRevs, nil
 }
 
@@ -176,6 +193,13 @@ func (s *Service) resolveRepoCommits(ctx context.Context, repoRevs map[api.RepoN
 
 // lockfileDependencies returns a flattened list of package dependencies for every repo-commit pair.
 func (s *Service) lockfileDependencies(ctx context.Context, repoCommits []repoCommitResolvedCommit) (deps []shared.PackageDependency, _ error) {
+	// Do not destroy the caller's slice. The filtering/fallback mechanism used here is strictly an
+	// implementation detail and its semantics should not leak out of this function. We make a copy
+	// of the incoming slice here so we can manipulate a shallow copy.
+	repoCommitsCopy := make([]repoCommitResolvedCommit, len(repoCommits))
+	copy(repoCommitsCopy, repoCommits)
+	repoCommits = repoCommitsCopy
+
 	// resolverFunc describes internal functions that perform bulk queries to gather the dependencies of
 	// some portion of the input. It is expected that if there are any unqueried repo-commit pairs remain
 	// that they are moved to the front of the given slice, and the number of unqueried elements returned.
@@ -358,6 +382,23 @@ func (s *Service) Dependents(ctx context.Context, repoRevs map[api.RepoName]type
 			dependencyRevs[dep.Repo] = types.RevSpecSet{}
 		}
 		dependencyRevs[dep.Repo][api.RevSpec(dep.CommitID)] = struct{}{}
+	}
+
+	for _, repoCommit := range repoCommits {
+		// TODO - batch these requests in the store layer
+		preciseDeps, err := s.dependenciesStore.PreciseDependents(ctx, string(repoCommit.Repo), repoCommit.ResolvedCommit)
+		if err != nil {
+			return nil, errors.Wrap(err, "store.PreciseDependents")
+		}
+
+		for repoName, commits := range preciseDeps {
+			if _, ok := dependencyRevs[repoName]; !ok {
+				dependencyRevs[repoName] = types.RevSpecSet{}
+			}
+			for commit := range commits {
+				dependencyRevs[repoName][commit] = struct{}{}
+			}
+		}
 	}
 
 	return dependencyRevs, nil

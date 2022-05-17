@@ -8,11 +8,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/lockfiles"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 type Store interface {
+	PreciseDependencies(ctx context.Context, repoName, commit string) (map[api.RepoName]types.RevSpecSet, error)
+	PreciseDependents(ctx context.Context, repoName, commit string) (map[api.RepoName]types.RevSpecSet, error)
 	LockfileDependencies(ctx context.Context, repoName, commit string) ([]shared.PackageDependency, bool, error)
 	UpsertLockfileDependencies(ctx context.Context, repoName, commit string, deps []shared.PackageDependency) error
 	SelectRepoRevisionsToResolve(ctx context.Context, batchSize int, minimumCheckInterval time.Duration) (map[string][]string, error)
