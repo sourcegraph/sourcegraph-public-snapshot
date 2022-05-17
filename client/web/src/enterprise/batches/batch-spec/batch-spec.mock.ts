@@ -23,6 +23,8 @@ import {
 } from '../../../graphql-operations'
 import { EXECUTORS, IMPORTING_CHANGESETS, WORKSPACES, WORKSPACE_RESOLUTION_STATUS } from '../create/backend'
 
+import helloWorldSample from './edit/library/hello-world.batch.yaml'
+
 const now = new Date()
 
 export const MOCK_USER_NAMESPACE = {
@@ -57,7 +59,7 @@ export const mockBatchSpec = (
     __typename: 'BatchSpec',
     id: '1',
     state: BatchSpecState.PENDING,
-    originalInput: 'name: my-batch-change',
+    originalInput: helloWorldSample,
     createdAt: now.toISOString(),
     startedAt: null,
     applyURL: null,

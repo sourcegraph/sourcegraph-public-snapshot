@@ -177,13 +177,15 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
             <Typography.H4 className={styles.instruction}>
                 {hasPreviewed ? 'Modify your' : 'Add an'} <span className="text-monospace">on:</span> statement to
                 preview repositories.
-                <Button
-                    className={styles.toggleExampleButton}
-                    display="inline"
-                    onClick={() => setExampleOpen(!exampleOpen)}
-                >
-                    {exampleOpen ? 'Close example' : 'See example'}
-                </Button>
+                {!hasPreviewed && (
+                    <Button
+                        className={styles.toggleExampleButton}
+                        display="inline"
+                        onClick={() => setExampleOpen(!exampleOpen)}
+                    >
+                        {exampleOpen ? 'Close example' : 'See example'}
+                    </Button>
+                )}
             </Typography.H4>
             <animated.div style={exampleStyle} className={styles.onExample}>
                 <div ref={exampleReference} className="pt-2 pb-3">
