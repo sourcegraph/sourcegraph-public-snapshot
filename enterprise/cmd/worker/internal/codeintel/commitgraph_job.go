@@ -9,6 +9,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/commitgraph"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
@@ -45,14 +46,14 @@ func (j *commitGraphJob) Routines(ctx context.Context, logger log.Logger) ([]gor
 		return nil, err
 	}
 
-	dbStore, err := InitDBStore()
+	dbStore, err := codeintel.InitDBStore()
 	if err != nil {
 		return nil, err
 	}
 
 	locker := locker.NewWithDB(db, "codeintel")
 
-	gitserverClient, err := InitGitserverClient()
+	gitserverClient, err := codeintel.InitGitserverClient()
 	if err != nil {
 		return nil, err
 	}

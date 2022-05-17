@@ -7,6 +7,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/indexing"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
@@ -47,22 +48,22 @@ func (j *indexingJob) Routines(ctx context.Context, logger log.Logger) ([]gorout
 		return nil, err
 	}
 
-	dbStore, err := InitDBStore()
+	dbStore, err := codeintel.InitDBStore()
 	if err != nil {
 		return nil, err
 	}
 
-	gitserverClient, err := InitGitserverClient()
+	gitserverClient, err := codeintel.InitGitserverClient()
 	if err != nil {
 		return nil, err
 	}
 
-	dependencySyncStore, err := InitDependencySyncingStore()
+	dependencySyncStore, err := codeintel.InitDependencySyncingStore()
 	if err != nil {
 		return nil, err
 	}
 
-	dependencyIndexingStore, err := InitDependencyIndexingStore()
+	dependencyIndexingStore, err := codeintel.InitDependencyIndexingStore()
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +71,7 @@ func (j *indexingJob) Routines(ctx context.Context, logger log.Logger) ([]gorout
 	// Initialize metrics
 	dbworker.InitPrometheusMetric(observationContext, dependencySyncStore, "codeintel", "dependency_index", nil)
 
-	repoUpdaterClient := InitRepoUpdaterClient()
+	repoUpdaterClient := codeintel.InitRepoUpdaterClient()
 	extSvcStore := database.NewDB(db).ExternalServices()
 	dbStoreShim := &indexing.DBStoreShim{Store: dbStore}
 	enqueuerDBStoreShim := &enqueuer.DBStoreShim{Store: dbStore}

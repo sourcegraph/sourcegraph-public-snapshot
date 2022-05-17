@@ -9,9 +9,9 @@ import (
 
 	regexp "github.com/grafana/regexp"
 	enqueuer "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
-	gitserver1 "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	dbstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	gitserver1 "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
 	lsifstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	gitserver "github.com/sourcegraph/sourcegraph/internal/gitserver"

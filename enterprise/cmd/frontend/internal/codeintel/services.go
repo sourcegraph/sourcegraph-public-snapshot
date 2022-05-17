@@ -10,11 +10,11 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/httpapi"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/repoupdater"
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifuploadstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
 	uploadshttp "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/http"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
