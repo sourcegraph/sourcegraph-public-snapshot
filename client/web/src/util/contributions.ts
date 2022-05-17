@@ -4,7 +4,7 @@ import { RouteComponentProps } from 'react-router'
 
 interface Conditional<C extends object> {
     /** Optional condition under which this item should be used */
-    readonly condition?: (context: C) => boolean
+    readonly condition?: (context: C) => boolean | Promise<boolean>
 }
 
 interface WithIcon {

@@ -9,7 +9,7 @@ import { ProductStatusBadge, Button, Link, Icon, ProductStatusType } from '@sour
 import { AuthenticatedUser } from '../../auth'
 import { BatchChangesProps } from '../../batches'
 import { SidebarGroup, SidebarGroupHeader, SidebarNavItem } from '../../components/Sidebar'
-import { FeatureFlagProps } from '../../featureFlags/featureFlags'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { UserSettingsAreaUserFields } from '../../graphql-operations'
 import { OrgAvatar } from '../../org/OrgAvatar'
 import { useExperimentalFeatures } from '../../stores'
@@ -32,11 +32,7 @@ type UserSettingsSidebarItem = NavItemDescriptor<UserSettingsSidebarItemConditio
 
 export type UserSettingsSidebarItems = readonly UserSettingsSidebarItem[]
 
-export interface UserSettingsSidebarProps
-    extends UserSettingsAreaRouteContext,
-        BatchChangesProps,
-        FeatureFlagProps,
-        RouteComponentProps<{}> {
+export interface UserSettingsSidebarProps extends UserSettingsAreaRouteContext, BatchChangesProps, RouteComponentProps<{}> {
     items: UserSettingsSidebarItems
     isSourcegraphDotCom: boolean
     className?: string
@@ -48,7 +44,7 @@ export const UserSettingsSidebar: React.FunctionComponent<
 > = props => {
     const [, setHasCancelledTour] = useTemporarySetting('search.onboarding.tourCancelled')
     const showOnboardingTour = useExperimentalFeatures(features => features.showOnboardingTour ?? false)
-    const openBetaEnabled = !!props.featureFlags.get('open-beta-enabled')
+    const [openBetaEnabled] = useFeatureFlag('open-beta-enabled')
 
     if (!props.authenticatedUser) {
         return null

@@ -42,7 +42,7 @@ import { CodeIntelligenceProps } from '../../codeintel'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
 import { ActionItemsBarProps } from '../../extensions/components/ActionItemsBar'
-import { FeatureFlagProps } from '../../featureFlags/featureFlags'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { RepositoryFields } from '../../graphql-operations'
 import { basename } from '../../util/path'
 import { RepositoryCompareArea } from '../compare/RepositoryCompareArea'
@@ -64,7 +64,6 @@ import styles from './TreePage.module.scss'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
-        FeatureFlagProps,
         ExtensionsControllerProps,
         PlatformContextProps,
         ThemeProps,
@@ -108,7 +107,6 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
     batchChangesEnabled,
     useActionItemsBar,
     match,
-    featureFlags,
     isSourcegraphDotCom,
     ...props
 }) => {
@@ -207,7 +205,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
     // To start using the feature flag bellow, you can go to /site-admin/feature-flags and
     // create a new featurFlag named 'new-repo-page' and set its value to true.
     // https://docs.sourcegraph.com/dev/how-to/use_feature_flags#create-a-feature-flag
-    const newRepoPage = featureFlags.get('new-repo-page')
+    const [newRepoPage] = useFeatureFlag('new-repo-page')
 
     const homeTabProps = {
         repo,

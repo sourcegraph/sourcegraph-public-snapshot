@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useMemo } from 'react'
 
 import { gql, useQuery } from '@apollo/client'
 import { Location } from 'history'
@@ -15,6 +15,8 @@ import { useEventBus } from '../emitter'
 import { OrgAvatar } from '../OrgAvatar'
 
 import { OrgAreaPageProps } from './OrgArea'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
+import { calculateLeftGetStartedSteps, showGetStartPage } from '../openBeta/GettingStarted'
 
 interface Props extends OrgAreaPageProps, RouteComponentProps<{}> {
     isSourcegraphDotCom: boolean
@@ -28,7 +30,7 @@ export interface OrgSummary {
     extServices: { totalCount: number }
 }
 
-export interface OrgAreaHeaderContext extends BatchChangesProps, Pick<Props, 'org' | 'featureFlags'> {
+export interface OrgAreaHeaderContext extends BatchChangesProps, Pick<Props, 'org'> {
     isSourcegraphDotCom: boolean
     newMembersInviteEnabled: boolean
     getStartedInfo: OrgSummary | undefined
@@ -70,7 +72,6 @@ export const OrgHeader: React.FunctionComponent<React.PropsWithChildren<Props>> 
     className = '',
     isSourcegraphDotCom,
     newMembersInviteEnabled,
-    featureFlags,
 }) => {
     const emitter = useEventBus()
 
@@ -87,6 +88,25 @@ export const OrgHeader: React.FunctionComponent<React.PropsWithChildren<Props>> 
         variables: { organization: org.id },
     })
 
+    const [isOpenBetaEnabled] = useFeatureFlag('open-beta-enabled')
+
+    const memoizedNavItems = useMemo((): readonly OrgAreaHeaderNavItem[] => {
+        if (!isOpenBetaEnabled) {
+            return navItems
+        }
+        return [
+            {
+                to: '/getstarted',
+                label: 'Get started',
+                dynamicLabel: ({ getStartedInfo, org }) => calculateLeftGetStartedSteps(getStartedInfo, org.name),
+                isActive: (_match, location) => location.pathname.includes('getstarted'),
+                condition: ({ getStartedInfo, org, isSourcegraphDotCom }) =>
+                    showGetStartPage(getStartedInfo, org.name, isOpenBetaEnabled, isSourcegraphDotCom),
+            },
+            ...navItems,
+        ]
+    }, [navItems, isOpenBetaEnabled])
+
     const context = {
         batchChangesEnabled,
         batchChangesExecutionEnabled,
@@ -94,7 +114,6 @@ export const OrgHeader: React.FunctionComponent<React.PropsWithChildren<Props>> 
         org,
         isSourcegraphDotCom,
         newMembersInviteEnabled,
-        featureFlags,
         getStartedInfo: data ? (data as OrgSummary) : undefined,
     }
 
@@ -124,7 +143,7 @@ export const OrgHeader: React.FunctionComponent<React.PropsWithChildren<Props>> 
                         />
                         <div className="d-flex align-items-end justify-content-between">
                             <ul className="nav nav-tabs w-100">
-                                {navItems.map(
+                                {memoizedNavItems.map(
                                     ({
                                         to,
                                         label,

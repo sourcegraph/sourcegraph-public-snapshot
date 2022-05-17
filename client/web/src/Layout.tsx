@@ -36,7 +36,6 @@ import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
-import { FeatureFlagProps } from './featureFlags/featureFlags'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
 import { SurveyToast } from './marketing/SurveyToast'
@@ -78,8 +77,7 @@ export interface LayoutProps
         SearchStreamingProps,
         UserExternalServicesOrRepositoriesUpdateProps,
         CodeIntelligenceProps,
-        BatchChangesProps,
-        FeatureFlagProps {
+        BatchChangesProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
     extensionsAreaRoutes: readonly ExtensionsAreaRoute[]

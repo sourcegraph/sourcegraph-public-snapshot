@@ -2,7 +2,6 @@ import { createMemoryHistory } from 'history'
 
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 
-import { EMPTY_FEATURE_FLAGS } from '../../featureFlags/featureFlags'
 
 import { SiteInitPage } from './SiteInitPage'
 
@@ -25,7 +24,6 @@ describe('SiteInitPage', () => {
                 needsSiteInit={false}
                 authenticatedUser={null}
                 context={{ authProviders: [], sourcegraphDotComMode: false, experimentalFeatures: {} }}
-                featureFlags={EMPTY_FEATURE_FLAGS}
             />,
             { history }
         )
@@ -40,7 +38,6 @@ describe('SiteInitPage', () => {
                     needsSiteInit={true}
                     authenticatedUser={{ username: 'alice' }}
                     context={{ authProviders: [], sourcegraphDotComMode: false, experimentalFeatures: {} }}
-                    featureFlags={EMPTY_FEATURE_FLAGS}
                 />
             ).asFragment()
         ).toMatchSnapshot())
@@ -53,7 +50,6 @@ describe('SiteInitPage', () => {
                     needsSiteInit={true}
                     authenticatedUser={null}
                     context={{ authProviders: [], sourcegraphDotComMode: false, experimentalFeatures: {} }}
-                    featureFlags={EMPTY_FEATURE_FLAGS}
                 />
             ).asFragment()
         ).toMatchSnapshot())

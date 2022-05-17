@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
@@ -13,7 +13,6 @@ import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
-import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import {
     UserAreaUserFields,
     UserSettingsAreaUserFields,
@@ -29,6 +28,9 @@ import { EditUserProfilePageGQLFragment } from './profile/UserSettingsProfilePag
 import { UserSettingsSidebar, UserSettingsSidebarItems } from './UserSettingsSidebar'
 
 import styles from './UserSettingsArea.module.scss'
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
+import { routes } from '../../routes'
 
 const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <HeroPage icon={MapSearchIcon} title="404: Not Found" />
@@ -38,7 +40,6 @@ export interface UserSettingsAreaRoute extends RouteDescriptor<UserSettingsAreaR
 
 export interface UserSettingsAreaProps
     extends UserAreaRouteContext,
-        FeatureFlagProps,
         RouteComponentProps<{}>,
         ThemeProps,
         TelemetryProps,
@@ -110,6 +111,17 @@ export const AuthenticatedUserSettingsArea: React.FunctionComponent<
             siteAdmin: authenticatedUser.siteAdmin,
         },
     })
+    const [isOpenBetaEnabled] = useFeatureFlag('open-beta-enabled')
+    const memoizedRoutes = useMemo((): readonly UserSettingsAreaRoute[] => {
+        if (!isOpenBetaEnabled) {
+            return props.routes
+        }
+        return [...props.routes, {
+            path: '/organizations',
+            render: lazyComponent(() => import('./openBetaOrgs/OrganizationsList'), 'OrganizationsListPage'),
+            exact: true
+        }]
+    },[isOpenBetaEnabled, props.routes])
 
     // Accept stale data if recently updated, avoids unmounting components due to a brief lack of data
     const user =
@@ -163,7 +175,7 @@ export const AuthenticatedUserSettingsArea: React.FunctionComponent<
                     <ErrorBoundary location={props.location}>
                         <React.Suspense fallback={<LoadingSpinner className="m-2" />}>
                             <Switch>
-                                {props.routes.map(
+                                {memoizedRoutes.map(
                                     ({ path, exact, render, condition = () => true }) =>
                                         condition(context) && (
                                             <Route

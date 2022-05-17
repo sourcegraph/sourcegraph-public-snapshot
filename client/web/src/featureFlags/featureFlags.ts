@@ -5,9 +5,9 @@ import { dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
 
 import { requestGraphQL } from '../backend/graphql'
 import {
-    FetchFeatureFlagsResult,
     OrgFeatureFlagOverridesResult,
     OrgFeatureFlagOverridesVariables,
+    EvaluatedFeatureFlagsResult,
 } from '../graphql-operations'
 
 import { getOverrideKey } from './lib/getOverrideKey'
@@ -22,21 +22,31 @@ class ProxyMap<K extends string, V extends boolean> extends Map<K, V> {
     }
 }
 
+const featureFlagCache = new ProxyMap<FeatureFlagName, boolean>((key: FeatureFlagName, value?: boolean):
+    | boolean
+    | undefined => {
+    const overriddenValue = localStorage.getItem(getOverrideKey(key))
+
+    return overriddenValue !== 'undefined' && overriddenValue !== null && ['true', 'false'].includes(overriddenValue)
+        ? (JSON.parse(overriddenValue) as boolean)
+        : value
+})
+
 // A union of all feature flags we currently have.
 // If there are no feature flags at the moment, this should be `never`.
 export type FeatureFlagName = 'open-beta-enabled' | 'quick-start-tour-for-authenticated-users' | 'new-repo-page'
 
-export type FlagSet = ProxyMap<FeatureFlagName, boolean>
+type FlagSet = ProxyMap<FeatureFlagName, boolean>
 
 /**
  * Fetches the evaluated feature flags for the current user
  */
-export function fetchFeatureFlags(): Observable<FlagSet> {
+function fetchFeatureFlags(): Observable<FlagSet> {
     return from(
-        requestGraphQL<FetchFeatureFlagsResult>(
+        requestGraphQL<EvaluatedFeatureFlagsResult>(
             gql`
-                query FetchFeatureFlags {
-                    viewerFeatureFlags {
+                query EvaluatedFeatureFlags {
+                    evaluatedFeatureFlags {
                         name
                         value
                     }
@@ -46,32 +56,38 @@ export function fetchFeatureFlags(): Observable<FlagSet> {
     ).pipe(
         map(dataOrThrowErrors),
         map(data => {
-            const result = new ProxyMap<FeatureFlagName, boolean>((key: FeatureFlagName, value?: boolean):
-                | boolean
-                | undefined => {
-                const overriddenValue = localStorage.getItem(getOverrideKey(key))
-
-                return overriddenValue !== 'undefined' &&
-                    overriddenValue !== null &&
-                    ['true', 'false'].includes(overriddenValue)
-                    ? (JSON.parse(overriddenValue) as boolean)
-                    : value
-            })
-            for (const flag of data.viewerFeatureFlags) {
-                result.set(flag.name as FeatureFlagName, flag.value)
+            for (const flag of data.evaluatedFeatureFlags) {
+                featureFlagCache.set(flag.name as FeatureFlagName, flag.value)
             }
-            return result
+            return featureFlagCache
         })
     )
 }
 
-export interface OrgFlagOverride {
+/**
+ * Fetches the evaluated feature flags for the current user
+ */
+function fetchFeatureFlag(flagName: FeatureFlagName): Observable<boolean> {
+    return from(
+        requestGraphQL<boolean>(
+            gql`
+                query FetchFeatureFlag($flagName: String!) {
+                    evaluateFeatureFlag(flagName: $flagName)
+                }
+            `,
+            { flagName }
+        )
+    ).pipe(map(dataOrThrowErrors))
+}
+
+interface OrgFlagOverride {
     orgID: string
     flagName: string
     value: boolean
 }
 
 /**
+ * // TODO: clarify why to use this if GQL already takes care of overrides?
  * Fetches all feature flag overrides for organizations that the current user is a member of
  */
 export function useFlagsOverrides(): { data: OrgFlagOverride[]; loading: boolean } {
@@ -111,16 +127,41 @@ export function useFlagsOverrides(): { data: OrgFlagOverride[]; loading: boolean
     }
 }
 
-export interface FeatureFlagProps {
+export class FeatureFlagClient {
+    private cache = new ProxyMap<FeatureFlagName, boolean>()
+
+    constructor() {
+            fetchFeatureFlags()
+                .toPromise()
+                .then(flags => (this.cache = flags))
+                .catch(console.error)
+    }
+
     /**
-     * Evaluated feature flags for the current viewer
+     * Evaluate a given feature flag for the current user or get from cache if already evaluated.
      */
-    featureFlags: FlagSet
+    public async variation(flagName: FeatureFlagName): Promise<boolean> {
+        if (!this.cache.has(flagName)) {
+            const value = await fetchFeatureFlag(flagName).toPromise()
+            this.cache.set(flagName, value)
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        return this.cache.get(flagName)!
+    }
+
+    /**
+     * Calls callback function whenever a feature flag is changed
+     *
+     * @returns a cleanup/unsubscribe function
+     */
+    // eslint-disable-next-line id-length
+    public on(flagName: FeatureFlagName, callback: (value: boolean, error?: Error) => void): () => void {
+        this.variation(flagName)
+            .then(callback)
+            .catch(error => callback(false, error))
+        return () => {
+            // TODO: cleanup
+        }
+    }
 }
-
-export const EMPTY_FEATURE_FLAGS = new Map<FeatureFlagName, boolean>()
-
-// TODO: add VN JS version
-// TODO: add React hook version
-// TODO: replace all old usage to new
-// TODO: rename featureFlags to feature-flags

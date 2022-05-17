@@ -1,7 +1,14 @@
-import React, { useEffect } from 'react'
+import React, { createContext, useEffect, useRef } from 'react'
 
+import { FeatureFlagClient } from './featureFlags'
 import { getOverrideKey } from './lib/getOverrideKey'
 import { parseUrlOverrideFeatureFlags } from './lib/parseUrlOverrideFeatureFlags'
+
+export const FeatureFlagsContext = createContext<{ client?: FeatureFlagClient }>({})
+
+interface FeatureFlagsProviderProps {
+    isLocalOverrideEnabled?: boolean
+}
 
 /**
  * Overrides feature flag based on initial URL query parameters
@@ -12,7 +19,7 @@ import { parseUrlOverrideFeatureFlags } from './lib/parseUrlOverrideFeatureFlags
  * Remove/reset local override: "/?feature-flag-key=my-feature"
  * Multiple values: /?feature-flag-key=my-feature-one,my-feature-two&feature-flag-value=false,true
  */
-export const OverrideFeatureFlagsAgent = React.memo(() => {
+const FeatureFlagsLocalOverrideAgent = React.memo(() => {
     useEffect(() => {
         try {
             const overrideFeatureFlags = parseUrlOverrideFeatureFlags(location.search) || {}
@@ -32,3 +39,16 @@ export const OverrideFeatureFlagsAgent = React.memo(() => {
     }, [])
     return null
 })
+
+export const FeatureFlagsProvider: React.FunctionComponent<FeatureFlagsProviderProps> = ({
+    isLocalOverrideEnabled = true,
+    children,
+}) => {
+    const clientReference = useRef(new FeatureFlagClient(true))
+
+    return (
+    <FeatureFlagsContext.Provider value={{ client: clientReference.current }}>
+        {isLocalOverrideEnabled && <FeatureFlagsLocalOverrideAgent />}
+        {children}
+    </FeatureFlagsContext.Provider>
+)}
