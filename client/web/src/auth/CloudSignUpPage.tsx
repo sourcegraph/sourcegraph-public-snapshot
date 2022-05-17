@@ -10,7 +10,6 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { ProductStatusBadge, Link, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../components/branding/BrandLogo'
-import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import { UserAreaUserProfileResult, UserAreaUserProfileVariables } from '../graphql-operations'
 import { AuthProvider, SourcegraphContext } from '../jscontext'
 import { USER_AREA_USER_PROFILE } from '../user/area/UserArea'
@@ -21,7 +20,7 @@ import { SignUpArguments, SignUpForm } from './SignUpForm'
 
 import styles from './CloudSignUpPage.module.scss'
 
-interface Props extends ThemeProps, TelemetryProps, FeatureFlagProps {
+interface Props extends ThemeProps, TelemetryProps {
     source: string | null
     showEmailForm: boolean
     /** Called to perform the signup on the server. */
@@ -53,7 +52,6 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
     onSignUp,
     context,
     telemetryService,
-    featureFlags,
 }) => {
     const location = useLocation()
 
@@ -83,7 +81,6 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
 
     const signUpForm = (
         <SignUpForm
-            featureFlags={featureFlags}
             onSignUp={args => {
                 logEvent('builtin')
                 return onSignUp(args)
