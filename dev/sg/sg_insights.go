@@ -6,7 +6,7 @@ import (
 
 	"github.com/urfave/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -31,15 +31,15 @@ func decodeInsightIDAction(cmd *cli.Context) error {
 	if len(ids) == 0 {
 		return errors.New("Expected at least 1 id to decode")
 	}
-	writeFingerPointingLinef("Decoding %d IDs", len(ids))
+	std.Out.WriteNoticef("Decoding %d IDs", len(ids))
 	for _, id := range ids {
 		decoded, err := base64.StdEncoding.DecodeString(id)
 		if err != nil {
 			return errors.Newf("could not decode id %q: %v", id, err)
 		}
 		// an insight view id is encoded in this format: `insight_view:"[id]"`
-		cleanDecoded := strings.TrimLeft(strings.TrimRight(string(decoded), "\""), "insight_view:\"")
-		stdout.Out.Writef("\t%s -> %s", id, cleanDecoded)
+		cleanDecoded := strings.Trim(strings.TrimLeft(string(decoded), "insight_view:"), "\"")
+		std.Out.Writef("\t%s -> %s", id, cleanDecoded)
 	}
 	return nil
 }
