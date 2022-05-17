@@ -15,11 +15,21 @@ import (
 
 func toComputeResultStream(ctx context.Context, db database.DB, cmd compute.Command, matches []result.Match, f func(compute.Result)) error {
 	for _, m := range matches {
-		result, err := cmd.Run(ctx, db, m)
-		if err != nil {
-			return err
+		if v, ok := m.(*result.CommitMatch); ok && v.DiffPreview != nil {
+			for _, diffMatch := range v.ToDiffMatches() {
+				result, err := cmd.Run(ctx, db, diffMatch)
+				if err != nil {
+					return err
+				}
+				f(result)
+			}
+		} else {
+			result, err := cmd.Run(ctx, db, m)
+			if err != nil {
+				return err
+			}
+			f(result)
 		}
-		f(result)
 	}
 	return nil
 }
