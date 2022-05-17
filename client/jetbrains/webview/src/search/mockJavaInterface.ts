@@ -20,7 +20,13 @@ function handleRequest(
     onFailureCallback: (errorCode: number, errorMessage: string) => void
 ): void {
     if (request.action === 'getConfig') {
-        onSuccessCallback(JSON.stringify({ instanceURL: 'https://sourcegraph.com' }))
+        onSuccessCallback(
+            JSON.stringify({
+                instanceURL: 'https://sourcegraph.com',
+                isGlobbingEnabled: true,
+                accessToken: null,
+            })
+        )
     } else if (request.action === 'getTheme') {
         onSuccessCallback(
             JSON.stringify({
@@ -42,14 +48,6 @@ function handleRequest(
     } else if (request.action === 'open') {
         const { path } = request.arguments as { path: string }
         console.log(`Opening "${path}"`)
-    } else if (request.action === 'getConfig') {
-        onSuccessCallback(
-            JSON.stringify({
-                instanceURL: 'https://sourcegraph.com',
-                isGlobbingEnabled: true,
-                accessToken: null,
-            })
-        )
     } else {
         onFailureCallback(2, `Unknown action: ${request.action}`)
     }

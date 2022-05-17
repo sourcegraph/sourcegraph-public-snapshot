@@ -14,13 +14,6 @@ let instanceURL = 'https://sourcegraph.com'
 let isGlobbingEnabled = false
 let accessToken: string | null = null
 
-type RequestToJavaAction = 'getConfig' | 'getTheme' | 'saveLastSearch' | 'loadLastSearch'
-
-export interface RequestToJava {
-    action: RequestToJavaAction
-    arguments: object
-}
-
 export interface Theme {
     isDarkTheme: boolean
     buttonColor: string
@@ -40,12 +33,6 @@ declare global {
     }
 }
 
-// eslint-disable-next-line @typescript-eslint/require-await
-async function onOpen(match: ContentMatch, lineIndex: number): Promise<void> {
-    console.log('open', match.lineMatches[lineIndex])
-}
-
-// eslint-disable-next-line @typescript-eslint/require-await
 async function onPreviewChange(match: ContentMatch, lineMatchIndex: number): Promise<void> {
     await window.callJava(await createRequestForMatch(match, lineMatchIndex, 'preview'))
 }

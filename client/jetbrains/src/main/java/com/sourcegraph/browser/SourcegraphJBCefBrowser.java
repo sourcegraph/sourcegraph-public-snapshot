@@ -1,6 +1,5 @@
 package com.sourcegraph.browser;
 
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.ui.jcef.JBCefBrowser;
 import com.sourcegraph.config.ThemeUtil;
@@ -8,9 +7,7 @@ import org.cef.CefApp;
 import org.jetbrains.annotations.NotNull;
 
 public class SourcegraphJBCefBrowser extends JBCefBrowser {
-    private final JSToJavaBridge jsToJavaBridge;
-
-    public SourcegraphJBCefBrowser(@NotNull JSToJavaBridgeRequestHandler requestHandler, @NotNull Project project) {
+    public SourcegraphJBCefBrowser(@NotNull JSToJavaBridgeRequestHandler requestHandler) {
         super("http://sourcegraph/html/index.html");
         // Create and set up JCEF browser
         CefApp.getInstance().registerSchemeHandlerFactory("http", "sourcegraph", new HttpSchemeHandlerFactory());
@@ -18,12 +15,8 @@ public class SourcegraphJBCefBrowser extends JBCefBrowser {
 
         // Create bridge, set up handlers, then run init function
         String initJSCode = "window.initializeSourcegraph();";
-        jsToJavaBridge = new JSToJavaBridge(this, requestHandler, initJSCode);
+        JSToJavaBridge jsToJavaBridge = new JSToJavaBridge(this, requestHandler, initJSCode);
         Disposer.register(this, jsToJavaBridge);
-    }
-
-    public JSToJavaBridge getJsToJavaBridge() {
-        return jsToJavaBridge;
     }
 
     public void focus() {

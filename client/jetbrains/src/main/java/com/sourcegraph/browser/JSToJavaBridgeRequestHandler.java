@@ -6,21 +6,20 @@ import com.intellij.openapi.project.Project;
 import com.intellij.ui.jcef.JBCefJSQuery;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.ThemeUtil;
+import com.sourcegraph.find.PreviewContent;
+import com.sourcegraph.find.PreviewPanel;
 import com.sourcegraph.find.Search;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
-import com.sourcegraph.find.PreviewContent;
-import com.sourcegraph.find.PreviewPanel;
-import org.jetbrains.annotations.Nullable;
 
 public class JSToJavaBridgeRequestHandler {
-    private final PreviewPanel previewPanel;
     private final Project project;
+    private final PreviewPanel previewPanel;
 
-    public JSToJavaBridgeRequestHandler(@NotNull PreviewPanel previewPanel, @NotNull Project project) {
-        this.previewPanel = previewPanel;
+    public JSToJavaBridgeRequestHandler(@NotNull Project project, @NotNull PreviewPanel previewPanel) {
         this.project = project;
+        this.previewPanel = previewPanel;
     }
 
     public JBCefJSQuery.Response handle(@NotNull JsonObject request) {
@@ -63,7 +62,7 @@ public class JSToJavaBridgeRequestHandler {
                 } catch (Exception e) {
                     return createErrorResponse(5, e.getClass().getName() + ": " + e.getMessage());
                 }
-            case "loadLastSearch": {
+            case "loadLastSearch":
                 try {
                     JsonObject configAsJson = new JsonObject();
                     Search lastSearch = ConfigUtil.getLastSearch(this.project);
@@ -98,7 +97,6 @@ public class JSToJavaBridgeRequestHandler {
                 } catch (Exception e) {
                     return createErrorResponse(9, e.getClass().getName() + ": " + e.getMessage());
                 }
-            }
             default:
                 return createErrorResponse(2, "Unknown action: " + action);
         }
