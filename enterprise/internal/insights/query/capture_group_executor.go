@@ -63,6 +63,9 @@ func streamCompute(ctx context.Context, query string) ([]GroupedResults, error) 
 	if err != nil {
 		return nil, err
 	}
+	if len(streamResults.Errors) > 0 {
+		return nil, errors.Errorf("compute streaming search: errors: %v", streamResults.Errors)
+	}
 	return computeTabulationResultToGroupedResults(streamResults), nil
 }
 
@@ -113,7 +116,11 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 			log15.Debug("executing query", "query", modifiedQuery)
 			grouped, err := c.computeSearch(ctx, modifiedQuery)
 			if err != nil {
-				return nil, errors.Wrapf(err, "failed to execute capture group search for repository:%s commit:%s", repository, execution.Revision)
+				errorMsg := "failed to execute capture group search for repository:" + repository
+				if execution.Revision != "" {
+					errorMsg += " commit:" + execution.Revision
+				}
+				return nil, errors.Wrap(err, errorMsg)
 			}
 
 			sort.Slice(grouped, func(i, j int) bool {

@@ -177,6 +177,9 @@ func (r *workHandler) generateComputeRecordingsStream(ctx context.Context, job *
 	if err != nil {
 		return nil, err
 	}
+	if len(streamResults.Errors) > 0 {
+		return nil, StreamingError{Type: types.SearchCompute, Messages: streamResults.Errors}
+	}
 
 	checker := authz.DefaultSubRepoPermsChecker
 	var recordings []store.RecordSeriesPointArgs
@@ -296,7 +299,7 @@ func (r *workHandler) generateSearchRecordingsStream(ctx context.Context, job *J
 		log15.Error("insights query issue", "reasons", tr.SkippedReasons, "query", job.SearchQuery)
 	}
 	if len(tr.Errors) > 0 {
-		log15.Error("streaming errors", "errors", tr.Errors)
+		return nil, StreamingError{Messages: tr.Errors}
 	}
 
 	checker := authz.DefaultSubRepoPermsChecker
