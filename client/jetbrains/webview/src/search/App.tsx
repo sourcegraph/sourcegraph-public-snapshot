@@ -14,6 +14,7 @@ import { SearchBox } from '@sourcegraph/search-ui'
 import { AuthenticatedUser, currentAuthStateQuery } from '@sourcegraph/shared/src/auth'
 import { CurrentAuthStateResult, CurrentAuthStateVariables } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import polyfillEventSource from '@sourcegraph/shared/src/polyfills/vendor/eventSource'
 import {
     aggregateStreamingSearch,
     ContentMatch,
@@ -195,6 +196,10 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                 console.error(`Failed to save last search: ${(error as Error).message}`)
             })
     }, [lastSearch, userQueryState])
+
+    useEffect(() => {
+        polyfillEventSource(accessToken ? { Authorization: `token ${accessToken}` } : {})
+    }, [accessToken])
 
     return (
         <WildcardThemeContext.Provider value={{ isBranded: true }}>
