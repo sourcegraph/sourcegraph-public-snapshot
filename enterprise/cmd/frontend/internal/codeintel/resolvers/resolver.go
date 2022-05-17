@@ -32,6 +32,7 @@ type Resolver interface {
 	GetUploadByID(ctx context.Context, id int) (store.Upload, bool, error)
 	GetUploadsByIDs(ctx context.Context, ids ...int) ([]store.Upload, error)
 	DeleteUploadByID(ctx context.Context, uploadID int) error
+	GetUploadDocumentsForPath(ctx context.Context, uploadID int, pathPrefix string) ([]string, int, error)
 
 	GetIndexByID(ctx context.Context, id int) (store.Index, bool, error)
 	GetIndexesByIDs(ctx context.Context, ids ...int) ([]store.Index, error)
@@ -178,6 +179,10 @@ func (r *resolver) CommitGraph(ctx context.Context, repositoryID int) (gql.CodeI
 	}
 
 	return NewCommitGraphResolver(stale, updatedAt), nil
+}
+
+func (r *resolver) GetUploadDocumentsForPath(ctx context.Context, uploadID int, pathPattern string) ([]string, int, error) {
+	return r.lsifStore.DocumentPaths(ctx, uploadID, pathPattern)
 }
 
 func (r *resolver) QueueAutoIndexJobsForRepo(ctx context.Context, repositoryID int, rev, configuration string) ([]store.Index, error) {

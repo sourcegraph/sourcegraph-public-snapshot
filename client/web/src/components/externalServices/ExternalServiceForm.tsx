@@ -8,7 +8,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { ErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, LoadingSpinner, Alert } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Alert, Typography } from '@sourcegraph/wildcard'
 
 import { AddExternalServiceInput } from '../../graphql-operations'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
@@ -67,7 +67,7 @@ export const ExternalServiceForm: React.FunctionComponent<React.PropsWithChildre
             {error && <ErrorAlert error={error} />}
             {warning && (
                 <Alert variant="warning">
-                    <h4>Warning</h4>
+                    <Typography.H4>Warning</Typography.H4>
                     <ErrorMessage error={warning} />
                 </Alert>
             )}

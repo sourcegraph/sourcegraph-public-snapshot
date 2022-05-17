@@ -568,8 +568,26 @@ func (e *ExternalService) With(opts ...func(*ExternalService)) *ExternalService 
 	return clone
 }
 
-// ExternalServices is an utility type with
-// convenience methods for operating on lists of ExternalServices.
+func (e *ExternalService) ToAPIService() api.ExternalService {
+	return api.ExternalService{
+		ID:              e.ID,
+		Kind:            e.Kind,
+		DisplayName:     e.DisplayName,
+		Config:          e.Config,
+		CreatedAt:       e.CreatedAt,
+		UpdatedAt:       e.UpdatedAt,
+		DeletedAt:       e.DeletedAt,
+		LastSyncAt:      e.LastSyncAt,
+		NextSyncAt:      e.NextSyncAt,
+		NamespaceUserID: e.NamespaceUserID,
+		NamespaceOrgID:  e.NamespaceOrgID,
+		Unrestricted:    e.Unrestricted,
+		CloudDefault:    e.CloudDefault,
+	}
+}
+
+// ExternalServices is a utility type with convenience methods for operating on
+// lists of ExternalServices.
 type ExternalServices []*ExternalService
 
 // IDs returns the list of ids from all ExternalServices.
@@ -1317,6 +1335,19 @@ type CodeMonitoringUsageStatistics struct {
 	CreateCodeMonitorPageViewsWithoutTriggerQuery *int32
 	ManageCodeMonitorPageViews                    *int32
 	CodeMonitorEmailLinkClicks                    *int32
+}
+
+type NotebooksUsageStatistics struct {
+	NotebookPageViews                *int32
+	EmbeddedNotebookPageViews        *int32
+	NotebooksListPageViews           *int32
+	NotebooksCreatedCount            *int32
+	NotebookAddedStarsCount          *int32
+	NotebookAddedMarkdownBlocksCount *int32
+	NotebookAddedQueryBlocksCount    *int32
+	NotebookAddedFileBlocksCount     *int32
+	NotebookAddedSymbolBlocksCount   *int32
+	NotebookAddedComputeBlocksCount  *int32
 }
 
 // Secret represents the secrets table

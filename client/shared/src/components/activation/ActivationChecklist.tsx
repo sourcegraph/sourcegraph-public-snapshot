@@ -26,19 +26,32 @@ export const ActivationChecklistItem: React.FunctionComponent<
 > = ({ className = '', ...props }: ActivationChecklistItemProps) => (
     <div className={classNames('d-flex justify-content-between', styles.activationChecklistItem, className)}>
         <div className="d-flex align-items-center">
-            <Icon className={classNames(styles.iconContainer, styles.iconDown)} as="span">
-                <ChevronDownIcon className={styles.icon} />
-            </Icon>
-            <Icon className={classNames(styles.iconContainer, styles.iconRight)} as="span">
-                <ChevronRightIcon className={styles.icon} />
-            </Icon>
+            <span className={styles.iconContainer}>
+                <Icon
+                    role="img"
+                    className={classNames(styles.icon, styles.iconDown)}
+                    as={ChevronDownIcon}
+                    aria-hidden={true}
+                />
+                <Icon
+                    role="img"
+                    className={classNames(styles.icon, styles.iconRight)}
+                    as={ChevronRightIcon}
+                    aria-hidden={true}
+                />
+            </span>
             <span>{props.title}</span>
         </div>
         <div>
             {props.done ? (
-                <Icon className="text-success" as={CheckCircleIcon} />
+                <Icon role="img" className="text-success" as={CheckCircleIcon} aria-label="Completed" />
             ) : (
-                <Icon className="text-muted" as={CheckboxBlankCircleOutlineIcon} />
+                <Icon
+                    role="img"
+                    className="text-muted"
+                    as={CheckboxBlankCircleOutlineIcon}
+                    aria-label="Not completed"
+                />
             )}
         </div>
     </div>

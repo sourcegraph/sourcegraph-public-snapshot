@@ -51,7 +51,7 @@ if err := db.Exec(ctx, sqlf.Sprintf(tempTableQuery)); err != nil {
 
 Here, we defined the temporary table with the clause `ON COMMIT DROP`, which will ensure that the temporary table is only visible to the current transaction and is dropped on the next commit or rollback of the transaction.
 
-Next, create and use a batch inserter instance just as descried in the previous section, but target the newly created temporary table. Only the columns that are defined on the temporary table need to be supplied when calling the `Insert` method.
+Next, create and use a batch inserter instance just as described in the previous section, but target the newly created temporary table. Only the columns that are defined on the temporary table need to be supplied when calling the `Insert` method.
 
 ```go
 inserter := batch.NewInserter(ctx, db, "temp_table", "col3", "col4")
