@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from 'react'
 
+import { noop } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
@@ -48,11 +49,14 @@ const MemoizedActionsMenu: React.FunctionComponent<
     >(CANCEL_BATCH_SPEC_EXECUTION, {
         variables: { id: batchSpec.id },
         onError: setActionsError,
-        onCompleted: () => {
-            setShowCancelModal(false)
-            history.push(`${url}/edit`)
-        },
+        onCompleted: () => setShowCancelModal(false),
     })
+
+    const cancelAndEdit = useCallback(() => {
+        cancelBatchSpecExecution()
+            .then(() => history.push(`${url}/edit`))
+            .catch(noop)
+    }, [cancelBatchSpecExecution, history, url])
 
     const [retryBatchSpecExecution, { loading: isRetryLoading }] = useMutation<
         RetryBatchSpecExecutionResult,
@@ -126,7 +130,7 @@ const MemoizedActionsMenu: React.FunctionComponent<
             <CancelExecutionModal
                 isOpen={showCancelModal}
                 onCancel={() => setShowCancelModal(false)}
-                onConfirm={cancelBatchSpecExecution}
+                onConfirm={cancelModalType === 'cancel' ? cancelBatchSpecExecution : cancelAndEdit}
                 modalHeader={cancelModalType === 'cancel' ? 'Cancel execution' : 'The execution is still running'}
                 modalBody={
                     <p>

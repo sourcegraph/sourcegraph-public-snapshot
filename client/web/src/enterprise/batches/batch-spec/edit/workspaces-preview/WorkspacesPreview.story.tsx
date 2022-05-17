@@ -1,5 +1,6 @@
 import { boolean, select } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
+import { noop } from 'lodash'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
@@ -20,7 +21,6 @@ import {
 import { BatchSpecContextProvider } from '../../BatchSpecContext'
 
 import { WorkspacesPreview } from './WorkspacesPreview'
-import { noop } from 'lodash'
 
 const { add } = storiesOf(
     'web/batches/batch-spec/edit/workspaces-preview/WorkspacesPreview',
