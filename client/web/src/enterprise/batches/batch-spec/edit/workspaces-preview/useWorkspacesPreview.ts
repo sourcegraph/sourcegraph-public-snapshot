@@ -111,7 +111,7 @@ export const useWorkspacesPreview = (
     { isBatchSpecApplied, namespaceID, noCache, onComplete, filters }: UseWorkspacesPreviewOptions
 ): UseWorkspacesPreviewResult => {
     // Track whether the user has previewed the batch spec workspaces at least once.
-    const [hasRequestedPreviewed, setHasRequestedPreviewed] = useState(false)
+    const [hasRequestedPreview, setHasRequestedPreview] = useState(false)
     const [hasPreviewed, setHasPreviewed] = useState(false)
 
     // Mutation to create a new batch spec from the raw input YAML code.
@@ -174,7 +174,7 @@ export const useWorkspacesPreview = (
             return preview()
                 .then(result => {
                     const newBatchSpecID = getBatchSpecID(result)
-                    setHasRequestedPreviewed(true)
+                    setHasRequestedPreview(true)
                     // Requery the workspace resolution status. A status change will
                     // re-trigger polling until the new job finishes.
                     refetchResolutionStatus({ batchSpec: newBatchSpecID })
@@ -274,6 +274,6 @@ export const useWorkspacesPreview = (
         resolutionState: uiState,
         error,
         clearError: () => setError(undefined),
-        hasPreviewed: hasRequestedPreviewed && hasPreviewed,
+        hasPreviewed: hasRequestedPreview && hasPreviewed,
     }
 }
