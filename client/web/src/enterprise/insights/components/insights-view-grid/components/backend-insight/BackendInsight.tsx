@@ -40,7 +40,7 @@ interface BackendInsightProps
 export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren<BackendInsightProps>> = props => {
     const { telemetryService, insight, innerRef, resizing, ...otherProps } = props
 
-    const { dashboard } = useContext(InsightContext)
+    const { currentDashboard, dashboards } = useContext(InsightContext)
     const { getBackendInsightData, createInsight, updateInsight } = useContext(CodeInsightsBackendContext)
 
     // Visual line chart settings
@@ -98,7 +98,7 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
     ): Promise<SubmissionErrors> => {
         const { insightName } = values
 
-        if (!dashboard) {
+        if (!currentDashboard) {
             return
         }
 
@@ -111,7 +111,7 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
 
             await createInsight({
                 insight: newInsight,
-                dashboard,
+                dashboard: currentDashboard,
             }).toPromise()
 
             telemetryService.log('CodeInsightsSearchBasedFilterInsightCreation')
@@ -153,8 +153,8 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
                         />
                         <InsightContextMenu
                             insight={insight}
-                            dashboard={dashboard}
-                            menuButtonClassName="ml-1 d-inline-flex"
+                            currentDashboard={currentDashboard}
+                            dashboards={dashboards}
                             zeroYAxisMin={zeroYAxisMin}
                             onToggleZeroYAxisMin={() => setZeroYAxisMin(!zeroYAxisMin)}
                         />

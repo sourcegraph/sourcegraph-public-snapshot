@@ -1,5 +1,3 @@
-import { InsightViewNode } from '../../../../../graphql-operations'
-
 export enum InsightExecutionType {
     /**
      * This type of insights run on FE via search API.
@@ -38,5 +36,4 @@ export interface BaseInsight {
     type: InsightType
     dashboardReferenceCount: number
     isFrozen: boolean
-    dashboards: InsightViewNode['dashboards']
 }

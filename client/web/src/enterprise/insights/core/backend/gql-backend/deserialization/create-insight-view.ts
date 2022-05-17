@@ -16,7 +16,6 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
         id: insight.id,
         isFrozen: insight.isFrozen,
         dashboardReferenceCount: insight.dashboardReferenceCount,
-        dashboards: insight.dashboards,
     }
 
     switch (insight.presentation.__typename) {
