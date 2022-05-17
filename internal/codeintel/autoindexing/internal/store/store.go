@@ -14,9 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// ensure that all the needed methods are implemented
-var _ Store = (*store)(nil)
-
 // Store provides the interface for autoindexing storage.
 type Store interface {
 	List(ctx context.Context, opts ListOpts) (indexJobs []shared.IndexJob, err error)
@@ -26,6 +23,14 @@ type Store interface {
 type store struct {
 	db         *basestore.Store
 	operations *operations
+}
+
+// New returns a new autoindexing store.
+func New(db dbutil.DB, observationContext *observation.Context) Store {
+	return &store{
+		db:         basestore.NewWithDB(db, sql.TxOptions{}),
+		operations: newOperations(observationContext),
+	}
 }
 
 // ListOpts specifies options for listing index jobs.
@@ -53,11 +58,3 @@ const listQuery = `
 SELECT id FROM TODO
 LIMIT %s
 `
-
-// New returns a new autoindexing store.
-func New(db dbutil.DB, observationContext *observation.Context) Store {
-	return &store{
-		db:         basestore.NewWithDB(db, sql.TxOptions{}),
-		operations: newOperations(observationContext),
-	}
-}

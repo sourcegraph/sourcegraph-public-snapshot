@@ -25,7 +25,7 @@ var (
 func GetService(db database.DB) *Service {
 	svcOnce.Do(func() {
 		storeObservationCtx := &observation.Context{
-			Logger:     log.Scoped("store.autoindexing", "autoindexing store"),
+			Logger:     log.Scoped("autoindexing.store", "autoindexing store"),
 			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 			Registerer: prometheus.DefaultRegisterer,
 		}
