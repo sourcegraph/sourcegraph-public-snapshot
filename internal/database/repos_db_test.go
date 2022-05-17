@@ -307,6 +307,7 @@ func TestRepos_GetByIDs(t *testing.T) {
 		t.Errorf("got %v, want %v", repos[0], want[0])
 	}
 }
+
 func TestRepos_GetByIDs_EmptyIDs(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -325,6 +326,7 @@ func TestRepos_GetByIDs_EmptyIDs(t *testing.T) {
 	}
 
 }
+
 func TestRepos_List(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
