@@ -18,9 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-// ensure that all the needed methods are implemented
-var _ Store = (*store)(nil)
-
 // Store provides the interface for package dependencies storage.
 type Store interface {
 	PreciseDependencies(ctx context.Context, repoName, commit string) (deps map[api.RepoName]types.RevSpecSet, err error)
@@ -39,6 +36,14 @@ type Store interface {
 type store struct {
 	db         *basestore.Store
 	operations *operations
+}
+
+// New returns a new store.
+func New(db dbutil.DB, op *observation.Context) *store {
+	return &store{
+		db:         basestore.NewWithDB(db, sql.TxOptions{}),
+		operations: newOperations(op),
+	}
 }
 
 // PreciseDependencies returns package dependencies from precise indexes. It is assumed that
@@ -538,14 +543,6 @@ const deleteDependencyReposByIDQuery = `
 DELETE FROM lsif_dependency_repos
 WHERE id = ANY(%s)
 `
-
-// New returns a new store.
-func New(db dbutil.DB, op *observation.Context) *store {
-	return &store{
-		db:         basestore.NewWithDB(db, sql.TxOptions{}),
-		operations: newOperations(op),
-	}
-}
 
 // Transact returns a store in a transaction.
 func (s *store) Transact(ctx context.Context) (*store, error) {
