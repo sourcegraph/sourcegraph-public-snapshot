@@ -156,7 +156,7 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
                         Give it a short, descriptive name to reference the batch change on Sourcegraph. Do not include
                         confidential information.{' '}
                         <span className={classNames(isNameValid === false && 'text-danger')}>
-                            Only regular characters, _ and - are allowed.
+                            Only letters, numbers, _, and - are allowed.
                         </span>
                     </small>
                 )}
