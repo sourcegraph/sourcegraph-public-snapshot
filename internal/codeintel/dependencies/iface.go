@@ -17,6 +17,7 @@ type Store interface {
 	UpsertLockfileDependencies(ctx context.Context, repoName, commit string, deps []shared.PackageDependency) error
 	SelectRepoRevisionsToResolve(ctx context.Context, batchSize int, minimumCheckInterval time.Duration) (map[string][]string, error)
 	UpdateResolvedRevisions(ctx context.Context, repoRevsToResolvedRevs map[string]map[string]string) error
+	LockfileDependents(ctx context.Context, repoName, commit string) ([]api.RepoCommit, error)
 	ListDependencyRepos(ctx context.Context, opts store.ListDependencyReposOpts) ([]Repo, error)
 	UpsertDependencyRepos(ctx context.Context, deps []Repo) ([]Repo, error)
 	DeleteDependencyReposByID(ctx context.Context, ids ...int) error

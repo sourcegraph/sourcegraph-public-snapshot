@@ -162,6 +162,79 @@ func TestDependencies(t *testing.T) {
 	}
 }
 
+func TestDependents(t *testing.T) {
+	ctx := context.Background()
+	mockStore := NewMockStore()
+	gitService := NewMockLocalGitService()
+	lockfilesService := NewMockLockfilesService()
+	syncer := NewMockSyncer()
+	service := testService(mockStore, gitService, lockfilesService, syncer)
+
+	// GetCommits returns the same values as input; no errors
+	gitService.GetCommitsFunc.SetDefaultHook(func(ctx context.Context, repoCommits []api.RepoCommit, _ bool) (commits []*gitdomain.Commit, _ error) {
+		for _, repoCommit := range repoCommits {
+			commits = append(commits, &gitdomain.Commit{ID: repoCommit.CommitID})
+		}
+		return commits, nil
+	})
+
+	mockStore.LockfileDependentsFunc.SetDefaultHook(func(ctx context.Context, repoName, commit string) ([]api.RepoCommit, error) {
+		return []api.RepoCommit{
+			{Repo: api.RepoName(fmt.Sprintf("dep-a-%s", repoName)), CommitID: api.CommitID(fmt.Sprintf("c-%s", commit))},
+			{Repo: api.RepoName(fmt.Sprintf("dep-b-%s", repoName)), CommitID: api.CommitID(fmt.Sprintf("c-%s", commit))},
+		}, nil
+	})
+
+	repoRevs := map[api.RepoName]types.RevSpecSet{
+		api.RepoName("github.com/example/foo"): {
+			api.RevSpec("deadbeef1"): struct{}{},
+			api.RevSpec("deadbeef2"): struct{}{},
+		},
+		api.RepoName("github.com/example/bar"): {
+			api.RevSpec("deadbeef3"): struct{}{},
+			api.RevSpec("deadbeef4"): struct{}{},
+		},
+		api.RepoName("github.com/example/baz"): {
+			api.RevSpec("deadbeef5"): struct{}{},
+			api.RevSpec("deadbeef6"): struct{}{},
+		},
+	}
+	dependents, err := service.Dependents(ctx, repoRevs)
+	if err != nil {
+		t.Fatalf("unexpected error querying dependents: %s", err)
+	}
+
+	expectedDependents := map[api.RepoName]types.RevSpecSet{
+		api.RepoName("dep-a-github.com/example/foo"): {
+			api.RevSpec("c-deadbeef1"): struct{}{},
+			api.RevSpec("c-deadbeef2"): struct{}{},
+		},
+		api.RepoName("dep-a-github.com/example/bar"): {
+			api.RevSpec("c-deadbeef3"): struct{}{},
+			api.RevSpec("c-deadbeef4"): struct{}{},
+		},
+		api.RepoName("dep-a-github.com/example/baz"): {
+			api.RevSpec("c-deadbeef5"): struct{}{},
+			api.RevSpec("c-deadbeef6"): struct{}{},
+		},
+		api.RepoName("dep-b-github.com/example/foo"): {
+			api.RevSpec("c-deadbeef1"): struct{}{},
+			api.RevSpec("c-deadbeef2"): struct{}{},
+		},
+		api.RepoName("dep-b-github.com/example/bar"): {
+			api.RevSpec("c-deadbeef3"): struct{}{},
+			api.RevSpec("c-deadbeef4"): struct{}{},
+		},
+		api.RepoName("dep-b-github.com/example/baz"): {
+			api.RevSpec("c-deadbeef5"): struct{}{},
+			api.RevSpec("c-deadbeef6"): struct{}{},
+		},
+	}
+	if diff := cmp.Diff(expectedDependents, dependents); diff != "" {
+		t.Errorf("unexpected dependents (-want +got):\n%s", diff)
+	}
+}
+
 func testService(store Store, gitService localGitService, lockfilesService LockfilesService, syncer Syncer) *Service {
 	return newService(
 		store,

@@ -335,8 +335,32 @@ func (s *Service) sync(ctx context.Context, repos []api.RepoName) error {
 // Dependents resolves the (transitive) inverse dependencies for a set of repository and revisions.
 // Both the input repoRevs and the output dependencyRevs are a map from repository names to revspecs.
 func (s *Service) Dependents(ctx context.Context, repoRevs map[api.RepoName]types.RevSpecSet) (dependencyRevs map[api.RepoName]types.RevSpecSet, err error) {
-	// To be implemented after #31643
-	return nil, errors.New("unimplemented: dependencies.Dependents")
+	// Resolve the revhashes for the source repo-commit pairs
+	repoCommits, err := s.resolveRepoCommits(ctx, repoRevs)
+	if err != nil {
+		return nil, err
+	}
+
+	var deps []api.RepoCommit
+	for _, commit := range repoCommits {
+		// TODO - batch these requests in the store layer
+		repoDeps, err := s.dependenciesStore.LockfileDependents(ctx, string(commit.Repo), commit.ResolvedCommit)
+		if err != nil {
+			return nil, errors.Wrap(err, "store.LockfileDependents")
+		}
+		deps = append(deps, repoDeps...)
+
+	}
+
+	dependencyRevs = map[api.RepoName]types.RevSpecSet{}
+	for _, dep := range deps {
+		if _, ok := dependencyRevs[dep.Repo]; !ok {
+			dependencyRevs[dep.Repo] = types.RevSpecSet{}
+		}
+		dependencyRevs[dep.Repo][api.RevSpec(dep.CommitID)] = struct{}{}
+	}
+
+	return dependencyRevs, nil
 }
 
 func constructLogFields(repoRevs map[api.RepoName]types.RevSpecSet) []log.Field {

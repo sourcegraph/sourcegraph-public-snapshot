@@ -189,6 +189,9 @@ type MockStore struct {
 	// LockfileDependenciesFunc is an instance of a mock function object
 	// controlling the behavior of the method LockfileDependencies.
 	LockfileDependenciesFunc *StoreLockfileDependenciesFunc
+	// LockfileDependentsFunc is an instance of a mock function object
+	// controlling the behavior of the method LockfileDependents.
+	LockfileDependentsFunc *StoreLockfileDependentsFunc
 	// SelectRepoRevisionsToResolveFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// SelectRepoRevisionsToResolve.
@@ -221,6 +224,11 @@ func NewMockStore() *MockStore {
 		},
 		LockfileDependenciesFunc: &StoreLockfileDependenciesFunc{
 			defaultHook: func(context.Context, string, string) (r0 []shared.PackageDependency, r1 bool, r2 error) {
+				return
+			},
+		},
+		LockfileDependentsFunc: &StoreLockfileDependentsFunc{
+			defaultHook: func(context.Context, string, string) (r0 []api.RepoCommit, r1 error) {
 				return
 			},
 		},
@@ -266,6 +274,11 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.LockfileDependencies")
 			},
 		},
+		LockfileDependentsFunc: &StoreLockfileDependentsFunc{
+			defaultHook: func(context.Context, string, string) ([]api.RepoCommit, error) {
+				panic("unexpected invocation of MockStore.LockfileDependents")
+			},
+		},
 		SelectRepoRevisionsToResolveFunc: &StoreSelectRepoRevisionsToResolveFunc{
 			defaultHook: func(context.Context, int, time.Duration) (map[string][]string, error) {
 				panic("unexpected invocation of MockStore.SelectRepoRevisionsToResolve")
@@ -301,6 +314,9 @@ func NewMockStoreFrom(i Store) *MockStore {
 		},
 		LockfileDependenciesFunc: &StoreLockfileDependenciesFunc{
 			defaultHook: i.LockfileDependencies,
+		},
+		LockfileDependentsFunc: &StoreLockfileDependentsFunc{
+			defaultHook: i.LockfileDependents,
 		},
 		SelectRepoRevisionsToResolveFunc: &StoreSelectRepoRevisionsToResolveFunc{
 			defaultHook: i.SelectRepoRevisionsToResolve,
@@ -651,6 +667,117 @@ func (c StoreLockfileDependenciesFuncCall) Args() []interface{} {
 // invocation.
 func (c StoreLockfileDependenciesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// StoreLockfileDependentsFunc describes the behavior when the
+// LockfileDependents method of the parent MockStore instance is invoked.
+type StoreLockfileDependentsFunc struct {
+	defaultHook func(context.Context, string, string) ([]api.RepoCommit, error)
+	hooks       []func(context.Context, string, string) ([]api.RepoCommit, error)
+	history     []StoreLockfileDependentsFuncCall
+	mutex       sync.Mutex
+}
+
+// LockfileDependents delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockStore) LockfileDependents(v0 context.Context, v1 string, v2 string) ([]api.RepoCommit, error) {
+	r0, r1 := m.LockfileDependentsFunc.nextHook()(v0, v1, v2)
+	m.LockfileDependentsFunc.appendCall(StoreLockfileDependentsFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the LockfileDependents
+// method of the parent MockStore instance is invoked and the hook queue is
+// empty.
+func (f *StoreLockfileDependentsFunc) SetDefaultHook(hook func(context.Context, string, string) ([]api.RepoCommit, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// LockfileDependents method of the parent MockStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *StoreLockfileDependentsFunc) PushHook(hook func(context.Context, string, string) ([]api.RepoCommit, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreLockfileDependentsFunc) SetDefaultReturn(r0 []api.RepoCommit, r1 error) {
+	f.SetDefaultHook(func(context.Context, string, string) ([]api.RepoCommit, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreLockfileDependentsFunc) PushReturn(r0 []api.RepoCommit, r1 error) {
+	f.PushHook(func(context.Context, string, string) ([]api.RepoCommit, error) {
+		return r0, r1
+	})
+}
+
+func (f *StoreLockfileDependentsFunc) nextHook() func(context.Context, string, string) ([]api.RepoCommit, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreLockfileDependentsFunc) appendCall(r0 StoreLockfileDependentsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreLockfileDependentsFuncCall objects
+// describing the invocations of this function.
+func (f *StoreLockfileDependentsFunc) History() []StoreLockfileDependentsFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreLockfileDependentsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreLockfileDependentsFuncCall is an object that describes an invocation
+// of method LockfileDependents on an instance of MockStore.
+type StoreLockfileDependentsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []api.RepoCommit
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreLockfileDependentsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreLockfileDependentsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // StoreSelectRepoRevisionsToResolveFunc describes the behavior when the
