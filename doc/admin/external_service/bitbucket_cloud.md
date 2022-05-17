@@ -45,6 +45,8 @@ Bitbucket Cloud connections support the following configuration options, which a
 
 ## Webhooks
 
+> NOTE: Experimental webhook support for Bitbucket Cloud was added in Sourcegraph 3.40. Please <a href="https://about.sourcegraph.com/contact">contact us</a> with any issues found while using webhooks.
+
 To set up authentication for webhooks the `webhookSecret` setting has to be set, which is then used to authenticate incoming webhook requests to `/.api/bitbucket-cloud-webhooks`.
 
 ```json
