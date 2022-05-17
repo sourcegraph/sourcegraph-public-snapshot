@@ -831,6 +831,60 @@ func TestGitserverRepoUpsert(t *testing.T) {
 	}
 }
 
+func TestGitserverRepoUpsertMany(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	db := dbtest.NewDB(t)
+	ctx := context.Background()
+
+	// Create two test repos
+	repo1, gitserverRepo1 := createTestRepo(ctx, t, db, &createTestRepoPayload{
+		Name:          "github.com/sourcegraph/repo1",
+		URI:           "github.com/sourcegraph/repo1",
+		ExternalRepo:  api.ExternalRepoSpec{},
+		ShardID:       shardID,
+		CloneStatus:   types.CloneStatusNotCloned,
+		RepoSizeBytes: 100,
+	})
+	repo2, gitserverRepo2 := createTestRepo(ctx, t, db, &createTestRepoPayload{
+		Name:          "github.com/sourcegraph/repo2",
+		URI:           "github.com/sourcegraph/repo2",
+		ExternalRepo:  api.ExternalRepoSpec{},
+		ShardID:       shardID,
+		CloneStatus:   types.CloneStatusNotCloned,
+		RepoSizeBytes: 100,
+	})
+
+	// Change their clone statuses
+	gitserverRepo1.CloneStatus = types.CloneStatusCloned
+	gitserverRepo2.CloneStatus = types.CloneStatusCloning
+	if err := GitserverRepos(db).Upsert(ctx, gitserverRepo1, gitserverRepo2); err != nil {
+		t.Fatal(err)
+	}
+
+	// Confirm
+	t.Run("repo1", func(t *testing.T) {
+		fromDB, err := GitserverRepos(db).GetByID(ctx, repo1.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if diff := cmp.Diff(gitserverRepo1, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
+			t.Fatal(diff)
+		}
+	})
+	t.Run("repo2", func(t *testing.T) {
+		fromDB, err := GitserverRepos(db).GetByID(ctx, repo2.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if diff := cmp.Diff(gitserverRepo2, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
+			t.Fatal(diff)
+		}
+	})
+}
+
 func TestSanitizeToUTF8(t *testing.T) {
 	testSet := map[string]string{
 		"test\x00":     "test",
