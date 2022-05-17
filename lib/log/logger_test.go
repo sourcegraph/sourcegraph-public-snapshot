@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/log"
 	"github.com/sourcegraph/sourcegraph/lib/log/internal/globallogger"
 	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
@@ -36,6 +37,13 @@ func TestLogger(t *testing.T) {
 			log.String("field1", "value"),
 			log.String("field2", "value"),
 		))
+
+	// common
+	logger.Error("a real error!", log.Error(errors.New("foobar")))
+
+	// rare
+	logger.With(log.Error(errors.New("foobar"))).
+		Error("a real error!")
 
 	logs := exportLogs()
 	assert.Len(t, logs, 5)
