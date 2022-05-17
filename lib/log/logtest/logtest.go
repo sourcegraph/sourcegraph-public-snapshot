@@ -52,7 +52,7 @@ func initGlobal(level zapcore.Level) {
 type configurableAdapter interface {
 	log.Logger
 
-	WithAdditionalCore(core zapcore.Core) log.Logger
+	WithCore(func(c zapcore.Core) zapcore.Core) log.Logger
 }
 
 type CapturedLog struct {
@@ -86,7 +86,9 @@ func Captured(t testing.TB) (logger log.Logger, exportLogs func() []CapturedLog)
 	configurable := root.(configurableAdapter)
 
 	observerCore, entries := observer.New(zap.DebugLevel) // capture all levels
-	logger = configurable.WithAdditionalCore(observerCore)
+	logger = configurable.WithCore(func(c zapcore.Core) zapcore.Core {
+		return zapcore.NewTee(observerCore, c)
+	})
 
 	return logger, func() []CapturedLog {
 		entries := entries.TakeAll()

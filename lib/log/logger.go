@@ -1,7 +1,7 @@
 package log
 
 import (
-	"strings"
+	"fmt"
 	"sync"
 
 	"go.uber.org/zap"
@@ -70,7 +70,12 @@ type Logger interface {
 // Scopes should be static values, NOT dynamic values like identifiers or parameters.
 func Scoped(scope string, description string) Logger {
 	safeGet := !development // do not panic in prod
-	adapted := &zapAdapter{Logger: globallogger.Get(safeGet), fromPackageScoped: true}
+	root := globallogger.Get(safeGet)
+	adapted := &zapAdapter{
+		Logger:            root,
+		rootLogger:        root,
+		fromPackageScoped: true,
+	}
 
 	if development {
 		// In development, don't add the OpenTelemetry "Attributes" namespace which gets
@@ -83,21 +88,17 @@ func Scoped(scope string, description string) Logger {
 type zapAdapter struct {
 	*zap.Logger
 
-	// scope is a read-only copy of this logger's full scope so that we can rebuild
-	// loggers from root.
-	scope string
+	// rootLogger is used to rebuild loggers with fields that bypass the Attributes
+	// namespace. Keep this in sync with all modifications made to Logger.
+	rootLogger *zap.Logger
+
+	// fullScope tracks the full name of the logger's scope, for logging scope descriptions.
+	fullScope string
 
 	// attributes is a read-only copy of all attributes used in this logger, for the
 	// purposes of being able to rebuild loggers from a root logger to bypass the
 	// Attributes namespace.
 	attributes []Field
-
-	// callerSkip tracks the total caller skips added so far so that we can rebuild
-	// loggers from root.
-	callerSkip int
-
-	// additionalCore tracks an additional Core to write to - only to be used by logtest.
-	additionalCore zapcore.Core
 
 	// fromPackageScoped indicates this logger is from log.Scoped. Do not copy this to
 	// child loggers, and do not set this anywhere except log.Scoped.
@@ -110,21 +111,22 @@ var _ Logger = &zapAdapter{}
 var createdScopes sync.Map
 
 func (z *zapAdapter) Scoped(scope string, description string) Logger {
-	var newScope string
-	if z.scope == "" {
-		newScope = scope
+	var newFullScope string
+	if z.fullScope == "" {
+		newFullScope = scope
 	} else {
-		newScope = strings.Join([]string{z.scope, scope}, ".")
+		newFullScope = fmt.Sprintf("%s.%s", z.fullScope, scope)
 	}
 	scopedLogger := &zapAdapter{
-		Logger:         z.Logger.Named(scope), // name -> scope in OT
-		scope:          newScope,
-		attributes:     z.attributes,
-		callerSkip:     z.callerSkip,
-		additionalCore: z.additionalCore,
+		// name -> scope in OT
+		Logger:     z.Logger.Named(scope),
+		rootLogger: z.rootLogger.Named(scope),
+
+		fullScope:  newFullScope,
+		attributes: z.attributes,
 	}
 	if len(description) > 0 {
-		if _, alreadyLogged := createdScopes.LoadOrStore(newScope, struct{}{}); !alreadyLogged {
+		if _, alreadyLogged := createdScopes.LoadOrStore(newFullScope, struct{}{}); !alreadyLogged {
 			callerSkip := 1 // Logger.Scoped() -> Logger.Debug()
 			if z.fromPackageScoped {
 				callerSkip += 1 // log.Scoped() -> Logger.Scoped() -> Logger.Debug()
@@ -141,68 +143,53 @@ func (z *zapAdapter) Scoped(scope string, description string) Logger {
 
 func (z *zapAdapter) With(fields ...Field) Logger {
 	return &zapAdapter{
-		Logger:         z.Logger.With(fields...),
-		scope:          z.scope,
-		attributes:     append(z.attributes, fields...),
-		additionalCore: z.additionalCore,
+		Logger:     z.Logger.With(fields...),
+		rootLogger: z.rootLogger,
+		fullScope:  z.fullScope,
+		attributes: append(z.attributes, fields...),
 	}
 }
 
 func (z *zapAdapter) WithTrace(trace TraceContext) Logger {
-	newLogger := globallogger.Get(development)
-	if z.additionalCore != nil {
-		newLogger = newLogger.WithOptions(zap.WrapCore(func(c zapcore.Core) zapcore.Core {
-			return zapcore.NewTee(c, z.additionalCore)
-		}))
-	}
-
-	// apply options after adding core
-	newLogger = newLogger.
-		Named(z.scope).
-		WithOptions(zap.AddCallerSkip(z.callerSkip)).
+	newLogger := z.rootLogger.
 		// insert trace before attributes
 		With(zap.Inline(&encoders.TraceContextEncoder{TraceContext: trace})).
 		// add attributes back
 		With(z.attributes...)
 
 	return &zapAdapter{
-		Logger:         newLogger,
-		scope:          z.scope,
-		attributes:     z.attributes,
-		callerSkip:     z.callerSkip,
-		additionalCore: z.additionalCore,
+		Logger:     newLogger,
+		rootLogger: z.rootLogger,
+		fullScope:  z.fullScope,
+		attributes: z.attributes,
 	}
 }
 
 func (z *zapAdapter) AddCallerSkip(skip int) Logger {
 	return &zapAdapter{
-		Logger:         z.Logger.WithOptions(zap.AddCallerSkip(skip)),
-		scope:          z.scope,
-		attributes:     z.attributes,
-		callerSkip:     skip + z.callerSkip, // increase
-		additionalCore: z.additionalCore,
+		Logger:     z.Logger.WithOptions(zap.AddCallerSkip(skip)),
+		rootLogger: z.rootLogger.WithOptions(zap.AddCallerSkip(skip)),
+		fullScope:  z.fullScope,
+		attributes: z.attributes,
 	}
 }
 
-// WithAdditionalCore is an internal API used to allow packages like logtest to hook into
+// WithCore is an internal API used to allow packages like logtest to hook into
 // underlying zap logger's core.
 //
 // It must implement logtest.configurableAdapter
-func (z *zapAdapter) WithAdditionalCore(core zapcore.Core) Logger {
-	newLogger := globallogger.Get(development).
-		WithOptions(
-			zap.WrapCore(func(c zapcore.Core) zapcore.Core { return zapcore.NewTee(core, c) }),
-			zap.AddCallerSkip(z.callerSkip),
-		).
+func (z *zapAdapter) WithCore(f func(c zapcore.Core) zapcore.Core) Logger {
+	newRootLogger := z.rootLogger.
+		WithOptions(zap.WrapCore(f))
+
+	newLogger := newRootLogger.
 		// add fields back
-		Named(z.scope).
 		With(z.attributes...)
 
 	return &zapAdapter{
-		Logger:         newLogger,
-		scope:          z.scope,
-		attributes:     z.attributes,
-		callerSkip:     z.callerSkip,
-		additionalCore: core,
+		Logger:     newLogger,
+		rootLogger: newRootLogger,
+		fullScope:  z.fullScope,
+		attributes: z.attributes,
 	}
 }
