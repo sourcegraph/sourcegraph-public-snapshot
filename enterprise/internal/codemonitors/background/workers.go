@@ -29,7 +29,7 @@ const (
 func newTriggerQueryRunner(ctx context.Context, db edb.EnterpriseDB, metrics codeMonitorsMetrics) *workerutil.Worker {
 	options := workerutil.WorkerOptions{
 		Name:              "code_monitors_trigger_jobs_worker",
-		NumHandlers:       1,
+		NumHandlers:       4,
 		Interval:          5 * time.Second,
 		HeartbeatInterval: 15 * time.Second,
 		Metrics:           metrics.workerMetrics,
