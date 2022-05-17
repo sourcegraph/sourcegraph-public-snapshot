@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import { range } from 'lodash'
 import { useHistory } from 'react-router'
 
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Input } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../tracking/eventLogger'
 
@@ -59,7 +59,7 @@ export const SurveyRatingRadio: React.FunctionComponent<React.PropsWithChildren<
                         variant="primary"
                         as="label"
                     >
-                        <input
+                        <Input
                             type="radio"
                             name="survey-score"
                             value={score}

@@ -5,7 +5,7 @@ import * as H from 'history'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError } from '@sourcegraph/common'
-import { Button, LoadingSpinner, Link } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Link, Input } from '@sourcegraph/wildcard'
 
 import { SourcegraphContext } from '../jscontext'
 import { eventLogger } from '../tracking/eventLogger'
@@ -98,20 +98,18 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<React.PropsWith
                     <label htmlFor="username-or-email" className="align-self-start">
                         Username or email
                     </label>
-                    <input
+                    <Input
                         id="username-or-email"
-                        className="form-control"
-                        type="text"
                         onChange={onUsernameOrEmailFieldChange}
                         required={true}
                         value={usernameOrEmail}
                         disabled={loading}
                         autoCapitalize="off"
                         autoFocus={true}
+                        autoComplete="username"
                         // There is no well supported way to declare username OR email here.
                         // Using username seems to be the best approach and should still support this behaviour.
                         // See: https://github.com/whatwg/html/issues/4445
-                        autoComplete="username"
                     />
                 </div>
                 <div className="form-group d-flex flex-column align-content-start position-relative">

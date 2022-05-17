@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import classNames from 'classnames'
 import { useMergeRefs } from 'use-callback-ref'
 
-import { Button, useOnClickOutside } from '@sourcegraph/wildcard'
+import { Button, useOnClickOutside, Input } from '@sourcegraph/wildcard'
 
 import { BlockInput } from '..'
 
@@ -130,7 +130,7 @@ export const NotebookCommandPaletteInput = React.forwardRef<HTMLInputElement, No
         return (
             <div className={styles.root} ref={rootReference} data-testid="notebook-command-palette">
                 <div className={styles.inputRow}>
-                    <input
+                    <Input
                         ref={mergedInputReference}
                         className={styles.input}
                         value={input}

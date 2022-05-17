@@ -1,7 +1,8 @@
 import * as React from 'react'
 
-import classNames from 'classnames'
 import * as H from 'history'
+
+import { Input } from '@sourcegraph/wildcard'
 
 import { USERNAME_MAX_LENGTH, VALID_USERNAME_REGEXP } from '../user'
 
@@ -12,11 +13,11 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 export const PasswordInput: React.FunctionComponent<React.PropsWithChildren<InputProps>> = props => {
     const { inputRef, ...other } = props
     return (
-        <input
+        <Input
             name="password"
             id="password"
             {...other}
-            className={classNames('form-control', props.className)}
+            className={props.className}
             placeholder={props.placeholder || 'Password'}
             type="password"
             required={true}
@@ -28,11 +29,11 @@ export const PasswordInput: React.FunctionComponent<React.PropsWithChildren<Inpu
 export const EmailInput: React.FunctionComponent<React.PropsWithChildren<InputProps>> = props => {
     const { inputRef, ...other } = props
     return (
-        <input
+        <Input
             name="email"
             id="email"
             {...other}
-            className={classNames('form-control', props.className)}
+            className={props.className}
             type="email"
             placeholder={props.placeholder || 'Email'}
             spellCheck={false}
@@ -45,12 +46,11 @@ export const EmailInput: React.FunctionComponent<React.PropsWithChildren<InputPr
 export const UsernameInput: React.FunctionComponent<React.PropsWithChildren<InputProps>> = props => {
     const { inputRef, ...other } = props
     return (
-        <input
+        <Input
             name="username"
             id="username"
             {...other}
-            className={classNames('form-control', props.className)}
-            type="text"
+            className={props.className}
             placeholder={props.placeholder || 'Username'}
             spellCheck={false}
             pattern={VALID_USERNAME_REGEXP}

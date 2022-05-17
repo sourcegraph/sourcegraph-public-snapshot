@@ -7,7 +7,7 @@ import { RouteComponentProps } from 'react-router-dom'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { Button, Link, LoadingSpinner, Alert } from '@sourcegraph/wildcard'
+import { Button, Link, LoadingSpinner, Alert, Input } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { HeroPage } from '../components/HeroPage'
@@ -79,20 +79,18 @@ class ResetPasswordInitForm extends React.PureComponent<ResetPasswordInitFormPro
                     <p className="text-left">
                         Enter your account email address and we will send you a password reset link
                     </p>
-                    <div className="form-group">
-                        <input
-                            className="form-control"
-                            onChange={this.onEmailFieldChange}
-                            value={this.state.email}
-                            type="email"
-                            name="email"
-                            autoFocus={true}
-                            spellCheck={false}
-                            required={true}
-                            autoComplete="email"
-                            disabled={this.state.submitOrError === 'loading'}
-                        />
-                    </div>
+                    <Input
+                        onChange={this.onEmailFieldChange}
+                        value={this.state.email}
+                        type="email"
+                        name="email"
+                        autoFocus={true}
+                        spellCheck={false}
+                        required={true}
+                        autoComplete="email"
+                        disabled={this.state.submitOrError === 'loading'}
+                        className="mb-3"
+                    />
                     <Button
                         className="btn-block mt-4"
                         type="submit"

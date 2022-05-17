@@ -14,16 +14,20 @@ exports[`ExternalServiceForm create GitHub 1`] = `
       >
         Display name:
       </label>
-      <input
-        autocomplete="off"
-        autocorrect="off"
-        class="form-control"
-        id="test-external-service-form-display-name"
-        required=""
-        spellcheck="false"
-        type="text"
-        value="GitHub"
-      />
+      <div
+        class="container d-flex"
+      >
+        <input
+          autocomplete="off"
+          autocorrect="off"
+          class="input form-control with-invalid-icon"
+          id="test-external-service-form-display-name"
+          required=""
+          spellcheck="false"
+          type="text"
+          value="GitHub"
+        />
+      </div>
     </div>
     <div
       class="form-group"
@@ -61,16 +65,20 @@ exports[`ExternalServiceForm edit GitHub 1`] = `
       >
         Display name:
       </label>
-      <input
-        autocomplete="off"
-        autocorrect="off"
-        class="form-control"
-        id="test-external-service-form-display-name"
-        required=""
-        spellcheck="false"
-        type="text"
-        value="GitHub"
-      />
+      <div
+        class="container d-flex"
+      >
+        <input
+          autocomplete="off"
+          autocorrect="off"
+          class="input form-control with-invalid-icon"
+          id="test-external-service-form-display-name"
+          required=""
+          spellcheck="false"
+          type="text"
+          value="GitHub"
+        />
+      </div>
     </div>
     <div
       class="form-group"
@@ -108,17 +116,21 @@ exports[`ExternalServiceForm edit GitHub, loading 1`] = `
       >
         Display name:
       </label>
-      <input
-        autocomplete="off"
-        autocorrect="off"
-        class="form-control"
-        disabled=""
-        id="test-external-service-form-display-name"
-        required=""
-        spellcheck="false"
-        type="text"
-        value="GitHub"
-      />
+      <div
+        class="container d-flex"
+      >
+        <input
+          autocomplete="off"
+          autocorrect="off"
+          class="input form-control with-invalid-icon"
+          disabled=""
+          id="test-external-service-form-display-name"
+          required=""
+          spellcheck="false"
+          type="text"
+          value="GitHub"
+        />
+      </div>
     </div>
     <div
       class="form-group"

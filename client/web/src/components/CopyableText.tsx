@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 
-import { Button, Icon } from '@sourcegraph/wildcard'
+import { Button, Icon, Input } from '@sourcegraph/wildcard'
 
 import styles from './CopyableText.module.scss'
 
@@ -45,9 +45,9 @@ export class CopyableText extends React.PureComponent<Props, State> {
         return (
             <div className={classNames('form-inline', this.props.className)}>
                 <div className={classNames('input-group', this.props.flex && 'flex-1')}>
-                    <input
+                    <Input
                         type={this.props.password ? 'password' : 'text'}
-                        className={classNames('form-control', styles.input)}
+                        className={styles.input}
                         value={this.props.text}
                         size={this.props.size}
                         readOnly={true}
