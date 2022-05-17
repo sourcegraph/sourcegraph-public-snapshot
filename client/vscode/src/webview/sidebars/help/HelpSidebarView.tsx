@@ -3,6 +3,7 @@ import React, { useState } from 'react'
 import classNames from 'classnames'
 
 import { version } from '../../../../package.json'
+import { VSCE_LINK_FEEDBACK, VSCE_LINK_ISSUES, VSCE_LINK_SIGNUP, VSCE_LINK_TROUBLESHOOT } from '../../../common/links'
 import { WebviewPageProps } from '../../platform/context'
 import { AuthSidebarView } from '../auth/AuthSidebarView'
 
@@ -31,12 +32,7 @@ export const HelpSidebarView: React.FunctionComponent<React.PropsWithChildren<He
         <div className={classNames(styles.sidebarContainer)}>
             <button
                 type="button"
-                onClick={() =>
-                    onHelpItemClick(
-                        'https://github.com/sourcegraph/sourcegraph/discussions/categories/feedback',
-                        'Feedback'
-                    )
-                }
+                onClick={() => onHelpItemClick(VSCE_LINK_FEEDBACK, 'Feedback')}
                 className={classNames(styles.itemContainer, 'btn btn-text text-left')}
             >
                 <i className="codicon codicon-github" />
@@ -44,12 +40,7 @@ export const HelpSidebarView: React.FunctionComponent<React.PropsWithChildren<He
             </button>
             <button
                 type="button"
-                onClick={() =>
-                    onHelpItemClick(
-                        'https://github.com/sourcegraph/sourcegraph/issues/new?labels=team/integrations,vscode-extension&title=VSCode+Bug+report:+&projects=Integrations%20Project%20Board',
-                        'Issues'
-                    )
-                }
+                onClick={() => onHelpItemClick(VSCE_LINK_ISSUES, 'Issues')}
                 className={classNames(styles.itemContainer, 'btn btn-text text-left')}
             >
                 <i className="codicon codicon-bug" />
@@ -57,12 +48,7 @@ export const HelpSidebarView: React.FunctionComponent<React.PropsWithChildren<He
             </button>
             <button
                 type="button"
-                onClick={() =>
-                    onHelpItemClick(
-                        'https://docs.sourcegraph.com/admin/how-to/troubleshoot-sg-extension#vs-code-extension',
-                        'Troubleshoot'
-                    )
-                }
+                onClick={() => onHelpItemClick(VSCE_LINK_TROUBLESHOOT, 'Troubleshoot')}
                 className={classNames(styles.itemContainer, 'btn btn-text text-left')}
             >
                 <i className="codicon codicon-notebook" />
@@ -70,12 +56,7 @@ export const HelpSidebarView: React.FunctionComponent<React.PropsWithChildren<He
             </button>
             <button
                 type="button"
-                onClick={() =>
-                    onHelpItemClick(
-                        'https://sourcegraph.com/sign-up?editor=vscode&utm_medium=VSCODE&utm_source=sidebar&utm_campaign=vsce-sign-up&utm_content=sign-up',
-                        'Authenticate'
-                    )
-                }
+                onClick={() => onHelpItemClick(VSCE_LINK_SIGNUP(), 'Authenticate')}
                 className={classNames(styles.itemContainer, 'btn btn-text text-left')}
             >
                 <img

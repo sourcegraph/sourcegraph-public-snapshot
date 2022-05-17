@@ -63,14 +63,13 @@ export function activate(context: vscode.ExtensionContext): void {
     const stateMachine = createVSCEStateMachine({ localStorageService })
     invalidateContextOnSettingsChange({ context, stateMachine })
     initializeSearchContexts({ localStorageService, stateMachine, context })
-    const eventSourceType = initializeInstantVersionNumber(localStorageService)
     const sourcegraphSettings = initializeSourcegraphSettings({ context })
     const authenticatedUser = observeAuthenticatedUser({ context })
     const initialInstanceURL = endpointSetting()
-
+    const initialAccessToken = accessTokenSetting()
+    const eventSourceType = initializeInstantVersionNumber(localStorageService, initialInstanceURL, initialAccessToken)
     // Sets global `EventSource` for Node, which is required for streaming search.
     // Used for VS Code web as well to be able to add Authorization header.
-    const initialAccessToken = accessTokenSetting()
     // Add custom headers to `EventSource` Authorization header when provided
     const customHeaders = endpointRequestHeadersSetting()
     polyfillEventSource(initialAccessToken ? { Authorization: `token ${initialAccessToken}`, ...customHeaders } : {})
@@ -133,7 +132,6 @@ export function activate(context: vscode.ExtensionContext): void {
         logEvents: (variables: Event) => logEvent(variables),
         getEventSource: eventSourceType,
     }
-
     // Also initializes code intel.
     registerWebviews({
         context,

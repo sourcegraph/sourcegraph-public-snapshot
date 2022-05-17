@@ -7,14 +7,19 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 import { currentAuthStateQuery } from '@sourcegraph/shared/src/auth'
 import { CurrentAuthStateResult, CurrentAuthStateVariables } from '@sourcegraph/shared/src/graphql-operations'
-import { Alert } from '@sourcegraph/wildcard'
+import { Alert, Button, Link } from '@sourcegraph/wildcard'
 
+import {
+    VSCE_LINK_DOTCOM,
+    VSCE_LINK_MARKETPLACE,
+    VSCE_LINK_SIGNUP,
+    VSCE_LINK_TOKEN_CALLBACK,
+    VSCE_LINK_USER_DOCS,
+    VSCE_SIDEBAR_PARAMS,
+} from '../../../common/links'
 import { WebviewPageProps } from '../../platform/context'
 
 import styles from './AuthSidebarView.module.scss'
-
-const SIDEBAR_UTM_PARAMS = 'utm_medium=VSCODE&utm_source=sidebar&utm_campaign=vsce-sign-up&utm_content=sign-up'
-
 interface AuthSidebarViewProps
     extends Pick<WebviewPageProps, 'extensionCoreAPI' | 'platformContext' | 'instanceURL' | 'authenticatedUser'> {}
 
@@ -32,9 +37,13 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
     const [state, setState] = useState<'initial' | 'validating' | 'success' | 'failure'>('initial')
     const [hasAccount, setHasAccount] = useState(!authenticatedUser)
     const [usePrivateInstance, setUsePrivateInstance] = useState(false)
-    const signUpURL = `https://sourcegraph.com/sign-up?editor=vscode&${SIDEBAR_UTM_PARAMS}&returnTo=%2Fuser%2Fsettings%2Ftokens%2Fnew%3Fdescription%3Dvsce%2Btoken%26toast%3Dintegrations`
+    const signUpURL = VSCE_LINK_SIGNUP()
     const instanceHostname = useMemo(() => new URL(instanceURL).hostname, [instanceURL])
     const [hostname, setHostname] = useState(instanceHostname)
+    const isSourcegraphDotCom = useMemo(() => {
+        const hostname = new URL(instanceURL).hostname
+        return hostname === 'sourcegraph.com' || hostname === 'www.sourcegraph.com' || hostname === 'sourcegraph.test'
+    }, [instanceURL])
 
     const validateAccessToken: React.FormEventHandler<HTMLFormElement> = (event): void => {
         event.preventDefault()
@@ -75,10 +84,9 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
         // If successful, update setting. This form will no longer be rendered
     }
 
-    const onSignUpClick = async (): Promise<void> => {
+    const onSignUpClick = (): void => {
         setHasAccount(true)
         platformContext.telemetryService.log('VSCESidebarCreateAccount')
-        await extensionCoreAPI.openLink(signUpURL)
     }
 
     if (state === 'success') {
@@ -109,17 +117,23 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
                     multiple repositories & commit history, monitor code changes, save searches, and more.
                 </p>
                 <p className={classNames(styles.ctaButtonWrapperWithContextBelow)}>
-                    <button type="button" onClick={onSignUpClick} className={classNames('btn my-1', styles.ctaButton)}>
+                    <Button
+                        variant="primary"
+                        className={classNames(styles.ctaButton, 'btn-text-link p-0 text-left my-1')}
+                        onClick={onSignUpClick}
+                        as={Link}
+                        to={signUpURL}
+                    >
                         Create an account
-                    </button>
+                    </Button>
                 </p>
-                <button
+                <VSCodeButton
                     type="button"
                     className={classNames(styles.ctaParagraph, 'btn btn-text-link text-left')}
                     onClick={() => setHasAccount(true)}
                 >
                     Have an account?
-                </button>
+                </VSCodeButton>
             </>
         )
     }
@@ -132,29 +146,31 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
             <p className={classNames(styles.ctaParagraph)}>
                 See our {/* eslint-disable-next-line react/forbid-elements */}{' '}
                 <a
-                    href={`https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token?${SIDEBAR_UTM_PARAMS}`}
+                    href={VSCE_LINK_USER_DOCS}
                     onClick={() => platformContext.telemetryService.log('VSCESidebarCreateToken')}
                 >
                     user docs
                 </a>{' '}
                 for a video guide on how to create an access token.
             </p>
-            <p className={classNames(styles.ctaParagraph)}>
-                <a href="https://sourcegraph.test:3443/sign-in?returnTo=user/settings/tokens/new?requestFrom=LOGINVSCE">
-                    {/* <a href="https://sourcegraph.com/sign-in?returnTo=user/settings/tokens/new?requestFrom=LOGINVSCE"> */}
-                    <VSCodeButton
-                        type="button"
-                        className={classNames(
-                            'btn my-1 p-0',
-                            styles.ctaButton,
-                            styles.ctaButtonWrapperWithContextBelow
-                        )}
-                        autofocus={false}
-                    >
-                        Sign in with a browser
-                    </VSCodeButton>
-                </a>
-            </p>
+            {/* TODO: UPDATE LINK BACK TO CLOUD */}
+            {isSourcegraphDotCom && (
+                <p className={classNames(styles.ctaParagraph)}>
+                    <Link to={VSCE_LINK_TOKEN_CALLBACK}>
+                        <VSCodeButton
+                            type="button"
+                            className={classNames(
+                                'btn my-1 p-0',
+                                styles.ctaButton,
+                                styles.ctaButtonWrapperWithContextBelow
+                            )}
+                            autofocus={false}
+                        >
+                            Sign in with a browser
+                        </VSCodeButton>
+                    </Link>
+                </p>
+            )}
             <p className={classNames(styles.ctaButtonWrapperWithContextBelow)}>
                 <LoaderInput loading={state === 'validating'}>
                     <label htmlFor="access-token-input">Access Token</label>
@@ -202,30 +218,32 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
                 </Alert>
             )}
             {!usePrivateInstance ? (
-                <button
-                    type="button"
-                    className={classNames(styles.ctaParagraph, 'btn btn-text-link text-left my-0')}
+                <Button
+                    variant="link"
+                    className={classNames(styles.ctaParagraph, 'btn-text-link p-0 text-left my-0')}
                     onClick={() => setUsePrivateInstance(true)}
                 >
                     Need to connect to a private instance?
-                </button>
+                </Button>
             ) : (
-                <button
-                    type="button"
-                    className={classNames(styles.ctaParagraph, 'btn btn-text-link text-left my-0')}
+                <Button
+                    variant="link"
+                    className={classNames(styles.ctaParagraph, 'btn-text-link p-0 text-left my-0')}
                     onClick={() => setUsePrivateInstance(false)}
                 >
                     Not a private instance user?
-                </button>
+                </Button>
             )}
             <div className="my-0">
-                <button
-                    type="button"
-                    className={classNames(styles.ctaParagraph, 'btn btn-text-link text-left my-0')}
+                <Button
+                    variant="link"
+                    className={classNames(styles.ctaParagraph, 'btn-text-link p-0 text-left my-0')}
                     onClick={onSignUpClick}
+                    as={Link}
+                    to={signUpURL}
                 >
                     Create an account
-                </button>
+                </Button>
             </div>
         </>
     )
@@ -254,7 +272,7 @@ export const AuthSidebarCta: React.FunctionComponent<React.PropsWithChildren<Aut
                 <p className="mb-0">Learn more:</p>
                 {/* eslint-disable-next-line react/forbid-elements */}
                 <a
-                    href={'https://sourcegraph.com/?' + SIDEBAR_UTM_PARAMS}
+                    href={VSCE_LINK_DOTCOM + VSCE_SIDEBAR_PARAMS}
                     className="my-0"
                     onClick={() => onLinkClick('Sourcegraph')}
                 >
@@ -262,11 +280,7 @@ export const AuthSidebarCta: React.FunctionComponent<React.PropsWithChildren<Aut
                 </a>
                 <br />
                 {/* eslint-disable-next-line react/forbid-elements */}
-                <a
-                    href="https://marketplace.visualstudio.com/items?itemName=sourcegraph.sourcegraph"
-                    className="my-0"
-                    onClick={() => onLinkClick('Extension')}
-                >
+                <a href={VSCE_LINK_MARKETPLACE} className="my-0" onClick={() => onLinkClick('Extension')}>
                     Sourcegraph VS Code extension
                 </a>
             </div>
