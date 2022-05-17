@@ -94,6 +94,7 @@ func FromContext(ctx context.Context) FlagSet {
 	}
 	return nil
 }
+
 // TODO: add description
 func (f *flagSetFetcher) evaluateForActor(ctx context.Context, a *actor.Actor, flagName string) (*bool, error) {
 	if a.IsAuthenticated() {
