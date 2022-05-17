@@ -183,7 +183,7 @@ func getRemoteRegistryExtension(ctx context.Context, field, value string) (*regi
 	}
 
 	if x != nil && !IsRemoteExtensionPublisherAllowed(x.Publisher) {
-		return nil, errors.Errorf("non Sourcegraph authored extensions are not allowed in site configuration")
+		return nil, errors.Errorf("Only Sourcegraph-authored extensions are allowed in the site configuration.")
 	}
 
 	return x, err
