@@ -141,6 +141,7 @@ export const NewBatchChangePreviewPage: React.FunctionComponent<
         telemetryService.logViewEvent('BatchChangeApplyPage')
     }, [telemetryService])
 
+    // If we're loading and haven't received any data yet
     if (loading && !data) {
         return (
             <div className="text-center">
@@ -148,9 +149,15 @@ export const NewBatchChangePreviewPage: React.FunctionComponent<
             </div>
         )
     }
-    if (data?.node?.__typename !== 'BatchSpec' || error) {
+    // If we received an error before we successfully received any data
+    if (error && !data) {
+        throw new Error(error.message)
+    }
+    // If there weren't any errors and we just didn't receive any data
+    if (data?.node?.__typename !== 'BatchSpec') {
         return <HeroPage icon={AlertCircleIcon} title="Batch spec not found" />
     }
+
     const spec = data.node
 
     return (

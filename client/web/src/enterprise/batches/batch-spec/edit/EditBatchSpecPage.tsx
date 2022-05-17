@@ -57,6 +57,7 @@ export const EditBatchSpecPage: React.FunctionComponent<React.PropsWithChildren<
 
     const refetchBatchChange = useCallback(() => refetch(batchChange), [refetch, batchChange])
 
+    // If we're loading and haven't received any data yet
     if (loading && !data) {
         return (
             <div className="w-100 text-center">
@@ -64,8 +65,12 @@ export const EditBatchSpecPage: React.FunctionComponent<React.PropsWithChildren<
             </div>
         )
     }
-
-    if (!data?.batchChange || error) {
+    // If we received an error before we successfully received any data
+    if (error && !data) {
+        throw new Error(error.message)
+    }
+    // If there weren't any errors and we just didn't receive any data
+    if (!data?.batchChange) {
         return <HeroPage icon={AlertCircleIcon} title="Batch change not found" />
     }
 
