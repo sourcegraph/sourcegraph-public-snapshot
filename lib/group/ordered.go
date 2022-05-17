@@ -11,7 +11,7 @@ func NewParallelOrdered[T any](maxParallel int, callback func(T)) *parallelOrder
 	return &parallelOrdered[T]{
 		callback:    callback,
 		tasks:       make(chan task[T]),
-		results:     make(chan chan T, 16),
+		results:     make(chan chan T, maxParallel),
 		callbackerC: make(chan struct{}, 1),
 		workerpoolC: make(chan struct{}, maxParallel),
 	}
