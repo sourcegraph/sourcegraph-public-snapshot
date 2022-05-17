@@ -587,6 +587,7 @@ func (m *mocks) DB() database.DB {
 	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
 	db.UsersFunc.SetDefaultReturn(users)
 	db.AuthzFunc.SetDefaultReturn(authzStore)
+	db.FeatureFlagsFunc.SetDefaultReturn(database.NewMockFeatureFlagStore())
 	db.EventLogsFunc.SetDefaultReturn(database.NewMockEventLogStore())
 	return db
 }

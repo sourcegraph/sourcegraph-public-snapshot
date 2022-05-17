@@ -282,6 +282,8 @@ func TestSearchResultsHydration(t *testing.T) {
 
 	db := database.NewMockDB()
 
+	db.FeatureFlagsFunc.SetDefaultReturn(database.NewMockFeatureFlagStore())
+
 	repos := database.NewMockRepoStore()
 	repos.GetFunc.SetDefaultReturn(hydratedRepo, nil)
 	repos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) ([]types.MinimalRepo, error) {
