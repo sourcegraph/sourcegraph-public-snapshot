@@ -204,12 +204,33 @@ func parseBitbucketServerBuildState(s string) btypes.ChangesetCheckState {
 	}
 }
 
-func computeBitbucketCloudBuildState(_ time.Time, apr *bbcs.AnnotatedPullRequest, _ []*btypes.ChangesetEvent) btypes.ChangesetCheckState {
-	states := make([]btypes.ChangesetCheckState, len(apr.Statuses))
-	for i, status := range apr.Statuses {
-		states[i] = parseBitbucketCloudBuildState(status.State)
+func computeBitbucketCloudBuildState(lastSynced time.Time, apr *bbcs.AnnotatedPullRequest, events []*btypes.ChangesetEvent) btypes.ChangesetCheckState {
+	stateMap := make(map[string]btypes.ChangesetCheckState)
+
+	// States from last sync.
+	for _, status := range apr.Statuses {
+		stateMap[status.Key()] = parseBitbucketCloudBuildState(status.State)
 	}
-	// TODO: handle events.
+
+	// Add any events we've received since our last sync.
+	addState := func(key string, status *bitbucketcloud.CommitStatus) {
+		if lastSynced.Before(status.CreatedOn) {
+			stateMap[key] = parseBitbucketCloudBuildState(status.State)
+		}
+	}
+	for _, e := range events {
+		switch m := e.Metadata.(type) {
+		case *bitbucketcloud.RepoCommitStatusCreatedEvent:
+			addState(m.Key(), &m.CommitStatus)
+		case *bitbucketcloud.RepoCommitStatusUpdatedEvent:
+			addState(m.Key(), &m.CommitStatus)
+		}
+	}
+
+	states := make([]btypes.ChangesetCheckState, 0, len(stateMap))
+	for _, v := range stateMap {
+		states = append(states, v)
+	}
 
 	return combineCheckStates(states)
 }

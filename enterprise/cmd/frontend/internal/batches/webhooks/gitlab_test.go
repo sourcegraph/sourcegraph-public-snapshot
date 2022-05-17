@@ -41,7 +41,11 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 				store := gitLabTestSetup(t, db)
 				h := NewGitLabWebhook(store)
 
-				u := extsvc.WebhookURL(extsvc.TypeGitLab, 12345, "https://example.com/")
+				u, err := extsvc.WebhookURL(extsvc.TypeGitLab, 12345, nil, "https://example.com/")
+				if err != nil {
+					t.Fatal(err)
+				}
+
 				req, err := http.NewRequest("POST", u, nil)
 				if err != nil {
 					t.Fatal(err)
@@ -59,7 +63,12 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 				store := gitLabTestSetup(t, db)
 				h := NewGitLabWebhook(store)
 
-				u := strings.ReplaceAll(extsvc.WebhookURL(extsvc.TypeGitLab, 12345, "https://example.com/"), "12345", "foo")
+				u, err := extsvc.WebhookURL(extsvc.TypeGitLab, 12345, nil, "https://example.com/")
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				u = strings.ReplaceAll(u, "12345", "foo")
 				req, err := http.NewRequest("POST", u, nil)
 				if err != nil {
 					t.Fatal(err)
@@ -95,7 +104,11 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 					t.Fatal(err)
 				}
 
-				u := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, "https://example.com/")
+				u, err := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, nil, "https://example.com/")
+				if err != nil {
+					t.Fatal(err)
+				}
+
 				req, err := http.NewRequest("POST", u, nil)
 				if err != nil {
 					t.Fatal(err)
@@ -117,7 +130,11 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 				h := NewGitLabWebhook(store)
 				es := createGitLabExternalService(t, ctx, store.ExternalServices())
 
-				u := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, "https://example.com/")
+				u, err := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, nil, "https://example.com/")
+				if err != nil {
+					t.Fatal(err)
+				}
+
 				req, err := http.NewRequest("POST", u, nil)
 				if err != nil {
 					t.Fatal(err)
@@ -138,7 +155,11 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 				h := NewGitLabWebhook(store)
 				es := createGitLabExternalService(t, ctx, store.ExternalServices())
 
-				u := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, "https://example.com/")
+				u, err := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, nil, "https://example.com/")
+				if err != nil {
+					t.Fatal(err)
+				}
+
 				req, err := http.NewRequest("POST", u, nil)
 				if err != nil {
 					t.Fatal(err)
@@ -160,7 +181,11 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 				h := NewGitLabWebhook(store)
 				es := createGitLabExternalService(t, ctx, store.ExternalServices())
 
-				u := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, "https://example.com/")
+				u, err := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, nil, "https://example.com/")
+				if err != nil {
+					t.Fatal(err)
+				}
+
 				req, err := http.NewRequest("POST", u, nil)
 				if err != nil {
 					t.Fatal(err)
@@ -182,7 +207,11 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 				h := NewGitLabWebhook(store)
 				es := createGitLabExternalService(t, ctx, store.ExternalServices())
 
-				u := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, "https://example.com/")
+				u, err := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, nil, "https://example.com/")
+				if err != nil {
+					t.Fatal(err)
+				}
+
 				req, err := http.NewRequest("POST", u, nil)
 				if err != nil {
 					t.Fatal(err)
@@ -205,7 +234,11 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 				h := NewGitLabWebhook(store)
 				es := createGitLabExternalService(t, ctx, store.ExternalServices())
 
-				u := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, "https://example.com/")
+				u, err := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, nil, "https://example.com/")
+				if err != nil {
+					t.Fatal(err)
+				}
+
 				req, err := http.NewRequest("POST", u, bytes.NewBufferString("invalid JSON"))
 				if err != nil {
 					t.Fatal(err)
@@ -227,7 +260,11 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 				h := NewGitLabWebhook(store)
 				es := createGitLabExternalService(t, ctx, store.ExternalServices())
 
-				u := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, "https://example.com/")
+				u, err := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, nil, "https://example.com/")
+				if err != nil {
+					t.Fatal(err)
+				}
+
 				body := ct.MarshalJSON(t, &webhooks.EventCommon{
 					ObjectKind: "unknown",
 				})
@@ -267,7 +304,11 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 					t.Fatal(err)
 				}
 
-				u := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, "https://example.com/")
+				u, err := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, nil, "https://example.com/")
+				if err != nil {
+					t.Fatal(err)
+				}
+
 				req, err := http.NewRequest("POST", u, bytes.NewBufferString(body))
 				if err != nil {
 					t.Fatal(err)
@@ -302,7 +343,11 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 						changeset := createGitLabChangeset(t, ctx, store, repo)
 						body := createMergeRequestPayload(t, repo, changeset, "approved")
 
-						u := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, "https://example.com/")
+						u, err := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, nil, "https://example.com/")
+						if err != nil {
+							t.Fatal(err)
+						}
+
 						req, err := http.NewRequest("POST", u, bytes.NewBufferString(body))
 						if err != nil {
 							t.Fatal(err)
@@ -348,7 +393,11 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 						changeset := createGitLabChangeset(t, ctx, store, repo)
 						body := createMergeRequestPayload(t, repo, changeset, action)
 
-						u := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, "https://example.com/")
+						u, err := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, nil, "https://example.com/")
+						if err != nil {
+							t.Fatal(err)
+						}
+
 						req, err := http.NewRequest("POST", u, bytes.NewBufferString(body))
 						if err != nil {
 							t.Fatal(err)
@@ -381,7 +430,11 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 					Status: gitlab.PipelineStatusSuccess,
 				})
 
-				u := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, "https://example.com/")
+				u, err := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, nil, "https://example.com/")
+				if err != nil {
+					t.Fatal(err)
+				}
+
 				req, err := http.NewRequest("POST", u, bytes.NewBufferString(body))
 				if err != nil {
 					t.Fatal(err)
