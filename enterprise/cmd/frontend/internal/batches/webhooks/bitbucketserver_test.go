@@ -51,7 +51,7 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 
 		secret := "secret"
 		repoStore := database.Repos(db)
-		esStore := database.ExternalServices(db)
+		esStore := database.NewDB(db).ExternalServices()
 		bitbucketServerToken := os.Getenv("BITBUCKET_SERVER_TOKEN")
 		if bitbucketServerToken == "" {
 			bitbucketServerToken = "test-token"

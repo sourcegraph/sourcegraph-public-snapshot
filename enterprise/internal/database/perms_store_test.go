@@ -2958,6 +2958,7 @@ WHERE repo_id = 2`, clock().AddDate(-1, 0, 0))
 
 func testPermsStore_UserIsMemberOfOrgHasCodeHostConnection(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
+		db := database.NewDB(db)
 		s := perms(db, clock)
 		ctx := context.Background()
 		t.Cleanup(func() {
@@ -3013,7 +3014,7 @@ func testPermsStore_UserIsMemberOfOrgHasCodeHostConnection(db *sql.DB) func(*tes
 		_, err = orgMembers.Create(ctx, cindyOrg.ID, cindy.ID)
 		require.NoError(t, err)
 
-		err = database.ExternalServices(db).Create(ctx,
+		err = db.ExternalServices().Create(ctx,
 			func() *conf.Unified { return &conf.Unified{} },
 			&types.ExternalService{
 				Kind:           extsvc.KindGitHub,

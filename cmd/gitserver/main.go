@@ -117,7 +117,7 @@ func main() {
 
 	repoStore := database.Repos(db)
 	depsSvc := livedependencies.GetService(db, nil)
-	externalServiceStore := database.ExternalServices(db)
+	externalServiceStore := db.ExternalServices()
 
 	err = keyring.Init(ctx)
 	if err != nil {

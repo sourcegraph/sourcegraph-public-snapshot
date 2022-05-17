@@ -71,7 +71,7 @@ func (j *indexingJob) Routines(ctx context.Context, logger log.Logger) ([]gorout
 	dbworker.InitPrometheusMetric(observationContext, dependencySyncStore, "codeintel", "dependency_index", nil)
 
 	repoUpdaterClient := InitRepoUpdaterClient()
-	extSvcStore := database.ExternalServices(db)
+	extSvcStore := database.NewDB(db).ExternalServices()
 	dbStoreShim := &indexing.DBStoreShim{Store: dbStore}
 	enqueuerDBStoreShim := &enqueuer.DBStoreShim{Store: dbStore}
 	policyMatcher := policies.NewMatcher(gitserverClient, policies.IndexingExtractor, false, true)

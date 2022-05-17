@@ -116,7 +116,7 @@ func TestIterateRepoGitserverStatus(t *testing.T) {
 
 func TestIteratePurgeableRepos(t *testing.T) {
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := NewDB(dbtest.NewDB(t))
 
 	normalRepo := &types.Repo{
 		Name: "normal",
@@ -289,7 +289,7 @@ func TestIterateWithNonemptyLastError(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
-			db := dbtest.NewDB(t)
+			db := NewDB(dbtest.NewDB(t))
 			now := time.Now()
 
 			cloudDefaultService := createTestExternalService(ctx, t, now, db, true)
@@ -349,7 +349,7 @@ func TestIterateWithNonemptyLastError(t *testing.T) {
 	}
 }
 
-func createTestExternalService(ctx context.Context, t *testing.T, now time.Time, db *sql.DB, cloudDefault bool) types.ExternalService {
+func createTestExternalService(ctx context.Context, t *testing.T, now time.Time, db DB, cloudDefault bool) types.ExternalService {
 	service := types.ExternalService{
 		Kind:         extsvc.KindGitHub,
 		DisplayName:  "Github - Test",
@@ -364,7 +364,7 @@ func createTestExternalService(ctx context.Context, t *testing.T, now time.Time,
 		return &conf.Unified{}
 	}
 
-	err := ExternalServices(db).Create(ctx, confGet, &service)
+	err := db.ExternalServices().Create(ctx, confGet, &service)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1043,7 +1043,7 @@ func createTestRepos(ctx context.Context, t *testing.T, db dbutil.DB, repos type
 	}
 }
 
-func createTestGitserverRepos(ctx context.Context, t *testing.T, db *sql.DB, hasLastError bool, cloneStatus types.CloneStatus, repoID api.RepoID) {
+func createTestGitserverRepos(ctx context.Context, t *testing.T, db DB, hasLastError bool, cloneStatus types.CloneStatus, repoID api.RepoID) {
 	t.Helper()
 	gitserverRepo := &types.GitserverRepo{
 		RepoID:      repoID,

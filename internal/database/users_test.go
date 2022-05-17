@@ -517,7 +517,7 @@ func TestUsers_Delete(t *testing.T) {
 			confGet := func() *conf.Unified {
 				return &conf.Unified{}
 			}
-			err = ExternalServices(db).Create(ctx, confGet, &types.ExternalService{
+			err = db.ExternalServices().Create(ctx, confGet, &types.ExternalService{
 				Kind:            extsvc.KindGitHub,
 				DisplayName:     "GITHUB #1",
 				Config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
@@ -602,7 +602,7 @@ func TestUsers_Delete(t *testing.T) {
 			}
 
 			// User's external services no longer exist
-			ess, err := ExternalServices(db).List(ctx, ExternalServicesListOptions{
+			ess, err := db.ExternalServices().List(ctx, ExternalServicesListOptions{
 				NamespaceUserID: user.ID,
 			})
 			if err != nil {

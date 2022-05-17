@@ -57,7 +57,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			token = "no-GITHUB_TOKEN-set"
 		}
 		repoStore := database.Repos(db)
-		esStore := database.ExternalServices(db)
+		esStore := database.NewDB(db).ExternalServices()
 		extSvc := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "GitHub",
