@@ -36,7 +36,7 @@ func init() {
 
 		allowedExtensions := getAllowedExtensionsFromSiteConfig()
 		if allowedExtensions != nil {
-			allow := make(map[string]any)
+			allow := make(map[string]struct{})
 			for _, id := range allowedExtensions {
 				allow[id] = struct{}{}
 			}
