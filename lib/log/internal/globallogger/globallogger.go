@@ -35,9 +35,9 @@ func Get(safe bool) *zap.Logger {
 
 // Init initializes the global logger once. Subsequent calls are no-op. Returns the
 // callback to sync the root core.
-func Init(r otfields.Resource, level zapcore.LevelEnabler, format encoders.OutputFormat, development bool) func() error {
+func Init(r otfields.Resource, level zapcore.LevelEnabler, format encoders.OutputFormat, development bool, sinks []zapcore.Core) func() error {
 	globalLoggerInit.Do(func() {
-		globalLogger = initLogger(r, level, format, development)
+		globalLogger = initLogger(r, level, format, development, sinks)
 	})
 	return globalLogger.Sync
 }
@@ -47,7 +47,7 @@ func IsInitialized() bool {
 	return globalLogger != nil
 }
 
-func initLogger(r otfields.Resource, level zapcore.LevelEnabler, format encoders.OutputFormat, development bool) *zap.Logger {
+func initLogger(r otfields.Resource, level zapcore.LevelEnabler, format encoders.OutputFormat, development bool, sinks []zapcore.Core) *zap.Logger {
 	// Set global
 	devMode = development
 
@@ -56,6 +56,7 @@ func initLogger(r otfields.Resource, level zapcore.LevelEnabler, format encoders
 		panic(err.Error())
 	}
 
+	// TODO add the cores
 	options := []zap.Option{zap.ErrorOutput(errSink), zap.AddCaller()}
 	if development {
 		options = append(options, zap.Development())
