@@ -2,13 +2,12 @@ import React, { useCallback, useMemo, useState } from 'react'
 
 import AddIcon from 'mdi-react/AddIcon'
 import { RouteComponentProps } from 'react-router'
-import { concat, Observable, Subject } from 'rxjs'
-import { catchError, concatMap, map, tap } from 'rxjs/operators'
+import { concat, Subject } from 'rxjs'
+import { catchError, concatMap, tap } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
-import { gql } from '@sourcegraph/http-client'
+import { asError, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Container,
@@ -22,39 +21,12 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { AccessTokenScopes } from '../../../auth/accessToken'
-import { requestGraphQL } from '../../../backend/graphql'
 import { PageTitle } from '../../../components/PageTitle'
-import { CreateAccessTokenResult, CreateAccessTokenVariables, Scalars } from '../../../graphql-operations'
+import { CreateAccessTokenResult } from '../../../graphql-operations'
 import { SiteAdminAlert } from '../../../site-admin/SiteAdminAlert'
-import { eventLogger } from '../../../tracking/eventLogger'
 import { UserSettingsAreaRouteContext } from '../UserSettingsArea'
 
-function createAccessToken(
-    user: Scalars['ID'],
-    scopes: string[],
-    note: string
-): Observable<CreateAccessTokenResult['createAccessToken']> {
-    return requestGraphQL<CreateAccessTokenResult, CreateAccessTokenVariables>(
-        gql`
-            mutation CreateAccessToken($user: ID!, $scopes: [String!]!, $note: String!) {
-                createAccessToken(user: $user, scopes: $scopes, note: $note) {
-                    id
-                    token
-                }
-            }
-        `,
-        { user, scopes, note }
-    ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.createAccessToken || (errors && errors.length > 0)) {
-                eventLogger.log('CreateAccessTokenFailed')
-                throw createAggregateError(errors)
-            }
-            eventLogger.log('AccessTokenCreated')
-            return data.createAccessToken
-        })
-    )
-}
+import { createAccessToken } from './create'
 
 interface Props
     extends Pick<UserSettingsAreaRouteContext, 'authenticatedUser' | 'user'>,
@@ -81,16 +53,10 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
         telemetryService.logViewEvent('NewAccessToken')
     }, [telemetryService])
 
-    /** Get the token description from the url parameters if any */
-    const requestFrom = new URLSearchParams(history.location.search).get('requestFrom')
-    // const nonce = new URLSearchParams(history.location.search).get('nonce')
     /** The contents of the note input field. */
     const [note, setNote] = useState<string>('')
     /** The selected scopes checkboxes. */
     const [scopes, setScopes] = useState<string[]>([AccessTokenScopes.UserAll])
-
-    const submits = useMemo(() => new Subject<React.FormEvent<HTMLFormElement>>(), [])
-    const onSubmit = useCallback<React.FormEventHandler<HTMLFormElement>>(event => submits.next(event), [submits])
 
     const onNoteChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
         setNote(event.currentTarget.value)
@@ -102,31 +68,8 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
         setScopes(previous => (checked ? [...previous, value] : previous.filter(scope => scope !== value)))
     }, [])
 
-    /** We use this to handle token creation request from redirections. */
-    const requestOrError = useObservable(
-        useMemo(
-            () =>
-                createAccessToken(
-                    user.id,
-                    scopes,
-                    'Click on the pop-up to sent token back to VS Code automatically'
-                ).pipe(
-                    tap(result => {
-                        // TODO: Create predefined list for requestFrom.
-                        // eg: LOGINVSCE { redirectCall: `vscode://sourcegraph.sourcegraph?code=${result.token}&nonce=${nonce}`}
-                        if (requestFrom === 'LOGINVSCE') {
-                            // Go back to access tokens list page and display the token secret value.
-                            history.push(`${match.url.replace(/\/new$/, '')}`)
-                            onDidCreateAccessToken(result)
-                            // TODO: ENCRYPT TOKEN
-                            window.location.replace(`vscode://sourcegraph.sourcegraph?code=${result.token}`)
-                        }
-                    }),
-                    catchError(error => [asError(error)])
-                ),
-            [history, match.url, onDidCreateAccessToken, requestFrom, scopes, user.id]
-        )
-    )
+    const submits = useMemo(() => new Subject<React.FormEvent<HTMLFormElement>>(), [])
+    const onSubmit = useCallback<React.FormEventHandler<HTMLFormElement>>(event => submits.next(event), [submits])
 
     const creationOrError = useObservable(
         useMemo(
@@ -157,6 +100,7 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
         <div className="user-settings-create-access-token-page">
             <PageTitle title="Create access token" />
             <PageHeader path={[{ text: 'New access token' }]} headingElement="h2" className="mb-3" />
+
             {siteAdminViewingOtherUser && (
                 <SiteAdminAlert className="sidebar__alert">
                     Creating access token for other user <strong>{user.username}</strong>
@@ -175,7 +119,6 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
                             required={true}
                             autoFocus={true}
                             placeholder="What's this token for?"
-                            value={note}
                         />
                     </div>
                     <div className="form-group mb-0">
@@ -237,8 +180,8 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
                     </Button>
                 </div>
             </Form>
+
             {isErrorLike(creationOrError) && <ErrorAlert className="my-3" error={creationOrError} />}
-            {isErrorLike(requestOrError) && requestFrom && <ErrorAlert className="my-3" error={requestOrError} />}
         </div>
     )
 }
