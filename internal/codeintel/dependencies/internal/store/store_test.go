@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"sort"
 	"testing"
 	"time"
 
@@ -65,6 +66,7 @@ func TestLockfileDependencies(t *testing.T) {
 		if !found {
 			t.Fatalf("expected dependencies to be cached for %s", commit)
 		}
+		sort.Slice(deps, func(i, j int) bool { return deps[i].RepoName() < deps[j].RepoName() })
 
 		if diff := cmp.Diff(expectedDeps, deps); diff != "" {
 			t.Fatalf("unexpected dependencies for commit %s (-have, +want): %s", commit, diff)
