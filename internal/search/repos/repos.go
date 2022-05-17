@@ -122,26 +122,34 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 
 	var (
 		depNames []string
-		depRevs  map[api.RepoName][]search.RevisionSpecifier
+		depRevs  = map[api.RepoName][]search.RevisionSpecifier{}
 	)
 
-	if len(op.Dependencies) > 0 {
-		depNames, depRevs, err = r.dependencies(ctx, &op)
-		if err != nil {
-			return Resolved{}, err
-		}
+	for _, repoPred := range []struct {
+		option []string
+		method func(context.Context, *search.RepoOptions) ([]string, map[api.RepoName][]search.RevisionSpecifier, error)
+	}{
+		{op.Dependencies, r.dependencies},
+		{op.Dependents, r.dependents},
+	} {
+		if len(repoPred.option) > 0 {
+			names, revs, err := repoPred.method(ctx, &op)
+			if err != nil {
+				return Resolved{}, err
+			}
 
-		if len(depNames) == 0 {
-			return Resolved{}, ErrNoResolvedRepos
-		}
-	} else if len(op.Dependents) > 0 {
-		depNames, depRevs, err = r.dependents(ctx, &op)
-		if err != nil {
-			return Resolved{}, err
-		}
+			if len(names) == 0 {
+				return Resolved{}, ErrNoResolvedRepos
+			}
 
-		if len(depNames) == 0 {
-			return Resolved{}, ErrNoResolvedRepos
+			depNames = append(depNames, names...)
+			for repo, revs := range revs {
+				if _, ok := depRevs[repo]; !ok {
+					depRevs[repo] = revs
+				} else {
+					depRevs[repo] = append(depRevs[repo], revs...)
+				}
+			}
 		}
 	}
 

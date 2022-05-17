@@ -36,10 +36,10 @@ var DefaultPredicateRegistry = PredicateRegistry{
 		"contains.file":         func() Predicate { return &RepoContainsFilePredicate{} },
 		"contains.content":      func() Predicate { return &RepoContainsContentPredicate{} },
 		"contains.commit.after": func() Predicate { return &RepoContainsCommitAfterPredicate{} },
-		"dependencies":          func() Predicate { return &RepoDependenciesPredicate{} },
-		"deps":                  func() Predicate { return &RepoDependenciesPredicate{} },
-		"dependents":            func() Predicate { return &RepoDependentsPredicate{} },
-		"revdeps":               func() Predicate { return &RepoDependentsPredicate{} },
+		"dependencies":          func() Predicate { return &RepoDependenciesOrDependentsPredicate{name: "dependencies"} },
+		"deps":                  func() Predicate { return &RepoDependenciesOrDependentsPredicate{name: "deps"} },
+		"dependents":            func() Predicate { return &RepoDependenciesOrDependentsPredicate{name: "dependents"} },
+		"revdeps":               func() Predicate { return &RepoDependenciesOrDependentsPredicate{name: "revdeps"} },
 	},
 	FieldFile: {
 		"contains.content": func() Predicate { return &FileContainsContentPredicate{} },
@@ -270,60 +270,35 @@ func (f *RepoContainsCommitAfterPredicate) Plan(parent Basic) (Plan, error) {
 	return BuildPlan(nodes), nil
 }
 
-// RepoDependenciesPredicate represents the `repo:dependencies(regex@rev)` predicate,
-// which filters to repos that are dependencies of the repos matching the given of regex.
-type RepoDependenciesPredicate struct{}
+// RepoDependenciesOrDependentsPredicate represents the `repo:dependencies(regex@rev)` and
+// `repo:dependents(regex@rev)` predicates (and their short forms), which filters to repos that are
+// dependencies/dependents of the repos matching the given of regex.
+type RepoDependenciesOrDependentsPredicate struct {
+	// name is either "dependencies", "dependents", "deps", "revdeps"
+	name string
+}
 
-func (f *RepoDependenciesPredicate) ParseParams(params string) (err error) {
+func (f *RepoDependenciesOrDependentsPredicate) ParseParams(params string) (err error) {
 	re := params
 	if n := strings.LastIndex(params, "@"); n > 0 {
 		re = re[:n]
 	}
 
 	if re == "" {
-		return errors.Errorf("empty repo:dependencies predicate parameter %q", params)
+		return errors.Errorf("empty repo:%s predicate parameter %q", f.name, params)
 	}
 
 	_, err = syntax.Parse(re, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
 	if err != nil {
-		return errors.Errorf("invalid repo:dependencies predicate parameter %q: %v", params, err)
+		return errors.Errorf("invalid repo:%s predicate parameter %q: %v", f.name, params, err)
 	}
 
 	return nil
 }
 
-func (f *RepoDependenciesPredicate) Field() string { return FieldRepo }
-func (f *RepoDependenciesPredicate) Name() string  { return "dependencies" }
-func (f *RepoDependenciesPredicate) Plan(parent Basic) (Plan, error) {
-	return nil, nil
-}
-
-// RepoDependentsPredicate represents the `repo:dependents(regex@rev)`
-// predicate, which filters to repos that depend on the repos matching the
-// given of regex.
-type RepoDependentsPredicate struct{}
-
-func (f *RepoDependentsPredicate) ParseParams(params string) (err error) {
-	re := params
-	if n := strings.LastIndex(params, "@"); n > 0 {
-		re = re[:n]
-	}
-
-	if re == "" {
-		return errors.Errorf("empty repo:dependents predicate parameter %q", params)
-	}
-
-	_, err = syntax.Parse(re, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
-	if err != nil {
-		return errors.Errorf("invalid repo:dependents predicate parameter %q: %v", params, err)
-	}
-
-	return nil
-}
-
-func (f *RepoDependentsPredicate) Field() string { return FieldRepo }
-func (f *RepoDependentsPredicate) Name() string  { return "dependents" }
-func (f *RepoDependentsPredicate) Plan(parent Basic) (Plan, error) {
+func (f *RepoDependenciesOrDependentsPredicate) Field() string { return FieldRepo }
+func (f *RepoDependenciesOrDependentsPredicate) Name() string  { return f.name }
+func (f *RepoDependenciesOrDependentsPredicate) Plan(parent Basic) (Plan, error) {
 	return nil, nil
 }
 

@@ -86,17 +86,17 @@ func TestRepoDependenciesPredicate(t *testing.T) {
 		type test struct {
 			name     string
 			params   string
-			expected *RepoDependenciesPredicate
+			expected *RepoDependenciesOrDependentsPredicate
 		}
 
 		valid := []test{
-			{`literal`, `test`, &RepoDependenciesPredicate{}},
-			{`regex with revs`, `^npm/@bar:baz`, &RepoDependenciesPredicate{}},
+			{`literal`, `test`, &RepoDependenciesOrDependentsPredicate{}},
+			{`regex with revs`, `^npm/@bar:baz`, &RepoDependenciesOrDependentsPredicate{}},
 		}
 
 		for _, tc := range valid {
 			t.Run(tc.name, func(t *testing.T) {
-				p := &RepoDependenciesPredicate{}
+				p := &RepoDependenciesOrDependentsPredicate{}
 				err := p.ParseParams(tc.params)
 				if err != nil {
 					t.Fatalf("unexpected error: %s", err)
@@ -115,7 +115,7 @@ func TestRepoDependenciesPredicate(t *testing.T) {
 
 		for _, tc := range invalid {
 			t.Run(tc.name, func(t *testing.T) {
-				p := &RepoDependenciesPredicate{}
+				p := &RepoDependenciesOrDependentsPredicate{}
 				err := p.ParseParams(tc.params)
 				if err == nil {
 					t.Fatal("expected error but got none")
