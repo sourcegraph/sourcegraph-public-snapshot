@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -539,5 +541,74 @@ func TestRepository_ResolveTag_error(t *testing.T) {
 		if commitID != "" {
 			t.Errorf("%s: got commitID == %v, want empty", label, commitID)
 		}
+	}
+}
+
+func TestLsFiles(t *testing.T) {
+	t.Parallel()
+	ClientMocks.LocalGitserver = true
+	defer ResetClientMocks()
+	client := NewClient(database.NewMockDB())
+	runFileListingTest(t, func(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName) ([]string, error) {
+		return client.LsFiles(ctx, checker, repo, "HEAD")
+	})
+}
+
+// runFileListingTest tests the specified function which must return a list of filenames and an error. The test first
+// tests the basic case (all paths returned), then the case with sub-repo permissions specified.
+func runFileListingTest(t *testing.T,
+	listingFunctionToTest func(context.Context, authz.SubRepoPermissionChecker, api.RepoName) ([]string, error)) {
+	t.Helper()
+	gitCommands := []string{
+		"touch file1",
+		"touch file2",
+		"touch file3",
+		"git add file1 file2 file3",
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+	}
+
+	repo := MakeGitRepository(t, gitCommands...)
+
+	ctx := context.Background()
+
+	checker := authz.NewMockSubRepoPermissionChecker()
+	// Start disabled
+	checker.EnabledFunc.SetDefaultHook(func() bool {
+		return false
+	})
+
+	files, err := listingFunctionToTest(ctx, checker, repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{
+		"file1", "file2", "file3",
+	}
+	if diff := cmp.Diff(want, files); diff != "" {
+		t.Fatal(diff)
+	}
+
+	// With filtering
+	checker.EnabledFunc.SetDefaultHook(func() bool {
+		return true
+	})
+	checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
+		if content.Path == "file1" {
+			return authz.Read, nil
+		}
+		return authz.None, nil
+	})
+	ctx = actor.WithActor(ctx, &actor.Actor{
+		UID: 1,
+	})
+	files, err = listingFunctionToTest(ctx, checker, repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want = []string{
+		"file1",
+	}
+	if diff := cmp.Diff(want, files); diff != "" {
+		t.Fatal(diff)
 	}
 }

@@ -29,6 +29,7 @@ All notable changes to Sourcegraph are documented in this file.
 - [search.largeFiles](https://docs.sourcegraph.com/admin/config/site_config#search-largeFiles) now supports recursive globs. For example it is now possible to specify a pattern like `**/*.lock` to match a lock file anywhere in a repository. [#35411](https://github.com/sourcegraph/sourcegraph/pull/35411)
 - Permissions: The `setRepositoryPermissionsUnrestricted` mutation was added, which allows explicity marking a repo as available to all Sourcegraph users. [#35378](https://github.com/sourcegraph/sourcegraph/pull/35378)
 - The `repo:deps(...)` predicate can now search through the [Python dependencies of your repositories](https://docs.sourcegraph.com/code_search/how-to/dependencies_search). [#32659](https://github.com/sourcegraph/sourcegraph/issues/32659)
+- Batch Changes are now supported on [Bitbucket Cloud](https://bitbucket.org/). [#24199](https://github.com/sourcegraph/sourcegraph/issues/24199)
 
 ### Changed
 
