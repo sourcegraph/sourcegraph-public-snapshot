@@ -527,7 +527,7 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 		return nil, nil, errors.Errorf("support for `repo:dependencies()` is disabled in site config (`experimentalFeatures.dependenciesSearch`)")
 	}
 
-	repoRevs, err := loadRepoRevSpecs(ctx, r.DB.Repos(), op.Dependencies, op.CaseSensitiveRepoFilters)
+	repoRevs, err := listDependencyRepos(ctx, r.DB.Repos(), op.Dependencies, op.CaseSensitiveRepoFilters)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -552,7 +552,7 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 	return depNames, depRevs, nil
 }
 
-func loadRepoRevSpecs(ctx context.Context, repoStore database.RepoStore, revSpecPatterns []string, caseSensitive bool) (map[api.RepoName]codeintelTypes.RevSpecSet, error) {
+func listDependencyRepos(ctx context.Context, repoStore database.RepoStore, revSpecPatterns []string, caseSensitive bool) (map[api.RepoName]codeintelTypes.RevSpecSet, error) {
 	repoRevs := make(map[api.RepoName]codeintelTypes.RevSpecSet, len(revSpecPatterns))
 	for _, depParams := range revSpecPatterns {
 		repoPattern, revs := search.ParseRepositoryRevisions(depParams)
@@ -597,10 +597,10 @@ func (r *Resolver) dependents(ctx context.Context, op *search.RepoOptions) (_ []
 	}()
 
 	if !conf.DependeciesSearchEnabled() {
-		return nil, nil, errors.Errorf("support for `repo:reverseDependencies()` is disabled in site config (`experimentalFeatures.dependenciesSearch`)")
+		return nil, nil, errors.Errorf("support for `repo:dependents()` is disabled in site config (`experimentalFeatures.dependenciesSearch`)")
 	}
 
-	repoRevs, err := loadRepoRevSpecs(ctx, r.DB.Repos(), op.Dependents, op.CaseSensitiveRepoFilters)
+	repoRevs, err := listDependencyRepos(ctx, r.DB.Repos(), op.Dependents, op.CaseSensitiveRepoFilters)
 	if err != nil {
 		return nil, nil, err
 	}
