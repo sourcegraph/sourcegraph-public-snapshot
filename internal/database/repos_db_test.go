@@ -307,6 +307,25 @@ func TestRepos_GetByIDs(t *testing.T) {
 	}
 }
 
+func TestRepos_GetByIDs_EmptyIDs(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	t.Parallel()
+	db := dbtest.NewDB(t)
+	ctx := actor.WithInternalActor(context.Background())
+
+	repos, err := Repos(db).GetByIDs(ctx, []api.RepoID{}...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(repos) != 0 {
+		t.Fatalf("got %d repos, but want 0", len(repos))
+	}
+
+}
+
 func TestRepos_List(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
