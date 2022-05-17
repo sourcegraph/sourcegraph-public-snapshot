@@ -16,7 +16,7 @@ import (
 func toComputeResultStream(ctx context.Context, db database.DB, cmd compute.Command, matches []result.Match, f func(compute.Result)) error {
 	for _, m := range matches {
 		if v, ok := m.(*result.CommitMatch); ok && v.DiffPreview != nil {
-			for _, diffMatch := range v.ToDiffMatches() {
+			for _, diffMatch := range v.CommitToDiffMatches() {
 				result, err := cmd.Run(ctx, db, diffMatch)
 				if err != nil {
 					return err

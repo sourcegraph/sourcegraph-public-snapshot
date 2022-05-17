@@ -244,11 +244,11 @@ func selectCommitDiffKind(diffPreview *MatchedString, field string) *MatchedStri
 
 func (r *CommitMatch) searchResultMarker() {}
 
-// ToDiffMatch is a helper function to narrow a CommitMatch to a a set of
+// CommitToDiffMatches is a helper function to narrow a CommitMatch to a a set of
 // CommitDiffMatch. Callers should validate whether a CommitMatch can be
 // converted. In time, we should directly create CommitDiffMatch and this helper
 // function should not, ideally, exist.
-func (r *CommitMatch) ToDiffMatches() []*CommitDiffMatch {
+func (r *CommitMatch) CommitToDiffMatches() []*CommitDiffMatch {
 	var matches []*CommitDiffMatch
 	fileDiffs, err := ParseDiffString(r.DiffPreview.Content)
 	if err != nil {
