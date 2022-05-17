@@ -45,7 +45,7 @@ Bitbucket Cloud connections support the following configuration options, which a
 
 ## Webhooks
 
-The `webhookSecret` setting allows the specification of a secret, which is then used to authenticate incoming webhook requests to `/.api/bitbucket-cloud-webhooks`.
+To set up authentication for webhooks the `webhookSecret` setting has to be set, which is then used to authenticate incoming webhook requests to `/.api/bitbucket-cloud-webhooks`.
 
 ```json
 {
@@ -53,7 +53,7 @@ The `webhookSecret` setting allows the specification of a secret, which is then 
 }
 ```
 
-Using webhooks is highly recommended when using [batch changes](../../batch_changes/index.md), since they speed up the syncing of pull request data between Bitbucket Cloud and Sourcegraph and make it more efficient.
+Using webhooks is highly recommended when using [Batch Changes](../../batch_changes/index.md), since they speed up the syncing of pull request data between Bitbucket Cloud and Sourcegraph and make it more efficient.
 
 To set up webhooks:
 
