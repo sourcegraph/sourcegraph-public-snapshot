@@ -527,8 +527,9 @@ type ZoektRepoSubsetSearchJob struct {
 
 // ZoektSearch is a job that searches repositories using zoekt.
 func (z *ZoektRepoSubsetSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
-	_, ctx, stream, finish := job.StartSpan(ctx, stream, z)
+	tr, ctx, stream, finish := job.StartSpan(ctx, stream, z)
 	defer func() { finish(alert, err) }()
+	tr.TagFields(trace.LazyFields(z.Tags))
 
 	if z.Repos == nil {
 		return nil, nil
@@ -549,17 +550,33 @@ func (*ZoektRepoSubsetSearchJob) Name() string {
 	return "ZoektRepoSubsetSearchJob"
 }
 
+func (z *ZoektRepoSubsetSearchJob) Tags() []log.Field {
+	tags := []log.Field{
+		trace.Stringer("query", z.Query),
+		log.String("type", string(z.Typ)),
+		log.Int32("fileMatchLimit", z.FileMatchLimit),
+		trace.Stringer("select", z.Select),
+	}
+	// z.Repos is nil for un-indexed search
+	if z.Repos != nil {
+		tags = append(tags, log.Int("numRepoRevs", len(z.Repos.RepoRevs)))
+		tags = append(tags, log.Int("numBranchRepos", len(z.Repos.branchRepos)))
+	}
+	return tags
+}
+
 type ZoektGlobalSearchJob struct {
 	GlobalZoektQuery *GlobalZoektQuery
 	ZoektArgs        *search.ZoektParameters
-	RepoOptions      search.RepoOptions
+	RepoOpts         search.RepoOptions
 }
 
 func (t *ZoektGlobalSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
-	_, ctx, stream, finish := job.StartSpan(ctx, stream, t)
+	tr, ctx, stream, finish := job.StartSpan(ctx, stream, t)
 	defer func() { finish(alert, err) }()
+	tr.TagFields(trace.LazyFields(t.Tags))
 
-	userPrivateRepos := searchrepos.PrivateReposForActor(ctx, clients.DB, t.RepoOptions)
+	userPrivateRepos := searchrepos.PrivateReposForActor(ctx, clients.DB, t.RepoOpts)
 	t.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
 	t.ZoektArgs.Query = t.GlobalZoektQuery.Generate()
 
@@ -568,4 +585,16 @@ func (t *ZoektGlobalSearchJob) Run(ctx context.Context, clients job.RuntimeClien
 
 func (*ZoektGlobalSearchJob) Name() string {
 	return "ZoektGlobalSearchJob"
+}
+
+func (t *ZoektGlobalSearchJob) Tags() []log.Field {
+	return []log.Field{
+		trace.Stringer("query", t.GlobalZoektQuery.query),
+		trace.Printf("repoScope", "%q", t.GlobalZoektQuery.repoScope),
+		log.Bool("includePrivate", t.GlobalZoektQuery.includePrivate),
+		log.String("type", string(t.ZoektArgs.Typ)),
+		log.Int32("fileMatchLimit", t.ZoektArgs.FileMatchLimit),
+		trace.Stringer("select", t.ZoektArgs.Select),
+		trace.Stringer("repoOpts", &t.RepoOpts),
+	}
 }

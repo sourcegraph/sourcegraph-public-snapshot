@@ -19,7 +19,6 @@ var Mocks, emptyMocks struct {
 	NewFileReader         func(commit api.CommitID, name string) (io.ReadCloser, error)
 	ReadFile              func(commit api.CommitID, name string) ([]byte, error)
 	LsFiles               func(repo api.RepoName, commit api.CommitID) ([]string, error)
-	ResolveRevision       func(spec string, opt ResolveRevisionOptions) (api.CommitID, error)
 	Stat                  func(commit api.CommitID, name string) (fs.FileInfo, error)
 	Commits               func(repo api.RepoName, opt CommitsOptions) ([]*gitdomain.Commit, error)
 	MergeBase             func(repo api.RepoName, a, b api.CommitID) (api.CommitID, error)

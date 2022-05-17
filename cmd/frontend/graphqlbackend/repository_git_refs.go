@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -161,7 +162,7 @@ func hydrateBranchCommits(ctx context.Context, db database.DB, repo api.RepoName
 	}
 
 	for _, branch := range branches {
-		branch.Commit, err = git.GetCommit(ctx, db, repo, branch.Head, git.ResolveRevisionOptions{}, authz.DefaultSubRepoPermsChecker)
+		branch.Commit, err = git.GetCommit(ctx, db, repo, branch.Head, gitserver.ResolveRevisionOptions{}, authz.DefaultSubRepoPermsChecker)
 		if err != nil {
 			if parentCtx.Err() == nil && ctx.Err() != nil {
 				// reached interactive timeout

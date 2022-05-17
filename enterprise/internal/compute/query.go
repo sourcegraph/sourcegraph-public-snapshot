@@ -270,7 +270,7 @@ func toComputeQuery(plan query.Plan) (*Query, error) {
 		return nil, err
 	}
 
-	parameters := query.MapPattern(plan.ToParseTree(), func(_ string, _ bool, _ query.Annotation) query.Node {
+	parameters := query.MapPattern(plan.ToQ(), func(_ string, _ bool, _ query.Annotation) query.Node {
 		// remove the pattern node.
 		return nil
 	})

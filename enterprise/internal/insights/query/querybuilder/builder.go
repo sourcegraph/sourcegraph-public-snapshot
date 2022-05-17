@@ -33,7 +33,7 @@ func withDefaults(inputQuery string, defaults searchquery.Parameters) (string, e
 		modified = append(modified, basic.MapParameters(p))
 	}
 
-	return searchquery.StringHuman(modified.ToParseTree()), nil
+	return searchquery.StringHuman(modified.ToQ()), nil
 }
 
 // codeInsightsQueryDefaults returns the default query parameters for a Code Insights generated Sourcegraph query.

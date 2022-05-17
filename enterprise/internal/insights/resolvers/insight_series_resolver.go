@@ -135,7 +135,7 @@ func unwrapSearchContexts(ctx context.Context, loader SearchContextLoader, rawCo
 			if err != nil {
 				return nil, nil, errors.Wrapf(err, "failed to parse search query for search context: %s", rawContext)
 			}
-			inc, exc := plan.ToParseTree().Repositories()
+			inc, exc := plan.ToQ().Repositories()
 			include = append(include, inc...)
 			exclude = append(exclude, exc...)
 		}

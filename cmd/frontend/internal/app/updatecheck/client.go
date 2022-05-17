@@ -596,7 +596,7 @@ func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 		return nil, err
 	}
 
-	err = database.EventLogs(db).Insert(ctx, &database.Event{
+	err = db.EventLogs().Insert(ctx, &database.Event{
 		UserID:          0,
 		Name:            "ping",
 		URL:             "",
