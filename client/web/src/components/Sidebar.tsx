@@ -13,7 +13,6 @@ import {
     Collapse,
     CollapseHeader,
     CollapsePanel,
-    H2,
     Typography,
 } from '@sourcegraph/wildcard'
 
@@ -52,7 +51,7 @@ export const SidebarNavItem: React.FunctionComponent<
  * Header of a `SideBarGroup`
  */
 export const SidebarGroupHeader: React.FunctionComponent<React.PropsWithChildren<{ label: string }>> = ({ label }) => (
-    <Typography.H3 as={H2}>{label}</Typography.H3>
+    <Typography.H3 as={Typography.H2}>{label}</Typography.H3>
 )
 
 /**

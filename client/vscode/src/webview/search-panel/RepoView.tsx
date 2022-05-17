@@ -134,7 +134,7 @@ export const RepoView: React.FunctionComponent<React.PropsWithChildren<RepoViewP
                                     <span>
                                         <Icon
                                             role="img"
-                                            title={entry.isDirectory ? 'Folder' : 'File'}
+                                            aria-label={entry.isDirectory ? 'Folder' : 'File'}
                                             className="mr-1 text-muted"
                                             as={entry.isDirectory ? FolderOutlineIcon : FileDocumentOutlineIcon}
                                         />

@@ -3,7 +3,6 @@ package dbstore
 import (
 	"context"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 
@@ -118,16 +117,14 @@ rank() OVER (
 )
 `
 
-// ReferenceIDsAndFilters returns visible uploads that refer (via package information) to any of the
-// given monikers' packages. Each upload identifier in the result set is paired with one or more
-// compressed bloom filters that encode more precisely the set of identifiers imported from dependent
-// packages.
+// ReferenceIDs returns visible uploads that refer (via package information) to any of the
+// given monikers' packages.
 //
 // Visibility is determined in two parts: if the index belongs to the given repository, it is visible if
 // it can be seen from the given index; otherwise, an index is visible if it can be seen from the tip of
 // the default branch of its own repository.
-func (s *Store) ReferenceIDsAndFilters(ctx context.Context, repositoryID int, commit string, monikers []precise.QualifiedMonikerData, limit, offset int) (_ PackageReferenceScanner, _ int, err error) {
-	ctx, trace, endObservation := s.operations.referenceIDsAndFilters.With(ctx, &err, observation.Args{LogFields: []log.Field{
+func (s *Store) ReferenceIDs(ctx context.Context, repositoryID int, commit string, monikers []precise.QualifiedMonikerData, limit, offset int) (_ PackageReferenceScanner, _ int, err error) {
+	ctx, trace, endObservation := s.operations.referenceIDs.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 		log.String("commit", commit),
 		log.Int("numMonikers", len(monikers)),
@@ -154,7 +151,7 @@ func (s *Store) ReferenceIDsAndFilters(ctx context.Context, repositoryID int, co
 	}
 
 	totalCount, _, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(
-		referenceIDsAndFiltersCountQuery,
+		referenceIDsCountQuery,
 		visibleUploadsQuery,
 		repositoryID,
 		sqlf.Join(qs, ", "),
@@ -165,14 +162,8 @@ func (s *Store) ReferenceIDsAndFilters(ctx context.Context, repositoryID int, co
 	}
 	trace.Log(log.Int("totalCount", totalCount))
 
-	query := referenceIDsAndFiltersQuery
-	if os.Getenv("DEBUG_PRECISE_CODE_INTEL_BLOOM_FILTER_BAIL_OUT") != "" {
-		// Do not select filter payloads, we won't test them later on
-		query = referenceIDsQuery
-	}
-
 	rows, err := s.Query(ctx, sqlf.Sprintf(
-		query,
+		referenceIDsQuery,
 		visibleUploadsQuery,
 		repositoryID,
 		sqlf.Join(qs, ", "),
@@ -187,8 +178,8 @@ func (s *Store) ReferenceIDsAndFilters(ctx context.Context, repositoryID int, co
 	return packageReferenceScannerFromRows(rows), totalCount, nil
 }
 
-const referenceIDsAndFiltersCTEDefinitions = `
--- source: enterprise/internal/codeintel/stores/dbstore/xrepo.go:ReferenceIDsAndFilters
+const referenceIDsCTEDefinitions = `
+-- source: enterprise/internal/codeintel/stores/dbstore/xrepo.go:ReferenceIDs
 WITH
 visible_uploads AS (
 	(%s)
@@ -197,7 +188,7 @@ visible_uploads AS (
 )
 `
 
-const referenceIDsAndFiltersBaseQuery = `
+const referenceIDsBaseQuery = `
 FROM lsif_references r
 LEFT JOIN lsif_dumps u ON u.id = r.dump_id
 JOIN repo ON repo.id = u.repository_id
@@ -207,23 +198,16 @@ WHERE
 	%s -- authz conds
 `
 
-const referenceIDsAndFiltersQuery = referenceIDsAndFiltersCTEDefinitions + `
-SELECT r.dump_id, r.scheme, r.name, r.version, r.filter
-` + referenceIDsAndFiltersBaseQuery + `
+const referenceIDsQuery = referenceIDsCTEDefinitions + `
+SELECT r.dump_id, r.scheme, r.name, r.version
+` + referenceIDsBaseQuery + `
 ORDER BY dump_id
 LIMIT %s OFFSET %s
 `
 
-const referenceIDsQuery = referenceIDsAndFiltersCTEDefinitions + `
-SELECT r.dump_id, r.scheme, r.name, r.version, NULL AS filter
-` + referenceIDsAndFiltersBaseQuery + `
-ORDER BY dump_id
-LIMIT %s OFFSET %s
-`
-
-const referenceIDsAndFiltersCountQuery = referenceIDsAndFiltersCTEDefinitions + `
+const referenceIDsCountQuery = referenceIDsCTEDefinitions + `
 SELECT COUNT(distinct r.dump_id)
-` + referenceIDsAndFiltersBaseQuery
+` + referenceIDsBaseQuery
 
 func monikersToString(vs []precise.QualifiedMonikerData) string {
 	strs := make([]string, 0, len(vs))
@@ -234,9 +218,7 @@ func monikersToString(vs []precise.QualifiedMonikerData) string {
 	return strings.Join(strs, ", ")
 }
 
-// ReferencesForUpload returns the set of import monikers attached to the given upload identifier. The
-// scanner will return nulls for the Filter field as it's expected to be unused (and rather heavy) by
-// callers.
+// ReferencesForUpload returns the set of import monikers attached to the given upload identifier.
 func (s *Store) ReferencesForUpload(ctx context.Context, uploadID int) (_ PackageReferenceScanner, err error) {
 	ctx, _, endObservation := s.operations.referencesForUpload.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("uploadID", uploadID),
@@ -253,7 +235,7 @@ func (s *Store) ReferencesForUpload(ctx context.Context, uploadID int) (_ Packag
 
 const referencesForUploadQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/xrepo.go:ReferencesForUpload
-SELECT r.dump_id, r.scheme, r.name, r.version, NULL as filter
+SELECT r.dump_id, r.scheme, r.name, r.version
 FROM lsif_references r
 WHERE dump_id = %s
 ORDER BY r.scheme, r.name, r.version

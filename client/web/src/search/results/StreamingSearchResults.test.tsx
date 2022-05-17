@@ -270,7 +270,7 @@ describe('StreamingSearchResults', () => {
             renderWrapper(<StreamingSearchResults {...defaultProps} streamSearch={() => of(results)} />)
 
             userEvent.click(await screen.findByText(/some results excluded/i))
-            const allChecks = await screen.findAllByTestId('streaming-progress-skipped-suggest-check')
+            const allChecks = await screen.findAllByTestId(/^streaming-progress-skipped-suggest-check/)
 
             for (const check of allChecks) {
                 userEvent.click(check, undefined, { skipPointerEventsCheck: true })

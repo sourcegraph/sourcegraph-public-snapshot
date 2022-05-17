@@ -1337,6 +1337,19 @@ type CodeMonitoringUsageStatistics struct {
 	CodeMonitorEmailLinkClicks                    *int32
 }
 
+type NotebooksUsageStatistics struct {
+	NotebookPageViews                *int32
+	EmbeddedNotebookPageViews        *int32
+	NotebooksListPageViews           *int32
+	NotebooksCreatedCount            *int32
+	NotebookAddedStarsCount          *int32
+	NotebookAddedMarkdownBlocksCount *int32
+	NotebookAddedQueryBlocksCount    *int32
+	NotebookAddedFileBlocksCount     *int32
+	NotebookAddedSymbolBlocksCount   *int32
+	NotebookAddedComputeBlocksCount  *int32
+}
+
 // Secret represents the secrets table
 type Secret struct {
 	ID int32

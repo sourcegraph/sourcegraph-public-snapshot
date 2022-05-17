@@ -16,22 +16,20 @@ import (
 	"sync"
 	"time"
 
-	"gopkg.in/src-d/go-git.v4/plumbing/format/config"
-
+	"github.com/go-git/go-git/v5/plumbing/format/config"
 	"github.com/golang/groupcache/lru"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/go-diff/diff"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
-
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -570,12 +568,12 @@ func lsTreeUncached(ctx context.Context, db database.DB, repo api.RepoName, comm
 		mode := os.FileMode(modeVal)
 		switch typ {
 		case "blob":
-			const gitModeSymlink = 020000
+			const gitModeSymlink = 0o20000
 			if mode&gitModeSymlink != 0 {
 				mode = os.ModeSymlink
 			} else {
 				// Regular file.
-				mode = mode | 0644
+				mode = mode | 0o644
 			}
 		case "commit":
 			mode = mode | gitdomain.ModeSubmodule

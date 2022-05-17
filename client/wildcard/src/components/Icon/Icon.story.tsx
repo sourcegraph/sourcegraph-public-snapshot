@@ -38,6 +38,6 @@ export const Simple: Story = () => (
         <Icon as={SourcegraphIcon} size="sm" title="Sourcegraph logo" />
 
         <Typography.H3>Medium Icon</Typography.H3>
-        <Icon as={SourcegraphIcon} size="md" title="Sourcegraph logo" />
+        <Icon as={SourcegraphIcon} size="md" aria-label="Sourcegraph logo" />
     </>
 )

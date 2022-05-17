@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -46,69 +47,91 @@ func (i Index) RecordID() int {
 	return i.ID
 }
 
-// scanIndexes scans a slice of indexes from the return value of `*Store.query`.
-func scanIndexes(rows *sql.Rows, queryErr error) (_ []Index, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	var indexes []Index
-	for rows.Next() {
-		var index Index
-		var executionLogs []dbworkerstore.ExecutionLogEntry
-
-		if err := rows.Scan(
-			&index.ID,
-			&index.Commit,
-			&index.QueuedAt,
-			&index.State,
-			&index.FailureMessage,
-			&index.StartedAt,
-			&index.FinishedAt,
-			&index.ProcessAfter,
-			&index.NumResets,
-			&index.NumFailures,
-			&index.RepositoryID,
-			&index.RepositoryName,
-			pq.Array(&index.DockerSteps),
-			&index.Root,
-			&index.Indexer,
-			pq.Array(&index.IndexerArgs),
-			&index.Outfile,
-			pq.Array(&executionLogs),
-			&index.Rank,
-			pq.Array(&index.LocalSteps),
-			&index.AssociatedUploadID,
-		); err != nil {
-			return nil, err
-		}
-
-		for _, entry := range executionLogs {
-			index.ExecutionLogs = append(index.ExecutionLogs, workerutil.ExecutionLogEntry(entry))
-		}
-
-		indexes = append(indexes, index)
+func scanIndex(s dbutil.Scanner) (index Index, err error) {
+	var executionLogs []dbworkerstore.ExecutionLogEntry
+	if err := s.Scan(
+		&index.ID,
+		&index.Commit,
+		&index.QueuedAt,
+		&index.State,
+		&index.FailureMessage,
+		&index.StartedAt,
+		&index.FinishedAt,
+		&index.ProcessAfter,
+		&index.NumResets,
+		&index.NumFailures,
+		&index.RepositoryID,
+		&index.RepositoryName,
+		pq.Array(&index.DockerSteps),
+		&index.Root,
+		&index.Indexer,
+		pq.Array(&index.IndexerArgs),
+		&index.Outfile,
+		pq.Array(&executionLogs),
+		&index.Rank,
+		pq.Array(&index.LocalSteps),
+		&index.AssociatedUploadID,
+	); err != nil {
+		return index, err
 	}
 
-	return indexes, nil
+	for _, entry := range executionLogs {
+		index.ExecutionLogs = append(index.ExecutionLogs, workerutil.ExecutionLogEntry(entry))
+	}
+
+	return index, nil
 }
+
+// scanIndexes scans a slice of indexes from the return value of `*Store.query`.
+func scanIndexWithCount(s dbutil.Scanner) (index Index, count int, err error) {
+	var executionLogs []dbworkerstore.ExecutionLogEntry
+
+	if err := s.Scan(
+		&index.ID,
+		&index.Commit,
+		&index.QueuedAt,
+		&index.State,
+		&index.FailureMessage,
+		&index.StartedAt,
+		&index.FinishedAt,
+		&index.ProcessAfter,
+		&index.NumResets,
+		&index.NumFailures,
+		&index.RepositoryID,
+		&index.RepositoryName,
+		pq.Array(&index.DockerSteps),
+		&index.Root,
+		&index.Indexer,
+		pq.Array(&index.IndexerArgs),
+		&index.Outfile,
+		pq.Array(&executionLogs),
+		&index.Rank,
+		pq.Array(&index.LocalSteps),
+		&index.AssociatedUploadID,
+		&count,
+	); err != nil {
+		return index, 0, err
+	}
+
+	for _, entry := range executionLogs {
+		index.ExecutionLogs = append(index.ExecutionLogs, workerutil.ExecutionLogEntry(entry))
+	}
+
+	return index, count, nil
+}
+
+// scanIndexes scans a slice of indexes from the return value of `*Store.query`.
+var scanIndexes = basestore.NewSliceScanner(scanIndex)
+
+var scanIndexesWithCount = basestore.NewSliceWithCountScanner(scanIndexWithCount)
 
 // scanFirstIndex scans a slice of indexes from the return value of `*Store.query` and returns the first.
-func scanFirstIndex(rows *sql.Rows, err error) (Index, bool, error) {
-	indexes, err := scanIndexes(rows, err)
-	if err != nil || len(indexes) == 0 {
-		return Index{}, false, err
-	}
-	return indexes[0], true, nil
-}
+var scanFirstIndex = basestore.NewFirstScanner(scanIndex)
 
 // scanFirstIndexInterface scans a slice of indexes from the return value of `*Store.query` and returns the first.
 func scanFirstIndexRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
 	return scanFirstIndex(rows, err)
 }
-
-var ScanFirstIndexRecord = scanFirstIndexRecord
 
 // GetIndexByID returns an index by its identifier and boolean flag indicating its existence.
 func (s *Store) GetIndexByID(ctx context.Context, id int) (_ Index, _ bool, err error) {
@@ -270,12 +293,7 @@ func (s *Store) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Ind
 	}
 	conds = append(conds, authzConds)
 
-	totalCount, _, err := basestore.ScanFirstInt(tx.Store.Query(ctx, sqlf.Sprintf(getIndexesCountQuery, sqlf.Join(conds, " AND "))))
-	if err != nil {
-		return nil, 0, err
-	}
-
-	indexes, err := scanIndexes(tx.Store.Query(ctx, sqlf.Sprintf(getIndexesQuery, sqlf.Join(conds, " AND "), opts.Limit, opts.Offset)))
+	indexes, totalCount, err := scanIndexesWithCount(tx.Store.Query(ctx, sqlf.Sprintf(getIndexesQuery, sqlf.Join(conds, " AND "), opts.Limit, opts.Offset)))
 	if err != nil {
 		return nil, 0, err
 	}
@@ -286,14 +304,6 @@ func (s *Store) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Ind
 
 	return indexes, totalCount, nil
 }
-
-const getIndexesCountQuery = `
--- source: enterprise/internal/codeintel/stores/dbstore/indexes.go:GetIndexes
-SELECT COUNT(*)
-FROM lsif_indexes u
-JOIN repo ON repo.id = u.repository_id
-WHERE repo.deleted_at IS NULL AND %s
-`
 
 const getIndexesQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/indexes.go:GetIndexes
@@ -318,7 +328,8 @@ SELECT
 	u.execution_logs,
 	s.rank,
 	u.local_steps,
-	` + indexAssociatedUploadIDQueryFragment + `
+	` + indexAssociatedUploadIDQueryFragment + `,
+	COUNT(*) OVER() AS count
 FROM lsif_indexes u
 LEFT JOIN (` + indexRankQueryFragment + `) s
 ON u.id = s.id

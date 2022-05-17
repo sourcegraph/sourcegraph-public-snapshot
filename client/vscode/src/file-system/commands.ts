@@ -42,7 +42,7 @@ async function getLocalCopy(remoteUri: SourcegraphUri): Promise<vscode.TextDocum
         .then(result => result[0]?.path || null)
     // If basePath is not configured, we will try to find file in the current workspace
     const absolutePath = basePath
-        ? vscode.Uri.joinPath(vscode.Uri.parse(basePath), repoName, filePath)
+        ? vscode.Uri.file(vscode.Uri.joinPath(vscode.Uri.parse(basePath), repoName, filePath).path)
         : workspaceFilePath
         ? vscode.Uri.file(workspaceFilePath)
         : null
@@ -56,7 +56,7 @@ async function getLocalCopy(remoteUri: SourcegraphUri): Promise<vscode.TextDocum
         const workspaceFolderUri = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(workspaceFilePath))?.uri
         if (workspaceFolderUri) {
             // go one level up and set that as the new basePath
-            const newBasePath = vscode.workspace.asRelativePath(vscode.Uri.joinPath(workspaceFolderUri, '../'))
+            const newBasePath = vscode.Uri.file(vscode.Uri.joinPath(workspaceFolderUri, '../').fsPath).path
             await vscode.workspace
                 .getConfiguration('sourcegraph')
                 .update('basePath', newBasePath, vscode.ConfigurationTarget.Global)
@@ -73,7 +73,6 @@ function getSelection(uri: SourcegraphUri, textDocument: vscode.TextDocument): v
     if (typeof uri?.position?.line !== 'undefined') {
         return offsetRange(uri.position.line, 0)
     }
-
     // There's no explicitly provided line number. Instead of focusing on the
     // first line (which usually contains lots of imports), we use a heuristic
     // to guess the location where the "main symbol" is defined (a
@@ -89,7 +88,6 @@ function getSelection(uri: SourcegraphUri, textDocument: vscode.TextDocument): v
             return new vscode.Range(position, position)
         }
     }
-
     return undefined
 }
 

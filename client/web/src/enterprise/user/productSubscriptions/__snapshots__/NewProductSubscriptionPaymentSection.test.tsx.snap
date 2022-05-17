@@ -27,6 +27,7 @@ exports[`NewProductSubscriptionPaymentSection downgrade to existing subscription
         </li>
       </ul>
       <div
+        aria-live="assertive"
         class="mb-2"
         role="alert"
       >

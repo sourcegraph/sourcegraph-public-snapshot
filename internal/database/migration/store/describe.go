@@ -262,6 +262,8 @@ func (s *Store) listFunctions(ctx context.Context) ([]function, error) {
 	return scanFunctions(s.Query(ctx, sqlf.Sprintf(listFunctionsQuery)))
 }
 
+// TODO - not belonging to something else?
+
 const listFunctionsQuery = `
 -- source: internal/database/migration/store/store.go:listFunctions
 SELECT
@@ -273,12 +275,13 @@ SELECT
 FROM pg_catalog.pg_proc p
 JOIN pg_catalog.pg_type t ON t.oid = p.prorettype
 JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-JOIN pg_language l ON (
-	l.oid = p.prolang AND l.lanname IN ('sql', 'plpgsql', 'c')
-)
+JOIN pg_language l ON l.oid = p.prolang AND l.lanname IN ('sql', 'plpgsql', 'c')
+LEFT JOIN pg_depend d ON d.objid = p.oid AND d.deptype = 'e'
 WHERE
 	n.nspname NOT LIKE 'pg_%%' AND
-	n.nspname != 'information_schema'
+	n.nspname != 'information_schema' AND
+	-- function is not defined in an extension
+	d.objid IS NULL
 ORDER BY
 	n.nspname,
 	p.proname

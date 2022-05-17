@@ -43,7 +43,6 @@ func (s *rowScanner) Next() (reference shared.PackageReference, _ bool, _ error)
 		&reference.Scheme,
 		&reference.Name,
 		&reference.Version,
-		&reference.Filter,
 	); err != nil {
 		return shared.PackageReference{}, false, err
 	}

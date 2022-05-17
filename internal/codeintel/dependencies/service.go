@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
@@ -14,13 +15,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
-	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Service encapsulates the resolution and persistence of dependencies at the repository and package levels.
 type Service struct {
 	dependenciesStore  Store
+	gitSvc             localGitService
 	lockfilesSvc       LockfilesService
 	lockfilesSemaphore *semaphore.Weighted
 	syncer             Syncer
@@ -30,6 +32,7 @@ type Service struct {
 
 func newService(
 	dependenciesStore Store,
+	gitSvc localGitService,
 	lockfilesSvc LockfilesService,
 	lockfilesSemaphore *semaphore.Weighted,
 	syncer Syncer,
@@ -38,6 +41,7 @@ func newService(
 ) *Service {
 	return &Service{
 		dependenciesStore:  dependenciesStore,
+		gitSvc:             gitSvc,
 		lockfilesSvc:       lockfilesSvc,
 		lockfilesSemaphore: lockfilesSemaphore,
 		syncer:             syncer,
@@ -56,8 +60,14 @@ func (s *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]ty
 		}})
 	}()
 
+	// Resolve the revhashes for the source repo-commit pairs
+	repoCommits, err := s.resolveRepoCommits(ctx, repoRevs)
+	if err != nil {
+		return nil, err
+	}
+
 	// Parse lockfile contents for the given repository and revision pairs
-	deps, err := s.lockfileDependencies(ctx, repoRevs)
+	deps, err := s.lockfileDependencies(ctx, repoCommits)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +103,7 @@ func (s *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]ty
 	// Write dependencies to database
 	newDependencies, err := s.dependenciesStore.UpsertDependencyRepos(ctx, dependencies)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "store.UpsertDependencyRepos")
 	}
 
 	// Determine the set of repo names that were recently inserted. Package and repository
@@ -119,61 +129,183 @@ func (s *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]ty
 	return dependencyRevs, nil
 }
 
-// lockfileDependencies returns a flattened list of package dependencies for every repo and
-// revision pair specified in the given map.
-func (s *Service) lockfileDependencies(ctx context.Context, repoRevs map[api.RepoName]types.RevSpecSet) ([]reposource.PackageDependency, error) {
+type repoCommitResolvedCommit struct {
+	api.RepoCommit
+	ResolvedCommit string
+}
+
+// resolveRepoCommits flattens the given map into a slice of api.RepoCommits with an extra
+// field indicating the canonical 40-character commit hash of the given revlike, which is
+// often symbolic.
+func (s *Service) resolveRepoCommits(ctx context.Context, repoRevs map[api.RepoName]types.RevSpecSet) ([]repoCommitResolvedCommit, error) {
 	n := 0
 	for _, revs := range repoRevs {
 		n += len(revs)
 	}
 
-	var (
-		mu   sync.Mutex
-		deps = make([]reposource.PackageDependency, 0, n)
-	)
-
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	g, ctx := errgroup.WithContext(ctx)
+	repoCommits := make([]api.RepoCommit, 0, n)
 	for repoName, revs := range repoRevs {
 		for rev := range revs {
-			// Capture outside of goroutine below
-			repoName, rev := repoName, rev
-
-			// Acquire semaphore before spawning goroutine to ensure that we limit the total number
-			// of concurrent _routines_, whether they are actively processing lockfiles or not.
-			if err := s.lockfilesSemaphore.Acquire(ctx, 1); err != nil {
-				return nil, err
-			}
-
-			g.Go(func() error {
-				defer s.lockfilesSemaphore.Release(1)
-
-				repoDeps, err := s.lockfilesSvc.ListDependencies(ctx, repoName, string(rev))
-				if err != nil {
-					return err
-				}
-
-				mu.Lock()
-				deps = append(deps, repoDeps...)
-				mu.Unlock()
-
-				return nil
+			repoCommits = append(repoCommits, api.RepoCommit{
+				Repo:     repoName,
+				CommitID: api.CommitID(rev),
 			})
 		}
 	}
 
-	if err := g.Wait(); err != nil {
-		return nil, err
+	commits, err := s.gitSvc.GetCommits(ctx, repoCommits, false)
+	if err != nil {
+		return nil, errors.Wrap(err, "git.GetCommits")
+	}
+	if len(commits) != len(repoCommits) {
+		// Add assertion here so that the blast radius of new or newly discovered errors
+		// southbound from the internal/vcs/git package does not leak into code intelligence.
+		return nil, errors.Newf("expected slice returned from git.GetCommits to have len %d, but has len %d", len(repoCommits), len(commits))
+	}
+
+	resolvedCommits := make([]repoCommitResolvedCommit, 0, len(repoCommits))
+	for i, repoCommit := range repoCommits {
+		resolvedCommits = append(resolvedCommits, repoCommitResolvedCommit{
+			RepoCommit:     repoCommit,
+			ResolvedCommit: string(commits[i].ID),
+		})
+	}
+
+	return resolvedCommits, nil
+}
+
+// lockfileDependencies returns a flattened list of package dependencies for every repo-commit pair.
+func (s *Service) lockfileDependencies(ctx context.Context, repoCommits []repoCommitResolvedCommit) (deps []shared.PackageDependency, _ error) {
+	// resolverFunc describes internal functions that perform bulk queries to gather the dependencies of
+	// some portion of the input. It is expected that if there are any unqueried repo-commit pairs remain
+	// that they are moved to the front of the given slice, and the number of unqueried elements returned.
+	type resolverFunc func(ctx context.Context, repoCommits []repoCommitResolvedCommit) ([]shared.PackageDependency, int, error)
+
+	resolvers := []resolverFunc{
+		s.resolveLockfileDependenciesFromStore,
+		s.resolveLockfileDependenciesFromArchive,
+	}
+
+	for _, resolver := range resolvers {
+		resolvedDeps, n, err := resolver(ctx, repoCommits)
+		if err != nil {
+			return nil, err
+		}
+
+		deps = append(deps, resolvedDeps...)
+		repoCommits = repoCommits[:n]
 	}
 
 	return deps, nil
 }
 
+// resolveLockfileDependenciesFromStore returns a flattened list of package dependencies for each
+// of the given repo-commit pairs from the database. The given `repoCommits` slice is altered in-place.
+// The returned `numUnqueried` value is the number of elements at the prefix of the slice that had no data.
+// It is expected that the remaining elements be passed to the fallback dependencies resolver, if one is
+// registered.
+func (s *Service) resolveLockfileDependenciesFromStore(ctx context.Context, repoCommits []repoCommitResolvedCommit) (deps []shared.PackageDependency, numUnqueried int, err error) {
+	ctx, _, endObservation := s.operations.resolveLockfileDependenciesFromStore.With(ctx, &err, observation.Args{})
+	defer func() {
+		endObservation(1, observation.Args{LogFields: []log.Field{
+			log.Int("numUnqueried", numUnqueried),
+		}})
+	}()
+
+	// Filter in-place
+	unqueried := repoCommits[:0]
+
+	for _, repoCommit := range repoCommits {
+		// TODO - batch these requests in the store layer
+		if repoDeps, ok, err := s.dependenciesStore.LockfileDependencies(ctx, string(repoCommit.Repo), repoCommit.ResolvedCommit); err != nil {
+			return nil, 0, errors.Wrap(err, "store.LockfileDependencies")
+		} else if !ok {
+			unqueried = append(unqueried, repoCommit)
+		} else {
+			deps = append(deps, repoDeps...)
+		}
+	}
+
+	return deps, len(unqueried), nil
+}
+
+// resolveLockfileDependenciesFromArchive is a resolverFunc. It returns a flattened list of package dependencies
+// for each of the given repo-commit pairs from an archive of relevant files from the git repository. The returned
+// `numUnqueried` value is always zero as we make a request for every input, thus no fallback resolver will
+// ever be triggered.
+func (s *Service) resolveLockfileDependenciesFromArchive(ctx context.Context, repoCommits []repoCommitResolvedCommit) (deps []shared.PackageDependency, numUnqueried int, err error) {
+	ctx, _, endObservation := s.operations.resolveLockfileDependenciesFromArchive.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	ctx, cancel := context.WithCancel(ctx)
+	g, ctx := errgroup.WithContext(ctx)
+	defer cancel()
+
+	// Protects appending to deps
+	var mu sync.Mutex
+
+	for _, repoCommit := range repoCommits {
+		// Capture outside of goroutine below
+		repoCommit := repoCommit
+
+		// Acquire semaphore before spawning goroutine to ensure that we limit the total number
+		// of concurrent _routines_, whether they are actively processing lockfiles or not.
+		if err := s.lockfilesSemaphore.Acquire(ctx, 1); err != nil {
+			return nil, 0, errors.Wrap(err, "lockfiles semaphore")
+		}
+
+		g.Go(func() error {
+			defer s.lockfilesSemaphore.Release(1)
+
+			repoDeps, err := s.listAndPersistLockfileDependencies(ctx, repoCommit)
+			if err != nil {
+				return err
+			}
+
+			mu.Lock()
+			deps = append(deps, repoDeps...)
+			mu.Unlock()
+
+			return nil
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		return nil, 0, err
+	}
+
+	return deps, 0, nil
+}
+
+// listAndPersistLockfileDependencies gathers dependencies from the lockfiles service for the
+// given repo-commit pair and persists the result to the database. This aids in both caching
+// and building an inverted index to power dependents search.
+func (s *Service) listAndPersistLockfileDependencies(ctx context.Context, repoCommit repoCommitResolvedCommit) ([]shared.PackageDependency, error) {
+	repoDeps, err := s.lockfilesSvc.ListDependencies(ctx, repoCommit.Repo, string(repoCommit.CommitID))
+	if err != nil {
+		return nil, errors.Wrap(err, "lockfiles.ListDependencies")
+	}
+
+	serializableRepoDeps := shared.SerializePackageDependencies(repoDeps)
+
+	if err := s.dependenciesStore.UpsertLockfileDependencies(
+		ctx,
+		string(repoCommit.Repo),
+		repoCommit.ResolvedCommit,
+		serializableRepoDeps,
+	); err != nil {
+		return nil, errors.Wrap(err, "store.UpsertLockfileDependencies")
+	}
+
+	return serializableRepoDeps, nil
+}
+
 // sync invokes the Syncer for every repo in the supplied slice.
 func (s *Service) sync(ctx context.Context, repos []api.RepoName) error {
+	ctx, cancel := context.WithCancel(ctx)
 	g, ctx := errgroup.WithContext(ctx)
+	defer cancel()
+
 	for _, repo := range repos {
 		// Capture outside of goroutine below
 		repo := repo
@@ -183,7 +315,7 @@ func (s *Service) sync(ctx context.Context, repos []api.RepoName) error {
 		// non-nil returned from here is a context timeout error, so we are guaranteed to clean
 		// up the errgroup on exit.
 		if err := s.syncerSemaphore.Acquire(ctx, 1); err != nil {
-			return err
+			return errors.Wrap(err, "syncer semaphore")
 		}
 
 		g.Go(func() error {
@@ -198,6 +330,13 @@ func (s *Service) sync(ctx context.Context, repos []api.RepoName) error {
 	}
 
 	return g.Wait()
+}
+
+// Dependents resolves the (transitive) inverse dependencies for a set of repository and revisions.
+// Both the input repoRevs and the output dependencyRevs are a map from repository names to revspecs.
+func (s *Service) Dependents(ctx context.Context, repoRevs map[api.RepoName]types.RevSpecSet) (dependencyRevs map[api.RepoName]types.RevSpecSet, err error) {
+	// To be implemented after #31643
+	return nil, errors.New("unimplemented: dependencies.Dependents")
 }
 
 func constructLogFields(repoRevs map[api.RepoName]types.RevSpecSet) []log.Field {
@@ -218,6 +357,14 @@ func constructLogFields(repoRevs map[api.RepoName]types.RevSpecSet) []log.Field 
 	return []log.Field{
 		log.Int("repoRevs", len(repoRevs)),
 	}
+}
+
+func (s *Service) SelectRepoRevisionsToResolve(ctx context.Context, batchSize int, minimumCheckInterval time.Duration) (map[string][]string, error) {
+	return s.dependenciesStore.SelectRepoRevisionsToResolve(ctx, batchSize, minimumCheckInterval)
+}
+
+func (s *Service) UpdateResolvedRevisions(ctx context.Context, repoRevsToResolvedRevs map[string]map[string]string) error {
+	return s.dependenciesStore.UpdateResolvedRevisions(ctx, repoRevsToResolvedRevs)
 }
 
 type Repo = shared.Repo

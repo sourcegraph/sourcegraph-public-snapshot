@@ -190,7 +190,7 @@ func handleSignUp(db database.DB, w http.ResponseWriter, r *http.Request, failIf
 		return
 	}
 
-	if err = database.Authz(db).GrantPendingPermissions(r.Context(), &database.GrantPendingPermissionsArgs{
+	if err = db.Authz().GrantPendingPermissions(r.Context(), &database.GrantPendingPermissionsArgs{
 		UserID: usr.ID,
 		Perm:   authz.Read,
 		Type:   authz.PermRepos,
