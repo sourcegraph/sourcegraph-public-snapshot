@@ -32,36 +32,32 @@ func init() {
 	}
 
 	frontendregistry.FilterRemoteExtensions = func(extensions []*registry.Extension) []*registry.Extension {
-		var extensionsWithAllowedPublisher []*registry.Extension
+		var keep []*registry.Extension
+
+		allowedExtensions := getAllowedExtensionsFromSiteConfig()
+		if allowedExtensions != nil {
+			allow := make(map[string]any)
+			for _, id := range allowedExtensions {
+				allow[id] = struct{}{}
+			}
+			for _, x := range extensions {
+				if _, ok := allow[x.ExtensionID]; ok {
+					keep = append(keep, x)
+				}
+			}
+			return keep
+		}
 
 		if getAllowOnlySourcegraphAuthoredExtensionsFromSiteConfig() {
 			for _, x := range extensions {
 				if isSourcegraphAuthoredExtension(x.Publisher) {
-					extensionsWithAllowedPublisher = append(extensionsWithAllowedPublisher, x)
+					keep = append(keep, x)
 				}
 			}
-		} else {
-			// If allow only Sourcegraph extensions feature is not enabled, all remote extensions are allowed.
-			extensionsWithAllowedPublisher = extensions
+			return keep
 		}
 
-		allowedExtensionIDs := getAllowedExtensionsFromSiteConfig()
-
-		if allowedExtensionIDs == nil {
-			return extensionsWithAllowedPublisher
-		}
-
-		allow := make(map[string]any)
-		for _, id := range allowedExtensionIDs {
-			allow[id] = struct{}{}
-		}
-		var keep []*registry.Extension
-		for _, x := range extensionsWithAllowedPublisher {
-			if _, ok := allow[x.ExtensionID]; ok {
-				keep = append(keep, x)
-			}
-		}
-		return keep
+		return extensions
 	}
 }
 

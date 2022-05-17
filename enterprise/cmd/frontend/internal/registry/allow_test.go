@@ -142,7 +142,7 @@ func TestFilterRemoteExtensions(t *testing.T) {
 				},
 			},
 		},
-		[]string{"b"},
+		[]string{"b", "c"},
 	)
 	run(
 		&schema.Extensions{

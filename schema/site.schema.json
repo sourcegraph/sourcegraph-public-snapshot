@@ -1026,7 +1026,7 @@
           }
         },
         "allowOnlySourcegraphAuthoredExtensions": {
-          "description": "Allow only Sourcegraph authored extensions from the remote registry. If not set, all remote extensions may be used from the remote registry. To completely disable the remote registry, set `remoteRegistry` to `false`.",
+          "description": "Allow only Sourcegraph authored extensions from the remote registry. If not set, all remote extensions may be used from the remote registry. If certain extensions are marked as allowed in `allowRemoteExtensions` field, `allowOnlySourcegraphAuthoredExtensions` setting value will be ignored. To completely disable the remote registry, set `remoteRegistry` to `false`.",
           "type": "boolean",
           "default": false
         }
