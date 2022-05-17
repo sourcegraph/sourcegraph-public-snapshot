@@ -2,11 +2,10 @@ package searcher
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/inconshreveable/log15"
-	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/opentracing/opentracing-go/log"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
@@ -47,12 +46,10 @@ type SearcherJob struct {
 }
 
 // Run calls the searcher service on a set of repositories.
-func (s *SearcherJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (_ *search.Alert, err error) {
-	tr, ctx := trace.New(ctx, "searcher.Run", fmt.Sprintf("query: %s", s.PatternInfo.Pattern))
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+func (s *SearcherJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
+	defer func() { finish(alert, err) }()
+	tr.TagFields(trace.LazyFields(s.Tags))
 
 	var fetchTimeout time.Duration
 	if len(s.Repos) == 1 || s.UseFullDeadline {
@@ -71,8 +68,8 @@ func (s *SearcherJob) Run(ctx context.Context, clients job.RuntimeClients, strea
 	}
 
 	tr.LogFields(
-		otlog.Int64("fetch_timeout_ms", fetchTimeout.Milliseconds()),
-		otlog.Int64("repos_count", int64(len(s.Repos))),
+		log.Int64("fetch_timeout_ms", fetchTimeout.Milliseconds()),
+		log.Int64("repos_count", int64(len(s.Repos))),
 	)
 
 	if len(s.Repos) == 0 {
@@ -114,7 +111,7 @@ func (s *SearcherJob) Run(ctx context.Context, clients job.RuntimeClients, strea
 
 					repoLimitHit, err := searchFilesInRepo(ctx, clients.DB, clients.SearcherURLs, repoRev.Repo, repoRev.GitserverRepo(), repoRev.RevSpecs()[0], s.Indexed, s.PatternInfo, fetchTimeout, stream)
 					if err != nil {
-						tr.LogFields(otlog.String("repo", string(repoRev.Repo.Name)), otlog.Error(err), otlog.Bool("timeout", errcode.IsTimeout(err)), otlog.Bool("temporary", errcode.IsTemporary(err)))
+						tr.LogFields(log.String("repo", string(repoRev.Repo.Name)), log.Error(err), log.Bool("timeout", errcode.IsTimeout(err)), log.Bool("temporary", errcode.IsTemporary(err)))
 						log15.Warn("searchFilesInRepo failed", "error", err, "repo", repoRev.Repo.Name)
 					}
 					// non-diff search reports timeout through err, so pass false for timedOut
@@ -138,6 +135,15 @@ func (s *SearcherJob) Run(ctx context.Context, clients job.RuntimeClients, strea
 
 func (s *SearcherJob) Name() string {
 	return "SearcherJob"
+}
+
+func (s *SearcherJob) Tags() []log.Field {
+	return []log.Field{
+		trace.Stringer("patternInfo", s.PatternInfo),
+		log.Int("numRepos", len(s.Repos)),
+		log.Bool("indexed", s.Indexed),
+		log.Bool("useFullDeadline", s.UseFullDeadline),
+	}
 }
 
 var MockSearchFilesInRepo func(
