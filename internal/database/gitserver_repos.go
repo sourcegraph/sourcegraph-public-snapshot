@@ -91,7 +91,7 @@ INSERT INTO
         (EXCLUDED.clone_status, EXCLUDED.shard_id, EXCLUDED.last_error, EXCLUDED.last_fetched, EXCLUDED.last_changed, EXCLUDED.repo_size_bytes, now())
 `, sqlf.Join(values, ",")))
 
-	return errors.Wrap(err, "creating GitserverRepo")
+	return errors.Wrap(err, "upserting GitserverRepo")
 }
 
 // TotalErroredCloudDefaultRepos returns the total number of repos which have a non-empty last_error field. Note that this is only
