@@ -406,7 +406,7 @@ func collectAnnotations(repoCommitPath types.RepoCommitPath, contents string) []
 
 	lines := strings.Split(contents, "\n")
 
-	// Annotation at the end of the line
+	// Annotation at the end of the line: < "x" x def
 	for i, line := range lines {
 		matchess := regexp.MustCompile(`([^<]+)< "([^"]+)" ([a-zA-Z0-9_.-]+) (def|ref)`).FindAllStringSubmatch(line, -1)
 		if matchess == nil {

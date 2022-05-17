@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -115,7 +116,7 @@ func bracket(text string) string {
 
 // forEachCapture runs the given tree-sitter query on the given node and calls f(captureName, node) for
 // each capture.
-func forEachCapture(query string, node Node, f func(captureName string, node Node)) error {
+func forEachCapture(query string, node *Node, f func(captureName string, node Node)) error {
 	sitterQuery, err := sitter.NewQuery([]byte(query), node.LangSpec.language)
 	if err != nil {
 		return errors.Newf("failed to parse query: %s\n%s", err, query)
@@ -140,6 +141,33 @@ func forEachCapture(query string, node Node, f func(captureName string, node Nod
 	}
 
 	return nil
+}
+
+func allCaptures(query string, node *Node) ([]Node, error) {
+	sitterQuery, err := sitter.NewQuery([]byte(query), node.LangSpec.language)
+	if err != nil {
+		return nil, errors.Newf("failed to parse query: %s\n%s", err, query)
+	}
+	defer sitterQuery.Close()
+	cursor := sitter.NewQueryCursor()
+	defer cursor.Close()
+	cursor.Exec(sitterQuery, node.Node)
+
+	var captures []Node
+	match, _, hasCapture := cursor.NextCapture()
+	for hasCapture {
+		for _, capture := range match.Captures {
+			captures = append(captures, Node{
+				RepoCommitPath: node.RepoCommitPath,
+				Node:           capture.Node,
+				Contents:       node.Contents,
+				LangSpec:       node.LangSpec,
+			})
+		}
+		match, _, hasCapture = cursor.NextCapture()
+	}
+
+	return captures, nil
 }
 
 // nodeToRange returns the range of the node.
@@ -199,7 +227,7 @@ func WithNode(other Node, newNode *sitter.Node) Node {
 	}
 }
 
-func WithNodePtr(other Node, newNode *sitter.Node) *Node {
+func WithNodePtr(other *Node, newNode *sitter.Node) *Node {
 	return &Node{
 		RepoCommitPath: other.RepoCommitPath,
 		Node:           newNode,
@@ -241,6 +269,9 @@ func (s *SquirrelService) parse(ctx context.Context, repoCommitPath types.RepoCo
 	root := tree.RootNode()
 	if root == nil {
 		return nil, errors.New("root is nil")
+	}
+	if s.errorOnParseFailure && root.HasError() {
+		return nil, errors.Newf("parse failure in %+v", repoCommitPath)
 	}
 
 	return &Node{RepoCommitPath: repoCommitPath, Node: root, Contents: contents, LangSpec: langSpec}, nil

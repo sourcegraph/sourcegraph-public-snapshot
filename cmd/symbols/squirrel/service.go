@@ -18,21 +18,23 @@ type ReadFileFunc func(context.Context, types.RepoCommitPath) ([]byte, error)
 // SquirrelService uses tree-sitter and the symbols service to analyze and traverse files to find
 // symbols.
 type SquirrelService struct {
-	readFile     ReadFileFunc
-	symbolSearch symbolsTypes.SearchFunc
-	breadcrumbs  []Breadcrumb
-	parser       *sitter.Parser
-	closables    []func()
+	readFile            ReadFileFunc
+	symbolSearch        symbolsTypes.SearchFunc
+	breadcrumbs         Breadcrumbs
+	parser              *sitter.Parser
+	closables           []func()
+	errorOnParseFailure bool
 }
 
 // Creates a new SquirrelService.
 func New(readFile ReadFileFunc, symbolSearch symbolsTypes.SearchFunc) *SquirrelService {
 	return &SquirrelService{
-		readFile:     readFile,
-		symbolSearch: symbolSearch,
-		breadcrumbs:  []Breadcrumb{},
-		parser:       sitter.NewParser(),
-		closables:    []func(){},
+		readFile:            readFile,
+		symbolSearch:        symbolSearch,
+		breadcrumbs:         []Breadcrumb{},
+		parser:              sitter.NewParser(),
+		closables:           []func(){},
+		errorOnParseFailure: false,
 	}
 }
 
@@ -63,7 +65,7 @@ func (squirrel *SquirrelService) symbolInfo(ctx context.Context, point types.Rep
 		}
 
 		// Now find the definition.
-		found, err := squirrel.getDef(ctx, WithNodePtr(*root, startNode))
+		found, err := squirrel.getDef(ctx, WithNodePtr(root, startNode))
 		if err != nil {
 			return nil, err
 		}

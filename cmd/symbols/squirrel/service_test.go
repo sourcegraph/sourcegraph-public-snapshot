@@ -4,12 +4,20 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"sort"
 	"testing"
 
+	"github.com/fatih/color"
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
+
+func init() {
+	if _, ok := os.LookupEnv("NO_COLOR"); !ok {
+		color.NoColor = false
+	}
+}
 
 func TestNonLocalDefinition(t *testing.T) {
 	repoDirs, err := os.ReadDir("test_repos")
@@ -53,9 +61,17 @@ func TestNonLocalDefinition(t *testing.T) {
 	}
 
 	squirrel := New(readFile, nil)
+	squirrel.errorOnParseFailure = true
 	defer squirrel.Close()
 
-	for symbol, m := range groupBySymbolAndKind(annotations) {
+	symbolToKindToAnnotations := groupBySymbolAndKind(annotations)
+	symbols := []string{}
+	for symbol := range symbolToKindToAnnotations {
+		symbols = append(symbols, symbol)
+	}
+	sort.Strings(symbols)
+	for _, symbol := range symbols {
+		m := symbolToKindToAnnotations[symbol]
 		var wantDef *annotation
 		for _, ann := range m["def"] {
 			if wantDef != nil {
@@ -67,15 +83,21 @@ func TestNonLocalDefinition(t *testing.T) {
 		}
 
 		if wantDef == nil {
-			t.Fatalf("no definition for symbol %s", symbol)
+			t.Fatalf("no matching \"def\" annotation for \"ref\" %s", symbol)
 		}
 
 		for _, ref := range m["ref"] {
+			squirrel.breadcrumbs = Breadcrumbs{}
 			got, err := squirrel.symbolInfo(context.Background(), ref.repoCommitPathPoint)
 			fatalIfErrorLabel(t, err, "symbolInfo")
 
 			if got == nil {
+				squirrel.breadcrumbs.prettyPrint(squirrel.readFile)
 				t.Fatalf("no symbolInfo for symbol %s", symbol)
+			}
+
+			if ref.symbol == "f2" {
+				squirrel.breadcrumbs.prettyPrint(squirrel.readFile)
 			}
 
 			gotDef := types.RepoCommitPathPoint{

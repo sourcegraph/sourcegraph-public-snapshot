@@ -16,17 +16,22 @@ type Breadcrumb struct {
 	types.RepoCommitPathRange
 	length  int
 	message string
+	number  int
 }
 
-// addBreadcrumb adds a breadcrumb to the given slice.
-func addBreadcrumb(breadcrumbs *[]Breadcrumb, node Node, message string) {
-	*breadcrumbs = append(*breadcrumbs, Breadcrumb{
+// Breadcrumbs is a slice of Breadcrumb.
+type Breadcrumbs []Breadcrumb
+
+// add adds a breadcrumb to the given slice.
+func (bs *Breadcrumbs) add(node *Node, message string) {
+	*bs = append(*bs, Breadcrumb{
 		RepoCommitPathRange: types.RepoCommitPathRange{
 			RepoCommitPath: node.RepoCommitPath,
 			Range:          nodeToRange(node.Node),
 		},
 		length:  nodeLength(node.Node),
 		message: message,
+		number:  len(*bs) + 1,
 	})
 }
 
@@ -35,10 +40,10 @@ func addBreadcrumb(breadcrumbs *[]Breadcrumb, node Node, message string) {
 //             v some breadcrumb
 //               vvv other breadcrumb
 // 78 | func f(f Foo) {
-func prettyPrintBreadcrumbs(w *strings.Builder, breadcrumbs []Breadcrumb, readFile ReadFileFunc) {
+func (bs *Breadcrumbs) pretty(w *strings.Builder, readFile ReadFileFunc) {
 	// First collect all the breadcrumbs in a map (path -> line -> breadcrumb) for easier printing.
 	pathToLineToBreadcrumbs := map[types.RepoCommitPath]map[int][]Breadcrumb{}
-	for _, breadcrumb := range breadcrumbs {
+	for _, breadcrumb := range *bs {
 		path := breadcrumb.RepoCommitPath
 
 		if _, ok := pathToLineToBreadcrumbs[path]; !ok {
@@ -87,7 +92,7 @@ func prettyPrintBreadcrumbs(w *strings.Builder, breadcrumbs []Breadcrumb, readFi
 
 				arrows := messageColor(breadcrumb.message)(strings.Repeat("v", breadcrumb.length))
 
-				fmt.Fprintf(w, "%s%s%s %s\n", gutterPadding, space, arrows, messageColor(breadcrumb.message)(breadcrumb.message))
+				fmt.Fprintf(w, "%s%s%s %d %s\n", gutterPadding, space, arrows, breadcrumb.number, messageColor(breadcrumb.message)(breadcrumb.message))
 			}
 
 			fmt.Fprint(w, grey(gutter))
@@ -102,6 +107,15 @@ func prettyPrintBreadcrumbs(w *strings.Builder, breadcrumbs []Breadcrumb, readFi
 			fmt.Fprintln(w)
 		}
 	}
+}
+
+func (bs *Breadcrumbs) prettyPrint(readFile ReadFileFunc) {
+	sb := &strings.Builder{}
+	bs.pretty(sb, readFile)
+
+	fmt.Println(" ")
+	fmt.Println(bracket(sb.String()))
+	fmt.Println(" ")
 }
 
 // Returns breadcrumbs that have one of the given messages.
