@@ -3,11 +3,12 @@ package log_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/sourcegraph/sourcegraph/lib/log"
 	"github.com/sourcegraph/sourcegraph/lib/log/internal/globallogger"
 	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 	"github.com/sourcegraph/sourcegraph/lib/log/otfields"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestLogger(t *testing.T) {
@@ -26,7 +27,7 @@ func TestLogger(t *testing.T) {
 
 	logger.Info("hello world", log.String("hello", "world")) // 1
 
-	logger = logger.WithTrace(log.TraceContext{TraceID: "asdf"})
+	logger = logger.WithTrace(log.TraceContext{TraceID: "1234abcde"})
 	logger.Info("goodbye", log.String("world", "hello")) // 2
 	logger.Warn("another message")                       // 3
 
@@ -49,7 +50,7 @@ func TestLogger(t *testing.T) {
 	}, logs[1].Fields["Attributes"])
 
 	// TraceId should be in root, everything else in attributes
-	assert.Equal(t, "asdf", logs[2].Fields["TraceId"])
+	assert.Equal(t, "1234abcde", logs[2].Fields["TraceId"])
 	assert.Equal(t, map[string]any{
 		"some":  "field",
 		"world": "hello",
