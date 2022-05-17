@@ -96,10 +96,6 @@ func TestNonLocalDefinition(t *testing.T) {
 				t.Fatalf("no symbolInfo for symbol %s", symbol)
 			}
 
-			if ref.symbol == "f2" {
-				squirrel.breadcrumbs.prettyPrint(squirrel.readFile)
-			}
-
 			gotDef := types.RepoCommitPathPoint{
 				RepoCommitPath: got.Definition.RepoCommitPath,
 				Point: types.Point{

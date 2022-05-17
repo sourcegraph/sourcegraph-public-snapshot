@@ -30,7 +30,8 @@ class C1 {
         //                     vv f1 ref
         //                          vv C2 ref
         //                             vv f2 ref
-        l1 = m1(1) + m2() + C1.f1 + C2.f2;
+        //                                        vv f2 ref
+        l1 = m1(1) + m2() + C1.f1 + C2.f2 + C1.C2.f2;
     }
 
     //   vv m2 def

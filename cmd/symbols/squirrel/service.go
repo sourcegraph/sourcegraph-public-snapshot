@@ -2,7 +2,11 @@ package squirrel
 
 import (
 	"context"
+	"fmt"
+	"runtime"
+	"strings"
 
+	"github.com/fatih/color"
 	sitter "github.com/smacker/go-tree-sitter"
 
 	symbolsTypes "github.com/sourcegraph/sourcegraph/cmd/symbols/types"
@@ -24,6 +28,7 @@ type SquirrelService struct {
 	parser              *sitter.Parser
 	closables           []func()
 	errorOnParseFailure bool
+	depth               int
 }
 
 // Creates a new SquirrelService.
@@ -72,11 +77,9 @@ func (squirrel *SquirrelService) symbolInfo(ctx context.Context, point types.Rep
 		if found == nil {
 			return nil, nil
 		}
-		if found.Node != nil {
-			def = &types.RepoCommitPathRange{
-				RepoCommitPath: found.Node.RepoCommitPath,
-				Range:          nodeToRange(found.Node.Node),
-			}
+		def = &types.RepoCommitPathRange{
+			RepoCommitPath: found.RepoCommitPath,
+			Range:          nodeToRange(found.Node),
 		}
 	}
 
@@ -129,7 +132,14 @@ type DirOrNode struct {
 	Node *Node
 }
 
-func (squirrel *SquirrelService) getDef(ctx context.Context, node *Node) (*DirOrNode, error) {
+func (dirOrNode *DirOrNode) String() string {
+	if dirOrNode.Dir != nil {
+		return fmt.Sprintf("%s", dirOrNode.Dir)
+	}
+	return fmt.Sprintf("%s", dirOrNode.Node)
+}
+
+func (squirrel *SquirrelService) getDef(ctx context.Context, node *Node) (*Node, error) {
 	switch node.LangSpec.name {
 	case "java":
 		return squirrel.getDefJava(ctx, node)
@@ -144,4 +154,55 @@ func (squirrel *SquirrelService) getDef(ctx context.Context, node *Node) (*DirOr
 		// Language not implemented yet
 		return nil, nil
 	}
+}
+
+func (squirrel *SquirrelService) onCall(node *Node, arg fmt.Stringer, ret func() fmt.Stringer) func() {
+	caller := ""
+	pc, _, _, ok := runtime.Caller(1)
+	details := runtime.FuncForPC(pc)
+	if ok && details != nil {
+		caller = details.Name()
+		caller = caller[strings.LastIndex(caller, ".")+1:]
+	}
+
+	msg := fmt.Sprintf("%s(%v) => %s", caller, color.New(color.FgCyan).Sprint(arg), color.New(color.Faint).Sprint("..."))
+	squirrel.breadcrumbWithOpts(node, func() string { return msg }, 3)
+
+	squirrel.depth += 1
+	return func() {
+		squirrel.depth -= 1
+
+		msg = fmt.Sprintf("%s(%v) => %v", caller, color.New(color.FgCyan).Sprint(arg), color.New(color.FgYellow).Sprint(ret()))
+	}
+}
+
+// add adds a breadcrumb.
+func (squirrel *SquirrelService) breadcrumb(node *Node, message string) {
+	squirrel.breadcrumbWithOpts(node, func() string { return message }, 2)
+}
+
+func (squirrel *SquirrelService) breadcrumbWithOpts(node *Node, message func() string, callerN int) {
+	caller := ""
+	pc, _, _, ok := runtime.Caller(callerN)
+	details := runtime.FuncForPC(pc)
+	if ok && details != nil {
+		caller = details.Name()
+		caller = caller[strings.LastIndex(caller, ".")+1:]
+	}
+	file, line := details.FileLine(pc)
+
+	breadcrumb := Breadcrumb{
+		RepoCommitPathRange: types.RepoCommitPathRange{
+			RepoCommitPath: node.RepoCommitPath,
+			Range:          nodeToRange(node.Node),
+		},
+		length:  nodeLength(node.Node),
+		message: message,
+		number:  len(squirrel.breadcrumbs) + 1,
+		depth:   squirrel.depth,
+		file:    file,
+		line:    line,
+	}
+
+	squirrel.breadcrumbs = append(squirrel.breadcrumbs, breadcrumb)
 }

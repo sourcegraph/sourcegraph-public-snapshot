@@ -124,7 +124,7 @@ func (squirrel *SquirrelService) localCodeIntel(ctx context.Context, repoCommitP
 				refs = append(refs, ref)
 			}
 			symbols = append(symbols, types.Symbol{
-				Name:  string(partialSymbol.Name),
+				Name:  partialSymbol.Name,
 				Hover: partialSymbol.Hover,
 				Def:   partialSymbol.Def,
 				Refs:  refs,

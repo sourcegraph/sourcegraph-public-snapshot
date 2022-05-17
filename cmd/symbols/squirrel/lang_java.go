@@ -3,10 +3,11 @@ package squirrel
 import (
 	"context"
 	"fmt"
+	"strings"
 )
 
-func (squirrel *SquirrelService) getDefJava(ctx context.Context, node *Node) (*DirOrNode, error) {
-	squirrel.breadcrumbs.add(node, fmt.Sprintf("getDefJava"))
+func (squirrel *SquirrelService) getDefJava(ctx context.Context, node *Node) (ret *Node, err error) {
+	defer squirrel.onCall(node, String(node.Type()), lazyNodeStringer(&ret))()
 
 	switch node.Type() {
 	case "identifier":
@@ -16,11 +17,9 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node *Node) (*D
 			prev := cur
 			cur = cur.Parent()
 			if cur == nil {
-				squirrel.breadcrumbs.add(WithNodePtr(node, prev), fmt.Sprintf("no more parents"))
+				squirrel.breadcrumb(WithNodePtr(node, prev), fmt.Sprintf("no more parents"))
 				return nil, nil
 			}
-
-			squirrel.breadcrumbs.add(WithNodePtr(node, cur), fmt.Sprintf("visiting parent node %s", cur.Type()))
 
 			switch cur.Type() {
 
@@ -37,8 +36,8 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node *Node) (*D
 						return nil, err
 					}
 					if found != nil {
-						squirrel.breadcrumbs.add(found, fmt.Sprintf("found field access"))
-						return &DirOrNode{Node: found}, nil
+						squirrel.breadcrumb(found, fmt.Sprintf("found field access"))
+						return found, nil
 					}
 				}
 				continue
@@ -61,7 +60,7 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node *Node) (*D
 			case "assignment_expression":
 				continue
 			case "program":
-				squirrel.breadcrumbs.add(WithNodePtr(node, cur), fmt.Sprintf("reached program node, TODO check imports"))
+				squirrel.breadcrumb(WithNodePtr(node, cur), fmt.Sprintf("reached program node, TODO check imports"))
 				return nil, nil
 
 			// Check nodes that might have bindings:
@@ -79,7 +78,7 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node *Node) (*D
 					}
 					for _, capture := range captures {
 						if capture.Content(capture.Contents) == node.Content(node.Contents) {
-							return &DirOrNode{Node: WithNodePtr(node, capture.Node)}, nil
+							return WithNodePtr(node, capture.Node), nil
 						}
 					}
 				}
@@ -96,7 +95,7 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node *Node) (*D
 				}
 				for _, capture := range captures {
 					if capture.Content(capture.Contents) == node.Content(node.Contents) {
-						return &DirOrNode{Node: WithNodePtr(node, capture.Node)}, nil
+						return WithNodePtr(node, capture.Node), nil
 					}
 				}
 				continue
@@ -105,21 +104,21 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node *Node) (*D
 				name := cur.ChildByFieldName("name")
 				if name != nil {
 					if name.Content(node.Contents) == node.Content(node.Contents) {
-						return &DirOrNode{Node: WithNodePtr(node, name)}, nil
+						return WithNodePtr(node, name), nil
 					}
 				}
-
-				body := cur.ChildByFieldName("body")
-				if body == nil {
-					continue
+				found, err := squirrel.lookupFieldJava(ctx, (*Type)(WithNodePtr(node, cur)), node.Content(node.Contents))
+				if err != nil {
+					return nil, err
 				}
-
-				squirrel.lookupFieldJava(ctx, WithNodePtr(node, cur), node.Content(node.Contents))
+				if found != nil {
+					return found, nil
+				}
 				continue
 
 			// Unrecognized nodes:
 			default:
-				squirrel.breadcrumbs.add(WithNodePtr(node, cur), fmt.Sprintf("unrecognized node type %q", cur.Type()))
+				squirrel.breadcrumb(WithNodePtr(node, cur), fmt.Sprintf("unrecognized node type %q", cur.Type()))
 				return nil, nil
 			}
 		}
@@ -128,7 +127,9 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node *Node) (*D
 	return nil, nil
 }
 
-func (squirrel *SquirrelService) getFieldJava(ctx context.Context, object *Node, field string) (*Node, error) {
+func (squirrel *SquirrelService) getFieldJava(ctx context.Context, object *Node, field string) (ret *Node, err error) {
+	defer squirrel.onCall(object, &Tuple{String(object.Type()), String(field)}, lazyNodeStringer(&ret))()
+
 	ty, err := squirrel.getTypeDefJava(ctx, object)
 	if err != nil {
 		return nil, err
@@ -139,42 +140,159 @@ func (squirrel *SquirrelService) getFieldJava(ctx context.Context, object *Node,
 	return squirrel.lookupFieldJava(ctx, ty, field)
 }
 
-func (squirrel *SquirrelService) lookupFieldJava(ctx context.Context, node *Node, field string) (*Node, error) {
-	for _, child := range children(body) {
-		switch child.Type() {
-		case "method_declaration":
-			name := child.ChildByFieldName("name")
-			if name == nil {
-				continue
-			}
-			if name.Content(node.Contents) == node.Content(node.Contents) {
-				return &DirOrNode{Node: WithNodePtr(node, name)}, nil
-			}
-		case "class_declaration":
-			name := child.ChildByFieldName("name")
-			if name == nil {
-				continue
-			}
-			if name.Content(node.Contents) == node.Content(node.Contents) {
-				return &DirOrNode{Node: WithNodePtr(node, name)}, nil
-			}
-		case "field_declaration":
-			query := "(field_declaration declarator: (variable_declarator name: (identifier) @ident))"
-			captures, err := allCaptures(query, WithNodePtr(node, child))
-			if err != nil {
-				return nil, err
-			}
-			for _, capture := range captures {
-				if capture.Content(capture.Contents) == node.Content(node.Contents) {
-					return &DirOrNode{Node: WithNodePtr(node, capture.Node)}, nil
+func (squirrel *SquirrelService) lookupFieldJava(ctx context.Context, ty *Type, field string) (ret *Node, err error) {
+	defer squirrel.onCall((*Node)(ty), &Tuple{String(ty.Type()), String(field)}, lazyNodeStringer(&ret))()
+
+	switch ty.Type() {
+	case "class_declaration":
+		body := ty.ChildByFieldName("body")
+		if body == nil {
+			return nil, nil
+		}
+		for _, child := range children(body) {
+			switch child.Type() {
+			case "method_declaration":
+				name := child.ChildByFieldName("name")
+				if name == nil {
+					continue
+				}
+				if name.Content(ty.Contents) == field {
+					return WithNodePtr((*Node)(ty), name), nil
+				}
+			case "class_declaration":
+				name := child.ChildByFieldName("name")
+				if name == nil {
+					continue
+				}
+				if name.Content(ty.Contents) == field {
+					return WithNodePtr((*Node)(ty), name), nil
+				}
+			case "field_declaration":
+				query := "(field_declaration declarator: (variable_declarator name: (identifier) @ident))"
+				captures, err := allCaptures(query, WithNodePtr((*Node)(ty), child))
+				if err != nil {
+					return nil, err
+				}
+				for _, capture := range captures {
+					if capture.Content(capture.Contents) == field {
+						return WithNodePtr((*Node)(ty), capture.Node), nil
+					}
 				}
 			}
+		}
+		return nil, nil
+	default:
+		squirrel.breadcrumb((*Node)(ty), fmt.Sprintf("lookupFieldJava: unrecognized node type %q", ty.Type()))
+		return nil, nil
+	}
+}
+
+func (squirrel *SquirrelService) getTypeDefJava(ctx context.Context, node *Node) (ret *Type, err error) {
+	defer squirrel.onCall(node, String(node.Type()), lazyTypeStringer(&ret))()
+
+	switch node.Type() {
+	case "identifier":
+		found, err := squirrel.getDefJava(ctx, node)
+		if err != nil {
+			return nil, err
+		}
+		if found == nil {
+			return nil, nil
+		}
+		return squirrel.defToType(found), nil
+	case "field_access":
+		object := node.ChildByFieldName("object")
+		if object == nil {
+			return nil, nil
+		}
+		field := node.ChildByFieldName("field")
+		if field == nil {
+			return nil, nil
+		}
+		objectType, err := squirrel.getTypeDefJava(ctx, WithNodePtr(node, object))
+		if err != nil {
+			return nil, err
+		}
+		if objectType == nil {
+			return nil, nil
+		}
+		found, err := squirrel.lookupFieldJava(ctx, objectType, field.Content(node.Contents))
+		if err != nil {
+			return nil, err
+		}
+		return squirrel.defToType(found), nil
+	}
+
+	return nil, nil
+}
+
+type Type Node
+
+func (squirrel *SquirrelService) defToType(def *Node) *Type {
+	if def == nil {
+		return nil
+	}
+	parent := def.Node.Parent()
+	if parent == nil {
+		return nil
+	}
+	switch parent.Type() {
+	case "class_declaration":
+		return (*Type)(WithNodePtr(def, parent))
+	default:
+		squirrel.breadcrumb(WithNodePtr(def, parent), fmt.Sprintf("unrecognized def parent %q", parent.Type()))
+		return nil
+	}
+}
+
+type String string
+
+func (f String) String() string {
+	return string(f)
+}
+
+type Tuple []interface{}
+
+func (t *Tuple) String() string {
+	s := []string{}
+	for _, v := range *t {
+		s = append(s, fmt.Sprintf("%v", v))
+	}
+	return strings.Join(s, ", ")
+}
+
+func lazyNodeStringer(node **Node) func() fmt.Stringer {
+	return func() fmt.Stringer {
+		if node != nil {
+			return String(fmt.Sprintf("%s ...%s...", (*node).Type(), snippet(*node)))
+		} else {
+			return String("<nil>")
 		}
 	}
 }
 
-func (squirrel *SquirrelService) getTypeDefJava(ctx context.Context, node *Node) (*Node, error) {
+func lazyTypeStringer(ty **Type) func() fmt.Stringer {
+	return func() fmt.Stringer {
+		if ty != nil {
+			return String(fmt.Sprintf("%s ...%s...", (*ty).Type(), snippet((*Node)(*ty))))
+		} else {
+			return String("<nil>")
+		}
+	}
 }
 
-func (squirrel *SquirrelService) getTypeDefJava(ctx context.Context, node *Node) (*Node, error) {
+func snippet(node *Node) string {
+	contextChars := 5
+	start := node.StartByte() - uint32(contextChars)
+	if start < 0 {
+		start = 0
+	}
+	end := node.StartByte() + uint32(contextChars)
+	if end > uint32(len(node.Contents)) {
+		end = uint32(len(node.Contents))
+	}
+	ret := string(node.Contents[start:end])
+	ret = strings.ReplaceAll(ret, "\n", "\\n")
+	ret = strings.ReplaceAll(ret, "\t", "\\t")
+	return ret
 }
