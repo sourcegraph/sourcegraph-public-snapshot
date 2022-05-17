@@ -20,6 +20,7 @@ import {
 import { BatchSpecContextProvider } from '../../BatchSpecContext'
 
 import { WorkspacesPreview } from './WorkspacesPreview'
+import { noop } from 'lodash'
 
 const { add } = storiesOf(
     'web/batches/batch-spec/edit/workspaces-preview/WorkspacesPreview',
@@ -283,6 +284,34 @@ add('failed/errored, with cached connection result', () => {
         </WebStory>
     )
 })
+
+add('succeeded', () => (
+    <WebStory>
+        {props => (
+            <MockedTestProvider link={new WildcardMockLink(UNSTARTED_WITH_CACHE_CONNECTION_MOCKS)}>
+                <BatchSpecContextProvider
+                    batchChange={mockBatchChange()}
+                    batchSpec={mockBatchSpec()}
+                    refetchBatchChange={() => Promise.resolve()}
+                    testState={{
+                        workspacesPreview: {
+                            hasPreviewed: true,
+                            resolutionState: BatchSpecWorkspaceResolutionState.COMPLETED,
+                            preview: () => Promise.resolve(),
+                            cancel: noop,
+                            isInProgress: false,
+                            clearError: noop,
+                            setFilters: noop,
+                            isPreviewDisabled: false,
+                        },
+                    }}
+                >
+                    <WorkspacesPreview {...props} />
+                </BatchSpecContextProvider>
+            </MockedTestProvider>
+        )}
+    </WebStory>
+))
 
 add('read-only', () => (
     <WebStory>
