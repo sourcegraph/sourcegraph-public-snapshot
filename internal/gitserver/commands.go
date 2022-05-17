@@ -923,10 +923,9 @@ func runRevParse(ctx context.Context, cmd GitCommand, spec string) (api.CommitID
 
 // LsFiles returns the output of `git ls-files`
 func (c *ClientImplementor) LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pathspecs ...Pathspec) ([]string, error) {
-	// TODO: mocks
-	//if Mocks.LsFiles != nil {
-	//	return Mocks.LsFiles(repo, commit)
-	//}
+	if Mocks.LsFiles != nil {
+		return Mocks.LsFiles(repo, commit)
+	}
 	args := []string{
 		"ls-files",
 		"-z",
