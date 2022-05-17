@@ -90,7 +90,9 @@ func (g *parallelOrdered[T]) startCallbackerOnce() {
 	select {
 	case g.callbackerC <- struct{}{}:
 		go func() {
-			g.callbacker()
+			for resultChan := range g.results {
+				g.callback(<-resultChan)
+			}
 			<-g.callbackerC
 		}()
 	default:
@@ -101,11 +103,5 @@ func (g *parallelOrdered[T]) startCallbackerOnce() {
 func (g *parallelOrdered[T]) worker() {
 	for task := range g.tasks {
 		task.resultC <- task.f()
-	}
-}
-
-func (g *parallelOrdered[T]) callbacker() {
-	for resultChan := range g.results {
-		g.callback(<-resultChan)
 	}
 }
