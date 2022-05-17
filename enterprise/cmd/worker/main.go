@@ -68,15 +68,16 @@ func init() {
 // the jobs configured in this service. This also enables repository update operations to fetch
 // permissions from code hosts.
 func setAuthzProviders() {
-	db, err := workerdb.Init()
+	sqlDB, err := workerdb.Init()
 	if err != nil {
 		return
 	}
 
 	ctx := context.Background()
+	db := database.NewDB(sqlDB)
 
 	for range time.NewTicker(eiauthz.RefreshInterval()).C {
-		allowAccessByDefault, authzProviders, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), database.ExternalServices(db), database.NewDB(db))
+		allowAccessByDefault, authzProviders, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices(), db)
 		authz.SetProviders(allowAccessByDefault, authzProviders)
 	}
 }

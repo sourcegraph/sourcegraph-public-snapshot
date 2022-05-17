@@ -83,7 +83,7 @@ func serveExternalServiceConfigs(db database.DB) func(w http.ResponseWriter, r *
 			}
 		}
 
-		services, err := database.ExternalServices(db).List(r.Context(), options)
+		services, err := db.ExternalServices().List(r.Context(), options)
 		if err != nil {
 			return err
 		}
@@ -137,7 +137,7 @@ func serveExternalServicesList(db database.DB) func(w http.ResponseWriter, r *ht
 			}
 		}
 
-		services, err := database.ExternalServices(db).List(r.Context(), options)
+		services, err := db.ExternalServices().List(r.Context(), options)
 		if err != nil {
 			return err
 		}

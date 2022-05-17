@@ -620,7 +620,7 @@ func authProviderTypes() []string {
 
 func externalServiceKinds(ctx context.Context, db database.DB) (kinds []string, err error) {
 	defer recordOperation("externalServiceKinds")(&err)
-	kinds, err = database.ExternalServices(db).DistinctKinds(ctx)
+	kinds, err = db.ExternalServices().DistinctKinds(ctx)
 	return kinds, err
 }
 

@@ -72,7 +72,7 @@ func NewHandler(
 	m.Get(apirouter.RepoRefresh).Handler(trace.Route(handler(serveRepoRefresh(db))))
 
 	gh := webhooks.GitHubWebhook{
-		ExternalServices: database.ExternalServices(db),
+		ExternalServices: db.ExternalServices(),
 	}
 
 	webhookhandlers.Init(db, &gh)
