@@ -56,7 +56,7 @@
           }
         },
         "apiDocs": {
-          "description": "Enables API documentation.",
+          "description": "Deprecated.",
           "type": "boolean",
           "default": true,
           "!go": {
