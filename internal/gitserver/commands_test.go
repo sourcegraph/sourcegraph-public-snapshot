@@ -7,8 +7,10 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -292,4 +294,250 @@ index 51a59ef1c..493090958 100644
 			t.Errorf("expected DiffPath to return no results, got %v", hunks)
 		}
 	})
+}
+
+func TestRepository_BlameFile(t *testing.T) {
+	ClientMocks.LocalGitserver = true
+	defer ResetClientMocks()
+
+	ctx := context.Background()
+
+	gitCommands := []string{
+		"echo line1 > f",
+		"git add f",
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"echo line2 >> f",
+		"git add f",
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git mv f f2",
+		"echo line3 >> f2",
+		"git add f2",
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+	}
+	gitWantHunks := []*Hunk{
+		{
+			StartLine: 1, EndLine: 2, StartByte: 0, EndByte: 6, CommitID: "e6093374dcf5725d8517db0dccbbf69df65dbde0",
+			Message: "foo", Author: gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			Filename: "f",
+		},
+		{
+			StartLine: 2, EndLine: 3, StartByte: 6, EndByte: 12, CommitID: "fad406f4fe02c358a09df0d03ec7a36c2c8a20f1",
+			Message: "foo", Author: gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			Filename: "f",
+		},
+		{
+			StartLine: 3, EndLine: 4, StartByte: 12, EndByte: 18, CommitID: "311d75a2b414a77f5158a0ed73ec476f5469b286",
+			Message: "foo", Author: gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			Filename: "f2",
+		},
+	}
+	tests := map[string]struct {
+		repo api.RepoName
+		path string
+		opt  *BlameOptions
+
+		wantHunks []*Hunk
+	}{
+		"git cmd": {
+			repo: MakeGitRepository(t, gitCommands...),
+			path: "f2",
+			opt: &BlameOptions{
+				NewestCommit: "master",
+			},
+			wantHunks: gitWantHunks,
+		},
+	}
+
+	client := NewClient(database.NewMockDB())
+	for label, test := range tests {
+		newestCommitID, err := client.ResolveRevision(ctx, test.repo, string(test.opt.NewestCommit), ResolveRevisionOptions{})
+		if err != nil {
+			t.Errorf("%s: ResolveRevision(%q) on base: %s", label, test.opt.NewestCommit, err)
+			continue
+		}
+
+		test.opt.NewestCommit = newestCommitID
+		runBlameFileTest(ctx, t, test.repo, test.path, test.opt, nil, label, test.wantHunks)
+
+		checker := authz.NewMockSubRepoPermissionChecker()
+		ctx = actor.WithActor(ctx, &actor.Actor{
+			UID: 1,
+		})
+		// Sub-repo permissions
+		// Case: user has read access to file, doesn't filter anything
+		checker.EnabledFunc.SetDefaultHook(func() bool {
+			return true
+		})
+		checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
+			if content.Path == "f2" {
+				return authz.Read, nil
+			}
+			return authz.None, nil
+		})
+		runBlameFileTest(ctx, t, test.repo, test.path, test.opt, checker, label, test.wantHunks)
+
+		// Sub-repo permissions
+		// Case: user doesn't have access to the file, nothing returned.
+		checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
+			return authz.None, nil
+		})
+		runBlameFileTest(ctx, t, test.repo, test.path, test.opt, checker, label, nil)
+	}
+}
+
+func runBlameFileTest(ctx context.Context, t *testing.T, repo api.RepoName, path string, opt *BlameOptions,
+	checker authz.SubRepoPermissionChecker, label string, wantHunks []*Hunk) {
+	t.Helper()
+	hunks, err := NewClient(database.NewMockDB()).BlameFile(ctx, repo, path, opt, checker)
+	if err != nil {
+		t.Errorf("%s: BlameFile(%s, %+v): %s", label, path, opt, err)
+		return
+	}
+	if !reflect.DeepEqual(hunks, wantHunks) {
+		t.Errorf("%s: hunks != wantHunks\n\nhunks ==========\n%s\n\nwantHunks ==========\n%s", label, AsJSON(hunks), AsJSON(wantHunks))
+	}
+}
+
+func TestIsAbsoluteRevision(t *testing.T) {
+	yes := []string{"8cb03d28ad1c6a875f357c5d862237577b06e57c", "20697a062454c29d84e3f006b22eb029d730cd00"}
+	no := []string{"ref: refs/heads/appsinfra/SHEP-20-review", "master", "HEAD", "refs/heads/master", "20697a062454c29d84e3f006b22eb029d730cd0", "20697a062454c29d84e3f006b22eb029d730cd000", "  20697a062454c29d84e3f006b22eb029d730cd00  ", "20697a062454c29d84e3f006b22eb029d730cd0 "}
+	for _, s := range yes {
+		if !IsAbsoluteRevision(s) {
+			t.Errorf("%q should be an absolute revision", s)
+		}
+	}
+	for _, s := range no {
+		if IsAbsoluteRevision(s) {
+			t.Errorf("%q should not be an absolute revision", s)
+		}
+	}
+}
+
+func TestRepository_ResolveBranch(t *testing.T) {
+	ClientMocks.LocalGitserver = true
+	defer ResetClientMocks()
+
+	gitCommands := []string{
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+	}
+	tests := map[string]struct {
+		repo         api.RepoName
+		branch       string
+		wantCommitID api.CommitID
+	}{
+		"git cmd": {
+			repo:         MakeGitRepository(t, gitCommands...),
+			branch:       "master",
+			wantCommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8",
+		},
+	}
+
+	for label, test := range tests {
+		commitID, err := NewClient(database.NewMockDB()).ResolveRevision(context.Background(), test.repo, test.branch, ResolveRevisionOptions{})
+		if err != nil {
+			t.Errorf("%s: ResolveRevision: %s", label, err)
+			continue
+		}
+
+		if commitID != test.wantCommitID {
+			t.Errorf("%s: got commitID == %v, want %v", label, commitID, test.wantCommitID)
+		}
+	}
+}
+
+func TestRepository_ResolveBranch_error(t *testing.T) {
+	ClientMocks.LocalGitserver = true
+	defer ResetClientMocks()
+
+	gitCommands := []string{
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+	}
+	tests := map[string]struct {
+		repo    api.RepoName
+		branch  string
+		wantErr func(error) bool
+	}{
+		"git cmd": {
+			repo:    MakeGitRepository(t, gitCommands...),
+			branch:  "doesntexist",
+			wantErr: func(err error) bool { return errors.HasType(err, &gitdomain.RevisionNotFoundError{}) },
+		},
+	}
+
+	for label, test := range tests {
+		commitID, err := NewClient(database.NewMockDB()).ResolveRevision(context.Background(), test.repo, test.branch, ResolveRevisionOptions{})
+		if !test.wantErr(err) {
+			t.Errorf("%s: ResolveRevision: %s", label, err)
+			continue
+		}
+
+		if commitID != "" {
+			t.Errorf("%s: got commitID == %v, want empty", label, commitID)
+		}
+	}
+}
+
+func TestRepository_ResolveTag(t *testing.T) {
+	ClientMocks.LocalGitserver = true
+	defer ResetClientMocks()
+
+	gitCommands := []string{
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git tag t",
+	}
+	tests := map[string]struct {
+		repo         api.RepoName
+		tag          string
+		wantCommitID api.CommitID
+	}{
+		"git cmd": {
+			repo:         MakeGitRepository(t, gitCommands...),
+			tag:          "t",
+			wantCommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8",
+		},
+	}
+
+	for label, test := range tests {
+		commitID, err := NewClient(database.NewMockDB()).ResolveRevision(context.Background(), test.repo, test.tag, ResolveRevisionOptions{})
+		if err != nil {
+			t.Errorf("%s: ResolveRevision: %s", label, err)
+			continue
+		}
+
+		if commitID != test.wantCommitID {
+			t.Errorf("%s: got commitID == %v, want %v", label, commitID, test.wantCommitID)
+		}
+	}
+}
+
+func TestRepository_ResolveTag_error(t *testing.T) {
+	ClientMocks.LocalGitserver = true
+	defer ResetClientMocks()
+
+	gitCommands := []string{
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+	}
+	tests := map[string]struct {
+		repo    api.RepoName
+		tag     string
+		wantErr func(error) bool
+	}{
+		"git cmd": {
+			repo:    MakeGitRepository(t, gitCommands...),
+			tag:     "doesntexist",
+			wantErr: func(err error) bool { return errors.HasType(err, &gitdomain.RevisionNotFoundError{}) },
+		},
+	}
+
+	for label, test := range tests {
+		commitID, err := NewClient(database.NewMockDB()).ResolveRevision(context.Background(), test.repo, test.tag, ResolveRevisionOptions{})
+		if !test.wantErr(err) {
+			t.Errorf("%s: ResolveRevision: %s", label, err)
+			continue
+		}
+
+		if commitID != "" {
+			t.Errorf("%s: got commitID == %v, want empty", label, commitID)
+		}
+	}
 }

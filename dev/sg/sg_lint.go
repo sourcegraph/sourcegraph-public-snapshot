@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -13,9 +14,10 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/lint"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/lint/linters"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/dev/sg/linters"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -25,9 +27,9 @@ var lintGenerateAnnotations bool
 
 var lintCommand = &cli.Command{
 	Name:        "lint",
-	ArgsUsage:   "[target]",
-	Usage:       "Run all or specified linter on the codebase",
-	Description: `Run all or specified linter on the codebase and display failures, if any. To run all checks, don't provide an argument.`,
+	ArgsUsage:   "[targets...]",
+	Usage:       "Run all or specified linters on the codebase",
+	Description: `Run all or specified linters on the codebase and display failures, if any. To run all checks, don't provide an argument.`,
 	Category:    CategoryDev,
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
@@ -63,22 +65,22 @@ var lintCommand = &cli.Command{
 			for _, t := range targets {
 				runners, ok := allLintTargetsMap[t]
 				if !ok {
-					writeFailureLinef("unrecognized target %q provided", t)
+					std.Out.WriteFailuref("unrecognized target %q provided", t)
 					return flag.ErrHelp
 				}
 				fns = append(fns, runners...)
 			}
 		}
 
-		writeFingerPointingLinef("Running checks from targets: %s", strings.Join(targets, ", "))
-		return runCheckScriptsAndReport(cmd.Context, fns...)
+		std.Out.WriteNoticef("Running checks from targets: %s", strings.Join(targets, ", "))
+		return runCheckScriptsAndReport(cmd.Context, cmd.App.Writer, fns...)
 	},
 	Subcommands: lintTargets(linters.Targets).Commands(),
 }
 
 // runCheckScriptsAndReport concurrently runs all fns and report as each check finishes. Returns an error
 // if any of the fns fails.
-func runCheckScriptsAndReport(ctx context.Context, fns ...lint.Runner) error {
+func runCheckScriptsAndReport(ctx context.Context, dst io.Writer, fns ...lint.Runner) error {
 	_, err := root.RepositoryRoot()
 	if err != nil {
 		return err
@@ -92,7 +94,7 @@ func runCheckScriptsAndReport(ctx context.Context, fns ...lint.Runner) error {
 	repoState := &repo.State{Branch: branch}
 
 	// We need the Verbose flag to print above the pending indicator.
-	out := output.NewOutput(os.Stdout, output.OutputOpts{
+	out := output.NewOutput(dst, output.OutputOpts{
 		ForceColor: true,
 		ForceTTY:   true,
 		Verbose:    true,
@@ -103,7 +105,7 @@ func runCheckScriptsAndReport(ctx context.Context, fns ...lint.Runner) error {
 	start := time.Now()
 	var count int64
 	total := len(fns)
-	pending := out.Pending(output.Linef("", output.StylePending, "Running linters (done: 0/%d)", total))
+	pending := out.Pending(output.Styledf(output.StylePending, "Running linters (done: 0/%d)", total))
 	var wg sync.WaitGroup
 	reportsCh := make(chan *lint.Report)
 	wg.Add(total)
@@ -159,7 +161,11 @@ func printLintReport(pending output.Pending, start time.Time, report *lint.Repor
 		}
 		return
 	}
+
 	pending.VerboseLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, msg))
+	if verbose {
+		pending.Verbose(report.Summary())
+	}
 }
 
 type lintTargets []lint.Target
@@ -173,10 +179,11 @@ func (lt lintTargets) Commands() (cmds []*cli.Command) {
 			Usage: c.Help,
 			Action: func(cmd *cli.Context) error {
 				if cmd.NArg() > 0 {
-					writeFailureLinef("unrecognized argument %q provided", cmd.Args().First())
+					std.Out.WriteFailuref("unrecognized argument %q provided", cmd.Args().First())
 					return flag.ErrHelp
 				}
-				return runCheckScriptsAndReport(cmd.Context, c.Linters...)
+				std.Out.WriteNoticef("Running checks from target: %s", c.Name)
+				return runCheckScriptsAndReport(cmd.Context, cmd.App.Writer, c.Linters...)
 			},
 			// Completions to chain multiple commands
 			BashComplete: completeOptions(func() (options []string) {

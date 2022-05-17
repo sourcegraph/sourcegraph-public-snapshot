@@ -3,6 +3,7 @@ import { ReactElement, useMemo } from 'react'
 import { RenderTooltipParams } from '@visx/xychart/lib/components/Tooltip'
 
 import { isDefined } from '@sourcegraph/common'
+import { Typography } from '@sourcegraph/wildcard'
 
 import { LineChartSeriesWithData, Point } from '../../types'
 import { getLineStroke } from '../LineChartContent'
@@ -62,7 +63,7 @@ export function TooltipContent<Datum extends object>(props: TooltipContentProps<
 
     return (
         <>
-            <h3>{dateString}</h3>
+            <Typography.H3>{dateString}</Typography.H3>
 
             <ul className={styles.tooltipList}>
                 {lines.leftRemaining > 0 && <li className={styles.item}>... and {lines.leftRemaining} more</li>}

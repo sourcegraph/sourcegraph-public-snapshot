@@ -45,23 +45,14 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 	linterOps := operations.NewNamedSet("Linters and static analysis",
 		// lightweight check that works over a lot of stuff - we are okay with running
 		// these on all PRs
-		addPrettier,
-		addCheck)
+		addPrettier)
 	if diff.Has(changed.GraphQL) {
 		linterOps.Append(addGraphQLLint)
 	}
-	if diff.Has(changed.SVG) {
-		linterOps.Append(addSVGLint)
+	if targets := changed.GetLinterTargets(diff); len(targets) > 0 {
+		linterOps.Append(addSgLints(targets))
 	}
-	if diff.Has(changed.Client) {
-		linterOps.Append(addYarnDeduplicateLint)
-	}
-	if diff.Has(changed.Dockerfiles) {
-		linterOps.Append(addDockerfileLint)
-	}
-	if diff.Has(changed.Docs) {
-		linterOps.Append(addDocs)
-	}
+
 	ops.Merge(linterOps)
 
 	if diff.Has(changed.Client | changed.GraphQL) {
@@ -88,8 +79,7 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 		// If there are any Graphql changes, they are impacting the backend as well.
 		ops.Merge(operations.NewNamedSet("Go checks",
 			addGoTests,
-			addGoBuild,
-			addCustomGoChecks))
+			addGoBuild))
 	}
 
 	if diff.Has(changed.DatabaseSchema) {
@@ -109,6 +99,19 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 	return ops
 }
 
+// addSgLints runs linters for the given targets.
+func addSgLints(targets []string) func(pipeline *bk.Pipeline) {
+	cmd := "go run ./dev/sg lint -annotations " + strings.Join(targets, " ")
+
+	return func(pipeline *bk.Pipeline) {
+		pipeline.AddStep(":pineapple::lint-roller: Run sg lint",
+			withYarnCache(),
+			bk.AnnotatedCmd(cmd, bk.AnnotatedCmdOpts{
+				Annotations: &bk.AnnotationOpts{IncludeNames: true},
+			}))
+	}
+}
+
 // Run enterprise/dev/ci/scripts tests
 func addCIScriptsTests(pipeline *bk.Pipeline) {
 	testDir := "./enterprise/dev/ci/scripts/tests"
@@ -125,36 +128,12 @@ func addCIScriptsTests(pipeline *bk.Pipeline) {
 	}
 }
 
-// Verifies the docs formatting and builds the `docsite` command.
-func addDocs(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":memo: Check and build docsite",
-		bk.AnnotatedCmd("./dev/check/docsite.sh", bk.AnnotatedCmdOpts{
-			Annotations: &bk.AnnotationOpts{},
-		}))
-}
-
 // Adds the terraform scanner step.  This executes very quickly ~6s
 // func addTerraformScan(pipeline *bk.Pipeline) {
 //	pipeline.AddStep(":lock: Checkov Terraform scanning",
 //		bk.Cmd("dev/ci/ci-checkov.sh"),
 //		bk.SoftFail(222))
 //}
-
-// Adds the static check test step.
-func addCheck(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":clipboard: Misc linters",
-		withYarnCache(),
-		bk.AnnotatedCmd("go run ./dev/sg lint -annotations check-all-compat", bk.AnnotatedCmdOpts{
-			Annotations: &bk.AnnotationOpts{IncludeNames: true},
-		}))
-}
-
-// yarn ~41s + ~30s
-func addPrettier(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":lipstick: Prettier",
-		withYarnCache(),
-		bk.Cmd("dev/ci/yarn-run.sh format:check"))
-}
 
 // yarn ~41s + ~1s
 func addGraphQLLint(pipeline *bk.Pipeline) {
@@ -163,14 +142,11 @@ func addGraphQLLint(pipeline *bk.Pipeline) {
 		bk.Cmd("dev/ci/yarn-run.sh lint:graphql"))
 }
 
-func addSVGLint(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":lipstick: :compression: SVG lint",
-		bk.Cmd("dev/check/svgo.sh"))
-}
-
-func addYarnDeduplicateLint(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":lipstick: :yarn: Yarn deduplicate lint",
-		bk.Cmd("dev/check/yarn-deduplicate.sh"))
+// yarn ~41s + ~30s
+func addPrettier(pipeline *bk.Pipeline) {
+	pipeline.AddStep(":lipstick: Prettier",
+		withYarnCache(),
+		bk.Cmd("dev/ci/yarn-run.sh format:check"))
 }
 
 // Adds Typescript check.
@@ -449,22 +425,6 @@ func addGoBuild(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":go: Build",
 		bk.Cmd("./dev/ci/go-build.sh"),
 	)
-}
-
-// Add custom GO checks
-func addCustomGoChecks(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":one-does-not-simply: Custom Go checks",
-		bk.AnnotatedCmd("go run ./dev/sg lint -annotations go-custom", bk.AnnotatedCmdOpts{
-			Annotations: &bk.AnnotationOpts{},
-		}))
-}
-
-// Lints the Dockerfiles.
-func addDockerfileLint(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":docker: Docker linters",
-		bk.AnnotatedCmd("go run ./dev/sg lint -annotations docker", bk.AnnotatedCmdOpts{
-			Annotations: &bk.AnnotationOpts{IncludeNames: true},
-		}))
 }
 
 // Adds backend integration tests step.

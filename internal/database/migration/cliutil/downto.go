@@ -3,8 +3,6 @@ package cliutil
 import (
 	"flag"
 	"fmt"
-	"strconv"
-	"strings"
 
 	"github.com/urfave/cli/v2"
 
@@ -12,14 +10,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func DownTo(commandName string, factory RunnerFactory, out *output.Output, development bool) *cli.Command {
+func DownTo(commandName string, factory RunnerFactory, outFactory func() *output.Output, development bool) *cli.Command {
 	flags := []cli.Flag{
 		&cli.StringFlag{
 			Name:     "db",
 			Usage:    "The target `schema` to modify.",
 			Required: true,
 		},
-		&cli.StringFlag{
+		&cli.StringSliceFlag{
 			Name:     "target",
 			Usage:    `The migration to apply. Comma-separated values are accepted.`,
 			Required: true,
@@ -37,32 +35,27 @@ func DownTo(commandName string, factory RunnerFactory, out *output.Output, devel
 	}
 
 	action := func(cmd *cli.Context) error {
+		out := outFactory()
+
 		if cmd.NArg() != 0 {
 			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments"))
 			return flag.ErrHelp
 		}
 
 		var (
-			schemaNameFlag           = cmd.String("db")
+			schemaName               = cmd.String("db")
 			unprivilegedOnlyFlag     = cmd.Bool("unprivileged-only")
 			ignoreSingleDirtyLogFlag = cmd.Bool("ignore-single-dirty-log")
-			targetsFlag              = cmd.String("target")
+			targets                  = cmd.StringSlice("target")
 		)
 
-		targets := strings.Split(targetsFlag, ",")
-
-		versions := make([]int, 0, len(targets))
-		for _, target := range targets {
-			version, err := strconv.Atoi(target)
-			if err != nil {
-				return err
-			}
-
-			versions = append(versions, version)
+		versions, err := parseTargets(targets, out)
+		if err != nil {
+			return err
 		}
 
 		ctx := cmd.Context
-		r, err := factory(ctx, []string{schemaNameFlag})
+		r, err := factory(ctx, []string{schemaName})
 		if err != nil {
 			return err
 		}
@@ -70,7 +63,7 @@ func DownTo(commandName string, factory RunnerFactory, out *output.Output, devel
 		return r.Run(ctx, runner.Options{
 			Operations: []runner.MigrationOperation{
 				{
-					SchemaName:     schemaNameFlag,
+					SchemaName:     schemaName,
 					Type:           runner.MigrationOperationTypeTargetedDown,
 					TargetVersions: versions,
 				},

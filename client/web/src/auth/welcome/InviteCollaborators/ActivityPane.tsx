@@ -4,7 +4,7 @@ import { ApolloError } from '@apollo/client'
 import classNames from 'classnames'
 
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { Link, Alert } from '@sourcegraph/wildcard'
+import { Link, Alert, Typography } from '@sourcegraph/wildcard'
 
 import { PageRoutes } from '../../../routes.constants'
 import { eventLogger } from '../../../tracking/eventLogger'
@@ -76,7 +76,7 @@ export const ActivityPane: React.FunctionComponent<React.PropsWithChildren<Props
     return (
         <div className={classNames(className, 'mx-2')}>
             <div className={styles.titleDescription}>
-                <h3>Fetching repositories...</h3>
+                <Typography.H3>Fetching repositories...</Typography.H3>
                 <p className="text-muted mb-4">
                     We’re cloning your repos to Sourcegraph. In just a few moments, you can make your first search!
                 </p>
@@ -84,7 +84,7 @@ export const ActivityPane: React.FunctionComponent<React.PropsWithChildren<Props
             <div className="border overflow-hidden rounded">
                 <header>
                     <div className="py-4 px-3 d-flex justify-content-between align-items-center">
-                        <h4 className="m-0">Activity log</h4>
+                        <Typography.H4 className="m-0">Activity log</Typography.H4>
                         <small className="m-0 text-muted">{statusSummary}</small>
                     </div>
                 </header>

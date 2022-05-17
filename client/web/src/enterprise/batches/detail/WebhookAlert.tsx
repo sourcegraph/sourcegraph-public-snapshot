@@ -3,7 +3,7 @@ import React, { useCallback, useState } from 'react'
 import classNames from 'classnames'
 
 import { pluralize } from '@sourcegraph/common'
-import { Button, useObservable, Link } from '@sourcegraph/wildcard'
+import { Button, useObservable, Link, Typography } from '@sourcegraph/wildcard'
 
 import { authenticatedUser } from '../../../auth'
 import { DismissibleAlert } from '../../../components/DismissibleAlert'
@@ -53,7 +53,7 @@ export const WebhookAlert: React.FunctionComponent<React.PropsWithChildren<Props
     return (
         <DismissibleAlert variant="warning" partialStorageKey={id}>
             <div>
-                <h4>Changeset information may not be up to date</h4>
+                <Typography.H4>Changeset information may not be up to date</Typography.H4>
                 <p className={styles.blurb}>
                     Sourcegraph will poll for updates because{' '}
                     <Button className={classNames(styles.openLink, 'p-0')} onClick={toggleOpen} variant="link">

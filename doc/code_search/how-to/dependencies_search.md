@@ -29,20 +29,29 @@ Search only Go dependencies:
 r:deps(^github\.com/sourcegraph/sourcegraph$@3.37) r:^go fmt.Println
 ```
 
+Search only Python dependencies:
+
+```sgquery
+r:deps(^github\.com/firecracker-microvm/firecracker$) r:^python
+```
+
 ### Compatibility
 
 The following table outlines the kinds of dependency repositories that dependency search supports and how it finds those dependencies in your repositories.
 
-Kind                            | How                       | Direct | Transitive
-------------------------------- |-------------------------- |------- | ----------
-[npm](../../integration/npm.md) | `package-lock.json`       | ✅     | ✅
-[npm](../../integration/npm.md) | lsif-typescript uploads   | ✅     | ✅
-[npm](../../integration/npm.md) | `yarn.lock`               | ✅     | ✅
-[Go](../../integration/go.md)   | `go.mod`                  | ✅     | ✅ with Go >= 1.17 go.mod files
-[Go](../../integration/go.md)   | lsif-go uploads           | ❌     | ❌
-[JVM](../../integration/jvm.md) | `gradle.lockfile`         | ❌     | ❌
-[JVM](../../integration/jvm.md) | `pom.xml`                 | ❌     | ❌
-Python                          | `poetry.lock`             | ❌     | ❌
+Kind                                  | How                       | Direct | Transitive
+-------------------------------       |-------------------------- |------- | ----------
+[npm](../../integration/npm.md)       | lsif-typescript uploads   | ✅     | ✅
+[npm](../../integration/npm.md)       | `package-lock.json`       | ✅     | ✅
+[npm](../../integration/npm.md)       | `yarn.lock`               | ✅     | ✅
+[Python](../../integration/python.md) | lsif-python uploads       | ❌     | ❌
+[Python](../../integration/python.md) | `poetry.lock`             | ✅     | ✅
+[Python](../../integration/python.md) | `Pipfile.lock`            | ✅     | ✅
+[Go](../../integration/go.md)         | lsif-go uploads           | ❌     | ❌
+[Go](../../integration/go.md)         | `go.mod`                  | ✅     | ✅ with Go >= 1.17 go.mod files
+[JVM](../../integration/jvm.md)       | lsif-java uploads         | ❌     | ❌
+[JVM](../../integration/jvm.md)       | `gradle.lockfile`         | ❌     | ❌
+[JVM](../../integration/jvm.md)       | `pom.xml`                 | ❌     | ❌
 
 ### Reference
 

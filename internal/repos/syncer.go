@@ -870,6 +870,10 @@ func syncErrorReason(err error) string {
 	case strings.Contains(err.Error(), "expected path in npm/(scope/)?name"):
 		// This is a known issue which we can filter out for now
 		return "invalid_npm_path"
+	case strings.Contains(err.Error(), "internal rate limit exceeded"):
+		// We want to identify these as it's not an issue communicating with the code
+		// host and is most likely caused by temporary traffic spikes.
+		return "internal_rate_limit"
 	default:
 		return "unknown"
 	}

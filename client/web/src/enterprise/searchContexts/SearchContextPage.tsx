@@ -15,7 +15,17 @@ import { Scalars, SearchPatternType } from '@sourcegraph/shared/src/graphql-oper
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { ISearchContextRepositoryRevisions } from '@sourcegraph/shared/src/schema'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Badge, Container, PageHeader, LoadingSpinner, useObservable, Button, Link, Alert } from '@sourcegraph/wildcard'
+import {
+    Badge,
+    Container,
+    PageHeader,
+    LoadingSpinner,
+    useObservable,
+    Button,
+    Link,
+    Alert,
+    Typography,
+} from '@sourcegraph/wildcard'
 
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
@@ -88,12 +98,12 @@ const SearchContextRepositories: React.FunctionComponent<
         <>
             <div className="d-flex justify-content-between align-items-center mb-3">
                 {filteredRepositories.length > 0 && (
-                    <h3>
+                    <Typography.H3>
                         <span>
                             {filteredRepositories.length}{' '}
                             {pluralize('repository', filteredRepositories.length, 'repositories')}
                         </span>
-                    </h3>
+                    </Typography.H3>
                 )}
                 {repositories.length > 0 && (
                     <input

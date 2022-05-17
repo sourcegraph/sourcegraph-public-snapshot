@@ -9,7 +9,7 @@ import { tap } from 'rxjs/operators'
 import { isErrorLike, ErrorLike } from '@sourcegraph/common'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, Button, Icon } from '@sourcegraph/wildcard'
+import { Link, Button, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { ListExternalServiceFields, Scalars, ExternalServicesResult } from '../../graphql-operations'
@@ -88,7 +88,7 @@ export const ExternalServicesPage: React.FunctionComponent<React.PropsWithChildr
         <div className="site-admin-external-services-page">
             <PageTitle title="Manage code hosts" />
             <div className="d-flex justify-content-between align-items-center mb-3">
-                <h2 className="mb-0">Manage code hosts</h2>
+                <Typography.H2 className="mb-0">Manage code hosts</Typography.H2>
                 {!isManagingOtherUser && (
                     <Button
                         className="test-goto-add-external-service-page"

@@ -13,13 +13,13 @@ import { Icon } from '@sourcegraph/wildcard'
 import { TrimmedCodeLineWithHighlights } from './TrimmedCodeLineWithHighlights'
 import { getIdForLine } from './utils'
 
+import styles from './FileSearchResult.module.scss'
+
 interface Props {
     selectResultFromId: (id: string) => void
     selectedResult: null | string
     result: ContentMatch
 }
-
-import styles from './FileSearchResult.module.scss'
 
 export const FileSearchResult: React.FunctionComponent<Props> = ({
     result,
@@ -46,7 +46,7 @@ export const FileSearchResult: React.FunctionComponent<Props> = ({
                 <div className={styles.lineCode}>
                     <TrimmedCodeLineWithHighlights line={line} />
                 </div>
-                <div className={classNames(styles.lineLineNumber, 'text-muted')}>{line.lineNumber}</div>
+                <div className={classNames(styles.lineLineNumber, 'text-muted')}>{line.lineNumber + 1}</div>
             </div>
         )
     })
@@ -59,7 +59,7 @@ export const FileSearchResult: React.FunctionComponent<Props> = ({
         // eslint-disable-next-line jsx-a11y/no-static-element-interactions
         <div className={styles.header} onMouseDown={preventAll}>
             <div className={classNames(styles.headerTitle)} data-testid="result-container-header">
-                <Icon role="img" title="File" className="flex-shrink-0" as={FileDocumentIcon} />
+                <Icon role="img" aria-label="File" className="flex-shrink-0" as={FileDocumentIcon} />
                 <div className={classNames('mx-1', styles.headerDivider)} />
                 <RepoIcon repoName={result.repository} className="text-muted flex-shrink-0" />
                 <RepoFileLink

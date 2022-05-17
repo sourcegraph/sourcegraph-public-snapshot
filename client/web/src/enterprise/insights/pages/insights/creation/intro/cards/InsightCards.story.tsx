@@ -1,5 +1,7 @@
 import { Meta, Story } from '@storybook/react'
 
+import { Typography } from '@sourcegraph/wildcard'
+
 import { WebStory } from '../../../../../../../components/WebStory'
 
 import { CaptureGroupInsightCard, LangStatsInsightCard, SearchInsightCard } from './InsightCards'
@@ -18,15 +20,15 @@ export default {
 export const InsightCards: Story = () => (
     <section className="row">
         <article className="col-sm-4">
-            <h2>Search Insight Card</h2>
+            <Typography.H2>Search Insight Card</Typography.H2>
             <SearchInsightCard />
         </article>
         <article className="col-sm-4">
-            <h2>Language Stats Insight Card</h2>
+            <Typography.H2>Language Stats Insight Card</Typography.H2>
             <LangStatsInsightCard />
         </article>
         <article className="col-sm-4">
-            <h2>Capture Group Insight Card</h2>
+            <Typography.H2>Capture Group Insight Card</Typography.H2>
             <CaptureGroupInsightCard />
         </article>
     </section>

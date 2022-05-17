@@ -8,7 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -59,7 +59,7 @@ func Revert(databases []db.Database, commit string) error {
 			}
 		}
 
-		block := stdout.Out.Block(output.Linef("", output.StyleBold, "Migration files redacted"))
+		block := std.Out.Block(output.Styled(output.StyleBold, "Migration files redacted"))
 		for _, path := range upPaths {
 			block.Writef("Up query file: %s", path)
 		}
