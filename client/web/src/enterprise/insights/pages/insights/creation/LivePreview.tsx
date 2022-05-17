@@ -3,7 +3,7 @@ import React, { useContext, useMemo } from 'react'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { useDeepMemo } from '@sourcegraph/wildcard'
 
-import { SeriesBasedChartTypes, SeriesChart } from '../../../../../components'
+import { SeriesBasedChartTypes, SeriesChart } from '../../../components'
 import {
     getSanitizedRepositories,
     useLivePreview,
@@ -16,39 +16,48 @@ import {
     LivePreviewBanner,
     LivePreviewLegend,
     SERIES_MOCK_CHART,
-} from '../../../../../components/creation-ui-kit'
-import { CodeInsightsBackendContext, SeriesChartContent } from '../../../../../core'
-import { InsightStep } from '../../search-insight'
-import { getSanitizedCaptureQuery } from '../utils/capture-group-insight-sanitizer'
+} from '../../../components/creation-ui-kit'
+import { CodeInsightsBackendContext, SeriesChartContent } from '../../../core'
 
-interface CaptureGroupCreationLivePreviewProps {
+import { getSanitizedCaptureQuery } from './capture-group/utils/capture-group-insight-sanitizer'
+import { InsightStep } from './search-insight'
+
+interface InsightLivePreviewProps {
     disabled: boolean
     repositories: string
-    query: string
     stepValue: string
     step: InsightStep
     isAllReposMode: boolean
     className?: string
+    series: SeriesLivePreview[]
 }
 
-export const CaptureGroupCreationLivePreview: React.FunctionComponent<
-    React.PropsWithChildren<CaptureGroupCreationLivePreviewProps>
-> = props => {
-    const { disabled, repositories, query, stepValue, step, isAllReposMode, className } = props
+interface SeriesLivePreview {
+    query: string
+    label: string
+    generatedFromCaptureGroup: boolean
+    stroke: string
+}
+
+export const InsightLivePreview: React.FunctionComponent<React.PropsWithChildren<InsightLivePreviewProps>> = props => {
+    const { disabled, repositories, stepValue, step, series, isAllReposMode, className } = props
     const { getInsightPreviewContent: getLivePreviewContent } = useContext(CodeInsightsBackendContext)
+
+    const sanitizedSeries = series.map(srs => {
+        const sanitizer = srs.generatedFromCaptureGroup ? getSanitizedCaptureQuery : (query: string) => query
+        return {
+            query: sanitizer(srs.query),
+            generatedFromCaptureGroup: srs.generatedFromCaptureGroup,
+            label: srs.label,
+            stroke: srs.stroke,
+        }
+    })
 
     const settings = useDeepMemo({
         disabled,
         repositories: getSanitizedRepositories(repositories),
         step: { [step]: stepValue },
-        series: [
-            {
-                query: getSanitizedCaptureQuery(query.trim()),
-                label: '',
-                generatedFromCaptureGroup: true,
-                stroke: '',
-            },
-        ],
+        series: sanitizedSeries,
     })
 
     const getLivePreview = useMemo(
