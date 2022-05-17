@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go/log"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -16,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -159,8 +161,9 @@ type StructuralSearchJob struct {
 }
 
 func (s *StructuralSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
-	_, ctx, stream, finish := job.StartSpan(ctx, stream, s)
+	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
+	tr.TagFields(trace.LazyFields(s.Tags))
 
 	repos := &searchrepos.Resolver{DB: clients.DB, Opts: s.RepoOpts}
 	return nil, repos.Paginate(ctx, func(page *searchrepos.Resolved) error {
@@ -186,4 +189,18 @@ func (s *StructuralSearchJob) Run(ctx context.Context, clients job.RuntimeClient
 
 func (*StructuralSearchJob) Name() string {
 	return "StructuralSearchJob"
+}
+
+func (s *StructuralSearchJob) Tags() []log.Field {
+	return []log.Field{
+		trace.Stringer("query", s.ZoektArgs.Query),
+		log.String("type", string(s.ZoektArgs.Typ)),
+		log.Int32("fileMatchLimit", s.ZoektArgs.FileMatchLimit),
+		trace.Printf("select", "%q", s.ZoektArgs.Select),
+		trace.Stringer("patternInfo", s.SearcherArgs.PatternInfo),
+		log.Bool("useFullDeadline", s.SearcherArgs.UseFullDeadline),
+		log.String("useIndex", string(s.UseIndex)),
+		log.Bool("containsRefGlobs", s.ContainsRefGlobs),
+		trace.Stringer("repoOpts", &s.RepoOpts),
+	}
 }
