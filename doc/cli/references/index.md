@@ -6,6 +6,7 @@
 * [`api`](api.md)
 * [`batch`](batch/index.md)
 * [`config`](config/index.md)
+* [`debug`](debug.md)
 * [`extensions`](extensions/index.md)
 * [`extsvc`](extsvc/index.md)
 * [`login`](login.md)
