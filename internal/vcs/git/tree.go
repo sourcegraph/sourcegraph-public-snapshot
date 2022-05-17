@@ -2,12 +2,9 @@ package git
 
 import (
 	"context"
-	"fmt"
 	"io/fs"
 	"sort"
 	"strings"
-
-	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -16,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Stat returns a FileInfo describing the named file at commit.
@@ -42,73 +38,6 @@ func Stat(ctx context.Context, db database.DB, checker authz.SubRepoPermissionCh
 	}
 
 	return fi, nil
-}
-
-// LsFiles returns the output of `git ls-files`
-func LsFiles(ctx context.Context, db database.DB, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pathspecs ...gitserver.Pathspec) ([]string, error) {
-	if Mocks.LsFiles != nil {
-		return Mocks.LsFiles(repo, commit)
-	}
-	args := []string{
-		"ls-files",
-		"-z",
-		"--with-tree",
-		string(commit),
-	}
-
-	if len(pathspecs) > 0 {
-		args = append(args, "--")
-		for _, pathspec := range pathspecs {
-			args = append(args, string(pathspec))
-		}
-	}
-
-	cmd := gitserver.NewClient(db).GitCommand(repo, args...)
-	out, err := cmd.CombinedOutput(ctx)
-	if err != nil {
-		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
-	}
-
-	files := strings.Split(string(out), "\x00")
-	// Drop trailing empty string
-	if len(files) > 0 && files[len(files)-1] == "" {
-		files = files[:len(files)-1]
-	}
-	return filterPaths(ctx, repo, checker, files)
-}
-
-// ListFiles returns a list of root-relative file paths matching the given
-// pattern in a particular commit of a repository.
-func ListFiles(ctx context.Context, db database.DB, repo api.RepoName, commit api.CommitID, pattern *regexp.Regexp, checker authz.SubRepoPermissionChecker) (_ []string, err error) {
-	cmd := gitserver.NewClient(db).GitCommand(repo, "ls-tree", "--name-only", "-r", string(commit), "--")
-
-	out, err := cmd.CombinedOutput(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	var matching []string
-	for _, path := range strings.Split(string(out), "\n") {
-		if pattern.MatchString(path) {
-			matching = append(matching, path)
-		}
-	}
-
-	return filterPaths(ctx, repo, checker, matching)
-}
-
-// 🚨 SECURITY: All git methods that deal with file or path access need to have
-// sub-repo permissions applied
-func filterPaths(ctx context.Context, repo api.RepoName, checker authz.SubRepoPermissionChecker, paths []string) ([]string, error) {
-	if !authz.SubRepoEnabled(checker) {
-		return paths, nil
-	}
-	a := actor.FromContext(ctx)
-	filtered, err := authz.FilterActorPaths(ctx, checker, a, repo, paths)
-	if err != nil {
-		return nil, errors.Wrap(err, "filtering paths")
-	}
-	return filtered, nil
 }
 
 // ListDirectoryChildren fetches the list of children under the given directory
