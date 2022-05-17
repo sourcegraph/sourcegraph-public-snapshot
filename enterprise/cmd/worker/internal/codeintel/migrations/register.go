@@ -1,7 +1,7 @@
 package migrations
 
 import (
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
 	dbmigrations "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore/migration"
 	lsifmigrations "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore/migration"
 	"github.com/sourcegraph/sourcegraph/internal/conf"

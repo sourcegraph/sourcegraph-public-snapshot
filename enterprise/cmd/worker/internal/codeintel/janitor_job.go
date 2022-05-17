@@ -7,6 +7,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/janitor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/executorqueue"
 	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
@@ -39,22 +40,22 @@ func (j *janitorJob) Routines(ctx context.Context, logger log.Logger) ([]gorouti
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	dbStore, err := InitDBStore()
+	dbStore, err := codeintel.InitDBStore()
 	if err != nil {
 		return nil, err
 	}
 
-	lsifStore, err := InitLSIFStore()
+	lsifStore, err := codeintel.InitLSIFStore()
 	if err != nil {
 		return nil, err
 	}
 
-	dependencyIndexingStore, err := InitDependencySyncingStore()
+	dependencyIndexingStore, err := codeintel.InitDependencySyncingStore()
 	if err != nil {
 		return nil, err
 	}
 
-	gitserverClient, err := InitGitserverClient()
+	gitserverClient, err := codeintel.InitGitserverClient()
 	if err != nil {
 		return nil, err
 	}
