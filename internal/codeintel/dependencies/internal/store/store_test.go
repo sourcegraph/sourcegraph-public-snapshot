@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
@@ -27,7 +28,7 @@ func TestPreciseDependenciesAndDependents(t *testing.T) {
 
 	ctx := context.Background()
 	db := database.NewDB(dbtest.NewDB(t))
-	store := New(db, nil)
+	store := New(db, &observation.TestContext)
 
 	// Note: repo identifiers match the name due to insertion order
 	for _, repo := range []string{"repo-1", "repo-2", "repo-3", "repo-4", "repo-5"} {
@@ -172,7 +173,7 @@ func TestLockfileDependencies(t *testing.T) {
 
 	ctx := context.Background()
 	db := database.NewDB(dbtest.NewDB(t))
-	store := New(db, nil)
+	store := New(db, &observation.TestContext)
 
 	if _, err := db.ExecContext(ctx, `INSERT INTO repo (name) VALUES ('foo')`); err != nil {
 		t.Fatalf(err.Error())
@@ -236,7 +237,7 @@ func TestUpsertDependencyRepo(t *testing.T) {
 
 	ctx := context.Background()
 	db := database.NewDB(dbtest.NewDB(t))
-	store := New(db, nil)
+	store := New(db, &observation.TestContext)
 
 	batches := [][]shared.Repo{
 		{
@@ -293,7 +294,7 @@ func TestDeleteDependencyReposByID(t *testing.T) {
 
 	ctx := context.Background()
 	db := database.NewDB(dbtest.NewDB(t))
-	store := New(db, nil)
+	store := New(db, &observation.TestContext)
 
 	repos := []shared.Repo{
 		// Test same-set flushes
@@ -333,7 +334,7 @@ func TestSelectRepoRevisionsToResolve(t *testing.T) {
 
 	ctx := context.Background()
 	db := database.NewDB(dbtest.NewDB(t))
-	store := New(db, nil)
+	store := New(db, &observation.TestContext)
 
 	if _, err := db.ExecContext(ctx, `INSERT INTO repo (name) VALUES ('repo-1')`); err != nil {
 		t.Fatalf(err.Error())
@@ -420,7 +421,7 @@ func TestUpdateResolvedRevisions(t *testing.T) {
 
 	ctx := context.Background()
 	db := database.NewDB(dbtest.NewDB(t))
-	store := New(db, nil)
+	store := New(db, &observation.TestContext)
 
 	for _, repo := range []string{"repo-1", "repo-2", "repo-3", "pkg-1", "pkg-2", "pkg-3", "pkg-4"} {
 		if err := store.db.Exec(ctx, sqlf.Sprintf(`INSERT INTO repo (name) VALUES (%s)`, repo)); err != nil {
@@ -478,7 +479,7 @@ func TestLockfileDependents(t *testing.T) {
 
 	ctx := context.Background()
 	db := database.NewDB(dbtest.NewDB(t))
-	store := New(db, nil)
+	store := New(db, &observation.TestContext)
 
 	for _, repo := range []string{"repo-1", "repo-2", "repo-3", "pkg-1", "pkg-2", "pkg-3", "pkg-4"} {
 		if err := store.db.Exec(ctx, sqlf.Sprintf(`INSERT INTO repo (name) VALUES (%s)`, repo)); err != nil {
