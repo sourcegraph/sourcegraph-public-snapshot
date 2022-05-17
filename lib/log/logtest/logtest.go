@@ -45,7 +45,7 @@ func InitWithLevel(_ *testing.M, level log.Level) {
 
 func initGlobal(level zapcore.Level) {
 	// use an empty resource, we don't log output Resource in dev mode anyway
-	globallogger.Init(otfields.Resource{}, level, encoders.OutputConsole, true)
+	globallogger.Init(otfields.Resource{}, level, encoders.OutputConsole, true, nil)
 }
 
 // configurableAdapter exposes internal APIs on zapAdapter.

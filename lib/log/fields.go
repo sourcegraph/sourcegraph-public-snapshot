@@ -75,5 +75,5 @@ func NamedError(key string, err error) Field {
 	if err == nil {
 		return String(key, "<nil>")
 	}
-	return String(key, err.Error())
+	return zap.NamedError(key, &encoders.ErrorEncoder{Source: err})
 }
