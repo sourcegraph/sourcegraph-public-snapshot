@@ -3,6 +3,7 @@ local languages = {
     "go",
     "java",
     "rust",
+    "test",
     "typescript",
 }
 

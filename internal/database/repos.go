@@ -176,7 +176,7 @@ func logPrivateRepoAccessGranted(ctx context.Context, db dbutil.DB, ids []api.Re
 		event.AnonymousUserID = "internal"
 	}
 
-	SecurityEventLogs(db).LogEvent(ctx, event)
+	NewDB(db).SecurityEventLogs().LogEvent(ctx, event)
 }
 
 // GetByName returns the repository with the given nameOrUri from the
@@ -262,6 +262,11 @@ func (s *repoStore) GetByIDs(ctx context.Context, ids ...api.RepoID) (_ []*types
 		tr.Finish()
 	}()
 
+	// listRepos will return a list of all repos if we pass in an empty ID list,
+	// so it is better to just return here rather than leak repo info.
+	if len(ids) == 0 {
+		return []*types.Repo{}, nil
+	}
 	return s.listRepos(ctx, tr, ReposListOptions{IDs: ids})
 }
 

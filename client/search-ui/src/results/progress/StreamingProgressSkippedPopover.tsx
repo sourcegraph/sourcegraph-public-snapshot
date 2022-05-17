@@ -144,14 +144,14 @@ export const StreamingProgressSkippedPopover: React.FunctionComponent<
                     <div className="mb-2 mt-3">Search again:</div>
                     <div className="form-check">
                         {sortedSkippedItems.map(
-                            skipped =>
+                            (skipped, index) =>
                                 skipped.suggested && (
                                     <Checkbox
                                         key={skipped.suggested.queryExpression}
                                         value={skipped.suggested.queryExpression}
                                         onChange={checkboxHandler}
-                                        data-testid="streaming-progress-skipped-suggest-check"
-                                        id="streaming-progress-skipped-suggest-check"
+                                        data-testid={`streaming-progress-skipped-suggest-check-${index}`}
+                                        id={`streaming-progress-skipped-suggest-check-${index}`}
                                         wrapperClassName="mb-1 d-block"
                                         label={
                                             <>

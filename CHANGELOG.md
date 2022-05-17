@@ -17,6 +17,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Code Insights: Fixed incorrect Line Chart size calculation in FireFox
 - The Grafana dashboard now has a global container resource usage view to help site-admin quickly identify potential scaling issues. [#34808](https://github.com/sourcegraph/sourcegraph/pull/34808)
+- Deployment: Nginx ingress controller updated to v1.2.0
 
 ### Added
 
@@ -27,6 +28,8 @@ All notable changes to Sourcegraph are documented in this file.
 - GraphQL API: Added support for async external service deletion. This should be used to delete an external service which cannot be deleted within 75 seconds timeout due to a large number of repos. Usage: add `async` boolean field to `deleteExternalService` mutation. Example: `mutation deleteExternalService(externalService: "id", async: true) { alwaysNil }`
 - [search.largeFiles](https://docs.sourcegraph.com/admin/config/site_config#search-largeFiles) now supports recursive globs. For example it is now possible to specify a pattern like `**/*.lock` to match a lock file anywhere in a repository. [#35411](https://github.com/sourcegraph/sourcegraph/pull/35411)
 - Permissions: The `setRepositoryPermissionsUnrestricted` mutation was added, which allows explicity marking a repo as available to all Sourcegraph users. [#35378](https://github.com/sourcegraph/sourcegraph/pull/35378)
+- The `repo:deps(...)` predicate can now search through the [Python dependencies of your repositories](https://docs.sourcegraph.com/code_search/how-to/dependencies_search). [#32659](https://github.com/sourcegraph/sourcegraph/issues/32659)
+- Batch Changes are now supported on [Bitbucket Cloud](https://bitbucket.org/). [#24199](https://github.com/sourcegraph/sourcegraph/issues/24199)
 
 ### Changed
 
@@ -45,6 +48,8 @@ All notable changes to Sourcegraph are documented in this file.
 - Carets in textareas in Firefox are now visible. [#34888](https://github.com/sourcegraph/sourcegraph/pull/34888)
 - Changesets to GitHub code hosts could fail with a confusing, non actionable error message. [#35048](https://github.com/sourcegraph/sourcegraph/pull/35048)
 - An issue causing search expressions to not work in conjunction with `type:symbol`. [#35126](https://github.com/sourcegraph/sourcegraph/pull/35126)
+- A non-descriptive error message that would be returned when using `on.repository` if it is not a valid repository path [#35023](https://github.com/sourcegraph/sourcegraph/pull/35023)
+- Reduced database load when viewing or previewing a batch change. [#35501](https://github.com/sourcegraph/sourcegraph/pull/35501)
 
 ### Removed
 
@@ -66,6 +71,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Added support for LSIF upload authentication against GitLab.com on Sourcegraph Cloud. [#33254](https://github.com/sourcegraph/sourcegraph/pull/33254)
 - Add "getting started/quick start checklist for authenticated users" [#32882](https://github.com/sourcegraph/sourcegraph/pull/32882)
 - A redesigned repository page is now available under the `new-repo-page` feature flag. [#33319](https://github.com/sourcegraph/sourcegraph/pull/33319)
+- Pings now include notebooks usage metrics. [#30087](https://github.com/sourcegraph/sourcegraph/issues/30087)
 - Notebooks are now enabled by default. [#33706](https://github.com/sourcegraph/sourcegraph/pull/33706)
 - The Code Insights GraphQL API now accepts Search Contexts as a filter and will extract the expressions embedded the `repo` and `-repo` search query fields from the contexts to apply them as filters on the insight. [#33866](https://github.com/sourcegraph/sourcegraph/pull/33866)
 - The Code Insights commit indexer can now index commits in smaller batches. Set the number of days per batch in the site setting `insights.commit.indexer.windowDuration`. A value of 0 (default) will disable batching. [#33666](https://github.com/sourcegraph/sourcegraph/pull/33666)

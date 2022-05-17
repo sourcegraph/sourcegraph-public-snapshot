@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
@@ -125,6 +126,27 @@ func (s *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]ty
 		return nil, err
 	}
 
+	if !enablePreciseQueries {
+		return dependencyRevs, nil
+	}
+
+	for _, repoCommit := range repoCommits {
+		// TODO - batch these requests in the store layer
+		preciseDeps, err := s.dependenciesStore.PreciseDependencies(ctx, string(repoCommit.Repo), repoCommit.ResolvedCommit)
+		if err != nil {
+			return nil, errors.Wrap(err, "store.PreciseDependencies")
+		}
+
+		for repoName, commits := range preciseDeps {
+			if _, ok := dependencyRevs[repoName]; !ok {
+				dependencyRevs[repoName] = types.RevSpecSet{}
+			}
+			for commit := range commits {
+				dependencyRevs[repoName][commit] = struct{}{}
+			}
+		}
+	}
+
 	return dependencyRevs, nil
 }
 
@@ -175,6 +197,13 @@ func (s *Service) resolveRepoCommits(ctx context.Context, repoRevs map[api.RepoN
 
 // lockfileDependencies returns a flattened list of package dependencies for every repo-commit pair.
 func (s *Service) lockfileDependencies(ctx context.Context, repoCommits []repoCommitResolvedCommit) (deps []shared.PackageDependency, _ error) {
+	// Do not destroy the caller's slice. The filtering/fallback mechanism used here is strictly an
+	// implementation detail and its semantics should not leak out of this function. We make a copy
+	// of the incoming slice here so we can manipulate a shallow copy.
+	repoCommitsCopy := make([]repoCommitResolvedCommit, len(repoCommits))
+	copy(repoCommitsCopy, repoCommits)
+	repoCommits = repoCommitsCopy
+
 	// resolverFunc describes internal functions that perform bulk queries to gather the dependencies of
 	// some portion of the input. It is expected that if there are any unqueried repo-commit pairs remain
 	// that they are moved to the front of the given slice, and the number of unqueried elements returned.
@@ -333,9 +362,54 @@ func (s *Service) sync(ctx context.Context, repos []api.RepoName) error {
 
 // Dependents resolves the (transitive) inverse dependencies for a set of repository and revisions.
 // Both the input repoRevs and the output dependencyRevs are a map from repository names to revspecs.
-func (s *Service) Dependents(ctx context.Context, repoRevs map[api.RepoName]types.RevSpecSet) (dependencyRevs map[api.RepoName]types.RevSpecSet, err error) {
-	// To be implemented after #31643
-	return nil, errors.New("unimplemented: dependencies.Dependents")
+func (s *Service) Dependents(ctx context.Context, repoRevs map[api.RepoName]types.RevSpecSet) (dependentsRevs map[api.RepoName]types.RevSpecSet, err error) {
+	// Resolve the revhashes for the source repo-commit pairs
+	repoCommits, err := s.resolveRepoCommits(ctx, repoRevs)
+	if err != nil {
+		return nil, err
+	}
+
+	var deps []api.RepoCommit
+	for _, commit := range repoCommits {
+		// TODO - batch these requests in the store layer
+		repoDeps, err := s.dependenciesStore.LockfileDependents(ctx, string(commit.Repo), commit.ResolvedCommit)
+		if err != nil {
+			return nil, errors.Wrap(err, "store.LockfileDependents")
+		}
+		deps = append(deps, repoDeps...)
+
+	}
+
+	dependentsRevs = map[api.RepoName]types.RevSpecSet{}
+	for _, dep := range deps {
+		if _, ok := dependentsRevs[dep.Repo]; !ok {
+			dependentsRevs[dep.Repo] = types.RevSpecSet{}
+		}
+		dependentsRevs[dep.Repo][api.RevSpec(dep.CommitID)] = struct{}{}
+	}
+
+	if !enablePreciseQueries {
+		return dependentsRevs, nil
+	}
+
+	for _, repoCommit := range repoCommits {
+		// TODO - batch these requests in the store layer
+		preciseDeps, err := s.dependenciesStore.PreciseDependents(ctx, string(repoCommit.Repo), repoCommit.ResolvedCommit)
+		if err != nil {
+			return nil, errors.Wrap(err, "store.PreciseDependents")
+		}
+
+		for repoName, commits := range preciseDeps {
+			if _, ok := dependentsRevs[repoName]; !ok {
+				dependentsRevs[repoName] = types.RevSpecSet{}
+			}
+			for commit := range commits {
+				dependentsRevs[repoName][commit] = struct{}{}
+			}
+		}
+	}
+
+	return dependentsRevs, nil
 }
 
 func constructLogFields(repoRevs map[api.RepoName]types.RevSpecSet) []log.Field {
@@ -356,6 +430,14 @@ func constructLogFields(repoRevs map[api.RepoName]types.RevSpecSet) []log.Field 
 	return []log.Field{
 		log.Int("repoRevs", len(repoRevs)),
 	}
+}
+
+func (s *Service) SelectRepoRevisionsToResolve(ctx context.Context, batchSize int, minimumCheckInterval time.Duration) (map[string][]string, error) {
+	return s.dependenciesStore.SelectRepoRevisionsToResolve(ctx, batchSize, minimumCheckInterval)
+}
+
+func (s *Service) UpdateResolvedRevisions(ctx context.Context, repoRevsToResolvedRevs map[string]map[string]string) error {
+	return s.dependenciesStore.UpdateResolvedRevisions(ctx, repoRevsToResolvedRevs)
 }
 
 type Repo = shared.Repo

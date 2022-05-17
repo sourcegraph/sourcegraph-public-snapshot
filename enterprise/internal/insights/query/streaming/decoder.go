@@ -13,6 +13,7 @@ import (
 type StreamDecoderEvents struct {
 	SkippedReasons []string
 	Errors         []string
+	Alerts         []string
 }
 
 type SearchMatch struct {
@@ -29,7 +30,7 @@ type TabulationResult struct {
 
 // TabulationDecoder will tabulate the result counts per repository.
 func TabulationDecoder() (streamhttp.FrontendStreamDecoder, *TabulationResult) {
-	var tr = &TabulationResult{
+	tr := &TabulationResult{
 		RepoCounts: make(map[string]*SearchMatch),
 	}
 
@@ -83,6 +84,14 @@ func TabulationDecoder() (streamhttp.FrontendStreamDecoder, *TabulationResult) {
 				}
 			}
 		},
+		OnAlert: func(ea *streamhttp.EventAlert) {
+			if ea.Title == "No repositories found" {
+				// If we hit a case where we don't find a repository we don't want to error, just
+				// complete our search.
+			} else {
+				tr.Alerts = append(tr.Alerts, fmt.Sprintf("%s: %s", ea.Title, ea.Description))
+			}
+		},
 		OnError: func(eventError *streamhttp.EventError) {
 			tr.Errors = append(tr.Errors, eventError.Message)
 		},
@@ -114,34 +123,44 @@ type ComputeTabulationResult struct {
 const capturedValueMaxLength = 100
 
 func ComputeDecoder() (client.ComputeMatchContextStreamDecoder, *ComputeTabulationResult) {
-	byRepo := make(map[string]*ComputeMatch)
+	ctr := &ComputeTabulationResult{
+		RepoCounts: make(map[string]*ComputeMatch),
+	}
 	getRepoCounts := func(matchContext compute.MatchContext) *ComputeMatch {
 		var v *ComputeMatch
-		if got, ok := byRepo[matchContext.Repository]; ok {
+		if got, ok := ctr.RepoCounts[matchContext.Repository]; ok {
 			return got
 		}
 		v = newComputeMatch(matchContext.Repository, matchContext.RepositoryID)
-		byRepo[matchContext.Repository] = v
+		ctr.RepoCounts[matchContext.Repository] = v
 		return v
 	}
 
 	return client.ComputeMatchContextStreamDecoder{
-			OnResult: func(results []compute.MatchContext) {
-				for _, result := range results {
-					current := getRepoCounts(result)
-					for _, match := range result.Matches {
-						for _, data := range match.Environment {
-							value := data.Value
-							if len(value) > capturedValueMaxLength {
-								value = value[:capturedValueMaxLength]
-							}
-							current.ValueCounts[value] += 1
+		OnResult: func(results []compute.MatchContext) {
+			for _, result := range results {
+				current := getRepoCounts(result)
+				for _, match := range result.Matches {
+					for _, data := range match.Environment {
+						value := data.Value
+						if len(value) > capturedValueMaxLength {
+							value = value[:capturedValueMaxLength]
 						}
+						current.ValueCounts[value] += 1
 					}
 				}
-			},
-		}, &ComputeTabulationResult{
-			StreamDecoderEvents: StreamDecoderEvents{},
-			RepoCounts:          byRepo,
-		}
+			}
+		},
+		OnAlert: func(ea *streamhttp.EventAlert) {
+			if ea.Title == "No repositories found" {
+				// If we hit a case where we don't find a repository we don't want to error, just
+				// complete our search.
+			} else {
+				ctr.Alerts = append(ctr.Alerts, fmt.Sprintf("%s: %s", ea.Title, ea.Description))
+			}
+		},
+		OnError: func(eventError *streamhttp.EventError) {
+			ctr.Errors = append(ctr.Errors, eventError.Message)
+		},
+	}, ctr
 }

@@ -363,6 +363,7 @@ Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
     "changesets_batch_change_ids" gin (batch_change_ids)
+    "changesets_bitbucket_cloud_metadata_source_commit_idx" btree ((((metadata -> 'source'::text) -> 'commit'::text) ->> 'hash'::text))
     "changesets_external_state_idx" btree (external_state)
     "changesets_external_title_idx" btree (external_title)
     "changesets_publication_state_idx" btree (publication_state)
@@ -663,26 +664,30 @@ Indexes:
 
 # Table "public.codeintel_lockfile_references"
 ```
-     Column      |  Type   | Collation | Nullable |                          Default                          
------------------+---------+-----------+----------+-----------------------------------------------------------
- id              | integer |           | not null | nextval('codeintel_lockfile_references_id_seq'::regclass)
- repository_name | text    |           | not null | 
- revspec         | text    |           | not null | 
- package_scheme  | text    |           | not null | 
- package_name    | text    |           | not null | 
- package_version | text    |           | not null | 
- repository_id   | integer |           |          | 
- commit_bytea    | bytea   |           |          | 
+     Column      |           Type           | Collation | Nullable |                          Default                          
+-----------------+--------------------------+-----------+----------+-----------------------------------------------------------
+ id              | integer                  |           | not null | nextval('codeintel_lockfile_references_id_seq'::regclass)
+ repository_name | text                     |           | not null | 
+ revspec         | text                     |           | not null | 
+ package_scheme  | text                     |           | not null | 
+ package_name    | text                     |           | not null | 
+ package_version | text                     |           | not null | 
+ repository_id   | integer                  |           |          | 
+ commit_bytea    | bytea                    |           |          | 
+ last_check_at   | timestamp with time zone |           |          | 
 Indexes:
     "codeintel_lockfile_references_pkey" PRIMARY KEY, btree (id)
-    "codeintel_lockfile_references_repository_id_commit_bytea" UNIQUE, btree (repository_id, commit_bytea) WHERE repository_id IS NOT NULL AND commit_bytea IS NOT NULL
     "codeintel_lockfile_references_repository_name_revspec_package" UNIQUE, btree (repository_name, revspec, package_scheme, package_name, package_version)
+    "codeintel_lockfile_references_last_check_at" btree (last_check_at)
+    "codeintel_lockfile_references_repository_id_commit_bytea" btree (repository_id, commit_bytea) WHERE repository_id IS NOT NULL AND commit_bytea IS NOT NULL
 
 ```
 
 Tracks a lockfile dependency that might be resolvable to a specific repository-commit pair.
 
 **commit_bytea**: The resolved 40-char revhash of the associated revspec, if it is resolvable on this instance.
+
+**last_check_at**: Timestamp when background job last checked this row for repository resolution
 
 **package_name**: Encodes `reposource.PackageDependency.PackageSyntax`. The name of the dependency as used by the package manager, excluding version information.
 

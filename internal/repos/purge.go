@@ -101,7 +101,7 @@ func purge(ctx context.Context, db database.DB, log log15.Logger, options databa
 	if failed > 0 {
 		statusLogger = log.Warn
 	}
-	statusLogger("repository cloned purge finished", "total", total, "removed", success, "failed", failed, "duration", time.Since(start))
+	statusLogger("repository purge finished", "total", total, "removed", success, "failed", failed, "duration", time.Since(start))
 	return errors.Wrap(err, "iterating purgeable repos")
 }
 

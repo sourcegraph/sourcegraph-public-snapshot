@@ -73,13 +73,17 @@ func findRoot(wd string) (string, error) {
 }
 
 func GetSGHomePath() (string, error) {
-	homedir, err := os.UserHomeDir()
+	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return "", err
 	}
 
-	path := filepath.Join(homedir, ".sourcegraph")
-	if err := os.MkdirAll(filepath.Dir(path), os.ModePerm); err != nil {
+	return createSGHome(homeDir)
+}
+
+func createSGHome(home string) (string, error) {
+	path := filepath.Join(home, ".sourcegraph")
+	if err := os.MkdirAll(path, os.ModePerm); err != nil {
 		return "", err
 	}
 	return path, nil

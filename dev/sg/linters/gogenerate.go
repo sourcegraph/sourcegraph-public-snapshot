@@ -32,7 +32,6 @@ func lintGoGenerate(ctx context.Context, _ *repo.State) *lint.Report {
 			ForceTTY:   true,
 		})
 		reportOut.WriteLine(output.Line(output.EmojiFailure, output.StyleWarning, "Uncommitted changes found after running go generate:"))
-		sb.WriteString("\n")
 		sb.WriteString(string(out))
 		r.Err = err
 		r.Output = sb.String()

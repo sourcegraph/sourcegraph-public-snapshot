@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -21,7 +20,7 @@ func TestListIndexableRepos(t *testing.T) {
 		t.Skip()
 	}
 
-	createExternalService := func(ctx context.Context, db dbutil.DB) *types.ExternalService {
+	createExternalService := func(ctx context.Context, db database.DB) *types.ExternalService {
 		confGet := func() *conf.Unified {
 			return &conf.Unified{}
 		}
@@ -30,7 +29,7 @@ func TestListIndexableRepos(t *testing.T) {
 			DisplayName: "GITHUB #1",
 			Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
 		}
-		err := database.ExternalServices(db).Create(ctx, confGet, es)
+		err := db.ExternalServices().Create(ctx, confGet, es)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -38,7 +37,7 @@ func TestListIndexableRepos(t *testing.T) {
 	}
 
 	t.Run("user-added repos", func(t *testing.T) {
-		db := dbtest.NewDB(t)
+		db := database.NewDB(dbtest.NewDB(t))
 		ctx := context.Background()
 
 		es := createExternalService(ctx, db)

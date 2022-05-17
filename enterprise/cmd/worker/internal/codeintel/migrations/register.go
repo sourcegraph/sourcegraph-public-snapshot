@@ -1,9 +1,9 @@
 package migrations
 
 import (
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel"
-	dbmigrations "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore/migration"
-	lsifmigrations "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore/migration"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
+	dbmigrations "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore/migration"
+	lsifmigrations "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore/migration"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"

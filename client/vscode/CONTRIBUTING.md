@@ -6,7 +6,7 @@ Please refer to our [main CONTRIBUTING](https://github.com/sourcegraph/sourcegra
 
 ## Feedback
 
-Your feedback is important to us and is greatly appreciated. Please do not hesitate to submit your ideas or suggestions about how we can improve the extension to our [GitHub Feedback discussion board](https://github.com/sourcegraph/sourcegraph/discussions/categories/feedback).
+Your feedback is important to us and is greatly appreciated. Please do not hesitate to submit your ideas or suggestions about how we can improve the extension to our [VS Code Extension Feedback Discussion Thread](https://github.com/sourcegraph/sourcegraph/discussions/34821) on GitHub.
 
 ## Issues / Bugs
 
@@ -20,7 +20,7 @@ New issues and feature requests can be filed through our [issue tracker](https:/
 1. Install dependencies via `yarn` for the Sourcegraph repository
 1. Run `yarn generate` at the root directory to generate the required schemas
 1. Make your changes to the files within the `client/vscode` directory with VS Code
-1. Run `yarn build-vsce` to build or `yarn watch-vsce` to build and watch the tasks in the `client/vscode` directory
+1. Run `yarn build-vsce` to build or `yarn watch-vsce` to build and watch the tasks from the `root` directory
 1. Select `Launch VS Code Extension` (`Launch VS Code Web Extension` for VS Code Web) from the dropdown menu in the `Run and Debug` sidebar view to see your changes
 
 ### Tests
@@ -46,16 +46,27 @@ If you need guidance or have any questions regarding Sourcegraph or the extensio
 - [Code of Conduct](https://handbook.sourcegraph.com/company-info-and-process/community/code_of_conduct/)
 - [Developing Sourcegraph guide](https://docs.sourcegraph.com/dev)
 - [Developing the web clients](https://docs.sourcegraph.com/dev/background-information/web)
+- [Feedback / Feature Request](https://github.com/sourcegraph/sourcegraph/discussions/34821)
 - [Issue Tracker](https://github.com/sourcegraph/sourcegraph/labels/vscode-extension)
-- [Troubleshooting docs](https://docs.sourcegraph.com/admin/how-to/troubleshoot-sg-extension#vs-code-extension)
 - [Report a bug](https://github.com/sourcegraph/sourcegraph/issues/new?labels=team/integrations,vscode-extension&title=VSCode+Bug+report:+&projects=Integrations%20Project%20Board)
+- [Troubleshooting docs](https://docs.sourcegraph.com/admin/how-to/troubleshoot-sg-extension#vs-code-extension)
 
 ## License
 
 Apache
 
-## Release
+## Release Process
 
-The extension is released to the VS Code Marketplace automatically whenever the `vsce/release` branch is updated.
+The release process for the VS Code Extension for Sourcegraph is currently automated.
 
-- Commit made for the release to the release branch must start with: `patch release vsce`, `minor release vsce`, or `major release vsce`
+#### Release Steps
+
+1. Make sure the main branch is up-to-date.
+2. Make a commit in the following format: `$RELEASE_TYPE release vsce`
+   - Replace $RELEASE_TYPE with one of the supporting types: `Major`, `minor`, and `patch`
+3. Run `git push origin main:vsce/release` to trigger the build pipeline for releasing the extension.
+   - The extension is built using the code from the release branch.
+   - The package name and changelog will also be updated automatically.
+   - The extension is published with the [auto-incremented](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#autoincrementing-the-extension-version) version number by running the `vsce publish $RELEASE_TYPE` command provided by the [vsce CLI tool](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#vsce)
+4. Visit the [buildkite page for the vsce/release pipeline](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=vsce%2Frelease) to watch the build process
+5. Once the build is completed with no error, you should see the new version being verified for the Sourcegraph extension in your [Marketplace Publisher Dashboard](https://marketplace.visualstudio.com/manage/publishers)

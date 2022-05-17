@@ -9,8 +9,8 @@ import (
 
 	graphqlbackend "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	resolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
-	dbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
+	dbstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	graphql "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 	config "github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	precise "github.com/sourcegraph/sourcegraph/lib/codeintel/precise"

@@ -2,14 +2,15 @@ package enqueuer
 
 import (
 	"context"
+	"os"
 
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 	"golang.org/x/time/rate"
 
-	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
+	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -214,6 +215,8 @@ func (s *IndexEnqueuer) queueIndexForRepositoryAndCommit(ctx context.Context, re
 	return s.dbStore.InsertIndexes(ctx, indexes)
 }
 
+var overrideScript = os.Getenv("SRC_CODEINTEL_INFERENCE_OVERRIDE_SCRIPT")
+
 // inferIndexJobsFromRepositoryStructure collects the result of  InferIndexJobs over all registered recognizers.
 func (s *IndexEnqueuer) inferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string) ([]config.IndexJob, error) {
 	if err := s.gitserverLimiter.Wait(ctx); err != nil {
@@ -225,7 +228,7 @@ func (s *IndexEnqueuer) inferIndexJobsFromRepositoryStructure(ctx context.Contex
 		return nil, err
 	}
 
-	indexes, err := s.inferenceService.InferIndexJobs(ctx, api.RepoName(repoName), commit, "")
+	indexes, err := s.inferenceService.InferIndexJobs(ctx, api.RepoName(repoName), commit, overrideScript)
 	if err != nil {
 		return nil, err
 	}
@@ -249,7 +252,7 @@ func (s *IndexEnqueuer) inferIndexJobHintsFromRepositoryStructure(ctx context.Co
 		return nil, err
 	}
 
-	indexes, err := s.inferenceService.InferIndexJobHints(ctx, api.RepoName(repoName), commit, "")
+	indexes, err := s.inferenceService.InferIndexJobHints(ctx, api.RepoName(repoName), commit, overrideScript)
 	if err != nil {
 		return nil, err
 	}

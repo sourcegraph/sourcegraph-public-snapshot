@@ -26,7 +26,8 @@ var (
 var (
 	lockfilesSemaphoreWeight = env.MustGetInt("CODEINTEL_DEPENDENCIES_LOCKFILES_SEMAPHORE_WEIGHT", 64, "The maximum number of concurrent routines parsing lockfile contents.")
 	syncerSemaphoreWeight    = env.MustGetInt("CODEINTEL_DEPENDENCIES_LOCKFILES_SYNCER_WEIGHT", 64, "The maximum number of concurrent routines actively syncing repositories.")
-	enableUpserts            = env.Get("CODEINTEL_DEPENDENCIES_ENABLE_UPSERTS", "", "Disable writes of lockfile results to the database from the dependencies service.") != ""
+	enableUpserts            = env.Get("CODEINTEL_DEPENDENCIES_ENABLE_UPSERTS", "", "Enables writes of lockfile results to the database from the dependencies service.") != ""
+	enablePreciseQueries     = env.Get("CODEINTEL_DEPENDENCIES_ENABLE_PRECISE_QUERIES", "", "Enables queries of precise code intelligence results from the database from the dependencies service.") != ""
 )
 
 // GetService creates or returns an already-initialized dependencies service. If the service is

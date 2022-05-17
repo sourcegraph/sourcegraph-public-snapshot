@@ -179,7 +179,7 @@ func overrideExtSvcConfig(ctx context.Context, db database.DB) error {
 	if path == "" {
 		return nil
 	}
-	extsvcs := database.ExternalServices(db)
+	extsvcs := db.ExternalServices()
 	cs := &configurationSource{db: db}
 
 	update := func(ctx context.Context) error {

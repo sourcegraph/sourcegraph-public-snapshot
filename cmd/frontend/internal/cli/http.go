@@ -21,7 +21,6 @@ import (
 	internalhttpapi "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -37,13 +36,10 @@ import (
 func newExternalHTTPHandler(
 	db database.DB,
 	schema *graphql.Schema,
-	gitHubWebhook webhooks.Registerer,
-	gitLabWebhook, bitbucketServerWebhook http.Handler,
-	newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler,
+	rateLimitWatcher graphqlbackend.LimitWatcher,
+	handlers *internalhttpapi.Handlers,
 	newExecutorProxyHandler enterprise.NewExecutorProxyHandler,
 	newGitHubAppCloudSetupHandler enterprise.NewGitHubAppCloudSetupHandler,
-	newComputeStreamHandler enterprise.NewComputeStreamHandler,
-	rateLimitWatcher graphqlbackend.LimitWatcher,
 ) http.Handler {
 	// Each auth middleware determines on a per-request basis whether it should be enabled (if not, it
 	// immediately delegates the request to the next middleware in the chain).
@@ -51,7 +47,7 @@ func newExternalHTTPHandler(
 
 	// HTTP API handler, the call order of middleware is LIFO.
 	r := router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter())
-	apiHandler := internalhttpapi.NewHandler(db, r, schema, gitHubWebhook, gitLabWebhook, bitbucketServerWebhook, newCodeIntelUploadHandler, newComputeStreamHandler, rateLimitWatcher)
+	apiHandler := internalhttpapi.NewHandler(db, r, schema, rateLimitWatcher, handlers)
 	if hooks.PostAuthMiddleware != nil {
 		// 🚨 SECURITY: These all run after the auth handler so the client is authenticated.
 		apiHandler = hooks.PostAuthMiddleware(apiHandler)
