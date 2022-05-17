@@ -178,9 +178,9 @@ func (z *zapAdapter) AddCallerSkip(skip int) Logger {
 // underlying zap logger's core.
 //
 // It must implement logtest.configurableAdapter
-func (z *zapAdapter) WithCore(core func(c zapcore.Core) zapcore.Core) Logger {
+func (z *zapAdapter) WithCore(f func(c zapcore.Core) zapcore.Core) Logger {
 	newRootLogger := z.rootLogger.
-		WithOptions(zap.WrapCore(core))
+		WithOptions(zap.WrapCore(f))
 
 	newLogger := newRootLogger.
 		// add fields back
