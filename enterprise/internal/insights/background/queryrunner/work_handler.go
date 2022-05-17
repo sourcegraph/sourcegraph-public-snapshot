@@ -180,6 +180,9 @@ func (r *workHandler) generateComputeRecordingsStream(ctx context.Context, job *
 	if len(streamResults.Errors) > 0 {
 		return nil, StreamingError{Type: types.SearchCompute, Messages: streamResults.Errors}
 	}
+	if len(streamResults.Alerts) > 0 {
+		return nil, errors.Errorf("compute streaming search: alerts: %v", streamResults.Alerts)
+	}
 
 	checker := authz.DefaultSubRepoPermsChecker
 	var recordings []store.RecordSeriesPointArgs
@@ -209,7 +212,7 @@ func (r *workHandler) generateSearchRecordings(ctx context.Context, job *Job, se
 		return nil, errors.Errorf("GraphQL errors: %v", results.Errors)
 	}
 	if alert := results.Data.Search.Results.Alert; alert != nil {
-		if alert.Title == "No repositories satisfied your repo: filter" {
+		if alert.Title == "No repositories found" {
 			// We got zero results and no repositories matched. This could be for a few reasons:
 			//
 			// 1. The repo hasn't been cloned by Sourcegraph yet.
@@ -300,6 +303,9 @@ func (r *workHandler) generateSearchRecordingsStream(ctx context.Context, job *J
 	}
 	if len(tr.Errors) > 0 {
 		return nil, StreamingError{Messages: tr.Errors}
+	}
+	if len(tr.Alerts) > 0 {
+		return nil, errors.Errorf("streaming search: alerts: %v", tr.Alerts)
 	}
 
 	checker := authz.DefaultSubRepoPermsChecker
