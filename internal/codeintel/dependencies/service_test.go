@@ -20,6 +20,9 @@ import (
 )
 
 func TestDependencies(t *testing.T) {
+	// Ensure the precise flag is enabled
+	enablePreciseQueries = true
+
 	ctx := context.Background()
 	mockStore := NewMockStore()
 	gitService := NewMockLocalGitService()
@@ -180,6 +183,9 @@ func TestDependencies(t *testing.T) {
 }
 
 func TestDependents(t *testing.T) {
+	// Ensure the precise flag is enabled
+	enablePreciseQueries = true
+
 	ctx := context.Background()
 	mockStore := NewMockStore()
 	gitService := NewMockLocalGitService()

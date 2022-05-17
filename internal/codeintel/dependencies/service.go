@@ -126,6 +126,10 @@ func (s *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]ty
 		return nil, err
 	}
 
+	if !enablePreciseQueries {
+		return dependencyRevs, nil
+	}
+
 	for _, repoCommit := range repoCommits {
 		// TODO - batch these requests in the store layer
 		preciseDeps, err := s.dependenciesStore.PreciseDependencies(ctx, string(repoCommit.Repo), repoCommit.ResolvedCommit)
@@ -358,7 +362,7 @@ func (s *Service) sync(ctx context.Context, repos []api.RepoName) error {
 
 // Dependents resolves the (transitive) inverse dependencies for a set of repository and revisions.
 // Both the input repoRevs and the output dependencyRevs are a map from repository names to revspecs.
-func (s *Service) Dependents(ctx context.Context, repoRevs map[api.RepoName]types.RevSpecSet) (dependencyRevs map[api.RepoName]types.RevSpecSet, err error) {
+func (s *Service) Dependents(ctx context.Context, repoRevs map[api.RepoName]types.RevSpecSet) (dependentsRevs map[api.RepoName]types.RevSpecSet, err error) {
 	// Resolve the revhashes for the source repo-commit pairs
 	repoCommits, err := s.resolveRepoCommits(ctx, repoRevs)
 	if err != nil {
@@ -376,12 +380,16 @@ func (s *Service) Dependents(ctx context.Context, repoRevs map[api.RepoName]type
 
 	}
 
-	dependencyRevs = map[api.RepoName]types.RevSpecSet{}
+	dependentsRevs = map[api.RepoName]types.RevSpecSet{}
 	for _, dep := range deps {
-		if _, ok := dependencyRevs[dep.Repo]; !ok {
-			dependencyRevs[dep.Repo] = types.RevSpecSet{}
+		if _, ok := dependentsRevs[dep.Repo]; !ok {
+			dependentsRevs[dep.Repo] = types.RevSpecSet{}
 		}
-		dependencyRevs[dep.Repo][api.RevSpec(dep.CommitID)] = struct{}{}
+		dependentsRevs[dep.Repo][api.RevSpec(dep.CommitID)] = struct{}{}
+	}
+
+	if !enablePreciseQueries {
+		return dependentsRevs, nil
 	}
 
 	for _, repoCommit := range repoCommits {
@@ -392,16 +400,16 @@ func (s *Service) Dependents(ctx context.Context, repoRevs map[api.RepoName]type
 		}
 
 		for repoName, commits := range preciseDeps {
-			if _, ok := dependencyRevs[repoName]; !ok {
-				dependencyRevs[repoName] = types.RevSpecSet{}
+			if _, ok := dependentsRevs[repoName]; !ok {
+				dependentsRevs[repoName] = types.RevSpecSet{}
 			}
 			for commit := range commits {
-				dependencyRevs[repoName][commit] = struct{}{}
+				dependentsRevs[repoName][commit] = struct{}{}
 			}
 		}
 	}
 
-	return dependencyRevs, nil
+	return dependentsRevs, nil
 }
 
 func constructLogFields(repoRevs map[api.RepoName]types.RevSpecSet) []log.Field {
