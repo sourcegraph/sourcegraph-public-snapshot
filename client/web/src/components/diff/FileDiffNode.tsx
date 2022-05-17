@@ -130,7 +130,6 @@ export const FileDiffNode: React.FunctionComponent<React.PropsWithChildren<FileD
                             <Link
                                 to={node.mostRelevantFile.url}
                                 data-tooltip="View file at revision"
-                                aria-description="View file at revision"
                                 className="mr-0 ml-2 fw-bold"
                             >
                                 <strong>{path}</strong>
