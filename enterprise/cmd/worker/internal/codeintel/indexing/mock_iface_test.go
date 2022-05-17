@@ -9,8 +9,8 @@ import (
 
 	regexp "github.com/grafana/regexp"
 	policies "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
-	dbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
+	dbstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	database "github.com/sourcegraph/sourcegraph/internal/database"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	protocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"

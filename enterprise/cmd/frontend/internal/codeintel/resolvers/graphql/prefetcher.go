@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
-	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 )
 
 // Prefetcher is a batch query utility and cache used to reduce the amount of database

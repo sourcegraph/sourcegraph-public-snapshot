@@ -8,7 +8,7 @@ import (
 	"time"
 
 	policies "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
-	dbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	dbstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
 
