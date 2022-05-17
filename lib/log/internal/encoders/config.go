@@ -71,11 +71,10 @@ func BuildEncoder(format OutputFormat, development bool) (enc zapcore.Encoder) {
 
 	switch format {
 	case OutputConsole:
-		enc = zapcore.NewConsoleEncoder(config)
+		return zapcore.NewConsoleEncoder(config)
 	case OutputJSON:
-		enc = zapcore.NewJSONEncoder(config)
+		return zapcore.NewJSONEncoder(config)
 	default:
 		panic("unknown output format")
 	}
-	return
 }
