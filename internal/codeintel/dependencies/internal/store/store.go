@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -47,6 +48,54 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 		operations: s.operations,
 	}, nil
 }
+
+// PreciseDependencies returns package dependencies from precise indexes. It is assumed that
+// the given commit is the canonical 40-character hash.
+func (s *Store) PreciseDependencies(ctx context.Context, repoName, commit string) (deps map[api.RepoName]types.RevSpecSet, err error) {
+	ctx, _, endObservation := s.operations.preciseDependencies.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("repoName", repoName),
+		log.String("commit", commit),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	return scanRepoRevSpecSets(s.Query(ctx, sqlf.Sprintf(preciseDependenciesQuery, repoName, commit)))
+}
+
+const preciseDependenciesQuery = `
+-- source: internal/codeintel/dependencies/internal/store/store.go:PreciseDependencies
+SELECT pr.name, pu.commit
+FROM lsif_packages lp
+JOIN lsif_uploads pu ON pu.id = lp.dump_id
+JOIN repo pr ON pr.id = pu.repository_id
+JOIN lsif_references lr ON lr.scheme = lp.scheme AND lr.name = lp.name AND lr.version = lp.version
+JOIN lsif_uploads ru ON ru.id = lr.dump_id
+JOIN repo rr ON rr.id = ru.repository_id
+WHERE rr.name = %s AND ru.commit = %s
+`
+
+// PreciseDependents returns package dependents from precise indexes. It is assumed that
+// the given commit is the canonical 40-character hash.
+func (s *Store) PreciseDependents(ctx context.Context, repoName, commit string) (deps map[api.RepoName]types.RevSpecSet, err error) {
+	ctx, _, endObservation := s.operations.preciseDependents.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("repoName", repoName),
+		log.String("commit", commit),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	return scanRepoRevSpecSets(s.Query(ctx, sqlf.Sprintf(preciseDependentsQuery, repoName, commit)))
+}
+
+const preciseDependentsQuery = `
+-- source: internal/codeintel/dependencies/internal/store/store.go:PreciseDependents
+SELECT rr.name, ru.commit
+FROM lsif_packages lp
+JOIN lsif_uploads pu ON pu.id = lp.dump_id
+JOIN repo pr ON pr.id = pu.repository_id
+JOIN lsif_references lr ON lr.scheme = lp.scheme AND lr.name = lp.name AND lr.version = lp.version
+JOIN lsif_uploads ru ON ru.id = lr.dump_id
+JOIN repo rr ON rr.id = ru.repository_id
+WHERE pr.name = %s AND pu.commit = %s
+`
 
 // LockfileDependencies returns package dependencies from a previous lockfiles result for
 // the given repository and commit. It is assumed that the given commit is the canonical

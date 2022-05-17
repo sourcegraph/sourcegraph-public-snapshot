@@ -20,6 +20,9 @@ import (
 )
 
 func TestDependencies(t *testing.T) {
+	// Ensure the precise flag is enabled
+	enablePreciseQueries = true
+
 	ctx := context.Background()
 	mockStore := NewMockStore()
 	gitService := NewMockLocalGitService()
@@ -38,6 +41,18 @@ func TestDependencies(t *testing.T) {
 		return v%2 == 0
 	}
 
+	mockStore.PreciseDependenciesFunc.SetDefaultHook(func(ctx context.Context, repoName, commit string) (map[api.RepoName]types.RevSpecSet, error) {
+		if repoName != "github.com/example/baz" {
+			return nil, nil
+		}
+
+		return map[api.RepoName]types.RevSpecSet{
+			api.RepoName(fmt.Sprintf("%s-depA", repoName)): {"deadbeef1": struct{}{}},
+			api.RepoName(fmt.Sprintf("%s-depB", repoName)): {"deadbeef2": struct{}{}},
+			api.RepoName(fmt.Sprintf("%s-depC", repoName)): {"deadbeef3": struct{}{}},
+		}, nil
+	})
+
 	// UpsertDependencyRepos influences the value that syncer.Sync is called with (asserted below)
 	mockStore.UpsertDependencyReposFunc.SetDefaultHook(func(ctx context.Context, dependencyRepos []Repo) ([]Repo, error) {
 		filtered := dependencyRepos[:0]
@@ -52,6 +67,19 @@ func TestDependencies(t *testing.T) {
 		}
 
 		return filtered, nil
+	})
+
+	// Return canned dependencies for repo `baz`
+	mockStore.LockfileDependenciesFunc.SetDefaultHook(func(ctx context.Context, repoName, commit string) ([]shared.PackageDependency, bool, error) {
+		if repoName != "github.com/example/baz" {
+			return nil, false, nil
+		}
+
+		return []shared.PackageDependency{
+			shared.TestPackageDependencyLiteral("npm/leftpad", "1", "2", "3", "4"),
+			shared.TestPackageDependencyLiteral("npm/rightpad", "2", "3", "4", "5"),
+			shared.TestPackageDependencyLiteral("npm/centerpad", "3", "4", "5", "6"),
+		}, true, nil
 	})
 
 	// GetCommits returns the same values as input; no errors
@@ -75,19 +103,6 @@ func TestDependencies(t *testing.T) {
 		}, nil
 	})
 
-	// Return canned dependencies for repo `baz`
-	mockStore.LockfileDependenciesFunc.SetDefaultHook(func(ctx context.Context, repoName, commit string) ([]shared.PackageDependency, bool, error) {
-		if repoName != "github.com/example/baz" {
-			return nil, false, nil
-		}
-
-		return []shared.PackageDependency{
-			shared.TestPackageDependencyLiteral("npm/leftpad", "1", "2", "3", "4"),
-			shared.TestPackageDependencyLiteral("npm/rightpad", "2", "3", "4", "5"),
-			shared.TestPackageDependencyLiteral("npm/centerpad", "3", "4", "5", "6"),
-		}, true, nil
-	})
-
 	repoRevs := map[api.RepoName]types.RevSpecSet{
 		api.RepoName("github.com/example/foo"): {
 			api.RevSpec("deadbeef1"): struct{}{},
@@ -108,6 +123,11 @@ func TestDependencies(t *testing.T) {
 	}
 
 	expectedDepencies := map[api.RepoName]types.RevSpecSet{
+		// From precise dependencies
+		"github.com/example/baz-depA": {"deadbeef1": struct{}{}},
+		"github.com/example/baz-depB": {"deadbeef2": struct{}{}},
+		"github.com/example/baz-depC": {"deadbeef3": struct{}{}},
+
 		// From store
 		("npm/leftpad"):   {"1": struct{}{}},
 		("npm/rightpad"):  {"2": struct{}{}},
@@ -163,6 +183,9 @@ func TestDependencies(t *testing.T) {
 }
 
 func TestDependents(t *testing.T) {
+	// Ensure the precise flag is enabled
+	enablePreciseQueries = true
+
 	ctx := context.Background()
 	mockStore := NewMockStore()
 	gitService := NewMockLocalGitService()
@@ -176,6 +199,18 @@ func TestDependents(t *testing.T) {
 			commits = append(commits, &gitdomain.Commit{ID: repoCommit.CommitID})
 		}
 		return commits, nil
+	})
+
+	mockStore.PreciseDependentsFunc.SetDefaultHook(func(ctx context.Context, repoName, commit string) (map[api.RepoName]types.RevSpecSet, error) {
+		if repoName != "github.com/example/baz" {
+			return nil, nil
+		}
+
+		return map[api.RepoName]types.RevSpecSet{
+			api.RepoName(fmt.Sprintf("%s-depA", repoName)): {"deadbeef1": struct{}{}},
+			api.RepoName(fmt.Sprintf("%s-depB", repoName)): {"deadbeef2": struct{}{}},
+			api.RepoName(fmt.Sprintf("%s-depC", repoName)): {"deadbeef3": struct{}{}},
+		}, nil
 	})
 
 	mockStore.LockfileDependentsFunc.SetDefaultHook(func(ctx context.Context, repoName, commit string) ([]api.RepoCommit, error) {
@@ -205,6 +240,12 @@ func TestDependents(t *testing.T) {
 	}
 
 	expectedDependents := map[api.RepoName]types.RevSpecSet{
+		// From precise dependents
+		"github.com/example/baz-depA": {"deadbeef1": struct{}{}},
+		"github.com/example/baz-depB": {"deadbeef2": struct{}{}},
+		"github.com/example/baz-depC": {"deadbeef3": struct{}{}},
+
+		// From lockfile dependents
 		api.RepoName("dep-a-github.com/example/foo"): {
 			api.RevSpec("c-deadbeef1"): struct{}{},
 			api.RevSpec("c-deadbeef2"): struct{}{},

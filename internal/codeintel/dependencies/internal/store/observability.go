@@ -12,6 +12,8 @@ type operations struct {
 	listDependencyRepos          *observation.Operation
 	lockfileDependencies         *observation.Operation
 	lockfileDependents           *observation.Operation
+	preciseDependencies          *observation.Operation
+	preciseDependents            *observation.Operation
 	selectRepoRevisionsToResolve *observation.Operation
 	updateResolvedRevisions      *observation.Operation
 	upsertDependencyRepos        *observation.Operation
@@ -39,6 +41,8 @@ func newOperations(observationContext *observation.Context) *operations {
 		listDependencyRepos:          op("ListDependencyRepos"),
 		lockfileDependencies:         op("LockfileDependencies"),
 		lockfileDependents:           op("LockfileDependents"),
+		preciseDependencies:          op("PreciseDependencies"),
+		preciseDependents:            op("PreciseDependents"),
 		selectRepoRevisionsToResolve: op("SelectRepoRevisionsToResolve"),
 		updateResolvedRevisions:      op("UpdateResolvedRevisions"),
 		upsertDependencyRepos:        op("UpsertDependencyRepos"),
