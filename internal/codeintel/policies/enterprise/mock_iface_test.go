@@ -13,7 +13,7 @@ import (
 
 // MockGitserverClient is a mock implementation of the GitserverClient
 // interface (from the package
-// github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies)
+// github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise)
 // used for unit testing.
 type MockGitserverClient struct {
 	// CommitDateFunc is an instance of a mock function object controlling
