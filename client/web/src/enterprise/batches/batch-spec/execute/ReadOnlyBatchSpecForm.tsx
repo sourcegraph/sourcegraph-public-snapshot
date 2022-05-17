@@ -61,7 +61,7 @@ const MemoizedReadOnlyBatchSpecForm: React.FunctionComponent<
 
     const alert = batchSpec.isExecuting ? (
         <Alert variant="warning" className="d-flex align-items-center pr-3">
-            <div className="flex-grow-1">
+            <div className="flex-grow-1 pr-3">
                 <Typography.H4>The execution is still running</Typography.H4>
                 You are unable to edit the spec when an execution is running.
             </div>
@@ -71,7 +71,7 @@ const MemoizedReadOnlyBatchSpecForm: React.FunctionComponent<
         </Alert>
     ) : (
         <Alert variant="info" className="d-flex align-items-center pr-3">
-            <div className="flex-grow-1">
+            <div className="flex-grow-1 pr-3">
                 <Typography.H4>This spec is read-only</Typography.H4>
                 We've preserved the original batch spec from this execution for you to inspect.
             </div>
