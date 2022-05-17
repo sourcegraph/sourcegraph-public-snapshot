@@ -3,7 +3,14 @@ import { ContentMatch } from '@sourcegraph/shared/src/search/stream'
 
 import { loadContent } from './lib/blob'
 
-type RequestToJavaAction = 'getConfig' | 'getTheme' | 'saveLastSearch' | 'loadLastSearch' | 'preview' | 'clearPreview' | 'open'
+type RequestToJavaAction =
+    | 'getConfig'
+    | 'getTheme'
+    | 'saveLastSearch'
+    | 'loadLastSearch'
+    | 'preview'
+    | 'clearPreview'
+    | 'open'
 
 export interface RequestToJava {
     action: RequestToJavaAction
