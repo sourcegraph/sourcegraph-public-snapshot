@@ -39,14 +39,14 @@ export function registerWebviews({
 
     // Register URI Handler to resolve data sending back from Browser
     const handleUri = async (uri: vscode.Uri): Promise<void> => {
-        const returnedToken = new URLSearchParams(uri.query).get('code')
-        const returnedNonce = new URLSearchParams(uri.query).get('nonce')
+        const token = new URLSearchParams(uri.query).get('code')
+        // const returnedNonce = new URLSearchParams(uri.query).get('nonce')
         // TODO: Decrypt token
         // TODO: Match returnedNonce to stored nonce
-        if (returnedToken && returnedToken.length > 8 && returnedNonce) {
+        if (token && token.length > 8) {
             await vscode.workspace
                 .getConfiguration('sourcegraph')
-                .update('accessToken', returnedToken, vscode.ConfigurationTarget.Global)
+                .update('accessToken', token, vscode.ConfigurationTarget.Global)
             await vscode.window.showInformationMessage('Token has been retreived and updated successfully')
         }
     }

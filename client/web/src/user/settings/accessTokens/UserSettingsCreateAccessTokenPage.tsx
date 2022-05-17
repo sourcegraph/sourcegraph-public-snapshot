@@ -83,7 +83,7 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
 
     /** Get the token description from the url parameters if any */
     const requestFrom = new URLSearchParams(history.location.search).get('requestFrom')
-    const nonce = new URLSearchParams(history.location.search).get('nonce')
+    // const nonce = new URLSearchParams(history.location.search).get('nonce')
     /** The contents of the note input field. */
     const [note, setNote] = useState<string>('')
     /** The selected scopes checkboxes. */
@@ -112,19 +112,19 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
                     'Click on the pop-up to sent token back to VS Code automatically'
                 ).pipe(
                     tap(result => {
-                        if (requestFrom === 'LOGINVSCE' && nonce) {
+                        // TODO: Create predefined list for requestFrom.
+                        // eg: LOGINVSCE { redirectCall: `vscode://sourcegraph.sourcegraph?code=${result.token}&nonce=${nonce}`}
+                        if (requestFrom === 'LOGINVSCE') {
                             // Go back to access tokens list page and display the token secret value.
                             history.push(`${match.url.replace(/\/new$/, '')}`)
                             onDidCreateAccessToken(result)
                             // TODO: ENCRYPT TOKEN
-                            window.location.replace(
-                                `vscode://sourcegraph.sourcegraph?code=${result.token}&nonce=${nonce}`
-                            )
+                            window.location.replace(`vscode://sourcegraph.sourcegraph?code=${result.token}`)
                         }
                     }),
                     catchError(error => [asError(error)])
                 ),
-            [history, match.url, nonce, onDidCreateAccessToken, requestFrom, scopes, user.id]
+            [history, match.url, onDidCreateAccessToken, requestFrom, scopes, user.id]
         )
     )
 

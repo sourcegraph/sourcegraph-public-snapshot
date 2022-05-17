@@ -140,7 +140,7 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
                 for a video guide on how to create an access token.
             </p>
             <p className={classNames(styles.ctaParagraph)}>
-                <a href="https://sourcegraph.test:3443/sign-in?returnTo=user/settings/tokens/new?requestFrom=LOGINVSCE&nonce=NONCEVSCE">
+                <a href="https://sourcegraph.test:3443/sign-in?returnTo=user/settings/tokens/new?requestFrom=LOGINVSCE">
                     {/* <a href="https://sourcegraph.com/sign-in?returnTo=user/settings/tokens/new?requestFrom=LOGINVSCE"> */}
                     <VSCodeButton
                         type="button"
