@@ -108,6 +108,19 @@ export interface CaptureInsightSettings {
     step: Duration
 }
 
+export interface InsightPreviewSettings {
+    repositories: string[]
+    step: Duration
+    series: SeriesPreviewSettings[]
+}
+
+export interface SeriesPreviewSettings {
+    query: string
+    generatedFromCaptureGroup: boolean
+    label: string
+    stroke: string
+}
+
 export interface AccessibleInsightInfo {
     id: string
     title: string

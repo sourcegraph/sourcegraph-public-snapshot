@@ -35,24 +35,31 @@ export const CaptureGroupCreationLivePreview: React.FunctionComponent<
     React.PropsWithChildren<CaptureGroupCreationLivePreviewProps>
 > = props => {
     const { disabled, repositories, query, stepValue, step, isAllReposMode, className } = props
-    const { getCaptureInsightContent } = useContext(CodeInsightsBackendContext)
+    const { getInsightPreviewContent: getLivePreviewContent } = useContext(CodeInsightsBackendContext)
 
     const settings = useDeepMemo({
         disabled,
-        query: getSanitizedCaptureQuery(query.trim()),
         repositories: getSanitizedRepositories(repositories),
         step: { [step]: stepValue },
+        series: [
+            {
+                query: getSanitizedCaptureQuery(query.trim()),
+                label: '',
+                generatedFromCaptureGroup: true,
+                stroke: '',
+            },
+        ],
     })
 
-    const getLivePreviewContent = useMemo(
+    const getLivePreview = useMemo(
         () => ({
             disabled: settings.disabled,
-            fetcher: () => getCaptureInsightContent(settings),
+            fetcher: () => getLivePreviewContent(settings),
         }),
-        [settings, getCaptureInsightContent]
+        [settings, getLivePreviewContent]
     )
 
-    const { state, update } = useLivePreview(getLivePreviewContent)
+    const { state, update } = useLivePreview(getLivePreview)
 
     return (
         <aside className={className}>

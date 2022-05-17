@@ -1,7 +1,7 @@
 import { ApolloClient, gql } from '@apollo/client'
 
 import { GetInsightPreviewResult, GetInsightPreviewVariables } from '../../../../../../graphql-operations'
-import { CaptureInsightSettings, SeriesChartContent } from '../../code-insights-backend-types'
+import { BackendInsightDatum, InsightPreviewSettings, SeriesChartContent } from '../../code-insights-backend-types'
 import { generateLinkURL, InsightDataSeriesData } from '../../utils/create-line-chart-content'
 import { getStepInterval } from '../utils/get-step-interval'
 
@@ -18,17 +18,14 @@ const GET_INSIGHT_PREVIEW_GQL = gql`
         }
     }
 `
-export interface CaptureGroupInsightDatum {
-    dateTime: Date
-    value: number | null
-    link?: string
-}
 
-export const getCaptureGroupInsightsPreview = (
+export const getInsightsPreview = (
     client: ApolloClient<unknown>,
-    input: CaptureInsightSettings
-): Promise<SeriesChartContent<CaptureGroupInsightDatum>> => {
+    input: InsightPreviewSettings
+): Promise<SeriesChartContent<BackendInsightDatum>> => {
     const [unit, value] = getStepInterval(input.step)
+
+    const inputMetadata = Object.fromEntries(input.series.map(previewSeries => [previewSeries.label, previewSeries]))
 
     return client
         .query<GetInsightPreviewResult, GetInsightPreviewVariables>({
@@ -37,13 +34,11 @@ export const getCaptureGroupInsightsPreview = (
                 input: {
                     repositoryScope: { repositories: input.repositories },
                     timeScope: { stepInterval: { unit, value: +value } },
-                    series: [
-                        {
-                            generatedFromCaptureGroups: true,
-                            label: '',
-                            query: input.query,
-                        },
-                    ],
+                    series: input.series.map(previewSeries => ({
+                        generatedFromCaptureGroups: previewSeries.generatedFromCaptureGroup,
+                        query: previewSeries.query,
+                        label: previewSeries.label,
+                    })),
                 },
             },
         })
@@ -69,8 +64,10 @@ export const getCaptureGroupInsightsPreview = (
             const seriesMetadata = indexedSeries.map((generatedSeries, index) => ({
                 id: generatedSeries.seriesId,
                 name: generatedSeries.label,
-                query: input.query,
-                stroke: DATA_SERIES_COLORS_LIST[index % DATA_SERIES_COLORS_LIST.length],
+                query: inputMetadata[generatedSeries.label]?.query || '',
+                stroke:
+                    inputMetadata[generatedSeries.label]?.stroke ||
+                    DATA_SERIES_COLORS_LIST[index % DATA_SERIES_COLORS_LIST.length],
             }))
 
             const seriesDefinitionMap = Object.fromEntries(
@@ -90,7 +87,9 @@ export const getCaptureGroupInsightsPreview = (
                         }),
                     })),
                     name: line.label,
-                    color: DATA_SERIES_COLORS_LIST[index % DATA_SERIES_COLORS_LIST.length],
+                    color:
+                        inputMetadata[line.label]?.stroke ||
+                        DATA_SERIES_COLORS_LIST[index % DATA_SERIES_COLORS_LIST.length],
                     getLinkURL: datum => datum.link,
                     getYValue: datum => datum.value,
                     getXValue: datum => datum.dateTime,
