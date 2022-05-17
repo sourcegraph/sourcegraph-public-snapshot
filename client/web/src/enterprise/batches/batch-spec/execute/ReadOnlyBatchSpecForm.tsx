@@ -75,7 +75,10 @@ const MemoizedReadOnlyBatchSpecForm: React.FunctionComponent<
                 <Typography.H4>This spec is read-only</Typography.H4>
                 We've preserved the original batch spec from this execution for you to inspect.
             </div>
-            <Button variant="primary" as="a" href={`${batchChange.url}/edit`} target="_blank" rel="noopener noreferrer">
+            {/* NOTE: As a future design consideration, what does the workflow look like if we
+                open this in a new tab to allow the user to continue to reference their original
+                batch spec at the same time? */}
+            <Button variant="primary" onClick={() => history.push(`${batchChange.url}/edit`)}>
                 Edit spec
             </Button>
         </Alert>
