@@ -313,15 +313,15 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       >
         <input
           class="form-check-input"
-          data-testid="streaming-progress-skipped-suggest-check"
-          id="streaming-progress-skipped-suggest-check"
+          data-testid="streaming-progress-skipped-suggest-check-1"
+          id="streaming-progress-skipped-suggest-check-1"
           label="[object Object]"
           type="checkbox"
           value="timeout:2m"
         />
         <label
           class="label form-check-label label"
-          for="streaming-progress-skipped-suggest-check"
+          for="streaming-progress-skipped-suggest-check-1"
         >
           timeout:2m (
           <span
@@ -347,15 +347,15 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       >
         <input
           class="form-check-input"
-          data-testid="streaming-progress-skipped-suggest-check"
-          id="streaming-progress-skipped-suggest-check"
+          data-testid="streaming-progress-skipped-suggest-check-2"
+          id="streaming-progress-skipped-suggest-check-2"
           label="[object Object]"
           type="checkbox"
           value="forked:yes"
         />
         <label
           class="label form-check-label label"
-          for="streaming-progress-skipped-suggest-check"
+          for="streaming-progress-skipped-suggest-check-2"
         >
           forked:yes (
           <span
@@ -371,15 +371,15 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       >
         <input
           class="form-check-input"
-          data-testid="streaming-progress-skipped-suggest-check"
-          id="streaming-progress-skipped-suggest-check"
+          data-testid="streaming-progress-skipped-suggest-check-3"
+          id="streaming-progress-skipped-suggest-check-3"
           label="[object Object]"
           type="checkbox"
           value="archived:yes"
         />
         <label
           class="label form-check-label label"
-          for="streaming-progress-skipped-suggest-check"
+          for="streaming-progress-skipped-suggest-check-3"
         >
           archived:yes (
           <span
@@ -405,15 +405,15 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       >
         <input
           class="form-check-input"
-          data-testid="streaming-progress-skipped-suggest-check"
-          id="streaming-progress-skipped-suggest-check"
+          data-testid="streaming-progress-skipped-suggest-check-4"
+          id="streaming-progress-skipped-suggest-check-4"
           label="[object Object]"
           type="checkbox"
           value="archived:yes"
         />
         <label
           class="label form-check-label label"
-          for="streaming-progress-skipped-suggest-check"
+          for="streaming-progress-skipped-suggest-check-4"
         >
           include archived (
           <span

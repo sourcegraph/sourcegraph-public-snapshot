@@ -38,7 +38,7 @@ type DBStore interface {
 	FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) ([]dbstore.Dump, error)
 	FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, graph *gitdomain.CommitGraph) ([]dbstore.Dump, error)
 	DefinitionDumps(ctx context.Context, monikers []precise.QualifiedMonikerData) (_ []dbstore.Dump, err error)
-	ReferenceIDsAndFilters(ctx context.Context, repositoryID int, commit string, monikers []precise.QualifiedMonikerData, limit, offset int) (_ dbstore.PackageReferenceScanner, _ int, err error)
+	ReferenceIDs(ctx context.Context, repositoryID int, commit string, monikers []precise.QualifiedMonikerData, limit, offset int) (_ dbstore.PackageReferenceScanner, _ int, err error)
 	HasRepository(ctx context.Context, repositoryID int) (bool, error)
 	HasCommit(ctx context.Context, repositoryID int, commit string) (bool, error)
 	MarkRepositoryAsDirty(ctx context.Context, repositoryID int) error

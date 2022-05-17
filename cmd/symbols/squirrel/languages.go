@@ -46,6 +46,7 @@ var extToLang = func() map[string]string {
 
 // Info about a language.
 type LangSpec struct {
+	name         string
 	language     *sitter.Language
 	commentStyle CommentStyle
 	// localsQuery is a tree-sitter localsQuery that finds scopes and defs.
@@ -67,6 +68,7 @@ var javaStyleIgnoreRegex = regexp.MustCompile(`^\s*(/\*\*|\*/)\s*$`)
 // Mapping from language name to language specification.
 var langToLangSpec = map[string]LangSpec{
 	"java": {
+		name:     "java",
 		language: java.GetLanguage(),
 		commentStyle: CommentStyle{
 			nodeTypes:     []string{"comment"},
@@ -93,6 +95,7 @@ var langToLangSpec = map[string]LangSpec{
 `,
 	},
 	"go": {
+		name:     "go",
 		language: golang.GetLanguage(),
 		commentStyle: CommentStyle{
 			nodeTypes:     []string{"comment"},
@@ -118,6 +121,7 @@ var langToLangSpec = map[string]LangSpec{
 `,
 	},
 	"csharp": {
+		name:     "csharp",
 		language: csharp.GetLanguage(),
 		commentStyle: CommentStyle{
 			nodeTypes:     []string{"comment"},
@@ -142,6 +146,7 @@ var langToLangSpec = map[string]LangSpec{
 `,
 	},
 	"python": {
+		name:     "python",
 		language: python.GetLanguage(),
 		commentStyle: CommentStyle{
 			nodeTypes:     []string{"comment"},
@@ -168,6 +173,7 @@ var langToLangSpec = map[string]LangSpec{
 `,
 	},
 	"javascript": {
+		name:     "javascript",
 		language: javascript.GetLanguage(),
 		commentStyle: CommentStyle{
 			nodeTypes:     []string{"comment"},
@@ -201,6 +207,7 @@ var langToLangSpec = map[string]LangSpec{
 `,
 	},
 	"typescript": {
+		name:     "typescript",
 		language: tsx.GetLanguage(),
 		commentStyle: CommentStyle{
 			nodeTypes:     []string{"comment"},
@@ -234,6 +241,7 @@ var langToLangSpec = map[string]LangSpec{
 `,
 	},
 	"cpp": {
+		name:     "cpp",
 		language: cpp.GetLanguage(),
 		commentStyle: CommentStyle{
 			nodeTypes:     []string{"comment"},
@@ -258,6 +266,7 @@ var langToLangSpec = map[string]LangSpec{
 `,
 	},
 	"ruby": {
+		name:     "ruby",
 		language: ruby.GetLanguage(),
 		commentStyle: CommentStyle{
 			nodeTypes:     []string{"comment"},

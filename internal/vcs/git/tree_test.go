@@ -132,7 +132,7 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 
 	// Check symlinks are links
 	for symlink := range symlinks {
-		fi, err := gitserver.LStat(ctx, db, authz.DefaultSubRepoPermsChecker, repo, commitID, symlink)
+		fi, err := gitserver.NewClient(db).LStat(ctx, authz.DefaultSubRepoPermsChecker, repo, commitID, symlink)
 		if err != nil {
 			t.Fatalf("fs.lStat(%s): %s", symlink, err)
 		}
@@ -411,7 +411,7 @@ func TestRepository_FileSystem_quoteChars(t *testing.T) {
 
 	client := gitserver.NewClient(db)
 	for label, test := range tests {
-		commitID, err := ResolveRevision(ctx, db, test.repo, "master", ResolveRevisionOptions{})
+		commitID, err := client.ResolveRevision(ctx, test.repo, "master", gitserver.ResolveRevisionOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -472,7 +472,7 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 
 	client := gitserver.NewClient(db)
 	for label, test := range tests {
-		commitID, err := ResolveRevision(ctx, db, test.repo, "master", ResolveRevisionOptions{})
+		commitID, err := client.ResolveRevision(ctx, test.repo, "master", gitserver.ResolveRevisionOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}

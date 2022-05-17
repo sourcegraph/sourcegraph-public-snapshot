@@ -33,6 +33,7 @@ exports[`HoverOverlay actions and hover error 1`] = `
       data-testid="hover-overlay-contents"
     >
       <div
+        aria-live="polite"
         class="hoverError"
         role="alert"
       >
@@ -264,6 +265,7 @@ exports[`HoverOverlay actions, hover and alert present 1`] = `
       class="hoverOverlayAlerts"
     >
       <div
+        aria-live="polite"
         class="alert"
         role="alert"
       >
@@ -330,6 +332,7 @@ exports[`HoverOverlay hover error 1`] = `
       data-testid="hover-overlay-contents"
     >
       <div
+        aria-live="polite"
         class="hoverError"
         role="alert"
       >
@@ -352,6 +355,7 @@ exports[`HoverOverlay hover error, actions present 1`] = `
       data-testid="hover-overlay-contents"
     >
       <div
+        aria-live="polite"
         class="hoverError"
         role="alert"
       >

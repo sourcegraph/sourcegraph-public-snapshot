@@ -1374,6 +1374,7 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 				URL:   "https://ghe.sgdev.org/",
 				Token: *githubToken,
 				Repos: []string{
+					"sgtest/pipenv-hw",
 					"sgtest/poetry-hw",
 				},
 				RepositoryPathPattern: "github.com/{nameWithOwner}",
@@ -1446,6 +1447,7 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 			"go/github.com/oklog/ulid/v2",
 			"maven/com.google.guava/guava",
 			"python/rich",
+			"github.com/sgtest/pipenv-hw",
 			"github.com/sgtest/poetry-hw",
 		)
 		if err != nil {
@@ -1460,42 +1462,68 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 			{"stream", streamClient},
 		} {
 			tc := tc
-			t.Run(tc.name+"/"+"repos", func(t *testing.T) {
-				began := time.Now()
 
-				const query = `(r:deps(^npm/urql$@v2.2.0) r:core|wonka) OR r:deps(oklog/ulid) OR (r:deps(^github\.com/sgtest/poetry-hw$) r:pluggy|attrs) `
-
-				want := []string{
-					"/go/github.com/pborman/getopt@v0.0.0-20170112200414-7148bc3a4c30",
+			for _, listDepsTc := range []struct {
+				name  string
+				query string
+				want  []string
+			}{
+				{"repos-npm", `r:deps(^npm/urql$@v2.2.0)`, []string{
 					"/npm/urql/core@v1.9.2",
 					"/npm/wonka@v4.0.7",
+				}},
+				{"repos-go", `r:deps(oklog/ulid)`, []string{
+					"/go/github.com/pborman/getopt@v0.0.0-20170112200414-7148bc3a4c30",
+				}},
+				{"repos-python-poetry", `r:deps(^github\.com/sgtest/poetry-hw$)`, []string{
+					"/python/atomicwrites@v1.4.0",
 					"/python/attrs@v21.4.0",
+					"/python/colorama@v0.4.4",
+					"/python/more-itertools@v8.13.0",
+					"/python/packaging@v21.3",
 					"/python/pluggy@v0.13.1",
-				}
+					"/python/py@v1.11.0",
+					"/python/pyparsing@v3.0.8",
+					"/python/pytest@v5.4.3",
+					"/python/tqdm@v4.64.0",
+					"/python/wcwidth@v0.2.5",
+				}},
+				{"repos-python-pipenv", `r:deps(^github\.com/sgtest/pipenv-hw$)`, []string{
+					"/python/certifi@v2021.10.8",
+					"/python/charset-normalizer@v2.0.12",
+					"/python/idna@v3.3",
+					"/python/requests@v2.27.1",
+					"/python/urllib3@v1.26.9",
+				}},
+			} {
+				listDepsTc := listDepsTc
 
-				for {
-					results, err := tc.client.SearchRepositories(query)
-					require.NoError(t, err)
+				t.Run(tc.name+"/"+listDepsTc.name, func(t *testing.T) {
+					began := time.Now()
+					for {
+						results, err := tc.client.SearchRepositories(listDepsTc.query)
+						require.NoError(t, err)
 
-					var have []string
-					for _, r := range results {
-						have = append(have, r.URL)
-					}
-
-					sort.Strings(have)
-
-					if diff := cmp.Diff(have, want); diff != "" {
-						if time.Since(began) >= time.Minute {
-							t.Fatalf("missing repositories after 1m: %v", diff)
+						var have []string
+						for _, r := range results {
+							have = append(have, r.URL)
 						}
 
-						t.Logf("still missing repositories: %v", diff)
-						time.Sleep(time.Second)
-						continue
+						sort.Strings(have)
+
+						if diff := cmp.Diff(have, listDepsTc.want); diff != "" {
+							if time.Since(began) >= time.Minute {
+								t.Fatalf("missing repositories after 1m: %v", diff)
+							}
+
+							t.Logf("still missing repositories: %v", diff)
+							time.Sleep(time.Second)
+							continue
+						}
+						break
 					}
-					break
-				}
-			})
+				})
+			}
 
 			t.Run(tc.name+"/"+"no-alert", func(t *testing.T) {
 				const query = `r:deps(^npm/urql$@v2.2.0) split`

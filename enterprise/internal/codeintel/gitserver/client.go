@@ -164,7 +164,7 @@ func (c *Client) CommitDate(ctx context.Context, repositoryID int, commit string
 	// target of the command. If the revision fails to resolve, we return an instance
 	// of a RevisionNotFoundError error instead of an "exit 128".
 	if !gitdomain.IsRepoNotExist(err) {
-		if _, err := git.ResolveRevision(ctx, db, repo, commit, git.ResolveRevisionOptions{}); err != nil {
+		if _, err := gitserver.NewClient(c.db).ResolveRevision(ctx, repo, commit, gitserver.ResolveRevisionOptions{}); err != nil {
 			return "", time.Time{}, false, errors.Wrap(err, "git.ResolveRevision")
 		}
 	}
@@ -203,7 +203,8 @@ func (c *Client) CommitGraph(ctx context.Context, repositoryID int, opts gitserv
 		return nil, err
 	}
 
-	g, err := gitserver.NewClient(c.db).CommitGraph(ctx, repo, opts)
+	gitserverClient := gitserver.NewClient(c.db)
+	g, err := gitserverClient.CommitGraph(ctx, repo, opts)
 	if err == nil {
 		return g, nil
 	}
@@ -213,7 +214,7 @@ func (c *Client) CommitGraph(ctx context.Context, repositoryID int, opts gitserv
 	// target of the command. If the revision fails to resolve, we return an instance
 	// of a RevisionNotFoundError error instead of an "exit 128".
 	if !gitdomain.IsRepoNotExist(err) && opts.Commit != "" {
-		if _, err := git.ResolveRevision(ctx, c.db, repo, opts.Commit, git.ResolveRevisionOptions{}); err != nil {
+		if _, err := gitserverClient.ResolveRevision(ctx, repo, opts.Commit, gitserver.ResolveRevisionOptions{}); err != nil {
 			return nil, errors.Wrap(err, "git.ResolveRevision")
 		}
 	}
@@ -329,7 +330,7 @@ func (c *Client) RawContents(ctx context.Context, repositoryID int, commit, file
 	// target of the command. If the revision fails to resolve, we return an instance
 	// of a RevisionNotFoundError error instead of an "exit 128".
 	if !gitdomain.IsRepoNotExist(err) {
-		if _, err := git.ResolveRevision(ctx, db, repo, commit, git.ResolveRevisionOptions{}); err != nil {
+		if _, err := gitserver.NewClient(c.db).ResolveRevision(ctx, repo, commit, gitserver.ResolveRevisionOptions{}); err != nil {
 			return nil, errors.Wrap(err, "git.ResolveRevision")
 		}
 	}
@@ -365,7 +366,7 @@ func (c *Client) DirectoryChildren(ctx context.Context, repositoryID int, commit
 	// target of the command. If the revision fails to resolve, we return an instance
 	// of a RevisionNotFoundError error instead of an "exit 128".
 	if !gitdomain.IsRepoNotExist(err) {
-		if _, err := git.ResolveRevision(ctx, c.db, repo, commit, git.ResolveRevisionOptions{}); err != nil {
+		if _, err := gitserver.NewClient(c.db).ResolveRevision(ctx, repo, commit, gitserver.ResolveRevisionOptions{}); err != nil {
 			return nil, errors.Wrap(err, "git.ResolveRevision")
 		}
 	}
@@ -391,7 +392,7 @@ func (c *Client) FileExists(ctx context.Context, repositoryID int, commit, file 
 	}
 
 	db := c.db
-	if _, err := git.ResolveRevision(ctx, db, repo, commit, git.ResolveRevisionOptions{}); err != nil {
+	if _, err := gitserver.NewClient(c.db).ResolveRevision(ctx, repo, commit, gitserver.ResolveRevisionOptions{}); err != nil {
 		return false, errors.Wrap(err, "git.ResolveRevision")
 	}
 
@@ -431,7 +432,7 @@ func (c *Client) ListFiles(ctx context.Context, repositoryID int, commit string,
 	// target of the command. If the revision fails to resolve, we return an instance
 	// of a RevisionNotFoundError error instead of an "exit 128".
 	if !gitdomain.IsRepoNotExist(err) {
-		if _, err := git.ResolveRevision(ctx, c.db, repo, commit, git.ResolveRevisionOptions{}); err != nil {
+		if _, err := gitserver.NewClient(c.db).ResolveRevision(ctx, repo, commit, gitserver.ResolveRevisionOptions{}); err != nil {
 			return nil, errors.Wrap(err, "git.ResolveRevision")
 		}
 	}
@@ -455,7 +456,7 @@ func (c *Client) ResolveRevision(ctx context.Context, repositoryID int, versionS
 		return "", err
 	}
 
-	commitID, err = git.ResolveRevision(ctx, c.db, repoName, versionString, git.ResolveRevisionOptions{})
+	commitID, err = gitserver.NewClient(c.db).ResolveRevision(ctx, repoName, versionString, gitserver.ResolveRevisionOptions{})
 	if err != nil {
 		return "", errors.Wrap(err, "git.ResolveRevision")
 	}

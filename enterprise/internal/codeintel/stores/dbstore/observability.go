@@ -63,7 +63,7 @@ type operations struct {
 	queueSize                                   *observation.Operation
 	recentIndexesSummary                        *observation.Operation
 	recentUploadsSummary                        *observation.Operation
-	referenceIDsAndFilters                      *observation.Operation
+	referenceIDs                                *observation.Operation
 	referencesForUpload                         *observation.Operation
 	refreshCommitResolvability                  *observation.Operation
 	repoIDsByGlobPatterns                       *observation.Operation
@@ -169,7 +169,7 @@ func newOperations(observationContext *observation.Context, metrics *metrics.RED
 		queueSize:                            op("QueueSize"),
 		recentIndexesSummary:                 op("RecentIndexesSummary"),
 		recentUploadsSummary:                 op("RecentUploadsSummary"),
-		referenceIDsAndFilters:               op("ReferenceIDsAndFilters"),
+		referenceIDs:                         op("ReferenceIDs"),
 		referencesForUpload:                  op("ReferencesForUpload"),
 		refreshCommitResolvability:           op("RefreshCommitResolvability"),
 		repoIDsByGlobPatterns:                op("repoIDsByGlobPatterns"),

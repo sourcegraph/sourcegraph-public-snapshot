@@ -91,7 +91,7 @@ func (r *schemaResolver) ParseSearchQuery(ctx context.Context, args *struct {
 	}
 
 	var jsons []any
-	for _, node := range plan.ToParseTree() {
+	for _, node := range plan.ToQ() {
 		jsons = append(jsons, toJSON(node))
 	}
 	json, err := json.Marshal(jsons)

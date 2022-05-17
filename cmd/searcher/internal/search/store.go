@@ -10,11 +10,11 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/bmatcuk/doublestar"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
@@ -421,7 +421,7 @@ func (s *Store) watchConfig() {
 func ignoreSizeMax(name string, patterns []string) bool {
 	for _, pattern := range patterns {
 		pattern = strings.TrimSpace(pattern)
-		if m, _ := filepath.Match(pattern, name); m {
+		if m, _ := doublestar.Match(pattern, name); m {
 			return true
 		}
 	}

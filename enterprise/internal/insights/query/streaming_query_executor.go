@@ -89,7 +89,7 @@ func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seri
 			tr := *tabulationResult
 
 			if len(tr.Errors) > 0 {
-				return nil, errors.Errorf("stream search: errors: %v", tr.Errors)
+				return nil, errors.Errorf("streaming search: errors: %v", tr.Errors)
 			}
 
 			points[execution.RecordingTime] += tr.TotalCount

@@ -1040,9 +1040,9 @@ func reduce(left, right []Node, kind operatorKind) ([]Node, bool) {
 	}
 	if len(right) > 1 {
 		// Reduce right list.
-		reduced, changed := reduce(append(left, right[0]), right[1:], kind)
+		reduced, changed := reduce([]Node{right[0]}, right[1:], kind)
 		if changed {
-			return reduced, true
+			return append(left, reduced...), true
 		}
 	}
 	return append(left, right...), false
