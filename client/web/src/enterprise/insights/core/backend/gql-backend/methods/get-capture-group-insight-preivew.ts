@@ -1,18 +1,15 @@
 import { ApolloClient, gql } from '@apollo/client'
 
-import {
-    GetCaptureGroupInsightPreviewResult,
-    GetCaptureGroupInsightPreviewVariables,
-} from '../../../../../../graphql-operations'
+import { GetInsightPreviewResult, GetInsightPreviewVariables } from '../../../../../../graphql-operations'
 import { CaptureInsightSettings, SeriesChartContent } from '../../code-insights-backend-types'
 import { generateLinkURL, InsightDataSeriesData } from '../../utils/create-line-chart-content'
 import { getStepInterval } from '../utils/get-step-interval'
 
 import { DATA_SERIES_COLORS_LIST, MAX_NUMBER_OF_SERIES } from './get-backend-insight-data/deserializators'
 
-const GET_CAPTURE_GROUP_INSIGHT_PREVIEW_GQL = gql`
-    query GetCaptureGroupInsightPreview($input: SearchInsightLivePreviewInput!) {
-        searchInsightLivePreview(input: $input) {
+const GET_INSIGHT_PREVIEW_GQL = gql`
+    query GetInsightPreview($input: SearchInsightPreviewInput!) {
+        searchInsightPreview(input: $input) {
             points {
                 dateTime
                 value
@@ -34,15 +31,19 @@ export const getCaptureGroupInsightsPreview = (
     const [unit, value] = getStepInterval(input.step)
 
     return client
-        .query<GetCaptureGroupInsightPreviewResult, GetCaptureGroupInsightPreviewVariables>({
-            query: GET_CAPTURE_GROUP_INSIGHT_PREVIEW_GQL,
+        .query<GetInsightPreviewResult, GetInsightPreviewVariables>({
+            query: GET_INSIGHT_PREVIEW_GQL,
             variables: {
                 input: {
-                    query: input.query,
-                    label: '',
                     repositoryScope: { repositories: input.repositories },
-                    generatedFromCaptureGroups: true,
                     timeScope: { stepInterval: { unit, value: +value } },
+                    series: [
+                        {
+                            generatedFromCaptureGroups: true,
+                            label: '',
+                            query: input.query,
+                        },
+                    ],
                 },
             },
         })
@@ -51,7 +52,7 @@ export const getCaptureGroupInsightsPreview = (
                 throw error
             }
 
-            const { searchInsightLivePreview: series } = data
+            const { searchInsightPreview: series } = data
 
             if (series.length === 0) {
                 throw new Error('Found no matches')
