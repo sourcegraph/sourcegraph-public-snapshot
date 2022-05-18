@@ -17,6 +17,7 @@ import {
     Checkbox,
     LoadingSpinner,
     Alert,
+    Typography,
 } from '@sourcegraph/wildcard'
 
 import { AccessTokenScopes } from '../../../auth/accessToken'
@@ -44,10 +45,7 @@ interface TokenRequester {
     message?: string
 }
 
-/**
- * A list of predefined requesters
- * Only accept requests from this list
- */
+// SECURITY: Only accept callback requests from requesters on this allowed list
 const REQUESTERS: Record<string, TokenRequester> = {
     LOGINVSCE: {
         name: 'VS Code Extension',
@@ -58,8 +56,13 @@ const REQUESTERS: Record<string, TokenRequester> = {
 }
 
 /**
- * A page with a callback function to create an access token for a user then redirect them back to
- * where they were sent from. Only accept requests from the predefined list of REQUESTERS
+ * This page acts as a callback URL after the authentication process has been completed by a user.
+ * This can be shared among different SG integrations as long as the value that is being passed in
+ * using the 'requestFrom' param (.../user/settings/tokens/new/callback?requestFrom=$SOURCE) is included in
+ * the REQUESTERS allow list above.
+ * Once the request has been validated, the user will then be redirected back to the source with the newly created token passing
+ * in as a new URL param, using the redirect URL associated with the allowlisted requester The token should then be processed by the extension's
+ * URL handler (For example, "vscode://sourcegraph/sourcegraph?code=$TOKEN" for the VS Code extension)
  */
 export const UserSettingsCreateAccessTokenCallbackPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     telemetryService,
@@ -74,7 +77,7 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FunctionComponent<
 
     /** Get the token description from the url parameters if any */
     const requestFrom = new URLSearchParams(history.location.search).get('requestFrom')
-    /** The selected scopes checkboxes. */
+    /** The validated requester where the callback request originally comes from. */
     const [requester, setRequester] = useState<TokenRequester | null | undefined>(undefined)
     /** The contents of the note input field. */
     const [note, setNote] = useState<string>('')
@@ -93,6 +96,7 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FunctionComponent<
         }
         // Redirect users back to tokens page if none or invalid url params provided
         if (!requestFrom || (!requester && requester !== undefined)) {
+            console.error('Error: Cannot process requests from unknown source.')
             history.push(`${match.url.replace(/\/new\/callback$/, '')}`)
         }
     }, [history, match.url, requestFrom, requester])
@@ -110,7 +114,6 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FunctionComponent<
                         // SECURITY: If the request was from a valid requestor, redirect to the allowlisted redirect URL.
                         if (requester) {
                             onDidCreateAccessToken(result)
-                            // TODO: ENCRYPT TOKEN
                             setNewToken(result.token)
                             const uri = requester?.redirectURL.replace('$TOKEN', result.token)
                             window.location.replace(uri)
@@ -179,9 +182,9 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FunctionComponent<
                         <Alert className="access-token-created-alert mt-3" variant="success">
                             <p>Copy the new access token now. You won't be able to see it again.</p>
                             <CopyableText className="test-access-token" text={newToken} size={48} />
-                            <h5 className="mt-4 mb-2">
+                            <Typography.H5 className="mt-4 mb-2">
                                 <strong>{requester?.message}</strong>
-                            </h5>
+                            </Typography.H5>
                         </Alert>
                     </Container>
                     <div className="mb-3">
