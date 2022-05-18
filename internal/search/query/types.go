@@ -285,6 +285,9 @@ func (b Basic) IsStructural() bool {
 // PatternString returns the simple string pattern of a basic query. It assumes
 // there is only on pattern atom.
 func (b Basic) PatternString() string {
+	if b.Pattern == nil {
+		return ""
+	}
 	if p, ok := b.Pattern.(Pattern); ok {
 		if b.IsLiteral() {
 			// Escape regexp meta characters if this pattern should be treated literally.
