@@ -33,7 +33,9 @@ import {
     mergeMap,
     delay,
     startWith,
+    tap,
 } from 'rxjs/operators'
+import { Key } from 'ts-key-enum'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Position, Range } from '@sourcegraph/extension-api-types'
@@ -77,6 +79,14 @@ export interface HoverifierOptions<C extends object, D, A> {
          */
         relativeElement?: HTMLElement
     }>
+
+    pinOptions?: {
+        /** Emit on this Observable to pin the popover. */
+        pins: Subscribable<void>
+
+        /** * Emit on this Observable when the close button in the HoverOverlay was clicked */
+        closeButtonClicks: Subscribable<void>
+    }
 
     hoverOverlayElements: Subscribable<HTMLElement | null>
 
@@ -235,6 +245,9 @@ export interface HoverifyOptions<C extends object>
  * @template A The type of an action.
  */
 export interface HoverState<C extends object, D, A> {
+    /** The currently hovered token */
+    hoveredToken?: HoveredToken & C
+
     /**
      * The currently hovered and highlighted HTML element.
      */
@@ -249,6 +262,8 @@ export interface HoverState<C extends object, D, A> {
      * The props to pass to `HoverOverlay`, or `undefined` if it should not be rendered.
      */
     hoverOverlayProps?: Pick<HoverOverlayProps<C, D, A>, Exclude<keyof HoverOverlayProps<C, D, A>, 'actionComponent'>>
+
+    pinned?: boolean
 
     /**
      * The highlighted range, which is the range in the hover result or else the range of the hovered token.
@@ -270,6 +285,8 @@ export interface HoverState<C extends object, D, A> {
  */
 interface InternalHoverifierState<C extends object, D, A> {
     hoverOrError?: typeof LOADING | (HoverAttachment & D) | null | ErrorLike
+
+    pinned: boolean
 
     /** The desired position of the hover overlay */
     hoverOverlayPosition?: { left: number } & ({ top: number } | { bottom: number })
@@ -312,7 +329,7 @@ interface InternalHoverifierState<C extends object, D, A> {
  * (because there is no content, or because it is still loading).
  */
 const shouldRenderOverlay = (state: InternalHoverifierState<{}, {}, {}>): boolean =>
-    !state.mouseIsMoving &&
+    !(!state.pinned && state.mouseIsMoving) &&
     ((!!state.hoverOrError && state.hoverOrError !== LOADING) ||
         (!!state.actionsOrError &&
             state.actionsOrError !== LOADING &&
@@ -328,6 +345,7 @@ const shouldRenderOverlay = (state: InternalHoverifierState<{}, {}, {}>): boolea
 const internalToExternalState = <C extends object, D, A>(
     internalState: InternalHoverifierState<C, D, A>
 ): HoverState<C, D, A> => ({
+    hoveredToken: internalState.hoveredToken,
     hoveredTokenElement: internalState.hoveredTokenElement,
     actionsOrError: internalState.actionsOrError,
     selectedPosition: internalState.selectedPosition,
@@ -340,6 +358,7 @@ const internalToExternalState = <C extends object, D, A>(
               actionsOrError: internalState.actionsOrError,
           }
         : undefined,
+    pinned: internalState.pinned,
 })
 
 /** The time in ms after which to show a loader if the result has not returned yet */
@@ -395,6 +414,7 @@ export type ContextResolver<C extends object> = (hoveredToken: HoveredToken) => 
  * @template A The type of an action.
  */
 export function createHoverifier<C extends object, D, A>({
+    pinOptions,
     hoverOverlayElements,
     hoverOverlayRerenders,
     getHover,
@@ -408,6 +428,7 @@ export function createHoverifier<C extends object, D, A>({
     // Shared between all hoverified code views
     const container = createObservableStateContainer<InternalHoverifierState<C, D, A>>({
         hoveredTokenElement: undefined,
+        pinned: false,
         hoveredToken: undefined,
         hoverOrError: undefined,
         hoverOverlayPosition: undefined,
@@ -444,6 +465,7 @@ export function createHoverifier<C extends object, D, A>({
     ): event is MouseEventTrigger & { eventType: T } => event.eventType === type
     const allCodeMouseMoves = allPositionsFromEvents.pipe(filter(isEventType('mousemove')), suppressWhileOverlayShown())
     const allCodeMouseOvers = allPositionsFromEvents.pipe(filter(isEventType('mouseover')), suppressWhileOverlayShown())
+    const allCodeClicks = allPositionsFromEvents.pipe(filter(isEventType('click')))
 
     const allPositionJumps = new Subject<PositionJump & EventOptions<C>>()
 
@@ -484,6 +506,8 @@ export function createHoverifier<C extends object, D, A>({
             ...rest,
         })),
         debounceTime(MOUSEOVER_DELAY),
+        // Do not consider mouseovers while overlay is pinned
+        filter(() => !container.values.pinned),
         switchMap(({ adjustPosition, codeView, resolveContext, position, ...rest }) =>
             adjustPosition && position
                 ? from(
@@ -650,9 +674,9 @@ export function createHoverifier<C extends object, D, A>({
         hoveredTokenElement,
         scrollBoundaries,
         ...rest
-    }: Omit<InternalHoverifierState<C, D, A>, 'mouseIsMoving' | 'hoverOverlayIsFixed'> &
+    }: Omit<InternalHoverifierState<C, D, A>, 'mouseIsMoving' | 'pinned'> &
         Omit<EventOptions<C>, 'resolveContext' | 'dom'> & { codeView: HTMLElement }): Observable<
-        Omit<InternalHoverifierState<C, D, A>, 'mouseIsMoving' | 'hoverOverlayIsFixed'> & { codeView: HTMLElement }
+        Omit<InternalHoverifierState<C, D, A>, 'mouseIsMoving' | 'pinned'> & { codeView: HTMLElement }
     > => {
         const result = of({ hoveredTokenElement, ...rest })
         if (!hoveredTokenElement || !scrollBoundaries) {
@@ -666,7 +690,7 @@ export function createHoverifier<C extends object, D, A>({
                 mapTo({
                     ...rest,
                     hoveredTokenElement,
-                    hoverOverlayIsFixed: false,
+                    pinned: false,
                     hoverOrError: undefined,
                     hoveredToken: undefined,
                     actionsOrError: undefined,
@@ -960,11 +984,27 @@ export function createHoverifier<C extends object, D, A>({
     const resetHover = (): void => {
         container.update({
             hoverOverlayPosition: undefined,
+            pinned: false,
             hoverOrError: undefined,
             hoveredToken: undefined,
             actionsOrError: undefined,
         })
     }
+
+    // Pin on request.
+    subscription.add(pinOptions?.pins.subscribe(() => container.update({ pinned: true })))
+
+    // Unpin on close, ESC, or click.
+    subscription.add(
+        merge(
+            pinOptions?.closeButtonClicks ?? EMPTY,
+            fromEvent<KeyboardEvent>(window, 'keydown').pipe(
+                filter(event => event.key === Key.Escape),
+                tap(event => event.preventDefault())
+            ),
+            allCodeClicks
+        ).subscribe(() => resetHover())
+    )
 
     // LOCATION CHANGES
     subscription.add(

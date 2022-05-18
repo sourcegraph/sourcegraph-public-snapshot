@@ -106,10 +106,11 @@
 }
 
 .actions-copy-link {
-    text-decoration: none !important;
-    padding-right: 16px;
+    margin-right: 16px;
     font-size: 0.75rem;
-    font-weight: normal;
+    color: var(--link-color);
+    border-style: none;
+    background: transparent;
 
     > span:last-child {
         padding-left: 3px;
