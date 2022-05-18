@@ -54,8 +54,6 @@ type LSIFStore interface {
 	Done(err error) error
 
 	Clear(ctx context.Context, bundleIDs ...int) error
-	DeleteOldPublicSearchRecords(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int) (int, error)
-	DeleteOldPrivateSearchRecords(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int) (int, error)
 }
 
 type LSIFStoreShim struct {

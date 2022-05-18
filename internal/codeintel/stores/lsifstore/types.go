@@ -29,12 +29,11 @@ type Diagnostic struct {
 	precise.DiagnosticData
 }
 
-// CodeIntelligenceRange pairs a range with its definitions, references, implementations, hover text, and documentation.
+// CodeIntelligenceRange pairs a range with its definitions, references, implementations, and hover text.
 type CodeIntelligenceRange struct {
-	Range               Range
-	Definitions         []Location
-	References          []Location
-	Implementations     []Location
-	HoverText           string
-	DocumentationPathID string
+	Range           Range
+	Definitions     []Location
+	References      []Location
+	Implementations []Location
+	HoverText       string
 }

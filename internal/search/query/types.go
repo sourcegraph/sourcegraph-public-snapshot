@@ -152,6 +152,15 @@ func (q Q) Dependencies() (dependencies []string) {
 	return dependencies
 }
 
+func (q Q) Dependents() (dependents []string) {
+	VisitPredicate(q, func(field, name, value string) {
+		if field == FieldRepo && (name == "dependents" || name == "revdeps") {
+			dependents = append(dependents, value)
+		}
+	})
+	return dependents
+}
+
 func (q Q) MaxResults(defaultLimit int) int {
 	if q == nil {
 		return 0
@@ -230,11 +239,22 @@ func (b Basic) MapCount(count int) Basic {
 }
 
 func (b Basic) String() string {
-	return fmt.Sprintf("%s %s", Q(toNodes(b.Parameters)).String(), Q([]Node{b.Pattern}).String())
+	return b.toString(func(nodes []Node) string {
+		return Q(nodes).String()
+	})
 }
 
 func (b Basic) StringHuman() string {
-	return fmt.Sprintf("%s %s", StringHuman(toNodes(b.Parameters)), StringHuman([]Node{b.Pattern}))
+	return b.toString(StringHuman)
+}
+
+// toString is a helper for String and StringHuman
+func (b Basic) toString(marshal func([]Node) string) string {
+	param := marshal(toNodes(b.Parameters))
+	if b.Pattern != nil {
+		return param + " " + marshal([]Node{b.Pattern})
+	}
+	return param
 }
 
 // HasPatternLabel returns whether a pattern atom has a specified label.
@@ -265,6 +285,9 @@ func (b Basic) IsStructural() bool {
 // PatternString returns the simple string pattern of a basic query. It assumes
 // there is only on pattern atom.
 func (b Basic) PatternString() string {
+	if b.Pattern == nil {
+		return ""
+	}
 	if p, ok := b.Pattern.(Pattern); ok {
 		if b.IsLiteral() {
 			// Escape regexp meta characters if this pattern should be treated literally.
@@ -317,6 +340,15 @@ func (p Parameters) Dependencies() (dependencies []string) {
 		}
 	})
 	return dependencies
+}
+
+func (p Parameters) Dependents() (dependents []string) {
+	VisitPredicate(toNodes(p), func(field, name, value string) {
+		if field == FieldRepo && (name == "revdeps" || name == "dependents") {
+			dependents = append(dependents, value)
+		}
+	})
+	return dependents
 }
 
 func (p Parameters) MaxResults(defaultLimit int) int {

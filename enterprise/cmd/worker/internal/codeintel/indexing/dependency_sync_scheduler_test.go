@@ -23,7 +23,7 @@ func TestDependencySyncSchedulerJVM(t *testing.T) {
 	mockDBStore.WithFunc.SetDefaultReturn(mockDBStore)
 	mockScanner := NewMockPackageReferenceScanner()
 	mockDBStore.ReferencesForUploadFunc.SetDefaultReturn(mockScanner, nil)
-	mockDBStore.GetUploadByIDFunc.SetDefaultReturn(enterprisedbstore.Upload{ID: 42, RepositoryID: 50, Indexer: "lsif-java"}, true, nil)
+	mockDBStore.GetUploadByIDFunc.SetDefaultReturn(enterprisedbstore.Upload{ID: 42, RepositoryID: 50, Indexer: "scip-java"}, true, nil)
 	mockScanner.NextFunc.PushReturn(shared.PackageReference{Package: shared.Package{DumpID: 42, Scheme: dependencies.JVMPackagesScheme, Name: "name1", Version: "v2.2.0"}}, true, nil)
 
 	handler := dependencySyncSchedulerHandler{

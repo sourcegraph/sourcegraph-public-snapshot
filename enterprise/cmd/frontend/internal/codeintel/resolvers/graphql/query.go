@@ -218,16 +218,3 @@ func (r *QueryResolver) Diagnostics(ctx context.Context, args *gql.LSIFDiagnosti
 
 	return NewDiagnosticConnectionResolver(diagnostics, totalCount, r.locationResolver), nil
 }
-
-func (r *QueryResolver) Documentation(ctx context.Context, args *gql.LSIFQueryPositionArgs) (_ gql.DocumentationResolver, err error) {
-	defer r.errTracer.Collect(&err, log.String("queryResolver.field", "documentation"))
-
-	documentations, err := r.queryResolver.Documentation(ctx, int(args.Line), int(args.Character))
-	if err != nil {
-		return nil, err
-	}
-	if len(documentations) == 0 {
-		return nil, nil
-	}
-	return NewDocumentationResolver(documentations[0]), nil
-}

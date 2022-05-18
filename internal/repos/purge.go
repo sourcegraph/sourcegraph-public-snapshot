@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -82,9 +81,6 @@ func purge(ctx context.Context, db database.DB, log log15.Logger, options databa
 			}
 		}
 		total++
-		// The repo may have been deleted, we want its old name
-		repo = api.UndeletedRepoName(repo)
-		repo = protocol.NormalizeRepo(repo)
 		if err := gitserverClient.Remove(ctx, repo); err != nil {
 			// Do not fail at this point, just log so we can remove other repos.
 			log.Warn("failed to remove repository", "repo", repo, "error", err)

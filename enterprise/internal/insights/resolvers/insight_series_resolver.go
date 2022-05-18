@@ -258,15 +258,15 @@ type resolverGenerator func(ctx context.Context, series types.InsightViewSeries,
 
 type seriesResolverGenerator struct {
 	next             insightSeriesResolverGenerator
-	handelsSeries    handleSeriesFunc
+	handlesSeries    handleSeriesFunc
 	generateResolver resolverGenerator
 }
 
 func (j *seriesResolverGenerator) handles(series types.InsightViewSeries) bool {
-	if j.handelsSeries == nil {
+	if j.handlesSeries == nil {
 		return false
 	}
-	return j.handelsSeries(series)
+	return j.handlesSeries(series)
 }
 
 func (j *seriesResolverGenerator) SetNext(nextGenerator insightSeriesResolverGenerator) {
@@ -285,9 +285,9 @@ func (j *seriesResolverGenerator) Generate(ctx context.Context, series types.Ins
 	}
 }
 
-func newSeriesResolverGenerator(handels handleSeriesFunc, generate resolverGenerator) insightSeriesResolverGenerator {
+func newSeriesResolverGenerator(handles handleSeriesFunc, generate resolverGenerator) insightSeriesResolverGenerator {
 	return &seriesResolverGenerator{
-		handelsSeries:    handels,
+		handlesSeries:    handles,
 		generateResolver: generate,
 	}
 }
