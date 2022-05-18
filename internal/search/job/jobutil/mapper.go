@@ -18,16 +18,16 @@ type Mapper struct {
 	MapJob func(job job.Job) job.Job
 
 	// Search Jobs (leaf nodes)
-	MapZoektRepoSubsetSearchJob    func(*zoekt.ZoektRepoSubsetSearchJob) *zoekt.ZoektRepoSubsetSearchJob
-	MapZoektSymbolSearchJob        func(*zoekt.ZoektSymbolSearchJob) *zoekt.ZoektSymbolSearchJob
-	MapSearcherJob                 func(*searcher.SearcherJob) *searcher.SearcherJob
-	MapSymbolSearcherJob           func(*searcher.SymbolSearcherJob) *searcher.SymbolSearcherJob
-	MapRepoSearchJob               func(*run.RepoSearchJob) *run.RepoSearchJob
-	MapRepoUniverseTextSearchJob   func(*zoekt.ZoektGlobalSearchJob) *zoekt.ZoektGlobalSearchJob
-	MapStructuralSearchJob         func(*structural.StructuralSearchJob) *structural.StructuralSearchJob
-	MapCommitSearchJob             func(*commit.CommitSearchJob) *commit.CommitSearchJob
-	MapRepoUniverseSymbolSearchJob func(*zoekt.RepoUniverseSymbolSearchJob) *zoekt.RepoUniverseSymbolSearchJob
-	MapComputeExcludedReposJob     func(*repos.ComputeExcludedReposJob) *repos.ComputeExcludedReposJob
+	MapZoektRepoSubsetSearchJob   func(*zoekt.ZoektRepoSubsetSearchJob) *zoekt.ZoektRepoSubsetSearchJob
+	MapZoektSymbolSearchJob       func(*zoekt.ZoektSymbolSearchJob) *zoekt.ZoektSymbolSearchJob
+	MapZoektGlobalSymbolSearchJob func(*zoekt.ZoektGlobalSymbolSearchJob) *zoekt.ZoektGlobalSymbolSearchJob
+	MapSearcherJob                func(*searcher.SearcherJob) *searcher.SearcherJob
+	MapSymbolSearcherJob          func(*searcher.SymbolSearcherJob) *searcher.SymbolSearcherJob
+	MapRepoSearchJob              func(*run.RepoSearchJob) *run.RepoSearchJob
+	MapRepoUniverseTextSearchJob  func(*zoekt.ZoektGlobalSearchJob) *zoekt.ZoektGlobalSearchJob
+	MapStructuralSearchJob        func(*structural.StructuralSearchJob) *structural.StructuralSearchJob
+	MapCommitSearchJob            func(*commit.CommitSearchJob) *commit.CommitSearchJob
+	MapComputeExcludedReposJob    func(*repos.ComputeExcludedReposJob) *repos.ComputeExcludedReposJob
 
 	// Repo pager Job (pre-step for some Search Jobs)
 	MapRepoPagerJob func(*repoPagerJob) *repoPagerJob
@@ -106,9 +106,9 @@ func (m *Mapper) Map(j job.Job) job.Job {
 		}
 		return j
 
-	case *zoekt.RepoUniverseSymbolSearchJob:
-		if m.MapRepoUniverseSymbolSearchJob != nil {
-			j = m.MapRepoUniverseSymbolSearchJob(j)
+	case *zoekt.ZoektGlobalSymbolSearchJob:
+		if m.MapZoektGlobalSymbolSearchJob != nil {
+			j = m.MapZoektGlobalSymbolSearchJob(j)
 		}
 		return j
 
@@ -225,7 +225,7 @@ func MapAtom(j job.Job, f func(job.Job) job.Job) job.Job {
 				*run.RepoSearchJob,
 				*structural.StructuralSearchJob,
 				*commit.CommitSearchJob,
-				*zoekt.RepoUniverseSymbolSearchJob,
+				*zoekt.ZoektGlobalSymbolSearchJob,
 				*repos.ComputeExcludedReposJob,
 				*NoopJob:
 				return f(typedJob)

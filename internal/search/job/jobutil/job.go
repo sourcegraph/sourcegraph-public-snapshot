@@ -608,7 +608,7 @@ func (b *jobBuilder) newZoektGlobalSearch(typ search.IndexedRequestType) (job.Jo
 
 	switch typ {
 	case search.SymbolRequest:
-		return &zoekt.RepoUniverseSymbolSearchJob{
+		return &zoekt.ZoektGlobalSymbolSearchJob{
 			GlobalZoektQuery: globalZoektQuery,
 			ZoektArgs:        zoektArgs,
 			RepoOptions:      b.repoOptions,
