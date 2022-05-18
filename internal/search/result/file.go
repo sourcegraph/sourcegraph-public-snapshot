@@ -4,6 +4,7 @@ import (
 	"net/url"
 	"path"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
@@ -162,9 +163,63 @@ func (fm *FileMatch) Key() Key {
 	return k
 }
 
-// LineMatch is the struct used by vscode to receive search results for a line
+// LineColumn is a subset of the fields on Location because we don't
+// have the rune offset necessary to build a full Location yet.
+// Eventually, the two structs should be merged.
+type LineColumn struct {
+	// Line is the count of newlines before the offset in the matched text
+	Line int32
+
+	// Column is the count of unicode code points after the last newline in the matched text
+	Column int32
+}
+
+type MultilineMatch struct {
+	// Preview is a possibly-multiline string that contains all the
+	// lines that the match overlaps.
+	// The number of lines in Preview should be End.Line - Start.Line + 1
+	Preview string
+	Start   LineColumn
+	End     LineColumn
+}
+
+func (m MultilineMatch) AsLineMatches() []LineMatch {
+	lines := strings.Split(m.Preview, "\n")
+	lineMatches := make([]LineMatch, 0, len(lines))
+	for i, line := range lines {
+		// TODO include the newline character?
+		offset, length := int32(0), int32(utf8.RuneCountInString(line))
+		if i == 0 {
+			offset = m.Start.Column
+		}
+		if i == len(lines)-1 {
+			length = m.End.Column - m.Start.Column
+		}
+		lineMatches = append(lineMatches, LineMatch{
+			Preview:          line,
+			LineNumber:       m.Start.Line + int32(i),
+			OffsetAndLengths: [][2]int32{{offset, length}},
+		})
+	}
+	return lineMatches
+}
+
 type LineMatch struct {
+	// Preview is the full single line these offsets belong to
 	Preview          string
 	OffsetAndLengths [][2]int32
 	LineNumber       int32
+}
+
+func (m LineMatch) AsMultilineMatches() []MultilineMatch {
+	multilineMatches := make([]MultilineMatch, 0, len(m.OffsetAndLengths))
+	for _, offsetAndLength := range m.OffsetAndLengths {
+		offset, length := offsetAndLength[0], offsetAndLength[1]
+		multilineMatches = append(multilineMatches, MultilineMatch{
+			Preview: m.Preview,
+			Start:   LineColumn{Line: m.LineNumber, Column: offset},
+			End:     LineColumn{Line: m.LineNumber, Column: offset + length},
+		})
+	}
+	return multilineMatches
 }
