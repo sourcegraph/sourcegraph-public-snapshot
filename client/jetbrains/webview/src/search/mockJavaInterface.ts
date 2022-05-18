@@ -1,4 +1,14 @@
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+
+import { Search } from './App'
 import { RequestToJava } from './jsToJavaBridgeUtil'
+
+let savedSearch: Search = {
+    query: '',
+    caseSensitive: false,
+    patternType: SearchPatternType.literal,
+    selectedSearchContextSpec: 'global',
+}
 
 export function callJava(request: RequestToJava): Promise<object> {
     return new Promise((resolve, reject) => {
@@ -19,7 +29,15 @@ function handleRequest(
     onSuccessCallback: (responseAsString: string) => void,
     onFailureCallback: (errorCode: number, errorMessage: string) => void
 ): void {
-    if (request.action === 'getTheme') {
+    if (request.action === 'getConfig') {
+        onSuccessCallback(
+            JSON.stringify({
+                instanceURL: 'https://sourcegraph.com',
+                isGlobbingEnabled: true,
+                accessToken: null,
+            })
+        )
+    } else if (request.action === 'getTheme') {
         onSuccessCallback(
             JSON.stringify({
                 isDarkTheme: true,
@@ -35,12 +53,20 @@ function handleRequest(
     } else if (request.action === 'preview') {
         const { path } = request.arguments as { path: string }
         console.log(`Previewing "${path}"`)
+        onSuccessCallback('{}')
     } else if (request.action === 'clearPreview') {
         console.log('Clearing preview.')
+        onSuccessCallback('{}')
     } else if (request.action === 'open') {
         const { path } = request.arguments as { path: string }
         console.log(`Opening "${path}"`)
+        onSuccessCallback('{}')
+    } else if (request.action === 'saveLastSearch') {
+        savedSearch = request.arguments as Search
+        onSuccessCallback('{}')
+    } else if (request.action === 'loadLastSearch') {
+        onSuccessCallback(JSON.stringify(savedSearch))
     } else {
-        onFailureCallback(2, `Unknown action: ${request.action}`)
+        onFailureCallback(2, `Unknown action: ${request.action as string}`)
     }
 }
