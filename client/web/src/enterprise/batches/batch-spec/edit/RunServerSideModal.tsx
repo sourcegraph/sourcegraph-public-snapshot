@@ -44,7 +44,7 @@ export const RunServerSideModal: React.FunctionComponent<RunServerSideModalProps
             <div className={styles.right}>
                 <div className={styles.rightTop}>
                     <Typography.H4>Resources</Typography.H4>
-                    <ul>
+                    <ul className={styles.linksList}>
                         <Link to="https://docs.sourcegraph.com/batch_changes/explanations/server_side">
                             <li>Running batch changes server-side</li>
                         </Link>
