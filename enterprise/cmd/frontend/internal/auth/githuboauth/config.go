@@ -1,7 +1,7 @@
 package githuboauth
 
 import (
-	"github.com/dghubble/gologin"
+	"github.com/dghubble/gologin/v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"

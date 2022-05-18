@@ -450,6 +450,18 @@ After you enable the permissions API, you must [set permissions](#settings-repos
 
 > NOTE: If you were previously using [background permissions syncing](#background-permissions-syncing), e.g. using [GitHub permissions](#github), then those permissions are used as the initial state after enabling explicit permissions. Otherwise, the initial state is for all repositories to have an empty set of authorized users, so users will not be able to view any repositories.
 
+### Setting a repository as unrestricted
+
+Sometimes it can be useful to mark a repository as `unrestricted`, meaning that it is available to all Sourcegraph users. This can be done with the `setRepositoryPermissionsUnrestricted` mutation. Marking a repository as unrestricted will disregard any previously set explicit or synced permissions. Setting `unrestricted` back to `false` will restore the previous behaviour.
+
+For example:
+
+```graphql
+mutation {
+  setRepositoryPermissionsUnrestricted(repositories: ["A","B","C"], unrestricted: true)
+}
+```
+
 ### Setting repository permissions for users
 
 Setting the permissions for a repository can be accomplished with 2 [GraphQL API](../../api/graphql.md) calls.

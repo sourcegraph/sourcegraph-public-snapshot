@@ -47,12 +47,142 @@ func (s SearchType) String() string {
 	}
 }
 
+// A query is a tree of Nodes. We choose the type name Q so that external uses like query.Q do not stutter.
+type Q []Node
+
+func (q Q) String() string {
+	return toString(q)
+}
+
+func (q Q) StringValues(field string) (values, negatedValues []string) {
+	VisitField(q, field, func(visitedValue string, negated bool, _ Annotation) {
+		if negated {
+			negatedValues = append(negatedValues, visitedValue)
+		} else {
+			values = append(values, visitedValue)
+		}
+	})
+	return values, negatedValues
+}
+
+func (q Q) StringValue(field string) (value, negatedValue string) {
+	VisitField(q, field, func(visitedValue string, negated bool, _ Annotation) {
+		if negated {
+			negatedValue = visitedValue
+		} else {
+			value = visitedValue
+		}
+	})
+	return value, negatedValue
+}
+
+func (q Q) Exists(field string) bool {
+	found := false
+	VisitField(q, field, func(_ string, _ bool, _ Annotation) {
+		found = true
+	})
+	return found
+}
+
+func (q Q) BoolValue(field string) bool {
+	result := false
+	VisitField(q, field, func(value string, _ bool, _ Annotation) {
+		result, _ = parseBool(value) // err was checked during parsing and validation.
+	})
+	return result
+}
+
+func (q Q) Count() *int {
+	var count *int
+	VisitField(q, FieldCount, func(value string, _ bool, _ Annotation) {
+		c, err := strconv.Atoi(value)
+		if err != nil {
+			panic(fmt.Sprintf("Value %q for count cannot be parsed as an int: %s", value, err))
+		}
+		count = &c
+	})
+	return count
+}
+
+func (q Q) Archived() *YesNoOnly {
+	return q.yesNoOnlyValue(FieldArchived)
+}
+
+func (q Q) Fork() *YesNoOnly {
+	return q.yesNoOnlyValue(FieldFork)
+}
+
+func (q Q) yesNoOnlyValue(field string) *YesNoOnly {
+	var res *YesNoOnly
+	VisitField(q, field, func(value string, _ bool, _ Annotation) {
+		yno := parseYesNoOnly(value)
+		if yno == Invalid {
+			panic(fmt.Sprintf("Invalid value %q for field %q", value, field))
+		}
+		res = &yno
+	})
+	return res
+}
+
+func (q Q) IsCaseSensitive() bool {
+	return q.BoolValue("case")
+}
+
+func (q Q) Repositories() (repos []string, negatedRepos []string) {
+	VisitField(q, FieldRepo, func(value string, negated bool, a Annotation) {
+		if a.Labels.IsSet(IsPredicate) {
+			return
+		}
+
+		if negated {
+			negatedRepos = append(negatedRepos, value)
+		} else {
+			repos = append(repos, value)
+		}
+	})
+	return repos, negatedRepos
+}
+
+func (q Q) Dependencies() (dependencies []string) {
+	VisitPredicate(q, func(field, name, value string) {
+		if field == FieldRepo && (name == "dependencies" || name == "deps") {
+			dependencies = append(dependencies, value)
+		}
+	})
+	return dependencies
+}
+
+func (q Q) Dependents() (dependents []string) {
+	VisitPredicate(q, func(field, name, value string) {
+		if field == FieldRepo && (name == "dependents" || name == "revdeps") {
+			dependents = append(dependents, value)
+		}
+	})
+	return dependents
+}
+
+func (q Q) MaxResults(defaultLimit int) int {
+	if q == nil {
+		return 0
+	}
+
+	if count := q.Count(); count != nil {
+		return *count
+	}
+
+	if defaultLimit != 0 {
+		return defaultLimit
+	}
+
+	return limits.DefaultMaxSearchResults
+}
+
 // A query plan represents a set of disjoint queries for the search engine to
 // execute. The result of executing a plan is the union of individual query results.
 type Plan []Basic
 
-// ToParseTree models a plan as a parse tree of an Or-expression on plan queries.
-func (p Plan) ToParseTree() Q {
+// ToQ models a plan as a parse tree of an Or-expression on plan queries.
+func (p Plan) ToQ() Q {
 	nodes := make([]Node, 0, len(p))
 	for _, basic := range p {
 		operands := basic.ToParseTree()
@@ -109,11 +239,22 @@ func (b Basic) MapCount(count int) Basic {
 }
 
 func (b Basic) String() string {
-	return fmt.Sprintf("%s %s", Q(toNodes(b.Parameters)).String(), Q([]Node{b.Pattern}).String())
+	return b.toString(func(nodes []Node) string {
+		return Q(nodes).String()
+	})
 }
 
 func (b Basic) StringHuman() string {
-	return fmt.Sprintf("%s %s", StringHuman(toNodes(b.Parameters)), StringHuman([]Node{b.Pattern}))
+	return b.toString(StringHuman)
+}
+
+// toString is a helper for String and StringHuman
+func (b Basic) toString(marshal func([]Node) string) string {
+	param := marshal(toNodes(b.Parameters))
+	if b.Pattern != nil {
+		return param + " " + marshal([]Node{b.Pattern})
+	}
+	return param
 }
 
 // HasPatternLabel returns whether a pattern atom has a specified label.
@@ -144,6 +285,9 @@ func (b Basic) IsStructural() bool {
 // PatternString returns the simple string pattern of a basic query. It assumes
 // there is only on pattern atom.
 func (b Basic) PatternString() string {
+	if b.Pattern == nil {
+		return ""
+	}
 	if p, ok := b.Pattern.(Pattern); ok {
 		if b.IsLiteral() {
 			// Escape regexp meta characters if this pattern should be treated literally.
@@ -196,6 +340,15 @@ func (p Parameters) Dependencies() (dependencies []string) {
 		}
 	})
 	return dependencies
+}
+
+func (p Parameters) Dependents() (dependents []string) {
+	VisitPredicate(toNodes(p), func(field, name, value string) {
+		if field == FieldRepo && (name == "revdeps" || name == "dependents") {
+			dependents = append(dependents, value)
+		}
+	})
+	return dependents
 }
 
 func (p Parameters) MaxResults(defaultLimit int) int {
@@ -323,123 +476,17 @@ func (p Parameters) FindParameter(field string, f func(value string, negated boo
 	}
 }
 
-// A query is a tree of Nodes. We choose the type name Q so that external uses like query.Q do not stutter.
-type Q []Node
-
-func (q Q) String() string {
-	return toString(q)
+// Flat is a more restricted form of Basic that has exactly zero or one atomic
+// pattern nodes.
+type Flat struct {
+	Parameters
+	Pattern *Pattern
 }
 
-func (q Q) StringValues(field string) (values, negatedValues []string) {
-	VisitField(q, field, func(visitedValue string, negated bool, _ Annotation) {
-		if negated {
-			negatedValues = append(negatedValues, visitedValue)
-		} else {
-			values = append(values, visitedValue)
-		}
-	})
-	return values, negatedValues
-}
-
-func (q Q) StringValue(field string) (value, negatedValue string) {
-	VisitField(q, field, func(visitedValue string, negated bool, _ Annotation) {
-		if negated {
-			negatedValue = visitedValue
-		} else {
-			value = visitedValue
-		}
-	})
-	return value, negatedValue
-}
-
-func (q Q) Exists(field string) bool {
-	found := false
-	VisitField(q, field, func(_ string, _ bool, _ Annotation) {
-		found = true
-	})
-	return found
-}
-
-func (q Q) BoolValue(field string) bool {
-	result := false
-	VisitField(q, field, func(value string, _ bool, _ Annotation) {
-		result, _ = parseBool(value) // err was checked during parsing and validation.
-	})
-	return result
-}
-
-func (q Q) Count() *int {
-	var count *int
-	VisitField(q, FieldCount, func(value string, _ bool, _ Annotation) {
-		c, err := strconv.Atoi(value)
-		if err != nil {
-			panic(fmt.Sprintf("Value %q for count cannot be parsed as an int: %s", value, err))
-		}
-		count = &c
-	})
-	return count
-}
-
-func (q Q) Archived() *YesNoOnly {
-	return q.yesNoOnlyValue(FieldArchived)
-}
-
-func (q Q) Fork() *YesNoOnly {
-	return q.yesNoOnlyValue(FieldFork)
-}
-
-func (q Q) yesNoOnlyValue(field string) *YesNoOnly {
-	var res *YesNoOnly
-	VisitField(q, field, func(value string, _ bool, _ Annotation) {
-		yno := parseYesNoOnly(value)
-		if yno == Invalid {
-			panic(fmt.Sprintf("Invalid value %q for field %q", value, field))
-		}
-		res = &yno
-	})
-	return res
-}
-
-func (q Q) IsCaseSensitive() bool {
-	return q.BoolValue("case")
-}
-
-func (q Q) Repositories() (repos []string, negatedRepos []string) {
-	VisitField(q, FieldRepo, func(value string, negated bool, a Annotation) {
-		if a.Labels.IsSet(IsPredicate) {
-			return
-		}
-
-		if negated {
-			negatedRepos = append(negatedRepos, value)
-		} else {
-			repos = append(repos, value)
-		}
-	})
-	return repos, negatedRepos
-}
-
-func (q Q) Dependencies() (dependencies []string) {
-	VisitPredicate(q, func(field, name, value string) {
-		if field == FieldRepo && (name == "dependencies" || name == "deps") {
-			dependencies = append(dependencies, value)
-		}
-	})
-	return dependencies
-}
-
-func (q Q) MaxResults(defaultLimit int) int {
-	if q == nil {
-		return 0
+func (f *Flat) ToBasic() Basic {
+	var pattern Node
+	if f.Pattern != nil {
+		pattern = *f.Pattern
 	}
-
-	if count := q.Count(); count != nil {
-		return *count
-	}
-
-	if defaultLimit != 0 {
-		return defaultLimit
-	}
-
-	return limits.DefaultMaxSearchResults
+	return Basic{Parameters: f.Parameters, Pattern: pattern}
 }

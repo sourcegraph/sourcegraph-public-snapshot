@@ -25,27 +25,29 @@ func lintLoggingLibraries() lint.Runner {
 			`"go.uber.org/zap/zapcore"`,
 		}
 
-		allowedFiles = map[string]struct{}{
+		allowedFiles = []string{
 			// Banned imports will match on the linter here
-			"dev/sg/linters/liblog.go": {},
+			"dev/sg/linters/liblog.go",
 			// We re-export things here
-			"lib/log": {},
+			"lib/log",
 			// We allow one usage of a direct zap import here
-			"internal/observation/fields.go": {},
+			"internal/observation/fields.go",
 		}
 	)
 
 	// checkHunk returns an error if a banned library is used
 	checkHunk := func(file string, hunk repo.DiffHunk) error {
-		if _, allowed := allowedFiles[file]; allowed {
-			return nil
+		for _, allowed := range allowedFiles {
+			if strings.HasPrefix(file, allowed) {
+				return nil
+			}
 		}
 
 		for _, l := range hunk.AddedLines {
 			for _, banned := range bannedImports {
 				if strings.Contains(l, banned) {
-					return errors.Newf(`%s:%d: banned usage of '%s': use "github.com/sourcegraph/sourcegraph/lib/log" instead`,
-						file, hunk.StartLine, banned)
+					return errors.Newf(`banned usage of '%s': use "github.com/sourcegraph/sourcegraph/lib/log" instead`,
+						banned)
 				}
 			}
 		}
@@ -61,14 +63,7 @@ func lintLoggingLibraries() lint.Runner {
 			}
 		}
 
-		var errs error
-		for file, hunks := range diffs {
-			for _, hunk := range hunks {
-				if err := checkHunk(file, hunk); err != nil {
-					errs = errors.Append(errs, err)
-				}
-			}
-		}
+		errs := diffs.IterateHunks(checkHunk)
 
 		return &lint.Report{
 			Header: header,

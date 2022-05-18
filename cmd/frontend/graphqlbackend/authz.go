@@ -69,4 +69,5 @@ type PermissionsInfoResolver interface {
 	Permissions() []string
 	SyncedAt() *DateTime
 	UpdatedAt() DateTime
+	Unrestricted() bool
 }

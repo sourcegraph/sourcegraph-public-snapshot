@@ -448,10 +448,8 @@ export const useWorkspacesListConnection = (
         },
         options: {
             useURL: true,
-            // For some reason caching caused flickering here. Will need to investigate
-            // further why.
-            fetchPolicy: 'no-cache',
-            pollInterval: 1000,
+            fetchPolicy: 'cache-and-network',
+            pollInterval: 2500,
         },
         getConnection: result => {
             const data = dataOrThrowErrors(result)

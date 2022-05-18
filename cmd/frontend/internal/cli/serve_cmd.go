@@ -29,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/loghandlers"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/vfsutil"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -314,14 +315,17 @@ func makeExternalAPI(db database.DB, schema *graphql.Schema, enterprise enterpri
 	externalHandler := newExternalHTTPHandler(
 		db,
 		schema,
-		enterprise.GitHubWebhook,
-		enterprise.GitLabWebhook,
-		enterprise.BitbucketServerWebhook,
-		enterprise.NewCodeIntelUploadHandler,
+		rateLimiter,
+		&httpapi.Handlers{
+			GitHubWebhook:             enterprise.GitHubWebhook,
+			GitLabWebhook:             enterprise.GitLabWebhook,
+			BitbucketServerWebhook:    enterprise.BitbucketServerWebhook,
+			BitbucketCloudWebhook:     enterprise.BitbucketCloudWebhook,
+			NewCodeIntelUploadHandler: enterprise.NewCodeIntelUploadHandler,
+			NewComputeStreamHandler:   enterprise.NewComputeStreamHandler,
+		},
 		enterprise.NewExecutorProxyHandler,
 		enterprise.NewGitHubAppCloudSetupHandler,
-		enterprise.NewComputeStreamHandler,
-		rateLimiter,
 	)
 	httpServer := &http.Server{
 		Handler:      externalHandler,

@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -212,11 +213,11 @@ func TestRepository_DefaultBranch(t *testing.T) {
 				git.Mocks.ExecSafe = nil
 			})
 
-			git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
+			gitserver.Mocks.ResolveRevision = func(spec string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 				return "", tt.resolveRevisionErr
 			}
 			t.Cleanup(func() {
-				git.Mocks.ResolveRevision = nil
+				gitserver.Mocks.ResolveRevision = nil
 			})
 
 			res := &RepositoryResolver{RepoMatch: result.RepoMatch{Name: "repo"}}

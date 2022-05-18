@@ -11,7 +11,7 @@ import (
 
 // GetAggregatedCodeIntelStats returns aggregated statistics for code intelligence usage.
 func GetAggregatedCodeIntelStats(ctx context.Context, db database.DB) (*types.NewCodeIntelUsageStatistics, error) {
-	eventLogs := database.EventLogs(db)
+	eventLogs := db.EventLogs()
 
 	codeIntelEvents, err := eventLogs.AggregatedCodeIntelEvents(ctx)
 	if err != nil {
