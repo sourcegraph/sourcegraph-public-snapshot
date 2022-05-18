@@ -129,6 +129,7 @@ input SearchInsightSeriesInput {
     query: String!
     title: String!
     color: String!
+    chartType: SeriesLikeChartType
     repositoryScope: RepositoryScopeInput!
     timeScope: TimeScopeInput!
 }
@@ -145,6 +146,7 @@ input CaptureGroupInsightInput {
     dashboards: [ID!]
     filters: NewInsightViewFiltersInput!
     query: String!
+    chartType: SeriesLikeChartType
     repositoryScope: RepositoryScopeInput!
     timeScope: TimeScopeInput!
 }
@@ -153,6 +155,7 @@ input CaptureGroupInsightInput {
 input LangStatsInsightInput {
     title: String!
     otherThreshold: Float!
+    chartType: CategoricalLikeChartTYpe
     repositoryScope: RepositoryScopeInput!
     dashboards: [ID!]
 }
