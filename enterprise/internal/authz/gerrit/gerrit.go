@@ -5,7 +5,6 @@ import (
 	"net/url"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
