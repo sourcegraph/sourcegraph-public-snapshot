@@ -452,9 +452,9 @@ func (r *Resolver) AddInsightViewToDashboard(ctx context.Context, args *graphqlb
 	return &insightsDashboardPayloadResolver{dashboard: dashboards[0], baseInsightResolver: r.baseInsightResolver}, nil
 }
 
-func (r *Resolver) RemoveInsightViewFromDashboard(ctx context.Context, args *graphqlbackend.RemoveInsightViewFromDashboardArgs) (graphqlbackend.InsightsDashboardPayloadResolver, error) {
+func (r *Resolver) RemoveInsightViewFromDashboard(ctx context.Context, args *graphqlbackend.RemoveInsightViewFromDashboardArgs) (_ graphqlbackend.InsightsDashboardPayloadResolver, err error) {
 	var viewID string
-	err := relay.UnmarshalSpec(args.Input.InsightViewID, &viewID)
+	err = relay.UnmarshalSpec(args.Input.InsightViewID, &viewID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to unmarshal insight view id")
 	}
