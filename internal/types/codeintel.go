@@ -48,6 +48,7 @@ type NewCodeIntelUsageStatistics struct {
 	NumRepositoriesWithAutoIndexConfigurationRecords *int32
 	CountsByLanguage                                 map[string]CodeIntelRepositoryCountsByLanguage
 	SettingsPageViewCount                            *int32
+	UsersWithRefPanelRedesignEnabled                 *int32
 	LanguageRequests                                 []LanguageRequest
 	InvestigationEvents                              []CodeIntelInvestigationEvent
 }
