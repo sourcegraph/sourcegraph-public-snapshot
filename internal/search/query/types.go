@@ -230,11 +230,22 @@ func (b Basic) MapCount(count int) Basic {
 }
 
 func (b Basic) String() string {
-	return fmt.Sprintf("%s %s", Q(toNodes(b.Parameters)).String(), Q([]Node{b.Pattern}).String())
+	return b.toString(func(nodes []Node) string {
+		return Q(nodes).String()
+	})
 }
 
 func (b Basic) StringHuman() string {
-	return fmt.Sprintf("%s %s", StringHuman(toNodes(b.Parameters)), StringHuman([]Node{b.Pattern}))
+	return b.toString(StringHuman)
+}
+
+// toString is a helper for String and StringHuman
+func (b Basic) toString(marshal func([]Node) string) string {
+	param := marshal(toNodes(b.Parameters))
+	if b.Pattern != nil {
+		return param + " " + marshal([]Node{b.Pattern})
+	}
+	return param
 }
 
 // HasPatternLabel returns whether a pattern atom has a specified label.
