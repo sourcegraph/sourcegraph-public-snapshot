@@ -15,6 +15,7 @@ export function useFeatureFlag(flagName: FeatureFlagName): [boolean, FetchStatus
     const [error, setError] = useState<Error | null>(null)
 
     useEffect(() => {
+        let isMounted = true
         if (!client) {
             console.warn(
                 '[useFeatureFlag]: No FeatureFlagClient is configured. All feature flags will default to "false" value.'
@@ -22,7 +23,10 @@ export function useFeatureFlag(flagName: FeatureFlagName): [boolean, FetchStatus
             return
         }
 
-        return client.on(flagName, (value, error) => {
+        const cleanup = client.on(flagName, (value, error) => {
+            if (!isMounted) {
+                return
+            }
             if (error) {
                 setError(error)
                 setStatus('error')
@@ -31,6 +35,11 @@ export function useFeatureFlag(flagName: FeatureFlagName): [boolean, FetchStatus
             setStatus('finished')
             setValue(value)
         })
+
+        return () => {
+            isMounted = false
+            cleanup()
+        }
     })
     return [value, status, error]
 }
