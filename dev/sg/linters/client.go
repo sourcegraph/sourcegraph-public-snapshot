@@ -17,7 +17,7 @@ func checkUnversionedDocsLinks() lint.Runner {
 	const header = "Literal unversioned docs links"
 
 	return func(ctx context.Context, s *repo.State) *lint.Report {
-		diff, err := s.GetDiff("**/*.tsx")
+		diff, err := s.GetDiff("client/web/***.tsx")
 		if err != nil {
 			return &lint.Report{Header: header, Err: err}
 		}
