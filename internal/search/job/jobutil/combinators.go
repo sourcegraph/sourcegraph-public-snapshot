@@ -118,9 +118,8 @@ type TimeoutJob struct {
 }
 
 func (t *TimeoutJob) Run(ctx context.Context, clients job.RuntimeClients, s streaming.Sender) (alert *search.Alert, err error) {
-	tr, ctx, s, finish := job.StartSpan(ctx, s, t)
+	_, ctx, s, finish := job.StartSpan(ctx, s, t)
 	defer func() { finish(alert, err) }()
-	tr.TagFields(trace.LazyFields(t.Tags))
 
 	ctx, cancel := context.WithTimeout(ctx, t.timeout)
 	defer cancel()
@@ -158,9 +157,8 @@ type LimitJob struct {
 }
 
 func (l *LimitJob) Run(ctx context.Context, clients job.RuntimeClients, s streaming.Sender) (alert *search.Alert, err error) {
-	tr, ctx, s, finish := job.StartSpan(ctx, s, l)
+	_, ctx, s, finish := job.StartSpan(ctx, s, l)
 	defer func() { finish(alert, err) }()
-	tr.TagFields(trace.LazyFields(l.Tags))
 
 	ctx, s, cancel := streaming.WithLimit(ctx, s, l.limit)
 	defer cancel()

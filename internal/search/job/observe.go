@@ -13,12 +13,14 @@ import (
 
 type observableJob interface {
 	Name() string
+	Tags() []log.Field
 }
 
 type finishSpanFunc func(*search.Alert, error)
 
 func StartSpan(ctx context.Context, stream streaming.Sender, job observableJob) (*trace.Trace, context.Context, streaming.Sender, finishSpanFunc) {
 	tr, ctx := trace.New(ctx, job.Name(), "")
+	tr.TagFields(trace.LazyFields(job.Tags))
 
 	observingStream := newObservingStream(tr, stream)
 
