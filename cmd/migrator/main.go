@@ -61,6 +61,7 @@ func mainErr(ctx context.Context, args []string) error {
 			cliutil.UpTo(appName, runnerFactory, outputFactory, false),
 			cliutil.DownTo(appName, runnerFactory, outputFactory, false),
 			cliutil.Validate(appName, runnerFactory, outputFactory),
+			cliutil.Describe(appName, runnerFactory, outputFactory),
 			cliutil.AddLog(appName, runnerFactory, outputFactory),
 		},
 	}
