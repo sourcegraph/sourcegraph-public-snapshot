@@ -1,13 +1,9 @@
 package featureflag
 
 import (
-	"context"
-
 	"encoding/binary"
 	"hash/fnv"
 	"time"
-
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 )
 
 type FeatureFlag struct {
@@ -23,34 +19,15 @@ type FeatureFlag struct {
 	DeletedAt *time.Time
 }
 
-type FeatureFlagsStore interface {
-	GetFeatureFlags(ctx context.Context) ([]*FeatureFlag, error)
-}
-
-func GetEvaluatedFlagsFromContext(ctx context.Context, store FeatureFlagsStore) FlagSet {
-	flags, error := store.GetFeatureFlags(ctx)
-
-	if error != nil {
-		return FlagSet{}
-	}
-
-	return GetEvaluatedFlagSetFromCache(flags, actor.FromContext(ctx))
-}
-
 // EvaluateForUser evaluates the feature flag for a userID.
 func (f *FeatureFlag) EvaluateForUser(userID int32) bool {
-	var result bool
-
 	switch {
 	case f.Bool != nil:
-		result = f.Bool.Value
+		return f.Bool.Value
 	case f.Rollout != nil:
-		result = hashUserAndFlag(userID, f.Name)%10000 < uint32(f.Rollout.Rollout)
-	default:
-		panic("one of Bool or Rollout must be set")
+		return hashUserAndFlag(userID, f.Name)%10000 < uint32(f.Rollout.Rollout)
 	}
-
-	return result
+	panic("one of Bool or Rollout must be set")
 }
 
 func hashUserAndFlag(userID int32, flagName string) uint32 {
@@ -62,18 +39,13 @@ func hashUserAndFlag(userID int32, flagName string) uint32 {
 
 // EvaluateForAnonymousUser evaluates the feature flag for an anonymous user ID.
 func (f *FeatureFlag) EvaluateForAnonymousUser(anonymousUID string) bool {
-	var result bool
-
 	switch {
 	case f.Bool != nil:
-		result = f.Bool.Value
+		return f.Bool.Value
 	case f.Rollout != nil:
-		result = hashAnonymousUserAndFlag(anonymousUID, f.Name)%10000 < uint32(f.Rollout.Rollout)
-	default:
-		panic("one of Bool or Rollout must be set")
+		return hashAnonymousUserAndFlag(anonymousUID, f.Name)%10000 < uint32(f.Rollout.Rollout)
 	}
-
-	return result
+	panic("one of Bool or Rollout must be set")
 }
 
 func hashAnonymousUserAndFlag(anonymousUID, flagName string) uint32 {

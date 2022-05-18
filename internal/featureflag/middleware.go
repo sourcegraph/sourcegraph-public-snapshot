@@ -14,6 +14,7 @@ type flagContextKey struct{}
 
 //go:generate ../../dev/mockgen.sh  github.com/sourcegraph/sourcegraph/internal/featureflag -i Store -o store_mock_test.go
 type Store interface {
+	GetFeatureFlags(context.Context) ([]*FeatureFlag, error)
 	GetUserFlags(context.Context, int32) (map[string]bool, error)
 	GetAnonymousUserFlags(context.Context, string) (map[string]bool, error)
 	GetGlobalFeatureFlags(context.Context) (map[string]bool, error)
@@ -88,6 +89,7 @@ func (f *flagSetFetcher) fetchForActor(ctx context.Context, a *actor.Actor) Flag
 
 // FromContext retrieves the current set of flags from the current
 // request's context.
+// DEPRECATED: Will be removed once frontend migrates to new API (https://github.com/sourcegraph/sourcegraph/issues/35543)
 func FromContext(ctx context.Context) FlagSet {
 	if flags := ctx.Value(flagContextKey{}); flags != nil {
 		return flags.(*flagSetFetcher).fetch(ctx)
@@ -100,7 +102,7 @@ func (f *flagSetFetcher) evaluateForActor(ctx context.Context, a *actor.Actor, f
 	if a.IsAuthenticated() {
 		flag, err := f.ffs.GetUserFlag(ctx, a.UID, flagName)
 		if err == nil {
-			SetEvaluatedFlagToCache(flagName, a, *flag)
+			setEvaluatedFlagToCache(flagName, a, *flag)
 			return flag, nil
 		}
 		// Continue if err != nil
@@ -109,7 +111,7 @@ func (f *flagSetFetcher) evaluateForActor(ctx context.Context, a *actor.Actor, f
 	if a.AnonymousUID != "" {
 		flag, err := f.ffs.GetAnonymousUserFlag(ctx, a.AnonymousUID, flagName)
 		if err == nil {
-			SetEvaluatedFlagToCache(flagName, a, *flag)
+			setEvaluatedFlagToCache(flagName, a, *flag)
 			return flag, nil
 		}
 		// Continue if err != nil
@@ -133,6 +135,16 @@ func EvaluateForActorFromContext(ctx context.Context, flagName string) (result b
 		}
 	}
 	return result
+}
+
+func GetEvaluatedFlagsFromContext(ctx context.Context) FlagSet {
+	if flags := ctx.Value(flagContextKey{}); flags != nil {
+		if f, err := flags.(*flagSetFetcher).ffs.GetFeatureFlags(ctx); err == nil {
+			return getEvaluatedFlagSetFromCache(f, actor.FromContext(ctx))
+		}
+	}
+
+	return FlagSet{}
 }
 
 // WithFlags adds a flag fetcher to the context so consumers of the

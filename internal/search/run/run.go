@@ -94,7 +94,7 @@ func NewSearchInputs(
 		OriginalQuery:       searchQuery,
 		UserSettings:        settings,
 		OnSourcegraphDotCom: sourcegraphDotComMode,
-		Features:            featureflag.GetEvaluatedFlagsFromContext(ctx, db.FeatureFlags()),
+		Features:            featureflag.GetEvaluatedFlagsFromContext(ctx),
 		PatternType:         searchType,
 		Protocol:            protocol,
 	}
