@@ -54,14 +54,15 @@ export const RunServerSideModal: React.FunctionComponent<RunServerSideModalProps
                     </ul>
                 </div>
 
-                <div className={styles.rightBottom}>
+                {/* TODO: Restore this once we have a process and link for requesting this demo */}
+                {/* <div className={styles.rightBottom}>
                     <div className={styles.blank}>
                         <Typography.H4>Request a demo</Typography.H4>
                         <p>Learn more about this free feature of batch changes.</p>
 
                         <Button variant="primary">Request Demo</Button>
                     </div>
-                </div>
+                </div> */}
             </div>
         </div>
     </Modal>
