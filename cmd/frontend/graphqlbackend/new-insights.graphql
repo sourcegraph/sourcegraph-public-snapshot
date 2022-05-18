@@ -1,0 +1,158 @@
+
+extend type Query {
+    newInsights(
+        id: ID
+        first: Int
+        after: String
+        filters: NewInsightViewFiltersInput
+    ): NewInsightConnection
+}
+
+
+type NewInsightConnection {
+    nodes: [NewInsight!]!
+    totalCount: Int!
+    pageInfo: PageInfo!
+}
+
+union NewInsight = SeriesLikeInsight | CategoricalLikeInsight
+
+# ---------- Base Insight types ----------- #
+interface BaseInsight {
+    id: ID!
+    title: String!
+    isFrozen: Boolean!
+    defaultFilters: NewInsightFilters
+    appliedFilters: NewInsightFilters!
+    dashboards(id: ID, first: Int, after: String): InsightsDashboardConnection
+}
+
+type NewInsightFilters {
+    includeRepoRegex: String
+    excludeRepoRegex: String
+    searchContexts: SearchContextConnection
+}
+
+# --------- Series-like insight types -------------- #
+type SeriesLikeInsight implements BaseInsight & Node {
+    id: ID!
+    title: String!
+    isFrozen: Boolean!
+    defaultFilters: NewInsightFilters
+    appliedFilters: NewInsightFilters!
+    dashboards(id: ID, first: Int, after: String): InsightsDashboardConnection
+    series: [NewInsightSeries!]!
+}
+
+type NewInsightSeries implements Node {
+    id: ID!
+    title: String!
+    color: String!
+    query: String!
+    chartType: SeriesLikeChartType
+    repositoryScope: InsightRepositoryScope!
+    timeScope: InsightTimeScope!
+    isGenerated: Boolean!
+    status: NewInsightSeriesStatus
+    points(from: DateTime, to: DateTime): [NewInsightDataPoint!]!
+}
+
+enum SeriesLikeChartType {
+    LINE
+    BAR
+}
+
+type NewInsightDataPoint {
+    dateTime: DateTime!
+    value: Float!
+}
+
+type NewInsightSeriesStatus {
+    totalPoints: Int!
+    pendingJobs: Int!
+    completedJobs: Int!
+    failedJobs: Int!
+    backfillQueuedAt: DateTime
+}
+
+# ----------- Categorical like insight ------------ #
+type CategoricalLikeInsight implements BaseInsight & Node {
+    id: ID!
+    title: String!
+    isFrozen: Boolean!
+    defaultFilters: NewInsightFilters
+    appliedFilters: NewInsightFilters!
+    dashboards(id: ID, first: Int, after: String): InsightsDashboardConnection
+    data: [NewInsightCategoricalDatum!]!
+    otherThreshold: Float!
+    chartType: CategoricalLikeChartTYpe
+}
+
+type NewInsightCategoricalDatum {
+    value: Float!
+    title: String!
+    color: String!
+    link: String!
+}
+
+enum CategoricalLikeChartTYpe {
+    PIE
+    BAR
+    SCATTERPLOT
+    BUBBLE
+}
+
+
+# ----------- Insight mutations ------------- #
+extend type Mutation {
+    createSearchInsight(input: SearchInsightInput): SeriesLikeInsight
+    createCaptureGroupInsight(input: CaptureGroupInsightInput): SeriesLikeInsight
+    createLangStatsInsight(input: LangStatsInsightInput): CategoricalLikeInsight
+
+    updateSearchBasedInsight(input: SearchInsightInput): SeriesLikeInsight
+    updateCaptureGroupInsight(input: CaptureGroupInsightInput): SeriesLikeInsight
+    updateLangStatsInsight(input: LangStatsInsightInput): CategoricalLikeInsight
+
+    deleteInsight(id: ID!): EmptyResponse!
+}
+
+# ----------- Search based insight input types ---------- #
+input SearchInsightInput {
+    title: String!
+    dashboards: [ID!]
+    filters: NewInsightViewFiltersInput!
+    series: [SearchInsightSeriesInput!]!
+}
+
+input SearchInsightSeriesInput {
+    id: ID
+    query: String!
+    title: String!
+    color: String!
+    repositoryScope: RepositoryScopeInput!
+    timeScope: TimeScopeInput!
+}
+
+input NewInsightViewFiltersInput {
+    includeRepoRegex: String
+    excludeRepoRegex: String
+    searchContexts: [ID!]
+}
+
+# ----------- Capture group insight input types ---------- #
+input CaptureGroupInsightInput {
+    title: String!
+    dashboards: [ID!]
+    filters: NewInsightViewFiltersInput!
+    query: String!
+    repositoryScope: RepositoryScopeInput!
+    timeScope: TimeScopeInput!
+}
+
+# ------------ LangStats insight input types ------------ #
+input LangStatsInsightInput {
+    title: String!
+    otherThreshold: Float!
+    repositoryScope: RepositoryScopeInput!
+    dashboards: [ID!]
+}
