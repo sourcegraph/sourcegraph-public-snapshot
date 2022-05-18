@@ -353,7 +353,10 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 
 		for _, record := range mapToRecords(totals) {
 			recordDateString := record[0]
-			eventTime, _ := time.Parse("2006-01-02T00:00:00Z", recordDateString+"T00:00:00Z")
+			eventTime, err := time.Parse("2006-01-02T00:00:00Z", recordDateString+"T00:00:00Z")
+			if err != nil {
+				log.Fatal("time.Parse: ", err)
+			}
 			event := okay.Event{
 				Name:      "buildStats",
 				Timestamp: eventTime,
@@ -379,7 +382,7 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 					},
 				},
 			}
-			err := okayCli.Push(&event)
+			err = okayCli.Push(&event)
 			if err != nil {
 				log.Fatal("okay.NewClient: ", err)
 			}
