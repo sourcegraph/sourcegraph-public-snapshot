@@ -85,7 +85,7 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FunctionComponent<
 
     // Check and Match URL Search Params
     useEffect((): void => {
-        // Initiating... Check if requester is valid
+        // SECURITY: If the URL contains ?requestFrom, verify it is an allowlisted source
         if (requestFrom && requester === undefined) {
             const uriPattern = REQUESTERS[requestFrom ?? ''].redirectURL
             setRequester(uriPattern ? REQUESTERS[requestFrom] : null)
@@ -107,6 +107,7 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FunctionComponent<
             () =>
                 (requester ? createAccessToken(user.id, scopes, note) : NEVER).pipe(
                     tap(result => {
+                        // SECURITY: If the request was from a valid requestor, redirect to the allowlisted redirect URL.
                         if (requester) {
                             onDidCreateAccessToken(result)
                             // TODO: ENCRYPT TOKEN
