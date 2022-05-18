@@ -8,11 +8,11 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-
-	"golang.org/x/sync/errgroup"
-	"golang.org/x/sync/semaphore"
+	"runtime"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"golang.org/x/sync/errgroup"
+	"golang.org/x/sync/semaphore"
 )
 
 func init() {
@@ -40,10 +40,10 @@ Examples:
 	flagSet := flag.NewFlagSet("server", flag.ExitOnError)
 	var base string
 	var container string
-	var noConfigs bool
+	var excludeConfigs bool
 	flagSet.StringVar(&base, "o", "debug.zip", "The name of the output zip archive")
 	flagSet.StringVar(&container, "c", "", "The container to target")
-	flagSet.BoolVar(&noConfigs, "no-configs", false, "If true include Sourcegraph configuration files. Default value true.")
+	flagSet.BoolVar(&excludeConfigs, "no-configs", false, "If true, exclude Sourcegraph configuration files. Defaults to false.")
 
 	handler := func(args []string) error {
 		if err := flagSet.Parse(args); err != nil {
@@ -77,7 +77,7 @@ Examples:
 			return nil
 		}
 
-		err = archiveServ(ctx, zw, *verbose, noConfigs, container, baseDir)
+		err = archiveServ(ctx, zw, *verbose, !excludeConfigs, container, baseDir)
 		if err != nil {
 			return err
 		}
@@ -94,14 +94,14 @@ Examples:
 }
 
 // Runs common docker cli commands on a single container
-func archiveServ(ctx context.Context, zw *zip.Writer, verbose, noConfigs bool, container, baseDir string) error {
+func archiveServ(ctx context.Context, zw *zip.Writer, verbose, archiveConfigs bool, container, baseDir string) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	// setup channel for slice of archive function outputs
 	ch := make(chan *archiveFile)
 	g, ctx := errgroup.WithContext(ctx)
-	semaphore := semaphore.NewWeighted(8)
+	semaphore := semaphore.NewWeighted(int64(runtime.GOMAXPROCS(0)))
 
 	run := func(f func() *archiveFile) {
 		g.Go(func() error {
@@ -128,7 +128,7 @@ func archiveServ(ctx context.Context, zw *zip.Writer, verbose, noConfigs bool, c
 	run(func() *archiveFile { return getServTop(ctx, container, baseDir) })
 
 	// start goroutine to get configs
-	if !noConfigs {
+	if archiveConfigs {
 		run(func() *archiveFile { return getExternalServicesConfig(ctx, baseDir) })
 
 		run(func() *archiveFile { return getSiteConfig(ctx, baseDir) })

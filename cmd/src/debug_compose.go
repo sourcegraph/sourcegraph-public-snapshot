@@ -9,12 +9,11 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-
 	"golang.org/x/sync/errgroup"
-
 	"golang.org/x/sync/semaphore"
 )
 
@@ -42,9 +41,9 @@ Examples:
 
 	flagSet := flag.NewFlagSet("compose", flag.ExitOnError)
 	var base string
-	var noConfigs bool
+	var excludeConfigs bool
 	flagSet.StringVar(&base, "o", "debug.zip", "The name of the output zip archive")
-	flagSet.BoolVar(&noConfigs, "no-configs", false, "If true include Sourcegraph configuration files. Default value true.")
+	flagSet.BoolVar(&excludeConfigs, "no-configs", false, "If true, exclude Sourcegraph configuration files. Defaults to false.")
 
 	handler := func(args []string) error {
 		if err := flagSet.Parse(args); err != nil {
@@ -81,7 +80,7 @@ Examples:
 			return nil
 		}
 
-		err = archiveCompose(ctx, zw, *verbose, noConfigs, baseDir)
+		err = archiveCompose(ctx, zw, *verbose, !excludeConfigs, baseDir)
 		if err != nil {
 			return err
 		}
@@ -98,7 +97,7 @@ Examples:
 }
 
 // writes archive of common docker cli commands
-func archiveCompose(ctx context.Context, zw *zip.Writer, verbose, noConfigs bool, baseDir string) error {
+func archiveCompose(ctx context.Context, zw *zip.Writer, verbose, archiveConfigs bool, baseDir string) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -114,7 +113,7 @@ func archiveCompose(ctx context.Context, zw *zip.Writer, verbose, noConfigs bool
 	// setup channel for slice of archive function outputs
 	ch := make(chan *archiveFile)
 	g, ctx := errgroup.WithContext(ctx)
-	semaphore := semaphore.NewWeighted(8)
+	semaphore := semaphore.NewWeighted(int64(runtime.GOMAXPROCS(0)))
 
 	run := func(f func() *archiveFile) {
 		g.Go(func() error {
@@ -150,7 +149,7 @@ func archiveCompose(ctx context.Context, zw *zip.Writer, verbose, noConfigs bool
 	}
 
 	// start goroutine to get configs
-	if !noConfigs {
+	if archiveConfigs {
 		run(func() *archiveFile { return getExternalServicesConfig(ctx, baseDir) })
 
 		run(func() *archiveFile { return getSiteConfig(ctx, baseDir) })
