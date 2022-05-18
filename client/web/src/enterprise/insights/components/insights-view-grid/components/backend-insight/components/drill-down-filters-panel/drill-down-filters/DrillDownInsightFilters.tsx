@@ -58,6 +58,8 @@ interface DrillDownInsightFilters {
 
     className?: string
 
+    showSeriesDisplayOptions: boolean
+
     /** Fires whenever the user changes filter value in any form input. */
     onFiltersChange: (filters: FormChangeEvent<DrillDownFiltersFormValues>) => void
 
@@ -78,6 +80,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
         originalValues,
         className,
         visualMode,
+        showSeriesDisplayOptions,
         onFiltersChange,
         onFilterSave,
         onCreateInsightRequest,
@@ -161,20 +164,22 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
             <hr className={styles.headerSeparator} />
 
             <div className={classNames(styles.panels, { [styles.panelsHorizontalMode]: isHorizontalMode })}>
-                <FilterCollapseSection
-                    open={isHorizontalMode || activeSection === FilterSection.SortFilter}
-                    title="Sort & Limit"
-                    preview={getSortPreview(parseSeriesDisplayOptions(seriesDisplayOptions))}
-                    hasActiveFilter={false}
-                    withSeparators={!isHorizontalMode}
-                    onOpenChange={opened => handleCollapseState(FilterSection.SortFilter, opened)}
-                >
-                    <SortFilterSeriesPanel
-                        limit={seriesDisplayOptions.limit}
-                        selectedOption={seriesDisplayOptions.sortOptions}
-                        onChange={handleSeriesDisplayOptionsChange}
-                    />
-                </FilterCollapseSection>
+                {showSeriesDisplayOptions && (
+                    <FilterCollapseSection
+                        open={isHorizontalMode || activeSection === FilterSection.SortFilter}
+                        title="Sort & Limit"
+                        preview={getSortPreview(parseSeriesDisplayOptions(seriesDisplayOptions))}
+                        hasActiveFilter={false}
+                        withSeparators={!isHorizontalMode}
+                        onOpenChange={opened => handleCollapseState(FilterSection.SortFilter, opened)}
+                    >
+                        <SortFilterSeriesPanel
+                            limit={seriesDisplayOptions.limit}
+                            selectedOption={seriesDisplayOptions.sortOptions}
+                            onChange={handleSeriesDisplayOptionsChange}
+                        />
+                    </FilterCollapseSection>
+                )}
 
                 <FilterCollapseSection
                     open={isHorizontalMode || activeSection === FilterSection.SearchContext}

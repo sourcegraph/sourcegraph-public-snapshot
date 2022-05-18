@@ -30,7 +30,7 @@ export const Primary: Story = () => {
     return (
         <div className="d-flex">
             <div className={styles.container}>
-                <SortFilterSeriesPanel value={value} onChange={setValue} />
+                <SortFilterSeriesPanel selectedOption={value.sortOptions} limit={value.limit} onChange={setValue} />
             </div>
             <pre className="p-4">{JSON.stringify(value, null, 2)}</pre>
         </div>

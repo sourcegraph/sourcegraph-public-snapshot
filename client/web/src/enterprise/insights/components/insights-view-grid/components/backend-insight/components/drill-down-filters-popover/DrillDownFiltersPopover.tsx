@@ -6,8 +6,12 @@ import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
 import { Button, createRectangle, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
 
 import { SeriesDisplayOptionsInput } from '../../../../../../../../graphql-operations'
-import { InsightFilters } from '../../../../../../core'
-import { SeriesDisplayOptions, SeriesDisplayOptionsInputRequired } from '../../../../../../core/types/insight/common'
+import { Insight, InsightFilters } from '../../../../../../core'
+import {
+    InsightType,
+    SeriesDisplayOptions,
+    SeriesDisplayOptionsInputRequired,
+} from '../../../../../../core/types/insight/common'
 import { FormChangeEvent, SubmissionResult } from '../../../../../form/hooks/useForm'
 import {
     DrillDownInsightCreationForm,
@@ -27,6 +31,7 @@ interface DrillDownFiltersPopoverProps {
     initialFiltersValue: InsightFilters
     originalFiltersValue: InsightFilters
     anchor: React.RefObject<HTMLElement>
+    insight: Insight
     onFilterChange: (filters: InsightFilters) => void
     onFilterSave: (filters: InsightFilters, displayOptions: SeriesDisplayOptionsInput) => void
     onInsightCreate: (values: DrillDownInsightCreationFormValues) => SubmissionResult
@@ -57,6 +62,7 @@ export const DrillDownFiltersPopover: React.FunctionComponent<
         anchor,
         initialFiltersValue,
         originalFiltersValue,
+        insight,
         onVisibilityChange,
         onFilterChange,
         onFilterSave,
@@ -111,6 +117,7 @@ export const DrillDownFiltersPopover: React.FunctionComponent<
                         initialValues={initialFiltersValue}
                         originalValues={originalFiltersValue}
                         visualMode={FilterSectionVisualMode.CollapseSections}
+                        showSeriesDisplayOptions={insight.type === InsightType.CaptureGroup}
                         onFiltersChange={handleFilterChange}
                         onFilterSave={onFilterSave}
                         onCreateInsightRequest={() => setStep(DrillDownFiltersStep.ViewCreation)}

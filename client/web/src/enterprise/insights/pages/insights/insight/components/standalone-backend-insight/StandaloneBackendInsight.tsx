@@ -26,6 +26,7 @@ import {
     CodeInsightsBackendContext,
     DEFAULT_SERIES_DISPLAY_OPTIONS,
     InsightFilters,
+    InsightType,
 } from '../../../../../core'
 import { LazyQueryStatus } from '../../../../../hooks/use-parallel-requests/use-parallel-request'
 import { getTrackingTypeByInsightType, useCodeInsightViewPings } from '../../../../../pings'
@@ -123,6 +124,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
                         initialValues={filters}
                         originalValues={originalInsightFilters}
                         visualMode={FilterSectionVisualMode.HorizontalSections}
+                        showSeriesDisplayOptions={insight.type === InsightType.CaptureGroup}
                         onFiltersChange={handleFilterChange}
                         onFilterSave={handleFilterSave}
                         onCreateInsightRequest={() => setStep(DrillDownFiltersStep.ViewCreation)}
