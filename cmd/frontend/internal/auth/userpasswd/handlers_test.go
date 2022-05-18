@@ -126,7 +126,6 @@ func TestHandleSignIn_Lockout(t *testing.T) {
 	db.EventLogsFunc.SetDefaultReturn(database.NewMockEventLogStore())
 	db.SecurityEventLogsFunc.SetDefaultReturn(database.NewMockSecurityEventLogsStore())
 	db.UserEmailsFunc.SetDefaultReturn(database.NewMockUserEmailsStore())
-	db.FeatureFlagsFunc.SetDefaultReturn(database.NewMockFeatureFlagStore())
 
 	lockout := NewMockLockoutStore()
 	h := HandleSignIn(db, lockout)

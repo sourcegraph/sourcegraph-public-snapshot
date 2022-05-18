@@ -17,6 +17,9 @@ type MockStore struct {
 	// GetAnonymousUserFlagsFunc is an instance of a mock function object
 	// controlling the behavior of the method GetAnonymousUserFlags.
 	GetAnonymousUserFlagsFunc *StoreGetAnonymousUserFlagsFunc
+	// GetFeatureFlagsFunc is an instance of a mock function object
+	// controlling the behavior of the method GetFeatureFlags.
+	GetFeatureFlagsFunc *StoreGetFeatureFlagsFunc
 	// GetGlobalFeatureFlagFunc is an instance of a mock function object
 	// controlling the behavior of the method GetGlobalFeatureFlag.
 	GetGlobalFeatureFlagFunc *StoreGetGlobalFeatureFlagFunc
@@ -42,6 +45,11 @@ func NewMockStore() *MockStore {
 		},
 		GetAnonymousUserFlagsFunc: &StoreGetAnonymousUserFlagsFunc{
 			defaultHook: func(context.Context, string) (r0 map[string]bool, r1 error) {
+				return
+			},
+		},
+		GetFeatureFlagsFunc: &StoreGetFeatureFlagsFunc{
+			defaultHook: func(context.Context) (r0 []*FeatureFlag, r1 error) {
 				return
 			},
 		},
@@ -82,6 +90,11 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.GetAnonymousUserFlags")
 			},
 		},
+		GetFeatureFlagsFunc: &StoreGetFeatureFlagsFunc{
+			defaultHook: func(context.Context) ([]*FeatureFlag, error) {
+				panic("unexpected invocation of MockStore.GetFeatureFlags")
+			},
+		},
 		GetGlobalFeatureFlagFunc: &StoreGetGlobalFeatureFlagFunc{
 			defaultHook: func(context.Context, string) (*bool, error) {
 				panic("unexpected invocation of MockStore.GetGlobalFeatureFlag")
@@ -114,6 +127,9 @@ func NewMockStoreFrom(i Store) *MockStore {
 		},
 		GetAnonymousUserFlagsFunc: &StoreGetAnonymousUserFlagsFunc{
 			defaultHook: i.GetAnonymousUserFlags,
+		},
+		GetFeatureFlagsFunc: &StoreGetFeatureFlagsFunc{
+			defaultHook: i.GetFeatureFlags,
 		},
 		GetGlobalFeatureFlagFunc: &StoreGetGlobalFeatureFlagFunc{
 			defaultHook: i.GetGlobalFeatureFlag,
@@ -346,6 +362,111 @@ func (c StoreGetAnonymousUserFlagsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c StoreGetAnonymousUserFlagsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// StoreGetFeatureFlagsFunc describes the behavior when the GetFeatureFlags
+// method of the parent MockStore instance is invoked.
+type StoreGetFeatureFlagsFunc struct {
+	defaultHook func(context.Context) ([]*FeatureFlag, error)
+	hooks       []func(context.Context) ([]*FeatureFlag, error)
+	history     []StoreGetFeatureFlagsFuncCall
+	mutex       sync.Mutex
+}
+
+// GetFeatureFlags delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockStore) GetFeatureFlags(v0 context.Context) ([]*FeatureFlag, error) {
+	r0, r1 := m.GetFeatureFlagsFunc.nextHook()(v0)
+	m.GetFeatureFlagsFunc.appendCall(StoreGetFeatureFlagsFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetFeatureFlags
+// method of the parent MockStore instance is invoked and the hook queue is
+// empty.
+func (f *StoreGetFeatureFlagsFunc) SetDefaultHook(hook func(context.Context) ([]*FeatureFlag, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetFeatureFlags method of the parent MockStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *StoreGetFeatureFlagsFunc) PushHook(hook func(context.Context) ([]*FeatureFlag, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreGetFeatureFlagsFunc) SetDefaultReturn(r0 []*FeatureFlag, r1 error) {
+	f.SetDefaultHook(func(context.Context) ([]*FeatureFlag, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreGetFeatureFlagsFunc) PushReturn(r0 []*FeatureFlag, r1 error) {
+	f.PushHook(func(context.Context) ([]*FeatureFlag, error) {
+		return r0, r1
+	})
+}
+
+func (f *StoreGetFeatureFlagsFunc) nextHook() func(context.Context) ([]*FeatureFlag, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreGetFeatureFlagsFunc) appendCall(r0 StoreGetFeatureFlagsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreGetFeatureFlagsFuncCall objects
+// describing the invocations of this function.
+func (f *StoreGetFeatureFlagsFunc) History() []StoreGetFeatureFlagsFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreGetFeatureFlagsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreGetFeatureFlagsFuncCall is an object that describes an invocation of
+// method GetFeatureFlags on an instance of MockStore.
+type StoreGetFeatureFlagsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*FeatureFlag
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreGetFeatureFlagsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreGetFeatureFlagsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
