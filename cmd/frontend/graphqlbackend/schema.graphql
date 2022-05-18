@@ -1423,7 +1423,7 @@ type Query {
 
     """
     Retrieve the values of all feature flags for the current user
-    DEPRECATED: Use 'viewerFeatureFlag' instead
+    DEPRECATED: will be removed once frontend migrates to new API
     """
     viewerFeatureFlags: [EvaluatedFeatureFlag!]!
 
@@ -1431,6 +1431,11 @@ type Query {
     Evaluates a feature flag for the current user
     """
     evaluateFeatureFlag(flagName: String!): Boolean!
+
+    """
+    Retrieve all evaluated feature flags for the current user
+    """
+    evaluatedFeatureFlags: [EvaluatedFeatureFlag!]!
 
     """
     Retrieve the value of a feature flag for the organization

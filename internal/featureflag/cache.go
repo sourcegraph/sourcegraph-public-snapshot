@@ -14,7 +14,7 @@ var (
 	pool = redispool.Store
 )
 
-func GetEvaluatedFlagSetFromCache(flags []*FeatureFlag, a *actor.Actor) FlagSet {
+func getEvaluatedFlagSetFromCache(flags []*FeatureFlag, a *actor.Actor) FlagSet {
 	flagSet := FlagSet{}
 
 	c := pool.Get()
@@ -35,7 +35,7 @@ func GetEvaluatedFlagSetFromCache(flags []*FeatureFlag, a *actor.Actor) FlagSet 
 	return flagSet
 }
 
-func SetEvaluatedFlagToCache(name string, a *actor.Actor, value bool) {
+func setEvaluatedFlagToCache(name string, a *actor.Actor, value bool) {
 	c := pool.Get()
 	defer c.Close()
 
