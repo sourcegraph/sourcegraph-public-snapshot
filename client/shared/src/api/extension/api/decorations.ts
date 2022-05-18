@@ -47,15 +47,24 @@ export type DecorationMapByLine = ReadonlyMap<number, TextDocumentDecoration[]>
  *
  * @todo this does not handle decorations that span multiple lines
  */
-export const groupDecorationsByLine = (decorations: TextDocumentDecoration[] | null): DecorationMapByLine => {
-    const grouped = new Map<number, TextDocumentDecoration[]>()
-    for (const decoration of decorations || []) {
-        const lineNumber = decoration.range.start.line + 1
-        const decorationsForLine = grouped.get(lineNumber)
-        if (!decorationsForLine) {
-            grouped.set(lineNumber, [decoration])
-        } else {
-            decorationsForLine.push(decoration)
+export const groupDecorationsByLine = (
+    decorations: [string, TextDocumentDecoration[] | null][]
+): Map<string, DecorationMapByLine> => {
+    const grouped = new Map<string, Map<number, TextDocumentDecoration[]>>()
+    for (const [extensionId, extensionDecorations] of decorations || []) {
+        for (const decoration of extensionDecorations || []) {
+            let decorationsForExtension = grouped.get(extensionId)
+            if (!decorationsForExtension) {
+                decorationsForExtension = new Map()
+                grouped.set(extensionId, decorationsForExtension)
+            }
+            const lineNumber = decoration.range.start.line + 1
+            const decorationsForLine = decorationsForExtension.get(lineNumber)
+            if (!decorationsForLine) {
+                decorationsForExtension.set(lineNumber, [decoration])
+            } else {
+                decorationsForLine.push(decoration)
+            }
         }
     }
     return grouped

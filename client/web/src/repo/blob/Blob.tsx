@@ -77,6 +77,7 @@ import { HoverThresholdProps } from '../RepoContainer'
 import { LineDecorator } from './LineDecorator'
 
 import styles from './Blob.module.scss'
+import { LineDecorators } from './LineDecorators'
 
 /**
  * toPortalID builds an ID that will be used for the {@link LineDecorator} portal containers.
@@ -134,14 +135,14 @@ const domFunctions = {
         if (!row) {
             return null
         }
-        return row.cells[1]
+        return row.cells[0]
     },
     getLineNumberFromCodeElement: (codeCell: HTMLElement): number => {
         const row = codeCell.closest('tr')
         if (!row) {
             throw new Error('Could not find closest row for codeCell')
         }
-        const numberCell = row.cells[0]
+        const numberCell = row.querySelector('[data-line]')
         if (!numberCell || !numberCell.dataset.line) {
             throw new Error('Could not find line number')
         }
@@ -624,23 +625,37 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                         extensionsController={extensionsController}
                     />
                 )}
-                {groupedDecorations &&
-                    iterate(groupedDecorations)
-                        .map(([line, decorations]) => {
-                            const portalID = toPortalID(line)
-                            return (
-                                <LineDecorator
-                                    isLightTheme={isLightTheme}
-                                    key={`${portalID}-${blobInfo.filePath}`}
-                                    portalID={portalID}
-                                    getCodeElementFromLineNumber={domFunctions.getCodeElementFromLineNumber}
-                                    line={line}
-                                    decorations={decorations}
-                                    codeViewElements={codeViewElements}
-                                />
-                            )
-                        })
-                        .toArray()}
+                {/* {groupedDecorations && */}
+                {/*     iterate(groupedDecorations).reduce( */}
+                {/*         (accumulator, [extensionId, extensionDecorations]) => [ */}
+                {/*             ...accumulator, */}
+                {/*             iterate(extensionDecorations) */}
+                {/*                 .map(([line, decorations]) => { */}
+                {/*                     const portalID = toPortalID(line) */}
+                {/*                     return ( */}
+                {/*                         <LineDecorator */}
+                {/*                             isLightTheme={isLightTheme} */}
+                {/*                             key={`${portalID}-${blobInfo.filePath}`} */}
+                {/*                             portalID={portalID} */}
+                {/*                             getCodeElementFromLineNumber={domFunctions.getCodeElementFromLineNumber} */}
+                {/*                             line={line} */}
+                {/*                             decorations={decorations} */}
+                {/*                             codeViewElements={codeViewElements} */}
+                {/*                         /> */}
+                {/*                     ) */}
+                {/*                 }) */}
+                {/*                 .toArray(), */}
+                {/*         ], */}
+                {/*         [] as any */}
+                {/*     )} */}
+                {groupedDecorations && (
+                    <LineDecorators
+                        groupedDecorations={groupedDecorations}
+                        codeViewElements={codeViewElements}
+                        getCodeElementFromLineNumber={domFunctions.getCodeElementFromLineNumber}
+                        isLightTheme={isLightTheme}
+                    />
+                )}
             </div>
             {!props.disableStatusBar && (
                 <StatusBar

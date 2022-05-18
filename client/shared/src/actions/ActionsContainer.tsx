@@ -61,6 +61,7 @@ export const ActionsContainer: React.FunctionComponent<React.PropsWithChildren<P
     }
 
     const items = getContributedActionItems(contributions, menu)
+    console.log({ items, contributions })
     if (empty !== undefined && items.length === 0) {
         return empty
     }

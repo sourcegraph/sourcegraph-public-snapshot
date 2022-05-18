@@ -64,8 +64,24 @@ export class ExtensionCodeEditor implements sourcegraph.CodeEditor, ProxyMarked 
         decorationType = decorationType || DEFAULT_DECORATION_TYPE
         // Replace previous decorations for this decorationType
         this._decorationsByType.set(decorationType, decorations.map(fromTextDocumentDecoration))
+        // console.log(
+        //     [...this._decorationsByType.entries()].reduce(
+        //         (accumulator, [{ key }, value]) => [
+        //             ...accumulator,
+        //             [key, value.flat().filter(decoration => !isDecorationEmpty(decoration))],
+        //         ],
+        //         [] as any[]
+        //     )
+        // )
         this._mergedDecorations.next(
-            [...this._decorationsByType.values()].flat().filter(decoration => !isDecorationEmpty(decoration))
+            // [...this._decorationsByType.values()].flat().filter(decoration => !isDecorationEmpty(decoration))
+            [...this._decorationsByType.entries()].reduce(
+                (accumulator, [{ key }, value]) => [
+                    ...accumulator,
+                    [key, value.flat().filter(decoration => !isDecorationEmpty(decoration))],
+                ],
+                [] as any[]
+            )
         )
     }
 
