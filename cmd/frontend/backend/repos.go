@@ -90,6 +90,12 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo
 		return nil, err
 	}
 
+	if errcode.IsNotFound(err) && !envvar.SourcegraphDotComMode() {
+		// The repo doesn't exist and we're not on sourcegraph.com, we should not lazy
+		// clone it.
+		return nil, err
+	}
+
 	newName, err := s.Add(ctx, name)
 	if err == nil {
 		return s.store.GetByName(ctx, newName)
