@@ -10,11 +10,11 @@ import (
 )
 
 type Service struct {
-	autoindexingStore Store
+	autoindexingStore store.Store
 	operations        *operations
 }
 
-func newService(autoindexingStore Store, observationContext *observation.Context) *Service {
+func newService(autoindexingStore store.Store, observationContext *observation.Context) *Service {
 	return &Service{
 		autoindexingStore: autoindexingStore,
 		operations:        newOperations(observationContext),
