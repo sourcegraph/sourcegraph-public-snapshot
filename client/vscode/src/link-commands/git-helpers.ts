@@ -188,18 +188,21 @@ export function getSourcegraphFileUrl(
     fileRelative: string,
     editor: TextEditor
 ): string {
-    return (
-        `${SourcegraphUrl}/-/editor` +
-        `?remote_url=${encodeURIComponent(remoteURL)}` +
-        `&branch=${encodeURIComponent(branch)}` +
-        `&file=${encodeURIComponent(fileRelative)}` +
-        `&editor=${encodeURIComponent('VSCode')}` +
-        `&version=${encodeURIComponent(version)}` +
-        `&start_row=${encodeURIComponent(String(editor.selection.start.line))}` +
-        `&start_col=${encodeURIComponent(String(editor.selection.start.character))}` +
-        `&end_row=${encodeURIComponent(String(editor.selection.end.line))}` +
-        `&end_col=${encodeURIComponent(String(editor.selection.end.character))}`
-    )
+    const parameters = {
+        remote_url: encodeURIComponent(remoteURL),
+        branch: encodeURIComponent(branch),
+        file: encodeURIComponent(fileRelative),
+        editor: encodeURIComponent('VSCode'),
+        version: encodeURIComponent(version),
+        start_row: encodeURIComponent(String(editor.selection.start.line)),
+        start_col: encodeURIComponent(String(editor.selection.start.character)),
+        end_row: encodeURIComponent(String(editor.selection.end.line)),
+        end_col: encodeURIComponent(String(editor.selection.end.character)),
+    }
+    const uri = new URL('/-/editor', SourcegraphUrl)
+    const parametersString = new URLSearchParams({ ...parameters }).toString()
+    uri.search = parametersString
+    return uri.href
 }
 
 function getRemoteUrlReplacements(): Record<string, string> {
@@ -219,6 +222,10 @@ export function getDefaultBranch(): string {
     return branch
 }
 
+/**
+ * Check if branch exists on Sourcegraph instance
+ * Return 'HEAD' if it does not exists remotely
+ */
 export async function checkBranch(remoteURL: string, currentBranch: string): Promise<string> {
     const repoNameRegex = /(\w+(:\/\/|@))(.+@)*([\w.]+)(:?)(\d+){0,1}\/*(.*)(\.git)(\/)?/
     const repoNameRegexMatches = remoteURL.match(repoNameRegex)

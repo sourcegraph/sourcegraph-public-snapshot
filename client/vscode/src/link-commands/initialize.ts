@@ -20,9 +20,33 @@ export function initializeCodeSharingCommands(
             await browserActions('open', logRedirectEvent)
         })
     )
+    // Open current file in main branch in browser
+    context.subscriptions.push(
+        vscode.commands.registerCommand('sourcegraph.openMain', async () => {
+            await browserActions('open', logRedirectEvent, true)
+        })
+    )
+    // Open current file in current branch in browser
+    context.subscriptions.push(
+        vscode.commands.registerCommand('sourcegraph.openCurrent', async () => {
+            await browserActions('open', logRedirectEvent)
+        })
+    )
     // Copy Sourcegraph link to file
     context.subscriptions.push(
         vscode.commands.registerCommand('sourcegraph.copyFileLink', async () => {
+            await browserActions('copy', logRedirectEvent)
+        })
+    )
+    // Copy Sourcegraph link to file in main branch
+    context.subscriptions.push(
+        vscode.commands.registerCommand('sourcegraph.copyMain', async () => {
+            await browserActions('copy', logRedirectEvent, true)
+        })
+    )
+    // Copy Sourcegraph link to file in current branch
+    context.subscriptions.push(
+        vscode.commands.registerCommand('sourcegraph.copyCurrent', async () => {
             await browserActions('copy', logRedirectEvent)
         })
     )
@@ -66,12 +90,14 @@ export function generateSourcegraphBlobLink(
     endLine: number,
     endChar: number
 ): string {
-    const instanceUrl = vscode.workspace.getConfiguration('sourcegraph').get<string>('url') || 'https://sourcegraph.com'
+    const instanceUrl = new URL(
+        vscode.workspace.getConfiguration('sourcegraph').get<string>('url') || 'https://sourcegraph.com'
+    )
     // Using SourcegraphUri.parse to properly decode repo revision
-    const decodedUri = SourcegraphUri.parse(uri.toString()).uri
-    return `${decodedUri.replace(uri.scheme, instanceUrl.startsWith('https') ? 'https' : 'http')}?L${encodeURIComponent(
-        String(startLine)
-    )}:${encodeURIComponent(String(startChar))}-${encodeURIComponent(String(endLine))}:${encodeURIComponent(
-        String(endChar)
-    )}${vsceUtms}`
+    const decodedUri = SourcegraphUri.parse(uri.toString())
+    const finalUri = new URL(decodedUri.uri)
+    finalUri.search = `L${encodeURIComponent(String(startLine))}:${encodeURIComponent(
+        String(startChar)
+    )}-${encodeURIComponent(String(endLine))}:${encodeURIComponent(String(endChar))}${vsceUtms}`
+    return finalUri.href.replace(finalUri.protocol, instanceUrl.protocol)
 }

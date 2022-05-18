@@ -48,9 +48,29 @@
         }
       },
       {
+        "command": "sourcegraph.openMain",
+        "category": "Sourcegraph",
+        "title": "Go to main branch"
+      },
+      {
+        "command": "sourcegraph.openCurrent",
+        "category": "Sourcegraph",
+        "title": "Go to current Branch"
+      },
+      {
         "command": "sourcegraph.copyFileLink",
         "category": "Sourcegraph",
         "title": "Copy Sourcegraph File Link"
+      },
+      {
+        "command": "sourcegraph.copyMain",
+        "category": "Sourcegraph",
+        "title": "Link to main branch"
+      },
+      {
+        "command": "sourcegraph.copyCurrent",
+        "category": "Sourcegraph",
+        "title": "Link to current branch"
       },
       {
         "command": "sourcegraph.selectionSearchWeb",
@@ -179,12 +199,14 @@
     "menus": {
       "editor/context": [
         {
-          "command": "sourcegraph.openInBrowser",
-          "group": "sourcegraph"
+          "submenu": "sourcegraph.openInBranch",
+          "group": "sourcegraph",
+          "label": "sourcegraph"
         },
         {
-          "command": "sourcegraph.copyFileLink",
-          "group": "sourcegraph"
+          "submenu": "sourcegraph.CopyBranchLink",
+          "group": "sourcegraph",
+          "label": "sourcegraph"
         },
         {
           "command": "sourcegraph.selectionSearchWeb",
@@ -193,6 +215,28 @@
         },
         {
           "command": "sourcegraph.search",
+          "group": "sourcegraph"
+        }
+      ],
+      "sourcegraph.openInBranch": [
+        {
+          "command": "sourcegraph.openMain",
+          "group": "sourcegraph",
+          "when": "resourceScheme != sourcegraph"
+        },
+        {
+          "command": "sourcegraph.openCurrent",
+          "group": "sourcegraph"
+        }
+      ],
+      "sourcegraph.CopyBranchLink": [
+        {
+          "command": "sourcegraph.copyMain",
+          "group": "sourcegraph",
+          "when": "resourceScheme != sourcegraph"
+        },
+        {
+          "command": "sourcegraph.copyCurrent",
           "group": "sourcegraph"
         }
       ],
@@ -210,7 +254,17 @@
           "group": "navigation"
         }
       ]
-    }
+    },
+    "submenus": [
+      {
+        "id": "sourcegraph.openInBranch",
+        "label": "Open File in Sourcegraph Web"
+      },
+      {
+        "id": "sourcegraph.CopyBranchLink",
+        "label": "Copy Sourcegraph File Link"
+      }
+    ]
   },
   "scripts": {
     "eslint": "eslint --cache '**/*.[jt]s?(x)'",

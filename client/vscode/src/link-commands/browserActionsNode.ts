@@ -6,7 +6,11 @@ import { generateSourcegraphBlobLink, vsceUtms } from './initialize'
  * Open active file in the browser on the configured Sourcegraph instance.
  */
 
-export async function browserActions(action: string, logRedirectEvent: (uri: string) => void): Promise<void> {
+export async function browserActions(
+    action: string,
+    logRedirectEvent: (uri: string) => void,
+    openMain?: boolean
+): Promise<void> {
     const editor = vscode.window.activeTextEditor
     if (!editor) {
         throw new Error('No active editor')
@@ -26,14 +30,19 @@ export async function browserActions(action: string, logRedirectEvent: (uri: str
         try {
             const repositoryInfo = await repoInfo(editor.document.uri.fsPath)
             if (!repositoryInfo) {
-                await vscode.window.showErrorMessage('Failed to get info for this repository.')
+                await vscode.window.showErrorMessage('Cannot get git info for this repository.')
                 return
             }
             const { remoteURL, branch, fileRelative } = repositoryInfo
-            const instanceUrl = vscode.workspace.getConfiguration('sourcegraph').get('url')
+            const instanceUrl = vscode.workspace.getConfiguration('sourcegraph').get<string>('url')
             if (typeof instanceUrl === 'string') {
                 // construct sourcegraph url for current file
-                sourcegraphUrl = getSourcegraphFileUrl(instanceUrl, remoteURL, branch, fileRelative, editor) + vsceUtms
+                // set branch as 'HEAD' if user wants to open file in main
+                // else use the branch we have retreive from the repository info
+                // which will set branch as default or 'HEAD' if current branch does not exist
+                const finalBranch = openMain ? 'HEAD' : branch
+                sourcegraphUrl =
+                    getSourcegraphFileUrl(instanceUrl, remoteURL, finalBranch, fileRelative, editor) + vsceUtms
             }
         } catch (error) {
             console.error(error)
