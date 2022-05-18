@@ -62,11 +62,14 @@ func initLogger(r otfields.Resource, level zapcore.LevelEnabler, format encoders
 		options = append(options, zap.Development())
 	}
 
-	logger := zap.New(zapcore.NewCore(
+	c := zapcore.NewCore(
 		encoders.BuildEncoder(format, development),
 		logSink,
 		level,
-	), options...)
+	)
+
+	c = zapcore.NewTee(append(sinks, c)...)
+	logger := zap.New(c, options...)
 
 	if development {
 		return logger
