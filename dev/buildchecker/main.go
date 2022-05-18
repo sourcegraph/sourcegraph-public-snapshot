@@ -17,11 +17,10 @@ import (
 	"github.com/google/go-github/v41/github"
 	libhoney "github.com/honeycombio/libhoney-go"
 
-	"github.com/sourcegraph/sourcegraph/dev/okay"
-
 	"github.com/slack-go/slack"
 	"golang.org/x/oauth2"
 
+	"github.com/sourcegraph/sourcegraph/dev/okay"
 	"github.com/sourcegraph/sourcegraph/dev/team"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
