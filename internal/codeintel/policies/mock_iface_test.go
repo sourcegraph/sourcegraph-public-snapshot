@@ -11,7 +11,8 @@ import (
 )
 
 // MockStore is a mock implementation of the Store interface (from the
-// package github.com/sourcegraph/sourcegraph/internal/codeintel/policies/internal/store)
+// package
+// github.com/sourcegraph/sourcegraph/internal/codeintel/policies/internal/store)
 // used for unit testing.
 type MockStore struct {
 	// ListFunc is an instance of a mock function object controlling the
