@@ -16,7 +16,7 @@ export const ReferencesPanelFeedbackCta: React.FunctionComponent = () => {
             {enabled === true && (
                 <div className={classNames('m-0 p-0 pr-3', styles.container)}>
                     <CommentAlert size={16} />
-                    <Link to="https://github.com/sourcegraph/sourcegraph/issues" className="ml-2">
+                    <Link to="https://github.com/sourcegraph/sourcegraph/discussions/35668" className="ml-2">
                         Send us your reference panel feedback!
                     </Link>
                 </div>
