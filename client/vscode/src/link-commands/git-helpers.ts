@@ -52,7 +52,7 @@ export async function repoInfo(filePath: string): Promise<RepositoryInfo | undef
         // check if current branch exists on sourcegraph. If not, open in HEAD instead
         const validatedBranch = await checkBranch(remoteURL, branch)
         // Use default branch if set. If not, use validated branch instead
-        branch = getDefaultBranch() || validatedBranch
+        branch = getDefaultBranch() || await checkBranch(remoteURL, branch)
         return { remoteURL, branch, fileRelative, remoteName }
     } catch {
         return undefined

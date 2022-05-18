@@ -55,7 +55,7 @@
       {
         "command": "sourcegraph.openCurrent",
         "category": "Sourcegraph",
-        "title": "Go to current Branch"
+        "title": "Go to current branch"
       },
       {
         "command": "sourcegraph.copyFileLink",
@@ -204,7 +204,7 @@
           "label": "sourcegraph"
         },
         {
-          "submenu": "sourcegraph.CopyBranchLink",
+          "submenu": "sourcegraph.copyBranchLink",
           "group": "sourcegraph",
           "label": "sourcegraph"
         },
@@ -261,7 +261,7 @@
         "label": "Open File in Sourcegraph Web"
       },
       {
-        "id": "sourcegraph.CopyBranchLink",
+        "id": "sourcegraph.copyBranchLink",
         "label": "Copy Sourcegraph File Link"
       }
     ]
