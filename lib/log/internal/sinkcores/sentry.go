@@ -4,7 +4,6 @@ package sinkcores
 
 import (
 	"fmt"
-	"sync"
 
 	"github.com/getsentry/sentry-go"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -37,13 +36,11 @@ type ErrorContext struct {
 }
 
 type SentryCore struct {
-	hub *sentry.Hub
-
+	hub  *sentry.Hub
 	base baseContext
 	errs []error
 
 	ErrorsC chan ErrorContext
-	started sync.Once
 	done    chan struct{}
 }
 
@@ -54,7 +51,6 @@ func (s *SentryCore) clone() *SentryCore {
 		hub:     s.hub,
 		base:    *s.base.clone(),
 		ErrorsC: s.ErrorsC,
-		started: s.started,
 		done:    s.done,
 	}
 	copy(c.errs, s.errs)
@@ -85,8 +81,6 @@ func (s *SentryCore) Check(e zapcore.Entry, ce *zapcore.CheckedEntry) *zapcore.C
 }
 
 func (s *SentryCore) Write(entry zapcore.Entry, fields []zapcore.Field) error {
-	s.started.Do(s.process)
-
 	s.base.Scope = entry.LoggerName
 	s.base.Message = entry.Message
 
@@ -115,8 +109,7 @@ func (s *SentryCore) Write(entry zapcore.Entry, fields []zapcore.Field) error {
 	return nil
 }
 
-func (s *SentryCore) process() {
-	println("process")
+func (s *SentryCore) Start() {
 	s.ErrorsC = make(chan ErrorContext)
 	go func() {
 		for {
