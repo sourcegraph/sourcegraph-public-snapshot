@@ -86,6 +86,12 @@ func TestConvertMatches(t *testing.T) {
 				OffsetAndLengths: [][2]int32{{0, 1}},
 			}},
 		}}
+
+		for _, tc := range cases {
+			t.Run("", func(t *testing.T) {
+				require.Equal(t, tc.input.AsLineMatches(), tc.output)
+			})
+		}
 	})
 
 	t.Run("AsMultilineMatches", func(t *testing.T) {
@@ -93,24 +99,26 @@ func TestConvertMatches(t *testing.T) {
 			input  LineMatch
 			output []MultilineMatch
 		}{{
-			input: MultilineMatch{
-				Preview: "0.2.4.6.8.10.13.16.19",
-				Line: 42,
-				OffsetAndLengths: [][2]{{2,4}, {8,13}}
+			input: LineMatch{
+				Preview:          "0.2.4.6.8.10.13.16.19",
+				LineNumber:       42,
+				OffsetAndLengths: [][2]int32{{2, 2}, {8, 5}},
 			},
-			output: []LineMatch{{
-				Preview:          "line1",
-				LineNumber:       1,
-				OffsetAndLengths: [][2]int32{{1, 4}},
+			output: []MultilineMatch{{
+				Preview: "0.2.4.6.8.10.13.16.19",
+				Start:   LineColumn{42, 2},
+				End:     LineColumn{42, 4},
 			}, {
-				Preview:          "line2",
-				LineNumber:       2,
-				OffsetAndLengths: [][2]int32{{0, 5}},
-			}, {
-				Preview:          "line3",
-				LineNumber:       3,
-				OffsetAndLengths: [][2]int32{{0, 1}},
+				Preview: "0.2.4.6.8.10.13.16.19",
+				Start:   LineColumn{42, 8},
+				End:     LineColumn{42, 13},
 			}},
 		}}
+
+		for _, tc := range cases {
+			t.Run("", func(t *testing.T) {
+				require.Equal(t, tc.output, tc.input.AsMultilineMatches())
+			})
+		}
 	})
 }

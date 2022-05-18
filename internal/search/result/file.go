@@ -188,12 +188,13 @@ func (m MultilineMatch) AsLineMatches() []LineMatch {
 	lineMatches := make([]LineMatch, 0, len(lines))
 	for i, line := range lines {
 		// TODO include the newline character?
-		offset, length := int32(0), int32(utf8.RuneCountInString(line))
+		offset := int32(0)
 		if i == 0 {
 			offset = m.Start.Column
 		}
+		length := int32(utf8.RuneCountInString(line)) - offset
 		if i == len(lines)-1 {
-			length = m.End.Column - m.Start.Column
+			length = m.End.Column - offset
 		}
 		lineMatches = append(lineMatches, LineMatch{
 			Preview:          line,
