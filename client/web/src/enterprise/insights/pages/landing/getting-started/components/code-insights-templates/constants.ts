@@ -36,14 +36,12 @@ const TERRAFORM_VERSIONS: Template = {
         series: [
             {
                 name: '1.1.0',
-                query:
-                    'app.terraform.io/(.*)\\n version =(.*)1.1.0 patternType:regexp lang:Terraform',
+                query: 'app.terraform.io/(.*)\\n version =(.*)1.1.0 patternType:regexp lang:Terraform',
                 stroke: DATA_SERIES_COLORS.BLUE,
             },
             {
                 name: '1.2.0',
-                query:
-                    'app.terraform.io/(.*)\\n version =(.*)1.2.0 patternType:regexp lang:Terraform',
+                query: 'app.terraform.io/(.*)\\n version =(.*)1.2.0 patternType:regexp lang:Terraform',
                 stroke: DATA_SERIES_COLORS.ORANGE,
             },
         ],
@@ -88,8 +86,7 @@ const LOG4J_FIXED_VERSIONS: Template = {
             },
             {
                 name: 'Fixed',
-                query:
-                    'lang:gradle org\\.apache\\.logging\\.log4j[\'"] 2\\.(17)(\\.[0-9]+) patterntype:regexp',
+                query: 'lang:gradle org\\.apache\\.logging\\.log4j[\'"] 2\\.(17)(\\.[0-9]+) patterntype:regexp',
                 stroke: DATA_SERIES_COLORS.GREEN,
             },
         ],
@@ -380,8 +377,7 @@ const STRUCTURAL_CODE_PATTERN: Template = {
         series: [
             {
                 name: 'Try catch',
-                query:
-                    'try {:[_]} catch (:[e]) { } finally {:[_]} lang:java patternType:structural',
+                query: 'try {:[_]} catch (:[e]) { } finally {:[_]} lang:java patternType:structural',
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
         ],
@@ -804,8 +800,7 @@ const DATA_FETCHING_GQL: Template = {
             },
             {
                 name: 'Hooks',
-                query:
-                    'patternType:regexp use(Query|Mutation|Connection|LazyQuery)(\\(|<[^>]*>\\()',
+                query: 'patternType:regexp use(Query|Mutation|Connection|LazyQuery)(\\(|<[^>]*>\\()',
                 stroke: DATA_SERIES_COLORS.ORANGE,
             },
         ],

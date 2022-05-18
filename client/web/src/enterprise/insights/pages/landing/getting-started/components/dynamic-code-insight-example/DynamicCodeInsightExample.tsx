@@ -33,7 +33,7 @@ const INITIAL_INSIGHT_VALUES: CodeInsightExampleFormValues = {
     query: 'TODO',
 }
 
-interface DynamicCodeInsightExampleProps extends TelemetryProps, React.HTMLAttributes<HTMLDivElement> { }
+interface DynamicCodeInsightExampleProps extends TelemetryProps, React.HTMLAttributes<HTMLDivElement> {}
 
 export const DynamicCodeInsightExample: React.FunctionComponent<
     React.PropsWithChildren<DynamicCodeInsightExampleProps>

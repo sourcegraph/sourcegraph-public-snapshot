@@ -109,8 +109,7 @@ export const LOG_4_J_INCIDENT_INSIGHT: SearchInsightExampleContent = {
             dataKey: 'a',
             name: 'Updated log4j',
             stroke: DATA_SERIES_COLORS.GREEN,
-            query:
-                'lang:gradle org\\.apache\\.logging\\.log4j[\'"] 2\\.(17)(\\.[0-9]+) patterntype:regexp',
+            query: 'lang:gradle org\\.apache\\.logging\\.log4j[\'"] 2\\.(17)(\\.[0-9]+) patterntype:regexp',
         },
         {
             dataKey: 'b',
