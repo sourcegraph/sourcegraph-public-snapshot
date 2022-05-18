@@ -13,16 +13,18 @@ import (
 )
 
 type ErrorContext struct {
-	Key    string
-	Scope  string
-	Error  error
-	Level  zapcore.Level
-	Fields []zapcore.Field
+	Key     string
+	Scope   string
+	Error   error
+	Level   zapcore.Level
+	Fields  []zapcore.Field
+	Message string
 }
 
 type ErrorsContext struct {
 	ErrorContext
-	errs []error
+	errs    []error
+	message string
 }
 
 type SentryCore struct {
@@ -51,7 +53,15 @@ func (s *SentryCore) clone() *SentryCore {
 // have the full context required to annotate the error being captured by Sentry.
 func (s *SentryCore) With(fields []zapcore.Field) zapcore.Core {
 	s = s.clone()
-	s.ec.Fields = append(s.ec.Fields, fields...)
+	for _, f := range fields {
+		if f.Type == zapcore.ErrorType {
+			if enc, ok := f.Interface.(*encoders.ErrorEncoder); ok {
+				s.ec.errs = append(s.ec.errs, enc.Source)
+				continue
+			}
+		}
+		s.ec.Fields = append(s.ec.Fields, f)
+	}
 	return s
 }
 
@@ -63,27 +73,29 @@ func (s *SentryCore) Check(e zapcore.Entry, ce *zapcore.CheckedEntry) *zapcore.C
 
 func (s *SentryCore) Write(entry zapcore.Entry, fields []zapcore.Field) error {
 	s.started.Do(s.process)
+
 	s.ec.Scope = entry.LoggerName
+	s.ec.message = entry.Message
+
 	for _, f := range fields {
 		if f.Type == zapcore.ErrorType {
 			if enc, ok := f.Interface.(*encoders.ErrorEncoder); ok {
-				// queue in background so that we don't block
-				println(enc.Error())
-				println("fields len", len(fields))
-
-				go func() {
-					for _, err := range s.ec.errs {
-						ec := s.ec.ErrorContext
-						ec.Error = err
-						s.ErrorsC <- ec
-					}
-					ec := s.ec.ErrorContext
-					ec.Error = enc.Source
-					s.ErrorsC <- ec
-				}()
+				s.ec.errs = append(s.ec.errs, enc.Source)
+				continue
 			}
 		}
+		s.ec.Fields = append(s.ec.Fields, f)
 	}
+
+	// queue the error reporting
+	go func() {
+		for _, err := range s.ec.errs {
+			ec := s.ec.ErrorContext
+			ec.Error = err
+			ec.Message = s.ec.message
+			s.ErrorsC <- ec
+		}
+	}()
 	return nil
 }
 
@@ -104,6 +116,9 @@ func (s *SentryCore) process() {
 
 func (s *SentryCore) capture(errC ErrorContext) {
 	event, extraDetails := errors.BuildSentryReport(errC.Error)
+	// Prepend the log message to the description, to increase visibility.
+	// This does not change how the errors are grouped.
+	event.Message = fmt.Sprintf("%s\n--\n%s", errC.Message, event.Message)
 
 	// Sentry uses the Type of the first exception as the issue title. By default,
 	// "github.com/cockroachdb/errors" uses "<filename>:<lineno> (<functionname>)"
@@ -138,6 +153,8 @@ func (s *SentryCore) capture(errC ErrorContext) {
 			extraDetails[fmt.Sprintf("log.%s", f.Key)] = fmt.Sprintf("%v", f.Interface)
 		}
 	}
+
+	extraDetails["log.msg"] = errC.Message
 
 	var level sentry.Level
 	switch errC.Level {
