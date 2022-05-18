@@ -1,9 +1,17 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { startCompletion } from '@codemirror/autocomplete'
-import { RangeSetBuilder } from '@codemirror/rangeset'
-import { EditorSelection, EditorState, Extension, Facet, StateEffect, StateField, Prec } from '@codemirror/state'
-import { hoverTooltip, TooltipView } from '@codemirror/tooltip'
+import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
+import {
+    EditorSelection,
+    EditorState,
+    Extension,
+    Facet,
+    StateEffect,
+    StateField,
+    Prec,
+    RangeSetBuilder,
+} from '@codemirror/state'
 import {
     EditorView,
     ViewUpdate,
@@ -11,6 +19,8 @@ import {
     Decoration,
     placeholder as placeholderExtension,
     ViewPlugin,
+    hoverTooltip,
+    TooltipView,
 } from '@codemirror/view'
 import { Shortcut } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'
@@ -263,6 +273,9 @@ const CodeMirrorQueryInput: React.FunctionComponent<React.PropsWithChildren<Code
             value,
             useMemo(
                 () => [
+                    keymap.of(historyKeymap),
+                    keymap.of(defaultKeymap),
+                    history(),
                     EditorView.darkTheme.of(isLightTheme === false),
                     parseInputAsQuery({ patternType, interpretComments }),
                     tokenHighlight,
@@ -355,7 +368,9 @@ const notifyOnEnter = StateField.define<() => void>({
         return () => {}
     },
     update(value, transaction) {
-        const effect = transaction.effects.find(effect => effect.is(setNotifyHandler))
+        const effect = transaction.effects.find((effect): effect is StateEffect<() => void> =>
+            effect.is(setNotifyHandler)
+        )
         return effect ? effect.value : value
     },
     provide(field) {
