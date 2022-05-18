@@ -10,7 +10,23 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/log/internal/globallogger"
 	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 	"github.com/sourcegraph/sourcegraph/lib/log/otfields"
+	"github.com/sourcegraph/sourcegraph/lib/log/sinks"
 )
+
+func TestSinks(t *testing.T) {
+	// hub, err := sentry.NewWithDsn(), conf.DefaultClient(), getDsn)
+	logger, _ := logtest.Captured(t, sinks.NewSentrySink(nil))
+	assert.NotNil(t, logger)
+
+	// If in devmode, the attributes namespace does not get added, but we want to test
+	// that behaviour here so we add it back.
+	if globallogger.DevMode() {
+		logger = logger.With(otfields.AttributesNamespace)
+	}
+
+	// common
+	logger.Error("a real error!", log.Error(errors.New("foobar")))
+}
 
 func TestLogger(t *testing.T) {
 	logger, exportLogs := logtest.Captured(t)
