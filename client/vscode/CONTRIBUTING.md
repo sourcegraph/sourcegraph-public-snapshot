@@ -36,7 +36,15 @@ To perform integration tests:
    1. `yarn build:test` or `yarn watch:test`
    2. `yarn test-integration`
 
-## GitPod
+### GitPod
+
+#### Desktop Version
+
+To install this extension on GitPod Desktop:
+
+1. Open the Extensions view by clicking on the Extensions icon in the Activity Bar on the side of your workspace
+2. Search for `Sourcegraph`
+3. Click `install` to install the Sourcegraph extension
 
 #### Web Version
 
