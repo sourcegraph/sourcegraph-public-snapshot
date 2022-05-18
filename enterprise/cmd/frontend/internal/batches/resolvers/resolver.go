@@ -98,7 +98,7 @@ func logBackendEvent(ctx context.Context, db database.DB, name string, args any,
 		return err
 	}
 
-	featureFlags := featureflag.FromContext(ctx)
+	featureFlags := featureflag.GetEvaluatedFlagsFromContext(ctx, db.FeatureFlags())
 	return usagestats.LogBackendEvent(db, actor.UID, deviceid.FromContext(ctx), name, jsonArg, jsonPublicArg, featureFlags, nil)
 }
 
