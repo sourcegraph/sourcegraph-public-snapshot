@@ -1,6 +1,7 @@
 import React from 'react'
 
 import classNames from 'classnames'
+import CloseIcon from 'mdi-react/CloseIcon'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { Alert, Button } from '@sourcegraph/wildcard'
@@ -32,7 +33,7 @@ export const ReferencePanelCta: React.FunctionComponent = () => {
                         className={classNames('m-0 p-0 text-right', styles.button)}
                         onClick={() => setCtaDismissed(true)}
                     >
-                        Dismiss
+                        <CloseIcon size={16} />
                     </Button>
                 </Alert>
             )}
