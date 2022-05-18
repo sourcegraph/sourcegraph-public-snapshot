@@ -31,6 +31,7 @@ import { registerPanelToolbarContributions } from './views/contributions'
 import { EmptyPanelView } from './views/EmptyPanelView'
 import { ExtensionsLoadingPanelView } from './views/ExtensionsLoadingView'
 import { PanelView } from './views/PanelView'
+import { ReferencesPanelFeedbackCta } from './views/ReferencesPanelFeedbackCta'
 
 import styles from './TabbedPanelContent.module.scss'
 
@@ -300,24 +301,27 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
                 actions={
                     <div className="align-items-center d-flex">
                         {activeTab && (
-                            <ActionsNavItems
-                                {...props}
-                                // TODO remove references to Bootstrap from shared, get class name from prop
-                                // This is okay for now because the Panel is currently only used in the webapp
-                                listClass="d-flex justify-content-end list-unstyled m-0 align-items-center"
-                                listItemClass="px-2 mx-2"
-                                actionItemClass="font-weight-medium"
-                                actionItemIconClass="icon-inline"
-                                menu={ContributableMenu.PanelToolbar}
-                                scope={{
-                                    type: 'panelView',
-                                    id: activeTab.id,
-                                    hasLocations: Boolean(activeTab.hasLocations),
-                                }}
-                                wrapInList={true}
-                                location={location}
-                                transformContributions={transformPanelContributions}
-                            />
+                            <>
+                                {activeTab.id === 'references' && <ReferencesPanelFeedbackCta />}
+                                <ActionsNavItems
+                                    {...props}
+                                    // TODO remove references to Bootstrap from shared, get class name from prop
+                                    // This is okay for now because the Panel is currently only used in the webapp
+                                    listClass="d-flex justify-content-end list-unstyled m-0 align-items-center"
+                                    listItemClass="px-2 mx-2"
+                                    actionItemClass="font-weight-medium"
+                                    actionItemIconClass="icon-inline"
+                                    menu={ContributableMenu.PanelToolbar}
+                                    scope={{
+                                        type: 'panelView',
+                                        id: activeTab.id,
+                                        hasLocations: Boolean(activeTab.hasLocations),
+                                    }}
+                                    wrapInList={true}
+                                    location={location}
+                                    transformContributions={transformPanelContributions}
+                                />
+                            </>
                         )}
                         <Button
                             onClick={handlePanelClose}
