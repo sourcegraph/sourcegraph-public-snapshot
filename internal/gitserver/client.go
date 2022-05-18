@@ -1329,12 +1329,13 @@ func (c *ClientImplementor) doReposStats(ctx context.Context, addr string) (*pro
 }
 
 func (c *ClientImplementor) Remove(ctx context.Context, repo api.RepoName) error {
-	addrForRepo, err := c.AddrForRepo(ctx, repo)
+	// In case the repo has already been deleted from the database we need to pass
+	// the old name in order to land on the correct gitserver instance.
+	addr, err := c.AddrForRepo(ctx, api.UndeletedRepoName(repo))
 	if err != nil {
 		return err
 	}
-
-	return c.RemoveFrom(ctx, repo, addrForRepo)
+	return c.RemoveFrom(ctx, repo, addr)
 }
 
 func (c *ClientImplementor) RemoveFrom(ctx context.Context, repo api.RepoName, from string) error {
