@@ -1845,7 +1845,7 @@ extend type Query {
     ): BatchSpecConnection!
 
     """
-    TODO
+    Determines if a batch change credential is authorized for a code host.
     """
     checkBatchChangesCredential(batchChangesCredential: ID!): EmptyResponse!
 }
