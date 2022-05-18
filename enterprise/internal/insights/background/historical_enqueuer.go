@@ -136,7 +136,6 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 	historicalEnqueuer := &historicalEnqueuer{
 		now:             time.Now,
 		insightsStore:   insightsStore,
-		repoStore:       repoStore,
 		db:              dbConn,
 		dataSeriesStore: dataSeriesStore,
 		limiter:         limiter,
@@ -248,7 +247,6 @@ type historicalEnqueuer struct {
 	insightsStore         store.Interface
 	dataSeriesStore       store.DataSeriesStore
 	db                    database.DB
-	repoStore             RepoStore
 	enqueueQueryRunnerJob func(ctx context.Context, job *queryrunner.Job) error
 	gitFirstEverCommit    func(ctx context.Context, db database.DB, repoName api.RepoName) (*gitdomain.Commit, error)
 	gitFindRecentCommit   func(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitdomain.Commit, error)
