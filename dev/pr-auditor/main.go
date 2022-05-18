@@ -99,10 +99,7 @@ func main() {
 	}
 }
 
-const (
-	commitStatusPostMerge = "pr-auditor / post-merge"
-	commitStatusPreMerge  = "pr-auditor / pre-merge"
-)
+const commitStatusPostMerge = "pr-auditor / post-merge"
 
 func postMergeAudit(ctx context.Context, ghc *github.Client, payload *EventPayload, flags *Flags) error {
 	result := checkPR(ctx, ghc, payload, checkOpts{
@@ -171,33 +168,30 @@ func preMergeAudit(ctx context.Context, ghc *github.Client, payload *EventPayloa
 	})
 	log.Printf("checkPR: %+v\n", result)
 
-	var prState, stateDescription string
-	stateURL := flags.GitHubRunURL
+	var passed bool
+	var stateDescription string
 	switch {
 	case result.Error != nil:
-		prState = "error"
-		stateDescription = fmt.Sprintf("checkPR: %s", result.Error.Error())
+		return errors.Wrap(result.Error, "checkPR")
+
 	case !result.HasTestPlan():
-		prState = "failure"
 		stateDescription = "No test plan detected - please provide one!"
-		stateURL = "https://docs.sourcegraph.com/dev/background-information/testing_principles#test-plans"
+
 	case result.ProtectedBranch:
-		prState = "success"
+		passed = true
 		stateDescription = "No action needed, but an exception will be opened post-merge."
+
 	default:
-		prState = "success"
+		passed = true
 		stateDescription = "No action needed, nice!"
 	}
 
-	owner, repo := payload.Repository.GetOwnerAndName()
-	_, _, err := ghc.Repositories.CreateStatus(ctx, owner, repo, payload.PullRequest.Head.SHA, &github.RepoStatus{
-		Context:     github.String(commitStatusPreMerge),
-		State:       github.String(prState),
-		Description: github.String(stateDescription),
-		TargetURL:   github.String(stateURL),
-	})
-	if err != nil {
-		return errors.Newf("CreateStatus: %w", err)
+	// Output
+	if !passed {
+		ErrorMessage("Pre-merge check failed", stateDescription)
+		return errors.New(stateDescription)
 	}
+
+	NoticeMessage("Pre-merge check passed", stateDescription)
 	return nil
 }
