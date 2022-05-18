@@ -109,6 +109,7 @@ func TestSearch(t *testing.T) {
 			db.ReposFunc.SetDefaultReturn(repos)
 			db.ExternalServicesFunc.SetDefaultReturn(ext)
 			db.PhabricatorFunc.SetDefaultReturn(phabricator)
+			db.FeatureFlagsFunc.SetDefaultReturn(database.NewMockFeatureFlagStore())
 
 			sr := &schemaResolver{db: db}
 			schema, err := graphql.ParseSchema(mainSchema, sr, graphql.Tracer(&prometheusTracer{}))
