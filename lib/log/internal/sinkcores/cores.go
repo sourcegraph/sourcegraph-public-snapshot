@@ -8,10 +8,12 @@ import (
 func Build(s *sinks.Sinks) []zapcore.Core {
 	cores := []zapcore.Core{}
 	println("build")
-	// if s.SentryHub != nil {
-	println("sentry")
-	cores = append(cores, &SentryCore{hub: s.SentryHub})
-	// }
+	if s.SentryHub != nil {
+		println("sentry")
+		c := SentryCore{hub: s.SentryHub}
+		c.Start()
+		cores = append(cores, &c)
+	}
 
 	return cores
 }
