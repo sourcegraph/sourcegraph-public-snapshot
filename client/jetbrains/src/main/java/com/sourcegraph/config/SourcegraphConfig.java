@@ -13,7 +13,6 @@ import org.jetbrains.annotations.Nullable;
     storages = {@Storage("sourcegraph.xml")})
 public
 class SourcegraphConfig implements PersistentStateComponent<SourcegraphConfig> {
-
     public String url;
     public String defaultBranch;
     public String remoteUrlReplacements;
@@ -69,10 +68,10 @@ class SourcegraphConfig implements PersistentStateComponent<SourcegraphConfig> {
         this.url = config.url;
         this.defaultBranch = config.defaultBranch;
         this.remoteUrlReplacements = config.remoteUrlReplacements;
-        this.lastSearchQuery = config.lastSearchQuery;
+        this.lastSearchQuery = config.lastSearchQuery != null ? config.lastSearchQuery : "";
         this.lastSearchCaseSensitive = config.lastSearchCaseSensitive;
-        this.lastSearchPatternType = config.lastSearchPatternType;
-        this.lastSearchContextSpec = config.lastSearchContextSpec;
+        this.lastSearchPatternType = config.lastSearchPatternType != null ? config.lastSearchPatternType : "literal";
+        this.lastSearchContextSpec = config.lastSearchContextSpec != null ? config.lastSearchContextSpec : "global";
         this.isGlobbingEnabled = config.isGlobbingEnabled;
         this.accessToken = config.accessToken;
     }

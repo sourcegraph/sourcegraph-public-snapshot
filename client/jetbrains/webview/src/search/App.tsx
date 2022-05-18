@@ -46,7 +46,7 @@ function fetchStreamSuggestionsWithStaticUrl(query: string): Observable<SearchMa
     return fetchStreamSuggestions(query, 'https://sourcegraph.com/.api')
 }
 
-interface Search {
+export interface Search {
     query: string | null
     caseSensitive: boolean
     patternType: SearchPatternType
