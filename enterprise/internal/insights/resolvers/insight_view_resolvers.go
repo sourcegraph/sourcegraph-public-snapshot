@@ -441,6 +441,95 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, validator: permissionsValidator, viewId: view.UniqueID}, nil
 }
 
+// TODO we're assuming only search series for now. I'm starting to think maybe just one type with nullable fields would be a lot easier.
+// Really depends on how important it is that we have chart type <-> allowed series types in the schema. Totally doable, just more overhead.
+func createInsight(ctx context.Context, r *Resolver, insightView types.InsightView, dashboards *[]graphql.ID, series []graphqlbackend.SearchDataSeriesInput) (graphqlbackend.InsightViewPayloadResolver, error) {
+	if len(series) == 0 {
+		return nil, errors.New("At least one data series is required to create an insight view")
+	}
+
+	uid := actor.FromContext(ctx).UID
+	permissionsValidator := PermissionsValidatorFromBase(&r.baseInsightResolver)
+
+	insightTx, err := r.insightStore.Transact(ctx)
+	dashboardTx := r.dashboardStore.With(insightTx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = insightTx.Done(err) }()
+
+	var dashboardIds []int
+	if dashboards != nil {
+		for _, id := range *dashboards {
+			dashboardID, err := unmarshalDashboardID(id)
+			if err != nil {
+				return nil, errors.Wrapf(err, "unmarshalDashboardID, id:%s", dashboardID)
+			}
+			dashboardIds = append(dashboardIds, int(dashboardID.Arg))
+		}
+	}
+
+	lamDashboardId, err := createInsightLicenseCheck(ctx, insightTx, dashboardTx, dashboardIds)
+	if err != nil {
+		return nil, errors.Wrapf(err, "createInsightLicenseCheck")
+	}
+	if lamDashboardId != 0 {
+		dashboardIds = append(dashboardIds, lamDashboardId)
+	}
+
+	view, err := insightTx.CreateView(ctx, insightView, []store.InsightViewGrant{store.UserGrant(int(uid))})
+	if err != nil {
+		return nil, errors.Wrap(err, "CreateView")
+	}
+
+	for _, series := range series {
+		// Map the types just for now as a quick hack
+		err = createAndAttachSeries(ctx, insightTx, view, graphqlbackend.LineChartSearchInsightDataSeriesInput{
+			SeriesId:                   series.SeriesId,
+			Query:                      series.Query,
+			TimeScope:                  series.TimeScope,
+			RepositoryScope:            series.RepositoryScope,
+			Options:                    graphqlbackend.LineChartDataSeriesOptionsInput(series.Options),
+			GeneratedFromCaptureGroups: series.GeneratedFromCaptureGroups,
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "createAndAttachSeries")
+		}
+	}
+
+	if len(dashboardIds) > 0 {
+		if dashboards != nil {
+			err := validateUserDashboardPermissions(ctx, dashboardTx, *dashboards, database.Orgs(r.postgresDB))
+			if err != nil {
+				return nil, err
+			}
+		}
+		for _, dashboardId := range dashboardIds {
+			log15.Debug("AddView", "insightId", view.UniqueID, "dashboardId", dashboardId)
+			err = dashboardTx.AddViewsToDashboard(ctx, dashboardId, []string{view.UniqueID})
+			if err != nil {
+				return nil, errors.Wrap(err, "AddViewsToDashboard")
+			}
+		}
+	}
+
+	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, validator: permissionsValidator, viewId: view.UniqueID}, nil
+}
+
+func (r *Resolver) CreateLineChartInsight(ctx context.Context, args *graphqlbackend.CreateLineChartInsightArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
+	var filters types.InsightViewFilters
+	if args.Input.ViewControls != nil {
+		filters = filtersFromInput(&args.Input.ViewControls.Filters)
+	}
+	insightView := types.InsightView{
+		Title:            emptyIfNil(args.Input.Options.Title),
+		UniqueID:         ksuid.New().String(),
+		Filters:          filters,
+		PresentationType: types.Line,
+	}
+	return createInsight(ctx, r, insightView, args.Input.Dashboards, *args.Input.DataSeries.Search)
+}
+
 func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graphqlbackend.UpdateLineChartSearchInsightArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
 	if len(args.Input.DataSeries) == 0 {
 		return nil, errors.New("At least one data series is required to update an insight view")

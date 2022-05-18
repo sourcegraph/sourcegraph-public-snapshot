@@ -39,6 +39,9 @@ type InsightsResolver interface {
 	// Admin Management
 	UpdateInsightSeries(ctx context.Context, args *UpdateInsightSeriesArgs) (InsightSeriesMetadataPayloadResolver, error)
 	InsightSeriesQueryStatus(ctx context.Context) ([]InsightSeriesQueryStatusResolver, error)
+
+	// New proposed
+	CreateLineChartInsight(ctx context.Context, args *CreateLineChartInsightArgs) (InsightViewPayloadResolver, error)
 }
 
 type SearchInsightLivePreviewArgs struct {
@@ -304,8 +307,38 @@ type CreateLineChartSearchInsightArgs struct {
 	Input CreateLineChartSearchInsightInput
 }
 
+type CreateLineChartInsightArgs struct {
+	Input CreateLineChartInsightInput
+}
+
 type CreateLineChartSearchInsightInput struct {
 	DataSeries   []LineChartSearchInsightDataSeriesInput
+	Options      LineChartOptionsInput
+	Dashboards   *[]graphql.ID
+	ViewControls *InsightViewControlsInput
+}
+
+type DataSeriesOptionsInput struct {
+	Label     *string
+	LineColor *string
+}
+
+type SearchDataSeriesInput struct {
+	SeriesId                   *string
+	Query                      string
+	TimeScope                  TimeScopeInput
+	RepositoryScope            RepositoryScopeInput
+	Options                    DataSeriesOptionsInput
+	GeneratedFromCaptureGroups *bool
+}
+
+type LineChartDataSeriesInput struct {
+	Order  []graphql.ID
+	Search *[]SearchDataSeriesInput
+}
+
+type CreateLineChartInsightInput struct {
+	DataSeries   LineChartDataSeriesInput
 	Options      LineChartOptionsInput
 	Dashboards   *[]graphql.ID
 	ViewControls *InsightViewControlsInput
