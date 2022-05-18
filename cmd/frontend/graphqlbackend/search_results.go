@@ -425,7 +425,7 @@ func LogSearchLatency(ctx context.Context, db database.DB, wg *sync.WaitGroup, s
 		if a.IsAuthenticated() && !a.IsMockUser() { // Do not log in tests
 			value := fmt.Sprintf(`{"durationMs": %d}`, durationMs)
 			eventName := fmt.Sprintf("search.latencies.%s", types[0])
-			featureFlags := featureflag.FromContext(ctx)
+			featureFlags := featureflag.GetEvaluatedFlagsFromContext(ctx, db.FeatureFlags())
 			wg.Add(1)
 			go func() {
 				defer wg.Done()

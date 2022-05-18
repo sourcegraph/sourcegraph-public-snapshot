@@ -147,7 +147,7 @@ func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.C
 		return nil, err
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", false) {
+	if featureflag.EvaluateForActorFromContext(ctx, "cc-repo-aware-monitors") {
 		settings, err := graphqlbackend.DecodedViewerFinalSettings(ctx, tx.db)
 		if err != nil {
 			return nil, err
@@ -528,7 +528,7 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 		return nil, err
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", false) {
+	if featureflag.EvaluateForActorFromContext(ctx, "cc-repo-aware-monitors") {
 		currentTrigger, err := r.db.CodeMonitors().GetQueryTriggerForMonitor(ctx, monitorID)
 		if err != nil {
 			return nil, err

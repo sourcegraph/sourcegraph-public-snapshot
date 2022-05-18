@@ -36,6 +36,7 @@ func TestSearchResults(t *testing.T) {
 
 	ctx := context.Background()
 	db := database.NewMockDB()
+	db.FeatureFlagsFunc.SetDefaultReturn(database.NewMockFeatureFlagStore())
 
 	getResults := func(t *testing.T, query, version string) []string {
 		r, err := newSchemaResolver(db).Search(ctx, &SearchArgs{Query: query, Version: version})
@@ -240,7 +241,10 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 			for _, globbing := range []bool{true, false} {
 				globbing := globbing // avoid a reference to the loop variable
 				MockDecodedViewerFinalSettings.SearchGlobbing = &globbing
-				actualDynamicFilters := (&SearchResultsResolver{db: database.NewMockDB(), Matches: test.searchResults}).DynamicFilters(context.Background())
+				db := database.NewMockDB()
+				db.FeatureFlagsFunc.SetDefaultReturn(database.NewMockFeatureFlagStore())
+
+				actualDynamicFilters := (&SearchResultsResolver{db: db, Matches: test.searchResults}).DynamicFilters(context.Background())
 				actualDynamicFilterStrs := make(map[string]int)
 
 				for _, filter := range actualDynamicFilters {
@@ -281,6 +285,7 @@ func TestSearchResultsHydration(t *testing.T) {
 	}
 
 	db := database.NewMockDB()
+	db.FeatureFlagsFunc.SetDefaultReturn(database.NewMockFeatureFlagStore())
 
 	repos := database.NewMockRepoStore()
 	repos.GetFunc.SetDefaultReturn(hydratedRepo, nil)
@@ -512,6 +517,7 @@ func TestCompareSearchResults(t *testing.T) {
 
 func TestEvaluateAnd(t *testing.T) {
 	db := database.NewMockDB()
+	db.FeatureFlagsFunc.SetDefaultReturn(database.NewMockFeatureFlagStore())
 
 	tests := []struct {
 		name         string
@@ -661,6 +667,7 @@ func TestSubRepoFiltering(t *testing.T) {
 			repos.CountFunc.SetDefaultReturn(0, nil)
 
 			db := database.NewMockDB()
+			db.FeatureFlagsFunc.SetDefaultReturn(database.NewMockFeatureFlagStore())
 			db.ReposFunc.SetDefaultReturn(repos)
 			db.EventLogsFunc.SetDefaultHook(func() database.EventLogStore {
 				return database.NewMockEventLogStore()
