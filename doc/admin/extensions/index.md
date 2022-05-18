@@ -71,7 +71,7 @@ https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/cmd/frontend/g
 
 ## Allow only extensions authored by Sourcegraph
 
-On Sourcegraph Enterprise, you can restrict users to using only Sourcegraph-autored extensions by setting [`extensions.allowOnlySourcegraphAuthoredExtensions`](../config/site_config.md) to `true` in your site configuration.
+On Sourcegraph Enterprise, you can restrict users to using only Sourcegraph-authored extensions by setting [`extensions.allowOnlySourcegraphAuthoredExtensions`](../config/site_config.md) to `true` in your site configuration.
 
 ```json
 {
