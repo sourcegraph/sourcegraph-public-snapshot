@@ -117,7 +117,7 @@ func (s *userEmailsStore) GetPrimaryEmail(ctx context.Context, id int32) (email 
 // SetPrimaryEmail sets the primary email for a user.
 // The address must be verified.
 // All other addresses for the user will be set as not primary.
-func (s *userEmailsStore) SetPrimaryEmail(ctx context.Context, userID int32, email string) error {
+func (s *userEmailsStore) SetPrimaryEmail(ctx context.Context, userID int32, email string) (err error) {
 	tx, err := s.Transact(ctx)
 	if err != nil {
 		return err
@@ -169,7 +169,7 @@ func (s *userEmailsStore) Add(ctx context.Context, userID int32, email string, v
 
 // Remove removes a user email. It returns an error if there is no such email associated with the user or the email
 // is the user's primary address
-func (s *userEmailsStore) Remove(ctx context.Context, userID int32, email string) error {
+func (s *userEmailsStore) Remove(ctx context.Context, userID int32, email string) (err error) {
 	tx, err := s.Transact(ctx)
 	if err != nil {
 		return err
