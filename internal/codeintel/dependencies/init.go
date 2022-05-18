@@ -78,7 +78,7 @@ func TestService(db database.DB, gitService GitService, syncer Syncer) *Service 
 	lockfilesService := lockfiles.GetService(gitService)
 	lockfilesSemaphore := semaphore.NewWeighted(64)
 	syncerSemaphore := semaphore.NewWeighted(64)
-	store := store.New(db, &observation.Context{})
+	store := store.New(db, &observation.TestContext)
 
 	return newService(
 		store,
