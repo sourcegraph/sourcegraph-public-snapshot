@@ -2,6 +2,7 @@ package dependencies
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -358,6 +359,33 @@ func (s *Service) sync(ctx context.Context, repos []api.RepoName) error {
 	}
 
 	return g.Wait()
+}
+
+// TODO - document
+func (s *Service) ResolveDependencies(ctx context.Context, repoRevs map[api.RepoName]types.RevSpecSet) (err error) {
+	if !enableUpserts {
+		return nil
+	}
+
+	// Resolve the revhashes for the source repo-commit pairs
+	repoCommits, err := s.resolveRepoCommits(ctx, repoRevs)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("repoCommits=%d\n", len(repoCommits))
+
+	for _, repoCommit := range repoCommits {
+		// TODO
+		fmt.Printf("> %v\n", repoCommit)
+		// TODO - take a different semaphore
+
+		if _, err := s.listAndPersistLockfileDependencies(ctx, repoCommit); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // Dependents resolves the (transitive) inverse dependencies for a set of repository and revisions.
