@@ -24,41 +24,54 @@ func init() {
 	usage := `
 Examples:
 
-  Upload an LSIF dump with explicit repo, commit, and upload files:
+  Upload a SCIP index with explicit repo, commit, and upload files:
 
-    	$ src lsif upload -repo=FOO -commit=BAR -file=dump.lsif
+    	$ src code-intel upload -repo=FOO -commit=BAR -file=index.scip
 
-  Upload an LSIF dump for a subproject:
+  Upload a SCIP index for a subproject:
 
-    	$ src lsif upload -root=cmd/
+    	$ src code-intel upload -root=cmd/
 
-  Upload an LSIF dump when lsifEnforceAuth is enabled:
+  Upload a SCIP index when lsifEnforceAuth is enabled:
 
-    	$ src lsif upload -github-token=BAZ, or
-    	$ src lsif upload -gitlab-token=BAZ
+    	$ src code-intel upload -github-token=BAZ, or
+    	$ src code-intel upload -gitlab-token=BAZ
 
-  Upload an LSIF dump when the LSIF indexer does not not declare a tool name.
+  Upload an LSIF index when the LSIF indexer does not not declare a tool name.
 
-    	$ src lsif upload -indexer=lsif-elixir
+    	$ src code-intel upload -indexer=lsif-elixir
+
+  For any of these commands, an LSIF index (default name: dump.lsif) can be
+  used instead of a SCIP index (default name: index.scip).
 `
-
-	lsifCommands = append(lsifCommands, &command{
-		flagSet: lsifUploadFlagSet,
-		handler: handleLSIFUpload,
+	codeintelCommands = append(codeintelCommands, &command{
+		flagSet: codeintelUploadFlagSet,
+		handler: handleCodeIntelUpload,
 		usageFunc: func() {
-			fmt.Fprintf(flag.CommandLine.Output(), "Usage of 'src lsif %s':\n", lsifUploadFlagSet.Name())
-			lsifUploadFlagSet.PrintDefaults()
+			fmt.Fprintf(flag.CommandLine.Output(), "Usage of 'src code-intel %s':\n", codeintelUploadFlagSet.Name())
+			codeintelUploadFlagSet.PrintDefaults()
+			fmt.Println(usage)
+		},
+	})
+
+	// Make 'upload' available under 'src lsif' for backwards compatibility.
+	lsifCommands = append(lsifCommands, &command{
+		flagSet: codeintelUploadFlagSet,
+		handler: handleCodeIntelUpload,
+		usageFunc: func() {
+			fmt.Fprintf(flag.CommandLine.Output(), "Usage of 'src lsif %s':\n", codeintelUploadFlagSet.Name())
+			codeintelUploadFlagSet.PrintDefaults()
 			fmt.Println(usage)
 		},
 	})
 }
 
-// handleLSIFUpload is the handler for `src lsif upload`.
-func handleLSIFUpload(args []string) error {
+// handleCodeIntelUpload is the handler for `src code-intel upload`.
+func handleCodeIntelUpload(args []string) error {
 	ctx := context.Background()
 
-	out, err := parseAndValidateLSIFUploadFlags(args)
-	if !lsifUploadFlags.json {
+	out, err := parseAndValidateCodeIntelUploadFlags(args)
+	if !codeintelUploadFlags.json {
 		if out != nil {
 			printInferredArguments(out)
 		} else {
@@ -67,32 +80,32 @@ func handleLSIFUpload(args []string) error {
 		}
 	}
 	if err != nil {
-		return handleLSIFUploadError(nil, err)
+		return handleUploadError(nil, err)
 	}
 
 	client := api.NewClient(api.ClientOpts{
 		Out:   io.Discard,
-		Flags: lsifUploadFlags.apiFlags,
+		Flags: codeintelUploadFlags.apiFlags,
 	})
 
-	uploadID, err := upload.UploadIndex(ctx, lsifUploadFlags.file, client, lsifUploadOptions(out))
+	uploadID, err := upload.UploadIndex(ctx, codeintelUploadFlags.file, client, codeintelUploadOptions(out))
 	if err != nil {
-		return handleLSIFUploadError(out, err)
+		return handleUploadError(out, err)
 	}
 
-	uploadURL, err := makeLSIFUploadURL(uploadID)
+	uploadURL, err := makeCodeIntelUploadURL(uploadID)
 	if err != nil {
 		return err
 	}
 
-	if lsifUploadFlags.json {
+	if codeintelUploadFlags.json {
 		serialized, err := json.Marshal(map[string]interface{}{
-			"repo":           lsifUploadFlags.repo,
-			"commit":         lsifUploadFlags.commit,
-			"root":           lsifUploadFlags.root,
-			"file":           lsifUploadFlags.file,
-			"indexer":        lsifUploadFlags.indexer,
-			"indexerVersion": lsifUploadFlags.indexerVersion,
+			"repo":           codeintelUploadFlags.repo,
+			"commit":         codeintelUploadFlags.commit,
+			"root":           codeintelUploadFlags.root,
+			"file":           codeintelUploadFlags.file,
+			"indexer":        codeintelUploadFlags.indexer,
+			"indexerVersion": codeintelUploadFlags.indexerVersion,
 			"uploadId":       uploadID,
 			"uploadUrl":      uploadURL,
 		})
@@ -109,7 +122,7 @@ func handleLSIFUpload(args []string) error {
 		out.WriteLine(output.Linef(output.EmojiLightbulb, output.StyleItalic, "View processing status at %s", uploadURL))
 	}
 
-	if lsifUploadFlags.open {
+	if codeintelUploadFlags.open {
 		if err := browser.OpenURL(uploadURL); err != nil {
 			return err
 		}
@@ -118,11 +131,11 @@ func handleLSIFUpload(args []string) error {
 	return nil
 }
 
-// lsifUploadOptions creates a set of upload options given the values in the flags.
-func lsifUploadOptions(out *output.Output) upload.UploadOptions {
+// codeintelUploadOptions creates a set of upload options given the values in the flags.
+func codeintelUploadOptions(out *output.Output) upload.UploadOptions {
 	var associatedIndexID *int
-	if lsifUploadFlags.associatedIndexID != -1 {
-		associatedIndexID = &lsifUploadFlags.associatedIndexID
+	if codeintelUploadFlags.associatedIndexID != -1 {
+		associatedIndexID = &codeintelUploadFlags.associatedIndexID
 	}
 
 	logger := upload.NewRequestLogger(
@@ -131,16 +144,16 @@ func lsifUploadOptions(out *output.Output) upload.UploadOptions {
 		// It's fine if someone supplies -trace=42, but it will just behave the
 		// same as if they supplied the highest verbosity level we define
 		// internally.
-		upload.RequestLoggerVerbosity(lsifUploadFlags.verbosity),
+		upload.RequestLoggerVerbosity(codeintelUploadFlags.verbosity),
 	)
 
 	return upload.UploadOptions{
 		UploadRecordOptions: upload.UploadRecordOptions{
-			Repo:              lsifUploadFlags.repo,
-			Commit:            lsifUploadFlags.commit,
-			Root:              lsifUploadFlags.root,
-			Indexer:           lsifUploadFlags.indexer,
-			IndexerVersion:    lsifUploadFlags.indexerVersion,
+			Repo:              codeintelUploadFlags.repo,
+			Commit:            codeintelUploadFlags.commit,
+			Root:              codeintelUploadFlags.root,
+			Indexer:           codeintelUploadFlags.indexer,
+			IndexerVersion:    codeintelUploadFlags.indexerVersion,
 			AssociatedIndexID: associatedIndexID,
 		},
 		SourcegraphInstanceOptions: upload.SourcegraphInstanceOptions{
@@ -149,10 +162,10 @@ func lsifUploadOptions(out *output.Output) upload.UploadOptions {
 			AdditionalHeaders:   cfg.AdditionalHeaders,
 			MaxRetries:          5,
 			RetryInterval:       time.Second,
-			Path:                lsifUploadFlags.uploadRoute,
-			MaxPayloadSizeBytes: lsifUploadFlags.maxPayloadSizeMb * 1000 * 1000,
-			GitHubToken:         lsifUploadFlags.gitHubToken,
-			GitLabToken:         lsifUploadFlags.gitLabToken,
+			Path:                codeintelUploadFlags.uploadRoute,
+			MaxPayloadSizeBytes: codeintelUploadFlags.maxPayloadSizeMb * 1000 * 1000,
+			GitHubToken:         codeintelUploadFlags.gitHubToken,
+			GitLabToken:         codeintelUploadFlags.gitLabToken,
 		},
 		OutputOptions: upload.OutputOptions{
 			Output: out,
@@ -170,25 +183,25 @@ func printInferredArguments(out *output.Output) {
 	}
 
 	block := out.Block(output.Line(output.EmojiLightbulb, output.StyleItalic, "Inferred arguments"))
-	block.Writef("repo: %s", lsifUploadFlags.repo)
-	block.Writef("commit: %s", lsifUploadFlags.commit)
-	block.Writef("root: %s", lsifUploadFlags.root)
-	block.Writef("file: %s", lsifUploadFlags.file)
-	block.Writef("indexer: %s", lsifUploadFlags.indexer)
-	block.Writef("indexerVersion: %s", lsifUploadFlags.indexerVersion)
+	block.Writef("repo: %s", codeintelUploadFlags.repo)
+	block.Writef("commit: %s", codeintelUploadFlags.commit)
+	block.Writef("root: %s", codeintelUploadFlags.root)
+	block.Writef("file: %s", codeintelUploadFlags.file)
+	block.Writef("indexer: %s", codeintelUploadFlags.indexer)
+	block.Writef("indexerVersion: %s", codeintelUploadFlags.indexerVersion)
 	block.Close()
 }
 
-// makeLSIFUploadURL constructs a URL to the upload with the given internal identifier.
+// makeCodeIntelUploadURL constructs a URL to the upload with the given internal identifier.
 // The base of the URL is constructed from the configured Sourcegraph instance.
-func makeLSIFUploadURL(uploadID int) (string, error) {
+func makeCodeIntelUploadURL(uploadID int) (string, error) {
 	url, err := url.Parse(cfg.Endpoint)
 	if err != nil {
 		return "", err
 	}
 
 	graphqlID := base64.URLEncoding.EncodeToString([]byte(fmt.Sprintf(`LSIFUpload:"%d"`, uploadID)))
-	url.Path = lsifUploadFlags.repo + "/-/code-intelligence/uploads/" + graphqlID
+	url.Path = codeintelUploadFlags.repo + "/-/code-intelligence/uploads/" + graphqlID
 	url.User = nil
 	return url.String(), nil
 }
@@ -202,16 +215,16 @@ func (e errorWithHint) Error() string {
 	return fmt.Sprintf("%s\n\n%s\n", e.err, e.hint)
 }
 
-// handleLSIFUploadError writes the given error to the given output. If the
+// handleUploadError writes the given error to the given output. If the
 // given output object is nil then the error will be written to standard out.
 //
 // This method returns the error that should be passed back up to the runner.
-func handleLSIFUploadError(out *output.Output, err error) error {
+func handleUploadError(out *output.Output, err error) error {
 	if err == upload.ErrUnauthorized {
 		err = filterLSIFUnauthorizedError(out, err)
 	}
 
-	if lsifUploadFlags.ignoreUploadFailures {
+	if codeintelUploadFlags.ignoreUploadFailures {
 		// Report but don't return the error
 		fmt.Println(err.Error())
 		return nil
@@ -222,30 +235,30 @@ func handleLSIFUploadError(out *output.Output, err error) error {
 
 func filterLSIFUnauthorizedError(out *output.Output, err error) error {
 	var actionableHints []string
-	needsGitHubToken := strings.HasPrefix(lsifUploadFlags.repo, "github.com")
-	needsGitLabToken := strings.HasPrefix(lsifUploadFlags.repo, "gitlab.com")
+	needsGitHubToken := strings.HasPrefix(codeintelUploadFlags.repo, "github.com")
+	needsGitLabToken := strings.HasPrefix(codeintelUploadFlags.repo, "gitlab.com")
 
 	if needsGitHubToken {
-		if lsifUploadFlags.gitHubToken != "" {
+		if codeintelUploadFlags.gitHubToken != "" {
 			actionableHints = append(actionableHints,
-				fmt.Sprintf("The supplied -github-token does not indicate that you have collaborator access to %s.", lsifUploadFlags.repo),
+				fmt.Sprintf("The supplied -github-token does not indicate that you have collaborator access to %s.", codeintelUploadFlags.repo),
 				"Please check the value of the supplied token and its permissions on the code host and try again.",
 			)
 		} else {
 			actionableHints = append(actionableHints,
-				fmt.Sprintf("Please retry your request with a -github-token=XXX with with collaborator access to %s.", lsifUploadFlags.repo),
+				fmt.Sprintf("Please retry your request with a -github-token=XXX with with collaborator access to %s.", codeintelUploadFlags.repo),
 				"This token will be used to check with the code host that the uploading user has write access to the target repository.",
 			)
 		}
 	} else if needsGitLabToken {
-		if lsifUploadFlags.gitLabToken != "" {
+		if codeintelUploadFlags.gitLabToken != "" {
 			actionableHints = append(actionableHints,
-				fmt.Sprintf("The supplied -gitlab-token does not indicate that you have write access to %s.", lsifUploadFlags.repo),
+				fmt.Sprintf("The supplied -gitlab-token does not indicate that you have write access to %s.", codeintelUploadFlags.repo),
 				"Please check the value of the supplied token and its permissions on the code host and try again.",
 			)
 		} else {
 			actionableHints = append(actionableHints,
-				fmt.Sprintf("Please retry your request with a -gitlab-token=XXX with with write access to %s.", lsifUploadFlags.repo),
+				fmt.Sprintf("Please retry your request with a -gitlab-token=XXX with with write access to %s.", codeintelUploadFlags.repo),
 				"This token will be used to check with the code host that the uploading user has write access to the target repository.",
 			)
 		}
