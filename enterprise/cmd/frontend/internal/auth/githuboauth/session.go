@@ -63,7 +63,8 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	// 🚨 SECURITY: Ensure that the user is part of one of the allow listed orgs or teams, if any.
 	userBelongsToAllowedOrgsOrTeams := s.verifyUserOrgsAndTeams(ctx, ghClient)
 	if !userBelongsToAllowedOrgsOrTeams {
-		return nil, "Could not verify user is part of the allowed GitHub organizations or teams.", errors.New("couldn't verify user is part of allowed GitHub organizations or teams")
+		message := "user does not belong to allowed GitHub organizations or teams"
+		return nil, message, errors.New(message)
 	}
 
 	// Try every verified email in succession until the first that succeeds
@@ -298,12 +299,12 @@ func (s *sessionIssuerHelper) verifyUserOrgs(ctx context.Context, ghClient *gith
 // verifyUserTeams checks whether the authenticated user belongs to one of the GitHub teams listed in the auth.provider > allowOrgsMap configuration
 func (s *sessionIssuerHelper) verifyUserTeams(ctx context.Context, ghClient *githubsvc.V3Client) bool {
 	var err error
-	nextPage := true
+	hasNextPage := true
 
-	for page := 1; nextPage; page++ {
+	for page := 1; hasNextPage; page++ {
 		var githubTeams []*githubsvc.Team
 
-		githubTeams, nextPage, _, err = ghClient.GetAuthenticatedUserTeams(ctx, page)
+		githubTeams, hasNextPage, _, err = ghClient.GetAuthenticatedUserTeams(ctx, page)
 		if err != nil {
 			log15.Warn("Could not get GitHub authenticated user teams", "error", err)
 			return false
