@@ -386,7 +386,9 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 				log.Fatal("okay.Push: ", err.Error())
 			}
 		}
-		okayCli.Flush()
+		if err := okayCli.Flush(); err != nil {
+			log.Fatal("okay.Flush: ", err.Error())
+		}
 	}
 
 	log.Println("done!")
