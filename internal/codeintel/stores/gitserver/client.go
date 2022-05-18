@@ -273,9 +273,6 @@ func (c *Client) BranchesContaining(ctx context.Context, db database.DB, reposit
 }
 
 // DefaultBranchContains tells if the default branch contains the given commit ID.
-//
-// TODO(apidocs): future: This could be implemented more optimally, but since it is called
-// infrequently it is fine for now.
 func (c *Client) DefaultBranchContains(ctx context.Context, repositoryID int, commit string) (bool, error) {
 	// Determine default branch name.
 	descriptions, err := c.RefDescriptions(ctx, repositoryID)

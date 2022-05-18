@@ -77,11 +77,6 @@ type LSIFStore interface {
 	MonikersByPosition(ctx context.Context, bundleID int, path string, line, character int) ([][]precise.MonikerData, error)
 	BulkMonikerResults(ctx context.Context, tableName string, ids []int, args []precise.MonikerData, limit, offset int) (_ []lsifstore.Location, _ int, err error)
 	PackageInformation(ctx context.Context, bundleID int, path string, packageInformationID string) (precise.PackageInformationData, bool, error)
-	DocumentationPage(ctx context.Context, bundleID int, pathID string) (*precise.DocumentationPageData, error)
-	DocumentationPathInfo(ctx context.Context, bundleID int, pathID string) (*precise.DocumentationPathInfoData, error)
-	DocumentationDefinitions(ctx context.Context, bundleID int, pathID string, limit, offset int) ([]lsifstore.Location, int, error)
-	DocumentationAtPosition(ctx context.Context, bundleID int, path string, line, character int) ([]string, error)
-	DocumentationSearch(ctx context.Context, table, query string, repos []string) ([]precise.DocumentationSearchResult, error)
 }
 
 type IndexEnqueuer interface {

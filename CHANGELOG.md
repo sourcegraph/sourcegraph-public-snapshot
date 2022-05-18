@@ -53,7 +53,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
--
+- The experimental API Docs feature released on our Cloud instance since 3.30.0 has been removed from the product entirely. This product functionality is being superseded by [doctree](https://github.com/sourcegraph/doctree). [#34798](https://github.com/sourcegraph/sourcegraph/pull/34798)
 
 ## 3.39.1
 
