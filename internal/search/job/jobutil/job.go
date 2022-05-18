@@ -88,7 +88,7 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 				}
 				addJob(&repoPagerJob{
 					child:            job,
-					repoOptions:      repoOptions,
+					repoOpts:         repoOptions,
 					useIndex:         b.Index(),
 					containsRefGlobs: query.ContainsRefGlobs(b.ToParseTree()),
 				})
@@ -112,7 +112,7 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 				}
 				addJob(&repoPagerJob{
 					child:            job,
-					repoOptions:      repoOptions,
+					repoOpts:         repoOptions,
 					useIndex:         b.Index(),
 					containsRefGlobs: query.ContainsRefGlobs(b.ToParseTree()),
 				})
@@ -218,7 +218,7 @@ func NewFlatJob(searchInputs *run.SearchInputs, f query.Flat) (job.Job, error) {
 
 				addJob(&repoPagerJob{
 					child:            searcherJob,
-					repoOptions:      repoOptions,
+					repoOpts:         repoOptions,
 					useIndex:         f.Index(),
 					containsRefGlobs: query.ContainsRefGlobs(f.ToBasic().ToParseTree()),
 				})
@@ -236,7 +236,7 @@ func NewFlatJob(searchInputs *run.SearchInputs, f query.Flat) (job.Job, error) {
 
 				addJob(&repoPagerJob{
 					child:            symbolSearchJob,
-					repoOptions:      repoOptions,
+					repoOpts:         repoOptions,
 					useIndex:         f.Index(),
 					containsRefGlobs: query.ContainsRefGlobs(f.ToBasic().ToParseTree()),
 				})

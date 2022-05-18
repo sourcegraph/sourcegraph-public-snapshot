@@ -19,6 +19,17 @@ const (
 	Batch
 )
 
+func (p Protocol) String() string {
+	switch p {
+	case Streaming:
+		return "Streaming"
+	case Batch:
+		return "Batch"
+	default:
+		return fmt.Sprintf("unknown{%d}", p)
+	}
+}
+
 type SymbolsParameters struct {
 	// Repo is the name of the repository to search in.
 	Repo api.RepoName `json:"repo"`
