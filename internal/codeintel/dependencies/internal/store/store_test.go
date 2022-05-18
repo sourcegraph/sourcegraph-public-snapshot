@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"sort"
+	"strconv"
 	"testing"
 	"time"
 
@@ -11,12 +12,158 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
+
+func TestPreciseDependenciesAndDependents(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := context.Background()
+	db := database.NewDB(dbtest.NewDB(t))
+	store := TestStore(db)
+
+	// Note: repo identifiers match the name due to insertion order
+	for _, repo := range []string{"repo-1", "repo-2", "repo-3", "repo-4", "repo-5"} {
+		if err := store.Exec(ctx, sqlf.Sprintf(`INSERT INTO repo (name) VALUES (%s)`, repo)); err != nil {
+			t.Fatalf(err.Error())
+		}
+	}
+
+	for _, uploadSpec := range []struct {
+		RepositoryID int
+		Commit       string
+	}{
+		{1, "0000000000000000000000000000000000000001"}, // uploadID = 1
+		{2, "0000000000000000000000000000000000000002"}, // uploadID = 2
+		{3, "0000000000000000000000000000000000000003"}, // uploadID = 3
+		{4, "0000000000000000000000000000000000000004"}, // uploadID = 4
+		{5, "0000000000000000000000000000000000000005"}, // uploadID = 5
+	} {
+		if err := store.Exec(ctx, sqlf.Sprintf(`
+			INSERT INTO lsif_uploads (
+				repository_id, commit, state, indexer, num_parts, uploaded_parts
+			) VALUES (
+				%s, %s, 'COMPLETED', '', 1, '{}'
+			)
+		`,
+			uploadSpec.RepositoryID,
+			uploadSpec.Commit,
+		)); err != nil {
+			t.Fatalf(err.Error())
+		}
+	}
+
+	for _, dependencySpec := range []struct {
+		pkgID int
+		refID int
+	}{
+		{1, 2}, // 2 depends on 1
+		{1, 3}, // 3 depends on 1
+		{1, 4}, // 4 depends on 1
+		{2, 4}, // 4 depends on 2
+		{4, 3}, // 3 depends on 4
+		{3, 5}, // 5 depends on 3
+	} {
+		if err := store.Exec(ctx, sqlf.Sprintf(`
+			INSERT INTO lsif_packages (dump_id, scheme, name, version) VALUES (%s, 'A' || %s, 'B' || %s, 'C' || %s)
+		`,
+			dependencySpec.pkgID,
+			strconv.Itoa(dependencySpec.pkgID),
+			strconv.Itoa(dependencySpec.pkgID),
+			strconv.Itoa(dependencySpec.pkgID),
+		)); err != nil {
+			t.Fatalf(err.Error())
+		}
+
+		if err := store.Exec(ctx, sqlf.Sprintf(`
+			INSERT INTO lsif_references (dump_id, scheme, name, version) VALUES (%s, 'A' || %s, 'B' || %s, 'C' || %s)
+		`,
+			dependencySpec.refID,
+			strconv.Itoa(dependencySpec.pkgID),
+			strconv.Itoa(dependencySpec.pkgID),
+			strconv.Itoa(dependencySpec.pkgID),
+		)); err != nil {
+			t.Fatalf(err.Error())
+		}
+	}
+
+	t.Run("dependencies", func(t *testing.T) {
+		for _, expectedDependency := range []struct {
+			repoName     string
+			commit       string
+			dependencies map[api.RepoName]types.RevSpecSet
+		}{
+			{"repo-1", "0000000000000000000000000000000000000001", map[api.RepoName]types.RevSpecSet{
+				// empty
+			}},
+			{"repo-2", "0000000000000000000000000000000000000002", map[api.RepoName]types.RevSpecSet{
+				"repo-1": {"0000000000000000000000000000000000000001": struct{}{}},
+			}},
+			{"repo-3", "0000000000000000000000000000000000000003", map[api.RepoName]types.RevSpecSet{
+				"repo-1": {"0000000000000000000000000000000000000001": struct{}{}},
+				"repo-4": {"0000000000000000000000000000000000000004": struct{}{}},
+			}},
+			{"repo-4", "0000000000000000000000000000000000000004", map[api.RepoName]types.RevSpecSet{
+				"repo-1": {"0000000000000000000000000000000000000001": struct{}{}},
+				"repo-2": {"0000000000000000000000000000000000000002": struct{}{}},
+			}},
+			{"repo-5", "0000000000000000000000000000000000000005", map[api.RepoName]types.RevSpecSet{
+				"repo-3": {"0000000000000000000000000000000000000003": struct{}{}},
+			}},
+		} {
+			dependencies, err := store.PreciseDependencies(ctx, expectedDependency.repoName, expectedDependency.commit)
+			if err != nil {
+				t.Fatalf(err.Error())
+			}
+
+			if diff := cmp.Diff(expectedDependency.dependencies, dependencies); diff != "" {
+				t.Fatalf("unexpected dependencies (-have, +want): %s", diff)
+			}
+		}
+	})
+
+	t.Run("dependents", func(t *testing.T) {
+		for _, expectedDependency := range []struct {
+			repoName   string
+			commit     string
+			dependents map[api.RepoName]types.RevSpecSet
+		}{
+			{"repo-1", "0000000000000000000000000000000000000001", map[api.RepoName]types.RevSpecSet{
+				"repo-2": {"0000000000000000000000000000000000000002": struct{}{}},
+				"repo-3": {"0000000000000000000000000000000000000003": struct{}{}},
+				"repo-4": {"0000000000000000000000000000000000000004": struct{}{}},
+			}},
+			{"repo-2", "0000000000000000000000000000000000000002", map[api.RepoName]types.RevSpecSet{
+				"repo-4": {"0000000000000000000000000000000000000004": struct{}{}},
+			}},
+			{"repo-3", "0000000000000000000000000000000000000003", map[api.RepoName]types.RevSpecSet{
+				"repo-5": {"0000000000000000000000000000000000000005": struct{}{}},
+			}},
+			{"repo-4", "0000000000000000000000000000000000000004", map[api.RepoName]types.RevSpecSet{
+				"repo-3": {"0000000000000000000000000000000000000003": struct{}{}},
+			}},
+			{"repo-5", "0000000000000000000000000000000000000004", map[api.RepoName]types.RevSpecSet{
+				// empty
+			}},
+		} {
+			dependents, err := store.PreciseDependents(ctx, expectedDependency.repoName, expectedDependency.commit)
+			if err != nil {
+				t.Fatalf(err.Error())
+			}
+
+			if diff := cmp.Diff(expectedDependency.dependents, dependents); diff != "" {
+				t.Fatalf("unexpected dependents (-have, +want): %s", diff)
+			}
+		}
+	})
+}
 
 func TestLockfileDependencies(t *testing.T) {
 	if testing.Short() {
@@ -219,7 +366,7 @@ func TestSelectRepoRevisionsToResolve(t *testing.T) {
 		"C": {"v3"},
 	}
 	if diff := cmp.Diff(selected, expectedRepoRevisions); diff != "" {
-		t.Errorf("unexpected sourced commits (-want +got):\n%s", diff)
+		t.Errorf("unexpected repo revisions (-want +got):\n%s", diff)
 	}
 
 	selected, err = store.selectRepoRevisionsToResolve(ctx, 3, 24*time.Hour, now)
@@ -232,7 +379,7 @@ func TestSelectRepoRevisionsToResolve(t *testing.T) {
 		"E": {"v5"},
 	}
 	if diff := cmp.Diff(selected, expectedRepoRevisions); diff != "" {
-		t.Errorf("unexpected sourced commits (-want +got):\n%s", diff)
+		t.Errorf("unexpected repo revisions (-want +got):\n%s", diff)
 	}
 
 	// Run it again, but all should be resolved in timeframe
@@ -243,7 +390,7 @@ func TestSelectRepoRevisionsToResolve(t *testing.T) {
 
 	expectedRepoRevisions = map[string][]string{}
 	if diff := cmp.Diff(selected, expectedRepoRevisions); diff != "" {
-		t.Errorf("unexpected sourced commits (-want +got):\n%s", diff)
+		t.Errorf("unexpected repo revisions (-want +got):\n%s", diff)
 	}
 
 	// Run it again, but in the future, all should be resolved in timeframe
@@ -275,30 +422,27 @@ func TestUpdateResolvedRevisions(t *testing.T) {
 	db := database.NewDB(dbtest.NewDB(t))
 	store := TestStore(db)
 
-	for _, repo := range []string{"repo-1", "repo-2", "repo-3"} {
+	for _, repo := range []string{"repo-1", "repo-2", "repo-3", "pkg-1", "pkg-2", "pkg-3", "pkg-4"} {
 		if err := store.Exec(ctx, sqlf.Sprintf(`INSERT INTO repo (name) VALUES (%s)`, repo)); err != nil {
 			t.Fatalf(err.Error())
 		}
 	}
 
-	packageA := shared.TestPackageDependencyLiteral(api.RepoName("A"), "v1", "2", "3", "4")
-	packageB := shared.TestPackageDependencyLiteral(api.RepoName("repo-2"), "v2", "3", "4", "5")
-	packageC := shared.TestPackageDependencyLiteral(api.RepoName("repo-3"), "v3", "4", "5", "6")
-	packageD := shared.TestPackageDependencyLiteral(api.RepoName("D"), "v4", "5", "6", "7")
+	var (
+		packageA = shared.TestPackageDependencyLiteral(api.RepoName("pkg-1"), "v1", "2", "3", "4")
+		packageB = shared.TestPackageDependencyLiteral(api.RepoName("pkg-2"), "v2", "3", "4", "5")
+		packageC = shared.TestPackageDependencyLiteral(api.RepoName("pkg-3"), "v3", "4", "5", "6")
+		packageD = shared.TestPackageDependencyLiteral(api.RepoName("pkg-4"), "v4", "5", "6", "7")
+	)
 
-	commit := "d34df00d"
-	repoName := "repo-1"
-	packages := []shared.PackageDependency{packageA, packageB, packageC, packageD}
-
-	if err := store.UpsertLockfileDependencies(ctx, repoName, commit, packages); err != nil {
+	if err := store.UpsertLockfileDependencies(ctx, "repo-1", "cafebabe", []shared.PackageDependency{packageA, packageB, packageC, packageD}); err != nil {
 		t.Fatalf("unexpected error upserting lockfile dependencies: %s", err)
 	}
 
 	resolvedRevisions := map[string]map[string]string{
-		"repo-2": {"v2": "d34df00d"},
-		"repo-3": {"v3": "d34db33f"},
+		"pkg-2": {"v2": "deadbeef"},
+		"pkg-3": {"v3": "deadd00d"},
 	}
-
 	if err := store.UpdateResolvedRevisions(ctx, resolvedRevisions); err != nil {
 		t.Fatalf("unexpected error updating resolved revisions: %s", err)
 	}
@@ -306,13 +450,10 @@ func TestUpdateResolvedRevisions(t *testing.T) {
 	for repoName, resolvedRevs := range resolvedRevisions {
 		for revspec, commit := range resolvedRevs {
 			q := sqlf.Sprintf(`
-			SELECT 1 FROM codeintel_lockfile_references
-			WHERE
-				repository_id = (SELECT id FROM repo WHERE name = %s)
-			AND
-				revspec = %s
-			AND
-				commit_bytea = %s
+				SELECT 1
+				FROM codeintel_lockfile_references lr
+				JOIN repo r ON r.id = lr.repository_id
+				WHERE r.name = %s AND lr.revspec = %s AND lr.commit_bytea = %s
 			`,
 				repoName,
 				revspec,
@@ -327,5 +468,81 @@ func TestUpdateResolvedRevisions(t *testing.T) {
 				t.Fatalf("revspec %q for repo %q was not updated to commit %s", revspec, repoName, commit)
 			}
 		}
+	}
+}
+
+func TestLockfileDependents(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := context.Background()
+	db := database.NewDB(dbtest.NewDB(t))
+	store := TestStore(db)
+
+	for _, repo := range []string{"repo-1", "repo-2", "repo-3", "pkg-1", "pkg-2", "pkg-3", "pkg-4"} {
+		if err := store.Exec(ctx, sqlf.Sprintf(`INSERT INTO repo (name) VALUES (%s)`, repo)); err != nil {
+			t.Fatalf(err.Error())
+		}
+	}
+
+	var (
+		packageA = shared.TestPackageDependencyLiteral(api.RepoName("pkg-1"), "v1", "2", "3", "4")
+		packageB = shared.TestPackageDependencyLiteral(api.RepoName("pkg-2"), "v2", "3", "4", "5")
+		packageC = shared.TestPackageDependencyLiteral(api.RepoName("pkg-3"), "v3", "4", "5", "6")
+		packageD = shared.TestPackageDependencyLiteral(api.RepoName("pkg-4"), "v4", "5", "6", "7")
+	)
+
+	if err := store.UpsertLockfileDependencies(ctx, "repo-1", "cafebabe", []shared.PackageDependency{packageA, packageB, packageC, packageD}); err != nil {
+		t.Fatalf("unexpected error upserting lockfile dependencies: %s", err)
+	}
+	if err := store.UpsertLockfileDependencies(ctx, "repo-2", "cafebeef", []shared.PackageDependency{packageB}); err != nil {
+		t.Fatalf("unexpected error upserting lockfile dependencies: %s", err)
+	}
+	if err := store.UpsertLockfileDependencies(ctx, "repo-3", "d00dd00d", []shared.PackageDependency{packageC}); err != nil {
+		t.Fatalf("unexpected error upserting lockfile dependencies: %s", err)
+	}
+
+	resolvedRevisions := map[string]map[string]string{
+		"pkg-2": {"v2": "deadbeef"},
+		"pkg-3": {"v3": "deadd00d"},
+	}
+	if err := store.UpdateResolvedRevisions(ctx, resolvedRevisions); err != nil {
+		t.Fatalf("unexpected error updating resolved revisions: %s", err)
+	}
+
+	// Should be empty; nothing resolved here
+	deps, err := store.LockfileDependents(ctx, "pkg-1", "cafecafe")
+	if err != nil {
+		t.Fatalf("unexpected error listing lockfile dependents: %s", err)
+	}
+	if diff := cmp.Diff([]api.RepoCommit(nil), deps); diff != "" {
+		t.Errorf("unexpected lockfile dependents (-want +got):\n%s", diff)
+	}
+
+	// Should include repo-1 and repo-2
+	deps, err = store.LockfileDependents(ctx, "pkg-2", "deadbeef")
+	if err != nil {
+		t.Fatalf("unexpected error listing lockfile dependents: %s", err)
+	}
+	expectedDeps := []api.RepoCommit{
+		{Repo: api.RepoName("repo-1"), CommitID: api.CommitID("cafebabe")},
+		{Repo: api.RepoName("repo-2"), CommitID: api.CommitID("cafebeef")},
+	}
+	if diff := cmp.Diff(expectedDeps, deps); diff != "" {
+		t.Errorf("unexpected lockfile dependents (-want +got):\n%s", diff)
+	}
+
+	// Should include repo-1 and repo-3
+	deps, err = store.LockfileDependents(ctx, "pkg-3", "deadd00d")
+	if err != nil {
+		t.Fatalf("unexpected error listing lockfile dependents: %s", err)
+	}
+	expectedDeps = []api.RepoCommit{
+		{Repo: api.RepoName("repo-1"), CommitID: api.CommitID("cafebabe")},
+		{Repo: api.RepoName("repo-3"), CommitID: api.CommitID("d00dd00d")},
+	}
+	if diff := cmp.Diff(expectedDeps, deps); diff != "" {
+		t.Errorf("unexpected lockfile dependents (-want +got):\n%s", diff)
 	}
 }

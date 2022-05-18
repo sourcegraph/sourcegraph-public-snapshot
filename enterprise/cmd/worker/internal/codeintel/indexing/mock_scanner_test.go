@@ -5,13 +5,13 @@ package indexing
 import (
 	"sync"
 
-	dbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
-	shared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/shared"
+	dbstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/shared"
 )
 
 // MockPackageReferenceScanner is a mock implementation of the
 // PackageReferenceScanner interface (from the package
-// github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore)
+// github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore)
 // used for unit testing.
 type MockPackageReferenceScanner struct {
 	// CloseFunc is an instance of a mock function object controlling the

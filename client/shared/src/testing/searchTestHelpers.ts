@@ -14,7 +14,6 @@ export const RESULT: ContentMatch = {
     repository: 'github.com/golang/oauth2',
     lineMatches: [
         {
-            line: '  - go test -v golang.org/x/oauth2/...',
             lineNumber: 12,
             offsetAndLengths: [[7, 4]],
         },
@@ -56,17 +55,14 @@ export const MULTIPLE_MATCH_RESULT: ContentMatch = {
     repository: 'github.com/golang/oauth2',
     lineMatches: [
         {
-            line: '\t"net/http/httptest"',
             lineNumber: 11,
             offsetAndLengths: [[15, 4]],
         },
         {
-            line: '\t"testing"',
             lineNumber: 13,
             offsetAndLengths: [[2, 4]],
         },
         {
-            line: 'func TestTokenSourceGrantTypeOverride(t *testing.T) {',
             lineNumber: 36,
             offsetAndLengths: [
                 [5, 4],
@@ -74,12 +70,10 @@ export const MULTIPLE_MATCH_RESULT: ContentMatch = {
             ],
         },
         {
-            line: '\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {',
             lineNumber: 39,
             offsetAndLengths: [[11, 4]],
         },
         {
-            line: 'func TestTokenRequest(t *testing.T) {',
             lineNumber: 73,
             offsetAndLengths: [
                 [5, 4],
@@ -87,12 +81,10 @@ export const MULTIPLE_MATCH_RESULT: ContentMatch = {
             ],
         },
         {
-            line: '\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {',
             lineNumber: 74,
             offsetAndLengths: [[11, 4]],
         },
         {
-            line: 'func TestTokenRefreshRequest(t *testing.T) {',
             lineNumber: 115,
             offsetAndLengths: [
                 [5, 4],
@@ -100,12 +92,10 @@ export const MULTIPLE_MATCH_RESULT: ContentMatch = {
             ],
         },
         {
-            line: '\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {',
             lineNumber: 117,
             offsetAndLengths: [[11, 4]],
         },
         {
-            line: '\t\tio.WriteString(w, `{"access_token": "foo", "refresh_token": "bar"}`)',
             lineNumber: 134,
             offsetAndLengths: [[8, 4]],
         },
@@ -150,7 +140,6 @@ export const MULTIPLE_SEARCH_RESULT: AggregateStreamingSearchResults = {
             repository: 'github.com/golang/oauth2',
             lineMatches: [
                 {
-                    line: 'package oauth2_test',
                     lineNumber: 4,
                     offsetAndLengths: [[15, 4]],
                 },
@@ -178,57 +167,46 @@ export const COLLAPSABLE_SEARCH_RESULT: AggregateStreamingSearchResults = {
             repository: 'github.com/golang/oauth2',
             lineMatches: [
                 {
-                    line: 'package oauth2_test',
                     lineNumber: 4,
                     offsetAndLengths: [[15, 4]],
                 },
                 {
-                    line: 'package oauth2_test',
                     lineNumber: 4,
                     offsetAndLengths: [[15, 4]],
                 },
                 {
-                    line: 'package oauth2_test',
                     lineNumber: 4,
                     offsetAndLengths: [[15, 4]],
                 },
                 {
-                    line: 'package oauth2_test',
                     lineNumber: 4,
                     offsetAndLengths: [[15, 4]],
                 },
                 {
-                    line: 'package oauth2_test',
                     lineNumber: 4,
                     offsetAndLengths: [[15, 4]],
                 },
                 {
-                    line: 'package oauth2_test',
                     lineNumber: 4,
                     offsetAndLengths: [[15, 4]],
                 },
                 {
-                    line: 'package oauth2_test',
                     lineNumber: 4,
                     offsetAndLengths: [[15, 4]],
                 },
                 {
-                    line: 'package oauth2_test',
                     lineNumber: 4,
                     offsetAndLengths: [[15, 4]],
                 },
                 {
-                    line: 'package oauth2_test',
                     lineNumber: 4,
                     offsetAndLengths: [[15, 4]],
                 },
                 {
-                    line: 'package oauth2_test',
                     lineNumber: 4,
                     offsetAndLengths: [[15, 4]],
                 },
                 {
-                    line: 'package oauth2_test',
                     lineNumber: 4,
                     offsetAndLengths: [[15, 4]],
                 },

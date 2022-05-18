@@ -27,7 +27,7 @@ func TestStatusMessages(t *testing.T) {
 		t.Skip()
 	}
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	store := NewStore(database.NewDB(db), sql.TxOptions{})
 
 	admin, err := database.Users(db).Create(ctx, database.NewUser{
@@ -52,7 +52,7 @@ func TestStatusMessages(t *testing.T) {
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "github.com - site",
 	}
-	err = database.ExternalServices(db).Upsert(ctx, siteLevelService)
+	err = db.ExternalServices().Upsert(ctx, siteLevelService)
 	require.NoError(t, err)
 
 	userService := &types.ExternalService{
@@ -62,7 +62,7 @@ func TestStatusMessages(t *testing.T) {
 		DisplayName:     "github.com - user",
 		NamespaceUserID: nonAdmin.ID,
 	}
-	err = database.ExternalServices(db).Upsert(ctx, userService)
+	err = db.ExternalServices().Upsert(ctx, userService)
 	require.NoError(t, err)
 
 	testCases := []struct {

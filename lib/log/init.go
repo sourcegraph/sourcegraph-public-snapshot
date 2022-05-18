@@ -16,8 +16,6 @@ const (
 	envSrcLogLevel    = "SRC_LOG_LEVEL"
 )
 
-var development = os.Getenv(envSrcDevelopment) == "true"
-
 type Resource = otfields.Resource
 
 // Init initializes the log package's global logger as a logger of the given resource.
@@ -36,5 +34,6 @@ func Init(r Resource) (sync func() error) {
 
 	level := zap.NewAtomicLevelAt(Level(os.Getenv(envSrcLogLevel)).Parse())
 	format := encoders.ParseOutputFormat(os.Getenv(envSrcLogFormat))
+	development := os.Getenv(envSrcDevelopment) == "true"
 	return globallogger.Init(r, level, format, development)
 }

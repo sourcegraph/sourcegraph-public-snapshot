@@ -4,15 +4,10 @@ import { ContentMatch } from '@sourcegraph/shared/src/search/stream'
 import { AnchorLink, setLinkComponent } from '@sourcegraph/wildcard'
 
 import { App } from './App'
-import { loadContent } from './lib/blob'
+import { createRequestForMatch, RequestToJava } from './jsToJavaBridgeUtil'
 import { callJava } from './mockJavaInterface'
 
 setLinkComponent(AnchorLink)
-
-export interface RequestToJava {
-    action: string
-    arguments: object
-}
 
 /* Add global functions to global window object */
 declare global {
@@ -22,16 +17,19 @@ declare global {
     }
 }
 
-async function onOpen(match: ContentMatch, lineIndex: number): Promise<void> {
-    console.log('open', await loadContent(match), match.lineMatches[lineIndex])
-}
-
-async function onPreviewChange(match: ContentMatch, lineIndex: number): Promise<void> {
-    console.log('preview', await loadContent(match), match.lineMatches[lineIndex])
+async function onPreviewChange(match: ContentMatch, lineMatchIndex: number): Promise<void> {
+    await window.callJava(await createRequestForMatch(match, lineMatchIndex, 'preview'))
 }
 
 function onPreviewClear(): void {
-    console.log('clear preview')
+    window
+        .callJava({ action: 'clearPreview', arguments: {} })
+        .then(() => {})
+        .catch(() => {})
+}
+
+async function onOpen(match: ContentMatch, lineMatchIndex: number): Promise<void> {
+    await window.callJava(await createRequestForMatch(match, lineMatchIndex, 'open'))
 }
 
 function renderReactApp(): void {
