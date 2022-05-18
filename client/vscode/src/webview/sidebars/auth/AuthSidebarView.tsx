@@ -14,6 +14,7 @@ import {
     VSCE_LINK_MARKETPLACE,
     VSCE_LINK_SIGNUP,
     VSCE_LINK_TOKEN_CALLBACK,
+    VSCE_LINK_TOKEN_CALLBACK_TEST,
     VSCE_LINK_USER_DOCS,
     VSCE_SIDEBAR_PARAMS,
 } from '../../../common/links'
@@ -42,7 +43,13 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
     const [hostname, setHostname] = useState(instanceHostname)
     const isSourcegraphDotCom = useMemo(() => {
         const hostname = new URL(instanceURL).hostname
-        return hostname === 'sourcegraph.com' || hostname === 'www.sourcegraph.com' || hostname === 'sourcegraph.test'
+        if (hostname === 'sourcegraph.com' || hostname === 'www.sourcegraph.com') {
+            return VSCE_LINK_TOKEN_CALLBACK
+        }
+        if (hostname === 'sourcegraph.test') {
+            return VSCE_LINK_TOKEN_CALLBACK_TEST
+        }
+        return null
     }, [instanceURL])
 
     const validateAccessToken: React.FormEventHandler<HTMLFormElement> = (event): void => {
@@ -156,7 +163,7 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
             {/* TODO: UPDATE LINK BACK TO CLOUD */}
             {isSourcegraphDotCom && (
                 <p className={classNames(styles.ctaParagraph)}>
-                    <Link to={VSCE_LINK_TOKEN_CALLBACK}>
+                    <Link to={isSourcegraphDotCom}>
                         <VSCodeButton
                             type="button"
                             className={classNames(
