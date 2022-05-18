@@ -37,13 +37,13 @@ const TERRAFORM_VERSIONS: Template = {
             {
                 name: '1.1.0',
                 query:
-                    'app.terraform.io/(.*)\\n version =(.*)1.1.0 patternType:regexp lang:Terraform archived:no fork:no',
+                    'app.terraform.io/(.*)\\n version =(.*)1.1.0 patternType:regexp lang:Terraform',
                 stroke: DATA_SERIES_COLORS.BLUE,
             },
             {
                 name: '1.2.0',
                 query:
-                    'app.terraform.io/(.*)\\n version =(.*)1.2.0 patternType:regexp lang:Terraform archived:no fork:no',
+                    'app.terraform.io/(.*)\\n version =(.*)1.2.0 patternType:regexp lang:Terraform',
                 stroke: DATA_SERIES_COLORS.ORANGE,
             },
         ],
@@ -60,12 +60,12 @@ const CSS_MODULES_MIGRATION: Template = {
         series: [
             {
                 name: 'Global CSS',
-                query: 'select:file lang:SCSS -file:module patterntype:regexp archived:no fork:no',
+                query: 'select:file lang:SCSS -file:module patterntype:regexp',
                 stroke: DATA_SERIES_COLORS.RED,
             },
             {
                 name: 'CSS Modules',
-                query: 'select:file lang:SCSS file:module patterntype:regexp archived:no fork:no',
+                query: 'select:file lang:SCSS file:module patterntype:regexp',
                 stroke: DATA_SERIES_COLORS.GREEN,
             },
         ],
@@ -83,13 +83,13 @@ const LOG4J_FIXED_VERSIONS: Template = {
             {
                 name: 'Vulnerable',
                 query:
-                    'lang:gradle org\\.apache\\.logging\\.log4j[\'"] 2\\.(0|1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16)(\\.[0-9]+) patterntype:regexp archived:no fork:no',
+                    'lang:gradle org\\.apache\\.logging\\.log4j[\'"] 2\\.(0|1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16)(\\.[0-9]+) patterntype:regexp',
                 stroke: DATA_SERIES_COLORS.RED,
             },
             {
                 name: 'Fixed',
                 query:
-                    'lang:gradle org\\.apache\\.logging\\.log4j[\'"] 2\\.(17)(\\.[0-9]+) patterntype:regexp archived:no fork:no',
+                    'lang:gradle org\\.apache\\.logging\\.log4j[\'"] 2\\.(17)(\\.[0-9]+) patterntype:regexp',
                 stroke: DATA_SERIES_COLORS.GREEN,
             },
         ],
@@ -107,7 +107,7 @@ const YARN_ADOPTION: Template = {
         series: [
             {
                 name: 'Yarn',
-                query: 'select:repo file:yarn.lock archived:no fork:no',
+                query: 'select:repo file:yarn.lock',
                 stroke: DATA_SERIES_COLORS.BLUE,
             },
         ],
@@ -121,7 +121,7 @@ const JAVA_VERSIONS: Template = {
     templateValues: {
         title: 'Java versions',
         allRepos: true,
-        groupSearchQuery: 'file:pom\\.xml$ <java\\.version>(.*)</java\\.version> archived:no fork:no',
+        groupSearchQuery: 'file:pom\\.xml$ <java\\.version>(.*)</java\\.version>',
     },
 }
 
@@ -135,7 +135,7 @@ const LINTER_OVERRIDE_RULES: Template = {
         series: [
             {
                 name: 'Rule overrides',
-                query: 'file:^\\.eslintignore ^[^#].*.\\n patternType:regexp archived:no fork:no',
+                query: 'file:^\\.eslintignore ^[^#].*.\\n patternType:regexp',
                 stroke: DATA_SERIES_COLORS.ORANGE,
             },
         ],
@@ -174,7 +174,7 @@ const CONFIG_OR_DOC_FILE: Template = {
         series: [
             {
                 name: 'Repositories with doc',
-                query: 'select:repo file:docs/*/new_config_filename archived:no fork:no',
+                query: 'select:repo file:docs/*/new_config_filename',
                 stroke: DATA_SERIES_COLORS.PINK,
             },
         ],
@@ -191,12 +191,12 @@ const ALLOW_DENY_LIST_TRACKING: Template = {
         series: [
             {
                 name: 'blacklist/whitelist',
-                query: 'select:file blacklist OR whitelist archived:no fork:no',
+                query: 'select:file blacklist OR whitelist',
                 stroke: DATA_SERIES_COLORS.RED,
             },
             {
                 name: 'denylist/allowlist',
-                query: 'select:file denylist OR allowlist archived:no fork:no',
+                query: 'select:file denylist OR allowlist',
                 stroke: DATA_SERIES_COLORS.GREEN,
             },
         ],
@@ -213,12 +213,12 @@ const PYTHON_2_3: Template = {
         series: [
             {
                 name: 'Python 3',
-                query: '#!/usr/bin/env python3 archived:no fork:no',
+                query: '#!/usr/bin/env python3',
                 stroke: DATA_SERIES_COLORS.BLUE,
             },
             {
                 name: 'Python 2',
-                query: '#!/usr/bin/env python2 archived:no fork:no',
+                query: '#!/usr/bin/env python2',
                 stroke: DATA_SERIES_COLORS.ORANGE,
             },
         ],
@@ -255,7 +255,7 @@ const NEW_API_USAGE: Template = {
         series: [
             {
                 name: 'New API',
-                query: 'select:repo ourApiLibraryName.load archived:no fork:no',
+                query: 'select:repo ourApiLibraryName.load',
                 stroke: DATA_SERIES_COLORS.BLUE,
             },
         ],
@@ -272,12 +272,12 @@ const FREQUENTLY_USED_DATABASE: Template = {
         series: [
             {
                 name: 'Redis',
-                query: 'redis\\.set patternType:regexp archived:no fork:no',
+                query: 'redis\\.set patternType:regexp',
                 stroke: DATA_SERIES_COLORS.BLUE,
             },
             {
                 name: 'GraphQL',
-                query: 'graphql\\( patternType:regexp archived:no fork:no',
+                query: 'graphql\\( patternType:regexp',
                 stroke: DATA_SERIES_COLORS.PINK,
             },
         ],
@@ -294,7 +294,7 @@ const LARGE_PACKAGE_USAGE: Template = {
         series: [
             {
                 name: 'Repositories with large package usage',
-                query: 'select:repo import\\slargePkg patternType:regexp archived:no fork:no',
+                query: 'select:repo import\\slargePkg patternType:regexp',
                 stroke: DATA_SERIES_COLORS.ORANGE,
             },
         ],
@@ -311,7 +311,7 @@ const REACT_COMPONENT_LIB_USAGE: Template = {
         series: [
             {
                 name: 'Library imports',
-                query: "from '@sourceLibrary/component' patternType:literal archived:no fork:no",
+                query: "from '@sourceLibrary/component' patternType:literal",
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
         ],
@@ -328,7 +328,7 @@ const CI_TOOLING: Template = {
         series: [
             {
                 name: 'Repo with CircleCI config',
-                query: 'file:\\.circleci/config.yml select:repo fork:no archived:no',
+                query: 'file:\\.circleci/config.yml select:repo',
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
         ],
@@ -345,7 +345,7 @@ const CSS_CLASS: Template = {
         series: [
             {
                 name: 'Deprecated CSS class',
-                query: 'deprecated-class archived:no fork:no',
+                query: 'deprecated-class',
                 stroke: DATA_SERIES_COLORS.ORANGE,
             },
         ],
@@ -362,7 +362,7 @@ const ICON_OR_IMAGE: Template = {
         series: [
             {
                 name: 'Deprecated logo',
-                query: '2018logo.png archived:no fork:no',
+                query: '2018logo.png',
                 stroke: DATA_SERIES_COLORS.ORANGE,
             },
         ],
@@ -381,7 +381,7 @@ const STRUCTURAL_CODE_PATTERN: Template = {
             {
                 name: 'Try catch',
                 query:
-                    'try {:[_]} catch (:[e]) { } finally {:[_]} lang:java patternType:structural archived:no fork:no',
+                    'try {:[_]} catch (:[e]) { } finally {:[_]} lang:java patternType:structural',
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
         ],
@@ -398,7 +398,7 @@ const TOOLING_MIGRATION: Template = {
         series: [
             {
                 name: 'Deprecated logger',
-                query: 'deprecatedEventLogger.log archived:no fork:no',
+                query: 'deprecatedEventLogger.log',
                 stroke: DATA_SERIES_COLORS.ORANGE,
             },
         ],
@@ -415,7 +415,7 @@ const VAR_KEYWORDS: Template = {
         series: [
             {
                 name: 'var statements',
-                query: '(lang:TypeScript OR lang:JavaScript) var ... = archived:no fork:no patterntype:structural',
+                query: '(lang:TypeScript OR lang:JavaScript) var ... = patterntype:structural',
                 stroke: DATA_SERIES_COLORS.ORANGE,
             },
         ],
@@ -432,12 +432,12 @@ const TESTING_LIBRARIES: Template = {
         series: [
             {
                 name: '@testing-library',
-                query: "from '@testing-library/react' archived:no fork:no",
+                query: "from '@testing-library/react'",
                 stroke: DATA_SERIES_COLORS.BLUE,
             },
             {
                 name: 'enzume',
-                query: "from 'enzyme' archived:no fork:no",
+                query: "from 'enzyme'",
                 stroke: DATA_SERIES_COLORS.ORANGE,
             },
         ],
@@ -451,7 +451,7 @@ const LICENSE_TYPES: Template = {
     templateValues: {
         title: 'License types in the codebase',
         allRepos: true,
-        groupSearchQuery: 'file:package.json "license":\\s"(.*)" archived:no fork:no',
+        groupSearchQuery: 'file:package.json "license":\\s"(.*)"',
     },
 }
 
@@ -462,7 +462,7 @@ const ALL_LOG4J_VERSIONS: Template = {
     templateValues: {
         title: 'All log4j versions',
         allRepos: true,
-        groupSearchQuery: 'lang:gradle org\\.apache\\.logging\\.log4j[\'"] 2\\.([0-9]+)\\. archived:no fork:no',
+        groupSearchQuery: 'lang:gradle org\\.apache\\.logging\\.log4j[\'"] 2\\.([0-9]+)\\.',
     },
 }
 
@@ -473,7 +473,7 @@ const PYTHON_VERSIONS: Template = {
     templateValues: {
         title: 'Python versions',
         allRepos: true,
-        groupSearchQuery: '#!/usr/bin/env python([0-9]\\.[0-9]+) archived:no fork:no',
+        groupSearchQuery: '#!/usr/bin/env python([0-9]\\.[0-9]+)',
     },
 }
 
@@ -484,7 +484,7 @@ const NODEJS_VERSIONS: Template = {
     templateValues: {
         title: 'Node.js versions',
         allRepos: true,
-        groupSearchQuery: 'nvm\\suse\\s([0-9]+\\.[0-9]+) archived:no fork:no',
+        groupSearchQuery: 'nvm\\suse\\s([0-9]+\\.[0-9]+)',
     },
 }
 
@@ -495,7 +495,7 @@ const CSS_COLORS: Template = {
     templateValues: {
         title: 'CSS Colors',
         allRepos: true,
-        groupSearchQuery: 'color:#([0-9a-fA-f]{3,6}) archived:no fork:no',
+        groupSearchQuery: 'color:#([0-9a-fA-f]{3,6})',
     },
 }
 
@@ -506,7 +506,7 @@ const CHECKOV_SKIP_TYPES: Template = {
     templateValues: {
         title: 'Types of checkov skips',
         allRepos: true,
-        groupSearchQuery: 'patterntype:regexp file:.tf #checkov:skip=(.*) archived:no fork:no',
+        groupSearchQuery: 'patterntype:regexp file:.tf #checkov:skip=(.*)',
     },
 }
 
@@ -520,7 +520,7 @@ const TODOS: Template = {
         series: [
             {
                 name: 'TODOs',
-                query: 'TODO archived:no fork:no',
+                query: 'TODO',
                 stroke: DATA_SERIES_COLORS.BLUE,
             },
         ],
@@ -537,7 +537,7 @@ const REVERT_COMMITS: Template = {
         series: [
             {
                 name: 'Reverts',
-                query: 'type:commit revert archived:no fork:no',
+                query: 'type:commit revert',
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
         ],
@@ -554,7 +554,7 @@ const DEPRECATED_CALLS: Template = {
         series: [
             {
                 name: '@deprecated',
-                query: 'lang:java @deprecated archived:no fork:no',
+                query: 'lang:java @deprecated',
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
         ],
@@ -571,7 +571,7 @@ const STORYBOOK_TESTS: Template = {
         series: [
             {
                 name: 'Stories',
-                query: 'patternType:regexp f:\\.story\\.tsx$ \\badd\\( archived:no fork:no',
+                query: 'patternType:regexp f:\\.story\\.tsx$ \\badd\\(',
                 stroke: DATA_SERIES_COLORS.PINK,
             },
         ],
@@ -588,12 +588,12 @@ const REPOS_WITH_README: Template = {
         series: [
             {
                 name: 'with readme',
-                query: 'repohasfile:readme.md select:repo archived:no fork:no',
+                query: 'repohasfile:readme.md select:repo',
                 stroke: DATA_SERIES_COLORS.LIME,
             },
             {
                 name: 'without readme',
-                query: '-repohasfile:readme.md select:repo archived:no fork:no',
+                query: '-repohasfile:readme.md select:repo',
                 stroke: DATA_SERIES_COLORS.YELLOW,
             },
         ],
@@ -610,12 +610,12 @@ const OWNERSHIP_TRACKING: Template = {
         series: [
             {
                 name: 'with readme',
-                query: 'repohasfile:CODEOWNERS select:repo archived:no fork:no',
+                query: 'repohasfile:CODEOWNERS select:repo',
                 stroke: DATA_SERIES_COLORS.LIME,
             },
             {
                 name: 'without readme',
-                query: '-repohasfile:CODEOWNERS select:repo archived:no fork:no',
+                query: '-repohasfile:CODEOWNERS select:repo',
                 stroke: DATA_SERIES_COLORS.YELLOW,
             },
         ],
@@ -633,7 +633,7 @@ const VULNERABLE_OPEN_SOURCE: Template = {
         series: [
             {
                 name: 'vulnerableLibrary@14.3.9',
-                query: 'vulnerableLibrary@14.3.9 archived:no fork:no',
+                query: 'vulnerableLibrary@14.3.9',
                 stroke: DATA_SERIES_COLORS.ORANGE,
             },
         ],
@@ -650,7 +650,7 @@ const API_KEYS_DETECTION: Template = {
         series: [
             {
                 name: 'API key',
-                query: 'regexMatchingAPIKey patternType:regexp archived:no fork:no',
+                query: 'regexMatchingAPIKey patternType:regexp',
                 stroke: DATA_SERIES_COLORS.RED,
             },
         ],
@@ -667,7 +667,7 @@ const SKIPPED_TESTS: Template = {
         series: [
             {
                 name: 'Skipped tests',
-                query: '(this.skip() OR it.skip) lang:TypeScript archived:no fork:no',
+                query: '(this.skip() OR it.skip) lang:TypeScript',
                 stroke: DATA_SERIES_COLORS.RED,
             },
         ],
@@ -684,17 +684,17 @@ const TEST_AMOUNT_AND_TYPES: Template = {
         series: [
             {
                 name: 'e2e tests',
-                query: 'patternType:regexp case:yes \\b(it|test)\\( f:/end-to-end/.*\\.test\\.ts$ archived:no fork:no',
+                query: 'patternType:regexp case:yes \\b(it|test)\\( f:/end-to-end/.*\\.test\\.ts$',
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
             {
                 name: 'regression tests',
-                query: 'patternType:regexp case:yes \\b(it|test)\\( f:/regression/.*\\.test\\.ts$ archived:no fork:no',
+                query: 'patternType:regexp case:yes \\b(it|test)\\( f:/regression/.*\\.test\\.ts$',
                 stroke: DATA_SERIES_COLORS.BLUE,
             },
             {
                 name: 'integration tests',
-                query: 'patternType:regexp case:yes \\b(it|test)\\( f:/integration/.*\\.test\\.ts$ archived:no fork:no',
+                query: 'patternType:regexp case:yes \\b(it|test)\\( f:/integration/.*\\.test\\.ts$',
                 stroke: DATA_SERIES_COLORS.ORANGE,
             },
         ],
@@ -711,12 +711,12 @@ const TS_VS_GO: Template = {
         series: [
             {
                 name: 'TypeScript',
-                query: 'select:file lang:TypeScript archived:no fork:no',
+                query: 'select:file lang:TypeScript',
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
             {
                 name: 'GO lang',
-                query: 'select:file lang:Go archived:no fork:no',
+                query: 'select:file lang:Go',
                 stroke: DATA_SERIES_COLORS.INDIGO,
             },
         ],
@@ -733,7 +733,7 @@ const IOS_APP_SCREENS: Template = {
         series: [
             {
                 name: 'Screens',
-                query: 'struct\\s(.*):\\sview$ patternType:regexp lang:swift archived:no fork:no',
+                query: 'struct\\s(.*):\\sview$ patternType:regexp lang:swift',
                 stroke: DATA_SERIES_COLORS.YELLOW,
             },
         ],
@@ -750,12 +750,12 @@ const ADOPTING_NEW_API: Template = {
         series: [
             {
                 name: 'Mobile team',
-                query: 'file:mobileTeam newAPI.call archived:no fork:no',
+                query: 'file:mobileTeam newAPI.call',
                 stroke: DATA_SERIES_COLORS.BLUE,
             },
             {
                 name: 'Web team',
-                query: 'file:webappTeam newAPI.call archived:no fork:no',
+                query: 'file:webappTeam newAPI.call',
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
         ],
@@ -772,12 +772,12 @@ const PROBLEMATIC_API_BY_TEAM: Template = {
         series: [
             {
                 name: 'Mobile team',
-                query: 'problemAPI file:teamOneDirectory archived:no fork:no',
+                query: 'problemAPI file:teamOneDirectory',
                 stroke: DATA_SERIES_COLORS.BLUE,
             },
             {
                 name: 'Web team',
-                query: 'problemAPI file:teamTwoDirectory archived:no fork:no',
+                query: 'problemAPI file:teamTwoDirectory',
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
         ],
@@ -794,18 +794,18 @@ const DATA_FETCHING_GQL: Template = {
         series: [
             {
                 name: 'requestGraphQL',
-                query: 'patternType:regexp requestGraphQL(\\(|<[^>]*>\\() archived:no fork:no',
+                query: 'patternType:regexp requestGraphQL(\\(|<[^>]*>\\()',
                 stroke: DATA_SERIES_COLORS.GRAPE,
             },
             {
                 name: 'Direct query/mutate calls',
-                query: 'patternType:regexp (query|mutate)GraphQL(\\(|<[^>]*>\\() archived:no fork:no',
+                query: 'patternType:regexp (query|mutate)GraphQL(\\(|<[^>]*>\\()',
                 stroke: DATA_SERIES_COLORS.BLUE,
             },
             {
                 name: 'Hooks',
                 query:
-                    'patternType:regexp use(Query|Mutation|Connection|LazyQuery)(\\(|<[^>]*>\\() archived:no fork:no',
+                    'patternType:regexp use(Query|Mutation|Connection|LazyQuery)(\\(|<[^>]*>\\()',
                 stroke: DATA_SERIES_COLORS.ORANGE,
             },
         ],

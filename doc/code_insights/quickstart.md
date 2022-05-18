@@ -47,7 +47,7 @@ If you are more interested in creating a language-based insight to show you lang
 
 If you want an insight running over up to ~50-70 repositories, enter the repositories in the repository URL format, like `github.com/Sourcegraph/Sourcegraph`. Separate multiple repositories with a comma. The form field will validate that you've entered the repository correctly.
 
-If you want to run an insight over all repositories, instead check the box to do so (available in Sourcegraph 3.31.1 and later). If you don't want to include fork or archived repositories, make sure to indicate `fork:no` and `archived:no` in your data series (step 5). If you otherwise want to exclude specific repositories, you can do so after creating the insight by using filters (step 10). 
+If you want to run an insight over all repositories, instead check the box to do so (available in Sourcegraph 3.31.1 and later). If you otherwise want to exclude specific repositories, you can do so after creating the insight by using filters (step 10). 
 
 ### 5. Define a data series to track the incidence of `TODO`
 

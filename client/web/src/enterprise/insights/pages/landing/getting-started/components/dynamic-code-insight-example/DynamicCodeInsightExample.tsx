@@ -30,10 +30,10 @@ interface CodeInsightExampleFormValues {
 
 const INITIAL_INSIGHT_VALUES: CodeInsightExampleFormValues = {
     repositories: 'github.com/sourcegraph/sourcegraph',
-    query: 'TODO archived:no fork:no',
+    query: 'TODO',
 }
 
-interface DynamicCodeInsightExampleProps extends TelemetryProps, React.HTMLAttributes<HTMLDivElement> {}
+interface DynamicCodeInsightExampleProps extends TelemetryProps, React.HTMLAttributes<HTMLDivElement> { }
 
 export const DynamicCodeInsightExample: React.FunctionComponent<
     React.PropsWithChildren<DynamicCodeInsightExampleProps>
