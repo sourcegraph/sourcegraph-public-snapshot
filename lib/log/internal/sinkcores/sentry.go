@@ -12,25 +12,35 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-type ErrorContext struct {
+type baseContext struct {
 	Key     string
 	Scope   string
-	Error   error
 	Level   zapcore.Level
-	Fields  []zapcore.Field
 	Message string
+
+	Fields []zapcore.Field
 }
 
-type ErrorsContext struct {
-	ErrorContext
-	errs    []error
-	message string
+func (b *baseContext) clone() *baseContext {
+	c := *b
+	c.Key = b.Key
+	c.Scope = b.Scope
+	c.Level = b.Level
+	c.Message = b.Message
+	copy(c.Fields, b.Fields)
+	return &c
+}
+
+type ErrorContext struct {
+	baseContext
+	Error error
 }
 
 type SentryCore struct {
 	hub *sentry.Hub
 
-	ec ErrorsContext
+	base baseContext
+	errs []error
 
 	ErrorsC chan ErrorContext
 	started sync.Once
@@ -40,13 +50,16 @@ type SentryCore struct {
 var _ zapcore.Core = &SentryCore{}
 
 func (s *SentryCore) clone() *SentryCore {
-	return &SentryCore{
+	c := SentryCore{
 		hub:     s.hub,
-		ec:      s.ec,
+		base:    *s.base.clone(),
 		ErrorsC: s.ErrorsC,
 		started: s.started,
 		done:    s.done,
 	}
+	copy(c.errs, s.errs)
+
+	return &c
 }
 
 // With only accumulate errors passed to the logger without sending them, as we do not
@@ -56,11 +69,11 @@ func (s *SentryCore) With(fields []zapcore.Field) zapcore.Core {
 	for _, f := range fields {
 		if f.Type == zapcore.ErrorType {
 			if enc, ok := f.Interface.(*encoders.ErrorEncoder); ok {
-				s.ec.errs = append(s.ec.errs, enc.Source)
+				s.errs = append(s.errs, enc.Source)
 				continue
 			}
 		}
-		s.ec.Fields = append(s.ec.Fields, f)
+		s.base.Fields = append(s.base.Fields, f)
 	}
 	return s
 }
@@ -74,25 +87,28 @@ func (s *SentryCore) Check(e zapcore.Entry, ce *zapcore.CheckedEntry) *zapcore.C
 func (s *SentryCore) Write(entry zapcore.Entry, fields []zapcore.Field) error {
 	s.started.Do(s.process)
 
-	s.ec.Scope = entry.LoggerName
-	s.ec.message = entry.Message
+	s.base.Scope = entry.LoggerName
+	s.base.Message = entry.Message
 
+	n := 0
 	for _, f := range fields {
 		if f.Type == zapcore.ErrorType {
 			if enc, ok := f.Interface.(*encoders.ErrorEncoder); ok {
-				s.ec.errs = append(s.ec.errs, enc.Source)
+				s.errs = append(s.errs, enc.Source)
 				continue
 			}
 		}
-		s.ec.Fields = append(s.ec.Fields, f)
+		fields[n] = f
+		n++
 	}
+	fields = fields[:n]
+	fields = append(fields, s.base.Fields...)
 
 	// queue the error reporting
 	go func() {
-		for _, err := range s.ec.errs {
-			ec := s.ec.ErrorContext
+		for _, err := range s.errs {
+			ec := ErrorContext{baseContext: s.base}
 			ec.Error = err
-			ec.Message = s.ec.message
 			s.ErrorsC <- ec
 		}
 	}()
@@ -178,8 +194,7 @@ func (s *SentryCore) capture(errC ErrorContext) {
 
 // Enabled returns false when the log level is below the Warn level.
 func (s *SentryCore) Enabled(level zapcore.Level) bool {
-	// return level >= zapcore.WarnLevel
-	return true
+	return level >= zapcore.WarnLevel
 }
 
 // Sync ensure that the remaining event are flushed, but has a hard limit of TODO seconds
