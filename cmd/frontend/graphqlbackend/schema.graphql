@@ -6343,22 +6343,6 @@ type CodeIntelligenceRange {
     The hover result of the symbol occurring within the range.
     """
     hover: Hover
-
-    """
-    The documentation result of the symbol occurring within the range, if any.
-    """
-    documentation: Documentation
-}
-
-"""
-Documentation at some position in a file.
-"""
-type Documentation {
-    """
-    The path ID of the documentation, which can be used to build a link to the documentation or
-    (after trimming the URL hash) passed to documentationPage or documentationPathInfo.
-    """
-    pathID: String!
 }
 
 """
