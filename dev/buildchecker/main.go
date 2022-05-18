@@ -385,10 +385,12 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 			}
 			err = okayCli.Push(&event)
 			if err != nil {
-				log.Fatal("okay.NewClient: ", err)
+				log.Fatal("okay.Push: ", err.Error())
 			}
 		}
-		okayCli.Flush()
+		if err := okayCli.Flush(); err != nil {
+			log.Fatal("okay.Flush: ", err.Error())
+		}
 	}
 
 	log.Println("done!")
