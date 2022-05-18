@@ -12,6 +12,7 @@ import (
 	"golang.org/x/sync/semaphore"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -276,7 +277,7 @@ func TestDependents(t *testing.T) {
 	}
 }
 
-func testService(store Store, gitService localGitService, lockfilesService LockfilesService, syncer Syncer) *Service {
+func testService(store store.Store, gitService localGitService, lockfilesService LockfilesService, syncer Syncer) *Service {
 	return newService(
 		store,
 		gitService,

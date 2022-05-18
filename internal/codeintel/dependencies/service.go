@@ -21,7 +21,7 @@ import (
 
 // Service encapsulates the resolution and persistence of dependencies at the repository and package levels.
 type Service struct {
-	dependenciesStore  Store
+	dependenciesStore  store.Store
 	gitSvc             localGitService
 	lockfilesSvc       LockfilesService
 	lockfilesSemaphore *semaphore.Weighted
@@ -31,7 +31,7 @@ type Service struct {
 }
 
 func newService(
-	dependenciesStore Store,
+	dependenciesStore store.Store,
 	gitSvc localGitService,
 	lockfilesSvc LockfilesService,
 	lockfilesSemaphore *semaphore.Weighted,
