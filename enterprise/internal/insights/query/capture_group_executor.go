@@ -135,7 +135,7 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 				if _, ok := pivoted[value]; !ok {
 					pivoted[value] = generateTimes(plan)
 				}
-				pivoted[value][execution.RecordingTime] = timeGroupElement.Count
+				pivoted[value][execution.RecordingTime] += timeGroupElement.Count
 				for _, children := range execution.SharedRecordings {
 					pivoted[value][children] += timeGroupElement.Count
 				}
