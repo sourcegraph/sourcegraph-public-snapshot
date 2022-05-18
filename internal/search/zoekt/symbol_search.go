@@ -2,7 +2,6 @@ package zoekt
 
 import (
 	"context"
-	"github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"time"
 
 	zoektquery "github.com/google/zoekt/query"
@@ -11,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
+	"github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
