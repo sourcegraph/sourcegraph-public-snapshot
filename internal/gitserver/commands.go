@@ -987,3 +987,51 @@ func filterPaths(ctx context.Context, repo api.RepoName, checker authz.SubRepoPe
 	}
 	return filtered, nil
 }
+
+// ListTags returns a list of all tags in the repository.
+func (c *ClientImplementor) ListTags(ctx context.Context, repo api.RepoName) ([]*gitdomain.Tag, error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: Tags")
+	defer span.Finish()
+
+	// Support both lightweight tags and tag objects. For creatordate, use an %(if) to prefer the
+	// taggerdate for tag objects, otherwise use the commit's committerdate (instead of just always
+	// using committerdate).
+	cmd := c.GitCommand(repo, "tag", "--list", "--sort", "-creatordate", "--format", "%(if)%(*objectname)%(then)%(*objectname)%(else)%(objectname)%(end)%00%(refname:short)%00%(if)%(creatordate:unix)%(then)%(creatordate:unix)%(else)%(*creatordate:unix)%(end)")
+	out, err := cmd.CombinedOutput(ctx)
+	if err != nil {
+		if gitdomain.IsRepoNotExist(err) {
+			return nil, err
+		}
+		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
+	}
+
+	return parseTags(out)
+}
+
+func parseTags(in []byte) ([]*gitdomain.Tag, error) {
+	in = bytes.TrimSuffix(in, []byte("\n")) // remove trailing newline
+	if len(in) == 0 {
+		return nil, nil // no tags
+	}
+	lines := bytes.Split(in, []byte("\n"))
+	tags := make([]*gitdomain.Tag, len(lines))
+	for i, line := range lines {
+		parts := bytes.SplitN(line, []byte("\x00"), 3)
+		if len(parts) != 3 {
+			return nil, errors.Errorf("invalid git tag list output line: %q", line)
+		}
+
+		tag := &gitdomain.Tag{
+			Name:     string(parts[1]),
+			CommitID: api.CommitID(parts[0]),
+		}
+
+		date, err := strconv.ParseInt(string(parts[2]), 10, 64)
+		if err == nil {
+			tag.CreatorDate = time.Unix(date, 0).UTC()
+		}
+
+		tags[i] = tag
+	}
+	return tags, nil
+}
