@@ -335,12 +335,12 @@ func (s *sessionIssuerHelper) verifyUserOrgsAndTeams(ctx context.Context, ghClie
 		return true
 	}
 
-	if len(s.allowOrgs) > 0 {
-		return s.verifyUserOrgs(ctx, ghClient)
+	if len(s.allowOrgs) > 0 && s.verifyUserOrgs(ctx, ghClient) {
+		return true
 	}
 
-	if len(s.allowOrgsMap) > 0 {
-		return s.verifyUserTeams(ctx, ghClient)
+	if len(s.allowOrgsMap) > 0 && s.verifyUserTeams(ctx, ghClient) {
+		return true
 	}
 
 	return false
