@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -171,7 +170,7 @@ func TestAuthzQueryConds(t *testing.T) {
 }
 
 func TestRepoStore_nonSiteAdminCanViewOwnPrivateCode(t *testing.T) {
-	db := dbtest.NewDB(t)
+	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Add a single user who is NOT a site admin
@@ -221,7 +220,7 @@ func TestRepoStore_nonSiteAdminCanViewOwnPrivateCode(t *testing.T) {
 		DisplayName: "GITHUB #1",
 		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
 	}
-	err = ExternalServices(db).Create(ctx, confGet, aliceExternalService)
+	err = db.ExternalServices().Create(ctx, confGet, aliceExternalService)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -268,7 +267,7 @@ func TestRepoStore_userCanSeeUnrestricedRepo(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t)
+	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Add a single user who is NOT a site admin
@@ -310,7 +309,7 @@ func TestRepoStore_userCanSeeUnrestricedRepo(t *testing.T) {
 		DisplayName: "GITHUB #1",
 		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
 	}
-	err = ExternalServices(db).Create(ctx, confGet, extsvc)
+	err = db.ExternalServices().Create(ctx, confGet, extsvc)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -376,7 +375,7 @@ func TestRepoStore_nonSiteAdminCanViewOrgPrivateCode(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t)
+	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Add a single user who is NOT a site admin
@@ -442,7 +441,7 @@ func TestRepoStore_nonSiteAdminCanViewOrgPrivateCode(t *testing.T) {
 		Config:         `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
 		NamespaceOrgID: org.ID,
 	}
-	err = ExternalServices(db).Create(ctx, confGet, extsvc)
+	err = db.ExternalServices().Create(ctx, confGet, extsvc)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -483,7 +482,7 @@ VALUES
 	}
 }
 
-func createGitHubExternalService(t *testing.T, db dbutil.DB, userID int32) *types.ExternalService {
+func createGitHubExternalService(t *testing.T, db DB, userID int32) *types.ExternalService {
 	now := time.Now()
 	svc := &types.ExternalService{
 		Kind:            extsvc.KindGitHub,
@@ -494,7 +493,7 @@ func createGitHubExternalService(t *testing.T, db dbutil.DB, userID int32) *type
 		UpdatedAt:       now,
 	}
 
-	if err := ExternalServices(db).Upsert(context.Background(), svc); err != nil {
+	if err := db.ExternalServices().Upsert(context.Background(), svc); err != nil {
 		t.Fatal(err)
 	}
 
@@ -507,7 +506,7 @@ func TestRepoStore_List_checkPermissions(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t)
+	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Set up three users: alice, bob and admin
@@ -650,7 +649,7 @@ VALUES (%s, %s, '')
 		Config:       `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
 		Unrestricted: true,
 	}
-	err = ExternalServices(db).Create(ctx, confGet, cindyExternalService)
+	err = db.ExternalServices().Create(ctx, confGet, cindyExternalService)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -768,7 +767,7 @@ func TestRepoStore_List_permissionsUserMapping(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t)
+	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Set up three users: alice, bob and admin

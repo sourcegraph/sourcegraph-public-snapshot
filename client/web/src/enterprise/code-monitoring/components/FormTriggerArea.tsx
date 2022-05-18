@@ -12,7 +12,7 @@ import { FilterType, resolveFilter, validateFilter } from '@sourcegraph/shared/s
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, Card, Icon, H3, H2, Checkbox } from '@sourcegraph/wildcard'
+import { Button, Link, Card, Icon, Checkbox, Typography } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../graphql-operations'
 import { useExperimentalFeatures } from '../../../stores'
@@ -204,7 +204,7 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
 
     return (
         <>
-            <H3 as={H2}>Trigger</H3>
+            <Typography.H3 as={Typography.H2}>Trigger</Typography.H3>
             {showQueryForm && (
                 <Card className={classNames(cardClassName, 'p-3')}>
                     <div className="font-weight-bold">When there are new search results</div>

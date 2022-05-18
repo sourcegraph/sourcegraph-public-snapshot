@@ -116,6 +116,17 @@ This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
   - Total number of views of the create code monitor page without a pre-populated trigger query
   - Total number of views of the manage code monitor page
   - Total number of clicks on the code monitor email search link
+- Notebooks usage data
+  - Total number of views of the notebook page
+  - Total number of views of the notebooks list page
+  - Total number of views of the embedded notebook page
+  - Total number of created notebooks
+  - Total number of added notebook stars
+  - Total number of added notebook markdown blocks
+  - Total number of added notebook query blocks
+  - Total number of added notebook file blocks
+  - Total number of added notebook symbol blocks
+  - Total number of added notebook compute blocks
 - Code Host integration usage data (Browser extension / Native Integration)
   - Aggregate counts of current daily, weekly, and monthly unique users and total events
   - Aggregate counts of current daily, weekly, and monthly unique users and total events who visited Sourcegraph instance from browser extension

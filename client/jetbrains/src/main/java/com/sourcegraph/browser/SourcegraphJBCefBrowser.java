@@ -8,7 +8,7 @@ import org.cef.CefApp;
 public class SourcegraphJBCefBrowser extends JBCefBrowser {
     private final JSToJavaBridge jsToJavaBridge;
 
-    public SourcegraphJBCefBrowser() {
+    public SourcegraphJBCefBrowser(JSToJavaBridgeRequestHandler requestHandler) {
         super("http://sourcegraph/html/index.html");
         // Create and set up JCEF browser
         CefApp.getInstance().registerSchemeHandlerFactory("http", "sourcegraph", new HttpSchemeHandlerFactory());
@@ -16,7 +16,7 @@ public class SourcegraphJBCefBrowser extends JBCefBrowser {
 
         // Create bridge, set up handlers, then run init function
         String initJSCode = "window.initializeSourcegraph(" + (ThemeUtil.isDarkTheme() ? "true" : "false") + ");";
-        jsToJavaBridge = new JSToJavaBridge(this, new JSToJavaBridgeRequestHandler(), initJSCode);
+        jsToJavaBridge = new JSToJavaBridge(this, requestHandler, initJSCode);
         Disposer.register(this, jsToJavaBridge);
     }
 

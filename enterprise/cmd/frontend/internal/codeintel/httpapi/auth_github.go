@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 var (
@@ -54,7 +55,10 @@ func enforceAuthViaGitHub(ctx context.Context, query url.Values, repoName string
 var _ AuthValidator = enforceAuthViaGitHub
 
 func uncachedEnforceAuthViaGitHub(ctx context.Context, githubToken, repoName string) (int, error) {
-	if author, err := checkGitHubPermissions(ctx, repoName, github.NewV3Client(extsvc.URNCodeIntel, githubURL, &auth.OAuthBearerToken{Token: githubToken}, nil)); err != nil {
+	ghClient := github.NewV3Client(log.Scoped("github.v3", "github v3 client"),
+		extsvc.URNCodeIntel, githubURL, &auth.OAuthBearerToken{Token: githubToken}, nil)
+
+	if author, err := checkGitHubPermissions(ctx, repoName, ghClient); err != nil {
 		if githubErr := new(github.APIError); errors.As(err, &githubErr) {
 			if shouldMirrorGitHubError(githubErr.Code) {
 				return githubErr.Code, errors.Wrap(errors.New(githubErr.Message), "github error")

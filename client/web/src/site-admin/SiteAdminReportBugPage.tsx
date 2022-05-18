@@ -6,7 +6,7 @@ import { RouteComponentProps } from 'react-router'
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { LoadingSpinner, useObservable, Alert, Link } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Alert, Link, Typography } from '@sourcegraph/wildcard'
 
 import awsCodeCommitJSON from '../../../../schema/aws_codecommit.schema.json'
 import bitbucketCloudSchemaJSON from '../../../../schema/bitbucket_cloud.schema.json'
@@ -117,7 +117,7 @@ export const SiteAdminReportBugPage: React.FunctionComponent<React.PropsWithChil
     return (
         <div>
             <PageTitle title="Report a bug - Admin" />
-            <h2>Report a bug</h2>
+            <Typography.H2>Report a bug</Typography.H2>
             <p>
                 <Link
                     target="_blank"

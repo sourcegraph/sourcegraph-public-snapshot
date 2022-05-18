@@ -110,7 +110,6 @@ type GenerationMethod string
 
 const (
 	Search        GenerationMethod = "search"
-	SearchStream  GenerationMethod = "search-stream"
 	SearchCompute GenerationMethod = "search-compute"
 	LanguageStats GenerationMethod = "language-stats"
 )

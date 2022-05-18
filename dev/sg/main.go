@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -12,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/log"
@@ -110,6 +111,10 @@ var sg = &cli.App{
 			return nil
 		}
 
+		// Configure output
+		std.Out = std.NewOutput(cmd.App.Writer, verbose)
+		log.Init(log.Resource{Name: "sg"})
+
 		// Configure analytics - this should be the first thing to be configured.
 		if !cmd.Bool("disable-analytics") {
 			cmd.Context = analytics.WithContext(cmd.Context, cmd.App.Version)
@@ -119,12 +124,6 @@ var sg = &cli.App{
 
 		// Add autosuggestion hooks to commands with subcommands but no action
 		addSuggestionHooks(cmd.App.Commands)
-
-		// Configure output
-		log.Init(log.Resource{Name: "sg"})
-		if verbose {
-			stdout.Out.SetVerbose()
-		}
 
 		// Validate configuration flags, which is required for sgconf.Get to work everywhere else.
 		if configFile == "" {
@@ -137,21 +136,21 @@ var sg = &cli.App{
 		// Set up access to secrets
 		secretsStore, err := loadSecrets()
 		if err != nil {
-			writeWarningLinef("failed to open secrets: %s", err)
+			std.Out.WriteWarningf("failed to open secrets: %s", err)
 		} else {
 			cmd.Context = secrets.WithContext(cmd.Context, secretsStore)
 		}
 
 		// We always try to set this, since we often want to watch files, start commands, etc...
 		if err := setMaxOpenFiles(); err != nil {
-			writeWarningLinef("Failed to set max open files: %s", err)
+			std.Out.WriteWarningf("Failed to set max open files: %s", err)
 		}
 
 		// Check for updates, unless we are running update manually.
 		if cmd.Args().First() != "update" {
 			err := checkSgVersionAndUpdate(cmd.Context, cmd.Bool("skip-auto-update"))
 			if err != nil {
-				writeWarningLinef("update check: %s", err)
+				std.Out.WriteWarningf("update check: %s", err)
 				// Do not exit here, so we don't break user flow when they want to
 				// run `sg` but updating fails
 			}
@@ -194,6 +193,29 @@ var sg = &cli.App{
 		updateCommand,
 		installCommand,
 		funkyLogoCommand,
+	},
+	ExitErrHandler: func(cmd *cli.Context, err error) {
+		if err == nil {
+			return
+		}
+
+		// Show help text only
+		if errors.Is(err, flag.ErrHelp) {
+			cli.ShowAppHelp(cmd)
+			os.Exit(1)
+		}
+
+		// Render error
+		errMsg := err.Error()
+		if errMsg != "" {
+			std.Out.WriteFailuref(errMsg)
+		}
+
+		// Determine exit code
+		if exitErr, ok := err.(cli.ExitCoder); ok {
+			os.Exit(exitErr.ExitCode())
+		}
+		os.Exit(1)
 	},
 
 	CommandNotFound: suggestCommands,

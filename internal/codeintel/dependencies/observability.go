@@ -8,7 +8,9 @@ import (
 )
 
 type operations struct {
-	dependencies *observation.Operation
+	dependencies                           *observation.Operation
+	resolveLockfileDependenciesFromArchive *observation.Operation
+	resolveLockfileDependenciesFromStore   *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -28,6 +30,8 @@ func newOperations(observationContext *observation.Context) *operations {
 	}
 
 	return &operations{
-		dependencies: op("Dependencies"),
+		dependencies:                           op("Dependencies"),
+		resolveLockfileDependenciesFromArchive: op("resolveLockfileDependenciesFromArchive"),
+		resolveLockfileDependenciesFromStore:   op("resolveLockfileDependenciesFromStore"),
 	}
 }

@@ -200,7 +200,7 @@ func TestOrgs_GetByID(t *testing.T) {
 }
 
 func TestOrgs_GetOrgsWithRepositoriesByUserID(t *testing.T) {
-	createOrg := func(ctx context.Context, db *sql.DB, name string, displayName string) *types.Org {
+	createOrg := func(ctx context.Context, db DB, name string, displayName string) *types.Org {
 		org, err := Orgs(db).Create(ctx, name, &displayName)
 		if err != nil {
 			t.Fatal(err)
@@ -209,7 +209,7 @@ func TestOrgs_GetOrgsWithRepositoriesByUserID(t *testing.T) {
 		return org
 	}
 
-	createUser := func(ctx context.Context, db *sql.DB, name string) *types.User {
+	createUser := func(ctx context.Context, db DB, name string) *types.User {
 		user, err := Users(db).Create(ctx, NewUser{
 			Username: name,
 		})
@@ -220,7 +220,7 @@ func TestOrgs_GetOrgsWithRepositoriesByUserID(t *testing.T) {
 		return user
 	}
 
-	createOrgMember := func(ctx context.Context, db *sql.DB, userID int32, orgID int32) {
+	createOrgMember := func(ctx context.Context, db DB, userID int32, orgID int32) {
 		_, err := OrgMembers(db).Create(ctx, orgID, userID)
 		if err != nil {
 			t.Fatal(err)
@@ -228,7 +228,7 @@ func TestOrgs_GetOrgsWithRepositoriesByUserID(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
 
 	org1 := createOrg(ctx, db, "org1", "org1")
@@ -246,7 +246,7 @@ func TestOrgs_GetOrgsWithRepositoriesByUserID(t *testing.T) {
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
 	}
-	if err := ExternalServices(db).Create(ctx, confGet, service); err != nil {
+	if err := db.ExternalServices().Create(ctx, confGet, service); err != nil {
 		t.Fatal(err)
 	}
 	repo := typestest.MakeGithubRepo(service)

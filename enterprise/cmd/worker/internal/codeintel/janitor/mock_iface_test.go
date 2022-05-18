@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	policies "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
-	dbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	enterprise "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
+	dbstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
 
@@ -2600,14 +2600,6 @@ type MockLSIFStore struct {
 	// ClearFunc is an instance of a mock function object controlling the
 	// behavior of the method Clear.
 	ClearFunc *LSIFStoreClearFunc
-	// DeleteOldPrivateSearchRecordsFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// DeleteOldPrivateSearchRecords.
-	DeleteOldPrivateSearchRecordsFunc *LSIFStoreDeleteOldPrivateSearchRecordsFunc
-	// DeleteOldPublicSearchRecordsFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// DeleteOldPublicSearchRecords.
-	DeleteOldPublicSearchRecordsFunc *LSIFStoreDeleteOldPublicSearchRecordsFunc
 	// DoneFunc is an instance of a mock function object controlling the
 	// behavior of the method Done.
 	DoneFunc *LSIFStoreDoneFunc
@@ -2622,16 +2614,6 @@ func NewMockLSIFStore() *MockLSIFStore {
 	return &MockLSIFStore{
 		ClearFunc: &LSIFStoreClearFunc{
 			defaultHook: func(context.Context, ...int) (r0 error) {
-				return
-			},
-		},
-		DeleteOldPrivateSearchRecordsFunc: &LSIFStoreDeleteOldPrivateSearchRecordsFunc{
-			defaultHook: func(context.Context, time.Duration, int) (r0 int, r1 error) {
-				return
-			},
-		},
-		DeleteOldPublicSearchRecordsFunc: &LSIFStoreDeleteOldPublicSearchRecordsFunc{
-			defaultHook: func(context.Context, time.Duration, int) (r0 int, r1 error) {
 				return
 			},
 		},
@@ -2657,16 +2639,6 @@ func NewStrictMockLSIFStore() *MockLSIFStore {
 				panic("unexpected invocation of MockLSIFStore.Clear")
 			},
 		},
-		DeleteOldPrivateSearchRecordsFunc: &LSIFStoreDeleteOldPrivateSearchRecordsFunc{
-			defaultHook: func(context.Context, time.Duration, int) (int, error) {
-				panic("unexpected invocation of MockLSIFStore.DeleteOldPrivateSearchRecords")
-			},
-		},
-		DeleteOldPublicSearchRecordsFunc: &LSIFStoreDeleteOldPublicSearchRecordsFunc{
-			defaultHook: func(context.Context, time.Duration, int) (int, error) {
-				panic("unexpected invocation of MockLSIFStore.DeleteOldPublicSearchRecords")
-			},
-		},
 		DoneFunc: &LSIFStoreDoneFunc{
 			defaultHook: func(error) error {
 				panic("unexpected invocation of MockLSIFStore.Done")
@@ -2686,12 +2658,6 @@ func NewMockLSIFStoreFrom(i LSIFStore) *MockLSIFStore {
 	return &MockLSIFStore{
 		ClearFunc: &LSIFStoreClearFunc{
 			defaultHook: i.Clear,
-		},
-		DeleteOldPrivateSearchRecordsFunc: &LSIFStoreDeleteOldPrivateSearchRecordsFunc{
-			defaultHook: i.DeleteOldPrivateSearchRecords,
-		},
-		DeleteOldPublicSearchRecordsFunc: &LSIFStoreDeleteOldPublicSearchRecordsFunc{
-			defaultHook: i.DeleteOldPublicSearchRecords,
 		},
 		DoneFunc: &LSIFStoreDoneFunc{
 			defaultHook: i.Done,
@@ -2811,236 +2777,6 @@ func (c LSIFStoreClearFuncCall) Args() []interface{} {
 // invocation.
 func (c LSIFStoreClearFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
-}
-
-// LSIFStoreDeleteOldPrivateSearchRecordsFunc describes the behavior when
-// the DeleteOldPrivateSearchRecords method of the parent MockLSIFStore
-// instance is invoked.
-type LSIFStoreDeleteOldPrivateSearchRecordsFunc struct {
-	defaultHook func(context.Context, time.Duration, int) (int, error)
-	hooks       []func(context.Context, time.Duration, int) (int, error)
-	history     []LSIFStoreDeleteOldPrivateSearchRecordsFuncCall
-	mutex       sync.Mutex
-}
-
-// DeleteOldPrivateSearchRecords delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockLSIFStore) DeleteOldPrivateSearchRecords(v0 context.Context, v1 time.Duration, v2 int) (int, error) {
-	r0, r1 := m.DeleteOldPrivateSearchRecordsFunc.nextHook()(v0, v1, v2)
-	m.DeleteOldPrivateSearchRecordsFunc.appendCall(LSIFStoreDeleteOldPrivateSearchRecordsFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// DeleteOldPrivateSearchRecords method of the parent MockLSIFStore instance
-// is invoked and the hook queue is empty.
-func (f *LSIFStoreDeleteOldPrivateSearchRecordsFunc) SetDefaultHook(hook func(context.Context, time.Duration, int) (int, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// DeleteOldPrivateSearchRecords method of the parent MockLSIFStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *LSIFStoreDeleteOldPrivateSearchRecordsFunc) PushHook(hook func(context.Context, time.Duration, int) (int, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *LSIFStoreDeleteOldPrivateSearchRecordsFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context, time.Duration, int) (int, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *LSIFStoreDeleteOldPrivateSearchRecordsFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context, time.Duration, int) (int, error) {
-		return r0, r1
-	})
-}
-
-func (f *LSIFStoreDeleteOldPrivateSearchRecordsFunc) nextHook() func(context.Context, time.Duration, int) (int, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *LSIFStoreDeleteOldPrivateSearchRecordsFunc) appendCall(r0 LSIFStoreDeleteOldPrivateSearchRecordsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// LSIFStoreDeleteOldPrivateSearchRecordsFuncCall objects describing the
-// invocations of this function.
-func (f *LSIFStoreDeleteOldPrivateSearchRecordsFunc) History() []LSIFStoreDeleteOldPrivateSearchRecordsFuncCall {
-	f.mutex.Lock()
-	history := make([]LSIFStoreDeleteOldPrivateSearchRecordsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// LSIFStoreDeleteOldPrivateSearchRecordsFuncCall is an object that
-// describes an invocation of method DeleteOldPrivateSearchRecords on an
-// instance of MockLSIFStore.
-type LSIFStoreDeleteOldPrivateSearchRecordsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 time.Duration
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 int
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c LSIFStoreDeleteOldPrivateSearchRecordsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c LSIFStoreDeleteOldPrivateSearchRecordsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// LSIFStoreDeleteOldPublicSearchRecordsFunc describes the behavior when the
-// DeleteOldPublicSearchRecords method of the parent MockLSIFStore instance
-// is invoked.
-type LSIFStoreDeleteOldPublicSearchRecordsFunc struct {
-	defaultHook func(context.Context, time.Duration, int) (int, error)
-	hooks       []func(context.Context, time.Duration, int) (int, error)
-	history     []LSIFStoreDeleteOldPublicSearchRecordsFuncCall
-	mutex       sync.Mutex
-}
-
-// DeleteOldPublicSearchRecords delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockLSIFStore) DeleteOldPublicSearchRecords(v0 context.Context, v1 time.Duration, v2 int) (int, error) {
-	r0, r1 := m.DeleteOldPublicSearchRecordsFunc.nextHook()(v0, v1, v2)
-	m.DeleteOldPublicSearchRecordsFunc.appendCall(LSIFStoreDeleteOldPublicSearchRecordsFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// DeleteOldPublicSearchRecords method of the parent MockLSIFStore instance
-// is invoked and the hook queue is empty.
-func (f *LSIFStoreDeleteOldPublicSearchRecordsFunc) SetDefaultHook(hook func(context.Context, time.Duration, int) (int, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// DeleteOldPublicSearchRecords method of the parent MockLSIFStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *LSIFStoreDeleteOldPublicSearchRecordsFunc) PushHook(hook func(context.Context, time.Duration, int) (int, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *LSIFStoreDeleteOldPublicSearchRecordsFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context, time.Duration, int) (int, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *LSIFStoreDeleteOldPublicSearchRecordsFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context, time.Duration, int) (int, error) {
-		return r0, r1
-	})
-}
-
-func (f *LSIFStoreDeleteOldPublicSearchRecordsFunc) nextHook() func(context.Context, time.Duration, int) (int, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *LSIFStoreDeleteOldPublicSearchRecordsFunc) appendCall(r0 LSIFStoreDeleteOldPublicSearchRecordsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// LSIFStoreDeleteOldPublicSearchRecordsFuncCall objects describing the
-// invocations of this function.
-func (f *LSIFStoreDeleteOldPublicSearchRecordsFunc) History() []LSIFStoreDeleteOldPublicSearchRecordsFuncCall {
-	f.mutex.Lock()
-	history := make([]LSIFStoreDeleteOldPublicSearchRecordsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// LSIFStoreDeleteOldPublicSearchRecordsFuncCall is an object that describes
-// an invocation of method DeleteOldPublicSearchRecords on an instance of
-// MockLSIFStore.
-type LSIFStoreDeleteOldPublicSearchRecordsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 time.Duration
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 int
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c LSIFStoreDeleteOldPublicSearchRecordsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c LSIFStoreDeleteOldPublicSearchRecordsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // LSIFStoreDoneFunc describes the behavior when the Done method of the
@@ -3263,7 +2999,7 @@ type MockPolicyMatcher struct {
 func NewMockPolicyMatcher() *MockPolicyMatcher {
 	return &MockPolicyMatcher{
 		CommitsDescribedByPolicyFunc: &PolicyMatcherCommitsDescribedByPolicyFunc{
-			defaultHook: func(context.Context, int, []dbstore.ConfigurationPolicy, time.Time, ...string) (r0 map[string][]policies.PolicyMatch, r1 error) {
+			defaultHook: func(context.Context, int, []dbstore.ConfigurationPolicy, time.Time, ...string) (r0 map[string][]enterprise.PolicyMatch, r1 error) {
 				return
 			},
 		},
@@ -3275,7 +3011,7 @@ func NewMockPolicyMatcher() *MockPolicyMatcher {
 func NewStrictMockPolicyMatcher() *MockPolicyMatcher {
 	return &MockPolicyMatcher{
 		CommitsDescribedByPolicyFunc: &PolicyMatcherCommitsDescribedByPolicyFunc{
-			defaultHook: func(context.Context, int, []dbstore.ConfigurationPolicy, time.Time, ...string) (map[string][]policies.PolicyMatch, error) {
+			defaultHook: func(context.Context, int, []dbstore.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error) {
 				panic("unexpected invocation of MockPolicyMatcher.CommitsDescribedByPolicy")
 			},
 		},
@@ -3297,15 +3033,15 @@ func NewMockPolicyMatcherFrom(i PolicyMatcher) *MockPolicyMatcher {
 // CommitsDescribedByPolicy method of the parent MockPolicyMatcher instance
 // is invoked.
 type PolicyMatcherCommitsDescribedByPolicyFunc struct {
-	defaultHook func(context.Context, int, []dbstore.ConfigurationPolicy, time.Time, ...string) (map[string][]policies.PolicyMatch, error)
-	hooks       []func(context.Context, int, []dbstore.ConfigurationPolicy, time.Time, ...string) (map[string][]policies.PolicyMatch, error)
+	defaultHook func(context.Context, int, []dbstore.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error)
+	hooks       []func(context.Context, int, []dbstore.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error)
 	history     []PolicyMatcherCommitsDescribedByPolicyFuncCall
 	mutex       sync.Mutex
 }
 
 // CommitsDescribedByPolicy delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockPolicyMatcher) CommitsDescribedByPolicy(v0 context.Context, v1 int, v2 []dbstore.ConfigurationPolicy, v3 time.Time, v4 ...string) (map[string][]policies.PolicyMatch, error) {
+func (m *MockPolicyMatcher) CommitsDescribedByPolicy(v0 context.Context, v1 int, v2 []dbstore.ConfigurationPolicy, v3 time.Time, v4 ...string) (map[string][]enterprise.PolicyMatch, error) {
 	r0, r1 := m.CommitsDescribedByPolicyFunc.nextHook()(v0, v1, v2, v3, v4...)
 	m.CommitsDescribedByPolicyFunc.appendCall(PolicyMatcherCommitsDescribedByPolicyFuncCall{v0, v1, v2, v3, v4, r0, r1})
 	return r0, r1
@@ -3314,7 +3050,7 @@ func (m *MockPolicyMatcher) CommitsDescribedByPolicy(v0 context.Context, v1 int,
 // SetDefaultHook sets function that is called when the
 // CommitsDescribedByPolicy method of the parent MockPolicyMatcher instance
 // is invoked and the hook queue is empty.
-func (f *PolicyMatcherCommitsDescribedByPolicyFunc) SetDefaultHook(hook func(context.Context, int, []dbstore.ConfigurationPolicy, time.Time, ...string) (map[string][]policies.PolicyMatch, error)) {
+func (f *PolicyMatcherCommitsDescribedByPolicyFunc) SetDefaultHook(hook func(context.Context, int, []dbstore.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error)) {
 	f.defaultHook = hook
 }
 
@@ -3323,7 +3059,7 @@ func (f *PolicyMatcherCommitsDescribedByPolicyFunc) SetDefaultHook(hook func(con
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *PolicyMatcherCommitsDescribedByPolicyFunc) PushHook(hook func(context.Context, int, []dbstore.ConfigurationPolicy, time.Time, ...string) (map[string][]policies.PolicyMatch, error)) {
+func (f *PolicyMatcherCommitsDescribedByPolicyFunc) PushHook(hook func(context.Context, int, []dbstore.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -3331,20 +3067,20 @@ func (f *PolicyMatcherCommitsDescribedByPolicyFunc) PushHook(hook func(context.C
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *PolicyMatcherCommitsDescribedByPolicyFunc) SetDefaultReturn(r0 map[string][]policies.PolicyMatch, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, []dbstore.ConfigurationPolicy, time.Time, ...string) (map[string][]policies.PolicyMatch, error) {
+func (f *PolicyMatcherCommitsDescribedByPolicyFunc) SetDefaultReturn(r0 map[string][]enterprise.PolicyMatch, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, []dbstore.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *PolicyMatcherCommitsDescribedByPolicyFunc) PushReturn(r0 map[string][]policies.PolicyMatch, r1 error) {
-	f.PushHook(func(context.Context, int, []dbstore.ConfigurationPolicy, time.Time, ...string) (map[string][]policies.PolicyMatch, error) {
+func (f *PolicyMatcherCommitsDescribedByPolicyFunc) PushReturn(r0 map[string][]enterprise.PolicyMatch, r1 error) {
+	f.PushHook(func(context.Context, int, []dbstore.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error) {
 		return r0, r1
 	})
 }
 
-func (f *PolicyMatcherCommitsDescribedByPolicyFunc) nextHook() func(context.Context, int, []dbstore.ConfigurationPolicy, time.Time, ...string) (map[string][]policies.PolicyMatch, error) {
+func (f *PolicyMatcherCommitsDescribedByPolicyFunc) nextHook() func(context.Context, int, []dbstore.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -3396,7 +3132,7 @@ type PolicyMatcherCommitsDescribedByPolicyFuncCall struct {
 	Arg4 []string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 map[string][]policies.PolicyMatch
+	Result0 map[string][]enterprise.PolicyMatch
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error

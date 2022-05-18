@@ -11,7 +11,7 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { LSIFUploadState } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Container, PageHeader, LoadingSpinner, useObservable, Icon } from '@sourcegraph/wildcard'
+import { Button, Container, PageHeader, LoadingSpinner, useObservable, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import { Collapsible } from '../../../../components/Collapsible'
@@ -234,7 +234,7 @@ export const CodeIntelUploadPage: FunctionComponent<React.PropsWithChildren<Code
 
                     <Container className="mt-2">
                         <CodeIntelAssociatedIndex node={uploadOrError} now={now} />
-                        <h3>Timeline</h3>
+                        <Typography.H3>Timeline</Typography.H3>
                         <CodeIntelUploadTimeline now={now} upload={uploadOrError} className="mb-3" />
                     </Container>
 
@@ -245,9 +245,9 @@ export const CodeIntelUploadPage: FunctionComponent<React.PropsWithChildren<Code
                                 <Collapsible
                                     title={
                                         dependencyGraphState === DependencyGraphState.ShowDependencies ? (
-                                            <h3 className="mb-0">Dependencies</h3>
+                                            <Typography.H3 className="mb-0">Dependencies</Typography.H3>
                                         ) : (
-                                            <h3 className="mb-0">Dependents</h3>
+                                            <Typography.H3 className="mb-0">Dependents</Typography.H3>
                                         )
                                     }
                                     titleAtStart={true}
@@ -309,7 +309,10 @@ export const CodeIntelUploadPage: FunctionComponent<React.PropsWithChildren<Code
                             </Container>
 
                             <Container className="mt-2">
-                                <Collapsible title={<h3 className="mb-0">Retention overview</h3>} titleAtStart={true}>
+                                <Collapsible
+                                    title={<Typography.H3 className="mb-0">Retention overview</Typography.H3>}
+                                    titleAtStart={true}
+                                >
                                     {retentionPolicyMatcherState === RetentionPolicyMatcherState.ShowAll ? (
                                         <Button
                                             type="button"

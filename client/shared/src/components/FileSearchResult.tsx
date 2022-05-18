@@ -136,7 +136,6 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
                           start,
                           highlightLength,
                       })),
-                      preview: match.line,
                       line: match.lineNumber,
                       aggregableBadges: match.aggregableBadges,
                   })) || []

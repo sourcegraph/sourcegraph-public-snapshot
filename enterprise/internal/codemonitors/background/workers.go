@@ -192,6 +192,11 @@ func (r *queryRunner) Handle(ctx context.Context, logger log.Logger, record work
 		return err
 	}
 
+	// After setting the next run, check the error value
+	if searchErr != nil {
+		return errors.Wrap(searchErr, "execute search")
+	}
+
 	// Log the actual query we ran and whether we got any new results.
 	err = s.UpdateTriggerJobWithResults(ctx, triggerJob.ID, query, results)
 	if err != nil {

@@ -7,7 +7,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 import { currentAuthStateQuery } from '@sourcegraph/shared/src/auth'
 import { CurrentAuthStateResult, CurrentAuthStateVariables } from '@sourcegraph/shared/src/graphql-operations'
-import { Alert, Button, Link } from '@sourcegraph/wildcard'
+import { Alert, Typography, Button, Link } from '@sourcegraph/wildcard'
 
 import {
     VSCE_LINK_DOTCOM,
@@ -101,7 +101,7 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
             <div className={classNames(styles.ctaContainer)}>
                 <Form onSubmit={validateAccessToken}>
                     <button type="button" className={classNames('btn btn-outline-secondary', styles.ctaTitle)}>
-                        <h5 className="flex-grow-1">Search your private code</h5>
+                        <Typography.H5 className="flex-grow-1">Search your private code</Typography.H5>
                     </button>
                     {content}
                 </Form>
@@ -258,7 +258,7 @@ export const AuthSidebarCta: React.FunctionComponent<React.PropsWithChildren<Aut
     return (
         <div>
             <button type="button" className={classNames('btn btn-outline-secondary', styles.ctaTitle)}>
-                <h5 className="flex-grow-1">Welcome</h5>
+                <Typography.H5 className="flex-grow-1">Welcome</Typography.H5>
             </button>
             <p className={classNames(styles.ctaParagraph)}>
                 The Sourcegraph extension allows you to search millions of open source repositories without cloning them

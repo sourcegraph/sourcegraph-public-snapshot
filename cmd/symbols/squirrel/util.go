@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+	"testing"
 
 	sitter "github.com/smacker/go-tree-sitter"
 
@@ -243,4 +244,16 @@ func (s *SquirrelService) parse(ctx context.Context, repoCommitPath types.RepoCo
 	}
 
 	return &Node{RepoCommitPath: repoCommitPath, Node: root, Contents: contents, LangSpec: langSpec}, nil
+}
+
+func fatalIfError(t *testing.T, err error) {
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func fatalIfErrorLabel(t *testing.T, err error, label string) {
+	if err != nil {
+		t.Fatalf("%s: %s", label, err)
+	}
 }

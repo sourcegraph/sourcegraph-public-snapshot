@@ -39,6 +39,9 @@ type MockClient struct {
 	// BatchLogFunc is an instance of a mock function object controlling the
 	// behavior of the method BatchLog.
 	BatchLogFunc *ClientBatchLogFunc
+	// BlameFileFunc is an instance of a mock function object controlling
+	// the behavior of the method BlameFile.
+	BlameFileFunc *ClientBlameFileFunc
 	// CreateCommitFromPatchFunc is an instance of a mock function object
 	// controlling the behavior of the method CreateCommitFromPatch.
 	CreateCommitFromPatchFunc *ClientCreateCommitFromPatchFunc
@@ -93,6 +96,9 @@ type MockClient struct {
 	// RequestRepoUpdateFunc is an instance of a mock function object
 	// controlling the behavior of the method RequestRepoUpdate.
 	RequestRepoUpdateFunc *ClientRequestRepoUpdateFunc
+	// ResolveRevisionFunc is an instance of a mock function object
+	// controlling the behavior of the method ResolveRevision.
+	ResolveRevisionFunc *ClientResolveRevisionFunc
 	// ResolveRevisionsFunc is an instance of a mock function object
 	// controlling the behavior of the method ResolveRevisions.
 	ResolveRevisionsFunc *ClientResolveRevisionsFunc
@@ -127,6 +133,11 @@ func NewMockClient() *MockClient {
 		},
 		BatchLogFunc: &ClientBatchLogFunc{
 			defaultHook: func(context.Context, BatchLogOptions, BatchLogCallback) (r0 error) {
+				return
+			},
+		},
+		BlameFileFunc: &ClientBlameFileFunc{
+			defaultHook: func(context.Context, api.RepoName, string, *BlameOptions, authz.SubRepoPermissionChecker) (r0 []*Hunk, r1 error) {
 				return
 			},
 		},
@@ -220,6 +231,11 @@ func NewMockClient() *MockClient {
 				return
 			},
 		},
+		ResolveRevisionFunc: &ClientResolveRevisionFunc{
+			defaultHook: func(context.Context, api.RepoName, string, ResolveRevisionOptions) (r0 api.CommitID, r1 error) {
+				return
+			},
+		},
 		ResolveRevisionsFunc: &ClientResolveRevisionsFunc{
 			defaultHook: func(context.Context, api.RepoName, []protocol.RevisionSpecifier) (r0 []string, r1 error) {
 				return
@@ -260,6 +276,11 @@ func NewStrictMockClient() *MockClient {
 		BatchLogFunc: &ClientBatchLogFunc{
 			defaultHook: func(context.Context, BatchLogOptions, BatchLogCallback) error {
 				panic("unexpected invocation of MockClient.BatchLog")
+			},
+		},
+		BlameFileFunc: &ClientBlameFileFunc{
+			defaultHook: func(context.Context, api.RepoName, string, *BlameOptions, authz.SubRepoPermissionChecker) ([]*Hunk, error) {
+				panic("unexpected invocation of MockClient.BlameFile")
 			},
 		},
 		CreateCommitFromPatchFunc: &ClientCreateCommitFromPatchFunc{
@@ -352,6 +373,11 @@ func NewStrictMockClient() *MockClient {
 				panic("unexpected invocation of MockClient.RequestRepoUpdate")
 			},
 		},
+		ResolveRevisionFunc: &ClientResolveRevisionFunc{
+			defaultHook: func(context.Context, api.RepoName, string, ResolveRevisionOptions) (api.CommitID, error) {
+				panic("unexpected invocation of MockClient.ResolveRevision")
+			},
+		},
 		ResolveRevisionsFunc: &ClientResolveRevisionsFunc{
 			defaultHook: func(context.Context, api.RepoName, []protocol.RevisionSpecifier) ([]string, error) {
 				panic("unexpected invocation of MockClient.ResolveRevisions")
@@ -383,6 +409,9 @@ func NewMockClientFrom(i Client) *MockClient {
 		},
 		BatchLogFunc: &ClientBatchLogFunc{
 			defaultHook: i.BatchLog,
+		},
+		BlameFileFunc: &ClientBlameFileFunc{
+			defaultHook: i.BlameFile,
 		},
 		CreateCommitFromPatchFunc: &ClientCreateCommitFromPatchFunc{
 			defaultHook: i.CreateCommitFromPatch,
@@ -437,6 +466,9 @@ func NewMockClientFrom(i Client) *MockClient {
 		},
 		RequestRepoUpdateFunc: &ClientRequestRepoUpdateFunc{
 			defaultHook: i.RequestRepoUpdate,
+		},
+		ResolveRevisionFunc: &ClientResolveRevisionFunc{
+			defaultHook: i.ResolveRevision,
 		},
 		ResolveRevisionsFunc: &ClientResolveRevisionsFunc{
 			defaultHook: i.ResolveRevisions,
@@ -977,6 +1009,122 @@ func (c ClientBatchLogFuncCall) Args() []interface{} {
 // invocation.
 func (c ClientBatchLogFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// ClientBlameFileFunc describes the behavior when the BlameFile method of
+// the parent MockClient instance is invoked.
+type ClientBlameFileFunc struct {
+	defaultHook func(context.Context, api.RepoName, string, *BlameOptions, authz.SubRepoPermissionChecker) ([]*Hunk, error)
+	hooks       []func(context.Context, api.RepoName, string, *BlameOptions, authz.SubRepoPermissionChecker) ([]*Hunk, error)
+	history     []ClientBlameFileFuncCall
+	mutex       sync.Mutex
+}
+
+// BlameFile delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockClient) BlameFile(v0 context.Context, v1 api.RepoName, v2 string, v3 *BlameOptions, v4 authz.SubRepoPermissionChecker) ([]*Hunk, error) {
+	r0, r1 := m.BlameFileFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.BlameFileFunc.appendCall(ClientBlameFileFuncCall{v0, v1, v2, v3, v4, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the BlameFile method of
+// the parent MockClient instance is invoked and the hook queue is empty.
+func (f *ClientBlameFileFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string, *BlameOptions, authz.SubRepoPermissionChecker) ([]*Hunk, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// BlameFile method of the parent MockClient instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *ClientBlameFileFunc) PushHook(hook func(context.Context, api.RepoName, string, *BlameOptions, authz.SubRepoPermissionChecker) ([]*Hunk, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ClientBlameFileFunc) SetDefaultReturn(r0 []*Hunk, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, string, *BlameOptions, authz.SubRepoPermissionChecker) ([]*Hunk, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ClientBlameFileFunc) PushReturn(r0 []*Hunk, r1 error) {
+	f.PushHook(func(context.Context, api.RepoName, string, *BlameOptions, authz.SubRepoPermissionChecker) ([]*Hunk, error) {
+		return r0, r1
+	})
+}
+
+func (f *ClientBlameFileFunc) nextHook() func(context.Context, api.RepoName, string, *BlameOptions, authz.SubRepoPermissionChecker) ([]*Hunk, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ClientBlameFileFunc) appendCall(r0 ClientBlameFileFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ClientBlameFileFuncCall objects describing
+// the invocations of this function.
+func (f *ClientBlameFileFunc) History() []ClientBlameFileFuncCall {
+	f.mutex.Lock()
+	history := make([]ClientBlameFileFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ClientBlameFileFuncCall is an object that describes an invocation of
+// method BlameFile on an instance of MockClient.
+type ClientBlameFileFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 *BlameOptions
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 authz.SubRepoPermissionChecker
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*Hunk
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ClientBlameFileFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ClientBlameFileFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // ClientCreateCommitFromPatchFunc describes the behavior when the
@@ -2968,6 +3116,120 @@ func (c ClientRequestRepoUpdateFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ClientRequestRepoUpdateFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// ClientResolveRevisionFunc describes the behavior when the ResolveRevision
+// method of the parent MockClient instance is invoked.
+type ClientResolveRevisionFunc struct {
+	defaultHook func(context.Context, api.RepoName, string, ResolveRevisionOptions) (api.CommitID, error)
+	hooks       []func(context.Context, api.RepoName, string, ResolveRevisionOptions) (api.CommitID, error)
+	history     []ClientResolveRevisionFuncCall
+	mutex       sync.Mutex
+}
+
+// ResolveRevision delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockClient) ResolveRevision(v0 context.Context, v1 api.RepoName, v2 string, v3 ResolveRevisionOptions) (api.CommitID, error) {
+	r0, r1 := m.ResolveRevisionFunc.nextHook()(v0, v1, v2, v3)
+	m.ResolveRevisionFunc.appendCall(ClientResolveRevisionFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ResolveRevision
+// method of the parent MockClient instance is invoked and the hook queue is
+// empty.
+func (f *ClientResolveRevisionFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string, ResolveRevisionOptions) (api.CommitID, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ResolveRevision method of the parent MockClient instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *ClientResolveRevisionFunc) PushHook(hook func(context.Context, api.RepoName, string, ResolveRevisionOptions) (api.CommitID, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ClientResolveRevisionFunc) SetDefaultReturn(r0 api.CommitID, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, string, ResolveRevisionOptions) (api.CommitID, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ClientResolveRevisionFunc) PushReturn(r0 api.CommitID, r1 error) {
+	f.PushHook(func(context.Context, api.RepoName, string, ResolveRevisionOptions) (api.CommitID, error) {
+		return r0, r1
+	})
+}
+
+func (f *ClientResolveRevisionFunc) nextHook() func(context.Context, api.RepoName, string, ResolveRevisionOptions) (api.CommitID, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ClientResolveRevisionFunc) appendCall(r0 ClientResolveRevisionFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ClientResolveRevisionFuncCall objects
+// describing the invocations of this function.
+func (f *ClientResolveRevisionFunc) History() []ClientResolveRevisionFuncCall {
+	f.mutex.Lock()
+	history := make([]ClientResolveRevisionFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ClientResolveRevisionFuncCall is an object that describes an invocation
+// of method ResolveRevision on an instance of MockClient.
+type ClientResolveRevisionFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 ResolveRevisionOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 api.CommitID
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ClientResolveRevisionFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ClientResolveRevisionFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

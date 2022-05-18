@@ -7,7 +7,7 @@ import CloudDownloadIcon from 'mdi-react/CloudDownloadIcon'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, useObservable, Link, Alert, Icon } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Link, Alert, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
 
@@ -37,7 +37,7 @@ export const SiteAdminUpdatesPage: React.FunctionComponent<React.PropsWithChildr
     return (
         <div>
             <PageTitle title="Updates - Admin" />
-            <h2>Updates</h2>
+            <Typography.H2>Updates</Typography.H2>
             {isErrorLike(state) && <ErrorAlert error={state} />}
             {updateCheck && (updateCheck.pending || updateCheck.checkedAt) && (
                 <div>

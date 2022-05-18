@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -49,7 +48,7 @@ func RunRepositoryPurgeWorker(ctx context.Context, db database.DB) {
 // than zero.
 func PurgeOldestRepos(db database.DB, limit int, perSecond float64) error {
 	if limit <= 0 {
-		return errors.Errorf("limit must be greated than zero, got %d", limit)
+		return errors.Errorf("limit must be greater than zero, got %d", limit)
 	}
 	log := log15.Root().New("request", "repo-purge")
 	go func() {
@@ -82,9 +81,6 @@ func purge(ctx context.Context, db database.DB, log log15.Logger, options databa
 			}
 		}
 		total++
-		// The repo may have been deleted, we want its old name
-		repo = api.UndeletedRepoName(repo)
-		repo = protocol.NormalizeRepo(repo)
 		if err := gitserverClient.Remove(ctx, repo); err != nil {
 			// Do not fail at this point, just log so we can remove other repos.
 			log.Warn("failed to remove repository", "repo", repo, "error", err)
@@ -101,7 +97,7 @@ func purge(ctx context.Context, db database.DB, log log15.Logger, options databa
 	if failed > 0 {
 		statusLogger = log.Warn
 	}
-	statusLogger("repository cloned purge finished", "total", total, "removed", success, "failed", failed, "duration", time.Since(start))
+	statusLogger("repository purge finished", "total", total, "removed", success, "failed", failed, "duration", time.Since(start))
 	return errors.Wrap(err, "iterating purgeable repos")
 }
 
