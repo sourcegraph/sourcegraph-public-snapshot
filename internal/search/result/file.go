@@ -188,6 +188,7 @@ func (m MultilineMatch) AsLineMatches() []LineMatch {
 	lineMatches := make([]LineMatch, 0, len(lines))
 	for i, line := range lines {
 		// TODO include the newline character?
+		// TODO read this very carefully
 		offset := int32(0)
 		if i == 0 {
 			offset = m.Start.Column
