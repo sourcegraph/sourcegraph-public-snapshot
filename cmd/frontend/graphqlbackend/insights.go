@@ -42,6 +42,7 @@ type InsightsResolver interface {
 
 	// New proposed
 	CreateLineChartInsight(ctx context.Context, args *CreateLineChartInsightArgs) (InsightViewPayloadResolver, error)
+	CreateBarChartInsight(ctx context.Context, args *CreateBarChartInsightArgs) (InsightViewPayloadResolver, error)
 }
 
 type SearchInsightLivePreviewArgs struct {
@@ -311,6 +312,10 @@ type CreateLineChartInsightArgs struct {
 	Input CreateLineChartInsightInput
 }
 
+type CreateBarChartInsightArgs struct {
+	Input CreateBarChartInsightInput
+}
+
 type CreateLineChartSearchInsightInput struct {
 	DataSeries   []LineChartSearchInsightDataSeriesInput
 	Options      LineChartOptionsInput
@@ -337,9 +342,21 @@ type LineChartDataSeriesInput struct {
 	Search *[]SearchDataSeriesInput
 }
 
+type BarChartDataSeriesInput struct {
+	Order  []graphql.ID
+	Search *[]SearchDataSeriesInput
+}
+
 type CreateLineChartInsightInput struct {
 	DataSeries   LineChartDataSeriesInput
 	Options      LineChartOptionsInput
+	Dashboards   *[]graphql.ID
+	ViewControls *InsightViewControlsInput
+}
+
+type CreateBarChartInsightInput struct {
+	DataSeries   BarChartDataSeriesInput
+	Options      BarChartOptionsInput
 	Dashboards   *[]graphql.ID
 	ViewControls *InsightViewControlsInput
 }
@@ -420,6 +437,10 @@ type TimeIntervalStepInput struct {
 }
 
 type LineChartOptionsInput struct {
+	Title *string
+}
+
+type BarChartOptionsInput struct {
 	Title *string
 }
 

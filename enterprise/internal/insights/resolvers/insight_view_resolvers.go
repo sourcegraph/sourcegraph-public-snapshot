@@ -530,6 +530,21 @@ func (r *Resolver) CreateLineChartInsight(ctx context.Context, args *graphqlback
 	return createInsight(ctx, r, insightView, args.Input.Dashboards, *args.Input.DataSeries.Search)
 }
 
+func (r *Resolver) CreateBarChartInsight(ctx context.Context, args *graphqlbackend.CreateBarChartInsightArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
+	var filters types.InsightViewFilters
+	if args.Input.ViewControls != nil {
+		filters = filtersFromInput(&args.Input.ViewControls.Filters)
+	}
+	// Could add in any other presentation options here as needed.
+	insightView := types.InsightView{
+		Title:            emptyIfNil(args.Input.Options.Title),
+		UniqueID:         ksuid.New().String(),
+		Filters:          filters,
+		PresentationType: types.Bar,
+	}
+	return createInsight(ctx, r, insightView, args.Input.Dashboards, *args.Input.DataSeries.Search)
+}
+
 func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graphqlbackend.UpdateLineChartSearchInsightArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
 	if len(args.Input.DataSeries) == 0 {
 		return nil, errors.New("At least one data series is required to update an insight view")

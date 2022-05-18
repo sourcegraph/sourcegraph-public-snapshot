@@ -563,6 +563,18 @@ input LineChartOptionsInput {
 }
 
 """
+Options for a bar chart
+"""
+input BarChartOptionsInput {
+    """
+    The chart title.
+    """
+    title: String
+
+    # Other bar chart options.
+}
+
+"""
 Input for a line chart search insight.
 """
 input LineChartSearchInsightInput {
@@ -605,7 +617,7 @@ input LineChartDataSeriesInput {
 }
 
 """
-Input for the data series allowed on line charts.
+Input for the data series allowed on bar charts.
 """
 input BarChartDataSeriesInput {
     """
@@ -618,7 +630,29 @@ input BarChartDataSeriesInput {
     """
     search: [SearchDataSeriesInput!]
 
-    # Other types go here.. could potentially have a separate type for compute?
+    # Other types go here..
+}
+
+"""
+Input for the data series allowed on pie charts.
+
+This is included to demonstrate the idea of a chart supporting different types of series, since the other examples just have search.
+"""
+input PieChartDataSeriesInput {
+    """
+    Array of series ids in the user defined order.
+    """
+    order: [ID!]!
+
+    """
+    Array of search generated data series.
+    """
+    search: [SearchDataSeriesInput!]
+
+    """
+    Array of langstats data series.
+    """
+    langstats: [LangStatsSeriesInput!]
 }
 
 """
@@ -636,13 +670,38 @@ input SeriesPresentationOptionsInput {
 }
 
 """
-Input for a line chart search insight.
+Input for a line chart insight.
 """
 input LineChartInsightInput {
     """
     The options for this line chart.
     """
     options: LineChartOptionsInput!
+
+    """
+    The list of data series for this insight.
+    """
+    dataSeries: LineChartDataSeriesInput!
+
+    """
+    The dashboard IDs to associate this insight with once created.
+    """
+    dashboards: [ID!]
+
+    """
+    The default values for filters and aggregates for this line chart.
+    """
+    viewControls: InsightViewControlsInput
+}
+
+"""
+Input for a bar chart insight.
+"""
+input BarChartInsightInput {
+    """
+    The options for this line chart.
+    """
+    options: BarChartOptionsInput!
 
     """
     The list of data series for this insight.
@@ -689,6 +748,26 @@ input SearchDataSeriesInput {
     Whether or not to generate the timeseries results from the query capture groups. Defaults to false if not provided.
     """
     generatedFromCaptureGroups: Boolean
+}
+
+"""
+Input for language statistics series.
+"""
+input LangStatsSeriesInput {
+    """
+    Unique ID for the series. Omit this field if it's a new series.
+    """
+    seriesId: String
+
+    """
+    The query string.
+    """
+    query: String!
+
+    """
+    The scope of repositories.
+    """
+    repositoryScope: RepositoryScopeInput!
 }
 
 """
@@ -885,9 +964,14 @@ extend type Mutation {
     # Proposed new API mutations
 
     """
-    Create a line chart backed by search insights.
+    Create a line chart insight.
     """
     createLineChartInsight(input: LineChartInsightInput!): InsightViewPayload!
+
+    """
+    Create a bar chart insight.
+    """
+    createBarChartInsight(input: BarChartInsightInput!): InsightViewPayload!
 }
 
 """

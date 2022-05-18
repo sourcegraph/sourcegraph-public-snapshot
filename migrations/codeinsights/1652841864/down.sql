@@ -1,0 +1,2 @@
+-- Hmm, it doesn't look like there's a way to remove a type from an enum once it's been added.
+-- Will have to come back to this.

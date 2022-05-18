@@ -154,6 +154,7 @@ type PresentationType string
 const (
 	Line PresentationType = "LINE"
 	Pie  PresentationType = "PIE"
+	Bar  PresentationType = "BAR"
 )
 
 type Frame struct {
