@@ -143,7 +143,7 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
     const areExtensionsReady = useObservable(
         useMemo(() => haveInitialExtensionsLoaded(props.extensionsController.extHostAPI), [props.extensionsController])
     )
-    const [redesignedEnabled] = useTemporarySetting('codeintel.referencePanel.redesignedEnabled', false)
+    const [redesignedEnabled] = useTemporarySetting('codeintel.referencePanel.redesign.enabled', false)
     const isExperimentalReferencePanelEnabled =
         (!isErrorLike(props.settingsCascade.final) &&
             props.settingsCascade.final?.experimentalFeatures?.coolCodeIntel === true) ||

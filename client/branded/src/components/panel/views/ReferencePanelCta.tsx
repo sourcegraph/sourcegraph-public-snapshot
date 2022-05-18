@@ -10,8 +10,8 @@ import styles from './ReferencePanelCta.module.scss'
 export const ReferencePanelCta: React.FunctionComponent = () => {
     // Determine if we should show the CTA at all. The initial value will be
     // the current user's temporary setting (so we can show it until they interact).
-    const [ctaDismissed, setCtaDismissed] = useTemporarySetting('codeintel.referencePanel.ctaDismissed', false)
-    const [, setRedesignedEnabled] = useTemporarySetting('codeintel.referencePanel.redesignedEnabled', false)
+    const [ctaDismissed, setCtaDismissed] = useTemporarySetting('codeintel.referencePanel.redesign.ctaDismissed', false)
+    const [, setEnabled] = useTemporarySetting('codeintel.referencePanel.redesign.enabled', false)
 
     return (
         <>
@@ -22,7 +22,7 @@ export const ReferencePanelCta: React.FunctionComponent = () => {
                         <Button
                             variant="link"
                             className={classNames('m-0 p-0 border-0', styles.button)}
-                            onClick={() => setRedesignedEnabled(true)}
+                            onClick={() => setEnabled(true)}
                         >
                             brand new reference panel experience
                         </Button>

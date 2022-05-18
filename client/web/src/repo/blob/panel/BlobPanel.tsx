@@ -102,7 +102,7 @@ export function useBlobPanelViews({
 
     const maxPanelResults = maxPanelResultsFromSettings(settingsCascade)
     const preferAbsoluteTimestamps = preferAbsoluteTimestampsFromSettings(settingsCascade)
-    const [redesignedEnabled] = useTemporarySetting('codeintel.referencePanel.redesignedEnabled', false)
+    const [redesignedEnabled] = useTemporarySetting('codeintel.referencePanel.redesign.enabled', false)
     const experimentalReferencePanelEnabled =
         (!isErrorLike(settingsCascade.final) && settingsCascade.final?.experimentalFeatures?.coolCodeIntel === true) ||
         redesignedEnabled === true
