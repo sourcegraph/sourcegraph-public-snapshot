@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/structural"
-	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
 	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 )
 
@@ -27,7 +26,7 @@ type Mapper struct {
 	MapRepoUniverseTextSearchJob   func(*zoekt.ZoektGlobalSearchJob) *zoekt.ZoektGlobalSearchJob
 	MapStructuralSearchJob         func(*structural.StructuralSearchJob) *structural.StructuralSearchJob
 	MapCommitSearchJob             func(*commit.CommitSearchJob) *commit.CommitSearchJob
-	MapRepoUniverseSymbolSearchJob func(*symbol.RepoUniverseSymbolSearchJob) *symbol.RepoUniverseSymbolSearchJob
+	MapRepoUniverseSymbolSearchJob func(*zoekt.RepoUniverseSymbolSearchJob) *zoekt.RepoUniverseSymbolSearchJob
 	MapComputeExcludedReposJob     func(*repos.ComputeExcludedReposJob) *repos.ComputeExcludedReposJob
 
 	// Repo pager Job (pre-step for some Search Jobs)
@@ -107,7 +106,7 @@ func (m *Mapper) Map(j job.Job) job.Job {
 		}
 		return j
 
-	case *symbol.RepoUniverseSymbolSearchJob:
+	case *zoekt.RepoUniverseSymbolSearchJob:
 		if m.MapRepoUniverseSymbolSearchJob != nil {
 			j = m.MapRepoUniverseSymbolSearchJob(j)
 		}
@@ -226,7 +225,7 @@ func MapAtom(j job.Job, f func(job.Job) job.Job) job.Job {
 				*run.RepoSearchJob,
 				*structural.StructuralSearchJob,
 				*commit.CommitSearchJob,
-				*symbol.RepoUniverseSymbolSearchJob,
+				*zoekt.RepoUniverseSymbolSearchJob,
 				*repos.ComputeExcludedReposJob,
 				*NoopJob:
 				return f(typedJob)

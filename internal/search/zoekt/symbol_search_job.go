@@ -2,6 +2,7 @@ package zoekt
 
 import (
 	"context"
+	"github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"time"
 
 	zoektquery "github.com/google/zoekt/query"
@@ -71,4 +72,35 @@ func (z *ZoektSymbolSearchJob) Tags() []log.Field {
 		tags = append(tags, log.Int("numBranchRepos", len(z.Repos.branchRepos)))
 	}
 	return tags
+}
+
+type RepoUniverseSymbolSearchJob struct {
+	GlobalZoektQuery *GlobalZoektQuery
+	ZoektArgs        *search.ZoektParameters
+	RepoOptions      search.RepoOptions
+}
+
+func (s *RepoUniverseSymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
+	defer func() { finish(alert, err) }()
+
+	userPrivateRepos := repos.PrivateReposForActor(ctx, clients.DB, s.RepoOptions)
+	s.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
+	s.ZoektArgs.Query = s.GlobalZoektQuery.Generate()
+
+	// always search for symbols in indexed repositories when searching the repo universe.
+	err = DoZoektSearchGlobal(ctx, clients.Zoekt, s.ZoektArgs, stream)
+	if err != nil {
+		tr.LogFields(log.Error(err))
+		// Only record error if we haven't timed out.
+		if ctx.Err() == nil {
+			return nil, err
+		}
+	}
+
+	return nil, nil
+}
+
+func (*RepoUniverseSymbolSearchJob) Name() string {
+	return "RepoUniverseSymbolSearchJob"
 }
