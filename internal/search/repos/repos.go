@@ -131,10 +131,6 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 			return Resolved{}, err
 		}
 
-		if len(depNames) == 0 {
-			return Resolved{}, ErrNoResolvedRepos
-		}
-
 		dependencyNames = append(dependencyNames, depNames...)
 		for repo, revs := range depRevs {
 			if _, ok := dependencyRevs[repo]; !ok {
@@ -151,10 +147,6 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 			return Resolved{}, err
 		}
 
-		if len(revDepNames) == 0 {
-			return Resolved{}, ErrNoResolvedRepos
-		}
-
 		dependencyNames = append(dependencyNames, revDepNames...)
 		for repo, revs := range revDepRevs {
 			if _, ok := dependencyRevs[repo]; !ok {
@@ -163,6 +155,10 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 				dependencyRevs[repo] = append(dependencyRevs[repo], revs...)
 			}
 		}
+	}
+
+	if (len(op.Dependencies) > 0 || len(op.Dependents) > 0) && len(dependencyNames) == 0 {
+		return Resolved{}, ErrNoResolvedRepos
 	}
 
 	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.DB, op.SearchContextSpec)
