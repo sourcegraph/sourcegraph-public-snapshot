@@ -623,6 +623,17 @@ func TestRemoveRepoDirectory(t *testing.T) {
 		}
 	}
 
+	// Removing them a second time is safe
+	for _, d := range []string{
+		"github.com/foo/baz/.git",
+		"github.com/bam/bam/.git",
+		"example.com/repo/.git",
+	} {
+		if err := s.removeRepoDirectory(GitDir(filepath.Join(root, d))); err != nil {
+			t.Fatalf("failed to remove %s: %s", d, err)
+		}
+	}
+
 	assertPaths(t, root,
 		"github.com/foo/survivor/.git/HEAD",
 		".tmp",

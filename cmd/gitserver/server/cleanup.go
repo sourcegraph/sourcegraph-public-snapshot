@@ -624,6 +624,12 @@ func (s *Server) removeRepoDirectory(gitDir GitDir) error {
 	ctx := context.Background()
 	dir := string(gitDir)
 
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		// If directory doesn't exist we can avoid all the work below and treat it as if
+		// it was removed.
+		return nil
+	}
+
 	// Rename out of the location so we can atomically stop using the repo.
 	tmp, err := s.tempDir("delete-repo")
 	if err != nil {
