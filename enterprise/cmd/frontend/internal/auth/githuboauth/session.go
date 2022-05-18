@@ -63,7 +63,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	// 🚨 SECURITY: Ensure that the user is part of one of the allow listed orgs or teams, if any.
 	userBelongsToAllowedOrgsOrTeams := s.verifyUserOrgsAndTeams(ctx, ghClient)
 	if !userBelongsToAllowedOrgsOrTeams {
-		message := "user does not belong to allowed GitHub organizations or teams"
+		message := "user does not belong to allowed GitHub organizations or teams."
 		return nil, message, errors.New(message)
 	}
 
@@ -300,6 +300,7 @@ func (s *sessionIssuerHelper) verifyUserOrgs(ctx context.Context, ghClient *gith
 func (s *sessionIssuerHelper) verifyUserTeams(ctx context.Context, ghClient *githubsvc.V3Client) bool {
 	var err error
 	hasNextPage := true
+	allowedTeams := make(map[string]map[string]bool, len(s.allowOrgsMap))
 
 	for page := 1; hasNextPage; page++ {
 		var githubTeams []*githubsvc.Team
@@ -310,19 +311,19 @@ func (s *sessionIssuerHelper) verifyUserTeams(ctx context.Context, ghClient *git
 			return false
 		}
 
-		allowedTeams := make(map[string][]string, len(s.allowOrgsMap))
-		for k, v := range s.allowOrgsMap {
-			allowedTeams[k] = v
+		for org, teams := range s.allowOrgsMap {
+			teamsMap := make(map[string]bool)
+			for _, team := range teams {
+				teamsMap[team] = true
+			}
+
+			allowedTeams[org] = teamsMap
 		}
 
 		for _, ghTeam := range githubTeams {
-			configTeams, ok := allowedTeams[ghTeam.Organization.Login]
+			_, ok := allowedTeams[ghTeam.Organization.Login][ghTeam.Name]
 			if ok {
-				for _, team := range configTeams {
-					if team == ghTeam.Name {
-						return true
-					}
-				}
+				return true
 			}
 		}
 	}
