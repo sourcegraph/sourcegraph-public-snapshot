@@ -9,8 +9,8 @@ import (
 	"net/url"
 	"path"
 
-	"github.com/dghubble/gologin"
-	goauth2 "github.com/dghubble/gologin/oauth2"
+	"github.com/dghubble/gologin/v2"
+	goauth2 "github.com/dghubble/gologin/v2/oauth2"
 	"github.com/inconshreveable/log15"
 	"golang.org/x/oauth2"
 

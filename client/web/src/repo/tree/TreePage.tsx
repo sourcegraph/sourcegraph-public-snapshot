@@ -50,7 +50,7 @@ import { RepoRevisionWrapper } from '../components/RepoRevision'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { RepositoryFileTreePageProps } from '../RepositoryFileTreePage'
 import { RepositoryGitDataContainer } from '../RepositoryGitDataContainer'
-import { RepoCommits, RepoDocs } from '../routes'
+import { RepoCommits } from '../routes'
 import { RepositoryStatsContributorsPage } from '../stats/RepositoryStatsContributorsPage'
 
 import { RepositoryBranchesTab } from './BranchesTab'
@@ -361,17 +361,6 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                                             path={`${treeOrError.url}/-/tag/tab`}
                                             render={routeComponentProps => (
                                                 <RepositoryTagTab repo={repo} {...routeComponentProps} />
-                                            )}
-                                        />
-                                        <Route
-                                            path={`${treeOrError.url}/-/docs/tab`}
-                                            render={routeComponentProps => (
-                                                <RepoDocs
-                                                    repo={repo}
-                                                    useBreadcrumb={useBreadcrumb}
-                                                    {...routeComponentProps}
-                                                    {...props}
-                                                />
                                             )}
                                         />
                                         <Route

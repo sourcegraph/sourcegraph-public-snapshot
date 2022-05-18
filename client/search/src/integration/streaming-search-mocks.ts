@@ -100,11 +100,13 @@ export const mixedSearchStreamEvents: SearchEvent[] = [
                 commit: '2e3569cf60646c9ce4e37a43e5cf698a00cbd41a',
                 lineMatches: [
                     {
-                        line: "test('does not emit items with duplicate IDs', async () => {",
                         lineNumber: 38,
                         offsetAndLengths: [[0, 4]],
                     },
-                    { line: "test('five', async () => {", lineNumber: 63, offsetAndLengths: [[0, 4]] },
+                    {
+                        lineNumber: 63,
+                        offsetAndLengths: [[0, 4]],
+                    },
                 ],
             },
         ],

@@ -1,7 +1,5 @@
 import React from 'react'
 
-import { isErrorLike } from '@sourcegraph/common'
-import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { ActionItemsBar } from '../extensions/components/ActionItemsBar'
@@ -13,10 +11,6 @@ import { RepositoryFileTreePageProps } from './RepositoryFileTreePage'
 import { RepositoryBranchesTab } from './tree/BranchesTab'
 import { RepositoryTagTab } from './tree/TagTab'
 
-const RepositoryDocumentationPage = lazyComponent(
-    () => import('./docs/RepositoryDocumentationPage'),
-    'RepositoryDocumentationPage'
-)
 const RepositoryCommitsPage = lazyComponent(() => import('./commits/RepositoryCommitsPage'), 'RepositoryCommitsPage')
 
 const RepositoryFileTreePage = lazyComponent(() => import('./RepositoryFileTreePage'), 'RepositoryFileTreePage')
@@ -108,44 +102,6 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
     },
 ]
 
-// eslint-disable-next-line unicorn/prevent-abbreviations
-export const RepoDocs: React.FunctionComponent<React.PropsWithChildren<any>> = ({
-    useBreadcrumb,
-    setBreadcrumb,
-    settingsCascade,
-    repo,
-    history,
-    location,
-    isLightTheme,
-    fetchHighlightedFileLineRanges,
-    resolvedRev: { commitID },
-    match,
-}) => (
-    <>
-        {/*
-            IMPORTANT: do NOT use `{...context}` expansion to pass props to page components
-            here. Doing so adds other props that exist in `context` that are NOT required
-            or specified by the component props, but TypeScript will NOT strip them out.
-            For example, the navbarSearchQueryState - meaning every time a user types into
-            the search input our React component props would change despite it being a field
-            that we are absolutely not using in any way. See:
-            https://github.com/sourcegraph/sourcegraph/issues/21200
-        */}
-        <RepositoryDocumentationPage
-            useBreadcrumb={useBreadcrumb}
-            setBreadcrumb={setBreadcrumb}
-            settingsCascade={settingsCascade}
-            repo={repo}
-            history={history}
-            location={location}
-            isLightTheme={isLightTheme}
-            fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
-            pathID={match.params.pathID ? '/' + decodeURIComponent(match.params.pathID) : '/'}
-            commitID={commitID}
-        />
-    </>
-)
-
 export const RepoContributors: React.FunctionComponent<React.PropsWithChildren<any>> = ({
     useBreadcrumb,
     setBreadcrumb,
@@ -200,17 +156,6 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
     {
         path: '/-/commits',
         render: RepoCommits,
-    },
-    {
-        path: '/-/docs/:pathID*',
-        condition: ({ settingsCascade }): boolean => {
-            if (settingsCascade.final === null || isErrorLike(settingsCascade.final)) {
-                return false
-            }
-            const settings: Settings = settingsCascade.final
-            return settings.experimentalFeatures?.apiDocs !== false
-        },
-        render: RepoDocs,
     },
     {
         path: '/-/branch',
