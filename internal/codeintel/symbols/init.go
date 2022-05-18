@@ -22,25 +22,21 @@ var (
 // new, it will use the given database handle.
 func GetService(db database.DB) *Service {
 	svcOnce.Do(func() {
-		observationContext := &observation.Context{
+		storeObservationCtx := &observation.Context{
+			Logger:     log.Scoped("symbols.store", "codeintels symbols store"),
+			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+			Registerer: prometheus.DefaultRegisterer,
+		}
+		store := store.New(db, storeObservationCtx)
+
+		observationCtx := &observation.Context{
 			Logger:     log.Scoped("symbols.service", "codeintel symbols service"),
 			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 			Registerer: prometheus.DefaultRegisterer,
 		}
 
-		svc = newService(
-			store.GetStore(db),
-			observationContext,
-		)
+		svc = newService(store, observationCtx)
 	})
 
 	return svc
-}
-
-// TestService creates a fresh symbols service with the given database handle.
-func TestService(db database.DB) *Service {
-	return newService(
-		store.GetStore(db),
-		&observation.TestContext,
-	)
 }
