@@ -1,5 +1,13 @@
 package sinks
 
+import "github.com/getsentry/sentry-go"
+
 type Sinks struct {
-	SentryClient any
+	SentryHub *sentry.Hub
+}
+
+func NewSentrySink(hub *sentry.Hub) *Sinks {
+	return &Sinks{
+		SentryHub: hub,
+	}
 }
