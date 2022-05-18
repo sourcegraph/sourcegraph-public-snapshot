@@ -64,6 +64,8 @@ func main() {
 
 	flags.Parse()
 
+	println("foobar")
+
 	switch cmd := flag.Arg(0); cmd {
 	case "history":
 		log.Println("buildchecker history")
