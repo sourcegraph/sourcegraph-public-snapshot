@@ -3,6 +3,8 @@ import React, { CSSProperties } from 'react'
 import classNames from 'classnames'
 
 import { isErrorLike, sanitizeClass } from '@sourcegraph/common'
+// eslint-disable-next-line no-restricted-imports
+import { LinkWithIcon } from '@sourcegraph/web/src/components/LinkWithIcon'
 import { Card } from '@sourcegraph/wildcard'
 
 import { ActionItem, ActionItemComponentProps } from '../actions/ActionItem'
@@ -11,6 +13,7 @@ import { PlatformContextProps } from '../platform/context'
 import { TelemetryProps } from '../telemetry/telemetryService'
 import { ThemeProps } from '../theme'
 
+import { CopyLinkIcon } from './CopyLinkIcon'
 import type { HoverContext, HoverOverlayBaseProps, GetAlertClassName, GetAlertVariant } from './HoverOverlay.types'
 import { HoverOverlayAlerts, HoverOverlayAlertsProps } from './HoverOverlayAlerts'
 import { HoverOverlayContents } from './HoverOverlayContents'
@@ -152,40 +155,48 @@ export const HoverOverlay: React.FunctionComponent<React.PropsWithChildren<Hover
                         onAlertDismissed={onAlertDismissed}
                     />
                 )}
-            {actionsOrError !== undefined &&
-                actionsOrError !== null &&
-                actionsOrError !== LOADING &&
-                !isErrorLike(actionsOrError) &&
-                actionsOrError.length > 0 && (
-                    <div className={hoverOverlayStyle.actions}>
-                        <div className={hoverOverlayStyle.actionsInner}>
-                            {actionsOrError.map((action, index) => (
-                                <ActionItem
-                                    key={index}
-                                    {...action}
-                                    className={classNames(
-                                        hoverOverlayStyle.action,
-                                        actionItemClassName,
-                                        `test-tooltip-${sanitizeClass(action.action.title || 'untitled')}`
-                                    )}
-                                    iconClassName={iconClassName}
-                                    pressedClassName={actionItemPressedClassName}
-                                    variant="actionItem"
-                                    disabledDuringExecution={true}
-                                    showLoadingSpinnerDuringExecution={true}
-                                    showInlineError={true}
-                                    platformContext={platformContext}
-                                    telemetryService={telemetryService}
-                                    extensionsController={extensionsController}
-                                    location={location}
-                                    actionItemStyleProps={actionItemStyleProps}
-                                />
-                            ))}
-                        </div>
+            <div className={hoverOverlayStyle.actionsContainer}>
+                {actionsOrError !== undefined &&
+                    actionsOrError !== null &&
+                    actionsOrError !== LOADING &&
+                    !isErrorLike(actionsOrError) &&
+                    actionsOrError.length > 0 && (
+                        <div className={hoverOverlayStyle.actions}>
+                            <div className={hoverOverlayStyle.actionsInner}>
+                                {actionsOrError.map((action, index) => (
+                                    <ActionItem
+                                        key={index}
+                                        {...action}
+                                        className={classNames(
+                                            hoverOverlayStyle.action,
+                                            actionItemClassName,
+                                            `test-tooltip-${sanitizeClass(action.action.title || 'untitled')}`
+                                        )}
+                                        iconClassName={iconClassName}
+                                        pressedClassName={actionItemPressedClassName}
+                                        variant="actionItem"
+                                        disabledDuringExecution={true}
+                                        showLoadingSpinnerDuringExecution={true}
+                                        showInlineError={true}
+                                        platformContext={platformContext}
+                                        telemetryService={telemetryService}
+                                        extensionsController={extensionsController}
+                                        location={location}
+                                        actionItemStyleProps={actionItemStyleProps}
+                                    />
+                                ))}
+                            </div>
 
-                        {useBrandedLogo && <HoverOverlayLogo className={hoverOverlayStyle.overlayLogo} />}
-                    </div>
-                )}
+                            {useBrandedLogo && <HoverOverlayLogo className={hoverOverlayStyle.overlayLogo} />}
+                        </div>
+                    )}
+                <LinkWithIcon
+                    to="#"
+                    icon={CopyLinkIcon}
+                    text="Copy link"
+                    className={hoverOverlayStyle.actionsCopyLink}
+                />
+            </div>
         </Card>
     )
 }
