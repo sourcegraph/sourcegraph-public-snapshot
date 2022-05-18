@@ -124,6 +124,9 @@ func (s *SentryCore) Start() {
 }
 
 func (s *SentryCore) capture(errC ErrorContext) {
+	if s.hub == nil {
+		return
+	}
 	event, extraDetails := errors.BuildSentryReport(errC.Error)
 	// Prepend the log message to the description, to increase visibility.
 	// This does not change how the errors are grouped.
@@ -194,5 +197,6 @@ func (s *SentryCore) Enabled(level zapcore.Level) bool {
 // after which it will stop blocking to avoid interruping application shutdown.
 func (s *SentryCore) Sync() error {
 	// TODO something flush flush
+	close(s.done)
 	return nil
 }
