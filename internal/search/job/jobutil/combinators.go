@@ -36,6 +36,10 @@ func (s *SequentialJob) Name() string {
 	return "SequentialJob"
 }
 
+func (s *SequentialJob) Tags() []log.Field {
+	return []log.Field{}
+}
+
 func (s *SequentialJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	var maxAlerter search.MaxAlerter
 	var errs errors.MultiError
@@ -71,6 +75,10 @@ type ParallelJob struct {
 
 func (p *ParallelJob) Name() string {
 	return "ParallelJob"
+}
+
+func (p *ParallelJob) Tags() []log.Field {
+	return []log.Field{}
 }
 
 func (p *ParallelJob) Run(ctx context.Context, clients job.RuntimeClients, s streaming.Sender) (alert *search.Alert, err error) {
