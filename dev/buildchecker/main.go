@@ -372,6 +372,7 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 					},
 					"incidentDuration": {
 						Type:  "durationMs",
+						// Convert minutes to ms
 						Value: float64(incidents[recordDateString] * 60000),
 					},
 					"flakeCount": {
