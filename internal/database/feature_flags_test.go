@@ -276,7 +276,7 @@ func testListOrgOverrides(t *testing.T) {
 	flagStore := &featureFlagStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 	users := Users(db)
 	orgs := Orgs(db)
-	orgMembers := OrgMembers(db)
+	orgMembers := db.OrgMembers()
 	ctx := actor.WithInternalActor(context.Background())
 
 	mkUser := func(name string, orgIDs ...int32) *types.User {
@@ -361,7 +361,7 @@ func testUserFlags(t *testing.T) {
 	flagStore := db.FeatureFlags()
 	users := Users(db)
 	orgs := Orgs(db)
-	orgMembers := OrgMembers(db)
+	orgMembers := db.OrgMembers()
 	ctx := actor.WithInternalActor(context.Background())
 
 	mkUser := func(name string, orgIDs ...int32) *types.User {
