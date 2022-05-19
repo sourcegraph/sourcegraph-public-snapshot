@@ -38,6 +38,9 @@ func traceInternal(ctx context.Context, args []string) error {
 	if err != nil {
 		return err
 	}
+	if _, ok := graph.PackageNames[pkg]; !ok {
+		return errors.Newf("pkg %q not found", pkg)
+	}
 
 	packages, dependencyEdges := filterExternalReferences(graph, pkg)
 	fmt.Printf("%s\n", visualization.Dotify(packages, dependencyEdges, nil))

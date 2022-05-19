@@ -44,6 +44,9 @@ func summary(ctx context.Context, args []string) error {
 	if err != nil {
 		return err
 	}
+	if _, ok := graph.PackageNames[pkg]; !ok {
+		return errors.Newf("pkg %q not found", pkg)
+	}
 
 	dependencyMap := summaryTraverse(pkg, graph.Dependencies)
 	dependencies := make([]string, 0, len(dependencyMap))
@@ -59,6 +62,10 @@ func summary(ctx context.Context, args []string) error {
 	}
 	sort.Strings(dependents)
 
+	fmt.Printf("Target package:\n")
+	printPkg(ctx, root, pkg)
+
+	fmt.Printf("\n")
 	fmt.Printf("Direct dependencies:\n")
 
 	for _, dependency := range dependencies {
@@ -153,7 +160,7 @@ func printPkg(ctx context.Context, root string, pkg string) error {
 	fmt.Printf("\t> %s", pkg)
 	if *summaryDepsSum {
 		dir := "./" + pkg
-		lines, err := run.Cmd(ctx, "bash -c", "'tar c "+dir+" | md5sum'").
+		lines, err := run.Bash(ctx, "tar c", dir, "| md5sum").
 			Dir(root).
 			Run().
 			Lines()
