@@ -16,6 +16,8 @@ RETURN NULL;
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trigger_gitserver_repo_insert on repo;
+
 CREATE TRIGGER trigger_gitserver_repo_insert
     AFTER INSERT
     ON repo

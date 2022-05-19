@@ -466,7 +466,7 @@ func TestListIndexableRepos(t *testing.T) {
 		if !cloned {
 			cloneStatus = types.CloneStatusNotCloned
 		}
-		if _, err := db.ExecContext(ctx, `INSERT INTO gitserver_repos(repo_id, clone_status, shard_id) VALUES ($1, $2, 'test');`, r.ID, cloneStatus); err != nil {
+		if _, err := db.ExecContext(ctx, `UPDATE gitserver_repos SET clone_status = $2, shard_id = 'test' WHERE repo_id = $1;`, r.ID, cloneStatus); err != nil {
 			t.Fatal(err)
 		}
 	}
