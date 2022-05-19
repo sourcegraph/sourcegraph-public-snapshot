@@ -67,7 +67,7 @@ export function activate(context: vscode.ExtensionContext): void {
     const authenticatedUser = observeAuthenticatedUser({ context })
     const initialInstanceURL = endpointSetting()
     const initialAccessToken = accessTokenSetting()
-    const eventSourceType = initializeInstantVersionNumber(localStorageService, initialInstanceURL, initialAccessToken)
+    const eventSourceType = initializeInstanceVersionNumber(localStorageService, initialInstanceURL, initialAccessToken)
     // Sets global `EventSource` for Node, which is required for streaming search.
     // Used for VS Code web as well to be able to add Authorization header.
     // Add custom headers to `EventSource` Authorization header when provided

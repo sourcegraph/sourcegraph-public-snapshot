@@ -10,9 +10,6 @@ export const VSCE_LINK_TOKEN_CALLBACK_TEST =
 
 // PARAMS
 export const VSCE_SIDEBAR_PARAMS = '?utm_medium=VSCODE&utm_source=sidebar&utm_campaign=vsce-sign-up&utm_content=sign-up'
-// export const VSCE_COMMANDS_PARAMS =
-//     '&utm_campaign=vscode-extension&utm_medium=direct_traffic&utm_source=vscode-extension&utm_content=vsce-commands'
-// const VSCE_LINK_PARAMS_TOKEN_CALLBACK = '&returnTo=user/settings/tokens/new/callback?requestFrom=LOGINVSCE'
 const VSCE_CALLBACK_CODE = 'LOGINVSCE'
 const VSCE_LINK_PARAMS_TOKEN_REDIRECT = {
     returnTo: `user/settings/tokens/new/callback?requestFrom=${VSCE_CALLBACK_CODE}`,

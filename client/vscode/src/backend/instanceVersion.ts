@@ -12,7 +12,7 @@ import { requestGraphQLFromVSCode } from './requestGraphQl'
  * This function will return the EventSource Type based
  * on the instance version
  */
-export function initializeInstantVersionNumber(
+export function initializeInstanceVersionNumber(
     localStorageService: LocalStorageService,
     instanceURL: string,
     accessToken: string | undefined
