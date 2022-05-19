@@ -385,7 +385,6 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 	}
 
 	log.Println("done!")
-
 }
 
 func writeCSV(p string, records [][]string) error {
