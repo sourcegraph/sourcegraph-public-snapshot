@@ -150,7 +150,7 @@ func TestNewPlanJob(t *testing.T) {
     (LIMIT
       500
       (PARALLEL
-        RepoUniverseSymbolSearchJob
+        ZoektGlobalSymbolSearchJob
         ComputeExcludedReposJob
         NoopJob))))`),
 	}, {
@@ -318,7 +318,7 @@ func TestNewPlanJob(t *testing.T) {
     (LIMIT
       500
       (PARALLEL
-        RepoUniverseSymbolSearchJob
+        ZoektGlobalSymbolSearchJob
         ComputeExcludedReposJob
         (OR
           NoopJob

@@ -133,8 +133,7 @@ func (o ListTriggerJobsOpts) Limit() *sqlf.Query {
 const getEventsForQueryIDInt64FmtStr = `
 SELECT %s
 FROM cm_trigger_jobs
-WHERE ((state = 'completed' AND jsonb_array_length(search_results) > 0) OR (state != 'completed'))
-AND %s
+WHERE %s
 ORDER BY id DESC
 LIMIT %s;
 `

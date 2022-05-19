@@ -8,7 +8,7 @@ export async function loadContent(match: ContentMatch): Promise<string> {
     const cacheKey = getIdForMatch(match)
 
     if (cachedContentRequests.has(cacheKey)) {
-        return cachedContentRequests.get(cacheKey) as Promise<string>
+        return (await cachedContentRequests.get(cacheKey)) as string
     }
 
     const loadPromise = fetchBlobContent(match)

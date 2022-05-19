@@ -9,16 +9,11 @@ import (
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/grafana/regexp"
-	otlog "github.com/opentracing/opentracing-go/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/job"
-	"github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -229,35 +224,4 @@ func limitOrDefault(first *int32) int {
 		return DefaultSymbolLimit
 	}
 	return int(*first)
-}
-
-type RepoUniverseSymbolSearchJob struct {
-	GlobalZoektQuery *zoektutil.GlobalZoektQuery
-	ZoektArgs        *search.ZoektParameters
-	RepoOptions      search.RepoOptions
-}
-
-func (s *RepoUniverseSymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
-	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
-	defer func() { finish(alert, err) }()
-
-	userPrivateRepos := repos.PrivateReposForActor(ctx, clients.DB, s.RepoOptions)
-	s.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
-	s.ZoektArgs.Query = s.GlobalZoektQuery.Generate()
-
-	// always search for symbols in indexed repositories when searching the repo universe.
-	err = zoektutil.DoZoektSearchGlobal(ctx, clients.Zoekt, s.ZoektArgs, stream)
-	if err != nil {
-		tr.LogFields(otlog.Error(err))
-		// Only record error if we haven't timed out.
-		if ctx.Err() == nil {
-			return nil, err
-		}
-	}
-
-	return nil, nil
-}
-
-func (*RepoUniverseSymbolSearchJob) Name() string {
-	return "RepoUniverseSymbolSearchJob"
 }

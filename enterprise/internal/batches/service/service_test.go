@@ -534,7 +534,7 @@ func TestService(t *testing.T) {
 			}
 
 			// Create org membership and try again
-			if _, err := database.OrgMembers(db).Create(ctx, orgID, user.ID); err != nil {
+			if _, err := db.OrgMembers().Create(ctx, orgID, user.ID); err != nil {
 				t.Fatal(err)
 			}
 

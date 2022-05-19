@@ -24,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/structural"
-	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
 	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -88,7 +87,7 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 				}
 				addJob(&repoPagerJob{
 					child:            job,
-					repoOptions:      repoOptions,
+					repoOpts:         repoOptions,
 					useIndex:         b.Index(),
 					containsRefGlobs: query.ContainsRefGlobs(b.ToParseTree()),
 				})
@@ -112,7 +111,7 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 				}
 				addJob(&repoPagerJob{
 					child:            job,
-					repoOptions:      repoOptions,
+					repoOpts:         repoOptions,
 					useIndex:         b.Index(),
 					containsRefGlobs: query.ContainsRefGlobs(b.ToParseTree()),
 				})
@@ -218,7 +217,7 @@ func NewFlatJob(searchInputs *run.SearchInputs, f query.Flat) (job.Job, error) {
 
 				addJob(&repoPagerJob{
 					child:            searcherJob,
-					repoOptions:      repoOptions,
+					repoOpts:         repoOptions,
 					useIndex:         f.Index(),
 					containsRefGlobs: query.ContainsRefGlobs(f.ToBasic().ToParseTree()),
 				})
@@ -236,7 +235,7 @@ func NewFlatJob(searchInputs *run.SearchInputs, f query.Flat) (job.Job, error) {
 
 				addJob(&repoPagerJob{
 					child:            symbolSearchJob,
-					repoOptions:      repoOptions,
+					repoOpts:         repoOptions,
 					useIndex:         f.Index(),
 					containsRefGlobs: query.ContainsRefGlobs(f.ToBasic().ToParseTree()),
 				})
@@ -609,10 +608,10 @@ func (b *jobBuilder) newZoektGlobalSearch(typ search.IndexedRequestType) (job.Jo
 
 	switch typ {
 	case search.SymbolRequest:
-		return &symbol.RepoUniverseSymbolSearchJob{
+		return &zoekt.ZoektGlobalSymbolSearchJob{
 			GlobalZoektQuery: globalZoektQuery,
 			ZoektArgs:        zoektArgs,
-			RepoOptions:      b.repoOptions,
+			RepoOpts:         b.repoOptions,
 		}, nil
 	case search.TextRequest:
 		return &zoekt.ZoektGlobalSearchJob{

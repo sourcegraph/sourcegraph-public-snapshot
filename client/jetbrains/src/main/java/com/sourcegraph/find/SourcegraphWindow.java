@@ -5,13 +5,14 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.popup.JBPopup;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.openapi.util.Disposer;
+import org.jetbrains.annotations.NotNull;
 
 public class SourcegraphWindow implements Disposable {
     private final Project project;
     private final FindPopupPanel mainPanel;
     private JBPopup popup;
 
-    public SourcegraphWindow(Project project) {
+    public SourcegraphWindow(@NotNull Project project) {
         this.project = project;
 
         // Create main panel
@@ -33,6 +34,7 @@ public class SourcegraphWindow implements Disposable {
         }
     }
 
+    @NotNull
     private JBPopup createPopup() {
         return JBPopupFactory.getInstance().createComponentPopupBuilder(mainPanel, mainPanel)
             .setTitle("Find on Sourcegraph")

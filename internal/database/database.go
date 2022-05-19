@@ -120,15 +120,15 @@ func (d *db) FeatureFlags() FeatureFlagStore {
 }
 
 func (d *db) GitserverRepos() GitserverRepoStore {
-	return NewGitserverReposWith(d.Store)
+	return GitserverReposWith(d.Store)
 }
 
 func (d *db) GitserverLocalClone() GitserverLocalCloneStore {
-	return NewGitserverLocalCloneStoreWith(d.Store)
+	return GitserverLocalCloneStoreWith(d.Store)
 }
 
 func (d *db) GlobalState() GlobalStateStore {
-	return &globalStateStore{Store: basestore.NewWithHandle(d.Handle())}
+	return GlobalStateWith(d.Store)
 }
 
 func (d *db) Namespaces() NamespaceStore {

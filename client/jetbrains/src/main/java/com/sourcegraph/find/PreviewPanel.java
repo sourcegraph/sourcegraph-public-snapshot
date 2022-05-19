@@ -21,7 +21,6 @@ import java.awt.*;
 public class PreviewPanel extends JBPanelWithEmptyText {
     private final Project project;
     private JComponent editorComponent;
-    private Editor editor;
     private VirtualFile virtualFile;
     private String fileName;
     private String fileContent;
@@ -65,7 +64,6 @@ public class PreviewPanel extends JBPanelWithEmptyText {
             settings.setAnimatedScrolling(false);
             settings.setAutoCodeFoldingEnabled(false);
 
-            this.editor = editor;
             editorComponent = editor.getComponent();
             add(editorComponent, BorderLayout.CENTER);
 

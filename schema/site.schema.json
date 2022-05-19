@@ -1798,6 +1798,23 @@
             "minLength": 1
           }
         },
+        "allowOrgsMap": {
+          "description": "Restricts new logins to members of GitHub teams. Each list of teams should have their Github org name as a key. Subteams inheritance is not supported, therefore only members of the listed teams will be granted access. Existing sessions won't be invalidated. Leave empty or unset for no team restrictions.",
+          "default": {},
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "examples": [
+            {
+              "orgName": ["team1"],
+              "anotherOrgName": ["team2", "team3"]
+            }
+          ]
+        },
         "allowGroupsPermissionsSync": {
           "description": "Experimental: Allows sync of GitHub teams and organizations permissions across all external services associated with this provider to allow enabling of [repository permissions caching](https://docs.sourcegraph.com/admin/repo/permissions#permissions-caching).",
           "default": false,

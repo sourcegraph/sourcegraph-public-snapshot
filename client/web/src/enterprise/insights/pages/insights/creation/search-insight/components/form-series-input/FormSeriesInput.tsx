@@ -169,8 +169,5 @@ const QueryFieldDescription: React.FunctionComponent<React.PropsWithChildren<unk
     <span>
         Do not include the <code>context:</code> or <code>repo:</code> filter; if needed, <code>repo:</code> will be
         added automatically.
-        <br />
-        Tip: include <code>archived:no</code> and <code>fork:no</code> if you don't want results from archived or forked
-        repos.
     </span>
 )

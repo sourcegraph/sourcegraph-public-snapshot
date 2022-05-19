@@ -11,7 +11,8 @@ import (
 )
 
 // MockStore is a mock implementation of the Store interface (from the
-// package github.com/sourcegraph/sourcegraph/internal/codeintel/policies)
+// package
+// github.com/sourcegraph/sourcegraph/internal/codeintel/policies/internal/store)
 // used for unit testing.
 type MockStore struct {
 	// ListFunc is an instance of a mock function object controlling the
@@ -45,7 +46,7 @@ func NewStrictMockStore() *MockStore {
 
 // NewMockStoreFrom creates a new mock of the MockStore interface. All
 // methods delegate to the given implementation, unless overwritten.
-func NewMockStoreFrom(i Store) *MockStore {
+func NewMockStoreFrom(i store.Store) *MockStore {
 	return &MockStore{
 		ListFunc: &StoreListFunc{
 			defaultHook: i.List,
