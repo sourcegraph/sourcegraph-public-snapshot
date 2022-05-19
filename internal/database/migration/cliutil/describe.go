@@ -38,16 +38,17 @@ func Describe(commandName string, factory RunnerFactory, outFactory func() *outp
 	}
 
 	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
-		formatter := getFormatter(formatFlag.Get(cmd))
-		if formatter == nil {
-			return flagHelp(out, "unrecognized format %q (must be json or psql)", formatFlag.Get(cmd))
-		}
 
-		output, err := getOutput(out, outFlag.Get(cmd), forceFlag.Get(cmd), noColorFlag.Get(cmd))
+		output, shouldDecorate, err := getOutput(out, outFlag.Get(cmd), forceFlag.Get(cmd), noColorFlag.Get(cmd))
 		if err != nil {
 			return err
 		}
 		defer output.Close()
+
+		formatter := getFormatter(formatFlag.Get(cmd), shouldDecorate)
+		if formatter == nil {
+			return flagHelp(out, "unrecognized format %q (must be json or psql)", formatFlag.Get(cmd))
+		}
 
 		_, store, err := setupStore(ctx, factory, schemaNameFlag.Get(cmd))
 		if err != nil {
