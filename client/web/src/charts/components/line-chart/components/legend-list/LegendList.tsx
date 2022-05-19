@@ -30,7 +30,7 @@ export const LegendItem: React.FunctionComponent<React.PropsWithChildren<LegendI
     ...attributes
 }) => (
     <li {...attributes} className={classNames(styles.legendItem, className)}>
-        <div
+        <span
             /* eslint-disable-next-line react/forbid-dom-props */
             style={{ backgroundColor: color }}
             className={styles.legendMark}
