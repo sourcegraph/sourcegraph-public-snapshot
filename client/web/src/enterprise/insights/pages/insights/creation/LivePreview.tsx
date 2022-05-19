@@ -29,14 +29,12 @@ interface InsightLivePreviewProps {
     step: InsightStep
     isAllReposMode: boolean
     className?: string
-    series: SeriesLivePreview[]
-}
-
-interface SeriesLivePreview {
-    query: string
-    label: string
-    generatedFromCaptureGroup: boolean
-    stroke: string
+    series: {
+        query: string
+        label: string
+        generatedFromCaptureGroup: boolean
+        stroke: string
+    }[]
 }
 
 export const InsightLivePreview: React.FunctionComponent<React.PropsWithChildren<InsightLivePreviewProps>> = props => {
