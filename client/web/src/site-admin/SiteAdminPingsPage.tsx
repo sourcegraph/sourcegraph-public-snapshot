@@ -193,7 +193,9 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                         <li>Cumulative executor runtime monthly</li>
                         <li>Total count of publish bulk operation</li>
                         <li>Total count of bulk operations (grouped by operation type)</li>
-                        <li>Changeset distribution for batch change (grouped by batch change source: local or executor)</li>
+                        <li>
+                            Changeset distribution for batch change (grouped by batch change source: local or executor)
+                        </li>
                         <li>Total count of users that ran a job on an executor monthly</li>
                         <li>
                             Total count of published changesets and batch changes created via:
