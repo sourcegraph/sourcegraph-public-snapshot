@@ -73,6 +73,7 @@ func New(base *mux.Router) *mux.Router {
 	base.Path("/lsif/upload").Methods("POST").Name(LSIFUpload)
 	base.Path("/search/stream").Methods("GET").Name(SearchStream)
 	base.Path("/compute/stream").Methods("GET").Name(ComputeStream)
+	base.Path("/compute/stream").Methods("POST").Name(ComputeStream)
 	base.Path("/src-cli/version").Methods("GET").Name(SrcCliVersion)
 	base.Path("/src-cli/{rest:.*}").Methods("GET").Name(SrcCliDownload)
 
