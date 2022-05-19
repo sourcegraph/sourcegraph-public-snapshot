@@ -141,28 +141,20 @@ func TestWithSelect(t *testing.T) {
 		return SearchEvent{
 			Results: []result.Match{
 				&result.FileMatch{
-					File: result.File{Path: "pokeman/charmandar"},
-					LineMatches: []*result.LineMatch{{
-						OffsetAndLengths: make([][2]int32, 1),
-					}},
+					File:             result.File{Path: "pokeman/charmandar"},
+					MultilineMatches: make([]result.MultilineMatch, 1),
 				},
 				&result.FileMatch{
-					File: result.File{Path: "pokeman/charmandar"},
-					LineMatches: []*result.LineMatch{{
-						OffsetAndLengths: make([][2]int32, 1),
-					}},
+					File:             result.File{Path: "pokeman/charmandar"},
+					MultilineMatches: make([]result.MultilineMatch, 1),
 				},
 				&result.FileMatch{
-					File: result.File{Path: "pokeman/bulbosaur"},
-					LineMatches: []*result.LineMatch{{
-						OffsetAndLengths: make([][2]int32, 1),
-					}},
+					File:             result.File{Path: "pokeman/bulbosaur"},
+					MultilineMatches: make([]result.MultilineMatch, 1),
 				},
 				&result.FileMatch{
-					File: result.File{Path: "digiman/ummm"},
-					LineMatches: []*result.LineMatch{{
-						OffsetAndLengths: make([][2]int32, 1),
-					}},
+					File:             result.File{Path: "digiman/ummm"},
+					MultilineMatches: make([]result.MultilineMatch, 1),
 				},
 			},
 		}
@@ -180,11 +172,13 @@ func TestWithSelect(t *testing.T) {
 	autogold.Want("dedupe paths for select:file.directory", `[
   {
     "Path": "pokeman/",
+    "MultilineMatches": null,
     "LineMatches": null,
     "LimitHit": false
   },
   {
     "Path": "digiman/",
+    "MultilineMatches": null,
     "LineMatches": null,
     "LimitHit": false
   }
@@ -193,16 +187,19 @@ func TestWithSelect(t *testing.T) {
 	autogold.Want("dedupe paths select:file", `[
   {
     "Path": "pokeman/charmandar",
+    "MultilineMatches": null,
     "LineMatches": null,
     "LimitHit": false
   },
   {
     "Path": "pokeman/bulbosaur",
+    "MultilineMatches": null,
     "LineMatches": null,
     "LimitHit": false
   },
   {
     "Path": "digiman/ummm",
+    "MultilineMatches": null,
     "LineMatches": null,
     "LimitHit": false
   }
@@ -211,76 +208,85 @@ func TestWithSelect(t *testing.T) {
 	autogold.Want("don't dedupe file matches for select:content", `[
   {
     "Path": "pokeman/charmandar",
-    "LineMatches": [
+    "MultilineMatches": [
       {
         "Preview": "",
-        "OffsetAndLengths": [
-          [
-            0,
-            0
-          ]
-        ],
-        "LineNumber": 0
+        "Start": {
+          "Line": 0,
+          "Column": 0
+        },
+        "End": {
+          "Line": 0,
+          "Column": 0
+        }
       },
       {
         "Preview": "",
-        "OffsetAndLengths": [
-          [
-            0,
-            0
-          ]
-        ],
-        "LineNumber": 0
+        "Start": {
+          "Line": 0,
+          "Column": 0
+        },
+        "End": {
+          "Line": 0,
+          "Column": 0
+        }
       }
     ],
+    "LineMatches": null,
     "LimitHit": false
   },
   {
     "Path": "pokeman/charmandar",
-    "LineMatches": [
+    "MultilineMatches": [
       {
         "Preview": "",
-        "OffsetAndLengths": [
-          [
-            0,
-            0
-          ]
-        ],
-        "LineNumber": 0
+        "Start": {
+          "Line": 0,
+          "Column": 0
+        },
+        "End": {
+          "Line": 0,
+          "Column": 0
+        }
       }
     ],
+    "LineMatches": null,
     "LimitHit": false
   },
   {
     "Path": "pokeman/bulbosaur",
-    "LineMatches": [
+    "MultilineMatches": [
       {
         "Preview": "",
-        "OffsetAndLengths": [
-          [
-            0,
-            0
-          ]
-        ],
-        "LineNumber": 0
+        "Start": {
+          "Line": 0,
+          "Column": 0
+        },
+        "End": {
+          "Line": 0,
+          "Column": 0
+        }
       }
     ],
+    "LineMatches": null,
     "LimitHit": false
   },
   {
     "Path": "digiman/ummm",
-    "LineMatches": [
+    "MultilineMatches": [
       {
         "Preview": "",
-        "OffsetAndLengths": [
-          [
-            0,
-            0
-          ]
-        ],
-        "LineNumber": 0
+        "Start": {
+          "Line": 0,
+          "Column": 0
+        },
+        "End": {
+          "Line": 0,
+          "Column": 0
+        }
       }
     ],
+    "LineMatches": null,
     "LimitHit": false
   }
 ]`).Equal(t, test("content"))

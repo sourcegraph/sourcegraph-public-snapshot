@@ -36,7 +36,7 @@ func TestConvertMatches(t *testing.T) {
 		})
 
 		t.Run("oneline", func(t *testing.T) {
-			cases := []LineMatch{{
+			cases := []*LineMatch{{
 				Preview:          "abcd",
 				LineNumber:       0,
 				OffsetAndLengths: [][2]int32{{0, 4}},
@@ -65,14 +65,14 @@ func TestConvertMatches(t *testing.T) {
 	t.Run("AsLineMatches", func(t *testing.T) {
 		cases := []struct {
 			input  MultilineMatch
-			output []LineMatch
+			output []*LineMatch
 		}{{
 			input: MultilineMatch{
 				Preview: "line1\nline2\nline3",
 				Start:   LineColumn{1, 1},
 				End:     LineColumn{3, 1},
 			},
-			output: []LineMatch{{
+			output: []*LineMatch{{
 				Preview:          "line1",
 				LineNumber:       1,
 				OffsetAndLengths: [][2]int32{{1, 4}},

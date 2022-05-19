@@ -43,8 +43,8 @@ func (f *File) URL() *url.URL {
 type FileMatch struct {
 	File
 
-	LineMatches []*LineMatch
-	Symbols     []*SymbolMatch `json:"-"`
+	MultilineMatches []MultilineMatch
+	Symbols          []*SymbolMatch `json:"-"`
 
 	LimitHit bool
 }
@@ -56,10 +56,7 @@ func (fm *FileMatch) RepoName() types.MinimalRepo {
 func (fm *FileMatch) searchResultMarker() {}
 
 func (fm *FileMatch) ResultCount() int {
-	rc := len(fm.Symbols)
-	for _, m := range fm.LineMatches {
-		rc += len(m.OffsetAndLengths)
-	}
+	rc := len(fm.Symbols) + len(fm.MultilineMatches)
 	if rc == 0 {
 		return 1 // 1 to count "empty" results like type:path results
 	}
@@ -70,7 +67,7 @@ func (fm *FileMatch) ResultCount() int {
 // the absence of a true `PathMatch` type, we use this function as a proxy
 // signal to drive `select:file` logic that deduplicates path results.
 func (fm *FileMatch) IsPathMatch() bool {
-	return fm.LineMatches == nil && fm.Symbols == nil
+	return len(fm.MultilineMatches) == 0 && len(fm.Symbols) == 0
 }
 
 func (fm *FileMatch) Select(selectPath filter.SelectPath) Match {
@@ -81,7 +78,7 @@ func (fm *FileMatch) Select(selectPath filter.SelectPath) Match {
 			ID:   fm.Repo.ID,
 		}
 	case filter.File:
-		fm.LineMatches = nil
+		fm.MultilineMatches = nil
 		fm.Symbols = nil
 		if len(selectPath) > 1 && selectPath[1] == "directory" {
 			fm.Path = path.Clean(path.Dir(fm.Path)) + "/" // Add trailing slash for clarity.
@@ -89,7 +86,7 @@ func (fm *FileMatch) Select(selectPath filter.SelectPath) Match {
 		return fm
 	case filter.Symbol:
 		if len(fm.Symbols) > 0 {
-			fm.LineMatches = nil // Only return symbol match if symbols exist
+			fm.MultilineMatches = nil // Only return symbol match if symbols exist
 			if len(selectPath) > 1 {
 				filteredSymbols := SelectSymbolKind(fm.Symbols, selectPath[1])
 				if len(filteredSymbols) == 0 {
@@ -102,7 +99,7 @@ func (fm *FileMatch) Select(selectPath filter.SelectPath) Match {
 		return nil
 	case filter.Content:
 		// Only return file match if line matches exist
-		if len(fm.LineMatches) > 0 {
+		if len(fm.MultilineMatches) > 0 {
 			fm.Symbols = nil
 			return fm
 		}
@@ -116,7 +113,7 @@ func (fm *FileMatch) Select(selectPath filter.SelectPath) Match {
 // AppendMatches appends the line matches from src as well as updating match
 // counts and limit.
 func (fm *FileMatch) AppendMatches(src *FileMatch) {
-	fm.LineMatches = append(fm.LineMatches, src.LineMatches...)
+	fm.MultilineMatches = append(fm.MultilineMatches, src.MultilineMatches...)
 	fm.Symbols = append(fm.Symbols, src.Symbols...)
 	fm.LimitHit = fm.LimitHit || src.LimitHit
 }
@@ -132,18 +129,10 @@ func (fm *FileMatch) Limit(limit int) int {
 		return after
 	}
 
-	// Invariant: limit > 0
-	for i, m := range fm.LineMatches {
-		after := limit - len(m.OffsetAndLengths)
-		if after <= 0 {
-			fm.Symbols = nil
-			fm.LineMatches = fm.LineMatches[:i+1]
-			m.OffsetAndLengths = m.OffsetAndLengths[:limit]
-			return 0
-		}
-		limit = after
+	if limit < len(fm.MultilineMatches) {
+		fm.MultilineMatches = fm.MultilineMatches[:limit]
 	}
-
+	// TODO: why is this not panicking in prod?
 	fm.Symbols = fm.Symbols[:limit]
 	return 0
 }
@@ -183,9 +172,17 @@ type MultilineMatch struct {
 	End     LineColumn
 }
 
-func (m MultilineMatch) AsLineMatches() []LineMatch {
+func MultilineSliceAsLineMatchSlice(matches []MultilineMatch) []*LineMatch {
+	lineMatches := make([]*LineMatch, 0, len(matches))
+	for _, m := range matches {
+		lineMatches = append(lineMatches, m.AsLineMatches()...)
+	}
+	return lineMatches
+}
+
+func (m MultilineMatch) AsLineMatches() []*LineMatch {
 	lines := strings.Split(m.Preview, "\n")
-	lineMatches := make([]LineMatch, 0, len(lines))
+	lineMatches := make([]*LineMatch, 0, len(lines))
 	for i, line := range lines {
 		// TODO include the newline character?
 		// TODO read this very carefully
@@ -197,7 +194,7 @@ func (m MultilineMatch) AsLineMatches() []LineMatch {
 		if i == len(lines)-1 {
 			length = m.End.Column - offset
 		}
-		lineMatches = append(lineMatches, LineMatch{
+		lineMatches = append(lineMatches, &LineMatch{
 			Preview:          line,
 			LineNumber:       m.Start.Line + int32(i),
 			OffsetAndLengths: [][2]int32{{offset, length}},
