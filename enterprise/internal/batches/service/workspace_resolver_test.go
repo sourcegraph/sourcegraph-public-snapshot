@@ -451,13 +451,13 @@ type defaultBranch struct {
 }
 
 func mockDefaultBranches(t *testing.T, defaultBranches map[api.RepoName]defaultBranch) {
-	git.Mocks.GetDefaultBranch = func(repo api.RepoName) (refName string, commit api.CommitID, err error) {
+	gitserver.Mocks.GetDefaultBranch = func(repo api.RepoName) (refName string, commit api.CommitID, err error) {
 		if res, ok := defaultBranches[repo]; ok {
 			return res.branch, res.commit, nil
 		}
 		return "", "", &gitdomain.RepoNotExistError{Repo: repo}
 	}
-	t.Cleanup(func() { git.Mocks.GetDefaultBranch = nil })
+	t.Cleanup(func() { gitserver.Mocks.GetDefaultBranch = nil })
 }
 
 func mockBatchIgnores(t *testing.T, m map[api.CommitID]bool) {
