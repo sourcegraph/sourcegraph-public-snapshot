@@ -6767,6 +6767,9 @@ type MockEventLogStore struct {
 	// object controlling the behavior of the method
 	// CountUniqueUsersPerPeriod.
 	CountUniqueUsersPerPeriodFunc *EventLogStoreCountUniqueUsersPerPeriodFunc
+	// CountUsersWithSettingFunc is an instance of a mock function object
+	// controlling the behavior of the method CountUsersWithSetting.
+	CountUsersWithSettingFunc *EventLogStoreCountUsersWithSettingFunc
 	// DoneFunc is an instance of a mock function object controlling the
 	// behavior of the method Done.
 	DoneFunc *EventLogStoreDoneFunc
@@ -6920,6 +6923,11 @@ func NewMockEventLogStore() *MockEventLogStore {
 		},
 		CountUniqueUsersPerPeriodFunc: &EventLogStoreCountUniqueUsersPerPeriodFunc{
 			defaultHook: func(context.Context, PeriodType, time.Time, int, *CountUniqueUsersOptions) (r0 []UsageValue, r1 error) {
+				return
+			},
+		},
+		CountUsersWithSettingFunc: &EventLogStoreCountUsersWithSettingFunc{
+			defaultHook: func(context.Context, string, interface{}) (r0 int, r1 error) {
 				return
 			},
 		},
@@ -7105,6 +7113,11 @@ func NewStrictMockEventLogStore() *MockEventLogStore {
 				panic("unexpected invocation of MockEventLogStore.CountUniqueUsersPerPeriod")
 			},
 		},
+		CountUsersWithSettingFunc: &EventLogStoreCountUsersWithSettingFunc{
+			defaultHook: func(context.Context, string, interface{}) (int, error) {
+				panic("unexpected invocation of MockEventLogStore.CountUsersWithSetting")
+			},
+		},
 		DoneFunc: &EventLogStoreDoneFunc{
 			defaultHook: func(error) error {
 				panic("unexpected invocation of MockEventLogStore.Done")
@@ -7243,6 +7256,9 @@ func NewMockEventLogStoreFrom(i EventLogStore) *MockEventLogStore {
 		},
 		CountUniqueUsersPerPeriodFunc: &EventLogStoreCountUniqueUsersPerPeriodFunc{
 			defaultHook: i.CountUniqueUsersPerPeriod,
+		},
+		CountUsersWithSettingFunc: &EventLogStoreCountUsersWithSettingFunc{
+			defaultHook: i.CountUsersWithSetting,
 		},
 		DoneFunc: &EventLogStoreDoneFunc{
 			defaultHook: i.Done,
@@ -9750,6 +9766,120 @@ func (c EventLogStoreCountUniqueUsersPerPeriodFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EventLogStoreCountUniqueUsersPerPeriodFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// EventLogStoreCountUsersWithSettingFunc describes the behavior when the
+// CountUsersWithSetting method of the parent MockEventLogStore instance is
+// invoked.
+type EventLogStoreCountUsersWithSettingFunc struct {
+	defaultHook func(context.Context, string, interface{}) (int, error)
+	hooks       []func(context.Context, string, interface{}) (int, error)
+	history     []EventLogStoreCountUsersWithSettingFuncCall
+	mutex       sync.Mutex
+}
+
+// CountUsersWithSetting delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockEventLogStore) CountUsersWithSetting(v0 context.Context, v1 string, v2 interface{}) (int, error) {
+	r0, r1 := m.CountUsersWithSettingFunc.nextHook()(v0, v1, v2)
+	m.CountUsersWithSettingFunc.appendCall(EventLogStoreCountUsersWithSettingFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// CountUsersWithSetting method of the parent MockEventLogStore instance is
+// invoked and the hook queue is empty.
+func (f *EventLogStoreCountUsersWithSettingFunc) SetDefaultHook(hook func(context.Context, string, interface{}) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CountUsersWithSetting method of the parent MockEventLogStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *EventLogStoreCountUsersWithSettingFunc) PushHook(hook func(context.Context, string, interface{}) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *EventLogStoreCountUsersWithSettingFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context, string, interface{}) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *EventLogStoreCountUsersWithSettingFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context, string, interface{}) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *EventLogStoreCountUsersWithSettingFunc) nextHook() func(context.Context, string, interface{}) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EventLogStoreCountUsersWithSettingFunc) appendCall(r0 EventLogStoreCountUsersWithSettingFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EventLogStoreCountUsersWithSettingFuncCall
+// objects describing the invocations of this function.
+func (f *EventLogStoreCountUsersWithSettingFunc) History() []EventLogStoreCountUsersWithSettingFuncCall {
+	f.mutex.Lock()
+	history := make([]EventLogStoreCountUsersWithSettingFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EventLogStoreCountUsersWithSettingFuncCall is an object that describes an
+// invocation of method CountUsersWithSetting on an instance of
+// MockEventLogStore.
+type EventLogStoreCountUsersWithSettingFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 interface{}
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EventLogStoreCountUsersWithSettingFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EventLogStoreCountUsersWithSettingFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
