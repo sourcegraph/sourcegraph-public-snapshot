@@ -49,6 +49,7 @@ import {
     convertNode,
     DiffPart,
     DOMFunctions,
+    findElementWithOffset,
     getCodeElementsInRange,
     getTokenAtPositionOrRange,
     HoveredToken,
@@ -529,6 +530,52 @@ export function createHoverifier<C extends object, D, A>({
         ),
         share()
     )
+    /**
+     * Emits DOM elements at new positions found in the URL. When pinning is
+     * disabled, this does not emit at all because the tooltip doesn't get
+     * pinned at the jump target.
+     */
+    const jumpTargets = allPositionJumps.pipe(
+        // TODO filterWhen hoverState.pinned
+        // Only use line and character for comparison
+        map(({ position: { line, character, part }, ...rest }) => ({
+            position: { line, character, part },
+            ...rest,
+        })),
+        // Ignore same values
+        // It's important to do this before filtering otherwise navigating from
+        // a position, to a line-only position, back to the first position would get ignored
+        distinctUntilChanged((a, b) => isEqual(a, b)),
+        map(({ position, codeView, dom, overrideTokenize, ...rest }) => {
+            let cell: HTMLElement | null
+            let target: HTMLElement | undefined
+            let part: DiffPart | undefined
+            if (isPosition(position)) {
+                cell = dom.getCodeElementFromLineNumber(codeView, position.line, position.part)
+                if (cell) {
+                    target = findElementWithOffset(
+                        cell,
+                        { offsetStart: position.character },
+                        shouldTokenize({ tokenize, overrideTokenize })
+                    )
+                    if (target) {
+                        part = dom.getDiffCodePart?.(target)
+                    } else {
+                        console.warn('Could not find target for position in file', position)
+                    }
+                }
+            }
+            return {
+                ...rest,
+                eventType: 'jump' as const,
+                target,
+                position: { ...position, part },
+                codeView,
+                dom,
+                overrideTokenize,
+            }
+        })
+    )
 
     // REPOSITIONING
     // On every componentDidUpdate (after the component was rerendered, e.g. from a hover state update) resposition
@@ -540,7 +587,7 @@ export function createHoverifier<C extends object, D, A>({
         from(hoverOverlayRerenders)
             .pipe(
                 // with the latest target that came from either a mouseover, click or location change (whatever was the most recent)
-                withLatestFrom(merge(codeMouseOverTargets)),
+                withLatestFrom(merge(codeMouseOverTargets, jumpTargets)),
                 map(
                     ([
                         { hoverOverlayElement, relativeElement },
@@ -610,7 +657,7 @@ export function createHoverifier<C extends object, D, A>({
     )
 
     /** Emits new positions including context at which a tooltip needs to be shown from clicks, mouseovers and URL changes. */
-    const resolvedPositionEvents = merge(codeMouseOverTargets).pipe(
+    const resolvedPositionEvents = merge(codeMouseOverTargets, jumpTargets).pipe(
         map(({ position, resolveContext, eventType, ...rest }) => ({
             ...rest,
             eventType,
