@@ -151,7 +151,7 @@ type traceLogger struct {
 	log.Logger
 }
 
-// initWithTags adds tags to everything except the underlying Logger, which should have
+// initWithTags adds tags to everything except the underlying Logger, which should
 // already have init fields due to being spawned from a parent Logger.
 func (t *traceLogger) initWithTags(fields ...otlog.Field) {
 	if honey.Enabled() {
