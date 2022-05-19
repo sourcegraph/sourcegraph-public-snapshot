@@ -2,8 +2,8 @@ import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
 
 import { WebStory } from '../../../../../components/WebStory'
+import { mockPreviewWorkspace } from '../../batch-spec.mock'
 
-import { mockWorkspace } from './WorkspacesPreview.mock'
 import { WorkspacesPreviewListItem } from './WorkspacesPreviewListItem'
 
 const { add } = storiesOf(
@@ -15,8 +15,18 @@ add('basic', () => (
     <WebStory>
         {props => (
             <>
-                <WorkspacesPreviewListItem {...props} isStale={false} workspace={mockWorkspace(1)} exclude={noop} />
-                <WorkspacesPreviewListItem {...props} isStale={false} workspace={mockWorkspace(2)} exclude={noop} />
+                <WorkspacesPreviewListItem
+                    {...props}
+                    isStale={false}
+                    workspace={mockPreviewWorkspace(1)}
+                    exclude={noop}
+                />
+                <WorkspacesPreviewListItem
+                    {...props}
+                    isStale={false}
+                    workspace={mockPreviewWorkspace(2)}
+                    exclude={noop}
+                />
             </>
         )}
     </WebStory>
@@ -29,13 +39,13 @@ add('cached', () => (
                 <WorkspacesPreviewListItem
                     {...props}
                     isStale={false}
-                    workspace={mockWorkspace(1, { cachedResultFound: true })}
+                    workspace={mockPreviewWorkspace(1, { cachedResultFound: true })}
                     exclude={noop}
                 />
                 <WorkspacesPreviewListItem
                     {...props}
                     isStale={false}
-                    workspace={mockWorkspace(2, { cachedResultFound: true })}
+                    workspace={mockPreviewWorkspace(2, { cachedResultFound: true })}
                     exclude={noop}
                 />
             </>
@@ -47,8 +57,41 @@ add('stale', () => (
     <WebStory>
         {props => (
             <>
-                <WorkspacesPreviewListItem {...props} isStale={true} workspace={mockWorkspace(1)} exclude={noop} />
-                <WorkspacesPreviewListItem {...props} isStale={true} workspace={mockWorkspace(2)} exclude={noop} />
+                <WorkspacesPreviewListItem
+                    {...props}
+                    isStale={true}
+                    workspace={mockPreviewWorkspace(1)}
+                    exclude={noop}
+                />
+                <WorkspacesPreviewListItem
+                    {...props}
+                    isStale={true}
+                    workspace={mockPreviewWorkspace(2)}
+                    exclude={noop}
+                />
+            </>
+        )}
+    </WebStory>
+))
+
+add('read-only', () => (
+    <WebStory>
+        {props => (
+            <>
+                <WorkspacesPreviewListItem
+                    {...props}
+                    isStale={false}
+                    isReadOnly={true}
+                    workspace={mockPreviewWorkspace(1)}
+                    exclude={noop}
+                />
+                <WorkspacesPreviewListItem
+                    {...props}
+                    isStale={false}
+                    isReadOnly={true}
+                    workspace={mockPreviewWorkspace(2)}
+                    exclude={noop}
+                />
             </>
         )}
     </WebStory>

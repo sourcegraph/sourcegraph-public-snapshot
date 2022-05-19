@@ -10,20 +10,19 @@ import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
 import { Button, useAccordion, useStopwatch, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { Connection } from '../../../../../components/FilteredConnection'
-import { UseConnectionResult } from '../../../../../components/FilteredConnection/hooks/useConnection'
 import {
     BatchSpecWorkspaceResolutionState,
     PreviewHiddenBatchSpecWorkspaceFields,
     PreviewVisibleBatchSpecWorkspaceFields,
 } from '../../../../../graphql-operations'
 import { Header as WorkspacesListHeader } from '../../../workspaces-list'
+import { BatchSpecContextState, useBatchSpecContext } from '../../BatchSpecContext'
 
 import { ImportingChangesetsPreviewList } from './ImportingChangesetsPreviewList'
 import { PreviewLoadingSpinner } from './PreviewLoadingSpinner'
 import { PreviewPromptIcon } from './PreviewPromptIcon'
-import { ImportingChangesetFields } from './useImportingChangesets'
-import { WorkspacePreviewFilters } from './useWorkspaces'
-import { ResolutionState } from './useWorkspacesPreview'
+import { useImportingChangesets } from './useImportingChangesets'
+import { useWorkspaces } from './useWorkspaces'
 import { WorkspacePreviewFilterRow } from './WorkspacesPreviewFilterRow'
 import { WorkspacesPreviewList } from './WorkspacesPreviewList'
 
@@ -49,66 +48,46 @@ const WAITING_MESSAGES = [
 const WAITING_MESSAGE_INTERVAL = 10
 
 interface WorkspacesPreviewProps {
-    /**
-     * Function to submit the current input batch spec YAML to trigger a new workspaces
-     * preview request.
-     */
-    preview: () => void
-    /**
-     * Whether or not the preview button should be disabled, for example due to there
-     * being a problem with the input batch spec YAML, or a preview request already being
-     * in flight. An optional tooltip string to display may be provided in place of
-     * `true`.
-     */
-    previewDisabled: boolean | string
-    /**
-     * Whether or not the batch spec YAML on the server which was used to preview
-     * workspaces is up-to-date with that which is presently in the editor.
-     */
-    batchSpecStale: boolean
-    /** Whether or not the user has previewed their batch spec at least once. */
-    hasPreviewed: boolean
-    /**
-     * Function to automatically update repo query of input batch spec YAML to exclude the
-     * provided repo + branch.
-     */
-    excludeRepo: (repo: string, branch: string) => void
-    /** Method to invoke to cancel any current workspaces resolution job. */
-    cancel: () => void
-    /**
-     * Whether or not a preview request is currently in flight or the current workspaces
-     * resolution job is in progress.
-     */
-    isWorkspacesPreviewInProgress: boolean
-    /** The status of the current workspaces resolution job. */
-    resolutionState: ResolutionState
-    /** Any error from `previewBatchSpec` or the workspaces resolution job. */
-    error?: string
-    /** The current workspaces preview connection result used to render the list. */
-    workspacesConnection: UseConnectionResult<
-        PreviewHiddenBatchSpecWorkspaceFields | PreviewVisibleBatchSpecWorkspaceFields
-    >
-    /** The current importing changesets connection result used to render the list. */
-    importingChangesetsConnection: UseConnectionResult<ImportingChangesetFields>
-    /** Method to invoke to capture a change in the active filters applied. */
-    setFilters: (filters: WorkspacePreviewFilters) => void
+    isReadOnly?: boolean
 }
 
 export const WorkspacesPreview: React.FunctionComponent<React.PropsWithChildren<WorkspacesPreviewProps>> = ({
-    previewDisabled,
-    preview,
-    batchSpecStale,
-    hasPreviewed,
-    excludeRepo,
-    isWorkspacesPreviewInProgress,
-    cancel,
-    error,
-    resolutionState,
-    workspacesConnection,
-    importingChangesetsConnection,
-    setFilters,
+    isReadOnly = false,
 }) => {
-    const { connection } = workspacesConnection
+    const { batchSpec, editor, workspacesPreview } = useBatchSpecContext()
+
+    return (
+        <MemoizedWorkspacesPreview
+            batchSpec={batchSpec}
+            editor={editor}
+            workspacesPreview={workspacesPreview}
+            isReadOnly={isReadOnly}
+        />
+    )
+}
+
+type MemoizedWorkspacesPreviewProps = WorkspacesPreviewProps &
+    Pick<BatchSpecContextState, 'batchSpec' | 'editor' | 'workspacesPreview'>
+
+const MemoizedWorkspacesPreview: React.FunctionComponent<
+    React.PropsWithChildren<MemoizedWorkspacesPreviewProps>
+> = React.memo(({ isReadOnly, batchSpec, editor, workspacesPreview }) => {
+    const { debouncedCode, excludeRepo, isServerStale } = editor
+    const {
+        resolutionState,
+        error,
+        filters,
+        setFilters,
+        cancel,
+        isInProgress: isWorkspacesPreviewInProgress,
+        hasPreviewed,
+        preview,
+        isPreviewDisabled,
+    } = workspacesPreview
+
+    const workspacesConnection = useWorkspaces(batchSpec.id, filters)
+    const importingChangesetsConnection = useImportingChangesets(batchSpec.id)
+    const connection = workspacesConnection.connection
 
     // Before we've ever previewed workspaces for this batch change, there's no reason to
     // show the list or filters for the connection.
@@ -163,9 +142,9 @@ export const WorkspacesPreview: React.FunctionComponent<React.PropsWithChildren<
         <Button
             className="mt-2 mb-2"
             variant="success"
-            disabled={!!previewDisabled}
-            data-tooltip={typeof previewDisabled === 'string' ? previewDisabled : undefined}
-            onClick={preview}
+            disabled={!!isPreviewDisabled}
+            data-tooltip={typeof isPreviewDisabled === 'string' ? isPreviewDisabled : undefined}
+            onClick={() => preview(debouncedCode)}
         >
             <Icon className="mr-1" as={SearchIcon} />
             {error ? 'Retry preview' : 'Preview workspaces'}
@@ -189,7 +168,7 @@ export const WorkspacesPreview: React.FunctionComponent<React.PropsWithChildren<
                 )
             })}
         </div>
-    ) : batchSpecStale ? (
+    ) : isServerStale ? (
         <Typography.H4 className={styles.instruction}>
             Finish editing your batch spec, then manually preview repositories.
         </Typography.H4>
@@ -198,13 +177,15 @@ export const WorkspacesPreview: React.FunctionComponent<React.PropsWithChildren<
             <Typography.H4 className={styles.instruction}>
                 {hasPreviewed ? 'Modify your' : 'Add an'} <span className="text-monospace">on:</span> statement to
                 preview repositories.
-                <Button
-                    className={styles.toggleExampleButton}
-                    display="inline"
-                    onClick={() => setExampleOpen(!exampleOpen)}
-                >
-                    {exampleOpen ? 'Close example' : 'See example'}
-                </Button>
+                {!hasPreviewed && (
+                    <Button
+                        className={styles.toggleExampleButton}
+                        display="inline"
+                        onClick={() => setExampleOpen(!exampleOpen)}
+                    >
+                        {exampleOpen ? 'Close example' : 'See example'}
+                    </Button>
+                )}
             </Typography.H4>
             <animated.div style={exampleStyle} className={styles.onExample}>
                 <div ref={exampleReference} className="pt-2 pb-3">
@@ -217,48 +198,64 @@ export const WorkspacesPreview: React.FunctionComponent<React.PropsWithChildren<
     return (
         <div className="d-flex flex-column align-items-center w-100 h-100">
             <WorkspacesListHeader>
-                Workspaces preview{' '}
-                {(batchSpecStale || !hasPreviewed) && shouldShowConnection && !isWorkspacesPreviewInProgress && (
-                    <Icon
-                        className={classNames('text-muted ml-1', styles.warningIcon)}
-                        data-tooltip="The workspaces previewed below may not be up-to-date."
-                        as={WarningIcon}
-                    />
-                )}
+                Workspaces {isReadOnly ? '' : 'preview '}
+                {(isServerStale || resolutionState === 'CANCELED' || !hasPreviewed) &&
+                    shouldShowConnection &&
+                    !isWorkspacesPreviewInProgress &&
+                    !isReadOnly && (
+                        <Icon
+                            className={classNames('text-muted ml-1', styles.warningIcon)}
+                            data-tooltip="The workspaces previewed below may not be up-to-date."
+                            as={WarningIcon}
+                        />
+                    )}
             </WorkspacesListHeader>
             {/* We wrap this section in its own div to prevent margin collapsing within the flex column */}
-            <div className="d-flex flex-column align-items-center w-100 mb-3">
-                {error && <ErrorAlert error={error} className="w-100 mb-0" />}
-                <div className={styles.iconContainer}>
-                    <PreviewLoadingSpinner
-                        className={classNames({ [styles.hidden]: !isWorkspacesPreviewInProgress })}
-                    />
-                    <PreviewPromptIcon className={classNames({ [styles.hidden]: isWorkspacesPreviewInProgress })} />
+            {!isReadOnly && (
+                <div className="d-flex flex-column align-items-center w-100 mb-3">
+                    {error && <ErrorAlert error={error} className="w-100 mb-0" />}
+                    <div className={styles.iconContainer}>
+                        <PreviewLoadingSpinner
+                            className={classNames({ [styles.hidden]: !isWorkspacesPreviewInProgress })}
+                        />
+                        <PreviewPromptIcon className={classNames({ [styles.hidden]: isWorkspacesPreviewInProgress })} />
+                    </div>
+                    {ctaInstructions}
+                    {ctaButton}
                 </div>
-                {ctaInstructions}
-                {ctaButton}
-            </div>
+            )}
             {shouldShowConnection && (
                 <WorkspacePreviewFilterRow onFiltersChange={setFilters} disabled={isWorkspacesPreviewInProgress} />
             )}
             {shouldShowConnection && (
                 <div className="overflow-auto w-100">
                     <WorkspacesPreviewList
-                        isStale={batchSpecStale || !hasPreviewed}
+                        isStale={
+                            isServerStale ||
+                            isWorkspacesPreviewInProgress ||
+                            resolutionState === 'CANCELED' ||
+                            !hasPreviewed
+                        }
                         excludeRepo={excludeRepo}
                         workspacesConnection={workspacesConnection}
                         showCached={showCached}
                         cached={cachedWorkspacesPreview}
+                        isReadOnly={isReadOnly}
                     />
                     <ImportingChangesetsPreviewList
-                        isStale={batchSpecStale || !hasPreviewed}
+                        isStale={
+                            isServerStale ||
+                            isWorkspacesPreviewInProgress ||
+                            resolutionState === 'CANCELED' ||
+                            !hasPreviewed
+                        }
                         importingChangesetsConnection={importingChangesetsConnection}
                     />
                 </div>
             )}
         </div>
     )
-}
+})
 
 const CTAInstruction: React.FunctionComponent<React.PropsWithChildren<{ active: boolean }>> = ({
     active,

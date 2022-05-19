@@ -7,21 +7,18 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { Icon, Typography } from '@sourcegraph/wildcard'
 
+import { BatchSpecContextErrors } from '../../BatchSpecContext'
+
 import styles from './EditorFeedbackPanel.module.scss'
 
 interface EditorFeedbackPanelProps {
-    errors: {
-        codeUpdate: string | Error | undefined
-        codeValidation: string | Error | undefined
-        preview: string | Error | undefined
-        execute: string | Error | undefined
-    }
+    errors: BatchSpecContextErrors
 }
 
 export const EditorFeedbackPanel: React.FunctionComponent<React.PropsWithChildren<EditorFeedbackPanelProps>> = ({
     errors,
 }) => {
-    const compactedErrors = compact(Object.values(errors))
+    const compactedErrors = compact<string | Error>(Object.values(errors))
     if (compactedErrors.length === 0) {
         return null
     }
