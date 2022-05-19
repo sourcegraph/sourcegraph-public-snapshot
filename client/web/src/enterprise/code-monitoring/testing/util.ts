@@ -573,9 +573,9 @@ export const mockLogs: MonitorTriggerEventsResult = {
                                     id: 'f',
                                     status: EventStatus.PENDING,
                                     message: null,
-                                    timestamp: '2022-02-14T16:29:16Z',
-                                    query: 'test type:diff',
-                                    resultCount: 5,
+                                    timestamp: '2022-02-14T16:20:16Z',
+                                    query: '',
+                                    resultCount: 0,
                                     actions: {
                                         __typename: 'MonitorActionConnection',
                                         nodes: [
@@ -596,7 +596,7 @@ export const mockLogs: MonitorTriggerEventsResult = {
                                                             __typename: 'MonitorActionEvent',
                                                             status: EventStatus.PENDING,
                                                             message: null,
-                                                            timestamp: '2022-02-14T16:29:16Z',
+                                                            timestamp: '2022-02-14T16:20:16Z',
                                                         },
                                                     ],
                                                 },
