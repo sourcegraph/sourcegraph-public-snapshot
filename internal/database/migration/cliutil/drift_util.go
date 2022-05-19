@@ -62,11 +62,9 @@ var errOutOfSync = errors.Newf("database schema is out of sync")
 
 func compareSchemaDescriptions(out *output.Output, actual, expected schemas.SchemaDescription) (err error) {
 	missing := func(typeName, name string, value any) {
-		diff := cmp.Diff(nil, value)
 		out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing %s %q", typeName, name)))
-		if diff != "" {
-			out.WriteMarkdown(fmt.Sprintf("```diff\n%s```", diff))
-		}
+		jsonValue, _ := json.MarshalIndent(value, "", "    ")
+		out.WriteMarkdown(fmt.Sprintf("```json\n%s\n```", string(jsonValue)))
 		err = errOutOfSync
 	}
 
@@ -168,7 +166,10 @@ func compareSchemaDescriptions(out *output.Output, actual, expected schemas.Sche
 		if table, ok := actualTables[name]; !ok {
 			missing("table", name, expectedTable)
 		} else {
-			diff("table", "definition", name, expectedTable, table)
+			diff("table", "columns", name, expectedTable.Columns, table.Columns)
+			diff("table", "columns", name, expectedTable.Constraints, table.Constraints)
+			diff("table", "columns", name, expectedTable.Indexes, table.Indexes)
+			diff("table", "columns", name, expectedTable.Triggers, table.Triggers)
 		}
 	}
 
