@@ -7,13 +7,10 @@ import (
 
 func Build(s *sinks.Sinks) []zapcore.Core {
 	cores := []zapcore.Core{}
-	println("build")
 	if s.SentryHub != nil {
-		println("sentry")
-		c := SentryCore{hub: s.SentryHub}
+		c := newSentryCore(s.SentryHub)
 		c.Start()
-		cores = append(cores, &c)
+		cores = append(cores, c)
 	}
-
 	return cores
 }
