@@ -10,7 +10,6 @@ import { Link } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../auth'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
-import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import { SourcegraphContext } from '../jscontext'
 import { eventLogger } from '../tracking/eventLogger'
 
@@ -22,7 +21,7 @@ import { VsCodeSignUpPage } from './VsCodeSignUpPage'
 
 import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
 
-export interface SignUpPageProps extends ThemeProps, TelemetryProps, FeatureFlagProps {
+export interface SignUpPageProps extends ThemeProps, TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     context: Pick<
         SourcegraphContext,
@@ -35,7 +34,6 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
     context,
     isLightTheme,
     telemetryService,
-    featureFlags,
 }) => {
     const location = useLocation()
     const query = new URLSearchParams(location.search)
@@ -103,7 +101,6 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
                 showEmailForm={query.has(ShowEmailFormQueryParameter)}
                 context={context}
                 telemetryService={telemetryService}
-                featureFlags={featureFlags}
             />
         )
     }
@@ -117,7 +114,6 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
                 showEmailForm={query.has(ShowEmailFormQueryParameter)}
                 context={context}
                 telemetryService={telemetryService}
-                featureFlags={featureFlags}
             />
         )
     }
@@ -136,7 +132,7 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
                 body={
                     <div className={classNames('pb-5', signInSignUpCommonStyles.signupPageContainer)}>
                         {context.sourcegraphDotComMode && <p className="pt-1 pb-2">Start searching public code now</p>}
-                        <SignUpForm featureFlags={featureFlags} context={context} onSignUp={handleSignUp} />
+                        <SignUpForm context={context} onSignUp={handleSignUp} />
                         <p className="mt-3">
                             Already have an account? <Link to={`/sign-in${location.search}`}>Sign in</Link>
                         </p>

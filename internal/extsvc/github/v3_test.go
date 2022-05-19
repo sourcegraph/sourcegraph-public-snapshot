@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
+	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 func newTestClient(t *testing.T, cli httpcli.Doer) *V3Client {
@@ -30,7 +31,7 @@ func newTestClientWithAuthenticator(t *testing.T, auth auth.Authenticator, cli h
 	rcache.SetupForTest(t)
 
 	apiURL := &url.URL{Scheme: "https", Host: "example.com", Path: "/"}
-	return NewV3Client("Test", apiURL, auth, cli)
+	return NewV3Client(logtest.Scoped(t), "Test", apiURL, auth, cli)
 }
 
 func TestNewRepoCache(t *testing.T) {
@@ -625,7 +626,7 @@ func TestListOrganizations(t *testing.T) {
 		}))
 
 		uri, _ := url.Parse(testServer.URL)
-		testCli := NewV3Client("Test", uri, gheToken, testServer.Client())
+		testCli := NewV3Client(logtest.Scoped(t), "Test", uri, gheToken, testServer.Client())
 
 		runTest := func(since int, expectedNextSince int, expectedOrgs []*Org) {
 			orgs, nextSince, err := testCli.ListOrganizations(context.Background(), since)
@@ -793,7 +794,7 @@ func newV3TestClient(t testing.TB, name string) (*V3Client, func()) {
 		t.Fatal(err)
 	}
 
-	return NewV3Client("Test", uri, vcrToken, doer), save
+	return NewV3Client(logtest.Scoped(t), "Test", uri, vcrToken, doer), save
 }
 
 func newV3TestEnterpriseClient(t testing.TB, name string) (*V3Client, func()) {
@@ -810,7 +811,7 @@ func newV3TestEnterpriseClient(t testing.TB, name string) (*V3Client, func()) {
 		t.Fatal(err)
 	}
 
-	return NewV3Client("Test", uri, gheToken, doer), save
+	return NewV3Client(logtest.Scoped(t), "Test", uri, gheToken, doer), save
 }
 
 func strPtr(s string) *string { return &s }

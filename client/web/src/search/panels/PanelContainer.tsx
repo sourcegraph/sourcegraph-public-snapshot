@@ -2,7 +2,7 @@ import * as React from 'react'
 
 import classNames from 'classnames'
 
-import { H2, H4 } from '@sourcegraph/wildcard'
+import { Typography } from '@sourcegraph/wildcard'
 
 import styles from './PanelContainer.module.scss'
 
@@ -33,9 +33,9 @@ export const PanelContainer: React.FunctionComponent<React.PropsWithChildren<Pro
     <div className={classNames(className, styles.panelContainer, 'd-flex', 'flex-column')}>
         {insideTabPanel !== true ? (
             <div className={classNames('d-flex border-bottom', styles.header)}>
-                <H4 as={H2} className={styles.headerText}>
+                <Typography.H4 as={Typography.H2} className={styles.headerText}>
                     {title}
-                </H4>
+                </Typography.H4>
                 {actionButtons}
             </div>
         ) : (

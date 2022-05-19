@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/signal"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -17,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
+	"github.com/sourcegraph/sourcegraph/dev/sg/interrupt"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -45,14 +45,12 @@ func setupExec(ctx context.Context, args []string) error {
 		return err
 	}
 
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-	go func() {
-		for range c {
-			std.Out.WriteAlertf("\n💡 You may need to restart your shell for the changes to work in this terminal.")
-			std.Out.WriteAlertf("   Close this terminal and open a new one or type the following command and press ENTER: %s", filepath.Base(usershell.ShellPath(ctx)))
-		}
-	}()
+	// Before a user interrupts and exits, let them know that they may need to take
+	// additiional actions.
+	interrupt.Register(func() {
+		std.Out.WriteAlertf("\n💡 You may need to restart your shell for the changes to work in this terminal.")
+		std.Out.WriteAlertf("   Close this terminal and open a new one or type the following command and press ENTER: %s", filepath.Base(usershell.ShellPath(ctx)))
+	})
 
 	var categories []dependencyCategory
 	if currentOS == "darwin" {

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	zoektquery "github.com/google/zoekt/query"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -17,6 +18,17 @@ const (
 	Streaming Protocol = iota
 	Batch
 )
+
+func (p Protocol) String() string {
+	switch p {
+	case Streaming:
+		return "Streaming"
+	case Batch:
+		return "Batch"
+	default:
+		return fmt.Sprintf("unknown{%d}", p)
+	}
+}
 
 type SymbolsParameters struct {
 	// Repo is the name of the repository to search in.
@@ -227,6 +239,7 @@ type RepoOptions struct {
 	RepoFilters              []string
 	MinusRepoFilters         []string
 	Dependencies             []string
+	Dependents               []string
 	CaseSensitiveRepoFilters bool
 	SearchContextSpec        string
 

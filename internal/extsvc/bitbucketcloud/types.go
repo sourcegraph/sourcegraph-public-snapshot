@@ -20,6 +20,11 @@ type Account struct {
 	UUID          string        `json:"uuid"`
 }
 
+type Author struct {
+	User *Account `json:"account,omitempty"`
+	Raw  string   `json:"raw"`
+}
+
 type Comment struct {
 	ID        int64          `json:"id"`
 	CreatedOn time.Time      `json:"created_on"`
@@ -36,6 +41,17 @@ type CommentInline struct {
 	To   int64  `json:"to,omitempty"`
 	From int64  `json:"from,omitempty"`
 	Path string `json:"path"`
+}
+
+type Commit struct {
+	Links        Links          `json:"links"`
+	Hash         string         `json:"hash"`
+	Date         time.Time      `json:"date"`
+	Author       Author         `json:"author"`
+	Message      string         `json:"message"`
+	Summary      RenderedMarkup `json:"summary"`
+	Parents      []Commit       `json:"parents"`
+	Participants []Participant  `json:"participants"`
 }
 
 type Link struct {
@@ -101,7 +117,7 @@ type RenderedPullRequestMarkup struct {
 type PullRequestStatus struct {
 	Links       Links                  `json:"links"`
 	UUID        string                 `json:"uuid"`
-	Key         string                 `json:"key"`
+	StatusKey   string                 `json:"key"`
 	RefName     string                 `json:"refname"`
 	URL         string                 `json:"url"`
 	State       PullRequestStatusState `json:"state"`
@@ -109,6 +125,16 @@ type PullRequestStatus struct {
 	Description string                 `json:"description"`
 	CreatedOn   time.Time              `json:"created_on"`
 	UpdatedOn   time.Time              `json:"updated_on"`
+}
+
+func (prs *PullRequestStatus) Key() string {
+	// Statuses sometimes have UUIDs, and sometimes don't. Let's ensure we have
+	// a fallback path.
+	if uuid := prs.UUID; uuid != "" {
+		return uuid
+	}
+
+	return prs.URL
 }
 
 type MergeStrategy string
@@ -135,6 +161,7 @@ type RenderedMarkup struct {
 	Raw    string `json:"raw"`
 	Markup string `json:"markup"`
 	HTML   string `json:"html"`
+	Type   string `json:"type,omitempty"`
 }
 
 type AccountStatus string
@@ -206,4 +233,14 @@ func (cl CloneLinks) HTTPS() (string, error) {
 		}
 	}
 	return "", errors.New("HTTPS clone link not found")
+}
+
+type Workspace struct {
+	Links     Links     `json:"links"`
+	UUID      string    `json:"string"`
+	Name      string    `json:"name"`
+	Slug      string    `json:"slug"`
+	IsPrivate bool      `json:"is_private"`
+	CreatedOn time.Time `json:"created_on"`
+	UpdatedOn time.Time `json:"updated_on"`
 }

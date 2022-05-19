@@ -3,16 +3,11 @@ import { createMemoryHistory } from 'history'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 
-import { PageTitle } from '../../components/PageTitle'
-
 import { RegistryExtensionOverviewPage } from './RegistryExtensionOverviewPage'
 
 jest.mock('mdi-react/GithubIcon', () => 'GithubIcon')
 
 describe('RegistryExtensionOverviewPage', () => {
-    afterEach(() => {
-        PageTitle.titleSet = false
-    })
     test('renders', () => {
         const history = createMemoryHistory()
         expect(

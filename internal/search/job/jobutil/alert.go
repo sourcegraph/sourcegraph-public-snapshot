@@ -5,11 +5,14 @@ import (
 	"math"
 	"time"
 
+	"github.com/opentracing/opentracing-go/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchalert "github.com/sourcegraph/sourcegraph/internal/search/alert"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -31,8 +34,9 @@ type alertJob struct {
 }
 
 func (j *alertJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
-	_, ctx, stream, finish := job.StartSpan(ctx, stream, j)
+	tr, ctx, stream, finish := job.StartSpan(ctx, stream, j)
 	defer func() { finish(alert, err) }()
+	tr.TagFields(trace.LazyFields(j.Tags))
 
 	start := time.Now()
 	countingStream := streaming.NewResultCountingStream(stream)
@@ -69,6 +73,17 @@ func (j *alertJob) Run(ctx context.Context, clients job.RuntimeClients, stream s
 
 func (j *alertJob) Name() string {
 	return "AlertJob"
+}
+
+func (j *alertJob) Tags() []log.Field {
+	return []log.Field{
+		trace.Stringer("query", j.inputs.Query),
+		log.String("originalQuery", j.inputs.OriginalQuery),
+		trace.Stringer("patternType", j.inputs.PatternType),
+		log.Bool("onSourcegraphDotCom", j.inputs.OnSourcegraphDotCom),
+		trace.Stringer("features", j.inputs.Features),
+		trace.Stringer("protocol", j.inputs.Protocol),
+	}
 }
 
 // longer returns a suggested longer time to wait if the given duration wasn't long enough.

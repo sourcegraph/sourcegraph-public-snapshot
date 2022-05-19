@@ -19,7 +19,7 @@ func GetCodeInsightsCriticalTelemetry(ctx context.Context, db database.DB) (_ *t
 }
 
 func totalCountCritical(ctx context.Context, db database.DB) (types.CodeInsightsCriticalTelemetry, error) {
-	store := database.EventLogs(db)
+	store := db.EventLogs()
 	name := InsightsTotalCountCriticalPingName
 	all, err := store.ListAll(ctx, database.EventLogsListOptions{
 		LimitOffset: &database.LimitOffset{

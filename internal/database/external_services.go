@@ -150,11 +150,6 @@ func (e *externalServiceStore) copy() *externalServiceStore {
 	}
 }
 
-// ExternalServices instantiates and returns a new ExternalServicesStore with prepared statements.
-func ExternalServices(db dbutil.DB) ExternalServiceStore {
-	return &externalServiceStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
-}
-
 // ExternalServicesWith instantiates and returns a new ExternalServicesStore with prepared statements.
 func ExternalServicesWith(other basestore.ShareableStore) ExternalServiceStore {
 	return &externalServiceStore{Store: basestore.NewWithHandle(other.Handle())}

@@ -401,7 +401,7 @@ func logAccountCreatedEvent(ctx context.Context, db dbutil.DB, u *types.User, se
 		Timestamp:       time.Now(),
 	}
 
-	SecurityEventLogs(db).LogEvent(ctx, event)
+	NewDB(db).SecurityEventLogs().LogEvent(ctx, event)
 }
 
 // orgsForAllUsersToJoin returns the list of org names that all users should be joined to. The second return value
@@ -628,7 +628,7 @@ func logUserDeletionEvent(ctx context.Context, db dbutil.DB, id int32, name Secu
 		Timestamp:       time.Now(),
 	}
 
-	SecurityEventLogs(db).LogEvent(ctx, event)
+	NewDB(db).SecurityEventLogs().LogEvent(ctx, event)
 }
 
 // SetIsSiteAdmin sets the user with the given ID to be or not to be the site admin.
@@ -1072,7 +1072,7 @@ func LogPasswordEvent(ctx context.Context, db dbutil.DB, r *http.Request, name S
 	}
 	event.AnonymousUserID, _ = cookie.AnonymousUID(r)
 
-	SecurityEventLogs(db).LogEvent(ctx, event)
+	NewDB(db).SecurityEventLogs().LogEvent(ctx, event)
 }
 
 func hashPassword(password string) (sql.NullString, error) {

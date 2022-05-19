@@ -25,3 +25,4 @@ jobs:
                   team/dev-experience=@taylorsperry @jhchabran @kstretch9
                   team/repo-management=@jplahn
                   team/devops=@sourcegraph/cloud-devops
+                  team/iam-admin-experience=@sourcegraph/iam-and-admin-experience

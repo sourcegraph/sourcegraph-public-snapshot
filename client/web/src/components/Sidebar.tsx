@@ -6,7 +6,15 @@ import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import { useRouteMatch } from 'react-router-dom'
 
-import { AnchorLink, ButtonLink, Icon, Collapse, CollapseHeader, CollapsePanel, H2, H3 } from '@sourcegraph/wildcard'
+import {
+    AnchorLink,
+    ButtonLink,
+    Icon,
+    Collapse,
+    CollapseHeader,
+    CollapsePanel,
+    Typography,
+} from '@sourcegraph/wildcard'
 
 import styles from './Sidebar.module.scss'
 
@@ -43,7 +51,7 @@ export const SidebarNavItem: React.FunctionComponent<
  * Header of a `SideBarGroup`
  */
 export const SidebarGroupHeader: React.FunctionComponent<React.PropsWithChildren<{ label: string }>> = ({ label }) => (
-    <H3 as={H2}>{label}</H3>
+    <Typography.H3 as={Typography.H2}>{label}</Typography.H3>
 )
 
 /**

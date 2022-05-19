@@ -8,7 +8,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/bloomfilter"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion/datastructures"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/reader"
@@ -316,14 +315,9 @@ func TestGroupBundleData(t *testing.T) {
 		t.Errorf("unexpected packages (-want +got):\n%s", diff)
 	}
 
-	expectedFilter, err := bloomfilter.CreateFilter([]string{"ident A"})
-	if err != nil {
-		t.Fatalf("unexpected error creating bloom filter: %s", err)
-	}
 	expectedPackageReferences := []precise.PackageReference{
 		{
 			Package: precise.Package{Scheme: "scheme A", Name: "pkg A", Version: "0.1.0"},
-			Filter:  expectedFilter,
 		},
 	}
 	sort.Slice(actualBundleData.PackageReferences, func(i, j int) bool {

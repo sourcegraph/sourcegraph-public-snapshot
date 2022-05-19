@@ -11,6 +11,7 @@ import { panels } from '@sourcegraph/branded/src/components/panel/TabbedPanelCon
 import { EmptyPanelView } from '@sourcegraph/branded/src/components/panel/views/EmptyPanelView'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
+import { Typography } from '../..'
 import { Button } from '../../Button'
 import { Grid } from '../../Grid'
 import { Icon } from '../../Icon'
@@ -77,8 +78,8 @@ export const Simple: Story = () => {
             <Grid columnCount={4}>
                 <div />
                 <div>
-                    <h1>Panel</h1>
-                    <h2>Positions</h2>
+                    <Typography.H1>Panel</Typography.H1>
+                    <Typography.H2>Positions</Typography.H2>
                     <div className="mb-2">
                         <Button variant="secondary" onClick={() => showPanelWithPosition('left')}>
                             Show left panel

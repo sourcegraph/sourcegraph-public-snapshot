@@ -60,7 +60,7 @@ const RepositoryContributorNode: React.FunctionComponent<React.PropsWithChildren
         .replace(/\s+/, ' ')
 
     return (
-        <div className={classNames('list-group-item py-2', styles.repositoryContributorNode)}>
+        <li className={classNames('list-group-item py-2', styles.repositoryContributorNode)}>
             <div className={styles.person}>
                 <UserAvatar inline={true} className="mr-2" user={node.person} />
                 <PersonLink userClassName="font-weight-bold" person={node.person} />
@@ -93,7 +93,7 @@ const RepositoryContributorNode: React.FunctionComponent<React.PropsWithChildren
                     </Link>
                 </div>
             </div>
-        </div>
+        </li>
     )
 }
 
@@ -247,7 +247,7 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                                         onChange={this.onChange}
                                     />
                                     <div className="input-group-append">
-                                        <ButtonGroup>
+                                        <ButtonGroup aria-label="Time period presets">
                                             <Button
                                                 className={classNames(
                                                     styles.btnNoLeftRoundedCorners,
@@ -355,7 +355,6 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                     listClassName="list-group list-group-flush test-filtered-contributors-connection"
                     noun="contributor"
                     pluralNoun="contributors"
-                    listComponent="div"
                     queryConnection={this.queryRepositoryContributors}
                     nodeComponent={RepositoryContributorNode}
                     nodeComponentProps={{

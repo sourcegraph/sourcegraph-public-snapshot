@@ -20,6 +20,7 @@ import { useExperimentalFeatures } from '../../../../../../stores'
 import { Insight, InsightDashboard, InsightType, isVirtualDashboard } from '../../../../core'
 import { useUiFeatures } from '../../../../hooks/use-ui-features'
 import { ConfirmDeleteModal } from '../../../modals/ConfirmDeleteModal'
+import { ShareLinkModal } from '../../../modals/ShareLinkModal/ShareLinkModal'
 
 import { ConfirmRemoveModal } from './ConfirmRemoveModal'
 
@@ -27,9 +28,9 @@ import styles from './InsightContextMenu.module.scss'
 
 export interface InsightCardMenuProps {
     insight: Insight
-    dashboard: InsightDashboard | null
+    currentDashboard: InsightDashboard | null
+    dashboards: InsightDashboard[]
     zeroYAxisMin: boolean
-    menuButtonClassName?: string
     onToggleZeroYAxisMin?: () => void
 }
 
@@ -37,17 +38,18 @@ export interface InsightCardMenuProps {
  * Renders context menu (three dots menu) for particular insight card.
  */
 export const InsightContextMenu: React.FunctionComponent<React.PropsWithChildren<InsightCardMenuProps>> = props => {
-    const { insight, dashboard, zeroYAxisMin, menuButtonClassName, onToggleZeroYAxisMin = noop } = props
+    const { insight, currentDashboard, dashboards, zeroYAxisMin, onToggleZeroYAxisMin = noop } = props
 
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const [showRemoveConfirm, setShowRemoveConfirm] = useState(false)
+    const [showShareModal, setShowShareModal] = useState(false)
 
     const { insight: insightPermissions } = useUiFeatures()
     const menuPermissions = insightPermissions.getContextActionsPermissions(insight)
 
     const insightID = insight.id
-    const editUrl = dashboard?.id
-        ? `/insights/edit/${insightID}?dashboardId=${dashboard.id}`
+    const editUrl = currentDashboard?.id
+        ? `/insights/edit/${insightID}?dashboardId=${currentDashboard.id}`
         : `/insights/edit/${insightID}`
 
     const features = useExperimentalFeatures()
@@ -58,7 +60,7 @@ export const InsightContextMenu: React.FunctionComponent<React.PropsWithChildren
             ? `/batch-changes/create?kind=goChecker${insight.series[0]?.name}&title=${insight.title}`
             : undefined
 
-    const withinVirtualDashboard = !!dashboard && isVirtualDashboard(dashboard)
+    const withinVirtualDashboard = !!currentDashboard && isVirtualDashboard(currentDashboard)
 
     return (
         <>
@@ -67,7 +69,7 @@ export const InsightContextMenu: React.FunctionComponent<React.PropsWithChildren
                     <>
                         <MenuButton
                             data-testid="InsightContextMenuButton"
-                            className={classNames(menuButtonClassName, 'p-1', styles.button)}
+                            className={classNames('p-1 ml-1 d-inline-flex', styles.button)}
                             aria-label="Insight options"
                             outline={true}
                         >
@@ -84,6 +86,14 @@ export const InsightContextMenu: React.FunctionComponent<React.PropsWithChildren
                                 to={editUrl}
                             >
                                 Edit
+                            </MenuLink>
+
+                            <MenuLink
+                                data-testid="InsightContextMenuShareLink"
+                                className={styles.item}
+                                onSelect={() => setShowShareModal(true)}
+                            >
+                                Get shareable link
                             </MenuLink>
 
                             {menuPermissions.showYAxis && (
@@ -111,7 +121,7 @@ export const InsightContextMenu: React.FunctionComponent<React.PropsWithChildren
                                 </MenuLink>
                             )}
 
-                            {dashboard && (
+                            {currentDashboard && (
                                 <MenuItem
                                     data-testid="insight-context-remove-from-dashboard-button"
                                     onSelect={() => setShowRemoveConfirm(true)}
@@ -148,9 +158,16 @@ export const InsightContextMenu: React.FunctionComponent<React.PropsWithChildren
             />
             <ConfirmRemoveModal
                 insight={insight}
-                dashboard={dashboard}
+                dashboard={currentDashboard}
                 showModal={showRemoveConfirm}
                 onCancel={() => setShowRemoveConfirm(false)}
+            />
+            <ShareLinkModal
+                aria-label="Share insight"
+                insight={insight}
+                dashboards={dashboards}
+                isOpen={showShareModal}
+                onDismiss={() => setShowShareModal(false)}
             />
         </>
     )
