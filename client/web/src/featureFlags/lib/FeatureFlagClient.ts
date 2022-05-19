@@ -4,7 +4,7 @@ import { map } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 
 import { requestGraphQL } from '../../backend/graphql'
-import { FetchFeatureFlagsResult } from '../../graphql-operations'
+import { EvaluatedFeatureFlagsResult } from '../../graphql-operations'
 import { FeatureFlagName } from '../featureFlags'
 
 import { getFeatureFlagOverride } from './feature-flag-local-overrides'
@@ -12,12 +12,12 @@ import { getFeatureFlagOverride } from './feature-flag-local-overrides'
 /**
  * Fetches the evaluated feature flags for the current user
  */
-function fetchFeatureFlags(): Observable<FetchFeatureFlagsResult['viewerFeatureFlags']> {
+function fetchFeatureFlags(): Observable<EvaluatedFeatureFlagsResult['evaluatedFeatureFlags']> {
     return from(
-        requestGraphQL<FetchFeatureFlagsResult>(
+        requestGraphQL<EvaluatedFeatureFlagsResult>(
             gql`
-                query FetchFeatureFlags {
-                    viewerFeatureFlags {
+                query EvaluatedFeatureFlags {
+                    evaluatedFeatureFlags {
                         name
                         value
                     }
@@ -26,7 +26,31 @@ function fetchFeatureFlags(): Observable<FetchFeatureFlagsResult['viewerFeatureF
         )
     ).pipe(
         map(dataOrThrowErrors),
-        map(data => data.viewerFeatureFlags)
+        map(data => data.evaluatedFeatureFlags)
+    )
+}
+
+/**
+ * Fetches the evaluated feature flags for the current user
+ */
+ function fetchEvaluateFeatureFlag(flagName: FeatureFlagName): Observable<boolean> {
+    return from(
+        requestGraphQL<EvaluateFeatureFlagResult>(
+            gql`
+                query EvaluateFeatureFlag(flagName: $) {
+                    evaluateFeatureFlag {
+                        name
+                        value
+                    }
+                }
+            `,
+            {
+
+            }
+        )
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.evaluateFeatureFlag)
     )
 }
 
@@ -70,6 +94,7 @@ export class FeatureFlagClient implements IFeatureFlagClient {
      */
     // eslint-disable-next-line id-length
     public on(flagName: FeatureFlagName, callback: (value: boolean, error?: Error) => void): () => void {
+        // TODO: // implement refetching
         Promise.resolve(this.cache.get(flagName) || false)
             .then(callback)
             .catch(error => callback(false, error))
