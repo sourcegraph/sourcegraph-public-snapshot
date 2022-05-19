@@ -5,11 +5,13 @@ import (
 	"io"
 	"os"
 	"reflect"
+	"sort"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -609,6 +611,70 @@ func runFileListingTest(t *testing.T,
 		"file1",
 	}
 	if diff := cmp.Diff(want, files); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
+func TestListTags(t *testing.T) {
+	ClientMocks.LocalGitserver = true
+	defer ResetClientMocks()
+
+	dateEnv := "GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z"
+	gitCommands := []string{
+		dateEnv + " git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git tag t0",
+		"git tag t1",
+		dateEnv + " git tag --annotate -m foo t2",
+	}
+
+	repo := MakeGitRepository(t, gitCommands...)
+	wantTags := []*gitdomain.Tag{
+		{Name: "t0", CommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", CreatorDate: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+		{Name: "t1", CommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", CreatorDate: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+		{Name: "t2", CommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", CreatorDate: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+	}
+
+	client := NewClient(database.NewMockDB())
+	tags, err := client.ListTags(context.Background(), repo)
+	require.Nil(t, err)
+
+	sort.Sort(gitdomain.Tags(tags))
+	sort.Sort(gitdomain.Tags(wantTags))
+
+	if diff := cmp.Diff(wantTags, tags); diff != "" {
+		t.Fatalf("tag mismatch (-want +got):\n%s", diff)
+	}
+}
+
+// See https://github.com/sourcegraph/sourcegraph/issues/5453
+func TestParseTags_WithoutCreatorDate(t *testing.T) {
+	have, err := parseTags([]byte(
+		"9ee1c939d1cb936b1f98e8d81aeffab57bae46ab\x00v2.6.12\x001119037709\n" +
+			"c39ae07f393806ccf406ef966e9a15afc43cc36a\x00v2.6.11-tree\x00\n" +
+			"c39ae07f393806ccf406ef966e9a15afc43cc36a\x00v2.6.11\x00\n",
+	))
+
+	if err != nil {
+		t.Fatalf("parseTags: have err %v, want nil", err)
+	}
+
+	want := []*gitdomain.Tag{
+		{
+			Name:        "v2.6.12",
+			CommitID:    "9ee1c939d1cb936b1f98e8d81aeffab57bae46ab",
+			CreatorDate: time.Unix(1119037709, 0).UTC(),
+		},
+		{
+			Name:     "v2.6.11-tree",
+			CommitID: "c39ae07f393806ccf406ef966e9a15afc43cc36a",
+		},
+		{
+			Name:     "v2.6.11",
+			CommitID: "c39ae07f393806ccf406ef966e9a15afc43cc36a",
+		},
+	}
+
+	if diff := cmp.Diff(have, want); diff != "" {
 		t.Fatal(diff)
 	}
 }
