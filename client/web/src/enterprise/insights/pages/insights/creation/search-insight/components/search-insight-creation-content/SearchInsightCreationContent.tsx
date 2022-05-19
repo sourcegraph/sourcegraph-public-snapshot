@@ -128,7 +128,8 @@ export const SearchInsightCreationContent: React.FunctionComponent<
 }
 
 function seriesToPreview(currentSeries: EditableDataSeries[]): any {
-    return getSanitizedSeries(currentSeries).map(series => ({
+    const validSeries = currentSeries.filter(series => series.valid)
+    return getSanitizedSeries(validSeries).map(series => ({
         query: series.query,
         stroke: series.stroke ? series.stroke : '',
         label: series.name,
