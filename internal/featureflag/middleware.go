@@ -3,7 +3,6 @@ package featureflag
 import (
 	"context"
 	"net/http"
-	"sync"
 
 	"sigs.k8s.io/kustomize/kyaml/errors"
 
@@ -15,9 +14,6 @@ type flagContextKey struct{}
 //go:generate ../../dev/mockgen.sh  github.com/sourcegraph/sourcegraph/internal/featureflag -i Store -o store_mock_test.go
 type Store interface {
 	GetFeatureFlags(context.Context) ([]*FeatureFlag, error)
-	GetUserFlags(context.Context, int32) (map[string]bool, error)
-	GetAnonymousUserFlags(context.Context, string) (map[string]bool, error)
-	GetGlobalFeatureFlags(context.Context) (map[string]bool, error)
 	GetUserFlag(ctx context.Context, userID int32, flagName string) (*bool, error)
 	GetAnonymousUserFlag(ctx context.Context, anonymousUID string, flagName string) (*bool, error)
 	GetGlobalFeatureFlag(ctx context.Context, flagName string) (*bool, error)
@@ -38,63 +34,6 @@ func Middleware(ffs Store, next http.Handler) http.Handler {
 // them.
 type flagSetFetcher struct {
 	ffs Store
-
-	once sync.Once
-	// Actor is the actor that was used to populate flagSet
-	actor *actor.Actor
-	// flagSet is the once-populated set of flags for the actor at the time of population
-	flagSet FlagSet
-}
-
-func (f *flagSetFetcher) fetch(ctx context.Context) FlagSet {
-	f.once.Do(func() {
-		f.actor = actor.FromContext(ctx)
-		f.flagSet = f.fetchForActor(ctx, f.actor)
-	})
-
-	currentActor := actor.FromContext(ctx)
-	if f.actor == currentActor {
-		// If the actor hasn't changed, return the cached flag set
-		return f.flagSet
-	}
-
-	// Otherwise, re-fetch the flag set
-	return f.fetchForActor(ctx, currentActor)
-}
-
-func (f *flagSetFetcher) fetchForActor(ctx context.Context, a *actor.Actor) FlagSet {
-	if a.IsAuthenticated() {
-		flags, err := f.ffs.GetUserFlags(ctx, a.UID)
-		if err == nil {
-			return FlagSet(flags)
-		}
-		// Continue if err != nil
-	}
-
-	if a.AnonymousUID != "" {
-		flags, err := f.ffs.GetAnonymousUserFlags(ctx, a.AnonymousUID)
-		if err == nil {
-			return FlagSet(flags)
-		}
-		// Continue if err != nil
-	}
-
-	flags, err := f.ffs.GetGlobalFeatureFlags(ctx)
-	if err == nil {
-		return FlagSet(flags)
-	}
-
-	return FlagSet(make(map[string]bool))
-}
-
-// FromContext retrieves the current set of flags from the current
-// request's context.
-// DEPRECATED: Will be removed once frontend migrates to new API (https://github.com/sourcegraph/sourcegraph/issues/35543)
-func FromContext(ctx context.Context) FlagSet {
-	if flags := ctx.Value(flagContextKey{}); flags != nil {
-		return flags.(*flagSetFetcher).fetch(ctx)
-	}
-	return nil
 }
 
 // TODO: add description

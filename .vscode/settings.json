@@ -85,4 +85,16 @@
     "editor.insertSpaces": true,
     "editor.tabSize": 2,
   },
+  "sqltools.connections": [
+    {
+      "previewLimit": 50,
+      "server": "localhost",
+      "port": 5432,
+      "driver": "PostgreSQL",
+      "name": "sourcegraph",
+      "database": "sourcegraph",
+      "username": "sourcegraph",
+      "password": "sourcegraph"
+    }
+  ],
 }

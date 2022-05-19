@@ -30,12 +30,6 @@ type FeatureFlagStore interface {
 	GetUserOverrides(context.Context, int32) ([]*ff.Override, error)
 	GetOrgOverridesForUser(ctx context.Context, userID int32) ([]*ff.Override, error)
 	GetOrgOverrideForFlag(ctx context.Context, orgID int32, flagName string) (*ff.Override, error)
-	// DEPRECATED: Will be removed once frontend migrates to new API (https://github.com/sourcegraph/sourcegraph/issues/35543)
-	GetUserFlags(context.Context, int32) (map[string]bool, error)
-	// DEPRECATED: Will be removed once frontend migrates to new API (https://github.com/sourcegraph/sourcegraph/issues/35543)
-	GetAnonymousUserFlags(ctx context.Context, anonymousUID string) (map[string]bool, error)
-	// DEPRECATED: Will be removed once frontend migrates to new API (https://github.com/sourcegraph/sourcegraph/issues/35543)
-	GetGlobalFeatureFlags(context.Context) (map[string]bool, error)
 	GetUserFlag(ctx context.Context, userID int32, flagName string) (*bool, error)
 	GetAnonymousUserFlag(ctx context.Context, anonymousUID string, flagName string) (*bool, error)
 	GetGlobalFeatureFlag(ctx context.Context, flagName string) (*bool, error)
@@ -319,10 +313,38 @@ func (f *featureFlagStore) CreateOverride(ctx context.Context, override *ff.Over
 	res, err := scanFeatureFlagOverride(row)
 
 	if err == nil {
-		ff.ClearFlagForUserFromCache(override.FlagName, override.UserID)
+		ff.ClearFlagForOverrideFromCache(override.FlagName, f.getUserIDsForOverride(ctx, override.OrgID, override.UserID))
 	}
 
 	return res, err
+}
+
+func (f *featureFlagStore) getUserIDsForOverride(ctx context.Context, orgID, userID *int32) []*int32 {
+	var userIDs = make([]*int32, 0, 0)
+
+	if userID != nil {
+		userIDs = append(userIDs, userID)
+	}
+
+	if orgID == nil {
+		return userIDs
+	}
+
+	rows, err := f.Query(ctx, sqlf.Sprintf("SELECT org_members.user_id FROM org_members WHERE org_id = %s", &orgID))
+	defer rows.Close()
+
+	if err != nil {
+		return userIDs
+	}
+
+	for rows.Next() {
+		var orgUserID *int32
+
+		rows.Scan(&orgUserID)
+		userIDs = append(userIDs, orgUserID)
+	}
+
+	return userIDs
 }
 
 func (f *featureFlagStore) DeleteOverride(ctx context.Context, orgID, userID *int32, flagName string) error {
@@ -349,7 +371,7 @@ func (f *featureFlagStore) DeleteOverride(ctx context.Context, orgID, userID *in
 	))
 
 	if err == nil {
-		ff.ClearFlagForUserFromCache(flagName, userID)
+		ff.ClearFlagForOverrideFromCache(flagName, f.getUserIDsForOverride(ctx, orgID, userID))
 	}
 
 	return err
@@ -388,7 +410,7 @@ func (f *featureFlagStore) UpdateOverride(ctx context.Context, orgID, userID *in
 	res, err := scanFeatureFlagOverride(row)
 
 	if err == nil {
-		ff.ClearFlagForUserFromCache(flagName, userID)
+		ff.ClearFlagForOverrideFromCache(flagName, f.getUserIDsForOverride(ctx, orgID, userID))
 	}
 
 	return res, err
@@ -509,90 +531,7 @@ func scanFeatureFlagOverride(scanner rowScanner) (*ff.Override, error) {
 	return &res, err
 }
 
-// GetUserFlags returns the calculated values for feature flags for the given userID. This should
-// be the primary entrypoint for getting the user flags since it handles retrieving all the flags,
-// the org overrides, and the user overrides, and merges them in priority order.
-// TODO: remove
-func (f *featureFlagStore) GetUserFlags(ctx context.Context, userID int32) (map[string]bool, error) {
-	g, ctx := errgroup.WithContext(ctx)
-
-	var flags []*ff.FeatureFlag
-	g.Go(func() error {
-		res, err := f.GetFeatureFlags(ctx)
-		flags = res
-		return err
-	})
-
-	var orgOverrides []*ff.Override
-	g.Go(func() error {
-		res, err := f.GetOrgOverridesForUser(ctx, userID)
-		orgOverrides = res
-		return err
-	})
-
-	var userOverrides []*ff.Override
-	g.Go(func() error {
-		res, err := f.GetUserOverrides(ctx, userID)
-		userOverrides = res
-		return err
-	})
-
-	if err := g.Wait(); err != nil {
-		return nil, err
-	}
-
-	res := make(map[string]bool, len(flags))
-	for _, ff := range flags {
-		res[ff.Name] = ff.EvaluateForUser(userID)
-
-		// Org overrides are higher priority than default
-		for _, oo := range orgOverrides {
-			res[oo.FlagName] = oo.Value
-		}
-
-		// User overrides are higher priority than org overrides
-		for _, uo := range userOverrides {
-			res[uo.FlagName] = uo.Value
-		}
-	}
-
-	return res, nil
-}
-
-// GetAnonymousUserFlags returns the calculated values for feature flags for the given anonymousUID
-// TODO: remove
-func (f *featureFlagStore) GetAnonymousUserFlags(ctx context.Context, anonymousUID string) (map[string]bool, error) {
-	flags, err := f.GetFeatureFlags(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	res := make(map[string]bool, len(flags))
-	for _, ff := range flags {
-		res[ff.Name] = ff.EvaluateForAnonymousUser(anonymousUID)
-	}
-
-	return res, nil
-}
-
-// TODO: remove
-func (f *featureFlagStore) GetGlobalFeatureFlags(ctx context.Context) (map[string]bool, error) {
-	flags, err := f.GetFeatureFlags(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	res := make(map[string]bool, len(flags))
-	for _, ff := range flags {
-		if val, ok := ff.EvaluateGlobal(); ok {
-			res[ff.Name] = val
-		}
-	}
-
-	return res, nil
-}
-
-// GetUserFlags returns the calculated values for feature flags for the given userID. This should
+// GetUserFlag returns the calculated values for feature flags for the given userID. This should
 // be the primary entrypoint for getting the user flags since it handles retrieving all the flags,
 // the org overrides, and the user overrides, and merges them in priority order.
 func (f *featureFlagStore) GetUserFlag(ctx context.Context, userID int32, flagName string) (*bool, error) {
@@ -643,7 +582,7 @@ func (f *featureFlagStore) GetUserFlag(ctx context.Context, userID int32, flagNa
 	return nil, errors.Errorf("Feature \"%s\" flag not found", flagName)
 }
 
-// GetAnonymousUserFlags returns the calculated values for feature flags for the given anonymousUID
+// GetAnonymousUserFlag returns the calculated values for feature flags for the given anonymousUID
 func (f *featureFlagStore) GetAnonymousUserFlag(ctx context.Context, anonymousUID string, flagName string) (*bool, error) {
 	flags, err := f.GetFeatureFlags(ctx)
 	if err != nil {
