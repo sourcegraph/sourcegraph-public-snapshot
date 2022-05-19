@@ -89,6 +89,7 @@ import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import { LayoutRouteProps } from './routes'
 import { PageRoutes } from './routes.constants'
+import { AccessibilityRuntimeChecker } from './RuntimeAccessibilityChecker'
 import { parseSearchURL } from './search'
 import { NotepadContainer } from './search/Notepad'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
@@ -485,6 +486,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                             notificationItemStyleProps={notificationStyles}
                                         />
                                         <UserSessionStores />
+                                        <AccessibilityRuntimeChecker />
                                     </SearchQueryStateStoreProvider>
                                 </SearchResultsCacheProvider>
                             </TemporarySettingsProvider>
