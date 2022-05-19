@@ -25,6 +25,7 @@ import {
     first,
     map,
     mapTo,
+    pairwise,
     share,
     switchMap,
     tap,
@@ -296,16 +297,26 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         )
     )
 
+    const popoverParameter = useMemo(() => urlSearchParameters.pipe(map(parameters => parameters.get('popover'))), [
+        urlSearchParameters,
+    ])
+
     const hoverifier = useMemo(
         () =>
             createHoverifier<HoverContext, HoverMerged, ActionItemAction>({
                 pinOptions: {
-                    pins: urlSearchParameters.pipe(
-                        map(parameters => parameters.get('popover')),
-                        filter(state => state === 'pinned'),
+                    pins: popoverParameter.pipe(
+                        filter(value => value === 'pinned'),
                         mapTo(undefined)
                     ),
-                    closeButtonClicks: popoverCloses,
+                    closeButtonClicks: merge(
+                        popoverCloses,
+                        popoverParameter.pipe(
+                            pairwise(),
+                            filter(([previous, next]) => previous === 'pinned' && next !== 'pinned'),
+                            mapTo(undefined)
+                        )
+                    ),
                 },
                 hoverOverlayElements,
                 hoverOverlayRerenders: rerenders.pipe(
@@ -330,14 +341,13 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                 getActions: context => getHoverActions({ extensionsController, platformContext }, context),
             }),
         [
-            // None of these dependencies are likely to change
+            popoverParameter,
+            popoverCloses,
+            hoverOverlayElements,
+            rerenders,
+            blobElements,
             extensionsController,
             platformContext,
-            hoverOverlayElements,
-            blobElements,
-            rerenders,
-            popoverCloses,
-            urlSearchParameters,
         ]
     )
 
