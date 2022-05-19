@@ -6,7 +6,7 @@ import { noop } from 'rxjs'
 import { styles } from '../../../../../../components/creation-ui-kit'
 import { FormChangeEvent, SubmissionErrors } from '../../../../../../components/form/hooks/useForm'
 import { Insight } from '../../../../../../core'
-import { InsightLivePreview } from '../../../LivePreview'
+import { LineChartLivePreview } from '../../../LineChartLivePreview'
 import { CreateInsightFormFields, EditableDataSeries } from '../../types'
 import { getSanitizedSeries } from '../../utils/insight-sanitizer'
 import { SearchInsightCreationForm } from '../SearchInsightCreationForm'
@@ -114,7 +114,7 @@ export const SearchInsightCreationContent: React.FunctionComponent<
                 onFormReset={handleFormReset}
             />
 
-            <InsightLivePreview
+            <LineChartLivePreview
                 disabled={!allFieldsForPreviewAreValid}
                 repositories={repositories.meta.value}
                 isAllReposMode={allReposMode.input.value}

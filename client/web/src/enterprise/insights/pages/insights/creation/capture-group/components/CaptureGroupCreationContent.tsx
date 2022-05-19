@@ -9,7 +9,7 @@ import { useField } from '../../../../../components/form/hooks/useField'
 import { FormChangeEvent, SubmissionErrors, useForm } from '../../../../../components/form/hooks/useForm'
 import { createRequiredValidator } from '../../../../../components/form/validators'
 import { Insight } from '../../../../../core'
-import { InsightLivePreview } from '../../LivePreview'
+import { LineChartLivePreview } from '../../LineChartLivePreview'
 import {
     repositoriesExistValidator,
     repositoriesFieldValidator,
@@ -168,7 +168,7 @@ export const CaptureGroupCreationContent: React.FunctionComponent<
                 onFormReset={handleFormReset}
             />
 
-            <InsightLivePreview
+            <LineChartLivePreview
                 disabled={!areAllFieldsForPreviewValid}
                 isAllReposMode={allReposMode.input.value}
                 repositories={repositories.meta.value}

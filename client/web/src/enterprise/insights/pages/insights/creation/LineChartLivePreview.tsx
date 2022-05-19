@@ -22,7 +22,7 @@ import { CodeInsightsBackendContext, SeriesChartContent } from '../../../core'
 import { getSanitizedCaptureQuery } from './capture-group/utils/capture-group-insight-sanitizer'
 import { InsightStep } from './search-insight'
 
-interface InsightLivePreviewProps {
+interface LineChartLivePreviewProps {
     disabled: boolean
     repositories: string
     stepValue: string
@@ -37,7 +37,9 @@ interface InsightLivePreviewProps {
     }[]
 }
 
-export const InsightLivePreview: React.FunctionComponent<React.PropsWithChildren<InsightLivePreviewProps>> = props => {
+export const LineChartLivePreview: React.FunctionComponent<
+    React.PropsWithChildren<LineChartLivePreviewProps>
+> = props => {
     const { disabled, repositories, stepValue, step, series, isAllReposMode, className } = props
     const { getInsightPreviewContent: getLivePreviewContent } = useContext(CodeInsightsBackendContext)
 
