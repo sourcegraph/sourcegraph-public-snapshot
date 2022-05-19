@@ -89,7 +89,8 @@ func (s *SentryCore) clone() *SentryCore {
 	return &c
 }
 
-// With stores fields passed to the core that will be then used to contruct the final error report.
+// With stores fields passed to the core into a new core that will be then used to contruct the final error report.
+//
 // It does not capture errors, because we may get additional context in a subsequent With or Write call
 // that will also need to be included.
 func (s *SentryCore) With(fields []zapcore.Field) zapcore.Core {
