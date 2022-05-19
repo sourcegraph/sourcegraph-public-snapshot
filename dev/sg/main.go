@@ -122,9 +122,6 @@ var sg = &cli.App{
 			addAnalyticsHooks(start, []string{"sg"}, cmd.App.Commands)
 		}
 
-		// Add autosuggestion hooks to commands with subcommands but no action
-		addSuggestionHooks(cmd.App.Commands)
-
 		// Validate configuration flags, which is required for sgconf.Get to work everywhere else.
 		if configFile == "" {
 			return errors.Newf("--config must not be empty")
@@ -218,7 +215,7 @@ var sg = &cli.App{
 		os.Exit(1)
 	},
 
-	CommandNotFound: suggestCommands,
+	Suggest: true,
 
 	EnableBashCompletion:   true,
 	UseShortOptionHandling: true,
