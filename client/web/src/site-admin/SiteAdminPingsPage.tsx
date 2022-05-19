@@ -179,13 +179,30 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                         <li>
                             Aggregate counts of unique monthly users, by:
                             <ul>
-                                <li>Whether they are contributed to batch changes</li>
+                                <li>Whether they have contributed to batch changes</li>
                                 <li>Whether they only viewed batch changes</li>
+                                <li>Whether they have performed a bulk operation</li>
                             </ul>
                         </li>
                         <li>
                             Weekly batch change (open, closed) and changesets counts (imported, published, unpublished,
                             open, draft, merged, closed) for batch change cohorts created in the last 12 months
+                        </li>
+                        <li>Weekly bulk operations count (grouped by operation)</li>
+                        <li>Total count of executors connected</li>
+                        <li>Cumulative executor runtime monthly</li>
+                        <li>Total count of publish bulk operation</li>
+                        <li>Total count of bulk operations (grouped by operation type)</li>
+                        <li>
+                            Changeset distribution for batch change (grouped by batch change source: local or executor)
+                        </li>
+                        <li>Total count of users that ran a job on an executor monthly</li>
+                        <li>
+                            Total count of published changesets and batch changes created via:
+                            <ul>
+                                <li>executor</li>
+                                <li>local (using src-cli)</li>
+                            </ul>
                         </li>
                     </ul>
                 </li>

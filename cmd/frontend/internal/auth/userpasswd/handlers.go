@@ -408,7 +408,7 @@ func HandleCheckUsernameTaken(db database.DB) func(w http.ResponseWriter, r *htt
 			return
 		}
 
-		_, err = database.Namespaces(db).GetByName(r.Context(), username)
+		_, err = db.Namespaces().GetByName(r.Context(), username)
 		if err == database.ErrNamespaceNotFound {
 			w.WriteHeader(http.StatusNotFound)
 			return

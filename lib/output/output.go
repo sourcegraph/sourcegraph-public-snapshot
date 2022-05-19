@@ -6,6 +6,7 @@ import (
 	"io"
 	"sync"
 
+	"github.com/charmbracelet/glamour"
 	"github.com/mattn/go-runewidth"
 )
 
@@ -215,6 +216,32 @@ func (o *Output) Progress(bars []ProgressBar, opts *ProgressOpts) Progress {
 // A Progress instance must be disposed of via the Complete or Destroy methods.
 func (o *Output) ProgressWithStatusBars(bars []ProgressBar, statusBars []*StatusBar, opts *ProgressOpts) ProgressWithStatusBars {
 	return newProgressWithStatusBars(bars, statusBars, o, opts)
+}
+
+// WriteMarkdown renders Markdown nicely, unless color is disabled.
+func (o *Output) WriteMarkdown(str string) error {
+	if !o.caps.Color {
+		o.Write(str)
+		return nil
+	}
+
+	r, err := glamour.NewTermRenderer(
+		// detect background color and pick either the default dark or light theme
+		glamour.WithAutoStyle(),
+		// wrap output at slightly less than terminal width
+		glamour.WithWordWrap(o.caps.Width*4/5),
+		glamour.WithEmoji(),
+	)
+	if err != nil {
+		return err
+	}
+
+	rendered, err := r.Render(str)
+	if err != nil {
+		return err
+	}
+	o.Write(rendered)
+	return nil
 }
 
 // The utility functions below do not make checks for whether the terminal is a

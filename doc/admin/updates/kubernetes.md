@@ -17,6 +17,8 @@
 - Updated the Nginx ingress controller to v1.2.0. Previously this image originated from quay.io, now it is pulled from the official k8s repository. A redeployment of the ingress 
  controller may be necessary if your deployment used the manifests provided in `configure/ingress-nginx`. [#4128](https://github.com/sourcegraph/deploy-sourcegraph/pull/4128) 
 
+- The alpine-3.12 docker images used as init containers for some deployments have been replaced with images based on alpine-3.14. [#4129](https://github.com/sourcegraph/deploy-sourcegraph/pull/4129)
+ 
 ## 3.38 -> 3.39
 
 The`codeinsights-db` container no longer uses TimescaleDB and is now based on the standard Postgres image [sourcegraph/deploy-sourcegraph#4103](https://github.com/sourcegraph/deploy-sourcegraph/pull/4103). Metrics scraping is also enabled.

@@ -181,7 +181,7 @@ func serveOrgsListUsers(db database.DB) func(w http.ResponseWriter, r *http.Requ
 		if err != nil {
 			return errors.Wrap(err, "Decode")
 		}
-		orgMembers, err := database.OrgMembers(db).GetByOrgID(r.Context(), orgID)
+		orgMembers, err := db.OrgMembers().GetByOrgID(r.Context(), orgID)
 		if err != nil {
 			return errors.Wrap(err, "OrgMembers.GetByOrgID")
 		}

@@ -122,15 +122,17 @@ const PrivateContent: FunctionComponent = () => (
             dashboards to share with others.
         </p>
         <p>
-            The “all insights” dashboard shows you all insights available to you regardless of their visibility to
-            others.
+            <em>
+                The “all insights” dashboard shows you all insights available to you regardless of their visibility to
+                others.
+            </em>
         </p>
     </>
 )
 
 const OrganizationContent: FunctionComponent<{ organizations: string[] }> = ({ organizations }) => (
     <>
-        <p className="mb-2">Only people added to following Organisations can see this insight:</p>
+        <p className="mb-2">Only people added to following Organizations can see this insight:</p>
         {organizations.map(organization => (
             <Badge variant="secondary" key={organization} className="mr-2">
                 {organization}

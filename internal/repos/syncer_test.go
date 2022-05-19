@@ -533,6 +533,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 
 		for _, tc := range testCases {
 			if tc.name == "" {
+				t.Error("Test case name is blank")
 				continue
 			}
 
@@ -545,7 +546,9 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 						t.Fatalf("%q panicked: %v", tc.name, err)
 					}
 				}()
-
+				if st == nil {
+					t.Fatal("nil store")
+				}
 				now := tc.now
 				if now == nil {
 					clock := timeutil.NewFakeClock(time.Now(), time.Second)
@@ -557,7 +560,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 					ctx = context.Background()
 				}
 
-				if st != nil && len(tc.stored) > 0 {
+				if len(tc.stored) > 0 {
 					cloned := tc.stored.Clone()
 					if err := st.RepoStore().Create(ctx, cloned...); err != nil {
 						t.Fatalf("failed to prepare store: %v", err)
@@ -571,25 +574,38 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				}
 
 				for _, svc := range tc.svcs {
-					err := syncer.SyncExternalService(ctx, svc.ID, time.Millisecond)
+					before, err := st.ExternalServiceStore().GetByID(ctx, svc.ID)
+					if err != nil {
+						t.Fatal(err)
+					}
 
+					err = syncer.SyncExternalService(ctx, svc.ID, time.Millisecond)
 					if have, want := fmt.Sprint(err), tc.err; !strings.Contains(have, want) {
 						t.Errorf("error %q doesn't contain %q", have, want)
 					}
+
+					after, err := st.ExternalServiceStore().GetByID(ctx, svc.ID)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					// last_synced should always be updated
+					if before.LastSyncAt == after.LastSyncAt {
+						t.Log(before.LastSyncAt, after.LastSyncAt)
+						t.Errorf("Service %q last_synced was not updated", svc.DisplayName)
+					}
 				}
 
-				if st != nil {
-					var want, have types.Repos
-					want.Concat(tc.diff.Added, tc.diff.Modified, tc.diff.Unmodified)
-					have, _ = st.RepoStore().List(ctx, database.ReposListOptions{})
+				var want, have types.Repos
+				want.Concat(tc.diff.Added, tc.diff.Modified, tc.diff.Unmodified)
+				have, _ = st.RepoStore().List(ctx, database.ReposListOptions{})
 
-					want = want.With(typestest.Opt.RepoID(0))
-					have = have.With(typestest.Opt.RepoID(0))
-					sort.Sort(want)
-					sort.Sort(have)
+				want = want.With(typestest.Opt.RepoID(0))
+				have = have.With(typestest.Opt.RepoID(0))
+				sort.Sort(want)
+				sort.Sort(have)
 
-					typestest.Assert.ReposEqual(want...)(t, have)
-				}
+				typestest.Assert.ReposEqual(want...)(t, have)
 			}))
 		}
 	}

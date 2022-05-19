@@ -427,7 +427,7 @@ func TestRepoStore_nonSiteAdminCanViewOrgPrivateCode(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = OrgMembers(db).Create(ctx, org.ID, alice.ID)
+	_, err = db.OrgMembers().Create(ctx, org.ID, alice.ID)
 	if err != nil {
 		t.Fatal(err)
 	}

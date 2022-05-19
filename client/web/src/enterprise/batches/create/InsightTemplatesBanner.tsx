@@ -14,7 +14,7 @@ interface InsightTemplatesBannerProps {
     className?: string
 }
 
-export const InsightTemplatesBanner: React.FunctionComponent<InsightTemplatesBannerProps> = ({
+export const InsightTemplatesBanner: React.FunctionComponent<React.PropsWithChildren<InsightTemplatesBannerProps>> = ({
     insightTitle,
     className,
     type,
