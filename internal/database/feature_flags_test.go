@@ -536,7 +536,7 @@ func testAnonymousUserFlags(t *testing.T) {
 		mkFFBool("f1", true)
 		mkFFBool("f2", false)
 
-		got, err := flagStore.GetAnonymousUserFlags(ctx, "testuser")
+		got, err := flagStore.GetAnonymousUserFlag(ctx, "testuser", "")
 		require.NoError(t, err)
 		expected := map[string]bool{"f1": true, "f2": false}
 		require.Equal(t, expected, got)
@@ -547,7 +547,7 @@ func testAnonymousUserFlags(t *testing.T) {
 		mkFFBoolVar("f1", 10000)
 		mkFFBoolVar("f2", 0)
 
-		got, err := flagStore.GetAnonymousUserFlags(ctx, "testuser")
+		got, err := flagStore.GetAnonymousUserFlag(ctx, "testuser", "")
 		require.NoError(t, err)
 		expected := map[string]bool{"f1": true, "f2": false}
 		require.Equal(t, expected, got)

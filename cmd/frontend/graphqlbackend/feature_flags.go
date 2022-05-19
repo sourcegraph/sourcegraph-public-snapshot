@@ -127,12 +127,6 @@ func (e *EvaluatedFeatureFlagResolver) Value() bool {
 	return e.value
 }
 
-// DEPRECATED: Will be removed once frontend migrates to new API
-func (r *schemaResolver) ViewerFeatureFlags(ctx context.Context) []*EvaluatedFeatureFlagResolver {
-	f := featureflag.FromContext(ctx)
-	return evaluatedFlagsToResolvers(f)
-}
-
 func (r *schemaResolver) EvaluateFeatureFlag(ctx context.Context, args *struct {
 	FlagName string
 }) bool {
