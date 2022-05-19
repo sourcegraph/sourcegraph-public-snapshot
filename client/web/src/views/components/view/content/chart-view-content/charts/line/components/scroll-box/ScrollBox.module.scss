@@ -26,6 +26,7 @@
     height: 0;
     width: 100%;
     opacity: 0;
+    pointer-events: none;
 
     &--top {
         top: 0;
