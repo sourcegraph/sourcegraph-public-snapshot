@@ -50,8 +50,6 @@ func addAnalyticsHooks(start time.Time, commandPath []string, commands []*cli.Co
 
 func makeAnalyticsHook(start time.Time, commandPath []string) func(ctx *cli.Context, events ...string) {
 	return func(cmd *cli.Context, events ...string) {
-		println("im doing analytics!")
-
 		// Log an sg usage occurrence
 		analytics.LogEvent(cmd.Context, "sg_action", commandPath, start, events...)
 
