@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/urfave/cli/v2"
 )
@@ -13,7 +12,6 @@ func completeOptions(generateOptions func() (options []string)) cli.BashComplete
 		for _, opt := range generateOptions() {
 			fmt.Fprintf(cmd.App.Writer, "%s\n", opt)
 		}
-		os.Exit(1)
 		// Also render default completions to support flags
 		cli.DefaultCompleteWithFlags(cmd.Command)(cmd)
 	}
