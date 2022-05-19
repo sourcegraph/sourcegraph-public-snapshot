@@ -160,7 +160,7 @@ func (w *sentryWorker) start() {
 				w.hub.Flush(5 * time.Second)
 				return
 			case err := <-w.ErrorsC:
-				w.capture(err)
+				w.capture(err) // it takes between 250µs and 150µs on my machine.
 			}
 		}
 	}()
