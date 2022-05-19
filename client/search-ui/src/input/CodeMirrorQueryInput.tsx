@@ -687,7 +687,7 @@ function isTokenInRange(position: number, token: Pick<DecoratedToken, 'type' | '
 }
 
 // Looks like there might be a bug with how the end range for a field is
-// computed? Need to add 2 to make this work properly.
+// computed? Need to add 1 to make this work properly.
 function getEndPosition(token: Pick<DecoratedToken, 'type' | 'range'>): number {
     return token.range.end + (token.type === 'field' ? 1 : 0)
 }
