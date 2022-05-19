@@ -1926,6 +1926,102 @@ mutation($batchChange: ID!, $changesets: [ID!]!, $draft: Boolean!) {
 }
 `
 
+func TestCheckBatchChangesCredential(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ct.MockRSAKeygen(t)
+
+	ctx := context.Background()
+	db := database.NewDB(dbtest.NewDB(t))
+
+	pruneUserCredentials(t, db, nil)
+
+	userID := ct.CreateTestUser(t, db, true).ID
+
+	cstore := store.New(db, &observation.TestContext, nil)
+
+	authenticator := &auth.OAuthBearerToken{Token: "SOSECRET"}
+	userCred, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
+		Domain:              database.UserCredentialDomainBatches,
+		ExternalServiceType: extsvc.TypeGitHub,
+		ExternalServiceID:   "https://github.com/",
+		UserID:              userID,
+	}, authenticator)
+	if err != nil {
+		t.Fatal(err)
+	}
+	siteCred := &btypes.SiteCredential{
+		ExternalServiceType: extsvc.TypeGitHub,
+		ExternalServiceID:   "https://github.com/",
+	}
+	if err := cstore.CreateSiteCredential(ctx, siteCred, authenticator); err != nil {
+		t.Fatal(err)
+	}
+
+	r := &Resolver{store: cstore}
+	s, err := newSchema(database.NewDB(db), r)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var validationErr error
+	service.Mocks.ValidateAuthenticator = func(ctx context.Context, externalServiceID, externalServiceType string, a auth.Authenticator) error {
+		return validationErr
+	}
+	t.Cleanup(func() {
+		service.Mocks.Reset()
+	})
+
+	t.Run("valid site credential", func(t *testing.T) {
+		input := map[string]any{
+			"batchChangesCredential": marshalBatchChangesCredentialID(userCred.ID, true),
+		}
+
+		var response struct{ CheckBatchChangesCredential apitest.EmptyResponse }
+		actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+
+		apitest.MustExec(actorCtx, t, s, input, &response, queryCheckCredential)
+	})
+
+	t.Run("valid user credential", func(t *testing.T) {
+		input := map[string]any{
+			"batchChangesCredential": marshalBatchChangesCredentialID(userCred.ID, false),
+		}
+
+		var response struct{ CheckBatchChangesCredential apitest.EmptyResponse }
+		actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+
+		apitest.MustExec(actorCtx, t, s, input, &response, queryCheckCredential)
+	})
+
+	t.Run("invalid credential", func(t *testing.T) {
+		validationErr = errors.New("credential is not authorized")
+
+		input := map[string]any{
+			"batchChangesCredential": marshalBatchChangesCredentialID(userCred.ID, true),
+		}
+
+		var response struct{ CheckBatchChangesCredential apitest.EmptyResponse }
+		actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+
+		errs := apitest.Exec(actorCtx, t, s, input, &response, queryCheckCredential)
+		if len(errs) != 1 {
+			t.Fatalf("expected single errors, but got none")
+		}
+		if have, want := errs[0].Extensions["code"], "ErrVerifyCredentialFailed"; have != want {
+			t.Fatalf("wrong error code. want=%q, have=%q", want, have)
+		}
+	})
+}
+
+const queryCheckCredential = `
+query($batchChangesCredential: ID!) {
+  checkBatchChangesCredential(batchChangesCredential: $batchChangesCredential) { alwaysNil }
+}
+`
+
 func stringPtr(s string) *string { return &s }
 
 func newSchema(db database.DB, r graphqlbackend.BatchChangesResolver) (*graphql.Schema, error) {
