@@ -6,6 +6,7 @@ package sinkcores
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/getsentry/sentry-go"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -156,6 +157,7 @@ func (w *sentryWorker) start() {
 		for {
 			select {
 			case <-w.done:
+				w.hub.Flush(5 * time.Second)
 				return
 			case err := <-w.ErrorsC:
 				w.capture(err)
