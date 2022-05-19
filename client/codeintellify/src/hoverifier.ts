@@ -536,7 +536,6 @@ export function createHoverifier<C extends object, D, A>({
      * pinned at the jump target.
      */
     const jumpTargets = allPositionJumps.pipe(
-        // TODO filterWhen hoverState.pinned
         // Only use line and character for comparison
         map(({ position: { line, character, part }, ...rest }) => ({
             position: { line, character, part },
