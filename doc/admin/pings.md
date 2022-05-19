@@ -65,9 +65,20 @@ This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
   - Total count of changesets manually added to a batch change
   - Total count of changesets manually added to a batch change that have been merged
   - Aggregate counts of unique monthly users, by:
-    - Whether they are contributed to batch changes
+    - Whether they have contributed to batch changes
     - Whether they only viewed batch changes
+    - Whether they have performed a bulk operation
   - Weekly batch change (open, closed) and changesets counts (imported, published, unpublished, open, draft, merged, closed) for batch change cohorts created in the last 12 months
+  - Weekly bulk operations count (grouped by operation)
+  - Total count of executors connected
+  - Cumulative executor runtime monthly
+  - Total count of `publish` bulk operation
+  - Total count of bulk operations (grouped by operation type)
+  - Changeset distribution for batch change (grouped by batch change source: `local` or `executor`)
+  - Total count of users that ran a job on an executor monthly
+  - Total count of published changesets and batch changes created via:
+    - executor
+    - local (using `src-cli`)
 - Aggregated counts of users created, deleted, retained, resurrected and churned within the month
 - Saved searches usage data
   - Count of saved searches
