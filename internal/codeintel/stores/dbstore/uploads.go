@@ -887,18 +887,22 @@ func (s *Store) selectRepositoriesForIndexScan(ctx context.Context, table, colum
 		limitExpression = sqlf.Sprintf("LIMIT %s", *repositoryMatchLimit)
 	}
 
-	replacer := strings.NewReplacer("{table_name}", table, "{column_name}", column)
+	replacer := strings.NewReplacer("{column_name}", column)
 	return basestore.ScanInts(s.Query(ctx, sqlf.Sprintf(
 		replacer.Replace(selectRepositoriesForIndexScanQuery),
 		allowGlobalPolicies,
 		limitExpression,
+		quote(table),
 		now,
 		int(processDelay/time.Second),
 		limit,
+		quote(table),
 		now,
 		now,
 	)))
 }
+
+func quote(s string) *sqlf.Query { return sqlf.Sprintf(s) }
 
 const selectRepositoriesForIndexScanQuery = `
 -- source: internal/codeintel/stores/dbstore/uploads.go:selectRepositoriesForIndexScan
@@ -944,7 +948,7 @@ candidate_repositories AS (
 repositories AS (
 	SELECT cr.id
 	FROM candidate_repositories cr
-	LEFT JOIN {table_name} lrs ON lrs.repository_id = cr.id
+	LEFT JOIN %s lrs ON lrs.repository_id = cr.id
 
 	-- Ignore records that have been checked recently. Note this condition is
 	-- true for a null {column_name} (which has never been checked).
@@ -954,7 +958,7 @@ repositories AS (
 		cr.id -- tie breaker
 	LIMIT %s
 )
-INSERT INTO {table_name} (repository_id, {column_name})
+INSERT INTO %s (repository_id, {column_name})
 SELECT r.id, %s::timestamp FROM repositories r
 ON CONFLICT (repository_id) DO UPDATE
 SET {column_name} = %s

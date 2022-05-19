@@ -32,19 +32,14 @@ var _ goroutine.ErrorHandler = &indexer{}
 var autoIndexingEnabled = conf.CodeIntelAutoIndexingEnabled
 
 func (i *indexer) Handle(ctx context.Context) error {
-	fmt.Println("foobar!")
 	if !autoIndexingEnabled() {
 		return nil
 	}
-	fmt.Println("barfoo!")
-	fmt.Printf("allow global: %t\n", conf.CodeIntelAutoIndexingAllowGlobalPolicies())
 
 	var repositoryMatchLimit *int
 	if val := conf.CodeIntelAutoIndexingPolicyRepositoryMatchLimit(); val != -1 {
 		repositoryMatchLimit = &val
 	}
-
-	// TODO: needs to write to a different timpestamp
 
 	repositories, err := i.dbStore.SelectRepositoriesForIndexScan(
 		ctx,
@@ -59,14 +54,12 @@ func (i *indexer) Handle(ctx context.Context) error {
 		return errors.Wrap(err, "dbstore.SelectRepositoriesForIndexScan")
 	}
 	if len(repositories) == 0 {
-		fmt.Println("no repositories")
 		return nil
 	}
 
 	now := timeutil.Now()
 
 	for _, repositoryID := range repositories {
-		fmt.Printf("repositoryID=%d\n", repositoryID)
 		if repositoryErr := i.handleRepository(ctx, repositoryID, now); repositoryErr != nil {
 			if err == nil {
 				err = repositoryErr
