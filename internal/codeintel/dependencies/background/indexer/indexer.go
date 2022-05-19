@@ -32,9 +32,12 @@ var _ goroutine.ErrorHandler = &indexer{}
 var autoIndexingEnabled = conf.CodeIntelAutoIndexingEnabled
 
 func (i *indexer) Handle(ctx context.Context) error {
+	fmt.Println("foobar!")
 	if !autoIndexingEnabled() {
 		return nil
 	}
+	fmt.Println("barfoo!")
+	fmt.Printf("allow global: %t\n", conf.CodeIntelAutoIndexingAllowGlobalPolicies())
 
 	var repositoryMatchLimit *int
 	if val := conf.CodeIntelAutoIndexingPolicyRepositoryMatchLimit(); val != -1 {
@@ -45,6 +48,8 @@ func (i *indexer) Handle(ctx context.Context) error {
 
 	repositories, err := i.dbStore.SelectRepositoriesForIndexScan(
 		ctx,
+		"last_lockfile_scan",
+		"last_lockfile_scan_at",
 		ConfigInst.RepositoryMinimumCheckInterval,
 		conf.CodeIntelAutoIndexingAllowGlobalPolicies(),
 		repositoryMatchLimit,
@@ -54,12 +59,14 @@ func (i *indexer) Handle(ctx context.Context) error {
 		return errors.Wrap(err, "dbstore.SelectRepositoriesForIndexScan")
 	}
 	if len(repositories) == 0 {
+		fmt.Println("no repositories")
 		return nil
 	}
 
 	now := timeutil.Now()
 
 	for _, repositoryID := range repositories {
+		fmt.Printf("repositoryID=%d\n", repositoryID)
 		if repositoryErr := i.handleRepository(ctx, repositoryID, now); repositoryErr != nil {
 			if err == nil {
 				err = repositoryErr
