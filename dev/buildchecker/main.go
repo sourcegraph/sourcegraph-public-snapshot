@@ -358,12 +358,9 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 				log.Fatal("time.Parse: ", err)
 			}
 
-			d := time.Duration(incidents[recordDateString]) * time.Minute
-			d2 := time.Duration.Nanoseconds(d)
-
 			metrics := map[string]okay.Metric{
 				"totalCount":       okay.Count(totals[recordDateString]),
-				"incidentDuration": okay.Duration(time.Duration(d2)),
+				"incidentDuration": okay.Duration(time.Duration(time.Duration(incidents[recordDateString]) * time.Minute)),
 				"flakeCount":       okay.Count(flakes[recordDateString]),
 			}
 			event := okay.Event{
