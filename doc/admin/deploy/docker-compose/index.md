@@ -37,7 +37,7 @@ The sections below cover the process to [create a fork](#create-a-fork), [clone]
 
 [Create a fork](https://docs.github.com/en/get-started/quickstart/fork-a-repo#forking-a-repository) of the [sourcegraph/deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/) [reference repository](#reference-repository).
 
-> WARNING: If you plan to store secrets (SSL certificates, external Postgres credentials, etc.) within the repository you should dupicate the reference repository and make your copy private. To create a private copy you create an empty private repository in GitHub, bare clone the reference repository, mirror push the bare clone to your new private repository, and remove your local bare clone. 
+> WARNING: If you plan to store secrets (SSL certificates, external Postgres credentials, etc.) within the repository you should duplicate the reference repository and make your copy private. To create a private copy you create an empty private repository in GitHub, bare clone the reference repository, mirror push the bare clone to your new private repository, and remove your local bare clone. 
 
 #### Clone your fork
 
