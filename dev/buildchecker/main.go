@@ -374,13 +374,14 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 				},
 				Metrics: metrics,
 			}
+
 			err = okayCli.Push(&event)
 			if err != nil {
-				log.Fatal("okay.Push: ", err.Error())
+				log.Fatal("Error storing OKAYHQ event okay.Push: ", err.Error())
 			}
 		}
 		if err := okayCli.Flush(); err != nil {
-			log.Fatal("okay.Flush: ", err.Error())
+			log.Fatal("Error posting to OKAYHQ okay.Flush: ", err.Error())
 		}
 	}
 
