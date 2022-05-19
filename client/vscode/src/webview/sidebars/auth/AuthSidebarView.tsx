@@ -12,7 +12,7 @@ import { Alert, Typography, Button, Link } from '@sourcegraph/wildcard'
 import {
     VSCE_LINK_DOTCOM,
     VSCE_LINK_MARKETPLACE,
-    VSCE_LINK_SIGNUP,
+    VSCE_LINK_AUTH,
     VSCE_LINK_TOKEN_CALLBACK,
     VSCE_LINK_TOKEN_CALLBACK_TEST,
     VSCE_LINK_USER_DOCS,
@@ -38,7 +38,7 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
     const [state, setState] = useState<'initial' | 'validating' | 'success' | 'failure'>('initial')
     const [hasAccount, setHasAccount] = useState(!authenticatedUser)
     const [usePrivateInstance, setUsePrivateInstance] = useState(false)
-    const signUpURL = VSCE_LINK_SIGNUP()
+    const signUpURL = VSCE_LINK_AUTH('sign-up')
     const instanceHostname = useMemo(() => new URL(instanceURL).hostname, [instanceURL])
     const [hostname, setHostname] = useState(instanceHostname)
     const isSourcegraphDotCom = useMemo(() => {

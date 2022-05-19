@@ -2,15 +2,15 @@
  * All Sourcegraph Cloud related links
  */
 // MAIN
+const VSCE_CALLBACK_CODE = 'VSCEAUTH'
 export const VSCE_LINK_DOTCOM = 'https://sourcegraph.com'
 export const VSCE_LINK_TOKEN_CALLBACK =
-    'https://sourcegraph.com/sign-in?returnTo=user/settings/tokens/new/callback?requestFrom=LOGINVSCE'
+    'https://sourcegraph.com/sign-in?returnTo=user/settings/tokens/new/callback?requestFrom=VSCEAUTH'
 export const VSCE_LINK_TOKEN_CALLBACK_TEST =
-    'https://sourcegraph.test:3443/sign-in?returnTo=user/settings/tokens/new/callback?requestFrom=LOGINVSCE'
+    'https://sourcegraph.test:3443/sign-in?returnTo=user/settings/tokens/new/callback?requestFrom=VSCEAUTH'
 
 // PARAMS
 export const VSCE_SIDEBAR_PARAMS = '?utm_medium=VSCODE&utm_source=sidebar&utm_campaign=vsce-sign-up&utm_content=sign-up'
-const VSCE_CALLBACK_CODE = 'LOGINVSCE'
 const VSCE_LINK_PARAMS_TOKEN_REDIRECT = {
     returnTo: `user/settings/tokens/new/callback?requestFrom=${VSCE_CALLBACK_CODE}`,
 }
@@ -40,27 +40,20 @@ export const VSCE_LINK_ISSUES =
     'https://github.com/sourcegraph/sourcegraph/issues/new?labels=team/integrations,vscode-extension&title=VSCode+Bug+report:+&projects=Integrations%20Project%20Board'
 export const VSCE_LINK_TROUBLESHOOT =
     'https://docs.sourcegraph.com/admin/how-to/troubleshoot-sg-extension#vs-code-extension'
+export const VSCE_SG_LOGOMARK_LIGHT =
+    'https://raw.githubusercontent.com/sourcegraph/sourcegraph/fd431743e811ba756490e5e7bd88aa2362b6453e/client/vscode/images/logomark_light.svg'
+export const VSCE_SG_LOGOMARK_DARK =
+    'https://raw.githubusercontent.com/sourcegraph/sourcegraph/2636c64c9f323d78281a68dd4bdf432d9a97835a/client/vscode/images/logomark_dark.svg'
 
 // Generate sign-in and sign-up links using the above params
-export const VSCE_LINK_SIGNIN = (): string => {
+export const VSCE_LINK_AUTH = (mode: 'sign-in' | 'sign-up'): string => {
     const uri = new URL(VSCE_LINK_DOTCOM)
     const parameters = new URLSearchParams({
         ...VSCE_LINK_PARAMS_UTM_SIDEBAR,
         ...VSCE_LINK_PARAMS_EDITOR,
         ...VSCE_LINK_PARAMS_TOKEN_REDIRECT,
     }).toString()
-    uri.pathname = 'sign-in'
-    uri.search = parameters
-    return uri.href
-}
-export const VSCE_LINK_SIGNUP = (): string => {
-    const uri = new URL(VSCE_LINK_DOTCOM)
-    const parameters = new URLSearchParams({
-        ...VSCE_LINK_PARAMS_UTM_SIDEBAR,
-        ...VSCE_LINK_PARAMS_EDITOR,
-        ...VSCE_LINK_PARAMS_TOKEN_REDIRECT,
-    }).toString()
-    uri.pathname = 'sign-up'
+    uri.pathname = mode
     uri.search = parameters
     return uri.href
 }

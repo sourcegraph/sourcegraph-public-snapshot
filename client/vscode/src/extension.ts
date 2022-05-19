@@ -8,7 +8,7 @@ import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestio
 
 import { observeAuthenticatedUser } from './backend/authenticatedUser'
 import { logEvent } from './backend/eventLogger'
-import { initializeInstantVersionNumber } from './backend/instanceVersion'
+import { initializeInstanceVersionNumber } from './backend/instanceVersion'
 import { requestGraphQLFromVSCode } from './backend/requestGraphQl'
 import { initializeSearchContexts } from './backend/searchContexts'
 import { initializeSourcegraphSettings } from './backend/sourcegraphSettings'
@@ -67,6 +67,7 @@ export function activate(context: vscode.ExtensionContext): void {
     const authenticatedUser = observeAuthenticatedUser({ context })
     const initialInstanceURL = endpointSetting()
     const initialAccessToken = accessTokenSetting()
+    const editorTheme = vscode.ColorThemeKind[vscode.window.activeColorTheme.kind]
     const eventSourceType = initializeInstanceVersionNumber(localStorageService, initialInstanceURL, initialAccessToken)
     // Sets global `EventSource` for Node, which is required for streaming search.
     // Used for VS Code web as well to be able to add Authorization header.
@@ -131,6 +132,7 @@ export function activate(context: vscode.ExtensionContext): void {
         setLocalStorageItem: (key: string, value: string) => localStorageService.setValue(key, value),
         logEvents: (variables: Event) => logEvent(variables),
         getEventSource: eventSourceType,
+        getEditorTheme: editorTheme,
     }
     // Also initializes code intel.
     registerWebviews({

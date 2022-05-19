@@ -1,9 +1,16 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 import classNames from 'classnames'
 
 import { version } from '../../../../package.json'
-import { VSCE_LINK_FEEDBACK, VSCE_LINK_ISSUES, VSCE_LINK_SIGNUP, VSCE_LINK_TROUBLESHOOT } from '../../../common/links'
+import {
+    VSCE_LINK_FEEDBACK,
+    VSCE_LINK_ISSUES,
+    VSCE_LINK_AUTH,
+    VSCE_LINK_TROUBLESHOOT,
+    VSCE_SG_LOGOMARK_DARK,
+    VSCE_SG_LOGOMARK_LIGHT,
+} from '../../../common/links'
 import { WebviewPageProps } from '../../platform/context'
 import { AuthSidebarView } from '../auth/AuthSidebarView'
 
@@ -21,7 +28,23 @@ export const HelpSidebarView: React.FunctionComponent<React.PropsWithChildren<He
     authenticatedUser,
     instanceURL,
 }) => {
-    const [hasAccount, setHasAccount] = useState(false)
+    const [openAuthPanel, setOpenAuthPanel] = useState(false)
+    const [isLightTheme, setIsLightTheme] = useState<boolean | undefined>(undefined)
+
+    useEffect(() => {
+        if (isLightTheme === undefined) {
+            extensionCoreAPI.getEditorTheme
+                .then(theme => {
+                    console.log(theme)
+                    setIsLightTheme(theme === 'Light')
+                })
+                .catch(error => {
+                    console.log(error)
+                    setIsLightTheme(false)
+                })
+        }
+    }, [extensionCoreAPI.getEditorTheme, isLightTheme])
+    console.log(isLightTheme)
 
     const onHelpItemClick = async (url: string, item: string): Promise<void> => {
         platformContext.telemetryService.log(`VSCEHelpSidebar${item}Click`)
@@ -56,25 +79,25 @@ export const HelpSidebarView: React.FunctionComponent<React.PropsWithChildren<He
             </button>
             <button
                 type="button"
-                onClick={() => onHelpItemClick(VSCE_LINK_SIGNUP(), 'Authenticate')}
+                onClick={() => onHelpItemClick(VSCE_LINK_AUTH('sign-up'), 'Authenticate')}
                 className={classNames(styles.itemContainer, 'btn btn-text text-left')}
             >
                 <img
                     alt="sg-logo"
                     className="codicon"
-                    src="https://raw.githubusercontent.com/sourcegraph/sourcegraph/fd431743e811ba756490e5e7bd88aa2362b6453e/client/vscode/images/logomark_light.svg"
+                    src={isLightTheme ? VSCE_SG_LOGOMARK_DARK : VSCE_SG_LOGOMARK_LIGHT}
                 />
                 <span>Create an account</span>
             </button>
             <button
                 type="button"
                 className={classNames(styles.itemContainer, 'btn btn-text text-left')}
-                onClick={() => setHasAccount(previousHasAccount => !previousHasAccount)}
+                onClick={() => setOpenAuthPanel(previousOpenAuthPanel => !previousOpenAuthPanel)}
             >
                 <i className="codicon codicon-account" />
                 <span>Authenticate account</span>
             </button>
-            {hasAccount && (
+            {openAuthPanel && (
                 <div className="ml-3 mt-1">
                     {!authenticatedUser ? (
                         <AuthSidebarView
@@ -84,7 +107,7 @@ export const HelpSidebarView: React.FunctionComponent<React.PropsWithChildren<He
                             authenticatedUser={authenticatedUser}
                         />
                     ) : (
-                        <p className="ml-2">Authenticated as {authenticatedUser.displayName}</p>
+                        <p className="ml-2">Authenticated as {authenticatedUser.username}</p>
                     )}
                 </div>
             )}

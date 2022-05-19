@@ -39,19 +39,39 @@ interface Props
 }
 
 interface TokenRequester {
+    /** The name of the source */
     name: string
+    /** The URL where the token should be added to */
+    /** SECURITY: Local context only! Do not send token to non-local servers*/
     redirectURL: string
+    /** A description of where the request is coming from */
     description: string
+    /** The message to show users when the token has been created successfully */
     message?: string
+    /** How the redirect URL should be open: open in same tab vs open in a new-tab */
+    /** Default: Open link in same tab */
+    callbackType?: 'open' | 'new-tab'
+    /** Show button to redirect URL on click */
+    showRedirectButton?: boolean
 }
 
 // SECURITY: Only accept callback requests from requesters on this allowed list
 const REQUESTERS: Record<string, TokenRequester> = {
-    LOGINVSCE: {
+    VSCEAUTH: {
         name: 'VS Code Extension',
         redirectURL: 'vscode://sourcegraph.sourcegraph?code=$TOKEN',
-        description: 'VS Code Extension for Sourcegraph',
-        message: 'Click popup to redirect back to VS Code',
+        description: 'Auth from VS Code Extension for Sourcegraph',
+        message:
+            'Click the import button below if the popup did not take you back to VS Code. You can also import the token manually.',
+        callbackType: 'new-tab',
+        showRedirectButton: true,
+    },
+    SRCCLI: {
+        name: 'SRC CLI',
+        redirectURL: 'http://127.0.0.1:9889/callback?code=$TOKEN',
+        description: 'Auth from Sourcegraph CLI',
+        callbackType: 'new-tab',
+        showRedirectButton: false,
     },
 }
 
@@ -72,10 +92,10 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FunctionComponent<
     match,
 }) => {
     useMemo(() => {
-        telemetryService.logPageView('NewAccessToken')
+        telemetryService.logPageView('NewAccessTokenCallback')
     }, [telemetryService])
 
-    /** Get the token description from the url parameters if any */
+    /** Get the requester from the url parameters if any */
     const requestFrom = new URLSearchParams(history.location.search).get('requestFrom')
     /** The validated requester where the callback request originally comes from. */
     const [requester, setRequester] = useState<TokenRequester | null | undefined>(undefined)
@@ -88,15 +108,15 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FunctionComponent<
 
     // Check and Match URL Search Params
     useEffect((): void => {
-        // SECURITY: If the URL contains ?requestFrom, verify it is an allowlisted source
+        // SECURITY: Verify if the request is coming from an allowlisted source
+        const isRequestValid = requestFrom ? requestFrom in REQUESTERS : false
         if (requestFrom && requester === undefined) {
-            const uriPattern = REQUESTERS[requestFrom ?? ''].redirectURL
-            setRequester(uriPattern ? REQUESTERS[requestFrom] : null)
-            setNote(uriPattern ? REQUESTERS[requestFrom].name : '')
+            setRequester(isRequestValid ? REQUESTERS[requestFrom] : null)
+            setNote(isRequestValid ? REQUESTERS[requestFrom].name : '')
         }
         // Redirect users back to tokens page if none or invalid url params provided
         if (!requestFrom || (!requester && requester !== undefined)) {
-            console.error('Error: Cannot process requests from unknown source.')
+            console.error('Error: Cannot process request from unknown source.')
             history.push(`${match.url.replace(/\/new\/callback$/, '')}`)
         }
     }, [history, match.url, requestFrom, requester])
@@ -112,11 +132,18 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FunctionComponent<
                 (requester ? createAccessToken(user.id, scopes, note) : NEVER).pipe(
                     tap(result => {
                         // SECURITY: If the request was from a valid requestor, redirect to the allowlisted redirect URL.
+                        // SECURITY: Local context ONLY
                         if (requester) {
                             onDidCreateAccessToken(result)
                             setNewToken(result.token)
                             const uri = requester?.redirectURL.replace('$TOKEN', result.token)
-                            window.location.replace(uri)
+                            switch (requester.callbackType) {
+                                case 'new-tab':
+                                    window.open(uri, '_blank')
+                                default:
+                                    // open the redirect link in the same tab
+                                    window.location.replace(uri)
+                            }
                         }
                     }),
                     startWith('loading'),
@@ -188,16 +215,18 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FunctionComponent<
                         </Alert>
                     </Container>
                     <div className="mb-3">
+                        {requester.showRedirectButton && (
+                            <Button
+                                className="mr-2"
+                                to={requester.redirectURL.replace('$TOKEN', newToken)}
+                                disabled={creationOrError === 'loading'}
+                                variant="primary"
+                                as={Link}
+                            >
+                                Import token to {requester.name}
+                            </Button>
+                        )}
                         <Button
-                            to={requester.redirectURL.replace('$TOKEN', newToken)}
-                            disabled={creationOrError === 'loading'}
-                            variant="primary"
-                            as={Link}
-                        >
-                            Import token to {requester.name}
-                        </Button>
-                        <Button
-                            className="ml-2"
                             to={match.url.replace(/\/new\/callback$/, '')}
                             disabled={creationOrError === 'loading'}
                             variant="secondary"
