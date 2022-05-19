@@ -366,9 +366,9 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 			event := okay.Event{
 				Name:      "buildStats",
 				Timestamp: eventTime,
-				UniqueKey: []string{"unique_key"},
+				UniqueKey: []string{
+					eventTime.Format(time.RFC3339)},
 				Properties: map[string]string{
-					"unique_key":   eventTime.Format(time.RFC3339),
 					"organization": "sourcegraph",
 					"pipeline":     "sourcegraph",
 					"branch":       "main",
