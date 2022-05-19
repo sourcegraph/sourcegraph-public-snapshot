@@ -302,7 +302,9 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
                     <div className="align-items-center d-flex">
                         {activeTab && (
                             <>
-                                {activeTab.id === 'references' && <ReferencesPanelFeedbackCta />}
+                                {activeTab.id === 'def' ||
+                                    activeTab.id === 'references' ||
+                                    (activeTab.id.startsWith('implementations_') && <ReferencesPanelFeedbackCta />)}
                                 <ActionsNavItems
                                     {...props}
                                     // TODO remove references to Bootstrap from shared, get class name from prop
