@@ -36,10 +36,22 @@ type ErrorContext struct {
 }
 
 type SentryCore struct {
-	hub  *sentry.Hub
-	base baseContext
-	errs []error
+	base   baseContext
+	errs   []error
+	worker *sentryWorker
+}
 
+func newSentryCore(hub *sentry.Hub) *SentryCore {
+	return &SentryCore{
+		worker: &sentryWorker{
+			hub:     hub.Clone(), // Avoid potential accidents if the hub is modified elsewhere.
+			ErrorsC: make(chan ErrorContext),
+		},
+	}
+}
+
+type sentryWorker struct {
+	hub     *sentry.Hub
 	ErrorsC chan ErrorContext
 	done    chan struct{}
 }
@@ -48,10 +60,8 @@ var _ zapcore.Core = &SentryCore{}
 
 func (s *SentryCore) clone() *SentryCore {
 	c := SentryCore{
-		hub:     s.hub,
-		base:    *s.base.clone(),
-		ErrorsC: s.ErrorsC,
-		done:    s.done,
+		worker: s.worker,
+		base:   *s.base.clone(),
 	}
 	copy(c.errs, s.errs)
 
@@ -103,28 +113,31 @@ func (s *SentryCore) Write(entry zapcore.Entry, fields []zapcore.Field) error {
 		for _, err := range s.errs {
 			ec := ErrorContext{baseContext: s.base}
 			ec.Error = err
-			s.ErrorsC <- ec
+			s.worker.ErrorsC <- ec
 		}
 	}()
 	return nil
 }
 
 func (s *SentryCore) Start() {
-	s.ErrorsC = make(chan ErrorContext)
+	s.worker.start()
+}
+
+func (w *sentryWorker) start() {
 	go func() {
 		for {
 			select {
-			case <-s.done:
+			case <-w.done:
 				return
-			case err := <-s.ErrorsC:
-				s.capture(err)
+			case err := <-w.ErrorsC:
+				w.capture(err)
 			}
 		}
 	}()
 }
 
-func (s *SentryCore) capture(errC ErrorContext) {
-	if s.hub == nil {
+func (w *sentryWorker) capture(errC ErrorContext) {
+	if w.hub == nil {
 		return
 	}
 	event, extraDetails := errors.BuildSentryReport(errC.Error)
@@ -162,6 +175,8 @@ func (s *SentryCore) capture(errC ErrorContext) {
 		case zapcore.Int8Type, zapcore.Int16Type, zapcore.Int32Type, zapcore.Int64Type:
 			extraDetails[fmt.Sprintf("log.%s", f.Key)] = f.Integer
 		default:
+			// Because the log package only exposes base types or sliced versions, using %v is a
+			// good enough way to print the values for extra attributes display in Sentry.
 			extraDetails[fmt.Sprintf("log.%s", f.Key)] = fmt.Sprintf("%v", f.Interface)
 		}
 	}
@@ -180,11 +195,11 @@ func (s *SentryCore) capture(errC ErrorContext) {
 		level = sentry.LevelError
 	}
 
-	s.hub.WithScope(func(scope *sentry.Scope) {
+	w.hub.WithScope(func(scope *sentry.Scope) {
 		scope.SetExtras(extraDetails)
 		scope.SetTags(tags)
 		scope.SetLevel(level)
-		s.hub.CaptureEvent(event)
+		w.hub.CaptureEvent(event)
 	})
 }
 
@@ -196,7 +211,6 @@ func (s *SentryCore) Enabled(level zapcore.Level) bool {
 // Sync ensure that the remaining event are flushed, but has a hard limit of TODO seconds
 // after which it will stop blocking to avoid interruping application shutdown.
 func (s *SentryCore) Sync() error {
-	// TODO something flush flush
-	close(s.done)
+	close(s.worker.done)
 	return nil
 }
