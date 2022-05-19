@@ -3743,6 +3743,16 @@
           "ConstraintDefinition": ""
         },
         {
+          "Name": "changesets_bitbucket_cloud_metadata_source_commit_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX changesets_bitbucket_cloud_metadata_source_commit_idx ON changesets USING btree ((((metadata -\u003e 'source'::text) -\u003e 'commit'::text) -\u003e\u003e 'hash'::text))",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "changesets_external_state_idx",
           "IsPrimaryKey": false,
           "IsUnique": false,

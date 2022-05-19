@@ -3,6 +3,8 @@ package jobutil
 import (
 	"context"
 
+	"github.com/opentracing/opentracing-go/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -10,10 +12,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 type repoPagerJob struct {
-	repoOptions      search.RepoOptions
+	repoOpts         search.RepoOptions
 	useIndex         query.YesNoOnly // whether to include indexed repos
 	containsRefGlobs bool            // whether to include repositories with refs
 	child            job.Job         // child job tree that need populating a repos field to run
@@ -57,12 +60,13 @@ func setRepos(job job.Job, indexed *zoekt.IndexedRepoRevs, unindexed []*search.R
 }
 
 func (p *repoPagerJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
-	_, ctx, stream, finish := job.StartSpan(ctx, stream, p)
+	tr, ctx, stream, finish := job.StartSpan(ctx, stream, p)
 	defer func() { finish(alert, err) }()
+	tr.TagFields(trace.LazyFields(p.Tags))
 
 	var maxAlerter search.MaxAlerter
 
-	repoResolver := &repos.Resolver{DB: clients.DB, Opts: p.repoOptions}
+	repoResolver := &repos.Resolver{DB: clients.DB, Opts: p.repoOpts}
 	pager := func(page *repos.Resolved) error {
 		indexed, unindexed, err := zoekt.PartitionRepos(
 			ctx,
@@ -87,4 +91,12 @@ func (p *repoPagerJob) Run(ctx context.Context, clients job.RuntimeClients, stre
 
 func (p *repoPagerJob) Name() string {
 	return "RepoPagerJob"
+}
+
+func (p *repoPagerJob) Tags() []log.Field {
+	return []log.Field{
+		trace.Stringer("repoOpts", &p.repoOpts),
+		log.String("useIndex", string(p.useIndex)),
+		log.Bool("containsRefGlobs", p.containsRefGlobs),
+	}
 }

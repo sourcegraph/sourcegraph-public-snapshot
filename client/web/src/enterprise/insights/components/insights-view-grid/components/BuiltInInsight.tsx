@@ -44,7 +44,7 @@ interface BuiltInInsightProps extends TelemetryProps, React.HTMLAttributes<HTMLE
 export function BuiltInInsight(props: BuiltInInsightProps): React.ReactElement {
     const { insight, resizing, telemetryService, innerRef, ...otherProps } = props
     const { getBuiltInInsightData } = useContext(CodeInsightsBackendContext)
-    const { dashboard } = useContext(InsightContext)
+    const { currentDashboard, dashboards } = useContext(InsightContext)
 
     const insightCardReference = useRef<HTMLDivElement>(null)
     const mergedInsightCardReference = useMergeRefs([insightCardReference, innerRef])
@@ -76,8 +76,8 @@ export function BuiltInInsight(props: BuiltInInsightProps): React.ReactElement {
                 {isVisible && (
                     <InsightContextMenu
                         insight={insight}
-                        dashboard={dashboard}
-                        menuButtonClassName="ml-1 d-inline-flex"
+                        currentDashboard={currentDashboard}
+                        dashboards={dashboards}
                         zeroYAxisMin={zeroYAxisMin}
                         onToggleZeroYAxisMin={() => setZeroYAxisMin(!zeroYAxisMin)}
                     />

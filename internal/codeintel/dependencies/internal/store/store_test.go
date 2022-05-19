@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
@@ -27,11 +28,11 @@ func TestPreciseDependenciesAndDependents(t *testing.T) {
 
 	ctx := context.Background()
 	db := database.NewDB(dbtest.NewDB(t))
-	store := TestStore(db)
+	store := New(db, &observation.TestContext)
 
 	// Note: repo identifiers match the name due to insertion order
 	for _, repo := range []string{"repo-1", "repo-2", "repo-3", "repo-4", "repo-5"} {
-		if err := store.Exec(ctx, sqlf.Sprintf(`INSERT INTO repo (name) VALUES (%s)`, repo)); err != nil {
+		if err := store.db.Exec(ctx, sqlf.Sprintf(`INSERT INTO repo (name) VALUES (%s)`, repo)); err != nil {
 			t.Fatalf(err.Error())
 		}
 	}
@@ -46,7 +47,7 @@ func TestPreciseDependenciesAndDependents(t *testing.T) {
 		{4, "0000000000000000000000000000000000000004"}, // uploadID = 4
 		{5, "0000000000000000000000000000000000000005"}, // uploadID = 5
 	} {
-		if err := store.Exec(ctx, sqlf.Sprintf(`
+		if err := store.db.Exec(ctx, sqlf.Sprintf(`
 			INSERT INTO lsif_uploads (
 				repository_id, commit, state, indexer, num_parts, uploaded_parts
 			) VALUES (
@@ -71,7 +72,7 @@ func TestPreciseDependenciesAndDependents(t *testing.T) {
 		{4, 3}, // 3 depends on 4
 		{3, 5}, // 5 depends on 3
 	} {
-		if err := store.Exec(ctx, sqlf.Sprintf(`
+		if err := store.db.Exec(ctx, sqlf.Sprintf(`
 			INSERT INTO lsif_packages (dump_id, scheme, name, version) VALUES (%s, 'A' || %s, 'B' || %s, 'C' || %s)
 		`,
 			dependencySpec.pkgID,
@@ -82,7 +83,7 @@ func TestPreciseDependenciesAndDependents(t *testing.T) {
 			t.Fatalf(err.Error())
 		}
 
-		if err := store.Exec(ctx, sqlf.Sprintf(`
+		if err := store.db.Exec(ctx, sqlf.Sprintf(`
 			INSERT INTO lsif_references (dump_id, scheme, name, version) VALUES (%s, 'A' || %s, 'B' || %s, 'C' || %s)
 		`,
 			dependencySpec.refID,
@@ -172,7 +173,7 @@ func TestLockfileDependencies(t *testing.T) {
 
 	ctx := context.Background()
 	db := database.NewDB(dbtest.NewDB(t))
-	store := TestStore(db)
+	store := New(db, &observation.TestContext)
 
 	if _, err := db.ExecContext(ctx, `INSERT INTO repo (name) VALUES ('foo')`); err != nil {
 		t.Fatalf(err.Error())
@@ -236,7 +237,7 @@ func TestUpsertDependencyRepo(t *testing.T) {
 
 	ctx := context.Background()
 	db := database.NewDB(dbtest.NewDB(t))
-	store := TestStore(db)
+	store := New(db, &observation.TestContext)
 
 	batches := [][]shared.Repo{
 		{
@@ -293,7 +294,7 @@ func TestDeleteDependencyReposByID(t *testing.T) {
 
 	ctx := context.Background()
 	db := database.NewDB(dbtest.NewDB(t))
-	store := TestStore(db)
+	store := New(db, &observation.TestContext)
 
 	repos := []shared.Repo{
 		// Test same-set flushes
@@ -333,7 +334,7 @@ func TestSelectRepoRevisionsToResolve(t *testing.T) {
 
 	ctx := context.Background()
 	db := database.NewDB(dbtest.NewDB(t))
-	store := TestStore(db)
+	store := New(db, &observation.TestContext)
 
 	if _, err := db.ExecContext(ctx, `INSERT INTO repo (name) VALUES ('repo-1')`); err != nil {
 		t.Fatalf(err.Error())
@@ -420,10 +421,10 @@ func TestUpdateResolvedRevisions(t *testing.T) {
 
 	ctx := context.Background()
 	db := database.NewDB(dbtest.NewDB(t))
-	store := TestStore(db)
+	store := New(db, &observation.TestContext)
 
 	for _, repo := range []string{"repo-1", "repo-2", "repo-3", "pkg-1", "pkg-2", "pkg-3", "pkg-4"} {
-		if err := store.Exec(ctx, sqlf.Sprintf(`INSERT INTO repo (name) VALUES (%s)`, repo)); err != nil {
+		if err := store.db.Exec(ctx, sqlf.Sprintf(`INSERT INTO repo (name) VALUES (%s)`, repo)); err != nil {
 			t.Fatalf(err.Error())
 		}
 	}
@@ -460,7 +461,7 @@ func TestUpdateResolvedRevisions(t *testing.T) {
 				dbutil.CommitBytea(commit),
 			)
 
-			_, ok, err := basestore.ScanFirstInt(store.Query(ctx, q))
+			_, ok, err := basestore.ScanFirstInt(store.db.Query(ctx, q))
 			if err != nil {
 				t.Fatalf("failed to query resolved revisions for repo %s: %s", repoName, err)
 			}
@@ -478,10 +479,10 @@ func TestLockfileDependents(t *testing.T) {
 
 	ctx := context.Background()
 	db := database.NewDB(dbtest.NewDB(t))
-	store := TestStore(db)
+	store := New(db, &observation.TestContext)
 
 	for _, repo := range []string{"repo-1", "repo-2", "repo-3", "pkg-1", "pkg-2", "pkg-3", "pkg-4"} {
-		if err := store.Exec(ctx, sqlf.Sprintf(`INSERT INTO repo (name) VALUES (%s)`, repo)); err != nil {
+		if err := store.db.Exec(ctx, sqlf.Sprintf(`INSERT INTO repo (name) VALUES (%s)`, repo)); err != nil {
 			t.Fatalf(err.Error())
 		}
 	}

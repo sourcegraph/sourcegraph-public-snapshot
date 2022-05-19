@@ -11,6 +11,7 @@ import com.intellij.ui.jcef.JBCefApp;
 import com.intellij.util.ui.JBUI;
 import com.sourcegraph.browser.JSToJavaBridgeRequestHandler;
 import com.sourcegraph.browser.SourcegraphJBCefBrowser;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
@@ -21,7 +22,7 @@ import java.awt.*;
 public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposable {
     private final SourcegraphJBCefBrowser browser;
 
-    public FindPopupPanel(Project project) {
+    public FindPopupPanel(@NotNull Project project) {
         super(new BorderLayout());
 
         setPreferredSize(JBUI.size(1200, 800));
@@ -35,7 +36,7 @@ public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposabl
         PreviewPanel previewPanel = new PreviewPanel(project);
 
         JBPanelWithEmptyText jcefPanel = new JBPanelWithEmptyText(new BorderLayout()).withEmptyText("Unfortunately, the browser is not available on your system. Try running the IDE with the default OpenJDK.");
-        browser = JBCefApp.isSupported() ? new SourcegraphJBCefBrowser(new JSToJavaBridgeRequestHandler(previewPanel)) : null;
+        browser = JBCefApp.isSupported() ? new SourcegraphJBCefBrowser(new JSToJavaBridgeRequestHandler(project, previewPanel)) : null;
         if (browser != null) {
             jcefPanel.add(browser.getComponent(), BorderLayout.CENTER);
         }

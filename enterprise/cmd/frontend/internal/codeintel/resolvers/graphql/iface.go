@@ -5,7 +5,7 @@ import (
 
 	"github.com/grafana/regexp"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
+	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
 )
 
 type GitserverClient interface {

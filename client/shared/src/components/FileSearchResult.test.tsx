@@ -48,7 +48,6 @@ describe('FileSearchResult', () => {
             repository: 'github.com/golang/oauth2',
             lineMatches: [
                 {
-                    line: '  - go test -v golang.org/x/oauth2/...',
                     lineNumber: 4,
                     offsetAndLengths: [[7, 4]],
                 },

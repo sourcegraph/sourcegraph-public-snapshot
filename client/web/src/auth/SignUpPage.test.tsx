@@ -6,7 +6,6 @@ import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { AuthenticatedUser } from '../auth'
-import { FeatureFlagName } from '../featureFlags/featureFlags'
 import { SourcegraphContext } from '../jscontext'
 
 import { SignUpPage } from './SignUpPage'
@@ -15,7 +14,6 @@ describe('SignUpPage', () => {
     const commonProps = {
         history: createMemoryHistory(),
         location: createLocation('/'),
-        featureFlags: new Map<FeatureFlagName, boolean>(),
         isLightTheme: true,
     }
     const authProviders: SourcegraphContext['authProviders'] = [

@@ -103,6 +103,7 @@ const batchChangeFragment = gql`
         url
         name
         namespace {
+            id
             namespaceName
             url
         }

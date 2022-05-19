@@ -85,7 +85,7 @@ func mustCreateGitserverRepo(ctx context.Context, t *testing.T, db DB, repo *typ
 	}
 
 	// Add a row in gitserver_repos
-	if err := GitserverRepos(db).Upsert(ctx, &gitserver); err != nil {
+	if err := db.GitserverRepos().Upsert(ctx, &gitserver); err != nil {
 		t.Fatal(err)
 	}
 
@@ -305,6 +305,25 @@ func TestRepos_GetByIDs(t *testing.T) {
 	if !jsonEqual(t, repos[0], want[0]) {
 		t.Errorf("got %v, want %v", repos[0], want[0])
 	}
+}
+
+func TestRepos_GetByIDs_EmptyIDs(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	t.Parallel()
+	db := dbtest.NewDB(t)
+	ctx := actor.WithInternalActor(context.Background())
+
+	repos, err := Repos(db).GetByIDs(ctx, []api.RepoID{}...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(repos) != 0 {
+		t.Fatalf("got %d repos, but want 0", len(repos))
+	}
+
 }
 
 func TestRepos_List(t *testing.T) {
@@ -644,7 +663,7 @@ func TestRepos_List_FailedSync(t *testing.T) {
 	assertCount(t, ReposListOptions{FailedFetch: true}, 0)
 
 	repo := created[0]
-	if err := GitserverRepos(db).SetLastError(ctx, repo.Name, "Oops", "test"); err != nil {
+	if err := db.GitserverRepos().SetLastError(ctx, repo.Name, "Oops", "test"); err != nil {
 		t.Fatal(err)
 	}
 	assertCount(t, ReposListOptions{}, 1)

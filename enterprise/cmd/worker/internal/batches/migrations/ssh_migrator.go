@@ -48,7 +48,7 @@ SELECT CASE c2.count WHEN 0 THEN 1 ELSE CAST((c2.count - c1.count) AS float) / C
 
 // Up loops over all credentials and finds authenticators that are missing
 // SSH credentials, generates a keypair for them and upgrades them.
-func (m *sshMigrator) Up(ctx context.Context) error {
+func (m *sshMigrator) Up(ctx context.Context) (err error) {
 	tx, err := m.store.Transact(ctx)
 	if err != nil {
 		return err
@@ -113,7 +113,7 @@ func (m *sshMigrator) Up(ctx context.Context) error {
 
 // Down converts all credentials that have an SSH key back to a version without, so
 // an older version of Sourcegraph would be able to match those credentials again.
-func (m *sshMigrator) Down(ctx context.Context) error {
+func (m *sshMigrator) Down(ctx context.Context) (err error) {
 	tx, err := m.store.Transact(ctx)
 	if err != nil {
 		return err

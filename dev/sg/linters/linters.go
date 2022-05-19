@@ -53,6 +53,7 @@ var Targets = []lint.Target{
 			tsEnterpriseImport,
 			inlineTemplates,
 			lint.RunScript("Yarn duplicate", "dev/check/yarn-deduplicate.sh"),
+			checkUnversionedDocsLinks(),
 		},
 	},
 	{

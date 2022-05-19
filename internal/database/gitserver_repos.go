@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"strings"
 	"time"
@@ -44,14 +43,9 @@ type gitserverRepoStore struct {
 	*basestore.Store
 }
 
-// GitserverRepos instantiates and returns a new gitserverRepoStore.
-func GitserverRepos(db dbutil.DB) GitserverRepoStore {
-	return &gitserverRepoStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
-}
-
-// NewGitserverReposWith instantiates and returns a new gitserverRepoStore using
+// GitserverReposWith instantiates and returns a new gitserverRepoStore using
 // the other store handle.
-func NewGitserverReposWith(other basestore.ShareableStore) GitserverRepoStore {
+func GitserverReposWith(other basestore.ShareableStore) GitserverRepoStore {
 	return &gitserverRepoStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 
@@ -609,7 +603,7 @@ WHERE gr.repo_size_bytes IS NULL
 `
 
 // UpdateRepoSizes sets repo sizes according to input map. Key is repoID, value is repo_size_bytes.
-func (s *gitserverRepoStore) UpdateRepoSizes(ctx context.Context, shardID string, repos map[api.RepoID]int64) error {
+func (s *gitserverRepoStore) UpdateRepoSizes(ctx context.Context, shardID string, repos map[api.RepoID]int64) (err error) {
 
 	inserter := func(inserter *batch.Inserter) error {
 		for repo, size := range repos {

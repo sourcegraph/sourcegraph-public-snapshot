@@ -268,7 +268,7 @@ func (g *graph) emitMonikerVertex(symbolID string, kind string, resultSetID int)
 		// NOTE: these special cases are needed since the Sourcegraph backend uses the "scheme" field of monikers where
 		// it should use the "manager" field of packageInformation instead.
 		switch symbol.Scheme {
-		case "lsif-java":
+		case "lsif-java", "scip-java":
 			scheme = "semanticdb"
 		case "lsif-typescript":
 			scheme = "npm"

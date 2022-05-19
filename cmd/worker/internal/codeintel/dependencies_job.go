@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/workerdb"
+	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/background/indexer"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/background/resolver"
 	livedependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"

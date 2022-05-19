@@ -29,7 +29,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
-import { FlagSet } from '../featureFlags/featureFlags'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { ThemePreference } from '../stores/themeState'
 import { ThemePreferenceProps } from '../theme'
 import { UserAvatar } from '../user/UserAvatar'
@@ -47,7 +47,6 @@ export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps, Exte
     showRepositorySection?: boolean
     position?: Position
     menuButtonRef?: React.Ref<HTMLButtonElement>
-    featureFlags?: FlagSet
 }
 
 export interface ExtensionAlertAnimationProps {
@@ -109,7 +108,6 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
         isExtensionAlertAnimating,
         codeHostIntegrationMessaging,
         position = Position.bottomEnd,
-        featureFlags,
     } = props
 
     const supportsSystemTheme = useMemo(
@@ -130,7 +128,7 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
 
     // Target ID for tooltip
     const targetID = 'target-user-avatar'
-    const openBetaEnabled = featureFlags?.get('open-beta-enabled')
+    const [isOpenBetaEnabled] = useFeatureFlag('open-beta-enabled')
 
     return (
         <Menu>
@@ -185,7 +183,7 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                         <MenuLink as={Link} to={`/users/${props.authenticatedUser.username}/searches`}>
                             Saved searches
                         </MenuLink>
-                        {openBetaEnabled && (
+                        {isOpenBetaEnabled && (
                             <MenuLink
                                 as={Link}
                                 to={`/users/${props.authenticatedUser.username}/settings/organizations`}
@@ -229,7 +227,7 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                                 <Shortcut key={index} {...keybinding} onMatch={onThemeCycle} />
                             ))}
                         </div>
-                        {!openBetaEnabled && props.authenticatedUser.organizations.nodes.length > 0 && (
+                        {!isOpenBetaEnabled && props.authenticatedUser.organizations.nodes.length > 0 && (
                             <>
                                 <MenuDivider />
                                 <MenuHeader>Your organizations</MenuHeader>

@@ -4,6 +4,7 @@ import { of, ReplaySubject } from 'rxjs'
 import vscode, { env } from 'vscode'
 
 import { proxySubscribable } from '@sourcegraph/shared/src/api/extension/api/common'
+import polyfillEventSource from '@sourcegraph/shared/src/polyfills/vendor/eventSource'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 
 import { observeAuthenticatedUser } from './backend/authenticatedUser'
@@ -25,7 +26,6 @@ import { invalidateContextOnSettingsChange } from './settings/invalidation'
 import { LocalStorageService, SELECTED_SEARCH_CONTEXT_SPEC_KEY } from './settings/LocalStorageService'
 import { watchUninstall } from './settings/uninstall'
 import { createVSCEStateMachine, VSCEQueryState } from './state'
-import polyfillEventSource from './vendor/eventSource'
 import { focusSearchPanel, registerWebviews } from './webview/commands'
 
 // Sourcegraph VS Code extension architecture
