@@ -78,7 +78,7 @@ func TestEventLogs_CountUsersWithSetting(t *testing.T) {
 
 	usersStore := Users(db)
 	settingsStore := TemporarySettings(db)
-	eventLogsStore := EventLogs(db)
+	eventLogsStore := &eventLogStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 
 	for i := 0; i < 24; i++ {
 		user, err := usersStore.Create(ctx, NewUser{Username: fmt.Sprintf("u%d", i)})
