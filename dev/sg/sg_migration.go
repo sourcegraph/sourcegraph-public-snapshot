@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/migration"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/cliutil"
@@ -54,12 +54,18 @@ var (
 		Action:      execAdapter(revertExec),
 	}
 
-	upCommand       = cliutil.Up("sg migration", makeRunner, stdout.Out, true)
-	upToCommand     = cliutil.UpTo("sg migration", makeRunner, stdout.Out, true)
-	undoCommand     = cliutil.Undo("sg migration", makeRunner, stdout.Out, true)
-	downToCommand   = cliutil.DownTo("sg migration", makeRunner, stdout.Out, true)
-	validateCommand = cliutil.Validate("sg validate", makeRunner, stdout.Out)
-	addLogCommand   = cliutil.AddLog("sg migration", makeRunner, stdout.Out)
+	// outputFactory lazily retrieves the global output that might not yet be instantiated
+	// at compile-time in sg.
+	outputFactory = func() *output.Output { return std.Out.Output }
+
+	upCommand       = cliutil.Up("sg migration", makeRunner, outputFactory, true)
+	upToCommand     = cliutil.UpTo("sg migration", makeRunner, outputFactory, true)
+	undoCommand     = cliutil.Undo("sg migration", makeRunner, outputFactory, true)
+	downToCommand   = cliutil.DownTo("sg migration", makeRunner, outputFactory, true)
+	validateCommand = cliutil.Validate("sg migration", makeRunner, outputFactory)
+	describeCommand = cliutil.Describe("sg migration", makeRunner, outputFactory)
+	driftCommand    = cliutil.Drift("sg migration", makeRunner, outputFactory)
+	addLogCommand   = cliutil.AddLog("sg migration", makeRunner, outputFactory)
 
 	leavesCommand = &cli.Command{
 		Name:        "leaves",
@@ -90,6 +96,8 @@ var (
 			undoCommand,
 			downToCommand,
 			validateCommand,
+			describeCommand,
+			driftCommand,
 			addLogCommand,
 			leavesCommand,
 			squashCommand,
@@ -154,11 +162,11 @@ func resolveSchema(name string) (*schemas.Schema, error) {
 
 func addExec(ctx context.Context, args []string) error {
 	if len(args) == 0 {
-		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "No migration name specified"))
+		std.Out.WriteLine(output.Styled(output.StyleWarning, "No migration name specified"))
 		return flag.ErrHelp
 	}
 	if len(args) != 1 {
-		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments"))
+		std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: too many arguments"))
 		return flag.ErrHelp
 	}
 
@@ -167,7 +175,7 @@ func addExec(ctx context.Context, args []string) error {
 		database, ok = db.DatabaseByName(databaseName)
 	)
 	if !ok {
-		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: database %q not found :(", databaseName))
+		std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: database %q not found :(", databaseName))
 		return flag.ErrHelp
 	}
 
@@ -176,11 +184,11 @@ func addExec(ctx context.Context, args []string) error {
 
 func revertExec(ctx context.Context, args []string) error {
 	if len(args) == 0 {
-		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "No commit specified"))
+		std.Out.WriteLine(output.Styled(output.StyleWarning, "No commit specified"))
 		return flag.ErrHelp
 	}
 	if len(args) != 1 {
-		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments"))
+		std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: too many arguments"))
 		return flag.ErrHelp
 	}
 
@@ -189,11 +197,11 @@ func revertExec(ctx context.Context, args []string) error {
 
 func squashExec(ctx context.Context, args []string) (err error) {
 	if len(args) == 0 {
-		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "No current-version specified"))
+		std.Out.WriteLine(output.Styled(output.StyleWarning, "No current-version specified"))
 		return flag.ErrHelp
 	}
 	if len(args) != 1 {
-		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments"))
+		std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: too many arguments"))
 		return flag.ErrHelp
 	}
 
@@ -202,7 +210,7 @@ func squashExec(ctx context.Context, args []string) (err error) {
 		database, ok = db.DatabaseByName(databaseName)
 	)
 	if !ok {
-		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: database %q not found :(", databaseName))
+		std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: database %q not found :(", databaseName))
 		return flag.ErrHelp
 	}
 
@@ -211,18 +219,18 @@ func squashExec(ctx context.Context, args []string) (err error) {
 	if err != nil {
 		return err
 	}
-	stdout.Out.Writef("Squashing migration files defined up through %s", commit)
+	std.Out.Writef("Squashing migration files defined up through %s", commit)
 
 	return migration.Squash(database, commit)
 }
 
 func leavesExec(ctx context.Context, args []string) (err error) {
 	if len(args) == 0 {
-		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "No commit specified"))
+		std.Out.WriteLine(output.Styled(output.StyleWarning, "No commit specified"))
 		return flag.ErrHelp
 	}
 	if len(args) != 1 {
-		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments"))
+		std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: too many arguments"))
 		return flag.ErrHelp
 	}
 

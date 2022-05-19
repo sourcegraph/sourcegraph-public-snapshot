@@ -64,7 +64,7 @@ func TestRedirects(t *testing.T) {
 		envvar.MockSourcegraphDotComMode(true)
 		defer envvar.MockSourcegraphDotComMode(orig) // reset
 		t.Run("root", func(t *testing.T) {
-			check(t, "/", http.StatusTemporaryRedirect, "/search", "Mozilla/5.0")
+			check(t, "/", http.StatusTemporaryRedirect, "https://about.sourcegraph.com", "Mozilla/5.0")
 		})
 	})
 

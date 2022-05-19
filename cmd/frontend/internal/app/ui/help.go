@@ -1,10 +1,13 @@
 package ui
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
 	"path"
 	"strings"
+
+	"github.com/coreos/go-semver/semver"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -24,7 +27,14 @@ func serveHelp(w http.ResponseWriter, r *http.Request) {
 	// - Sourcegraph.com users probably want the latest docs on the default branch.
 	var docRevPrefix string
 	if !version.IsDev(versionStr) && !envvar.SourcegraphDotComMode() {
-		docRevPrefix = "@v" + versionStr
+		v, err := semver.NewVersion(versionStr)
+		if err != nil {
+			// If not a semver, just use the version string and hope for the best
+			docRevPrefix = "@" + versionStr
+		} else {
+			// Otherwise, send viewer to the major.minor branch of this version
+			docRevPrefix = fmt.Sprintf("@%d.%d", v.Major, v.Minor)
+		}
 	}
 
 	// Note that the URI fragment (e.g., #some-section-in-doc) *should* be preserved by most user

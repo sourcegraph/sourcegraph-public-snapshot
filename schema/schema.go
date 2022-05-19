@@ -221,6 +221,8 @@ type BitbucketCloudConnection struct {
 	Url string `json:"url"`
 	// Username description: The username to use when authenticating to the Bitbucket Cloud. Also set the corresponding "appPassword" field.
 	Username string `json:"username"`
+	// WebhookSecret description: A shared secret used to authenticate incoming webhooks (minimum 12 characters).
+	WebhookSecret string `json:"webhookSecret,omitempty"`
 }
 
 // BitbucketCloudRateLimit description: Rate limit applied when making background API requests to Bitbucket Cloud.
@@ -583,7 +585,7 @@ type ExpandedGitCommitDescription struct {
 type ExperimentalFeatures struct {
 	// AndOrQuery description: DEPRECATED: Interpret a search input query as an and/or query.
 	AndOrQuery string `json:"andOrQuery,omitempty"`
-	// ApidocsSearchIndexing description: Index API docs for search, see https://docs.sourcegraph.com/code_intelligence/apidocs
+	// ApidocsSearchIndexing description: Deprecated.
 	ApidocsSearchIndexing string `json:"apidocs.search.indexing,omitempty"`
 	// BitbucketServerFastPerm description: DEPRECATED: Configure in Bitbucket Server config.
 	BitbucketServerFastPerm string `json:"bitbucketServerFastPerm,omitempty"`
@@ -1678,7 +1680,7 @@ type Settings struct {
 
 // SettingsExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 type SettingsExperimentalFeatures struct {
-	// ApiDocs description: Enables API documentation.
+	// ApiDocs description: Deprecated.
 	ApiDocs *bool `json:"apiDocs,omitempty"`
 	// BatchChangesExecution description: Enables/disables the Batch Changes server side execution feature.
 	BatchChangesExecution *bool `json:"batchChangesExecution,omitempty"`
@@ -1753,7 +1755,7 @@ type SettingsExperimentalFeatures struct {
 type SiteConfiguration struct {
 	// ApiRatelimit description: Configuration for API rate limiting
 	ApiRatelimit *ApiRatelimit `json:"api.ratelimit,omitempty"`
-	// ApidocsSearchIndexSizeLimitFactor description: Limit factor for API docs search index size. A multiple of 250 million symbols. 1.0 indicates 250 million symbols (approx 12.5k repos) can be indexed. 2.0 indicates double that, and so on. See https://docs.sourcegraph.com/code_intelligence/apidocs
+	// ApidocsSearchIndexSizeLimitFactor description: Deprecated.
 	ApidocsSearchIndexSizeLimitFactor float64 `json:"apidocs.search.index-size-limit-factor,omitempty"`
 	// AuthAccessTokens description: Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.
 	AuthAccessTokens *AuthAccessTokens `json:"auth.accessTokens,omitempty"`
@@ -1897,6 +1899,8 @@ type SiteConfiguration struct {
 	InsightsQueryWorkerConcurrency int `json:"insights.query.worker.concurrency,omitempty"`
 	// InsightsQueryWorkerRateLimit description: Maximum number of Code Insights queries initiated per second on a worker node.
 	InsightsQueryWorkerRateLimit *float64 `json:"insights.query.worker.rateLimit,omitempty"`
+	// InsightsSearchGraphql description: Force GraphQL mode for insights searches. This will overwrite the default streaming behavior and force search clients to use the GraphQL API
+	InsightsSearchGraphql *bool `json:"insights.search.graphql,omitempty"`
 	// LicenseKey description: The license key associated with a Sourcegraph product subscription, which is necessary to activate Sourcegraph Enterprise functionality. To obtain this value, contact Sourcegraph to purchase a subscription. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.
 	LicenseKey string `json:"licenseKey,omitempty"`
 	// Log description: Configuration for logging and alerting, including to external services.
@@ -1925,8 +1929,12 @@ type SiteConfiguration struct {
 	PermissionsSyncOldestRepos int `json:"permissions.syncOldestRepos,omitempty"`
 	// PermissionsSyncOldestUsers description: Number of user permissions to schedule for syncing in single scheduler iteration
 	PermissionsSyncOldestUsers int `json:"permissions.syncOldestUsers,omitempty"`
+	// PermissionsSyncReposBackoffSeconds description: Don't sync a repo's permissions if it has synced within the last n seconds
+	PermissionsSyncReposBackoffSeconds int `json:"permissions.syncReposBackoffSeconds,omitempty"`
 	// PermissionsSyncScheduleInterval description: Time interval (in seconds) of how often each component picks up authorization changes in external services.
 	PermissionsSyncScheduleInterval int `json:"permissions.syncScheduleInterval,omitempty"`
+	// PermissionsSyncUsersBackoffSeconds description: Don't sync a user's permissions if they have synced within the last n seconds
+	PermissionsSyncUsersBackoffSeconds int `json:"permissions.syncUsersBackoffSeconds,omitempty"`
 	// PermissionsUserMapping description: Settings for Sourcegraph permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This setting cannot be enabled if repository permissions for any specific external service are enabled (i.e., when the external service's `authorization` field is set).
 	PermissionsUserMapping *PermissionsUserMapping `json:"permissions.userMapping,omitempty"`
 	// ProductResearchPageEnabled description: Enables users access to the product research page in their settings.
@@ -1939,7 +1947,7 @@ type SiteConfiguration struct {
 	SearchIndexEnabled *bool `json:"search.index.enabled,omitempty"`
 	// SearchIndexSymbolsEnabled description: Whether indexed symbol search is enabled. This is contingent on the indexed search configuration, and is true by default for instances with indexed search enabled. Enabling this will cause every repository to re-index, which is a time consuming (several hours) operation. Additionally, it requires more storage and ram to accommodate the added symbols information in the search index.
 	SearchIndexSymbolsEnabled *bool `json:"search.index.symbols.enabled,omitempty"`
-	// SearchLargeFiles description: A list of file glob patterns where matching files will be indexed and searched regardless of their size. Files still need to be valid utf-8 to be indexed. The glob pattern syntax can be found here: https://golang.org/pkg/path/filepath/#Match.
+	// SearchLargeFiles description: A list of file glob patterns where matching files will be indexed and searched regardless of their size. Files still need to be valid utf-8 to be indexed. The glob pattern syntax can be found here: https://github.com/bmatcuk/doublestar#patterns.
 	SearchLargeFiles []string `json:"search.largeFiles,omitempty"`
 	// SearchLimits description: Limits that search applies for number of repositories searched and timeouts.
 	SearchLimits *SearchLimits `json:"search.limits,omitempty"`

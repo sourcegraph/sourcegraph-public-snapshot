@@ -2,11 +2,11 @@ package query
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"time"
 
-	"github.com/grafana/regexp"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
+
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
@@ -75,19 +75,23 @@ func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seri
 				continue
 			}
 
-			modifiedQuery := withCountUnlimited(query)
-			modifiedQuery = fmt.Sprintf("%s repo:^%s$@%s", modifiedQuery, regexp.QuoteMeta(repository), commits[0].ID)
+			modified, err := querybuilder.SingleRepoQuery(query, repository, string(commits[0].ID))
+			if err != nil {
+				return nil, errors.Wrap(err, "SingleRepoQuery")
+			}
 
 			decoder, tabulationResult := streaming.TabulationDecoder()
-			err = streaming.Search(ctx, modifiedQuery, decoder)
+			err = streaming.Search(ctx, modified, decoder)
 			if err != nil {
 				return nil, errors.Wrap(err, "streaming.Search")
 			}
 
 			tr := *tabulationResult
-
 			if len(tr.Errors) > 0 {
 				return nil, errors.Errorf("streaming search: errors: %v", tr.Errors)
+			}
+			if len(tr.Alerts) > 0 {
+				return nil, errors.Errorf("streaming search: alerts: %v", tr.Alerts)
 			}
 
 			points[execution.RecordingTime] += tr.TotalCount

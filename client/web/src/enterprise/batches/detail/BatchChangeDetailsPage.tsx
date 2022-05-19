@@ -155,12 +155,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<
             />
             <ChangesetsArchivedNotice history={history} location={location} />
             <WebhookAlert batchChange={batchChange} />
-            <BatchChangeStatsCard
-                closedAt={batchChange.closedAt}
-                stats={batchChange.changesetsStats}
-                diff={batchChange.diffStat}
-                className="mb-3"
-            />
+            <BatchChangeStatsCard batchChange={batchChange} className="mb-3" />
             <Description description={batchChange.description} />
             <BatchChangeDetailsTabs batchChange={batchChange} refetchBatchChange={refetch} {...props} />
         </>

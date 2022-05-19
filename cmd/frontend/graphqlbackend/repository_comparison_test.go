@@ -10,8 +10,9 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/go-diff/diff"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -39,7 +40,7 @@ func TestRepositoryComparisonNoMergeBase(t *testing.T) {
 	}
 
 	t.Cleanup(git.ResetMocks)
-	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
+	gitserver.Mocks.ResolveRevision = func(spec string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		if spec != wantBaseRevision && spec != wantHeadRevision {
 			t.Fatalf("ResolveRevision received wrong spec: %s", spec)
 		}
@@ -74,13 +75,13 @@ func TestRepositoryComparison(t *testing.T) {
 		CreatedAt: time.Now(),
 	}
 
-	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
+	gitserver.Mocks.ResolveRevision = func(spec string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		if spec != wantMergeBaseRevision && spec != wantHeadRevision {
 			t.Fatalf("ResolveRevision received wrong spec: %s", spec)
 		}
 		return api.CommitID(spec), nil
 	}
-	t.Cleanup(func() { git.Mocks.ResolveRevision = nil })
+	t.Cleanup(func() { gitserver.Mocks.ResolveRevision = nil })
 
 	gitserver.Mocks.ExecReader = func(args []string) (io.ReadCloser, error) {
 		if len(args) < 1 && args[0] != "diff" {

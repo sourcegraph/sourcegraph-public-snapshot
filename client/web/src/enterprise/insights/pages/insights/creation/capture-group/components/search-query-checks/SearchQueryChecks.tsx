@@ -81,10 +81,5 @@ export const SearchQueryChecks: React.FunctionComponent<React.PropsWithChildren<
                 </CheckListItem>
             </li>
         </ul>
-
-        <p className="mt-1 text-muted">
-            Tip: use <code>archived:no</code> or <code>fork:no</code> to exclude results from archived or forked
-            repositories.
-        </p>
     </div>
 )

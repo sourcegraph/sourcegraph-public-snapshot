@@ -20,7 +20,6 @@ import {
 import { Button, Link, Icon, Checkbox } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../components/LoaderButton'
-import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import { AuthProvider, SourcegraphContext } from '../jscontext'
 import { ANONYMOUS_USER_ID_KEY, eventLogger, FIRST_SOURCE_URL_KEY, LAST_SOURCE_URL_KEY } from '../tracking/eventLogger'
 import { enterpriseTrial } from '../util/features'
@@ -41,7 +40,7 @@ export interface SignUpArguments {
     lastSourceUrl?: string
 }
 
-interface SignUpFormProps extends FeatureFlagProps {
+interface SignUpFormProps {
     className?: string
 
     /** Called to perform the signup on the server. */

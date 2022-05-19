@@ -134,12 +134,7 @@ type eventLogStore struct {
 	*basestore.Store
 }
 
-// EventLogs instantiates and returns a new EventLogStore with prepared statements.
-func EventLogs(db dbutil.DB) EventLogStore {
-	return &eventLogStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
-}
-
-// NewEventLogStoreWithDB instantiates and returns a new EventLogStore using the other store handle.
+// EventLogsWith instantiates and returns a new EventLogStore using the other store handle.
 func EventLogsWith(other basestore.ShareableStore) EventLogStore {
 	return &eventLogStore{Store: basestore.NewWithHandle(other.Handle())}
 }

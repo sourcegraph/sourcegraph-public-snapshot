@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -32,8 +33,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/jvmpackages"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm/npmpackages"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/pagure"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
@@ -177,7 +176,7 @@ func logPrivateRepoAccessGranted(ctx context.Context, db dbutil.DB, ids []api.Re
 		event.AnonymousUserID = "internal"
 	}
 
-	SecurityEventLogs(db).LogEvent(ctx, event)
+	NewDB(db).SecurityEventLogs().LogEvent(ctx, event)
 }
 
 // GetByName returns the repository with the given nameOrUri from the
@@ -263,6 +262,11 @@ func (s *repoStore) GetByIDs(ctx context.Context, ids ...api.RepoID) (_ []*types
 		tr.Finish()
 	}()
 
+	// listRepos will return a list of all repos if we pass in an empty ID list,
+	// so it is better to just return here rather than leak repo info.
+	if len(ids) == 0 {
+		return []*types.Repo{}, nil
+	}
 	return s.listRepos(ctx, tr, ReposListOptions{IDs: ids})
 }
 
@@ -494,9 +498,9 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 	case extsvc.TypeOther:
 		r.Metadata = new(extsvc.OtherRepoMetadata)
 	case extsvc.TypeJVMPackages:
-		r.Metadata = new(jvmpackages.Metadata)
+		r.Metadata = new(reposource.MavenMetadata)
 	case extsvc.TypeNpmPackages:
-		r.Metadata = new(npmpackages.Metadata)
+		r.Metadata = new(reposource.NpmMetadata)
 	case extsvc.TypeGoModules:
 		r.Metadata = &struct{}{}
 	case extsvc.TypePythonPackages:

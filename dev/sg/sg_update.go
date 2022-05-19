@@ -11,7 +11,7 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/download"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -28,8 +28,8 @@ Requires a local copy of the 'sourcegraph/sourcegraph' codebase.`,
 		if _, err := updateToPrebuiltSG(cmd.Context); err != nil {
 			return err
 		}
-		writeSuccessLinef("sg has been updated!")
-		stdout.Out.Write("To see what's new, run 'sg version changelog'.")
+		std.Out.WriteSuccessf("sg has been updated!")
+		std.Out.Write("To see what's new, run 'sg version changelog'.")
 		return nil
 	},
 }

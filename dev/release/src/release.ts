@@ -23,7 +23,15 @@ import {
 } from './github'
 import { ensureEvent, getClient, EventOptions, calendarTime } from './google-calendar'
 import { postMessage, slackURL } from './slack'
-import { cacheFolder, formatDate, timezoneLink, hubSpotFeedbackFormStub, ensureDocker, changelogURL } from './util'
+import {
+    cacheFolder,
+    formatDate,
+    timezoneLink,
+    hubSpotFeedbackFormStub,
+    ensureDocker,
+    changelogURL,
+    ensureReleaseBranchUpToDate,
+} from './util'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
 
@@ -109,6 +117,14 @@ const steps: Step[] = [
             const { upcoming: release } = await releaseVersions(config)
             const name = releaseName(release)
             const events: EventOptions[] = [
+                {
+                    title: `Security Team to Review Release Container Image Scans ${name}`,
+                    description: '(This is not an actual event to attend, just a calendar marker.)',
+                    anyoneCanAddSelf: true,
+                    attendees: [config.teamEmail],
+                    transparency: 'transparent',
+                    ...calendarTime(config.oneWorkingWeekBeforeRelease),
+                },
                 {
                     title: `Cut Sourcegraph ${name}`,
                     description: '(This is not an actual event to attend, just a calendar marker.)',
@@ -287,6 +303,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
             const { upcoming: release } = await releaseVersions(config)
             const branch = `${release.major}.${release.minor}`
             const tag = `v${release.version}${candidate === 'final' ? '' : `-rc.${candidate}`}`
+            ensureReleaseBranchUpToDate(branch)
             await createTag(
                 await getAuthenticatedGitHubClient(),
                 {

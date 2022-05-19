@@ -9,7 +9,7 @@ import { catchError, map, mergeMap } from 'rxjs/operators'
 import { asError, ErrorLike, isErrorLike, pluralize } from '@sourcegraph/common'
 import { aggregateStreamingSearch, ContentMatch } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, PageHeader, Container, Button } from '@sourcegraph/wildcard'
+import { Link, PageHeader, Container, Button, Typography } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, FilteredConnectionFilter } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
@@ -240,7 +240,7 @@ const FeatureFlagNode: React.FunctionComponent<React.PropsWithChildren<FeatureFl
         <React.Fragment key={name}>
             <div className={classNames('d-flex flex-column', styles.information)}>
                 <div>
-                    <h3 className={classNames(!hasOverridesOrReferences && 'm-0')}>{name}</h3>
+                    <Typography.H3 className={classNames(!hasOverridesOrReferences && 'm-0')}>{name}</Typography.H3>
 
                     {hasOverridesOrReferences && (
                         <p className="m-0">

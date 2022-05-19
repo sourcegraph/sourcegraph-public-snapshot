@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/workerdb"
+	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"

@@ -14,7 +14,9 @@ exports[`UserSubscriptionsEditProductSubscriptionPage renders 1`] = `
       />
        Subscription
     </a>
-    <h2>
+    <h2
+      class="h2"
+    >
       Upgrade or change subscription L-123
     </h2>
   </div>

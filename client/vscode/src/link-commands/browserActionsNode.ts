@@ -23,17 +23,20 @@ export async function browserActions(action: string, logRedirectEvent: (uri: str
             editor.selection.end.character
         )
     } else {
-        const repositoryInfo = await repoInfo(editor.document.uri.fsPath)
-        if (!repositoryInfo) {
-            return
-        }
-        const { remoteURL, branch, fileRelative } = repositoryInfo
-        const instanceUrl = vscode.workspace.getConfiguration('sourcegraph').get('url')
-        if (typeof instanceUrl === 'string') {
-            // construct sourcegraph url for current file
-            sourcegraphUrl =
-                getSourcegraphFileUrl(instanceUrl, remoteURL, branch, fileRelative.replaceAll('\\', '/'), editor) +
-                vsceUtms
+        try {
+            const repositoryInfo = await repoInfo(editor.document.uri.fsPath)
+            if (!repositoryInfo) {
+                await vscode.window.showErrorMessage('Failed to get info for this repository.')
+                return
+            }
+            const { remoteURL, branch, fileRelative } = repositoryInfo
+            const instanceUrl = vscode.workspace.getConfiguration('sourcegraph').get('url')
+            if (typeof instanceUrl === 'string') {
+                // construct sourcegraph url for current file
+                sourcegraphUrl = getSourcegraphFileUrl(instanceUrl, remoteURL, branch, fileRelative, editor) + vsceUtms
+            }
+        } catch (error) {
+            console.error(error)
         }
     }
     const decodedUri = decodeURIComponent(sourcegraphUrl)

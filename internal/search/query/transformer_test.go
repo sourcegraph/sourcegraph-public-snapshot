@@ -97,12 +97,12 @@ func TestSubstituteAliases(t *testing.T) {
 	autogold.Want(
 		"substitution honors literal search pattern",
 		`[{"and":[{"field":"repo","value":"repo","negated":false,"labels":["IsAlias"]},{"value":"^not-actually-a-regexp:tbf$","negated":false,"labels":["IsAlias","Literal"]}]}]`).
-		Equal(t, test("r:repo content:^not-actually-a-regexp:tbf$", SearchTypeLiteral))
+		Equal(t, test("r:repo content:^not-actually-a-regexp:tbf$", SearchTypeLiteralDefault))
 
 	autogold.Want(
 		"substitution honors path",
 		`[{"field":"file","value":"foo","negated":false,"labels":["IsAlias"]}]`).
-		Equal(t, test("path:foo", SearchTypeLiteral))
+		Equal(t, test("path:foo", SearchTypeLiteralDefault))
 }
 
 func TestLowercaseFieldNames(t *testing.T) {
@@ -457,9 +457,9 @@ func TestPipeline(t *testing.T) {
 	}}
 	for _, c := range cases {
 		t.Run("Map query", func(t *testing.T) {
-			plan, err := Pipeline(Init(c.input, SearchTypeLiteral))
+			plan, err := Pipeline(Init(c.input, SearchTypeLiteralDefault))
 			require.NoError(t, err)
-			got := plan.ToParseTree().String()
+			got := plan.ToQ().String()
 			if diff := cmp.Diff(c.want, got); diff != "" {
 				t.Fatal(diff)
 			}
@@ -941,7 +941,7 @@ func TestConcatRevFiltersTopLevelAnd(t *testing.T) {
 		t.Run(c.input, func(t *testing.T) {
 			plan, _ := Pipeline(InitRegexp(c.input))
 			p := MapPlan(plan, ConcatRevFilters)
-			if diff := cmp.Diff(c.want, toString(p.ToParseTree())); diff != "" {
+			if diff := cmp.Diff(c.want, toString(p.ToQ())); diff != "" {
 				t.Error(diff)
 			}
 		})
@@ -960,7 +960,7 @@ func TestQueryField(t *testing.T) {
 
 func TestSubstituteCountAll(t *testing.T) {
 	test := func(input string) string {
-		query, _ := Parse(input, SearchTypeLiteral)
+		query, _ := Parse(input, SearchTypeLiteralDefault)
 		q := SubstituteCountAll(query)
 		return toString(q)
 	}

@@ -10,9 +10,9 @@ import (
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -125,4 +125,20 @@ func (r *UploadResolver) Indexer() gql.CodeIntelIndexerResolver {
 	}
 
 	return &codeIntelIndexerResolver{name: r.upload.Indexer}
+}
+
+func (r *UploadResolver) DocumentPaths(ctx context.Context, args *gql.LSIFUploadDocumentPathsQueryArgs) (gql.LSIFUploadDocumentPathsConnectionResolver, error) {
+	pattern := "%%"
+	if args.Pattern != "" {
+		pattern = args.Pattern
+	}
+	documents, totalCount, err := r.resolver.GetUploadDocumentsForPath(ctx, r.upload.ID, pattern)
+	if err != nil {
+		return nil, err
+	}
+
+	return &uploadDocumentPathsConnectionResolver{
+		totalCount: totalCount,
+		documents:  documents,
+	}, nil
 }

@@ -36,6 +36,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -821,7 +822,7 @@ func TestGetOrRenewGitHubAppInstallationAccessToken(t *testing.T) {
 			}, nil
 		},
 	}
-	client := github.NewV3Client("Test", baseURL, &auth.OAuthBearerToken{Token: "oauth-token"}, doer)
+	client := github.NewV3Client(logtest.Scoped(t), "Test", baseURL, &auth.OAuthBearerToken{Token: "oauth-token"}, doer)
 
 	tests := []struct {
 		name           string

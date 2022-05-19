@@ -24,7 +24,7 @@ It is recommended to pass a database handle which is already wrapped in a transa
 
 Sample uses:
 
-- [data_write.go](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@b795806a03468f565702cd8f1990a7fbc969722a/-/blob/enterprise/internal/codeintel/stores/lsifstore/data_write.go#L290:16): Code intelligence uses a batch inserter to write processed code intelligence index data to the codeintel-db. This use instantiates a number of inserters that read values to insert from a shared channel, all operating in parallel.
+- [data_write.go](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@b795806a03468f565702cd8f1990a7fbc969722a/-/blob/internal/codeintel/stores/lsifstore/data_write.go#L290:16): Code intelligence uses a batch inserter to write processed code intelligence index data to the codeintel-db. This use instantiates a number of inserters that read values to insert from a shared channel, all operating in parallel.
 - [changeset_jobs.go](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@b795806a03468f565702cd8f1990a7fbc969722a/-/blob/enterprise/internal/batches/store/changeset_jobs.go#L99:15): Batch changes uses a batch inserter to insert a large number of changeset jobs atomically. Before using a batch inserter, this method would fail when a large number of rows were inserted. PostgreSQL accepts a maximum of `(2^15) - 1` parameters per query, which can be spent surprisingly quickly when inserting a large number of columns.
 
 ## Insertion with common values
@@ -51,7 +51,7 @@ if err := db.Exec(ctx, sqlf.Sprintf(tempTableQuery)); err != nil {
 
 Here, we defined the temporary table with the clause `ON COMMIT DROP`, which will ensure that the temporary table is only visible to the current transaction and is dropped on the next commit or rollback of the transaction.
 
-Next, create and use a batch inserter instance just as descried in the previous section, but target the newly created temporary table. Only the columns that are defined on the temporary table need to be supplied when calling the `Insert` method.
+Next, create and use a batch inserter instance just as described in the previous section, but target the newly created temporary table. Only the columns that are defined on the temporary table need to be supplied when calling the `Insert` method.
 
 ```go
 inserter := batch.NewInserter(ctx, db, "temp_table", "col3", "col4")
@@ -151,4 +151,4 @@ if err := db.Exec(ctx, sqlf.Sprintf(updateQuery, val1, val2)); err != nil {
 
 Sample uses:
 
-- [commits.go](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@b795806a03468f565702cd8f1990a7fbc969722a/-/blob/enterprise/internal/codeintel/stores/dbstore/commits.go#L292:16): Code intelligence uses this update-in-place technique over a set of tables to store an indexed and compressed view of the commit graph of a repository. This operation runs frequently (after each precise code intelligence index upload, and after updates from the code host) and generally changes only in a local way between updates.
+- [commits.go](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@b795806a03468f565702cd8f1990a7fbc969722a/-/blob/internal/codeintel/stores/dbstore/commits.go#L292:16): Code intelligence uses this update-in-place technique over a set of tables to store an indexed and compressed view of the commit graph of a repository. This operation runs frequently (after each precise code intelligence index upload, and after updates from the code host) and generally changes only in a local way between updates.

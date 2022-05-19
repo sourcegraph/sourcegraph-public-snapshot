@@ -13,6 +13,7 @@ import (
 type StreamDecoderEvents struct {
 	SkippedReasons []string
 	Errors         []string
+	Alerts         []string
 }
 
 type SearchMatch struct {
@@ -83,6 +84,14 @@ func TabulationDecoder() (streamhttp.FrontendStreamDecoder, *TabulationResult) {
 				}
 			}
 		},
+		OnAlert: func(ea *streamhttp.EventAlert) {
+			if ea.Title == "No repositories found" {
+				// If we hit a case where we don't find a repository we don't want to error, just
+				// complete our search.
+			} else {
+				tr.Alerts = append(tr.Alerts, fmt.Sprintf("%s: %s", ea.Title, ea.Description))
+			}
+		},
 		OnError: func(eventError *streamhttp.EventError) {
 			tr.Errors = append(tr.Errors, eventError.Message)
 		},
@@ -140,6 +149,14 @@ func ComputeDecoder() (client.ComputeMatchContextStreamDecoder, *ComputeTabulati
 						current.ValueCounts[value] += 1
 					}
 				}
+			}
+		},
+		OnAlert: func(ea *streamhttp.EventAlert) {
+			if ea.Title == "No repositories found" {
+				// If we hit a case where we don't find a repository we don't want to error, just
+				// complete our search.
+			} else {
+				ctr.Alerts = append(ctr.Alerts, fmt.Sprintf("%s: %s", ea.Title, ea.Description))
 			}
 		},
 		OnError: func(eventError *streamhttp.EventError) {

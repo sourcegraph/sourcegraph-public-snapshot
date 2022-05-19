@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import CheckboxBlankCircleOutlineIcon from 'mdi-react/CheckboxBlankCircleOutlineIcon'
 import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
 
-import { Badge, Button, Icon } from '@sourcegraph/wildcard'
+import { Badge, Button, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
 import { BatchChangesCodeHostFields, Scalars } from '../../../graphql-operations'
@@ -78,7 +78,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
                         'd-flex justify-content-between align-items-center flex-wrap mb-0'
                     )}
                 >
-                    <h3 className="text-nowrap mb-0" aria-label={headingAriaLabel}>
+                    <Typography.H3 className="text-nowrap mb-0" aria-label={headingAriaLabel}>
                         {isEnabled && (
                             <Icon
                                 className="text-success test-code-host-connection-node-enabled"
@@ -110,7 +110,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
                                 Global token
                             </Badge>
                         )}
-                    </h3>
+                    </Typography.H3>
                     <div className="mb-0 d-flex justify-content-end flex-grow-1">
                         {isEnabled ? (
                             <>

@@ -13,9 +13,9 @@ type StreamingError struct {
 
 func (e StreamingError) Error() string {
 	if e.Type == types.SearchCompute {
-		return fmt.Sprintf("encountered error(s) while running a streaming compute search: %v", e.Messages)
+		return fmt.Sprintf("compute streaming search: errors: %v", e.Messages)
 	}
-	return fmt.Sprintf("encountered error(s) while running a streaming search: %v", e.Messages)
+	return fmt.Sprintf("streaming search: errors: %v", e.Messages)
 }
 
 func (e StreamingError) NonRetryable() bool { return true }

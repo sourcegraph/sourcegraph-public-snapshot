@@ -16553,7 +16553,7 @@ func NewMockGitserverRepoStore() *MockGitserverRepoStore {
 			},
 		},
 		IteratePurgeableReposFunc: &GitserverRepoStoreIteratePurgeableReposFunc{
-			defaultHook: func(context.Context, time.Time, func(repo api.RepoName) error) (r0 error) {
+			defaultHook: func(context.Context, IteratePurgableReposOptions, func(repo api.RepoName) error) (r0 error) {
 				return
 			},
 		},
@@ -16641,7 +16641,7 @@ func NewStrictMockGitserverRepoStore() *MockGitserverRepoStore {
 			},
 		},
 		IteratePurgeableReposFunc: &GitserverRepoStoreIteratePurgeableReposFunc{
-			defaultHook: func(context.Context, time.Time, func(repo api.RepoName) error) error {
+			defaultHook: func(context.Context, IteratePurgableReposOptions, func(repo api.RepoName) error) error {
 				panic("unexpected invocation of MockGitserverRepoStore.IteratePurgeableRepos")
 			},
 		},
@@ -17194,15 +17194,15 @@ func (c GitserverRepoStoreHandleFuncCall) Results() []interface{} {
 // the IteratePurgeableRepos method of the parent MockGitserverRepoStore
 // instance is invoked.
 type GitserverRepoStoreIteratePurgeableReposFunc struct {
-	defaultHook func(context.Context, time.Time, func(repo api.RepoName) error) error
-	hooks       []func(context.Context, time.Time, func(repo api.RepoName) error) error
+	defaultHook func(context.Context, IteratePurgableReposOptions, func(repo api.RepoName) error) error
+	hooks       []func(context.Context, IteratePurgableReposOptions, func(repo api.RepoName) error) error
 	history     []GitserverRepoStoreIteratePurgeableReposFuncCall
 	mutex       sync.Mutex
 }
 
 // IteratePurgeableRepos delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockGitserverRepoStore) IteratePurgeableRepos(v0 context.Context, v1 time.Time, v2 func(repo api.RepoName) error) error {
+func (m *MockGitserverRepoStore) IteratePurgeableRepos(v0 context.Context, v1 IteratePurgableReposOptions, v2 func(repo api.RepoName) error) error {
 	r0 := m.IteratePurgeableReposFunc.nextHook()(v0, v1, v2)
 	m.IteratePurgeableReposFunc.appendCall(GitserverRepoStoreIteratePurgeableReposFuncCall{v0, v1, v2, r0})
 	return r0
@@ -17211,7 +17211,7 @@ func (m *MockGitserverRepoStore) IteratePurgeableRepos(v0 context.Context, v1 ti
 // SetDefaultHook sets function that is called when the
 // IteratePurgeableRepos method of the parent MockGitserverRepoStore
 // instance is invoked and the hook queue is empty.
-func (f *GitserverRepoStoreIteratePurgeableReposFunc) SetDefaultHook(hook func(context.Context, time.Time, func(repo api.RepoName) error) error) {
+func (f *GitserverRepoStoreIteratePurgeableReposFunc) SetDefaultHook(hook func(context.Context, IteratePurgableReposOptions, func(repo api.RepoName) error) error) {
 	f.defaultHook = hook
 }
 
@@ -17220,7 +17220,7 @@ func (f *GitserverRepoStoreIteratePurgeableReposFunc) SetDefaultHook(hook func(c
 // instance invokes the hook at the front of the queue and discards it.
 // After the queue is empty, the default hook function is invoked for any
 // future action.
-func (f *GitserverRepoStoreIteratePurgeableReposFunc) PushHook(hook func(context.Context, time.Time, func(repo api.RepoName) error) error) {
+func (f *GitserverRepoStoreIteratePurgeableReposFunc) PushHook(hook func(context.Context, IteratePurgableReposOptions, func(repo api.RepoName) error) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -17229,19 +17229,19 @@ func (f *GitserverRepoStoreIteratePurgeableReposFunc) PushHook(hook func(context
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *GitserverRepoStoreIteratePurgeableReposFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, time.Time, func(repo api.RepoName) error) error {
+	f.SetDefaultHook(func(context.Context, IteratePurgableReposOptions, func(repo api.RepoName) error) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *GitserverRepoStoreIteratePurgeableReposFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, time.Time, func(repo api.RepoName) error) error {
+	f.PushHook(func(context.Context, IteratePurgableReposOptions, func(repo api.RepoName) error) error {
 		return r0
 	})
 }
 
-func (f *GitserverRepoStoreIteratePurgeableReposFunc) nextHook() func(context.Context, time.Time, func(repo api.RepoName) error) error {
+func (f *GitserverRepoStoreIteratePurgeableReposFunc) nextHook() func(context.Context, IteratePurgableReposOptions, func(repo api.RepoName) error) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -17281,7 +17281,7 @@ type GitserverRepoStoreIteratePurgeableReposFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 time.Time
+	Arg1 IteratePurgableReposOptions
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 func(repo api.RepoName) error

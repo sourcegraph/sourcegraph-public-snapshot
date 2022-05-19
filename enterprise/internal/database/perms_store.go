@@ -91,6 +91,10 @@ type PermsStore interface {
 	//  ---------+------------+---------------+------------+-----------
 	//         1 |       read |        {1, 2} |      NOW() |     NOW()
 	SetRepoPermissions(ctx context.Context, p *authz.RepoPermissions) error
+	// SetRepoPermissionsUnrestricted sets the unrestricted on the repo_permissions
+	// table for all the provided repos. Either all or non are updated. Passing a
+	// non-existent id is a noop.
+	SetRepoPermissionsUnrestricted(ctx context.Context, ids []int32, unrestricted bool) error
 	// TouchRepoPermissions only updates the value of both `updated_at` and
 	// `synced_at` columns of the `repo_permissions` table without modifying the
 	// permissions bits. It inserts a new row when the row does not yet exist. The
@@ -168,12 +172,14 @@ type PermsStore interface {
 	RepoIDsWithNoPerms(ctx context.Context) ([]api.RepoID, error)
 	// UserIDsWithOldestPerms returns a list of user ID and last updated pairs for
 	// users who have the least recent synced permissions in the database and capped
-	// results by the limit.
-	UserIDsWithOldestPerms(ctx context.Context, limit int) (map[int32]time.Time, error)
+	// results by the limit. If a user's permissions have been recently synced, based
+	// on "age" they are ignored.
+	UserIDsWithOldestPerms(ctx context.Context, limit int, age time.Duration) (map[int32]time.Time, error)
 	// ReposIDsWithOldestPerms returns a list of repository ID and last updated pairs
 	// for repositories that have the least recent synced permissions in the database
-	// and caps results by the limit.
-	ReposIDsWithOldestPerms(ctx context.Context, limit int) (map[api.RepoID]time.Time, error)
+	// and caps results by the limit. If a repo's permissions have been recently
+	// synced, based on "age" they are ignored.
+	ReposIDsWithOldestPerms(ctx context.Context, limit int, age time.Duration) (map[api.RepoID]time.Time, error)
 	// UserIsMemberOfOrgHasCodeHostConnection returns true if the user is a member of
 	// any organization that has added code host connection.
 	UserIsMemberOfOrgHasCodeHostConnection(ctx context.Context, userID int32) (has bool, err error)
@@ -247,7 +253,7 @@ func (s *permsStore) LoadRepoPermissions(ctx context.Context, p *authz.RepoPermi
 	ctx, save := s.observe(ctx, "LoadRepoPermissions", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
-	ids, updatedAt, syncedAt, err := s.loadRepoPermissions(ctx, p, "")
+	ids, updatedAt, syncedAt, unrestricted, err := s.loadRepoPermissions(ctx, p, "")
 	if err != nil {
 		return err
 	}
@@ -258,6 +264,7 @@ func (s *permsStore) LoadRepoPermissions(ctx context.Context, p *authz.RepoPermi
 	}
 	p.UpdatedAt = updatedAt
 	p.SyncedAt = syncedAt
+	p.Unrestricted = unrestricted
 	return nil
 }
 
@@ -386,7 +393,7 @@ func (s *permsStore) SetRepoPermissions(ctx context.Context, p *authz.RepoPermis
 
 	// Retrieve currently stored user IDs of this repository.
 	oldIDs := map[int32]struct{}{}
-	ids, _, _, err := txs.loadRepoPermissions(ctx, p, "FOR UPDATE")
+	ids, _, _, _, err := txs.loadRepoPermissions(ctx, p, "FOR UPDATE")
 	if err != nil {
 		if err != authz.ErrPermsNotFound {
 			return errors.Wrap(err, "load repo permissions")
@@ -488,20 +495,41 @@ DO UPDATE SET
 	), nil
 }
 
+func (s *permsStore) SetRepoPermissionsUnrestricted(ctx context.Context, ids []int32, unrestricted bool) error {
+	if len(ids) == 0 {
+		return nil
+	}
+
+	const format = `
+UPDATE repo_permissions
+SET unrestricted = %s
+WHERE repo_id IN (%s)
+`
+	idqs := make([]*sqlf.Query, len(ids))
+	for i := range ids {
+		idqs[i] = sqlf.Sprintf("%s", ids[i])
+	}
+
+	q := sqlf.Sprintf(format, unrestricted, sqlf.Join(idqs, ","))
+
+	return errors.Wrap(s.Exec(ctx, q), "setting unrestricted flag")
+}
+
 // upsertRepoPermissionsQuery upserts single row of repository permissions.
 func upsertRepoPermissionsQuery(p *authz.RepoPermissions) (*sqlf.Query, error) {
 	const format = `
 -- source: enterprise/internal/database/perms_store.go:upsertRepoPermissionsQuery
 INSERT INTO repo_permissions
-  (repo_id, permission, user_ids_ints, updated_at, synced_at)
+  (repo_id, permission, user_ids_ints, updated_at, synced_at, unrestricted)
 VALUES
-  (%s, %s, %s, %s, %s)
+  (%s, %s, %s, %s, %s, %s)
 ON CONFLICT ON CONSTRAINT
   repo_permissions_perm_unique
 DO UPDATE SET
   user_ids_ints = excluded.user_ids_ints,
   updated_at = excluded.updated_at,
-  synced_at = excluded.synced_at
+  synced_at = excluded.synced_at,
+  unrestricted = excluded.unrestricted
 `
 
 	if p.UpdatedAt.IsZero() {
@@ -522,6 +550,7 @@ DO UPDATE SET
 		pq.Array(userIDs),
 		p.UpdatedAt.UTC(),
 		p.SyncedAt.UTC(),
+		p.Unrestricted,
 	), nil
 }
 
@@ -1234,10 +1263,10 @@ AND object_type = %s
 
 // loadRepoPermissions is a method that scans three values from one repo_permissions table row:
 // []int32 (ids), time.Time (updatedAt) and nullable time.Time (syncedAt).
-func (s *permsStore) loadRepoPermissions(ctx context.Context, p *authz.RepoPermissions, lock string) (ids []int32, updatedAt, syncedAt time.Time, err error) {
+func (s *permsStore) loadRepoPermissions(ctx context.Context, p *authz.RepoPermissions, lock string) (ids []int32, updatedAt, syncedAt time.Time, unrestricted bool, err error) {
 	const format = `
 -- source: enterprise/internal/database/perms_store.go:loadRepoPermissions
-SELECT user_ids_ints, updated_at, synced_at
+SELECT user_ids_ints, updated_at, synced_at, unrestricted
 FROM repo_permissions
 WHERE repo_id = %s
 AND permission = %s
@@ -1259,7 +1288,7 @@ AND permission = %s
 	var rows *sql.Rows
 	rows, err = s.Query(ctx, q)
 	if err != nil {
-		return nil, time.Time{}, time.Time{}, err
+		return nil, time.Time{}, time.Time{}, false, err
 	}
 
 	if !rows.Next() {
@@ -1268,17 +1297,17 @@ AND permission = %s
 		if err == nil {
 			err = authz.ErrPermsNotFound
 		}
-		return nil, time.Time{}, time.Time{}, err
+		return nil, time.Time{}, time.Time{}, false, err
 	}
 
-	if err = rows.Scan(pq.Array(&ids), &updatedAt, &dbutil.NullTime{Time: &syncedAt}); err != nil {
-		return nil, time.Time{}, time.Time{}, err
+	if err = rows.Scan(pq.Array(&ids), &updatedAt, &dbutil.NullTime{Time: &syncedAt}, &unrestricted); err != nil {
+		return nil, time.Time{}, time.Time{}, false, err
 	}
 
 	if err = rows.Close(); err != nil {
-		return nil, time.Time{}, time.Time{}, err
+		return nil, time.Time{}, time.Time{}, false, err
 	}
-	return ids, updatedAt, syncedAt, nil
+	return ids, updatedAt, syncedAt, unrestricted, nil
 }
 
 // loadUserPendingPermissions is a method that scans three values from one user_pending_permissions table row:
@@ -1588,29 +1617,44 @@ AND repo.id NOT IN
 	return ids, nil
 }
 
-func (s *permsStore) UserIDsWithOldestPerms(ctx context.Context, limit int) (map[int32]time.Time, error) {
+// UserIDsWithOldestPerms lists the users with the oldest synced perms, limited
+// to limit. If age is non-zero, users that have synced within "age" since now
+// will be filtered out.
+func (s *permsStore) UserIDsWithOldestPerms(ctx context.Context, limit int, age time.Duration) (map[int32]time.Time, error) {
+	cutoffClause := sqlf.Sprintf("TRUE")
+	if age > 0 {
+		cutoff := s.clock().Add(-1 * age)
+		cutoffClause = sqlf.Sprintf("(perms.synced_at IS NULL OR perms.synced_at < %s)", cutoff)
+	}
 	q := sqlf.Sprintf(`
 -- source: enterprise/internal/database/perms_store.go:PermsStore.UserIDsWithOldestPerms
 SELECT perms.user_id, perms.synced_at FROM user_permissions AS perms
 WHERE perms.user_id IN
 	(SELECT users.id FROM users
 	 WHERE users.deleted_at IS NULL)
+AND %s
 ORDER BY perms.synced_at ASC NULLS FIRST
 LIMIT %s
-`, limit)
+`, cutoffClause, limit)
 	return s.loadIDsWithTime(ctx, q)
 }
 
-func (s *permsStore) ReposIDsWithOldestPerms(ctx context.Context, limit int) (map[api.RepoID]time.Time, error) {
+func (s *permsStore) ReposIDsWithOldestPerms(ctx context.Context, limit int, age time.Duration) (map[api.RepoID]time.Time, error) {
+	cutoffClause := sqlf.Sprintf("TRUE")
+	if age > 0 {
+		cutoff := s.clock().Add(-1 * age)
+		cutoffClause = sqlf.Sprintf("(perms.synced_at IS NULL OR perms.synced_at < %s)", cutoff)
+	}
 	q := sqlf.Sprintf(`
 -- source: enterprise/internal/database/perms_store.go:PermsStore.ReposIDsWithOldestPerms
 SELECT perms.repo_id, perms.synced_at FROM repo_permissions AS perms
 WHERE perms.repo_id IN
 	(SELECT repo.id FROM repo
 	 WHERE repo.deleted_at IS NULL)
+AND %s
 ORDER BY perms.synced_at ASC NULLS FIRST
 LIMIT %s
-`, limit)
+`, cutoffClause, limit)
 
 	pairs, err := s.loadIDsWithTime(ctx, q)
 	if err != nil {

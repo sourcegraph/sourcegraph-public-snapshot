@@ -68,11 +68,11 @@ func TestAddCodeMonitorHook(t *testing.T) {
 			require.NoError(t, err)
 			inputs := &run.SearchInputs{
 				UserSettings:        &schema.Settings{},
-				PatternType:         query.SearchTypeLiteral,
+				PatternType:         query.SearchTypeLiteralDefault,
 				Protocol:            search.Streaming,
 				OnSourcegraphDotCom: true,
 			}
-			j, err := jobutil.NewJob(inputs, plan, jobutil.IdentityPass)
+			j, err := jobutil.NewPlanJob(inputs, plan)
 			require.NoError(t, err)
 			addCodeMonitorHook(j, nil)
 		}

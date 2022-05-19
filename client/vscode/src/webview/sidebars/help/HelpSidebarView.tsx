@@ -34,10 +34,7 @@ export const HelpSidebarView: React.FunctionComponent<React.PropsWithChildren<He
             <button
                 type="button"
                 onClick={() =>
-                    onHelpItemClick(
-                        'https://github.com/sourcegraph/sourcegraph/discussions/categories/feedback',
-                        'Feedback'
-                    )
+                    onHelpItemClick('https://github.com/sourcegraph/sourcegraph/discussions/34821', 'Feedback')
                 }
                 className={classNames(styles.itemContainer, 'btn btn-text text-left')}
             >
