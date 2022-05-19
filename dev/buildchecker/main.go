@@ -16,7 +16,6 @@ import (
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 	"github.com/google/go-github/v41/github"
 	libhoney "github.com/honeycombio/libhoney-go"
-
 	"github.com/slack-go/slack"
 	"golang.org/x/oauth2"
 
