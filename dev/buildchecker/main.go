@@ -359,15 +359,15 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 
 			metrics := map[string]okay.Metric{
 				"totalCount":       okay.Count(totals[recordDateString]),
-				"incidentDuration": okay.Duration(time.Duration(time.Duration(incidents[recordDateString]) * time.Minute)),
+				"incidentDuration": okay.Duration(time.Duration(incidents[recordDateString]) * time.Minute),
 				"flakeCount":       okay.Count(flakes[recordDateString]),
 			}
 			event := okay.Event{
 				Name:      "buildStats",
 				Timestamp: eventTime,
-				UniqueKey: []string{
-					eventTime.Format(time.RFC3339)},
+				UniqueKey: []string{"ts"},
 				Properties: map[string]string{
+					"ts":           eventTime.Format(time.RFC3339),
 					"organization": "sourcegraph",
 					"pipeline":     "sourcegraph",
 					"branch":       "main",
