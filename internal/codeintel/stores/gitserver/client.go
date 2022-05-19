@@ -353,7 +353,7 @@ func (c *Client) DirectoryChildren(ctx context.Context, repositoryID int, commit
 		return nil, err
 	}
 
-	children, err := git.ListDirectoryChildren(ctx, c.db, authz.DefaultSubRepoPermsChecker, repo, api.CommitID(commit), dirnames)
+	children, err := gitserver.NewClient(c.db).ListDirectoryChildren(ctx, authz.DefaultSubRepoPermsChecker, repo, api.CommitID(commit), dirnames)
 	if err == nil {
 		return children, err
 	}
