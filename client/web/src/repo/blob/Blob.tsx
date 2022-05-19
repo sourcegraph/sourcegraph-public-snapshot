@@ -279,6 +279,23 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
     const popoverCloses = useMemo(() => new Subject<void>(), [])
     const nextPopoverClose = useCallback((click: void) => popoverCloses.next(click), [popoverCloses])
 
+    useObservable(
+        useMemo(
+            () =>
+                popoverCloses.pipe(
+                    withLatestFrom(urlSearchParameters),
+                    tap(([, parameters]) => {
+                        parameters.delete('popover')
+                        props.history.push({
+                            ...location,
+                            search: formatSearchParameters(parameters),
+                        })
+                    })
+                ),
+            [location, popoverCloses, props.history, urlSearchParameters]
+        )
+    )
+
     const hoverifier = useMemo(
         () =>
             createHoverifier<HoverContext, HoverMerged, ActionItemAction>({
