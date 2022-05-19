@@ -122,8 +122,10 @@ const PrivateContent: FunctionComponent = () => (
             dashboards to share with others.
         </p>
         <p>
-            <em>The “all insights” dashboard shows you all insights available to you regardless of their visibility to
-                others.</em>
+            <em>
+                The “all insights” dashboard shows you all insights available to you regardless of their visibility to
+                others.
+            </em>
         </p>
     </>
 )
