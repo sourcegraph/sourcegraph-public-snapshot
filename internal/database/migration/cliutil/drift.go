@@ -5,6 +5,7 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	descriptions "github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -37,6 +38,7 @@ func Drift(commandName string, factory RunnerFactory, outFactory func() *output.
 			return err
 		}
 
+		descriptions.Canonicalize(schema)
 		return compareSchemaDescriptions(out, schema, expected)
 	})
 

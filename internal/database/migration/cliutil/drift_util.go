@@ -62,13 +62,19 @@ var errOutOfSync = errors.Newf("database schema is out of sync")
 
 func compareSchemaDescriptions(out *output.Output, actual, expected schemas.SchemaDescription) (err error) {
 	missing := func(typeName, name string, value any) {
-		out.WriteMarkdown(fmt.Sprintf("Missing %s %q:\n```diff\n%s\n```", typeName, name, cmp.Diff(nil, value)))
+		diff := cmp.Diff(nil, value)
+		out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing %s %q", typeName, name)))
+		if diff != "" {
+			out.WriteMarkdown(fmt.Sprintf("```diff\n%s```", diff))
+		}
 		err = errOutOfSync
 	}
 
-	diff := func(typeName, name string, a, b any) {
-		if diff := cmp.Diff(a, b); diff != "" {
-			out.WriteMarkdown(fmt.Sprintf("Diff %s %q:\n```diff\n%s\n```", typeName, name, diff))
+	diff := func(typeName, fieldName, name string, a, b any) {
+		diff := cmp.Diff(a, b)
+		if diff != "" {
+			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Mismatched %s of %s %q", fieldName, typeName, name)))
+			out.WriteMarkdown(fmt.Sprintf("```diff\n%s```", diff))
 			err = errOutOfSync
 		}
 	}
@@ -76,18 +82,17 @@ func compareSchemaDescriptions(out *output.Output, actual, expected schemas.Sche
 	//
 	// Compare extensions
 
-	actualExtensions := map[string]string{}
+	actualExtensions := map[string]struct{}{}
 	for _, extension := range actual.Extensions {
-		actualExtensions[extension] = extension
+		actualExtensions[extension] = struct{}{}
 	}
-	expectedExtensions := map[string]string{}
+	expectedExtensions := map[string]struct{}{}
 	for _, extension := range expected.Extensions {
-		expectedExtensions[extension] = extension
+		expectedExtensions[extension] = struct{}{}
 	}
-
 	for name := range expectedExtensions {
 		if _, ok := actualExtensions[name]; !ok {
-			missing("extension", name, name)
+			missing("extension", name, nil)
 		}
 	}
 
@@ -102,12 +107,11 @@ func compareSchemaDescriptions(out *output.Output, actual, expected schemas.Sche
 	for _, enum := range expected.Enums {
 		expectedEnums[enum.Name] = enum
 	}
-
 	for name, expectedEnum := range expectedEnums {
 		if enum, ok := actualEnums[name]; !ok {
 			missing("enum", name, expectedEnum)
 		} else {
-			diff("enum labels", name, expectedEnum.Labels, enum.Labels)
+			diff("enum", "labels", name, expectedEnum.Labels, enum.Labels)
 		}
 	}
 
@@ -122,13 +126,11 @@ func compareSchemaDescriptions(out *output.Output, actual, expected schemas.Sche
 	for _, function := range expected.Functions {
 		expectedFunctions[function.Name] = function
 	}
-
 	for name, expectedFunction := range expectedFunctions {
 		if function, ok := actualFunctions[name]; !ok {
 			missing("function", name, expectedFunction)
 		} else {
-			// TODO
-			_, _ = expectedFunction, function
+			diff("function", "definition", name, expectedFunction.Definition, function.Definition)
 		}
 	}
 
@@ -143,13 +145,11 @@ func compareSchemaDescriptions(out *output.Output, actual, expected schemas.Sche
 	for _, sequence := range expected.Sequences {
 		expectedSequences[sequence.Name] = sequence
 	}
-
 	for name, expectedSequence := range expectedSequences {
 		if sequence, ok := actualSequences[name]; !ok {
 			missing("sequence", name, expectedSequence)
 		} else {
-			// TODO
-			_, _ = expectedSequence, sequence
+			diff("sequence", "definition", name, expectedSequence, sequence)
 		}
 	}
 
@@ -164,12 +164,11 @@ func compareSchemaDescriptions(out *output.Output, actual, expected schemas.Sche
 	for _, Table := range expected.Tables {
 		expectedTables[Table.Name] = Table
 	}
-
 	for name, expectedTable := range expectedTables {
 		if table, ok := actualTables[name]; !ok {
 			missing("table", name, expectedTable)
 		} else {
-			_, _ = expectedTable, table
+			diff("table", "definition", name, expectedTable, table)
 		}
 	}
 
@@ -184,12 +183,11 @@ func compareSchemaDescriptions(out *output.Output, actual, expected schemas.Sche
 	for _, view := range expected.Views {
 		expectedViews[view.Name] = view
 	}
-
 	for name, expectedView := range expectedViews {
 		if view, ok := actualViews[name]; !ok {
 			missing("view", name, expectedView)
 		} else {
-			_, _ = expectedView, view
+			diff("view", "definition", name, expectedView.Definition, view.Definition)
 		}
 	}
 
