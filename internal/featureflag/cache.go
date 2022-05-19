@@ -57,6 +57,13 @@ func ClearFlagFromCache(name string) {
 	c.Do("DEL", getFlagCacheKey(name))
 }
 
+func ClearFlagForUserFromCache(name string, userID *int32) {
+	c := pool.Get()
+	defer c.Close()
+
+	c.Do("HDEL", getFlagCacheKey(name), fmt.Sprintf("uid_%v", userID))
+}
+
 func getVisitorIDForActor(a *actor.Actor) (string, error) {
 	if a.IsAuthenticated() {
 		return fmt.Sprintf("uid_%v", a.UID), nil
