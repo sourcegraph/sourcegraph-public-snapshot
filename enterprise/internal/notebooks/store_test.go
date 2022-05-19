@@ -39,7 +39,7 @@ func notebookByOrg(notebook *Notebook, creatorID int32, orgID int32) *Notebook {
 
 func TestCreateAndGetNotebook(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 	u := database.Users(db)
 	n := Notebooks(db)
@@ -79,7 +79,7 @@ func TestCreateAndGetNotebook(t *testing.T) {
 
 func TestUpdateNotebook(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 	u := database.Users(db)
 	n := Notebooks(db)
@@ -116,7 +116,7 @@ func TestUpdateNotebook(t *testing.T) {
 
 func TestDeleteNotebook(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 	u := database.Users(db)
 	n := Notebooks(db)
@@ -189,11 +189,11 @@ func createNotebookStars(ctx context.Context, store NotebooksStore, userID int32
 
 func TestListingAndCountingNotebooks(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	internalCtx := actor.WithInternalActor(context.Background())
 	u := database.Users(db)
 	o := database.Orgs(db)
-	om := database.OrgMembers(db)
+	om := db.OrgMembers()
 	n := Notebooks(db)
 
 	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
@@ -447,7 +447,7 @@ func TestListingAndCountingNotebooks(t *testing.T) {
 
 func TestCreatingNotebookWithInvalidBlock(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 	u := database.Users(db)
 	n := Notebooks(db)
@@ -471,11 +471,11 @@ func TestCreatingNotebookWithInvalidBlock(t *testing.T) {
 
 func TestNotebookPermissions(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	internalCtx := actor.WithInternalActor(context.Background())
 	u := database.Users(db)
 	o := database.Orgs(db)
-	om := database.OrgMembers(db)
+	om := db.OrgMembers()
 	n := Notebooks(db)
 
 	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
@@ -541,7 +541,7 @@ func TestNotebookPermissions(t *testing.T) {
 
 func TestListingNotebookStars(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	internalCtx := actor.WithInternalActor(context.Background())
 	u := database.Users(db)
 	n := Notebooks(db)
@@ -627,7 +627,7 @@ func TestListingNotebookStars(t *testing.T) {
 
 func TestCreatingAndDeletingNotebookStars(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	internalCtx := actor.WithInternalActor(context.Background())
 	u := database.Users(db)
 	n := Notebooks(db)

@@ -127,7 +127,7 @@ func (s *store) RepoStore() database.RepoStore {
 }
 
 func (s *store) GitserverReposStore() database.GitserverRepoStore {
-	return database.NewGitserverReposWith(s)
+	return database.GitserverReposWith(s)
 }
 
 func (s *store) ExternalServiceStore() database.ExternalServiceStore {

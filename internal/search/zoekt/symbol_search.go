@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
+	"github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
@@ -71,4 +72,48 @@ func (z *ZoektSymbolSearchJob) Tags() []log.Field {
 		tags = append(tags, log.Int("numBranchRepos", len(z.Repos.branchRepos)))
 	}
 	return tags
+}
+
+type ZoektGlobalSymbolSearchJob struct {
+	GlobalZoektQuery *GlobalZoektQuery
+	ZoektArgs        *search.ZoektParameters
+	RepoOpts         search.RepoOptions
+}
+
+func (s *ZoektGlobalSymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
+	defer func() { finish(alert, err) }()
+	tr.TagFields(trace.LazyFields(s.Tags))
+
+	userPrivateRepos := repos.PrivateReposForActor(ctx, clients.DB, s.RepoOpts)
+	s.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
+	s.ZoektArgs.Query = s.GlobalZoektQuery.Generate()
+
+	// always search for symbols in indexed repositories when searching the repo universe.
+	err = DoZoektSearchGlobal(ctx, clients.Zoekt, s.ZoektArgs, stream)
+	if err != nil {
+		tr.LogFields(log.Error(err))
+		// Only record error if we haven't timed out.
+		if ctx.Err() == nil {
+			return nil, err
+		}
+	}
+
+	return nil, nil
+}
+
+func (*ZoektGlobalSymbolSearchJob) Name() string {
+	return "ZoektGlobalSymbolSearchJob"
+}
+
+func (s *ZoektGlobalSymbolSearchJob) Tags() []log.Field {
+	return []log.Field{
+		trace.Stringer("query", s.GlobalZoektQuery.query),
+		trace.Printf("repoScope", "%q", s.GlobalZoektQuery.repoScope),
+		log.Bool("includePrivate", s.GlobalZoektQuery.includePrivate),
+		log.String("type", string(s.ZoektArgs.Typ)),
+		log.Int32("fileMatchLimit", s.ZoektArgs.FileMatchLimit),
+		trace.Stringer("select", s.ZoektArgs.Select),
+		trace.Stringer("repoOpts", &s.RepoOpts),
+	}
 }

@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"strings"
 	"time"
@@ -44,14 +43,9 @@ type gitserverRepoStore struct {
 	*basestore.Store
 }
 
-// GitserverRepos instantiates and returns a new gitserverRepoStore.
-func GitserverRepos(db dbutil.DB) GitserverRepoStore {
-	return &gitserverRepoStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
-}
-
-// NewGitserverReposWith instantiates and returns a new gitserverRepoStore using
+// GitserverReposWith instantiates and returns a new gitserverRepoStore using
 // the other store handle.
-func NewGitserverReposWith(other basestore.ShareableStore) GitserverRepoStore {
+func GitserverReposWith(other basestore.ShareableStore) GitserverRepoStore {
 	return &gitserverRepoStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 

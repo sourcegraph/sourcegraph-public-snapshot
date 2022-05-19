@@ -19,13 +19,13 @@ export const CSS_MODULES_VS_GLOBAL_STYLES_INSIGHT: SearchInsightExampleContent =
             dataKey: 'a',
             name: 'CSS Modules',
             stroke: DATA_SERIES_COLORS.GREEN,
-            query: 'select:file lang:scss file:module.scss patterntype:regexp archived:no fork:no',
+            query: 'select:file lang:scss file:module.scss patterntype:regexp',
         },
         {
             dataKey: 'b',
             name: 'Global CSS',
             stroke: DATA_SERIES_COLORS.RED,
-            query: 'select:file lang:scss -file:module.scss patterntype:regexp archived:no fork:no',
+            query: 'select:file lang:scss -file:module.scss patterntype:regexp',
         },
     ],
     xAxis: {
@@ -109,15 +109,14 @@ export const LOG_4_J_INCIDENT_INSIGHT: SearchInsightExampleContent = {
             dataKey: 'a',
             name: 'Updated log4j',
             stroke: DATA_SERIES_COLORS.GREEN,
-            query:
-                'lang:gradle org\\.apache\\.logging\\.log4j[\'"] 2\\.(17)(\\.[0-9]+) patterntype:regexp archived:no fork:no',
+            query: 'lang:gradle org\\.apache\\.logging\\.log4j[\'"] 2\\.(17)(\\.[0-9]+) patterntype:regexp',
         },
         {
             dataKey: 'b',
             name: 'Vulnerable log4j',
             stroke: DATA_SERIES_COLORS.RED,
             query:
-                'lang:gradle org\\.apache\\.logging\\.log4j[\'"] 2\\.(0|1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16)(\\.[0-9]+) patterntype:regexp archived:no fork:no',
+                'lang:gradle org\\.apache\\.logging\\.log4j[\'"] 2\\.(0|1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16)(\\.[0-9]+) patterntype:regexp',
         },
     ],
     xAxis: {
@@ -144,19 +143,19 @@ export const DEPRECATED_API_USAGE_BY_TEAM: SearchInsightExampleContent = {
             dataKey: 'a',
             name: 'Cloud',
             stroke: DATA_SERIES_COLORS.ORANGE,
-            query: 'problemAPI file:CloudDirectory archived:no fork:no',
+            query: 'problemAPI file:CloudDirectory',
         },
         {
             dataKey: 'b',
             name: 'Core App',
             stroke: DATA_SERIES_COLORS.CYAN,
-            query: 'problemAPI file:CoreDirectory archived:no fork:no',
+            query: 'problemAPI file:CoreDirectory',
         },
         {
             dataKey: 'c',
             name: 'Extensibility',
             stroke: DATA_SERIES_COLORS.GRAPE,
-            query: 'problemAPI file:ExtnDirectory archived:no fork:no',
+            query: 'problemAPI file:ExtnDirectory',
         },
     ],
     xAxis: {
@@ -183,7 +182,7 @@ export const LINTER_OVERRIDES: SearchInsightExampleContent = {
             dataKey: 'a',
             name: 'Linter overrides',
             stroke: DATA_SERIES_COLORS.RED,
-            query: 'file:\\.eslintignore .\\n patternType:regexp archived:no fork:no',
+            query: 'file:\\.eslintignore .\\n patternType:regexp',
         },
     ],
     xAxis: {
@@ -210,7 +209,7 @@ export const REPOS_WITH_CI_SYSTEM: SearchInsightExampleContent = {
             dataKey: 'a',
             name: 'Connected repos',
             stroke: DATA_SERIES_COLORS.GREEN,
-            query: 'file:\\.circleci/config.yml select:repo fork:no archived:no',
+            query: 'file:\\.circleci/config.yml select:repo',
         },
     ],
     xAxis: {

@@ -104,10 +104,10 @@ func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitR
 		}
 	}
 
-	var tags []*git.Tag
+	var tags []*gitdomain.Tag
 	if args.Type == nil || *args.Type == gitRefTypeTag {
 		var err error
-		tags, err = git.ListTags(ctx, db, r.RepoName())
+		tags, err = gitserver.NewClient(r.db).ListTags(ctx, r.RepoName())
 		if err != nil {
 			return nil, err
 		}

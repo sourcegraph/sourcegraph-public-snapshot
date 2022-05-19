@@ -540,7 +540,7 @@ func TestCloneRepo(t *testing.T) {
 	}
 	assertRepoState := func(status types.CloneStatus, size int64) {
 		t.Helper()
-		fromDB, err := database.GitserverRepos(db).GetByID(ctx, dbRepo.ID)
+		fromDB, err := db.GitserverRepos().GetByID(ctx, dbRepo.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -557,7 +557,7 @@ func TestCloneRepo(t *testing.T) {
 		ShardID:     "test",
 		CloneStatus: types.CloneStatusNotCloned,
 	}
-	if err := database.GitserverRepos(db).Upsert(ctx, &gr); err != nil {
+	if err := db.GitserverRepos().Upsert(ctx, &gr); err != nil {
 		t.Fatal(err)
 	}
 	assertRepoState(types.CloneStatusNotCloned, 0)
@@ -691,7 +691,7 @@ func testHandleRepoDelete(t *testing.T, deletedInDB bool) {
 		CloneStatus:   types.CloneStatusCloned,
 		RepoSizeBytes: size,
 	}
-	fromDB, err := database.GitserverRepos(db).GetByID(ctx, dbRepo.ID)
+	fromDB, err := db.GitserverRepos().GetByID(ctx, dbRepo.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -740,7 +740,7 @@ func testHandleRepoDelete(t *testing.T, deletedInDB bool) {
 		CloneStatus:   types.CloneStatusNotCloned,
 		RepoSizeBytes: size,
 	}
-	fromDB, err = database.GitserverRepos(db).GetByID(ctx, dbRepo.ID)
+	fromDB, err = db.GitserverRepos().GetByID(ctx, dbRepo.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -807,7 +807,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 		CloneStatus:   types.CloneStatusCloned,
 		RepoSizeBytes: size,
 	}
-	fromDB, err := database.GitserverRepos(db).GetByID(ctx, dbRepo.ID)
+	fromDB, err := db.GitserverRepos().GetByID(ctx, dbRepo.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -836,7 +836,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 		LastError:     "fail",
 		RepoSizeBytes: size,
 	}
-	fromDB, err = database.GitserverRepos(db).GetByID(ctx, dbRepo.ID)
+	fromDB, err = db.GitserverRepos().GetByID(ctx, dbRepo.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -859,7 +859,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 		CloneStatus:   types.CloneStatusCloned,
 		RepoSizeBytes: dirSize(s.dir(repoName).Path(".")), // we compute the new size
 	}
-	fromDB, err = database.GitserverRepos(db).GetByID(ctx, dbRepo.ID)
+	fromDB, err = db.GitserverRepos().GetByID(ctx, dbRepo.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -948,7 +948,7 @@ func TestHandleRepoUpdateFromShard(t *testing.T) {
 		CloneStatus:   types.CloneStatusCloned,
 		RepoSizeBytes: size,
 	}
-	fromDB, err := database.GitserverRepos(db).GetByID(ctx, dbRepo.ID)
+	fromDB, err := db.GitserverRepos().GetByID(ctx, dbRepo.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1234,7 +1234,7 @@ func TestSyncRepoState(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = database.GitserverRepos(db).GetByID(ctx, dbRepo.ID)
+	_, err = db.GitserverRepos().GetByID(ctx, dbRepo.ID)
 	if err != nil {
 		// GitserverRepo should exist after updating the lastFetched time
 		t.Fatal(err)
@@ -1245,7 +1245,7 @@ func TestSyncRepoState(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	gr, err := database.GitserverRepos(db).GetByID(ctx, dbRepo.ID)
+	gr, err := db.GitserverRepos().GetByID(ctx, dbRepo.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1256,7 +1256,7 @@ func TestSyncRepoState(t *testing.T) {
 
 	t.Run("sync deleted repo", func(t *testing.T) {
 		// Fake setting an incorrect status
-		if err := database.GitserverRepos(db).SetCloneStatus(ctx, dbRepo.Name, types.CloneStatusUnknown, hostname); err != nil {
+		if err := db.GitserverRepos().SetCloneStatus(ctx, dbRepo.Name, types.CloneStatusUnknown, hostname); err != nil {
 			t.Fatal(err)
 		}
 
@@ -1270,7 +1270,7 @@ func TestSyncRepoState(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		gr, err := database.GitserverRepos(db).GetByID(ctx, dbRepo.ID)
+		gr, err := db.GitserverRepos().GetByID(ctx, dbRepo.ID)
 		if err != nil {
 			t.Fatal(err)
 		}

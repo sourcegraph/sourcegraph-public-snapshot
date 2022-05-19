@@ -11,6 +11,7 @@ import {
     StateField,
     Prec,
     RangeSetBuilder,
+    MapMode,
 } from '@codemirror/state'
 import {
     EditorView,
@@ -424,14 +425,14 @@ const decoratedToDecoration = (token: DecoratedToken): Decoration => {
 }
 
 // This provides syntax highlighting. This is a custom solution so that we an
-// use our existing query parser (instead of using codemirrors language
-// support). That's not to say that we couldn't properly intergate with
-// codemirror's language system with more effort.
+// use our existing query parser (instead of using CodeMirror's language
+// support). That's not to say that we couldn't properly integrate with
+// CodeMirror's language system with more effort.
 const tokenHighlight = EditorView.decorations.compute([decoratedTokens], state => {
     const tokens = state.facet(decoratedTokens)
     const builder = new RangeSetBuilder<Decoration>()
     for (const token of tokens) {
-        builder.add(token.range.start, token.range.end + (token.type === 'field' ? 1 : 0), decoratedToDecoration(token))
+        builder.add(token.range.start, getEndPosition(token), decoratedToDecoration(token))
     }
     return builder.finish()
 })
@@ -466,132 +467,160 @@ const highlightFocusedFilter = ViewPlugin.define(
 
 // Tooltip information.
 function tokenInfo(): Extension[] {
-    const setHighlighedToken = StateEffect.define<DecoratedToken | null>()
-    const highlightedToken = StateField.define<DecoratedToken | null>({
+    const setHighlighedTokenPosition = StateEffect.define<number | null>()
+    const highlightedTokenPosition = StateField.define<number | null>({
         create() {
             return null
         },
-        update(value, transaction) {
-            const effect = transaction.effects.find((effect): effect is StateEffect<DecoratedToken | null> =>
-                effect.is(setHighlighedToken)
+        update(position, transaction) {
+            // Hide the highlight when the document changes. This replicates
+            // Monaco's behavior.
+            if (transaction.docChanged) {
+                return null
+            }
+            const effect = transaction.effects.find((effect): effect is StateEffect<number | null> =>
+                effect.is(setHighlighedTokenPosition)
             )
-            return effect ? effect.value : value
+            if (effect) {
+                position = effect?.value
+            }
+            if (position !== null) {
+                // Mapping the position might not be necessary since we clear
+                // the highlight when the document changes anyway, but this is
+                // the safer way.
+                // MapMode.TrackDel causes mapPos to return null if content at
+                // this position was deleted (in which case we want to remove
+                // the highlight)
+                return transaction.changes.mapPos(position, 0, MapMode.TrackDel)
+            }
+            return position
         },
         provide(field) {
-            return EditorView.decorations.from(field, token =>
-                token
+            return EditorView.decorations.compute([field, decoratedTokens], state => {
+                const position = state.field(field)
+                if (position === null) {
+                    return Decoration.none
+                }
+                let tokenAtPosition = state.facet(decoratedTokens).find(token => isTokenInRange(position, token))
+
+                switch (tokenAtPosition?.type) {
+                    case 'field':
+                    case 'pattern':
+                    case 'metaRevision':
+                    case 'metaRepoRevisionSeparator':
+                    case 'metaSelector':
+                    case 'metaRegexp':
+                    case 'metaStructural':
+                    case 'metaPredicate':
+                        // These are the tokens we show hover information for
+                        break
+                    default:
+                        tokenAtPosition = undefined
+                        break
+                }
+                return tokenAtPosition
                     ? Decoration.set([
-                          focusedFilterDeco.range(
-                              token.range.start,
-                              token.range.end + (token.type === 'field' ? 1 : 0)
-                          ),
+                          focusedFilterDeco.range(tokenAtPosition.range.start, getEndPosition(tokenAtPosition)),
                       ])
                     : Decoration.none
-            )
+            })
         },
     })
 
     return [
-        highlightedToken,
+        highlightedTokenPosition,
         // Highlights the hovered token
         EditorView.domEventHandlers({
             mousemove(event, view) {
                 const position = view.posAtCoords(event)
-                let token: DecoratedToken | null = null
-
-                if (position) {
-                    const tokenAtCursor = view.state
-                        .facet(decoratedTokens)
-                        .find(token => isTokenInRange(position, token))
-
-                    // These are the tokens we show hover information for
-                    switch (tokenAtCursor?.type) {
-                        case 'field':
-                        case 'pattern':
-                        case 'metaRevision':
-                        case 'metaRepoRevisionSeparator':
-                        case 'metaSelector':
-                        case 'metaRegexp':
-                        case 'metaStructural':
-                        case 'metaPredicate':
-                            token = tokenAtCursor ?? null
-                            break
-                    }
-                }
-
-                if (token !== view.state.field(highlightedToken)) {
-                    view.dispatch({ effects: [setHighlighedToken.of(token)] })
+                if (position && position !== view.state.field(highlightedTokenPosition)) {
+                    view.dispatch({ effects: [setHighlighedTokenPosition.of(position)] })
                 }
             },
             mouseleave(_event, view) {
-                if (view.state.field(highlightedToken)) {
-                    view.dispatch({ effects: [setHighlighedToken.of(null)] })
+                if (view.state.field(highlightedTokenPosition) !== null) {
+                    view.dispatch({ effects: [setHighlighedTokenPosition.of(null)] })
                 }
             },
         }),
         // Shows information about the hovered token
         hoverTooltip(
             (view, position) => {
-                const tokensAtCursor = view.state
-                    .facet(decoratedTokens)
-                    .filter(token => isTokenInRange(position, token))
-
-                if (tokensAtCursor?.length === 0) {
+                const tooltipInfo = getTokensTooltipInformation(view.state.facet(decoratedTokens), position)
+                if (!tooltipInfo) {
                     return null
                 }
 
-                const values: string[] = []
-                let range: { start: number; end: number } | undefined
-
-                // Copied and adapated from getHoverResult (hover.ts)
-                tokensAtCursor.map(token => {
-                    switch (token.type) {
-                        case 'field': {
-                            const resolvedFilter = resolveFilter(token.value)
-                            if (resolvedFilter) {
-                                values.push(
-                                    'negated' in resolvedFilter
-                                        ? resolvedFilter.definition.description(resolvedFilter.negated)
-                                        : resolvedFilter.definition.description
-                                )
-                                // Add 3 to end of range to include the ':'.
-                                // (there seems to be a bug with computing the correct
-                                // range end)
-                                range = { start: token.range.start, end: token.range.end + 3 }
-                            }
-                            break
+                return {
+                    pos: tooltipInfo.range.start,
+                    end: tooltipInfo.range.end,
+                    create(): TooltipView {
+                        const dom = document.createElement('div')
+                        dom.innerHTML = renderMarkdown(tooltipInfo.value)
+                        return {
+                            dom,
                         }
-                        case 'pattern':
-                        case 'metaRevision':
-                        case 'metaRepoRevisionSeparator':
-                        case 'metaSelector':
-                            values.push(toHover(token))
-                            range = token.range
-                            break
-                        case 'metaRegexp':
-                        case 'metaStructural':
-                        case 'metaPredicate':
-                            values.push(toHover(token))
-                            range = token.groupRange ? token.groupRange : token.range
-                            break
-                    }
-                })
-                if (range) {
-                    return {
-                        pos: range.start,
-                        end: range.end,
-                        create(): TooltipView {
-                            const dom = document.createElement('div')
-                            dom.innerHTML = renderMarkdown(values.join(''))
-                            return { dom }
-                        },
-                    }
+                    },
                 }
-                return null
             },
-            { hoverTime: 100 }
+            {
+                hoverTime: 100,
+                // Hiding the tooltip when the document changes replicates
+                // Monaco's behavior and also "feels right" because it removes
+                // "clutter" from the input.
+                hideOnChange: true,
+            }
         ),
     ]
+}
+
+function getTokensTooltipInformation(
+    tokens: DecoratedToken[],
+    position: number
+): { range: { start: number; end: number }; value: string } | null {
+    const tokensAtCursor = tokens.filter(token => isTokenInRange(position, token))
+
+    if (tokensAtCursor?.length === 0) {
+        return null
+    }
+    const values: string[] = []
+    let range: { start: number; end: number } | undefined
+
+    // Copied and adapted from getHoverResult (hover.ts)
+    for (const token of tokensAtCursor) {
+        switch (token.type) {
+            case 'field': {
+                const resolvedFilter = resolveFilter(token.value)
+                if (resolvedFilter) {
+                    values.push(
+                        'negated' in resolvedFilter
+                            ? resolvedFilter.definition.description(resolvedFilter.negated)
+                            : resolvedFilter.definition.description
+                    )
+                    range = { start: token.range.start, end: getEndPosition(token) }
+                }
+                break
+            }
+            case 'pattern':
+            case 'metaRevision':
+            case 'metaRepoRevisionSeparator':
+            case 'metaSelector':
+                values.push(toHover(token))
+                range = token.range
+                break
+            case 'metaRegexp':
+            case 'metaStructural':
+            case 'metaPredicate':
+                values.push(toHover(token))
+                range = token.groupRange ? token.groupRange : token.range
+                break
+        }
+    }
+
+    if (!range) {
+        return null
+    }
+    return { range, value: values.join('') }
 }
 
 // Hooks query diagnostics into the editor.
@@ -642,15 +671,23 @@ const queryDiagnostic: Extension[] = [
                 },
             }
         },
-        { hoverTime: 100 }
+        {
+            hoverTime: 100,
+            // Making changes elsewhere in the query might invalidate a specific
+            // diagnostic (e.g. adding type:commit to a query that contains
+            // author:...), so generally hiding them on any change seems
+            // reasonable.
+            hideOnChange: true,
+        }
     ),
 ]
 
+function isTokenInRange(position: number, token: Pick<DecoratedToken, 'type' | 'range'>): boolean {
+    return token.range.start <= position && getEndPosition(token) > position
+}
+
 // Looks like there might be a bug with how the end range for a field is
 // computed? Need to add 1 to make this work properly.
-function isTokenInRange(
-    position: number,
-    token: { type: DecoratedToken['type']; range: { start: number; end: number } }
-): boolean {
-    return token.range.start <= position && token.range.end + (token.type === 'field' ? 2 : 0) > position
+function getEndPosition(token: Pick<DecoratedToken, 'type' | 'range'>): number {
+    return token.range.end + (token.type === 'field' ? 1 : 0)
 }

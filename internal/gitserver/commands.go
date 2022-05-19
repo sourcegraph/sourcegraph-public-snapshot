@@ -11,6 +11,7 @@ import (
 	"os"
 	stdlibpath "path"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -986,4 +987,140 @@ func filterPaths(ctx context.Context, repo api.RepoName, checker authz.SubRepoPe
 		return nil, errors.Wrap(err, "filtering paths")
 	}
 	return filtered, nil
+}
+
+// ListDirectoryChildren fetches the list of children under the given directory
+// names. The result is a map keyed by the directory names with the list of files
+// under each.
+func (c *ClientImplementor) ListDirectoryChildren(
+	ctx context.Context,
+	checker authz.SubRepoPermissionChecker,
+	repo api.RepoName,
+	commit api.CommitID,
+	dirnames []string,
+) (map[string][]string, error) {
+	args := []string{"ls-tree", "--name-only", string(commit), "--"}
+	args = append(args, cleanDirectoriesForLsTree(dirnames)...)
+	cmd := c.GitCommand(repo, args...)
+
+	out, err := cmd.CombinedOutput(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	paths := strings.Split(string(out), "\n")
+	if authz.SubRepoEnabled(checker) {
+		paths, err = authz.FilterActorPaths(ctx, checker, actor.FromContext(ctx), repo, paths)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return parseDirectoryChildren(dirnames, paths), nil
+}
+
+// cleanDirectoriesForLsTree sanitizes the input dirnames to a git ls-tree command. There are a
+// few peculiarities handled here:
+//
+//   1. The root of the tree must be indicated with `.`, and
+//   2. In order for git ls-tree to return a directory's contents, the name must end in a slash.
+func cleanDirectoriesForLsTree(dirnames []string) []string {
+	var args []string
+	for _, dir := range dirnames {
+		if dir == "" {
+			args = append(args, ".")
+		} else {
+			if !strings.HasSuffix(dir, "/") {
+				dir += "/"
+			}
+			args = append(args, dir)
+		}
+	}
+
+	return args
+}
+
+// parseDirectoryChildren converts the flat list of files from git ls-tree into a map. The keys of the
+// resulting map are the input (unsanitized) dirnames, and the value of that key are the files nested
+// under that directory. If dirnames contains a directory that encloses another, then the paths will
+// be placed into the key sharing the longest path prefix.
+func parseDirectoryChildren(dirnames, paths []string) map[string][]string {
+	childrenMap := map[string][]string{}
+
+	// Ensure each directory has an entry, even if it has no children
+	// listed in the gitserver output.
+	for _, dirname := range dirnames {
+		childrenMap[dirname] = nil
+	}
+
+	// Order directory names by length (biggest first) so that we assign
+	// paths to the most specific enclosing directory in the following loop.
+	sort.Slice(dirnames, func(i, j int) bool {
+		return len(dirnames[i]) > len(dirnames[j])
+	})
+
+	for _, path := range paths {
+		if strings.Contains(path, "/") {
+			for _, dirname := range dirnames {
+				if strings.HasPrefix(path, dirname) {
+					childrenMap[dirname] = append(childrenMap[dirname], path)
+					break
+				}
+			}
+		} else if len(dirnames) > 0 && dirnames[len(dirnames)-1] == "" {
+			// No need to loop here. If we have a root input directory it
+			// will necessarily be the last element due to the previous
+			// sorting step.
+			childrenMap[""] = append(childrenMap[""], path)
+		}
+	}
+
+	return childrenMap
+}
+
+// ListTags returns a list of all tags in the repository.
+func (c *ClientImplementor) ListTags(ctx context.Context, repo api.RepoName) ([]*gitdomain.Tag, error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: Tags")
+	defer span.Finish()
+
+	// Support both lightweight tags and tag objects. For creatordate, use an %(if) to prefer the
+	// taggerdate for tag objects, otherwise use the commit's committerdate (instead of just always
+	// using committerdate).
+	cmd := c.GitCommand(repo, "tag", "--list", "--sort", "-creatordate", "--format", "%(if)%(*objectname)%(then)%(*objectname)%(else)%(objectname)%(end)%00%(refname:short)%00%(if)%(creatordate:unix)%(then)%(creatordate:unix)%(else)%(*creatordate:unix)%(end)")
+	out, err := cmd.CombinedOutput(ctx)
+	if err != nil {
+		if gitdomain.IsRepoNotExist(err) {
+			return nil, err
+		}
+		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
+	}
+
+	return parseTags(out)
+}
+
+func parseTags(in []byte) ([]*gitdomain.Tag, error) {
+	in = bytes.TrimSuffix(in, []byte("\n")) // remove trailing newline
+	if len(in) == 0 {
+		return nil, nil // no tags
+	}
+	lines := bytes.Split(in, []byte("\n"))
+	tags := make([]*gitdomain.Tag, len(lines))
+	for i, line := range lines {
+		parts := bytes.SplitN(line, []byte("\x00"), 3)
+		if len(parts) != 3 {
+			return nil, errors.Errorf("invalid git tag list output line: %q", line)
+		}
+
+		tag := &gitdomain.Tag{
+			Name:     string(parts[1]),
+			CommitID: api.CommitID(parts[0]),
+		}
+
+		date, err := strconv.ParseInt(string(parts[2]), 10, 64)
+		if err == nil {
+			tag.CreatorDate = time.Unix(date, 0).UTC()
+		}
+
+		tags[i] = tag
+	}
+	return tags, nil
 }

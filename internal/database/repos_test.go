@@ -570,7 +570,7 @@ func TestRepoStore_Metadata(t *testing.T) {
 		},
 	}
 
-	gr := GitserverRepos(db)
+	gr := db.GitserverRepos()
 	require.NoError(t, gr.Upsert(ctx, gitserverRepos...))
 
 	expected := []*types.SearchedRepo{

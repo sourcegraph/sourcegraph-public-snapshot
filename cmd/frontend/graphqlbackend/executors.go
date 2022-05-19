@@ -6,6 +6,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	gql "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 )
@@ -27,6 +28,10 @@ func (r *schemaResolver) Executors(ctx context.Context, args *struct {
 	}
 
 	return executors, nil
+}
+
+func (r *schemaResolver) AreExecutorsConfigured() bool {
+	return conf.Get().ExecutorsAccessToken != ""
 }
 
 func executorByID(ctx context.Context, db database.DB, gqlID graphql.ID, r *schemaResolver) (*gql.ExecutorResolver, error) {
