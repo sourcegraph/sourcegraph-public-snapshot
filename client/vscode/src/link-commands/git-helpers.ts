@@ -49,10 +49,8 @@ export async function repoInfo(filePath: string): Promise<RepositoryInfo | undef
         const fileRelative = filePath.slice(repoRoot.length + 1).replace(/\\/g, '/')
         let { branch, remoteName } = await gitRemoteNameAndBranch(repoRoot, gitHelpers, log)
         const remoteURL = await gitRemoteUrlWithReplacements(repoRoot, remoteName, gitHelpers, log)
-        // check if current branch exists on sourcegraph. If not, open in HEAD instead
-        const validatedBranch = await checkBranch(remoteURL, branch)
-        // Use default branch if set. If not, use validated branch instead
-        branch = getDefaultBranch() || await checkBranch(remoteURL, branch)
+        // check if branch exist remotely. return empty string if it does not exists
+        branch = await checkBranch(remoteURL, branch)
         return { remoteURL, branch, fileRelative, remoteName }
     } catch {
         return undefined
@@ -244,7 +242,7 @@ export async function checkBranch(remoteURL: string, currentBranch: string): Pro
     if (foundBranches?.length === 1) {
         return currentBranch
     }
-    return 'HEAD'
+    return ''
 }
 
 const checkBranchQuery = gql`

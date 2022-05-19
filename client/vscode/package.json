@@ -229,7 +229,7 @@
           "group": "sourcegraph"
         }
       ],
-      "sourcegraph.CopyBranchLink": [
+      "sourcegraph.copyBranchLink": [
         {
           "command": "sourcegraph.copyMain",
           "group": "sourcegraph",

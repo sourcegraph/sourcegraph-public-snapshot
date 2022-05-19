@@ -1,6 +1,6 @@
 import vscode, { env } from 'vscode'
 
-import { getSourcegraphFileUrl, repoInfo } from './git-helpers'
+import { getDefaultBranch, getSourcegraphFileUrl, repoInfo } from './git-helpers'
 import { generateSourcegraphBlobLink, vsceUtms } from './initialize'
 /**
  * Open active file in the browser on the configured Sourcegraph instance.
@@ -9,7 +9,7 @@ import { generateSourcegraphBlobLink, vsceUtms } from './initialize'
 export async function browserActions(
     action: string,
     logRedirectEvent: (uri: string) => void,
-    openMain?: boolean
+    mainBranch?: boolean
 ): Promise<void> {
     const editor = vscode.window.activeTextEditor
     if (!editor) {
@@ -33,14 +33,21 @@ export async function browserActions(
                 await vscode.window.showErrorMessage('Cannot get git info for this repository.')
                 return
             }
+            const defaultBranch = getDefaultBranch()
             const { remoteURL, branch, fileRelative } = repositoryInfo
             const instanceUrl = vscode.workspace.getConfiguration('sourcegraph').get<string>('url')
+            if (!mainBranch && !branch && !defaultBranch) {
+                await vscode.window.showErrorMessage(
+                    'Current branch does not exist on Sourcegraph. Try open it in main.'
+                )
+                return
+            }
             if (typeof instanceUrl === 'string') {
                 // construct sourcegraph url for current file
                 // set branch as 'HEAD' if user wants to open file in main
                 // else use the branch we have retreive from the repository info
                 // which will set branch as default or 'HEAD' if current branch does not exist
-                const finalBranch = openMain ? 'HEAD' : branch
+                const finalBranch = defaultBranch || mainBranch ? 'HEAD' : branch
                 sourcegraphUrl =
                     getSourcegraphFileUrl(instanceUrl, remoteURL, finalBranch, fileRelative, editor) + vsceUtms
             }
