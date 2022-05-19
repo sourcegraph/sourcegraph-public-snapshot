@@ -5,8 +5,12 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/google/go-cmp/cmp"
+
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	descriptions "github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 // fetchSchema returns the schema description of the given schema at the given version. If the version
@@ -54,95 +58,143 @@ func getSchemaJSONFilename(schemaName, version string) (string, error) {
 	return "", errors.Newf("unknown schema name %q", schemaName)
 }
 
-// prepareForSchemaComparison modifies the given schema description to minimize the _spurious_ diff
-// between the actual and the given expected schema description.
-//
-// This function currently:
-//   - removes entire objects that are not present in the expected schema to allow additional extensions
-//     enums, functions, sequences, tables, and views that may be co-located (dev environments for one).
-func prepareForSchemaComparison(schemaDescription, expectedSchemaDescription descriptions.SchemaDescription) descriptions.SchemaDescription {
-	var (
-		expectedExtensions = map[string]struct{}{}
-		expectedEnums      = map[string]struct{}{}
-		expectedFunctions  = map[string]struct{}{}
-		expectedSequences  = map[string]struct{}{}
-		expectedTables     = map[string]struct{}{}
-		expectedViews      = map[string]struct{}{}
-	)
+var errOutOfSync = errors.Newf("database schema is out of sync")
 
-	for _, extension := range expectedSchemaDescription.Extensions {
-		expectedExtensions[extension] = struct{}{}
-	}
-	for _, enum := range expectedSchemaDescription.Enums {
-		expectedEnums[enum.Name] = struct{}{}
-	}
-	for _, function := range expectedSchemaDescription.Functions {
-		expectedFunctions[function.Name] = struct{}{}
-	}
-	for _, sequence := range expectedSchemaDescription.Sequences {
-		expectedSequences[sequence.Name] = struct{}{}
-	}
-	for _, table := range expectedSchemaDescription.Tables {
-		expectedTables[table.Name] = struct{}{}
-	}
-	for _, view := range expectedSchemaDescription.Views {
-		expectedViews[view.Name] = struct{}{}
+func compareSchemaDescriptions(out *output.Output, actual, expected schemas.SchemaDescription) (err error) {
+	missing := func(typeName, name string, value any) {
+		out.WriteMarkdown(fmt.Sprintf("Missing %s %q:\n```diff\n%s\n```", typeName, name, cmp.Diff(nil, value)))
+		err = errOutOfSync
 	}
 
-	var (
-		filteredExtensions = schemaDescription.Extensions[:0]
-		filteredEnums      = schemaDescription.Enums[:0]
-		filteredFunctions  = schemaDescription.Functions[:0]
-		filteredSequences  = schemaDescription.Sequences[:0]
-		filteredTables     = schemaDescription.Tables[:0]
-		filteredViews      = schemaDescription.Views[:0]
-	)
-
-	for _, extension := range schemaDescription.Extensions {
-		if _, ok := expectedExtensions[extension]; ok {
-			filteredExtensions = append(filteredExtensions, extension)
+	diff := func(typeName, name string, a, b any) {
+		if diff := cmp.Diff(a, b); diff != "" {
+			out.WriteMarkdown(fmt.Sprintf("Diff %s %q:\n```diff\n%s\n```", typeName, name, diff))
+			err = errOutOfSync
 		}
 	}
 
-	for _, enum := range schemaDescription.Enums {
-		if _, ok := expectedEnums[enum.Name]; ok {
-			filteredEnums = append(filteredEnums, enum)
+	//
+	// Compare extensions
+
+	actualExtensions := map[string]string{}
+	for _, extension := range actual.Extensions {
+		actualExtensions[extension] = extension
+	}
+	expectedExtensions := map[string]string{}
+	for _, extension := range expected.Extensions {
+		expectedExtensions[extension] = extension
+	}
+
+	for name := range expectedExtensions {
+		if _, ok := actualExtensions[name]; !ok {
+			missing("extension", name, name)
 		}
 	}
 
-	for _, function := range schemaDescription.Functions {
-		if _, ok := expectedFunctions[function.Name]; ok {
-			filteredFunctions = append(filteredFunctions, function)
+	//
+	// Compare enums
+
+	actualEnums := map[string]schemas.EnumDescription{}
+	for _, enum := range actual.Enums {
+		actualEnums[enum.Name] = enum
+	}
+	expectedEnums := map[string]schemas.EnumDescription{}
+	for _, enum := range expected.Enums {
+		expectedEnums[enum.Name] = enum
+	}
+
+	for name, expectedEnum := range expectedEnums {
+		if enum, ok := actualEnums[name]; !ok {
+			missing("enum", name, expectedEnum)
+		} else {
+			diff("enum labels", name, expectedEnum.Labels, enum.Labels)
 		}
 	}
 
-	for _, sequence := range schemaDescription.Sequences {
-		if _, ok := expectedSequences[sequence.Name]; ok {
-			filteredSequences = append(filteredSequences, sequence)
+	//
+	// Compare functions
+
+	actualFunctions := map[string]schemas.FunctionDescription{}
+	for _, function := range actual.Functions {
+		actualFunctions[function.Name] = function
+	}
+	expectedFunctions := map[string]schemas.FunctionDescription{}
+	for _, function := range expected.Functions {
+		expectedFunctions[function.Name] = function
+	}
+
+	for name, expectedFunction := range expectedFunctions {
+		if function, ok := actualFunctions[name]; !ok {
+			missing("function", name, expectedFunction)
+		} else {
+			// TODO
+			_, _ = expectedFunction, function
 		}
 	}
 
-	for _, table := range schemaDescription.Tables {
-		if _, ok := expectedTables[table.Name]; ok {
-			filteredTables = append(filteredTables, table)
+	//
+	// Compare sequences
+
+	actualSequences := map[string]schemas.SequenceDescription{}
+	for _, sequence := range actual.Sequences {
+		actualSequences[sequence.Name] = sequence
+	}
+	expectedSequences := map[string]schemas.SequenceDescription{}
+	for _, sequence := range expected.Sequences {
+		expectedSequences[sequence.Name] = sequence
+	}
+
+	for name, expectedSequence := range expectedSequences {
+		if sequence, ok := actualSequences[name]; !ok {
+			missing("sequence", name, expectedSequence)
+		} else {
+			// TODO
+			_, _ = expectedSequence, sequence
 		}
 	}
 
-	for _, view := range schemaDescription.Views {
-		if _, ok := expectedViews[view.Name]; ok {
-			filteredViews = append(filteredViews, view)
+	//
+	// Compare tables
+
+	actualTables := map[string]schemas.TableDescription{}
+	for _, table := range actual.Tables {
+		actualTables[table.Name] = table
+	}
+	expectedTables := map[string]schemas.TableDescription{}
+	for _, Table := range expected.Tables {
+		expectedTables[Table.Name] = Table
+	}
+
+	for name, expectedTable := range expectedTables {
+		if table, ok := actualTables[name]; !ok {
+			missing("table", name, expectedTable)
+		} else {
+			_, _ = expectedTable, table
 		}
 	}
 
-	newSchema := descriptions.SchemaDescription{
-		Extensions: filteredExtensions,
-		Enums:      filteredEnums,
-		Functions:  filteredFunctions,
-		Sequences:  filteredSequences,
-		Tables:     filteredTables,
-		Views:      filteredViews,
+	//
+	// Compare views
+
+	actualViews := map[string]schemas.ViewDescription{}
+	for _, view := range actual.Views {
+		actualViews[view.Name] = view
+	}
+	expectedViews := map[string]schemas.ViewDescription{}
+	for _, view := range expected.Views {
+		expectedViews[view.Name] = view
 	}
 
-	descriptions.Canonicalize(newSchema)
-	return newSchema
+	for name, expectedView := range expectedViews {
+		if view, ok := actualViews[name]; !ok {
+			missing("view", name, expectedView)
+		} else {
+			_, _ = expectedView, view
+		}
+	}
+
+	if err == nil {
+		out.Write("No drift detected")
+	}
+	return err
 }

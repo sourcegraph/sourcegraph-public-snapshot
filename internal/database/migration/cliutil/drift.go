@@ -3,7 +3,6 @@ package cliutil
 import (
 	"context"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -38,13 +37,7 @@ func Drift(commandName string, factory RunnerFactory, outFactory func() *output.
 			return err
 		}
 
-		if diff := cmp.Diff(prepareForSchemaComparison(schema, expected), expected); diff == "" {
-			out.Write("No drift detected!")
-		} else {
-			out.Writef("Database schema drift detected: %s", diff)
-		}
-
-		return nil
+		return compareSchemaDescriptions(out, schema, expected)
 	})
 
 	return &cli.Command{
