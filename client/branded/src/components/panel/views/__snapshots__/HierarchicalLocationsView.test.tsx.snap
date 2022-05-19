@@ -11,7 +11,9 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
         class="fileLocations fileLocations"
       >
         <div
+          aria-live="polite"
           class="alert alertInfo mr-4 container"
+          role="alert"
         >
           <span>
             Try out our 
@@ -26,7 +28,17 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
             class="btn btnLink m-0 p-0 text-right button"
             type="button"
           >
-            Dismiss
+            <svg
+              class="mdi-icon "
+              fill="currentColor"
+              height="16"
+              viewBox="0 0 24 24"
+              width="16"
+            >
+              <path
+                d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+              />
+            </svg>
           </button>
         </div>
         <div>
@@ -256,7 +268,9 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
         class="fileLocations fileLocations"
       >
         <div
+          aria-live="polite"
           class="alert alertInfo mr-4 container"
+          role="alert"
         >
           <span>
             Try out our 
@@ -271,7 +285,17 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
             class="btn btnLink m-0 p-0 text-right button"
             type="button"
           >
-            Dismiss
+            <svg
+              class="mdi-icon "
+              fill="currentColor"
+              height="16"
+              viewBox="0 0 24 24"
+              width="16"
+            >
+              <path
+                d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+              />
+            </svg>
           </button>
         </div>
         <div>
@@ -457,7 +481,9 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
         class="fileLocations fileLocations"
       >
         <div
+          aria-live="polite"
           class="alert alertInfo mr-4 container"
+          role="alert"
         >
           <span>
             Try out our 
@@ -472,7 +498,17 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
             class="btn btnLink m-0 p-0 text-right button"
             type="button"
           >
-            Dismiss
+            <svg
+              class="mdi-icon "
+              fill="currentColor"
+              height="16"
+              viewBox="0 0 24 24"
+              width="16"
+            >
+              <path
+                d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+              />
+            </svg>
           </button>
         </div>
         <div>
