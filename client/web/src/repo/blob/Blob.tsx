@@ -366,14 +366,10 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                         parameters.delete('popover')
                         nextPopoverClose()
 
-                        if (position && !('character' in position)) {
-                            // Only change the URL when clicking on blank space on the line (not on
-                            // characters). Otherwise, this would interfere with go to definition.
-                            props.history.push({
-                                ...location,
-                                search: formatSearchParameters(addLineRangeQueryParameter(parameters, query)),
-                            })
-                        }
+                        props.history.push({
+                            ...location,
+                            search: formatSearchParameters(addLineRangeQueryParameter(parameters, query)),
+                        })
                     }),
                     mapTo(undefined)
                 ),
