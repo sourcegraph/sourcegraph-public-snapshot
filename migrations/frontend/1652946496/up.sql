@@ -4,7 +4,8 @@ SELECT repo.id, ''
 FROM repo
 LEFT JOIN gitserver_repos gr
 ON repo.id = gr.repo_id
-WHERE gr.repo_id IS NULL;
+WHERE gr.repo_id IS NULL
+ON CONFLICT (repo_id) DO NOTHING;
 
 CREATE OR REPLACE FUNCTION func_insert_gitserver_repo() RETURNS TRIGGER AS $$
 BEGIN
