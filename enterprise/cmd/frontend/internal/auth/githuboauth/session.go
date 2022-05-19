@@ -302,6 +302,15 @@ func (s *sessionIssuerHelper) verifyUserTeams(ctx context.Context, ghClient *git
 	hasNextPage := true
 	allowedTeams := make(map[string]map[string]bool, len(s.allowOrgsMap))
 
+	for org, teams := range s.allowOrgsMap {
+		teamsMap := make(map[string]bool)
+		for _, team := range teams {
+			teamsMap[team] = true
+		}
+
+		allowedTeams[org] = teamsMap
+	}
+
 	for page := 1; hasNextPage; page++ {
 		var githubTeams []*githubsvc.Team
 
@@ -309,15 +318,6 @@ func (s *sessionIssuerHelper) verifyUserTeams(ctx context.Context, ghClient *git
 		if err != nil {
 			log15.Warn("Could not get GitHub authenticated user teams", "error", err)
 			return false
-		}
-
-		for org, teams := range s.allowOrgsMap {
-			teamsMap := make(map[string]bool)
-			for _, team := range teams {
-				teamsMap[team] = true
-			}
-
-			allowedTeams[org] = teamsMap
 		}
 
 		for _, ghTeam := range githubTeams {
