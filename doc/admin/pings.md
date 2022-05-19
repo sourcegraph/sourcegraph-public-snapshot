@@ -73,7 +73,7 @@ This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
   - Total count of executors connected
   - Cumulative executor runtime monthly
   - Total count of `publish` bulk operation
-  - Total count of bulk operation (grouped by operation)
+  - Total count of bulk operations (grouped by operation type)
   - Changeset distribution for batch change (grouped by batch change source: `local` or `executor`)
   - Total count of users that ran a job on an executor monthly
   - Total count of published changesets and batch changes created via:
