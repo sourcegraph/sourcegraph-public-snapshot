@@ -51,6 +51,7 @@ func setupExec(ctx context.Context, args []string) error {
 		for range c {
 			std.Out.WriteAlertf("\n💡 You may need to restart your shell for the changes to work in this terminal.")
 			std.Out.WriteAlertf("   Close this terminal and open a new one or type the following command and press ENTER: %s", filepath.Base(usershell.ShellPath(ctx)))
+			os.Exit(0)
 		}
 	}()
 
