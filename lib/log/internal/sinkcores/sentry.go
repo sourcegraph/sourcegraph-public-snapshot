@@ -1,6 +1,8 @@
+// sinkcores provides a few additional cores that adds side effects to logging.
+//
+// See SentryCore for more information about turning log messages whose level is equal or above zapcore.WarnLevel
+// into Sentry reports if there is an error attached with log.Error(err).
 package sinkcores
-
-// TODO doc, dpanic tags
 
 import (
 	"fmt"
@@ -11,6 +13,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+// baseContext contains the data surrounding an error, that is shared by all errors attached to the current core.
 type baseContext struct {
 	Key     string
 	Scope   string
@@ -20,6 +23,7 @@ type baseContext struct {
 	Fields []zapcore.Field
 }
 
+// clone safely copies a baseContext
 func (b *baseContext) clone() *baseContext {
 	c := *b
 	c.Key = b.Key
@@ -30,34 +34,51 @@ func (b *baseContext) clone() *baseContext {
 	return &c
 }
 
+// ErrorContext is an error and its associated context that is accumulated during the core lifetime.
 type ErrorContext struct {
 	baseContext
 	Error error
 }
 
+// SentryCore turns any log message that comes with at least one error into one or more error reports. All
+// error reports will share the same metadata, with the exception of those attached onto the errors themselves.
 type SentryCore struct {
-	base   baseContext
+	base baseContext
+	// errs accumulates the errors fed to the core as attributes.
 	errs   []error
 	worker *sentryWorker
 }
 
+var _ zapcore.Core = &SentryCore{}
+
+// newSentryCore returns a new SentryCore with a ready to use worker. It should be called only once, when attaching
+// this core onto the global logger that is then used to create scoped loggers in other parts of the codebase.
 func newSentryCore(hub *sentry.Hub) *SentryCore {
 	return &SentryCore{
 		worker: &sentryWorker{
-			hub:     hub.Clone(), // Avoid potential accidents if the hub is modified elsewhere.
+			hub:     hub.Clone(), // Avoid accidental side effects if the hub is modified elsewhere.
 			ErrorsC: make(chan ErrorContext),
 		},
 	}
 }
 
+// sentryWorker encapsulate the process of sending events to Sentry.
+// The internal implementation used a buffered approach that batches sending events. The default batch size is
+// 30, so for the first iteration, it's good enough approach. We may want to reconsider if we observe events
+// being dropped because the batch is full.
+//
+// See https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/getsentry/sentry-go%24+file:%5Etransport%5C.go+defaultBufferSize&patternType=literal for more details.
 type sentryWorker struct {
-	hub     *sentry.Hub
+	// hub is an isolated Sentry context used to send out events to their API.
+	hub *sentry.Hub
+	// ErrorsC is the channel used to pass errors and their associated context to the go routine sending out events.
 	ErrorsC chan ErrorContext
-	done    chan struct{}
+	// done is channel which when closed shuts down the worker immediately.
+	done chan struct{}
 }
 
-var _ zapcore.Core = &SentryCore{}
-
+// clone returns a copy of the core, carrying all previously accumulated context, but that can be safely be
+// modified without affecting other core instances.
 func (s *SentryCore) clone() *SentryCore {
 	c := SentryCore{
 		worker: s.worker,
@@ -68,8 +89,9 @@ func (s *SentryCore) clone() *SentryCore {
 	return &c
 }
 
-// With only accumulate errors passed to the logger without sending them, as we do not
-// have the full context required to annotate the error being captured by Sentry.
+// With stores fields passed to the core that will be then used to contruct the final error report.
+// It does not capture errors, because we may get additional context in a subsequent With or Write call
+// that will also need to be included.
 func (s *SentryCore) With(fields []zapcore.Field) zapcore.Core {
 	s = s.clone()
 	for _, f := range fields {
@@ -90,6 +112,8 @@ func (s *SentryCore) Check(e zapcore.Entry, ce *zapcore.CheckedEntry) *zapcore.C
 	return ce.AddCore(e, s)
 }
 
+// Write will asynchronoulsy send out all errors and the fields that have been accumulated during the
+// lifetime of the core.
 func (s *SentryCore) Write(entry zapcore.Entry, fields []zapcore.Field) error {
 	s.base.Scope = entry.LoggerName
 	s.base.Message = entry.Message
@@ -98,6 +122,8 @@ func (s *SentryCore) Write(entry zapcore.Entry, fields []zapcore.Field) error {
 	for _, f := range fields {
 		if f.Type == zapcore.ErrorType {
 			if enc, ok := f.Interface.(*encoders.ErrorEncoder); ok {
+				// If we find one of our errors, we remove it from the fields so our error reports are not including
+				// their own error as an attribute, which would a useless repetition.
 				s.errs = append(s.errs, enc.Source)
 				continue
 			}
@@ -105,7 +131,7 @@ func (s *SentryCore) Write(entry zapcore.Entry, fields []zapcore.Field) error {
 		fields[n] = f
 		n++
 	}
-	fields = fields[:n]
+	fields = fields[:n] // account for the filtered out elements.
 	fields = append(fields, s.base.Fields...)
 
 	// queue the error reporting
@@ -119,6 +145,7 @@ func (s *SentryCore) Write(entry zapcore.Entry, fields []zapcore.Field) error {
 	return nil
 }
 
+// Starts launches the go routine responsible for consuming ErrorContext that needs to be submitted to Sentry.
 func (s *SentryCore) Start() {
 	s.worker.start()
 }
@@ -136,21 +163,24 @@ func (w *sentryWorker) start() {
 	}()
 }
 
+// capture submits an ErrorContext to Sentry.
 func (w *sentryWorker) capture(errC ErrorContext) {
 	if w.hub == nil {
 		return
 	}
+	// Extract a sentry event from the error itself. If the error is an errors.Error, it will
+	// include a stack trace and additional details.
 	event, extraDetails := errors.BuildSentryReport(errC.Error)
 	// Prepend the log message to the description, to increase visibility.
 	// This does not change how the errors are grouped.
 	event.Message = fmt.Sprintf("%s\n--\n%s", errC.Message, event.Message)
 
-	// Sentry uses the Type of the first exception as the issue title. By default,
-	// "github.com/cockroachdb/errors" uses "<filename>:<lineno> (<functionname>)"
-	// which is very sensitive to move up/down lines. Using the original error
-	// string would be much more readable. We are also not losing location
-	// information because that is also encoded in the stack trace.
 	if len(event.Exception) > 0 {
+		// Sentry uses the Type of the first exception as the issue title. By default,
+		// "github.com/cockroachdb/errors" uses "<filename>:<lineno> (<functionname>)"
+		// which is very sensitive to move up/down lines. Using the original error
+		// string would be much more readable. We are also not losing location
+		// information because that is also encoded in the stack trace.
 		event.Exception[0].Type = errors.Cause(errC.Error).Error()
 	}
 
@@ -166,9 +196,7 @@ func (w *sentryWorker) capture(errC ErrorContext) {
 
 	// Extra are fields that are added to the error as annotation, still registering
 	// as the same error when counted.
-	println("len fields", len(errC.Fields))
 	for _, f := range errC.Fields {
-		println("fields key", f.Key)
 		switch f.Type {
 		case zapcore.StringType:
 			extraDetails[fmt.Sprintf("log.%s", f.Key)] = f.String
@@ -181,8 +209,7 @@ func (w *sentryWorker) capture(errC ErrorContext) {
 		}
 	}
 
-	extraDetails["log.msg"] = errC.Message
-
+	// Translate zapcore levels into Sentry levels.
 	var level sentry.Level
 	switch errC.Level {
 	case zapcore.WarnLevel:
@@ -195,6 +222,7 @@ func (w *sentryWorker) capture(errC ErrorContext) {
 		level = sentry.LevelError
 	}
 
+	// Submit the event itself.
 	w.hub.WithScope(func(scope *sentry.Scope) {
 		scope.SetExtras(extraDetails)
 		scope.SetTags(tags)
