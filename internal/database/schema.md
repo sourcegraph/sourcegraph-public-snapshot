@@ -1217,6 +1217,21 @@ Stores data points for a code insight that do not need to be queried directly, b
 
 ```
 
+# Table "public.last_lockfile_scan"
+```
+        Column         |           Type           | Collation | Nullable | Default 
+-----------------------+--------------------------+-----------+----------+---------
+ repository_id         | integer                  |           | not null | 
+ last_lockfile_scan_at | timestamp with time zone |           | not null | 
+Indexes:
+    "last_lockfile_scan_pkey" PRIMARY KEY, btree (repository_id)
+
+```
+
+Tracks the last time repository was checked for lockfile indexing.
+
+**last_lockfile_scan_at**: The last time this repository was considered for lockfile indexing.
+
 # Table "public.lsif_configuration_policies"
 ```
            Column            |           Type           | Collation | Nullable |                         Default                         
