@@ -357,6 +357,15 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 			if err != nil {
 				log.Fatal("time.Parse: ", err)
 			}
+
+			d := time.Duration(incidents[recordDateString]) * time.Minute
+			d2 := time.Duration.Nanoseconds(d)
+
+			metrics := map[string]okay.Metric{
+				"totalCount":       okay.Count(totals[recordDateString]),
+				"incidentDuration": okay.Duration(time.Duration(d2)),
+				"flakeCount":       okay.Count(flakes[recordDateString]),
+			}
 			event := okay.Event{
 				Name:      "buildStats",
 				Timestamp: eventTime,
@@ -367,21 +376,7 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 					"pipeline":     "sourcegraph",
 					"branch":       "main",
 				},
-				Metrics: map[string]okay.Metric{
-					"totalCount": {
-						Type:  "count",
-						Value: float64(totals[recordDateString]),
-					},
-					"incidentDuration": {
-						Type:  "durationMs",
-						// Convert minutes to ms
-						Value: float64(incidents[recordDateString] * 60000),
-					},
-					"flakeCount": {
-						Type:  "count",
-						Value: float64(flakes[recordDateString]),
-					},
-				},
+				Metrics: metrics,
 			}
 			err = okayCli.Push(&event)
 			if err != nil {
