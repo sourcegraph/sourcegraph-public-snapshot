@@ -173,7 +173,7 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
                             )}
                             autofocus={false}
                         >
-                            Sign in with a browser
+                            Continue in browser
                         </VSCodeButton>
                     </Link>
                 </p>
