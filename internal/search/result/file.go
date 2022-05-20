@@ -163,7 +163,8 @@ func (fm *FileMatch) Key() Key {
 // have the rune offset necessary to build a full Location yet.
 // Eventually, the two structs should be merged.
 type LineColumn struct {
-	// Line is the count of newlines before the offset in the matched text
+	// Line is the count of newlines before the offset in the matched text.
+	// Line is 0-based.
 	Line int32
 
 	// Column is the count of unicode code points after the last newline in the matched text

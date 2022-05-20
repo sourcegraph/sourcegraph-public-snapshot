@@ -408,15 +408,14 @@ func zoektFileMatchToMultilineMatches(file *zoekt.FileMatch) []result.MultilineM
 			continue
 		}
 
-		offsets := make([][2]int32, len(l.LineFragments))
-		for k, m := range l.LineFragments {
+		for _, m := range l.LineFragments {
 			offset := utf8.RuneCount(l.Line[:m.LineOffset])
 			length := utf8.RuneCount(l.Line[m.LineOffset : m.LineOffset+m.MatchLength])
-			offsets[k] = [2]int32{int32(offset), int32(length)}
 
 			lines = append(lines, result.MultilineMatch{
 				Preview: string(l.Line),
 				Start: result.LineColumn{
+					// zoekt line numbers are 1-based rather than 0-based so subtract 1
 					Line:   int32(l.LineNumber - 1),
 					Column: int32(offset),
 				},
