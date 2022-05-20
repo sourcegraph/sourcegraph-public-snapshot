@@ -6,6 +6,7 @@ package sinkcores
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/getsentry/sentry-go"
@@ -52,13 +53,14 @@ type SentryCore struct {
 
 var _ zapcore.Core = &SentryCore{}
 
-// newSentryCore returns a new SentryCore with a ready to use worker. It should be called only once, when attaching
+// NewSentryCore returns a new SentryCore with a ready to use worker. It should be called only once, when attaching
 // this core onto the global logger that is then used to create scoped loggers in other parts of the codebase.
-func newSentryCore(hub *sentry.Hub) *SentryCore {
+func NewSentryCore(hub *sentry.Hub) *SentryCore {
 	return &SentryCore{
 		worker: &sentryWorker{
 			hub:     hub.Clone(), // Avoid accidental side effects if the hub is modified elsewhere.
-			ErrorsC: make(chan ErrorContext),
+			ErrorsC: make(chan ErrorContext, 16),
+			done:    make(chan struct{}),
 		},
 	}
 }
@@ -76,6 +78,7 @@ type sentryWorker struct {
 	ErrorsC chan ErrorContext
 	// done is channel which when closed shuts down the worker immediately.
 	done chan struct{}
+	sync.Mutex
 }
 
 // clone returns a copy of the core, carrying all previously accumulated context, but that can be safely be
@@ -117,27 +120,30 @@ func (s *SentryCore) Check(e zapcore.Entry, ce *zapcore.CheckedEntry) *zapcore.C
 // Write will asynchronoulsy send out all errors and the fields that have been accumulated during the
 // lifetime of the core.
 func (s *SentryCore) Write(entry zapcore.Entry, fields []zapcore.Field) error {
-	s.base.Scope = entry.LoggerName
-	s.base.Message = entry.Message
-
-	n := 0
-	for _, f := range fields {
-		if f.Type == zapcore.ErrorType {
-			if enc, ok := f.Interface.(*encoders.ErrorEncoder); ok {
-				// If we find one of our errors, we remove it from the fields so our error reports are not including
-				// their own error as an attribute, which would a useless repetition.
-				s.errs = append(s.errs, enc.Source)
-				continue
-			}
-		}
-		fields[n] = f
-		n++
-	}
-	fields = fields[:n] // account for the filtered out elements.
-	fields = append(fields, s.base.Fields...)
-
-	// queue the error reporting
+	// Clone ourselves, so we don't affect other loggers
+	s = s.clone()
 	go func() {
+		fmt.Println("write")
+		s.base.Scope = entry.LoggerName
+		s.base.Message = entry.Message
+
+		n := 0
+		for _, f := range fields {
+			if f.Type == zapcore.ErrorType {
+				if enc, ok := f.Interface.(*encoders.ErrorEncoder); ok {
+					// If we find one of our errors, we remove it from the fields so our error reports are not including
+					// their own error as an attribute, which would a useless repetition.
+					s.errs = append(s.errs, enc.Source)
+					continue
+				}
+			}
+			fields[n] = f
+			n++
+		}
+		fields = fields[:n] // account for the filtered out elements.
+		s.base.Fields = append(fields, s.base.Fields...)
+
+		// queue the error reporting
 		for _, err := range s.errs {
 			ec := ErrorContext{baseContext: s.base}
 			ec.Error = err
@@ -153,14 +159,18 @@ func (s *SentryCore) Start() {
 }
 
 func (w *sentryWorker) start() {
+	println("hereeee start")
 	go func() {
+		println("inside start")
 		for {
 			select {
+			case err := <-w.ErrorsC:
+				println("weeee")
+				w.capture(err) // it takes between 250µs and 150µs on my machine.
 			case <-w.done:
+				println("done")
 				w.hub.Flush(5 * time.Second)
 				return
-			case err := <-w.ErrorsC:
-				w.capture(err) // it takes between 250µs and 150µs on my machine.
 			}
 		}
 	}()
@@ -168,6 +178,7 @@ func (w *sentryWorker) start() {
 
 // capture submits an ErrorContext to Sentry.
 func (w *sentryWorker) capture(errC ErrorContext) {
+	fmt.Println("caputre")
 	if w.hub == nil {
 		return
 	}
