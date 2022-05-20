@@ -15,6 +15,24 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## Unreleased
 
+### Added
+
+-
+
+### Changed
+
+-
+
+### Fixed
+
+-
+
+### Removed
+
+-
+
+## 3.40.0
+
 - Code Insights: Fixed incorrect Line Chart size calculation in FireFox
 - The Grafana dashboard now has a global container resource usage view to help site-admin quickly identify potential scaling issues. [#34808](https://github.com/sourcegraph/sourcegraph/pull/34808)
 - Deployment: Nginx ingress controller updated to v1.2.0

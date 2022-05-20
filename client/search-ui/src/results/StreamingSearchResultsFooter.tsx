@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
-import { Alert, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Alert, LoadingSpinner, Typography } from '@sourcegraph/wildcard'
 
 import { StreamingProgressCount } from './progress/StreamingProgressCount'
 
@@ -46,8 +46,8 @@ export const StreamingSearchResultFooter: React.FunctionComponent<
         {results?.state === 'complete' && results.progress.skipped.some(skipped => skipped.reason.includes('-limit')) && (
             <Alert className="d-flex m-3" variant="info">
                 <p className="m-0">
-                    <strong>Result limit hit.</strong> Modify your search with <code>count:</code> to return additional
-                    items.
+                    <strong>Result limit hit.</strong> Modify your search with <Typography.Code>count:</Typography.Code>{' '}
+                    to return additional items.
                 </p>
             </Alert>
         )}

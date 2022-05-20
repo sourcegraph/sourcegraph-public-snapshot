@@ -194,9 +194,8 @@ func TestDependencies(t *testing.T) {
 		getCommitsErr := errors.New("get commits failed for at least one commit")
 
 		gitService.GetCommitsFunc.PushHook(func(ctx context.Context, repoCommits []api.RepoCommit, ignoreErrors bool) (commits []*gitdomain.Commit, _ error) {
-			for i, repoCommit := range repoCommits {
-				if i%2 == 0 {
-					// Even-numbered commits do not resolve in this test.
+			for _, repoCommit := range repoCommits {
+				if repoCommit.Repo != "github.com/example/quux" {
 					if ignoreErrors {
 						commits = append(commits, nil)
 						continue

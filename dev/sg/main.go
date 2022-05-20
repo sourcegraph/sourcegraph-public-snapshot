@@ -117,6 +117,8 @@ var sg = &cli.App{
 
 		// Configure output
 		std.Out = std.NewOutput(cmd.App.Writer, verbose)
+		os.Setenv("SRC_DEVELOPMENT", "true")
+		os.Setenv("SRC_LOG_FORMAT", "console")
 		syncLogs := log.Init(log.Resource{Name: "sg"})
 		interrupt.Register(func() { syncLogs() })
 

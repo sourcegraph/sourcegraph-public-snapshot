@@ -6,7 +6,7 @@ import * as H from 'history'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Alert, Link } from '@sourcegraph/wildcard'
+import { Button, Alert, Link, Typography } from '@sourcegraph/wildcard'
 
 import { BatchSpecFields } from '../../../graphql-operations'
 import { MultiSelectContext } from '../MultiSelectContext'
@@ -89,7 +89,7 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<
                     ) : (
                         'Review the proposed changesets below.'
                     )}{' '}
-                    Click 'Apply' or run <code>src batch apply</code> against your batch spec to{' '}
+                    Click 'Apply' or run <Typography.Code>src batch apply</Typography.Code> against your batch spec to{' '}
                     {batchChange ? 'update' : 'create'} the batch change and perform the indicated action on each
                     changeset. Select a changeset and modify the action to customize the publication state of each or
                     all changesets.

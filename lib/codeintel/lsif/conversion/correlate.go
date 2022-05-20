@@ -235,7 +235,7 @@ func correlateEdge(state *wrappedState, element Element) error {
 		}
 		return handler(state, element.ID, payload)
 	default:
-		return ErrUnexpectedPayload
+		return nil
 	}
 }
 

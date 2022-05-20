@@ -35,6 +35,8 @@ export interface TemporarySettingsSchema {
     'batches.defaultListFilters': MultiSelectState<BatchChangeState>
     'batches.downloadSpecModalDismissed': boolean
     'codeintel.badge.used': boolean
+    'codeintel.referencePanel.redesign.ctaDismissed': boolean
+    'codeintel.referencePanel.redesign.enabled': boolean
 }
 
 /**

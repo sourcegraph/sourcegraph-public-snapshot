@@ -180,7 +180,7 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
             )}
             <p className={classNames(styles.ctaButtonWrapperWithContextBelow)}>
                 <LoaderInput loading={state === 'validating'}>
-                    <label htmlFor="access-token-input">Access Token</label>
+                    <Typography.Label htmlFor="access-token-input">Access Token</Typography.Label>
                     <input
                         className={classNames('input form-control', styles.ctaInput)}
                         id="access-token-input"
@@ -197,7 +197,7 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
             {usePrivateInstance && (
                 <p className={classNames(styles.ctaButtonWrapperWithContextBelow)}>
                     <LoaderInput loading={state === 'validating'}>
-                        <label htmlFor="instance-url-input">Sourcegraph Instance URL</label>
+                        <Typography.Label htmlFor="instance-url-input">Sourcegraph Instance URL</Typography.Label>
                         <input
                             className={classNames('input form-control', styles.ctaInput)}
                             id="instance-url-input"

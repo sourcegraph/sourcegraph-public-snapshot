@@ -22,6 +22,7 @@ import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExce
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, useObservable, Tab, TabList, TabPanel, TabPanels, Tabs, Icon } from '@sourcegraph/wildcard'
@@ -30,6 +31,7 @@ import { registerPanelToolbarContributions } from './views/contributions'
 import { EmptyPanelView } from './views/EmptyPanelView'
 import { ExtensionsLoadingPanelView } from './views/ExtensionsLoadingView'
 import { PanelView } from './views/PanelView'
+import { ReferencesPanelFeedbackCta } from './views/ReferencesPanelFeedbackCta'
 
 import styles from './TabbedPanelContent.module.scss'
 
@@ -141,10 +143,11 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
     const areExtensionsReady = useObservable(
         useMemo(() => haveInitialExtensionsLoaded(props.extensionsController.extHostAPI), [props.extensionsController])
     )
-
+    const [redesignedEnabled] = useTemporarySetting('codeintel.referencePanel.redesign.enabled', false)
     const isExperimentalReferencePanelEnabled =
-        !isErrorLike(props.settingsCascade.final) &&
-        props.settingsCascade.final?.experimentalFeatures?.coolCodeIntel === true
+        (!isErrorLike(props.settingsCascade.final) &&
+            props.settingsCascade.final?.experimentalFeatures?.coolCodeIntel === true) ||
+        redesignedEnabled === true
 
     const [tabIndex, setTabIndex] = useState(0)
     const location = useLocation()
@@ -298,24 +301,29 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
                 actions={
                     <div className="align-items-center d-flex">
                         {activeTab && (
-                            <ActionsNavItems
-                                {...props}
-                                // TODO remove references to Bootstrap from shared, get class name from prop
-                                // This is okay for now because the Panel is currently only used in the webapp
-                                listClass="d-flex justify-content-end list-unstyled m-0 align-items-center"
-                                listItemClass="px-2 mx-2"
-                                actionItemClass="font-weight-medium"
-                                actionItemIconClass="icon-inline"
-                                menu={ContributableMenu.PanelToolbar}
-                                scope={{
-                                    type: 'panelView',
-                                    id: activeTab.id,
-                                    hasLocations: Boolean(activeTab.hasLocations),
-                                }}
-                                wrapInList={true}
-                                location={location}
-                                transformContributions={transformPanelContributions}
-                            />
+                            <>
+                                {activeTab.id === 'def' ||
+                                    activeTab.id === 'references' ||
+                                    (activeTab.id.startsWith('implementations_') && <ReferencesPanelFeedbackCta />)}
+                                <ActionsNavItems
+                                    {...props}
+                                    // TODO remove references to Bootstrap from shared, get class name from prop
+                                    // This is okay for now because the Panel is currently only used in the webapp
+                                    listClass="d-flex justify-content-end list-unstyled m-0 align-items-center"
+                                    listItemClass="px-2 mx-2"
+                                    actionItemClass="font-weight-medium"
+                                    actionItemIconClass="icon-inline"
+                                    menu={ContributableMenu.PanelToolbar}
+                                    scope={{
+                                        type: 'panelView',
+                                        id: activeTab.id,
+                                        hasLocations: Boolean(activeTab.hasLocations),
+                                    }}
+                                    wrapInList={true}
+                                    location={location}
+                                    transformContributions={transformPanelContributions}
+                                />
+                            </>
                         )}
                         <Button
                             onClick={handlePanelClose}

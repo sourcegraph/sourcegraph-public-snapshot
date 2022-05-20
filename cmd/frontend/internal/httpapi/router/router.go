@@ -72,7 +72,7 @@ func New(base *mux.Router) *mux.Router {
 	base.Path("/bitbucket-cloud-webhooks").Methods("POST").Name(BitbucketCloudWebhooks)
 	base.Path("/lsif/upload").Methods("POST").Name(LSIFUpload)
 	base.Path("/search/stream").Methods("GET").Name(SearchStream)
-	base.Path("/compute/stream").Methods("GET").Name(ComputeStream)
+	base.Path("/compute/stream").Methods("GET", "POST").Name(ComputeStream)
 	base.Path("/src-cli/version").Methods("GET").Name(SrcCliVersion)
 	base.Path("/src-cli/{rest:.*}").Methods("GET").Name(SrcCliDownload)
 
@@ -123,7 +123,7 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/telemetry").Methods("POST").Name(Telemetry)
 	base.Path("/lsif/upload").Methods("POST").Name(LSIFUpload)
 	base.Path("/search/stream").Methods("GET").Name(StreamingSearch)
-	base.Path("/compute/stream").Methods("GET").Name(ComputeStream)
+	base.Path("/compute/stream").Methods("GET", "POST").Name(ComputeStream)
 	addRegistryRoute(base)
 	addGraphQLRoute(base)
 

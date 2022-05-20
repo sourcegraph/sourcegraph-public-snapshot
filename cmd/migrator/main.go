@@ -3,8 +3,11 @@ package main
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
+	"regexp"
 
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
@@ -12,6 +15,7 @@ import (
 
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/cliutil"
+	descriptions "github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -19,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	sglog "github.com/sourcegraph/sourcegraph/lib/log"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -52,6 +57,29 @@ func mainErr(ctx context.Context, args []string) error {
 
 	runnerFactory := newRunnerFactory()
 	outputFactory := func() *output.Output { return out }
+	expectedSchemaFactory := func(filename, version string) (descriptions.SchemaDescription, error) {
+		if !regexp.MustCompile(`(^v\d+\.\d+\.\d+$)|(^[A-Fa-f0-9]{40}$)`).MatchString(version) {
+			return descriptions.SchemaDescription{}, errors.Newf("failed to parse %q - expected a version of the form `vX.Y.Z` or a 40-character commit hash", version)
+		}
+
+		resp, err := http.Get(fmt.Sprintf("https://raw.githubusercontent.com/sourcegraph/sourcegraph/%s/%s", version, filename))
+		if err != nil {
+			return descriptions.SchemaDescription{}, err
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			return descriptions.SchemaDescription{}, errors.Newf("unexpected status %d from github", resp.StatusCode)
+		}
+
+		var schemaDescription descriptions.SchemaDescription
+		if err := json.NewDecoder(resp.Body).Decode(&schemaDescription); err != nil {
+			return descriptions.SchemaDescription{}, err
+		}
+
+		return schemaDescription, nil
+	}
+
 	command := &cli.App{
 		Name:   appName,
 		Usage:  "Validates and runs schema migrations",
@@ -62,7 +90,7 @@ func mainErr(ctx context.Context, args []string) error {
 			cliutil.DownTo(appName, runnerFactory, outputFactory, false),
 			cliutil.Validate(appName, runnerFactory, outputFactory),
 			cliutil.Describe(appName, runnerFactory, outputFactory),
-			cliutil.Drift(appName, runnerFactory, outputFactory),
+			cliutil.Drift(appName, runnerFactory, outputFactory, expectedSchemaFactory),
 			cliutil.AddLog(appName, runnerFactory, outputFactory),
 		},
 	}

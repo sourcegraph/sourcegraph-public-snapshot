@@ -437,7 +437,8 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 				NumRepositoriesWithFreshIndexRecords:  int32Ptr(45),
 			},
 		},
-		SettingsPageViewCount: int32Ptr(1489),
+		SettingsPageViewCount:            int32Ptr(1489),
+		UsersWithRefPanelRedesignEnabled: int32Ptr(46),
 		LanguageRequests: []types.LanguageRequest{
 			{
 				LanguageID:  "frob",
@@ -588,6 +589,7 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 				}
 			],
 			"settings_page_view_count": 1489,
+			"users_with_ref_panel_redesign_enabled": 46,
 			"language_requests": [
 				{
 					"language_id": "frob",
@@ -773,6 +775,7 @@ func TestSerializeOldCodeIntelUsage(t *testing.T) {
 			"num_repositories_with_index_configuration_records": null,
 			"counts_by_language": null,
 			"settings_page_view_count": null,
+			"users_with_ref_panel_redesign_enabled": null,
 			"language_requests": null,
 			"investigation_events": null
 		},
