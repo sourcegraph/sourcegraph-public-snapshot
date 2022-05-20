@@ -8,8 +8,7 @@ import (
 )
 
 type operations struct {
-	listDependencies   *observation.Operation
-	streamDependencies *observation.Operation
+	listDependencies *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -29,7 +28,6 @@ func newOperations(observationContext *observation.Context) *operations {
 	}
 
 	return &operations{
-		listDependencies:   op("ListDependencies"),
-		streamDependencies: op("StreamDependencies"),
+		listDependencies: op("ListDependencies"),
 	}
 }

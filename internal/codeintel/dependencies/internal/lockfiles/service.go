@@ -37,33 +37,19 @@ func (s *Service) ListDependencies(ctx context.Context, repo api.RepoName, rev s
 	}})
 	defer endObservation(1, observation.Args{})
 
-	err = s.StreamDependencies(ctx, repo, rev, func(d reposource.PackageDependency) error {
-		deps = append(deps, d)
-		return nil
-	})
-
-	return deps, err
-}
-
-func (s *Service) StreamDependencies(ctx context.Context, repo api.RepoName, rev string, cb func(reposource.PackageDependency) error) (err error) {
-	ctx, _, endObservation := s.operations.streamDependencies.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("repo", string(repo)),
-		log.String("rev", rev),
-	}})
-	defer endObservation(1, observation.Args{})
-
 	// First call ls-files to find matching lockfiles, then pass those literal paths to archive.
 	//
-	// This ls-files call might appear redundant with the subsequent archive call, but it turns out
-	// ls-files handles pathspecs that match 0 files whereas archive throws an error. The ls-files
-	// behavior is desirable because we don't know ahead of time which lockfiles a repo has.
+	// This ls-files call might appear redundant with the subsequent archive call,
+	// but it turns out ls-files handles pathspecs that match 0 files whereas
+	// archive throws an error. The ls-files behavior is desirable because we don't
+	// know ahead of time which lockfiles a repo has.
 	paths, err := s.gitSvc.LsFiles(ctx, repo, api.CommitID(rev), lockfilePathspecs...)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if len(paths) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	pathspecs := []gitserver.Pathspec{}
@@ -79,21 +65,21 @@ func (s *Service) StreamDependencies(ctx context.Context, repo api.RepoName, rev
 
 	rc, err := s.gitSvc.Archive(ctx, repo, opts)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer rc.Close()
 
 	data, err := io.ReadAll(rc)
 	if err != nil {
 		if strings.Contains(err.Error(), "did not match any files") {
-			return nil
+			return nil, nil
 		}
-		return err
+		return nil, err
 	}
 
 	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	set := map[string]struct{}{}
@@ -104,21 +90,18 @@ func (s *Service) StreamDependencies(ctx context.Context, repo api.RepoName, rev
 
 		ds, err := parseZipLockfile(f)
 		if err != nil {
-			return errors.Wrapf(err, "failed to parse %q", f.Name)
+			return nil, errors.Wrapf(err, "failed to parse %q", f.Name)
 		}
 
 		for _, d := range ds {
 			k := d.PackageManagerSyntax()
 			if _, ok := set[k]; !ok {
 				set[k] = struct{}{}
-				if err = cb(d); err != nil {
-					return err
-				}
+				deps = append(deps, d)
 			}
 		}
 	}
-
-	return nil
+	return deps, nil
 }
 
 func parseZipLockfile(f *zip.File) ([]reposource.PackageDependency, error) {
