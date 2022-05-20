@@ -1,24 +1,11 @@
 import { InsightExecutionType, InsightType, InsightFilters } from './common'
 import { CaptureGroupInsight } from './types/capture-group-insight'
 import { LangStatsInsight } from './types/lang-stat-insight'
-import {
-    SearchAllReposInsight,
-    SearchBasedInsight,
-    SearchBasedInsightSeries,
-    SearchNamedReposInsight,
-} from './types/search-insight'
+import { SearchBasedInsight, SearchBasedInsightSeries } from './types/search-insight'
 
 export { InsightType, InsightExecutionType }
 
-export type {
-    SearchBasedInsight,
-    SearchAllReposInsight as SearchBackendBasedInsight,
-    SearchNamedReposInsight as SearchRuntimeBasedInsight,
-    SearchBasedInsightSeries,
-    LangStatsInsight,
-    CaptureGroupInsight,
-    InsightFilters,
-}
+export type { SearchBasedInsight, SearchBasedInsightSeries, LangStatsInsight, CaptureGroupInsight, InsightFilters }
 
 /**
  * Main insight model. Union of all different insights by execution type (backend, runtime)
