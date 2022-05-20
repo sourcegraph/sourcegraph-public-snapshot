@@ -120,9 +120,11 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 
 		if resultTypes.Has(result.TypeCommit) || resultTypes.Has(result.TypeDiff) {
 			diff := resultTypes.Has(result.TypeDiff)
+			repoOptionsCopy := repoOptions
+			repoOptionsCopy.OnlyCloned = true
 			addJob(&commit.CommitSearchJob{
 				Query:                commit.QueryToGitQuery(b, diff),
-				RepoOpts:             repoOptions,
+				RepoOpts:             repoOptionsCopy,
 				Diff:                 diff,
 				HasTimeFilter:        b.Exists("after") || b.Exists("before"),
 				Limit:                int(fileMatchLimit),
