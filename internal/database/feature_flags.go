@@ -459,6 +459,25 @@ func (f *featureFlagStore) GetUserOverrides(ctx context.Context, userID int32) (
 	return scanFeatureFlagOverrides(rows)
 }
 
+// GetUserOverride lists the overrides that have been specifically set for the given userID.
+// NOTE: this does not return any overrides for the user orgs. Those are returned separately
+// by ListOrgOverridesForUser so they can be mered in proper priority order.
+func (f *featureFlagStore) GetUserOverride(ctx context.Context, userID int32, flagName string) (*ff.Override, error) {
+	const getUserOverrideFmtString = `
+		SELECT
+			namespace_org_id,
+			namespace_user_id,
+			flag_name,
+			flag_value
+		FROM feature_flag_overrides
+		WHERE namespace_user_id = %s
+			AND deleted_at IS NULL
+			AND flag_name = %s;
+	`
+	row := f.QueryRow(ctx, sqlf.Sprintf(getUserOverrideFmtString, userID, flagName))
+	return scanFeatureFlagOverride(row)
+}
+
 // GetOrgOverridesForUser lists the feature flag overrides for all orgs the given user belongs to.
 func (f *featureFlagStore) GetOrgOverridesForUser(ctx context.Context, userID int32) ([]*ff.Override, error) {
 	const listUserOverridesFmtString = `
@@ -482,6 +501,26 @@ func (f *featureFlagStore) GetOrgOverridesForUser(ctx context.Context, userID in
 	defer rows.Close()
 
 	return scanFeatureFlagOverrides(rows)
+}
+
+// GetOrgOverrideForUser lists the feature flag overrides for all orgs the given user belongs to.
+func (f *featureFlagStore) GetOrgOverrideForUser(ctx context.Context, userID int32, flagName string) (*ff.Override, error) {
+	const getUserOverrideFmtString = `
+		SELECT
+			namespace_org_id,
+			namespace_user_id,
+			flag_name,
+			flag_value
+		FROM feature_flag_overrides
+		WHERE EXISTS (
+			SELECT org_id
+			FROM org_members
+			WHERE org_members.user_id = %s
+				AND feature_flag_overrides.namespace_org_id = org_members.org_id
+		) AND deleted_at IS NULL AND flag_name = %s;
+	`
+	row := f.QueryRow(ctx, sqlf.Sprintf(getUserOverrideFmtString, userID, flagName))
+	return scanFeatureFlagOverride(row)
 }
 
 // GetOrgOverrideForFlag returns the flag override for the given organization.
@@ -537,83 +576,79 @@ func scanFeatureFlagOverride(scanner rowScanner) (*ff.Override, error) {
 func (f *featureFlagStore) GetUserFlag(ctx context.Context, userID int32, flagName string) (*bool, error) {
 	g, ctx := errgroup.WithContext(ctx)
 
-	var flags []*ff.FeatureFlag
+	var flag *ff.FeatureFlag
 	g.Go(func() error {
-		res, err := f.GetFeatureFlags(ctx)
-		flags = res
+		res, err := f.GetFeatureFlag(ctx, flagName)
+		flag = res
 		return err
 	})
 
-	var orgOverrides []*ff.Override
+	var orgOverride *ff.Override
 	g.Go(func() error {
-		res, err := f.GetOrgOverridesForUser(ctx, userID)
-		orgOverrides = res
-		return err
+		if res, err := f.GetOrgOverrideForUser(ctx, userID, flagName); err == nil {
+			orgOverride = res
+		}
+		return nil
 	})
 
-	var userOverrides []*ff.Override
+	var userOverride *ff.Override
 	g.Go(func() error {
-		res, err := f.GetUserOverrides(ctx, userID)
-		userOverrides = res
-		return err
+		if res, err := f.GetUserOverride(ctx, userID, flagName); err == nil {
+			userOverride = res
+		}
+		return nil
 	})
 
 	if err := g.Wait(); err != nil {
 		return nil, err
 	}
 
-	for _, ff := range flags {
-		if ff.Name == flagName {
-			res := ff.EvaluateForUser(userID)
-
-			// Org overrides are higher priority than default
-			for _, oo := range orgOverrides {
-				res = oo.Value
-			}
-
-			// User overrides are higher priority than org overrides
-			for _, uo := range userOverrides {
-				res = uo.Value
-			}
-			return &res, nil
-		}
+	if flag == nil {
+		return nil, nil
 	}
 
-	return nil, errors.Errorf("Feature \"%s\" flag not found", flagName)
+	res := flag.EvaluateForUser(userID)
+	if orgOverride != nil {
+		res = orgOverride.Value
+	}
+
+	if userOverride != nil {
+		res = userOverride.Value
+	}
+
+	return &res, nil
 }
 
 // GetAnonymousUserFlag returns the calculated values for feature flags for the given anonymousUID
 func (f *featureFlagStore) GetAnonymousUserFlag(ctx context.Context, anonymousUID string, flagName string) (*bool, error) {
-	flags, err := f.GetFeatureFlags(ctx)
+	flag, err := f.GetFeatureFlag(ctx, flagName)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, ff := range flags {
-		if ff.Name != flagName {
-			res := ff.EvaluateForAnonymousUser(anonymousUID)
-			return &res, nil
-		}
+	if flag == nil {
+		return nil, nil
 	}
 
-	return nil, errors.Errorf("Feature \"%s\" flag not found", flagName)
+	res := flag.EvaluateForAnonymousUser(anonymousUID)
+	return &res, nil
 }
 
 func (f *featureFlagStore) GetGlobalFeatureFlag(ctx context.Context, flagName string) (*bool, error) {
-	flags, err := f.GetFeatureFlags(ctx)
+	flag, err := f.GetFeatureFlag(ctx, flagName)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, ff := range flags {
-		if ff.Name == flagName {
-			if val, ok := ff.EvaluateGlobal(); ok {
-				return &val, nil
-			}
-		}
+	if flag == nil {
+		return nil, nil
 	}
 
-	return nil, errors.Errorf("Feature \"%s\" flag not found", flagName)
+	if val, ok := flag.EvaluateGlobal(); ok {
+		return &val, nil
+	}
+
+	return nil, nil
 }
 
 // GetOrgFeatureFlag returns the calculated flag value for the given organization, taking potential override into account
