@@ -68,7 +68,6 @@ var (
 	// returned.
 	expectedSchemaFactory = func(filename, version string) (descriptions.SchemaDescription, error) {
 		gitShow := exec.Command("git", "show", fmt.Sprintf("%s^:%s", version, filename))
-		gitShow.Env = os.Environ()
 		content, err := run.InRoot(gitShow)
 		if err != nil {
 			return descriptions.SchemaDescription{}, err
