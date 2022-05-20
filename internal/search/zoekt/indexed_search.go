@@ -417,11 +417,11 @@ func zoektFileMatchToLineMatches(file *zoekt.FileMatch) []result.MultilineMatch 
 			lines = append(lines, result.MultilineMatch{
 				Preview: string(l.Line),
 				Start: result.LineColumn{
-					Line:   int32(l.LineNumber),
+					Line:   int32(l.LineNumber - 1),
 					Column: int32(offset),
 				},
 				End: result.LineColumn{
-					Line:   int32(l.LineNumber),
+					Line:   int32(l.LineNumber - 1),
 					Column: int32(offset + length),
 				},
 			})
