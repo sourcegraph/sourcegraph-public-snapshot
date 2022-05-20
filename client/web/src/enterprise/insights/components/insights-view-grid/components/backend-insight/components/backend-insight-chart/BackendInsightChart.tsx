@@ -1,4 +1,4 @@
-import React, { Dispatch, SetStateAction, useEffect, useState } from 'react'
+import React, { useEffect } from 'react'
 
 import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'
@@ -11,6 +11,8 @@ import { ScrollBox } from '../../../../../../../../views/components/view/content
 import { BackendInsightData } from '../../../../../../core'
 import { SeriesBasedChartTypes, SeriesChart } from '../../../../../views'
 import { BackendAlertOverlay } from '../backend-insight-alerts/BackendInsightAlerts'
+
+import { useSeriesToggle } from './use-series-toggle'
 
 import styles from './BackendInsightChart.module.scss'
 
@@ -108,38 +110,4 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
             )}
         </div>
     )
-}
-
-interface UseSeriesToggleReturn {
-    toggle: (id: string) => void
-    selectedSeriesIds: string[]
-    isSelected: (id: string) => boolean
-    hoveredId: string | undefined
-    setHoveredId: Dispatch<SetStateAction<string | undefined>>
-}
-
-const useSeriesToggle = (currentSelectedSeriesIds: string[]): UseSeriesToggleReturn => {
-    const [selectedSeriesIds, setSelectedSeriesIds] = useState<string[]>(currentSelectedSeriesIds)
-    const [hoveredId, setHoveredId] = useState<string | undefined>()
-
-    const selectSeries = (seriesId: string): void => setSelectedSeriesIds([...selectedSeriesIds, seriesId])
-    const deselectSeries = (seriesId: string): void =>
-        setSelectedSeriesIds(selectedSeriesIds.filter(id => id !== seriesId))
-    const toggle = (seriesId: string): void =>
-        selectedSeriesIds.includes(seriesId) ? deselectSeries(seriesId) : selectSeries(seriesId)
-    const isSelected = (seriesId: string): boolean => {
-        if (selectedSeriesIds.length === 0) {
-            return true
-        }
-
-        return selectedSeriesIds.includes(seriesId)
-    }
-
-    return {
-        toggle,
-        selectedSeriesIds,
-        isSelected,
-        hoveredId,
-        setHoveredId,
-    }
 }
