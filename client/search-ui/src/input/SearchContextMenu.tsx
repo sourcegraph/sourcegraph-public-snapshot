@@ -151,6 +151,9 @@ export const SearchContextMenu: React.FunctionComponent<React.PropsWithChildren<
         }
     }, [])
 
+    // A keydown event is needed here in addition to the button's click event because 
+    // otherwise the keydown event will be propagated to `onMenuKeyDown` and the
+    // click event will not be fired.
     const onCloseButtonKeyDown = useCallback(
         (event: ReactKeyboardEvent<HTMLButtonElement>): void => {
             if (event.key === ' ' || event.key === 'Enter') {
