@@ -29,10 +29,10 @@ var _ goroutine.ErrorHandler = &indexer{}
 // store+policy matcher into a proper policies service.
 
 // For mocking in tests
-var autoIndexingEnabled = conf.CodeIntelAutoIndexingEnabled
+var lockfileIndexingEnabled = conf.CodeIntelLockfileIndexingEnabled
 
 func (i *indexer) Handle(ctx context.Context) error {
-	if !autoIndexingEnabled() {
+	if !lockfileIndexingEnabled() {
 		return nil
 	}
 
