@@ -9,7 +9,6 @@ import { HeroPage } from '../../../components/HeroPage'
 import { CreateAccessTokenResult } from '../../../graphql-operations'
 import { UserSettingsAreaRouteContext } from '../UserSettingsArea'
 
-import { UserSettingsCreateAccessTokenCallbackPage } from './UserSettingsCreateAccessTokenCallbackPage'
 import { UserSettingsCreateAccessTokenPage } from './UserSettingsCreateAccessTokenPage'
 import { UserSettingsTokensPage } from './UserSettingsTokensPage'
 
@@ -34,17 +33,6 @@ export const UserSettingsTokensArea: React.FunctionComponent<React.PropsWithChil
                 path={outerProps.match.url + '/new'}
                 render={props => (
                     <UserSettingsCreateAccessTokenPage
-                        {...outerProps}
-                        {...props}
-                        onDidCreateAccessToken={setNewToken}
-                    />
-                )}
-            />
-            <Route
-                exact={true}
-                path={outerProps.match.url + '/new/callback'}
-                render={props => (
-                    <UserSettingsCreateAccessTokenCallbackPage
                         {...outerProps}
                         {...props}
                         onDidCreateAccessToken={setNewToken}

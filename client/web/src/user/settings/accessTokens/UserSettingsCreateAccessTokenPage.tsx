@@ -2,12 +2,13 @@ import React, { useCallback, useMemo, useState } from 'react'
 
 import AddIcon from 'mdi-react/AddIcon'
 import { RouteComponentProps } from 'react-router'
-import { concat, Subject } from 'rxjs'
-import { catchError, concatMap, tap } from 'rxjs/operators'
+import { concat, Observable, Subject } from 'rxjs'
+import { catchError, concatMap, map, tap } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { asError, isErrorLike } from '@sourcegraph/common'
+import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
+import { gql } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Container,
@@ -22,12 +23,39 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { AccessTokenScopes } from '../../../auth/accessToken'
+import { requestGraphQL } from '../../../backend/graphql'
 import { PageTitle } from '../../../components/PageTitle'
-import { CreateAccessTokenResult } from '../../../graphql-operations'
+import { CreateAccessTokenResult, CreateAccessTokenVariables, Scalars } from '../../../graphql-operations'
 import { SiteAdminAlert } from '../../../site-admin/SiteAdminAlert'
+import { eventLogger } from '../../../tracking/eventLogger'
 import { UserSettingsAreaRouteContext } from '../UserSettingsArea'
 
-import { createAccessToken } from './create'
+function createAccessToken(
+    user: Scalars['ID'],
+    scopes: string[],
+    note: string
+): Observable<CreateAccessTokenResult['createAccessToken']> {
+    return requestGraphQL<CreateAccessTokenResult, CreateAccessTokenVariables>(
+        gql`
+            mutation CreateAccessToken($user: ID!, $scopes: [String!]!, $note: String!) {
+                createAccessToken(user: $user, scopes: $scopes, note: $note) {
+                    id
+                    token
+                }
+            }
+        `,
+        { user, scopes, note }
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || !data.createAccessToken || (errors && errors.length > 0)) {
+                eventLogger.log('CreateAccessTokenFailed')
+                throw createAggregateError(errors)
+            }
+            eventLogger.log('AccessTokenCreated')
+            return data.createAccessToken
+        })
+    )
+}
 
 interface Props
     extends Pick<UserSettingsAreaRouteContext, 'authenticatedUser' | 'user'>,
