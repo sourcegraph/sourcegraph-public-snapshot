@@ -18,7 +18,6 @@ public class SourcegraphWindow implements Disposable {
     private final Project project;
     private final FindPopupPanel mainPanel;
     private JBPopup popup;
-    private boolean isFirstRender = true;
 
     public SourcegraphWindow(@NotNull Project project) {
         this.project = project;
