@@ -151,6 +151,15 @@ export const SearchContextMenu: React.FunctionComponent<React.PropsWithChildren<
         }
     }, [])
 
+    const onCloseButtonKeyDown = useCallback(
+        (event: ReactKeyboardEvent<HTMLButtonElement>): void => {
+            if (event.key === ' ' || event.key === 'Enter') {
+                closeMenu(true)
+            }
+        },
+        [closeMenu]
+    )
+
     const onMenuKeyDown = useCallback(
         (event: ReactKeyboardEvent<HTMLDivElement>): void => {
             if (event.key === 'Escape') {
@@ -292,7 +301,13 @@ export const SearchContextMenu: React.FunctionComponent<React.PropsWithChildren<
         <div onKeyDown={onMenuKeyDown}>
             <div className={styles.title}>
                 <small>Choose search context</small>
-                <Button onClick={() => closeMenu()} variant="icon" className={styles.titleClose} aria-label="Close">
+                <Button
+                    onClick={() => closeMenu()}
+                    onKeyDown={onCloseButtonKeyDown}
+                    variant="icon"
+                    className={styles.titleClose}
+                    aria-label="Close"
+                >
                     <Icon as={CloseIcon} />
                 </Button>
             </div>
