@@ -29,7 +29,6 @@ require (
 	github.com/buildkite/go-buildkite/v3 v3.0.1
 	github.com/cespare/xxhash v1.1.0
 	github.com/cespare/xxhash/v2 v2.1.2
-	github.com/charmbracelet/glamour v0.5.0
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/coreos/go-semver v0.3.0
 	github.com/crewjam/saml v0.4.6
@@ -37,7 +36,7 @@ require (
 	github.com/daviddengcn/go-colortext v1.0.0
 	github.com/derision-test/glock v1.0.0
 	github.com/derision-test/go-mockgen v1.2.0
-	github.com/dghubble/gologin v2.0.1-0.20181120070955-e2bffa01eb28+incompatible
+	github.com/dghubble/gologin/v2 v2.3.0
 	github.com/dgraph-io/ristretto v0.1.0
 	github.com/dineshappavoo/basex v0.0.0-20170425072625-481a6f6dc663
 	github.com/distribution/distribution/v3 v3.0.0-20220128175647-b60926597a1b
@@ -141,7 +140,7 @@ require (
 	github.com/sourcegraph/go-lsp v0.0.0-20200429204803-219e11d77f5d
 	github.com/sourcegraph/go-rendezvous v0.0.0-20210910070954-ef39ade5591d
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
-	github.com/sourcegraph/run v0.4.0
+	github.com/sourcegraph/run v0.6.0
 	github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images v0.0.0-20220203145655-4d2a39d3038a
 	github.com/sourcegraph/sourcegraph/lib v0.0.0-20220203145655-4d2a39d3038a
 	github.com/stretchr/testify v1.7.1
@@ -164,7 +163,7 @@ require (
 	go.uber.org/atomic v1.9.0
 	go.uber.org/automaxprocs v1.5.1
 	go.uber.org/ratelimit v0.2.0
-	golang.org/x/crypto v0.0.0-20220427172511-eb4f295cb31f
+	golang.org/x/crypto v0.0.0-20220517005047-85d78b3ac167
 	golang.org/x/net v0.0.0-20220425223048-2871e0cb64e4
 	golang.org/x/oauth2 v0.0.0-20220411215720-9780585627b5
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
@@ -176,7 +175,6 @@ require (
 	google.golang.org/protobuf v1.28.0
 	gopkg.in/DataDog/dd-trace-go.v1 v1.38.1
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
-	gopkg.in/src-d/go-git.v4 v4.13.1
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.23.3
 	k8s.io/apimachinery v0.23.3
@@ -197,9 +195,12 @@ require (
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/sprig v2.22.0+incompatible // indirect
 	github.com/alecthomas/chroma v0.10.0 // indirect
+	github.com/charmbracelet/glamour v0.5.0 // indirect
 	github.com/cockroachdb/errors v1.8.9 // indirect
 	github.com/containerd/typeurl v1.0.2 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.1 // indirect
+	github.com/djherbis/buffer v1.2.0 // indirect
+	github.com/djherbis/nio/v3 v3.0.1 // indirect
 	github.com/dlclark/regexp2 v1.4.0 // indirect
 	github.com/docker/docker v20.10.7+incompatible // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
@@ -351,7 +352,6 @@ require (
 	github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/src-d/gcfg v1.4.0 // indirect
 	github.com/stretchr/objx v0.3.0 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
@@ -415,7 +415,7 @@ require (
 // or intentional forks.
 replace (
 	// We maintain our own fork of Zoekt. Update with ./dev/zoekt/update
-	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20220512010913-108fddf760ab
+	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20220519151725-3bb00e7d99bf
 	// We use a fork of Alertmanager to allow prom-wrapper to better manipulate Alertmanager configuration.
 	// See https://docs.sourcegraph.com/dev/background-information/observability/prometheus
 	github.com/prometheus/alertmanager => github.com/sourcegraph/alertmanager v0.21.1-0.20211110092431-863f5b1ee51b

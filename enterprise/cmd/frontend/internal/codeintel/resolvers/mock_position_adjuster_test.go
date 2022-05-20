@@ -6,7 +6,7 @@ import (
 	"context"
 	"sync"
 
-	lsifstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+	lsifstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
 )
 
 // MockPositionAdjuster is a mock implementation of the PositionAdjuster

@@ -8,7 +8,6 @@ import { CardBody, Card, Typography } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../../auth'
 import { SignUpArguments, SignUpForm } from '../../auth/SignUpForm'
 import { BrandLogo } from '../../components/branding/BrandLogo'
-import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { SourcegraphContext } from '../../jscontext'
 import { submitTrialRequest } from '../../marketing/backend'
 import { PageRoutes } from '../../routes.constants'
@@ -47,7 +46,7 @@ const initSite = async (args: SignUpArguments): Promise<void> => {
     window.location.replace('/site-admin')
 }
 
-interface Props extends ThemeProps, FeatureFlagProps {
+interface Props extends ThemeProps {
     authenticatedUser: Pick<AuthenticatedUser, 'username'> | null
 
     /**
@@ -67,7 +66,6 @@ export const SiteInitPage: React.FunctionComponent<React.PropsWithChildren<Props
     isLightTheme,
     needsSiteInit = window.context.needsSiteInit,
     context,
-    featureFlags,
 }) => {
     if (!needsSiteInit) {
         return <Redirect to={PageRoutes.Search} />
@@ -95,7 +93,6 @@ export const SiteInitPage: React.FunctionComponent<React.PropsWithChildren<Props
                                 buttonLabel="Create admin account & continue"
                                 onSignUp={initSite}
                                 context={context}
-                                featureFlags={featureFlags}
                             />
                         </>
                     )}

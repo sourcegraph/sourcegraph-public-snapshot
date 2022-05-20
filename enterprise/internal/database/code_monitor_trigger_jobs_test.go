@@ -82,3 +82,18 @@ func TestUpdateTriggerJob(t *testing.T) {
 		require.NoError(t, err)
 	})
 }
+
+func TestListTriggerJobs(t *testing.T) {
+	t.Run("handles null results", func(t *testing.T) {
+		ctx := context.Background()
+		db := NewEnterpriseDB(database.NewDB(dbtest.NewDB(t)))
+		f := populateCodeMonitorFixtures(t, db)
+		jobs, err := db.CodeMonitors().EnqueueQueryTriggerJobs(ctx)
+		require.NoError(t, err)
+		require.Len(t, jobs, 1)
+
+		js, err := db.CodeMonitors().ListQueryTriggerJobs(ctx, ListTriggerJobsOpts{QueryID: &f.Query.ID})
+		require.NoError(t, err)
+		require.Len(t, js, 1)
+	})
+}

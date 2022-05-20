@@ -5,8 +5,8 @@ import (
 	"strconv"
 	"strings"
 
-	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
 

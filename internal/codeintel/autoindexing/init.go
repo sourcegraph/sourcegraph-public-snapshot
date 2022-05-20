@@ -24,27 +24,23 @@ var (
 
 func GetService(db database.DB) *Service {
 	svcOnce.Do(func() {
-		observationContext := &observation.Context{
+		storeObservationCtx := &observation.Context{
+			Logger:     log.Scoped("autoindexing.store", "autoindexing store"),
+			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+			Registerer: prometheus.DefaultRegisterer,
+		}
+		store := store.New(db, storeObservationCtx)
+
+		observationCxt := &observation.Context{
 			Logger:     log.Scoped("autoindexing.service", "autoindexing service"),
 			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 			Registerer: prometheus.DefaultRegisterer,
 		}
 
-		svc = newService(
-			store.GetStore(db),
-			observationContext,
-		)
+		svc = newService(store, observationCxt)
 	})
 
 	return svc
-}
-
-// TestService creates a fresh autoindexing service with the given database handle.
-func TestService(db database.DB) *Service {
-	return newService(
-		store.GetStore(db),
-		&observation.TestContext,
-	)
 }
 
 // To be removed after https://github.com/sourcegraph/sourcegraph/issues/33377

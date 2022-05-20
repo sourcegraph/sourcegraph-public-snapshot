@@ -138,7 +138,9 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
             ) : (
                 <Form onSubmit={onSubmit}>
                     <div className="form-group">
-                        <label htmlFor="site-admin-create-product-subscription-page__tags">Tags</label>
+                        <Typography.Label htmlFor="site-admin-create-product-subscription-page__tags">
+                            Tags
+                        </Typography.Label>
                         <input
                             type="text"
                             className="form-control"
@@ -169,7 +171,9 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
                         </small>
                     </div>
                     <div className="form-group">
-                        <label htmlFor="site-admin-create-product-subscription-page__userCount">Users</label>
+                        <Typography.Label htmlFor="site-admin-create-product-subscription-page__userCount">
+                            Users
+                        </Typography.Label>
                         <input
                             type="number"
                             min={1}
@@ -181,7 +185,9 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
                         />
                     </div>
                     <div className="form-group">
-                        <label htmlFor="site-admin-create-product-subscription-page__validDays">Valid for (days)</label>
+                        <Typography.Label htmlFor="site-admin-create-product-subscription-page__validDays">
+                            Valid for (days)
+                        </Typography.Label>
                         <input
                             type="number"
                             className="form-control"

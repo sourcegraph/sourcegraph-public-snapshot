@@ -30,9 +30,9 @@ var schemas = map[string]struct {
 	destinationFilename string
 	factory             databaseFactory
 }{
-	"frontend":  {"schema.md", connections.MigrateNewFrontendDB},
-	"codeintel": {"schema.codeintel.md", connections.MigrateNewCodeIntelDB},
-	"insights":  {"schema.codeinsights.md", connections.MigrateNewCodeInsightsDB},
+	"frontend":  {"schema", connections.MigrateNewFrontendDB},
+	"codeintel": {"schema.codeintel", connections.MigrateNewCodeIntelDB},
+	"insights":  {"schema.codeinsights", connections.MigrateNewCodeInsightsDB},
 }
 
 // This script generates markdown formatted output containing descriptions of
@@ -77,12 +77,22 @@ func generateAndWrite(name string, factory databaseFactory, dataSource string, c
 	}
 	defer db.Close()
 
-	out, err := generateInternal(db, name, run)
+	store := migrationstore.NewWithDB(db, "schema_migrations", migrationstore.NewOperations(&observation.TestContext))
+	schemas, err := store.Describe(context.Background())
 	if err != nil {
 		return err
 	}
+	schema := schemas["public"]
 
-	return os.WriteFile(destinationFile, []byte(out), os.ModePerm)
+	if err := os.WriteFile(destinationFile+".md", []byte(descriptions.NewPSQLFormatter().Format(schema)), os.ModePerm); err != nil {
+		return err
+	}
+
+	if err := os.WriteFile(destinationFile+".json", []byte(descriptions.NewJSONFormatter().Format(schema)), os.ModePerm); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func runWithPrefix(prefix []string) runFunc {
@@ -97,16 +107,4 @@ func runWithPrefix(prefix []string) runFunc {
 		out, err := c.Output()
 		return string(out), err
 	}
-}
-
-var formatter = descriptions.NewPSQLFormatter()
-
-func generateInternal(db *sql.DB, name string, run runFunc) (_ string, err error) {
-	store := migrationstore.NewWithDB(db, "schema_migrations", migrationstore.NewOperations(&observation.TestContext))
-	schemas, err := store.Describe(context.Background())
-	if err != nil {
-		return "", err
-	}
-
-	return formatter.Format(schemas["public"]), nil
 }

@@ -1,6 +1,7 @@
 import { FunctionComponent } from 'react'
 
 import { GitObjectType } from '@sourcegraph/shared/src/graphql-operations'
+import { Typography } from '@sourcegraph/wildcard'
 
 import { CodeIntelligenceConfigurationPolicyFields } from '../../../../graphql-operations'
 import { nullPolicy } from '../hooks/types'
@@ -35,7 +36,7 @@ export const BranchTargetSettings: FunctionComponent<React.PropsWithChildren<Bra
     return (
         <>
             <div className="form-group">
-                <label htmlFor="name">Name</label>
+                <Typography.Label htmlFor="name">Name</Typography.Label>
                 <input
                     id="name"
                     type="text"

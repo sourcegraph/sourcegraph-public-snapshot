@@ -32,7 +32,7 @@ import { WORKSPACES_PER_PAGE_COUNT, WorkspacePreviewFilters } from './useWorkspa
 
 export type ResolutionState = BatchSpecWorkspaceResolutionState | 'UNSTARTED' | 'REQUESTED' | 'CANCELED'
 
-interface UseWorkspacesPreviewResult {
+export interface UseWorkspacesPreviewResult {
     /**
      * Method to invoke the appropriate GraphQL mutation to submit the batch spec input
      * YAML to the backend and request a preview of the workspaces it would affect.
@@ -94,7 +94,6 @@ const getBatchSpecID = ({
     }
     return data.replaceBatchSpecInput.id
 }
-
 /**
  * Custom hook to power the "preview" aspect of the batch spec creation workflow, i.e.
  * submitting batch spec input YAML code, enqueing a resolution job to evaluate the
@@ -112,6 +111,7 @@ export const useWorkspacesPreview = (
     { isBatchSpecApplied, namespaceID, noCache, onComplete, filters }: UseWorkspacesPreviewOptions
 ): UseWorkspacesPreviewResult => {
     // Track whether the user has previewed the batch spec workspaces at least once.
+    const [hasRequestedPreview, setHasRequestedPreview] = useState(false)
     const [hasPreviewed, setHasPreviewed] = useState(false)
 
     // Mutation to create a new batch spec from the raw input YAML code.
@@ -174,7 +174,7 @@ export const useWorkspacesPreview = (
             return preview()
                 .then(result => {
                     const newBatchSpecID = getBatchSpecID(result)
-                    setHasPreviewed(true)
+                    setHasRequestedPreview(true)
                     // Requery the workspace resolution status. A status change will
                     // re-trigger polling until the new job finishes.
                     refetchResolutionStatus({ batchSpec: newBatchSpecID })
@@ -244,6 +244,7 @@ export const useWorkspacesPreview = (
         ) {
             setError(undefined)
             // If the workspace resolution is still queued or processing, start polling.
+            setIsInProgress(true)
             startPolling(POLLING_INTERVAL)
         } else if (
             uiState === BatchSpecWorkspaceResolutionState.ERRORED ||
@@ -253,6 +254,7 @@ export const useWorkspacesPreview = (
             stop()
         } else if (uiState === BatchSpecWorkspaceResolutionState.COMPLETED) {
             setError(undefined)
+            setHasPreviewed(true)
             // We can stop polling once the workspace resolution completes.
             stop()
             // Fetch the results of the workspace preview resolution.
@@ -272,6 +274,6 @@ export const useWorkspacesPreview = (
         resolutionState: uiState,
         error,
         clearError: () => setError(undefined),
-        hasPreviewed,
+        hasPreviewed: hasRequestedPreview && hasPreviewed,
     }
 }

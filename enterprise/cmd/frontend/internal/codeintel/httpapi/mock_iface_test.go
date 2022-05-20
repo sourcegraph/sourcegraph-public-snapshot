@@ -6,7 +6,7 @@ import (
 	"context"
 	"sync"
 
-	dbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	dbstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	github "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
 

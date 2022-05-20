@@ -182,7 +182,7 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
                             <div className="form-group">
                                 {requiresUsername && (
                                     <>
-                                        <label htmlFor="username">Username</label>
+                                        <Typography.Label htmlFor="username">Username</Typography.Label>
                                         <input
                                             id="username"
                                             name="username"
@@ -197,7 +197,7 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
                                         />
                                     </>
                                 )}
-                                <label htmlFor="token">{patLabel}</label>
+                                <Typography.Label htmlFor="token">{patLabel}</Typography.Label>
                                 <input
                                     id="token"
                                     name="token"

@@ -45,7 +45,7 @@
       "examples": [["20"]]
     },
     "apidocs.search.index-size-limit-factor": {
-      "description": "Limit factor for API docs search index size. A multiple of 250 million symbols. 1.0 indicates 250 million symbols (approx 12.5k repos) can be indexed. 2.0 indicates double that, and so on. See https://docs.sourcegraph.com/code_intelligence/apidocs",
+      "description": "Deprecated.",
       "type": "number",
       "default": 1.0,
       "additionalProperties": false
@@ -122,7 +122,7 @@
           }
         },
         "apidocs.search.indexing": {
-          "description": "Index API docs for search, see https://docs.sourcegraph.com/code_intelligence/apidocs",
+          "description": "Deprecated.",
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "enabled"
@@ -1797,6 +1797,23 @@
             "type": "string",
             "minLength": 1
           }
+        },
+        "allowOrgsMap": {
+          "description": "Restricts new logins to members of GitHub teams. Each list of teams should have their Github org name as a key. Subteams inheritance is not supported, therefore only members of the listed teams will be granted access. Existing sessions won't be invalidated. Leave empty or unset for no team restrictions.",
+          "default": {},
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "examples": [
+            {
+              "orgName": ["team1"],
+              "anotherOrgName": ["team2", "team3"]
+            }
+          ]
         },
         "allowGroupsPermissionsSync": {
           "description": "Experimental: Allows sync of GitHub teams and organizations permissions across all external services associated with this provider to allow enabling of [repository permissions caching](https://docs.sourcegraph.com/admin/repo/permissions#permissions-caching).",

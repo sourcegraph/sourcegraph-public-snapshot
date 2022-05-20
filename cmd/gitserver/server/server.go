@@ -559,7 +559,7 @@ func (s *Server) syncRepoState(gitServerAddrs gitserver.GitServerAddresses, batc
 	}
 
 	ctx := s.ctx
-	store := database.GitserverRepos(s.DB)
+	store := s.DB.GitserverRepos()
 
 	// The rate limit should be enforced across all instances
 	perSecond = perSecond / len(addrs)
@@ -1730,7 +1730,7 @@ func (s *Server) setLastError(ctx context.Context, name api.RepoName, error stri
 	if s.DB == nil {
 		return nil
 	}
-	return database.GitserverRepos(s.DB).SetLastError(ctx, name, error, s.Hostname)
+	return s.DB.GitserverRepos().SetLastError(ctx, name, error, s.Hostname)
 }
 
 func (s *Server) setLastFetched(ctx context.Context, name api.RepoName) error {
@@ -1750,7 +1750,7 @@ func (s *Server) setLastFetched(ctx context.Context, name api.RepoName) error {
 		return errors.Wrapf(err, "failed to get last changed for %s", name)
 	}
 
-	return database.GitserverRepos(s.DB).SetLastFetched(ctx, name, database.GitserverFetchData{
+	return s.DB.GitserverRepos().SetLastFetched(ctx, name, database.GitserverFetchData{
 		LastFetched: lastFetched,
 		LastChanged: lastChanged,
 		ShardID:     s.Hostname,
@@ -1772,7 +1772,7 @@ func (s *Server) setCloneStatus(ctx context.Context, name api.RepoName, status t
 	if s.DB == nil {
 		return nil
 	}
-	return database.GitserverRepos(s.DB).SetCloneStatus(ctx, name, status, s.Hostname)
+	return s.DB.GitserverRepos().SetCloneStatus(ctx, name, status, s.Hostname)
 }
 
 // setCloneStatusNonFatal is the same as setCloneStatus but only logs errors
@@ -1788,7 +1788,7 @@ func (s *Server) setRepoSize(ctx context.Context, name api.RepoName) error {
 		return nil
 	}
 
-	return database.GitserverRepos(s.DB).SetRepoSize(ctx, name, dirSize(s.dir(name).Path(".")), s.Hostname)
+	return s.DB.GitserverRepos().SetRepoSize(ctx, name, dirSize(s.dir(name).Path(".")), s.Hostname)
 }
 
 // setGitAttributes writes our global gitattributes to

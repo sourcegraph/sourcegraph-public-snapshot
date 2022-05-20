@@ -312,12 +312,12 @@ export class RepoSettingsMirrorPage extends React.PureComponent<
                     {this.state.loading && <LoadingSpinner />}
                     {this.state.error && <ErrorAlert error={this.state.error} />}
                     <div className="form-group">
-                        <label>
+                        <Typography.Label>
                             Remote repository URL{' '}
                             <small className="text-info">
                                 <Icon as={LockIcon} /> Only visible to site admins
                             </small>
-                        </label>
+                        </Typography.Label>
                         <input
                             className="form-control"
                             value={this.props.repo.mirrorInfo.remoteURL || '(unknown)'}

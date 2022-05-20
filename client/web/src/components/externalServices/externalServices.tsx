@@ -698,6 +698,15 @@ const BITBUCKET_CLOUD: AddExternalServiceOptions = {
                 return { edits, selectText: value }
             },
         },
+        {
+            id: 'enableWebhooks',
+            label: 'Enable webhooks',
+            run: (config: string) => {
+                const value = '<any_secret_string>'
+                const edits = setProperty(config, ['webhookSecret'], value, defaultFormattingOptions)
+                return { edits, selectText: value }
+            },
+        },
     ],
     instructions: (
         <div>

@@ -393,16 +393,16 @@ var listChangesetSpecsWithConflictingHeadQueryFmtstr = `
 -- source: enterprise/internal/batches/store/changeset_specs.go:ListChangesetSpecsWithConflictingHeadRef
 SELECT
 	repo_id,
-	spec->>'headRef' AS head_ref,
+	head_ref,
 	COUNT(*) AS count
 FROM
 	changeset_specs
 WHERE
 	batch_spec_id = %s
 AND
-	spec->>'headRef' IS NOT NULL
+	head_ref IS NOT NULL
 GROUP BY
-	repo_id, spec->>'headRef'
+	repo_id, head_ref
 HAVING COUNT(*) > 1
 ORDER BY repo_id ASC, head_ref ASC
 `

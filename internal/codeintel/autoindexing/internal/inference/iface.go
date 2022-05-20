@@ -40,7 +40,7 @@ func NewDefaultGitService(checker authz.SubRepoPermissionChecker, db database.DB
 }
 
 func (s *gitService) ListFiles(ctx context.Context, repo api.RepoName, commit string, pattern *regexp.Regexp) ([]string, error) {
-	return git.ListFiles(ctx, s.db, repo, api.CommitID(commit), pattern, authz.DefaultSubRepoPermsChecker)
+	return gitserver.NewClient(s.db).ListFiles(ctx, repo, api.CommitID(commit), pattern, authz.DefaultSubRepoPermsChecker)
 }
 
 func (s *gitService) Archive(ctx context.Context, repo api.RepoName, opts gitserver.ArchiveOptions) (io.ReadCloser, error) {

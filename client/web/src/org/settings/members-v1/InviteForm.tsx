@@ -104,9 +104,9 @@ export const InviteForm: React.FunctionComponent<React.PropsWithChildren<Props>>
     return (
         <div>
             <div className={styles.container}>
-                <label htmlFor="invite-form__username">
+                <Typography.Label htmlFor="invite-form__username">
                     {viewerCanAddUserToOrganization ? 'Add or invite member' : 'Invite member'}
-                </label>
+                </Typography.Label>
                 <Form className="form-inline align-items-start" onSubmit={onSubmit}>
                     <input
                         type="text"

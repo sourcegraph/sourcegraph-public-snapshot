@@ -169,8 +169,5 @@ const QueryFieldDescription: React.FunctionComponent<React.PropsWithChildren<unk
     <span>
         Do not include the <Typography.Code>context:</Typography.Code> or <Typography.Code>repo:</Typography.Code>{' '}
         filter; if needed, <Typography.Code>repo:</Typography.Code> will be added automatically.
-        <br />
-        Tip: include <Typography.Code>archived:no</Typography.Code> and <Typography.Code>fork:no</Typography.Code> if
-        you don't want results from archived or forked repos.
     </span>
 )

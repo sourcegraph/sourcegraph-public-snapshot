@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"sort"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -691,6 +692,91 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 			t.Error("Expected error but received nil")
 		}
 	})
+
+	t.Run("compute stream job returns error event", func(t *testing.T) {
+		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
+		job := Job{
+			SeriesID:        "testseries1",
+			SearchQuery:     "searchit",
+			RecordTime:      &date,
+			PersistMode:     "record",
+			DependentFrames: nil,
+			ID:              1,
+			State:           "queued",
+		}
+
+		mocked := func(context.Context, string) (*streaming.ComputeTabulationResult, error) {
+			return &streaming.ComputeTabulationResult{
+				StreamDecoderEvents: streaming.StreamDecoderEvents{
+					Errors: []string{"error event"},
+				},
+			}, nil
+		}
+
+		handler := workHandler{
+			baseWorkerStore:     nil,
+			insightsStore:       nil,
+			metadadataStore:     nil,
+			limiter:             nil,
+			mu:                  sync.RWMutex{},
+			seriesCache:         nil,
+			computeSearchStream: mocked,
+		}
+
+		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date)
+		if len(recordings) != 0 {
+			t.Error("No records should be returned as we errored on compute stream")
+		}
+		if err == nil {
+			t.Error("Expected error but received nil")
+		}
+		var streamingErr StreamingError
+		if !errors.As(err, &streamingErr) {
+			t.Errorf("Expected StreamingError, got %v", err)
+		}
+	})
+
+	t.Run("compute stream job returns alert event", func(t *testing.T) {
+		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
+		job := Job{
+			SeriesID:        "testseries1",
+			SearchQuery:     "searchit",
+			RecordTime:      &date,
+			PersistMode:     "record",
+			DependentFrames: nil,
+			ID:              1,
+			State:           "queued",
+		}
+
+		mocked := func(context.Context, string) (*streaming.ComputeTabulationResult, error) {
+			return &streaming.ComputeTabulationResult{
+				StreamDecoderEvents: streaming.StreamDecoderEvents{
+					Alerts: []string{"event"},
+				},
+			}, nil
+		}
+
+		handler := workHandler{
+			baseWorkerStore:     nil,
+			insightsStore:       nil,
+			metadadataStore:     nil,
+			limiter:             nil,
+			mu:                  sync.RWMutex{},
+			seriesCache:         nil,
+			computeSearchStream: mocked,
+		}
+
+		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date)
+		if len(recordings) != 0 {
+			t.Error("No records should be returned as we errored on compute stream")
+		}
+		if err == nil {
+			t.Error("Expected error but received nil")
+		}
+		if !strings.Contains(err.Error(), "alert") {
+			t.Errorf("Expected alerts to return, got %v", err)
+		}
+	})
 }
 
 func TestGenerateSearchRecordingsStream(t *testing.T) {
@@ -1001,6 +1087,88 @@ func TestGenerateSearchRecordingsStream(t *testing.T) {
 		}
 		if err == nil {
 			t.Error("Expected error but received nil")
+		}
+	})
+
+	t.Run("search stream job returns error event", func(t *testing.T) {
+		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
+		job := Job{
+			SeriesID:        "testseries1",
+			SearchQuery:     "searchit",
+			RecordTime:      &date,
+			PersistMode:     "record",
+			DependentFrames: nil,
+			ID:              1,
+			State:           "queued",
+		}
+
+		mocked := func(context.Context, string) (*streaming.TabulationResult, error) {
+			return &streaming.TabulationResult{
+				StreamDecoderEvents: streaming.StreamDecoderEvents{
+					Errors: []string{"error event"},
+				},
+			}, nil
+		}
+
+		handler := workHandler{
+			baseWorkerStore: nil,
+			insightsStore:   nil,
+			metadadataStore: nil,
+			limiter:         nil,
+			mu:              sync.RWMutex{},
+			seriesCache:     nil,
+			searchStream:    mocked,
+		}
+
+		recordings, err := handler.generateSearchRecordingsStream(context.Background(), &job, nil, date)
+		if len(recordings) != 0 {
+			t.Error("No records should be returned as we errored on stream")
+		}
+		var streamingErr StreamingError
+		if !errors.As(err, &streamingErr) {
+			t.Errorf("Expected StreamingError, got %v", err)
+		}
+	})
+
+	t.Run("search stream job returns alert event", func(t *testing.T) {
+		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
+		job := Job{
+			SeriesID:        "testseries1",
+			SearchQuery:     "searchit",
+			RecordTime:      &date,
+			PersistMode:     "record",
+			DependentFrames: nil,
+			ID:              1,
+			State:           "queued",
+		}
+
+		mocked := func(context.Context, string) (*streaming.TabulationResult, error) {
+			return &streaming.TabulationResult{
+				StreamDecoderEvents: streaming.StreamDecoderEvents{
+					Errors: []string{"alert"},
+				},
+			}, nil
+		}
+
+		handler := workHandler{
+			baseWorkerStore: nil,
+			insightsStore:   nil,
+			metadadataStore: nil,
+			limiter:         nil,
+			mu:              sync.RWMutex{},
+			seriesCache:     nil,
+			searchStream:    mocked,
+		}
+
+		recordings, err := handler.generateSearchRecordingsStream(context.Background(), &job, nil, date)
+		if len(recordings) != 0 {
+			t.Error("No records should be returned as we errored on stream")
+		}
+		if err == nil {
+			t.Error("Expected error but received nil")
+		}
+		if !strings.Contains(err.Error(), "alert") {
+			t.Errorf("Expected alerts to return, got %v", err)
 		}
 	})
 }

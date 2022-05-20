@@ -98,9 +98,9 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
             <Form onSubmit={handleSubmit}>
                 <Container className="mb-3">
                     <div className="form-group">
-                        <label className={styles.label} htmlFor="saved-search-form-input-description">
+                        <Typography.Label className={styles.label} htmlFor="saved-search-form-input-description">
                             Description
-                        </label>
+                        </Typography.Label>
                         <input
                             id="saved-search-form-input-description"
                             type="text"
@@ -113,9 +113,9 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
                         />
                     </div>
                     <div className="form-group">
-                        <label className={styles.label} htmlFor="saved-search-form-input-query">
+                        <Typography.Label className={styles.label} htmlFor="saved-search-form-input-query">
                             Query
-                        </label>
+                        </Typography.Label>
                         <input
                             id="saved-search-form-input-query"
                             type="text"
@@ -132,9 +132,9 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
                         <div className="form-group mb-0">
                             {/* Label is for visual benefit, input has more specific label attached */}
                             {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
-                            <label className={styles.label} id="saved-search-form-email-notifications">
+                            <Typography.Label className={styles.label} id="saved-search-form-email-notifications">
                                 Email notifications
-                            </label>
+                            </Typography.Label>
                             <div aria-labelledby="saved-search-form-email-notifications">
                                 <Checkbox
                                     name="Notify owner"
@@ -169,9 +169,9 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
 
                     {notifySlack && slackWebhookURL && (
                         <div className="form-group mt-3 mb-0">
-                            <label className={styles.label} htmlFor="saved-search-form-input-slack">
+                            <Typography.Label className={styles.label} htmlFor="saved-search-form-input-slack">
                                 Slack notifications
-                            </label>
+                            </Typography.Label>
                             <input
                                 id="saved-search-form-input-slack"
                                 type="text"

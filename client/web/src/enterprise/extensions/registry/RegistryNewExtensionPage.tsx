@@ -164,12 +164,12 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                             />
                             {extensionID && (
                                 <div className="form-group d-flex flex-wrap align-items-baseline mb-0">
-                                    <label
+                                    <Typography.Label
                                         htmlFor="extension-registry-create-extension-page__extensionID"
                                         className="mr-1 mb-0 mt-1"
                                     >
                                         Extension ID:
-                                    </label>
+                                    </Typography.Label>
                                     <Typography.Code
                                         id="extension-registry-create-extension-page__extensionID"
                                         className={classNames('mt-1', styles.extensionId)}

@@ -137,7 +137,8 @@ export const DashboardsContent: React.FunctionComponent<React.PropsWithChildren<
 
             {currentDashboard ? (
                 <DashboardInsights
-                    dashboard={currentDashboard}
+                    currentDashboard={currentDashboard}
+                    dashboards={dashboards}
                     telemetryService={telemetryService}
                     className={styles.insights}
                     onAddInsightRequest={handleAddInsightRequest}

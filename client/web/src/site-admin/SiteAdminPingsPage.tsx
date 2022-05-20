@@ -179,13 +179,30 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                         <li>
                             Aggregate counts of unique monthly users, by:
                             <ul>
-                                <li>Whether they are contributed to batch changes</li>
+                                <li>Whether they have contributed to batch changes</li>
                                 <li>Whether they only viewed batch changes</li>
+                                <li>Whether they have performed a bulk operation</li>
                             </ul>
                         </li>
                         <li>
                             Weekly batch change (open, closed) and changesets counts (imported, published, unpublished,
                             open, draft, merged, closed) for batch change cohorts created in the last 12 months
+                        </li>
+                        <li>Weekly bulk operations count (grouped by operation)</li>
+                        <li>Total count of executors connected</li>
+                        <li>Cumulative executor runtime monthly</li>
+                        <li>Total count of publish bulk operation</li>
+                        <li>Total count of bulk operations (grouped by operation type)</li>
+                        <li>
+                            Changeset distribution for batch change (grouped by batch change source: local or executor)
+                        </li>
+                        <li>Total count of users that ran a job on an executor monthly</li>
+                        <li>
+                            Total count of published changesets and batch changes created via:
+                            <ul>
+                                <li>executor</li>
+                                <li>local (using src-cli)</li>
+                            </ul>
                         </li>
                     </ul>
                 </li>
@@ -294,6 +311,21 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                         </li>
                         <li>Total number of views of the manage code monitor page</li>
                         <li>Total number of clicks on the code monitor email search link</li>
+                    </ul>
+                </li>
+                <li>
+                    Notebooks usage data
+                    <ul>
+                        <li>Total number of views of the notebook page</li>
+                        <li>Total number of views of the notebooks list page</li>
+                        <li>Total number of views of the embedded notebook page</li>
+                        <li>Total number of created notebooks</li>
+                        <li>Total number of added notebook stars</li>
+                        <li>Total number of added notebook markdown blocks</li>
+                        <li>Total number of added notebook query blocks</li>
+                        <li>Total number of added notebook file blocks</li>
+                        <li>Total number of added notebook symbol blocks</li>
+                        <li>Total number of added notebook compute blocks</li>
                     </ul>
                 </li>
                 <li>

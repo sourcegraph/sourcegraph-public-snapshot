@@ -122,8 +122,9 @@ func TestResolver_InsightsRepoPermissions(t *testing.T) {
 		t.Skip()
 	}
 	insightsDB := dbtest.NewInsightsDB(t)
-	postgres := dbtest.NewDB(t)
+	postgres := database.NewDB(dbtest.NewDB(t))
 
+	ctx := context.Background()
 	now := time.Now().UTC().Truncate(time.Microsecond)
 	clock := func() time.Time { return now }
 	authz.SetProviders(false, []authz.Provider{}) // setting authz in this way will force user permissions to be enabled
@@ -137,7 +138,7 @@ func TestResolver_InsightsRepoPermissions(t *testing.T) {
 		DisplayName: "GITHUB #1",
 		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
 	}
-	err := database.ExternalServices(postgres).Create(context.Background(), confGet, externalService)
+	err := postgres.ExternalServices().Create(context.Background(), confGet, externalService)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -145,7 +146,7 @@ func TestResolver_InsightsRepoPermissions(t *testing.T) {
 	// Create three repositories -
 	// 1) private repo that will be assigned to user 1
 	// 2 & 3) public repos
-	_, err = postgres.Exec(`
+	_, err = postgres.Handle().DB().ExecContext(ctx, `
 		INSERT INTO repo (id, name, description, fork, created_at, updated_at, external_id, external_service_type,
 					  external_service_id, archived, uri, deleted_at, metadata, private, stars)
 		VALUES
@@ -172,7 +173,7 @@ func TestResolver_InsightsRepoPermissions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = postgres.Exec(`
+	_, err = postgres.Handle().DB().ExecContext(ctx, `
 		INSERT INTO external_service_repos (external_service_id, repo_id, clone_url)
 		VALUES
 		       ($1, 1, ''),

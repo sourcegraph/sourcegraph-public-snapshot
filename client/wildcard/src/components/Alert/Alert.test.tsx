@@ -10,7 +10,9 @@ describe('Alert', () => {
         const { container } = render(<Alert>Simple Alert</Alert>)
         expect(container.firstChild).toMatchInlineSnapshot(`
             <div
+              aria-live="polite"
               class=""
+              role="alert"
             >
               Simple Alert
             </div>

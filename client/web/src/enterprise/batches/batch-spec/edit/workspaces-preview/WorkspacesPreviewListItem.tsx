@@ -18,11 +18,13 @@ interface WorkspacesPreviewListItemProps {
     isStale: boolean
     /** Function to automatically update batch spec to exclude this item. */
     exclude: (repo: string, branch: string) => void
+    /** Whether or not the item presented should be read-only. */
+    isReadOnly?: boolean
 }
 
 export const WorkspacesPreviewListItem: React.FunctionComponent<
     React.PropsWithChildren<WorkspacesPreviewListItemProps>
-> = ({ workspace, isStale, exclude }) => {
+> = ({ workspace, isStale, exclude, isReadOnly = false }) => {
     const [toBeExcluded, setToBeExcluded] = useState(false)
 
     const handleExclude = useCallback(() => {
@@ -39,12 +41,12 @@ export const WorkspacesPreviewListItem: React.FunctionComponent<
     )
 
     return (
-        <ListItem className={isStale ? styles.stale : undefined}>
+        <ListItem className={!isReadOnly && isStale ? styles.stale : undefined}>
             <Descriptor
                 workspace={workspace.__typename === 'HiddenBatchSpecWorkspace' ? undefined : workspace}
                 statusIndicator={statusIndicator}
             />
-            {workspace.__typename !== 'HiddenBatchSpecWorkspace' && toBeExcluded ? null : (
+            {isReadOnly || (workspace.__typename !== 'HiddenBatchSpecWorkspace' && toBeExcluded) ? null : (
                 <ExcludeButton handleExclude={handleExclude} />
             )}
         </ListItem>

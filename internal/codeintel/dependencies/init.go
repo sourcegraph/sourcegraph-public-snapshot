@@ -26,7 +26,8 @@ var (
 var (
 	lockfilesSemaphoreWeight = env.MustGetInt("CODEINTEL_DEPENDENCIES_LOCKFILES_SEMAPHORE_WEIGHT", 64, "The maximum number of concurrent routines parsing lockfile contents.")
 	syncerSemaphoreWeight    = env.MustGetInt("CODEINTEL_DEPENDENCIES_LOCKFILES_SYNCER_WEIGHT", 64, "The maximum number of concurrent routines actively syncing repositories.")
-	enableUpserts            = env.Get("CODEINTEL_DEPENDENCIES_ENABLE_UPSERTS", "", "Disable writes of lockfile results to the database from the dependencies service.") != ""
+	enableUpserts            = env.Get("CODEINTEL_DEPENDENCIES_ENABLE_UPSERTS", "", "Enables writes of lockfile results to the database from the dependencies service.") != ""
+	enablePreciseQueries     = env.Get("CODEINTEL_DEPENDENCIES_ENABLE_PRECISE_QUERIES", "", "Enables queries of precise code intelligence results from the database from the dependencies service.") != ""
 )
 
 // GetService creates or returns an already-initialized dependencies service. If the service is
@@ -35,13 +36,19 @@ func GetService(db database.DB, gitService GitService, syncer Syncer) *Service {
 	logger := log.Scoped("dependencies.service", "codeintel dependencies service")
 
 	svcOnce.Do(func() {
-		observationContext := &observation.Context{
+		storeObservationCtx := &observation.Context{
+			Logger:     log.Scoped("dependencies.store", "dependencies store"),
+			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+			Registerer: prometheus.DefaultRegisterer,
+		}
+		var store store.Store = store.New(db, storeObservationCtx)
+
+		observationCtx := &observation.Context{
 			Logger:     logger,
 			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 			Registerer: prometheus.DefaultRegisterer,
 		}
 
-		var store Store = store.GetStore(db)
 		if !enableUpserts {
 			logger.Warn("Disabling dependencies.store.UpsertLockfileDependencies")
 			store = &shim{store}
@@ -58,7 +65,7 @@ func GetService(db database.DB, gitService GitService, syncer Syncer) *Service {
 			lockfilesSemaphore,
 			syncer,
 			syncerSemaphore,
-			observationContext,
+			observationCtx,
 		)
 	})
 
@@ -71,9 +78,10 @@ func TestService(db database.DB, gitService GitService, syncer Syncer) *Service 
 	lockfilesService := lockfiles.GetService(gitService)
 	lockfilesSemaphore := semaphore.NewWeighted(64)
 	syncerSemaphore := semaphore.NewWeighted(64)
+	store := store.New(db, &observation.TestContext)
 
 	return newService(
-		store.GetStore(db),
+		store,
 		gitService,
 		lockfilesService,
 		lockfilesSemaphore,
@@ -83,7 +91,7 @@ func TestService(db database.DB, gitService GitService, syncer Syncer) *Service 
 	)
 }
 
-type shim struct{ Store }
+type shim struct{ store.Store }
 
 func (s *shim) UpsertLockfileDependencies(ctx context.Context, repoName, commit string, deps []shared.PackageDependency) error {
 	return nil

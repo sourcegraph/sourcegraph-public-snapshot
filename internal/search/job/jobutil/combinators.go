@@ -4,9 +4,12 @@ import (
 	"context"
 	"time"
 
+	"github.com/opentracing/opentracing-go/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -107,8 +110,9 @@ type TimeoutJob struct {
 }
 
 func (t *TimeoutJob) Run(ctx context.Context, clients job.RuntimeClients, s streaming.Sender) (alert *search.Alert, err error) {
-	_, ctx, s, finish := job.StartSpan(ctx, s, t)
+	tr, ctx, s, finish := job.StartSpan(ctx, s, t)
 	defer func() { finish(alert, err) }()
+	tr.TagFields(trace.LazyFields(t.Tags))
 
 	ctx, cancel := context.WithTimeout(ctx, t.timeout)
 	defer cancel()
@@ -118,6 +122,12 @@ func (t *TimeoutJob) Run(ctx context.Context, clients job.RuntimeClients, s stre
 
 func (t *TimeoutJob) Name() string {
 	return "TimeoutJob"
+}
+
+func (t *TimeoutJob) Tags() []log.Field {
+	return []log.Field{
+		trace.Stringer("timeout", t.timeout),
+	}
 }
 
 // NewLimitJob creates a new job that is canceled after the result limit
@@ -140,8 +150,9 @@ type LimitJob struct {
 }
 
 func (l *LimitJob) Run(ctx context.Context, clients job.RuntimeClients, s streaming.Sender) (alert *search.Alert, err error) {
-	_, ctx, s, finish := job.StartSpan(ctx, s, l)
+	tr, ctx, s, finish := job.StartSpan(ctx, s, l)
 	defer func() { finish(alert, err) }()
+	tr.TagFields(trace.LazyFields(l.Tags))
 
 	ctx, s, cancel := streaming.WithLimit(ctx, s, l.limit)
 	defer cancel()
@@ -157,6 +168,12 @@ func (l *LimitJob) Run(ctx context.Context, clients job.RuntimeClients, s stream
 
 func (l *LimitJob) Name() string {
 	return "LimitJob"
+}
+
+func (l *LimitJob) Tags() []log.Field {
+	return []log.Field{
+		log.Int("limit", l.limit),
+	}
 }
 
 func NewNoopJob() *NoopJob {

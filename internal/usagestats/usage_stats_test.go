@@ -40,7 +40,7 @@ func TestGetArchive(t *testing.T) {
 		Timestamp: now,
 	}
 
-	err = database.EventLogs(db).Insert(ctx, event)
+	err = db.EventLogs().Insert(ctx, event)
 	if err != nil {
 		t.Fatal(err)
 	}

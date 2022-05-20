@@ -19,15 +19,12 @@ func lintGoDirectives(ctx context.Context, state *repo.State) *lint.Report {
 		return &lint.Report{Header: header, Err: err}
 	}
 
-	var errs error
-	for file, hunks := range diff {
-		for _, hunk := range hunks {
-			if directivesRegexp.MatchString(strings.Join(hunk.AddedLines, "\n")) {
-				errs = errors.Append(errors.Newf(`%s:%d: Go compiler directives must have no spaces between the // and 'go'`,
-					file, hunk.StartLine))
-			}
+	errs := diff.IterateHunks(func(file string, hunk repo.DiffHunk) error {
+		if directivesRegexp.MatchString(strings.Join(hunk.AddedLines, "\n")) {
+			return errors.New("Go compiler directives must have no spaces between the // and 'go'")
 		}
-	}
+		return nil
+	})
 
 	return &lint.Report{
 		Header: header,
