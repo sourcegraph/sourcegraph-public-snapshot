@@ -58,8 +58,8 @@ func mainErr(ctx context.Context, args []string) error {
 	runnerFactory := newRunnerFactory()
 	outputFactory := func() *output.Output { return out }
 	expectedSchemaFactory := func(filename, version string) (descriptions.SchemaDescription, error) {
-		if !regexp.MustCompile(`(^v\d+\.\d+\.\d+$)|($[a-z0-9]{40}^)`).MatchString(version) {
-			return descriptions.SchemaDescription{}, errors.Newf("failed to parse %q - expected a version of the form `vX.Y.Z` or a 40-character commit hash", v)
+		if !regexp.MustCompile(`(^v\d+\.\d+\.\d+$)|(^[A-Fa-f0-9]{40}$)`).MatchString(version) {
+			return descriptions.SchemaDescription{}, errors.Newf("failed to parse %q - expected a version of the form `vX.Y.Z` or a 40-character commit hash", version)
 		}
 
 		resp, err := http.Get(fmt.Sprintf("https://raw.githubusercontent.com/sourcegraph/sourcegraph/%s/%s", version, filename))
