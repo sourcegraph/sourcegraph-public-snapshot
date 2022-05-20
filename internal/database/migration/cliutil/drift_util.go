@@ -167,9 +167,9 @@ func compareSchemaDescriptions(out *output.Output, actual, expected schemas.Sche
 			missing("table", name, expectedTable)
 		} else {
 			diff("table", "columns", name, expectedTable.Columns, table.Columns)
-			diff("table", "columns", name, expectedTable.Constraints, table.Constraints)
-			diff("table", "columns", name, expectedTable.Indexes, table.Indexes)
-			diff("table", "columns", name, expectedTable.Triggers, table.Triggers)
+			diff("table", "constraints", name, expectedTable.Constraints, table.Constraints)
+			diff("table", "indexes", name, expectedTable.Indexes, table.Indexes)
+			diff("table", "triggers", name, expectedTable.Triggers, table.Triggers)
 		}
 	}
 
