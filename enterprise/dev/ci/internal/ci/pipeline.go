@@ -102,7 +102,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		ops.Merge(CoreTestOperations(c.Diff, CoreTestOperationsOptions{
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
-			ForceRunChromatic:         c.MessageFlags.ForceRunStepChromatic,
+			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
 			// TODO: (@umpox, @valerybugakov) Figure out if we can reliably enable this in PRs.
 			ClientLintOnlyChangedFiles: false,
 		}))
@@ -239,7 +239,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Merge(CoreTestOperations(changed.All, CoreTestOperationsOptions{
 			ChromaticShouldAutoAccept: c.RunType.Is(runtype.MainBranch),
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
-			ForceRunChromatic:         c.MessageFlags.ForceRunStepChromatic,
+			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
 		}))
 
 		// Integration tests

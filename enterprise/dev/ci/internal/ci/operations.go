@@ -25,7 +25,7 @@ type CoreTestOperationsOptions struct {
 	ChromaticShouldAutoAccept  bool
 	MinimumUpgradeableVersion  string
 	ClientLintOnlyChangedFiles bool
-	ForceRunChromatic          bool
+	ForceReadyForReview        bool
 }
 
 // CoreTestOperations is a core set of tests that should be run in most CI cases. More
@@ -339,7 +339,7 @@ func clientChromaticTests(opts CoreTestOperationsOptions) operations.Operation {
 		chromaticCommand := "yarn chromatic --exit-zero-on-changes --exit-once-uploaded"
 		if opts.ChromaticShouldAutoAccept {
 			chromaticCommand += " --auto-accept-changes"
-		} else if opts.ForceRunChromatic {
+		} else if opts.ForceReadyForReview {
 			chromaticCommand += " | ./dev/ci/post-chromatic.sh"
 		} else {
 			// Unless we plan on automatically accepting these changes, we only run this
