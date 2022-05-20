@@ -2,7 +2,6 @@ package indexer
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -111,7 +110,6 @@ func (i *indexer) handleRepository(
 		}
 		repoRevs := map[api.RepoName]types.RevSpecSet{api.RepoName(repoName): revs}
 
-		fmt.Printf("> %s %d\n", repoName, len(revs))
 		if err := i.dependenciesSvc.ResolveDependencies(ctx, repoRevs); err != nil {
 			return err
 		}
