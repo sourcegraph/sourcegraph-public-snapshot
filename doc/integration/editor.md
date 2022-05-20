@@ -7,14 +7,35 @@ Get up to speed quickly, learn best practices and, find code to re-use all while
 
 We currently have integrations with these editors:
 
-<a href="https://marketplace.visualstudio.com/items?itemName=sourcegraph.sourcegraph"><img src="img/vscode.svg"/> Visual Studio Code</a>
+<p>
+  <a target="_blank" href="https://marketplace.visualstudio.com/items?itemName=sourcegraph.sourcegraph" style="display:flex;align-items:center">
+  <img src="img/vscode.svg" width="30" height="30" style="margin-right:5px" /> <strong>Visual Studio Code</strong>
+  </a>
+</p>
 
-<a href="https://atom.io/packages/sourcegraph"><img src="img/atom.svg"/> Atom</a>
+<p>
+  <a target="_blank" href="https://atom.io/packages/sourcegraph" style="display:flex;align-items:center">
+  <img src="img/atom.svg" width="30" height="30" style="margin-right:5px" /> <strong>Atom</strong>
+  </a>
+</p>
 
-<a href="https://plugins.jetbrains.com/plugin/9682-sourcegraph"><img src="img/jetbrains.svg"/> JetBrains IDEs (IntelliJ, PyCharm, GoLand, etc.)</a>
+<p>
+  <a target="_blank" href="https://plugins.jetbrains.com/plugin/9682-sourcegraph" style="display:flex;align-items:center">
+  <img src="img/jetbrains.svg" width="30" height="30" style="margin-right:5px" /> <strong>JetBrains IDEs (IntelliJ, PyCharm, GoLand, etc.)</strong>
+  </a>
+</p>
 
-<a href="https://github.com/sourcegraph/sourcegraph-sublime"><img src="img/sublime.svg"/> Sublime Text</a>
+<p>
+  <a target="_blank" href="https://github.com/sourcegraph/sourcegraph-sublime" style="display:flex;align-items:center">
+  <img src="img/sublime.svg" width="30" height="30" style="margin-right:5px" /> <strong>Sublime Text</strong>
+  </a>
+</p>
 
+<p>
+  <a target="_blank" href="gitpod.md" style="display:flex;align-items:center">
+  <img src="img/gitpod.svg" width="30" height="30" style="margin-right:5px" /> <strong>Gitpod</strong>
+  </a>
+</p>
 
 ## References
 
