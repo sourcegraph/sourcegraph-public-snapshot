@@ -9,7 +9,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory) *cli.Command {
+type ExpectedSchemaFactory func(repoName, version string) (descriptions.SchemaDescription, error)
+
+func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, expectedSchemaFactory ExpectedSchemaFactory) *cli.Command {
 	schemaNameFlag := &cli.StringFlag{
 		Name:     "db",
 		Usage:    "The target `schema` to compare.",
@@ -26,19 +28,22 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory) 
 		if err != nil {
 			return err
 		}
-
 		schemas, err := store.Describe(ctx)
 		if err != nil {
 			return err
 		}
 		schema := schemas["public"]
 
-		expected, err := fetchSchema(schemaNameFlag.Get(cmd), versionFlag.Get(cmd))
+		filename, err := getSchemaJSONFilename(schemaNameFlag.Get(cmd))
+		if err != nil {
+			return err
+		}
+		expectedSchema, err := expectedSchemaFactory(filename, versionFlag.Get(cmd))
 		if err != nil {
 			return err
 		}
 
-		return compareSchemaDescriptions(out, canonicalize(schema), canonicalize(expected))
+		return compareSchemaDescriptions(out, canonicalize(schema), canonicalize(expectedSchema))
 	})
 
 	return &cli.Command{
