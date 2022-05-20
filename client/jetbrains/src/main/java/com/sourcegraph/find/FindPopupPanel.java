@@ -41,7 +41,7 @@ public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposabl
         createBrowserPanel();
     }
 
-    public void createBrowserPanel() {
+    private void createBrowserPanel() {
         JBPanelWithEmptyText jcefPanel = new JBPanelWithEmptyText(new BorderLayout()).withEmptyText("Unfortunately, the browser is not available on your system. Try running the IDE with the default OpenJDK.");
         browser = JBCefApp.isSupported() ? new SourcegraphJBCefBrowser(new JSToJavaBridgeRequestHandler(project, previewPanel)) : null;
         if (browser != null) {
