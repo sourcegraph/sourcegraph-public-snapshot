@@ -13,11 +13,10 @@ Our IDEs extensions work with the following IDEs supported by Gitpod.
 
 ### VS Code for the Web
 
-1. Follow the instruction in our [VS Code extension CONTRUBUTION docs](https://github.com/sourcegraph/sourcegraph/blob/main/client/vscode/CONTRIBUTING.md#web-version) to host the Sourcegraph extension locally
+1. Follow the instruction in our [VS Code extension CONTRUBUTION docs](https://github.com/sourcegraph/sourcegraph/blob/main/client/vscode/CONTRIBUTING.md) to host the Sourcegraph extension locally
 2. Open the `Command Palette` once you are in your Gitpod VS Code Browser workspace
 3. Search and Select `Developer: Install Web Extension…`
 4. Paste the link for where the extension is hosted in the input area to install the Sourcegraph extension
-
 
 ### JetBrains IDEs
 
