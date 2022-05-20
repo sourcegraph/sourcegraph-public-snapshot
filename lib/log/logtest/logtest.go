@@ -118,8 +118,8 @@ func Captured(t testing.TB, sinks ...*sinks.Sinks) (logger log.Logger, exportLog
 	configurable := scopedTestLogger(t, LoggerOptions{}).(configurableAdapter)
 
 	observerCore, entries := observer.New(zap.DebugLevel) // capture all levels
+	var cores []zapcore.Core
 	logger = configurable.WithCore(func(c zapcore.Core) zapcore.Core {
-		var cores []zapcore.Core
 		for _, s := range sinks {
 			cores = append(cores, sinkcores.Build(s)...)
 		}
@@ -127,6 +127,13 @@ func Captured(t testing.TB, sinks ...*sinks.Sinks) (logger log.Logger, exportLog
 	})
 
 	return logger, func() []CapturedLog {
+		for _, c := range cores {
+			err := c.Sync()
+			if err != nil {
+				t.Logf("core %t failed to Sync(): %q", c, err)
+				t.Fail()
+			}
+		}
 		entries := entries.TakeAll()
 		logs := make([]CapturedLog, len(entries))
 		for i, e := range entries {
