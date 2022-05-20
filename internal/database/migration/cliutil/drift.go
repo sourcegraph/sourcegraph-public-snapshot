@@ -38,10 +38,7 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory) 
 			return err
 		}
 
-		canonicalize(schema)
-		canonicalize(expected)
-
-		return compareSchemaDescriptions(out, schema, expected)
+		return compareSchemaDescriptions(out, canonicalize(schema), canonicalize(expected))
 	})
 
 	return &cli.Command{
@@ -56,12 +53,14 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory) 
 	}
 }
 
-func canonicalize(schema descriptions.SchemaDescription) {
-	descriptions.Canonicalize(schema)
+func canonicalize(schemaDescription descriptions.SchemaDescription) descriptions.SchemaDescription {
+	descriptions.Canonicalize(schemaDescription)
 
-	for i, table := range schema.Tables {
+	for i, table := range schemaDescription.Tables {
 		for j := range table.Columns {
-			schema.Tables[i].Columns[j].Index = -1
+			schemaDescription.Tables[i].Columns[j].Index = -1
 		}
 	}
+
+	return schemaDescription
 }
