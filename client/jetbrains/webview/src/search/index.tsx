@@ -5,7 +5,6 @@ import { AnchorLink, setLinkComponent } from '@sourcegraph/wildcard'
 
 import { App } from './App'
 import { createRequestForMatch, Request } from './jsToJavaBridgeUtil'
-import { callJava } from './mockJavaInterface'
 
 setLinkComponent(AnchorLink)
 
@@ -117,10 +116,4 @@ window.initializeSourcegraph = async () => {
     applyTheme(theme)
     renderReactApp()
     await window.callJava({ action: 'indicateFinishedLoading' })
-}
-
-/* Initialize app for standalone server */
-if (window.location.search.includes('standalone=true')) {
-    window.callJava = callJava
-    window.initializeSourcegraph()
 }
