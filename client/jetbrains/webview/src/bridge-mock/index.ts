@@ -62,7 +62,6 @@ function handleRequest(
         }
 
         case 'preview': {
-            console.log(request.arguments)
             const { content, absoluteOffsetAndLengths } = request.arguments
 
             const start = absoluteOffsetAndLengths[0][0]
