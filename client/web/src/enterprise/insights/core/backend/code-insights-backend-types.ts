@@ -8,7 +8,7 @@ import {
     CaptureGroupInsight,
     LangStatsInsight,
     InsightsDashboardOwner,
-    SearchRuntimeBasedInsight,
+    SearchBasedInsight,
 } from '../types'
 import { InsightContentType } from '../types/insight/common'
 
@@ -68,10 +68,7 @@ export interface FindInsightByNameInput {
     name: string
 }
 
-export type MinimalSearchBasedInsightData = Omit<
-    SearchRuntimeBasedInsight,
-    'id' | 'dashboardReferenceCount' | 'isFrozen'
->
+export type MinimalSearchBasedInsightData = Omit<SearchBasedInsight, 'id' | 'dashboardReferenceCount' | 'isFrozen'>
 
 export type MinimalCaptureGroupInsightData = Omit<CaptureGroupInsight, 'id' | 'dashboardReferenceCount' | 'isFrozen'>
 export type MinimalLangStatsInsightData = Omit<LangStatsInsight, 'id' | 'dashboardReferenceCount' | 'isFrozen'>
