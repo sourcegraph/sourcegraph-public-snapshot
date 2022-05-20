@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo } from 'react'
 
+import { Tooltip, TooltipTrigger, ActionButton } from '@adobe/react-spectrum'
 import classNames from 'classnames'
 import * as H from 'history'
 import BarChartIcon from 'mdi-react/BarChartIcon'
@@ -239,7 +240,10 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
                         </NavItem>
                     )}
                     <NavItem icon={MagnifyIcon}>
-                        <Button>Tooltip test</Button>
+                        <TooltipTrigger delay={0}>
+                            <ActionButton>Tooltip test</ActionButton>
+                            <Tooltip>Change Name</Tooltip>
+                        </TooltipTrigger>
                     </NavItem>
                     {/* This is the only circumstance where we show something
                          batch-changes-related even if the instance does not have batch

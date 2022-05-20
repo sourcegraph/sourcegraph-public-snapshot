@@ -3897,7 +3897,7 @@
     "@react-aria/utils" "^3.12.0"
     "@react-types/shared" "^3.12.0"
 
-"@react-aria/interactions@^3.8.2", "@react-aria/interactions@^3.8.3", "@react-aria/interactions@^3.8.4":
+"@react-aria/interactions@^3.8.2", "@react-aria/interactions@^3.8.4":
   version "3.8.4"
   resolved "https://registry.npmjs.org/@react-aria/interactions/-/interactions-3.8.4.tgz#f3704470b70f150b753bba01a8714f97d6299906"
   integrity sha512-6EHFKK8pmjSJSKcBbduijPETKqE669XZ1VaEY8ubr6VnlVhCszvKHoxpU384CkNiDNLJOVkK6HDzPXsn3lxhng==
@@ -4241,7 +4241,7 @@
     "@react-stately/virtualizer" "^3.1.9"
     "@react-types/shared" "^3.12.0"
 
-"@react-aria/visually-hidden@^3.2.6", "@react-aria/visually-hidden@^3.2.7", "@react-aria/visually-hidden@^3.2.8":
+"@react-aria/visually-hidden@^3.2.6", "@react-aria/visually-hidden@^3.2.8":
   version "3.2.8"
   resolved "https://registry.npmjs.org/@react-aria/visually-hidden/-/visually-hidden-3.2.8.tgz#1f3531f065752f642089a584a402de0fa1daa288"
   integrity sha512-SLBID66sUZrCdxaxLhgxypF/UyGuFVFGc+VhqmFi9QacDfAQcoT3DQyXEaKUIDMVtwAtSuWl7BpuooEctKBe6Q==
