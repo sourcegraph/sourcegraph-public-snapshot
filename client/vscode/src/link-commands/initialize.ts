@@ -20,33 +20,9 @@ export function initializeCodeSharingCommands(
             await browserActions('open', logRedirectEvent)
         })
     )
-    // Open current file in main branch in browser
-    context.subscriptions.push(
-        vscode.commands.registerCommand('sourcegraph.openMain', async () => {
-            await browserActions('open', logRedirectEvent, true)
-        })
-    )
-    // Open current file in current branch in browser
-    context.subscriptions.push(
-        vscode.commands.registerCommand('sourcegraph.openCurrent', async () => {
-            await browserActions('open', logRedirectEvent)
-        })
-    )
     // Copy Sourcegraph link to file
     context.subscriptions.push(
         vscode.commands.registerCommand('sourcegraph.copyFileLink', async () => {
-            await browserActions('copy', logRedirectEvent)
-        })
-    )
-    // Copy Sourcegraph link to file in main branch
-    context.subscriptions.push(
-        vscode.commands.registerCommand('sourcegraph.copyMain', async () => {
-            await browserActions('copy', logRedirectEvent, true)
-        })
-    )
-    // Copy Sourcegraph link to file in current branch
-    context.subscriptions.push(
-        vscode.commands.registerCommand('sourcegraph.copyCurrent', async () => {
             await browserActions('copy', logRedirectEvent)
         })
     )

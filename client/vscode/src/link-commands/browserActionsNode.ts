@@ -1,22 +1,20 @@
 import vscode, { env } from 'vscode'
 
-import { getDefaultBranch, getSourcegraphFileUrl, repoInfo } from './git-helpers'
+import { getSourcegraphFileUrl, repoInfo } from './git-helpers'
 import { generateSourcegraphBlobLink, vsceUtms } from './initialize'
 /**
  * Open active file in the browser on the configured Sourcegraph instance.
  */
 
-export async function browserActions(
-    action: string,
-    logRedirectEvent: (uri: string) => void,
-    mainBranch?: boolean
-): Promise<void> {
+export async function browserActions(action: string, logRedirectEvent: (uri: string) => void): Promise<void> {
     const editor = vscode.window.activeTextEditor
     if (!editor) {
         throw new Error('No active editor')
     }
     const uri = editor.document.uri
-    let sourcegraphUrl = String()
+    const instanceUrl =
+        vscode.workspace.getConfiguration('sourcegraph').get<string>('url') || 'https://sourcegraph.com/'
+    let sourcegraphUrl = ''
     // check if the current file is a remote file or not
     if (uri.scheme === 'sourcegraph') {
         sourcegraphUrl = generateSourcegraphBlobLink(
@@ -27,39 +25,33 @@ export async function browserActions(
             editor.selection.end.character
         )
     } else {
-        try {
-            const repositoryInfo = await repoInfo(editor.document.uri.fsPath)
-            if (!repositoryInfo) {
-                await vscode.window.showErrorMessage('Cannot get git info for this repository.')
-                return
-            }
-            const defaultBranch = getDefaultBranch()
-            const { remoteURL, branch, fileRelative } = repositoryInfo
-            const instanceUrl = vscode.workspace.getConfiguration('sourcegraph').get<string>('url')
-            if (!mainBranch && !branch && !defaultBranch) {
-                await vscode.window.showErrorMessage(
-                    'Current branch does not exist on Sourcegraph. Try open it in main.'
-                )
-                return
-            }
-            if (typeof instanceUrl === 'string') {
-                // construct sourcegraph url for current file
-                // set branch as 'HEAD' if user wants to open file in main
-                // else use the branch we have retreive from the repository info
-                // which will set branch as default or 'HEAD' if current branch does not exist
-                const finalBranch = defaultBranch || mainBranch ? 'HEAD' : branch
-                sourcegraphUrl =
-                    getSourcegraphFileUrl(instanceUrl, remoteURL, finalBranch, fileRelative, editor) + vsceUtms
-            }
-        } catch (error) {
-            console.error(error)
+        const repositoryInfo = await repoInfo(editor.document.uri.fsPath)
+        if (!repositoryInfo) {
+            await vscode.window.showErrorMessage('Cannot get git info for this repository.')
+            return
         }
+        let { remoteURL, branch, fileRelative } = repositoryInfo
+        // construct sourcegraph url for current file
+        // set branch as 'HEAD' if user wants to open file in main
+        // else use the branch we have retreive from the repository info
+        // which will set branch as default or 'HEAD' if current branch does not exist
+        if (!branch) {
+            const userChoice = await vscode.window.showInformationMessage(
+                'Current branch does not exist on Sourcegraph. Please either publish your branch, or continue with the main branch.',
+                'Continue with main',
+                'Cancel'
+            )
+            branch = userChoice === 'Continue with main' ? 'HEAD' : ''
+            if (!branch) {
+                return
+            }
+        }
+        sourcegraphUrl = getSourcegraphFileUrl(instanceUrl, remoteURL, branch, fileRelative, editor) + vsceUtms
     }
+    // Decode URI
     const decodedUri = decodeURIComponent(sourcegraphUrl)
-
     // Log redirect events
     logRedirectEvent(sourcegraphUrl)
-
     // Open in browser or Copy file link
     switch (action) {
         case 'open':

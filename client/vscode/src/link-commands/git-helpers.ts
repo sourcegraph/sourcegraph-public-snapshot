@@ -49,8 +49,8 @@ export async function repoInfo(filePath: string): Promise<RepositoryInfo | undef
         const fileRelative = filePath.slice(repoRoot.length + 1).replace(/\\/g, '/')
         let { branch, remoteName } = await gitRemoteNameAndBranch(repoRoot, gitHelpers, log)
         const remoteURL = await gitRemoteUrlWithReplacements(repoRoot, remoteName, gitHelpers, log)
-        // check if branch exist remotely. return empty string if it does not exists
-        branch = await checkBranch(remoteURL, branch)
+        // check if branch exist remotely
+        branch = getDefaultBranch() || (await isOnSourcegraph(remoteURL, branch)) ? branch : ''
         return { remoteURL, branch, fileRelative, remoteName }
     } catch {
         return undefined
@@ -215,34 +215,30 @@ function getRemoteUrlReplacements(): Record<string, string> {
 export function getDefaultBranch(): string {
     // has default value
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const branch = vscode.workspace.getConfiguration('sourcegraph').get<string>('defaultBranch')!
-
-    return branch
+    return vscode.workspace.getConfiguration('sourcegraph').get<string>('defaultBranch')!
 }
 
 /**
  * Check if branch exists on Sourcegraph instance
  * Return 'HEAD' if it does not exists remotely
  */
-export async function checkBranch(remoteURL: string, currentBranch: string): Promise<string> {
+export async function isOnSourcegraph(remoteURL: string, currentBranch: string): Promise<boolean> {
     const repoNameRegex = /(\w+(:\/\/|@))(.+@)*([\w.]+)(:?)(\d+){0,1}\/*(.*)(\.git)(\/)?/
     const repoNameRegexMatches = remoteURL.match(repoNameRegex)
     const repoName =
         repoNameRegexMatches?.[4] && repoNameRegexMatches?.[7]
             ? repoNameRegexMatches?.[4] + '/' + repoNameRegexMatches?.[7]
             : remoteURL.replace('git@', '').replace('https://', '').replace('.git', '').replace(':', '/')
-
-    const foundBranches = await requestGraphQLFromVSCode<CheckBranchResult>(checkBranchQuery, {
+    const isOnSourcegraph = await requestGraphQLFromVSCode<CheckBranchResult>(checkBranchQuery, {
         repoName,
         branchName: currentBranch,
     })
         .then(response => response.data?.repository.branches.nodes)
         .then(nodes => nodes?.filter(branch => branch.name.replace('refs/heads/', '') === currentBranch))
+        .then(filtered => filtered?.length === 1)
         .catch(error => console.error(error))
-    if (foundBranches?.length === 1) {
-        return currentBranch
-    }
-    return ''
+    console.log(isOnSourcegraph)
+    return isOnSourcegraph || false
 }
 
 const checkBranchQuery = gql`
