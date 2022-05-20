@@ -17,16 +17,14 @@ type ScopedRepoIterator struct {
 	repos []simpleRepo
 }
 
-func (s *ScopedRepoIterator) ForEach() func(ctx context.Context, each func(repoName string, id api.RepoID) error) error {
-	return func(ctx context.Context, each func(repoName string, id api.RepoID) error) error {
-		for _, repo := range s.repos {
-			err := each(repo.name, repo.id)
-			if err != nil {
-				return err
-			}
+func (s *ScopedRepoIterator) ForEach(ctx context.Context, each func(repoName string, id api.RepoID) error) error {
+	for _, repo := range s.repos {
+		err := each(repo.name, repo.id)
+		if err != nil {
+			return err
 		}
-		return nil
 	}
+	return nil
 }
 
 func NewScopedRepoIterator(ctx context.Context, repoNames []string, store RepoStore) (*ScopedRepoIterator, error) {

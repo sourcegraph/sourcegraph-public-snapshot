@@ -15,7 +15,7 @@ import (
 )
 
 type RepoIterator interface {
-	ForEach() func(ctx context.Context, each func(repoName string, id api.RepoID) error) error
+	ForEach(ctx context.Context, each func(repoName string, id api.RepoID) error) error
 }
 
 // IndexableReposLister is a subset of the API exposed by the backend.ListIndexable.
