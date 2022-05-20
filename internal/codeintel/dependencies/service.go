@@ -2,7 +2,6 @@ package dependencies
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -367,30 +366,29 @@ func (s *Service) sync(ctx context.Context, repos []api.RepoName) error {
 	return g.Wait()
 }
 
-// TODO - document
+// ResolveDependencies resolves the lockfile dependencies for a set of repository and revsisions
+// and writes them the database.
+//
+// This method is expected to be used only from background routines controlling lockfile indexing
+// scheduling. Additional users may impact the performance profile of the application as a whole.
 func (s *Service) ResolveDependencies(ctx context.Context, repoRevs map[api.RepoName]types.RevSpecSet) (err error) {
-	if !enableUpserts {
+	if !lockfileIndexingEnabled() {
 		return nil
 	}
 
 	// Resolve the revhashes for the source repo-commit pairs
-	repoCommits, err := s.resolveRepoCommits(ctx, repoRevs)
+	repoCommits, _, err := s.resolveRepoCommits(ctx, repoRevs)
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("repoCommits=%d\n", len(repoCommits))
-
 	for _, repoCommit := range repoCommits {
-		// TODO
-		fmt.Printf("> %v\n", repoCommit)
-		// TODO - take a different semaphore
-
 		if _, err := s.listAndPersistLockfileDependencies(ctx, repoCommit); err != nil {
 			return err
 		}
 	}
 
+	// TODO - also sync dependencies
 	return nil
 }
 
