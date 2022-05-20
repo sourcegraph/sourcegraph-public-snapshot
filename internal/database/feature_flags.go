@@ -563,7 +563,7 @@ func (f *featureFlagStore) GetUserFlag(ctx context.Context, userID int32, flagNa
 	}
 
 	for _, ff := range flags {
-		if ff.Name != flagName {
+		if ff.Name == flagName {
 			res := ff.EvaluateForUser(userID)
 
 			// Org overrides are higher priority than default
@@ -606,7 +606,7 @@ func (f *featureFlagStore) GetGlobalFeatureFlag(ctx context.Context, flagName st
 	}
 
 	for _, ff := range flags {
-		if ff.Name != flagName {
+		if ff.Name == flagName {
 			if val, ok := ff.EvaluateGlobal(); ok {
 				return &val, nil
 			}
