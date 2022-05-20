@@ -10,14 +10,13 @@ interface PointGlyphProps {
     color: string
     active: boolean
     linkURL?: string
-    fill?: string
     onClick: MouseEventHandler<Element>
     onFocus: FocusEventHandler<Element>
     onBlur: FocusEventHandler<Element>
 }
 
 export const PointGlyph: React.FunctionComponent<React.PropsWithChildren<PointGlyphProps>> = props => {
-    const { top, left, color, active, linkURL, fill = 'var(--body-bg)', onFocus, onBlur, onClick } = props
+    const { top, left, color, active, linkURL, onFocus, onBlur, onClick } = props
 
     return (
         <MaybeLink
@@ -37,7 +36,7 @@ export const PointGlyph: React.FunctionComponent<React.PropsWithChildren<PointGl
                 cx={left}
                 cy={top}
                 stroke={color}
-                fill={fill}
+                fill="var(--body-bg)"
                 strokeWidth={active ? 3 : 2}
                 r={active ? 6 : 4}
             />
