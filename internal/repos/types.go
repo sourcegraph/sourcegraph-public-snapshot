@@ -146,7 +146,7 @@ func GrantedScopes(ctx context.Context, cache ScopeCache, db database.DB, svc *t
 		return nil, errors.Wrap(err, "creating source")
 	}
 	switch v := src.(type) {
-	case *GithubSource:
+	case *GitHubSource:
 		// Cached path
 		token := v.config.Token
 		if token == "" {
