@@ -6,7 +6,7 @@ on:
       - '**.js'
 
 jobs:
-  lsif-typescript:
+  scip-typescript:
     if: github.repository == 'sourcegraph/sourcegraph'
     runs-on: ubuntu-latest
     steps:
@@ -14,13 +14,13 @@ jobs:
       - name: Install npm dependencies
         run: yarn --ignore-engines --ignore-scripts
       - run: yarn global add @sourcegraph/scip-typescript
-      - run: lsif-typescript index --yarn-workspaces
+      - run: scip-typescript index --yarn-workspaces
       - run: cp index.scip dump.lsif-typed
       - name: Install src-cli
         run: |
           curl -L https://sourcegraph.com/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src
           chmod +x /usr/local/bin/src
-      - name: Upload lsif to Cloud
+      - name: Upload SCIP to Cloud
         run: src lsif upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress
         env:
           SRC_ENDPOINT: https://sourcegraph.com/
