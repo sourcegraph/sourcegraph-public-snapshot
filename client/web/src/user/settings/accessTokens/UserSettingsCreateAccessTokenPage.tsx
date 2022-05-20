@@ -18,6 +18,7 @@ import {
     Link,
     Icon,
     Checkbox,
+    Typography,
 } from '@sourcegraph/wildcard'
 
 import { AccessTokenScopes } from '../../../auth/accessToken'
@@ -110,7 +111,9 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
             <Form onSubmit={onSubmit}>
                 <Container className="mb-3">
                     <div className="form-group">
-                        <label htmlFor="user-settings-create-access-token-page__note">Token description</label>
+                        <Typography.Label htmlFor="user-settings-create-access-token-page__note">
+                            Token description
+                        </Typography.Label>
                         <input
                             type="text"
                             className="form-control test-create-access-token-description"
@@ -122,9 +125,12 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
                         />
                     </div>
                     <div className="form-group mb-0">
-                        <label htmlFor="user-settings-create-access-token-page__scope-user:all" className="mb-0">
+                        <Typography.Label
+                            htmlFor="user-settings-create-access-token-page__scope-user:all"
+                            className="mb-0"
+                        >
                             Token scope
-                        </label>
+                        </Typography.Label>
                         <p>
                             <small className="form-help text-muted">
                                 Tokens with limited user scopes are not yet supported.
