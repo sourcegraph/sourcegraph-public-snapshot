@@ -36,7 +36,6 @@ type flagSetFetcher struct {
 	ffs Store
 }
 
-// TODO: add description
 func (f *flagSetFetcher) evaluateForActor(ctx context.Context, a *actor.Actor, flagName string) (*bool, error) {
 	if a.IsAuthenticated() {
 		flag, err := f.ffs.GetUserFlag(ctx, a.UID, flagName)
@@ -45,6 +44,7 @@ func (f *flagSetFetcher) evaluateForActor(ctx context.Context, a *actor.Actor, f
 			return flag, nil
 		}
 		// Continue if err != nil
+		// TODO: should we continue if feature flag not found?
 	}
 
 	if a.AnonymousUID != "" {
@@ -54,6 +54,7 @@ func (f *flagSetFetcher) evaluateForActor(ctx context.Context, a *actor.Actor, f
 			return flag, nil
 		}
 		// Continue if err != nil
+		// TODO: should we continue if feature flag not found?
 	}
 
 	flag, err := f.ffs.GetGlobalFeatureFlag(ctx, flagName)
@@ -67,9 +68,7 @@ func (f *flagSetFetcher) evaluateForActor(ctx context.Context, a *actor.Actor, f
 func EvaluateForActorFromContext(ctx context.Context, flagName string) (result bool) {
 	result = false
 	if flags := ctx.Value(flagContextKey{}); flags != nil {
-		actor := actor.FromContext(ctx)
-		value, err := flags.(*flagSetFetcher).evaluateForActor(ctx, actor, flagName)
-		if err == nil {
+		if value, err := flags.(*flagSetFetcher).evaluateForActor(ctx, actor.FromContext(ctx), flagName); err == nil {
 			result = *value
 		}
 	}

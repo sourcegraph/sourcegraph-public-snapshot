@@ -27,9 +27,9 @@ func getEvaluatedFlagSetFromCache(flags []*FeatureFlag, a *actor.Actor) FlagSet 
 	}
 
 	for _, flag := range flags {
-		value, _ := redis.Bool(c.Do("HGET", getFlagCacheKey(flag.Name), visitorID))
-
-		flagSet[flag.Name] = value
+		if value, err := redis.Bool(c.Do("HGET", getFlagCacheKey(flag.Name), visitorID)); err == nil {
+			flagSet[flag.Name] = value
+		}
 	}
 
 	return flagSet

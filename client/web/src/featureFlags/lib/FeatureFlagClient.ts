@@ -4,7 +4,7 @@ import { map } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 
 import { requestGraphQL } from '../../backend/graphql'
-import { EvaluatedFeatureFlagsResult } from '../../graphql-operations'
+import { EvaluatedFeatureFlagsResult, EvaluateFeatureFlagResult } from '../../graphql-operations'
 import { FeatureFlagName } from '../featureFlags'
 
 import { getFeatureFlagOverride } from './feature-flag-local-overrides'
@@ -33,19 +33,16 @@ function fetchFeatureFlags(): Observable<EvaluatedFeatureFlagsResult['evaluatedF
 /**
  * Fetches the evaluated feature flags for the current user
  */
- function fetchEvaluateFeatureFlag(flagName: FeatureFlagName): Observable<boolean> {
+function fetchEvaluateFeatureFlag(flagName: FeatureFlagName): Observable<boolean> {
     return from(
         requestGraphQL<EvaluateFeatureFlagResult>(
             gql`
-                query EvaluateFeatureFlag(flagName: $) {
-                    evaluateFeatureFlag {
-                        name
-                        value
-                    }
+                query EvaluateFeatureFlag($flagName: String!) {
+                    evaluateFeatureFlag(flagName: $flagName)
                 }
             `,
             {
-
+                flagName,
             }
         )
     ).pipe(
@@ -95,9 +92,15 @@ export class FeatureFlagClient implements IFeatureFlagClient {
     // eslint-disable-next-line id-length
     public on(flagName: FeatureFlagName, callback: (value: boolean, error?: Error) => void): () => void {
         // TODO: // implement refetching
-        Promise.resolve(this.cache.get(flagName) || false)
-            .then(callback)
-            .catch(error => callback(false, error))
+        if (this.cache.has(flagName)) {
+            // eslint-disable-next-line callback-return
+            callback(this.cache.get(flagName)!)
+        } else {
+            fetchEvaluateFeatureFlag(flagName)
+                .toPromise()
+                .then(callback)
+                .catch(error => callback(false, error))
+        }
         return () => {
             // TODO: cleanup
         }
