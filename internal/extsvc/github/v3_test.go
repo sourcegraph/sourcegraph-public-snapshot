@@ -716,6 +716,7 @@ func TestV3Client_WithAuthenticator(t *testing.T) {
 	}
 
 	old := &V3Client{
+		log:    logtest.Scoped(t),
 		apiURL: uri,
 		auth:   &auth.OAuthBearerToken{Token: "old_token"},
 	}
