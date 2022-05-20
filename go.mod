@@ -157,7 +157,6 @@ require (
 	github.com/urfave/cli/v2 v2.6.0
 	github.com/xeipuuv/gojsonschema v1.2.0
 	github.com/xeonx/timeago v1.0.0-rc4
-	github.com/xhit/go-str2duration/v2 v2.0.0
 	github.com/yuin/gopher-lua v0.0.0-20210529063254-f4c35e4016d9
 	go.etcd.io/bbolt v1.3.6
 	go.uber.org/atomic v1.9.0
