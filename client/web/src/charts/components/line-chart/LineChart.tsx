@@ -178,6 +178,7 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
                             top={point.y}
                             active={activePoint?.id === point.id}
                             color={isSelected(`${point.seriesId}`) ? point.color : 'transparent'}
+                            fill={isSelected(`${point.seriesId}`) ? 'var(--body-bg)' : 'transparent'}
                             linkURL={point.linkUrl}
                             onClick={onDatumClick}
                             onFocus={event => setActivePoint({ ...point, element: event.target })}
