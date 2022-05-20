@@ -1,15 +1,23 @@
 import { Dispatch, SetStateAction, useState } from 'react'
 
 interface UseSeriesToggleReturn {
-    toggle: (id: string) => void
-    selectedSeriesIds: string[]
-    isSelected: (id: string) => boolean
+    // Currently hovered series id
     hoveredId: string | undefined
+
+    // List of currently selected series ids
+    selectedSeriesIds: string[]
+
+    // These functions are exposed to keep all of the state
+    // contained in the hook
+    isSelected: (id: string) => boolean
     setHoveredId: Dispatch<SetStateAction<string | undefined>>
+    toggle: (id: string) => void
 }
 
-export const useSeriesToggle = (currentSelectedSeriesIds: string[]): UseSeriesToggleReturn => {
-    const [selectedSeriesIds, setSelectedSeriesIds] = useState<string[]>(currentSelectedSeriesIds)
+// Used when clicking legend items in a line chart. This hook manages the currently
+// selected data series as well as the currently hovered legend item.
+export const useSeriesToggle = (): UseSeriesToggleReturn => {
+    const [selectedSeriesIds, setSelectedSeriesIds] = useState<string[]>([])
     const [hoveredId, setHoveredId] = useState<string | undefined>()
 
     const selectSeries = (seriesId: string): void => setSelectedSeriesIds([...selectedSeriesIds, seriesId])
@@ -26,10 +34,13 @@ export const useSeriesToggle = (currentSelectedSeriesIds: string[]): UseSeriesTo
     }
 
     return {
-        toggle,
-        selectedSeriesIds,
-        isSelected,
+        // state
         hoveredId,
+        selectedSeriesIds,
+
+        // functions
+        isSelected,
         setHoveredId,
+        toggle,
     }
 }
