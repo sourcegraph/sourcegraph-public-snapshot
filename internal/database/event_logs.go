@@ -102,6 +102,9 @@ type EventLogStore interface {
 	// entry for each period in the time span.
 	CountUniqueUsersPerPeriod(ctx context.Context, periodType PeriodType, now time.Time, periods int, opt *CountUniqueUsersOptions) ([]UsageValue, error)
 
+	// CountUsersWithSetting returns the number of users wtih the given temporary setting set to the given value.
+	CountUsersWithSetting(ctx context.Context, setting string, value any) (int, error)
+
 	Insert(ctx context.Context, e *Event) error
 
 	// LatestPing returns the most recently recorded ping event.
@@ -454,6 +457,16 @@ type EventArgumentMatch struct {
 type PercentileValue struct {
 	Start  time.Time
 	Values []float64
+}
+
+func (l *eventLogStore) CountUsersWithSetting(ctx context.Context, setting string, value any) (int, error) {
+	count, _, err := basestore.ScanFirstInt(l.Store.Query(ctx, sqlf.Sprintf(`SELECT COUNT(*) FROM temporary_settings WHERE %s <@ contents`, jsonSettingFragment(setting, value))))
+	return count, err
+}
+
+func jsonSettingFragment(setting string, value any) string {
+	raw, _ := json.Marshal(map[string]any{setting: value})
+	return string(raw)
 }
 
 func (l *eventLogStore) CountUniqueUsersPerPeriod(ctx context.Context, periodType PeriodType, now time.Time, periods int, opt *CountUniqueUsersOptions) ([]UsageValue, error) {

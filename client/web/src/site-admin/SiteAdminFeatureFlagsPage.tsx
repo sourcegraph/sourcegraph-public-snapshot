@@ -259,7 +259,9 @@ const FeatureFlagNode: React.FunctionComponent<React.PropsWithChildren<FeatureFl
             <span className={classNames('d-none d-md-inline', styles.progress)}>
                 <div className="m-0 text-nowrap d-flex flex-column align-items-center justify-content-center">
                     <div>
-                        {node.__typename === 'FeatureFlagBoolean' && <code>{JSON.stringify(node.value)}</code>}
+                        {node.__typename === 'FeatureFlagBoolean' && (
+                            <Typography.Code>{JSON.stringify(node.value)}</Typography.Code>
+                        )}
                         {node.__typename === 'FeatureFlagRollout' && node.rolloutBasisPoints}
                     </div>
 

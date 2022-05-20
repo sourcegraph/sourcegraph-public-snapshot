@@ -17,22 +17,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func lintGoGenerate(ctx context.Context, _ *repo.State) *lint.Report {
+func lintGoGenerate(ctx context.Context, state *repo.State) *lint.Report {
 	const header = "Go generate check"
 
 	// Do not run in dirty state, because the dirty check we do later will be inaccurate.
 	// This is not the same as using repo.State
-	dirty, err := root.Run(run.Cmd(ctx, "git diff --name-only")).Lines()
-	if err != nil {
+	if state.Dirty {
 		return &lint.Report{
 			Header: header,
-			Err:    err,
-		}
-	}
-	if len(dirty) > 0 {
-		return &lint.Report{
-			Header: header,
-			Err:    errors.Newf("cannot run go generate check with uncommitted changes: %+v", dirty),
+			Err:    errors.New("cannot run go generate check with uncommitted changes"),
 		}
 	}
 
@@ -49,7 +42,7 @@ func lintGoGenerate(ctx context.Context, _ *repo.State) *lint.Report {
 	}
 
 	var out bytes.Buffer
-	err = root.Run(run.Cmd(ctx, "git", "diff", "--exit-code", "--", ".", ":!go.sum")).Stream(&out)
+	err := root.Run(run.Cmd(ctx, "git", "diff", "--exit-code", "--", ".", ":!go.sum")).Stream(&out)
 	if err != nil {
 		var sb strings.Builder
 		reportOut := std.NewOutput(&sb, true)

@@ -180,6 +180,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 		OnlyArchived: op.OnlyArchived,
 		NoPrivate:    op.Visibility == query.Public,
 		OnlyPrivate:  op.Visibility == query.Private,
+		OnlyCloned:   op.OnlyCloned,
 		OrderBy: database.RepoListOrderBy{
 			{
 				Field:      database.RepoListStars,

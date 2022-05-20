@@ -3,7 +3,7 @@ import React from 'react'
 import classNames from 'classnames'
 import { noop } from 'rxjs'
 
-import { Button, Card, Input } from '@sourcegraph/wildcard'
+import { Button, Card, Input, Typography } from '@sourcegraph/wildcard'
 
 import { getDefaultInputProps } from '../../../../../../components/form/getDefaultInputProps'
 import { useField } from '../../../../../../components/form/hooks/useField'
@@ -167,7 +167,7 @@ export const FormSeriesInput: React.FunctionComponent<React.PropsWithChildren<Fo
 
 const QueryFieldDescription: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <span>
-        Do not include the <code>context:</code> or <code>repo:</code> filter; if needed, <code>repo:</code> will be
-        added automatically.
+        Do not include the <Typography.Code>context:</Typography.Code> or <Typography.Code>repo:</Typography.Code>{' '}
+        filter; if needed, <Typography.Code>repo:</Typography.Code> will be added automatically.
     </span>
 )

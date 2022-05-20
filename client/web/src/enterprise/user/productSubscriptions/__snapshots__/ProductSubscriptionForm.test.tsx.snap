@@ -18,7 +18,7 @@ exports[`ProductSubscriptionForm edit existing subscription 1`] = `
             class="product-subscription-user-count-control form-group align-items-center"
           >
             <label
-              class="mb-0 mr-2 font-weight-bold"
+              class="label fontWeightBold mb-0 mr-2"
               for="product-subscription-user-count-control__userCount"
             >
               Users
@@ -114,7 +114,7 @@ exports[`ProductSubscriptionForm new subscription for anonymous viewer (no accou
             class="product-subscription-user-count-control form-group align-items-center"
           >
             <label
-              class="mb-0 mr-2 font-weight-bold"
+              class="label fontWeightBold mb-0 mr-2"
               for="product-subscription-user-count-control__userCount"
             >
               Users
@@ -231,7 +231,7 @@ exports[`ProductSubscriptionForm new subscription for existing account 1`] = `
             class="product-subscription-user-count-control form-group align-items-center"
           >
             <label
-              class="mb-0 mr-2 font-weight-bold"
+              class="label fontWeightBold mb-0 mr-2"
               for="product-subscription-user-count-control__userCount"
             >
               Users

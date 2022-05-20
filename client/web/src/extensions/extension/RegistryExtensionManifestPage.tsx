@@ -117,7 +117,7 @@ export class RegistryExtensionManifestPage extends React.PureComponent<Props, St
                         />
                     ) : (
                         <pre className={classNames('form-control', styles.plainViewer)}>
-                            <code>{this.props.extension.rawManifest}</code>
+                            <Typography.Code>{this.props.extension.rawManifest}</Typography.Code>
                         </pre>
                     )}
                 </div>

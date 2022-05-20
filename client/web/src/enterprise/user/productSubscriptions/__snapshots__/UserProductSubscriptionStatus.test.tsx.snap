@@ -148,10 +148,10 @@ exports[`UserProductSubscriptionStatus toggle: license key revealed 1`] = `
            
           <span>
             Use this license key as the 
-            <code>
-              <strong>
-                licenseKey
-              </strong>
+            <code
+              class="code fontWeightBold"
+            >
+              licenseKey
             </code>
              property value in Sourcegraph site configuration.
           </span>

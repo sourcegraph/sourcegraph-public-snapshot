@@ -5,7 +5,7 @@ import * as H from 'history'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Button, Container, PageHeader, LoadingSpinner, Link } from '@sourcegraph/wildcard'
+import { Button, Container, PageHeader, LoadingSpinner, Link, Typography } from '@sourcegraph/wildcard'
 
 import { ORG_NAME_MAX_LENGTH, VALID_ORG_NAME_REGEXP } from '..'
 import { Page } from '../../components/Page'
@@ -73,7 +73,7 @@ export const NewOrganizationPage: React.FunctionComponent<React.PropsWithChildre
                 <Container className="mb-3">
                     {isErrorLike(loading) && <ErrorAlert className="mb-3" error={loading} />}
                     <div className="form-group">
-                        <label htmlFor="new-org-page__form-name">Organization name</label>
+                        <Typography.Label htmlFor="new-org-page__form-name">Organization name</Typography.Label>
                         <input
                             id="new-org-page__form-name"
                             type="text"
@@ -97,7 +97,7 @@ export const NewOrganizationPage: React.FunctionComponent<React.PropsWithChildre
                     </div>
 
                     <div className="form-group mb-0">
-                        <label htmlFor="new-org-page__form-display-name">Display name</label>
+                        <Typography.Label htmlFor="new-org-page__form-display-name">Display name</Typography.Label>
                         <input
                             id="new-org-page__form-display-name"
                             type="text"
