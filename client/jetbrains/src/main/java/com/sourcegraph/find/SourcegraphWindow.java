@@ -51,7 +51,7 @@ public class SourcegraphWindow implements Disposable {
             mainPanel.createBrowserPanel();
         }
 
-        this.isFirstRender = false;
+        isFirstRender = false;
     }
 
     @NotNull

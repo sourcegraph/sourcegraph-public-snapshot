@@ -22,7 +22,7 @@ import java.awt.*;
 public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposable {
     private SourcegraphJBCefBrowser browser;
     private final Project project;
-    private Splitter splitter;
+    private final Splitter splitter;
     private PreviewPanel previewPanel;
 
     public FindPopupPanel(@NotNull Project project) {
@@ -37,13 +37,13 @@ public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposabl
         splitter = new OnePixelSplitter(true, 0.5f, 0.1f, 0.9f);
         add(splitter, BorderLayout.CENTER);
 
-        this.createPreviewPanel();
-        this.createBrowserPanel();
+        createPreviewPanel();
+        createBrowserPanel();
     }
 
     public void createBrowserPanel() {
         JBPanelWithEmptyText jcefPanel = new JBPanelWithEmptyText(new BorderLayout()).withEmptyText("Unfortunately, the browser is not available on your system. Try running the IDE with the default OpenJDK.");
-        this.browser = JBCefApp.isSupported() ? new SourcegraphJBCefBrowser(new JSToJavaBridgeRequestHandler(project, previewPanel)) : null;
+        browser = JBCefApp.isSupported() ? new SourcegraphJBCefBrowser(new JSToJavaBridgeRequestHandler(project, previewPanel)) : null;
         if (browser != null) {
             jcefPanel.add(browser.getComponent(), BorderLayout.CENTER);
         }
@@ -51,7 +51,7 @@ public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposabl
     }
 
     private void createPreviewPanel() {
-        this.previewPanel = new PreviewPanel(this.project);
+        previewPanel = new PreviewPanel(project);
         splitter.setSecondComponent(previewPanel);
     }
 
