@@ -24,7 +24,6 @@ const {
   getBasicCSSLoader,
   getStatoscopePlugin,
   STATOSCOPE_STATS,
-  SPECTRUM_PATH,
 } = require('@sourcegraph/build-config')
 
 const { IS_PRODUCTION, IS_DEVELOPMENT, ENVIRONMENT_CONFIG } = require('./dev/utils')
@@ -217,11 +216,6 @@ const config = {
         test: /\.(sass|scss)$/,
         exclude: /\.module\.(sass|scss)$/,
         use: getCSSLoaders(styleLoader, getBasicCSSLoader()),
-      },
-      {
-        test: /\.css$/,
-        include: [SPECTRUM_PATH],
-        use: ['style-loader', { loader: 'css-loader' }],
       },
       getMonacoCSSRule(),
       getMonacoTTFRule(),

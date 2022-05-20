@@ -2,7 +2,6 @@ import 'focus-visible'
 
 import * as React from 'react'
 
-import { defaultTheme, Provider as ReactSpectrumProvider } from '@adobe/react-spectrum'
 import { ApolloProvider } from '@apollo/client'
 import { ShortcutProvider } from '@slimsag/react-shortcuts'
 import { createBrowserHistory } from 'history'
@@ -59,6 +58,7 @@ import {
     RouterLink,
     WildcardThemeContext,
     WildcardTheme,
+    TooltipNewProvider,
 } from '@sourcegraph/wildcard'
 
 import { authenticatedUser, AuthenticatedUser } from './auth'
@@ -388,7 +388,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                     <FeatureFlagsProvider>
                         <ShortcutProvider>
                             <WildcardThemeContext.Provider value={WILDCARD_THEME}>
-                                <ReactSpectrumProvider theme={defaultTheme}>
+                                <TooltipNewProvider delayDuration={250} skipDelayDuration={250}>
                                     <TemporarySettingsProvider temporarySettingsStorage={temporarySettingsStorage}>
                                         <SearchResultsCacheProvider>
                                             <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
@@ -486,7 +486,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                             </SearchQueryStateStoreProvider>
                                         </SearchResultsCacheProvider>
                                     </TemporarySettingsProvider>
-                                </ReactSpectrumProvider>
+                                </TooltipNewProvider>
                             </WildcardThemeContext.Provider>
                         </ShortcutProvider>
                     </FeatureFlagsProvider>

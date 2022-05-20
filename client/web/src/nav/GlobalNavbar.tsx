@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo } from 'react'
 
-import { Tooltip, TooltipTrigger, ActionButton } from '@adobe/react-spectrum'
 import classNames from 'classnames'
 import * as H from 'history'
 import BarChartIcon from 'mdi-react/BarChartIcon'
@@ -28,7 +27,15 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
-import { useObservable, Button, Link, FeedbackPrompt, ButtonLink, PopoverTrigger } from '@sourcegraph/wildcard'
+import {
+    useObservable,
+    Button,
+    Link,
+    FeedbackPrompt,
+    ButtonLink,
+    PopoverTrigger,
+    TooltipNew,
+} from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -239,12 +246,11 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
                             <NavLink to="/code-monitoring">Monitoring</NavLink>
                         </NavItem>
                     )}
-                    <NavItem icon={MagnifyIcon}>
-                        <TooltipTrigger delay={0}>
-                            <ActionButton>Tooltip test</ActionButton>
-                            <Tooltip>Change Name</Tooltip>
-                        </TooltipTrigger>
-                    </NavItem>
+                    <TooltipNew title="Blah blah">
+                        <NavItem icon={MagnifyIcon}>
+                            <NavLink to="/blah">Blah</NavLink>
+                        </NavItem>
+                    </TooltipNew>
                     {/* This is the only circumstance where we show something
                          batch-changes-related even if the instance does not have batch
                          changes enabled, for marketing purposes on sourcegraph.com */}
