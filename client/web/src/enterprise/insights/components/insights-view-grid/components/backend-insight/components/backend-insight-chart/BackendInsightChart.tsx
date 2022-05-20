@@ -50,7 +50,7 @@ interface BackendInsightChartProps<Datum> extends BackendInsightData {
 export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum>): React.ReactElement {
     const { locked, isFetchingHistoricalData, content, className, onDatumClick } = props
     const { ref, width = 0 } = useDebounce(useResizeObserver(), 100)
-    const { toggle, selectedSeriesIds } = useSeriesToggle([])
+    const { toggle, selectedSeriesIds, isSelected } = useSeriesToggle([])
 
     useEffect(() => console.log(selectedSeriesIds), [selectedSeriesIds])
 
@@ -95,6 +95,7 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                                     key={series.id as string}
                                     color={getLineColor(series)}
                                     name={series.name}
+                                    selected={isSelected(series.id)}
                                     className={styles.legendListItem}
                                     onClick={() => toggle(series.id)}
                                 />
