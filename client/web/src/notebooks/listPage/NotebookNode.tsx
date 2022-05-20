@@ -61,11 +61,18 @@ export const NotebookNode: React.FunctionComponent<React.PropsWithChildren<Noteb
                 <span className="d-flex align-items-center mr-3">
                     {node.viewerHasStarred ? (
                         <Icon
+                            role="img"
+                            aria-label="Unstar Notebook"
                             className={classNames(styles.notebookStarIcon, styles.notebookStarIconActive)}
                             as={StarIcon}
                         />
                     ) : (
-                        <Icon className={styles.notebookStarIcon} as={StarOutlineIcon} />
+                        <Icon
+                            role="img"
+                            aria-label="Star Notebook"
+                            className={styles.notebookStarIcon}
+                            as={StarOutlineIcon}
+                        />
                     )}
                     <span className="ml-1">{node.stars.totalCount}</span>
                 </span>

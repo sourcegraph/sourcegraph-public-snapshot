@@ -30,7 +30,7 @@ export const TweetFeedback: React.FunctionComponent<React.PropsWithChildren<Twee
                     rel="noreferrer noopener"
                     variant="primary"
                 >
-                    <Icon className="mr-2" as={TwitterIcon} />
+                    <Icon role="img" className="mr-2" as={TwitterIcon} aria-hidden={true} />
                     Tweet feedback
                 </ButtonLink>
             </>

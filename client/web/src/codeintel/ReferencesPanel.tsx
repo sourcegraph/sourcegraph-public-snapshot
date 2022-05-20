@@ -375,14 +375,27 @@ export const ReferencesList: React.FunctionComponent<
                     </Typography.Code>
                     {canShowSpinner && (
                         <small className="ml-3 text-muted d-flex align-items-center">
-                            <Icon as={LoadingSpinner} size="sm" inline={true} className="mr-1" />
+                            <Icon
+                                role="img"
+                                aria-hidden={true}
+                                as={LoadingSpinner}
+                                size="sm"
+                                inline={true}
+                                className="mr-1"
+                            />
                             <i>Loading...</i>
                         </small>
                     )}
                 </CardHeader>
                 <div className={classNames('d-flex justify-content-start', styles.filter)}>
                     <small>
-                        <Icon as={FilterOutlineIcon} size="sm" className={styles.filterIcon} />
+                        <Icon
+                            role="img"
+                            aria-hidden={true}
+                            as={FilterOutlineIcon}
+                            size="sm"
+                            className={styles.filterIcon}
+                        />
                     </small>
                     <Input
                         className={classNames('py-0 my-0 w-100 text-small')}
@@ -450,7 +463,13 @@ export const ReferencesList: React.FunctionComponent<
                                 data-placement="left"
                                 size="sm"
                             >
-                                <Icon size="sm" as={ArrowCollapseRightIcon} className="border-0" />
+                                <Icon
+                                    role="img"
+                                    aria-hidden={true}
+                                    size="sm"
+                                    as={ArrowCollapseRightIcon}
+                                    className="border-0"
+                                />
                             </Button>
                             <Link
                                 to={activeLocation.url}
@@ -515,12 +534,9 @@ const CollapsibleLocationList: React.FunctionComponent<
                         aria-expanded={props.isOpen(props.name)}
                         type="button"
                         className="d-flex p-0 justify-content-start w-100"
+                        aria-label={isOpen ? 'Close' : 'Open'}
                     >
-                        {isOpen ? (
-                            <Icon aria-label="Close" as={ChevronDownIcon} />
-                        ) : (
-                            <Icon aria-label="Expand" as={ChevronRightIcon} />
-                        )}{' '}
+                        <Icon role="img" aria-hidden={true} as={isOpen ? ChevronDownIcon : ChevronRightIcon} />
                         <Typography.H4 className="mb-0">{capitalize(props.name)}</Typography.H4>
                         <span className={classNames('ml-2 text-muted small', styles.cardHeaderSmallText)}>
                             ({props.locations.length} displayed{props.hasMore ? ', more available)' : ')'}
@@ -733,13 +749,10 @@ const CollapsibleRepoLocationGroup: React.FunctionComponent<
                     as={Button}
                     aria-expanded={open}
                     type="button"
+                    aria-label={`${open ? 'Close' : 'Open'}`}
                     className={classNames('d-flex justify-content-start w-100', styles.repoLocationGroupHeader)}
                 >
-                    {open ? (
-                        <Icon aria-label="Close" as={ChevronDownIcon} />
-                    ) : (
-                        <Icon aria-label="Expand" as={ChevronRightIcon} />
-                    )}
+                    <Icon role="img" aria-hidden={true} as={open ? ChevronDownIcon : ChevronRightIcon} />
                     <small>
                         <Link
                             to={repoUrl}
@@ -801,12 +814,9 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                         'bg-transparent border-top-0 border-left-0 border-right-0 d-flex justify-content-start w-100',
                         styles.locationGroupHeader
                     )}
+                    aria-label={open ? 'Open' : 'Close'}
                 >
-                    {open ? (
-                        <Icon aria-label="Close" as={ChevronDownIcon} />
-                    ) : (
-                        <Icon aria-label="Expand" as={ChevronRightIcon} />
-                    )}
+                    <Icon role="img" aria-hidden={true} as={open ? ChevronDownIcon : ChevronRightIcon} />
                     <small className={styles.locationGroupHeaderFilename}>
                         {highlighted.length === 2 ? (
                             <span>
