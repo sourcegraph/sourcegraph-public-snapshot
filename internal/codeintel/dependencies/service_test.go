@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestDependencies(t *testing.T) {
@@ -44,21 +43,15 @@ func TestDependencies(t *testing.T) {
 	}
 
 	mockStore.PreciseDependenciesFunc.SetDefaultHook(func(ctx context.Context, repoName, commit string) (map[api.RepoName]types.RevSpecSet, error) {
-		switch repoName {
-		case "github.com/example/baz":
-			return map[api.RepoName]types.RevSpecSet{
-				api.RepoName(fmt.Sprintf("%s-depA", repoName)): {"deadbeef1": struct{}{}},
-				api.RepoName(fmt.Sprintf("%s-depB", repoName)): {"deadbeef2": struct{}{}},
-				api.RepoName(fmt.Sprintf("%s-depC", repoName)): {"deadbeef3": struct{}{}},
-			}, nil
-		case "github.com/example/quux":
-			return map[api.RepoName]types.RevSpecSet{
-				api.RepoName(fmt.Sprintf("%s-depA", repoName)): {"deadbeef1": struct{}{}},
-				api.RepoName(fmt.Sprintf("%s-depB", repoName)): {"deadbeef2": struct{}{}},
-			}, nil
+		if repoName != "github.com/example/baz" {
+			return nil, nil
 		}
 
-		return nil, nil
+		return map[api.RepoName]types.RevSpecSet{
+			api.RepoName(fmt.Sprintf("%s-depA", repoName)): {"deadbeef1": struct{}{}},
+			api.RepoName(fmt.Sprintf("%s-depB", repoName)): {"deadbeef2": struct{}{}},
+			api.RepoName(fmt.Sprintf("%s-depC", repoName)): {"deadbeef3": struct{}{}},
+		}, nil
 	})
 
 	// UpsertDependencyRepos influences the value that syncer.Sync is called with (asserted below)
@@ -188,47 +181,6 @@ func TestDependencies(t *testing.T) {
 	if diff := cmp.Diff(expectedNames, syncedRepoNames); diff != "" {
 		t.Errorf("unexpected names (-want +got):\n%s", diff)
 	}
-
-	// Located in the end so as not to interfere with Upsert call counting.
-	t.Run("get-commits-error", func(t *testing.T) {
-		getCommitsErr := errors.New("get commits failed for at least one commit")
-
-		gitService.GetCommitsFunc.PushHook(func(ctx context.Context, repoCommits []api.RepoCommit, ignoreErrors bool) (commits []*gitdomain.Commit, _ error) {
-			for i, repoCommit := range repoCommits {
-				if i%2 == 0 {
-					// Even-numbered commits do not resolve in this test.
-					if ignoreErrors {
-						commits = append(commits, nil)
-						continue
-					}
-					return nil, getCommitsErr
-				}
-				commits = append(commits, &gitdomain.Commit{ID: repoCommit.CommitID})
-			}
-			return commits, nil
-		})
-
-		repoRevs := map[api.RepoName]types.RevSpecSet{
-			api.RepoName("github.com/example/foo"): {
-				api.RevSpec("deadbeef1"): struct{}{},
-			},
-			api.RepoName("github.com/example/quux"): {
-				api.RevSpec("deadbeef1"): struct{}{},
-			},
-		}
-
-		dependencies, err := service.Dependencies(ctx, repoRevs)
-		if err != nil {
-			t.Fatalf("unexpected error querying dependencies: %s", err)
-		}
-		expectedDepencies := map[api.RepoName]types.RevSpecSet{
-			"github.com/example/quux-depA": {"deadbeef1": struct{}{}},
-			"github.com/example/quux-depB": {"deadbeef2": struct{}{}},
-		}
-		if diff := cmp.Diff(expectedDepencies, dependencies); diff != "" {
-			t.Errorf("unexpected dependencies (-want +got):\n%s", diff)
-		}
-	})
 }
 
 func TestDependents(t *testing.T) {

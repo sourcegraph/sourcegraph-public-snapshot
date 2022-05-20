@@ -60,9 +60,8 @@ func (s *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]ty
 		}})
 	}()
 
-	// Resolve the revhashes for the source repo-commit pairs.
-	// TODO - Process unresolved commits.
-	repoCommits, _, err := s.resolveRepoCommits(ctx, repoRevs)
+	// Resolve the revhashes for the source repo-commit pairs
+	repoCommits, err := s.resolveRepoCommits(ctx, repoRevs)
 	if err != nil {
 		return nil, err
 	}
@@ -158,8 +157,8 @@ type repoCommitResolvedCommit struct {
 
 // resolveRepoCommits flattens the given map into a slice of api.RepoCommits with an extra
 // field indicating the canonical 40-character commit hash of the given revlike, which is
-// often symbolic. The commits that failed to resolve are returned in a separate slice.
-func (s *Service) resolveRepoCommits(ctx context.Context, repoRevs map[api.RepoName]types.RevSpecSet) ([]repoCommitResolvedCommit, []api.RepoCommit, error) {
+// often symbolic.
+func (s *Service) resolveRepoCommits(ctx context.Context, repoRevs map[api.RepoName]types.RevSpecSet) ([]repoCommitResolvedCommit, error) {
 	n := 0
 	for _, revs := range repoRevs {
 		n += len(revs)
@@ -175,30 +174,25 @@ func (s *Service) resolveRepoCommits(ctx context.Context, repoRevs map[api.RepoN
 		}
 	}
 
-	commits, err := s.gitSvc.GetCommits(ctx, repoCommits, true)
+	commits, err := s.gitSvc.GetCommits(ctx, repoCommits, false)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "git.GetCommits")
+		return nil, errors.Wrap(err, "git.GetCommits")
 	}
 	if len(commits) != len(repoCommits) {
 		// Add assertion here so that the blast radius of new or newly discovered errors
 		// southbound from the internal/vcs/git package does not leak into code intelligence.
-		return nil, nil, errors.Newf("expected slice returned from git.GetCommits to have len %d, but has len %d", len(repoCommits), len(commits))
+		return nil, errors.Newf("expected slice returned from git.GetCommits to have len %d, but has len %d", len(repoCommits), len(commits))
 	}
 
 	resolvedCommits := make([]repoCommitResolvedCommit, 0, len(repoCommits))
-	var unresolvedCommits []api.RepoCommit
 	for i, repoCommit := range repoCommits {
-		if commits[i] == nil {
-			unresolvedCommits = append(unresolvedCommits, repoCommit)
-			continue
-		}
 		resolvedCommits = append(resolvedCommits, repoCommitResolvedCommit{
 			RepoCommit:     repoCommit,
 			ResolvedCommit: string(commits[i].ID),
 		})
 	}
 
-	return resolvedCommits, unresolvedCommits, nil
+	return resolvedCommits, nil
 }
 
 // lockfileDependencies returns a flattened list of package dependencies for every repo-commit pair.
@@ -369,9 +363,8 @@ func (s *Service) sync(ctx context.Context, repos []api.RepoName) error {
 // Dependents resolves the (transitive) inverse dependencies for a set of repository and revisions.
 // Both the input repoRevs and the output dependencyRevs are a map from repository names to revspecs.
 func (s *Service) Dependents(ctx context.Context, repoRevs map[api.RepoName]types.RevSpecSet) (dependentsRevs map[api.RepoName]types.RevSpecSet, err error) {
-	// Resolve the revhashes for the source repo-commit pairs.
-	// TODO - Process unresolved commits.
-	repoCommits, _, err := s.resolveRepoCommits(ctx, repoRevs)
+	// Resolve the revhashes for the source repo-commit pairs
+	repoCommits, err := s.resolveRepoCommits(ctx, repoRevs)
 	if err != nil {
 		return nil, err
 	}
