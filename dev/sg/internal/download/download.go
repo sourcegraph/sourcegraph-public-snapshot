@@ -2,6 +2,7 @@ package download
 
 import (
 	"bytes"
+	"context"
 	"io/fs"
 	"net/http"
 	"os"
@@ -13,9 +14,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// Exeuctable downloads a binary from the given URL, updates the given path if different, and
+// Executable downloads a binary from the given URL, updates the given path if different, and
 // makes the downloaded file executable.
-func Exeuctable(url string, path string) error {
+func Executable(url string, path string) error {
 	resp, err := http.Get(url)
 	if err != nil {
 		return err
@@ -41,13 +42,19 @@ func Exeuctable(url string, path string) error {
 	return nil
 }
 
-// ArchivedExeuctable
-func ArchivedExeuctable(url, targetFile, fileInArchive string) error {
+// ArchivedExecutable downloads an executable that's in an archive and extracts
+// it.
+func ArchivedExecutable(ctx context.Context, url, targetFile, fileInArchive string) error {
 	if ok, _ := fileExists(targetFile); ok {
 		return nil
 	}
 
-	resp, err := http.Get(url)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
 	}

@@ -282,18 +282,6 @@ type installFunc func(context.Context, map[string]string) error
 
 var installFuncs = map[string]installFunc{
 	"installCaddy": func(ctx context.Context, env map[string]string) error {
-		//  name="caddy_${CADDY_VERSION}_${os}_$(go env GOARCH)"
-		//  target="$PWD/.bin/caddy_${CADDY_VERSION}"
-		//  url="https://github.com/caddyserver/caddy/releases/download/v${CADDY_VERSION}/${name}.tar.gz"
-
-		//  if [ ! -f "${target}" ]; then
-		//    echo "downloading ${url}" 1>&2
-		//    curl -sS -L -f "${url}" | tar -xz --to-stdout "caddy" >"${target}.tmp"
-		//    mv "${target}.tmp" "${target}"
-		//    chmod +x "${target}"
-		//  fi
-		//
-
 		version := env["CADDY_VERSION"]
 		if version == "" {
 			return errors.New("could not find CADDY_VERSION in env")
@@ -317,7 +305,7 @@ var installFuncs = map[string]installFunc{
 
 		target := filepath.Join(root, fmt.Sprintf(".bin/caddy_%s", version))
 
-		return download.ArchivedExeuctable(url, target, "caddy")
+		return download.ArchivedExecutable(ctx, url, target, "caddy")
 	},
 }
 
