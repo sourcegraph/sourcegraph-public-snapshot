@@ -25,7 +25,6 @@ import { LATEST_VERSION, RepositoryMatch, SearchMatch } from '@sourcegraph/share
 import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
-import { VSCE_LINK_AUTH } from '../../common/links'
 import { DISMISS_SEARCH_CTA_KEY } from '../../settings/LocalStorageService'
 import { SearchResultsState } from '../../state'
 import { WebviewPageProps } from '../platform/context'
@@ -393,7 +392,8 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                 searches and more."
                             cta={{
                                 label: 'Get started',
-                                href: VSCE_LINK_AUTH('sign-up'),
+                                href:
+                                    'https://sourcegraph.com/sign-up?editor=vscode&utm_medium=VSCODE&utm_source=sidebar&utm_campaign=vsce-sign-up&utm_content=sign-up',
                                 onClick: onSignUpClick,
                             }}
                             icon={<SearchBetaIcon />}

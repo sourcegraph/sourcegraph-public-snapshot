@@ -56,23 +56,15 @@ export interface ExtensionCoreAPI {
      * Used to send current query from panel to sidebar.
      */
     setSidebarQueryState: (queryState: VSCEQueryState) => void
-    /**
-     * Local Storage Item
-     */
+
     getLocalStorageItem: (key: string) => string
     setLocalStorageItem: (key: string, value: string) => Promise<boolean>
-    /**
-     * For Telemetry Service / logging
-     */
+
+    // For Telemetry Service
     logEvents: (variables: Event) => void
-    /**
-     * Get EventSource Type to use based on instance version
-     */
+
+    // Get EventSource Type to use based on instance version
     getEventSource: EventSource
-    /**
-     * Get EventSource Type to use based on instance version
-     */
-    getEditorTheme: string
 }
 
 export interface SearchPanelAPI {
