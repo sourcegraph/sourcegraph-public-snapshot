@@ -406,7 +406,7 @@ export const Forms: Story = () => (
         </p>
         <Form onSubmit={preventDefault}>
             <div className="form-group">
-                <label htmlFor="example-email-input">Email address</label>
+                <Typography.Label htmlFor="example-email-input">Email address</Typography.Label>
                 <input
                     type="email"
                     className="form-control"
@@ -419,7 +419,7 @@ export const Forms: Story = () => (
                 </small>
             </div>
             <div className="form-group">
-                <label htmlFor="example-input-password">Password</label>
+                <Typography.Label htmlFor="example-input-password">Password</Typography.Label>
                 <input type="password" className="form-control" id="example-input-password" />
             </div>
 
@@ -444,7 +444,7 @@ export const Forms: Story = () => (
         <Form>
             <fieldset disabled={true}>
                 <div className="form-group">
-                    <label htmlFor="disabledTextInput">Disabled input</label>
+                    <Typography.Label htmlFor="disabledTextInput">Disabled input</Typography.Label>
                     <input type="text" id="disabledTextInput" className="form-control" placeholder="Disabled input" />
                 </div>
 

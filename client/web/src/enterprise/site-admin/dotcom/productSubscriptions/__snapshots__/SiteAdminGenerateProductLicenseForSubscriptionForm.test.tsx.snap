@@ -12,6 +12,7 @@ exports[`SiteAdminGenerateProductLicenseForSubscriptionForm renders 1`] = `
         class="form-group"
       >
         <label
+          class="label"
           for="site-admin-create-product-subscription-page__tags"
         >
           Tags
@@ -68,6 +69,7 @@ exports[`SiteAdminGenerateProductLicenseForSubscriptionForm renders 1`] = `
         class="form-group"
       >
         <label
+          class="label"
           for="site-admin-create-product-subscription-page__userCount"
         >
           Users
@@ -84,6 +86,7 @@ exports[`SiteAdminGenerateProductLicenseForSubscriptionForm renders 1`] = `
         class="form-group"
       >
         <label
+          class="label"
           for="site-admin-create-product-subscription-page__validDays"
         >
           Valid for (days)
