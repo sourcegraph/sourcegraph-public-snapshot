@@ -1,6 +1,5 @@
 import React from 'react'
 
-import { fetchEventSource } from '@microsoft/fetch-event-source'
 import ElmComponent from 'react-elm-components'
 
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
@@ -43,52 +42,48 @@ const updateBlockInput = (id: string, onBlockInputChange: (id: string, blockInpu
     onBlockInputChange(id, blockInput)
 }
 
-const setupPorts = (sourcegraphURL: string, updateBlockInputWithID: (blockInput: BlockInput) => void) => (
-    ports: Ports
-): void => {
-    const openRequests: AbortController[] = []
+const setupPorts = (updateBlockInputWithID: (blockInput: BlockInput) => void) => (ports: Ports): void => {
+    const sources: { [key: string]: EventSource } = {}
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     function sendEventToElm(event: any): void {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-        const elmEvent = { data: event.data, eventType: event.event || null, id: event.id || null }
+        const elmEvent = { data: event.data, eventType: event.type || null, id: event.id || null }
         ports.receiveEvent.send(elmEvent)
     }
 
+    function newEventSource(address: string): EventSource {
+        sources[address] = new EventSource(address)
+        return sources[address]
+    }
+
+    function deleteAllEventSources(): void {
+        for (const [key] of Object.entries(sources)) {
+            deleteEventSource(key)
+        }
+    }
+
+    function deleteEventSource(address: string): void {
+        sources[address].close()
+        delete sources[address]
+    }
+
     ports.openStream.subscribe((args: string[]) => {
+        deleteAllEventSources() // Close any open streams if we receive a request to open a new stream before seeing 'done'.
         console.log(`stream: ${args[0]}`)
         const address = args[0]
 
-        // Close any open streams if we receive a request to open a new stream before seeing 'done'.
-        for (const request of openRequests) {
-            request.abort()
-        }
-
-        const ctrl = new AbortController()
-        openRequests.push(ctrl)
-        async function fetch(): Promise<void> {
-            await fetchEventSource(address, {
-                method: 'POST',
-                headers: {
-                    origin: sourcegraphURL,
-                },
-                signal: ctrl.signal,
-                onerror(error) {
-                    console.log(`Compute EventSource error: ${JSON.stringify(error)}`)
-                },
-                onclose() {
-                    // Note: 'done:true' is sent in progress too. But we want a 'done' for the entire stream in case we don't see it.
-                    sendEventToElm({ type: 'done', data: '' })
-                    openRequests.splice(0)
-                },
-                onmessage(event) {
-                    sendEventToElm(event)
-                },
-            })
-        }
-
-        fetch().catch(error => {
-            console.log(`Compute fetch error: ${JSON.stringify(error)}`)
+        const eventSource = newEventSource(address)
+        eventSource.addEventListener('error', () => {
+            console.log('EventSource failed')
+        })
+        eventSource.addEventListener('results', sendEventToElm)
+        eventSource.addEventListener('alert', sendEventToElm)
+        eventSource.addEventListener('error', sendEventToElm)
+        eventSource.addEventListener('done', () => {
+            deleteEventSource(address)
+            // Note: 'done:true' is sent in progress too. But we want a 'done' for the entire stream in case we don't see it.
+            sendEventToElm({ type: 'done', data: '' })
         })
     })
 
@@ -124,7 +119,7 @@ export const NotebookComputeBlock: React.FunctionComponent<React.PropsWithChildr
                 <div className="elm">
                     <ElmComponent
                         src={Elm.Main}
-                        ports={setupPorts(platformContext.sourcegraphURL, updateBlockInput(id, onBlockInputChange))}
+                        ports={setupPorts(updateBlockInput(id, onBlockInputChange))}
                         flags={{
                             sourcegraphURL: platformContext.sourcegraphURL,
                             isLightTheme,
