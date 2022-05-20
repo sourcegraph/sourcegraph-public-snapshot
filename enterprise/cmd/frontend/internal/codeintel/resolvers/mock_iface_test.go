@@ -9,7 +9,7 @@ import (
 
 	regexp "github.com/grafana/regexp"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
-	enqueuer "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/enqueuer"
+	autoindexing "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
 	dbstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	gitserver1 "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
 	lsifstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
@@ -4496,7 +4496,7 @@ func NewMockEnqueuerDBStore() *MockEnqueuerDBStore {
 			},
 		},
 		TransactFunc: &EnqueuerDBStoreTransactFunc{
-			defaultHook: func(context.Context) (r0 enqueuer.DBStore, r1 error) {
+			defaultHook: func(context.Context) (r0 autoindexing.DBStore, r1 error) {
 				return
 			},
 		},
@@ -4548,7 +4548,7 @@ func NewStrictMockEnqueuerDBStore() *MockEnqueuerDBStore {
 			},
 		},
 		TransactFunc: &EnqueuerDBStoreTransactFunc{
-			defaultHook: func(context.Context) (enqueuer.DBStore, error) {
+			defaultHook: func(context.Context) (autoindexing.DBStore, error) {
 				panic("unexpected invocation of MockEnqueuerDBStore.Transact")
 			},
 		},
@@ -5464,15 +5464,15 @@ func (c EnqueuerDBStoreRepoNameFuncCall) Results() []interface{} {
 // EnqueuerDBStoreTransactFunc describes the behavior when the Transact
 // method of the parent MockEnqueuerDBStore instance is invoked.
 type EnqueuerDBStoreTransactFunc struct {
-	defaultHook func(context.Context) (enqueuer.DBStore, error)
-	hooks       []func(context.Context) (enqueuer.DBStore, error)
+	defaultHook func(context.Context) (autoindexing.DBStore, error)
+	hooks       []func(context.Context) (autoindexing.DBStore, error)
 	history     []EnqueuerDBStoreTransactFuncCall
 	mutex       sync.Mutex
 }
 
 // Transact delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockEnqueuerDBStore) Transact(v0 context.Context) (enqueuer.DBStore, error) {
+func (m *MockEnqueuerDBStore) Transact(v0 context.Context) (autoindexing.DBStore, error) {
 	r0, r1 := m.TransactFunc.nextHook()(v0)
 	m.TransactFunc.appendCall(EnqueuerDBStoreTransactFuncCall{v0, r0, r1})
 	return r0, r1
@@ -5481,7 +5481,7 @@ func (m *MockEnqueuerDBStore) Transact(v0 context.Context) (enqueuer.DBStore, er
 // SetDefaultHook sets function that is called when the Transact method of
 // the parent MockEnqueuerDBStore instance is invoked and the hook queue is
 // empty.
-func (f *EnqueuerDBStoreTransactFunc) SetDefaultHook(hook func(context.Context) (enqueuer.DBStore, error)) {
+func (f *EnqueuerDBStoreTransactFunc) SetDefaultHook(hook func(context.Context) (autoindexing.DBStore, error)) {
 	f.defaultHook = hook
 }
 
@@ -5489,7 +5489,7 @@ func (f *EnqueuerDBStoreTransactFunc) SetDefaultHook(hook func(context.Context) 
 // Transact method of the parent MockEnqueuerDBStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *EnqueuerDBStoreTransactFunc) PushHook(hook func(context.Context) (enqueuer.DBStore, error)) {
+func (f *EnqueuerDBStoreTransactFunc) PushHook(hook func(context.Context) (autoindexing.DBStore, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -5497,20 +5497,20 @@ func (f *EnqueuerDBStoreTransactFunc) PushHook(hook func(context.Context) (enque
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *EnqueuerDBStoreTransactFunc) SetDefaultReturn(r0 enqueuer.DBStore, r1 error) {
-	f.SetDefaultHook(func(context.Context) (enqueuer.DBStore, error) {
+func (f *EnqueuerDBStoreTransactFunc) SetDefaultReturn(r0 autoindexing.DBStore, r1 error) {
+	f.SetDefaultHook(func(context.Context) (autoindexing.DBStore, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *EnqueuerDBStoreTransactFunc) PushReturn(r0 enqueuer.DBStore, r1 error) {
-	f.PushHook(func(context.Context) (enqueuer.DBStore, error) {
+func (f *EnqueuerDBStoreTransactFunc) PushReturn(r0 autoindexing.DBStore, r1 error) {
+	f.PushHook(func(context.Context) (autoindexing.DBStore, error) {
 		return r0, r1
 	})
 }
 
-func (f *EnqueuerDBStoreTransactFunc) nextHook() func(context.Context) (enqueuer.DBStore, error) {
+func (f *EnqueuerDBStoreTransactFunc) nextHook() func(context.Context) (autoindexing.DBStore, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -5548,7 +5548,7 @@ type EnqueuerDBStoreTransactFuncCall struct {
 	Arg0 context.Context
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 enqueuer.DBStore
+	Result0 autoindexing.DBStore
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
