@@ -1174,12 +1174,9 @@ func TestSelectRepositoriesForIndexScanInDifferentTable(t *testing.T) {
 	// Create a new table
 	query = `
 		CREATE TABLE last_incredible_testing_scan (
-		    repository_id integer NOT NULL,
-		    last_incredible_testing_scan_at timestamp with time zone NOT NULL
-		);
-
-		ALTER TABLE ONLY last_incredible_testing_scan
-		    ADD CONSTRAINT last_incredible_testing_scan_pkey PRIMARY KEY (repository_id);
+			repository_id integer NOT NULL PRIMARY KEY,
+			last_incredible_testing_scan_at timestamp with time zone NOT NULL
+		)
 	`
 
 	if _, err := db.ExecContext(context.Background(), query); err != nil {
