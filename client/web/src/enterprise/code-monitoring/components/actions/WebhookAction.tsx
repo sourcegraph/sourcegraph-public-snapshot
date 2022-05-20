@@ -3,7 +3,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { gql, useMutation } from '@apollo/client'
 import { noop } from 'lodash'
 
-import { Alert, Input, Link, ProductStatusBadge } from '@sourcegraph/wildcard'
+import { Alert, Input, Link, ProductStatusBadge, Typography } from '@sourcegraph/wildcard'
 
 import { SendTestWebhookResult, SendTestWebhookVariables } from '../../../../graphql-operations'
 import { ActionProps } from '../FormActionArea'
@@ -135,7 +135,7 @@ export const WebhookAction: React.FunctionComponent<React.PropsWithChildren<Acti
                 </Link>
             </Alert>
             <div className="form-group">
-                <label htmlFor="code-monitor-webhook-url">Webhook URL</label>
+                <Typography.Label htmlFor="code-monitor-webhook-url">Webhook URL</Typography.Label>
                 <Input
                     id="code-monitor-webhook-url"
                     type="url"

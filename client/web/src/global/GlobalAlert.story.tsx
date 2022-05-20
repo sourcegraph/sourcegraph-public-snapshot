@@ -31,7 +31,7 @@ export const GlobalAlerts: Story = () => (
     <div>
         <Typography.H1>Global Alert</Typography.H1>
         <p>
-            These alerts map to the <code>AlertType</code> returned from the backend API
+            These alerts map to the <Typography.Code>AlertType</Typography.Code> returned from the backend API
         </p>
         <Typography.H2>Variants</Typography.H2>
         {Object.values(AlertType).map(type => (

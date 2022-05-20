@@ -5,7 +5,7 @@ import Check from 'mdi-react/CheckIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 import RadioboxBlankIcon from 'mdi-react/RadioboxBlankIcon'
 
-import { Icon } from '@sourcegraph/wildcard'
+import { Icon, Typography } from '@sourcegraph/wildcard'
 
 import styles from './SearchQueryChecks.module.scss'
 
@@ -61,23 +61,26 @@ export const SearchQueryChecks: React.FunctionComponent<React.PropsWithChildren<
             </li>
             <li>
                 <CheckListItem valid={checks.isValidOperator}>
-                    Does not contain boolean operators <code>AND</code>, <code>OR</code>, and <code>NOT</code> (regular
+                    Does not contain boolean operators <Typography.Code>AND</Typography.Code>,{' '}
+                    <Typography.Code>OR</Typography.Code>, and <Typography.Code>NOT</Typography.Code> (regular
                     expression boolean operators can still be used)
                 </CheckListItem>
             </li>
             <li>
                 <CheckListItem valid={checks.isValidPatternType}>
-                    Does not contain <code>patternType:literal</code> and <code>patternType:structural</code>
+                    Does not contain <Typography.Code>patternType:literal</Typography.Code> and{' '}
+                    <Typography.Code>patternType:structural</Typography.Code>
                 </CheckListItem>
             </li>
             <li>
                 <CheckListItem valid={checks.isNotRepo}>
-                    Does not contain <code>repo:</code> filter
+                    Does not contain <Typography.Code>repo:</Typography.Code> filter
                 </CheckListItem>
             </li>
             <li>
                 <CheckListItem valid={checks.isNotCommitOrDiff}>
-                    Does not contain <code>commit</code> or <code>diff</code> search
+                    Does not contain <Typography.Code>commit</Typography.Code> or{' '}
+                    <Typography.Code>diff</Typography.Code> search
                 </CheckListItem>
             </li>
         </ul>

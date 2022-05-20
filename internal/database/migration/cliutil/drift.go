@@ -3,9 +3,9 @@ package cliutil
 import (
 	"context"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/urfave/cli/v2"
 
+	descriptions "github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -38,13 +38,10 @@ func Drift(commandName string, factory RunnerFactory, outFactory func() *output.
 			return err
 		}
 
-		if diff := cmp.Diff(prepareForSchemaComparison(schema, expected), expected); diff == "" {
-			out.Write("No drift detected!")
-		} else {
-			out.Writef("Database schema drift detected: %s", diff)
-		}
+		canonicalize(schema)
+		canonicalize(expected)
 
-		return nil
+		return compareSchemaDescriptions(out, schema, expected)
 	})
 
 	return &cli.Command{
@@ -56,5 +53,15 @@ func Drift(commandName string, factory RunnerFactory, outFactory func() *output.
 			schemaNameFlag,
 			versionFlag,
 		},
+	}
+}
+
+func canonicalize(schema descriptions.SchemaDescription) {
+	descriptions.Canonicalize(schema)
+
+	for i, table := range schema.Tables {
+		for j := range table.Columns {
+			schema.Tables[i].Columns[j].Index = -1
+		}
 	}
 }

@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/google/go-github/v41/github"
-	"github.com/inconshreveable/log15"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -112,7 +111,10 @@ func newV3Client(logger log.Logger, urn string, apiURL *url.URL, a auth.Authenti
 	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(apiURL.String(), tokenHash, resource, &ratelimit.Monitor{HeaderPrefix: "X-"})
 
 	return &V3Client{
-		log:              logger,
+		log: logger.With(
+			log.String("urn", urn),
+			log.String("resource", resource),
+		),
 		urn:              urn,
 		apiURL:           apiURL,
 		githubDotCom:     urlIsGitHubDotCom(apiURL),
@@ -188,11 +190,11 @@ func (c *V3Client) request(ctx context.Context, req *http.Request, result any) (
 			return nil, ctx.Err()
 		}
 
-		log15.Warn("internal rate limiter error", "error", err, "urn", c.urn)
+		c.log.Warn("internal rate limiter error", log.Error(err))
 		return nil, errInternalRateLimitExceeded
 	}
 
-	return doRequest(ctx, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, result)
+	return doRequest(ctx, c.log, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, result)
 }
 
 // newRepoCache creates a new cache for GitHub repository metadata. The backing

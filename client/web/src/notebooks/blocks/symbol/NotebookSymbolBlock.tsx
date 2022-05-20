@@ -23,7 +23,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 import { useCodeIntelViewerUpdates } from '@sourcegraph/shared/src/util/useCodeIntelViewerUpdates'
-import { Alert, Icon, Link, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
+import { Alert, Icon, Link, LoadingSpinner, Typography, useObservable } from '@sourcegraph/wildcard'
 
 import { BlockProps, SymbolBlock, SymbolBlockInput, SymbolBlockOutput } from '../..'
 import { BlockMenuAction } from '../menu/NotebookBlockMenu'
@@ -252,12 +252,12 @@ const NotebookSymbolBlockHeader: React.FunctionComponent<React.PropsWithChildren
         </div>
         <div className="d-flex flex-column">
             <div className="mb-1 d-flex align-items-center">
-                <code data-testid="selected-symbol-name">
+                <Typography.Code data-testid="selected-symbol-name">
                     <Link className={styles.headerLink} to={symbolURL}>
                         {symbolName}
                     </Link>
                     {symbolContainerName && <span className="text-muted"> {symbolContainerName}</span>}
-                </code>
+                </Typography.Code>
                 {symbolFoundAtLatestRevision === false && (
                     <Icon
                         as={InformationOutlineIcon}

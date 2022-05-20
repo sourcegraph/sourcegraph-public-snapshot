@@ -13,9 +13,11 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/run"
+
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/lint"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
+	sgrun "github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/linters"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
@@ -86,12 +88,20 @@ func runCheckScriptsAndReport(ctx context.Context, dst io.Writer, fns ...lint.Ru
 		return err
 	}
 
-	// Get currently checked out branch so linters can optimize
-	branch, err := run.TrimResult(run.GitCmd("branch", "--show-current"))
+	// Get currently checked out ref and merge base so linters can optimize
+	dirty, err := root.Run(run.Cmd(ctx, "git diff --name-only")).Lines()
 	if err != nil {
 		return err
 	}
-	repoState := &repo.State{Branch: branch}
+	mergeBase, err := sgrun.TrimResult(sgrun.GitCmd("merge-base", "main", "HEAD"))
+	if err != nil {
+		return err
+	}
+	ref, err := sgrun.TrimResult(sgrun.GitCmd("rev-parse", "HEAD"))
+	if err != nil {
+		return err
+	}
+	repoState := &repo.State{Dirty: len(dirty) > 0, Ref: ref, MergeBase: mergeBase}
 
 	// We need the Verbose flag to print above the pending indicator.
 	out := output.NewOutput(dst, output.OutputOpts{
