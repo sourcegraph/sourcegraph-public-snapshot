@@ -11,6 +11,7 @@ export interface SeriesChartProps<D> extends SeriesLikeChart<D>, Omit<SVGProps<S
     zeroYAxisMin?: boolean
     locked?: boolean
     isSelected?: (id: string) => boolean
+    hoveredId?: string | undefined
 }
 
 export function SeriesChart<Datum>(props: SeriesChartProps<Datum>): React.ReactElement {

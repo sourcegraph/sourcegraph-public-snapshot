@@ -81,6 +81,7 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                                     locked={locked}
                                     onDatumClick={onDatumClick}
                                     isSelected={isSelected}
+                                    hoveredId={hoveredId}
                                     {...content}
                                 />
                             </>
