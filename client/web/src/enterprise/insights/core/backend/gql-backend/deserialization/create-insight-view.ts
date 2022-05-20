@@ -71,6 +71,7 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                 executionType: InsightExecutionType.Backend,
                 type: InsightType.SearchBased,
                 title: presentation.title,
+                repositories,
                 series,
                 step,
                 filters: {
