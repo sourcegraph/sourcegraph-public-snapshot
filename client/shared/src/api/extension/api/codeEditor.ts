@@ -15,6 +15,12 @@ export const createStatusBarItemType = (): sourcegraph.StatusBarItemType => ({ k
 
 export type StatusBarItemWithKey = sourcegraph.StatusBarItem & sourcegraph.StatusBarItemType
 
+interface Extension {
+    publisher: string
+    name: string
+    icon: string
+}
+
 const DEFAULT_DECORATION_TYPE = createDecorationType()
 
 /** @internal */
@@ -48,6 +54,9 @@ export class ExtensionCodeEditor implements sourcegraph.CodeEditor, ProxyMarked 
         return this.selectionsChanges.value
     }
 
+    private _extensionConfigs = new Map<string, Extension>()
+    private _decorationTypesByExtension = new Map<sourcegraph.TextDocumentDecorationType, string>()
+
     private _decorationsByType = new Map<sourcegraph.TextDocumentDecorationType, clientType.TextDocumentDecoration[]>()
 
     private _mergedDecorations = new BehaviorSubject<clientType.TextDocumentDecoration[]>([])
@@ -57,12 +66,26 @@ export class ExtensionCodeEditor implements sourcegraph.CodeEditor, ProxyMarked 
 
     public setDecorations(
         decorationType: sourcegraph.TextDocumentDecorationType | null,
-        decorations: sourcegraph.TextDocumentDecoration[]
+        decorations: sourcegraph.TextDocumentDecoration[],
+        config?: Extension
     ): void {
         // Backcompat: extensions developed against an older version of the API
         // may not supply a decorationType
         decorationType = decorationType || DEFAULT_DECORATION_TYPE
         // Replace previous decorations for this decorationType
+
+        if (config) {
+            const id = `${config.publisher}/${config.name}`
+            const extensionConfig = this._extensionConfigs.get(id)
+            if (!extensionConfig) {
+                this._extensionConfigs.set(id, config)
+            }
+            const decorationTypesForExtensions = this._decorationTypesByExtension.get(decorationType)
+            if (!decorationTypesForExtensions) {
+                this._decorationTypesByExtension.set(decorationType, id)
+            }
+        }
+
         this._decorationsByType.set(decorationType, decorations.map(fromTextDocumentDecoration))
         // console.log(
         //     [...this._decorationsByType.entries()].reduce(
@@ -73,15 +96,19 @@ export class ExtensionCodeEditor implements sourcegraph.CodeEditor, ProxyMarked 
         //         [] as any[]
         //     )
         // )
+
         this._mergedDecorations.next(
             // [...this._decorationsByType.values()].flat().filter(decoration => !isDecorationEmpty(decoration))
-            [...this._decorationsByType.entries()].reduce(
-                (accumulator, [{ key }, value]) => [
+            [...this._decorationsByType.entries()].reduce((accumulator, [type, value]) => {
+                const extensionByType = this._decorationTypesByExtension.get(type)
+                const extensionConfig = extensionByType
+                    ? this._extensionConfigs.get(extensionByType)
+                    : { name: type.key }
+                return [
                     ...accumulator,
-                    [key, value.flat().filter(decoration => !isDecorationEmpty(decoration))],
-                ],
-                [] as any[]
-            )
+                    [extensionConfig, value.flat().filter(decoration => !isDecorationEmpty(decoration))],
+                ]
+            }, [] as any[])
         )
     }
 

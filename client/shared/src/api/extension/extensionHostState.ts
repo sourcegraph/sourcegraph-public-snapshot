@@ -1,5 +1,6 @@
 import * as comlink from 'comlink'
 import { BehaviorSubject, Observable, ReplaySubject, Subject } from 'rxjs'
+import { tap } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 
 import { Contributions } from '@sourcegraph/client-api'
@@ -99,7 +100,7 @@ export function createExtensionHostState(
             readonly { urlMatchPattern: string; provider: sourcegraph.LinkPreviewProvider }[]
         >([]),
 
-        activeExtensions,
+        activeExtensions: activeExtensions.pipe(tap(console.log)),
         activeLoggers: new Set<string>(),
     }
 }

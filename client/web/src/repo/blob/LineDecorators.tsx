@@ -18,7 +18,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import styles from './LineDecorator.module.scss'
 
 export interface LineDecoratorProps extends ThemeProps {
-    groupedDecorations: Map<string, DecorationMapByLine>
+    groupedDecorations: Map<{ name: string }, DecorationMapByLine>
     codeViewElements: ReplaySubject<HTMLElement | null>
     getCodeElementFromLineNumber: (codeView: HTMLElement, line: number) => HTMLTableCellElement | null
 }
@@ -51,25 +51,38 @@ export const LineDecorators = React.memo<LineDecoratorProps>(
             const subscription = codeViewElements.subscribe(codeView => {
                 if (codeView) {
                     const table = codeView.firstElementChild as HTMLTableElement
-                    const rows = table.rows
+                    const rows = table.tBodies[0].rows
+
+                    // add extension labels
+                    let k = 0
+                    for (const [{ name }] of groupedDecorations) {
+                        const head = table.tHead || table.createTHead()
+                        const hRow = head.rows[0] || head.insertRow()
+                        const hCell = hRow.cells[k] || hRow.insertCell(0)
+                        hCell.textContent = name
+                        addedCells.set(hCell, undefined)
+                        k++
+                    }
+
+                    console.log(groupedDecorations)
 
                     // iterate table rows
                     for (let index = 0; index < rows.length; index++) {
                         // add cell for each extension to each row
-                        for (const [extensionId, extensionDecorations] of groupedDecorations) {
+                        for (const [{ name }, extensionDecorations] of groupedDecorations) {
                             const row = rows[index]
 
                             // find the existing cell or create a new one if it not exists
-                            let cell = row.querySelector<HTMLTableCellElement>(`td.${extensionId}`)
-                            if (!cell) {
-                                cell = document.createElement('td')
-                                cell.classList.add(extensionId)
-                                cell.dataset.line = `${index + 1}`
-                                cell.dataset.testid = 'line-decoration'
-                                cell.dataset.lineDecorationAttachmentPortal = 'true'
-                                cell.style.borderRight = '1px solid gray'
-                                row.prepend(cell)
-                            }
+                            const cell = row.querySelector<HTMLTableCellElement>(`td.${name}`) || row.insertCell(0)
+                            // if (!cell) {
+                            // cell = document.createElement('td')
+                            cell.classList.add(name)
+                            cell.dataset.line = `${index + 1}`
+                            cell.dataset.testid = 'line-decoration'
+                            cell.dataset.lineDecorationAttachmentPortal = 'true'
+                            cell.style.borderRight = '1px solid gray'
+                            // row.prepend(cell)
+                            // }
 
                             // get decorations for the 1-based line number
                             const decorations = extensionDecorations.get(index + 1)
@@ -92,7 +105,10 @@ export const LineDecorators = React.memo<LineDecoratorProps>(
                             addedCells.set(cell, decorations)
                         }
                     }
+<<<<<<< Updated upstream
 
+=======
+>>>>>>> Stashed changes
                     setPortalNodes(addedCells)
                 } else {
                     // code view ref passed `null`, so element is leaving DOM
@@ -142,7 +158,7 @@ export const LineDecorators = React.memo<LineDecoratorProps>(
                                     }}
                                     data-contents={attachment.contentText || ''}
                                 >
-                                    {attachment?.contentText || ''}
+                                    {attachment.contentText || ''}
                                 </span>
                             </LinkOrSpan>
                         )
@@ -153,3 +169,5 @@ export const LineDecorators = React.memo<LineDecoratorProps>(
             .toArray()
     }
 )
+
+LineDecorators.displayName = 'LineDecorators'

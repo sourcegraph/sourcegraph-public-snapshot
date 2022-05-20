@@ -3,7 +3,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import classNames from 'classnames'
 import { Remote } from 'comlink'
 import * as H from 'history'
-import iterate from 'iterare'
 import { isEqual } from 'lodash'
 import { BehaviorSubject, combineLatest, merge, EMPTY, from, fromEvent, of, ReplaySubject, Subscription } from 'rxjs'
 import {
@@ -74,7 +73,7 @@ import { WebHoverOverlay } from '../../components/shared'
 import { StatusBar } from '../../extensions/components/StatusBar'
 import { HoverThresholdProps } from '../RepoContainer'
 
-import { LineDecorator } from './LineDecorator'
+import { LineDecorators } from './LineDecorators'
 
 import styles from './Blob.module.scss'
 import { LineDecorators } from './LineDecorators'
@@ -131,7 +130,7 @@ const domFunctions = {
     },
     getCodeElementFromLineNumber: (codeView: HTMLElement, line: number): HTMLTableCellElement | null => {
         const table = codeView.firstElementChild as HTMLTableElement
-        const row = table.rows[line - 1]
+        const row = table.tBodies[0].rows[line - 1]
         if (!row) {
             return null
         }

@@ -245,6 +245,8 @@ export function activateExtensions(
             if (state.haveInitialExtensionsLoaded.value === false) {
                 state.haveInitialExtensionsLoaded.next(true)
             }
+
+            console.log({ state, previouslyActivatedExtensions })
         })
 
     return extensionsSubscription
