@@ -36,9 +36,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"golang.org/x/net/html"
-	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -60,7 +58,7 @@ type Client struct {
 	cli  httpcli.Doer
 
 	// Self-imposed rate-limiter. pypi.org does not impose a rate limiting policy.
-	limiter *rate.Limiter
+	limiter *ratelimit.InstrumentedLimiter
 }
 
 func NewClient(urn string, urls []string, cli httpcli.Doer) *Client {
@@ -272,12 +270,8 @@ OUTER:
 
 // Download downloads a file located at url, respecting the rate limit.
 func (c *Client) Download(ctx context.Context, url string) ([]byte, error) {
-	startWait := time.Now()
 	if err := c.limiter.Wait(ctx); err != nil {
 		return nil, err
-	}
-	if d := time.Since(startWait); d > rateLimitingWaitThreshold {
-		log15.Warn("PyPI client self-enforced API rate limit: request delayed longer than expected due to rate limit", "delay", d)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
@@ -418,13 +412,8 @@ func (c *Client) get(ctx context.Context, project string) (respBody []byte, err 
 	)
 
 	for _, baseURL := range c.urls {
-		startWait := time.Now()
 		if err = c.limiter.Wait(ctx); err != nil {
 			return nil, err
-		}
-
-		if d := time.Since(startWait); d > rateLimitingWaitThreshold {
-			log15.Warn("PyPI client self-enforced API rate limit: request delayed longer than expected due to rate limit", "delay", d)
 		}
 
 		reqURL, err = url.Parse(baseURL)

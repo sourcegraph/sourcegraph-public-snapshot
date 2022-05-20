@@ -15,7 +15,6 @@ import (
 	"github.com/graphql-go/graphql/language/ast"
 	"github.com/graphql-go/graphql/language/parser"
 	"github.com/graphql-go/graphql/language/visitor"
-	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -54,7 +53,7 @@ type V4Client struct {
 	rateLimitMonitor *ratelimit.Monitor
 
 	// rateLimit is our self imposed rate limiter.
-	rateLimit *rate.Limiter
+	rateLimit *ratelimit.InstrumentedLimiter
 }
 
 // NewV4Client creates a new GitHub GraphQL API client with an optional default
