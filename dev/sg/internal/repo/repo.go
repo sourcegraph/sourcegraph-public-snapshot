@@ -39,6 +39,10 @@ type DiffHunk struct {
 }
 
 func (s *State) GetDiff(paths string) (Diff, error) {
+	if paths == "" {
+		paths = "**/*"
+	}
+
 	mergeBase, err := run.TrimResult(run.GitCmd("merge-base", "main", "HEAD"))
 	if err != nil {
 		return nil, err
