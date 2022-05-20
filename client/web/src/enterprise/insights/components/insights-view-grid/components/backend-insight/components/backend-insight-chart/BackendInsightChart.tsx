@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { Dispatch, SetStateAction, useEffect, useState } from 'react'
 
 import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'
@@ -48,7 +48,7 @@ interface BackendInsightChartProps<Datum> extends BackendInsightData {
 export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum>): React.ReactElement {
     const { locked, isFetchingHistoricalData, content, className, onDatumClick } = props
     const { ref, width = 0 } = useDebounce(useResizeObserver(), 100)
-    const { toggle, selectedSeriesIds, isSelected } = useSeriesToggle([])
+    const { toggle, selectedSeriesIds, isSelected, hoveredId, setHoveredId } = useSeriesToggle([])
 
     useEffect(() => console.log(selectedSeriesIds), [selectedSeriesIds])
 
@@ -87,7 +87,7 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                         )}
                     </ParentSize>
 
-                    <ScrollBox className={styles.legendListContainer}>
+                    <ScrollBox className={styles.legendListContainer} onMouseLeave={() => setHoveredId(undefined)}>
                         <LegendList className={styles.legendList}>
                             {content.series.map(series => (
                                 <LegendItem
@@ -95,8 +95,10 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                                     color={getLineColor(series)}
                                     name={series.name}
                                     selected={isSelected(`${series.id}`)}
+                                    hovered={`${series.id}` === hoveredId}
                                     className={styles.legendListItem}
                                     onClick={() => toggle(`${series.id}`)}
+                                    onMouseEnter={() => setHoveredId(`${series.id}`)}
                                 />
                             ))}
                         </LegendList>
@@ -111,10 +113,13 @@ interface UseSeriesToggleReturn {
     toggle: (id: string) => void
     selectedSeriesIds: string[]
     isSelected: (id: string) => boolean
+    hoveredId: string | undefined
+    setHoveredId: Dispatch<SetStateAction<string | undefined>>
 }
 
 const useSeriesToggle = (currentSelectedSeriesIds: string[]): UseSeriesToggleReturn => {
     const [selectedSeriesIds, setSelectedSeriesIds] = useState<string[]>(currentSelectedSeriesIds)
+    const [hoveredId, setHoveredId] = useState<string | undefined>()
 
     const selectSeries = (seriesId: string): void => setSelectedSeriesIds([...selectedSeriesIds, seriesId])
     const deselectSeries = (seriesId: string): void =>
@@ -133,5 +138,7 @@ const useSeriesToggle = (currentSelectedSeriesIds: string[]): UseSeriesToggleRet
         toggle,
         selectedSeriesIds,
         isSelected,
+        hoveredId,
+        setHoveredId,
     }
 }
