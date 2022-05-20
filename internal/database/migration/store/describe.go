@@ -2,8 +2,10 @@ package store
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/keegancsmith/sqlf"
 
@@ -218,6 +220,9 @@ func (s *Store) Describe(ctx context.Context) (_ map[string]schemas.SchemaDescri
 }
 
 func (s *Store) listExtensions(ctx context.Context) ([]Extension, error) {
+	start := time.Now()
+	defer func() { fmt.Printf("listExtensions in %s\n", time.Since(start)) }()
+
 	return scanExtensions(s.Query(ctx, sqlf.Sprintf(listExtensionsQuery)))
 }
 
@@ -237,6 +242,9 @@ ORDER BY
 `
 
 func (s *Store) listEnums(ctx context.Context) ([]enum, error) {
+	start := time.Now()
+	defer func() { fmt.Printf("listEnums in %s\n", time.Since(start)) }()
+
 	return scanEnums(s.Query(ctx, sqlf.Sprintf(listEnumQuery)))
 }
 
@@ -259,6 +267,9 @@ ORDER BY
 `
 
 func (s *Store) listFunctions(ctx context.Context) ([]function, error) {
+	start := time.Now()
+	defer func() { fmt.Printf("listFunctions in %s\n", time.Since(start)) }()
+
 	return scanFunctions(s.Query(ctx, sqlf.Sprintf(listFunctionsQuery)))
 }
 
@@ -288,6 +299,9 @@ ORDER BY
 `
 
 func (s *Store) listSequences(ctx context.Context) ([]sequence, error) {
+	start := time.Now()
+	defer func() { fmt.Printf("listSequences in %s\n", time.Since(start)) }()
+
 	return scanSequences(s.Query(ctx, sqlf.Sprintf(listSequencesQuery)))
 }
 
@@ -312,6 +326,9 @@ ORDER BY
 `
 
 func (s *Store) listTables(ctx context.Context) ([]table, error) {
+	start := time.Now()
+	defer func() { fmt.Printf("listTables in %s\n", time.Since(start)) }()
+
 	return scanTables(s.Query(ctx, sqlf.Sprintf(listTablesQuery)))
 }
 
@@ -332,6 +349,9 @@ ORDER BY
 `
 
 func (s *Store) listColumns(ctx context.Context) ([]column, error) {
+	start := time.Now()
+	defer func() { fmt.Printf("listColumns in %s\n", time.Since(start)) }()
+
 	return scanColumns(s.Query(ctx, sqlf.Sprintf(listColumnsQuery)))
 }
 
@@ -378,6 +398,9 @@ ORDER BY
 `
 
 func (s *Store) listIndexes(ctx context.Context) ([]index, error) {
+	start := time.Now()
+	defer func() { fmt.Printf("listIndexes in %s\n", time.Since(start)) }()
+
 	return scanIndexes(s.Query(ctx, sqlf.Sprintf(listIndexesQuery)))
 }
 
@@ -413,6 +436,9 @@ ORDER BY
 `
 
 func (s *Store) listConstraints(ctx context.Context) ([]constraint, error) {
+	start := time.Now()
+	defer func() { fmt.Printf("listConstraints in %s\n", time.Since(start)) }()
+
 	return scanConstraints(s.Query(ctx, sqlf.Sprintf(listConstraintsQuery)))
 }
 
@@ -441,6 +467,9 @@ ORDER BY
 `
 
 func (s *Store) listTriggers(ctx context.Context) ([]trigger, error) {
+	start := time.Now()
+	defer func() { fmt.Printf("listTriggers in %s\n", time.Since(start)) }()
+
 	return scanTriggers(s.Query(ctx, sqlf.Sprintf(listTriggersQuery)))
 }
 
@@ -465,6 +494,9 @@ ORDER BY
 `
 
 func (s *Store) listViews(ctx context.Context) ([]view, error) {
+	start := time.Now()
+	defer func() { fmt.Printf("listViews in %s\n", time.Since(start)) }()
+
 	return scanViews(s.Query(ctx, sqlf.Sprintf(listViewsQuery)))
 }
 
