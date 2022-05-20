@@ -495,6 +495,27 @@ func (s *Syncer) SyncExternalService(
 		return errors.Wrap(err, "fetching external services")
 	}
 
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	// From this point we always want to make a best effort attempt to update the
+	// service timestamps
+	var modified bool
+	defer func() {
+		now := s.Now()
+		interval := calcSyncInterval(now, svc.LastSyncAt, minSyncInterval, modified, err)
+
+		svc.NextSyncAt = now.Add(interval)
+		svc.LastSyncAt = now
+
+		// We only want to log this error, not return it
+		if err := s.Store.ExternalServiceStore().Upsert(ctx, svc); err != nil {
+			s.log().Error("upserting external service", "error", err)
+		}
+
+		s.log().Debug("Synced external service", "id", externalServiceID, "backoff duration", interval)
+	}()
+
 	// We have fail-safes in place to prevent enqueuing sync jobs for cloud default
 	// external services, but in case those fail to prevent a sync for any reason,
 	// we have this additional check here. Cloud default external services have their
@@ -523,15 +544,12 @@ func (s *Syncer) SyncExternalService(
 	}
 
 	results := make(chan SourceResult)
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
 
 	go func() {
 		src.ListRepos(ctx, results)
 		close(results)
 	}()
 
-	modified := false
 	seen := make(map[api.RepoID]struct{})
 	var errs error
 	fatal := func(err error) bool {
@@ -617,19 +635,7 @@ func (s *Syncer) SyncExternalService(
 		}
 	}
 
-	now := s.Now()
 	modified = modified || deleted > 0
-	interval := calcSyncInterval(now, svc.LastSyncAt, minSyncInterval, modified, errs)
-
-	s.log().Debug("Synced external service", "id", externalServiceID, "backoff duration", interval)
-
-	svc.NextSyncAt = now.Add(interval)
-	svc.LastSyncAt = now
-
-	err = s.Store.ExternalServiceStore().Upsert(ctx, svc)
-	if err != nil {
-		errs = errors.Append(errs, errors.Wrap(err, "upserting external service"))
-	}
 
 	return errs
 }

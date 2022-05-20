@@ -148,7 +148,7 @@ func TestGithubSource_GetRepo(t *testing.T) {
 }
 
 func setUpRcache(t *testing.T) {
-	// The GithubSource uses the github.Client under the hood, which
+	// The GitHubSource uses the github.Client under the hood, which
 	// uses rcache, a caching layer that uses Redis.
 	// We need to clear the cache before we run the tests
 	rcache.SetupForTest(t)
@@ -590,8 +590,8 @@ func TestGithubSource_WithAuthenticator(t *testing.T) {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
 
-		if gs, ok := src.(*GithubSource); !ok {
-			t.Error("cannot coerce Source into GithubSource")
+		if gs, ok := src.(*GitHubSource); !ok {
+			t.Error("cannot coerce Source into GitHubSource")
 		} else if gs == nil {
 			t.Error("unexpected nil Source")
 		}

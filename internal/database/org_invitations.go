@@ -76,12 +76,7 @@ type orgInvitationStore struct {
 	*basestore.Store
 }
 
-// OrgInvitations instantiates and returns a new OrgInvitationStore with prepared statements.
-func OrgInvitations(db dbutil.DB) OrgInvitationStore {
-	return &orgInvitationStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
-}
-
-// NewOrgInvitationStoreWithDB instantiates and returns a new OrgInvitationStore using the other store handle.
+// OrgInvitationsWith instantiates and returns a new OrgInvitationStore using the other store handle.
 func OrgInvitationsWith(other basestore.ShareableStore) OrgInvitationStore {
 	return &orgInvitationStore{Store: basestore.NewWithHandle(other.Handle())}
 }

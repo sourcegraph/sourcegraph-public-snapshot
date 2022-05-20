@@ -29,7 +29,6 @@ require (
 	github.com/buildkite/go-buildkite/v3 v3.0.1
 	github.com/cespare/xxhash v1.1.0
 	github.com/cespare/xxhash/v2 v2.1.2
-	github.com/charmbracelet/glamour v0.5.0
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/coreos/go-semver v0.3.0
 	github.com/crewjam/saml v0.4.6
@@ -116,7 +115,7 @@ require (
 	github.com/peterbourgon/ff/v3 v3.1.2
 	github.com/peterhellberg/link v1.1.0
 	github.com/prometheus/alertmanager v0.23.0
-	github.com/prometheus/client_golang v1.12.1
+	github.com/prometheus/client_golang v1.12.2
 	github.com/prometheus/common v0.32.1
 	github.com/pseudomuto/protoc-gen-doc v1.5.0
 	github.com/qustavo/sqlhooks/v2 v2.1.0
@@ -141,7 +140,7 @@ require (
 	github.com/sourcegraph/go-lsp v0.0.0-20200429204803-219e11d77f5d
 	github.com/sourcegraph/go-rendezvous v0.0.0-20210910070954-ef39ade5591d
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
-	github.com/sourcegraph/run v0.4.0
+	github.com/sourcegraph/run v0.6.0
 	github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images v0.0.0-20220203145655-4d2a39d3038a
 	github.com/sourcegraph/sourcegraph/lib v0.0.0-20220203145655-4d2a39d3038a
 	github.com/stretchr/testify v1.7.1
@@ -158,7 +157,6 @@ require (
 	github.com/urfave/cli/v2 v2.6.0
 	github.com/xeipuuv/gojsonschema v1.2.0
 	github.com/xeonx/timeago v1.0.0-rc4
-	github.com/xhit/go-str2duration/v2 v2.0.0
 	github.com/yuin/gopher-lua v0.0.0-20210529063254-f4c35e4016d9
 	go.etcd.io/bbolt v1.3.6
 	go.uber.org/atomic v1.9.0
@@ -196,9 +194,12 @@ require (
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/sprig v2.22.0+incompatible // indirect
 	github.com/alecthomas/chroma v0.10.0 // indirect
+	github.com/charmbracelet/glamour v0.5.0 // indirect
 	github.com/cockroachdb/errors v1.8.9 // indirect
 	github.com/containerd/typeurl v1.0.2 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.1 // indirect
+	github.com/djherbis/buffer v1.2.0 // indirect
+	github.com/djherbis/nio/v3 v3.0.1 // indirect
 	github.com/dlclark/regexp2 v1.4.0 // indirect
 	github.com/docker/docker v20.10.7+incompatible // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
@@ -413,7 +414,7 @@ require (
 // or intentional forks.
 replace (
 	// We maintain our own fork of Zoekt. Update with ./dev/zoekt/update
-	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20220518195015-92148cf913e5
+	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20220519151725-3bb00e7d99bf
 	// We use a fork of Alertmanager to allow prom-wrapper to better manipulate Alertmanager configuration.
 	// See https://docs.sourcegraph.com/dev/background-information/observability/prometheus
 	github.com/prometheus/alertmanager => github.com/sourcegraph/alertmanager v0.21.1-0.20211110092431-863f5b1ee51b

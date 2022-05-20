@@ -72,6 +72,7 @@ export interface Location {
 }
 
 interface LineMatch {
+    line: string
     lineNumber: number
     offsetAndLengths: number[][]
     aggregableBadges?: AggregableBadge[]

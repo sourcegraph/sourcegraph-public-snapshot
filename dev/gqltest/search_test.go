@@ -1376,6 +1376,7 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 				Repos: []string{
 					"sgtest/pipenv-hw",
 					"sgtest/poetry-hw",
+					"sgtest/empty",
 				},
 				RepositoryPathPattern: "github.com/{nameWithOwner}",
 			}),
@@ -1449,6 +1450,7 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 			"python/rich",
 			"github.com/sgtest/pipenv-hw",
 			"github.com/sgtest/poetry-hw",
+			"github.com/sgtest/empty",
 		)
 		if err != nil {
 			t.Fatal(err)
@@ -1495,6 +1497,7 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 					"/python/requests@v2.27.1",
 					"/python/urllib3@v1.26.9",
 				}},
+				{"empty", `r:deps(^github\.com/sgtest/empty$)`, nil},
 			} {
 				listDepsTc := listDepsTc
 

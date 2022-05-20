@@ -28,7 +28,7 @@ func orgInvitationByID(ctx context.Context, db database.DB, id graphql.ID) (*org
 }
 
 func orgInvitationByIDInt64(ctx context.Context, db database.DB, id int64) (*organizationInvitationResolver, error) {
-	orgInvitation, err := database.OrgInvitations(db).GetByID(ctx, id)
+	orgInvitation, err := db.OrgInvitations().GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}

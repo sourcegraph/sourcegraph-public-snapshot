@@ -11,7 +11,7 @@ It is currently only available as a browser extension for Chrome.
 
 ## Usage
 
-Here is a useful tutorial video that explains how to use this tool: [How to use ARC Toolkit](https://www.youtube.com/watch?v=_X_X_X_X_X_)
+Here is a useful tutorial video that explains how to use this tool: [How to use ARC Toolkit](https://youtu.be/FmIzRdLBOmA?t=88)
 
 In summary:
 

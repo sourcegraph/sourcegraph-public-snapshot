@@ -12,6 +12,7 @@ import { WORKSPACES } from '../../../create/backend'
 
 export const WORKSPACES_PER_PAGE_COUNT = 100
 
+/** Any filters to apply to the workspaces preview connection. */
 export interface WorkspacePreviewFilters {
     search: string | null
 }
@@ -20,8 +21,8 @@ export interface WorkspacePreviewFilters {
  * Custom hook that wraps `useConnection` to resolve the workspaces for the batch spec
  * with the ID and filters provided.
  *
- * @param batchSpecID The id of the batch spec to query
- * @param filters Any filters to apply to the workspaces connection preview
+ * @param batchSpecID The id of the batch spec to query.
+ * @param filters Any filters to apply to the workspaces preview connection.
  */
 export const useWorkspaces = (
     batchSpecID: Scalars['ID'],

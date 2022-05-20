@@ -3,22 +3,27 @@ package main
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/Masterminds/semver"
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/migration"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/cliutil"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
+	descriptions "github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -58,13 +63,31 @@ var (
 	// at compile-time in sg.
 	outputFactory = func() *output.Output { return std.Out.Output }
 
+	// expectedSchemaFactory returns the description of the given schema at the given version via
+	// the local git clone. If the version is not resolvable as a git rev-like, then an error is
+	// returned.
+	expectedSchemaFactory = func(filename, version string) (descriptions.SchemaDescription, error) {
+		gitShow := exec.Command("git", "show", fmt.Sprintf("%s^:%s", version, filename))
+		content, err := run.InRoot(gitShow)
+		if err != nil {
+			return descriptions.SchemaDescription{}, err
+		}
+
+		var schemaDescription descriptions.SchemaDescription
+		if err := json.NewDecoder(strings.NewReader(content)).Decode(&schemaDescription); err != nil {
+			return schemaDescription, err
+		}
+
+		return schemaDescription, nil
+	}
+
 	upCommand       = cliutil.Up("sg migration", makeRunner, outputFactory, true)
 	upToCommand     = cliutil.UpTo("sg migration", makeRunner, outputFactory, true)
 	undoCommand     = cliutil.Undo("sg migration", makeRunner, outputFactory, true)
 	downToCommand   = cliutil.DownTo("sg migration", makeRunner, outputFactory, true)
 	validateCommand = cliutil.Validate("sg migration", makeRunner, outputFactory)
 	describeCommand = cliutil.Describe("sg migration", makeRunner, outputFactory)
-	driftCommand    = cliutil.Drift("sg migration", makeRunner, outputFactory)
+	driftCommand    = cliutil.Drift("sg migration", makeRunner, outputFactory, expectedSchemaFactory)
 	addLogCommand   = cliutil.AddLog("sg migration", makeRunner, outputFactory)
 
 	leavesCommand = &cli.Command{

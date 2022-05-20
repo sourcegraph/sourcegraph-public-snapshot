@@ -151,7 +151,7 @@ must create one explicitly.
 
 > WARNING: If `allowSignup` is set to `true`, anyone with internet access to both your Sourcegraph instance and your Github url are able to sign up and login to your instance. In particular, if url is set to `https://github.com`, this means that anyone with a Github account could log in to your Sourcegraph instance and search your indexed code. Make sure to also configure the `allowOrgs` field described below to limit signups to your org, or limit public access to your Sourcegraph instance via IP restrictions / VPN. For assistance, contact support.
 
-The `allowOrgs` fields restricts logins to members of the specified GitHub organizations. Existing user sessions are **not invalidated**. Only new logins after this setting is changed are affected.
+The `allowOrgs` field restricts logins to members of the specified GitHub organizations while `allowOrgsMap` restricts logins to members of GitHub teams that belong to a given org. If you choose to use the latter, note that subteams inheritance is not supported, therefore only members of the listed teams will be granted access. In both cases, existing user sessions are **not invalidated**. Only new logins after these settings are changed are affected.
 
 Once you've configured GitHub as a sign-on provider, you may also want to [add GitHub repositories to Sourcegraph](../external_service/github.md#repository-syncing).
 

@@ -9,7 +9,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -65,13 +64,6 @@ type BranchesOptions struct {
 	ContainsCommit string `json:"ContainsCommit,omitempty" url:",omitempty"`
 }
 
-// A Tag is a VCS tag.
-type Tag struct {
-	Name         string `json:"Name,omitempty"`
-	api.CommitID `json:"CommitID,omitempty"`
-	CreatorDate  time.Time
-}
-
 // BehindAhead is a set of behind/ahead counts.
 type BehindAhead struct {
 	Behind uint32 `json:"Behind,omitempty"`
@@ -92,12 +84,6 @@ func (p ByAuthorDate) Less(i, j int) bool {
 	return p[i].Commit.Author.Date.Before(p[j].Commit.Author.Date)
 }
 func (p ByAuthorDate) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
-
-type Tags []*Tag
-
-func (p Tags) Len() int           { return len(p) }
-func (p Tags) Less(i, j int) bool { return p[i].Name < p[j].Name }
-func (p Tags) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
 // branchFilter is a filter for branch names.
 // If not empty, only contained branch names are allowed. If empty, all names are allowed.
@@ -218,54 +204,6 @@ func GetBehindAhead(ctx context.Context, db database.DB, repo api.RepoName, left
 		return nil, err
 	}
 	return &BehindAhead{Behind: uint32(b), Ahead: uint32(a)}, nil
-}
-
-// ListTags returns a list of all tags in the repository.
-func ListTags(ctx context.Context, db database.DB, repo api.RepoName) ([]*Tag, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: Tags")
-	defer span.Finish()
-
-	// Support both lightweight tags and tag objects. For creatordate, use an %(if) to prefer the
-	// taggerdate for tag objects, otherwise use the commit's committerdate (instead of just always
-	// using committerdate).
-	cmd := gitserver.NewClient(db).GitCommand(repo, "tag", "--list", "--sort", "-creatordate", "--format", "%(if)%(*objectname)%(then)%(*objectname)%(else)%(objectname)%(end)%00%(refname:short)%00%(if)%(creatordate:unix)%(then)%(creatordate:unix)%(else)%(*creatordate:unix)%(end)")
-	out, err := cmd.CombinedOutput(ctx)
-	if err != nil {
-		if gitdomain.IsRepoNotExist(err) {
-			return nil, err
-		}
-		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
-	}
-
-	return parseTags(out)
-}
-
-func parseTags(in []byte) ([]*Tag, error) {
-	in = bytes.TrimSuffix(in, []byte("\n")) // remove trailing newline
-	if len(in) == 0 {
-		return nil, nil // no tags
-	}
-	lines := bytes.Split(in, []byte("\n"))
-	tags := make([]*Tag, len(lines))
-	for i, line := range lines {
-		parts := bytes.SplitN(line, []byte("\x00"), 3)
-		if len(parts) != 3 {
-			return nil, errors.Errorf("invalid git tag list output line: %q", line)
-		}
-
-		tag := &Tag{
-			Name:     string(parts[1]),
-			CommitID: api.CommitID(parts[0]),
-		}
-
-		date, err := strconv.ParseInt(string(parts[2]), 10, 64)
-		if err == nil {
-			tag.CreatorDate = time.Unix(date, 0).UTC()
-		}
-
-		tags[i] = tag
-	}
-	return tags, nil
 }
 
 type byteSlices [][]byte

@@ -29,6 +29,7 @@ var Targets = []lint.Target{
 			lintGoDirectives,
 			lintLoggingLibraries(),
 			goModGuards(),
+			lintSGExit(),
 		},
 	},
 	{

@@ -24,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/structural"
-	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
 	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -121,9 +120,11 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 
 		if resultTypes.Has(result.TypeCommit) || resultTypes.Has(result.TypeDiff) {
 			diff := resultTypes.Has(result.TypeDiff)
+			repoOptionsCopy := repoOptions
+			repoOptionsCopy.OnlyCloned = true
 			addJob(&commit.CommitSearchJob{
 				Query:                commit.QueryToGitQuery(b, diff),
-				RepoOpts:             repoOptions,
+				RepoOpts:             repoOptionsCopy,
 				Diff:                 diff,
 				HasTimeFilter:        b.Exists("after") || b.Exists("before"),
 				Limit:                int(fileMatchLimit),
@@ -609,10 +610,10 @@ func (b *jobBuilder) newZoektGlobalSearch(typ search.IndexedRequestType) (job.Jo
 
 	switch typ {
 	case search.SymbolRequest:
-		return &symbol.RepoUniverseSymbolSearchJob{
+		return &zoekt.ZoektGlobalSymbolSearchJob{
 			GlobalZoektQuery: globalZoektQuery,
 			ZoektArgs:        zoektArgs,
-			RepoOptions:      b.repoOptions,
+			RepoOpts:         b.repoOptions,
 		}, nil
 	case search.TextRequest:
 		return &zoekt.ZoektGlobalSearchJob{

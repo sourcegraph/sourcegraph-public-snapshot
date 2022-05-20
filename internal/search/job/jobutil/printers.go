@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/structural"
-	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
 	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 )
 
@@ -49,7 +48,7 @@ func SexpFormat(j job.Job, sep, indent string) string {
 			*zoekt.ZoektGlobalSearchJob,
 			*structural.StructuralSearchJob,
 			*commit.CommitSearchJob,
-			*symbol.RepoUniverseSymbolSearchJob,
+			*zoekt.ZoektGlobalSymbolSearchJob,
 			*repos.ComputeExcludedReposJob,
 			*NoopJob:
 			b.WriteString(j.Name())
@@ -209,7 +208,7 @@ func PrettyMermaid(j job.Job) string {
 			*zoekt.ZoektGlobalSearchJob,
 			*structural.StructuralSearchJob,
 			*commit.CommitSearchJob,
-			*symbol.RepoUniverseSymbolSearchJob,
+			*zoekt.ZoektGlobalSymbolSearchJob,
 			*repos.ComputeExcludedReposJob,
 			*NoopJob:
 			writeNode(b, depth, RoundedStyle, &id, j.Name())
@@ -327,7 +326,7 @@ func toJSON(j job.Job, verbose bool) any {
 			*zoekt.ZoektGlobalSearchJob,
 			*structural.StructuralSearchJob,
 			*commit.CommitSearchJob,
-			*symbol.RepoUniverseSymbolSearchJob,
+			*zoekt.ZoektGlobalSymbolSearchJob,
 			*repos.ComputeExcludedReposJob,
 			*NoopJob:
 			if verbose {

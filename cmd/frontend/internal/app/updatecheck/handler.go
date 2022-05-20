@@ -503,6 +503,7 @@ func reserializeNewCodeIntelUsage(payload json.RawMessage) (json.RawMessage, err
 		NumRepositoriesWithIndexConfigurationRecords: codeIntelUsage.NumRepositoriesWithAutoIndexConfigurationRecords,
 		CountsByLanguage:                             countsByLanguage,
 		SettingsPageViewCount:                        codeIntelUsage.SettingsPageViewCount,
+		UsersWithRefPanelRedesignEnabled:             codeIntelUsage.UsersWithRefPanelRedesignEnabled,
 		LanguageRequests:                             languageRequests,
 		InvestigationEvents:                          investigationEvents,
 	})
@@ -562,6 +563,7 @@ type jsonCodeIntelUsage struct {
 	NumRepositoriesWithIndexConfigurationRecords *int32                                    `json:"num_repositories_with_index_configuration_records"`
 	CountsByLanguage                             []jsonCodeIntelRepositoryCountsByLanguage `json:"counts_by_language"`
 	SettingsPageViewCount                        *int32                                    `json:"settings_page_view_count"`
+	UsersWithRefPanelRedesignEnabled             *int32                                    `json:"users_with_ref_panel_redesign_enabled"`
 	LanguageRequests                             []jsonLanguageRequest                     `json:"language_requests"`
 	InvestigationEvents                          []jsonCodeIntelInvestigationEvent         `json:"investigation_events"`
 }

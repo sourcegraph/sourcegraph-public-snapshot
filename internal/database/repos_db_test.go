@@ -85,7 +85,7 @@ func mustCreateGitserverRepo(ctx context.Context, t *testing.T, db DB, repo *typ
 	}
 
 	// Add a row in gitserver_repos
-	if err := GitserverRepos(db).Upsert(ctx, &gitserver); err != nil {
+	if err := db.GitserverRepos().Upsert(ctx, &gitserver); err != nil {
 		t.Fatal(err)
 	}
 
@@ -663,7 +663,7 @@ func TestRepos_List_FailedSync(t *testing.T) {
 	assertCount(t, ReposListOptions{FailedFetch: true}, 0)
 
 	repo := created[0]
-	if err := GitserverRepos(db).SetLastError(ctx, repo.Name, "Oops", "test"); err != nil {
+	if err := db.GitserverRepos().SetLastError(ctx, repo.Name, "Oops", "test"); err != nil {
 		t.Fatal(err)
 	}
 	assertCount(t, ReposListOptions{}, 1)
