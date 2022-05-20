@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 
 import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'
@@ -11,8 +11,6 @@ import { ScrollBox } from '../../../../../../../../views/components/view/content
 import { BackendInsightData } from '../../../../../../core'
 import { SeriesBasedChartTypes, SeriesChart } from '../../../../../views'
 import { BackendAlertOverlay } from '../backend-insight-alerts/BackendInsightAlerts'
-
-import { useSeriesToggle } from './use-series-toggle'
 
 import styles from './BackendInsightChart.module.scss'
 
@@ -82,6 +80,7 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                                     height={parent.height}
                                     locked={locked}
                                     onDatumClick={onDatumClick}
+                                    isSelected={isSelected}
                                     {...content}
                                 />
                             </>
@@ -95,9 +94,9 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                                     key={series.id as string}
                                     color={getLineColor(series)}
                                     name={series.name}
-                                    selected={isSelected(series.id)}
+                                    selected={isSelected(`${series.id}`)}
                                     className={styles.legendListItem}
-                                    onClick={() => toggle(series.id)}
+                                    onClick={() => toggle(`${series.id}`)}
                                 />
                             ))}
                         </LegendList>
@@ -106,4 +105,33 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
             )}
         </div>
     )
+}
+
+interface UseSeriesToggleReturn {
+    toggle: (id: string) => void
+    selectedSeriesIds: string[]
+    isSelected: (id: string) => boolean
+}
+
+const useSeriesToggle = (currentSelectedSeriesIds: string[]): UseSeriesToggleReturn => {
+    const [selectedSeriesIds, setSelectedSeriesIds] = useState<string[]>(currentSelectedSeriesIds)
+
+    const selectSeries = (seriesId: string): void => setSelectedSeriesIds([...selectedSeriesIds, seriesId])
+    const deselectSeries = (seriesId: string): void =>
+        setSelectedSeriesIds(selectedSeriesIds.filter(id => id !== seriesId))
+    const toggle = (seriesId: string): void =>
+        selectedSeriesIds.includes(seriesId) ? deselectSeries(seriesId) : selectSeries(seriesId)
+    const isSelected = (seriesId: string): boolean => {
+        if (selectedSeriesIds.length === 0) {
+            return true
+        }
+
+        return selectedSeriesIds.includes(seriesId)
+    }
+
+    return {
+        toggle,
+        selectedSeriesIds,
+        isSelected,
+    }
 }

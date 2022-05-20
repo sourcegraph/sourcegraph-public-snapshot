@@ -10,6 +10,7 @@ export interface SeriesChartProps<D> extends SeriesLikeChart<D>, Omit<SVGProps<S
     height: number
     zeroYAxisMin?: boolean
     locked?: boolean
+    isSelected?: (id: string) => boolean
 }
 
 export function SeriesChart<Datum>(props: SeriesChartProps<Datum>): React.ReactElement {

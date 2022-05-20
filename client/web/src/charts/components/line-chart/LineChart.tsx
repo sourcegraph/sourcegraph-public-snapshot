@@ -30,6 +30,7 @@ export interface LineChartContentProps<Datum> extends SeriesLikeChart<Datum>, SV
     width: number
     height: number
     zeroYAxisMin?: boolean
+    isSelected?: (id: string) => boolean
 }
 
 const sortByDataKey = (dataKey: string | number | symbol, activeDataKey: string): number =>
@@ -48,6 +49,7 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
         zeroYAxisMin = false,
         onDatumClick = noop,
         className,
+        isSelected = () => true,
         ...attributes
     } = props
 
@@ -160,7 +162,7 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
                             defined={isDatumWithValidNumber}
                             x={data => xScale(data.x)}
                             y={data => yScale(getDatumValue(data))}
-                            stroke={line.color}
+                            stroke={isSelected(`${line.id}`) ? line.color : 'transparent'}
                             curve={curveLinear}
                             strokeLinecap="round"
                             strokeWidth={2}
@@ -175,7 +177,7 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
                             left={point.x}
                             top={point.y}
                             active={activePoint?.id === point.id}
-                            color={point.color}
+                            color={isSelected(`${point.seriesId}`) ? point.color : 'transparent'}
                             linkURL={point.linkUrl}
                             onClick={onDatumClick}
                             onFocus={event => setActivePoint({ ...point, element: event.target })}
