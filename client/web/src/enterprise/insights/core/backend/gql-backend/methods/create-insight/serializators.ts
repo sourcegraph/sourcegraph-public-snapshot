@@ -3,13 +3,12 @@ import {
     LineChartSearchInsightInput,
     PieChartSearchInsightInput,
 } from '../../../../../../../graphql-operations'
-import { InsightDashboard, InsightExecutionType, InsightType, isVirtualDashboard } from '../../../../types'
+import { InsightDashboard, InsightType, isVirtualDashboard } from '../../../../types'
 import {
     CreationInsightInput,
     MinimalCaptureGroupInsightData,
     MinimalLangStatsInsightData,
-    MinimalSearchBackendBasedInsightData,
-    MinimalSearchRuntimeBasedInsightData,
+    MinimalSearchBasedInsightData,
 } from '../../../code-insights-backend-types'
 import { getStepInterval } from '../../utils/get-step-interval'
 
@@ -59,10 +58,10 @@ export function getCaptureGroupInsightCreateInput(
 }
 
 export function getSearchInsightCreateInput(
-    insight: MinimalSearchRuntimeBasedInsightData | MinimalSearchBackendBasedInsightData,
+    insight: MinimalSearchBasedInsightData,
     dashboard: InsightDashboard | null
 ): LineChartSearchInsightInput {
-    const repositories = insight.executionType !== InsightExecutionType.Backend ? insight.repositories : []
+    const repositories = insight.repositories
 
     const [unit, value] = getStepInterval(insight.step)
     const input: LineChartSearchInsightInput = {
