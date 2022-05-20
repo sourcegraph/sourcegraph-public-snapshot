@@ -1,6 +1,3 @@
-import React from 'react'
-
-import * as RadixTooltip from '@radix-ui/react-tooltip'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
@@ -50,23 +47,5 @@ export const Examples: Story = () => (
                 <Button variant="secondary">Other tooltip</Button>
             </Tooltip>
         </div>
-
-        <Typography.H2>Using Radix</Typography.H2>
-        <RadixTooltip.Root>
-            <RadixTooltip.Trigger>
-                Hover me
-                <RadixTooltip.Content
-                    style={{
-                        background: 'black',
-                        color: 'white',
-                        padding: 20,
-                        borderRadius: 4,
-                        marginTop: 10,
-                    }}
-                >
-                    Tooltip content
-                </RadixTooltip.Content>
-            </RadixTooltip.Trigger>
-        </RadixTooltip.Root>
     </>
 )

@@ -80,7 +80,7 @@ export interface TooltipProps {
 }
 export const Tooltip: React.FunctionComponent<TooltipProps> = ({ children, title }) => {
     const [open, setOpen] = useState(false)
-    console.log('open state', open)
+
     const context = {
         onTriggerEnter: () => {
             console.log('trigger enter')
@@ -99,10 +99,14 @@ export const Tooltip: React.FunctionComponent<TooltipProps> = ({ children, title
     return (
         <Popover isOpen={open} onOpenChange={event => setOpen(event.isOpen)}>
             <TooltipRoot>
-                <TooltipTrigger context={context}>{children}</TooltipTrigger>
-                <PopoverContent position={Position.top} tail={true}>
-                    {title}
-                </PopoverContent>
+                <TooltipTrigger context={context}>
+                    <span>
+                        {children}
+                        <PopoverContent position={Position.top} tail={true}>
+                            {title}
+                        </PopoverContent>
+                    </span>
+                </TooltipTrigger>
             </TooltipRoot>
         </Popover>
     )
