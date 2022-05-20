@@ -528,6 +528,24 @@ func TestHighlightMultipleLines(t *testing.T) {
 				},
 			},
 		},
+		{
+			Name: "newline split",
+			Match: &comby.Match{
+				Range: comby.Range{
+					Start: comby.Location{
+						Offset: 11448,
+						Line:   470,
+						Column: 21,
+					},
+					End: comby.Location{
+						Offset: 11619,
+						Line:   481,
+						Column: 5,
+					},
+				},
+				Matched: "LineMatch{\n\t\t\t\t{\n\t\t\t\t\tLineNumber: 0,\n\t\t\t\t\tOffsetAndLengths: [][2]int{\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t0,\n\t\t\t\t\t\t\t1,\n\t\t\t\t\t\t},\n\t\t\t\t\t},\n\t\t\t\t\tPreview: \"this is a single line match\",\n\t\t\t\t},\n\t\t\t}",
+			},
+		},
 	}
 	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {

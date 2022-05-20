@@ -173,13 +173,11 @@ func TestWithSelect(t *testing.T) {
   {
     "Path": "pokeman/",
     "MultilineMatches": null,
-    "LineMatches": null,
     "LimitHit": false
   },
   {
     "Path": "digiman/",
     "MultilineMatches": null,
-    "LineMatches": null,
     "LimitHit": false
   }
 ]`).Equal(t, test("file.directory"))
@@ -188,19 +186,16 @@ func TestWithSelect(t *testing.T) {
   {
     "Path": "pokeman/charmandar",
     "MultilineMatches": null,
-    "LineMatches": null,
     "LimitHit": false
   },
   {
     "Path": "pokeman/bulbosaur",
     "MultilineMatches": null,
-    "LineMatches": null,
     "LimitHit": false
   },
   {
     "Path": "digiman/ummm",
     "MultilineMatches": null,
-    "LineMatches": null,
     "LimitHit": false
   }
 ]`).Equal(t, test("file"))
@@ -232,7 +227,6 @@ func TestWithSelect(t *testing.T) {
         }
       }
     ],
-    "LineMatches": null,
     "LimitHit": false
   },
   {
@@ -250,7 +244,6 @@ func TestWithSelect(t *testing.T) {
         }
       }
     ],
-    "LineMatches": null,
     "LimitHit": false
   },
   {
@@ -268,7 +261,6 @@ func TestWithSelect(t *testing.T) {
         }
       }
     ],
-    "LineMatches": null,
     "LimitHit": false
   },
   {
@@ -286,7 +278,6 @@ func TestWithSelect(t *testing.T) {
         }
       }
     ],
-    "LineMatches": null,
     "LimitHit": false
   }
 ]`).Equal(t, test("content"))

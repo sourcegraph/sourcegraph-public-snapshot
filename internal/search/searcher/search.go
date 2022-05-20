@@ -2,6 +2,7 @@ package searcher
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/inconshreveable/log15"
@@ -215,13 +216,14 @@ func newToMatches(repo types.MinimalRepo, commit api.CommitID, rev *string) func
 			lineMatches := make([]result.MultilineMatch, 0, len(fm.LineMatches))
 			for _, lm := range fm.LineMatches {
 				for _, ol := range lm.OffsetAndLengths {
+					newlineCount := strings.Count(lm.Preview, "\n")
 					lineMatches = append(lineMatches, result.MultilineMatch{
 						Start: result.LineColumn{
 							Line:   int32(lm.LineNumber),
 							Column: int32(ol[0]),
 						},
 						End: result.LineColumn{
-							Line:   int32(lm.LineNumber),
+							Line:   int32(lm.LineNumber + newlineCount),
 							Column: int32(ol[0] + ol[1]),
 						},
 						Preview: lm.Preview,
