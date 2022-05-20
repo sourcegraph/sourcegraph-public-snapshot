@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func Up(commandName string, factory RunnerFactory, outFactory func() *output.Output, development bool) *cli.Command {
+func Up(commandName string, factory RunnerFactory, outFactory OutputFactory, development bool) *cli.Command {
 	schemaNamesFlag := &cli.StringSliceFlag{
 		Name:  "db",
 		Usage: "The target `schema(s)` to modify. Comma-separated values are accepted. Supply \"all\" to migrate all schemas.",

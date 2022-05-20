@@ -26,7 +26,6 @@ export async function handleAccessTokenError(badToken?: string): Promise<void> {
 }
 
 export async function updateAccessTokenSetting(newToken: string): Promise<boolean> {
-    // TODO: STORE TOKEN IN KEYCHAIN AND REMOVE FROM USER CONFIG
     try {
         await readConfiguration().update('accessToken', newToken, vscode.ConfigurationTarget.Global)
         return true

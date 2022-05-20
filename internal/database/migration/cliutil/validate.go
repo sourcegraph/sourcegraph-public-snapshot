@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func Validate(commandName string, factory RunnerFactory, outFactory func() *output.Output) *cli.Command {
+func Validate(commandName string, factory RunnerFactory, outFactory OutputFactory) *cli.Command {
 	schemaNamesFlag := &cli.StringSliceFlag{
 		Name:  "db",
 		Usage: "The target `schema(s)` to modify. Comma-separated values are accepted. Supply \"all\" to migrate all schemas.",

@@ -115,7 +115,7 @@ require (
 	github.com/peterbourgon/ff/v3 v3.1.2
 	github.com/peterhellberg/link v1.1.0
 	github.com/prometheus/alertmanager v0.23.0
-	github.com/prometheus/client_golang v1.12.1
+	github.com/prometheus/client_golang v1.12.2
 	github.com/prometheus/common v0.32.1
 	github.com/pseudomuto/protoc-gen-doc v1.5.0
 	github.com/qustavo/sqlhooks/v2 v2.1.0
@@ -157,7 +157,6 @@ require (
 	github.com/urfave/cli/v2 v2.6.0
 	github.com/xeipuuv/gojsonschema v1.2.0
 	github.com/xeonx/timeago v1.0.0-rc4
-	github.com/xhit/go-str2duration/v2 v2.0.0
 	github.com/yuin/gopher-lua v0.0.0-20210529063254-f4c35e4016d9
 	go.etcd.io/bbolt v1.3.6
 	go.uber.org/atomic v1.9.0

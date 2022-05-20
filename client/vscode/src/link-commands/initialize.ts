@@ -4,7 +4,6 @@ import { EventSource } from '@sourcegraph/shared/src/graphql-operations'
 
 import { version } from '../../package.json'
 import { logEvent } from '../backend/eventLogger'
-import { VSCE_COMMANDS_PARAMS } from '../common/links'
 import { SourcegraphUri } from '../file-system/SourcegraphUri'
 import { LocalStorageService, ANONYMOUS_USER_ID_KEY } from '../settings/LocalStorageService'
 
@@ -57,7 +56,8 @@ export function initializeCodeSharingCommands(
     }
 }
 
-export const vsceUtms = '&' + VSCE_COMMANDS_PARAMS
+export const vsceUtms =
+    '&utm_campaign=vscode-extension&utm_medium=direct_traffic&utm_source=vscode-extension&utm_content=vsce-commands'
 
 export function generateSourcegraphBlobLink(
     uri: vscode.Uri,
