@@ -68,6 +68,10 @@ func mainErr(ctx context.Context, args []string) error {
 		}
 		defer resp.Body.Close()
 
+		if resp.StatusCode != http.StatusOK {
+			return descriptions.SchemaDescription{}, errors.Newf("unexpected status %d from github", resp.StatusCode)
+		}
+
 		var schemaDescription descriptions.SchemaDescription
 		if err := json.NewDecoder(resp.Body).Decode(&schemaDescription); err != nil {
 			return descriptions.SchemaDescription{}, err
