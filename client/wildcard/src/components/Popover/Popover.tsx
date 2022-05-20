@@ -9,6 +9,7 @@ import React, {
     useState,
 } from 'react'
 
+import { Primitive } from '@radix-ui/react-primitive'
 import classNames from 'classnames'
 import { noop } from 'lodash'
 import FocusLock from 'react-focus-lock'
@@ -102,7 +103,9 @@ export const Popover: React.FunctionComponent<React.PropsWithChildren<PopoverPro
     return <PopoverContext.Provider value={context}>{children}</PopoverContext.Provider>
 }
 
-interface PopoverTriggerProps {}
+interface PopoverTriggerProps {
+    asChild?: boolean
+}
 
 export const PopoverTrigger = forwardRef((props, reference) => {
     const { as: Component = 'button', onClick = noop, ...otherProps } = props
@@ -114,6 +117,10 @@ export const PopoverTrigger = forwardRef((props, reference) => {
     const handleClick: React.MouseEventHandler<HTMLButtonElement> = event => {
         setOpen({ isOpen: !isOpen, reason: PopoverOpenEventReason.TriggerClick })
         onClick(event)
+    }
+
+    if (props.asChild) {
+        return <Primitive.button asChild={true} ref={mergedReference} onClick={handleClick} {...otherProps} />
     }
 
     return <Component ref={mergedReference} onClick={handleClick} {...otherProps} />
