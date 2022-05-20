@@ -11,6 +11,7 @@ public class SourcegraphWindow implements Disposable {
     private final Project project;
     private final FindPopupPanel mainPanel;
     private JBPopup popup;
+    private boolean isFirstRender = true;
 
     public SourcegraphWindow(@NotNull Project project) {
         this.project = project;
@@ -27,11 +28,30 @@ public class SourcegraphWindow implements Disposable {
             popup.showCenteredInCurrentWindow(project);
         }
 
+        this.recreateBrowserIfNeeded();
+
         // If the popup is already shown, hitting alt + a gain should behave the same as the native find in files
         // feature and focus the search field.
         if (mainPanel.getBrowser() != null) {
             mainPanel.getBrowser().focus();
         }
+    }
+
+    /**
+     * This is a workaround for #34773: On Mac OS, the web view is empty after opening and closing the popover
+     * repeatedly.
+     *
+     * We work around the issue by forcing a recreation of the JCEF browser window whenever we open the popover. This
+     * increases the modal opening times drastically and adds noticeable lag.
+     */
+    private void recreateBrowserIfNeeded() {
+        boolean isMacOS = System.getProperty("os.name").equals("Mac OS X");
+
+        if (!isFirstRender && isMacOS) {
+            mainPanel.createBrowserPanel();
+        }
+
+        isFirstRender = false;
     }
 
     @NotNull
