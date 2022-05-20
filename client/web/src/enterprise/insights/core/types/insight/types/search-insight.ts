@@ -8,7 +8,7 @@ export interface SearchBasedInsight extends BaseInsight {
     series: SearchBasedInsightSeries[]
     step: Duration
 
-    executionType: InsightExecutionType.Runtime
+    executionType: InsightExecutionType.Backend
     type: InsightType.SearchBased
 }
 
