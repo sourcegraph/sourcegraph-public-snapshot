@@ -6,7 +6,6 @@ package sinkcores
 
 import (
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/getsentry/sentry-go"
@@ -32,6 +31,7 @@ func (b *baseContext) clone() *baseContext {
 	c.Scope = b.Scope
 	c.Level = b.Level
 	c.Message = b.Message
+	c.Fields = make([]zapcore.Field, len(b.Fields))
 	copy(c.Fields, b.Fields)
 	return &c
 }
@@ -58,9 +58,9 @@ var _ zapcore.Core = &SentryCore{}
 func NewSentryCore(hub *sentry.Hub) *SentryCore {
 	return &SentryCore{
 		worker: &sentryWorker{
-			hub:     hub.Clone(), // Avoid accidental side effects if the hub is modified elsewhere.
-			ErrorsC: make(chan ErrorContext, 16),
-			done:    make(chan struct{}),
+			hub:  hub.Clone(), // Avoid accidental side effects if the hub is modified elsewhere.
+			C:    make(chan *SentryCore, 8),
+			done: make(chan struct{}),
 		},
 	}
 }
@@ -74,11 +74,10 @@ func NewSentryCore(hub *sentry.Hub) *SentryCore {
 type sentryWorker struct {
 	// hub is an isolated Sentry context used to send out events to their API.
 	hub *sentry.Hub
-	// ErrorsC is the channel used to pass errors and their associated context to the go routine sending out events.
-	ErrorsC chan ErrorContext
+	// C is the channel used to pass errors and their associated context to the go routine sending out events.
+	C chan *SentryCore
 	// done is channel which when closed shuts down the worker immediately.
 	done chan struct{}
-	sync.Mutex
 }
 
 // clone returns a copy of the core, carrying all previously accumulated context, but that can be safely be
@@ -87,8 +86,10 @@ func (s *SentryCore) clone() *SentryCore {
 	c := SentryCore{
 		worker: s.worker,
 		base:   *s.base.clone(),
+		errs:   make([]error, len(s.errs)),
 	}
-	copy(c.errs, s.errs)
+	n := copy(c.errs, s.errs)
+	println("clone", n, c.errs, s.errs)
 
 	return &c
 }
@@ -123,7 +124,6 @@ func (s *SentryCore) Write(entry zapcore.Entry, fields []zapcore.Field) error {
 	// Clone ourselves, so we don't affect other loggers
 	s = s.clone()
 	go func() {
-		fmt.Println("write")
 		s.base.Scope = entry.LoggerName
 		s.base.Message = entry.Message
 
@@ -143,12 +143,7 @@ func (s *SentryCore) Write(entry zapcore.Entry, fields []zapcore.Field) error {
 		fields = fields[:n] // account for the filtered out elements.
 		s.base.Fields = append(fields, s.base.Fields...)
 
-		// queue the error reporting
-		for _, err := range s.errs {
-			ec := ErrorContext{baseContext: s.base}
-			ec.Error = err
-			s.worker.ErrorsC <- ec
-		}
+		s.worker.C <- s
 	}()
 	return nil
 }
@@ -164,9 +159,9 @@ func (w *sentryWorker) start() {
 		println("inside start")
 		for {
 			select {
-			case err := <-w.ErrorsC:
-				println("weeee")
-				w.capture(err) // it takes between 250µs and 150µs on my machine.
+			case c := <-w.C:
+				println("work")
+				w.work(c)
 			case <-w.done:
 				println("done")
 				w.hub.Flush(5 * time.Second)
@@ -174,6 +169,14 @@ func (w *sentryWorker) start() {
 			}
 		}
 	}()
+}
+
+func (w *sentryWorker) work(c *SentryCore) {
+	for _, err := range c.errs {
+		ec := ErrorContext{baseContext: c.base}
+		ec.Error = err
+		w.capture(ec)
+	}
 }
 
 // capture submits an ErrorContext to Sentry.
