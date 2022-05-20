@@ -9,7 +9,7 @@ import { CommitMatch, getCommitMatchUrl, getRepositoryUrl } from '@sourcegraph/s
 import { formatRepositoryStarCount } from '@sourcegraph/shared/src/util/stars'
 // eslint-disable-next-line no-restricted-imports
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
-import { Link, useIsTruncated } from '@sourcegraph/wildcard'
+import { Link, Typography, useIsTruncated } from '@sourcegraph/wildcard'
 
 import { CommitSearchResultMatch } from './CommitSearchResultMatch'
 
@@ -62,7 +62,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
                 </span>
                 <span className={styles.spacer} />
                 <Link to={getCommitMatchUrl(result)}>
-                    <code className={styles.commitOid}>{result.oid.slice(0, 7)}</code>{' '}
+                    <Typography.Code className={styles.commitOid}>{result.oid.slice(0, 7)}</Typography.Code>{' '}
                     <Timestamp date={result.authorDate} noAbout={true} strict={true} />
                 </Link>
                 {formattedRepositoryStarCount && (

@@ -308,12 +308,12 @@ export const SettingsRepositoriesPage: React.FunctionComponent<React.PropsWithCh
             <Typography.H4 className="align-middle mb-1">Added repositories</Typography.H4>
             <p className="align-middle mb-0">
                 Search across all repositories added by {orgName} with{' '}
-                <code className="user-code-hosts-page__code--inline">
+                <Typography.Code className="user-code-hosts-page__code--inline">
                     <Link className="font-weight-normal" to={`/search?q=context:%40${orgName.toLowerCase()}`}>
                         context:
                     </Link>
                     @{orgName}
-                </code>
+                </Typography.Code>
                 .
             </p>
         </Alert>
