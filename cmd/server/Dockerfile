@@ -60,7 +60,7 @@ RUN apk add --no-cache --verbose \
     'redis>=5.0' \
     python2 \
     python3 \
-    'nginx>=1.18.0' openssh-client pcre sqlite-libs su-exec 'nodejs-current>=14.5.0' \
+    'nginx>=1.18.0' openssh-client pcre sqlite-libs libev su-exec 'nodejs-current>=14.5.0' \
     # We require libstdc++ for p4-fusion
     libstdc++
 

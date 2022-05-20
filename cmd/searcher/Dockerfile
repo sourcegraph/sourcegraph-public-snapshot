@@ -5,7 +5,7 @@
 
 FROM sourcegraph/alpine-3.14:142406_2022-04-14_8836ac3499f4@sha256:2a2d1cbaec78882661fe1aa5b0a4af0c23a37be2ea9ff8aadc2da5b80852c233
 
-RUN apk --no-cache add pcre sqlite-libs
+RUN apk --no-cache add pcre sqlite-libs libev
 
 # The comby/comby image is a small binary-only distribution. See the bin and src directories
 # here: https://github.com/comby-tools/comby/tree/master/dockerfiles/alpine
