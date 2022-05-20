@@ -238,6 +238,9 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
                             <NavLink to="/code-monitoring">Monitoring</NavLink>
                         </NavItem>
                     )}
+                    <NavItem icon={MagnifyIcon}>
+                        <Button>Tooltip test</Button>
+                    </NavItem>
                     {/* This is the only circumstance where we show something
                          batch-changes-related even if the instance does not have batch
                          changes enabled, for marketing purposes on sourcegraph.com */}

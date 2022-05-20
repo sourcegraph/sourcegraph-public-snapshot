@@ -352,6 +352,7 @@
     "yauzl": "^2.10.0"
   },
   "dependencies": {
+    "@adobe/react-spectrum": "^3.17.0",
     "@apollo/client": "^3.5.0",
     "@codemirror/autocomplete": "^0.20.1",
     "@codemirror/commands": "^0.20.0",
