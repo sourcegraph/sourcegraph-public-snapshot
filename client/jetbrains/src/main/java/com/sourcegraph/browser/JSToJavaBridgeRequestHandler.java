@@ -6,6 +6,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.ui.jcef.JBCefJSQuery;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.ThemeUtil;
+import com.sourcegraph.find.BrowserAndLoadingPanel;
 import com.sourcegraph.find.PreviewContent;
 import com.sourcegraph.find.PreviewPanel;
 import com.sourcegraph.find.Search;
@@ -16,10 +17,12 @@ import javax.annotation.Nullable;
 public class JSToJavaBridgeRequestHandler {
     private final Project project;
     private final PreviewPanel previewPanel;
+    private final BrowserAndLoadingPanel topPanel;
 
-    public JSToJavaBridgeRequestHandler(@NotNull Project project, @NotNull PreviewPanel previewPanel) {
+    public JSToJavaBridgeRequestHandler(@NotNull Project project, @NotNull PreviewPanel previewPanel, @NotNull BrowserAndLoadingPanel topPanel) {
         this.project = project;
         this.previewPanel = previewPanel;
+        this.topPanel = topPanel;
     }
 
     public JBCefJSQuery.Response handle(@NotNull JsonObject request) {
@@ -96,6 +99,12 @@ public class JSToJavaBridgeRequestHandler {
                     return createSuccessResponse(null);
                 } catch (Exception e) {
                     return createErrorResponse(9, e.getClass().getName() + ": " + e.getMessage());
+                }
+            case "indicateFinishedLoading":
+                try {
+                    topPanel.setBrowserVisible(true);
+                } catch (Exception e) {
+                    return createErrorResponse(10, e.getClass().getName() + ": " + e.getMessage());
                 }
             default:
                 return createErrorResponse(2, "Unknown action: " + action);

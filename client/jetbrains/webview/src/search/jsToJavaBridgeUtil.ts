@@ -11,6 +11,7 @@ type RequestToJavaAction =
     | 'preview'
     | 'clearPreview'
     | 'open'
+    | 'indicateFinishedLoading'
 
 export interface RequestToJava {
     action: RequestToJavaAction
