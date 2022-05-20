@@ -193,3 +193,7 @@ func (e *NoopJob) Run(context.Context, job.RuntimeClients, streaming.Sender) (*s
 }
 
 func (e *NoopJob) Name() string { return "NoopJob" }
+
+func (e *NoopJob) Tags() []log.Field {
+	return []log.Field{}
+}
