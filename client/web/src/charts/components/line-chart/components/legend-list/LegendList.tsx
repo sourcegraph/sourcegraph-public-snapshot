@@ -1,4 +1,4 @@
-import React, { LiHTMLAttributes } from 'react'
+import React, { LiHTMLAttributes, useState } from 'react'
 
 import classNames from 'classnames'
 
@@ -30,13 +30,24 @@ export const LegendItem: React.FunctionComponent<React.PropsWithChildren<LegendI
     selected = true,
     className,
     ...attributes
-}) => (
-    <li {...attributes} className={classNames({ 'text-muted': !selected }, styles.legendItem, className)}>
-        <span
-            /* eslint-disable-next-line react/forbid-dom-props */
-            style={{ backgroundColor: selected ? color : undefined }}
-            className={classNames([styles.legendMark, { [styles.unselected]: !selected }])}
-        />
-        {name}
-    </li>
-)
+}) => {
+    const [hovered, setHovered] = useState(false)
+    const handleMouseEnter = (): void => setHovered(true)
+    const handleMouseLeave = (): void => setHovered(false)
+
+    return (
+        <li
+            {...attributes}
+            className={classNames({ 'text-muted': !selected && !hovered }, styles.legendItem, className)}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+        >
+            <span
+                /* eslint-disable-next-line react/forbid-dom-props */
+                style={{ backgroundColor: selected || hovered ? color : undefined }}
+                className={classNames([styles.legendMark, { [styles.unselected]: !selected }])}
+            />
+            {name}
+        </li>
+    )
+}
