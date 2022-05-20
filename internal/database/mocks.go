@@ -13545,9 +13545,6 @@ type MockFeatureFlagStore struct {
 	// GetAnonymousUserFlagFunc is an instance of a mock function object
 	// controlling the behavior of the method GetAnonymousUserFlag.
 	GetAnonymousUserFlagFunc *FeatureFlagStoreGetAnonymousUserFlagFunc
-	// GetAnonymousUserFlagsFunc is an instance of a mock function object
-	// controlling the behavior of the method GetAnonymousUserFlags.
-	GetAnonymousUserFlagsFunc *FeatureFlagStoreGetAnonymousUserFlagsFunc
 	// GetFeatureFlagFunc is an instance of a mock function object
 	// controlling the behavior of the method GetFeatureFlag.
 	GetFeatureFlagFunc *FeatureFlagStoreGetFeatureFlagFunc
@@ -13557,9 +13554,6 @@ type MockFeatureFlagStore struct {
 	// GetGlobalFeatureFlagFunc is an instance of a mock function object
 	// controlling the behavior of the method GetGlobalFeatureFlag.
 	GetGlobalFeatureFlagFunc *FeatureFlagStoreGetGlobalFeatureFlagFunc
-	// GetGlobalFeatureFlagsFunc is an instance of a mock function object
-	// controlling the behavior of the method GetGlobalFeatureFlags.
-	GetGlobalFeatureFlagsFunc *FeatureFlagStoreGetGlobalFeatureFlagsFunc
 	// GetOrgFeatureFlagFunc is an instance of a mock function object
 	// controlling the behavior of the method GetOrgFeatureFlag.
 	GetOrgFeatureFlagFunc *FeatureFlagStoreGetOrgFeatureFlagFunc
@@ -13575,9 +13569,6 @@ type MockFeatureFlagStore struct {
 	// GetUserFlagFunc is an instance of a mock function object controlling
 	// the behavior of the method GetUserFlag.
 	GetUserFlagFunc *FeatureFlagStoreGetUserFlagFunc
-	// GetUserFlagsFunc is an instance of a mock function object controlling
-	// the behavior of the method GetUserFlags.
-	GetUserFlagsFunc *FeatureFlagStoreGetUserFlagsFunc
 	// GetUserOverridesFunc is an instance of a mock function object
 	// controlling the behavior of the method GetUserOverrides.
 	GetUserOverridesFunc *FeatureFlagStoreGetUserOverridesFunc
@@ -13638,11 +13629,6 @@ func NewMockFeatureFlagStore() *MockFeatureFlagStore {
 				return
 			},
 		},
-		GetAnonymousUserFlagsFunc: &FeatureFlagStoreGetAnonymousUserFlagsFunc{
-			defaultHook: func(context.Context, string) (r0 map[string]bool, r1 error) {
-				return
-			},
-		},
 		GetFeatureFlagFunc: &FeatureFlagStoreGetFeatureFlagFunc{
 			defaultHook: func(context.Context, string) (r0 *featureflag.FeatureFlag, r1 error) {
 				return
@@ -13655,11 +13641,6 @@ func NewMockFeatureFlagStore() *MockFeatureFlagStore {
 		},
 		GetGlobalFeatureFlagFunc: &FeatureFlagStoreGetGlobalFeatureFlagFunc{
 			defaultHook: func(context.Context, string) (r0 *bool, r1 error) {
-				return
-			},
-		},
-		GetGlobalFeatureFlagsFunc: &FeatureFlagStoreGetGlobalFeatureFlagsFunc{
-			defaultHook: func(context.Context) (r0 map[string]bool, r1 error) {
 				return
 			},
 		},
@@ -13685,11 +13666,6 @@ func NewMockFeatureFlagStore() *MockFeatureFlagStore {
 		},
 		GetUserFlagFunc: &FeatureFlagStoreGetUserFlagFunc{
 			defaultHook: func(context.Context, int32, string) (r0 *bool, r1 error) {
-				return
-			},
-		},
-		GetUserFlagsFunc: &FeatureFlagStoreGetUserFlagsFunc{
-			defaultHook: func(context.Context, int32) (r0 map[string]bool, r1 error) {
 				return
 			},
 		},
@@ -13765,11 +13741,6 @@ func NewStrictMockFeatureFlagStore() *MockFeatureFlagStore {
 				panic("unexpected invocation of MockFeatureFlagStore.GetAnonymousUserFlag")
 			},
 		},
-		GetAnonymousUserFlagsFunc: &FeatureFlagStoreGetAnonymousUserFlagsFunc{
-			defaultHook: func(context.Context, string) (map[string]bool, error) {
-				panic("unexpected invocation of MockFeatureFlagStore.GetAnonymousUserFlags")
-			},
-		},
 		GetFeatureFlagFunc: &FeatureFlagStoreGetFeatureFlagFunc{
 			defaultHook: func(context.Context, string) (*featureflag.FeatureFlag, error) {
 				panic("unexpected invocation of MockFeatureFlagStore.GetFeatureFlag")
@@ -13783,11 +13754,6 @@ func NewStrictMockFeatureFlagStore() *MockFeatureFlagStore {
 		GetGlobalFeatureFlagFunc: &FeatureFlagStoreGetGlobalFeatureFlagFunc{
 			defaultHook: func(context.Context, string) (*bool, error) {
 				panic("unexpected invocation of MockFeatureFlagStore.GetGlobalFeatureFlag")
-			},
-		},
-		GetGlobalFeatureFlagsFunc: &FeatureFlagStoreGetGlobalFeatureFlagsFunc{
-			defaultHook: func(context.Context) (map[string]bool, error) {
-				panic("unexpected invocation of MockFeatureFlagStore.GetGlobalFeatureFlags")
 			},
 		},
 		GetOrgFeatureFlagFunc: &FeatureFlagStoreGetOrgFeatureFlagFunc{
@@ -13813,11 +13779,6 @@ func NewStrictMockFeatureFlagStore() *MockFeatureFlagStore {
 		GetUserFlagFunc: &FeatureFlagStoreGetUserFlagFunc{
 			defaultHook: func(context.Context, int32, string) (*bool, error) {
 				panic("unexpected invocation of MockFeatureFlagStore.GetUserFlag")
-			},
-		},
-		GetUserFlagsFunc: &FeatureFlagStoreGetUserFlagsFunc{
-			defaultHook: func(context.Context, int32) (map[string]bool, error) {
-				panic("unexpected invocation of MockFeatureFlagStore.GetUserFlags")
 			},
 		},
 		GetUserOverridesFunc: &FeatureFlagStoreGetUserOverridesFunc{
@@ -13879,9 +13840,6 @@ func NewMockFeatureFlagStoreFrom(i FeatureFlagStore) *MockFeatureFlagStore {
 		GetAnonymousUserFlagFunc: &FeatureFlagStoreGetAnonymousUserFlagFunc{
 			defaultHook: i.GetAnonymousUserFlag,
 		},
-		GetAnonymousUserFlagsFunc: &FeatureFlagStoreGetAnonymousUserFlagsFunc{
-			defaultHook: i.GetAnonymousUserFlags,
-		},
 		GetFeatureFlagFunc: &FeatureFlagStoreGetFeatureFlagFunc{
 			defaultHook: i.GetFeatureFlag,
 		},
@@ -13890,9 +13848,6 @@ func NewMockFeatureFlagStoreFrom(i FeatureFlagStore) *MockFeatureFlagStore {
 		},
 		GetGlobalFeatureFlagFunc: &FeatureFlagStoreGetGlobalFeatureFlagFunc{
 			defaultHook: i.GetGlobalFeatureFlag,
-		},
-		GetGlobalFeatureFlagsFunc: &FeatureFlagStoreGetGlobalFeatureFlagsFunc{
-			defaultHook: i.GetGlobalFeatureFlags,
 		},
 		GetOrgFeatureFlagFunc: &FeatureFlagStoreGetOrgFeatureFlagFunc{
 			defaultHook: i.GetOrgFeatureFlag,
@@ -13908,9 +13863,6 @@ func NewMockFeatureFlagStoreFrom(i FeatureFlagStore) *MockFeatureFlagStore {
 		},
 		GetUserFlagFunc: &FeatureFlagStoreGetUserFlagFunc{
 			defaultHook: i.GetUserFlag,
-		},
-		GetUserFlagsFunc: &FeatureFlagStoreGetUserFlagsFunc{
-			defaultHook: i.GetUserFlags,
 		},
 		GetUserOverridesFunc: &FeatureFlagStoreGetUserOverridesFunc{
 			defaultHook: i.GetUserOverrides,
@@ -14714,118 +14666,6 @@ func (c FeatureFlagStoreGetAnonymousUserFlagFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// FeatureFlagStoreGetAnonymousUserFlagsFunc describes the behavior when the
-// GetAnonymousUserFlags method of the parent MockFeatureFlagStore instance
-// is invoked.
-type FeatureFlagStoreGetAnonymousUserFlagsFunc struct {
-	defaultHook func(context.Context, string) (map[string]bool, error)
-	hooks       []func(context.Context, string) (map[string]bool, error)
-	history     []FeatureFlagStoreGetAnonymousUserFlagsFuncCall
-	mutex       sync.Mutex
-}
-
-// GetAnonymousUserFlags delegates to the next hook function in the queue
-// and stores the parameter and result values of this invocation.
-func (m *MockFeatureFlagStore) GetAnonymousUserFlags(v0 context.Context, v1 string) (map[string]bool, error) {
-	r0, r1 := m.GetAnonymousUserFlagsFunc.nextHook()(v0, v1)
-	m.GetAnonymousUserFlagsFunc.appendCall(FeatureFlagStoreGetAnonymousUserFlagsFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// GetAnonymousUserFlags method of the parent MockFeatureFlagStore instance
-// is invoked and the hook queue is empty.
-func (f *FeatureFlagStoreGetAnonymousUserFlagsFunc) SetDefaultHook(hook func(context.Context, string) (map[string]bool, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetAnonymousUserFlags method of the parent MockFeatureFlagStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *FeatureFlagStoreGetAnonymousUserFlagsFunc) PushHook(hook func(context.Context, string) (map[string]bool, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *FeatureFlagStoreGetAnonymousUserFlagsFunc) SetDefaultReturn(r0 map[string]bool, r1 error) {
-	f.SetDefaultHook(func(context.Context, string) (map[string]bool, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *FeatureFlagStoreGetAnonymousUserFlagsFunc) PushReturn(r0 map[string]bool, r1 error) {
-	f.PushHook(func(context.Context, string) (map[string]bool, error) {
-		return r0, r1
-	})
-}
-
-func (f *FeatureFlagStoreGetAnonymousUserFlagsFunc) nextHook() func(context.Context, string) (map[string]bool, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *FeatureFlagStoreGetAnonymousUserFlagsFunc) appendCall(r0 FeatureFlagStoreGetAnonymousUserFlagsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// FeatureFlagStoreGetAnonymousUserFlagsFuncCall objects describing the
-// invocations of this function.
-func (f *FeatureFlagStoreGetAnonymousUserFlagsFunc) History() []FeatureFlagStoreGetAnonymousUserFlagsFuncCall {
-	f.mutex.Lock()
-	history := make([]FeatureFlagStoreGetAnonymousUserFlagsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// FeatureFlagStoreGetAnonymousUserFlagsFuncCall is an object that describes
-// an invocation of method GetAnonymousUserFlags on an instance of
-// MockFeatureFlagStore.
-type FeatureFlagStoreGetAnonymousUserFlagsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 string
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 map[string]bool
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c FeatureFlagStoreGetAnonymousUserFlagsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c FeatureFlagStoreGetAnonymousUserFlagsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
 // FeatureFlagStoreGetFeatureFlagFunc describes the behavior when the
 // GetFeatureFlag method of the parent MockFeatureFlagStore instance is
 // invoked.
@@ -15153,115 +14993,6 @@ func (c FeatureFlagStoreGetGlobalFeatureFlagFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c FeatureFlagStoreGetGlobalFeatureFlagFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// FeatureFlagStoreGetGlobalFeatureFlagsFunc describes the behavior when the
-// GetGlobalFeatureFlags method of the parent MockFeatureFlagStore instance
-// is invoked.
-type FeatureFlagStoreGetGlobalFeatureFlagsFunc struct {
-	defaultHook func(context.Context) (map[string]bool, error)
-	hooks       []func(context.Context) (map[string]bool, error)
-	history     []FeatureFlagStoreGetGlobalFeatureFlagsFuncCall
-	mutex       sync.Mutex
-}
-
-// GetGlobalFeatureFlags delegates to the next hook function in the queue
-// and stores the parameter and result values of this invocation.
-func (m *MockFeatureFlagStore) GetGlobalFeatureFlags(v0 context.Context) (map[string]bool, error) {
-	r0, r1 := m.GetGlobalFeatureFlagsFunc.nextHook()(v0)
-	m.GetGlobalFeatureFlagsFunc.appendCall(FeatureFlagStoreGetGlobalFeatureFlagsFuncCall{v0, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// GetGlobalFeatureFlags method of the parent MockFeatureFlagStore instance
-// is invoked and the hook queue is empty.
-func (f *FeatureFlagStoreGetGlobalFeatureFlagsFunc) SetDefaultHook(hook func(context.Context) (map[string]bool, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetGlobalFeatureFlags method of the parent MockFeatureFlagStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *FeatureFlagStoreGetGlobalFeatureFlagsFunc) PushHook(hook func(context.Context) (map[string]bool, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *FeatureFlagStoreGetGlobalFeatureFlagsFunc) SetDefaultReturn(r0 map[string]bool, r1 error) {
-	f.SetDefaultHook(func(context.Context) (map[string]bool, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *FeatureFlagStoreGetGlobalFeatureFlagsFunc) PushReturn(r0 map[string]bool, r1 error) {
-	f.PushHook(func(context.Context) (map[string]bool, error) {
-		return r0, r1
-	})
-}
-
-func (f *FeatureFlagStoreGetGlobalFeatureFlagsFunc) nextHook() func(context.Context) (map[string]bool, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *FeatureFlagStoreGetGlobalFeatureFlagsFunc) appendCall(r0 FeatureFlagStoreGetGlobalFeatureFlagsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// FeatureFlagStoreGetGlobalFeatureFlagsFuncCall objects describing the
-// invocations of this function.
-func (f *FeatureFlagStoreGetGlobalFeatureFlagsFunc) History() []FeatureFlagStoreGetGlobalFeatureFlagsFuncCall {
-	f.mutex.Lock()
-	history := make([]FeatureFlagStoreGetGlobalFeatureFlagsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// FeatureFlagStoreGetGlobalFeatureFlagsFuncCall is an object that describes
-// an invocation of method GetGlobalFeatureFlags on an instance of
-// MockFeatureFlagStore.
-type FeatureFlagStoreGetGlobalFeatureFlagsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 map[string]bool
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c FeatureFlagStoreGetGlobalFeatureFlagsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c FeatureFlagStoreGetGlobalFeatureFlagsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -15826,115 +15557,6 @@ func (c FeatureFlagStoreGetUserFlagFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c FeatureFlagStoreGetUserFlagFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// FeatureFlagStoreGetUserFlagsFunc describes the behavior when the
-// GetUserFlags method of the parent MockFeatureFlagStore instance is
-// invoked.
-type FeatureFlagStoreGetUserFlagsFunc struct {
-	defaultHook func(context.Context, int32) (map[string]bool, error)
-	hooks       []func(context.Context, int32) (map[string]bool, error)
-	history     []FeatureFlagStoreGetUserFlagsFuncCall
-	mutex       sync.Mutex
-}
-
-// GetUserFlags delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockFeatureFlagStore) GetUserFlags(v0 context.Context, v1 int32) (map[string]bool, error) {
-	r0, r1 := m.GetUserFlagsFunc.nextHook()(v0, v1)
-	m.GetUserFlagsFunc.appendCall(FeatureFlagStoreGetUserFlagsFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the GetUserFlags method
-// of the parent MockFeatureFlagStore instance is invoked and the hook queue
-// is empty.
-func (f *FeatureFlagStoreGetUserFlagsFunc) SetDefaultHook(hook func(context.Context, int32) (map[string]bool, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetUserFlags method of the parent MockFeatureFlagStore instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *FeatureFlagStoreGetUserFlagsFunc) PushHook(hook func(context.Context, int32) (map[string]bool, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *FeatureFlagStoreGetUserFlagsFunc) SetDefaultReturn(r0 map[string]bool, r1 error) {
-	f.SetDefaultHook(func(context.Context, int32) (map[string]bool, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *FeatureFlagStoreGetUserFlagsFunc) PushReturn(r0 map[string]bool, r1 error) {
-	f.PushHook(func(context.Context, int32) (map[string]bool, error) {
-		return r0, r1
-	})
-}
-
-func (f *FeatureFlagStoreGetUserFlagsFunc) nextHook() func(context.Context, int32) (map[string]bool, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *FeatureFlagStoreGetUserFlagsFunc) appendCall(r0 FeatureFlagStoreGetUserFlagsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of FeatureFlagStoreGetUserFlagsFuncCall
-// objects describing the invocations of this function.
-func (f *FeatureFlagStoreGetUserFlagsFunc) History() []FeatureFlagStoreGetUserFlagsFuncCall {
-	f.mutex.Lock()
-	history := make([]FeatureFlagStoreGetUserFlagsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// FeatureFlagStoreGetUserFlagsFuncCall is an object that describes an
-// invocation of method GetUserFlags on an instance of MockFeatureFlagStore.
-type FeatureFlagStoreGetUserFlagsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int32
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 map[string]bool
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c FeatureFlagStoreGetUserFlagsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c FeatureFlagStoreGetUserFlagsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
