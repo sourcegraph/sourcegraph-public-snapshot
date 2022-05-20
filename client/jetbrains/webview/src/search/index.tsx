@@ -4,7 +4,7 @@ import { ContentMatch } from '@sourcegraph/shared/src/search/stream'
 import { AnchorLink, setLinkComponent } from '@sourcegraph/wildcard'
 
 import { App } from './App'
-import { createRequestForMatch, RequestToJava } from './jsToJavaBridgeUtil'
+import { createRequestForMatch, Request } from './jsToJavaBridgeUtil'
 import { callJava } from './mockJavaInterface'
 
 setLinkComponent(AnchorLink)
@@ -29,7 +29,7 @@ export interface PluginConfig {
 declare global {
     interface Window {
         initializeSourcegraph: () => void
-        callJava: (request: RequestToJava) => Promise<object>
+        callJava: (request: Request) => Promise<object>
     }
 }
 
@@ -39,7 +39,7 @@ async function onPreviewChange(match: ContentMatch, lineMatchIndex: number): Pro
 
 function onPreviewClear(): void {
     window
-        .callJava({ action: 'clearPreview', arguments: {} })
+        .callJava({ action: 'clearPreview' })
         .then(() => {})
         .catch(() => {})
 }
@@ -66,7 +66,7 @@ function renderReactApp(): void {
 
 async function getConfig(): Promise<PluginConfig> {
     try {
-        return (await window.callJava({ action: 'getConfig', arguments: {} })) as PluginConfig
+        return (await window.callJava({ action: 'getConfig' })) as PluginConfig
     } catch (error) {
         console.error(`Failed to get config: ${(error as Error).message}`)
         return {
@@ -85,7 +85,7 @@ function applyConfig(config: PluginConfig): void {
 
 async function getTheme(): Promise<Theme> {
     try {
-        return (await window.callJava({ action: 'getTheme', arguments: {} })) as Theme
+        return (await window.callJava({ action: 'getTheme' })) as Theme
     } catch (error) {
         console.error(`Failed to get theme: ${(error as Error).message}`)
         return {
@@ -116,7 +116,7 @@ window.initializeSourcegraph = async () => {
     applyConfig(config)
     applyTheme(theme)
     renderReactApp()
-    await window.callJava({ action: 'indicateFinishedLoading', arguments: {} })
+    await window.callJava({ action: 'indicateFinishedLoading' })
 }
 
 /* Initialize app for standalone server */

@@ -176,7 +176,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
 
     useEffect(() => {
         window
-            .callJava({ action: 'loadLastSearch', arguments: {} })
+            .callJava({ action: 'loadLastSearch' })
             .then(lastSavedSearch => {
                 console.log(`Loaded last search: ${JSON.stringify(lastSavedSearch)}`)
                 setLastSearch(lastSavedSearch as Search)

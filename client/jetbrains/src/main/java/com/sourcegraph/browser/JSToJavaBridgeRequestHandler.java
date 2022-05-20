@@ -27,7 +27,6 @@ public class JSToJavaBridgeRequestHandler {
 
     public JBCefJSQuery.Response handle(@NotNull JsonObject request) {
         String action = request.get("action").getAsString();
-        JsonObject arguments = request.getAsJsonObject("arguments");
         Gson gson = new Gson();
         PreviewContent previewContent;
         switch (action) {
@@ -51,6 +50,7 @@ public class JSToJavaBridgeRequestHandler {
                 }
             case "saveLastSearch":
                 try {
+                    JsonObject arguments = request.getAsJsonObject("arguments");
                     String query = arguments.get("query").getAsString();
                     boolean caseSensitive = arguments.get("caseSensitive").getAsBoolean();
                     String patternType = arguments.get("patternType").getAsString();
@@ -79,6 +79,7 @@ public class JSToJavaBridgeRequestHandler {
                 }
             case "preview":
                 try {
+                    JsonObject arguments = request.getAsJsonObject("arguments");
                     previewContent = gson.fromJson(arguments, PreviewContent.class);
                     previewPanel.setContent(previewContent, false);
                     return createSuccessResponse(null);
@@ -94,6 +95,7 @@ public class JSToJavaBridgeRequestHandler {
                 }
             case "open":
                 try {
+                    JsonObject arguments = request.getAsJsonObject("arguments");
                     previewContent = gson.fromJson(arguments, PreviewContent.class);
                     previewPanel.setContent(previewContent, true);
                     return createSuccessResponse(null);
