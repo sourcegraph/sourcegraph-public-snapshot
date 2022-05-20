@@ -110,6 +110,7 @@ func (s BitbucketServerSource) WithAuthenticator(a auth.Authenticator) (Source, 
 
 // ExternalServices returns a singleton slice containing the external service.
 func (s BitbucketServerSource) ExternalServices() types.ExternalServices {
+    fmt.Println("Hi")
 	return types.ExternalServices{s.svc}
 }
 
