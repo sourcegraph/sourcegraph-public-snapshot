@@ -99,8 +99,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				ops.Append(prPreview())
 			}
 		}
+
 		ops.Merge(CoreTestOperations(c.Diff, CoreTestOperationsOptions{
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
+			ForceRunChromatic:         c.MessageFlags.ForceRunStepChromatic,
 			// TODO: (@umpox, @valerybugakov) Figure out if we can reliably enable this in PRs.
 			ClientLintOnlyChangedFiles: false,
 		}))
@@ -171,7 +173,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			buildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag()),
 			trivyScanCandidateImage(patchImage, c.candidateImageTag()))
 		// Test images
-		ops.Merge(CoreTestOperations(changed.All, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
+		ops.Merge(CoreTestOperations(changed.All, CoreTestOperationsOptions{
+			MinimumUpgradeableVersion: minimumUpgradeableVersion,
+		}))
 		// Publish images after everything is done
 		ops.Append(
 			wait,
