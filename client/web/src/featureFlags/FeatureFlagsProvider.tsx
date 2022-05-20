@@ -80,11 +80,11 @@ export const MockedFeatureFlagsProvider: React.FunctionComponent<MockedFeatureFl
 }
 
 class MockFeatureFlagClient implements IFeatureFlagClient {
-    constructor(private overrides: Map<FeatureFlagName, boolean>) {}
+    constructor(private featureFlags: Map<FeatureFlagName, boolean>) {}
 
     // eslint-disable-next-line id-length
     public on(flagName: FeatureFlagName, callback: (value: boolean, error?: Error) => void): () => void {
-        callback(this.overrides.get(flagName) || false)
+        callback(this.featureFlags.get(flagName) || false)
 
         return () => {}
     }

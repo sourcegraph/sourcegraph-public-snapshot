@@ -12,8 +12,8 @@ import { getFeatureFlagOverride } from './feature-flag-local-overrides'
 /**
  * Fetches the evaluated feature flags for the current user
  */
-function fetchFeatureFlags(): Observable<EvaluatedFeatureFlagsResult['evaluatedFeatureFlags']> {
-    return from(
+const fetchEvaluatedFeatureFlags = (): Observable<EvaluatedFeatureFlagsResult['evaluatedFeatureFlags']> =>
+    from(
         requestGraphQL<EvaluatedFeatureFlagsResult>(
             gql`
                 query EvaluatedFeatureFlags {
@@ -28,13 +28,14 @@ function fetchFeatureFlags(): Observable<EvaluatedFeatureFlagsResult['evaluatedF
         map(dataOrThrowErrors),
         map(data => data.evaluatedFeatureFlags)
     )
-}
 
 /**
  * Fetches the evaluated feature flags for the current user
  */
-function fetchEvaluateFeatureFlag(flagName: FeatureFlagName): Observable<boolean> {
-    return from(
+const fetchEvaluateFeatureFlag = (
+    flagName: FeatureFlagName
+): Observable<EvaluateFeatureFlagResult['evaluateFeatureFlag']> =>
+    from(
         requestGraphQL<EvaluateFeatureFlagResult>(
             gql`
                 query EvaluateFeatureFlag($flagName: String!) {
@@ -49,7 +50,6 @@ function fetchEvaluateFeatureFlag(flagName: FeatureFlagName): Observable<boolean
         map(dataOrThrowErrors),
         map(data => data.evaluateFeatureFlag)
     )
-}
 
 /**
  * A Map wrapper that first looks in localStorage.get when returning values.
@@ -70,10 +70,13 @@ export interface IFeatureFlagClient {
     on(flagName: FeatureFlagName, callback: (value: boolean, error?: Error) => void): () => void
 }
 
+type FeatureFlagListener = (value: boolean, error?: Error) => void
+
 export class FeatureFlagClient implements IFeatureFlagClient {
     private cache = new FeatureFlagsProxyMap()
+    private listeners = new Map<FeatureFlagName, Set<FeatureFlagListener>>()
     constructor() {
-        fetchFeatureFlags()
+        fetchEvaluatedFeatureFlags()
             .toPromise()
             .then(flags => {
                 for (const flag of flags) {
@@ -85,24 +88,28 @@ export class FeatureFlagClient implements IFeatureFlagClient {
 
     /**
      * Calls callback function whenever a feature flag is changed
-     * NOTE: Will change to actual per flag evaluation and listeners on flag value change once backend is migrated to new API
      *
      * @returns a cleanup/unsubscribe function
      */
     // eslint-disable-next-line id-length
-    public on(flagName: FeatureFlagName, callback: (value: boolean, error?: Error) => void): () => void {
-        // TODO: // implement refetching
-        if (this.cache.has(flagName)) {
-            // eslint-disable-next-line callback-return
-            callback(this.cache.get(flagName)!)
-        } else {
-            fetchEvaluateFeatureFlag(flagName)
-                .toPromise()
-                .then(callback)
-                .catch(error => callback(false, error))
+    public on(flagName: FeatureFlagName, callback: FeatureFlagListener): () => void {
+        if (!this.listeners.has(flagName)) {
+            this.listeners.set(flagName, new Set())
         }
-        return () => {
-            // TODO: cleanup
-        }
+        this.listeners.get(flagName)?.add(callback)
+
+        fetchEvaluateFeatureFlag(flagName)
+            .toPromise()
+            .then(flagValue => this.cache.set(flagName, flagValue))
+            .catch(error => callback(this.cache.get(flagName) || false, error))
+            .finally(() => {
+                if (!this.listeners.has(flagName)) {
+                    return
+                }
+                for (const listener of this.listeners.get(flagName)!) {
+                    listener(this.cache.get(flagName) || false)
+                }
+            })
+        return () => this.listeners.get(flagName)?.delete(callback)
     }
 }
