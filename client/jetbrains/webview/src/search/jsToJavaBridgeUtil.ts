@@ -30,7 +30,6 @@ interface SaveLastSearchRequest {
 
 interface LoadLastSearchRequest {
     action: 'loadLastSearch'
-    arguments: Search
 }
 
 interface ClearPreviewRequest {
