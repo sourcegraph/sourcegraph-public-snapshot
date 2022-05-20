@@ -26,6 +26,9 @@ export const useSeriesToggle = (): UseSeriesToggleReturn => {
     const toggle = (seriesId: string): void =>
         selectedSeriesIds.includes(seriesId) ? deselectSeries(seriesId) : selectSeries(seriesId)
     const isSelected = (seriesId: string): boolean => {
+        // Return true for all series if no series are selected
+        // This is because we only want to hide series if something is
+        // specifically selected. Otherwise they should all be "highlighted"
         if (selectedSeriesIds.length === 0) {
             return true
         }

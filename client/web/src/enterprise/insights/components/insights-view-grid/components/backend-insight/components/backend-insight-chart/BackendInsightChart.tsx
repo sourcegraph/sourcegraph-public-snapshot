@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 
 import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'
@@ -50,9 +50,7 @@ interface BackendInsightChartProps<Datum> extends BackendInsightData {
 export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum>): React.ReactElement {
     const { locked, isFetchingHistoricalData, content, className, onDatumClick } = props
     const { ref, width = 0 } = useDebounce(useResizeObserver(), 100)
-    const { toggle, selectedSeriesIds, isSelected, hoveredId, setHoveredId } = useSeriesToggle()
-
-    useEffect(() => console.log(selectedSeriesIds), [selectedSeriesIds])
+    const { toggle, isSelected, hoveredId, setHoveredId } = useSeriesToggle()
 
     const hasViewManySeries = content.series.length > MINIMAL_SERIES_FOR_ASIDE_LEGEND
     const hasEnoughXSpace = width >= MINIMAL_HORIZONTAL_LAYOUT_WIDTH
