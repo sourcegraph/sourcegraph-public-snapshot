@@ -1,7 +1,7 @@
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 
 import { Search } from './App'
-import { RequestToJava } from './jsToJavaBridgeUtil'
+import { Request } from './jsToJavaBridgeUtil'
 
 let savedSearch: Search = {
     query: '',
@@ -10,7 +10,7 @@ let savedSearch: Search = {
     selectedSearchContextSpec: 'global',
 }
 
-export function callJava(request: RequestToJava): Promise<object> {
+export function callJava(request: Request): Promise<object> {
     return new Promise((resolve, reject) => {
         const requestAsString = JSON.stringify(request)
         const onSuccessCallback = (responseAsString: string): void => {
@@ -25,7 +25,7 @@ export function callJava(request: RequestToJava): Promise<object> {
 }
 
 function handleRequest(
-    request: RequestToJava,
+    request: Request,
     onSuccessCallback: (responseAsString: string) => void,
     onFailureCallback: (errorCode: number, errorMessage: string) => void
 ): void {
@@ -51,18 +51,18 @@ function handleRequest(
             })
         )
     } else if (request.action === 'preview') {
-        const { path } = request.arguments as { path: string }
+        const { path } = request.arguments
         console.log(`Previewing "${path}"`)
         onSuccessCallback('{}')
     } else if (request.action === 'clearPreview') {
         console.log('Clearing preview.')
         onSuccessCallback('{}')
     } else if (request.action === 'open') {
-        const { path } = request.arguments as { path: string }
+        const { path } = request.arguments
         console.log(`Opening "${path}"`)
         onSuccessCallback('{}')
     } else if (request.action === 'saveLastSearch') {
-        savedSearch = request.arguments as Search
+        savedSearch = request.arguments
         onSuccessCallback('{}')
     } else if (request.action === 'loadLastSearch') {
         onSuccessCallback(JSON.stringify(savedSearch))
