@@ -128,6 +128,7 @@ func (fm *FileMatch) Limit(limit int) int {
 	if limit < matchCount {
 		fm.MultilineMatches = fm.MultilineMatches[:limit]
 		limit = 0
+		fm.LimitHit = true
 	} else {
 		limit -= matchCount
 	}
@@ -136,6 +137,7 @@ func (fm *FileMatch) Limit(limit int) int {
 	if limit < symbolCount {
 		fm.Symbols = fm.Symbols[:limit]
 		limit = 0
+		fm.LimitHit = true
 	} else {
 		limit -= symbolCount
 	}

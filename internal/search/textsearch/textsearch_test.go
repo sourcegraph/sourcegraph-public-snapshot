@@ -340,6 +340,7 @@ func TestFileMatch_Limit(t *testing.T) {
 		expNumMultilineMatches int
 		expNumSymbolMatches    int
 		expRemainingLimit      int
+		wantLimitHit           bool
 	}{
 		{
 			numMultilineMatches:    3,
@@ -347,6 +348,7 @@ func TestFileMatch_Limit(t *testing.T) {
 			limit:                  1,
 			expNumMultilineMatches: 1,
 			expRemainingLimit:      0,
+			wantLimitHit:           true,
 		},
 		{
 			numMultilineMatches: 0,
@@ -354,6 +356,7 @@ func TestFileMatch_Limit(t *testing.T) {
 			limit:               1,
 			expNumSymbolMatches: 1,
 			expRemainingLimit:   0,
+			wantLimitHit:        true,
 		},
 		{
 			numMultilineMatches:    3,
@@ -361,6 +364,7 @@ func TestFileMatch_Limit(t *testing.T) {
 			limit:                  5,
 			expNumMultilineMatches: 3,
 			expRemainingLimit:      2,
+			wantLimitHit:           false,
 		},
 		{
 			numMultilineMatches: 0,
@@ -368,6 +372,7 @@ func TestFileMatch_Limit(t *testing.T) {
 			limit:               5,
 			expNumSymbolMatches: 3,
 			expRemainingLimit:   2,
+			wantLimitHit:        false,
 		},
 		{
 			numMultilineMatches:    3,
@@ -375,6 +380,7 @@ func TestFileMatch_Limit(t *testing.T) {
 			limit:                  3,
 			expNumMultilineMatches: 3,
 			expRemainingLimit:      0,
+			wantLimitHit:           false,
 		},
 		{
 			numMultilineMatches: 0,
@@ -382,6 +388,7 @@ func TestFileMatch_Limit(t *testing.T) {
 			limit:               3,
 			expNumSymbolMatches: 3,
 			expRemainingLimit:   0,
+			wantLimitHit:        false,
 		},
 	}
 
