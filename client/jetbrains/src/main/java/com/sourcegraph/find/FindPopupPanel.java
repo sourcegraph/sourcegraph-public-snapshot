@@ -42,12 +42,19 @@ public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposabl
     }
 
     private void createBrowserPanel() {
+        JBPanelWithEmptyText overlayPanel = new JBPanelWithEmptyText();
+        //noinspection DialogTitleCapitalization
+        overlayPanel.getEmptyText().setText("Loading Sourcegraph...");
+
         JBPanelWithEmptyText jcefPanel = new JBPanelWithEmptyText(new BorderLayout()).withEmptyText("Unfortunately, the browser is not available on your system. Try running the IDE with the default OpenJDK.");
-        browser = JBCefApp.isSupported() ? new SourcegraphJBCefBrowser(new JSToJavaBridgeRequestHandler(project, previewPanel)) : null;
+
+        BrowserAndLoadingPanel topPanel = new BrowserAndLoadingPanel(jcefPanel, overlayPanel);
+
+        browser = JBCefApp.isSupported() ? new SourcegraphJBCefBrowser(new JSToJavaBridgeRequestHandler(project, previewPanel, topPanel)) : null;
         if (browser != null) {
-            jcefPanel.add(browser.getComponent(), BorderLayout.CENTER);
+            jcefPanel.add(browser.getComponent());
         }
-        splitter.setFirstComponent(jcefPanel);
+        splitter.setFirstComponent(topPanel);
     }
 
     private void createPreviewPanel() {

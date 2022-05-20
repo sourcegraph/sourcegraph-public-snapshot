@@ -36,6 +36,10 @@ interface ClearPreviewRequest {
     action: 'clearPreview'
 }
 
+interface IndicateFinishedLoadingRequest {
+    action: 'indicateFinishedLoading'
+}
+
 export type Request =
     | MatchRequest
     | GetConfigRequest
@@ -43,6 +47,7 @@ export type Request =
     | SaveLastSearchRequest
     | LoadLastSearchRequest
     | ClearPreviewRequest
+    | IndicateFinishedLoadingRequest
 
 export async function createRequestForMatch(
     match: ContentMatch,

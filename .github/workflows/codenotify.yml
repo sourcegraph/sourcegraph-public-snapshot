@@ -19,6 +19,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.CODENOTIFY_GITHUB_TOKEN }}
       - uses: sourcegraph/codenotify@v0.6.1
+        continue-on-error: true
         with:
           filename: 'OWNERS'
           subscriber-threshold: '15'

@@ -165,8 +165,9 @@ export const InviteForm: React.FunctionComponent<React.PropsWithChildren<Props>>
             {authenticatedUser?.siteAdmin && !emailInvitesEnabled && (
                 <DismissibleAlert variant="info" partialStorageKey="org-invite-email-config">
                     <p className=" mb-0">
-                        Set <code>email.smtp</code> in <Link to="/site-admin/configuration">site configuration</Link> to
-                        send email notifications about invitations.
+                        Set <Typography.Code>email.smtp</Typography.Code> in{' '}
+                        <Link to="/site-admin/configuration">site configuration</Link> to send email notifications about
+                        invitations.
                     </p>
                 </DismissibleAlert>
             )}
