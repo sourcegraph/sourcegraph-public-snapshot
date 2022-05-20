@@ -368,7 +368,7 @@ func sendMatches(event *zoekt.SearchResult, getRepoInputRev repoRevFunc, typ sea
 
 		var lines []result.MultilineMatch
 		if typ != search.SymbolRequest {
-			lines = zoektFileMatchToLineMatches(&file)
+			lines = zoektFileMatchToMultilineMatches(&file)
 		}
 
 		for _, inputRev := range inputRevs {
@@ -400,7 +400,7 @@ func sendMatches(event *zoekt.SearchResult, getRepoInputRev repoRevFunc, typ sea
 	})
 }
 
-func zoektFileMatchToLineMatches(file *zoekt.FileMatch) []result.MultilineMatch {
+func zoektFileMatchToMultilineMatches(file *zoekt.FileMatch) []result.MultilineMatch {
 	lines := make([]result.MultilineMatch, 0, len(file.LineMatches))
 
 	for _, l := range file.LineMatches {
