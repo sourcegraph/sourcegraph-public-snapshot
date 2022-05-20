@@ -12,6 +12,8 @@ import { BackendInsightData } from '../../../../../../core'
 import { SeriesBasedChartTypes, SeriesChart } from '../../../../../views'
 import { BackendAlertOverlay } from '../backend-insight-alerts/BackendInsightAlerts'
 
+import { useSeriesToggle } from './use-series-toggle'
+
 import styles from './BackendInsightChart.module.scss'
 
 /**
@@ -48,6 +50,7 @@ interface BackendInsightChartProps<Datum> extends BackendInsightData {
 export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum>): React.ReactElement {
     const { locked, isFetchingHistoricalData, content, className, onDatumClick } = props
     const { ref, width = 0 } = useDebounce(useResizeObserver(), 100)
+    const { toggle } = useSeriesToggle()
 
     const hasViewManySeries = content.series.length > MINIMAL_SERIES_FOR_ASIDE_LEGEND
     const hasEnoughXSpace = width >= MINIMAL_HORIZONTAL_LAYOUT_WIDTH
@@ -91,6 +94,7 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                                     color={getLineColor(series)}
                                     name={series.name}
                                     className={styles.legendListItem}
+                                    onClick={() => toggle(series.id)}
                                 />
                             ))}
                         </LegendList>
