@@ -4,8 +4,6 @@ import (
 	"context"
 	"net/http"
 
-	"sigs.k8s.io/kustomize/kyaml/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 )
 
@@ -36,33 +34,29 @@ type flagSetFetcher struct {
 	ffs Store
 }
 
-func (f *flagSetFetcher) evaluateForActor(ctx context.Context, a *actor.Actor, flagName string) (*bool, error) {
+func (f *flagSetFetcher) evaluateForActor(ctx context.Context, a *actor.Actor, flagName string) (flag *bool, err error) {
+	println("debug1", flagName)
 	if a.IsAuthenticated() {
-		flag, err := f.ffs.GetUserFlag(ctx, a.UID, flagName)
-		if err == nil {
+		if flag, err = f.ffs.GetUserFlag(ctx, a.UID, flagName); flag != nil {
 			setEvaluatedFlagToCache(flagName, a, *flag)
-			return flag, nil
 		}
-		// Continue if err != nil
-		// TODO: should we continue if feature flag not found?
+		return flag, err
 	}
+	println("debug2", flagName)
 
 	if a.AnonymousUID != "" {
-		flag, err := f.ffs.GetAnonymousUserFlag(ctx, a.AnonymousUID, flagName)
-		if err == nil {
+		if flag, err = f.ffs.GetAnonymousUserFlag(ctx, a.AnonymousUID, flagName); flag != nil {
 			setEvaluatedFlagToCache(flagName, a, *flag)
-			return flag, nil
 		}
-		// Continue if err != nil
-		// TODO: should we continue if feature flag not found?
+		return flag, err
 	}
 
-	flag, err := f.ffs.GetGlobalFeatureFlag(ctx, flagName)
-	if err == nil {
-		return flag, nil
-	}
+	println("debug3", flagName)
 
-	return nil, errors.Errorf("Couldn't evaluate feature flag \"%s\" for the given actor", flagName)
+	if flag, err = f.ffs.GetGlobalFeatureFlag(ctx, flagName); flag != nil {
+		setEvaluatedFlagToCache(flagName, a, *flag)
+	}
+	return flag, err
 }
 
 func EvaluateForActorFromContext(ctx context.Context, flagName string) (result bool) {
