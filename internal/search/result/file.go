@@ -124,17 +124,22 @@ func (fm *FileMatch) AppendMatches(src *FileMatch) {
 //   if limit >= ResultCount then nothing is done and we return limit - ResultCount.
 //   if limit < ResultCount then ResultCount becomes limit and we return 0.
 func (fm *FileMatch) Limit(limit int) int {
-	// Check if we need to limit.
-	if after := limit - fm.ResultCount(); after >= 0 {
-		return after
+	matchCount := len(fm.MultilineMatches)
+	if limit < matchCount {
+		fm.MultilineMatches = fm.MultilineMatches[:limit]
+		limit = 0
+	} else {
+		limit -= matchCount
 	}
 
-	if limit < len(fm.MultilineMatches) {
-		fm.MultilineMatches = fm.MultilineMatches[:limit]
+	symbolCount := len(fm.Symbols)
+	if limit < symbolCount {
+		fm.Symbols = fm.Symbols[:limit]
+		limit = 0
+	} else {
+		limit -= symbolCount
 	}
-	// TODO: why is this not panicking in prod?
-	fm.Symbols = fm.Symbols[:limit]
-	return 0
+	return limit
 }
 
 func (fm *FileMatch) Key() Key {
