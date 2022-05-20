@@ -62,16 +62,9 @@ const REQUESTERS: Record<string, TokenRequester> = {
         redirectURL: 'vscode://sourcegraph.sourcegraph?code=$TOKEN',
         description: 'Auth from VS Code Extension for Sourcegraph',
         message:
-            'Click the import button below if the popup did not take you back to VS Code. You can also import the token manually.',
+            'Click the import button below if the popup did not take you back to VS Code. You must have VS Code running for the token to be auto-imported. You can also import the token manually.',
         callbackType: 'new-tab',
         showRedirectButton: true,
-    },
-    SRCCLI: {
-        name: 'SRC CLI',
-        redirectURL: 'http://127.0.0.1:9889/callback?code=$TOKEN',
-        description: 'Auth from Sourcegraph CLI',
-        callbackType: 'new-tab',
-        showRedirectButton: false,
     },
 }
 
@@ -189,7 +182,6 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FunctionComponent<
                                     Tokens with limited user scopes are not yet supported.
                                 </small>
                             </p>
-
                             <Checkbox
                                 id="user-settings-create-access-token-page__scope-user:all"
                                 checked={true}
