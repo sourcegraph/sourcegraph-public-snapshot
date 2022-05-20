@@ -10,6 +10,8 @@ import (
 // Runner is a linter runner. It can make programmatic checks, call out to a bash script,
 // or anything you want, and should return a report with helpful feedback for the user to
 // act upon.
+//
+// Runners can be tested by providing a mock state with repo.NewMockState().
 type Runner func(context.Context, *repo.State) *Report
 
 // Report describes the result of a linter runner.
