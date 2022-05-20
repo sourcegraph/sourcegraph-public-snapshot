@@ -270,7 +270,7 @@ func (g *graph) emitMonikerVertex(symbolID string, kind string, resultSetID int)
 		switch symbol.Scheme {
 		case "lsif-java", "scip-java":
 			scheme = "semanticdb"
-		case "lsif-typescript":
+		case "lsif-typescript", "scip-typescript":
 			scheme = "npm"
 		}
 	}

@@ -216,6 +216,7 @@ func (h *dependencySyncSchedulerHandler) shouldIndexDependencies(ctx context.Con
 		upload.Indexer == "scip-java" ||
 		upload.Indexer == "lsif-java" ||
 		upload.Indexer == "lsif-tsc" ||
+		upload.Indexer == "scip-typescript" ||
 		upload.Indexer == "lsif-typescript", nil
 }
 
