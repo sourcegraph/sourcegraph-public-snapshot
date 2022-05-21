@@ -125,6 +125,13 @@ func (fm *FileMatch) AppendMatches(src *FileMatch) {
 //   if limit < ResultCount then ResultCount becomes limit and we return 0.
 func (fm *FileMatch) Limit(limit int) int {
 	matchCount := len(fm.MultilineMatches)
+	symbolCount := len(fm.Symbols)
+
+	// An empty FileMatch should still count against the limit -- see *FileMatch.ResultCount()
+	if matchCount == 0 && symbolCount == 0 {
+		return limit - 1
+	}
+
 	if limit < matchCount {
 		fm.MultilineMatches = fm.MultilineMatches[:limit]
 		limit = 0
@@ -133,7 +140,6 @@ func (fm *FileMatch) Limit(limit int) int {
 		limit -= matchCount
 	}
 
-	symbolCount := len(fm.Symbols)
 	if limit < symbolCount {
 		fm.Symbols = fm.Symbols[:limit]
 		limit = 0
