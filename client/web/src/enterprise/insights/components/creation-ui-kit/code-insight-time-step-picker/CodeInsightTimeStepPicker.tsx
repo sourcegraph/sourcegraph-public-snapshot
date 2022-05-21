@@ -2,7 +2,7 @@ import { ChangeEvent, FocusEventHandler, forwardRef } from 'react'
 
 import classNames from 'classnames'
 
-import { getInputStatus, Input } from '@sourcegraph/wildcard'
+import { getInputStatus, FormInput } from '@sourcegraph/wildcard'
 
 import { InsightStep } from '../../../pages/insights/creation/search-insight/types'
 import { FormGroup } from '../../form/form-group/FormGroup'
@@ -56,7 +56,7 @@ export const CodeInsightTimeStepPicker = forwardRef<HTMLInputElement, CodeInsigh
                 labelClassName={styles.groupLabel}
                 contentClassName="d-flex flex-wrap mb-n2"
             >
-                <Input
+                <FormInput
                     placeholder="ex. 2"
                     required={true}
                     type="number"

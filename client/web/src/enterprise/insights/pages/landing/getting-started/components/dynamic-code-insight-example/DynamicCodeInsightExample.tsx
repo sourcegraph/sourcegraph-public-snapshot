@@ -5,7 +5,7 @@ import PlusIcon from 'mdi-react/PlusIcon'
 import { noop } from 'rxjs'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Card, Link, useObservable, useDebounce, Icon, Input, Typography } from '@sourcegraph/wildcard'
+import { Button, Card, Link, useObservable, useDebounce, Icon, Typography, FormInput } from '@sourcegraph/wildcard'
 
 import { getDefaultInputProps } from '../../../../../components/form/getDefaultInputProps'
 import { useField } from '../../../../../components/form/hooks/useField'
@@ -109,7 +109,7 @@ export const DynamicCodeInsightExample: React.FunctionComponent<
                     className={styles.chart}
                 />
 
-                <Input
+                <FormInput
                     label="Data series search query"
                     required={true}
                     as={InsightQueryInput}
@@ -120,7 +120,7 @@ export const DynamicCodeInsightExample: React.FunctionComponent<
                     className="mt-3 mb-0"
                 />
 
-                <Input
+                <FormInput
                     as={RepositoriesField}
                     required={true}
                     label="Repositories"

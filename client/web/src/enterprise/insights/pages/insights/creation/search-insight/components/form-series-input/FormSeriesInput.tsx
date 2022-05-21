@@ -3,7 +3,7 @@ import React from 'react'
 import classNames from 'classnames'
 import { noop } from 'rxjs'
 
-import { Button, Card, Input, Typography } from '@sourcegraph/wildcard'
+import { Button, Card, FormInput, Typography } from '@sourcegraph/wildcard'
 
 import { getDefaultInputProps } from '../../../../../../components/form/getDefaultInputProps'
 import { useField } from '../../../../../../components/form/hooks/useField'
@@ -116,7 +116,7 @@ export const FormSeriesInput: React.FunctionComponent<React.PropsWithChildren<Fo
 
     return (
         <Card data-testid="series-form" ref={ref} className={classNames('d-flex flex-column', className)}>
-            <Input
+            <FormInput
                 label="Name"
                 required={true}
                 autoFocus={autofocus}
@@ -125,7 +125,7 @@ export const FormSeriesInput: React.FunctionComponent<React.PropsWithChildren<Fo
                 {...getDefaultInputProps(nameField)}
             />
 
-            <Input
+            <FormInput
                 label="Search query"
                 required={true}
                 as={InsightQueryInput}

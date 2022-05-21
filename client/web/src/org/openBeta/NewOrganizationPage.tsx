@@ -13,11 +13,11 @@ import {
     AlertLink,
     Button,
     Checkbox,
-    Input,
     Link,
     LoadingSpinner,
     PageHeader,
     Typography,
+    FormInput,
 } from '@sourcegraph/wildcard'
 
 import { ORG_NAME_MAX_LENGTH, VALID_ORG_NAME_REGEXP } from '..'
@@ -231,7 +231,7 @@ export const NewOrgOpenBetaPage: React.FunctionComponent<React.PropsWithChildren
                 </div>
 
                 <div className={classNames('form-group', styles.formItem)}>
-                    <Input
+                    <FormInput
                         id="new-org-page__form-organizationid"
                         type="text"
                         autoCorrect="off"

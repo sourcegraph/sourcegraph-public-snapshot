@@ -1,17 +1,12 @@
-import { InputStatus } from '../Input'
+import { InputStatus } from '..'
 
 interface GetInputStatusProps {
     isValid?: boolean
     isError?: boolean
-    isLoading?: boolean
 }
 
 export function getInputStatus(props: GetInputStatusProps): InputStatus {
-    const { isLoading, isError, isValid } = props
-
-    if (isLoading) {
-        return InputStatus.loading
-    }
+    const { isError, isValid } = props
 
     if (isError) {
         return InputStatus.error

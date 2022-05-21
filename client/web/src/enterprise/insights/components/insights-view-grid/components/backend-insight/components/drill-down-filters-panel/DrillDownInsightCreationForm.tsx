@@ -1,7 +1,7 @@
 import { FunctionComponent } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Input, Typography } from '@sourcegraph/wildcard'
+import { Button, FormInput, Typography } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../components/LoaderButton'
 import { getDefaultInputProps } from '../../../../../form/getDefaultInputProps'
@@ -50,7 +50,7 @@ export const DrillDownInsightCreationForm: FunctionComponent<DrillDownInsightCre
         <form ref={ref} onSubmit={handleSubmit} noValidate={true} className={className}>
             <Typography.H3 className="mb-3">Save as new view</Typography.H3>
 
-            <Input
+            <FormInput
                 label="Name"
                 autoFocus={true}
                 required={true}

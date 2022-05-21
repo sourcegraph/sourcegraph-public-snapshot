@@ -2,13 +2,13 @@ import React, { forwardRef, PropsWithChildren, Ref } from 'react'
 
 import classNames from 'classnames'
 
-import { Button, Input, InputProps, Typography } from '@sourcegraph/wildcard'
+import { Button, FormInput, FormInputProps, Typography } from '@sourcegraph/wildcard'
 
 import { TruncatedText } from '../../../../../../trancated-text/TruncatedText'
 
 import styles from './DrillDownInput.module.scss'
 
-interface DrillDownRegExpInputProps extends InputProps {
+interface DrillDownRegExpInputProps extends FormInputProps {
     prefix: string
 }
 
@@ -18,7 +18,7 @@ export const DrillDownInput = forwardRef((props: DrillDownRegExpInputProps, refe
     return (
         <span className={classNames(className, 'd-flex w-100')}>
             <span className={classNames(styles.prefixText, 'text-monospace')}>{prefix}</span>
-            <Input
+            <FormInput
                 {...inputProps}
                 className={styles.inputContainer}
                 inputClassName={classNames(styles.input)}

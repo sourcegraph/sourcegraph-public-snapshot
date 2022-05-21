@@ -5,10 +5,10 @@ import { Meta } from '@storybook/react'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
-import { Input } from './Input'
+import { FormInput } from './FormInput'
 
 const Story: Meta = {
-    title: 'wildcard/Input',
+    title: 'wildcard/FormInput',
 
     decorators: [
         story => (
@@ -17,7 +17,7 @@ const Story: Meta = {
     ],
 
     parameters: {
-        component: Input,
+        component: FormInput,
         chromatic: {
             enableDarkMode: true,
             disableSnapshot: false,
@@ -41,8 +41,19 @@ export const Simple = () => {
 
     return (
         <>
-            <Input label="Input raw" value={selected} onChange={handleChange} />
-            <Input
+            <FormInput
+                value={selected}
+                label="Input loading"
+                onChange={handleChange}
+                message="random message"
+                status="loading"
+                disabled={false}
+                placeholder="testing this one"
+            />
+
+            <FormInput label="Input raw" value={selected} onChange={handleChange} />
+
+            <FormInput
                 value={selected}
                 label="Input valid"
                 onChange={handleChange}
@@ -52,7 +63,7 @@ export const Simple = () => {
                 placeholder="testing this one"
             />
 
-            <Input
+            <FormInput
                 value={selected}
                 label="Input error"
                 onChange={handleChange}
@@ -60,7 +71,7 @@ export const Simple = () => {
                 status="error"
                 placeholder="error status input"
             />
-            <Input
+            <FormInput
                 value={selected}
                 label="Disabled input"
                 onChange={handleChange}
@@ -69,7 +80,7 @@ export const Simple = () => {
                 placeholder="disable status input"
             />
 
-            <Input
+            <FormInput
                 value={selected}
                 label="Input small"
                 onChange={handleChange}
@@ -80,7 +91,7 @@ export const Simple = () => {
                 variant="small"
             />
 
-            <Input
+            <FormInput
                 value={selected}
                 label="Input with symbol"
                 onChange={handleChange}

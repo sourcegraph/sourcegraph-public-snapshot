@@ -3,7 +3,7 @@ import React, { FormEventHandler, RefObject, useMemo } from 'react'
 import classNames from 'classnames'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Input, useObservable } from '@sourcegraph/wildcard'
+import { Button, FormInput, useObservable } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../components/LoaderButton'
 import { CodeInsightDashboardsVisibility } from '../../../../../../components/creation-ui-kit'
@@ -84,7 +84,7 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<
                 Rule: aria-allowed-role ARIA - role should be appropriate for the element
                 Error occurs as a result of using `role=combobox` on `textarea` element.
              */}
-            <Input
+            <FormInput
                 as={RepositoryField}
                 required={true}
                 autoFocus={true}
@@ -96,7 +96,7 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<
                 inputClassName="a11y-ignore"
             />
 
-            <Input
+            <FormInput
                 required={true}
                 label="Title"
                 message="Shown as the title for your insight."
@@ -105,7 +105,7 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<
                 className="mb-0 mt-4"
             />
 
-            <Input
+            <FormInput
                 required={true}
                 min={1}
                 max={100}
@@ -115,7 +115,7 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<
                 {...getDefaultInputProps(threshold)}
                 className="mb-0 mt-4"
                 inputClassName={styles.formThresholdInput}
-                inputSymbol={<span className={styles.formThresholdInputSymbol}>%</span>}
+                inputSymbol={<span className={classNames(styles.formThresholdInputSymbol)}>%</span>}
             />
 
             {!!dashboardReferenceCount && dashboardReferenceCount > 1 && (

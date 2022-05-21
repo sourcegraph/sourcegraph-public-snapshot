@@ -3,18 +3,13 @@ import { useRef, forwardRef, InputHTMLAttributes, ReactNode } from 'react'
 import classNames from 'classnames'
 import { useMergeRefs } from 'use-callback-ref'
 
-import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
-
 import { Typography } from '../..'
 import { useAutoFocus } from '../../../hooks/useAutoFocus'
 import { ForwardReferenceComponent } from '../../../types'
 
-import styles from './Input.module.scss'
-
 export enum InputStatus {
     initial = 'initial',
     error = 'error',
-    loading = 'loading',
     valid = 'valid',
 }
 
@@ -27,8 +22,6 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
     className?: string
     /** Custom class name for input element. */
     inputClassName?: string
-    /** Input icon (symbol) which render right after the input element. */
-    inputSymbol?: ReactNode
     /** Exclusive status */
     status?: InputStatus | `${InputStatus}`
     error?: ReactNode
@@ -36,10 +29,15 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
     disabled?: boolean
     /** Determines the size of the input */
     variant?: 'regular' | 'small'
+    /** Supports appending an element to input */
+    inputSymbol?: ReactNode
+    /** Custom class name for input element and symbol wrapper. */
+    inputSymbolWrapperClassName?: string
 }
 
 /**
  * Displays the input with description, error message, visual invalid and valid states.
+ * Does not support Loader icon and status=loadind (user FormInput to get support for loading state)
  */
 export const Input = forwardRef((props, reference) => {
     const {
@@ -50,11 +48,12 @@ export const Input = forwardRef((props, reference) => {
         message,
         className,
         inputClassName,
-        inputSymbol,
         disabled,
         status = InputStatus.initial,
         error,
         autoFocus,
+        inputSymbol,
+        inputSymbolWrapperClassName,
         ...otherProps
     } = props
 
@@ -62,27 +61,32 @@ export const Input = forwardRef((props, reference) => {
     const mergedReference = useMergeRefs([localReference, reference])
 
     useAutoFocus({ autoFocus, reference: localReference })
+    const inputElement = (
+        <Component
+            disabled={disabled}
+            type={type}
+            className={classNames(inputClassName, 'form-control', 'with-invalid-icon', {
+                'is-valid': status === InputStatus.valid,
+                'is-invalid': error || status === InputStatus.error,
+                'form-control-sm': variant === 'small',
+            })}
+            {...otherProps}
+            ref={mergedReference}
+            autoFocus={autoFocus}
+        />
+    )
+
+    const inputWithSymbol = (
+        <div className={classNames('d-flex', inputSymbolWrapperClassName)}>
+            {inputElement}
+            {inputSymbol}
+        </div>
+    )
 
     const messageClassName = 'form-text font-weight-normal mt-2'
     const inputWithMessage = (
         <>
-            <LoaderInput className={classNames('d-flex', !label && className)} loading={status === InputStatus.loading}>
-                <Component
-                    disabled={disabled}
-                    type={type}
-                    className={classNames(styles.input, inputClassName, 'form-control', 'with-invalid-icon', {
-                        'is-valid': status === InputStatus.valid,
-                        'is-invalid': error || status === InputStatus.error,
-                        'form-control-sm': variant === 'small',
-                    })}
-                    {...otherProps}
-                    ref={mergedReference}
-                    autoFocus={autoFocus}
-                />
-
-                {inputSymbol}
-            </LoaderInput>
-
+            {inputSymbol ? inputWithSymbol : inputElement}
             {error && (
                 <small role="alert" className={classNames('text-danger', messageClassName)}>
                     {error}

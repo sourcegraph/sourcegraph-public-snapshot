@@ -7,11 +7,13 @@ export {
     Checkbox,
     FlexTextArea,
     Input,
+    FormInput,
     RadioButton,
     Select,
     MultiSelect,
     TextArea,
     InputStatus,
+    FormInputStatus,
     getInputStatus,
 } from './Form'
 export { Grid } from './Grid'
@@ -49,7 +51,15 @@ export { Collapse, CollapseHeader, CollapsePanel } from './Collapse'
  */
 export type { FeedbackPromptSubmitEventHandler } from './Feedback'
 export type { AlertProps, AlertLinkProps } from './Alert'
-export type { MultiSelectProps, MultiSelectOption, MultiSelectState, SelectProps, InputProps } from './Form'
+export type {
+    MultiSelectProps,
+    MultiSelectOption,
+    MultiSelectState,
+    SelectProps,
+    InputProps,
+    FormInputProps,
+    FormInputStatusType,
+} from './Form'
 export type { ButtonProps } from './Button'
 export type { ButtonLinkProps } from './ButtonLink'
 export type { LinkProps } from './Link'

@@ -7,7 +7,7 @@ import { debounce } from 'lodash'
 import CloseIcon from 'mdi-react/CloseIcon'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Input, Modal, Typography } from '@sourcegraph/wildcard'
+import { Button, FormInput, Modal, Typography } from '@sourcegraph/wildcard'
 
 import { AddUserToOrganizationResult, AddUserToOrganizationVariables } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -83,7 +83,7 @@ export const AddMemberToOrgModal: React.FunctionComponent<
                     </div>
                     {error && <ErrorAlert className={styles.alert} error={error} />}
                     <div className="d-flex flex-row position-relative mt-2">
-                        <Input
+                        <FormInput
                             autoFocus={true}
                             value={username}
                             label="Add member by username"

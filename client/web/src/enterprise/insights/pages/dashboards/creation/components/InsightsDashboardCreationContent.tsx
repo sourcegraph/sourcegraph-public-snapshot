@@ -3,7 +3,7 @@ import React, { ReactNode, useContext } from 'react'
 import classNames from 'classnames'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Input } from '@sourcegraph/wildcard'
+import { FormInput } from '@sourcegraph/wildcard'
 
 import { FormGroup } from '../../../../components/form/form-group/FormGroup'
 import { FormRadioInput } from '../../../../components/form/form-radio-input/FormRadioInput'
@@ -79,7 +79,7 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<
     return (
         // eslint-disable-next-line react/forbid-elements
         <form noValidate={true} ref={ref} onSubmit={handleSubmit}>
-            <Input
+            <FormInput
                 required={true}
                 autoFocus={true}
                 label="Name"

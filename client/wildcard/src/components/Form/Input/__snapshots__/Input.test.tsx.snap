@@ -1,40 +1,33 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Input Renders status 'error' correctly 1`] = `
-<div
-  class="container d-flex"
->
-  <input
-    class="input form-control with-invalid-icon is-invalid"
-    type="text"
-    value=""
-  />
-</div>
+exports[`Input FormInput - supports loading state Renders FormInput status 'error' correctly 1`] = `
+<input
+  class="form-control with-invalid-icon is-invalid"
+  type="text"
+  value=""
+/>
 `;
 
-exports[`Input Renders status 'loading' correctly 1`] = `
-<div
-  class="container d-flex"
->
-  <input
-    class="input form-control with-invalid-icon"
-    type="text"
-    value=""
-  />
-  <div
-    class="loadingSpinner spinner"
-  />
-</div>
+exports[`Input FormInput - supports loading state Renders FormInput status 'valid' correctly 1`] = `
+<input
+  class="form-control with-invalid-icon is-valid"
+  type="text"
+  value=""
+/>
 `;
 
-exports[`Input Renders status 'valid' correctly 1`] = `
-<div
-  class="container d-flex"
->
-  <input
-    class="input form-control with-invalid-icon is-valid"
-    type="text"
-    value=""
-  />
-</div>
+exports[`Input Input - does not support loading state Renders Input status 'error' correctly 1`] = `
+<input
+  class="form-control with-invalid-icon is-invalid"
+  type="text"
+  value=""
+/>
+`;
+
+exports[`Input Input - does not support loading state Renders Input status 'valid' correctly 1`] = `
+<input
+  class="form-control with-invalid-icon is-valid"
+  type="text"
+  value=""
+/>
 `;

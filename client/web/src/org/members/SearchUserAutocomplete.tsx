@@ -6,7 +6,7 @@ import { debounce } from 'lodash'
 // eslint-disable-next-line no-restricted-imports
 import { Dropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 
-import { Input } from '@sourcegraph/wildcard'
+import { FormInput } from '@sourcegraph/wildcard'
 
 import { AutocompleteMembersSearchResult, AutocompleteMembersSearchVariables, Maybe } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -208,7 +208,7 @@ export const AutocompleteSearchUsers: React.FunctionComponent<
         <div className={styles.inputContainer} onKeyDown={onMenuKeyDown} tabIndex={-1} role="menu">
             <Dropdown isOpen={resultsEnabled} toggle={toggleOpen}>
                 <DropdownToggle tag="div" data-toggle="dropdown">
-                    <Input
+                    <FormInput
                         autoFocus={true}
                         ref={inputReference}
                         value={userNameOrEmail}

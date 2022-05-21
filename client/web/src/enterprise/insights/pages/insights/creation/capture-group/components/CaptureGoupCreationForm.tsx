@@ -3,7 +3,7 @@ import React, { useMemo } from 'react'
 import classNames from 'classnames'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Card, Checkbox, Input, Typography, Link, useObservable } from '@sourcegraph/wildcard'
+import { Button, Card, Checkbox, Typography, Link, useObservable, FormInput } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../components/LoaderButton'
 import { CodeInsightTimeStepPicker, CodeInsightDashboardsVisibility } from '../../../../../components/creation-ui-kit'
@@ -88,7 +88,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<
                 title="Targeted repositories"
                 subtitle="Create a list of repositories to run your search over"
             >
-                <Input
+                <FormInput
                     as={RepositoriesField}
                     autoFocus={true}
                     required={true}
@@ -144,7 +144,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<
                         <div className="mb-2">Search query</div>
                         <QueryFieldSubtitle className="mb-3" />
 
-                        <Input
+                        <FormInput
                             required={true}
                             as={CaptureGroupQueryInput}
                             repositories={repositories.input.value}
@@ -190,7 +190,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<
             <hr className="my-4 w-100" />
 
             <FormGroup name="chart settings group" title="Chart settings">
-                <Input
+                <FormInput
                     label="Title"
                     required={true}
                     message="Shown as the title for your insight"

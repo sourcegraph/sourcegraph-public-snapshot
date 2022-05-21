@@ -1,7 +1,7 @@
 import React, { FormEventHandler, RefObject, useMemo } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Checkbox, Input, Link, useObservable } from '@sourcegraph/wildcard'
+import { Button, Checkbox, FormInput, Link, useObservable } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../components/LoaderButton'
 import { CodeInsightDashboardsVisibility, CodeInsightTimeStepPicker } from '../../../../../components/creation-ui-kit'
@@ -113,7 +113,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<
                 title="Targeted repositories"
                 subtitle="Create a list of repositories to run your search over"
             >
-                <Input
+                <FormInput
                     as={RepositoriesField}
                     autoFocus={true}
                     required={true}
@@ -174,7 +174,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<
             <hr className="my-4 w-100" />
 
             <FormGroup name="chart settings group" title="Chart settings">
-                <Input
+                <FormInput
                     label="Title"
                     required={true}
                     message="Shown as the title for your insight"

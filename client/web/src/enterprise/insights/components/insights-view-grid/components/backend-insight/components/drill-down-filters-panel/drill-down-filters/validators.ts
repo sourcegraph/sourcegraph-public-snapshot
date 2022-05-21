@@ -1,6 +1,6 @@
 import { ApolloClient, gql } from '@apollo/client'
 
-import { InputStatus } from '@sourcegraph/wildcard'
+import { FormInputStatus, FormInputStatusType } from '@sourcegraph/wildcard'
 
 import { GetSearchContextByNameResult } from '../../../../../../../../../graphql-operations'
 import { useFieldAPI } from '../../../../../../form/hooks/useField'
@@ -47,20 +47,20 @@ export const createSearchContextValidator = (client: ApolloClient<unknown>) => a
     }
 }
 
-export function getFilterInputStatus<T>({ meta }: useFieldAPI<T>): InputStatus {
+export function getFilterInputStatus<T>({ meta }: useFieldAPI<T>): FormInputStatusType {
     const isValidated = meta.initialValue || meta.touched
 
     if (meta.validState === 'CHECKING') {
-        return InputStatus.loading
+        return FormInputStatus.loading
     }
 
     if (isValidated && meta.validState === 'VALID') {
-        return InputStatus.initial
+        return FormInputStatus.initial
     }
 
     if (isValidated && meta.error) {
-        return InputStatus.error
+        return FormInputStatus.error
     }
 
-    return InputStatus.initial
+    return FormInputStatus.initial
 }

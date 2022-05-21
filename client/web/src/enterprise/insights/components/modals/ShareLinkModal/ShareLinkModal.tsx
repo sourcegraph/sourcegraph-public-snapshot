@@ -5,7 +5,7 @@ import classNames from 'classnames'
 import { noop } from 'lodash'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Badge, Button, Input, LoadingSpinner, Modal, ModalProps, Typography } from '@sourcegraph/wildcard'
+import { Badge, Button, FormInput, LoadingSpinner, Modal, ModalProps, Typography } from '@sourcegraph/wildcard'
 
 import { GetSharableInsightInfoResult } from '../../../../../graphql-operations'
 import {
@@ -53,9 +53,10 @@ export const ShareLinkModal: FunctionComponent<ShareLinkModalProps> = props => {
 
             <ShareLinkModalContent insight={insight} dashboards={dashboards} />
 
-            <Input
+            <FormInput
                 value={shareableUrl}
                 className={styles.input}
+                inputSymbolWrapperClassName={styles.inputSymbol}
                 inputSymbol={
                     <Button
                         ref={copyButtonReference}

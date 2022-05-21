@@ -7,7 +7,7 @@ import { noop } from 'lodash'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isDefined } from '@sourcegraph/common'
-import { InputProps, Link, LoadingSpinner, useDebounce } from '@sourcegraph/wildcard'
+import { FormInputProps, Link, LoadingSpinner, useDebounce } from '@sourcegraph/wildcard'
 
 import { GetSearchContextsResult } from '../../../../../../../../../graphql-operations'
 import { TruncatedText } from '../../../../../../trancated-text/TruncatedText'
@@ -31,7 +31,7 @@ export const SEARCH_CONTEXT_GQL = gql`
     }
 `
 
-interface DrillDownSearchContextFilter extends InputProps {}
+interface DrillDownSearchContextFilter extends FormInputProps {}
 
 export const DrillDownSearchContextFilter: FunctionComponent<DrillDownSearchContextFilter> = props => {
     const { value = '', className, onChange = noop, ...attributes } = props
