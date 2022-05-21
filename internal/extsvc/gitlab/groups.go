@@ -14,6 +14,7 @@ type Group struct {
 
 var MockListGroups func(ctx context.Context) ([]*Group, error)
 
+// TODO: handle pagination
 func (c *Client) ListGroups(ctx context.Context) (groups []*Group, err error) {
 	if MockListGroups != nil {
 		return MockListGroups(ctx)
