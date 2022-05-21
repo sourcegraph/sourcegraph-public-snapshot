@@ -1,6 +1,7 @@
 package gitlaboauth
 
 import (
+	"fmt"
 	"net/url"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
@@ -19,10 +20,14 @@ func Init(db database.DB) {
 	})
 	go func() {
 		conf.Watch(func() {
+			fmt.Println("here.....")
 			newProviders, _ := parseConfig(conf.Get(), db)
 			if len(newProviders) == 0 {
+				fmt.Println("iffff")
+
 				providers.Update(PkgName, nil)
 			} else {
+				fmt.Println("else")
 				newProvidersList := make([]providers.Provider, 0, len(newProviders))
 				for _, p := range newProviders {
 					newProvidersList = append(newProvidersList, p)
@@ -33,8 +38,12 @@ func Init(db database.DB) {
 	}()
 }
 
-func parseConfig(cfg conftypes.SiteConfigQuerier, db database.DB) (ps map[schema.GitLabAuthProvider]providers.Provider, problems conf.Problems) {
-	ps = make(map[schema.GitLabAuthProvider]providers.Provider)
+type Provider struct {
+	*schema.GitLabAuthProvider
+	providers.Provider
+}
+
+func parseConfig(cfg conftypes.SiteConfigQuerier, db database.DB) (ps []Provider, problems conf.Problems) {
 	for _, pr := range cfg.SiteConfig().AuthProviders {
 		if pr.Gitlab == nil {
 			continue
@@ -54,9 +63,10 @@ func parseConfig(cfg conftypes.SiteConfigQuerier, db database.DB) (ps map[schema
 
 		provider, providerMessages := parseProvider(db, callbackURL.String(), pr.Gitlab, pr)
 		problems = append(problems, conf.NewSiteProblems(providerMessages...)...)
-		if provider != nil {
-			ps[*pr.Gitlab] = provider
-		}
+		ps = append(ps, Provider{
+			GitLabAuthProvider: pr.Gitlab,
+			Provider:           provider,
+		})
 	}
 	return ps, problems
 }

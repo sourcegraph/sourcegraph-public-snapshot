@@ -9,6 +9,8 @@ import (
 
 	"golang.org/x/oauth2"
 
+	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
@@ -25,8 +27,9 @@ import (
 
 type sessionIssuerHelper struct {
 	*extsvc.CodeHost
-	clientID string
-	db       database.DB
+	clientID    string
+	db          database.DB
+	allowGroups []string
 }
 
 func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL, lastSourceURL string) (actr *actor.Actor, safeErrMsg string, err error) {
@@ -41,13 +44,14 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	}
 
 	provider := gitlab.NewClientProvider(extsvc.URNGitLabOAuth, s.BaseURL, nil)
-	gClient := provider.GetOAuthClient(token.AccessToken)
+	glClient := provider.GetOAuthClient(token.AccessToken)
 
-	groups, err := gClient.ListGroups(ctx)
-	if err != nil {
-		fmt.Println("debug - error getting user using gitlab client", err)
+	// 🚨 SECURITY: Ensure that the user is part of one of the allowed groups when the allowGroups option is set.
+	userBelongsToAllowedGroups := s.verifyUserGroups(ctx, glClient)
+	if !userBelongsToAllowedGroups {
+		message := "user does not belong to allowed GitLab groups."
+		return nil, message, errors.New(message)
 	}
-	fmt.Println("debug - groups", groups)
 
 	var data extsvc.AccountData
 	gitlab.SetExternalAccountData(&data, gUser, token)
@@ -181,4 +185,26 @@ func (s *sessionIssuerHelper) SessionData(token *oauth2.Token) oauth.SessionData
 		TokenType:   token.Type(),
 		// TODO(beyang): store and use refresh token to auto-refresh sessions
 	}
+}
+
+// verifyUserGroups checks whether the authenticated user belongs to one of the GitLab groups when the allowOrgs option is set
+func (s *sessionIssuerHelper) verifyUserGroups(ctx context.Context, glClient *gitlab.Client) bool {
+	allowed := make(map[string]bool, len(s.allowGroups))
+	for _, group := range s.allowGroups {
+		allowed[group] = true
+	}
+
+	userGroups, err := glClient.ListGroups(ctx)
+	if err != nil {
+		log15.Warn("Could not get GitLab groups for the authenticated user", "error", err)
+		return false
+	}
+
+	for _, uGroup := range userGroups {
+		if allowed[uGroup.Name] {
+			return true
+		}
+	}
+
+	return false
 }
