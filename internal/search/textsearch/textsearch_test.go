@@ -390,6 +390,15 @@ func TestFileMatch_Limit(t *testing.T) {
 			expRemainingLimit:   0,
 			wantLimitHit:        false,
 		},
+		{
+			// An empty FileMatch should still count against the limit
+			numMultilineMatches:    0,
+			numSymbolMatches:       0,
+			limit:                  1,
+			expNumSymbolMatches:    0,
+			expNumMultilineMatches: 0,
+			wantLimitHit:           true,
+		},
 	}
 
 	for _, tt := range tests {
