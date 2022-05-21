@@ -35,19 +35,28 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 
 	var expErr bool
 	authSaveableUsers := map[string]int32{
-		"alice": 1,
+		"alice": 111,
 	}
 
 	glUser := &gitlab.User{ID: int32(101), Username: string("alice"), Email: string("alice@example.com")}
-	expActor := &actor.Actor{UID: 1}
+	glUserGroups := []*gitlab.Group{
+		{Name: "group1"},
+	}
+
+	expActor := &actor.Actor{UID: 111}
 	expAuthUserOp := &auth.GetAndSaveUserOp{
 		UserProps:        u("alice", "alice@example.com", true),
 		ExternalAccount:  acct(extsvc.TypeGitLab, "https://gitlab.com/", clientID, "101"),
 		CreateIfNotExist: true,
 	}
 
-	t.Run("gitlab signin", func(t *testing.T) {
+	t.Run("gitlab signin - session created", func(t *testing.T) {
 		var gotAuthUserOp *auth.GetAndSaveUserOp
+
+		gitlab.MockListGroups = func(ctx context.Context) (groups []*gitlab.Group, err error) {
+			return glUserGroups, errors.New("error getting GitLab groups")
+		}
+
 		auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
 			if gotAuthUserOp != nil {
 				t.Fatal("GetAndSaveUser called more than once")

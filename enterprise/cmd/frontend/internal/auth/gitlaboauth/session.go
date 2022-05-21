@@ -40,6 +40,15 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		return nil, fmt.Sprintf("Error normalizing the username %q. See https://docs.sourcegraph.com/admin/auth/#username-normalization.", login), err
 	}
 
+	provider := gitlab.NewClientProvider(extsvc.URNGitLabOAuth, s.BaseURL, nil)
+	gClient := provider.GetOAuthClient(token.AccessToken)
+
+	groups, err := gClient.ListGroups(ctx)
+	if err != nil {
+		fmt.Println("debug - error getting user using gitlab client", err)
+	}
+	fmt.Println("debug - groups", groups)
+
 	var data extsvc.AccountData
 	gitlab.SetExternalAccountData(&data, gUser, token)
 
@@ -75,6 +84,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 			LastSourceURL:   lastSourceURL,
 		})
 	}
+
 	return actor.FromUser(userID), "", nil
 }
 
