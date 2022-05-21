@@ -8,7 +8,7 @@ exports[`PageHeader renders correctly 1`] = `
     >
       <div>
         <h1
-          class="heading"
+          class="h1 heading"
         >
           <a
             class="anchorLink path"
