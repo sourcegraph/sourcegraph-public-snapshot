@@ -3,14 +3,16 @@ import React from 'react'
 import classNames from 'classnames'
 
 import { ForwardReferenceComponent } from '../../../types'
-import { getAlignmentStyle, getModeStyle, HeadingElement, TypographyProps } from '../utils'
+import { getAlignmentStyle, getModeStyle, TypographyProps } from '../utils'
 
 import styles from './Heading.module.scss'
 
-export type HeadingProps = React.HTMLAttributes<HTMLHeadingElement> &
-    TypographyProps & {
-        styleAs?: HeadingElement
-    }
+export type HeadingProps = React.HTMLAttributes<HTMLHeadingElement> & TypographyProps
+export type HeadingElement = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'
+
+type InternalHeadingProps = HeadingProps & {
+    styleAs?: HeadingElement
+}
 
 const getStyleAs = (headerX: HeadingElement | undefined): string | undefined =>
     headerX && styles[headerX as keyof typeof styles]
@@ -30,4 +32,4 @@ export const Heading = React.forwardRef(
             {children}
         </Component>
     )
-) as ForwardReferenceComponent<'div', HeadingProps>
+) as ForwardReferenceComponent<'div' | HeadingElement, InternalHeadingProps>

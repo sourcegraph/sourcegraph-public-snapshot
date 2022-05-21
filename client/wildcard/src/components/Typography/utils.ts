@@ -5,8 +5,6 @@ import { TYPOGRAPHY_ALIGNMENTS, TYPOGRAPHY_MODES, TYPOGRAPHY_WEIGHTS } from './c
 
 import styles from './Typography.module.scss'
 
-export type HeadingElement = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'
-
 export interface TypographyProps {
     alignment?: typeof TYPOGRAPHY_ALIGNMENTS[number]
     mode?: typeof TYPOGRAPHY_MODES[number]

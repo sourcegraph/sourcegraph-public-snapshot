@@ -166,6 +166,8 @@ export const SearchContextPage: React.FunctionComponent<React.PropsWithChildren<
                             <PageTitle title={searchContextOrError.spec} />
                             <PageHeader
                                 className="mb-2"
+                                headingElement="h2"
+                                headingStyleAs="h1"
                                 path={[
                                     {
                                         icon: MagnifyIcon,
