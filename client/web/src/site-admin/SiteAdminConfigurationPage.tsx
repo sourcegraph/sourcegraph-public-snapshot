@@ -418,9 +418,9 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
             alerts.push(
                 <Alert key="legacy-cluster-props-present" className={styles.alert} variant="info">
                     The configuration contains properties that are valid only in the
-                    <code>values.yaml</code> config file used for Kubernetes cluster deployments of Sourcegraph:{' '}
-                    <code>{legacyKubernetesConfigProps.join(' ')}</code>. You can disregard the validation warnings for
-                    these properties reported by the configuration editor.
+                    <Typography.Code>values.yaml</Typography.Code> config file used for Kubernetes cluster deployments
+                    of Sourcegraph: <Typography.Code>{legacyKubernetesConfigProps.join(' ')}</Typography.Code>. You can
+                    disregard the validation warnings for these properties reported by the configuration editor.
                 </Alert>
             )
         }

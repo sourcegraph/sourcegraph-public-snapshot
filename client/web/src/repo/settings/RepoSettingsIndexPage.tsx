@@ -88,20 +88,18 @@ const TextSearchIndexedReference: React.FunctionComponent<
                 as={isCurrent ? CheckCircleIcon : LoadingSpinner}
             />
             <LinkOrSpan to={indexedRef.ref.url}>
-                <strong>
-                    <code>{indexedRef.ref.displayName}</code>
-                </strong>
+                <Typography.Code weight="bold">{indexedRef.ref.displayName}</Typography.Code>
             </LinkOrSpan>{' '}
             {indexedRef.indexed ? (
                 <span>
                     &nbsp;&mdash; indexed at{' '}
-                    <code>
+                    <Typography.Code>
                         <LinkOrSpan
                             to={indexedRef.indexedCommit?.commit ? indexedRef.indexedCommit.commit.url : repo.url}
                         >
                             {indexedRef.indexedCommit!.abbreviatedOID}
                         </LinkOrSpan>
-                    </code>{' '}
+                    </Typography.Code>{' '}
                     {indexedRef.current ? '(up to date)' : '(index update in progress)'}
                 </span>
             ) : (

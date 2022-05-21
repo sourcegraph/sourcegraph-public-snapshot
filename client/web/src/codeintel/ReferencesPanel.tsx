@@ -605,7 +605,7 @@ const SideBlob: React.FunctionComponent<
                 <LoadingSpinner inline={false} className="mx-auto my-4" />
                 <p className="text-muted text-center">
                     <i>
-                        Loading <code>{props.activeLocation.file}</code>...
+                        Loading <Typography.Code>{props.activeLocation.file}</Typography.Code>...
                     </i>
                 </p>
             </>
@@ -617,7 +617,7 @@ const SideBlob: React.FunctionComponent<
         return (
             <div>
                 <p className="text-danger">
-                    Loading <code>{props.activeLocation.file}</code> failed:
+                    Loading <Typography.Code>{props.activeLocation.file}</Typography.Code> failed:
                 </p>
                 <pre>{error.message}</pre>
             </div>
@@ -634,7 +634,7 @@ const SideBlob: React.FunctionComponent<
         return (
             <p className="text-warning text-center">
                 <i>
-                    Highlighting <code>{props.activeLocation.file}</code> failed
+                    Highlighting <Typography.Code>{props.activeLocation.file}</Typography.Code> failed
                 </i>
             </p>
         )
@@ -837,19 +837,19 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                                     {locationLine.prePostToken.pre === '' ? (
                                         <></>
                                     ) : (
-                                        <code>{locationLine.prePostToken.pre}</code>
+                                        <Typography.Code>{locationLine.prePostToken.pre}</Typography.Code>
                                     )}
                                     <mark className="p-0 selection-highlight sourcegraph-document-highlight">
-                                        <code>{searchToken}</code>
+                                        <Typography.Code>{searchToken}</Typography.Code>
                                     </mark>
                                     {locationLine.prePostToken.post === '' ? (
                                         <></>
                                     ) : (
-                                        <code>{locationLine.prePostToken.post}</code>
+                                        <Typography.Code>{locationLine.prePostToken.post}</Typography.Code>
                                     )}
                                 </>
                             ) : locationLine.line ? (
-                                <code>{locationLine.line}</code>
+                                <Typography.Code>{locationLine.line}</Typography.Code>
                             ) : (
                                 ''
                             )

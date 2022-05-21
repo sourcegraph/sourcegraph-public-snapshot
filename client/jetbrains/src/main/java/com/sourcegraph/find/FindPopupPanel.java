@@ -20,28 +20,45 @@ import java.awt.*;
  * Inspired by <a href="https://sourcegraph.com/github.com/JetBrains/intellij-community/-/blob/platform/lang-impl/src/com/intellij/find/impl/FindPopupPanel.java">FindPopupPanel.java</a>
  */
 public class FindPopupPanel extends JBPanel<FindPopupPanel> implements Disposable {
-    private final SourcegraphJBCefBrowser browser;
+    private SourcegraphJBCefBrowser browser;
+    private final Project project;
+    private final Splitter splitter;
+    private PreviewPanel previewPanel;
 
     public FindPopupPanel(@NotNull Project project) {
         super(new BorderLayout());
+
+        this.project = project;
 
         setPreferredSize(JBUI.size(1200, 800));
         setBorder(PopupBorder.Factory.create(true, true));
         setFocusCycleRoot(true);
 
-        // Create splitter
-        Splitter splitter = new OnePixelSplitter(true, 0.5f, 0.1f, 0.9f);
+        splitter = new OnePixelSplitter(true, 0.5f, 0.1f, 0.9f);
         add(splitter, BorderLayout.CENTER);
 
-        PreviewPanel previewPanel = new PreviewPanel(project);
+        createPreviewPanel();
+        createBrowserPanel();
+    }
+
+    private void createBrowserPanel() {
+        JBPanelWithEmptyText overlayPanel = new JBPanelWithEmptyText();
+        //noinspection DialogTitleCapitalization
+        overlayPanel.getEmptyText().setText("Loading Sourcegraph...");
 
         JBPanelWithEmptyText jcefPanel = new JBPanelWithEmptyText(new BorderLayout()).withEmptyText("Unfortunately, the browser is not available on your system. Try running the IDE with the default OpenJDK.");
-        browser = JBCefApp.isSupported() ? new SourcegraphJBCefBrowser(new JSToJavaBridgeRequestHandler(project, previewPanel)) : null;
-        if (browser != null) {
-            jcefPanel.add(browser.getComponent(), BorderLayout.CENTER);
-        }
 
-        splitter.setFirstComponent(jcefPanel);
+        BrowserAndLoadingPanel topPanel = new BrowserAndLoadingPanel(jcefPanel, overlayPanel);
+
+        browser = JBCefApp.isSupported() ? new SourcegraphJBCefBrowser(new JSToJavaBridgeRequestHandler(project, previewPanel, topPanel)) : null;
+        if (browser != null) {
+            jcefPanel.add(browser.getComponent());
+        }
+        splitter.setFirstComponent(topPanel);
+    }
+
+    private void createPreviewPanel() {
+        previewPanel = new PreviewPanel(project);
         splitter.setSecondComponent(previewPanel);
     }
 

@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func Describe(commandName string, factory RunnerFactory, outFactory func() *output.Output) *cli.Command {
+func Describe(commandName string, factory RunnerFactory, outFactory OutputFactory) *cli.Command {
 	schemaNameFlag := &cli.StringFlag{
 		Name:     "db",
 		Usage:    "The target `schema` to describe.",
