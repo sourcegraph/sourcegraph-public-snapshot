@@ -5,13 +5,13 @@ import (
 	"crypto/md5"
 	"encoding/binary"
 	"fmt"
-	"github.com/stretchr/testify/require"
 	"reflect"
 	"sort"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
