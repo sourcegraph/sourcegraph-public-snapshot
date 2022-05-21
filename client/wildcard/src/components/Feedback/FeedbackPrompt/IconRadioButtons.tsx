@@ -2,7 +2,7 @@ import React, { useCallback } from 'react'
 
 import classNames from 'classnames'
 
-import { Label } from '../../Typography/Label'
+import { Typography } from '../..'
 
 import styles from './IconRadioButtons.module.scss'
 
@@ -41,7 +41,7 @@ export const IconRadioButtons: React.FunctionComponent<React.PropsWithChildren<P
         <ul className={classNames(className, styles.buttons)}>
             {Object.values(icons).map(({ icon: Icon, name: iconName, value }) => (
                 <li key={iconName} className="d-flex">
-                    <Label className={styles.label}>
+                    <Typography.Label className={styles.label}>
                         <input
                             disabled={disabled}
                             type="radio"
@@ -67,7 +67,7 @@ export const IconRadioButtons: React.FunctionComponent<React.PropsWithChildren<P
                         >
                             <Icon />
                         </span>
-                    </Label>
+                    </Typography.Label>
                 </li>
             ))}
         </ul>

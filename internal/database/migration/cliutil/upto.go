@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func UpTo(commandName string, factory RunnerFactory, outFactory func() *output.Output, development bool) *cli.Command {
+func UpTo(commandName string, factory RunnerFactory, outFactory OutputFactory, development bool) *cli.Command {
 	schemaNameFlag := &cli.StringFlag{
 		Name:     "db",
 		Usage:    "The target `schema` to modify.",

@@ -17,7 +17,7 @@ import {
     ValidationOptions,
     deriveInputClassName,
 } from '@sourcegraph/shared/src/util/useInputValidation'
-import { Button, Link, Icon, Checkbox } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, Checkbox, Typography } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../components/LoaderButton'
 import { AuthProvider, SourcegraphContext } from '../jscontext'
@@ -203,14 +203,14 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                     emailInputReference={emailInputReference}
                 />
                 <div className="form-group d-flex flex-column align-content-start">
-                    <label
+                    <Typography.Label
                         htmlFor="username"
                         className={classNames('align-self-start', {
                             'text-danger font-weight-bold': usernameState.kind === 'INVALID',
                         })}
                     >
                         Username
-                    </label>
+                    </Typography.Label>
                     <LoaderInput
                         className={classNames(deriveInputClassName(usernameState))}
                         loading={usernameState.kind === 'LOADING'}
@@ -232,14 +232,14 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                     )}
                 </div>
                 <div className="form-group d-flex flex-column align-content-start">
-                    <label
+                    <Typography.Label
                         htmlFor="password"
                         className={classNames('align-self-start', {
                             'text-danger font-weight-bold': passwordState.kind === 'INVALID',
                         })}
                     >
                         Password
-                    </label>
+                    </Typography.Label>
                     <LoaderInput
                         className={classNames(deriveInputClassName(passwordState))}
                         loading={passwordState.kind === 'LOADING'}

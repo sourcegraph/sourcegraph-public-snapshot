@@ -27,7 +27,6 @@ type ZoektSymbolSearchJob struct {
 func (z *ZoektSymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	tr, ctx, stream, finish := job.StartSpan(ctx, stream, z)
 	defer func() { finish(alert, err) }()
-	tr.TagFields(trace.LazyFields(z.Tags))
 
 	if z.Repos == nil {
 		return nil, nil
@@ -83,7 +82,6 @@ type ZoektGlobalSymbolSearchJob struct {
 func (s *ZoektGlobalSymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
-	tr.TagFields(trace.LazyFields(s.Tags))
 
 	userPrivateRepos := repos.PrivateReposForActor(ctx, clients.DB, s.RepoOpts)
 	s.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)

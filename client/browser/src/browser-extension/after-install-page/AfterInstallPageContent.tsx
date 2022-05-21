@@ -86,7 +86,7 @@ export const AfterInstallPageContent: React.FunctionComponent<React.PropsWithChi
                             <div className="col-md-6 mt-4 mt-md-0">
                                 <Typography.H3>Search shortcut in the URL location bar</Typography.H3>
                                 <p>
-                                    Type <code>src</code>
+                                    Type <Typography.Code>src</Typography.Code>
                                     <kbd>tab</kbd> in the address bar of your browser to search for queries on
                                     Sourcegraph.
                                 </p>

@@ -7,10 +7,12 @@ The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release v
 ### Changes
 
 - Update Access Token headers setting method --thanks @ptxmac for the contribution! [issues/34338](https://github.com/sourcegraph/sourcegraph/issues/34338)
+- Add ability to import Sourcegraph Access token automatically after logging in on Sourcegraph Cloud [issues/28311](https://github.com/sourcegraph/sourcegraph/issues/28311)
 
 ### Fixes
 
 - Windows file path issue [issues/34788](https://github.com/sourcegraph/sourcegraph/issues/34788)
+- Sourcegraph icon in help sidebar now shows on light theme [issues/35672](https://github.com/sourcegraph/sourcegraph/issues/35672)
 
 ## 2.2.2
 

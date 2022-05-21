@@ -131,7 +131,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                     tabindex="0"
                   >
                     <code
-                      class="codeExcerpt"
+                      class="code codeExcerpt"
                       data-testid="code-excerpt"
                     >
                       <table>
@@ -390,7 +390,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                     tabindex="0"
                   >
                     <code
-                      class="codeExcerpt"
+                      class="code codeExcerpt"
                       data-testid="code-excerpt"
                     >
                       <table>
@@ -601,7 +601,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                     tabindex="0"
                   >
                     <code
-                      class="codeExcerpt"
+                      class="code codeExcerpt"
                       data-testid="code-excerpt"
                     >
                       <table>

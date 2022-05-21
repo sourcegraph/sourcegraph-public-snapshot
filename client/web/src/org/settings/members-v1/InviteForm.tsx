@@ -11,7 +11,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { LoadingSpinner, Button, Link, Alert, Icon } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Button, Link, Alert, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { requestGraphQL } from '../../../backend/graphql'
@@ -104,9 +104,9 @@ export const InviteForm: React.FunctionComponent<React.PropsWithChildren<Props>>
     return (
         <div>
             <div className={styles.container}>
-                <label htmlFor="invite-form__username">
+                <Typography.Label htmlFor="invite-form__username">
                     {viewerCanAddUserToOrganization ? 'Add or invite member' : 'Invite member'}
-                </label>
+                </Typography.Label>
                 <Form className="form-inline align-items-start" onSubmit={onSubmit}>
                     <input
                         type="text"
@@ -165,8 +165,9 @@ export const InviteForm: React.FunctionComponent<React.PropsWithChildren<Props>>
             {authenticatedUser?.siteAdmin && !emailInvitesEnabled && (
                 <DismissibleAlert variant="info" partialStorageKey="org-invite-email-config">
                     <p className=" mb-0">
-                        Set <code>email.smtp</code> in <Link to="/site-admin/configuration">site configuration</Link> to
-                        send email notifications about invitations.
+                        Set <Typography.Code>email.smtp</Typography.Code> in{' '}
+                        <Link to="/site-admin/configuration">site configuration</Link> to send email notifications about
+                        invitations.
                     </p>
                 </DismissibleAlert>
             )}
