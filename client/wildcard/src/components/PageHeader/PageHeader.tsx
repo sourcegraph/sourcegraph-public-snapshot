@@ -38,7 +38,7 @@ interface Props {
     actions?: React.ReactNode
     /** Heading element to use, defaults to h1 */
     headingElement?: HeadingElement
-    /** Set heading element style, defaults to h1 */
+    /** Set heading element style */
     headingStyleAs?: HeadingElement
     className?: string
 }
@@ -51,7 +51,7 @@ export const PageHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
     actions,
     className,
     headingElement = 'h1',
-    headingStyleAs = 'h1',
+    headingStyleAs,
 }) => {
     if (path.length === 0) {
         return null
@@ -61,7 +61,7 @@ export const PageHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
         <div className={classNames(styles.container, className)}>
             <div>
                 {annotation && <small className={styles.annotation}>{annotation}</small>}
-                <Heading as={headingElement} styleAs={headingStyleAs} className={styles.heading}>
+                <Heading as={headingElement} styleAs={headingStyleAs ?? headingElement} className={styles.heading}>
                     {path.map(({ to, text, icon: Icon, ariaLabel }, index) => (
                         <React.Fragment key={index}>
                             {index !== 0 && <span className={styles.divider}>/</span>}
