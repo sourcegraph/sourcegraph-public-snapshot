@@ -8,7 +8,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/lib/log/internal/encoders"
 	"github.com/sourcegraph/sourcegraph/lib/log/internal/globallogger"
-	"github.com/sourcegraph/sourcegraph/lib/log/internal/sinkcores"
 	"github.com/sourcegraph/sourcegraph/lib/log/otfields"
 	"github.com/sourcegraph/sourcegraph/lib/log/sinks"
 )
@@ -30,7 +29,7 @@ type Resource = otfields.Resource
 // For testing, you can use 'logtest.Init' to initialize the logging library.
 //
 // If Init is not called, Get will panic.
-func Init(r Resource, sinks ...*sinks.Sinks) (sync func() error) {
+func Init(r Resource, sinks ...sinks.SinkCore) (sync func() error) {
 	if globallogger.IsInitialized() {
 		panic("log.Init initialized multiple times")
 	}
@@ -41,7 +40,7 @@ func Init(r Resource, sinks ...*sinks.Sinks) (sync func() error) {
 
 	var cores []zapcore.Core
 	for _, s := range sinks {
-		cores = append(cores, sinkcores.Build(s)...)
+		cores = append(cores, s.Core())
 	}
 	return globallogger.Init(r, level, format, development, cores)
 }
