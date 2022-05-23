@@ -56,15 +56,17 @@ func sameElements(a, b []string) bool {
 func TestFilterRemoteExtensions(t *testing.T) {
 	defer licensing.TestingSkipFeatureChecks()()
 
-	run := func(allowRemoteExtensions *[]string, extensions []string, want []string) {
+	run := func(extensionConfig *schema.Extensions, extensions []*registry.Extension, want []string) {
 		t.Helper()
-		if allowRemoteExtensions != nil {
-			conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{Extensions: &schema.Extensions{AllowRemoteExtensions: *allowRemoteExtensions}}})
+
+		if extensionConfig != nil {
+			conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{Extensions: extensionConfig}})
 			defer conf.Mock(nil)
 		}
+
 		var xs []*registry.Extension
-		for _, id := range extensions {
-			xs = append(xs, &registry.Extension{ExtensionID: id})
+		for _, x := range extensions {
+			xs = append(xs, x)
 		}
 		got := []string{}
 		for _, x := range frontendregistry.FilterRemoteExtensions(xs) {
@@ -75,12 +77,184 @@ func TestFilterRemoteExtensions(t *testing.T) {
 		}
 	}
 
-	run(nil, []string{}, []string{})
-	run(nil, []string{"a"}, []string{"a"})
-	run(&[]string{}, []string{}, []string{})
-	run(&[]string{"a"}, []string{}, []string{})
-	run(&[]string{}, []string{"a"}, []string{})
-	run(&[]string{"a"}, []string{"b"}, []string{})
-	run(&[]string{"a"}, []string{"a"}, []string{"a"})
-	run(&[]string{"b", "c"}, []string{"a", "b", "c"}, []string{"b", "c"})
+	run(nil, []*registry.Extension{}, []string{})
+	run(nil, []*registry.Extension{{ExtensionID: "a"}}, []string{"a"})
+	run(&schema.Extensions{AllowRemoteExtensions: []string{}}, []*registry.Extension{}, []string{})
+	run(&schema.Extensions{AllowRemoteExtensions: []string{"a"}}, []*registry.Extension{}, []string{})
+	run(&schema.Extensions{AllowRemoteExtensions: []string{}}, []*registry.Extension{{ExtensionID: "a"}}, []string{})
+	run(&schema.Extensions{AllowRemoteExtensions: []string{"a"}}, []*registry.Extension{{ExtensionID: "b"}}, []string{})
+	run(&schema.Extensions{AllowRemoteExtensions: []string{"a"}}, []*registry.Extension{{ExtensionID: "a"}}, []string{"a"})
+	run(&schema.Extensions{AllowRemoteExtensions: []string{"b", "c"}}, []*registry.Extension{{ExtensionID: "a"}, {ExtensionID: "b"}, {ExtensionID: "c"}}, []string{"b", "c"})
+	run(
+		&schema.Extensions{
+			AllowOnlySourcegraphAuthoredExtensions: true,
+		},
+		[]*registry.Extension{
+			{
+				ExtensionID: "a",
+				Publisher: registry.Publisher{
+					Name: "sourcegraph",
+					URL:  "https://sourcegraph.com/extensions/registry/publishers/organizations/sourcegraph",
+				},
+			},
+			{
+				ExtensionID: "b",
+				Publisher: registry.Publisher{
+					Name: "tobias",
+					URL:  "https://sourcegraph.com/extensions/registry/publishers/users/tobias",
+				},
+			},
+			{
+				ExtensionID: "c",
+				Publisher: registry.Publisher{
+					Name: "sourcegraph",
+					URL:  "https://sourcegraph.com/extensions/registry/publishers/organizations/sourcegraph",
+				},
+			},
+		},
+		[]string{"a", "c"},
+	)
+	run(
+		&schema.Extensions{
+			AllowOnlySourcegraphAuthoredExtensions: true,
+			AllowRemoteExtensions:                  []string{"b", "c"},
+		},
+		[]*registry.Extension{
+			{
+				ExtensionID: "a",
+				Publisher: registry.Publisher{
+					Name: "sourcegraph",
+					URL:  "https://sourcegraph.com/extensions/registry/publishers/organizations/sourcegraph",
+				},
+			},
+			{
+				ExtensionID: "b",
+				Publisher: registry.Publisher{
+					Name: "sourcegraph",
+					URL:  "https://sourcegraph.com/extensions/registry/publishers/organizations/sourcegraph",
+				},
+			},
+			{
+				ExtensionID: "c",
+				Publisher: registry.Publisher{
+					Name: "tobias",
+					URL:  "https://sourcegraph.com/extensions/registry/publishers/users/tobias",
+				},
+			},
+		},
+		[]string{"b", "c"},
+	)
+	run(
+		&schema.Extensions{
+			AllowOnlySourcegraphAuthoredExtensions: true,
+			AllowRemoteExtensions:                  []string{},
+		},
+		[]*registry.Extension{
+			{
+				ExtensionID: "a",
+				Publisher: registry.Publisher{
+					Name: "sourcegraph",
+					URL:  "https://sourcegraph.com/extensions/registry/publishers/organizations/sourcegraph",
+				},
+			},
+			{
+				ExtensionID: "b",
+				Publisher: registry.Publisher{
+					Name: "sourcegraph",
+					URL:  "https://sourcegraph.com/extensions/registry/publishers/organizations/sourcegraph",
+				},
+			},
+		},
+		[]string{},
+	)
+	run(
+		&schema.Extensions{
+			AllowOnlySourcegraphAuthoredExtensions: true,
+			RemoteRegistry:                         "https://sourcegraph.com/.api/registry",
+		},
+		[]*registry.Extension{
+			{
+				ExtensionID: "a",
+				Publisher: registry.Publisher{
+					Name: "sourcegraph",
+					URL:  "https://sourcegraph.com/extensions/registry/publishers/organizations/sourcegraph",
+				},
+			},
+			{
+				ExtensionID: "b",
+				Publisher: registry.Publisher{
+					Name: "tobias",
+					URL:  "https://sourcegraph.com/extensions/registry/publishers/users/tobias",
+				},
+			},
+			{
+				ExtensionID: "c",
+				Publisher: registry.Publisher{
+					Name: "sourcegraph",
+					URL:  "https://sourcegraph.com/extensions/registry/publishers/organizations/sourcegraph",
+				},
+			},
+		},
+		[]string{"a", "c"},
+	)
+	run(
+		&schema.Extensions{
+			AllowOnlySourcegraphAuthoredExtensions: true,
+			RemoteRegistry:                         false,
+		},
+		[]*registry.Extension{
+			{
+				ExtensionID: "a",
+				Publisher: registry.Publisher{
+					Name: "sourcegraph",
+					URL:  "https://sourcegraph.com/extensions/registry/publishers/organizations/sourcegraph",
+				},
+			},
+			{
+				ExtensionID: "b",
+				Publisher: registry.Publisher{
+					Name: "tobias",
+					URL:  "https://sourcegraph.com/extensions/registry/publishers/users/tobias",
+				},
+			},
+			{
+				ExtensionID: "c",
+				Publisher: registry.Publisher{
+					Name: "sourcegraph",
+					URL:  "https://sourcegraph.com/extensions/registry/publishers/organizations/sourcegraph",
+				},
+			},
+		},
+		[]string{"a", "b", "c"},
+	)
+	run(
+		&schema.Extensions{
+			AllowOnlySourcegraphAuthoredExtensions: true,
+			RemoteRegistry:                         "https://some-remote-registry.com/.api/registry",
+		},
+		[]*registry.Extension{
+			{
+				ExtensionID: "a",
+				Publisher: registry.Publisher{
+					Name: "sourcegraph",
+					URL:  "https://sourcegraph.com/extensions/registry/publishers/organizations/sourcegraph",
+				},
+			},
+			{
+				ExtensionID: "b",
+				Publisher: registry.Publisher{
+					Name: "tobias",
+					URL:  "https://sourcegraph.com/extensions/registry/publishers/users/tobias",
+				},
+			},
+			{
+				ExtensionID: "c",
+				Publisher: registry.Publisher{
+					Name: "sourcegraph",
+					URL:  "https://sourcegraph.com/extensions/registry/publishers/organizations/sourcegraph",
+				},
+			},
+		},
+		[]string{"a", "b", "c"},
+	)
 }

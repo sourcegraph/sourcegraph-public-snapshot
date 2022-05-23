@@ -1024,6 +1024,11 @@
           "items": {
             "type": "string"
           }
+        },
+        "allowOnlySourcegraphAuthoredExtensions": {
+          "description": "Allow only Sourcegraph authored extensions from the default remote registry. If not set, all remote extensions may be used from the remote registry. If certain extensions are marked as allowed in `allowRemoteExtensions` field or `remoteRegistry` points to other than default registry, `allowOnlySourcegraphAuthoredExtensions` setting value will be ignored. To completely disable the remote registry, set `remoteRegistry` to `false`.",
+          "type": "boolean",
+          "default": false
         }
       },
       "default": {
