@@ -110,7 +110,7 @@ func (c *Core) Write(entry zapcore.Entry, fields []zapcore.Field) error {
 	c.base.Message = entry.Message
 	c.base.Level = entry.Level
 
-	n := 0
+	sentryFields := make([]zapcore.Field, 0, len(fields))
 	for _, f := range fields {
 		if f.Type == zapcore.ErrorType {
 			if enc, ok := f.Interface.(*encoders.ErrorEncoder); ok {
@@ -120,11 +120,9 @@ func (c *Core) Write(entry zapcore.Entry, fields []zapcore.Field) error {
 				continue
 			}
 		}
-		fields[n] = f
-		n++
+		sentryFields = append(sentryFields, f)
 	}
-	fields = fields[:n] // account for the filtered out elements.
-	c.base.Fields = append(fields, c.base.Fields...)
+	c.base.Fields = append(sentryFields, c.base.Fields...)
 
 	c.w.in.Add(1)
 	go func() {
