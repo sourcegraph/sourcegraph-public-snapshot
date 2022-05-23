@@ -77,7 +77,7 @@ export const SidebarCollapseItems: React.FunctionComponent<
                     <span>
                         {CollapseItemIcon && (
                             <Icon role="img" className="mr-1" as={CollapseItemIcon} aria-hidden={true} />
-                        )}
+                        )}{' '}
                         {label}
                     </span>
                     <Icon

@@ -50,7 +50,7 @@ export const SaveToolbar: React.FunctionComponent<
     return (
         <>
             {error && willShowError() && (
-                <div className={styles.error}>
+                <div className={styles.error} role="alert">
                     <Icon role="img" className={styles.errorIcon} as={AlertCircleIcon} aria-hidden={true} />
                     {error.message}
                 </div>

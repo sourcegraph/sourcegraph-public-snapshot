@@ -534,9 +534,12 @@ const CollapsibleLocationList: React.FunctionComponent<
                         aria-expanded={props.isOpen(props.name)}
                         type="button"
                         className="d-flex p-0 justify-content-start w-100"
-                        aria-label={isOpen ? 'Close' : 'Open'}
                     >
-                        <Icon role="img" aria-hidden={true} as={isOpen ? ChevronDownIcon : ChevronRightIcon} />
+                        {isOpen ? (
+                            <Icon aria-label="Close" as={ChevronDownIcon} />
+                        ) : (
+                            <Icon aria-label="Expand" as={ChevronRightIcon} />
+                        )}{' '}
                         <Typography.H4 className="mb-0">{capitalize(props.name)}</Typography.H4>
                         <span className={classNames('ml-2 text-muted small', styles.cardHeaderSmallText)}>
                             ({props.locations.length} displayed{props.hasMore ? ', more available)' : ')'}
@@ -749,10 +752,13 @@ const CollapsibleRepoLocationGroup: React.FunctionComponent<
                     as={Button}
                     aria-expanded={open}
                     type="button"
-                    aria-label={`${open ? 'Close' : 'Open'}`}
                     className={classNames('d-flex justify-content-start w-100', styles.repoLocationGroupHeader)}
                 >
-                    <Icon role="img" aria-hidden={true} as={open ? ChevronDownIcon : ChevronRightIcon} />
+                    {open ? (
+                        <Icon aria-label="Close" as={ChevronDownIcon} />
+                    ) : (
+                        <Icon aria-label="Expand" as={ChevronRightIcon} />
+                    )}
                     <small>
                         <Link
                             to={repoUrl}
@@ -814,9 +820,12 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                         'bg-transparent border-top-0 border-left-0 border-right-0 d-flex justify-content-start w-100',
                         styles.locationGroupHeader
                     )}
-                    aria-label={open ? 'Open' : 'Close'}
                 >
-                    <Icon role="img" aria-hidden={true} as={open ? ChevronDownIcon : ChevronRightIcon} />
+                    {open ? (
+                        <Icon aria-label="Close" as={ChevronDownIcon} />
+                    ) : (
+                        <Icon aria-label="Expand" as={ChevronRightIcon} />
+                    )}
                     <small className={styles.locationGroupHeaderFilename}>
                         {highlighted.length === 2 ? (
                             <span>

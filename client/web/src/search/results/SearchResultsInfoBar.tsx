@@ -325,7 +325,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                     outline={true}
                     variant="secondary"
                     size="sm"
-                    aria-label="Show Filters"
+                    aria-label={`${showFilters ? 'Hide' : 'Show'} filters`}
                 >
                     <Icon role="img" aria-hidden={true} className="mr-1" as={MenuIcon} />
                     Filters

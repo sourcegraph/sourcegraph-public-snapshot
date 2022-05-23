@@ -62,19 +62,21 @@ export const NotebookNode: React.FunctionComponent<React.PropsWithChildren<Noteb
                     {node.viewerHasStarred ? (
                         <Icon
                             role="img"
-                            aria-label="Unstar Notebook"
+                            aria-label="You have starred this notebook"
                             className={classNames(styles.notebookStarIcon, styles.notebookStarIconActive)}
                             as={StarIcon}
                         />
                     ) : (
                         <Icon
                             role="img"
-                            aria-label="Star Notebook"
+                            aria-label="You have not starred this notebook"
                             className={styles.notebookStarIcon}
                             as={StarOutlineIcon}
                         />
                     )}
-                    <span className="ml-1">{node.stars.totalCount}</span>
+                    <span className="ml-1" aria-label={`${node.stars.totalCount} stars`}>
+                        {node.stars.totalCount}
+                    </span>
                 </span>
                 <span className="mr-3">
                     Updated <Timestamp date={node.updatedAt} noAbout={true} />

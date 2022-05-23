@@ -10,7 +10,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
       class="row"
     >
       <button
-        aria-label="Show Filters"
+        aria-label="Show filters"
         aria-pressed="false"
         class="btn btnOutlineSecondary btnSm d-flex d-lg-none"
         type="button"
@@ -125,7 +125,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
       class="row"
     >
       <button
-        aria-label="Show Filters"
+        aria-label="Show filters"
         aria-pressed="false"
         class="btn btnOutlineSecondary btnSm d-flex d-lg-none"
         type="button"
@@ -267,7 +267,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
       class="row"
     >
       <button
-        aria-label="Show Filters"
+        aria-label="Show filters"
         aria-pressed="false"
         class="btn btnOutlineSecondary btnSm d-flex d-lg-none"
         type="button"
@@ -406,7 +406,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
       class="row"
     >
       <button
-        aria-label="Show Filters"
+        aria-label="Show filters"
         aria-pressed="false"
         class="btn btnOutlineSecondary btnSm d-flex d-lg-none"
         type="button"
@@ -551,7 +551,7 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
       class="row"
     >
       <button
-        aria-label="Show Filters"
+        aria-label="Show filters"
         aria-pressed="false"
         class="btn btnOutlineSecondary btnSm d-flex d-lg-none"
         type="button"
