@@ -59,9 +59,9 @@ export const RetentionSettings: FunctionComponent<React.PropsWithChildren<Retent
                     className={styles.radioButtons}
                 />
 
-                <label className="ml-4" htmlFor="retention-duration">
+                <Typography.Label className="ml-4" htmlFor="retention-duration">
                     Duration
-                </label>
+                </Typography.Label>
                 <DurationSelect
                     id="retention-duration"
                     value={policy.retentionDurationHours ? `${policy.retentionDurationHours}` : null}
@@ -80,9 +80,9 @@ export const RetentionSettings: FunctionComponent<React.PropsWithChildren<Retent
                         onToggle={retainIntermediateCommits => updatePolicy({ retainIntermediateCommits })}
                         disabled={policy.protected || !policy.retentionEnabled}
                     />
-                    <label htmlFor="retain-intermediate-commits" className="ml-2">
+                    <Typography.Label htmlFor="retain-intermediate-commits" className="ml-2">
                         Retain intermediate commits
-                    </label>
+                    </Typography.Label>
                 </div>
             )}
         </div>

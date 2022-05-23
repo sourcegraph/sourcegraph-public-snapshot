@@ -1,0 +1,22 @@
+.page-container {
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem;
+    width: 100%;
+    height: 100%;
+}
+
+.header-container {
+    display: flex;
+    flex: 0;
+    justify-content: space-between;
+    align-items: flex-end;
+}
+
+.action-buttons-container {
+    display: flex;
+    flex-direction: column;
+    flex: 0;
+    justify-content: center;
+    align-items: center;
+}

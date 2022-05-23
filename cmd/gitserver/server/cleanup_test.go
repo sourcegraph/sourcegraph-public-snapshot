@@ -596,7 +596,7 @@ func TestRemoveRepoDirectory(t *testing.T) {
 		if err := database.Repos(db).Create(ctx, repo); err != nil {
 			t.Fatal(err)
 		}
-		if err := database.GitserverRepos(db).Upsert(ctx, &types.GitserverRepo{
+		if err := db.GitserverRepos().Upsert(ctx, &types.GitserverRepo{
 			RepoID:      repo.ID,
 			ShardID:     "test",
 			CloneStatus: types.CloneStatusCloned,
@@ -613,6 +613,17 @@ func TestRemoveRepoDirectory(t *testing.T) {
 	}
 
 	// Remove everything but github.com/foo/survivor
+	for _, d := range []string{
+		"github.com/foo/baz/.git",
+		"github.com/bam/bam/.git",
+		"example.com/repo/.git",
+	} {
+		if err := s.removeRepoDirectory(GitDir(filepath.Join(root, d))); err != nil {
+			t.Fatalf("failed to remove %s: %s", d, err)
+		}
+	}
+
+	// Removing them a second time is safe
 	for _, d := range []string{
 		"github.com/foo/baz/.git",
 		"github.com/bam/bam/.git",
@@ -641,7 +652,7 @@ func TestRemoveRepoDirectory(t *testing.T) {
 		if !ok {
 			t.Fatal("id mapping not found")
 		}
-		r, err := database.GitserverRepos(db).GetByID(ctx, id)
+		r, err := db.GitserverRepos().GetByID(ctx, id)
 		if err != nil {
 			t.Fatal(err)
 		}

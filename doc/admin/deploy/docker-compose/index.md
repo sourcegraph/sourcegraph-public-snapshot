@@ -27,17 +27,38 @@ Our Docker Compose support also has the following requirements:
 
 ### Reference Repository
 
+The Reference Repository contains everything you need to install and [configure](#configuration) a Docker Compose Sourcegraph instance, and it will make [upgrades](#upgrade-and-migration) far easier.
+
 We **strongly** recommend that you create and run Sourcegraph from your own fork of the [`sourcegraph/deploy-sourcegraph-docker` reference repository](https://github.com/sourcegraph/deploy-sourcegraph-docker/) to track customizations to the [Sourcegraph Docker Compose YAML](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml). 
 
-This repository contains everything you need to install and [configure](#configuration) a Docker Compose Sourcegraph instance, and will make [upgrades](#upgrade-and-migration) far easier.
+> WARNING: Forks of public repos are also public. If you plan to store secrets (SSL certificates, external Postgres credentials, etc.) within the repository you should rather duplicate the reference repository and make your copy private. 
 
-The sections below cover the process to [create a fork](#create-a-fork), [clone](#clone-your-fork), [configure a release branch](#configure-release-branch), and [make YAML customizations](#make-yaml-customizations). Once completed you'll be ready to [run](#run-sourcegraph) Sourcegraph.
+The followng sections cover the process to [create a fork or private duplicate](#create-a-fork-or-private-duplicate), [clone](#clone-your-fork), [configure a release branch](#configure-release-branch), and [make YAML customizations](#make-yaml-customizations). Once completed you'll be ready to [run](#run-sourcegraph) Sourcegraph.
 
-#### Create a fork
+#### Create a fork or private duplicate
 
-[Create a fork](https://docs.github.com/en/get-started/quickstart/fork-a-repo#forking-a-repository) of the [sourcegraph/deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/) [reference repository](#reference-repository).
+[Create a public fork](https://docs.github.com/en/get-started/quickstart/fork-a-repo#forking-a-repository) of the [sourcegraph/deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/) [reference repository](#reference-repository).
 
-> WARNING: Set your fork to **private** if you plan to store secrets (SSL certificates, external Postgres credentials, etc.) within the repository.
+Alternatively, create a [private duplicate](https://docs.github.com/en/repositories/creating-and-managing-repositories/duplicating-a-repository#mirroring-a-repository) of the [sourcegraph/deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/) [reference repository](#reference-repository) as follows:
+
+Create an [empty private repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-new-repository), for example <you/private-repository> in GitHub, then bare clone the reference repository. 
+
+  ```bash
+  git clone --bare https://github.com/sourcegraph/deploy-sourcegraph-docker/
+  ```
+  
+Navigate to the bare clone and mirror push it to your private repository.
+
+  ```bash
+  cd deploy-sourcegraph-docker.git
+  git push --mirror https://github.com/<you/private-repository>.git
+  ```
+
+Remove your local bare clone. 
+  ```bash
+  cd ..
+  rm -rf deploy-sourcegraph-docker.git
+  ```
 
 #### Clone your fork
 

@@ -1,5 +1,7 @@
 import React from 'react'
 
+import { Typography } from '@sourcegraph/wildcard'
+
 import terminalStyles from './Terminal.module.scss'
 
 // 73 '=' characters are the 100% of the progress bar
@@ -13,7 +15,7 @@ export const Terminal: React.FunctionComponent<React.PropsWithChildren<unknown>>
 
 export const TerminalTitle: React.FunctionComponent<React.PropsWithChildren<unknown>> = ({ children }) => (
     <header className={terminalStyles.terminalTitle}>
-        <code>{children}</code>
+        <Typography.Code>{children}</Typography.Code>
     </header>
 )
 
@@ -23,7 +25,7 @@ export const TerminalLine: React.FunctionComponent<React.PropsWithChildren<unkno
 
 export const TerminalDetails: React.FunctionComponent<React.PropsWithChildren<unknown>> = ({ children }) => (
     <div>
-        <code>{children}</code>
+        <Typography.Code>{children}</Typography.Code>
     </div>
 )
 
@@ -32,5 +34,7 @@ export const TerminalProgress: React.FunctionComponent<
 > = ({ progress = 0, character = '#' }) => {
     const numberOfChars = Math.ceil((progress / 100) * CHARACTERS_LENGTH)
 
-    return <code className={terminalStyles.downloadProgress}>{character.repeat(numberOfChars)}</code>
+    return (
+        <Typography.Code className={terminalStyles.downloadProgress}>{character.repeat(numberOfChars)}</Typography.Code>
+    )
 }

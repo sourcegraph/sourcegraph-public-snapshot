@@ -8,7 +8,7 @@ import (
 )
 
 func GetSiteUsageStats(ctx context.Context, db database.DB, monthsOnly bool) (*types.SiteUsageStatistics, error) {
-	summary, err := database.EventLogs(db).SiteUsage(ctx)
+	summary, err := db.EventLogs().SiteUsage(ctx)
 	if err != nil {
 		return nil, err
 	}

@@ -3,6 +3,7 @@ package com.sourcegraph.git;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.sourcegraph.config.ConfigUtil;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -13,12 +14,13 @@ public class GitUtil {
     // repoInfo returns the Sourcegraph repository URI, and the file path
     // relative to the repository root. If the repository URI cannot be
     // determined, a RepoInfo with empty strings is returned.
+    @NotNull
     public static RepoInfo getRepoInfo(String filePath, Project project) {
         String relativePath = "";
         String remoteUrl = "";
         String branchName = "";
         try {
-            String defaultBranchNameSetting = ConfigUtil.getDefaultBranchNameSetting(project);
+            String defaultBranchNameSetting = ConfigUtil.getDefaultBranchName(project);
             String repoRootPath = getRepoRootPath(filePath);
 
             // Determine file path, relative to repository root.
@@ -51,6 +53,7 @@ public class GitUtil {
     /**
      * E.g. "origin" -> "git@github.com:foo/bar"
      */
+    @NotNull
     private static String getRemoteUrl(String repoDirectoryPath, String remoteName) throws Exception {
         String result = exec("git remote get-url " + remoteName, repoDirectoryPath).trim();
         if (result.isEmpty()) {
@@ -64,6 +67,7 @@ public class GitUtil {
      * Falls back to the "origin" remote.
      * An exception is thrown if neither exists.
      */
+    @NotNull
     private static String getConfiguredRemoteUrl(String repoDirectoryPath) throws Exception {
         try {
             return getRemoteUrl(repoDirectoryPath, "sourcegraph");
@@ -79,6 +83,7 @@ public class GitUtil {
     /**
      * Returns the repository root directory for any path within a repository.
      */
+    @NotNull
     private static String getRepoRootPath(String path) throws IOException {
         return exec("git rev-parse --show-toplevel", path).trim();
     }
@@ -87,6 +92,7 @@ public class GitUtil {
      * Returns the current branch name of the repository.
      * In detached HEAD state and other exceptional cases it returns "HEAD".
      */
+    @NotNull
     private static String getCurrentBranchName(String path) throws IOException {
         return exec("git rev-parse --abbrev-ref HEAD", path).trim();
     }

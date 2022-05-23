@@ -514,6 +514,7 @@ exports[`FeedbackPrompt should render submit error correctly 1`] = `
             </li>
           </ul>
           <div
+            aria-live="assertive"
             class="mt-3"
             role="alert"
           >

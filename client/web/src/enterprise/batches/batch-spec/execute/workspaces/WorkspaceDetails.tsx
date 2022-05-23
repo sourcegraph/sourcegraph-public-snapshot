@@ -290,8 +290,8 @@ const IgnoredWorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<I
             <VisuallyHidden>Ignored Workspace</VisuallyHidden>
         </Typography.H1>
         <p className="text-center">
-            This workspace has been skipped because a <code>.batchignore</code> file is present in the workspace
-            repository.
+            This workspace has been skipped because a <Typography.Code>.batchignore</Typography.Code> file is present in
+            the workspace repository.
         </p>
         <p className="text-center">Enable the execution option to "allow ignored" to override.</p>
     </>

@@ -366,7 +366,7 @@ const MigrationNode: React.FunctionComponent<React.PropsWithChildren<MigrationNo
                                 </div>
 
                                 <span className={classNames('py-1 pl-2', styles.nodeGridCode)}>
-                                    <code>{error.message}</code>
+                                    <Typography.Code>{error.message}</Typography.Code>
                                 </span>
                             </React.Fragment>
                         ))}

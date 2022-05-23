@@ -53,11 +53,14 @@ exports[`SearchStatsPage limitHit 1`] = `
       class="my-3"
     />
     <div
+      aria-live="assertive"
       class=""
       role="alert"
     >
       Limit hit. Add 
-      <code>
+      <code
+        class="code"
+      >
         count:5000
       </code>
        (or an even larger number) to your query to retry with a higher limit.

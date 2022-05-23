@@ -406,6 +406,8 @@ describe('getCompletionItems()', () => {
               "contains.commit.after(\${1:1 month ago}) ",
               "deps(\${1}) ",
               "dependencies(\${1}) ",
+              "revdeps(\${1}) ",
+              "dependents(\${1}) ",
               "^repo/with\\\\ a\\\\ space$ "
             ]
         `)
@@ -428,7 +430,9 @@ describe('getCompletionItems()', () => {
               "contains(file:\${1:CHANGELOG} content:\${2:fix}) ",
               "contains.commit.after(\${1:1 month ago}) ",
               "deps(\${1}) ",
-              "dependencies(\${1}) "
+              "dependencies(\${1}) ",
+              "revdeps(\${1}) ",
+              "dependents(\${1}) "
             ]
         `)
     })

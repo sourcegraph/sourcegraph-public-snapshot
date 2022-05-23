@@ -3,6 +3,7 @@ module github.com/sourcegraph/sourcegraph/lib
 go 1.18
 
 require (
+	github.com/charmbracelet/glamour v0.5.0
 	github.com/cockroachdb/errors v1.8.9
 	github.com/derision-test/go-mockgen v1.1.2
 	github.com/fatih/color v1.13.0
@@ -35,27 +36,36 @@ require (
 
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
+	github.com/alecthomas/chroma v0.10.0 // indirect
 	github.com/alecthomas/kingpin v2.2.6+incompatible // indirect
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751 // indirect
 	github.com/alecthomas/units v0.0.0-20211218093645-b94a6e3cc137 // indirect
+	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/cockroachdb/logtags v0.0.0-20211118104740-dabe8e521a4f // indirect
 	github.com/cockroachdb/redact v1.1.3 // indirect
 	github.com/dave/jennifer v1.4.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/dlclark/regexp2 v1.4.0 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/getsentry/sentry-go v0.12.0 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
+	github.com/gorilla/css v1.0.0 // indirect
 	github.com/hexops/valast v1.4.1 // indirect
 	github.com/klauspost/compress v1.14.2 // indirect
 	github.com/kr/pretty v0.3.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
+	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
+	github.com/microcosm-cc/bluemonday v1.0.17 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
+	github.com/muesli/reflow v0.3.0 // indirect
+	github.com/muesli/termenv v0.9.0 // indirect
 	github.com/nightlyone/lockfile v1.0.0 // indirect
+	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
@@ -63,9 +73,12 @@ require (
 	github.com/shurcooL/go-goon v0.0.0-20210110234559-7585751d9a17 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
+	github.com/yuin/goldmark v1.4.4 // indirect
+	github.com/yuin/goldmark-emoji v1.0.1 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
 	golang.org/x/mod v0.5.1 // indirect
+	golang.org/x/net v0.0.0-20211015210444-4f30a5c0130f // indirect
 	golang.org/x/tools v0.1.9 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	mvdan.cc/gofumpt v0.2.1 // indirect

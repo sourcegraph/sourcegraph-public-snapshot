@@ -12,7 +12,6 @@ import {
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { extensionsController } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
-import { FeatureFlagName } from '../../featureFlags/featureFlags'
 import { SourcegraphContext } from '../../jscontext'
 import { useExperimentalFeatures } from '../../stores'
 import { ThemePreference } from '../../stores/themeState'
@@ -117,7 +116,6 @@ describe('SearchPage', () => {
         hasUserAddedRepositories: false,
         hasUserAddedExternalServices: false,
         getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
-        featureFlags: new Map<FeatureFlagName, boolean>(),
     }
 
     it('should not show home panels if on Sourcegraph.com and showEnterpriseHomePanels disabled', () => {

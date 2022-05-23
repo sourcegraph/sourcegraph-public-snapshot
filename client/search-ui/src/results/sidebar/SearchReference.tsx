@@ -218,6 +218,14 @@ To use this filter, the search query must contain \`type:diff\` or \`type:commit
         showSuggestions: false,
     },
     {
+        ...createQueryExampleFromString('dependents({regex-pattern})'),
+        field: FilterType.repo,
+        description:
+            'Search inside repositories that depend on repositories matched by the provided regex pattern. This parameter is experimental.',
+        examples: ['repo:revdeps(^go/github\\.com/google/go-cmp$@v0.5.8)'],
+        showSuggestions: true,
+    },
+    {
         ...createQueryExampleFromString('{revision}'),
         field: FilterType.rev,
         commonRank: 20,

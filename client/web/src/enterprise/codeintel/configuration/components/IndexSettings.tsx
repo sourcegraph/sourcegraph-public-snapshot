@@ -73,9 +73,9 @@ export const IndexingSettings: FunctionComponent<React.PropsWithChildren<Indexin
                         </Alert>
                     )}
 
-                <label className="ml-4" htmlFor="index-commit-max-age">
+                <Typography.Label className="ml-4" htmlFor="index-commit-max-age">
                     Commit max age
-                </label>
+                </Typography.Label>
                 <DurationSelect
                     id="index-commit-max-age"
                     value={policy.indexCommitMaxAgeHours ? `${policy.indexCommitMaxAgeHours}` : null}
@@ -94,9 +94,9 @@ export const IndexingSettings: FunctionComponent<React.PropsWithChildren<Indexin
                         onToggle={indexIntermediateCommits => updatePolicy({ indexIntermediateCommits })}
                         disabled={!policy.indexingEnabled}
                     />
-                    <label htmlFor="index-intermediate-commits" className="ml-2">
+                    <Typography.Label htmlFor="index-intermediate-commits" className="ml-2">
                         Index intermediate commits
-                    </label>
+                    </Typography.Label>
                 </div>
             )}
         </div>

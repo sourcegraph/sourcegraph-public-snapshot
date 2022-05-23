@@ -2,7 +2,8 @@ package graphql
 
 import (
 	"github.com/sourcegraph/go-lsp"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
 )
 
 // strPtr creates a pointer to the given value. If the value is an

@@ -221,6 +221,8 @@ type BitbucketCloudConnection struct {
 	Url string `json:"url"`
 	// Username description: The username to use when authenticating to the Bitbucket Cloud. Also set the corresponding "appPassword" field.
 	Username string `json:"username"`
+	// WebhookSecret description: A shared secret used to authenticate incoming webhooks (minimum 12 characters).
+	WebhookSecret string `json:"webhookSecret,omitempty"`
 }
 
 // BitbucketCloudRateLimit description: Rate limit applied when making background API requests to Bitbucket Cloud.
@@ -583,7 +585,7 @@ type ExpandedGitCommitDescription struct {
 type ExperimentalFeatures struct {
 	// AndOrQuery description: DEPRECATED: Interpret a search input query as an and/or query.
 	AndOrQuery string `json:"andOrQuery,omitempty"`
-	// ApidocsSearchIndexing description: Index API docs for search, see https://docs.sourcegraph.com/code_intelligence/apidocs
+	// ApidocsSearchIndexing description: Deprecated.
 	ApidocsSearchIndexing string `json:"apidocs.search.indexing,omitempty"`
 	// BitbucketServerFastPerm description: DEPRECATED: Configure in Bitbucket Server config.
 	BitbucketServerFastPerm string `json:"bitbucketServerFastPerm,omitempty"`
@@ -646,6 +648,8 @@ type ExperimentalFeatures struct {
 
 // Extensions description: Configures Sourcegraph extensions.
 type Extensions struct {
+	// AllowOnlySourcegraphAuthoredExtensions description: Allow only Sourcegraph authored extensions from the default remote registry. If not set, all remote extensions may be used from the remote registry. If certain extensions are marked as allowed in `allowRemoteExtensions` field or `remoteRegistry` points to other than default registry, `allowOnlySourcegraphAuthoredExtensions` setting value will be ignored. To completely disable the remote registry, set `remoteRegistry` to `false`.
+	AllowOnlySourcegraphAuthoredExtensions bool `json:"allowOnlySourcegraphAuthoredExtensions,omitempty"`
 	// AllowRemoteExtensions description: Allow only the explicitly listed remote extensions (by extension ID, such as "alice/myextension") from the remote registry. If not set, all remote extensions may be used from the remote registry. To completely disable the remote registry, set `remoteRegistry` to `false`.
 	//
 	// Only available in Sourcegraph Enterprise.
@@ -725,6 +729,8 @@ type GitHubAuthProvider struct {
 	AllowGroupsPermissionsSync bool `json:"allowGroupsPermissionsSync,omitempty"`
 	// AllowOrgs description: Restricts new logins to members of these GitHub organizations. Existing sessions won't be invalidated. Leave empty or unset for no org restrictions.
 	AllowOrgs []string `json:"allowOrgs,omitempty"`
+	// AllowOrgsMap description: Restricts new logins to members of GitHub teams. Each list of teams should have their Github org name as a key. Subteams inheritance is not supported, therefore only members of the listed teams will be granted access. Existing sessions won't be invalidated. Leave empty or unset for no team restrictions.
+	AllowOrgsMap map[string][]string `json:"allowOrgsMap,omitempty"`
 	// AllowSignup description: Allows new visitors to sign up for accounts via GitHub authentication. If false, users signing in via GitHub must have an existing Sourcegraph account, which will be linked to their GitHub identity after sign-in.
 	AllowSignup bool `json:"allowSignup,omitempty"`
 	// ClientID description: The Client ID of the GitHub OAuth app, accessible from https://github.com/settings/developers (or the same path on GitHub Enterprise).
@@ -1676,7 +1682,7 @@ type Settings struct {
 
 // SettingsExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 type SettingsExperimentalFeatures struct {
-	// ApiDocs description: Enables API documentation.
+	// ApiDocs description: Deprecated.
 	ApiDocs *bool `json:"apiDocs,omitempty"`
 	// BatchChangesExecution description: Enables/disables the Batch Changes server side execution feature.
 	BatchChangesExecution *bool `json:"batchChangesExecution,omitempty"`
@@ -1751,7 +1757,7 @@ type SettingsExperimentalFeatures struct {
 type SiteConfiguration struct {
 	// ApiRatelimit description: Configuration for API rate limiting
 	ApiRatelimit *ApiRatelimit `json:"api.ratelimit,omitempty"`
-	// ApidocsSearchIndexSizeLimitFactor description: Limit factor for API docs search index size. A multiple of 250 million symbols. 1.0 indicates 250 million symbols (approx 12.5k repos) can be indexed. 2.0 indicates double that, and so on. See https://docs.sourcegraph.com/code_intelligence/apidocs
+	// ApidocsSearchIndexSizeLimitFactor description: Deprecated.
 	ApidocsSearchIndexSizeLimitFactor float64 `json:"apidocs.search.index-size-limit-factor,omitempty"`
 	// AuthAccessTokens description: Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.
 	AuthAccessTokens *AuthAccessTokens `json:"auth.accessTokens,omitempty"`
@@ -1817,6 +1823,8 @@ type SiteConfiguration struct {
 	CodeIntelAutoIndexingEnabled *bool `json:"codeIntelAutoIndexing.enabled,omitempty"`
 	// CodeIntelAutoIndexingPolicyRepositoryMatchLimit description: The maximum number of repositories to which a single auto-indexing policy can apply. Default is -1, which is unlimited.
 	CodeIntelAutoIndexingPolicyRepositoryMatchLimit *int `json:"codeIntelAutoIndexing.policyRepositoryMatchLimit,omitempty"`
+	// CodeIntelLockfileIndexingEnabled description: Enables/disables the code intel lockfile-indexing feature. Currently experimental.
+	CodeIntelLockfileIndexingEnabled *bool `json:"codeIntelLockfileIndexing.enabled,omitempty"`
 	// CorsOrigin description: Required when using any of the native code host integrations for Phabricator, GitLab, or Bitbucket Server. It is a space-separated list of allowed origins for cross-origin HTTP requests which should be the base URL for your Phabricator, GitLab, or Bitbucket Server instance.
 	CorsOrigin string `json:"corsOrigin,omitempty"`
 	// DebugSearchSymbolsParallelism description: (debug) controls the amount of symbol search parallelism. Defaults to 20. It is not recommended to change this outside of debugging scenarios. This option will be removed in a future version.
@@ -1895,6 +1903,8 @@ type SiteConfiguration struct {
 	InsightsQueryWorkerConcurrency int `json:"insights.query.worker.concurrency,omitempty"`
 	// InsightsQueryWorkerRateLimit description: Maximum number of Code Insights queries initiated per second on a worker node.
 	InsightsQueryWorkerRateLimit *float64 `json:"insights.query.worker.rateLimit,omitempty"`
+	// InsightsSearchGraphql description: Force GraphQL mode for insights searches. This will overwrite the default streaming behavior and force search clients to use the GraphQL API
+	InsightsSearchGraphql *bool `json:"insights.search.graphql,omitempty"`
 	// LicenseKey description: The license key associated with a Sourcegraph product subscription, which is necessary to activate Sourcegraph Enterprise functionality. To obtain this value, contact Sourcegraph to purchase a subscription. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.
 	LicenseKey string `json:"licenseKey,omitempty"`
 	// Log description: Configuration for logging and alerting, including to external services.
@@ -1941,7 +1951,7 @@ type SiteConfiguration struct {
 	SearchIndexEnabled *bool `json:"search.index.enabled,omitempty"`
 	// SearchIndexSymbolsEnabled description: Whether indexed symbol search is enabled. This is contingent on the indexed search configuration, and is true by default for instances with indexed search enabled. Enabling this will cause every repository to re-index, which is a time consuming (several hours) operation. Additionally, it requires more storage and ram to accommodate the added symbols information in the search index.
 	SearchIndexSymbolsEnabled *bool `json:"search.index.symbols.enabled,omitempty"`
-	// SearchLargeFiles description: A list of file glob patterns where matching files will be indexed and searched regardless of their size. Files still need to be valid utf-8 to be indexed. The glob pattern syntax can be found here: https://golang.org/pkg/path/filepath/#Match.
+	// SearchLargeFiles description: A list of file glob patterns where matching files will be indexed and searched regardless of their size. Files still need to be valid utf-8 to be indexed. The glob pattern syntax can be found here: https://github.com/bmatcuk/doublestar#patterns.
 	SearchLargeFiles []string `json:"search.largeFiles,omitempty"`
 	// SearchLimits description: Limits that search applies for number of repositories searched and timeouts.
 	SearchLimits *SearchLimits `json:"search.limits,omitempty"`
