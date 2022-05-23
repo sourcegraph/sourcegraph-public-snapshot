@@ -289,7 +289,7 @@ func TestSearchContextWriteAccessValidation(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Expected no error, got %s", err)
 	}
-	database.OrgMembers(db).Create(internalCtx, org.ID, user2.ID)
+	db.OrgMembers().Create(internalCtx, org.ID, user2.ID)
 	// Third user is not a site-admin and is not a member of the org
 	user3, err := u.Create(internalCtx, database.NewUser{Username: "u3", Password: "p"})
 	if err != nil {

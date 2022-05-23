@@ -21,11 +21,16 @@
     padding: 0.25rem 0;
 }
 
+// Unset Button-y styles
 .library-item-button {
+    font-weight: unset;
+    letter-spacing: unset;
+    font-size: unset;
+    line-height: unset;
+    user-select: unset;
     background: none;
     border: none;
     padding: 0;
-    color: var(--body-color);
 }
 
 // Should mostly match WorkspacesPreview header and Editor header

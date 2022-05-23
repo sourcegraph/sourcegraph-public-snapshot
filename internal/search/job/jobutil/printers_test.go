@@ -207,6 +207,7 @@ func TestPrettyJSON(t *testing.T) {
               ],
               "MinusRepoFilters": null,
               "Dependencies": null,
+              "Dependents": null,
               "CaseSensitiveRepoFilters": false,
               "SearchContextSpec": "",
               "CommitAfter": "",
@@ -216,6 +217,7 @@ func TestPrettyJSON(t *testing.T) {
               "ForkSet": false,
               "NoForks": true,
               "OnlyForks": false,
+              "OnlyCloned": false,
               "ArchivedSet": false,
               "NoArchived": true,
               "OnlyArchived": false
@@ -262,6 +264,7 @@ func TestPrettyJSON(t *testing.T) {
                   ],
                   "MinusRepoFilters": null,
                   "Dependencies": null,
+                  "Dependents": null,
                   "CaseSensitiveRepoFilters": false,
                   "SearchContextSpec": "",
                   "CommitAfter": "",
@@ -271,6 +274,7 @@ func TestPrettyJSON(t *testing.T) {
                   "ForkSet": false,
                   "NoForks": true,
                   "OnlyForks": false,
+                  "OnlyCloned": false,
                   "ArchivedSet": false,
                   "NoArchived": true,
                   "OnlyArchived": false

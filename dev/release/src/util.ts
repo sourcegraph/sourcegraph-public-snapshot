@@ -81,8 +81,40 @@ export function changelogURL(version: string): string {
     return `https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CHANGELOG.md#${versionAnchor}`
 }
 
+function ensureBranchUpToDate(baseBranch: string, targetBranch: string): boolean {
+    const [behind, ahead] = execa
+        .sync('git', ['rev-list', '--left-right', '--count', targetBranch + '...' + baseBranch])
+        .stdout.split('\t')
+
+    if (behind === '0' && ahead === '0') {
+        return true
+    }
+
+    const countCommits = function (numberOfCommits: string, aheadOrBehind: string): string {
+        return numberOfCommits === '1'
+            ? numberOfCommits + ' commit ' + aheadOrBehind
+            : numberOfCommits + ' commits ' + aheadOrBehind
+    }
+
+    if (behind !== '0' && ahead !== '0') {
+        console.log(
+            `Your branch is ${countCommits(ahead, 'ahead')} and ${countCommits(
+                behind,
+                'behind'
+            )} the branch ${targetBranch}.`
+        )
+    } else if (behind !== '0') {
+        console.log(`Your branch is ${countCommits(behind, 'behind')} the branch ${targetBranch}.`)
+    } else if (ahead !== '0') {
+        console.log(`Your branch is ${countCommits(ahead, 'ahead')} the branch ${targetBranch}.`)
+    }
+
+    return false
+}
+
 export function ensureMainBranchUpToDate(): void {
     const mainBranch = 'main'
+    const remoteMainBranch = 'origin/main'
     const currentBranch = execa.sync('git', ['rev-parse', '--abbrev-ref', 'HEAD']).stdout.trim()
     if (currentBranch !== mainBranch) {
         console.log(
@@ -91,17 +123,18 @@ export function ensureMainBranchUpToDate(): void {
         process.exit(1)
     }
     execa.sync('git', ['remote', 'update'], { stdout: 'ignore' })
-    const { stdout } = execa.sync('git', ['status', '-uno'])
-    if (stdout.includes('Your branch is behind')) {
-        console.log(
-            `Your branch is behind the ${mainBranch} branch. You should run \`git pull\` to update your ${mainBranch} branch.`
-        )
-        process.exit(1)
-    } else if (stdout.includes('Your branch is ahead')) {
-        console.log(`Your branch is ahead of the ${mainBranch} branch.`)
+    if (!ensureBranchUpToDate(mainBranch, remoteMainBranch)) {
         process.exit(1)
     }
 }
+
+export function ensureReleaseBranchUpToDate(branch: string): void {
+    const remoteBranch = 'origin/' + branch
+    if (!ensureBranchUpToDate(branch, remoteBranch)) {
+        process.exit(1)
+    }
+}
+
 interface ContainerRegistryCredential {
     username: string
     password: string

@@ -10,7 +10,7 @@ import { catchError, filter, switchMap, map, distinctUntilChanged } from 'rxjs/o
 import { HoverMerged } from '@sourcegraph/client-api'
 import { DOMFunctions, findPositionsFromEvents, Hoverifier } from '@sourcegraph/codeintellify'
 import { asError, ErrorLike, isDefined, isErrorLike, highlightNode } from '@sourcegraph/common'
-import { Icon } from '@sourcegraph/wildcard'
+import { Icon, Typography } from '@sourcegraph/wildcard'
 
 import { ActionItemAction } from '../actions/ActionItem'
 import { ViewerId } from '../api/viewerTypes'
@@ -195,7 +195,7 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
                 partialVisibility={true}
                 offset={this.visibilitySensorOffset}
             >
-                <code
+                <Typography.Code
                     data-testid="code-excerpt"
                     className={classNames(
                         styles.codeExcerpt,
@@ -228,7 +228,7 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
                             </tbody>
                         </table>
                     )}
-                </code>
+                </Typography.Code>
             </VisibilitySensor>
         )
     }

@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -110,19 +111,19 @@ func Search(ctx context.Context, db database.DB, query string, monitorID int64, 
 	searchClient := client.NewSearchClient(db, search.Indexed(), search.SearcherURLs())
 	inputs, err := searchClient.Plan(ctx, "V2", nil, query, search.Streaming, settings, envvar.SourcegraphDotComMode())
 	if err != nil {
-		return nil, err
+		return nil, errcode.MakeNonRetryable(err)
 	}
 
 	// Inline job creation so we can mutate the commit job before running it
 	clients := searchClient.JobClients()
 	plan, err := predicate.Expand(ctx, clients, inputs, inputs.Plan)
 	if err != nil {
-		return nil, err
+		return nil, errcode.MakeNonRetryable(err)
 	}
 
 	planJob, err := jobutil.NewPlanJob(inputs, plan)
 	if err != nil {
-		return nil, err
+		return nil, errcode.MakeNonRetryable(err)
 	}
 
 	if featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", false) {
@@ -156,7 +157,7 @@ func Search(ctx context.Context, db database.DB, query string, monitorID int64, 
 		}
 		planJob, err = addCodeMonitorHook(planJob, hook)
 		if err != nil {
-			return nil, err
+			return nil, errcode.MakeNonRetryable(err)
 		}
 	}
 
@@ -221,8 +222,8 @@ func addCodeMonitorHook(in job.Job, hook commit.CodeMonitorHook) (_ job.Job, err
 		switch typedAtom := atom.(type) {
 		case *commit.CommitSearchJob:
 			commitSearchJobCount++
-			if commitSearchJobCount > 1 {
-				err = errors.Append(err, ErrInvalidMonitorQuery)
+			if commitSearchJobCount > 1 && err == nil {
+				err = ErrInvalidMonitorQuery
 			}
 			jobCopy := *typedAtom
 			jobCopy.CodeMonitorSearchWrapper = hook
@@ -231,7 +232,9 @@ func addCodeMonitorHook(in job.Job, hook commit.CodeMonitorHook) (_ job.Job, err
 			// ComputeExcludedReposJob is fine for code monitor jobs
 			return atom
 		default:
-			err = errors.Append(err, errors.Errorf("found invalid atom job type %T for code monitor search", atom))
+			if err == nil {
+				err = errors.Errorf("found invalid atom job type %T for code monitor search", atom)
+			}
 			return atom
 		}
 	}), err

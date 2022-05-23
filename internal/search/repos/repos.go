@@ -121,19 +121,44 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 	}
 
 	var (
-		depNames []string
-		depRevs  map[api.RepoName][]search.RevisionSpecifier
+		dependencyNames []string
+		dependencyRevs  = map[api.RepoName][]search.RevisionSpecifier{}
 	)
 
 	if len(op.Dependencies) > 0 {
-		depNames, depRevs, err = r.dependencies(ctx, &op)
+		depNames, depRevs, err := r.dependencies(ctx, &op)
 		if err != nil {
 			return Resolved{}, err
 		}
 
-		if len(depNames) == 0 {
-			return Resolved{}, ErrNoResolvedRepos
+		dependencyNames = append(dependencyNames, depNames...)
+		for repo, revs := range depRevs {
+			if _, ok := dependencyRevs[repo]; !ok {
+				dependencyRevs[repo] = revs
+			} else {
+				dependencyRevs[repo] = append(dependencyRevs[repo], revs...)
+			}
 		}
+	}
+
+	if len(op.Dependents) > 0 {
+		revDepNames, revDepRevs, err := r.dependents(ctx, &op)
+		if err != nil {
+			return Resolved{}, err
+		}
+
+		dependencyNames = append(dependencyNames, revDepNames...)
+		for repo, revs := range revDepRevs {
+			if _, ok := dependencyRevs[repo]; !ok {
+				dependencyRevs[repo] = revs
+			} else {
+				dependencyRevs[repo] = append(dependencyRevs[repo], revs...)
+			}
+		}
+	}
+
+	if (len(op.Dependencies) > 0 || len(op.Dependents) > 0) && len(dependencyNames) == 0 {
+		return Resolved{}, ErrNoResolvedRepos
 	}
 
 	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.DB, op.SearchContextSpec)
@@ -143,7 +168,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 
 	options := database.ReposListOptions{
 		IncludePatterns:       includePatterns,
-		Names:                 depNames,
+		Names:                 dependencyNames,
 		ExcludePattern:        query.UnionRegExps(excludePatterns),
 		CaseSensitivePatterns: op.CaseSensitiveRepoFilters,
 		Cursors:               op.Cursors,
@@ -155,6 +180,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 		OnlyArchived: op.OnlyArchived,
 		NoPrivate:    op.Visibility == query.Public,
 		OnlyPrivate:  op.Visibility == query.Private,
+		OnlyCloned:   op.OnlyCloned,
 		OrderBy: database.RepoListOrderBy{
 			{
 				Field:      database.RepoListStars,
@@ -257,8 +283,8 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 				revs    []search.RevisionSpecifier
 			)
 
-			if len(depRevs) > 0 {
-				revs = depRevs[repo.Name]
+			if len(dependencyRevs) > 0 {
+				revs = dependencyRevs[repo.Name]
 			}
 
 			if len(searchContextRepositoryRevisions) > 0 && len(revs) == 0 {
@@ -510,9 +536,34 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 		return nil, nil, errors.Errorf("support for `repo:dependencies()` is disabled in site config (`experimentalFeatures.dependenciesSearch`)")
 	}
 
-	repoStore := r.DB.Repos()
-	repoRevs := make(map[api.RepoName]codeintelTypes.RevSpecSet, len(op.Dependencies))
-	for _, depParams := range op.Dependencies {
+	repoRevs, err := listDependencyRepos(ctx, r.DB.Repos(), op.Dependencies, op.CaseSensitiveRepoFilters)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	dependencyRepoRevs, err := livedependencies.GetService(r.DB, livedependencies.NewSyncer()).Dependencies(ctx, repoRevs)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	depRevs := make(map[api.RepoName][]search.RevisionSpecifier, len(dependencyRepoRevs))
+	depNames := make([]string, 0, len(dependencyRepoRevs))
+
+	for repoName, revs := range dependencyRepoRevs {
+		depNames = append(depNames, string(repoName))
+		revSpecs := make([]search.RevisionSpecifier, 0, len(revs))
+		for rev := range revs {
+			revSpecs = append(revSpecs, search.RevisionSpecifier{RevSpec: string(rev)})
+		}
+		depRevs[repoName] = revSpecs
+	}
+
+	return depNames, depRevs, nil
+}
+
+func listDependencyRepos(ctx context.Context, repoStore database.RepoStore, revSpecPatterns []string, caseSensitive bool) (map[api.RepoName]codeintelTypes.RevSpecSet, error) {
+	repoRevs := make(map[api.RepoName]codeintelTypes.RevSpecSet, len(revSpecPatterns))
+	for _, depParams := range revSpecPatterns {
 		repoPattern, revs := search.ParseRepositoryRevisions(depParams)
 		if len(revs) == 0 {
 			revs = append(revs, search.RevisionSpecifier{RevSpec: "HEAD"})
@@ -520,10 +571,10 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 
 		rs, err := repoStore.ListMinimalRepos(ctx, database.ReposListOptions{
 			IncludePatterns:       []string{repoPattern},
-			CaseSensitivePatterns: op.CaseSensitiveRepoFilters,
+			CaseSensitivePatterns: caseSensitive,
 		})
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 
 		for _, repo := range rs {
@@ -531,7 +582,7 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 				if rev == (search.RevisionSpecifier{}) {
 					rev.RevSpec = "HEAD"
 				} else if rev.RevSpec == "" {
-					return nil, nil, errors.New("unsupported glob rev in dependencies filter")
+					return nil, errors.New("unsupported glob rev in dependencies filter")
 				}
 
 				if _, ok := repoRevs[repo.Name]; !ok {
@@ -543,7 +594,27 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 		}
 	}
 
-	dependencyRepoRevs, err := livedependencies.GetService(r.DB, livedependencies.NewSyncer()).Dependencies(ctx, repoRevs)
+	return repoRevs, nil
+}
+
+func (r *Resolver) dependents(ctx context.Context, op *search.RepoOptions) (_ []string, _ map[api.RepoName][]search.RevisionSpecifier, err error) {
+	tr, ctx := trace.New(ctx, "searchrepos.reverseDependencies", "")
+	defer func() {
+		tr.LazyPrintf("dependents: %v", op.Dependents)
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	if !conf.DependeciesSearchEnabled() {
+		return nil, nil, errors.Errorf("support for `repo:dependents()` is disabled in site config (`experimentalFeatures.dependenciesSearch`)")
+	}
+
+	repoRevs, err := listDependencyRepos(ctx, r.DB.Repos(), op.Dependents, op.CaseSensitiveRepoFilters)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	dependencyRepoRevs, err := livedependencies.GetService(r.DB, livedependencies.NewSyncer()).Dependents(ctx, repoRevs)
 	if err != nil {
 		return nil, nil, err
 	}

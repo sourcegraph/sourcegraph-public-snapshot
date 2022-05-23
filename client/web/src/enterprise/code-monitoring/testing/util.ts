@@ -558,6 +558,58 @@ export const mockLogs: MonitorTriggerEventsResult = {
                         },
                     },
                 },
+                {
+                    __typename: 'Monitor',
+                    description: 'Fifth test code monitor (only pending events)',
+                    id: '131415',
+                    trigger: {
+                        __typename: 'MonitorQuery',
+                        query: 'test type:commit',
+                        events: {
+                            __typename: 'MonitorTriggerEventConnection',
+                            nodes: [
+                                {
+                                    __typename: 'MonitorTriggerEvent',
+                                    id: 'f',
+                                    status: EventStatus.PENDING,
+                                    message: null,
+                                    timestamp: '2022-02-14T16:20:16Z',
+                                    query: '',
+                                    resultCount: 0,
+                                    actions: {
+                                        __typename: 'MonitorActionConnection',
+                                        nodes: [
+                                            {
+                                                __typename: 'MonitorEmail',
+                                                events: {
+                                                    __typename: 'MonitorActionEventConnection',
+                                                    nodes: [],
+                                                },
+                                            },
+                                            {
+                                                __typename: 'MonitorSlackWebhook',
+                                                events: {
+                                                    __typename: 'MonitorActionEventConnection',
+                                                    nodes: [
+                                                        {
+                                                            id: 'af',
+                                                            __typename: 'MonitorActionEvent',
+                                                            status: EventStatus.PENDING,
+                                                            message: null,
+                                                            timestamp: '2022-02-14T16:20:16Z',
+                                                        },
+                                                    ],
+                                                },
+                                            },
+                                        ],
+                                    },
+                                },
+                            ],
+                            totalCount: 1,
+                            pageInfo: { endCursor: '', hasNextPage: false },
+                        },
+                    },
+                },
             ],
             pageInfo: {
                 endCursor: '123',

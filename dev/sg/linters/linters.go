@@ -29,6 +29,7 @@ var Targets = []lint.Target{
 			lintGoDirectives,
 			lintLoggingLibraries(),
 			goModGuards(),
+			lintSGExit(),
 		},
 	},
 	{
@@ -53,6 +54,7 @@ var Targets = []lint.Target{
 			tsEnterpriseImport,
 			inlineTemplates,
 			lint.RunScript("Yarn duplicate", "dev/check/yarn-deduplicate.sh"),
+			checkUnversionedDocsLinks(),
 		},
 	},
 	{

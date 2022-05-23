@@ -18,24 +18,24 @@ import {
     Typography,
 } from '@sourcegraph/wildcard'
 
-import styles from './RunBatchSpecButton.module.scss'
+import { ExecutionOptions } from '../BatchSpecContext'
 
-export interface ExecutionOptions {
-    runWithoutCache: boolean
-}
+import styles from './RunBatchSpecButton.module.scss'
 
 interface RunBatchSpecButtonProps {
     execute: () => void
-    isExecutionDisabled: boolean
-    executionTooltip?: string
+    /**
+     * Whether or not the button should be disabled. An optional tooltip string to display
+     * may be provided in place of `true`.
+     */
+    isExecutionDisabled?: boolean | string
     options: ExecutionOptions
     onChangeOptions: (newOptions: ExecutionOptions) => void
 }
 
 export const RunBatchSpecButton: React.FunctionComponent<React.PropsWithChildren<RunBatchSpecButtonProps>> = ({
     execute,
-    isExecutionDisabled,
-    executionTooltip,
+    isExecutionDisabled = false,
     options,
     onChangeOptions,
 }) => {
@@ -50,8 +50,8 @@ export const RunBatchSpecButton: React.FunctionComponent<React.PropsWithChildren
                 <Button
                     variant="primary"
                     onClick={execute}
-                    disabled={isExecutionDisabled}
-                    data-tooltip={executionTooltip}
+                    disabled={!!isExecutionDisabled}
+                    data-tooltip={typeof isExecutionDisabled === 'string' ? isExecutionDisabled : undefined}
                 >
                     Run batch spec
                 </Button>

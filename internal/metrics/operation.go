@@ -140,7 +140,7 @@ func NewREDMetrics(r prometheus.Registerer, metricPrefix string, fns ...REDMetri
 	}
 }
 
-type SingletonREDnMetrics struct {
+type SingletonREDMetrics struct {
 	sync.Once
 	metrics *REDMetrics
 }
@@ -148,7 +148,7 @@ type SingletonREDnMetrics struct {
 // Get returns a RED metrics instance. If no instance has been
 // created yet, one is constructed with the given create function. This method is safe to
 // access concurrently.
-func (m *SingletonREDnMetrics) Get(create func() *REDMetrics) *REDMetrics {
+func (m *SingletonREDMetrics) Get(create func() *REDMetrics) *REDMetrics {
 	m.Do(func() {
 		m.metrics = create()
 	})

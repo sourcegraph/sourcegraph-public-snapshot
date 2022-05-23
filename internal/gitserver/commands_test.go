@@ -5,11 +5,13 @@ import (
 	"io"
 	"os"
 	"reflect"
+	"sort"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -609,6 +611,209 @@ func runFileListingTest(t *testing.T,
 		"file1",
 	}
 	if diff := cmp.Diff(want, files); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
+func TestParseDirectoryChildrenRoot(t *testing.T) {
+	dirnames := []string{""}
+	paths := []string{
+		".github",
+		".gitignore",
+		"LICENSE",
+		"README.md",
+		"cmd",
+		"go.mod",
+		"go.sum",
+		"internal",
+		"protocol",
+	}
+
+	expected := map[string][]string{
+		"": paths,
+	}
+
+	if diff := cmp.Diff(expected, parseDirectoryChildren(dirnames, paths)); diff != "" {
+		t.Errorf("unexpected directory children result (-want +got):\n%s", diff)
+	}
+}
+
+func TestParseDirectoryChildrenNonRoot(t *testing.T) {
+	dirnames := []string{"cmd/", "protocol/", "cmd/protocol/"}
+	paths := []string{
+		"cmd/lsif-go",
+		"protocol/protocol.go",
+		"protocol/writer.go",
+	}
+
+	expected := map[string][]string{
+		"cmd/":          {"cmd/lsif-go"},
+		"protocol/":     {"protocol/protocol.go", "protocol/writer.go"},
+		"cmd/protocol/": nil,
+	}
+
+	if diff := cmp.Diff(expected, parseDirectoryChildren(dirnames, paths)); diff != "" {
+		t.Errorf("unexpected directory children result (-want +got):\n%s", diff)
+	}
+}
+
+func TestParseDirectoryChildrenDifferentDepths(t *testing.T) {
+	dirnames := []string{"cmd/", "protocol/", "cmd/protocol/"}
+	paths := []string{
+		"cmd/lsif-go",
+		"protocol/protocol.go",
+		"protocol/writer.go",
+		"cmd/protocol/main.go",
+	}
+
+	expected := map[string][]string{
+		"cmd/":          {"cmd/lsif-go"},
+		"protocol/":     {"protocol/protocol.go", "protocol/writer.go"},
+		"cmd/protocol/": {"cmd/protocol/main.go"},
+	}
+
+	if diff := cmp.Diff(expected, parseDirectoryChildren(dirnames, paths)); diff != "" {
+		t.Errorf("unexpected directory children result (-want +got):\n%s", diff)
+	}
+}
+
+func TestCleanDirectoriesForLsTree(t *testing.T) {
+	args := []string{"", "foo", "bar/", "baz"}
+	actual := cleanDirectoriesForLsTree(args)
+	expected := []string{".", "foo/", "bar/", "baz/"}
+
+	if diff := cmp.Diff(expected, actual); diff != "" {
+		t.Errorf("unexpected ls-tree args (-want +got):\n%s", diff)
+	}
+}
+
+func TestListDirectoryChildren(t *testing.T) {
+	ClientMocks.LocalGitserver = true
+	defer ResetClientMocks()
+	client := NewClient(database.NewMockDB())
+	gitCommands := []string{
+		"mkdir -p dir{1..3}/sub{1..3}",
+		"touch dir1/sub1/file",
+		"touch dir1/sub2/file",
+		"touch dir2/sub1/file",
+		"touch dir2/sub2/file",
+		"touch dir3/sub1/file",
+		"touch dir3/sub3/file",
+		"git add .",
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+	}
+
+	repo := MakeGitRepository(t, gitCommands...)
+
+	ctx := context.Background()
+
+	checker := authz.NewMockSubRepoPermissionChecker()
+	// Start disabled
+	checker.EnabledFunc.SetDefaultHook(func() bool {
+		return false
+	})
+
+	dirnames := []string{"dir1/", "dir2/", "dir3/"}
+	children, err := client.ListDirectoryChildren(ctx, checker, repo, "HEAD", dirnames)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected := map[string][]string{
+		"dir1/": {"dir1/sub1", "dir1/sub2"},
+		"dir2/": {"dir2/sub1", "dir2/sub2"},
+		"dir3/": {"dir3/sub1", "dir3/sub3"},
+	}
+	if diff := cmp.Diff(expected, children); diff != "" {
+		t.Fatal(diff)
+	}
+
+	// With filtering
+	checker.EnabledFunc.SetDefaultHook(func() bool {
+		return true
+	})
+	checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
+		if strings.Contains(content.Path, "dir1/") {
+			return authz.Read, nil
+		}
+		return authz.None, nil
+	})
+	ctx = actor.WithActor(ctx, &actor.Actor{
+		UID: 1,
+	})
+	children, err = client.ListDirectoryChildren(ctx, checker, repo, "HEAD", dirnames)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected = map[string][]string{
+		"dir1/": {"dir1/sub1", "dir1/sub2"},
+		"dir2/": nil,
+		"dir3/": nil,
+	}
+	if diff := cmp.Diff(expected, children); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
+func TestListTags(t *testing.T) {
+	ClientMocks.LocalGitserver = true
+	defer ResetClientMocks()
+
+	dateEnv := "GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z"
+	gitCommands := []string{
+		dateEnv + " git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git tag t0",
+		"git tag t1",
+		dateEnv + " git tag --annotate -m foo t2",
+	}
+
+	repo := MakeGitRepository(t, gitCommands...)
+	wantTags := []*gitdomain.Tag{
+		{Name: "t0", CommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", CreatorDate: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+		{Name: "t1", CommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", CreatorDate: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+		{Name: "t2", CommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", CreatorDate: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+	}
+
+	client := NewClient(database.NewMockDB())
+	tags, err := client.ListTags(context.Background(), repo)
+	require.Nil(t, err)
+
+	sort.Sort(gitdomain.Tags(tags))
+	sort.Sort(gitdomain.Tags(wantTags))
+
+	if diff := cmp.Diff(wantTags, tags); diff != "" {
+		t.Fatalf("tag mismatch (-want +got):\n%s", diff)
+	}
+}
+
+// See https://github.com/sourcegraph/sourcegraph/issues/5453
+func TestParseTags_WithoutCreatorDate(t *testing.T) {
+	have, err := parseTags([]byte(
+		"9ee1c939d1cb936b1f98e8d81aeffab57bae46ab\x00v2.6.12\x001119037709\n" +
+			"c39ae07f393806ccf406ef966e9a15afc43cc36a\x00v2.6.11-tree\x00\n" +
+			"c39ae07f393806ccf406ef966e9a15afc43cc36a\x00v2.6.11\x00\n",
+	))
+
+	if err != nil {
+		t.Fatalf("parseTags: have err %v, want nil", err)
+	}
+
+	want := []*gitdomain.Tag{
+		{
+			Name:        "v2.6.12",
+			CommitID:    "9ee1c939d1cb936b1f98e8d81aeffab57bae46ab",
+			CreatorDate: time.Unix(1119037709, 0).UTC(),
+		},
+		{
+			Name:     "v2.6.11-tree",
+			CommitID: "c39ae07f393806ccf406ef966e9a15afc43cc36a",
+		},
+		{
+			Name:     "v2.6.11",
+			CommitID: "c39ae07f393806ccf406ef966e9a15afc43cc36a",
+		},
+	}
+
+	if diff := cmp.Diff(have, want); diff != "" {
 		t.Fatal(diff)
 	}
 }

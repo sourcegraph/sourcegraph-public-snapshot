@@ -52,7 +52,7 @@ func newExternalHTTPHandler(
 		// 🚨 SECURITY: These all run after the auth handler so the client is authenticated.
 		apiHandler = hooks.PostAuthMiddleware(apiHandler)
 	}
-	apiHandler = featureflag.Middleware(database.FeatureFlags(db), apiHandler)
+	apiHandler = featureflag.Middleware(db.FeatureFlags(), apiHandler)
 	apiHandler = actor.AnonymousUIDMiddleware(apiHandler)
 	apiHandler = authMiddlewares.API(apiHandler) // 🚨 SECURITY: auth middleware
 	// 🚨 SECURITY: The HTTP API should not accept cookies as authentication, except from trusted
@@ -75,7 +75,7 @@ func newExternalHTTPHandler(
 		// 🚨 SECURITY: These all run after the auth handler so the client is authenticated.
 		appHandler = hooks.PostAuthMiddleware(appHandler)
 	}
-	appHandler = featureflag.Middleware(database.FeatureFlags(db), appHandler)
+	appHandler = featureflag.Middleware(db.FeatureFlags(), appHandler)
 	appHandler = actor.AnonymousUIDMiddleware(appHandler)
 	appHandler = authMiddlewares.App(appHandler)                           // 🚨 SECURITY: auth middleware
 	appHandler = session.CookieMiddleware(db, appHandler)                  // app accepts cookies
@@ -128,7 +128,7 @@ func newInternalHTTPHandler(schema *graphql.Schema, db database.DB, newCodeIntel
 	internalMux := http.NewServeMux()
 	internalMux.Handle("/.internal/", gziphandler.GzipHandler(
 		actor.HTTPMiddleware(
-			featureflag.Middleware(database.FeatureFlags(db),
+			featureflag.Middleware(db.FeatureFlags(),
 				internalhttpapi.NewInternalHandler(
 					router.NewInternal(mux.NewRouter().PathPrefix("/.internal/").Subrouter()),
 					db,

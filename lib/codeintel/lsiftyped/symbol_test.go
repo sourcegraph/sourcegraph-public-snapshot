@@ -44,9 +44,9 @@ func TestParseSymbol(t *testing.T) {
 			Descriptors: []*Descriptor{{Name: "f", Suffix: Descriptor_Term}},
 		}},
 		{
-			Symbol: "lsif-java maven package 1.0.0 java/io/File#Entry.method(+1).(param)[TypeParam]",
+			Symbol: "scip-java maven package 1.0.0 java/io/File#Entry.method(+1).(param)[TypeParam]",
 			Expected: &Symbol{
-				Scheme:  "lsif-java",
+				Scheme:  "scip-java",
 				Package: &Package{Manager: "maven", Name: "package", Version: "1.0.0"},
 				Descriptors: []*Descriptor{
 					{Name: "java", Suffix: Descriptor_Package},

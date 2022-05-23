@@ -95,17 +95,17 @@ indexing_jobs:
 
 ## Java
 
-> NOTE: Inference for languages supported by [lsif-java](https://github.com/sourcegraph/lsif-java) is currently restricted to Sourcegraph Cloud.
+> NOTE: Inference for languages supported by [scip-java](https://github.com/sourcegraph/scip-java) is currently restricted to Sourcegraph Cloud.
 
 If the repository contains both a `lsif-java.json` file as well as `*.java`, `*.scala`, or `*.kt` files, the following index job is scheduled.
 
 ```yaml
 indexing_jobs:
   - root: ''
-    indexer: sourcegraph/lsif-java
+    indexer: sourcegraph/scip-java
     indexer_args:
-      - lsif-java
+      - scip-java
       - index
       - --build-tool=lsif
-    outfile: dump.lsif
+    outfile: index.scip
 ```

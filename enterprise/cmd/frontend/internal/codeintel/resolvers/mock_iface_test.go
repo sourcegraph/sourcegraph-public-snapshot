@@ -8,8 +8,8 @@ import (
 	"time"
 
 	regexp "github.com/grafana/regexp"
-	enqueuer "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
+	enqueuer "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/enqueuer"
 	dbstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	gitserver1 "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
 	lsifstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"

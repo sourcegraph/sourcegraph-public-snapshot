@@ -37,11 +37,11 @@ export const Simple: Story = () => (
             <tbody>
                 <tr>
                     <td>
-                        <code>
+                        <Typography.Code>
                             {'<'}
                             H1
                             {'>'}
-                        </code>
+                        </Typography.Code>
                     </td>
                     <td>
                         <Typography.H1
@@ -54,11 +54,11 @@ export const Simple: Story = () => (
                 </tr>
                 <tr>
                     <td>
-                        <code>
+                        <Typography.Code>
                             {'<'}
                             H2
                             {'>'}
-                        </code>
+                        </Typography.Code>
                     </td>
                     <td>
                         <Typography.H2
@@ -71,11 +71,11 @@ export const Simple: Story = () => (
                 </tr>
                 <tr>
                     <td>
-                        <code>
+                        <Typography.Code>
                             {'<'}
                             H3
                             {'>'}
-                        </code>
+                        </Typography.Code>
                     </td>
                     <td>
                         <Typography.H3
@@ -88,11 +88,11 @@ export const Simple: Story = () => (
                 </tr>
                 <tr>
                     <td>
-                        <code>
+                        <Typography.Code>
                             {'<'}
                             H4
                             {'>'}
-                        </code>
+                        </Typography.Code>
                     </td>
                     <td>
                         <Typography.H4
@@ -105,11 +105,11 @@ export const Simple: Story = () => (
                 </tr>
                 <tr>
                     <td>
-                        <code>
+                        <Typography.Code>
                             {'<'}
                             H5
                             {'>'}
-                        </code>
+                        </Typography.Code>
                     </td>
                     <td>
                         <Typography.H5
@@ -122,11 +122,11 @@ export const Simple: Story = () => (
                 </tr>
                 <tr>
                     <td>
-                        <code>
+                        <Typography.Code>
                             {'<'}
                             H6
                             {'>'}
-                        </code>
+                        </Typography.Code>
                     </td>
                     <td>
                         <Typography.H6
@@ -145,11 +145,11 @@ export const Simple: Story = () => (
             <tbody>
                 <tr>
                     <td>
-                        <code>
+                        <Typography.Code>
                             {'<'}
                             Code
                             {'>'}
-                        </code>
+                        </Typography.Code>
                     </td>
                     <td>
                         <div>
@@ -182,11 +182,11 @@ export const Simple: Story = () => (
             <tbody>
                 <tr>
                     <td>
-                        <code>
+                        <Typography.Code>
                             {'<'}
                             Label
                             {'>'}
-                        </code>
+                        </Typography.Code>
                     </td>
                     <td>
                         <div>
@@ -256,11 +256,11 @@ export const Simple: Story = () => (
             <tbody>
                 <tr>
                     <td>
-                        <code>
+                        <Typography.Code>
                             {'<'}
                             Text
                             {'>'}
-                        </code>
+                        </Typography.Code>
                     </td>
                     <td>
                         <Typography.Text

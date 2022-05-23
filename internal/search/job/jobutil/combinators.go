@@ -4,9 +4,12 @@ import (
 	"context"
 	"time"
 
+	"github.com/opentracing/opentracing-go/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -31,6 +34,10 @@ type SequentialJob struct {
 
 func (s *SequentialJob) Name() string {
 	return "SequentialJob"
+}
+
+func (s *SequentialJob) Tags() []log.Field {
+	return []log.Field{}
 }
 
 func (s *SequentialJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
@@ -68,6 +75,10 @@ type ParallelJob struct {
 
 func (p *ParallelJob) Name() string {
 	return "ParallelJob"
+}
+
+func (p *ParallelJob) Tags() []log.Field {
+	return []log.Field{}
 }
 
 func (p *ParallelJob) Run(ctx context.Context, clients job.RuntimeClients, s streaming.Sender) (alert *search.Alert, err error) {
@@ -120,6 +131,12 @@ func (t *TimeoutJob) Name() string {
 	return "TimeoutJob"
 }
 
+func (t *TimeoutJob) Tags() []log.Field {
+	return []log.Field{
+		trace.Stringer("timeout", t.timeout),
+	}
+}
+
 // NewLimitJob creates a new job that is canceled after the result limit
 // is hit. Whenever an event is sent down the stream, the result count
 // is incremented by the number of results in that event, and if it reaches
@@ -159,6 +176,12 @@ func (l *LimitJob) Name() string {
 	return "LimitJob"
 }
 
+func (l *LimitJob) Tags() []log.Field {
+	return []log.Field{
+		log.Int("limit", l.limit),
+	}
+}
+
 func NewNoopJob() *NoopJob {
 	return &NoopJob{}
 }
@@ -170,3 +193,7 @@ func (e *NoopJob) Run(context.Context, job.RuntimeClients, streaming.Sender) (*s
 }
 
 func (e *NoopJob) Name() string { return "NoopJob" }
+
+func (e *NoopJob) Tags() []log.Field {
+	return []log.Field{}
+}

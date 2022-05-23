@@ -73,9 +73,9 @@ export const ExternalServiceForm: React.FunctionComponent<React.PropsWithChildre
             )}
             {hideDisplayNameField || (
                 <div className="form-group">
-                    <label className="font-weight-bold" htmlFor="test-external-service-form-display-name">
+                    <Typography.Label weight="bold" htmlFor="test-external-service-form-display-name">
                         Display name:
-                    </label>
+                    </Typography.Label>
                     <input
                         id="test-external-service-form-display-name"
                         type="text"

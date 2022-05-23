@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -63,6 +65,74 @@ func TestEventLogs_ValidInfo(t *testing.T) {
 				t.Errorf("have %+v, want %+v", have, want)
 			}
 		})
+	}
+}
+
+func TestEventLogs_CountUsersWithSetting(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	db := dbtest.NewDB(t)
+	ctx := context.Background()
+
+	usersStore := Users(db)
+	settingsStore := TemporarySettings(db)
+	eventLogsStore := &eventLogStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+
+	for i := 0; i < 24; i++ {
+		user, err := usersStore.Create(ctx, NewUser{Username: fmt.Sprintf("u%d", i)})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		settings := fmt.Sprintf("{%s}", strings.Join([]string{
+			fmt.Sprintf(`"foo": %d`, user.ID%7),
+			fmt.Sprintf(`"bar": "%d"`, user.ID%5),
+			fmt.Sprintf(`"baz": %v`, user.ID%2 == 0),
+		}, ", "))
+
+		if err := settingsStore.OverwriteTemporarySettings(ctx, user.ID, settings); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	for _, expectedCount := range []struct {
+		key           string
+		value         any
+		expectedCount int
+	}{
+		// foo, ints
+		{"foo", 0, 3},
+		{"foo", 1, 4},
+		{"foo", 2, 4},
+		{"foo", 3, 4},
+		{"foo", 4, 3},
+		{"foo", 5, 3},
+		{"foo", 6, 3},
+		{"foo", 7, 0}, // none
+
+		// bar, strings
+		{"bar", strconv.Itoa(0), 4},
+		{"bar", strconv.Itoa(1), 5},
+		{"bar", strconv.Itoa(2), 5},
+		{"bar", strconv.Itoa(3), 5},
+		{"bar", strconv.Itoa(4), 5},
+		{"bar", strconv.Itoa(5), 0}, // none
+
+		// baz, bools
+		{"baz", true, 12},
+		{"baz", false, 12},
+		{"baz", nil, 0}, // none
+	} {
+		count, err := eventLogsStore.CountUsersWithSetting(ctx, expectedCount.key, expectedCount.value)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if count != expectedCount.expectedCount {
+			t.Errorf("unexpected count for %q = %v. want=%d have=%d", expectedCount.key, expectedCount.value, expectedCount.expectedCount, count)
+		}
 	}
 }
 

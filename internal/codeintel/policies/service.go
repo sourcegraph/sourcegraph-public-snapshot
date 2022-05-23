@@ -11,11 +11,11 @@ import (
 )
 
 type Service struct {
-	policiesStore Store
+	policiesStore store.Store
 	operations    *operations
 }
 
-func newService(policiesStore Store, observationContext *observation.Context) *Service {
+func newService(policiesStore store.Store, observationContext *observation.Context) *Service {
 	return &Service{
 		policiesStore: policiesStore,
 		operations:    newOperations(observationContext),

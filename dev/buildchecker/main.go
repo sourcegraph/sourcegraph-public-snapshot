@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -18,6 +19,7 @@ import (
 	"github.com/slack-go/slack"
 	"golang.org/x/oauth2"
 
+	"github.com/sourcegraph/sourcegraph/dev/okay"
 	"github.com/sourcegraph/sourcegraph/dev/team"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -61,6 +63,7 @@ func main() {
 	flag.StringVar(&historyFlags.resultsCsvPath, "csv", "", "path for CSV results exports")
 	flag.StringVar(&historyFlags.honeycombDataset, "honeycomb.dataset", "", "honeycomb dataset to publish to")
 	flag.StringVar(&historyFlags.honeycombToken, "honeycomb.token", "", "honeycomb API token")
+	flag.StringVar(&historyFlags.okayHQToken, "okayhq.token", "", "okayhq API token")
 
 	flags.Parse()
 
@@ -174,6 +177,8 @@ type cmdHistoryFlags struct {
 	resultsCsvPath   string
 	honeycombDataset string
 	honeycombToken   string
+
+	okayHQToken string
 }
 
 func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags) {
@@ -286,7 +291,7 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 		FailuresThreshold: flags.FailuresThreshold,
 		BuildTimeout:      time.Duration(flags.FailuresTimeoutMins) * time.Minute,
 	}
-	log.Printf("running analyses with options: %+v\n", checkOpts)
+	log.Printf("running analysis with options: %+v\n", checkOpts)
 	totals, flakes, incidents := generateHistory(builds, createdTo, checkOpts)
 
 	// Prepare output
@@ -339,6 +344,44 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 			if strings.Contains(ev.String(), "sent:false") {
 				log.Printf("An event did not send: %s", ev.String())
 			}
+		}
+	}
+
+	if historyFlags.okayHQToken != "" {
+		okayCli := okay.NewClient(http.DefaultClient, historyFlags.okayHQToken)
+
+		for _, record := range mapToRecords(totals) {
+			recordDateString := record[0]
+			eventTime, err := time.Parse("2006-01-02T00:00:00Z", recordDateString+"T00:00:00Z")
+			if err != nil {
+				log.Fatal("time.Parse: ", err)
+			}
+
+			metrics := map[string]okay.Metric{
+				"totalCount":       okay.Count(totals[recordDateString]),
+				"incidentDuration": okay.Duration(time.Duration(incidents[recordDateString]) * time.Minute),
+				"flakeCount":       okay.Count(flakes[recordDateString]),
+			}
+			event := okay.Event{
+				Name:      "buildStats",
+				Timestamp: eventTime,
+				UniqueKey: []string{"ts", "pipeline", "branch"},
+				Properties: map[string]string{
+					"ts":           eventTime.Format(time.RFC3339),
+					"organization": "sourcegraph",
+					"pipeline":     "sourcegraph",
+					"branch":       "main",
+				},
+				Metrics: metrics,
+			}
+
+			err = okayCli.Push(&event)
+			if err != nil {
+				log.Fatal("Error storing OKAYHQ event okay.Push: ", err.Error())
+			}
+		}
+		if err := okayCli.Flush(); err != nil {
+			log.Fatal("Error posting to OKAYHQ okay.Flush: ", err.Error())
 		}
 	}
 

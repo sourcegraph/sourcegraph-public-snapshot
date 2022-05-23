@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	zoektquery "github.com/google/zoekt/query"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -17,6 +18,17 @@ const (
 	Streaming Protocol = iota
 	Batch
 )
+
+func (p Protocol) String() string {
+	switch p {
+	case Streaming:
+		return "Streaming"
+	case Batch:
+		return "Batch"
+	default:
+		return fmt.Sprintf("unknown{%d}", p)
+	}
+}
 
 type SymbolsParameters struct {
 	// Repo is the name of the repository to search in.
@@ -227,6 +239,7 @@ type RepoOptions struct {
 	RepoFilters              []string
 	MinusRepoFilters         []string
 	Dependencies             []string
+	Dependents               []string
 	CaseSensitiveRepoFilters bool
 	SearchContextSpec        string
 
@@ -240,6 +253,8 @@ type RepoOptions struct {
 	ForkSet   bool
 	NoForks   bool
 	OnlyForks bool
+
+	OnlyCloned bool
 
 	// ArchivedSet indicates whether `archived:` was set explicitly in the query,
 	// or whether the values were set from defaults.
@@ -276,6 +291,9 @@ func (op *RepoOptions) String() string {
 	}
 	if op.OnlyForks {
 		fmt.Fprintf(&b, "OnlyForks: %t\n", op.OnlyForks)
+	}
+	if op.OnlyCloned {
+		fmt.Fprintf(&b, "OnlyCloned: %t\n", op.OnlyCloned)
 	}
 	if op.ArchivedSet {
 		fmt.Fprintf(&b, "ArchivedSet: %t\n", op.ArchivedSet)
