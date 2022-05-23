@@ -1,3 +1,5 @@
+deleteme
+
 <!-- Plugin description -->
 
 # Sourcegraph for JetBrains IDEs [![JetBrains Plugin](https://img.shields.io/badge/JetBrains-Sourcegraph-green.svg)](https://plugins.jetbrains.com/plugin/9682-sourcegraph)
