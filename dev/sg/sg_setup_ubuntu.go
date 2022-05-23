@@ -18,7 +18,6 @@ var ubuntuOSDependencies = []dependencyCategory{
 			{name: "pcre", check: check.HasUbuntuLibrary("libpcre3-dev"), instructionsCommands: "sudo apt-get update && sudo apt-get -y install libpcre3-dev"},
 			{name: "sqlite", check: check.HasUbuntuLibrary("libsqlite3-dev"), instructionsCommands: "sudo apt-get update && sudo apt-get -y install libsqlite3-dev"},
 			{name: "libev", check: check.HasUbuntuLibrary("libev-dev"), instructionsCommands: "sudo apt-get update && sudo apt-get -y install libev-dev"},
-			{name: "libev4", check: check.HasUbuntuLibrary("libev4"), instructionsCommands: "sudo apt-get update && sudo apt-get -y install libev4"},
 			{name: "pkg-config", check: check.InPath("pkg-config"), instructionsCommands: `sudo apt-get update && sudo apt-get -y install pkg-config`},
 			{name: "jq", check: check.InPath("jq"), instructionsCommands: `sudo apt-get update && sudo apt-get -y install jq`},
 			{name: "curl", check: check.InPath("curl"), instructionsCommands: `sudo apt-get update && sudo apt-get -y install curl`},
