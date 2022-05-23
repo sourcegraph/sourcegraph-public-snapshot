@@ -64,6 +64,8 @@ func TestLevelFiltering(t *testing.T) {
 		{level: zapcore.InfoLevel, wantReport: false},
 		{level: zapcore.WarnLevel, wantReport: true},
 		{level: zapcore.ErrorLevel, wantReport: true},
+		// Those are annoying to test, it would required to fire up a subprocess, so
+		// instead, we just check the result of the Enabled() method in another subtest.
 		// {level: zapcore.FatalLevel, wantReport: true},
 		// {level: zapcore.DPanicLevel, wantReport: true},
 	}
@@ -95,6 +97,20 @@ func TestLevelFiltering(t *testing.T) {
 			assert.Len(t, tr.Events(), count)
 		})
 	}
+
+	t.Run("FATAL has report", func(t *testing.T) {
+		hub, _ := newTestHub(t)
+		core := sentrycore.NewCore(hub)
+		got := core.Enabled(zapcore.FatalLevel)
+		assert.True(t, got)
+	})
+
+	t.Run("DPANIC has report", func(t *testing.T) {
+		hub, _ := newTestHub(t)
+		core := sentrycore.NewCore(hub)
+		got := core.Enabled(zapcore.FatalLevel)
+		assert.True(t, got)
+	})
 }
 
 func TestFieldsFiltering(t *testing.T) {
@@ -106,8 +122,6 @@ func TestFieldsFiltering(t *testing.T) {
 		{level: zapcore.InfoLevel, wantReport: false},
 		{level: zapcore.WarnLevel, wantReport: false},
 		{level: zapcore.ErrorLevel, wantReport: false},
-		// {level: zapcore.FatalLevel, wantReport: false},
-		// {level: zapcore.DPanicLevel, wantReport: false},
 	}
 	for _, test := range tt {
 		var desc string
