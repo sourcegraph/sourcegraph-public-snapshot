@@ -9,5 +9,6 @@ export * from './ResultContainer'
 export * from './SearchResultStar'
 export * from './SyntaxHighlightedSearchQuery'
 
-import styles from './SearchResult.module.scss'
-export { styles as SearchResultStyles }
+import FileMatchChildrenStyles from './FileMatchChildren.module.scss'
+import SearchResultStyles from './SearchResult.module.scss'
+export { SearchResultStyles, FileMatchChildrenStyles }
