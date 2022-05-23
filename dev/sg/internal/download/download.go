@@ -71,7 +71,7 @@ func ArchivedExecutable(ctx context.Context, url, targetFile, fileInArchive stri
 	}
 	defer func() {
 		// Clean up the temporary directory but ignore any possible errors
-		_ = os.Remove(tmpDirName)
+		_ = os.RemoveAll(tmpDirName)
 	}()
 
 	// Only extract the file that we want
