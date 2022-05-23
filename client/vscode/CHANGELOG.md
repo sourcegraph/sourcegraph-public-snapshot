@@ -14,6 +14,7 @@ The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release v
 
 - Windows file path issue [issues/34788](https://github.com/sourcegraph/sourcegraph/issues/34788)
 - Sourcegraph icon in help sidebar now shows on light theme [issues/35672](https://github.com/sourcegraph/sourcegraph/issues/35672)
+- Highlight background color for VS Code Light & Light+ Theme [issues/35767](https://github.com/sourcegraph/sourcegraph/issues/35767)
 
 ## 2.2.2
 
