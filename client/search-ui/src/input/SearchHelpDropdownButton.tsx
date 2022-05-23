@@ -48,7 +48,12 @@ export const SearchHelpDropdownButton: React.FunctionComponent<
                 className={classNames('px-2 d-flex align-items-center cursor-pointer', styles.triggerButton)}
                 aria-label="Quick help for search"
             >
-                <Icon className="test-search-help-dropdown-button-icon" aria-hidden="true" as={HelpCircleOutlineIcon} />
+                <Icon
+                    role="img"
+                    aria-hidden={true}
+                    className="test-search-help-dropdown-button-icon"
+                    as={HelpCircleOutlineIcon}
+                />
             </PopoverTrigger>
             <PopoverContent position={Position.bottomEnd} className={classNames('pb-0', styles.content)}>
                 <MenuHeader>
@@ -128,7 +133,7 @@ export const SearchHelpDropdownButton: React.FunctionComponent<
                     className="dropdown-item"
                     onClick={onQueryDocumentationLinkClicked}
                 >
-                    <Icon className="small" as={ExternalLinkIcon} /> All search keywords
+                    <Icon role="img" aria-hidden={true} className="small" as={ExternalLinkIcon} /> All search keywords
                 </Link>
                 {isSourcegraphDotCom && (
                     <Alert className="small rounded-0 mb-0 mt-1" variant="info">

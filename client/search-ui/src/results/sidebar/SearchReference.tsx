@@ -430,7 +430,7 @@ const SearchReferenceEntry = <T extends SearchReferenceInfo>({
                         aria-label={collapsed ? 'Show filter description' : 'Hide filter description'}
                     >
                         <small className="text-monospace">i</small>
-                        <Icon as={CollapseIcon} />
+                        <Icon role="img" aria-hidden={true} as={CollapseIcon} />
                     </CollapseHeader>
                 </span>
                 <CollapsePanel>
@@ -602,7 +602,7 @@ const SearchReference = React.memo(
                 <p className={sidebarStyles.sidebarSectionFooter}>
                     <small>
                         <Link target="blank" to="https://docs.sourcegraph.com/code_search/reference/queries">
-                            Search syntax <Icon as={ExternalLinkIcon} />
+                            Search syntax <Icon role="img" aria-hidden={true} as={ExternalLinkIcon} />
                         </Link>
                     </small>
                 </p>
