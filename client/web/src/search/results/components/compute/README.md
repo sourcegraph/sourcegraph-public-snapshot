@@ -75,7 +75,7 @@ See elm-mode: https://github.com/jcollard/elm-mode
 
 ### Running
 
-Let's make sure things worked. You need `npx` installed (probably it is, but you can check with `which npx`). Then, in this directory (`client/web/src/notebooks/blocks/compute/component`), run:
+Let's make sure things worked. You need `npx` installed (probably it is, but you can check with `which npx`). Then, in this directory (`client/web/src/search/results/components/compute`), run:
 
 ```
 make standalone

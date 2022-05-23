@@ -7,10 +7,9 @@ import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { BlockInput, BlockProps, ComputeBlock } from '../..'
+import { Elm } from '../../../search/results/components/compute/src/Main.elm'
 import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
 import { NotebookBlock } from '../NotebookBlock'
-
-import { Elm } from './component/src/Main.elm'
 
 import styles from './NotebookComputeBlock.module.scss'
 
