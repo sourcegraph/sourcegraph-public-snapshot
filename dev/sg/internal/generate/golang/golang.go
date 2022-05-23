@@ -137,15 +137,18 @@ func runGoGenerate(ctx context.Context, pkgPaths []string, progressBar bool, ver
 	if verbosity == VerboseOutput {
 		args = append(args, "-x")
 	}
+	if progressBar {
+		// If we want to display a progress bar we want the verbose output of `go
+		// generate` so we can check which package has been generated.
+		args = append(args, "-v")
+	}
 	args = append(args, pkgPaths...)
 
 	if !progressBar {
+		// If we don't want to display a progress bar we stream output to `out`
+		// and are done.
 		return root.Run(run.Cmd(ctx, args...)).Stream(out)
 	}
-
-	// If we want to display a progress bar we want the verbose output of `go
-	// generate` so we can check which package has been generated.
-	args = append(args, "-v")
 
 	done := 0.0
 	total := float64(len(pkgPaths))
