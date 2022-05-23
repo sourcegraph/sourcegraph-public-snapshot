@@ -1,16 +1,16 @@
-import React from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
-import { range, isEqual } from 'lodash'
+import { range } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import VisibilitySensor from 'react-visibility-sensor'
-import { of, combineLatest, Observable, Subject, Subscription, BehaviorSubject, NEVER } from 'rxjs'
-import { catchError, filter, switchMap, map, distinctUntilChanged } from 'rxjs/operators'
+import { Observable, NEVER, BehaviorSubject } from 'rxjs'
+import { catchError, filter } from 'rxjs/operators'
 
 import { HoverMerged } from '@sourcegraph/client-api'
 import { DOMFunctions, findPositionsFromEvents, Hoverifier } from '@sourcegraph/codeintellify'
 import { asError, ErrorLike, isDefined, isErrorLike, highlightNode } from '@sourcegraph/common'
-import { Icon, Typography } from '@sourcegraph/wildcard'
+import { Icon, useObservable, Typography } from '@sourcegraph/wildcard'
 
 import { ActionItemAction } from '../actions/ActionItem'
 import { ViewerId } from '../api/viewerTypes'
@@ -63,10 +63,6 @@ export interface HighlightRange {
     highlightLength: number
 }
 
-interface State {
-    blobLinesOrError?: string[] | ErrorLike
-}
-
 const domFunctions: DOMFunctions = {
     getCodeElementFromTarget: target => {
         const row = target.closest('tr')
@@ -102,142 +98,112 @@ const domFunctions: DOMFunctions = {
 /**
  * A code excerpt that displays syntax highlighting and match range highlighting.
  */
-export class CodeExcerpt extends React.PureComponent<Props, State> {
-    public state: State = {}
-    private tableContainerElements = new BehaviorSubject<HTMLElement | null>(null)
-    private propsChanges = new Subject<Props>()
-    private visibilityChanges = new Subject<boolean>()
-    private subscriptions = new Subscription()
-    private visibilitySensorOffset = { bottom: -500 }
+export const CodeExcerpt: React.FunctionComponent<Props> = ({
+    blobLines,
+    isFirst,
+    startLine,
+    endLine,
+    fetchHighlightedFileRangeLines,
+    hoverifier,
+    viewerUpdates,
+    highlightRanges,
+    className,
+}) => {
+    const tableContainerElement = useMemo(() => new BehaviorSubject<HTMLElement | null>(null), [])
+    const setTableContainerElement = (reference: HTMLElement | null): void => tableContainerElement.next(reference)
 
-    constructor(props: Props) {
-        super(props)
-        this.subscriptions.add(
-            combineLatest([this.propsChanges, this.visibilityChanges])
-                .pipe(
-                    filter(([, isVisible]) => isVisible),
-                    map(([props]) => props),
-                    distinctUntilChanged((a, b) => isEqual(a, b)),
-                    switchMap(({ blobLines, isFirst, startLine, endLine }) =>
-                        blobLines ? of(blobLines) : props.fetchHighlightedFileRangeLines(isFirst, startLine, endLine)
-                    ),
-                    catchError(error => [asError(error)])
-                )
-                .subscribe(blobLinesOrError => {
-                    this.setState({ blobLinesOrError })
-                })
-        )
+    const [isVisible, setIsVisible] = useState(false)
+    const visibilitySensorOffset = { bottom: -500 }
 
-        let hoverifierSubscription: Subscription | null
-        this.subscriptions.add(
-            combineLatest([
-                props.viewerUpdates ?? NEVER,
-                this.propsChanges.pipe(
-                    map(props => props.hoverifier),
-                    distinctUntilChanged(),
-                    filter(isDefined)
+    const [highlightedLinesOrError, setHighlightedLinesOrError] = useState<string[] | ErrorLike | undefined>(undefined)
+
+    const hoverContext = useObservable(useMemo(() => viewerUpdates ?? NEVER, [viewerUpdates]))
+
+    useEffect(() => {
+        if (hoverContext && hoverifier) {
+            const subscription = hoverifier.hoverify({
+                positionEvents: tableContainerElement.pipe(
+                    filter(isDefined),
+                    findPositionsFromEvents({ domFunctions })
                 ),
-            ]).subscribe(([{ viewerId, ...hoverContext }, hoverifier]) => {
-                if (hoverifierSubscription) {
-                    hoverifierSubscription.unsubscribe()
-                    this.subscriptions.remove(hoverifierSubscription)
-                }
-
-                hoverifierSubscription = hoverifier.hoverify({
-                    positionEvents: this.tableContainerElements.pipe(
-                        filter(isDefined),
-                        findPositionsFromEvents({ domFunctions })
-                    ),
-                    resolveContext: () => hoverContext,
-                    dom: domFunctions,
-                })
-                this.subscriptions.add(hoverifierSubscription)
+                resolveContext: () => hoverContext,
+                dom: domFunctions,
             })
-        )
-    }
 
-    public componentDidMount(): void {
-        this.propsChanges.next(this.props)
-    }
+            return () => subscription.unsubscribe()
+        }
+        return () => {}
+    }, [hoverContext, hoverifier, tableContainerElement])
 
-    public componentDidUpdate(): void {
-        this.propsChanges.next(this.props)
+    useEffect(() => {
+        if (isVisible) {
+            if (blobLines) {
+                setHighlightedLinesOrError(blobLines)
+            } else {
+                const subscription = fetchHighlightedFileRangeLines(isFirst, startLine, endLine)
+                    .pipe(catchError(error => [asError(error)]))
+                    .subscribe(value => setHighlightedLinesOrError(value))
 
-        if (this.tableContainerElements.value) {
-            const visibleRows = this.tableContainerElements.value.querySelectorAll('table tr')
-            for (const highlight of this.props.highlightRanges) {
+                return () => subscription.unsubscribe()
+            }
+        }
+        return () => {}
+    }, [blobLines, endLine, fetchHighlightedFileRangeLines, highlightedLinesOrError, isFirst, isVisible, startLine])
+
+    useEffect(() => {
+        if (tableContainerElement.value) {
+            const visibleRows = tableContainerElement.value.querySelectorAll('table tr')
+            for (const highlight of highlightRanges) {
                 // Select the HTML row in the excerpt that corresponds to the line to be highlighted.
                 // highlight.line is the 0-indexed line number in the code file, and this.props.startLine is the 0-indexed
                 // line number of the first visible line in the excerpt. So, subtract this.props.startLine
                 // from highlight.line to get the correct 0-based index in visibleRows that holds the HTML row.
-                const tableRow = visibleRows[highlight.line - this.props.startLine]
+                const tableRow = visibleRows[highlight.line - startLine]
                 if (tableRow) {
                     // Take the lastChild of the row to select the code portion of the table row (each table row consists of the line number and code).
-                    const code = tableRow.lastChild as HTMLTableDataCellElement
+                    const code = tableRow.lastChild as HTMLTableCellElement
                     highlightNode(code, highlight.character, highlight.highlightLength)
                 }
             }
         }
-    }
+    }, [highlightRanges, startLine, tableContainerElement])
 
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
-    }
-
-    private onChangeVisibility = (isVisible: boolean): void => {
-        this.visibilityChanges.next(isVisible)
-    }
-
-    public render(): JSX.Element | null {
-        return (
-            <VisibilitySensor
-                onChange={this.onChangeVisibility}
-                partialVisibility={true}
-                offset={this.visibilitySensorOffset}
+    return (
+        <VisibilitySensor onChange={setIsVisible} partialVisibility={true} offset={visibilitySensorOffset}>
+            <Typography.Code
+                data-testid="code-excerpt"
+                className={classNames(
+                    styles.codeExcerpt,
+                    className,
+                    isErrorLike(highlightedLinesOrError) && styles.codeExcerptError
+                )}
             >
-                <Typography.Code
-                    data-testid="code-excerpt"
-                    className={classNames(
-                        styles.codeExcerpt,
-                        this.props.className,
-                        isErrorLike(this.state.blobLinesOrError) && styles.codeExcerptError
-                    )}
-                >
-                    {this.state.blobLinesOrError && !isErrorLike(this.state.blobLinesOrError) && (
-                        <div
-                            ref={this.setTableContainerElement}
-                            dangerouslySetInnerHTML={{ __html: this.makeTableHTML(this.state.blobLinesOrError) }}
-                        />
-                    )}
-                    {this.state.blobLinesOrError && isErrorLike(this.state.blobLinesOrError) && (
-                        <div className={styles.codeExcerptAlert}>
-                            <Icon role="img" className="mr-2" as={AlertCircleIcon} aria-hidden={true} />
-                            {this.state.blobLinesOrError.message}
-                        </div>
-                    )}
-                    {!this.state.blobLinesOrError && (
-                        <table>
-                            <tbody>
-                                {range(this.props.startLine, this.props.endLine).map(index => (
-                                    <tr key={index}>
-                                        <td className="line">{index + 1}</td>
-                                        {/* create empty space to fill viewport (as if the blob content were already fetched, otherwise we'll overfetch) */}
-                                        <td className="code"> </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    )}
-                </Typography.Code>
-            </VisibilitySensor>
-        )
-    }
-
-    private setTableContainerElement = (reference: HTMLElement | null): void => {
-        this.tableContainerElements.next(reference)
-    }
-
-    private makeTableHTML(blobLines: string[]): string {
-        return '<table>' + blobLines.join('') + '</table>'
-    }
+                {highlightedLinesOrError && !isErrorLike(highlightedLinesOrError) && (
+                    <div
+                        ref={setTableContainerElement}
+                        dangerouslySetInnerHTML={{ __html: '<table>' + highlightedLinesOrError.join('') + '</table>' }}
+                    />
+                )}
+                {highlightedLinesOrError && isErrorLike(highlightedLinesOrError) && (
+                    <div className={styles.codeExcerptAlert}>
+                        <Icon role="img" className="mr-2" as={AlertCircleIcon} aria-hidden={true} />
+                        {highlightedLinesOrError.message}
+                    </div>
+                )}
+                {!highlightedLinesOrError && (
+                    <table>
+                        <tbody>
+                            {range(startLine, endLine).map(index => (
+                                <tr key={index}>
+                                    <td className="line">{index + 1}</td>
+                                    {/* create empty space to fill viewport (as if the blob content were already fetched, otherwise we'll overfetch) */}
+                                    <td className="code"> </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
+            </Typography.Code>
+        </VisibilitySensor>
+    )
 }
