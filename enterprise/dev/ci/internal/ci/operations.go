@@ -339,12 +339,10 @@ func clientChromaticTests(opts CoreTestOperationsOptions) operations.Operation {
 		chromaticCommand := "yarn chromatic --exit-zero-on-changes --exit-once-uploaded"
 		if opts.ChromaticShouldAutoAccept {
 			chromaticCommand += " --auto-accept-changes"
-		} else if opts.ForceReadyForReview {
-			chromaticCommand += " | ./dev/ci/post-chromatic.sh"
 		} else {
 			// Unless we plan on automatically accepting these changes, we only run this
 			// step on ready-for-review pull requests.
-			stepOpts = append(stepOpts, bk.IfReadyForReview())
+			stepOpts = append(stepOpts, bk.IfReadyForReview(opts.ForceReadyForReview))
 			chromaticCommand += " | ./dev/ci/post-chromatic.sh"
 		}
 
