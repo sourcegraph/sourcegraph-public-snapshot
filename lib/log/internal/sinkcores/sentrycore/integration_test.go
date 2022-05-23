@@ -213,7 +213,7 @@ func logWithLevel(logger log.Logger, level zapcore.Level, msg string, fields ...
 
 func newTestLogger(t testing.TB) (log.Logger, *sentrycore.TransportMock, func()) {
 	hub, tr := newTestHub(t)
-	sink := sinks.NewSentrySinkCore(hub)
+	sink, _ := sinks.NewSentrySinkCore(hub)
 	logger, exportLogs := logtest.Captured(t, sink)
 	return logger, tr, func() { _ = exportLogs() }
 }

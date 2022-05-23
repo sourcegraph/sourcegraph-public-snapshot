@@ -66,6 +66,11 @@ func (c *Core) Core() zapcore.Core {
 	return c
 }
 
+// SetHub replaces the sentry.Hub used to submit sentry error reports.
+func (c *Core) SetHub(hub *sentry.Hub) {
+	c.w.setHub(hub)
+}
+
 // clone returns a copy of the core, carrying all previously accumulated context, but that can be safely be
 // modified without affecting other core instances.
 func (c *Core) clone() *Core {
