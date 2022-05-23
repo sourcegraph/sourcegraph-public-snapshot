@@ -52,6 +52,48 @@ func NewClient(urn string, config *schema.GerritConnection, httpClient httpcli.D
 	}, nil
 }
 
+type GetProjectAccessResponse map[string]ProjectAccessInfo
+
+func (c *Client) GetProjectAccess(ctx context.Context, projects ...string) (GetProjectAccessResponse, error) {
+	urlPath := "a/access/?"
+	// TODO: move this url formation piece somewhere else.
+	for i, proj := range projects {
+		urlPath += fmt.Sprintf("project=%s", proj)
+		if i != len(projects)-1 {
+			urlPath += "&"
+		}
+	}
+	fmt.Printf("URL: %s\n", urlPath)
+
+	reqAllAccounts, err := http.NewRequest("GET", urlPath, nil)
+
+	if err != nil {
+		return nil, err
+	}
+	respProjAccess := GetProjectAccessResponse{}
+	if _, err = c.do(ctx, reqAllAccounts, &respProjAccess); err != nil {
+		return respProjAccess, err
+	}
+	return respProjAccess, nil
+}
+
+type GetAccountGroupsResponse []GroupInfo
+
+func (c *Client) GetAccountGroups(ctx context.Context, acctID int32) (GetAccountGroupsResponse, error) {
+	urlPath := fmt.Sprintf("a/accounts/%d/groups", acctID)
+
+	reqAllAccounts, err := http.NewRequest("GET", urlPath, nil)
+
+	if err != nil {
+		return nil, err
+	}
+	respAcctGroups := GetAccountGroupsResponse{}
+	if _, err = c.do(ctx, reqAllAccounts, &respAcctGroups); err != nil {
+		return respAcctGroups, err
+	}
+	return respAcctGroups, nil
+}
+
 type ListAccountsResponse []Account
 
 func (c *Client) ListAccountsByEmail(ctx context.Context, email string) (ListAccountsResponse, error) {
@@ -191,6 +233,17 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.R
 		}
 	}
 	return resp, json.Unmarshal(bs[4:], result)
+}
+
+type ProjectAccessInfo struct {
+	Revision     string               `json:"revision"`
+	InheritsFrom Project              `json:"inherits_from"`
+	Groups       map[string]GroupInfo `json:"groups"`
+}
+
+type GroupInfo struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
 }
 
 type Account struct {

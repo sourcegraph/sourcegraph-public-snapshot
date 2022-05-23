@@ -3,6 +3,7 @@ package gerrit
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/url"
 
 	jsoniter "github.com/json-iterator/go"
@@ -111,7 +112,57 @@ func marshalAccountData(username, email string, acctID int32) (*json.RawMessage,
 }
 
 func (p Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
+	// fetch account data from Gerrit by the account id
+	user, err := gerrit.GetExternalAccountData(&account.AccountData)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get all groups that this account is a member of
+	groups, err := p.client.GetAccountGroups(ctx, user.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	// get a list of repos to check
+	for {
+		// TODO: pagination?
+		page, nextPage, err := p.client.ListProjects(ctx, gerrit.ListProjectsArgs{})
+		if err != nil {
+			// TODO: handle error?
+			continue
+		}
+		names := getProjectNamesFromMap(page)
+		fmt.Printf("names: %v\n", names)
+		resp, err := p.client.GetProjectAccess(ctx, names...)
+		if err != nil {
+			//todo handle error
+			fmt.Printf("Error getting project access: %s", err)
+			continue
+		}
+		interpretProjectAccess(resp, groups)
+		if !nextPage {
+			break
+		}
+	}
 	return nil, &authz.ErrUnimplemented{Feature: "gerrit.FetchUserPerms"}
+}
+
+func getProjectNamesFromMap(page *gerrit.ListProjectsResponse) []string {
+	names := make([]string, 0, len(*page))
+	for name := range *page {
+		names = append(names, name)
+	}
+	return names
+}
+
+func interpretProjectAccess(accessResp gerrit.GetProjectAccessResponse, groups gerrit.GetAccountGroupsResponse) {
+	for proj, access := range accessResp {
+		fmt.Printf("Access for project: %s\n", proj)
+		fmt.Printf("Groups? %v\n", access.Groups)
+		fmt.Printf("Inherits from? %v\n", access.InheritsFrom)
+		fmt.Println()
+	}
 }
 
 func (p Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, opts authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
