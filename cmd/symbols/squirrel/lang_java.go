@@ -3,7 +3,6 @@ package squirrel
 import (
 	"context"
 	"fmt"
-	"strings"
 )
 
 func (squirrel *SquirrelService) getDefJava(ctx context.Context, node *Node) (ret *Node, err error) {
@@ -245,32 +244,6 @@ func (squirrel *SquirrelService) defToType(def *Node) *Type {
 	}
 }
 
-type String string
-
-func (f String) String() string {
-	return string(f)
-}
-
-type Tuple []interface{}
-
-func (t *Tuple) String() string {
-	s := []string{}
-	for _, v := range *t {
-		s = append(s, fmt.Sprintf("%v", v))
-	}
-	return strings.Join(s, ", ")
-}
-
-func lazyNodeStringer(node **Node) func() fmt.Stringer {
-	return func() fmt.Stringer {
-		if node != nil {
-			return String(fmt.Sprintf("%s ...%s...", (*node).Type(), snippet(*node)))
-		} else {
-			return String("<nil>")
-		}
-	}
-}
-
 func lazyTypeStringer(ty **Type) func() fmt.Stringer {
 	return func() fmt.Stringer {
 		if ty != nil {
@@ -279,20 +252,4 @@ func lazyTypeStringer(ty **Type) func() fmt.Stringer {
 			return String("<nil>")
 		}
 	}
-}
-
-func snippet(node *Node) string {
-	contextChars := 5
-	start := node.StartByte() - uint32(contextChars)
-	if start < 0 {
-		start = 0
-	}
-	end := node.StartByte() + uint32(contextChars)
-	if end > uint32(len(node.Contents)) {
-		end = uint32(len(node.Contents))
-	}
-	ret := string(node.Contents[start:end])
-	ret = strings.ReplaceAll(ret, "\n", "\\n")
-	ret = strings.ReplaceAll(ret, "\t", "\\t")
-	return ret
 }
