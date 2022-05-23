@@ -1214,10 +1214,10 @@ func sortSeriesResolvers(ctx context.Context, seriesOptions types.SeriesDisplayO
 		}
 	}
 
-	return resolvers[:limit], nil
+	return resolvers[:minInt(int32(len(resolvers)), limit)], nil
 }
 
-func minInt(a, b int) int32 {
+func minInt(a, b int32) int32 {
 	if a < b {
 		return int32(a)
 	}
