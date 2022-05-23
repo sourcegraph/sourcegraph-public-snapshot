@@ -1,5 +1,7 @@
 import React, { createContext, useEffect, useMemo } from 'react'
 
+import { requestGraphQL } from '../backend/graphql'
+
 import { FeatureFlagName } from './featureFlags'
 import { removeFeatureFlagOverride, setFeatureFlagOverride } from './lib/feature-flag-local-overrides'
 import { FeatureFlagClient, IFeatureFlagClient } from './lib/FeatureFlagClient'
@@ -48,7 +50,7 @@ export const FeatureFlagsProvider: React.FunctionComponent<FeatureFlagsProviderP
     isLocalOverrideEnabled = true,
     children,
 }) => {
-    const client = useMemo(() => new FeatureFlagClient(), [])
+    const client = useMemo(() => new FeatureFlagClient(requestGraphQL), [])
 
     return (
         <FeatureFlagsContext.Provider value={{ client }}>

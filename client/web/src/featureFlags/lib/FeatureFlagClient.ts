@@ -3,49 +3,50 @@ import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 
-import { requestGraphQL } from '../../backend/graphql'
+import type { requestGraphQL } from '../../backend/graphql'
 import { EvaluatedFeatureFlagsResult, EvaluateFeatureFlagResult } from '../../graphql-operations'
 import { FeatureFlagName } from '../featureFlags'
 
 import { getFeatureFlagOverride } from './feature-flag-local-overrides'
 
-/**
- * Fetches the evaluated feature flags for the current user
- */
-const fetchEvaluatedFeatureFlags = (): Observable<EvaluatedFeatureFlagsResult['evaluatedFeatureFlags']> =>
-    from(
-        requestGraphQL<EvaluatedFeatureFlagsResult>(
-            gql`
-                query EvaluatedFeatureFlags {
-                    evaluatedFeatureFlags {
-                        name
-                        value
-                    }
-                }
-            `
-        )
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => data.evaluatedFeatureFlags)
-    )
+// exporting for testing purposes only
+export const EVALUATE_FEATURE_FLAGS_QUERY = gql`
+    query EvaluatedFeatureFlags {
+        evaluatedFeatureFlags {
+            name
+            value
+        }
+    }
+`
 
 /**
  * Fetches the evaluated feature flags for the current user
  */
+const fetchEvaluatedFeatureFlags = (
+    requestGraphQLFunc: typeof requestGraphQL
+): Observable<EvaluatedFeatureFlagsResult['evaluatedFeatureFlags']> =>
+    from(requestGraphQLFunc<EvaluatedFeatureFlagsResult>(EVALUATE_FEATURE_FLAGS_QUERY)).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.evaluatedFeatureFlags)
+    )
+
+// exporting for testing purposes only
+export const EVALUATE_FEATURE_FLAG_QUERY = gql`
+    query EvaluateFeatureFlag($flagName: String!) {
+        evaluateFeatureFlag(flagName: $flagName)
+    }
+`
+/**
+ * Fetches the evaluated feature flags for the current user
+ */
 const fetchEvaluateFeatureFlag = (
+    requestGraphQLFunc: typeof requestGraphQL,
     flagName: FeatureFlagName
 ): Observable<EvaluateFeatureFlagResult['evaluateFeatureFlag']> =>
     from(
-        requestGraphQL<EvaluateFeatureFlagResult>(
-            gql`
-                query EvaluateFeatureFlag($flagName: String!) {
-                    evaluateFeatureFlag(flagName: $flagName)
-                }
-            `,
-            {
-                flagName,
-            }
-        )
+        requestGraphQLFunc<EvaluateFeatureFlagResult>(EVALUATE_FEATURE_FLAG_QUERY, {
+            flagName,
+        })
     ).pipe(
         map(dataOrThrowErrors),
         map(data => data.evaluateFeatureFlag)
@@ -75,8 +76,8 @@ type FeatureFlagListener = (value: boolean, error?: Error) => void
 export class FeatureFlagClient implements IFeatureFlagClient {
     private cache = new FeatureFlagsProxyMap()
     private listeners = new Map<FeatureFlagName, Set<FeatureFlagListener>>()
-    constructor() {
-        fetchEvaluatedFeatureFlags()
+    constructor(private requestGraphQLFunc: typeof requestGraphQL) {
+        fetchEvaluatedFeatureFlags(this.requestGraphQLFunc)
             .toPromise()
             .then(flags => {
                 for (const flag of flags) {
@@ -98,7 +99,7 @@ export class FeatureFlagClient implements IFeatureFlagClient {
         }
         this.listeners.get(flagName)?.add(callback)
 
-        fetchEvaluateFeatureFlag(flagName)
+        fetchEvaluateFeatureFlag(this.requestGraphQLFunc, flagName)
             .toPromise()
             .then(flagValue => this.cache.set(flagName, flagValue))
             .catch(error => callback(this.cache.get(flagName) || false, error))
