@@ -50,26 +50,11 @@ func setEvaluatedFlagToCache(name string, a *actor.Actor, value bool) {
 	c.Do("HSET", getFlagCacheKey(name), visitorID, fmt.Sprintf("%v", value))
 }
 
-// TODO: discuss if we should clear when feature flag is updated?
-// Maybe we can still keep in cache until it is re-evaluated by new request from user/client?
-// However, from GQL api flag name can be changed as well, but in admin UI only value can change actually
 func ClearFlagFromCache(name string) {
 	c := pool.Get()
 	defer c.Close()
 
 	c.Do("DEL", getFlagCacheKey(name))
-}
-
-// TODO: discuss if we should clear when feature flag is updated?
-// Maybe we can still keep in cache until it is re-evaluated by new request from user/client?
-// Because, technically user is still using old flag, until makes new evaluate request
-func ClearFlagForOverrideFromCache(name string, userIDs []*int32) {
-	c := pool.Get()
-	defer c.Close()
-
-	for _, userID := range userIDs {
-		c.Do("HDEL", getFlagCacheKey(name), fmt.Sprintf("uid_%v", userID))
-	}
 }
 
 func getVisitorIDForActor(a *actor.Actor) (string, error) {

@@ -142,13 +142,7 @@ func (f *featureFlagStore) UpdateFeatureFlag(ctx context.Context, flag *ff.Featu
 		flag.Name,
 	))
 
-	res, err := scanFeatureFlag(row)
-
-	if err == nil {
-		ff.ClearFlagFromCache(flag.Name)
-	}
-
-	return res, err
+	return scanFeatureFlag(row)
 }
 
 func (f *featureFlagStore) DeleteFeatureFlag(ctx context.Context, name string) error {
@@ -310,13 +304,8 @@ func (f *featureFlagStore) CreateOverride(ctx context.Context, override *ff.Over
 		&override.UserID,
 		&override.FlagName,
 		&override.Value))
-	res, err := scanFeatureFlagOverride(row)
 
-	if err == nil {
-		ff.ClearFlagForOverrideFromCache(override.FlagName, f.getUserIDsForOverride(ctx, override.OrgID, override.UserID))
-	}
-
-	return res, err
+		return scanFeatureFlagOverride(row)
 }
 
 func (f *featureFlagStore) getUserIDsForOverride(ctx context.Context, orgID, userID *int32) []*int32 {
@@ -364,17 +353,11 @@ func (f *featureFlagStore) DeleteOverride(ctx context.Context, orgID, userID *in
 		return errors.New("must set either orgID or userID")
 	}
 
-	err := f.Exec(ctx, sqlf.Sprintf(
+	return f.Exec(ctx, sqlf.Sprintf(
 		newFeatureFlagOverrideFmtStr,
 		cond,
 		flagName,
 	))
-
-	if err == nil {
-		ff.ClearFlagForOverrideFromCache(flagName, f.getUserIDsForOverride(ctx, orgID, userID))
-	}
-
-	return err
 }
 
 func (f *featureFlagStore) UpdateOverride(ctx context.Context, orgID, userID *int32, flagName string, newValue bool) (*ff.Override, error) {
@@ -407,13 +390,7 @@ func (f *featureFlagStore) UpdateOverride(ctx context.Context, orgID, userID *in
 		flagName,
 	))
 
-	res, err := scanFeatureFlagOverride(row)
-
-	if err == nil {
-		ff.ClearFlagForOverrideFromCache(flagName, f.getUserIDsForOverride(ctx, orgID, userID))
-	}
-
-	return res, err
+	return scanFeatureFlagOverride(row)
 }
 
 func (f *featureFlagStore) GetOverridesForFlag(ctx context.Context, flagName string) ([]*ff.Override, error) {
