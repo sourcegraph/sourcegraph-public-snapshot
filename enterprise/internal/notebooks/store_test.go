@@ -192,7 +192,7 @@ func TestListingAndCountingNotebooks(t *testing.T) {
 	db := database.NewDB(dbtest.NewDB(t))
 	internalCtx := actor.WithInternalActor(context.Background())
 	u := database.Users(db)
-	o := database.Orgs(db)
+	o := db.Orgs()
 	om := db.OrgMembers()
 	n := Notebooks(db)
 
@@ -474,7 +474,7 @@ func TestNotebookPermissions(t *testing.T) {
 	db := database.NewDB(dbtest.NewDB(t))
 	internalCtx := actor.WithInternalActor(context.Background())
 	u := database.Users(db)
-	o := database.Orgs(db)
+	o := db.Orgs()
 	om := db.OrgMembers()
 	n := Notebooks(db)
 
