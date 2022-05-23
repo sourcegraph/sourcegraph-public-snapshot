@@ -50,6 +50,10 @@ class C1 {
         //          v l2.y def
         //                v l2.y ref
         L2 l2 = (x, y) -> y;
+
+        //                       v e def
+        //                                           v e ref
+        try { } catch (Exception e) { Exception e2 = e; }
     }
 
     //   vv m2 def
