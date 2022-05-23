@@ -197,7 +197,7 @@ func (i *insightViewResolver) DataSeries(ctx context.Context) ([]graphqlbackend.
 	}
 
 	for _, current := range i.view.Series {
-		seriesResolvers, err := i.dataSeriesGenerator.Generate(ctx, current, i.baseInsightResolver, *filters, seriesOptions)
+		seriesResolvers, err := i.dataSeriesGenerator.Generate(ctx, current, i.baseInsightResolver, *filters)
 		if err != nil {
 			return nil, errors.Wrapf(err, "generate for seriesID: %s", current.SeriesID)
 		}
