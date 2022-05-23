@@ -25,13 +25,19 @@ func lintSGExit() lint.Runner {
 		}
 
 		mErr := diff.IterateHunks(func(file string, hunk repo.DiffHunk) error {
-			if strings.HasPrefix(file, "dev/sg/interrupt") || strings.HasPrefix(file, "dev/sg/linters/go_checks.go") {
+			if strings.HasPrefix(file, "dev/sg/interrupt") || file == "dev/sg/linters/go_checks.go" {
 				return nil
 			}
 
-			added := strings.Join(hunk.AddedLines, "\n")
-			if strings.Contains(added, "os.Exit") || strings.Contains(added, "signal.Notify") {
-				return errors.New("do not use 'os.Exit' or 'signal.Notify', use the 'dev/sg/internal/interrupt' package instead")
+			for _, added := range hunk.AddedLines {
+				// Ignore comments
+				if strings.HasPrefix(strings.TrimSpace(added), "//") {
+					continue
+				}
+
+				if strings.Contains(added, "os.Exit") || strings.Contains(added, "signal.Notify") {
+					return errors.New("do not use 'os.Exit' or 'signal.Notify', use the 'dev/sg/internal/interrupt' package instead")
+				}
 			}
 
 			return nil
