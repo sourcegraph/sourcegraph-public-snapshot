@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -27,7 +28,7 @@ const (
 	QuietOutput
 )
 
-func Generate(ctx context.Context, args []string, verbosity OutputVerbosityType) *generate.Report {
+func Generate(ctx context.Context, args []string, progressBar bool, verbosity OutputVerbosityType) *generate.Report {
 	start := time.Now()
 	var sb strings.Builder
 	reportOut := output.NewOutput(&sb, output.OutputOpts{
@@ -67,13 +68,13 @@ func Generate(ctx context.Context, args []string, verbosity OutputVerbosityType)
 		if verbosity != QuietOutput {
 			reportOut.WriteLine(output.Linef(output.EmojiInfo, output.StyleBold, "go generate ./... (excluding doc/cli/references)"))
 		}
-		goGenerateErr = runGoGenerate(ctx, filtered, verbosity)
+		goGenerateErr = runGoGenerate(ctx, filtered, progressBar, verbosity, &sb)
 	} else {
 		// Use the given packages.
 		if verbosity != QuietOutput {
 			reportOut.WriteLine(output.Linef(output.EmojiInfo, output.StyleBold, "go generate %s", strings.Join(args, " ")))
 		}
-		goGenerateErr = runGoGenerate(ctx, args, verbosity)
+		goGenerateErr = runGoGenerate(ctx, args, progressBar, verbosity, &sb)
 	}
 
 	if goGenerateErr != nil {
@@ -131,13 +132,26 @@ func Generate(ctx context.Context, args []string, verbosity OutputVerbosityType)
 	}
 }
 
-func runGoGenerate(ctx context.Context, pkgPaths []string, verbosity OutputVerbosityType) (err error) {
+func runGoGenerate(ctx context.Context, pkgPaths []string, progressBar bool, verbosity OutputVerbosityType, out io.Writer) (err error) {
+	args := []string{"go", "generate"}
+	if verbosity == VerboseOutput {
+		args = append(args, "-x")
+	}
+	args = append(args, pkgPaths...)
+
+	if !progressBar {
+		return root.Run(run.Cmd(ctx, args...)).Stream(out)
+	}
+
+	// If we want to display a progress bar we want the verbose output of `go
+	// generate` so we can check which package has been generated.
+	args = append(args, "-v")
+
 	done := 0.0
 	total := float64(len(pkgPaths))
 	progress := std.Out.Progress([]output.ProgressBar{
 		{Label: fmt.Sprintf("go generating %d packages", len(pkgPaths)), Max: total},
 	}, nil)
-
 	defer func() {
 		if err != nil {
 			progress.Destroy()
@@ -151,14 +165,7 @@ func runGoGenerate(ctx context.Context, pkgPaths []string, verbosity OutputVerbo
 		pkgMap[strings.TrimPrefix(pkg, "github.com/sourcegraph/sourcegraph/")] = false
 	}
 
-	args := []string{"go", "generate"}
-	if verbosity == VerboseOutput {
-		args = append(args, "-x")
-	}
-	args = append(args, "-v")
-	args = append(args, pkgPaths...)
-
-	err = root.Run(run.Cmd(ctx, args...)).StreamLines(func(line []byte) {
+	return root.Run(run.Cmd(ctx, args...)).StreamLines(func(line []byte) {
 		if !bytes.HasSuffix(line, []byte(".go")) {
 			return
 		}
@@ -177,6 +184,4 @@ func runGoGenerate(ctx context.Context, pkgPaths []string, verbosity OutputVerbo
 			progress.SetLabelAndRecalc(0, fmt.Sprintf("%d/%d packages generated", int(done), int(total)))
 		}
 	})
-
-	return err
 }
