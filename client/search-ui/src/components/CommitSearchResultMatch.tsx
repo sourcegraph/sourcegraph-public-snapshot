@@ -13,7 +13,7 @@ import { LastSyncedIcon } from '@sourcegraph/shared/src/components/LastSyncedIco
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { CommitMatch } from '@sourcegraph/shared/src/search/stream'
-import { LoadingSpinner, Link, useEventObservable } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Link, useEventObservable, Typography } from '@sourcegraph/wildcard'
 
 import styles from './CommitSearchResultMatch.module.scss'
 import searchResultStyles from './SearchResult.module.scss'
@@ -130,14 +130,14 @@ export const CommitSearchResultMatch: React.FunctionComponent<CommitSearchResult
                         className={searchResultStyles.searchResultMatch}
                         {...openInNewTabProps}
                     >
-                        <code>
+                        <Typography.Code>
                             <Markdown
                                 ref={containerElement}
                                 testId="search-result-match-code-excerpt"
                                 className={classNames(styles.markdown, styles.codeExcerpt)}
                                 dangerousInnerHTML={syntaxHighlighting}
                             />
-                        </code>
+                        </Typography.Code>
                     </Link>
                 ) : (
                     <>
@@ -148,7 +148,7 @@ export const CommitSearchResultMatch: React.FunctionComponent<CommitSearchResult
                                     <tr key={`${item.url}#${index}`}>
                                         {/* create empty space to fill viewport (as if the blob content were already fetched, otherwise we'll overfetch) */}
                                         <td className={styles.lineHidden}>
-                                            <code>{index}</code>
+                                            <Typography.Code>{index}</Typography.Code>
                                         </td>
                                         <td className="code"> </td>
                                     </tr>

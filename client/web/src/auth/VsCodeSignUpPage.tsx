@@ -10,7 +10,6 @@ import { Link, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { VSCodeIcon } from '../components/CtaIcons'
-import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import { AuthProvider, SourcegraphContext } from '../jscontext'
 
 import { ExternalsAuth } from './ExternalsAuth'
@@ -19,7 +18,7 @@ import { SignUpArguments, SignUpForm } from './SignUpForm'
 import styles from './VsCodeSignUpPage.module.scss'
 
 export const ShowEmailFormQueryParameter = 'showEmail'
-interface Props extends ThemeProps, TelemetryProps, FeatureFlagProps {
+interface Props extends ThemeProps, TelemetryProps {
     source: string | null
     showEmailForm: boolean
     /** Called to perform the signup on the server. */
@@ -36,7 +35,6 @@ export const VsCodeSignUpPage: React.FunctionComponent<React.PropsWithChildren<P
     onSignUp,
     context,
     telemetryService,
-    featureFlags,
 }) => {
     const location = useLocation()
 
@@ -60,7 +58,6 @@ export const VsCodeSignUpPage: React.FunctionComponent<React.PropsWithChildren<P
 
     const signUpForm = (
         <SignUpForm
-            featureFlags={featureFlags}
             onSignUp={args => {
                 logEvent('builtin')
                 return onSignUp(args)

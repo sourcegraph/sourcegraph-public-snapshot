@@ -90,7 +90,12 @@ export const DownloadSpecModal: React.FunctionComponent<React.PropsWithChildren<
                 >
                     Cancel
                 </Button>
-                <BatchSpecDownloadLink name={name} originalInput={originalInput} isLightTheme={isLightTheme}>
+                <BatchSpecDownloadLink
+                    name={name}
+                    originalInput={originalInput}
+                    isLightTheme={isLightTheme}
+                    asButton={false}
+                >
                     <Button
                         variant="primary"
                         onClick={() => {

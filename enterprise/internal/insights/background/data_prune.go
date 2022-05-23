@@ -48,22 +48,22 @@ func performPurge(ctx context.Context, postgres dbutil.DB, insightsdb dbutil.DB,
 		if err != nil {
 			return errors.Wrap(err, "deleteQueuedRecords")
 		}
-		tx, err := timeseriesStore.Transact(ctx)
-		if err != nil {
-			return err
-		}
-		err = tx.Delete(ctx, id)
-		if err != nil {
-			return errors.Wrap(err, "Delete")
-		}
+		err = func() (err error) {
+			// scope the transaction to an anonymous function so we can defer Done
+			tx, err := timeseriesStore.Transact(ctx)
+			if err != nil {
+				return err
+			}
+			defer func() { err = tx.Done(err) }()
 
-		insightStoreTx := insightStore.With(tx)
-		err = insightStoreTx.HardDeleteSeries(ctx, id)
-		if err != nil {
-			return err
-		}
+			err = tx.Delete(ctx, id)
+			if err != nil {
+				return errors.Wrap(err, "Delete")
+			}
 
-		err = tx.Done(err)
+			insightStoreTx := insightStore.With(tx)
+			return insightStoreTx.HardDeleteSeries(ctx, id)
+		}()
 		if err != nil {
 			return err
 		}

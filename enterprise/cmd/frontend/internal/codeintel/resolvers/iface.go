@@ -6,8 +6,8 @@ import (
 
 	"github.com/grafana/regexp"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
@@ -85,7 +85,7 @@ type IndexEnqueuer interface {
 }
 
 type (
-	RepoUpdaterClient       = enqueuer.RepoUpdaterClient
-	EnqueuerDBStore         = enqueuer.DBStore
-	EnqueuerGitserverClient = enqueuer.GitserverClient
+	RepoUpdaterClient       = autoindexing.RepoUpdaterClient
+	EnqueuerDBStore         = autoindexing.DBStore
+	EnqueuerGitserverClient = autoindexing.GitserverClient
 )

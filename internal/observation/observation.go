@@ -67,7 +67,7 @@ type Op struct {
 	Description string
 	// MetricLabelValues that apply for every invocation of this operation.
 	MetricLabelValues []string
-	// LogFields that apply for for every invocation of this operation.
+	// LogFields that apply for every invocation of this operation.
 	LogFields []otlog.Field
 	// ErrorFilter returns true for any error that should be converted to nil
 	// for the purposes of metrics and tracing. If this field is not set then
@@ -151,7 +151,7 @@ type traceLogger struct {
 	log.Logger
 }
 
-// initWithTags adds tags to everything except the underlying Logger, which should have
+// initWithTags adds tags to everything except the underlying Logger, which should
 // already have init fields due to being spawned from a parent Logger.
 func (t *traceLogger) initWithTags(fields ...otlog.Field) {
 	if honey.Enabled() {

@@ -31,7 +31,7 @@ add('active', () => (
                     <span style={{ backgroundColor: 'red', width: 100 }} />
                 </div>
                 <Typography.H3 className="mt-4">
-                    <code>stableWidth=false</code>
+                    <Typography.Code>stableWidth=false</Typography.Code>
                 </Typography.H3>
                 <div className="d-flex">
                     <span style={{ backgroundColor: 'red', width: 100 }} />

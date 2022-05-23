@@ -1,27 +1,59 @@
 import { splitPath } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { ContentMatch } from '@sourcegraph/shared/src/search/stream'
 
+import { Search } from './App'
 import { loadContent } from './lib/blob'
 
-type RequestToJavaAction =
-    | 'getConfig'
-    | 'getTheme'
-    | 'saveLastSearch'
-    | 'loadLastSearch'
-    | 'preview'
-    | 'clearPreview'
-    | 'open'
-
-export interface RequestToJava {
-    action: RequestToJavaAction
-    arguments: object
+interface MatchRequest {
+    action: 'preview' | 'open'
+    arguments: {
+        fileName: string
+        path: string
+        content: string
+        lineNumber: number
+        absoluteOffsetAndLengths: number[][]
+    }
 }
+
+interface GetConfigRequest {
+    action: 'getConfig'
+}
+
+interface GetThemeRequest {
+    action: 'getTheme'
+}
+
+interface SaveLastSearchRequest {
+    action: 'saveLastSearch'
+    arguments: Search
+}
+
+interface LoadLastSearchRequest {
+    action: 'loadLastSearch'
+}
+
+interface ClearPreviewRequest {
+    action: 'clearPreview'
+}
+
+interface IndicateFinishedLoadingRequest {
+    action: 'indicateFinishedLoading'
+}
+
+export type Request =
+    | MatchRequest
+    | GetConfigRequest
+    | GetThemeRequest
+    | SaveLastSearchRequest
+    | LoadLastSearchRequest
+    | ClearPreviewRequest
+    | IndicateFinishedLoadingRequest
 
 export async function createRequestForMatch(
     match: ContentMatch,
     lineMatchIndex: number,
-    action: RequestToJavaAction
-): Promise<RequestToJava> {
+    action: MatchRequest['action']
+): Promise<MatchRequest> {
     const fileName = splitPath(match.path)[1]
     const content = await loadContent(match)
     const characterCountUntilLine = getCharacterCountUntilLine(content, match.lineMatches[lineMatchIndex].lineNumber)

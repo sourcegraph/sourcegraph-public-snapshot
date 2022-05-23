@@ -11,6 +11,7 @@ import (
 	"os"
 	stdlibpath "path"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -986,4 +987,228 @@ func filterPaths(ctx context.Context, repo api.RepoName, checker authz.SubRepoPe
 		return nil, errors.Wrap(err, "filtering paths")
 	}
 	return filtered, nil
+}
+
+// ListDirectoryChildren fetches the list of children under the given directory
+// names. The result is a map keyed by the directory names with the list of files
+// under each.
+func (c *ClientImplementor) ListDirectoryChildren(
+	ctx context.Context,
+	checker authz.SubRepoPermissionChecker,
+	repo api.RepoName,
+	commit api.CommitID,
+	dirnames []string,
+) (map[string][]string, error) {
+	args := []string{"ls-tree", "--name-only", string(commit), "--"}
+	args = append(args, cleanDirectoriesForLsTree(dirnames)...)
+	cmd := c.GitCommand(repo, args...)
+
+	out, err := cmd.CombinedOutput(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	paths := strings.Split(string(out), "\n")
+	if authz.SubRepoEnabled(checker) {
+		paths, err = authz.FilterActorPaths(ctx, checker, actor.FromContext(ctx), repo, paths)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return parseDirectoryChildren(dirnames, paths), nil
+}
+
+// cleanDirectoriesForLsTree sanitizes the input dirnames to a git ls-tree command. There are a
+// few peculiarities handled here:
+//
+//   1. The root of the tree must be indicated with `.`, and
+//   2. In order for git ls-tree to return a directory's contents, the name must end in a slash.
+func cleanDirectoriesForLsTree(dirnames []string) []string {
+	var args []string
+	for _, dir := range dirnames {
+		if dir == "" {
+			args = append(args, ".")
+		} else {
+			if !strings.HasSuffix(dir, "/") {
+				dir += "/"
+			}
+			args = append(args, dir)
+		}
+	}
+
+	return args
+}
+
+// parseDirectoryChildren converts the flat list of files from git ls-tree into a map. The keys of the
+// resulting map are the input (unsanitized) dirnames, and the value of that key are the files nested
+// under that directory. If dirnames contains a directory that encloses another, then the paths will
+// be placed into the key sharing the longest path prefix.
+func parseDirectoryChildren(dirnames, paths []string) map[string][]string {
+	childrenMap := map[string][]string{}
+
+	// Ensure each directory has an entry, even if it has no children
+	// listed in the gitserver output.
+	for _, dirname := range dirnames {
+		childrenMap[dirname] = nil
+	}
+
+	// Order directory names by length (biggest first) so that we assign
+	// paths to the most specific enclosing directory in the following loop.
+	sort.Slice(dirnames, func(i, j int) bool {
+		return len(dirnames[i]) > len(dirnames[j])
+	})
+
+	for _, path := range paths {
+		if strings.Contains(path, "/") {
+			for _, dirname := range dirnames {
+				if strings.HasPrefix(path, dirname) {
+					childrenMap[dirname] = append(childrenMap[dirname], path)
+					break
+				}
+			}
+		} else if len(dirnames) > 0 && dirnames[len(dirnames)-1] == "" {
+			// No need to loop here. If we have a root input directory it
+			// will necessarily be the last element due to the previous
+			// sorting step.
+			childrenMap[""] = append(childrenMap[""], path)
+		}
+	}
+
+	return childrenMap
+}
+
+// ListTags returns a list of all tags in the repository.
+func (c *ClientImplementor) ListTags(ctx context.Context, repo api.RepoName) ([]*gitdomain.Tag, error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: Tags")
+	defer span.Finish()
+
+	// Support both lightweight tags and tag objects. For creatordate, use an %(if) to prefer the
+	// taggerdate for tag objects, otherwise use the commit's committerdate (instead of just always
+	// using committerdate).
+	cmd := c.GitCommand(repo, "tag", "--list", "--sort", "-creatordate", "--format", "%(if)%(*objectname)%(then)%(*objectname)%(else)%(objectname)%(end)%00%(refname:short)%00%(if)%(creatordate:unix)%(then)%(creatordate:unix)%(else)%(*creatordate:unix)%(end)")
+	out, err := cmd.CombinedOutput(ctx)
+	if err != nil {
+		if gitdomain.IsRepoNotExist(err) {
+			return nil, err
+		}
+		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
+	}
+
+	return parseTags(out)
+}
+
+func parseTags(in []byte) ([]*gitdomain.Tag, error) {
+	in = bytes.TrimSuffix(in, []byte("\n")) // remove trailing newline
+	if len(in) == 0 {
+		return nil, nil // no tags
+	}
+	lines := bytes.Split(in, []byte("\n"))
+	tags := make([]*gitdomain.Tag, len(lines))
+	for i, line := range lines {
+		parts := bytes.SplitN(line, []byte("\x00"), 3)
+		if len(parts) != 3 {
+			return nil, errors.Errorf("invalid git tag list output line: %q", line)
+		}
+
+		tag := &gitdomain.Tag{
+			Name:     string(parts[1]),
+			CommitID: api.CommitID(parts[0]),
+		}
+
+		date, err := strconv.ParseInt(string(parts[2]), 10, 64)
+		if err == nil {
+			tag.CreatorDate = time.Unix(date, 0).UTC()
+		}
+
+		tags[i] = tag
+	}
+	return tags, nil
+}
+
+// GetDefaultBranch returns the name of the default branch and the commit it's
+// currently at from the given repository.
+//
+// If the repository is empty or currently being cloned, empty values and no
+// error are returned.
+func (c *ClientImplementor) GetDefaultBranch(ctx context.Context, repo api.RepoName) (refName string, commit api.CommitID, err error) {
+	if Mocks.GetDefaultBranch != nil {
+		return Mocks.GetDefaultBranch(repo)
+	}
+	return c.getDefaultBranch(ctx, repo, false)
+}
+
+// GetDefaultBranchShort returns the short name of the default branch for the
+// given repository and the commit it's currently at. A short name would return
+// something like `main` instead of `refs/heads/main`.
+//
+// If the repository is empty or currently being cloned, empty values and no
+// error are returned.
+func (c *ClientImplementor) GetDefaultBranchShort(ctx context.Context, repo api.RepoName) (refName string, commit api.CommitID, err error) {
+	if Mocks.GetDefaultBranchShort != nil {
+		return Mocks.GetDefaultBranchShort(repo)
+	}
+	return c.getDefaultBranch(ctx, repo, true)
+}
+
+// GetDefaultBranch returns the name of the default branch and the commit it's
+// currently at from the given repository.
+//
+// If the repository is empty or currently being cloned, empty values and no
+// error are returned.
+func (c *ClientImplementor) getDefaultBranch(ctx context.Context, repo api.RepoName, short bool) (refName string, commit api.CommitID, err error) {
+	args := []string{"symbolic-ref", "HEAD"}
+	if short {
+		args = append(args, "--short")
+	}
+	refBytes, _, exitCode, err := c.execSafe(ctx, repo, args)
+	refName = string(bytes.TrimSpace(refBytes))
+
+	if err == nil && exitCode == 0 {
+		// Check that our repo is not empty
+		commit, err = c.ResolveRevision(ctx, repo, "HEAD", ResolveRevisionOptions{NoEnsureRevision: true})
+	}
+
+	// If we fail to get the default branch due to cloning or being empty, we return nothing.
+	if err != nil {
+		if gitdomain.IsCloneInProgress(err) || errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+			return "", "", nil
+		}
+		return "", "", err
+	}
+
+	return refName, commit, nil
+}
+
+// execSafe executes a Git subcommand iff it is allowed according to a allowlist.
+//
+// An error is only returned when there is a failure unrelated to the actual
+// command being executed. If the executed command exits with a nonzero exit
+// code, err == nil. This is similar to how http.Get returns a nil error for HTTP
+// non-2xx responses.
+//
+// execSafe should NOT be exported. We want to limit direct git calls to this
+// package.
+func (c *ClientImplementor) execSafe(ctx context.Context, repo api.RepoName, params []string) (stdout, stderr []byte, exitCode int, err error) {
+	if Mocks.ExecSafe != nil {
+		return Mocks.ExecSafe(params)
+	}
+
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: execSafe")
+	defer span.Finish()
+
+	if len(params) == 0 {
+		return nil, nil, 0, errors.New("at least one argument required")
+	}
+
+	if !gitdomain.IsAllowedGitCmd(params) {
+		return nil, nil, 0, errors.Errorf("command failed: %q is not a allowed git command", params)
+	}
+
+	cmd := c.GitCommand(repo, params...)
+	stdout, stderr, err = cmd.DividedOutput(ctx)
+	exitCode = cmd.ExitStatus()
+	if exitCode != 0 && err != nil {
+		err = nil // the error must just indicate that the exit code was nonzero
+	}
+	return stdout, stderr, exitCode, err
 }

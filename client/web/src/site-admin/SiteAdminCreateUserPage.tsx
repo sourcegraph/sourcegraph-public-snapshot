@@ -125,7 +125,9 @@ export class SiteAdminCreateUserPage extends React.Component<RouteComponentProps
                 ) : (
                     <Form onSubmit={this.onSubmit} className="site-admin-create-user-page__form">
                         <div className={classNames('form-group', styles.formGroup)}>
-                            <label htmlFor="site-admin-create-user-page__form-username">Username</label>
+                            <Typography.Label htmlFor="site-admin-create-user-page__form-username">
+                                Username
+                            </Typography.Label>
                             <UsernameInput
                                 id="site-admin-create-user-page__form-username"
                                 onChange={this.onUsernameFieldChange}
@@ -140,7 +142,7 @@ export class SiteAdminCreateUserPage extends React.Component<RouteComponentProps
                             </small>
                         </div>
                         <div className={classNames('form-group', styles.formGroup)}>
-                            <label htmlFor="site-admin-create-user-page__form-email">Email</label>
+                            <Typography.Label htmlFor="site-admin-create-user-page__form-email">Email</Typography.Label>
                             <EmailInput
                                 id="site-admin-create-user-page__form-email"
                                 onChange={this.onEmailFieldChange}

@@ -8,9 +8,11 @@ exports[`QuickLink should have correct links when quicklinks present 1`] = `
     href="/"
   >
     <svg
+      aria-hidden="true"
       class="mdi-icon iconInline pr-1 flex-shrink-0"
       fill="currentColor"
       height="24"
+      role="img"
       viewBox="0 0 24 24"
       width="24"
     >
@@ -27,9 +29,11 @@ exports[`QuickLink should have correct links when quicklinks present 1`] = `
     href="http://example.com"
   >
     <svg
+      aria-hidden="true"
       class="mdi-icon iconInline pr-1 flex-shrink-0"
       fill="currentColor"
       height="24"
+      role="img"
       viewBox="0 0 24 24"
       width="24"
     >

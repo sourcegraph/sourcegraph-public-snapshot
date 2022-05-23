@@ -527,9 +527,8 @@ type ZoektRepoSubsetSearchJob struct {
 
 // ZoektSearch is a job that searches repositories using zoekt.
 func (z *ZoektRepoSubsetSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
-	tr, ctx, stream, finish := job.StartSpan(ctx, stream, z)
+	_, ctx, stream, finish := job.StartSpan(ctx, stream, z)
 	defer func() { finish(alert, err) }()
-	tr.TagFields(trace.LazyFields(z.Tags))
 
 	if z.Repos == nil {
 		return nil, nil
@@ -572,9 +571,8 @@ type ZoektGlobalSearchJob struct {
 }
 
 func (t *ZoektGlobalSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
-	tr, ctx, stream, finish := job.StartSpan(ctx, stream, t)
+	_, ctx, stream, finish := job.StartSpan(ctx, stream, t)
 	defer func() { finish(alert, err) }()
-	tr.TagFields(trace.LazyFields(t.Tags))
 
 	userPrivateRepos := searchrepos.PrivateReposForActor(ctx, clients.DB, t.RepoOpts)
 	t.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)

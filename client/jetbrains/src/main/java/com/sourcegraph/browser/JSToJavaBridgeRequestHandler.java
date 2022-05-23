@@ -6,6 +6,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.ui.jcef.JBCefJSQuery;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.ThemeUtil;
+import com.sourcegraph.find.BrowserAndLoadingPanel;
 import com.sourcegraph.find.PreviewContent;
 import com.sourcegraph.find.PreviewPanel;
 import com.sourcegraph.find.Search;
@@ -16,15 +17,16 @@ import javax.annotation.Nullable;
 public class JSToJavaBridgeRequestHandler {
     private final Project project;
     private final PreviewPanel previewPanel;
+    private final BrowserAndLoadingPanel topPanel;
 
-    public JSToJavaBridgeRequestHandler(@NotNull Project project, @NotNull PreviewPanel previewPanel) {
+    public JSToJavaBridgeRequestHandler(@NotNull Project project, @NotNull PreviewPanel previewPanel, @NotNull BrowserAndLoadingPanel topPanel) {
         this.project = project;
         this.previewPanel = previewPanel;
+        this.topPanel = topPanel;
     }
 
     public JBCefJSQuery.Response handle(@NotNull JsonObject request) {
         String action = request.get("action").getAsString();
-        JsonObject arguments = request.getAsJsonObject("arguments");
         Gson gson = new Gson();
         PreviewContent previewContent;
         switch (action) {
@@ -48,6 +50,7 @@ public class JSToJavaBridgeRequestHandler {
                 }
             case "saveLastSearch":
                 try {
+                    JsonObject arguments = request.getAsJsonObject("arguments");
                     String query = arguments.get("query").getAsString();
                     boolean caseSensitive = arguments.get("caseSensitive").getAsBoolean();
                     String patternType = arguments.get("patternType").getAsString();
@@ -76,6 +79,7 @@ public class JSToJavaBridgeRequestHandler {
                 }
             case "preview":
                 try {
+                    JsonObject arguments = request.getAsJsonObject("arguments");
                     previewContent = gson.fromJson(arguments, PreviewContent.class);
                     previewPanel.setContent(previewContent, false);
                     return createSuccessResponse(null);
@@ -91,11 +95,18 @@ public class JSToJavaBridgeRequestHandler {
                 }
             case "open":
                 try {
+                    JsonObject arguments = request.getAsJsonObject("arguments");
                     previewContent = gson.fromJson(arguments, PreviewContent.class);
                     previewPanel.setContent(previewContent, true);
                     return createSuccessResponse(null);
                 } catch (Exception e) {
                     return createErrorResponse(9, e.getClass().getName() + ": " + e.getMessage());
+                }
+            case "indicateFinishedLoading":
+                try {
+                    topPanel.setBrowserVisible(true);
+                } catch (Exception e) {
+                    return createErrorResponse(10, e.getClass().getName() + ": " + e.getMessage());
                 }
             default:
                 return createErrorResponse(2, "Unknown action: " + action);

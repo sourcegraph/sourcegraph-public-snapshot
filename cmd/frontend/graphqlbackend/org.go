@@ -334,7 +334,7 @@ func (r *schemaResolver) UpdateOrganization(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	updatedOrg, err := database.Orgs(r.db).Update(ctx, orgID, args.DisplayName)
+	updatedOrg, err := r.db.Orgs().Update(ctx, orgID, args.DisplayName)
 	if err != nil {
 		return nil, err
 	}
@@ -360,7 +360,7 @@ func (r *schemaResolver) RemoveUserFromOrganization(ctx context.Context, args *s
 	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgID); err != nil {
 		return nil, err
 	}
-	memberCount, err := database.OrgMembers(r.db).MemberCount(ctx, orgID)
+	memberCount, err := r.db.OrgMembers().MemberCount(ctx, orgID)
 	if err != nil {
 		return nil, err
 	}
@@ -368,7 +368,7 @@ func (r *schemaResolver) RemoveUserFromOrganization(ctx context.Context, args *s
 		return nil, errors.New("you can’t remove the only member of an organization")
 	}
 	log15.Info("removing user from org", "user", userID, "org", orgID)
-	if err := database.OrgMembers(r.db).Remove(ctx, orgID, userID); err != nil {
+	if err := r.db.OrgMembers().Remove(ctx, orgID, userID); err != nil {
 		return nil, err
 	}
 

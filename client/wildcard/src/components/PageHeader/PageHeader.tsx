@@ -61,7 +61,7 @@ export const PageHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
                         <React.Fragment key={index}>
                             {index !== 0 && <span className={styles.divider}>/</span>}
                             <LinkOrSpan to={to} className={styles.path} aria-label={ariaLabel}>
-                                {Icon && <Icon className={styles.pathIcon} />}
+                                {Icon && <Icon className={styles.pathIcon} aria-hidden={true} />}
                                 {text && <span className={styles.pathText}>{text}</span>}
                             </LinkOrSpan>
                         </React.Fragment>

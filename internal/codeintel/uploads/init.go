@@ -22,25 +22,20 @@ var (
 // new, it will use the given database handle.
 func GetService(db database.DB) *Service {
 	svcOnce.Do(func() {
+		storeObservationCtx := &observation.Context{
+			Logger:     log.Scoped("uploads.store", "codeintel uploads store"),
+			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+			Registerer: prometheus.DefaultRegisterer,
+		}
+		store := store.New(db, storeObservationCtx)
+
 		observationContext := &observation.Context{
 			Logger:     log.Scoped("uploads.service", "codeintel uploads service"),
 			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 			Registerer: prometheus.DefaultRegisterer,
 		}
-
-		svc = newService(
-			store.GetStore(db),
-			observationContext,
-		)
+		svc = newService(store, observationContext)
 	})
 
 	return svc
-}
-
-// TestService creates a fresh uplopads service with the given database handle.
-func TestService(db database.DB) *Service {
-	return newService(
-		store.GetStore(db),
-		&observation.TestContext,
-	)
 }

@@ -62,10 +62,8 @@ export const UserProductSubscriptionStatus: React.FunctionComponent<React.PropsW
                                         <Icon className="mr-1" as={InformationIcon} />{' '}
                                         <span>
                                             Use this license key as the{' '}
-                                            <code>
-                                                <strong>licenseKey</strong>
-                                            </code>{' '}
-                                            property value in Sourcegraph site configuration.
+                                            <Typography.Code weight="bold">licenseKey</Typography.Code> property value
+                                            in Sourcegraph site configuration.
                                         </span>
                                     </small>
                                     <LicenseGenerationKeyWarning className="mb-0 mt-1" />

@@ -3002,13 +3002,13 @@ func testPermsStore_UserIsMemberOfOrgHasCodeHostConnection(db *sql.DB) func(*tes
 		)
 		require.NoError(t, err)
 
-		orgs := database.Orgs(db)
+		orgs := db.Orgs()
 		bobOrg, err := orgs.Create(ctx, "bob-org", nil)
 		require.NoError(t, err)
 		cindyOrg, err := orgs.Create(ctx, "cindy-org", nil)
 		require.NoError(t, err)
 
-		orgMembers := database.OrgMembers(db)
+		orgMembers := db.OrgMembers()
 		_, err = orgMembers.Create(ctx, bobOrg.ID, bob.ID)
 		require.NoError(t, err)
 		_, err = orgMembers.Create(ctx, cindyOrg.ID, cindy.ID)

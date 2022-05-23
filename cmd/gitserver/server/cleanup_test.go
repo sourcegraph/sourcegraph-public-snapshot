@@ -596,7 +596,7 @@ func TestRemoveRepoDirectory(t *testing.T) {
 		if err := database.Repos(db).Create(ctx, repo); err != nil {
 			t.Fatal(err)
 		}
-		if err := database.GitserverRepos(db).Upsert(ctx, &types.GitserverRepo{
+		if err := db.GitserverRepos().Upsert(ctx, &types.GitserverRepo{
 			RepoID:      repo.ID,
 			ShardID:     "test",
 			CloneStatus: types.CloneStatusCloned,
@@ -652,7 +652,7 @@ func TestRemoveRepoDirectory(t *testing.T) {
 		if !ok {
 			t.Fatal("id mapping not found")
 		}
-		r, err := database.GitserverRepos(db).GetByID(ctx, id)
+		r, err := db.GitserverRepos().GetByID(ctx, id)
 		if err != nil {
 			t.Fatal(err)
 		}

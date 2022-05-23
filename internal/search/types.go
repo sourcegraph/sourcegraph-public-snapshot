@@ -19,6 +19,17 @@ const (
 	Batch
 )
 
+func (p Protocol) String() string {
+	switch p {
+	case Streaming:
+		return "Streaming"
+	case Batch:
+		return "Batch"
+	default:
+		return fmt.Sprintf("unknown{%d}", p)
+	}
+}
+
 type SymbolsParameters struct {
 	// Repo is the name of the repository to search in.
 	Repo api.RepoName `json:"repo"`
@@ -243,6 +254,8 @@ type RepoOptions struct {
 	NoForks   bool
 	OnlyForks bool
 
+	OnlyCloned bool
+
 	// ArchivedSet indicates whether `archived:` was set explicitly in the query,
 	// or whether the values were set from defaults.
 	ArchivedSet  bool
@@ -278,6 +291,9 @@ func (op *RepoOptions) String() string {
 	}
 	if op.OnlyForks {
 		fmt.Fprintf(&b, "OnlyForks: %t\n", op.OnlyForks)
+	}
+	if op.OnlyCloned {
+		fmt.Fprintf(&b, "OnlyCloned: %t\n", op.OnlyCloned)
 	}
 	if op.ArchivedSet {
 		fmt.Fprintf(&b, "ArchivedSet: %t\n", op.ArchivedSet)

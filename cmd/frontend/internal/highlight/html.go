@@ -76,6 +76,26 @@ func DocumentToHTML(code string, document *lsiftyped.Document) (template.HTML, e
 	return template.HTML(buf.String()), nil
 }
 
+// safeSlice is used to prevent us from panicing in production when we
+// request a slice of runes for lsifToHTML. It's possible that the incoming
+// bundle may be malformed, so this way we'll at least try to highlight things
+// (and hopefully pick up in the correct place on the next line if things went weird)
+func safeSlice(text []rune, start, finish int32) string {
+	if start > finish {
+		return ""
+	}
+
+	if int(start) > len(text) {
+		return ""
+	}
+
+	if int(finish) > len(text) {
+		return string(text[start:])
+	}
+
+	return string(text[start:finish])
+}
+
 // lsifToHTML iterates on code and a document to dispatch to AddRow and AddText
 // which can be used to generate different kinds of HTML.
 func lsifToHTML(
@@ -85,7 +105,34 @@ func lsifToHTML(
 	addText func(kind lsiftyped.SyntaxKind, line string),
 	validLines map[int32]bool,
 ) {
-	splitLines := strings.Split(code, "\n")
+	splitStringLines := strings.Split(code, "\n")
+
+	// Why split into runes?
+	//   Well, my young ascii grasshopper, we are using lines and _columns_
+	//   and columns expect things to be indexed by column, not by byte offset.
+	//
+	//   If we use byte offset (which is what you get when you do myString[x:y])
+	//   then you'll be in big trouble for displaying purposes (and probably run over
+	//   the end of things).
+	//
+	//   So, we get a list of list of runes to interact with, which can be correctly
+	//   indexed and sliced based on columns.
+	//
+	//   This could probably use a library (or we are doing something similar elsewhere
+	//   and I just didn't know about it)
+	splitLines := make([][]rune, len(splitStringLines))
+	for idx, line := range splitStringLines {
+		// Ensure that line doesn't have trailing \r characters (we already split on \n)
+		line = strings.TrimSuffix(line, "\r")
+
+		// important for e.g. selecting whitespace in the produced table
+		if line == "" {
+			line = "\n"
+		}
+
+		splitLines[idx] = []rune(line)
+	}
+
 	occurences := document.Occurrences
 
 	row, occIndex := int32(0), 0
@@ -96,45 +143,43 @@ func lsifToHTML(
 			continue
 		}
 
-		line := strings.TrimSuffix(splitLines[row], "\r")
-		if line == "" {
-			line = "\n" // important for e.g. selecting whitespace in the produced table
-		}
+		line := splitLines[row]
 
 		addRow(row)
 
-		lineCharacter := 0
+		lineCharacter := int32(0)
 		for occIndex < len(occurences) && occurences[occIndex].Range[0] < row+1 {
 			occ := occurences[occIndex]
 			occIndex += 1
 
 			startRow, startCharacter, endRow, endCharacter := normalizeLsifTypedRange(occ.Range)
-			addText(occ.SyntaxKind, line[lineCharacter:startCharacter])
+
+			addText(occ.SyntaxKind, safeSlice(line, lineCharacter, startCharacter))
 
 			if startRow != endRow {
-				addText(occ.SyntaxKind, line[startCharacter:])
+				addText(occ.SyntaxKind, safeSlice(line, startCharacter, int32(len(line))))
 
 				row += 1
 				for row < endRow {
 					line = splitLines[row]
 
 					addRow(row)
-					addText(occ.SyntaxKind, line)
+					addText(occ.SyntaxKind, string(line))
 
 					row += 1
 				}
 
 				line = splitLines[row]
 				addRow(row)
-				addText(occ.SyntaxKind, line[:endCharacter])
+				addText(occ.SyntaxKind, safeSlice(line, 0, endCharacter))
 			} else {
-				addText(occ.SyntaxKind, line[startCharacter:endCharacter])
+				addText(occ.SyntaxKind, safeSlice(line, startCharacter, endCharacter-1))
 			}
 
-			lineCharacter = int(endCharacter)
+			lineCharacter = endCharacter
 		}
 
-		addText(lsiftyped.SyntaxKind_UnspecifiedSyntaxKind, line[lineCharacter:])
+		addText(lsiftyped.SyntaxKind_UnspecifiedSyntaxKind, safeSlice(line, lineCharacter, int32(len(line))))
 
 		row += 1
 	}

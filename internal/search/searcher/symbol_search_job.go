@@ -33,7 +33,6 @@ type SymbolSearcherJob struct {
 func (s *SymbolSearcherJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
-	tr.TagFields(trace.LazyFields(s.Tags))
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()

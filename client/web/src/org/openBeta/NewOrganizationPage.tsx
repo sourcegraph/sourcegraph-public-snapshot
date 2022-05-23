@@ -210,7 +210,7 @@ export const NewOrgOpenBetaPage: React.FunctionComponent<React.PropsWithChildren
             <Form className="mb-3" onSubmit={onSubmit}>
                 {error && <ErrorAlert className="mb-3" error={getError(error)} />}
                 <div className={classNames('form-group', styles.formItem)}>
-                    <label htmlFor="new-org-page__form-name">Organization name</label>
+                    <Typography.Label htmlFor="new-org-page__form-name">Organization name</Typography.Label>
                     <input
                         id="new-org-page__form-name"
                         type="text"

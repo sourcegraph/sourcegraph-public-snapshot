@@ -361,6 +361,7 @@
     "@codemirror/view": "^0.20.4",
     "@lezer/highlight": "^0.16.0",
     "@radix-ui/react-tooltip": "^0.1.7",
+    "@microsoft/fetch-event-source": "^2.0.1",
     "@reach/accordion": "^0.16.1",
     "@reach/combobox": "^0.16.5",
     "@reach/dialog": "^0.16.2",

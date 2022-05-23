@@ -142,6 +142,14 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
             element: 'h6',
             message: 'Use the <Typography.H6 /> component from @sourcegraph/wildcard instead.',
           },
+          {
+            element: 'code',
+            message: 'Use the <Typography.Code /> component from @sourcegraph/wildcard instead.',
+          },
+          {
+            element: 'label',
+            message: 'Use the <Typography.Label /> component from @sourcegraph/wildcard instead.',
+          },
         ],
       },
     ],
