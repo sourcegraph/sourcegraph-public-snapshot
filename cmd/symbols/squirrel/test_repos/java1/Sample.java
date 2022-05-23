@@ -38,6 +38,18 @@ class C1 {
         //                             vv f2 ref
         //                                        vv f2 ref
         l1 = m1(1) + m2() + C1.f1 + C2.f2 + C1.C2.f2;
+
+        ArrayList<Integer> numbers = new ArrayList<Integer>();
+        numbers.add(5);
+        numbers.add(9);
+
+        //              v m1.n def
+        //                                      v m1.n ref
+        numbers.forEach(n -> System.out.println(n));
+
+        //          v l2.y def
+        //                v l2.y ref
+        L2 l2 = (x, y) -> y;
     }
 
     //   vv m2 def
@@ -48,4 +60,8 @@ class C1 {
         //         vv f2 def
         static int f2;
     }
+}
+
+interface L2 {
+    public int l2(int x, int y);
 }

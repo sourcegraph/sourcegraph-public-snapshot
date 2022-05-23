@@ -132,6 +132,24 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node *Node) (re
 				}
 				continue
 
+			case "lambda_expression":
+				query := `[
+					(lambda_expression parameters: (identifier) @ident)
+					(lambda_expression parameters: (formal_parameters (formal_parameter name: (identifier) @ident)))
+					(lambda_expression parameters: (formal_parameters (spread_parameter (variable_declarator name: (identifier) @ident))))
+					(lambda_expression parameters: (inferred_parameters (identifier) @ident))
+				]`
+				captures, err := allCaptures(query, WithNodePtr(node, cur))
+				if err != nil {
+					return nil, err
+				}
+				for _, capture := range captures {
+					if capture.Content(capture.Contents) == node.Content(node.Contents) {
+						return WithNodePtr(node, capture.Node), nil
+					}
+				}
+				continue
+
 			// Unrecognized nodes:
 			default:
 				squirrel.breadcrumb(WithNodePtr(node, cur), fmt.Sprintf("unrecognized node type %q", cur.Type()))
