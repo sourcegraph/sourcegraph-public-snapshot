@@ -14,7 +14,7 @@ on:
   # Trigger the workflow on any pull request that touches the jetbrains src folder
   pull_request:
       paths:
-       - client/jetbrains/src/**
+       - client/jetbrains/**
 
 jobs:
   # Run Gradle Wrapper Validation Action to verify the wrapper's checksum
