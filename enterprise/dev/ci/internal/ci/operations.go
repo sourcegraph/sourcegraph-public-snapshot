@@ -285,7 +285,7 @@ func addBrowserExtensionUnitTests(pipeline *bk.Pipeline) {
 }
 
 func addJetBrainsUnitTests(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":jetbrains: Test (client/jetbrains)",
+	pipeline.AddStep(":jest::java: Test (client/jetbrains)",
 		withYarnCache(),
 		bk.Cmd("yarn generate"),
 		bk.Cmd("yarn --cwd client/jetbrains -s build"),
