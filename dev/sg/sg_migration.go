@@ -39,6 +39,14 @@ var (
 		Value:       db.DefaultDatabase.Name,
 		Destination: &migrateTargetDatabase,
 	}
+
+	squashInContainer     bool
+	squashInContainerFlag = &cli.BoolFlag{
+		Name:        "in-container",
+		Usage:       "Launch Postgres in a Docker container for squashing; do not use the host",
+		Value:       false,
+		Destination: &squashInContainer,
+	}
 )
 
 var (
@@ -103,7 +111,7 @@ var (
 		ArgsUsage:   "<current-release>",
 		Usage:       "Collapse migration files from historic releases together",
 		Description: cliutil.ConstructLongHelp(),
-		Flags:       []cli.Flag{migrateTargetDatabaseFlag},
+		Flags:       []cli.Flag{migrateTargetDatabaseFlag, squashInContainerFlag},
 		Action:      execAdapter(squashExec),
 	}
 
@@ -244,7 +252,7 @@ func squashExec(ctx context.Context, args []string) (err error) {
 	}
 	std.Out.Writef("Squashing migration files defined up through %s", commit)
 
-	return migration.Squash(database, commit)
+	return migration.Squash(database, commit, squashInContainer)
 }
 
 func leavesExec(ctx context.Context, args []string) (err error) {
