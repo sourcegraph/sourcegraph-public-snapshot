@@ -63,6 +63,8 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node *Node) (re
 				return nil, nil
 
 			// Check nodes that might have bindings:
+			case "constructor_body":
+				fallthrough
 			case "block":
 				blockChild := prev
 				for {
@@ -82,11 +84,26 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node *Node) (re
 					}
 				}
 
+			case "constructor_declaration":
+				query := `[
+					(constructor_declaration parameters: (formal_parameters (formal_parameter name: (identifier) @ident)))
+					(constructor_declaration parameters: (formal_parameters (spread_parameter (variable_declarator name: (identifier) @ident))))
+				]`
+				captures, err := allCaptures(query, WithNodePtr(node, cur))
+				if err != nil {
+					return nil, err
+				}
+				for _, capture := range captures {
+					if capture.Content(capture.Contents) == node.Content(node.Contents) {
+						return WithNodePtr(node, capture.Node), nil
+					}
+				}
+				continue
 			case "method_declaration":
 				query := `[
 					(method_declaration name: (identifier) @ident)
-					(formal_parameter name: (identifier) @ident)
-					(spread_parameter (variable_declarator name: (identifier) @ident))
+					(method_declaration parameters: (formal_parameters (formal_parameter name: (identifier) @ident)))
+					(method_declaration parameters: (formal_parameters (spread_parameter (variable_declarator name: (identifier) @ident))))
 				]`
 				captures, err := allCaptures(query, WithNodePtr(node, cur))
 				if err != nil {

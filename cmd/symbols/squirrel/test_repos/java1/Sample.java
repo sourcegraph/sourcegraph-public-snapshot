@@ -4,6 +4,12 @@ class C1 {
     //  vv f1 def
     int f1;
 
+    //     vv constructor.p1 def
+    C1(int p1) {
+        //   vv constructor.p1 ref
+        f1 = p1;
+    }
+
     //   vv m1 def
     //          vv p1 def
     //                     vv p2 def
