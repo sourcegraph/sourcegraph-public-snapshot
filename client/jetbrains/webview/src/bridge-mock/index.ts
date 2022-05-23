@@ -1,7 +1,7 @@
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 
-import { Search } from './App'
-import { Request } from './jsToJavaBridgeUtil'
+import { Search } from '../search/App'
+import { Request } from '../search/jsToJavaBridgeUtil'
 
 let savedSearch: Search = {
     query: '',
@@ -10,7 +10,10 @@ let savedSearch: Search = {
     selectedSearchContextSpec: 'global',
 }
 
-export function callJava(request: Request): Promise<object> {
+const codeDetailsNode = document.querySelector('#code-details') as HTMLPreElement
+const iframeNode = document.querySelector('#webview') as HTMLIFrameElement
+
+function callJava(request: Request): Promise<object> {
     return new Promise((resolve, reject) => {
         const requestAsString = JSON.stringify(request)
         const onSuccessCallback = (responseAsString: string): void => {
@@ -59,21 +62,34 @@ function handleRequest(
         }
 
         case 'preview': {
-            const { path } = request.arguments
-            console.log(`Previewing "${path}"`)
+            const { content, absoluteOffsetAndLengths } = request.arguments
+
+            const start = absoluteOffsetAndLengths[0][0]
+            const length = absoluteOffsetAndLengths[0][1]
+
+            let htmlContent: string = escapeHTML(content.slice(0, start))
+            htmlContent += `<span id="code-details-highlight">${escapeHTML(
+                content.slice(start, start + length)
+            )}</span>`
+            htmlContent += escapeHTML(content.slice(start + length))
+
+            codeDetailsNode.innerHTML = htmlContent
+
+            document.querySelector('#code-details-highlight')?.scrollIntoView({ block: 'center', inline: 'center' })
+
             onSuccessCallback('{}')
             break
         }
 
         case 'clearPreview': {
-            console.log('Clearing preview.')
+            codeDetailsNode.textContent = ''
             onSuccessCallback('{}')
             break
         }
 
         case 'open': {
             const { path } = request.arguments
-            console.log(`Opening "${path}"`)
+            alert(`Opening ${path}`)
             onSuccessCallback('{}')
             break
         }
@@ -99,4 +115,20 @@ function handleRequest(
             onFailureCallback(2, `Unknown action: ${exhaustiveCheck as string}`)
         }
     }
+}
+
+/* Initialize app for standalone server */
+iframeNode.addEventListener('load', () => {
+    const iframeWindow = iframeNode.contentWindow
+    if (iframeWindow !== null) {
+        iframeWindow.callJava = callJava
+        iframeWindow.initializeSourcegraph()
+    }
+})
+
+function escapeHTML(unsafe: string): string {
+    return unsafe.replace(
+        /[\u0000-\u002F\u003A-\u0040\u005B-\u0060\u007B-\u00FF]/g,
+        c => '&#' + ('000' + c.charCodeAt(0)).slice(-4) + ';'
+    )
 }
