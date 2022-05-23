@@ -35,9 +35,9 @@ export default config
 export const Simple: Story = () => (
     <>
         <Typography.H3>Small Icon</Typography.H3>
-        <Icon as={SourcegraphIcon} size="sm" title="Sourcegraph logo" />
+        <Icon role="img" as={SourcegraphIcon} size="sm" aria-label="Sourcegraph logo" />
 
         <Typography.H3>Medium Icon</Typography.H3>
-        <Icon as={SourcegraphIcon} size="md" aria-label="Sourcegraph logo" />
+        <Icon role="img" as={SourcegraphIcon} size="md" aria-label="Sourcegraph logo" />
     </>
 )
