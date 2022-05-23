@@ -85,6 +85,7 @@ app.action('priority_select', async ({ ack,  say, action: actionBase, respond, b
     message += `\n\`${body.user.username}\`: ${timestamp}`
 
     relevantBlock.text.text = message
+    relevantBlock.block_id = `${Date.now()}`;
     relevantBlock.accessory.initial_option = action.selected_option;
     await say("Yaaay! that command works!");
 
@@ -148,6 +149,7 @@ app.action('estimate_select', async ({ ack,  say, action: actionBase, respond, b
 
 
     relevantBlock.text.text = message
+    relevantBlock.block_id = `${Date.now()}`;
     relevantBlock.accessory.initial_option = action.selected_option;
     await say("Yaaay! that command works!");
 
