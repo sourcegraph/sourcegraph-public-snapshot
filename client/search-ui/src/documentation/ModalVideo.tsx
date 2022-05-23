@@ -87,7 +87,7 @@ export const ModalVideo: React.FunctionComponent<React.PropsWithChildren<ModalVi
                                 onClick={() => toggleDialog(false)}
                                 aria-label="Close"
                             >
-                                <Icon as={CloseIcon} />
+                                <Icon role="img" aria-hidden={true} as={CloseIcon} />
                             </Button>
                         </div>
                         <div className="w-100">

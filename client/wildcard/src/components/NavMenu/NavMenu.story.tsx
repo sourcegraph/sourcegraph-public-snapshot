@@ -159,8 +159,8 @@ export const UserNav: Story = () => (
             triggerContent: {
                 trigger: isOpen => (
                     <>
-                        <Icon as="img" className={styles.avatar} src={avatarUrl} />
-                        <Icon as={isOpen ? MenuUpIcon : MenuDownIcon} />
+                        <Icon role="img" aria-hidden={true} as="img" className={styles.avatar} src={avatarUrl} />
+                        <Icon role="img" aria-hidden={true} as={isOpen ? MenuUpIcon : MenuDownIcon} />
                     </>
                 ),
             },
@@ -176,7 +176,7 @@ const singleSectionNavItems: NavMenuSectionProps[] = [
             {
                 content: (
                     <Button variant="link" className="w-100 text-left">
-                        <Icon as={BarChartIcon} /> Insight
+                        <Icon role="img" aria-hidden={true} as={BarChartIcon} /> Insight
                     </Button>
                 ),
                 key: 'Insight',
@@ -184,7 +184,7 @@ const singleSectionNavItems: NavMenuSectionProps[] = [
             {
                 content: (
                     <Button variant="link" className="w-100 text-left">
-                        <Icon as={AntennaIcon} /> Monitoring
+                        <Icon role="img" aria-hidden={true} as={AntennaIcon} /> Monitoring
                     </Button>
                 ),
                 key: 'Monitoring',
@@ -201,8 +201,8 @@ export const SingleSectionNavMenuExample: Story = () => (
             triggerContent: {
                 trigger: isOpen => (
                     <>
-                        <Icon as={MenuIcon} />
-                        <Icon as={isOpen ? MenuUpIcon : MenuDownIcon} />
+                        <Icon role="img" aria-hidden={true} as={MenuIcon} />
+                        <Icon role="img" aria-hidden={true} as={isOpen ? MenuUpIcon : MenuDownIcon} />
                     </>
                 ),
             },
