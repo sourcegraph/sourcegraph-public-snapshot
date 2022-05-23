@@ -112,16 +112,16 @@ func (w *worker) Flush() error {
 }
 
 // capture submits an ErrorContext to Sentry.
-func (w *worker) capture(errC ErrorContext) {
+func (w *worker) capture(errCtx ErrorContext) {
 	if w.hub == nil {
 		return
 	}
 	// Extract a sentry event from the error itself. If the error is an errors.Error, it will
 	// include a stack trace and additional details.
-	event, extraDetails := errors.BuildSentryReport(errC.Error)
+	event, extraDetails := errors.BuildSentryReport(errCtx.Error)
 	// Prepend the log message to the description, to increase visibility.
 	// This does not change how the errors are grouped.
-	event.Message = fmt.Sprintf("%s\n--\n%s", errC.Message, event.Message)
+	event.Message = fmt.Sprintf("%s\n--\n%s", errCtx.Message, event.Message)
 
 	if len(event.Exception) > 0 {
 		// Sentry uses the Type of the first exception as the issue title. By default,
@@ -129,25 +129,25 @@ func (w *worker) capture(errC ErrorContext) {
 		// which is very sensitive to move up/down lines. Using the original error
 		// string would be much more readable. We are also not losing location
 		// information because that is also encoded in the stack trace.
-		event.Exception[0].Type = errors.Cause(errC.Error).Error()
+		event.Exception[0].Type = errors.Cause(errCtx.Error).Error()
 	}
 
 	// Tags are indexed fields that can be used to filter errors with.
 	tags := map[string]string{
-		"scope": errC.Scope,
+		"scope": errCtx.Scope,
 	}
-	if errC.Level == zapcore.DPanicLevel {
+	if errCtx.Level == zapcore.DPanicLevel {
 		// If the error being reported panics in development, let's tag it
 		// so we can distinguish it from other levels and easily identify them
 		tags["panic_in_development"] = "true"
 	}
-	if errC.Level == zapcore.WarnLevel {
+	if errCtx.Level == zapcore.WarnLevel {
 		tags["transient"] = "true"
 	}
 
 	// Extra are fields that are added to the error as annotation, still registering
 	// as the same error when counted.
-	for _, f := range errC.Fields {
+	for _, f := range errCtx.Fields {
 		switch f.Type {
 		case zapcore.StringType:
 			extraDetails[fmt.Sprintf("log.%s", f.Key)] = f.String
@@ -162,7 +162,7 @@ func (w *worker) capture(errC ErrorContext) {
 
 	// Translate zapcore levels into Sentry levels.
 	var level sentry.Level
-	switch errC.Level {
+	switch errCtx.Level {
 	case zapcore.DebugLevel:
 		level = sentry.LevelDebug
 	case zapcore.WarnLevel:
