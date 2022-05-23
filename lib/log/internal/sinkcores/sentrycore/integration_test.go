@@ -17,38 +17,6 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-func logWithLevel(logger log.Logger, level zapcore.Level, msg string, fields ...zapcore.Field) {
-	switch level {
-	case zapcore.DebugLevel:
-		logger.Debug(msg, fields...)
-	case zapcore.InfoLevel:
-		logger.Info(msg, fields...)
-	case zapcore.WarnLevel:
-		logger.Warn(msg, fields...)
-	case zapcore.ErrorLevel:
-		logger.Error(msg, fields...)
-	case zapcore.FatalLevel:
-		logger.Fatal(msg, fields...)
-	case zapcore.DPanicLevel, zapcore.PanicLevel:
-		panic("not implemented")
-	}
-}
-
-func newTestLogger(t testing.TB) (log.Logger, *sentrycore.TransportMock, func()) {
-	hub, tr := newTestHub(t)
-	sink := sinks.NewSentrySink(hub)
-	logger, exportLogs := logtest.Captured(t, sink)
-	return logger, tr, func() { _ = exportLogs() }
-}
-
-func newTestHub(t testing.TB) (*sentry.Hub, *sentrycore.TransportMock) {
-	transport := &sentrycore.TransportMock{}
-	c, err := sentry.NewClient(sentry.ClientOptions{Transport: transport})
-	assert.NoError(t, err)
-	hub := sentry.NewHub(c, sentry.NewScope())
-	return hub, transport
-}
-
 func TestLevelFiltering(t *testing.T) {
 	e := errors.New("test error")
 	tt := []struct {
@@ -187,4 +155,36 @@ func withTimeout(t *testing.T, timeout time.Duration) {
 		t.Errorf("test timed out after %s", timeout)
 		os.Exit(1)
 	}
+}
+
+func logWithLevel(logger log.Logger, level zapcore.Level, msg string, fields ...zapcore.Field) {
+	switch level {
+	case zapcore.DebugLevel:
+		logger.Debug(msg, fields...)
+	case zapcore.InfoLevel:
+		logger.Info(msg, fields...)
+	case zapcore.WarnLevel:
+		logger.Warn(msg, fields...)
+	case zapcore.ErrorLevel:
+		logger.Error(msg, fields...)
+	case zapcore.FatalLevel:
+		logger.Fatal(msg, fields...)
+	case zapcore.DPanicLevel, zapcore.PanicLevel:
+		panic("not implemented")
+	}
+}
+
+func newTestLogger(t testing.TB) (log.Logger, *sentrycore.TransportMock, func()) {
+	hub, tr := newTestHub(t)
+	sink := sinks.NewSentrySink(hub)
+	logger, exportLogs := logtest.Captured(t, sink)
+	return logger, tr, func() { _ = exportLogs() }
+}
+
+func newTestHub(t testing.TB) (*sentry.Hub, *sentrycore.TransportMock) {
+	transport := &sentrycore.TransportMock{}
+	c, err := sentry.NewClient(sentry.ClientOptions{Transport: transport})
+	assert.NoError(t, err)
+	hub := sentry.NewHub(c, sentry.NewScope())
+	return hub, transport
 }
