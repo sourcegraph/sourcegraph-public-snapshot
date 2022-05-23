@@ -163,6 +163,32 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node *Node) (re
 				}
 				continue
 
+			case "for_statement":
+				query := `(for_statement init: (local_variable_declaration declarator: (variable_declarator name: (identifier) @ident)))`
+				captures, err := allCaptures(query, WithNodePtr(node, cur))
+				if err != nil {
+					return nil, err
+				}
+				for _, capture := range captures {
+					if capture.Content(capture.Contents) == node.Content(node.Contents) {
+						return WithNodePtr(node, capture.Node), nil
+					}
+				}
+				continue
+
+			case "enhanced_for_statement":
+				query := `(enhanced_for_statement name: (identifier) @ident)`
+				captures, err := allCaptures(query, WithNodePtr(node, cur))
+				if err != nil {
+					return nil, err
+				}
+				for _, capture := range captures {
+					if capture.Content(capture.Contents) == node.Content(node.Contents) {
+						return WithNodePtr(node, capture.Node), nil
+					}
+				}
+				continue
+
 			// Unrecognized nodes:
 			default:
 				squirrel.breadcrumb(WithNodePtr(node, cur), fmt.Sprintf("unrecognized node type %q", cur.Type()))

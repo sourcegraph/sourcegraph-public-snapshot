@@ -54,6 +54,14 @@ class C1 {
         //                       v e def
         //                                           v e ref
         try { } catch (Exception e) { Exception e2 = e; }
+
+        //       v for.i def
+        //              v for.i ref
+        for (int i = 0; i < 5; i++) { }
+
+        //       v enhanced_for.i def
+        //                      v enhanced_for.i ref
+        for (int i : p2) { p1 = i; }
     }
 
     //   vv m2 def
