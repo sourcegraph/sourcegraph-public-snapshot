@@ -16,13 +16,14 @@ var ubuntuOSDependencies = []dependencyCategory{
 			{name: "gcc", check: check.InPath("gcc"), instructionsCommands: `sudo apt-get update && sudo apt-get install -y build-essential`},
 			{name: "git", check: getCheck("git"), instructionsCommands: `sudo apt-get update && sudo add-apt-repository ppa:git-core/ppa; sudo apt-get install -y git`},
 			{name: "pcre", check: check.HasUbuntuLibrary("libpcre3-dev"), instructionsCommands: "sudo apt-get update && sudo apt-get -y install libpcre3-dev"},
+			{name: "libev", check: check.HasUbuntuLibrary("libev-dev"), instructionsCommands: "sudo apt-get update && sudo apt-get -y install libev-dev"},
 			{name: "sqlite", check: check.HasUbuntuLibrary("libsqlite3-dev"), instructionsCommands: "sudo apt-get update && sudo apt-get -y install libsqlite3-dev"},
 			{name: "libev", check: check.HasUbuntuLibrary("libev-dev"), instructionsCommands: "sudo apt-get update && sudo apt-get -y install libev-dev"},
 			{name: "pkg-config", check: check.InPath("pkg-config"), instructionsCommands: `sudo apt-get update && sudo apt-get -y install pkg-config`},
 			{name: "jq", check: check.InPath("jq"), instructionsCommands: `sudo apt-get update && sudo apt-get -y install jq`},
 			{name: "curl", check: check.InPath("curl"), instructionsCommands: `sudo apt-get update && sudo apt-get -y install curl`},
 			// Comby will fail systematically on linux/arm64 as there aren't binaries available for that platform.
-			{name: "comby", check: check.InPath("comby"), instructionsCommands: `bash <(curl -sL get.comby.dev)`},
+			{name: "comby", check: check.InPath("comby"), instructionsCommands: `bash <(curl -sL get-comby.netlify.app)`},
 			{name: "bash", check: check.CommandOutputContains("bash --version", "version 5"), instructionsCommands: `sudo apt-get update && sudo apt-get -y install bash`},
 			{
 				name: "docker",
