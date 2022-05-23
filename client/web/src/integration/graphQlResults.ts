@@ -231,6 +231,9 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
     EvaluatedFeatureFlags: () => ({
         evaluatedFeatureFlags: [],
     }),
+    EvaluateFeatureFlag: () => ({
+        evaluateFeatureFlag: false,
+    }),
     OrgFeatureFlagValue: () => ({
         organizationFeatureFlagValue: false,
     }),
