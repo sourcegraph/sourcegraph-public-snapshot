@@ -36,6 +36,51 @@ The following projects have example GitHub Action workflows to generate and uplo
 - [kubernetes/kubernetes](https://github.com/sourcegraph-codeintel-showcase/kubernetes/blob/359b6469d85cc7cd4f6634e50651633eefeaea4e/.github/workflows/lsif.yml)
 - [moby/moby](https://github.com/sourcegraph-codeintel-showcase/moby/blob/380429abb05846de773d5aa07de052f40c9e8208/.github/workflows/lsif.yml)
 
+### GitLab CI
+
+In order to upload LSIF index data to Sourcegraph the `src` CLI when executed from a GitLab runner needs to connect to a Sourcegraph instance so ideally the `SRC_ENDPOINT` and `SRC_ACCESS_TOKEN` environment variables need to be securely provisioned to the runner that executes the job. One way to do this is by defining instance wide CI variables in GitLab via the [API](https://docs.gitlab.com/ee/api/instance_level_ci_variables.html#create-instance-variable) or the admin interface.
+
+GitLab already ships with basic support for code intelligence and provides the following [template](https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Jobs/Code-Intelligence.gitlab-ci.yml) supporting Go. This template can be rewritten or if included through GitLab's Auto DevOps feature  overwritten in a custom `.gitlab-ci.yml` file to addionally upload the LSIF data to Sourcegraph.
+
+```yaml
+# Rewrite example
+code_intelligence_go:
+  stage: test
+  needs: []
+  allow_failure: true
+  image: sourcegraph/lsif-go:v1
+  rules:
+    - if: $CODE_INTELLIGENCE_DISABLED
+      when: never
+    - if: $CI_COMMIT_BRANCH
+      exists:
+        - '**/*.go'
+  script:
+    - lsif-go
+    - |- 
+        if [[ $SRC_ENDPOINT != "" ]]; then
+          src lsif upload -gitlab-token=$CI_JOB_TOKEN
+        fi
+  artifacts:
+    reports:
+      lsif: dump.lsif
+
+```
+
+```yaml
+# Overwrite example
+include:
+  - template: Auto-DevOps.gitlab-ci.yml
+  
+code_intelligence_go:
+  script:
+    - lsif-go
+    - |- 
+        if [[ $SRC_ENDPOINT != "" ]]; then
+          src lsif upload -gitlab-token=$CI_JOB_TOKEN
+        fi
+```
+
 ### CircleCI
 
 ```yaml
