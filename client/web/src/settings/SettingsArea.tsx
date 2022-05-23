@@ -24,6 +24,7 @@ import { PageHeader } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../auth'
 import { queryGraphQL } from '../backend/graphql'
 import { HeroPage } from '../components/HeroPage'
+import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { mergeSettingsSchemas } from './configuration'
@@ -169,6 +170,7 @@ export class SettingsArea extends React.Component<Props, State> {
 
         return (
             <div className={classNames('h-100 d-flex flex-column', this.props.className)}>
+                <PageTitle title="Settings" />
                 <PageHeader headingElement="h2" path={[{ text: `${term} settings` }]} className="mb-3" />
                 {this.props.extraHeader}
                 <Switch>

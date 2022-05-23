@@ -177,7 +177,7 @@ export const CommunitySearchContextPage: React.FunctionComponent<
                                 </Typography.H2>
                                 <p>
                                     Using the syntax{' '}
-                                    <code>
+                                    <Typography.Code>
                                         {/*
                                             a11y-ignore
                                             Rule: "color-contrast" (Elements must have sufficient color contrast)
@@ -185,7 +185,7 @@ export const CommunitySearchContextPage: React.FunctionComponent<
                                           */}
                                         <span className="search-filter-keyword a11y-ignore">context:</span>
                                         {props.communitySearchContextMetadata.spec}
-                                    </code>{' '}
+                                    </Typography.Code>{' '}
                                     in a query will search these repositories:
                                 </p>
                                 {searchContextOrError &&

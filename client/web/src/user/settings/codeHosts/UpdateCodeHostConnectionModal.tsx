@@ -98,7 +98,7 @@ export const UpdateCodeHostConnectionModal: React.FunctionComponent<
                         {didAckMachineUserHint ? (
                             <>
                                 {' '}
-                                <label htmlFor="code-host-token">Access token</label>
+                                <Typography.Label htmlFor="code-host-token">Access token</Typography.Label>
                                 <div className="position-relative">
                                     <input
                                         id="code-host-token"

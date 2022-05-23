@@ -39,7 +39,7 @@ func TestResolver_InsightConnection(t *testing.T) {
 		now := time.Now().UTC().Truncate(time.Microsecond)
 		clock := func() time.Time { return now }
 
-		postgres := dbtest.NewDB(t)
+		postgres := database.NewDB(dbtest.NewDB(t))
 		resolver := newWithClock(insightsDB, postgres, clock)
 
 		insightMetadataStore := store.NewMockInsightMetadataStore()

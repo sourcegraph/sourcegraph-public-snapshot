@@ -1,4 +1,4 @@
-name: lsif-typescript
+name: scip-typescript
 on:
   push:
     paths:
@@ -6,26 +6,21 @@ on:
       - '**.js'
 
 jobs:
-  lsif-typescript:
+  scip-typescript:
     if: github.repository == 'sourcegraph/sourcegraph'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - name: Install npm dependencies
         run: yarn --ignore-engines --ignore-scripts
+      - run: yarn global add @sourcegraph/scip-typescript
+      - run: scip-typescript index --yarn-workspaces
+      - run: cp index.scip dump.lsif-typed
       - name: Install src-cli
         run: |
           curl -L https://sourcegraph.com/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src
           chmod +x /usr/local/bin/src
-      - name: Install lsif-typescript
-        run: yarn global add @sourcegraph/lsif-typescript
-      - name: Run lsif-typescript
-        run: lsif-typescript index --yarn-workspaces
-      - uses: actions/setup-go@v2
-        with: { go-version: '1.18' }
-      - name: Convert LSIF Typed into LSIF Graph
-        run: go run lib/codeintel/tools/lsif-typed/main.go dump.lsif-typed > dump.lsif
-      - name: Upload lsif to Cloud
+      - name: Upload SCIP to Cloud
         run: src lsif upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress
         env:
           SRC_ENDPOINT: https://sourcegraph.com/

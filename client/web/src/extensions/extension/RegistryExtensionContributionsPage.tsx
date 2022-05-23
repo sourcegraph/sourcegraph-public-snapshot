@@ -79,7 +79,7 @@ function toContributionsGroups(manifest: ExtensionManifest): ContributionGroup[]
             for (const [name, schema] of Object.entries(manifest.contributes.configuration.properties)) {
                 settingsGroup.rows.push([
                     // eslint-disable-next-line react/jsx-key
-                    <code>{name}</code>,
+                    <Typography.Code>{name}</Typography.Code>,
                     typeof schema === 'object' &&
                     schema !== null &&
                     hasProperty('description')(schema) &&
@@ -122,7 +122,7 @@ function toContributionsGroups(manifest: ExtensionManifest): ContributionGroup[]
                 }`
                 actionsGroup.rows.push([
                     // eslint-disable-next-line react/jsx-key
-                    <code>{action.id}</code>,
+                    <Typography.Code>{action.id}</Typography.Code>,
                     description.includes('${') ? (
                         <>
                             Evaluated at runtime: <small className="text-monospace">{description}</small>
@@ -131,9 +131,9 @@ function toContributionsGroups(manifest: ExtensionManifest): ContributionGroup[]
                         description
                     ),
                     menus.map((menu, index) => (
-                        <code key={index} className="mr-1 border p-1">
+                        <Typography.Code key={index} className="mr-1 border p-1">
                             {menu}
-                        </code>
+                        </Typography.Code>
                     )),
                 ])
             }

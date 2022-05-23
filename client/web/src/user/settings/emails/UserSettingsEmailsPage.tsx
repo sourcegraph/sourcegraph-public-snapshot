@@ -109,7 +109,7 @@ export const UserSettingsEmailsPage: FunctionComponent<React.PropsWithChildren<P
             </Container>
             {/* re-fetch emails on onDidAdd to guarantee correct state */}
             <AddUserEmailForm className={styles.emailForm} user={user.id} onDidAdd={fetchEmails} />
-            <hr className="my-4" />
+            <hr className="my-4" aria-hidden="true" />
             <SetUserPrimaryEmailForm user={user.id} emails={emails} onDidSet={fetchEmails} />
         </div>
     )

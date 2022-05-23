@@ -83,7 +83,7 @@ export const SelfHostInstructions: React.FunctionComponent<React.PropsWithChildr
                     >
                         <Icon role="img" aria-hidden={true} as={ContentCopyIcon} />
                     </Button>
-                    <code className={styles.codeBlock}>{dockerCommand}</code>
+                    <Typography.Code className={styles.codeBlock}>{dockerCommand}</Typography.Code>
                 </MarketingBlock>
                 <div className="d-flex justify-content-between">
                     <Link

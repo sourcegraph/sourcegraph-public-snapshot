@@ -117,6 +117,8 @@ var sg = &cli.App{
 
 		// Configure output
 		std.Out = std.NewOutput(cmd.App.Writer, verbose)
+		os.Setenv("SRC_DEVELOPMENT", "true")
+		os.Setenv("SRC_LOG_FORMAT", "console")
 		syncLogs := log.Init(log.Resource{Name: "sg"})
 		interrupt.Register(func() { syncLogs() })
 
@@ -206,8 +208,7 @@ var sg = &cli.App{
 
 		// Show help text only
 		if errors.Is(err, flag.ErrHelp) {
-			cli.ShowAppHelp(cmd)
-			os.Exit(1)
+			cli.ShowSubcommandHelpAndExit(cmd, 1)
 		}
 
 		// Render error
