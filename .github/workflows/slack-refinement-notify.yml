@@ -1,11 +1,13 @@
 
 name: Issue Labeled
 on:
+
+  # will turn this on for real once I test post merge
   workflow_dispatch:
-    if: github.actor == github.event.repository.owner.login
-    branches: [ master ]
-  issues:
-    types: [labeled, reopened, opened]
+    if: github.actor == 'jasongornall'
+    branches: [ main ]
+  # issues:
+  #   types: [labeled, reopened, opened]
 
 jobs:
   # if manually triggered grab a random issue (will subtitute for cron when I figure out a good cadence)
