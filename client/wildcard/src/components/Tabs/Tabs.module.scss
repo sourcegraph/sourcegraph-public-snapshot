@@ -91,11 +91,11 @@
         align-items: stretch;
         justify-content: space-between;
 
-        &:after,
-        &:before {
+        &::after,
+        &::before {
             content: '';
             position: absolute;
-            width: 80px;
+            width: 5rem;
             top: 0;
             height: 100%;
             pointer-events: none;
@@ -103,21 +103,21 @@
             transition: opacity var(--opacity-transition) ease;
         }
 
-        &:before {
+        &::before {
             left: 0;
             @include scroll-gradient(right);
         }
 
-        &:after {
+        &::after {
             right: 0;
             @include scroll-gradient(left);
         }
 
-        &-obscured-left:before {
+        &-obscured-left::before {
             opacity: 1;
         }
 
-        &-obscured-right:after {
+        &-obscured-right::after {
             opacity: 1;
         }
     }
