@@ -6,9 +6,9 @@ import LockIcon from 'mdi-react/LockIcon'
 import SourceForkIcon from 'mdi-react/SourceForkIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 
+import { CodeHostIcon } from '@sourcegraph/shared/src/components/CodeHostIcon'
 import { LastSyncedIcon } from '@sourcegraph/shared/src/components/LastSyncedIcon'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
-import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
 import { ResultContainer } from '@sourcegraph/shared/src/components/ResultContainer'
 import { SearchResultStar } from '@sourcegraph/shared/src/components/SearchResultStar'
 import { getRepoMatchLabel, getRepoMatchUrl, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
@@ -41,7 +41,7 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
         const formattedRepositoryStarCount = formatRepositoryStarCount(result.repoStars)
         return (
             <div className={styles.title}>
-                <RepoIcon repoName={repoName} className="text-muted flex-shrink-0" />
+                <CodeHostIcon repoName={repoName} className="text-muted flex-shrink-0" />
                 <span
                     onMouseEnter={checkTruncation}
                     className="test-search-result-label ml-1 flex-shrink-past-contents text-truncate"
