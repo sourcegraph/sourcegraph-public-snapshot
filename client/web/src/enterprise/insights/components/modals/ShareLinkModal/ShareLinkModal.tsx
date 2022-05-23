@@ -1,7 +1,6 @@
 import { FunctionComponent, MouseEventHandler, useRef } from 'react'
 
 import { useQuery } from '@apollo/client'
-import classNames from 'classnames'
 import { noop } from 'lodash'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
@@ -48,28 +47,24 @@ export const ShareLinkModal: FunctionComponent<ShareLinkModalProps> = props => {
     }
 
     return (
-        <Modal className={classNames(styles.container)} {...attributes} isOpen={isOpen} onDismiss={onDismiss}>
-            <Typography.H3>Get shareable link</Typography.H3>
+        <Modal {...attributes} isOpen={isOpen} onDismiss={onDismiss}>
+            <Typography.H3 className={styles.title}>Get shareable link</Typography.H3>
 
             <ShareLinkModalContent insight={insight} dashboards={dashboards} />
 
-            <FormInput
-                value={shareableUrl}
-                className={styles.input}
-                inputSymbolWrapperClassName={styles.inputSymbol}
-                inputSymbol={
-                    <Button
-                        ref={copyButtonReference}
-                        variant="primary"
-                        data-tooltip={isCopied ? 'Link copied' : undefined}
-                        data-placement="bottom"
-                        onClick={handleClick}
-                    >
-                        Copy link
-                    </Button>
-                }
-                onChange={noop}
-            />
+            <div className={styles.inputWrapper}>
+                <FormInput value={shareableUrl} className={styles.formInput} onChange={noop} />
+                <Button
+                    ref={copyButtonReference}
+                    variant="primary"
+                    data-tooltip={isCopied ? 'Link copied' : undefined}
+                    data-placement="bottom"
+                    onClick={handleClick}
+                    className={styles.button}
+                >
+                    Copy link
+                </Button>
+            </div>
         </Modal>
     )
 }

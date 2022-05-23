@@ -2,8 +2,7 @@ import { forwardRef, ForwardRefExoticComponent, ReactNode, RefAttributes, Textar
 
 import classNames from 'classnames'
 
-import { Typography } from '../..'
-import { FormFieldMessage } from '../internal/FormFieldMessage'
+import { Input } from '../Input'
 import { getValidStyle } from '../internal/utils'
 
 import styles from './TextArea.module.scss'
@@ -28,7 +27,7 @@ export interface TextAreaProps extends TextareaHTMLAttributes<HTMLTextAreaElemen
      *
      * @default true
      */
-    resizeable?: boolean
+    resizable?: boolean
     /** Determines the size of the textarea */
     size?: 'regular' | 'small'
     /** Custom class name for textarea element. */
@@ -48,14 +47,12 @@ export const TextArea: ForwardRefExoticComponent<TextAreaProps & RefAttributes<H
             isValid,
             size,
             inputClassName,
-            resizeable = true,
+            resizable = true,
             ...otherProps
         } = props
 
         return (
-            <Typography.Label className={classNames(styles.label, className)}>
-                {label && <div className="mb-2">{size === 'small' ? <small>{label}</small> : label}</div>}
-
+            <Input.Label label={label} className={classNames(styles.label, className)}>
                 {/* eslint-disable-next-line react/forbid-elements */}
                 <textarea
                     disabled={disabled}
@@ -64,14 +61,14 @@ export const TextArea: ForwardRefExoticComponent<TextAreaProps & RefAttributes<H
                         'form-control',
                         getValidStyle(isValid),
                         size === 'small' && 'form-control-sm',
-                        resizeable === false && styles.resizeNone,
+                        resizable === false && styles.resizeNone,
                         inputClassName
                     )}
                     {...otherProps}
                     ref={reference}
                 />
-                {message && <FormFieldMessage isValid={isValid}>{message}</FormFieldMessage>}
-            </Typography.Label>
+                {message && <Input.Message isValid={isValid}>{message}</Input.Message>}
+            </Input.Label>
         )
     }
 )

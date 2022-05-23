@@ -2,9 +2,9 @@ import React from 'react'
 
 import classNames from 'classnames'
 
+import { Input } from '../Input'
 import { AccessibleFieldProps } from '../internal/AccessibleFieldType'
 import { FormFieldLabel } from '../internal/FormFieldLabel'
-import { FormFieldMessage } from '../internal/FormFieldMessage'
 import { getValidStyle } from '../internal/utils'
 
 import styles from './Select.module.scss'
@@ -86,7 +86,7 @@ export const Select: React.FunctionComponent<React.PropsWithChildren<SelectProps
             >
                 {children}
             </select>
-            {message && <FormFieldMessage isValid={isValid}>{message}</FormFieldMessage>}
+            {message && <Input.Message isValid={isValid}>{message}</Input.Message>}
         </div>
     )
 )

@@ -2,9 +2,10 @@ import React from 'react'
 
 import classNames from 'classnames'
 
+import { Input } from '../Input'
+
 import { AccessibleFieldProps } from './AccessibleFieldType'
 import { FormFieldLabel } from './FormFieldLabel'
-import { FormFieldMessage } from './FormFieldMessage'
 import { getValidStyle } from './utils'
 
 import styles from './BaseControlInput.module.scss'
@@ -37,7 +38,7 @@ export const BaseControlInput: React.FunctionComponent<React.PropsWithChildren<C
                     {props.label}
                 </FormFieldLabel>
             )}
-            {message && <FormFieldMessage isValid={isValid}>{message}</FormFieldMessage>}
+            {message && <Input.Message isValid={isValid}>{message}</Input.Message>}
         </div>
     )
 )

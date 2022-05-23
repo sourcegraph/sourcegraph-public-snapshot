@@ -3,7 +3,7 @@ import React, { FormEventHandler, RefObject, useMemo } from 'react'
 import classNames from 'classnames'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, FormInput, useObservable } from '@sourcegraph/wildcard'
+import { Button, FormInput, useObservable, Input } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../components/LoaderButton'
 import { CodeInsightDashboardsVisibility } from '../../../../../../components/creation-ui-kit'
@@ -79,7 +79,7 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<
             onSubmit={handleSubmit}
             onReset={onFormReset}
         >
-            {/* 
+            {/*
                 a11y-ignore
                 Rule: aria-allowed-role ARIA - role should be appropriate for the element
                 Error occurs as a result of using `role=combobox` on `textarea` element.
@@ -105,18 +105,23 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<
                 className="mb-0 mt-4"
             />
 
-            <FormInput
-                required={true}
-                min={1}
-                max={100}
-                type="number"
-                label="Threshold of ‘Other’ category"
-                message="Languages with usage lower than the threshold are grouped into an 'other' category."
-                {...getDefaultInputProps(threshold)}
-                className="mb-0 mt-4"
-                inputClassName={styles.formThresholdInput}
-                inputSymbol={<span className={classNames(styles.formThresholdInputSymbol)}>%</span>}
-            />
+            <Input.Label label="Threshold of ‘Other’ category" className="mt-4 mb-0">
+                <div className="d-flex">
+                    <FormInput
+                        required={true}
+                        min={1}
+                        max={100}
+                        type="number"
+                        message=""
+                        {...getDefaultInputProps(threshold)}
+                        className={styles.formThresholdInput}
+                    />
+                    <span className={classNames(styles.formThresholdInputSymbol)}>%</span>
+                </div>
+                <Input.Message>
+                    Languages with usage lower than the threshold are grouped into an 'other' category.
+                </Input.Message>
+            </Input.Label>
 
             {!!dashboardReferenceCount && dashboardReferenceCount > 1 && (
                 <CodeInsightDashboardsVisibility className="mt-5 mb-n1" dashboardCount={dashboardReferenceCount} />

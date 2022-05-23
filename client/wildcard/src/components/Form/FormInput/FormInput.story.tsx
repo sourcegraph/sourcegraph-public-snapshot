@@ -90,18 +90,6 @@ export const Simple = () => {
                 placeholder="testing this one"
                 variant="small"
             />
-
-            <FormInput
-                value={selected}
-                label="Input with symbol"
-                onChange={handleChange}
-                message="random message"
-                status="valid"
-                disabled={false}
-                placeholder="testing this one"
-                variant="small"
-                inputSymbol={<span className="d-flex align-items-center ml-2">&</span>}
-            />
         </>
     )
 }

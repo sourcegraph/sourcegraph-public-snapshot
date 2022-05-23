@@ -5,7 +5,6 @@ import classNames from 'classnames'
 import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 
 import { ForwardReferenceComponent } from '../../../types'
-import { Label } from '../../Typography/Label'
 import { Input, InputProps, InputStatus } from '../Input'
 
 import styles from './FormInput.module.scss'
@@ -35,30 +34,26 @@ export const FormInput = forwardRef((props, reference) => {
         ...otherProps
     } = props
 
-    const inputWithMessage = (
-        <>
-            <LoaderInput className={classNames(!label && className)} loading={status === FormInputStatus.loading}>
-                <Input
-                    ref={reference}
-                    className={className}
-                    status={status === 'loading' ? 'initial' : status}
-                    inputClassName={classNames(styles.input, inputClassName)}
-                    {...otherProps}
-                />
-            </LoaderInput>
-        </>
+    const inputElement = (
+        <LoaderInput className={classNames(!label && className)} loading={status === FormInputStatus.loading}>
+            <Input
+                ref={reference}
+                status={status === 'loading' ? 'initial' : status}
+                inputClassName={classNames(styles.input, inputClassName)}
+                {...otherProps}
+            />
+        </LoaderInput>
     )
 
     if (label) {
         return (
-            <Label className={classNames('w-100', className)}>
-                {label && <div className="mb-2">{variant === 'regular' ? label : <small>{label}</small>}</div>}
-                {inputWithMessage}
-            </Label>
+            <Input.Label className={className} variant={variant} label={label}>
+                {inputElement}
+            </Input.Label>
         )
     }
 
-    return inputWithMessage
+    return inputElement
 }) as ForwardReferenceComponent<'input', FormInputProps>
 
 FormInput.displayName = 'FormInput'

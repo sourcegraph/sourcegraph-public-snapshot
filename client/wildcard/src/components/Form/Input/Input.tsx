@@ -1,11 +1,14 @@
+/* eslint-disable react/display-name */
 import { useRef, forwardRef, InputHTMLAttributes, ReactNode } from 'react'
 
 import classNames from 'classnames'
 import { useMergeRefs } from 'use-callback-ref'
 
-import { Typography } from '../..'
 import { useAutoFocus } from '../../../hooks/useAutoFocus'
 import { ForwardReferenceComponent } from '../../../types'
+
+import { InputLabel } from './InputLabel'
+import { InputMessage } from './InputMessage'
 
 export enum InputStatus {
     initial = 'initial',
@@ -24,15 +27,12 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
     inputClassName?: string
     /** Exclusive status */
     status?: InputStatus | `${InputStatus}`
+    /** Error block shown below the input. */
     error?: ReactNode
     /** Disable input behavior */
     disabled?: boolean
     /** Determines the size of the input */
     variant?: 'regular' | 'small'
-    /** Supports appending an element to input */
-    inputSymbol?: ReactNode
-    /** Custom class name for input element and symbol wrapper. */
-    inputSymbolWrapperClassName?: string
 }
 
 /**
@@ -52,8 +52,6 @@ export const Input = forwardRef((props, reference) => {
         status = InputStatus.initial,
         error,
         autoFocus,
-        inputSymbol,
-        inputSymbolWrapperClassName,
         ...otherProps
     } = props
 
@@ -61,51 +59,39 @@ export const Input = forwardRef((props, reference) => {
     const mergedReference = useMergeRefs([localReference, reference])
 
     useAutoFocus({ autoFocus, reference: localReference })
-    const inputElement = (
-        <Component
-            disabled={disabled}
-            type={type}
-            className={classNames(inputClassName, 'form-control', 'with-invalid-icon', {
-                'is-valid': status === InputStatus.valid,
-                'is-invalid': error || status === InputStatus.error,
-                'form-control-sm': variant === 'small',
-            })}
-            {...otherProps}
-            ref={mergedReference}
-            autoFocus={autoFocus}
-        />
-    )
 
-    const inputWithSymbol = (
-        <div className={classNames('d-flex', inputSymbolWrapperClassName)}>
-            {inputElement}
-            {inputSymbol}
-        </div>
-    )
-
-    const messageClassName = 'form-text font-weight-normal mt-2'
     const inputWithMessage = (
         <>
-            {inputSymbol ? inputWithSymbol : inputElement}
-            {error && (
-                <small role="alert" className={classNames('text-danger', messageClassName)}>
-                    {error}
-                </small>
-            )}
-            {!error && message && <small className={classNames('text-muted', messageClassName)}>{message}</small>}
+            <Component
+                disabled={disabled}
+                type={type}
+                className={classNames(inputClassName, !label && className, 'form-control', 'with-invalid-icon', {
+                    'is-valid': status === InputStatus.valid,
+                    'is-invalid': error || status === InputStatus.error,
+                    'form-control-sm': variant === 'small',
+                })}
+                {...otherProps}
+                ref={mergedReference}
+                autoFocus={autoFocus}
+            />
+            {(error || message) && <InputMessage isValid={!error}>{error || message}</InputMessage>}
         </>
     )
 
     if (label) {
         return (
-            <Typography.Label className={classNames('w-100', className)}>
-                {label && <div className="mb-2">{variant === 'regular' ? label : <small>{label}</small>}</div>}
+            <InputLabel className={className} variant={variant} label={label}>
                 {inputWithMessage}
-            </Typography.Label>
+            </InputLabel>
         )
     }
 
     return inputWithMessage
-}) as ForwardReferenceComponent<'input', InputProps>
+}) as ForwardReferenceComponent<'input', InputProps> & {
+    Label: typeof InputLabel
+    Message: typeof InputMessage
+}
 
 Input.displayName = 'Input'
+Input.Label = InputLabel
+Input.Message = InputMessage

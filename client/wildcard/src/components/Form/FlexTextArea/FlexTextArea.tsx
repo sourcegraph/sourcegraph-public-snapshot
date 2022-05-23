@@ -78,7 +78,7 @@ export const FlexTextArea = forwardRef((props: FlexTextAreaProps, reference: Ref
             value={value}
             ref={innerReference}
             rows={rows}
-            resizeable={false}
+            resizable={false}
             className={classNames(styles.textarea, containerClassName)}
             inputClassName={className}
         />

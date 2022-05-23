@@ -3,9 +3,9 @@ import { ReactElement } from 'react'
 import classNames from 'classnames'
 import Select, { Props as SelectProps, StylesConfig, GroupBase } from 'react-select'
 
+import { Input } from '../Input'
 import { AccessibleFieldProps } from '../internal/AccessibleFieldType'
 import { FormFieldLabel } from '../internal/FormFieldLabel'
-import { FormFieldMessage } from '../internal/FormFieldMessage'
 import { getValidStyle } from '../internal/utils'
 
 import { ClearIndicator } from './ClearIndicator'
@@ -71,6 +71,6 @@ export const MultiSelect = <OptionValue extends unknown = unknown>({
             }}
             {...props}
         />
-        {message && <FormFieldMessage isValid={props.isValid}>{message}</FormFieldMessage>}
+        {message && <Input.Message isValid={props.isValid}>{message}</Input.Message>}
     </div>
 )
