@@ -76,6 +76,38 @@ func TestLevelFiltering(t *testing.T) {
 	})
 }
 
+func TestTags(t *testing.T) {
+	e := errors.New("test error")
+	t.Run("scope", func(t *testing.T) {
+		logger, tr, sync := newTestLogger(t)
+		logger = logger.Scoped("my-scope", "testing scope tags")
+		logger.Error("msg", log.Error(e))
+		sync()
+		assert.Len(t, tr.Events(), 1)
+		assert.Equal(t, tr.Events()[0].Tags["scope"], "TestTags/scope.my-scope")
+	})
+
+	t.Run("transient", func(t *testing.T) {
+		logger, tr, sync := newTestLogger(t)
+		logger.Warn("msg", log.Error(e))
+		sync()
+		assert.Len(t, tr.Events(), 1)
+		assert.Equal(t, tr.Events()[0].Tags["transient"], "true")
+	})
+}
+
+func TestWith(t *testing.T) {
+	a := errors.New("A")
+	b := errors.New("B")
+	c := errors.New("C")
+	t.Run("multiple errors", func(t *testing.T) {
+		logger, tr, sync := newTestLogger(t)
+		logger.With(log.Error(a), log.Error(b)).Warn("msg", log.Error(c))
+		sync()
+		assert.Len(t, tr.Events(), 3)
+	})
+}
+
 func TestFieldsFiltering(t *testing.T) {
 	tt := []struct {
 		level      zapcore.Level

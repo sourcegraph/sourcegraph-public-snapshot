@@ -135,6 +135,9 @@ func (w *worker) capture(errC ErrorContext) {
 		// so we can distinguish it from other levels and easily identify them
 		tags["panic_in_development"] = "true"
 	}
+	if errC.Level == zapcore.WarnLevel {
+		tags["transient"] = "true"
+	}
 
 	// Extra are fields that are added to the error as annotation, still registering
 	// as the same error when counted.

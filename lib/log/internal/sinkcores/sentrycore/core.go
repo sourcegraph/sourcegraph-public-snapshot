@@ -108,6 +108,7 @@ func (c *Core) Write(entry zapcore.Entry, fields []zapcore.Field) error {
 	c = c.clone()
 	c.base.Scope = entry.LoggerName
 	c.base.Message = entry.Message
+	c.base.Level = entry.Level
 
 	n := 0
 	for _, f := range fields {
