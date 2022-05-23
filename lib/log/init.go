@@ -7,7 +7,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/lib/log/internal/encoders"
 	"github.com/sourcegraph/sourcegraph/lib/log/internal/globallogger"
-	"github.com/sourcegraph/sourcegraph/lib/log/internal/sinkcores"
 	"github.com/sourcegraph/sourcegraph/lib/log/otfields"
 )
 
