@@ -61,6 +61,11 @@ func NewCore(hub *sentry.Hub) *Core {
 	}
 }
 
+// Core returns the underlying zapcore.
+func (c *Core) Core() zapcore.Core {
+	return c
+}
+
 // clone returns a copy of the core, carrying all previously accumulated context, but that can be safely be
 // modified without affecting other core instances.
 func (c *Core) clone() *Core {

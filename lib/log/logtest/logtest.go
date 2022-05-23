@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/log"
 	"github.com/sourcegraph/sourcegraph/lib/log/internal/encoders"
 	"github.com/sourcegraph/sourcegraph/lib/log/internal/globallogger"
-	"github.com/sourcegraph/sourcegraph/lib/log/internal/sinkcores"
 	"github.com/sourcegraph/sourcegraph/lib/log/otfields"
 	"github.com/sourcegraph/sourcegraph/lib/log/sinks"
 )
@@ -113,7 +112,7 @@ func ScopedWith(t testing.TB, options LoggerOptions) log.Logger {
 
 // Captured retrieves a logger from scoped to the the given test, and returns a callback,
 // dumpLogs, which flushes the logger buffer and returns log entries.
-func Captured(t testing.TB, sinks ...*sinks.Sinks) (logger log.Logger, exportLogs func() []CapturedLog) {
+func Captured(t testing.TB, sinks ...sinks.SinkCore) (logger log.Logger, exportLogs func() []CapturedLog) {
 	// Cast into internal APIs
 	configurable := scopedTestLogger(t, LoggerOptions{}).(configurableAdapter)
 
@@ -121,7 +120,7 @@ func Captured(t testing.TB, sinks ...*sinks.Sinks) (logger log.Logger, exportLog
 	var cores []zapcore.Core
 	logger = configurable.WithCore(func(c zapcore.Core) zapcore.Core {
 		for _, s := range sinks {
-			cores = append(cores, sinkcores.Build(s)...)
+			cores = append(cores, s.Core())
 		}
 		return zapcore.NewTee(append(cores, observerCore, c)...)
 	})
