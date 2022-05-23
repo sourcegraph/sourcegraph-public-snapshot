@@ -158,6 +158,7 @@ func TestConcurrentLogging(t *testing.T) {
 	})
 }
 
+// TestFlush ensures that even with a huge backlog of events, the Flush functions returns.
 func TestFlush(t *testing.T) {
 	go withTimeout(t, 10*time.Second)
 	e := errors.New("test error")
