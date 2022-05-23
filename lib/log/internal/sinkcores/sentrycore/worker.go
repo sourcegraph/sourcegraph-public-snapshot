@@ -78,6 +78,8 @@ func (w *worker) work(c *Core) {
 	}
 }
 
+// waitTimeout implements a mechanism to wait on a sync.WaitGroup, but avoid blocking
+// forever by also returning a timeout.
 func waitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
 	c := make(chan struct{})
 	go func() {
@@ -92,6 +94,10 @@ func waitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
 	}
 }
 
+// Flush blocks for a couple seconds at most, trying to flush all accumulated errors.
+//
+// It tries to accept all errors that are queued for two seconds then blocks any further events
+// to be queued until the Sentry buffer empties or reaches a five second timeout.
 func (w *worker) Flush() error {
 	// Wait until we have collected all errors and then stop accepting new errors.
 	waitTimeout(&w.in, 2*time.Second)
