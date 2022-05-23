@@ -31,7 +31,7 @@ func BenchmarkWithoutSentry(b *testing.B) {
 
 func newTestLogger(t testing.TB) (log.Logger, *sentrycore.TransportMock, func()) {
 	hub, tr := newTestHub(t)
-	sink := sinks.NewSentrySink(hub)
+	sink := sinks.NewSentrySinkCore(hub)
 	logger, exportLogs := logtest.Captured(t, sink)
 	return logger, tr, func() { _ = exportLogs() }
 }

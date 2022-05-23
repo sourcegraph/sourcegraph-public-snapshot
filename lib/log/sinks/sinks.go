@@ -1,13 +1,17 @@
 package sinks
 
-import "github.com/getsentry/sentry-go"
+import (
+	"github.com/getsentry/sentry-go"
+	"github.com/sourcegraph/sourcegraph/lib/log/internal/sinkcores/sentrycore"
+	"go.uber.org/zap/zapcore"
+)
 
-type Sinks struct {
-	SentryHub *sentry.Hub
+type SinkCore interface {
+	Core() zapcore.Core
 }
 
-func NewSentrySink(hub *sentry.Hub) *Sinks {
-	return &Sinks{
-		SentryHub: hub,
-	}
+func NewSentrySinkCore(hub *sentry.Hub) SinkCore {
+	c := sentrycore.NewCore(hub)
+	c.Start()
+	return c
 }
