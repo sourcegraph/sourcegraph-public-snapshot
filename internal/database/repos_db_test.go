@@ -507,7 +507,7 @@ func TestRepos_ListMinimalRepos_orgID(t *testing.T) {
 
 	// Create an org
 	displayName := "Acme Corp"
-	org, err := Orgs(db).Create(ctx, "acme", &displayName)
+	org, err := db.Orgs().Create(ctx, "acme", &displayName)
 	require.NoError(t, err)
 
 	now := time.Now()
