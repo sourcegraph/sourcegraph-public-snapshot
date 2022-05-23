@@ -2,7 +2,6 @@
 # - validate Gradle Wrapper
 # - run 'test' tasks
 # - run 'runPluginVerifier' task
-# - run Qodana inspections
 #
 # Note: This workflow works in isolation to the JavaScript artifacts necessary for full testing. It
 #       is intended to only test if the Java plugin compiles without issues.
@@ -45,56 +44,27 @@ jobs:
           cache: gradle
 
       # Set environment variables
-      - name: Export Properties
-        id: properties
-        shell: bash
-        run: |
-          PROPERTIES="$(./gradlew properties --console=plain -q)"
-          VERSION="$(echo "$PROPERTIES" | grep "^version:" | cut -f2- -d ' ')"
-          NAME="$(echo "$PROPERTIES" | grep "^pluginName:" | cut -f2- -d ' ')"
-          CHANGELOG="$(./gradlew getChangelog --unreleased --no-header --console=plain -q)"
-          CHANGELOG="${CHANGELOG//'%'/'%25'}"
-          CHANGELOG="${CHANGELOG//$'\n'/'%0A'}"
-          CHANGELOG="${CHANGELOG//$'\r'/'%0D'}"
+      # - name: Export Properties
+      #   id: properties
+      #   shell: bash
+      #   run: |
+      #       PROPERTIES="$(./gradlew properties --console=plain -q)"
+      #       VERSION="$(echo "$PROPERTIES" | grep "^version:" | cut -f2- -d ' ')"
+      #       NAME="$(echo "$PROPERTIES" | grep "^pluginName:" | cut -f2- -d ' ')"
+      #       CHANGELOG="$(./gradlew getChangelog --unreleased --no-header --console=plain -q)"
+      #       CHANGELOG="${CHANGELOG//'%'/'%25'}"
+      #       CHANGELOG="${CHANGELOG//$'\n'/'%0A'}"
+      #       CHANGELOG="${CHANGELOG//$'\r'/'%0D'}"
 
-          echo "::set-output name=version::$VERSION"
-          echo "::set-output name=name::$NAME"
-          echo "::set-output name=changelog::$CHANGELOG"
-          echo "::set-output name=pluginVerifierHomeDir::~/.pluginVerifier"
+      #       echo "::set-output name=version::$VERSION"
+      #       echo "::set-output name=name::$NAME"
+      #       echo "::set-output name=changelog::$CHANGELOG"
+      #       echo "::set-output name=pluginVerifierHomeDir::~/.pluginVerifier"
 
-          ./gradlew listProductsReleases # prepare list of IDEs for Plugin Verifier
+      #     ./gradlew listProductsReleases # prepare list of IDEs for Plugin Verifier
 
-      # Run tests
       - name: Run Tests
         run: ./gradlew test
 
-      # Collect Tests Result of failed tests
-      - name: Collect Tests Result
-        if: ${{ failure() }}
-        uses: actions/upload-artifact@v2
-        with:
-          name: tests-result
-          path: ${{ github.workspace }}/build/reports/tests
-
-      # Cache Plugin Verifier IDEs
-      - name: Setup Plugin Verifier IDEs Cache
-        uses: actions/cache@v2.1.7
-        with:
-          path: ${{ steps.properties.outputs.pluginVerifierHomeDir }}/ides
-          key: plugin-verifier-${{ hashFiles('client/jetbrains/build/listProductsReleases.txt') }}
-
-      # Run Verify Plugin task and IntelliJ Plugin Verifier tool
-      - name: Run Plugin Verification tasks
-        run: ./gradlew runPluginVerifier -Pplugin.verifier.home.dir=${{ steps.properties.outputs.pluginVerifierHomeDir }}
-
-      # Collect Plugin Verifier Result
-      - name: Collect Plugin Verifier Result
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v2
-        with:
-          name: pluginVerifier-result
-          path: ${{ github.workspace }}/build/reports/pluginVerifier
-
-      # Run Qodana inspections
-      - name: Qodana - Code Inspection
-        uses: JetBrains/qodana-action@v4.2.3
+      - name: Run Plugin Verifier
+        run: ./gradlew runPluginVerifier
