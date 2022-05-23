@@ -19,17 +19,17 @@ const MachineUserRecommendation = (
 export const scopes: Partial<Record<ExternalServiceKind, React.ReactFragment>> = {
     [ExternalServiceKind.GITHUB]: (
         <small className="text-muted">
-            Use an access token with <code className={styles.codeInline}>repo</code>,{' '}
-            <code className={styles.codeInline}>read:org</code>, and{' '}
-            <code className={styles.codeInline}>user:email</code> scopes.
+            Use an access token with <Typography.Code className={styles.codeInline}>repo</Typography.Code>,{' '}
+            <Typography.Code className={styles.codeInline}>read:org</Typography.Code>, and{' '}
+            <Typography.Code className={styles.codeInline}>user:email</Typography.Code> scopes.
             {MachineUserRecommendation}
         </small>
     ),
     [ExternalServiceKind.GITLAB]: (
         <small className="text-muted">
-            Use an access token with <code className={styles.codeInline}>read_user</code>,{' '}
-            <code className={styles.codeInline}>read_api</code> and{' '}
-            <code className={styles.codeInline}>read_repository</code> scopes.
+            Use an access token with <Typography.Code className={styles.codeInline}>read_user</Typography.Code>,{' '}
+            <Typography.Code className={styles.codeInline}>read_api</Typography.Code> and{' '}
+            <Typography.Code className={styles.codeInline}>read_repository</Typography.Code> scopes.
             {MachineUserRecommendation}
         </small>
     ),

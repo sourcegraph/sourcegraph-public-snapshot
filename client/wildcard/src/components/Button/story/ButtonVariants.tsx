@@ -24,15 +24,15 @@ export const ButtonVariants: React.FunctionComponent<React.PropsWithChildren<But
         {variants.map(variant => (
             <React.Fragment key={variant}>
                 <Button variant={variant} size={size} outline={outline} onClick={console.log}>
-                    {ButtonIcon && <Icon as={ButtonIcon} className="mr-1" />}
+                    {ButtonIcon && <Icon role="img" aria-hidden={true} as={ButtonIcon} className="mr-1" />}
                     {startCase(variant)}
                 </Button>
                 <Button variant={variant} size={size} outline={outline} onClick={console.log} className="focus">
-                    {ButtonIcon && <Icon as={ButtonIcon} className="mr-1" />}
+                    {ButtonIcon && <Icon role="img" aria-hidden={true} as={ButtonIcon} className="mr-1" />}
                     Focus
                 </Button>
                 <Button variant={variant} size={size} outline={outline} onClick={console.log} disabled={true}>
-                    {ButtonIcon && <Icon as={ButtonIcon} className="mr-1" />}
+                    {ButtonIcon && <Icon role="img" aria-hidden={true} as={ButtonIcon} className="mr-1" />}
                     Disabled
                 </Button>
             </React.Fragment>

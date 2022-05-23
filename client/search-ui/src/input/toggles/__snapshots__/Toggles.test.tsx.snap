@@ -12,9 +12,11 @@ Array [
     tabindex="0"
   >
     <svg
+      aria-hidden="true"
       class="mdi-icon iconInline"
       fill="currentColor"
       height="24"
+      role="img"
       viewBox="0 0 24 24"
       width="24"
     >
@@ -38,9 +40,11 @@ Array [
     tabindex="0"
   >
     <svg
+      aria-hidden="true"
       class="mdi-icon iconInline"
       fill="currentColor"
       height="24"
+      role="img"
       viewBox="0 0 24 24"
       width="24"
     >
@@ -64,9 +68,11 @@ Array [
     tabindex="0"
   >
     <svg
+      aria-hidden="true"
       class="mdi-icon iconInline"
       fill="currentColor"
       height="24"
+      role="img"
       viewBox="0 0 24 24"
       width="24"
     >

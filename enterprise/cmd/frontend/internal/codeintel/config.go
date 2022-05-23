@@ -1,7 +1,6 @@
 package codeintel
 
 import (
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifuploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -11,16 +10,11 @@ type Config struct {
 	env.BaseConfig
 
 	LSIFUploadStoreConfig          *lsifuploadstore.Config
-	AutoIndexEnqueuerConfig        *enqueuer.Config
 	HunkCacheSize                  int
 	MaximumIndexesPerMonikerSearch int
 }
 
 func (c *Config) Load() {
-	enqueuerConfig := &enqueuer.Config{}
-	enqueuerConfig.Load()
-	c.AutoIndexEnqueuerConfig = enqueuerConfig
-
 	c.LSIFUploadStoreConfig = &lsifuploadstore.Config{}
 	c.LSIFUploadStoreConfig.Load()
 
@@ -32,6 +26,5 @@ func (c *Config) Validate() error {
 	var errs error
 	errs = errors.Append(errs, c.BaseConfig.Validate())
 	errs = errors.Append(errs, c.LSIFUploadStoreConfig.Validate())
-	errs = errors.Append(errs, c.AutoIndexEnqueuerConfig.Validate())
 	return errs
 }

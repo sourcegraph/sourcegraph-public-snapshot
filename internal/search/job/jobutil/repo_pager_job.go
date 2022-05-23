@@ -60,9 +60,8 @@ func setRepos(job job.Job, indexed *zoekt.IndexedRepoRevs, unindexed []*search.R
 }
 
 func (p *repoPagerJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
-	tr, ctx, stream, finish := job.StartSpan(ctx, stream, p)
+	_, ctx, stream, finish := job.StartSpan(ctx, stream, p)
 	defer func() { finish(alert, err) }()
-	tr.TagFields(trace.LazyFields(p.Tags))
 
 	var maxAlerter search.MaxAlerter
 

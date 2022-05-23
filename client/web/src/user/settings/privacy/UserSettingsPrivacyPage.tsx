@@ -64,7 +64,7 @@ export const UserSettingsPrivacyPage: React.FunctionComponent<React.PropsWithChi
 
     return (
         <div>
-            <PageTitle title="Profile" />
+            <PageTitle title="Privacy" />
             <PageHeader path={[{ text: 'Privacy' }]} headingElement="h2" className={styles.heading} />
             <Container>
                 <Checkbox

@@ -42,7 +42,7 @@ export const InProgress: FunctionComponent<React.PropsWithChildren<unknown>> = (
             </header>
             <Terminal>
                 <TerminalLine>
-                    <code>Cloning Repositories...</code>
+                    <Typography.Code>Cloning Repositories...</Typography.Code>
                 </TerminalLine>
 
                 {cloningStatusLines?.map(({ id, title, details, progress }) => (

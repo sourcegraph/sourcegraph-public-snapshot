@@ -31,7 +31,7 @@ Sourcegraph also maintains a variety of tooling on [GitHub Actions](#github-acti
 ## Buildkite pipelines
 
 [Tests](../../how-to/testing.md) are automatically run in our [various Buildkite pipelines](https://buildkite.com/sourcegraph) when you push your changes (i.e. when you run `git push`) to the `sourcegraph/sourcegraph` GitHub repository.
-Pipeline steps are generated on the fly using the [pipeline generator](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/tree/enterprise/dev/ci) - a complete reference of all available pipeline types and steps is available in the generated [Pipeline reference](./reference.md).
+Pipeline steps are generated on the fly using the [pipeline generator](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/tree/enterprise/dev/ci) - a complete reference of all available pipeline types and steps is available in the generated [Pipeline reference](./reference.md). To keep the repository tidy, consider deleting the branch after the pipeline has completed. The build results will be available even after the branch is deleted.
 You can also see these docs locally with `sg ci docs`.
 
 To see what checks will get run against your current branch, use [`sg`](../../setup/quickstart.md):

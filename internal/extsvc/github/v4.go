@@ -15,7 +15,6 @@ import (
 	"github.com/graphql-go/graphql/language/ast"
 	"github.com/graphql-go/graphql/language/parser"
 	"github.com/graphql-go/graphql/language/visitor"
-	"github.com/inconshreveable/log15"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -28,6 +27,8 @@ import (
 
 // V4Client is a GitHub GraphQL API client.
 type V4Client struct {
+	log log.Logger
+
 	// The URN of the external service that the client is derived from.
 	urn string
 
@@ -90,6 +91,7 @@ func NewV4Client(urn string, apiURL *url.URL, a auth.Authenticator, cli httpcli.
 	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(apiURL.String(), tokenHash, "graphql", &ratelimit.Monitor{HeaderPrefix: "X-"})
 
 	return &V4Client{
+		log:              log.Scoped("github.v4", "github v4 client"),
 		urn:              urn,
 		apiURL:           apiURL,
 		githubDotCom:     urlIsGitHubDotCom(apiURL),
@@ -154,7 +156,7 @@ func (c *V4Client) requestGraphQL(ctx context.Context, query string, vars map[st
 
 	time.Sleep(c.rateLimitMonitor.RecommendedWaitForBackgroundOp(cost))
 
-	if _, err := doRequest(ctx, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, &respBody); err != nil {
+	if _, err := doRequest(ctx, c.log, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, &respBody); err != nil {
 		return err
 	}
 
@@ -269,9 +271,7 @@ func filterInPlace(limitStack []limitDepth, depth int) []limitDepth {
 	return limitStack
 }
 
-// graphqlErrors describes the errors in a GraphQL response. It contains at least 1 element when returned by
-// requestGraphQL. See https://graphql.github.io/graphql-spec/June2018/#sec-Errors.
-type graphqlErrors []struct {
+type graphqlError struct {
 	Message   string `json:"message"`
 	Type      string `json:"type"`
 	Path      []any  `json:"path"`
@@ -280,6 +280,10 @@ type graphqlErrors []struct {
 		Column int `json:"column"`
 	} `json:"locations,omitempty"`
 }
+
+// graphqlErrors describes the errors in a GraphQL response. It contains at least 1 element when returned by
+// requestGraphQL. See https://graphql.github.io/graphql-spec/June2018/#sec-Errors.
+type graphqlErrors []graphqlError
 
 const graphqlErrTypeNotFound = "NOT_FOUND"
 
@@ -340,14 +344,14 @@ func (c *V4Client) fetchGitHubVersion(ctx context.Context) (version *semver.Vers
 	}
 
 	// Initiate a v3Client since this requires a V3 API request.
-	logger := log.Scoped("v4.fetchGitHubVersion", "temporary client for fetching github version")
+	logger := c.log.Scoped("fetchGitHubVersion", "temporary client for fetching github version")
 	v3Client := NewV3Client(logger, c.urn, c.apiURL, c.auth, c.httpClient)
 	v, err := v3Client.GetVersion(ctx)
 	if err != nil {
-		log15.Warn("Failed to fetch GitHub enterprise version",
-			"method", "fetchGitHubVersion",
-			"apiURL", c.apiURL,
-			"err", err,
+		c.log.Warn("Failed to fetch GitHub enterprise version",
+			log.String("method", "fetchGitHubVersion"),
+			log.String("apiURL", c.apiURL.String()),
+			log.Error(err),
 		)
 		return allMatchingSemver
 	}
@@ -492,7 +496,7 @@ func (c *V4Client) GetReposByNameWithOwner(ctx context.Context, namesWithOwners 
 		if errors.As(err, &e) {
 			for _, err2 := range e {
 				if err2.Type == graphqlErrTypeNotFound {
-					log15.Warn("GitHub repository not found", "error", err2)
+					c.log.Warn("GitHub repository not found", graphQLErrorField(err2))
 					continue
 				}
 				return nil, err
@@ -590,7 +594,7 @@ fragment RepositoryFields on Repository {
 func (c *V4Client) Fork(ctx context.Context, owner, repo string, org *string) (*Repository, error) {
 	// Unfortunately, the GraphQL API doesn't provide a mutation to fork as of
 	// December 2021, so we have to fall back to the REST API.
-	logger := log.Scoped("v4.Fork", "temporary client for forking GitHub repository")
+	logger := c.log.Scoped("Fork", "temporary client for forking GitHub repository")
 	return NewV3Client(logger, c.urn, c.apiURL, c.auth, c.httpClient).Fork(ctx, owner, repo, org)
 }
 
@@ -684,7 +688,7 @@ func (c *V4Client) RecentCommitters(ctx context.Context, params *RecentCommitter
 		if errors.As(err, &e) {
 			for _, err2 := range e {
 				if err2.Type == graphqlErrTypeNotFound {
-					log15.Warn("RecentCommitters: GitHub repository not found", "error", err2)
+					c.log.Warn("RecentCommitters: GitHub repository not found")
 					continue
 				}
 				return nil, err
@@ -694,4 +698,12 @@ func (c *V4Client) RecentCommitters(ctx context.Context, params *RecentCommitter
 		}
 	}
 	return &result.Repository.DefaultBranchRef.Target.History, nil
+}
+
+func graphQLErrorField(err graphqlError) log.Field {
+	return log.Object("err",
+		log.String("message", err.Message),
+		log.String("type", err.Type),
+		log.String("path", fmt.Sprintf("%+v", err.Path)),
+		log.String("locations", fmt.Sprintf("%+v", err.Locations)))
 }

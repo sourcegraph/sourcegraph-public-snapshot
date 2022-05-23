@@ -9,7 +9,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/httpapi"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
@@ -41,7 +41,7 @@ type Services struct {
 
 	locker          *locker.Locker
 	gitserverClient *gitserver.Client
-	indexEnqueuer   *enqueuer.IndexEnqueuer
+	indexEnqueuer   *autoindexing.Service
 	hub             *sentry.Hub
 }
 
@@ -99,7 +99,7 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 	repoUpdaterClient := repoupdater.New(observationContext)
 
 	// Initialize the index enqueuer
-	indexEnqueuer := enqueuer.NewIndexEnqueuer(&enqueuer.DBStoreShim{Store: dbStore}, gitserverClient, repoUpdaterClient, config.AutoIndexEnqueuerConfig, observationContext)
+	indexEnqueuer := autoindexing.GetService(db, &autoindexing.DBStoreShim{Store: dbStore}, gitserverClient, repoUpdaterClient)
 
 	return &Services{
 		dbStore:     dbStore,

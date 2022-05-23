@@ -66,7 +66,8 @@ export const TriggerEvent: React.FunctionComponent<
                 {hasError ? <Icon className={classNames(styles.errorIcon, 'mr-2')} as={AlertCircleIcon} /> : <span />}
 
                 <span>
-                    Run <Timestamp date={triggerEvent.timestamp} noAbout={true} now={now} />
+                    {triggerEvent.status === EventStatus.PENDING ? 'Scheduled' : 'Ran'}{' '}
+                    <Timestamp date={triggerEvent.timestamp} noAbout={true} now={now} />
                     {triggerEvent.query && (
                         <Link
                             to={`/search?${buildSearchURLQuery(triggerEvent.query, SearchPatternType.literal, false)}`}

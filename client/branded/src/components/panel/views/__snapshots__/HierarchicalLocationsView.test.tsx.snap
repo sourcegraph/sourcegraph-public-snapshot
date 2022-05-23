@@ -10,6 +10,37 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
       <div
         class="fileLocations fileLocations"
       >
+        <div
+          aria-live="polite"
+          class="alert alertInfo mr-4 container"
+          role="alert"
+        >
+          <span>
+            Try out our 
+            <button
+              class="btn btnLink m-0 p-0 border-0 button"
+              type="button"
+            >
+              brand new reference panel experience
+            </button>
+          </span>
+          <button
+            class="btn btnLink m-0 p-0 text-right button"
+            type="button"
+          >
+            <svg
+              class="mdi-icon "
+              fill="currentColor"
+              height="16"
+              viewBox="0 0 24 24"
+              width="16"
+            >
+              <path
+                d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+              />
+            </svg>
+          </button>
+        </div>
         <div>
           <div
             class="test-search-result resultContainer resultContainer"
@@ -100,7 +131,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                     tabindex="0"
                   >
                     <code
-                      class="codeExcerpt"
+                      class="code codeExcerpt"
                       data-testid="code-excerpt"
                     >
                       <table>
@@ -236,6 +267,37 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
       <div
         class="fileLocations fileLocations"
       >
+        <div
+          aria-live="polite"
+          class="alert alertInfo mr-4 container"
+          role="alert"
+        >
+          <span>
+            Try out our 
+            <button
+              class="btn btnLink m-0 p-0 border-0 button"
+              type="button"
+            >
+              brand new reference panel experience
+            </button>
+          </span>
+          <button
+            class="btn btnLink m-0 p-0 text-right button"
+            type="button"
+          >
+            <svg
+              class="mdi-icon "
+              fill="currentColor"
+              height="16"
+              viewBox="0 0 24 24"
+              width="16"
+            >
+              <path
+                d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+              />
+            </svg>
+          </button>
+        </div>
         <div>
           <div
             class="test-search-result resultContainer resultContainer"
@@ -328,7 +390,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                     tabindex="0"
                   >
                     <code
-                      class="codeExcerpt"
+                      class="code codeExcerpt"
                       data-testid="code-excerpt"
                     >
                       <table>
@@ -418,6 +480,37 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
       <div
         class="fileLocations fileLocations"
       >
+        <div
+          aria-live="polite"
+          class="alert alertInfo mr-4 container"
+          role="alert"
+        >
+          <span>
+            Try out our 
+            <button
+              class="btn btnLink m-0 p-0 border-0 button"
+              type="button"
+            >
+              brand new reference panel experience
+            </button>
+          </span>
+          <button
+            class="btn btnLink m-0 p-0 text-right button"
+            type="button"
+          >
+            <svg
+              class="mdi-icon "
+              fill="currentColor"
+              height="16"
+              viewBox="0 0 24 24"
+              width="16"
+            >
+              <path
+                d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+              />
+            </svg>
+          </button>
+        </div>
         <div>
           <div
             class="test-search-result resultContainer resultContainer"
@@ -508,7 +601,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                     tabindex="0"
                   >
                     <code
-                      class="codeExcerpt"
+                      class="code codeExcerpt"
                       data-testid="code-excerpt"
                     >
                       <table>
