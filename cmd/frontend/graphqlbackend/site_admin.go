@@ -277,5 +277,5 @@ func logRoleChangeAttempt(ctx context.Context, db database.DB, name *database.Se
 		Timestamp:       time.Now(),
 	}
 
-	database.SecurityEventLogs(db).LogEvent(ctx, event)
+	db.SecurityEventLogs().LogEvent(ctx, event)
 }

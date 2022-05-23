@@ -2,8 +2,8 @@ local path = require("path")
 local patterns = require("sg.patterns")
 local recognizers = require("sg.recognizers")
 
-local indexer = "sourcegraph/lsif-java"
-local outfile = "dump.lsif"
+local indexer = "sourcegraph/scip-java"
+local outfile = "index.scip"
 
 local is_proejct_structure_supported = function(base)
     return base == "pom.xml" or base == "build.gradle" or base == "build.gradle.kts"
@@ -32,7 +32,7 @@ return recognizers.path_recognizer {
                     steps = {},
                     root = "",
                     indexer = indexer,
-                    indexer_args = { "lsif-java", "index", "--build-tool=lsif" },
+                    indexer_args = { "scip-java", "index", "--build-tool=lsif" },
                     outfile = outfile,
                 }
             end

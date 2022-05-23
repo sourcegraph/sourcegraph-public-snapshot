@@ -6,6 +6,7 @@ import (
 	"context"
 	"sync"
 
+	log "github.com/opentracing/opentracing-go/log"
 	search "github.com/sourcegraph/sourcegraph/internal/search"
 	job "github.com/sourcegraph/sourcegraph/internal/search/job"
 	streaming "github.com/sourcegraph/sourcegraph/internal/search/streaming"
@@ -21,6 +22,9 @@ type MockJob struct {
 	// RunFunc is an instance of a mock function object controlling the
 	// behavior of the method Run.
 	RunFunc *JobRunFunc
+	// TagsFunc is an instance of a mock function object controlling the
+	// behavior of the method Tags.
+	TagsFunc *JobTagsFunc
 }
 
 // NewMockJob creates a new mock of the Job interface. All methods return
@@ -34,6 +38,11 @@ func NewMockJob() *MockJob {
 		},
 		RunFunc: &JobRunFunc{
 			defaultHook: func(context.Context, job.RuntimeClients, streaming.Sender) (r0 *search.Alert, r1 error) {
+				return
+			},
+		},
+		TagsFunc: &JobTagsFunc{
+			defaultHook: func() (r0 []log.Field) {
 				return
 			},
 		},
@@ -54,6 +63,11 @@ func NewStrictMockJob() *MockJob {
 				panic("unexpected invocation of MockJob.Run")
 			},
 		},
+		TagsFunc: &JobTagsFunc{
+			defaultHook: func() []log.Field {
+				panic("unexpected invocation of MockJob.Tags")
+			},
+		},
 	}
 }
 
@@ -66,6 +80,9 @@ func NewMockJobFrom(i job.Job) *MockJob {
 		},
 		RunFunc: &JobRunFunc{
 			defaultHook: i.Run,
+		},
+		TagsFunc: &JobTagsFunc{
+			defaultHook: i.Tags,
 		},
 	}
 }
@@ -276,4 +293,102 @@ func (c JobRunFuncCall) Args() []interface{} {
 // invocation.
 func (c JobRunFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// JobTagsFunc describes the behavior when the Tags method of the parent
+// MockJob instance is invoked.
+type JobTagsFunc struct {
+	defaultHook func() []log.Field
+	hooks       []func() []log.Field
+	history     []JobTagsFuncCall
+	mutex       sync.Mutex
+}
+
+// Tags delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockJob) Tags() []log.Field {
+	r0 := m.TagsFunc.nextHook()()
+	m.TagsFunc.appendCall(JobTagsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Tags method of the
+// parent MockJob instance is invoked and the hook queue is empty.
+func (f *JobTagsFunc) SetDefaultHook(hook func() []log.Field) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Tags method of the parent MockJob instance invokes the hook at the front
+// of the queue and discards it. After the queue is empty, the default hook
+// function is invoked for any future action.
+func (f *JobTagsFunc) PushHook(hook func() []log.Field) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *JobTagsFunc) SetDefaultReturn(r0 []log.Field) {
+	f.SetDefaultHook(func() []log.Field {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *JobTagsFunc) PushReturn(r0 []log.Field) {
+	f.PushHook(func() []log.Field {
+		return r0
+	})
+}
+
+func (f *JobTagsFunc) nextHook() func() []log.Field {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *JobTagsFunc) appendCall(r0 JobTagsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of JobTagsFuncCall objects describing the
+// invocations of this function.
+func (f *JobTagsFunc) History() []JobTagsFuncCall {
+	f.mutex.Lock()
+	history := make([]JobTagsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// JobTagsFuncCall is an object that describes an invocation of method Tags
+// on an instance of MockJob.
+type JobTagsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []log.Field
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c JobTagsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c JobTagsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }

@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -32,7 +33,7 @@ func TestRepos_ResolveRev_noRevSpecified_getsDefaultBranch(t *testing.T) {
 	}
 	defer func() { repoupdater.MockRepoLookup = nil }()
 	var calledVCSRepoResolveRevision bool
-	git.Mocks.ResolveRevision = func(rev string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
+	gitserver.Mocks.ResolveRevision = func(rev string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		calledVCSRepoResolveRevision = true
 		return api.CommitID(want), nil
 	}
@@ -72,7 +73,7 @@ func TestRepos_ResolveRev_noCommitIDSpecified_resolvesRev(t *testing.T) {
 	}
 	defer func() { repoupdater.MockRepoLookup = nil }()
 	var calledVCSRepoResolveRevision bool
-	git.Mocks.ResolveRevision = func(rev string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
+	gitserver.Mocks.ResolveRevision = func(rev string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		calledVCSRepoResolveRevision = true
 		return api.CommitID(want), nil
 	}
@@ -111,7 +112,7 @@ func TestRepos_ResolveRev_commitIDSpecified_resolvesCommitID(t *testing.T) {
 	}
 	defer func() { repoupdater.MockRepoLookup = nil }()
 	var calledVCSRepoResolveRevision bool
-	git.Mocks.ResolveRevision = func(rev string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
+	gitserver.Mocks.ResolveRevision = func(rev string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		calledVCSRepoResolveRevision = true
 		return api.CommitID(want), nil
 	}
@@ -150,7 +151,7 @@ func TestRepos_ResolveRev_commitIDSpecified_failsToResolve(t *testing.T) {
 	}
 	defer func() { repoupdater.MockRepoLookup = nil }()
 	var calledVCSRepoResolveRevision bool
-	git.Mocks.ResolveRevision = func(rev string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
+	gitserver.Mocks.ResolveRevision = func(rev string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		calledVCSRepoResolveRevision = true
 		return "", errors.New("x")
 	}

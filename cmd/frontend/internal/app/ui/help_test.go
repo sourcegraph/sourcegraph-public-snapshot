@@ -44,18 +44,18 @@ func TestServeHelp(t *testing.T) {
 		}
 		{
 			orig := version.Version()
-			version.Mock("1.2.3")
+			version.Mock("3.39.1")
 			defer version.Mock(orig) // reset
 		}
 
 		rw := httptest.NewRecorder()
-		req, _ := http.NewRequest("GET", "/help/foo/bar", nil)
+		req, _ := http.NewRequest("GET", "/help/dev", nil)
 		serveHelp(rw, req)
 
 		if want := http.StatusTemporaryRedirect; rw.Code != want {
 			t.Errorf("got %d, want %d", rw.Code, want)
 		}
-		if got, want := rw.Header().Get("Location"), "https://docs.sourcegraph.com/@v1.2.3/foo/bar"; got != want {
+		if got, want := rw.Header().Get("Location"), "https://docs.sourcegraph.com/@3.39/dev"; got != want {
 			t.Errorf("got %q, want %q", got, want)
 		}
 	})

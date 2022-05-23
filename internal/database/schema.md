@@ -363,6 +363,7 @@ Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
     "changesets_batch_change_ids" gin (batch_change_ids)
+    "changesets_bitbucket_cloud_metadata_source_commit_idx" btree ((((metadata -> 'source'::text) -> 'commit'::text) ->> 'hash'::text))
     "changesets_external_state_idx" btree (external_state)
     "changesets_external_title_idx" btree (external_title)
     "changesets_publication_state_idx" btree (publication_state)
@@ -1215,6 +1216,21 @@ Stores data points for a code insight that do not need to be queried directly, b
  completed_at        | timestamp without time zone |           |          | 
 
 ```
+
+# Table "public.last_lockfile_scan"
+```
+        Column         |           Type           | Collation | Nullable | Default 
+-----------------------+--------------------------+-----------+----------+---------
+ repository_id         | integer                  |           | not null | 
+ last_lockfile_scan_at | timestamp with time zone |           | not null | 
+Indexes:
+    "last_lockfile_scan_pkey" PRIMARY KEY, btree (repository_id)
+
+```
+
+Tracks the last time repository was checked for lockfile indexing.
+
+**last_lockfile_scan_at**: The last time this repository was considered for lockfile indexing.
 
 # Table "public.lsif_configuration_policies"
 ```

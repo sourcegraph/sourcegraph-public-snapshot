@@ -3,6 +3,7 @@ package jobutil
 import (
 	"context"
 
+	"github.com/opentracing/opentracing-go/log"
 	"go.uber.org/atomic"
 	"golang.org/x/sync/semaphore"
 
@@ -77,6 +78,10 @@ func (a *AndJob) Run(ctx context.Context, clients job.RuntimeClients, stream str
 
 func (a *AndJob) Name() string {
 	return "AndJob"
+}
+
+func (a *AndJob) Tags() []log.Field {
+	return []log.Field{}
 }
 
 // NewAndJob creates a job that will run each of its child jobs and stream
@@ -170,4 +175,8 @@ func (j *OrJob) Run(ctx context.Context, clients job.RuntimeClients, stream stre
 
 func (j *OrJob) Name() string {
 	return "OrJob"
+}
+
+func (j *OrJob) Tags() []log.Field {
+	return []log.Field{}
 }

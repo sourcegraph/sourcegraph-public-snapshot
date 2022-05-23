@@ -60,7 +60,7 @@ const SearchInputExample: React.FunctionComponent<React.PropsWithChildren<Search
                                     'text-monospace dropdown-toggle'
                                 )}
                             >
-                                <code className={searchContextDropDownStyles.buttonContent}>
+                                <Typography.Code className={searchContextDropDownStyles.buttonContent}>
                                     {/*
                                        a11y-ignore
                                        Rule: "color-contrast" (Elements must have sufficient color contrast)
@@ -68,7 +68,7 @@ const SearchInputExample: React.FunctionComponent<React.PropsWithChildren<Search
                                      */}
                                     <span className="search-filter-keyword a11y-ignore">context:</span>
                                     global
-                                </code>
+                                </Typography.Code>
                             </Button>
                         </div>
                         <div className={classNames(searchBoxStyle.searchBoxSeparator, styles.fakeSearchboxSeparator)} />
@@ -253,13 +253,14 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
                             onClose={onClose}
                         >
                             <p>
-                                If you type <code>facebook react</code>, we will search for file names, file contents,
-                                repo names, etc. for the exact, ordered phrase <code>facebook react</code>. If you add
-                                quotes around your search phrase, we will include the quotes in the search. Literal
-                                search makes it easy to find code like:{' '}
-                                <code>
+                                If you type <Typography.Code>facebook react</Typography.Code>, we will search for file
+                                names, file contents, repo names, etc. for the exact, ordered phrase{' '}
+                                <Typography.Code>facebook react</Typography.Code>. If you add quotes around your search
+                                phrase, we will include the quotes in the search. Literal search makes it easy to find
+                                code like:{' '}
+                                <Typography.Code>
                                     {'{'} url: "https://sourcegraph.com" {'}'}
-                                </code>{' '}
+                                </Typography.Code>{' '}
                                 without escaping.
                             </p>
                             <p>

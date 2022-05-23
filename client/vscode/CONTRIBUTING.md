@@ -14,7 +14,9 @@ New issues and feature requests can be filed through our [issue tracker](https:/
 
 ## Development
 
-### Build and run
+### Build and Run
+
+#### Desktop and Web Version
 
 1. `git clone` the [Sourcegraph repository](https://github.com/sourcegraph/sourcegraph)
 1. Install dependencies via `yarn` for the Sourcegraph repository
@@ -23,7 +25,9 @@ New issues and feature requests can be filed through our [issue tracker](https:/
 1. Run `yarn build-vsce` to build or `yarn watch-vsce` to build and watch the tasks from the `root` directory
 1. Select `Launch VS Code Extension` (`Launch VS Code Web Extension` for VS Code Web) from the dropdown menu in the `Run and Debug` sidebar view to see your changes
 
-### Tests
+### Integration Tests
+
+To perform integration tests:
 
 1. In the Sourcegraph repository:
    1. `yarn`
@@ -31,6 +35,35 @@ New issues and feature requests can be filed through our [issue tracker](https:/
 2. In the `client/vscode` directory:
    1. `yarn build:test` or `yarn watch:test`
    2. `yarn test-integration`
+
+## GitPod
+
+The Sourcegraph extension for VS Code also works on GitPod.
+
+#### Desktop Version
+
+To install this extension on GitPod Desktop:
+
+1. Open the Extensions view by clicking on the Extensions icon in the Activity Bar on the side of your workspace
+2. Search for `Sourcegraph`
+3. Click `install` to install the Sourcegraph extension
+
+#### Web Version
+
+To run and test the web extension on GitPod Web (as well as VS Code and GitHub for the web), you must sideload the extension from your local machine as suggested in the following steps:
+
+1. `git clone` the [Sourcegraph repository](https://github.com/sourcegraph/sourcegraph)
+1. Run `yarn && yarn generate` at the root directory to install dependencies and generate the required schemas
+1. Run `yarn build-vsce` at root to build the Sourcegraph VS Code extension for Web
+1. Once the build has been completed, move to the extension’s directory: `cd client/vscode`
+1. Start an HTTP server inside the extension’s path to host the extension locally: `npx serve --cors -l 8988`
+1. In another terminal, generate a publicly-accessible URL from your locally running HTTP server using the localtunnel tool: `npx localtunnel -p 8988`
+   1. A publicly-accessible URL will be generated for you in the output followed by “your url is:”
+1. Copy and then open the newly generated URL in a browser and then select “Click to Continue”
+1. Open the Command Palette in GitPod Web (a GitPod Workspace using the Open in Browser setting)
+1. Select “Developer: Install Web Extension…”
+1. Paste the newly generated URL in the input area and select Install
+1. The extension is now installed
 
 ### Debugging
 

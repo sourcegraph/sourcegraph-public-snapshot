@@ -56,6 +56,7 @@ const batchChangeDefaults: BatchChangeFields = {
     id: 'specid',
     url: '/users/alice/batch-changes/specid',
     namespace: {
+        id: '1234',
         namespaceName: 'alice',
         url: '/users/alice',
     },

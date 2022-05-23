@@ -15,6 +15,9 @@
 <a class="btn" href="#upgrading-sourcegraph">Upgrading</a>
 </div>
 
+
+> WARNING: Sourcegraph currently does not support migration from an existing Sourcegraph deployment without Helm to a Sourcegraph deployment using Helm. The information you are looking at is currently recommended for a new install of Sourcegraph. We are currently working to provide migration guidance from a non-Helm deployment. If you are inquiring about performing such a migration please email <support@sourcegraph.com>
+
 ## Why use Helm
 
 Our Helm chart has a lot of sensible defaults baked into the values.yaml. Not only does this make customizations much easier (than either using Kustomize or manually editing Sourcegraph's manifest files) it also means that, when an override file is used to make the changes, you _never_ have to deal with merge conflicts during upgrades (see more about customizations in the [configuration](#configuration) section). 

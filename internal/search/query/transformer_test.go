@@ -459,7 +459,7 @@ func TestPipeline(t *testing.T) {
 		t.Run("Map query", func(t *testing.T) {
 			plan, err := Pipeline(Init(c.input, SearchTypeLiteralDefault))
 			require.NoError(t, err)
-			got := plan.ToParseTree().String()
+			got := plan.ToQ().String()
 			if diff := cmp.Diff(c.want, got); diff != "" {
 				t.Fatal(diff)
 			}
@@ -941,7 +941,7 @@ func TestConcatRevFiltersTopLevelAnd(t *testing.T) {
 		t.Run(c.input, func(t *testing.T) {
 			plan, _ := Pipeline(InitRegexp(c.input))
 			p := MapPlan(plan, ConcatRevFilters)
-			if diff := cmp.Diff(c.want, toString(p.ToParseTree())); diff != "" {
+			if diff := cmp.Diff(c.want, toString(p.ToQ())); diff != "" {
 				t.Error(diff)
 			}
 		})

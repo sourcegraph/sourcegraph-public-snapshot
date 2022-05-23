@@ -103,7 +103,7 @@ func getTotalUsersCount(ctx context.Context, db database.DB) (_ int, err error) 
 
 func getTotalOrgsCount(ctx context.Context, db database.DB) (_ int, err error) {
 	defer recordOperation("getTotalUsersCount")(&err)
-	return database.Orgs(db).Count(ctx, database.OrgsListOptions{})
+	return db.Orgs().Count(ctx, database.OrgsListOptions{})
 }
 
 // hasRepo returns true when the instance has at least one repository that isn't
@@ -596,7 +596,7 @@ func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 		return nil, err
 	}
 
-	err = database.EventLogs(db).Insert(ctx, &database.Event{
+	err = db.EventLogs().Insert(ctx, &database.Event{
 		UserID:          0,
 		Name:            "ping",
 		URL:             "",
@@ -620,7 +620,7 @@ func authProviderTypes() []string {
 
 func externalServiceKinds(ctx context.Context, db database.DB) (kinds []string, err error) {
 	defer recordOperation("externalServiceKinds")(&err)
-	kinds, err = database.ExternalServices(db).DistinctKinds(ctx)
+	kinds, err = db.ExternalServices().DistinctKinds(ctx)
 	return kinds, err
 }
 

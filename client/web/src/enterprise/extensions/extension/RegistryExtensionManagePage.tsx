@@ -184,9 +184,9 @@ export const RegistryExtensionManagePage = withAuthenticatedUser(
                             this.state.name !== this.props.extension.registryExtension.name && (
                                 <Alert variant="primary">
                                     Extension will be renamed. New extension ID:{' '}
-                                    <code id="registry-extension__extensionID">
-                                        <strong>{extensionID}</strong>
-                                    </code>
+                                    <Typography.Code id="registry-extension__extensionID" weight="bold">
+                                        {extensionID}
+                                    </Typography.Code>
                                 </Alert>
                             )}
                         <div aria-live="polite">

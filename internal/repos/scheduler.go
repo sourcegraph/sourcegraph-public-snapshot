@@ -436,7 +436,7 @@ func (s *UpdateScheduler) DebugDump(ctx context.Context, db database.DB) any {
 	}
 
 	var err error
-	data.SyncJobs, err = database.ExternalServices(db).GetSyncJobs(ctx)
+	data.SyncJobs, err = db.ExternalServices().GetSyncJobs(ctx)
 	if err != nil {
 		log15.Warn("Getting external service sync jobs foe debug page", "error", err)
 	}

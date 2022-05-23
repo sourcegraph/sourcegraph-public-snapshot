@@ -620,9 +620,9 @@ const CreateFeatureFlag: React.FunctionComponent<
 > = ({ name, setFlagName, type, setFlagType, value, setFlagValue }) => (
     <>
         <div className="form-group d-flex flex-column">
-            <label htmlFor="name">
+            <Typography.Label htmlFor="name">
                 <Typography.H3>Name</Typography.H3>
-            </label>
+            </Typography.Label>
             <input
                 id="name"
                 type="text"
@@ -704,9 +704,9 @@ const FeatureFlagRolloutValueSettings: React.FunctionComponent<
     }>
 > = ({ value, update }) => (
     <div className="form-group d-flex flex-column">
-        <label htmlFor="rollout-value">
+        <Typography.Label htmlFor="rollout-value">
             <Typography.H3>Value</Typography.H3>
-        </label>
+        </Typography.Label>
         <input
             type="range"
             id="rollout-value"
@@ -737,9 +737,9 @@ const FeatureFlagBooleanValueSettings: React.FunctionComponent<
     }>
 > = ({ value, update }) => (
     <div className="form-group d-flex flex-column">
-        <label htmlFor="bool-value">
+        <Typography.Label htmlFor="bool-value">
             <Typography.H3>Value</Typography.H3>
-        </label>
+        </Typography.Label>
         <div className="d-flex">
             <div>
                 <Toggle
@@ -799,7 +799,7 @@ const ReferencesCollapsible: React.FunctionComponent<
                 {references.map(reference => (
                     <div key={(flagName || '') + reference.file}>
                         <Link target="_blank" rel="noopener noreferrer" to={reference.searchURL}>
-                            <code>{reference.file}</code>
+                            <Typography.Code>{reference.file}</Typography.Code>
                         </Link>
                     </div>
                 ))}

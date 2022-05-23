@@ -14,13 +14,13 @@ export function getIdForMatch(match: ContentMatch): string {
     return `${match.repository}-${match.path}`
 }
 
-export function getIdForLine(match: ContentMatch, line: ContentMatch['lineMatches'][0]): string {
-    return `${getIdForMatch(match)}-#-${match.lineMatches.indexOf(line)}`
+export function getIdForLine(match: ContentMatch, lineMatch: ContentMatch['lineMatches'][0]): string {
+    return `${getIdForMatch(match)}-#-${match.lineMatches.indexOf(lineMatch)}`
 }
 
-export function decodeLineId(id: string): [matchId: string, lineNumber: number] {
-    const [matchId, lineId] = id.split('-#-')
-    return [matchId, parseInt(lineId, 10)]
+export function decodeLineId(id: string): [matchId: string, lineMatchIndex: number] {
+    const [matchId, lineMatchIndex] = id.split('-#-')
+    return [matchId, parseInt(lineMatchIndex, 10)]
 }
 
 export function getElementFromId(id: string): null | Element {

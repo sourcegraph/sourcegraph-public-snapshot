@@ -15,6 +15,24 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## Unreleased
 
+### Added
+
+- Extensions: Added site config parameter `extensions.allowOnlySourcegraphAuthoredExtensions`. When enabled only extensions authored by Sourcegraph will be able to be viewed and installed. For more information check out the [docs](https://docs.sourcegraph.com/admin/extensions##allow-only-extensions-authored-by-sourcegraph). [#35054](https://github.com/sourcegraph/sourcegraph/pull/35054)
+
+### Changed
+
+-
+
+### Fixed
+
+-
+
+### Removed
+
+-
+
+## 3.40.0
+
 - Code Insights: Fixed incorrect Line Chart size calculation in FireFox
 - The Grafana dashboard now has a global container resource usage view to help site-admin quickly identify potential scaling issues. [#34808](https://github.com/sourcegraph/sourcegraph/pull/34808)
 - Deployment: Nginx ingress controller updated to v1.2.0
@@ -29,6 +47,10 @@ All notable changes to Sourcegraph are documented in this file.
 - [search.largeFiles](https://docs.sourcegraph.com/admin/config/site_config#search-largeFiles) now supports recursive globs. For example it is now possible to specify a pattern like `**/*.lock` to match a lock file anywhere in a repository. [#35411](https://github.com/sourcegraph/sourcegraph/pull/35411)
 - Permissions: The `setRepositoryPermissionsUnrestricted` mutation was added, which allows explicity marking a repo as available to all Sourcegraph users. [#35378](https://github.com/sourcegraph/sourcegraph/pull/35378)
 - The `repo:deps(...)` predicate can now search through the [Python dependencies of your repositories](https://docs.sourcegraph.com/code_search/how-to/dependencies_search). [#32659](https://github.com/sourcegraph/sourcegraph/issues/32659)
+- Batch Changes are now supported on [Bitbucket Cloud](https://bitbucket.org/). [#24199](https://github.com/sourcegraph/sourcegraph/issues/24199)
+- Pings for server-side batch changes [#34308](https://github.com/sourcegraph/sourcegraph/pull/34308)
+- Indexed search will detect when it is misconfigured and has multiple replicas writing to the same directory. [#35513](https://github.com/sourcegraph/sourcegraph/pull/35513)
+- A new token creation callback feature that sends a token back to a trusted program automatically after the user has signed in [#35339](https://github.com/sourcegraph/sourcegraph/pull/35339)
 
 ### Changed
 
@@ -47,11 +69,13 @@ All notable changes to Sourcegraph are documented in this file.
 - Carets in textareas in Firefox are now visible. [#34888](https://github.com/sourcegraph/sourcegraph/pull/34888)
 - Changesets to GitHub code hosts could fail with a confusing, non actionable error message. [#35048](https://github.com/sourcegraph/sourcegraph/pull/35048)
 - An issue causing search expressions to not work in conjunction with `type:symbol`. [#35126](https://github.com/sourcegraph/sourcegraph/pull/35126)
+- A non-descriptive error message that would be returned when using `on.repository` if it is not a valid repository path [#35023](https://github.com/sourcegraph/sourcegraph/pull/35023)
 - Reduced database load when viewing or previewing a batch change. [#35501](https://github.com/sourcegraph/sourcegraph/pull/35501)
+- Fixed a bug where Capture Group Code Insights generated just in time only returned data for the latest repository in the list. [#35624](https://github.com/sourcegraph/sourcegraph/pull/35624)
 
 ### Removed
 
--
+- The experimental API Docs feature released on our Cloud instance since 3.30.0 has been removed from the product entirely. This product functionality is being superseded by [doctree](https://github.com/sourcegraph/doctree). [#34798](https://github.com/sourcegraph/sourcegraph/pull/34798)
 
 ## 3.39.1
 

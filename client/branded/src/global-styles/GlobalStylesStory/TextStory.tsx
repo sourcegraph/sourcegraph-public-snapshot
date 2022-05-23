@@ -14,11 +14,11 @@ export const TextStory: React.FunctionComponent<React.PropsWithChildren<unknown>
                 {(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'] as const).map(Heading => (
                     <tr key={Heading}>
                         <td>
-                            <code>
+                            <Typography.Code>
                                 {'<'}
                                 {Heading}
                                 {'>'}
-                            </code>
+                            </Typography.Code>
                         </td>
                         <td>
                             <Heading>This is an {Heading.toUpperCase()}</Heading>
@@ -55,7 +55,7 @@ export const TextStory: React.FunctionComponent<React.PropsWithChildren<unknown>
         </p>
 
         <p>
-            Text can be <i>idiomatic</i> with <code>{'<i>'}</code>. See{' '}
+            Text can be <i>idiomatic</i> with <Typography.Code>{'<i>'}</Typography.Code>. See{' '}
             <Link
                 target="__blank"
                 to="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/em#%3Ci%3E_vs._%3Cem%3E"
@@ -66,26 +66,26 @@ export const TextStory: React.FunctionComponent<React.PropsWithChildren<unknown>
         </p>
 
         <p>
-            You can bring attention to the <b>element</b> with <code>{'<b>'}</code>.
+            You can bring attention to the <b>element</b> with <Typography.Code>{'<b>'}</Typography.Code>.
         </p>
 
         <p>
-            Text can have superscripts<sup>sup</sup> with <code>{'<sup>'}</code>.
+            Text can have superscripts<sup>sup</sup> with <Typography.Code>{'<sup>'}</Typography.Code>.
         </p>
 
         <p>
-            Text can have subscripts<sub>sub</sub> with <code>{'<sub>'}</code>.
+            Text can have subscripts<sub>sub</sub> with <Typography.Code>{'<sub>'}</Typography.Code>.
         </p>
 
         <p>
             <small>
-                You can use <code>{'<small>'}</code> to make small text. Use sparingly.
+                You can use <Typography.Code>{'<small>'}</Typography.Code> to make small text. Use sparingly.
             </small>
         </p>
 
         <Typography.H2>Color variations</Typography.H2>
         <p>
-            <code>text-*</code> classes can be used to apply semantic coloring to text.
+            <Typography.Code>text-*</Typography.Code> classes can be used to apply semantic coloring to text.
         </p>
         <div className="mb-3">
             {['muted', ...SEMANTIC_COLORS].map(color => (
@@ -135,7 +135,7 @@ export const TextStory: React.FunctionComponent<React.PropsWithChildren<unknown>
 
         <Typography.H4>Dashes</Typography.H4>
         <p>
-            Dashed lists are created using <code>list-dashed</code>.
+            Dashed lists are created using <Typography.Code>list-dashed</Typography.Code>.
         </p>
         <ul className="list-dashed">
             <li>

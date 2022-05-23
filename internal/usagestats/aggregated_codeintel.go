@@ -11,7 +11,7 @@ import (
 
 // GetAggregatedCodeIntelStats returns aggregated statistics for code intelligence usage.
 func GetAggregatedCodeIntelStats(ctx context.Context, db database.DB) (*types.NewCodeIntelUsageStatistics, error) {
-	eventLogs := database.EventLogs(db)
+	eventLogs := db.EventLogs()
 
 	codeIntelEvents, err := eventLogs.AggregatedCodeIntelEvents(ctx)
 	if err != nil {
@@ -65,12 +65,18 @@ func GetAggregatedCodeIntelStats(ctx context.Context, db database.DB) (*types.Ne
 		return nil, err
 	}
 
+	usersWithRefPanelRedesignEnabled, err := eventLogs.CountUsersWithSetting(ctx, "codeintel.referencePanel.redesign.enabled", true)
+	if err != nil {
+		return nil, err
+	}
+
 	stats.NumRepositories = int32Ptr(counts.NumRepositories)
 	stats.NumRepositoriesWithUploadRecords = int32Ptr(counts.NumRepositoriesWithUploadRecords)
 	stats.NumRepositoriesWithFreshUploadRecords = int32Ptr(counts.NumRepositoriesWithFreshUploadRecords)
 	stats.NumRepositoriesWithIndexRecords = int32Ptr(counts.NumRepositoriesWithIndexRecords)
 	stats.NumRepositoriesWithFreshIndexRecords = int32Ptr(counts.NumRepositoriesWithFreshIndexRecords)
 	stats.NumRepositoriesWithAutoIndexConfigurationRecords = int32Ptr(counts.NumRepositoriesWithAutoIndexConfigurationRecords)
+	stats.UsersWithRefPanelRedesignEnabled = int32Ptr(usersWithRefPanelRedesignEnabled)
 	stats.SettingsPageViewCount = int32Ptr(settingsPageViewCount)
 
 	stats.CountsByLanguage = make(map[string]types.CodeIntelRepositoryCountsByLanguage, len(countsByLanguage))
