@@ -10,10 +10,9 @@ import { Icon } from '@sourcegraph/wildcard'
 /**
  * Returns the icon for the repository's code host
  */
-export const RepoIcon: React.FunctionComponent<React.PropsWithChildren<{ repoName: string; className?: string }>> = ({
-    repoName,
-    className,
-}) => {
+export const CodeHostIcon: React.FunctionComponent<
+    React.PropsWithChildren<{ repoName: string; className?: string }>
+> = ({ repoName, className }) => {
     const iconMap: { [key: string]: React.ComponentType<React.PropsWithChildren<MdiReactIconProps>> } = {
         'github.com': GithubIcon,
         'gitlab.com': GitlabIcon,
