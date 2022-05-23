@@ -1,4 +1,4 @@
-package enqueuer
+package autoindexing
 
 import (
 	"strings"

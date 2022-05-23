@@ -9,7 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/enqueuer"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -34,7 +34,7 @@ func NewDependencyIndexingScheduler(
 	externalServiceStore ExternalServiceStore,
 	repoUpdaterClient RepoUpdaterClient,
 	gitserverClient GitserverClient,
-	enqueuer IndexEnqueuer,
+	enqueuer *autoindexing.Service,
 	pollInterval time.Duration,
 	numProcessorRoutines int,
 	workerMetrics workerutil.WorkerMetrics,
@@ -139,7 +139,7 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, logger 
 			Version: packageReference.Package.Version,
 		}
 
-		repoName, _, ok := enqueuer.InferRepositoryAndRevision(pkg)
+		repoName, _, ok := autoindexing.InferRepositoryAndRevision(pkg)
 		if !ok {
 			continue
 		}
