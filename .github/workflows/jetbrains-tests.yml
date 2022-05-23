@@ -1,10 +1,8 @@
 # GitHub Actions Workflow created for testing the JetBrains extension plugin in following steps:
-# - validate Gradle Wrapper,
-# - run 'test' and 'verifyPlugin' tasks,
-# - run Qodana inspections,
-# - run 'buildPlugin' task and prepare artifact for the further tests,
-# - run 'runPluginVerifier' task,
-# - create a draft release.
+# - validate Gradle Wrapper
+# - run 'test' tasks
+# - run 'runPluginVerifier' task
+# - run Qodana inspections
 #
 # Note: This workflow works in isolation to the JavaScript artifacts necessary for full testing. It
 #       is intended to only test if the Java plugin compiles without issues.
@@ -88,10 +86,6 @@ jobs:
       # Run Verify Plugin task and IntelliJ Plugin Verifier tool
       - name: Run Plugin Verification tasks
         run: ./gradlew runPluginVerifier -Pplugin.verifier.home.dir=${{ steps.properties.outputs.pluginVerifierHomeDir }}
-
-      # Build plugin
-      - name: Build Plugin
-        run: ./gradlew buildPlugin
 
       # Collect Plugin Verifier Result
       - name: Collect Plugin Verifier Result
