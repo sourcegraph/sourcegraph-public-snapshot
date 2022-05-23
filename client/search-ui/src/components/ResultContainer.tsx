@@ -15,7 +15,7 @@ import { SearchResultStar } from './SearchResultStar'
 
 import styles from './ResultContainer.module.scss'
 
-export interface Props {
+export interface ResultContainerProps {
     /**
      * Whether the result container's children are visible by default.
      * The header is always visible even when the component is not expanded.
@@ -110,7 +110,7 @@ export interface Props {
 /**
  * The container component for a result in the SearchResults component.
  */
-export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<ResultContainerProps>> = ({
     defaultExpanded,
     allExpanded,
     collapsible,
