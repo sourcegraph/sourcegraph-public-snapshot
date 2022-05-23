@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState, forwardRef } from 'react'
 
 import classNames from 'classnames'
 import H from 'history'
@@ -7,7 +7,7 @@ import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import MenuIcon from 'mdi-react/MenuIcon'
 import { LinkProps, NavLink as RouterLink } from 'react-router-dom'
 
-import { Button, Link, Icon, Typography } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, Typography, ForwardReferenceComponent } from '@sourcegraph/wildcard'
 
 import { PageRoutes } from '../../routes.constants'
 
@@ -60,17 +60,19 @@ const useOutsideClickDetector = (
     return [outsideClick, setOutsideClick]
 }
 
-export const NavBar = ({ children, logo }: NavBarProps): JSX.Element => (
-    <nav aria-label="Main Menu" className={navBarStyles.navbar}>
-        <Typography.H1 className={navBarStyles.logo}>
-            <RouterLink className="d-flex align-items-center" to={PageRoutes.Search}>
-                {logo}
-            </RouterLink>
-        </Typography.H1>
-        <hr className={navBarStyles.divider} aria-hidden={true} />
-        {children}
-    </nav>
-)
+export const NavBar = forwardRef(
+    ({ children, logo }, reference): JSX.Element => (
+        <nav aria-label="Main Menu" className={navBarStyles.navbar} ref={reference}>
+            <Typography.H1 className={navBarStyles.logo}>
+                <RouterLink className="d-flex align-items-center" to={PageRoutes.Search}>
+                    {logo}
+                </RouterLink>
+            </Typography.H1>
+            <hr className={navBarStyles.divider} aria-hidden={true} />
+            {children}
+        </nav>
+    )
+) as ForwardReferenceComponent<'div', NavBarProps>
 
 export const NavGroup = ({ children }: NavGroupProps): JSX.Element => {
     const menuReference = useRef<HTMLDivElement>(null)

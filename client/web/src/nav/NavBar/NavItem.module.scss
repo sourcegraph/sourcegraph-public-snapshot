@@ -121,6 +121,11 @@
 .icon-included {
     margin-left: 0.25rem;
     display: inline-flex;
+    &.is-compact {
+        @media (--md-breakpoint-up) {
+            display: none;
+        }
+    }
     @media (--md-breakpoint-down) {
         display: none;
     }
@@ -129,11 +134,6 @@
     }
 }
 
-.is-compact {
-    @media (--lg-breakpoint-down) {
-        display: none;
-    }
-}
 .text {
     color: var(--body-color);
 }
