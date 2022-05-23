@@ -87,5 +87,3 @@ function getCharacterCountUntilLine(content: string, lineNumber: number): number
 function getAbsoluteOffsetAndLengths(offsetAndLengths: number[][], characterCountUntilLine: number): number[][] {
     return offsetAndLengths.map(offsetAndLength => [offsetAndLength[0] + characterCountUntilLine, offsetAndLength[1]])
 }
-
-// deletem
