@@ -17,11 +17,6 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-func TestMain(m *testing.M) {
-	logtest.Init(m)
-	os.Exit(m.Run())
-}
-
 func logWithLevel(logger log.Logger, level zapcore.Level, msg string, fields ...zapcore.Field) {
 	switch level {
 	case zapcore.DebugLevel:
@@ -39,15 +34,15 @@ func logWithLevel(logger log.Logger, level zapcore.Level, msg string, fields ...
 	}
 }
 
-func newTestLogger(t *testing.T) (log.Logger, *TransportMock, func()) {
+func newTestLogger(t testing.TB) (log.Logger, *sentrycore.TransportMock, func()) {
 	hub, tr := newTestHub(t)
 	sink := sinks.NewSentrySink(hub)
 	logger, exportLogs := logtest.Captured(t, sink)
 	return logger, tr, func() { _ = exportLogs() }
 }
 
-func newTestHub(t *testing.T) (*sentry.Hub, *TransportMock) {
-	transport := &TransportMock{}
+func newTestHub(t testing.TB) (*sentry.Hub, *sentrycore.TransportMock) {
+	transport := &sentrycore.TransportMock{}
 	c, err := sentry.NewClient(sentry.ClientOptions{Transport: transport})
 	assert.NoError(t, err)
 	hub := sentry.NewHub(c, sentry.NewScope())
@@ -178,53 +173,6 @@ func TestFlush(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 	core.Sync()
 	assert.Greater(t, len(tr.Events()), 1)
-}
-
-// BenchmarkWrite-10         924944              1842 ns/op
-// func BenchmarkWrite(b *testing.B) {
-// 	transport := &TransportMock{}
-// 	sc, err := sentry.NewClient(sentry.ClientOptions{Transport: transport})
-// 	hub := sentry.NewHub(sc, sentry.NewScope())
-// 	c := sentrycore.NewCore(hub)
-// 	c.Start()
-// 	err = errors.New("foobar")
-// 	for n := 0; n < b.N; n++ {
-// 		c.With([]zapcore.Field{log.Error(err)}).Write(zapcore.Entry{Message: "msg"}, []zapcore.Field{log.Int("key", 5)})
-// 	}
-// }
-
-// func init() {
-// 	log.Init(log.Resource{Name: "bench"})
-// }
-//
-// // BenchmarkNormal-10        296174              4331 ns/op
-// func BenchmarkNormal(b *testing.B) {
-// 	logger := globallogger.Get(false)
-// 	err := errors.New("foobar")
-// 	for n := 0; n < b.N; n++ {
-// 		logger.With(log.Error(err), log.Int("key", 5)).Info("msg")
-// 	}
-// }
-type TransportMock struct {
-	mu        sync.Mutex
-	events    []*sentry.Event
-	lastEvent *sentry.Event
-}
-
-func (t *TransportMock) Configure(options sentry.ClientOptions) {}
-func (t *TransportMock) SendEvent(event *sentry.Event) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	t.events = append(t.events, event)
-	t.lastEvent = event
-}
-func (t *TransportMock) Flush(timeout time.Duration) bool {
-	return true
-}
-func (t *TransportMock) Events() []*sentry.Event {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	return t.events
 }
 
 func withTimeout(t *testing.T, timeout time.Duration) {
