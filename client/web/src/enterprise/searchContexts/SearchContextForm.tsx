@@ -521,7 +521,7 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                             className="text-danger"
                             onClick={toggleDeleteModal}
                             outline={true}
-                            variant="secondary"
+                            variant="danger"
                         >
                             Delete
                         </Button>

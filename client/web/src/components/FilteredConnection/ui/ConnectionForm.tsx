@@ -108,6 +108,7 @@ export const ConnectionForm = React.forwardRef<HTMLInputElement, ConnectionFormP
                         autoCapitalize="off"
                         ref={mergedReference}
                         spellCheck={false}
+                        aria-label={inputPlaceholder}
                     />
                 )}
             </Form>
