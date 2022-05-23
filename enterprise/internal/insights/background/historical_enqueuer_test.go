@@ -137,7 +137,7 @@ func testHistoricalEnqueuer(t *testing.T, p *testParams) *testResults {
 		now:                   clock,
 		insightsStore:         insightsStore,
 		enqueueQueryRunnerJob: enqueueQueryRunnerJob,
-		allReposIterator:      allReposIterator,
+		repoIterator:          allReposIterator,
 		gitFirstEverCommit:    gitFirstEverCommit,
 		gitFindRecentCommit:   gitFindRecentCommit,
 		limiter:               limiter,

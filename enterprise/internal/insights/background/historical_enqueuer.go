@@ -8,11 +8,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
-	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -83,19 +83,8 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 		Metrics: metrics,
 	})
 
-	defaultRateLimit := rate.Limit(20.0)
-	getRateLimit := getRateLimit(defaultRateLimit)
-
-	limiter := rate.NewLimiter(getRateLimit(), 1)
-
-	go conf.Watch(func() {
-		val := getRateLimit()
-		log15.Info(fmt.Sprintf("Updating insights/historical-worker rate limit value=%v", val))
-		limiter.SetLimit(val)
-	})
-
 	db := workerBaseStore.Handle().DB()
-	repoStore := database.Repos(db)
+	repoStore := database.NewDB(db).Repos()
 
 	iterator := discovery.NewAllReposIterator(
 		dbcache.NewIndexableReposLister(repoStore),
@@ -109,9 +98,46 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 			Help:      "Counter of the number of repositories analyzed and queued for processing for insights.",
 		})
 
+	enq := baseBackfiller(ctx, workerBaseStore, dataSeriesStore, insightsStore)
 	maxTime := time.Now().Add(-1 * 365 * 24 * time.Hour)
+	enq.frameFilter = compression.NewHistoricalFilter(true, maxTime, insightsStore.Handle().DB())
+	enq.repoIterator = iterator.ForEach
 
+	defaultRateLimit := rate.Limit(20.0)
+	getRateLimit := getRateLimit(defaultRateLimit)
+	go conf.Watch(func() {
+		val := getRateLimit()
+		log15.Info(fmt.Sprintf("Updating insights/historical-worker rate limit value=%v", val))
+		enq.limiter.SetLimit(val)
+	})
+
+	// We use a periodic goroutine here just for metrics tracking. We specify 5s here so it runs as
+	// fast as possible without wasting CPU cycles, but in reality the handler itself can take
+	// minutes to hours to complete as it intentionally enqueues work slowly to avoid putting
+	// pressure on the system.
+	return goroutine.NewPeriodicGoroutineWithMetrics(ctx, 15*time.Minute, goroutine.NewHandlerWithErrorMessage(
+		"insights_historical_enqueuer",
+		enq.Handler,
+	), operation)
+}
+
+func NewRepoScopedBackfiller(ctx context.Context, workerBaseStore *basestore.Store, dataSeriesStore store.DataSeriesStore, insightsStore *store.Store, iterator discovery.RepoIterator) *historicalEnqueuer {
+	enq := baseBackfiller(ctx, workerBaseStore, dataSeriesStore, insightsStore)
+	maxTime := time.Now().Add(-1 * 365 * 24 * time.Hour)
+	enq.frameFilter = compression.NewHistoricalFilter(true, maxTime, insightsStore.Handle().DB())
+	enq.repoIterator = iterator.ForEach
+
+	return enq
+}
+
+func baseBackfiller(ctx context.Context, workerBaseStore *basestore.Store, dataSeriesStore store.DataSeriesStore, insightsStore *store.Store) *historicalEnqueuer {
+	db := workerBaseStore.Handle().DB()
 	dbConn := database.NewDB(db)
+
+	defaultRateLimit := rate.Limit(20.0)
+	getRateLimit := getRateLimit(defaultRateLimit)
+	limiter := rate.NewLimiter(getRateLimit(), 1)
+
 	historicalEnqueuer := &historicalEnqueuer{
 		now:             time.Now,
 		insightsStore:   insightsStore,
@@ -126,22 +152,10 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 		gitFindRecentCommit: func(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitdomain.Commit, error) {
 			return git.Commits(ctx, dbConn, repoName, git.CommitsOptions{N: 1, Before: target.Format(time.RFC3339), DateOrder: true}, authz.DefaultSubRepoPermsChecker)
 		},
-
-		frameFilter: compression.NewHistoricalFilter(true, maxTime, insightsStore.Handle().DB()),
-
-		allReposIterator: iterator.ForEach,
-
-		statistics: make(statistics),
+		frameFilter: &compression.NoopFilter{},
+		statistics:  make(statistics),
 	}
-
-	// We use a periodic goroutine here just for metrics tracking. We specify 5s here so it runs as
-	// fast as possible without wasting CPU cycles, but in reality the handler itself can take
-	// minutes to hours to complete as it intentionally enqueues work slowly to avoid putting
-	// pressure on the system.
-	return goroutine.NewPeriodicGoroutineWithMetrics(ctx, 15*time.Minute, goroutine.NewHandlerWithErrorMessage(
-		"insights_historical_enqueuer",
-		historicalEnqueuer.Handler,
-	), operation)
+	return historicalEnqueuer
 }
 
 func getRateLimit(defaultValue rate.Limit) func() rate.Limit {
@@ -234,8 +248,8 @@ type historicalEnqueuer struct {
 	frameLength func() time.Duration
 
 	// The iterator to use for walking over all repositories on Sourcegraph.
-	allReposIterator func(ctx context.Context, each func(repoName string, id api.RepoID) error) error
-	limiter          *rate.Limiter
+	repoIterator func(ctx context.Context, each func(repoName string, id api.RepoID) error) error
+	limiter      *rate.Limiter
 
 	statistics statistics
 }
@@ -258,12 +272,9 @@ func (h *historicalEnqueuer) Handler(ctx context.Context) error {
 		h.statistics[series.SeriesID] = &repoBackfillStatistics{}
 	}
 
-	// Deduplicate series that may be unique (e.g. different name/description) but do not have
-	// unique data (i.e. use the same exact search query or webhook URL.)
 	var (
-		uniqueSeries    = map[string]itypes.InsightSeries{}
-		sortedSeriesIDs []string
-		multi           error
+		uniqueSeries = map[string]itypes.InsightSeries{}
+		multi        error
 	)
 	for _, series := range foundInsights {
 		seriesID := series.SeriesID
@@ -273,9 +284,8 @@ func (h *historicalEnqueuer) Handler(ctx context.Context) error {
 			continue
 		}
 		uniqueSeries[seriesID] = series
-		sortedSeriesIDs = append(sortedSeriesIDs, seriesID)
 	}
-	if err := h.buildFrames(ctx, uniqueSeries, sortedSeriesIDs); err != nil {
+	if err := h.buildFrames(ctx, uniqueSeries); err != nil {
 		multi = errors.Append(multi, err)
 	}
 	if err == nil {
@@ -309,20 +319,20 @@ func (h *historicalEnqueuer) markInsightsComplete(ctx context.Context, completed
 // It is only called if there is at least one insights series defined.
 //
 // It will return instantly if there are no unique series.
-func (h *historicalEnqueuer) buildFrames(ctx context.Context, uniqueSeries map[string]itypes.InsightSeries, sortedSeriesIDs []string) error {
+func (h *historicalEnqueuer) buildFrames(ctx context.Context, uniqueSeries map[string]itypes.InsightSeries) error {
 	if len(uniqueSeries) == 0 {
 		return nil // nothing to do.
 	}
 	var multi error
 
-	hardErr := h.allReposIterator(ctx, h.buildForRepo(ctx, uniqueSeries, sortedSeriesIDs, multi))
+	hardErr := h.repoIterator(ctx, h.buildForRepo(ctx, uniqueSeries, multi))
 	if multi != nil {
 		log15.Error("historical_enqueuer.buildFrames - multierror", "err", multi)
 	}
 	return hardErr
 }
 
-func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[string]itypes.InsightSeries, sortedSeriesIDs []string, softErr error) func(repoName string, id api.RepoID) (err error) {
+func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[string]itypes.InsightSeries, softErr error) func(repoName string, id api.RepoID) (err error) {
 	return func(repoName string, id api.RepoID) (err error) {
 		span, ctx := ot.StartSpanFromContext(ot.WithShouldTrace(ctx, true), "historical_enqueuer.buildForRepo")
 		span.SetTag("repo_id", id)
@@ -361,8 +371,7 @@ func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[
 		}
 
 		// For every series that we want to potentially gather historical data for, try.
-		for _, seriesID := range sortedSeriesIDs {
-			series := uniqueSeries[seriesID]
+		for seriesID, series := range uniqueSeries {
 			frames := query.BuildFrames(12, timeseries.TimeInterval{
 				Unit:  itypes.IntervalUnit(series.SampleIntervalUnit),
 				Value: series.SampleIntervalValue,
