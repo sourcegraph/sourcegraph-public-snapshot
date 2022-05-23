@@ -1,33 +1,38 @@
-import { ReactElement } from 'react'
+import React, { ReactElement } from 'react'
 
-import { TooltipTrigger as SpectrumTooltipRoot, Tooltip as SpectrumTooltipContent } from '@react-spectrum/tooltip'
-import { SpectrumTooltipProps } from '@react-types/tooltip'
+import * as Tooltip from '@radix-ui/react-tooltip'
 
-interface TooltipRootProps {
-    children: [ReactElement, ReactElement]
-}
+import styles from './Tooltip.module.scss'
 
-const TooltipRoot: React.FunctionComponent<TooltipRootProps> = ({ children }) => (
-    <SpectrumTooltipRoot delay={0}>{children}</SpectrumTooltipRoot>
+const TooltipProvider: React.FunctionComponent<React.PropsWithChildren<{}>> = ({ children }) => (
+    <Tooltip.Provider delayDuration={0}>{children}</Tooltip.Provider>
+)
+
+const TooltipRoot: React.FunctionComponent<React.PropsWithChildren<{}>> = ({ children }) => (
+    <Tooltip.Root>{children}</Tooltip.Root>
 )
 
 interface TooltipTriggerProps {
     children: ReactElement
 }
 
-const TooltipTrigger: React.FunctionComponent<TooltipTriggerProps> = ({ children }) => <>{children}</>
+/**
+ * Accepts a single child node. That node will trigger the tooltip content to appear when it is hovered or focused.
+ */
+const TooltipTrigger: React.FunctionComponent<TooltipTriggerProps> = ({ children }) => (
+    <Tooltip.Trigger className={styles.tooltipTrigger}>{children}</Tooltip.Trigger>
+)
 
 interface TooltipContentProps {
     children: string
-    position?: SpectrumTooltipProps['placement']
+    placement?: Tooltip.TooltipContentProps['side']
 }
 
-const TooltipContent: React.FunctionComponent<TooltipContentProps> = ({ children, position = 'end' }) => (
-    <SpectrumTooltipContent placement={position}>{children}</SpectrumTooltipContent>
+const TooltipContent: React.FunctionComponent<TooltipContentProps> = ({ children, placement = 'right' }) => (
+    <Tooltip.Content side={placement}>
+        <Tooltip.Arrow />
+        {children}
+    </Tooltip.Content>
 )
 
-const Root = TooltipRoot
-const Trigger = TooltipTrigger
-const Content = TooltipContent
-
-export { Root, Trigger, Content }
+export { TooltipProvider as Provider, TooltipRoot as Root, TooltipTrigger as Trigger, TooltipContent as Content }

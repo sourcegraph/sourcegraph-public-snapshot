@@ -2,6 +2,9 @@ import { UseTooltipReturn } from './useTooltipState'
 
 type TooltipInstance = Pick<UseTooltipReturn, 'forceUpdate'>
 
+/**
+ * @deprecated
+ */
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class TooltipController {
     private static instance: TooltipInstance | undefined

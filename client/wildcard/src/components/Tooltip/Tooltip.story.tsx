@@ -10,12 +10,12 @@ const decorator: DecoratorFn = story => (
 )
 
 const config: Meta = {
-    title: 'wildcard/Tooltip',
+    title: 'wildcard/Tooltip1',
 
     decorators: [decorator],
 
     parameters: {
-        component: 'Tooltip',
+        component: 'NewTooltip',
         design: [
             {
                 type: 'figma',
@@ -42,7 +42,7 @@ export const Basic: Story = () => (
                     <strong>hover me</strong>
                 </Tooltip.Trigger>
                 <Tooltip.Content>Tooltip 1</Tooltip.Content>
-            </Tooltip.Root>
+            </Tooltip.Root>{' '}
             or{' '}
             <Tooltip.Root>
                 <Tooltip.Trigger>
