@@ -21,9 +21,6 @@ jobs:
     defaults:
       run:
         working-directory: client/jetbrains
-    outputs:
-      version: ${{ steps.properties.outputs.version }}
-      changelog: ${{ steps.properties.outputs.changelog }}
     steps:
       # Check out current repository
       - name: Fetch Sources
