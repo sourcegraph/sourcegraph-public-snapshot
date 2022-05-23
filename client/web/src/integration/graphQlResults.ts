@@ -15,7 +15,9 @@ import { builtinAuthProvider, siteGQLID, siteID } from './jscontext'
 /**
  * Predefined results for GraphQL requests that are made on almost every page.
  */
-export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraphQlOperations & SearchGraphQlOperations> = {
+export const commonWebGraphQlResults: Partial<
+    WebGraphQlOperations & SharedGraphQlOperations & SearchGraphQlOperations
+> = {
     ...sharedGraphQlResults,
     CurrentAuthState: () => ({
         currentUser: {
@@ -230,6 +232,9 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
     }),
     EvaluatedFeatureFlags: () => ({
         evaluatedFeatureFlags: [],
+    }),
+    EvaluateFeatureFlag: () => ({
+        evaluateFeatureFlag: false,
     }),
     OrgFeatureFlagValue: () => ({
         organizationFeatureFlagValue: false,
