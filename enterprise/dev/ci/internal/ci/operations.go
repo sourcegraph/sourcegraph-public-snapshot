@@ -63,6 +63,7 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 			frontendTests,                // ~4.5m
 			addWebApp,                    // ~5.5m
 			addBrowserExtensionUnitTests, // ~4.5m
+			addJetBrainsUnitTests,        // ~4.5m
 			addTypescriptCheck,           // ~4m
 		)
 
@@ -281,6 +282,14 @@ func addBrowserExtensionUnitTests(pipeline *bk.Pipeline) {
 			},
 		}),
 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
+}
+
+func addJetBrainsUnitTests(pipeline *bk.Pipeline) {
+	pipeline.AddStep(":jetbrains: Test (client/jetbrains)",
+		withYarnCache(),
+		bk.Cmd("yarn generate"),
+		bk.Cmd("yarn --cwd client/jetbrains -s build"),
+	)
 }
 
 func clientIntegrationTests(pipeline *bk.Pipeline) {
