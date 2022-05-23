@@ -302,25 +302,7 @@ commands:
     ignoreStdout: true
     ignoreStderr: true
     cmd: .bin/caddy_${CADDY_VERSION} run --watch --config=dev/Caddyfile
-    install: |
-      case "$(go env GOOS)" in
-        linux)
-          os="linux"
-          ;;
-        darwin)
-          os="mac"
-          ;;
-      esac
-      name="caddy_${CADDY_VERSION}_${os}_$(go env GOARCH)"
-      target="$PWD/.bin/caddy_${CADDY_VERSION}"
-      url="https://github.com/caddyserver/caddy/releases/download/v${CADDY_VERSION}/${name}.tar.gz"
-
-      if [ ! -f "${target}" ]; then
-        echo "downloading ${url}" 1>&2
-        curl -sS -L -f "${url}" | tar -xz --to-stdout "caddy" >"${target}.tmp"
-        mv "${target}.tmp" "${target}"
-        chmod +x "${target}"
-      fi
+    install_func: installCaddy
     env:
       CADDY_VERSION: 2.4.5
 

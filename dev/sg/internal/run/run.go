@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -16,6 +17,7 @@ import (
 	"github.com/rjeczalik/notify"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/download"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -276,6 +278,37 @@ func printCmdError(out *output.Output, cmdName string, err error) {
 	}
 }
 
+type installFunc func(context.Context, map[string]string) error
+
+var installFuncs = map[string]installFunc{
+	"installCaddy": func(ctx context.Context, env map[string]string) error {
+		version := env["CADDY_VERSION"]
+		if version == "" {
+			return errors.New("could not find CADDY_VERSION in env")
+		}
+
+		root, err := root.RepositoryRoot()
+		if err != nil {
+			return err
+		}
+
+		var os string
+		switch runtime.GOOS {
+		case "linux":
+			os = "linux"
+		case "darwin":
+			os = "mac"
+		}
+
+		archiveName := fmt.Sprintf("caddy_%s_%s_%s", version, os, runtime.GOARCH)
+		url := fmt.Sprintf("https://github.com/caddyserver/caddy/releases/download/v%s/%s.tar.gz", version, archiveName)
+
+		target := filepath.Join(root, fmt.Sprintf(".bin/caddy_%s", version))
+
+		return download.ArchivedExecutable(ctx, url, target, "caddy")
+	},
+}
+
 func runWatch(
 	ctx context.Context,
 	cmd Command,
@@ -312,12 +345,23 @@ func runWatch(
 
 	for {
 		// Build it
-		if cmd.Install != "" {
+		if cmd.Install != "" || cmd.InstallFunc != "" {
 			if startedOnce {
 				std.Out.WriteLine(output.Styledf(output.StylePending, "Installing %s...", cmd.Name))
 			}
 
-			cmdOut, err := BashInRoot(ctx, cmd.Install, makeEnv(parentEnv, cmd.Env))
+			var cmdOut string
+			var err error
+			if cmd.Install != "" && cmd.InstallFunc == "" {
+				cmdOut, err = BashInRoot(ctx, cmd.Install, makeEnv(parentEnv, cmd.Env))
+			} else if cmd.Install == "" && cmd.InstallFunc != "" {
+				fn, ok := installFuncs[cmd.InstallFunc]
+				if !ok {
+					return errors.New("nope, no install func with that name")
+				}
+				err = fn(ctx, makeEnvMap(parentEnv, cmd.Env))
+			}
+
 			if err != nil {
 				if !startedOnce {
 					return installErr{cmdName: cmd.Name, output: cmdOut, originalErr: err}
@@ -425,9 +469,23 @@ func runWatch(
 // makeEnv merges environments starting from the left, meaning the first environment will be overriden by the second one, skipping
 // any key that has been explicitly defined in the current environment of this process. This enables users to manually overrides
 // environment variables explictly, i.e FOO=1 sg start will have FOO=1 set even if a command or commandset sets FOO.
-func makeEnv(envs ...map[string]string) []string {
-	combined := os.Environ()
-	expandedEnv := map[string]string{}
+func makeEnv(envs ...map[string]string) (combined []string) {
+	for k, v := range makeEnvMap(envs...) {
+		combined = append(combined, fmt.Sprintf("%s=%s", k, v))
+	}
+	return combined
+}
+
+func makeEnvMap(envs ...map[string]string) map[string]string {
+	combined := map[string]string{}
+	for _, pair := range os.Environ() {
+		elems := strings.SplitN(pair, "=", 2)
+		if len(elems) != 2 {
+			panic("space/time continuum wrong")
+		}
+
+		combined[elems[0]] = elems[1]
+	}
 
 	for _, env := range envs {
 		for k, v := range env {
@@ -457,8 +515,7 @@ func makeEnv(envs ...map[string]string) []string {
 				}
 				return os.Getenv(lookup)
 			})
-			expandedEnv[k] = expanded
-			combined = append(combined, fmt.Sprintf("%s=%s", k, expanded))
+			combined[k] = expanded
 		}
 	}
 
