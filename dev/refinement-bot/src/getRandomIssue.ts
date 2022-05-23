@@ -31,7 +31,7 @@ const getIssues = async (): Promise<void> => {
     try {
       estimates = result.repository.labels?.nodes?.map(item => item?.name).join(',')
       if (!estimates) {
-          throw new Error('missing estiamtes')
+          throw new Error('missing estimates')
       }
     } catch {
       setFailed('unable to get estimate labels');

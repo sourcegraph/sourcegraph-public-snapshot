@@ -18,7 +18,6 @@ export interface EstimateValue {
 }
 
 // @ts-nocheck
-console.log('panda')
 // const config = functions.config();
 require("dotenv").config();
 // Initializes your app with your bot token and signing secret
@@ -36,7 +35,6 @@ const app = new App({
 
 app.command("/jason-testing", async ({  ack, say }) => {
     try {
-    console.log('panda')
       await ack();
       say("Yaaay! that command works!");
     } catch (error) {

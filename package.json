@@ -102,6 +102,8 @@
     ]
   },
   "devDependencies": {
+    "@slack/types": "^2.4.0",
+    "@octokit/graphql-schema": "^10.73.0",
     "@actions/core": "^1.7.0",
     "@actions/github": "^5.0.1",
     "@atlassian/aui": "^7.10.1",
@@ -356,7 +358,6 @@
     "yauzl": "^2.10.0"
   },
   "dependencies": {
-    "@slack/types": "^2.4.0",
     "@apollo/client": "^3.5.0",
     "@codemirror/autocomplete": "^0.19.14",
     "@codemirror/commands": "^0.19.8",
@@ -367,7 +368,6 @@
     "@codemirror/text": "^0.19.6",
     "@codemirror/tooltip": "^0.19.16",
     "@codemirror/view": "^0.19.47",
-    "@octokit/graphql-schema": "^10.73.0",
     "@reach/accordion": "^0.16.1",
     "@reach/combobox": "^0.16.5",
     "@reach/dialog": "^0.16.2",
