@@ -51,6 +51,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
     // Live valid filters from filter form. They are updated whenever the user is changing
     // filter value in filters fields.
     const [filters, setFilters] = useState<InsightFilters>(originalInsightFilters)
+    const [filterVisualMode, setFilterVisialMode] = useState<FilterSectionVisualMode>(FilterSectionVisualMode.Preview)
     const debouncedFilters = useDebounce(useDeepMemo<InsightFilters>(filters), 500)
 
     const { state, isVisible } = useInsightData(
@@ -115,7 +116,8 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
                     <DrillDownInsightFilters
                         initialValues={filters}
                         originalValues={originalInsightFilters}
-                        visualMode={FilterSectionVisualMode.HorizontalSections}
+                        visualMode={filterVisualMode}
+                        onVisualModeChange={setFilterVisialMode}
                         onFiltersChange={handleFilterChange}
                         onFilterSave={handleFilterSave}
                         onCreateInsightRequest={() => setStep(DrillDownFiltersStep.ViewCreation)}

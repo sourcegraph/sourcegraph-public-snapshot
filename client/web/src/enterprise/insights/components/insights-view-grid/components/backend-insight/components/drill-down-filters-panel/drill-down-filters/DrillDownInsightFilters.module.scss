@@ -1,22 +1,35 @@
 .header {
     display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    padding: 0 0 0.75rem 0;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 .header-separator {
-    margin-top: 0;
+    margin-top: 0.75rem;
     margin-bottom: 0.25rem;
 }
 
 .heading {
-    margin: 0;
+    flex-shrink: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+
+    &--with-expanded-content {
+        margin-right: auto;
+    }
 }
 
-.clear-filters {
-    margin-left: auto;
+.preview-pills {
+    flex: 1;
+}
+
+.action-button {
     padding: 0;
+    flex-shrink: 0;
+
+    &--with-collapsed {
+        margin-left: auto;
+    }
 }
 
 .input {

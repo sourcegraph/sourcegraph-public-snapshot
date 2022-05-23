@@ -2,7 +2,9 @@ import { FunctionComponent, useMemo, useState } from 'react'
 
 import { useApolloClient } from '@apollo/client'
 import classNames from 'classnames'
-import { isEqual } from 'lodash'
+import { isEqual, noop } from 'lodash'
+import ArrowCollapseIcon from 'mdi-react/ArrowCollapseIcon'
+import ArrowExpandIcon from 'mdi-react/ArrowExpandIcon'
 import PlusIcon from 'mdi-react/PlusIcon'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
@@ -12,7 +14,7 @@ import { LoaderButton } from '../../../../../../../../../components/LoaderButton
 import { useField } from '../../../../../../form/hooks/useField'
 import { FORM_ERROR, FormChangeEvent, SubmissionResult, useForm } from '../../../../../../form/hooks/useForm'
 import { DrillDownInput, LabelWithReset } from '../drill-down-input/DrillDownInput'
-import { FilterCollapseSection } from '../filter-collapse-section/FilterCollapseSection'
+import { FilterCollapseSection, FilterPreviewPill } from '../filter-collapse-section/FilterCollapseSection'
 import { DrillDownSearchContextFilter } from '../search-context/DrillDownSearchContextFilter'
 
 import { getSerializedRepositoriesFilter, getSerializedSearchContextFilter, validRegexp } from './utils'
@@ -28,6 +30,7 @@ enum FilterSection {
 export enum FilterSectionVisualMode {
     CollapseSections,
     HorizontalSections,
+    Preview,
 }
 
 export interface DrillDownFiltersFormValues {
@@ -53,6 +56,8 @@ interface DrillDownInsightFilters {
 
     /** Fires whenever the user clicks the create insight button. */
     onCreateInsightRequest: () => void
+
+    onVisualModeChange?: (nextVisualMode: FilterSectionVisualMode) => void
 }
 
 export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters> = props => {
@@ -64,6 +69,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
         onFiltersChange,
         onFilterSave,
         onCreateInsightRequest,
+        onVisualModeChange = noop,
     } = props
 
     const [activeSection, setActiveSection] = useState<FilterSection | null>(FilterSection.RegularExpressions)
@@ -114,22 +120,54 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
     }
 
     const isHorizontalMode = visualMode === FilterSectionVisualMode.HorizontalSections
+    const isPreviewMode = visualMode === FilterSectionVisualMode.Preview
+
+    if (isPreviewMode) {
+        return (
+            <header className={classNames(className, styles.header)}>
+                <Typography.H4 className={styles.heading}>Filter repositories</Typography.H4>
+
+                <FilterPreviewPill text={getSerializedSearchContextFilter(contexts.input.value)} />
+                <FilterPreviewPill text={getSerializedRepositoriesFilter(currentRepositoriesFilters)} />
+
+                <Button
+                    variant="link"
+                    className={classNames(styles.actionButton, styles.actionButtonWithCollapsed)}
+                    onClick={() => onVisualModeChange(FilterSectionVisualMode.HorizontalSections)}
+                >
+                    <Icon as={ArrowExpandIcon} />
+                </Button>
+            </header>
+        )
+    }
 
     return (
         // eslint-disable-next-line react/forbid-elements
         <form ref={ref} onSubmit={handleSubmit} className={className}>
             <header className={styles.header}>
-                <Typography.H4 className={styles.heading}>Filter repositories</Typography.H4>
+                <Typography.H4 className={classNames(styles.heading, styles.headingWithExpandedContent)}>
+                    Filter repositories
+                </Typography.H4>
 
                 <Button
                     disabled={!hasActiveFilters(values)}
                     variant="link"
                     size="sm"
-                    className={styles.clearFilters}
+                    className={styles.actionButton}
                     onClick={handleClear}
                 >
                     Clear filters
                 </Button>
+
+                {isHorizontalMode && (
+                    <Button
+                        variant="link"
+                        className={styles.actionButton}
+                        onClick={() => onVisualModeChange(FilterSectionVisualMode.Preview)}
+                    >
+                        <Icon as={ArrowCollapseIcon} />
+                    </Button>
+                )}
             </header>
 
             <hr className={styles.headerSeparator} />
