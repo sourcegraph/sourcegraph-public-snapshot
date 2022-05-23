@@ -1,4 +1,28 @@
-.tooltip-trigger {
-    background: none;
-    border: 0;
+:root {
+    --tooltip-font-size: 0.75rem; // 12px
+    --tooltip-line-height: 1.02rem; // 16.32px / 16px, per Figma
+    --tooltip-max-width: 256px;
+    --tooltip-color: var(--light-text);
+    --tooltip-border-radius: var(--border-radius);
+    --tooltip-padding-y: 0.25rem;
+    --tooltip-padding-x: 0.5rem;
+    --tooltip-margin: 0;
+}
+
+.tooltip {
+    display: inline-flex;
+}
+
+.tooltip-content {
+    font-size: var(--tooltip-font-size);
+    line-height: var(--tooltip-line-height);
+    max-width: var(--tooltip-max-width);
+    background-color: var(--tooltip-bg);
+    border-radius: var(--tooltip-border-radius);
+    color: var(--tooltip-color);
+    padding: var(--tooltip-padding-y) var(--tooltip-padding-x);
+}
+
+.tooltip-arrow {
+    fill: var(--tooltip-bg);
 }

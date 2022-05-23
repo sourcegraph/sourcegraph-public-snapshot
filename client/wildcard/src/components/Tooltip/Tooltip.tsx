@@ -1,38 +1,50 @@
 import React, { ReactElement } from 'react'
 
-import * as Tooltip from '@radix-ui/react-tooltip'
+import * as TooltipPrimitive from '@radix-ui/react-tooltip'
 
 import styles from './Tooltip.module.scss'
 
-const TooltipProvider: React.FunctionComponent<React.PropsWithChildren<{}>> = ({ children }) => (
-    <Tooltip.Provider delayDuration={0}>{children}</Tooltip.Provider>
-)
-
-const TooltipRoot: React.FunctionComponent<React.PropsWithChildren<{}>> = ({ children }) => (
-    <Tooltip.Root>{children}</Tooltip.Root>
-)
-
-interface TooltipTriggerProps {
+interface TooltipProps {
+    /** A single child element that will trigger the Tooltip to open on hover. */
     children: ReactElement
+    /** The text that will be displayed in the Tooltip. */
+    content: string
+    /** The open state of the tooltip when it is initially rendered. */
+    defaultOpen?: boolean
+    /** The preferred side of the trigger to render against when open. Will be reversed if a collision is detected. */
+    placement?: TooltipPrimitive.TooltipContentProps['side']
 }
 
-/**
- * Accepts a single child node. That node will trigger the tooltip content to appear when it is hovered or focused.
- */
-const TooltipTrigger: React.FunctionComponent<TooltipTriggerProps> = ({ children }) => (
-    <Tooltip.Trigger className={styles.tooltipTrigger}>{children}</Tooltip.Trigger>
+/** Arrow width in pixels */
+const TOOLTIP_ARROW_WIDTH = 14
+/** Arrow height in pixel */
+const TOOLTIP_ARROW_HEIGHT = 6
+
+export const Tooltip: React.FunctionComponent<TooltipProps> = ({
+    children,
+    content,
+    defaultOpen = false,
+    placement = 'right',
+}) => (
+    <TooltipPrimitive.Root delayDuration={0} defaultOpen={defaultOpen}>
+        <TooltipPrimitive.Trigger asChild={true}>
+            <span className={styles.tooltip}>
+                {children}
+
+                {/*
+                 * Rendering the Content within the Trigger is a workaround to support being able to hover over the Tooltip content itself.
+                 * Refrence: https://github.com/radix-ui/primitives/issues/620#issuecomment-1079147761
+                 */}
+                <TooltipPrimitive.TooltipContent className={styles.tooltipContent} side={placement}>
+                    {content}
+
+                    <TooltipPrimitive.Arrow
+                        className={styles.tooltipArrow}
+                        height={TOOLTIP_ARROW_HEIGHT}
+                        width={TOOLTIP_ARROW_WIDTH}
+                    />
+                </TooltipPrimitive.TooltipContent>
+            </span>
+        </TooltipPrimitive.Trigger>
+    </TooltipPrimitive.Root>
 )
-
-interface TooltipContentProps {
-    children: string
-    placement?: Tooltip.TooltipContentProps['side']
-}
-
-const TooltipContent: React.FunctionComponent<TooltipContentProps> = ({ children, placement = 'right' }) => (
-    <Tooltip.Content side={placement}>
-        <Tooltip.Arrow />
-        {children}
-    </Tooltip.Content>
-)
-
-export { TooltipProvider as Provider, TooltipRoot as Root, TooltipTrigger as Trigger, TooltipContent as Content }
