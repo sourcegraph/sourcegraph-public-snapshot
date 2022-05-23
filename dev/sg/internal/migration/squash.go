@@ -33,6 +33,24 @@ const (
 	squasherContainerPostgresName = "postgres"
 )
 
+func SquashAll(database db.Database, inContainer bool, filepath string) error {
+	definitions, err := readDefinitions(database)
+	if err != nil {
+		return err
+	}
+	var leafIDs []int
+	for _, leaf := range definitions.Leaves() {
+		leafIDs = append(leafIDs, leaf.ID)
+	}
+
+	squashedUpMigration, _, err := generateSquashedMigrations(database, leafIDs, inContainer)
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(filepath, []byte(squashedUpMigration), os.ModePerm)
+}
+
 func Squash(database db.Database, commit string, inContainer bool) error {
 	definitions, err := readDefinitions(database)
 	if err != nil {
