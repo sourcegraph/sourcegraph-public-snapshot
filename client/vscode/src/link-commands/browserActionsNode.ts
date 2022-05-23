@@ -37,11 +37,11 @@ export async function browserActions(action: string, logRedirectEvent: (uri: str
         // which will set branch as default or 'HEAD' if current branch does not exist
         if (!branch) {
             const userChoice = await vscode.window.showInformationMessage(
-                'Current branch does not exist on Sourcegraph. Please either publish your branch, or continue with the main branch.',
-                'Continue with main',
+                'Current branch does not exist on Sourcegraph. Publish your branch or continue to main branch.',
+                'Continue to main',
                 'Cancel'
             )
-            branch = userChoice === 'Continue with main' ? 'HEAD' : ''
+            branch = userChoice === 'Continue to main' ? 'HEAD' : ''
             if (!branch) {
                 return
             }
