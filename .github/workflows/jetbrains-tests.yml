@@ -1,7 +1,8 @@
 # GitHub Actions Workflow created for testing the JetBrains extension plugin in following steps:
+#
 # - validate Gradle Wrapper
 # - run 'test' tasks
-# - run 'runPluginVerifier' task
+# - run 'buildPlugin' task
 #
 # Note: This workflow works in isolation to the JavaScript artifacts necessary for full testing. It
 #       is intended to only test if the Java plugin compiles without issues.
@@ -14,11 +15,8 @@ on:
        - client/jetbrains/**
 
 jobs:
-  # Run Gradle Wrapper Validation Action to verify the wrapper's checksum
-  # Run verifyPlugin, IntelliJ Plugin Verifier, and test Gradle tasks
-  # Build plugin and provide the artifact for the next workflow jobs
-  build:
-    name: Build
+  test:
+    name: Test
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -43,28 +41,8 @@ jobs:
           java-version: 11
           cache: gradle
 
-      # Set environment variables
-      # - name: Export Properties
-      #   id: properties
-      #   shell: bash
-      #   run: |
-      #       PROPERTIES="$(./gradlew properties --console=plain -q)"
-      #       VERSION="$(echo "$PROPERTIES" | grep "^version:" | cut -f2- -d ' ')"
-      #       NAME="$(echo "$PROPERTIES" | grep "^pluginName:" | cut -f2- -d ' ')"
-      #       CHANGELOG="$(./gradlew getChangelog --unreleased --no-header --console=plain -q)"
-      #       CHANGELOG="${CHANGELOG//'%'/'%25'}"
-      #       CHANGELOG="${CHANGELOG//$'\n'/'%0A'}"
-      #       CHANGELOG="${CHANGELOG//$'\r'/'%0D'}"
-
-      #       echo "::set-output name=version::$VERSION"
-      #       echo "::set-output name=name::$NAME"
-      #       echo "::set-output name=changelog::$CHANGELOG"
-      #       echo "::set-output name=pluginVerifierHomeDir::~/.pluginVerifier"
-
-      #     ./gradlew listProductsReleases # prepare list of IDEs for Plugin Verifier
-
       - name: Run Tests
         run: ./gradlew test
 
-      - name: Run Plugin Verifier
-        run: ./gradlew runPluginVerifier
+      - name: Run Build Plugin
+        run: ./gradlew buildPlugin
