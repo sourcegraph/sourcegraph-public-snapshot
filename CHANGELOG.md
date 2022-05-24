@@ -21,7 +21,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
--
+- Code Insights: Added warnings about adding `context:` and `repo:` filters in search query.
 
 ### Fixed
 

@@ -7,9 +7,10 @@ import { Button, Card, Input, Typography } from '@sourcegraph/wildcard'
 
 import { getDefaultInputProps } from '../../../../../../components/form/getDefaultInputProps'
 import { useField } from '../../../../../../components/form/hooks/useField'
-import { useForm } from '../../../../../../components/form/hooks/useForm'
+import { useForm, ValidationResult } from '../../../../../../components/form/hooks/useForm'
 import { InsightQueryInput } from '../../../../../../components/form/query-input/InsightQueryInput'
 import { createRequiredValidator } from '../../../../../../components/form/validators'
+import { searchQueryValidator } from '../../../capture-group/utils/search-query-validator'
 import { DEFAULT_DATA_SERIES_COLOR } from '../../constants'
 import { EditableDataSeries } from '../../types'
 import { FormColorInput } from '../form-color-input/FormColorInput'
@@ -17,7 +18,21 @@ import { FormColorInput } from '../form-color-input/FormColorInput'
 import { getQueryPatternTypeFilter } from './get-pattern-type-filter'
 
 const requiredNameField = createRequiredValidator('Name is a required field for data series.')
-const validQuery = createRequiredValidator('Query is a required field for data series.')
+const validQuery = (value: string | undefined, validity: ValidityState | null | undefined): ValidationResult => {
+    const result = createRequiredValidator('Query is a required field for data series.')(value, validity)
+    if (result) {
+        return result
+    }
+    const { isNotContext, isNotRepo } = searchQueryValidator(value || '', true)
+
+    if (!isNotContext) {
+        return 'The `context:` filter is not currently supported.'
+    }
+
+    if (!isNotRepo) {
+        return 'Do not include the `repo:` filter; if needed `repo:` will be added automatically.'
+    }
+}
 
 interface FormSeriesInputProps {
     /** Series index. */
