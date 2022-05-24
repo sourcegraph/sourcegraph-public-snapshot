@@ -397,7 +397,7 @@ func TestFileMatch_Limit(t *testing.T) {
 			limit:                  1,
 			expNumSymbolMatches:    0,
 			expNumMultilineMatches: 0,
-			wantLimitHit:           true,
+			wantLimitHit:           false,
 		},
 	}
 
@@ -415,6 +415,7 @@ func TestFileMatch_Limit(t *testing.T) {
 			require.Equal(t, tt.expNumMultilineMatches, len(fileMatch.MultilineMatches))
 			require.Equal(t, tt.expNumSymbolMatches, len(fileMatch.Symbols))
 			require.Equal(t, tt.expRemainingLimit, got)
+			require.Equal(t, tt.wantLimitHit, fileMatch.LimitHit)
 		})
 	}
 }
