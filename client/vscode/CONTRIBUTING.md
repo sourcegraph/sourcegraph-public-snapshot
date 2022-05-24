@@ -12,6 +12,35 @@ Your feedback is important to us and is greatly appreciated. Please do not hesit
 
 New issues and feature requests can be filed through our [issue tracker](https://github.com/sourcegraph/sourcegraph/issues/new?labels=team/integrations,vscode-extension&title=VSCode+Bug+report:+&projects=Integrations%20Project%20Board) using the `vscode-extension` & `team/integrations` label.
 
+## Architecture
+
+                                   ┌──────────────────────────┐
+                                   │  env: Node OR Web Worker │
+                       ┌───────────┤ VS Code extension "Core" ├───────────────┐
+                       │           │          (HERE)          │               │
+                       │           └──────────────────────────┘               │
+                       │                                                      │
+         ┌─────────────▼────────────┐                          ┌──────────────▼───────────┐
+         │         env: Web         │                          │          env: Web        │
+     ┌───┤ "search sidebar" webview │                          │  "search panel" webview  │
+     │   │                          │                          │                          │
+     │   └──────────────────────────┘                          └──────────────────────────┘
+     │
+    ┌▼───────────────────────────┐
+    │       env: Web Worker      │
+    │ Sourcegraph Extension host │
+    │                            │
+    └────────────────────────────┘
+
+- See './state.ts' for documentation on state management.
+  - One state machine that lives in Core
+- See './contract.ts' to see the APIs for the three main components:
+  - Core, search sidebar, and search panel.
+  - The extension host API is exposed through the search sidebar.
+- See './webview/comlink' for documentation on _how_ communication between contexts works.
+  It is _not_ important to understand this layer to add features to the
+  VS Code extension (that's why it exists, after all).
+
 ## Development
 
 ### Build and Run

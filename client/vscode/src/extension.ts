@@ -28,36 +28,6 @@ import { watchUninstall } from './settings/uninstall'
 import { createVSCEStateMachine, VSCEQueryState } from './state'
 import { focusSearchPanel, registerWebviews } from './webview/commands'
 
-// Sourcegraph VS Code extension architecture
-// -----
-//
-//                                   ┌──────────────────────────┐
-//                                   │  env: Node OR Web Worker │
-//                       ┌───────────┤ VS Code extension "Core" ├───────────────┐
-//                       │           │          (HERE)          │               │
-//                       │           └──────────────────────────┘               │
-//                       │                                                      │
-//         ┌─────────────▼────────────┐                          ┌──────────────▼───────────┐
-//         │         env: Web         │                          │          env: Web        │
-//     ┌───┤ "search sidebar" webview │                          │  "search panel" webview  │
-//     │   │                          │                          │                          │
-//     │   └──────────────────────────┘                          └──────────────────────────┘
-//     │
-//    ┌▼───────────────────────────┐
-//    │       env: Web Worker      │
-//    │ Sourcegraph Extension host │
-//    │                            │
-//    └────────────────────────────┘
-//
-// - See './state.ts' for documentation on state management.
-//   - One state machine that lives in Core
-// - See './contract.ts' to see the APIs for the three main components:
-//   - Core, search sidebar, and search panel.
-//   - The extension host API is exposed through the search sidebar.
-// - See './webview/comlink' for documentation on _how_ communication between contexts works.
-//    It is _not_ important to understand this layer to add features to the
-//    VS Code extension (that's why it exists, after all).
-
 export function activate(context: vscode.ExtensionContext): void {
     const localStorageService = new LocalStorageService(context.globalState)
     const stateMachine = createVSCEStateMachine({ localStorageService })
