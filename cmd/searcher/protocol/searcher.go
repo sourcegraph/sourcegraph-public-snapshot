@@ -192,11 +192,15 @@ type Response struct {
 
 // FileMatch is the struct used by vscode to receive search results
 type FileMatch struct {
-	Path        string
-	LineMatches []LineMatch
+	Path string
+
+	MultilineMatches []MultilineMatch
+	LineMatches      []LineMatch
 
 	// MatchCount is the number of matches.  Different from len(LineMatches), as multiple
 	// lines may correspond to one logical match when doing a structural search
+	// TODO remove this because it's not used by any clients and will no longer
+	// be useful once we migrate to use only MultilineMatches
 	MatchCount int
 
 	// LimitHit is true if LineMatches may not include all LineMatches.
@@ -216,4 +220,25 @@ type LineMatch struct {
 	// representing each match on a line.
 	// Offsets and lengths are measured in characters, not bytes.
 	OffsetAndLengths [][2]int
+}
+
+// LineColumn is a subset of the fields on Location because we don't
+// have the rune offset necessary to build a full Location yet.
+// Eventually, the two structs should be merged.
+type LineColumn struct {
+	// Line is the count of newlines before the offset in the matched text.
+	// Line is 0-based.
+	Line int32
+
+	// Column is the count of unicode code points after the last newline in the matched text
+	Column int32
+}
+
+type MultilineMatch struct {
+	// Preview is a possibly-multiline string that contains all the
+	// lines that the match overlaps.
+	// The number of lines in Preview should be End.Line - Start.Line + 1
+	Preview string
+	Start   LineColumn
+	End     LineColumn
 }
