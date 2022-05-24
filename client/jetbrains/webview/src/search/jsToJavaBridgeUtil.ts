@@ -74,6 +74,9 @@ export async function createRequestForMatch(
     }
 }
 
+// NOTE: This might be slow when the content is a really large file and the match is in the beginning of the file
+// because we convert all rows to an array first.
+// If we ever run into issues with large files, this is a place to get some wins.
 function getCharacterCountUntilLine(content: string, lineNumber: number): number {
     let count = 0
     const lines = content.split('\n') // This logic should handle \r\n well, too.
