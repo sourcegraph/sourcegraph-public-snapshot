@@ -11,15 +11,15 @@ This document describes the exact changes needed to update a single-node Sourceg
 
 ## 3.39 -> 3.40
 
-TODO
+Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#operation).
 
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.39).*
+*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.40).*
 
 ## 3.39.0 -> 3.39.1
 
 Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#operation).
 
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.38.1).*
+*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.39.1).*
 
 ## 3.38 -> 3.39
 
