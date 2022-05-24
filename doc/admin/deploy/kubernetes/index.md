@@ -38,7 +38,7 @@ Before starting, we recommend reading the [configuration guide](configure.md#get
 - [Customization](./configure.md#customizations)
 - [Storage class](./configure.md#configure-a-storage-class)
 - [Network Access](./configure.md#configure-network-access)
-- [PostgreSQL Database](./configure.md#sourcegraph-databases)
+- [PostgreSQL Database](./configure.md#configure-external-databases)
 - [Scaling services](./scale.md#tuning-replica-counts-for-horizontal-scalability)
 - [Cluster role administrator access](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
 
