@@ -1,9 +1,11 @@
 import React, { CSSProperties } from 'react'
 
 import classNames from 'classnames'
+import CloseIcon from 'mdi-react/CloseIcon'
 
 import { isErrorLike, sanitizeClass } from '@sourcegraph/common'
-import { Card } from '@sourcegraph/wildcard'
+// eslint-disable-next-line no-restricted-imports
+import { Card, Icon } from '@sourcegraph/wildcard'
 
 import { ActionItem, ActionItemComponentProps } from '../actions/ActionItem'
 import { NotificationType } from '../api/extension/extensionHostApi'
@@ -11,6 +13,8 @@ import { PlatformContextProps } from '../platform/context'
 import { TelemetryProps } from '../telemetry/telemetryService'
 import { ThemeProps } from '../theme'
 
+import { CopyLinkIcon } from './CopyLinkIcon'
+import { toNativeEvent } from './helpers'
 import type { HoverContext, HoverOverlayBaseProps, GetAlertClassName, GetAlertVariant } from './HoverOverlay.types'
 import { HoverOverlayAlerts, HoverOverlayAlertsProps } from './HoverOverlayAlerts'
 import { HoverOverlayContents } from './HoverOverlayContents'
@@ -22,11 +26,15 @@ import style from './HoverOverlayContents.module.scss'
 
 const LOADING = 'loading' as const
 
+const transformMouseEvent = (handler: (event: MouseEvent) => void) => (event: React.MouseEvent<HTMLElement>) =>
+    handler(toNativeEvent(event))
+
 export type { HoverContext }
 
 export interface HoverOverlayClassProps {
     /** An optional class name to apply to the outermost element of the HoverOverlay */
     className?: string
+    closeButtonClassName?: string
 
     iconClassName?: string
     badgeClassName?: string
@@ -58,8 +66,21 @@ export interface HoverOverlayProps
     /** A ref callback to get the root overlay element. Use this to calculate the position. */
     hoverRef?: React.Ref<HTMLDivElement>
 
+    pinOptions?: PinOptions
+
     /** Show Sourcegraph logo alongside prompt */
     useBrandedLogo?: boolean
+}
+
+export interface PinOptions {
+    /** Whether to show the close button for the hover overlay */
+    showCloseButton: boolean
+
+    /** Called when the close button is clicked */
+    onCloseButtonClick?: () => void
+
+    /** Called when the copy link button is clicked */
+    onCopyLinkButtonClick?: () => void
 }
 
 const getOverlayStyle = (overlayPosition: HoverOverlayProps['overlayPosition']): CSSProperties => {
@@ -90,9 +111,11 @@ export const HoverOverlay: React.FunctionComponent<React.PropsWithChildren<Hover
         platformContext,
         telemetryService,
         extensionsController,
+        pinOptions,
         location,
 
         className,
+        closeButtonClassName,
         iconClassName,
         badgeClassName,
         actionItemClassName,
@@ -127,9 +150,27 @@ export const HoverOverlay: React.FunctionComponent<React.PropsWithChildren<Hover
                 data-testid="hover-overlay-contents"
                 className={classNames(
                     style.hoverOverlayContents,
-                    hoverOrError === LOADING && style.hoverOverlayContentsLoading
+                    hoverOrError === LOADING && style.hoverOverlayContentsLoading,
+                    pinOptions?.showCloseButton && style.hoverOverlayContentsWithCloseButton
                 )}
             >
+                {pinOptions?.showCloseButton && (
+                    <button
+                        type="button"
+                        onClick={
+                            pinOptions.onCloseButtonClick
+                                ? transformMouseEvent(pinOptions.onCloseButtonClick)
+                                : undefined
+                        }
+                        className={classNames(
+                            hoverOverlayStyle.closeButton,
+                            closeButtonClassName,
+                            hoverOrError === LOADING && hoverOverlayStyle.closeButtonLoading
+                        )}
+                    >
+                        <CloseIcon className={iconClassName} />
+                    </button>
+                )}
                 <HoverOverlayContents
                     hoverOrError={hoverOrError}
                     iconClassName={iconClassName}
@@ -152,40 +193,54 @@ export const HoverOverlay: React.FunctionComponent<React.PropsWithChildren<Hover
                         onAlertDismissed={onAlertDismissed}
                     />
                 )}
-            {actionsOrError !== undefined &&
-                actionsOrError !== null &&
-                actionsOrError !== LOADING &&
-                !isErrorLike(actionsOrError) &&
-                actionsOrError.length > 0 && (
-                    <div className={hoverOverlayStyle.actions}>
-                        <div className={hoverOverlayStyle.actionsInner}>
-                            {actionsOrError.map((action, index) => (
-                                <ActionItem
-                                    key={index}
-                                    {...action}
-                                    className={classNames(
-                                        hoverOverlayStyle.action,
-                                        actionItemClassName,
-                                        `test-tooltip-${sanitizeClass(action.action.title || 'untitled')}`
-                                    )}
-                                    iconClassName={iconClassName}
-                                    pressedClassName={actionItemPressedClassName}
-                                    variant="actionItem"
-                                    disabledDuringExecution={true}
-                                    showLoadingSpinnerDuringExecution={true}
-                                    showInlineError={true}
-                                    platformContext={platformContext}
-                                    telemetryService={telemetryService}
-                                    extensionsController={extensionsController}
-                                    location={location}
-                                    actionItemStyleProps={actionItemStyleProps}
-                                />
-                            ))}
-                        </div>
+            <div className={hoverOverlayStyle.actionsContainer}>
+                {actionsOrError !== undefined &&
+                    actionsOrError !== null &&
+                    actionsOrError !== LOADING &&
+                    !isErrorLike(actionsOrError) &&
+                    actionsOrError.length > 0 && (
+                        <div className={hoverOverlayStyle.actions}>
+                            <div className={hoverOverlayStyle.actionsInner}>
+                                {actionsOrError.map((action, index) => (
+                                    <ActionItem
+                                        key={index}
+                                        {...action}
+                                        className={classNames(
+                                            hoverOverlayStyle.action,
+                                            actionItemClassName,
+                                            `test-tooltip-${sanitizeClass(action.action.title || 'untitled')}`
+                                        )}
+                                        iconClassName={iconClassName}
+                                        pressedClassName={actionItemPressedClassName}
+                                        variant="actionItem"
+                                        disabledDuringExecution={true}
+                                        showLoadingSpinnerDuringExecution={true}
+                                        showInlineError={true}
+                                        platformContext={platformContext}
+                                        telemetryService={telemetryService}
+                                        extensionsController={extensionsController}
+                                        location={location}
+                                        actionItemStyleProps={actionItemStyleProps}
+                                    />
+                                ))}
+                            </div>
 
-                        {useBrandedLogo && <HoverOverlayLogo className={hoverOverlayStyle.overlayLogo} />}
-                    </div>
+                            {useBrandedLogo && <HoverOverlayLogo className={hoverOverlayStyle.overlayLogo} />}
+                        </div>
+                    )}
+
+                {pinOptions && (
+                    <button
+                        className={classNames('d-flex', 'align-items-center', hoverOverlayStyle.actionsCopyLink)}
+                        onClick={pinOptions.onCopyLinkButtonClick}
+                        onKeyPress={pinOptions.onCopyLinkButtonClick}
+                        type="button"
+                    >
+                        <Icon className="mr-1" as={CopyLinkIcon} />
+                        <span className="inline-block">Copy link</span>
+                    </button>
                 )}
+            </div>
         </Card>
     )
 }
