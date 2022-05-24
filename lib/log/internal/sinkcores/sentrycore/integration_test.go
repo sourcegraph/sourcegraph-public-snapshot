@@ -170,7 +170,7 @@ func TestFlush(t *testing.T) {
 			// Without this sleep, we're hitting the max goroutine count that the race detector can handle, which
 			// causes it to just abort because it can't run with that many go routines.
 			// https://github.com/golang/go/issues/38184
-			time.Sleep(10 * time.Millisecond)
+			time.Sleep(2 * time.Millisecond)
 			err := core.Write(zapcore.Entry{Level: zapcore.InfoLevel, Message: "msg"}, []zapcore.Field{log.Error(e)})
 			assert.NoError(t, err)
 		}
