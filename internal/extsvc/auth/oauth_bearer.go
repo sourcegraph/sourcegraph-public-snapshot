@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
+	"golang.org/x/oauth2"
+	"google.golang.org/genproto/googleapis/spanner/admin/database/v1"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -15,7 +17,10 @@ import (
 // OAuthBearerToken implements OAuth Bearer Token authentication for extsvc
 // clients.
 type OAuthBearerToken struct {
-	Token string
+	Token        string
+	RefreshToken string
+	Config *oauth2.Config
+	DB *database.Database
 }
 
 var _ Authenticator = &OAuthBearerToken{}
@@ -29,6 +34,54 @@ func (token *OAuthBearerToken) Hash() string {
 	key := sha256.Sum256([]byte(token.Token))
 	return hex.EncodeToString(key[:])
 }
+
+func (token *OAuthBearerToken) GetOAuthConfig() *oauth2.Config {
+	return token.Config
+}
+
+func (token *OAuthBearerToken) GetRefreshToken() string {
+	return token.RefreshToken
+}
+
+func (token *OAuthBearerToken) OnTokenRefresh(tok *oauth2.Token) error {
+	token.Token = tok.AccessToken
+	token.RefreshToken = tok.RefreshToken
+	return token.DB.Update...
+}
+
+type OAuthBearerToken struct {
+	Token        string
+	RefreshToken string
+	Config *oauth2.Config
+	DB *database.Database
+}
+
+var _ Authenticator = &OAuthBearerToken{}
+
+func (token *OAuthBearerToken) Authenticate(req *http.Request) error {
+	req.Header.Set("Authorization", "Bearer "+token.Token)
+	return nil
+}
+
+func (token *OAuthBearerToken) Hash() string {
+	key := sha256.Sum256([]byte(token.Token))
+	return hex.EncodeToString(key[:])
+}
+
+func (token *OAuthBearerToken) GetOAuthConfig() *oauth2.Config {
+	return token.Config
+}
+
+func (token *OAuthBearerToken) GetRefreshToken() string {
+	return token.RefreshToken
+}
+
+func (token *OAuthBearerToken) OnTokenRefresh(tok *oauth2.Token) error {
+	token.Token = tok.AccessToken
+	token.RefreshToken = tok.RefreshToken
+	return token.DB.Update...
+}
+
 
 // OAuthBearerTokenWithSSH implements OAuth Bearer Token authentication for extsvc
 // clients and holds an additional RSA keypair.

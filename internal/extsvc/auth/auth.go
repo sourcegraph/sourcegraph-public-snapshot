@@ -5,6 +5,8 @@ package auth
 
 import (
 	"net/http"
+
+	"golang.org/x/oauth2"
 )
 
 // Authenticator instances mutate an outbound request to add whatever headers or
@@ -40,4 +42,10 @@ type AuthenticatorWithSSH interface {
 	// authorized_keys file format. This is usually accepted by code hosts to
 	// allow access to git over SSH.
 	SSHPublicKey() (publicKey string)
+}
+
+type OAuthRefresher interface {
+	GetOAuthConfig() *oauth2.Config
+	GetRefreshToken() string
+	OnTokenRefresh(tok *oauth2.Token) error
 }

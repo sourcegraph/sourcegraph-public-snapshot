@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
+	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -218,10 +219,58 @@ func isGitLabDotComURL(baseURL *url.URL) bool {
 	return hostname == "gitlab.com" || hostname == "www.gitlab.com"
 }
 
+func (c *Client) refreshToken(ctx context.Context, or auth.OAuthRefresher) error {
+	cfg := or.GetOAuthConfig()
+	url := c.baseURL.ResolveReference(&url.URL{Path: "/oauth/token"})
+	q := url.Query()
+	q.Set("client_id", cfg.ClientID)
+	q.Set("client_secret", cfg.ClientSecret)
+	q.Set("refresh_token", or.GetRefreshToken())
+	q.Set("grant_type", "refresh_token")
+	q.Set("redirect_uri", cfg.RedirectURL)
+	url.RawQuery = q.Encode()
+
+	req, err := http.NewRequest("POST", url.String(), nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return errors.Wrapf(err, "unexpected status code %d", resp.StatusCode)
+	}
+
+	var token oauth2.Token
+	if err := json.NewDecoder(resp.Body).Decode(&token); err != nil {
+		return err
+	}
+
+	return or.OnTokenRefresh(&token)
+}
+
 // do is the default method for making API requests and will prepare the correct
 // base path.
 func (c *Client) do(ctx context.Context, req *http.Request, result any) (responseHeader http.Header, responseCode int, err error) {
 	req.URL = c.baseURL.ResolveReference(req.URL)
+
+	responseHeader, responseCode, err = c.doWithBaseURL(ctx, req, result)
+	if err == nil {
+		return
+	}
+
+	// TODO: detect that the token has expired and refresh it.
+	if or, ok := c.Auth.(auth.OAuthRefresher); ok {
+		err := c.refreshToken(ctx, or)
+		if err != nil {
+			return nil, 0, errors.Wrap(err, "failed to refresh oauth token")
+		}
+	}
+
 	return c.doWithBaseURL(ctx, req, result)
 }
 
