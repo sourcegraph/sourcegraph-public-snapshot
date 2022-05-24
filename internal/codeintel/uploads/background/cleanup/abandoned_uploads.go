@@ -4,8 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -16,7 +14,7 @@ func (j *janitor) HandleAbandonedUpload(ctx context.Context) error {
 		return errors.Wrap(err, "dbstore.DeleteUploadsStuckUploading")
 	}
 	if count > 0 {
-		log15.Debug("Deleted abandoned upload records", "count", count)
+		// log15.Debug("Deleted abandoned upload records", "count", count)
 		j.metrics.numUploadRecordsRemoved.Add(float64(count))
 	}
 

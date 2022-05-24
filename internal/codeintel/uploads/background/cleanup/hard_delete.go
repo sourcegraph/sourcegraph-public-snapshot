@@ -4,8 +4,6 @@ import (
 	"context"
 	"sort"
 
-	"github.com/inconshreveable/log15"
-
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -35,7 +33,7 @@ func (j *janitor) HandleHardDeleter(ctx context.Context) error {
 		}
 
 		count := len(uploads)
-		log15.Debug("Deleted data associated with uploads", "upload_count", count)
+		// log15.Debug("Deleted data associated with uploads", "upload_count", count)
 		j.metrics.numUploadsPurged.Add(float64(count))
 
 		if count >= totalCount {

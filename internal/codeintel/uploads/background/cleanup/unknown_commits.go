@@ -3,8 +3,6 @@ package cleanup
 import (
 	"context"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -76,11 +74,11 @@ func (j *janitor) handleCommit(ctx context.Context, tx DBStore, repositoryID int
 		}
 
 		if uploadsDeleted > 0 {
-			log15.Debug("Deleted upload records with unresolvable commits", "count", uploadsDeleted)
+			// log15.Debug("Deleted upload records with unresolvable commits", "count", uploadsDeleted)
 			j.metrics.numUploadRecordsRemoved.Add(float64(uploadsDeleted))
 		}
 		if indexesDeleted > 0 {
-			log15.Debug("Deleted index records with unresolvable commits", "count", indexesDeleted)
+			// log15.Debug("Deleted index records with unresolvable commits", "count", indexesDeleted)
 			j.metrics.numIndexRecordsRemoved.Add(float64(indexesDeleted))
 		}
 
