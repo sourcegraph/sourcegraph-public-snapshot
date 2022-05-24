@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 
 	"github.com/graph-gophers/graphql-go"
 
@@ -544,6 +545,7 @@ type BatchChangesCredentialResolver interface {
 	SSHPublicKey(ctx context.Context) (*string, error)
 	CreatedAt() DateTime
 	IsSiteCredential() bool
+	Authenticator(ctx context.Context) (auth.Authenticator, error)
 }
 
 type ChangesetCountsArgs struct {
