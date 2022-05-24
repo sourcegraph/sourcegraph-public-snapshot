@@ -3,13 +3,13 @@ import * as H from 'history'
 import FileIcon from 'mdi-react/FileIcon'
 import sinon from 'sinon'
 
-import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
-import { renderWithBrandedContext } from '../testing'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 import {
     MULTIPLE_MATCH_RESULT,
     HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST,
     NOOP_SETTINGS_CASCADE,
-} from '../testing/searchTestHelpers'
+} from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { FileMatchChildren } from './FileMatchChildren'
 import { RepoFileLink } from './RepoFileLink'
@@ -166,10 +166,10 @@ describe('ResultContainer', () => {
         // 1 is the value of subsetMatches
         expect(expandedItems.length).toBe(1)
 
-        const button = container.querySelector('[data-testid="toggle-matches-container"]')
+        const button = container.querySelector('[data-testid="toggle-matches-container"]') as Element
         expect(button).toBeVisible()
 
-        fireEvent.click(button!)
+        fireEvent.click(button)
 
         expandedItems = container.querySelectorAll('[data-testid="file-match-children-item"]')
         expect(expandedItems.length).toBe(5)
@@ -185,10 +185,10 @@ describe('ResultContainer', () => {
     it('displays the collapse label when expanded', () => {
         const { container } = renderWithBrandedContext(<ResultContainer {...defaultProps} />)
 
-        const button = container.querySelector('[data-testid="toggle-matches-container"]')
+        const button = container.querySelector('[data-testid="toggle-matches-container"]') as Element
         expect(button).toBeVisible()
 
-        fireEvent.click(button!)
+        fireEvent.click(button)
 
         expect(getByText(container, 'Hide matches')).toBeVisible()
     })
@@ -206,9 +206,9 @@ describe('ResultContainer', () => {
         let expandedItems = container.querySelectorAll('[data-testid="file-match-children-item"]')
         expect(expandedItems.length).toBe(5)
 
-        const button = container.querySelector('[data-testid="toggle-matches-container"]')
+        const button = container.querySelector('[data-testid="toggle-matches-container"]') as Element
         expect(button).toBeVisible()
-        fireEvent.click(button!)
+        fireEvent.click(button)
 
         expandedItems = container.querySelectorAll('[data-testid="file-match-children-item"]')
         expect(expandedItems.length).toBe(0)

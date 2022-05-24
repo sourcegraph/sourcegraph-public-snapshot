@@ -70,8 +70,9 @@ func fromRegexpMatches(submatches []int, namedGroups []string, lineValue string,
 }
 
 func matchOnly(fm *result.FileMatch, r *regexp.Regexp) *MatchContext {
-	matches := make([]Match, 0, len(fm.LineMatches))
-	for _, l := range fm.LineMatches {
+	lineMatches := result.MultilineSliceAsLineMatchSlice(fm.MultilineMatches)
+	matches := make([]Match, 0, len(lineMatches))
+	for _, l := range lineMatches {
 		for _, submatches := range r.FindAllStringSubmatchIndex(l.Preview, -1) {
 			matches = append(matches, fromRegexpMatches(submatches, r.SubexpNames(), l.Preview, int(l.LineNumber)))
 		}

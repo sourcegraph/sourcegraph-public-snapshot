@@ -159,7 +159,9 @@ export const Breadcrumbs: React.FunctionComponent<
             .map(({ breadcrumb }) => breadcrumb)
             .filter(isDefined)
             .map((breadcrumb, index, validBreadcrumbs) => {
-                const divider = breadcrumb.divider ?? <Icon className={styles.divider} as={ChevronRightIcon} />
+                const divider = breadcrumb.divider ?? (
+                    <Icon role="img" className={styles.divider} as={ChevronRightIcon} aria-hidden={true} />
+                )
                 // When the last breadcrumbs is a link and the hash is empty (to allow user to reset hash),
                 // render link breadcrumbs as plain text
                 return (

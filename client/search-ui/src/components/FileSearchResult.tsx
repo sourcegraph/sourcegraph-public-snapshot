@@ -7,23 +7,29 @@ import { AggregableBadge } from 'sourcegraph'
 import { HoverMerged } from '@sourcegraph/client-api'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import { isErrorLike, pluralize } from '@sourcegraph/common'
+import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
+import { LineRanking } from '@sourcegraph/shared/src/components/ranking/LineRanking'
+import { MatchGroup, MatchItem } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
+import { ZoektRanking } from '@sourcegraph/shared/src/components/ranking/ZoektRanking'
+import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
+import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
+import {
+    ContentMatch,
+    SymbolMatch,
+    PathMatch,
+    getFileMatchUrl,
+    getRepositoryUrl,
+    getRevision,
+} from '@sourcegraph/shared/src/search/stream'
+import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Badge } from '@sourcegraph/wildcard'
 
-import { ActionItemAction } from '../actions/ActionItem'
-import { Controller as ExtensionsController } from '../extensions/controller'
-import { HoverContext } from '../hover/HoverOverlay.types'
-import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl, getRepositoryUrl, getRevision } from '../search/stream'
-import { isSettingsValid, SettingsCascadeProps } from '../settings/settings'
-import { TelemetryProps } from '../telemetry/telemetryService'
-
-import { FetchFileParameters } from './CodeExcerpt'
 import { CodeHostIcon } from './CodeHostIcon'
 import { FileMatchChildren } from './FileMatchChildren'
-import { LineRanking } from './ranking/LineRanking'
-import { MatchGroup, MatchItem } from './ranking/PerFileResultRanking'
-import { ZoektRanking } from './ranking/ZoektRanking'
 import { RepoFileLink } from './RepoFileLink'
-import { Props as ResultContainerProps, ResultContainer } from './ResultContainer'
+import { ResultContainerProps, ResultContainer } from './ResultContainer'
 
 interface Props extends SettingsCascadeProps, TelemetryProps {
     location: H.Location

@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
-	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -175,7 +174,7 @@ type Client struct {
 	projCache        *rcache.Cache
 	Auth             auth.Authenticator
 	rateLimitMonitor *ratelimit.Monitor
-	rateLimiter      *rate.Limiter // Our internal rate limiter
+	rateLimiter      *ratelimit.InstrumentedLimiter // Our internal rate limiter
 }
 
 // newClient creates a new GitLab API client with an optional personal access token to authenticate requests.

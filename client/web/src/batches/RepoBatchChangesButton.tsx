@@ -36,7 +36,7 @@ export const RepoBatchChangesButton: FC<React.PropsWithChildren<RepoBatchChanges
             outline={true}
             as={Link}
         >
-            <Icon as={BatchChangesIcon} /> Batch Changes
+            <Icon role="img" as={BatchChangesIcon} aria-hidden={true} /> Batch Changes
             {open > 0 && (
                 <Badge
                     tooltip={`${open} open ${pluralize('batch changeset', open)}`}

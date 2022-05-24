@@ -1,4 +1,4 @@
-import { renderWithBrandedContext } from '../testing'
+import { renderWithBrandedContext } from '@sourcegraph/shared/src//testing'
 
 import { RepoFileLink } from './RepoFileLink'
 

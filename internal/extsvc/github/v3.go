@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/google/go-github/v41/github"
-	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -57,7 +56,7 @@ type V3Client struct {
 	rateLimitMonitor *ratelimit.Monitor
 
 	// rateLimit is our self imposed rate limiter
-	rateLimit *rate.Limiter
+	rateLimit *ratelimit.InstrumentedLimiter
 
 	// resource specifies which API this client is intended for.
 	// One of 'rest' or 'search'.

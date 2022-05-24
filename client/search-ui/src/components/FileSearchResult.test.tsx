@@ -4,14 +4,18 @@ import FileIcon from 'mdi-react/FileIcon'
 import _VisibilitySensor from 'react-visibility-sensor'
 import sinon from 'sinon'
 
-import { ContentMatch } from '../search/stream'
-import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
-import { renderWithBrandedContext } from '../testing'
-import { HIGHLIGHTED_FILE_LINES_REQUEST, NOOP_SETTINGS_CASCADE, RESULT } from '../testing/searchTestHelpers'
+import { MockVisibilitySensor } from '@sourcegraph/shared/src/components/CodeExcerpt.test'
+import { MatchGroup } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
+import { ContentMatch } from '@sourcegraph/shared/src/search/stream'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+import {
+    HIGHLIGHTED_FILE_LINES_REQUEST,
+    NOOP_SETTINGS_CASCADE,
+    RESULT,
+} from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
-import { MockVisibilitySensor } from './CodeExcerpt.test'
 import { FileSearchResult, limitGroup } from './FileSearchResult'
-import { MatchGroup } from './ranking/PerFileResultRanking'
 
 jest.mock('react-visibility-sensor', (): typeof _VisibilitySensor => ({ children, onChange }) => (
     <>
