@@ -112,7 +112,7 @@ export async function onPreviewClear(): Promise<void> {
 
 export async function onOpen(match: ContentMatch, lineMatchIndex: number): Promise<void> {
     try {
-    await window.callJava(await createRequestForMatch(match, lineMatchIndex, 'open'))
+        await window.callJava(await createRequestForMatch(match, lineMatchIndex, 'open'))
     } catch (error) {
         console.error(`Failed to open match: ${(error as Error).message}`)
     }
