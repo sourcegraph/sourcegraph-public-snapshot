@@ -25,8 +25,6 @@ type worker struct {
 	done chan struct{}
 	// batch stores cores for processing, leveraging the ability of the Sentry client to send batched reports.
 	batch []*Core
-	// in tracks the incoming cores count, i.e those which have been submitted.
-	in sync.WaitGroup
 	// out tracks the outgoing cores count, i.e those which have to be sent out.
 	out sync.WaitGroup
 	sync.Mutex
@@ -40,7 +38,6 @@ func (w *worker) accept() {
 			w.Lock()
 			w.batch = append(w.batch, c)
 			w.out.Add(1)
-			w.in.Done()
 			w.Unlock()
 		case <-w.done:
 			return
@@ -50,7 +47,7 @@ func (w *worker) accept() {
 
 // process periodically send out the batch.
 func (w *worker) process() {
-	ticker := time.Tick(50 * time.Millisecond)
+	ticker := time.Tick(10 * time.Millisecond)
 	for {
 		select {
 		case <-ticker:
@@ -100,7 +97,7 @@ func waitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
 // to be queued until the Sentry buffer empties or reaches a five second timeout.
 func (w *worker) Flush() error {
 	// Wait until we have collected all errors and then stop accepting new errors.
-	waitTimeout(&w.in, 2*time.Second)
+	// waitTimeout(&w.in, 2*time.Second)
 	w.done <- struct{}{}
 	// Wait until we have processed all errors
 	w.out.Wait()
