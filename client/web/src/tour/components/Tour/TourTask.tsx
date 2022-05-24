@@ -97,7 +97,15 @@ export const TourTask: React.FunctionComponent<React.PropsWithChildren<TourTaskP
                 <div className="d-flex justify-content-between position-relative">
                     {icon && variant === 'small' && <span className={classNames(styles.taskIcon)}>{icon}</span>}
                     <p className={styles.title}>{title}</p>
-                    {completed === 100 && <Icon as={CheckCircleIcon} size="sm" className="text-success" />}
+                    {completed === 100 && (
+                        <Icon
+                            role="img"
+                            as={CheckCircleIcon}
+                            size="sm"
+                            className="text-success"
+                            aria-label="Completed"
+                        />
+                    )}
                     {typeof completed === 'number' && completed < 100 && (
                         <CircularProgressbar className={styles.progressBar} strokeWidth={10} value={completed || 0} />
                     )}
@@ -158,7 +166,13 @@ export const TourTask: React.FunctionComponent<React.PropsWithChildren<TourTaskP
                                 />
                             )}
                             {isMultiStep && step.isCompleted && (
-                                <Icon as={CheckCircleIcon} size="md" className="text-success" />
+                                <Icon
+                                    role="img"
+                                    as={CheckCircleIcon}
+                                    size="md"
+                                    className="text-success"
+                                    aria-label="Completed step"
+                                />
                             )}
                         </li>
                     ))}

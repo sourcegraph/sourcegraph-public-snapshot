@@ -13,7 +13,7 @@ import {
     isRevisionNotFoundErrorLike,
 } from '@sourcegraph/shared/src/backend/errors'
 import { RepoQuestionIcon } from '@sourcegraph/shared/src/components/icons'
-import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { Typography } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../components/HeroPage'

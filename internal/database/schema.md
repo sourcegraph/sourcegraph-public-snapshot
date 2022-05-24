@@ -1971,7 +1971,7 @@ Indexes:
  component                | text                     |           | not null | 
  description              | text                     |           | not null | 
  progress                 | double precision         |           | not null | 0
- created                  | timestamp with time zone |           | not null | now()
+ created                  | timestamp with time zone |           | not null | 
  last_updated             | timestamp with time zone |           |          | 
  non_destructive          | boolean                  |           | not null | 
  apply_reverse            | boolean                  |           | not null | false
@@ -2223,6 +2223,7 @@ Referenced by:
     TABLE "user_public_repos" CONSTRAINT "user_public_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
 Triggers:
     trig_delete_repo_ref_on_external_service_repos AFTER UPDATE OF deleted_at ON repo FOR EACH ROW EXECUTE FUNCTION delete_repo_ref_on_external_service_repos()
+    trigger_gitserver_repo_insert AFTER INSERT ON repo FOR EACH ROW EXECUTE FUNCTION func_insert_gitserver_repo()
 
 ```
 

@@ -9,10 +9,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"time"
-
-	"github.com/inconshreveable/log15"
-	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
@@ -32,7 +28,7 @@ type Client struct {
 
 	// RateLimit is the self-imposed rate limiter (since Gerrit does not have a concept
 	// of rate limiting in HTTP response headers).
-	rateLimit *rate.Limiter
+	rateLimit *ratelimit.InstrumentedLimiter
 }
 
 // NewClient returns an authenticated Gerrit API client with
@@ -127,13 +123,8 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.R
 	// Add Basic Auth headers for authenticated requests.
 	req.Header.Add("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(c.Config.Username+":"+c.Config.Password)))
 
-	startWait := time.Now()
 	if err := c.rateLimit.Wait(ctx); err != nil {
 		return nil, err
-	}
-
-	if d := time.Since(startWait); d > 200*time.Millisecond {
-		log15.Warn("Gerrit self-enforced API rate limit: request delayed longer than expected due to rate limit", "delay", d)
 	}
 
 	resp, err := c.httpClient.Do(req)

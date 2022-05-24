@@ -93,6 +93,10 @@
       "Definition": "CREATE OR REPLACE FUNCTION public.func_configuration_policies_update()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\n    DECLARE\n        diff hstore[];\n    BEGIN\n        diff = func_configuration_policies_transition_columns_diff(\n            func_row_to_configuration_policies_transition_columns(OLD),\n            func_row_to_configuration_policies_transition_columns(NEW)\n        );\n\n        IF (array_length(diff, 1) \u003e 0) THEN\n            INSERT INTO configuration_policies_audit_logs\n            (policy_id, transition_columns)\n            VALUES (\n                NEW.id,\n                diff\n            );\n        END IF;\n\n        RETURN NEW;\n    END;\n$function$\n"
     },
     {
+      "Name": "func_insert_gitserver_repo",
+      "Definition": "CREATE OR REPLACE FUNCTION public.func_insert_gitserver_repo()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nBEGIN\nINSERT INTO gitserver_repos\n(repo_id, shard_id)\nVALUES (NEW.id, '');\nRETURN NULL;\nEND;\n$function$\n"
+    },
+    {
       "Name": "func_lsif_uploads_delete",
       "Definition": "CREATE OR REPLACE FUNCTION public.func_lsif_uploads_delete()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\n    BEGIN\n        UPDATE lsif_uploads_audit_logs\n        SET record_deleted_at = NOW()\n        WHERE upload_id IN (\n            SELECT id FROM OLD\n        );\n\n        RETURN NULL;\n    END;\n$function$\n"
     },
@@ -12807,7 +12811,7 @@
           "Index": 6,
           "TypeName": "timestamp with time zone",
           "IsNullable": false,
-          "Default": "now()",
+          "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -14274,6 +14278,10 @@
         {
           "Name": "trig_delete_repo_ref_on_external_service_repos",
           "Definition": "CREATE TRIGGER trig_delete_repo_ref_on_external_service_repos AFTER UPDATE OF deleted_at ON repo FOR EACH ROW EXECUTE FUNCTION delete_repo_ref_on_external_service_repos()"
+        },
+        {
+          "Name": "trigger_gitserver_repo_insert",
+          "Definition": "CREATE TRIGGER trigger_gitserver_repo_insert AFTER INSERT ON repo FOR EACH ROW EXECUTE FUNCTION func_insert_gitserver_repo()"
         }
       ]
     },

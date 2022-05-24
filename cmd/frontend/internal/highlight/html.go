@@ -173,7 +173,7 @@ func lsifToHTML(
 				addRow(row)
 				addText(occ.SyntaxKind, safeSlice(line, 0, endCharacter))
 			} else {
-				addText(occ.SyntaxKind, safeSlice(line, startCharacter, endCharacter-1))
+				addText(occ.SyntaxKind, safeSlice(line, startCharacter, endCharacter))
 			}
 
 			lineCharacter = endCharacter

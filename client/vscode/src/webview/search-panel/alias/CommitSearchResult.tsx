@@ -1,16 +1,16 @@
 import React from 'react'
 
-// eslint-disable-next-line no-restricted-imports
-import { CommitSearchResultMatch } from '@sourcegraph/search-ui/src/components/CommitSearchResultMatch'
-// eslint-disable-next-line no-restricted-imports
-import styles from '@sourcegraph/search-ui/src/components/SearchResult.module.scss'
-import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
-import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
-import { ResultContainer } from '@sourcegraph/shared/src/components/ResultContainer'
-import { SearchResultStar } from '@sourcegraph/shared/src/components/SearchResultStar'
+import {
+    formatRepositoryStarCount,
+    SearchResultStyles as styles,
+    CodeHostIcon,
+    ResultContainer,
+    SearchResultStar,
+    CommitSearchResultMatch,
+} from '@sourcegraph/search-ui'
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { CommitMatch, getCommitMatchUrl } from '@sourcegraph/shared/src/search/stream'
-import { formatRepositoryStarCount } from '@sourcegraph/shared/src/util/stars'
 // eslint-disable-next-line no-restricted-imports
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
 import { Typography } from '@sourcegraph/wildcard'
@@ -45,7 +45,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
         const formattedRepositoryStarCount = formatRepositoryStarCount(result.repoStars)
         return (
             <div className={styles.title}>
-                <RepoIcon repoName={repoName} className="text-muted flex-shrink-0" />
+                <CodeHostIcon repoName={repoName} className="text-muted flex-shrink-0" />
                 <span className="test-search-result-label ml-1 flex-shrink-past-contents text-truncate">
                     <>
                         <button
