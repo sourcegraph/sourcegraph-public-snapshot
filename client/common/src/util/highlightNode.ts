@@ -72,9 +72,9 @@ function highlightNodeHelper(
                 // Unpack the string to be sliced into an array of code points before doing the slice.
                 // This allows match range highlighting to continue to work when Unicode characters (such as emojis)
                 // are present in a matched line.
-                const unicodeAwareSlice = (text: string, start: number, end: number): string => (
+                const unicodeAwareSlice = (text: string, start: number, end: number): string =>
                     [...text].slice(start, end).join('')
-                )
+
                 // Split the text node into a range before the highlight, a range overlapping with
                 // the highlight, and a range after the highlight. These ranges can be zero-length
                 const preHighlightedRange = unicodeAwareSlice(nodeText, 0, Math.max(0, start - currentOffset))
@@ -83,7 +83,11 @@ function highlightNodeHelper(
                     Math.max(0, start - currentOffset),
                     start - currentOffset + length
                 )
-                const postHighlightedRange = unicodeAwareSlice(nodeText, start - currentOffset + length, nodeText.length + 1)
+                const postHighlightedRange = unicodeAwareSlice(
+                    nodeText,
+                    start - currentOffset + length,
+                    nodeText.length + 1
+                )
 
                 // Create new nodes for each of the ranges with length > 0
                 const newNodes: Node[] = []
