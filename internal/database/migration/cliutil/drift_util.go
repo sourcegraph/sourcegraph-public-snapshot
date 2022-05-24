@@ -37,7 +37,7 @@ func compareSchemaDescriptions(out *output.Output, actual, expected schemas.Sche
 		compareTables,
 		compareViews,
 	} {
-		if !f(out, actual, expected) {
+		if f(out, actual, expected) {
 			err = errOutOfSync
 		}
 	}
