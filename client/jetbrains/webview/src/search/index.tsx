@@ -1,10 +1,19 @@
 import { render } from 'react-dom'
 
-import { ContentMatch } from '@sourcegraph/shared/src/search/stream'
 import { AnchorLink, setLinkComponent } from '@sourcegraph/wildcard'
 
 import { App } from './App'
-import { createRequestForMatch, Request } from './jsToJavaBridgeUtil'
+import {
+    getConfig,
+    getTheme,
+    indicateFinishedLoading,
+    onOpen,
+    onPreviewChange,
+    onPreviewClear,
+    PluginConfig,
+    Request,
+    Theme,
+} from './jsToJavaBridgeUtil'
 
 setLinkComponent(AnchorLink)
 
@@ -13,38 +22,12 @@ let instanceURL = 'https://sourcegraph.com'
 let isGlobbingEnabled = false
 let accessToken: string | null = null
 
-export interface Theme {
-    isDarkTheme: boolean
-    buttonColor: string
-}
-
-export interface PluginConfig {
-    instanceURL: string
-    isGlobbingEnabled: boolean
-    accessToken: string | null
-}
-
 /* Add global functions to global window object */
 declare global {
     interface Window {
         initializeSourcegraph: () => void
         callJava: (request: Request) => Promise<object>
     }
-}
-
-async function onPreviewChange(match: ContentMatch, lineMatchIndex: number): Promise<void> {
-    await window.callJava(await createRequestForMatch(match, lineMatchIndex, 'preview'))
-}
-
-function onPreviewClear(): void {
-    window
-        .callJava({ action: 'clearPreview' })
-        .then(() => {})
-        .catch(() => {})
-}
-
-async function onOpen(match: ContentMatch, lineMatchIndex: number): Promise<void> {
-    await window.callJava(await createRequestForMatch(match, lineMatchIndex, 'open'))
 }
 
 function renderReactApp(): void {
@@ -63,35 +46,10 @@ function renderReactApp(): void {
     )
 }
 
-async function getConfig(): Promise<PluginConfig> {
-    try {
-        return (await window.callJava({ action: 'getConfig' })) as PluginConfig
-    } catch (error) {
-        console.error(`Failed to get config: ${(error as Error).message}`)
-        return {
-            instanceURL: 'https://sourcegraph.com',
-            isGlobbingEnabled: false,
-            accessToken: null,
-        }
-    }
-}
-
 function applyConfig(config: PluginConfig): void {
     instanceURL = config.instanceURL
     isGlobbingEnabled = config.isGlobbingEnabled || false
     accessToken = config.accessToken || null
-}
-
-async function getTheme(): Promise<Theme> {
-    try {
-        return (await window.callJava({ action: 'getTheme' })) as Theme
-    } catch (error) {
-        console.error(`Failed to get theme: ${(error as Error).message}`)
-        return {
-            isDarkTheme: true,
-            buttonColor: '#0078d4',
-        }
-    }
 }
 
 function applyTheme(theme: Theme): void {
@@ -115,5 +73,5 @@ window.initializeSourcegraph = async () => {
     applyConfig(config)
     applyTheme(theme)
     renderReactApp()
-    await window.callJava({ action: 'indicateFinishedLoading' })
+    await indicateFinishedLoading()
 }

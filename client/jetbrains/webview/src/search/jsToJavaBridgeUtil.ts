@@ -40,6 +40,17 @@ interface IndicateFinishedLoadingRequest {
     action: 'indicateFinishedLoading'
 }
 
+export interface Theme {
+    isDarkTheme: boolean
+    buttonColor: string
+}
+
+export interface PluginConfig {
+    instanceURL: string
+    isGlobbingEnabled: boolean
+    accessToken: string | null
+}
+
 export type Request =
     | MatchRequest
     | GetConfigRequest
@@ -89,4 +100,48 @@ function getCharacterCountUntilLine(content: string, lineNumber: number): number
 
 function getAbsoluteOffsetAndLengths(offsetAndLengths: number[][], characterCountUntilLine: number): number[][] {
     return offsetAndLengths.map(offsetAndLength => [offsetAndLength[0] + characterCountUntilLine, offsetAndLength[1]])
+}
+
+export async function getConfig(): Promise<PluginConfig> {
+    try {
+        return (await window.callJava({ action: 'getConfig' })) as PluginConfig
+    } catch (error) {
+        console.error(`Failed to get config: ${(error as Error).message}`)
+        return {
+            instanceURL: 'https://sourcegraph.com',
+            isGlobbingEnabled: false,
+            accessToken: null,
+        }
+    }
+}
+
+export async function getTheme(): Promise<Theme> {
+    try {
+        return (await window.callJava({ action: 'getTheme' })) as Theme
+    } catch (error) {
+        console.error(`Failed to get theme: ${(error as Error).message}`)
+        return {
+            isDarkTheme: true,
+            buttonColor: '#0078d4',
+        }
+    }
+}
+
+export async function indicateFinishedLoading(): Promise<void> {
+    await window.callJava({ action: 'indicateFinishedLoading' })
+}
+
+export async function onPreviewChange(match: ContentMatch, lineMatchIndex: number): Promise<void> {
+    await window.callJava(await createRequestForMatch(match, lineMatchIndex, 'preview'))
+}
+
+export function onPreviewClear(): void {
+    window
+        .callJava({ action: 'clearPreview' })
+        .then(() => {})
+        .catch(() => {})
+}
+
+export async function onOpen(match: ContentMatch, lineMatchIndex: number): Promise<void> {
+    await window.callJava(await createRequestForMatch(match, lineMatchIndex, 'open'))
 }
