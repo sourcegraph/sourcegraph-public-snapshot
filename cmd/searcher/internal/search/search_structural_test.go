@@ -2,7 +2,6 @@ package search
 
 import (
 	"context"
-	"encoding/json"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -14,7 +13,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 )
 
@@ -444,101 +442,6 @@ func bar() {
 	t.Run("exact limit", test(4, 4, &protocol.PatternInfo{Pattern: "{:[body]}"}))
 	t.Run("limited", test(2, 2, &protocol.PatternInfo{Pattern: "{:[body]}"}))
 	t.Run("many", test(12, 8, &protocol.PatternInfo{Pattern: "(:[_])"}))
-}
-
-func TestHighlightMultipleLines(t *testing.T) {
-	cases := []struct {
-		Name  string
-		Match *comby.Match
-		Want  []protocol.LineMatch
-	}{
-		{
-			Name: "Single line",
-			Match: &comby.Match{
-				Range: comby.Range{
-					Start: comby.Location{
-						Line:   1,
-						Column: 1,
-					},
-					End: comby.Location{
-						Line:   1,
-						Column: 2,
-					},
-				},
-				Matched: "this is a single line match",
-			},
-			Want: []protocol.LineMatch{
-				{
-					LineNumber: 0,
-					OffsetAndLengths: [][2]int{
-						{
-							0,
-							1,
-						},
-					},
-					Preview: "this is a single line match",
-				},
-			},
-		},
-		{
-			Name: "Three lines",
-			Match: &comby.Match{
-				Range: comby.Range{
-					Start: comby.Location{
-						Line:   1,
-						Column: 1,
-					},
-					End: comby.Location{
-						Line:   3,
-						Column: 5,
-					},
-				},
-				Matched: "this is a match across\nthree\nlines",
-			},
-			Want: []protocol.LineMatch{
-				{
-					LineNumber: 0,
-					OffsetAndLengths: [][2]int{
-						{
-							0,
-							22,
-						},
-					},
-					Preview: "this is a match across",
-				},
-				{
-					LineNumber: 1,
-					OffsetAndLengths: [][2]int{
-						{
-							0,
-							5,
-						},
-					},
-					Preview: "three",
-				},
-				{
-					LineNumber: 2,
-					OffsetAndLengths: [][2]int{
-						{
-							0,
-							4, // don't include trailing newline
-						},
-					},
-					Preview: "lines",
-				},
-			},
-		},
-	}
-	for _, tt := range cases {
-		t.Run(tt.Name, func(t *testing.T) {
-			got := highlightMultipleLines(tt.Match)
-			if !reflect.DeepEqual(got, tt.Want) {
-				jsonGot, _ := json.Marshal(got)
-				jsonWant, _ := json.Marshal(tt.Want)
-				t.Errorf("got: %s, want: %s", jsonGot, jsonWant)
-			}
-		})
-	}
 }
 
 func TestMatchCountForMultilineMatches(t *testing.T) {
