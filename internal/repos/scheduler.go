@@ -221,7 +221,7 @@ func (s *UpdateScheduler) runUpdateLoop(ctx context.Context) {
 					subLogger.Error("error updating repo", log.String("err", resp.Error), log.String("uri", string(repo.Name)))
 				}
 
-				if interval := getCustomInterval(subLogger, conf.Get(), string(repo.Name)); interval > 0 {
+				if interval := getCustomInterval(conf.Get(), string(repo.Name), subLogger); interval > 0 {
 					s.schedule.updateInterval(repo, interval)
 					return
 				}
@@ -243,7 +243,7 @@ func (s *UpdateScheduler) runUpdateLoop(ctx context.Context) {
 	}
 }
 
-func getCustomInterval(logger log.Logger, c *conf.Unified, repoName string) time.Duration {
+func getCustomInterval(c *conf.Unified, repoName string, logger log.Logger) time.Duration {
 	if c == nil {
 		return 0
 	}
