@@ -11,10 +11,13 @@ type flagContextKey struct{}
 
 //go:generate ../../dev/mockgen.sh  github.com/sourcegraph/sourcegraph/internal/featureflag -i Store -o store_mock_test.go
 type Store interface {
+	GetFeatureFlag(context.Context, string) (*FeatureFlag, error)
 	GetFeatureFlags(context.Context) ([]*FeatureFlag, error)
 	GetUserFlag(ctx context.Context, userID int32, flagName string) (*bool, error)
 	GetAnonymousUserFlag(ctx context.Context, anonymousUID string, flagName string) (*bool, error)
 	GetGlobalFeatureFlag(ctx context.Context, flagName string) (*bool, error)
+	GetOrgOverrideForUser(ctx context.Context, uid int32, flag string) (*Override, error)
+	GetUserOverride(ctx context.Context, uid int32, flag string) (*Override, error)
 }
 
 // Middleware evaluates the feature flags for the current user and adds the
@@ -35,14 +38,12 @@ type flagSetFetcher struct {
 }
 
 func (f *flagSetFetcher) evaluateForActor(ctx context.Context, a *actor.Actor, flagName string) (flag *bool, err error) {
-	println("debug1", flagName)
 	if a.IsAuthenticated() {
 		if flag, err = f.ffs.GetUserFlag(ctx, a.UID, flagName); flag != nil {
 			setEvaluatedFlagToCache(flagName, a, *flag)
 		}
 		return flag, err
 	}
-	println("debug2", flagName)
 
 	if a.AnonymousUID != "" {
 		if flag, err = f.ffs.GetAnonymousUserFlag(ctx, a.AnonymousUID, flagName); flag != nil {
@@ -50,8 +51,6 @@ func (f *flagSetFetcher) evaluateForActor(ctx context.Context, a *actor.Actor, f
 		}
 		return flag, err
 	}
-
-	println("debug3", flagName)
 
 	if flag, err = f.ffs.GetGlobalFeatureFlag(ctx, flagName); flag != nil {
 		setEvaluatedFlagToCache(flagName, a, *flag)
@@ -62,7 +61,7 @@ func (f *flagSetFetcher) evaluateForActor(ctx context.Context, a *actor.Actor, f
 func EvaluateForActorFromContext(ctx context.Context, flagName string) (result bool) {
 	result = false
 	if flags := ctx.Value(flagContextKey{}); flags != nil {
-		if value, err := flags.(*flagSetFetcher).evaluateForActor(ctx, actor.FromContext(ctx), flagName); err == nil {
+		if value, _ := flags.(*flagSetFetcher).evaluateForActor(ctx, actor.FromContext(ctx), flagName); value != nil {
 			result = *value
 		}
 	}
