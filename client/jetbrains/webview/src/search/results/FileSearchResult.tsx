@@ -3,11 +3,8 @@ import React from 'react'
 import classNames from 'classnames'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 
-import { CodeHostIcon } from '@sourcegraph/shared/src/components/CodeHostIcon'
-import { RepoFileLink } from '@sourcegraph/shared/src/components/RepoFileLink'
-import { SearchResultStar } from '@sourcegraph/shared/src/components/SearchResultStar'
+import { RepoFileLink, CodeHostIcon, SearchResultStar, formatRepositoryStarCount } from '@sourcegraph/search-ui'
 import { ContentMatch, getFileMatchUrl } from '@sourcegraph/shared/src/search/stream'
-import { formatRepositoryStarCount } from '@sourcegraph/shared/src/util/stars'
 import { Icon } from '@sourcegraph/wildcard'
 
 import { TrimmedCodeLineWithHighlights } from './TrimmedCodeLineWithHighlights'

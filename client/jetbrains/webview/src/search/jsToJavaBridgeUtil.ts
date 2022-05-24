@@ -1,4 +1,4 @@
-import { splitPath } from '@sourcegraph/shared/src/components/RepoFileLink'
+import { splitPath } from '@sourcegraph/shared/src/components/RepoLink'
 import { ContentMatch } from '@sourcegraph/shared/src/search/stream'
 
 import { loadContent } from './lib/blob'
