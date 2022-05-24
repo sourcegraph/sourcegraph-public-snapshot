@@ -142,19 +142,11 @@ func (w *worker) capture(errCtx ErrorContext) {
 		tags["transient"] = "true"
 	}
 
-	// Extra are fields that are added to the error as annotation, still registering
-	// as the same error when counted.
+	// Add the logging context, extra is deprecated by Sentry:
+	// https://docs.sentry.io/platforms/go/enriching-events/context/#additional-data
+	enc := zapcore.NewMapObjectEncoder()
 	for _, f := range errCtx.Fields {
-		switch f.Type {
-		case zapcore.StringType:
-			extraDetails[fmt.Sprintf("log.%s", f.Key)] = f.String
-		case zapcore.Int8Type, zapcore.Int16Type, zapcore.Int32Type, zapcore.Int64Type:
-			extraDetails[fmt.Sprintf("log.%s", f.Key)] = f.Integer
-		default:
-			// Because the log package only exposes base types or sliced versions, using %v is a
-			// good enough way to print the values for extra attributes display in Sentry.
-			extraDetails[fmt.Sprintf("log.%s", f.Key)] = fmt.Sprintf("%v", f.Interface)
-		}
+		f.AddTo(enc)
 	}
 
 	// Translate zapcore levels into Sentry levels.
@@ -175,6 +167,7 @@ func (w *worker) capture(errCtx ErrorContext) {
 	// Submit the event itself.
 	w.hub.WithScope(func(scope *sentry.Scope) {
 		scope.SetExtras(extraDetails)
+		scope.SetContext("log", enc.Fields)
 		scope.SetTags(tags)
 		scope.SetLevel(level)
 		w.hub.CaptureEvent(event)
