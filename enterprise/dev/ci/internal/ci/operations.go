@@ -102,13 +102,13 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 
 // addSgLints runs linters for the given targets.
 func addSgLints(targets []string) func(pipeline *bk.Pipeline) {
-	cmd := "go run ./dev/sg lint -annotations "
+	cmd := "go run ./dev/sg "
 
 	if retryCount := os.Getenv("BUILDKITE_RETRY_COUNT"); retryCount != "" && retryCount != "0" {
 		cmd = cmd + "-v "
 	}
 
-	cmd = cmd + strings.Join(targets, " ")
+	cmd = cmd + "lint -annotations " + strings.Join(targets, " ")
 
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":pineapple::lint-roller: Run sg lint",
