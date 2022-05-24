@@ -117,12 +117,6 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
         condition: userExternalServicesEnabled,
     },
     {
-        path: '/organizations',
-        render: lazyComponent(() => import('./openBetaOrgs/OrganizationsList'), 'OrganizationsListPage'),
-        exact: true,
-        condition: context => !!context.featureFlags.get('open-beta-enabled'),
-    },
-    {
         path: '/repositories/manage',
         render: props => (
             <UserSettingsManageRepositoriesPage

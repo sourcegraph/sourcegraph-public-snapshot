@@ -150,6 +150,18 @@ Batch Changes requires the access token to have the `write` permission on both p
 
 <img class="screenshot" src="https://sourcegraphstatic.com/docs/images/batch_changes/bb-token.png" alt="The Bitbucket Server / Bitbucket Data Center token creation page, with Write permissions selected on both the Project and Repository dropdowns">
 
+### Bitbucket Cloud
+
+Follow the steps to [create an app password](https://support.atlassian.com/bitbucket-cloud/docs/app-passwords/) on Bitbucket. Batch Changes requires the following scopes:
+
+- `account:read`
+- `repo:read`
+- `repo:write`
+- `pr:write`
+- `pipeline:read`
+
+<img class="screenshot" src="https://sourcegraphstatic.com/docs/images/batch_changes/bb-cloud-app-password.png" alt="The Bitbucket Cloud app password creation page">
+
 ### SSH access to code host
 
 When Sourcegraph is configured to [clone repositories using SSH via the `gitURLType` setting](../../admin/repo/auth.md), an SSH keypair will be generated for you and the public key needs to be added to the code host to allow push access. In the process of adding your personal access token you will be given that public key. You can also come back later and copy it to paste it in your code hosts SSH access settings page.

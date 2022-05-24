@@ -29,9 +29,17 @@ func traceInternal(ctx context.Context, args []string) error {
 	}
 	pkg := args[0]
 
-	graph, err := graph.Load()
+	root, err := findRoot()
 	if err != nil {
 		return err
+	}
+
+	graph, err := graph.Load(root)
+	if err != nil {
+		return err
+	}
+	if _, ok := graph.PackageNames[pkg]; !ok {
+		return errors.Newf("pkg %q not found", pkg)
 	}
 
 	packages, dependencyEdges := filterExternalReferences(graph, pkg)

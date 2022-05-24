@@ -5,7 +5,7 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 
 import { ErrorLike } from '@sourcegraph/common'
-import { Button, Badge, Icon } from '@sourcegraph/wildcard'
+import { Button, Badge, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { CircleDashedIcon } from '../../../components/CircleDashedIcon'
 import { LoaderButton } from '../../../components/LoaderButton'
@@ -141,9 +141,9 @@ export const CodeHostItem: React.FunctionComponent<React.PropsWithChildren<CodeH
                 <Icon className="mb-0 mr-1" as={ItemIcon} />
             </div>
             <div className="flex-1 align-self-center">
-                <h3 className="m-0">
+                <Typography.H3 className="m-0">
                     {name} {serviceConfig.pending ? <Badge color="secondary">Pending</Badge> : null}
-                </h3>
+                </Typography.H3>
             </div>
             <div className="align-self-center">
                 {/* Show one of: update, updating, connect, connecting buttons */}

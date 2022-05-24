@@ -27,7 +27,6 @@ import { SearchStreamingProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { SearchBetaIcon } from '../../components/CtaIcons'
 import { PageTitle } from '../../components/PageTitle'
-import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { usePersistentCadence } from '../../hooks'
 import { useIsActiveIdeIntegrationUser } from '../../IdeExtensionTracker'
 import { CodeInsightsProps } from '../../insights/types'
@@ -64,8 +63,7 @@ export interface StreamingSearchResultsProps
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'requestGraphQL'>,
         TelemetryProps,
         ThemeProps,
-        CodeInsightsProps,
-        FeatureFlagProps {
+        CodeInsightsProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
@@ -366,7 +364,6 @@ export const StreamingSearchResults: React.FunctionComponent<
                         isSourcegraphDotCom={props.isSourcegraphDotCom}
                         telemetryService={props.telemetryService}
                         isAuthenticated={!!props.authenticatedUser}
-                        featureFlags={props.featureFlags}
                     />
                 }
                 buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}

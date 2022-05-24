@@ -6,20 +6,21 @@ import (
 
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go/ext"
-	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 type SymbolSearcherJob struct {
@@ -60,7 +61,7 @@ func (s *SymbolSearcherJob) Run(ctx context.Context, clients job.RuntimeClients,
 				},
 			})
 			if err != nil {
-				tr.LogFields(otlog.String("repo", string(repoRevs.Repo.Name)), otlog.Error(err))
+				tr.LogFields(log.String("repo", string(repoRevs.Repo.Name)), log.Error(err))
 				// Only record error if we haven't timed out.
 				if ctx.Err() == nil {
 					cancel()
@@ -77,12 +78,20 @@ func (s *SymbolSearcherJob) Name() string {
 	return "SymbolSearcherJob"
 }
 
+func (s *SymbolSearcherJob) Tags() []log.Field {
+	return []log.Field{
+		trace.Stringer("patternInfo", s.PatternInfo),
+		log.Int("numRepos", len(s.Repos)),
+		log.Int("limit", s.Limit),
+	}
+}
+
 func searchInRepo(ctx context.Context, db database.DB, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []result.Match, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Search symbols in repo")
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
-			span.LogFields(otlog.Error(err))
+			span.LogFields(log.Error(err))
 		}
 		span.Finish()
 	}()
@@ -94,7 +103,7 @@ func searchInRepo(ctx context.Context, db database.DB, repoRevs *search.Reposito
 	// backend.{GitRepo,Repos.ResolveRev}) because that would slow this operation
 	// down by a lot (if we're looping over many repos). This means that it'll fail if a
 	// repo is not on gitserver.
-	commitID, err := git.ResolveRevision(ctx, db, repoRevs.GitserverRepo(), inputRev, git.ResolveRevisionOptions{})
+	commitID, err := gitserver.NewClient(db).ResolveRevision(ctx, repoRevs.GitserverRepo(), inputRev, gitserver.ResolveRevisionOptions{})
 	if err != nil {
 		return nil, err
 	}

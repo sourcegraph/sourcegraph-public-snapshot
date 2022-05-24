@@ -4,6 +4,7 @@ import classNames from 'classnames'
 
 import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 import { deriveInputClassName, InputValidationState } from '@sourcegraph/shared/src/util/useInputValidation'
+import { Typography } from '@sourcegraph/wildcard'
 
 import { EmailInput } from './SignInSignUpCommon'
 
@@ -23,14 +24,14 @@ export const SignupEmailField: React.FunctionComponent<React.PropsWithChildren<S
     emailInputReference,
 }) => (
     <div className="form-group d-flex flex-column align-content-start">
-        <label
+        <Typography.Label
             htmlFor="email"
             className={classNames('align-self-start', {
                 'text-danger font-weight-bold': emailState.kind === 'INVALID',
             })}
         >
             {label}
-        </label>
+        </Typography.Label>
         <LoaderInput className={deriveInputClassName(emailState)} loading={emailState.kind === 'LOADING'}>
             <EmailInput
                 className={deriveInputClassName(emailState)}

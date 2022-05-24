@@ -29,10 +29,10 @@ type baseInsightResolver struct {
 
 	// including the DB references for any one off stores that may need to be created.
 	insightsDB dbutil.DB
-	postgresDB dbutil.DB
+	postgresDB database.DB
 }
 
-func WithBase(insightsDB dbutil.DB, primaryDB dbutil.DB, clock func() time.Time) *baseInsightResolver {
+func WithBase(insightsDB dbutil.DB, primaryDB database.DB, clock func() time.Time) *baseInsightResolver {
 	insightStore := store.NewInsightStore(insightsDB)
 	timeSeriesStore := store.NewWithClock(insightsDB, store.NewInsightPermissionStore(primaryDB), clock)
 	dashboardStore := store.NewDashboardStore(insightsDB)
@@ -58,13 +58,13 @@ type Resolver struct {
 }
 
 // New returns a new Resolver whose store uses the given Postgres DBs.
-func New(db, postgres dbutil.DB) graphqlbackend.InsightsResolver {
+func New(db dbutil.DB, postgres database.DB) graphqlbackend.InsightsResolver {
 	return newWithClock(db, postgres, timeutil.Now)
 }
 
 // newWithClock returns a new Resolver whose store uses the given Postgres DBs and the given clock
 // for timestamps.
-func newWithClock(db, postgres dbutil.DB, clock func() time.Time) *Resolver {
+func newWithClock(db dbutil.DB, postgres database.DB, clock func() time.Time) *Resolver {
 	base := WithBase(db, postgres, clock)
 	return &Resolver{
 		baseInsightResolver:  *base,
@@ -87,14 +87,14 @@ func (r *Resolver) Insights(ctx context.Context, args *graphqlbackend.InsightsAr
 		workerBaseStore:      r.workerBaseStore,
 		insightMetadataStore: r.insightMetadataStore,
 		ids:                  idList,
-		orgStore:             database.Orgs(r.workerBaseStore.Handle().DB()),
+		orgStore:             database.NewDB(r.workerBaseStore.Handle().DB()).Orgs(),
 	}, nil
 }
 
 func (r *Resolver) InsightsDashboards(ctx context.Context, args *graphqlbackend.InsightsDashboardsArgs) (graphqlbackend.InsightsDashboardConnectionResolver, error) {
 	return &dashboardConnectionResolver{
 		baseInsightResolver: r.baseInsightResolver,
-		orgStore:            database.Orgs(r.postgresDB),
+		orgStore:            r.postgresDB.Orgs(),
 		args:                args,
 	}, nil
 }

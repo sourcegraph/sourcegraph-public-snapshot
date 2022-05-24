@@ -8,7 +8,6 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	ff "github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -39,10 +38,6 @@ type FeatureFlagStore interface {
 
 type featureFlagStore struct {
 	*basestore.Store
-}
-
-func FeatureFlags(db dbutil.DB) FeatureFlagStore {
-	return &featureFlagStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 func FeatureFlagsWith(other basestore.ShareableStore) FeatureFlagStore {

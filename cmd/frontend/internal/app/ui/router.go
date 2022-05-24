@@ -16,6 +16,8 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
+	muxtrace "gopkg.in/DataDog/dd-trace-go.v1/contrib/gorilla/mux"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -29,7 +31,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	muxtrace "gopkg.in/DataDog/dd-trace-go.v1/contrib/gorilla/mux"
 )
 
 const (
@@ -42,7 +43,6 @@ const (
 	routeRepoCommit              = "repo-commit"
 	routeRepoBranches            = "repo-branches"
 	routeRepoBatchChanges        = "repo-batch-changes"
-	routeRepoDocs                = "repo-docs"
 	routeRepoCommits             = "repo-commits"
 	routeRepoTags                = "repo-tags"
 	routeRepoCompare             = "repo-compare"
@@ -192,7 +192,6 @@ func newRouter() *muxtrace.Router {
 	repoRev := r.PathPrefix(repoRevPath + "/" + routevar.RepoPathDelim).Subrouter()
 	repoRev.Path("/tree{Path:.*}").Methods("GET").Name(routeTree)
 
-	repoRev.PathPrefix("/docs{Path:.*}").Methods("GET").Name(routeRepoDocs)
 	repoRev.PathPrefix("/commits").Methods("GET").Name(routeRepoCommits)
 
 	// blob
@@ -258,7 +257,6 @@ func initRouter(db database.DB, router *muxtrace.Router, codeIntelResolver graph
 	router.Get(routeRepoCommit).Handler(brandedNoIndex("Commit"))
 	router.Get(routeRepoBranches).Handler(brandedNoIndex("Branches"))
 	router.Get(routeRepoBatchChanges).Handler(brandedIndex("Batch Changes"))
-	router.Get(routeRepoDocs).Handler(handler(db, serveRepoDocs(db, codeIntelResolver)))
 	router.Get(routeRepoCommits).Handler(brandedNoIndex("Commits"))
 	router.Get(routeRepoTags).Handler(brandedNoIndex("Tags"))
 	router.Get(routeRepoCompare).Handler(brandedNoIndex("Compare"))

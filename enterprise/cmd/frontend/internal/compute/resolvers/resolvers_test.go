@@ -35,7 +35,7 @@ func TestToResultResolverList(t *testing.T) {
 
 	nonNilMatches := []result.Match{
 		&result.FileMatch{
-			LineMatches: []*result.LineMatch{
+			MultilineMatches: []result.MultilineMatch{
 				{Preview: "a"},
 				{Preview: "b"},
 			},

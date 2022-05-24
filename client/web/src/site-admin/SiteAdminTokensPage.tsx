@@ -9,7 +9,7 @@ import { map } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Icon } from '@sourcegraph/wildcard'
+import { Button, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { requestGraphQL } from '../backend/graphql'
@@ -46,7 +46,7 @@ export const SiteAdminTokensPage: React.FunctionComponent<React.PropsWithChildre
         <div className="user-settings-tokens-page">
             <PageTitle title="Access tokens - Admin" />
             <div className="d-flex justify-content-between align-items-center mb-3">
-                <h2 className="mb-0">Access tokens</h2>
+                <Typography.H2 className="mb-0">Access tokens</Typography.H2>
                 <Button
                     as={LinkOrSpan}
                     title={accessTokensEnabled ? '' : 'Access token creation is disabled in site configuration'}

@@ -5,8 +5,6 @@ import (
 	"io"
 	"os"
 
-	"github.com/charmbracelet/glamour"
-
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -106,25 +104,4 @@ func (o *Output) WriteAlertf(fmtStr string, args ...any) {
 // In Buildkite it expands the current section to make it visible.
 func (o *Output) WriteNoticef(fmtStr string, args ...any) {
 	o.writeExpanded(output.Linef(output.EmojiFingerPointRight, output.StyleBold, fmtStr, args...))
-}
-
-// WriteMarkdown renders Markdown nicely!
-func (o *Output) WriteMarkdown(str string) error {
-	r, err := glamour.NewTermRenderer(
-		// detect background color and pick either the default dark or light theme
-		glamour.WithAutoStyle(),
-		// wrap output at specific width
-		glamour.WithWordWrap(120),
-		glamour.WithEmoji(),
-	)
-	if err != nil {
-		return err
-	}
-
-	rendered, err := r.Render(str)
-	if err != nil {
-		return err
-	}
-	o.Write(rendered)
-	return nil
 }

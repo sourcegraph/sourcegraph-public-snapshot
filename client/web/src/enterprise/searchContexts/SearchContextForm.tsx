@@ -28,6 +28,7 @@ import {
     Alert,
     ProductStatusBadge,
     Link,
+    Typography,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -88,7 +89,7 @@ function getVisibilityRadioButtons(selectedNamespaceType: SelectedNamespaceType)
 
 function getSearchContextSpecPreview(selectedNamespace: SelectedNamespace, searchContextName: string): JSX.Element {
     return (
-        <code className={styles.searchContextFormPreview} data-testid="search-context-preview">
+        <Typography.Code className={styles.searchContextFormPreview} data-testid="search-context-preview">
             {/*
                 a11y-ignore
                 Rule: "color-contrast" (Elements must have sufficient color contrast)
@@ -102,7 +103,7 @@ function getSearchContextSpecPreview(selectedNamespace: SelectedNamespace, searc
                 </>
             )}
             <span>{searchContextName}</span>
-        </code>
+        </Typography.Code>
     )
 }
 

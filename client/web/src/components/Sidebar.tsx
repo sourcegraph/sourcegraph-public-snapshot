@@ -6,7 +6,15 @@ import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import { useRouteMatch } from 'react-router-dom'
 
-import { AnchorLink, ButtonLink, Icon, Collapse, CollapseHeader, CollapsePanel, H2, H3 } from '@sourcegraph/wildcard'
+import {
+    AnchorLink,
+    ButtonLink,
+    Icon,
+    Collapse,
+    CollapseHeader,
+    CollapsePanel,
+    Typography,
+} from '@sourcegraph/wildcard'
 
 import styles from './Sidebar.module.scss'
 
@@ -43,7 +51,7 @@ export const SidebarNavItem: React.FunctionComponent<
  * Header of a `SideBarGroup`
  */
 export const SidebarGroupHeader: React.FunctionComponent<React.PropsWithChildren<{ label: string }>> = ({ label }) => (
-    <H3 as={H2}>{label}</H3>
+    <Typography.H3 as={Typography.H2}>{label}</Typography.H3>
 )
 
 /**
@@ -67,9 +75,17 @@ export const SidebarCollapseItems: React.FunctionComponent<
                     className="bg-2 border-0 d-flex justify-content-between list-group-item-action py-2 w-100"
                 >
                     <span>
-                        {CollapseItemIcon && <Icon className="mr-1" as={CollapseItemIcon} />} {label}
+                        {CollapseItemIcon && (
+                            <Icon role="img" className="mr-1" as={CollapseItemIcon} aria-hidden={true} />
+                        )}{' '}
+                        {label}
                     </span>
-                    <Icon className={styles.chevron} as={isOpen ? MenuUpIcon : MenuDownIcon} />
+                    <Icon
+                        role="img"
+                        aria-hidden={true}
+                        className={styles.chevron}
+                        as={isOpen ? MenuUpIcon : MenuDownIcon}
+                    />
                 </CollapseHeader>
                 <CollapsePanel id={kebabCase(label)} className="border-top">
                     {children}

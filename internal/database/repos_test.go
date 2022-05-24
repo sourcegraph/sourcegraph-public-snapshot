@@ -138,7 +138,7 @@ func TestRepos_Count(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
@@ -190,7 +190,7 @@ func TestRepos_Delete(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
@@ -224,7 +224,7 @@ func TestRepos_Upsert(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
@@ -307,7 +307,7 @@ func TestRepos_UpsertForkAndArchivedFields(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
@@ -345,12 +345,12 @@ func TestRepos_Create(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
 	svcs := typestest.MakeExternalServices()
-	if err := ExternalServices(db).Upsert(ctx, svcs...); err != nil {
+	if err := db.ExternalServices().Upsert(ctx, svcs...); err != nil {
 		t.Fatalf("Upsert error: %s", err)
 	}
 
@@ -395,7 +395,7 @@ func TestListIndexableRepos(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	db := NewDB(dbtest.NewDB(t))
 
 	reposToAdd := []types.Repo{
 		{
@@ -466,7 +466,7 @@ func TestListIndexableRepos(t *testing.T) {
 		if !cloned {
 			cloneStatus = types.CloneStatusNotCloned
 		}
-		if _, err := db.ExecContext(ctx, `INSERT INTO gitserver_repos(repo_id, clone_status, shard_id) VALUES ($1, $2, 'test');`, r.ID, cloneStatus); err != nil {
+		if _, err := db.ExecContext(ctx, `UPDATE gitserver_repos SET clone_status = $2, shard_id = 'test' WHERE repo_id = $1;`, r.ID, cloneStatus); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -523,7 +523,7 @@ func TestRepoStore_Metadata(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	db := NewDB(dbtest.NewDB(t))
 
 	ctx := context.Background()
 
@@ -570,7 +570,7 @@ func TestRepoStore_Metadata(t *testing.T) {
 		},
 	}
 
-	gr := GitserverRepos(db)
+	gr := db.GitserverRepos()
 	require.NoError(t, gr.Upsert(ctx, gitserverRepos...))
 
 	expected := []*types.SearchedRepo{

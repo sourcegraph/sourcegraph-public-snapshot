@@ -24,11 +24,14 @@ func newTest() *httptestutil.Client {
 	return httptestutil.NewTest(NewHandler(database.NewMockDB(),
 		router.New(mux.NewRouter()),
 		nil,
-		enterpriseServices.GitHubWebhook,
-		enterpriseServices.GitLabWebhook,
-		enterpriseServices.BitbucketServerWebhook,
-		enterpriseServices.NewCodeIntelUploadHandler,
-		enterpriseServices.NewComputeStreamHandler,
 		rateLimiter,
+		&Handlers{
+			GitHubWebhook:             enterpriseServices.GitHubWebhook,
+			GitLabWebhook:             enterpriseServices.GitLabWebhook,
+			BitbucketServerWebhook:    enterpriseServices.BitbucketServerWebhook,
+			BitbucketCloudWebhook:     enterpriseServices.BitbucketCloudWebhook,
+			NewCodeIntelUploadHandler: enterpriseServices.NewCodeIntelUploadHandler,
+			NewComputeStreamHandler:   enterpriseServices.NewComputeStreamHandler,
+		},
 	))
 }

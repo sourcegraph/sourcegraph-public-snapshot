@@ -9,8 +9,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -100,7 +100,7 @@ func testIndexSchedulerMockDBStore() *MockDBStore {
 		{ID: 5, RepositoryID: intPtr(50)},
 	}
 
-	selectRepositoriesForIndexScan := func(ctx context.Context, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int) (scannedIDs []int, _ error) {
+	selectRepositoriesForIndexScan := func(ctx context.Context, tableName, column string, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int) (scannedIDs []int, _ error) {
 		if len(repositoryIDs) <= limit {
 			scannedIDs, repositoryIDs = repositoryIDs, nil
 		} else {

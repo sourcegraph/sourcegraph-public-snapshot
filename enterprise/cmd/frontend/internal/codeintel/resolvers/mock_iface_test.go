@@ -8,11 +8,11 @@ import (
 	"time"
 
 	regexp "github.com/grafana/regexp"
-	enqueuer "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
-	gitserver1 "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
-	dbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
-	lsifstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
+	autoindexing "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
+	dbstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	gitserver1 "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
+	lsifstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	gitserver "github.com/sourcegraph/sourcegraph/internal/gitserver"
 	gitdomain "github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -114,9 +114,9 @@ type MockDBStore struct {
 	// RecentUploadsSummaryFunc is an instance of a mock function object
 	// controlling the behavior of the method RecentUploadsSummary.
 	RecentUploadsSummaryFunc *DBStoreRecentUploadsSummaryFunc
-	// ReferenceIDsAndFiltersFunc is an instance of a mock function object
-	// controlling the behavior of the method ReferenceIDsAndFilters.
-	ReferenceIDsAndFiltersFunc *DBStoreReferenceIDsAndFiltersFunc
+	// ReferenceIDsFunc is an instance of a mock function object controlling
+	// the behavior of the method ReferenceIDs.
+	ReferenceIDsFunc *DBStoreReferenceIDsFunc
 	// RepoIDsByGlobPatternsFunc is an instance of a mock function object
 	// controlling the behavior of the method RepoIDsByGlobPatterns.
 	RepoIDsByGlobPatternsFunc *DBStoreRepoIDsByGlobPatternsFunc
@@ -278,7 +278,7 @@ func NewMockDBStore() *MockDBStore {
 				return
 			},
 		},
-		ReferenceIDsAndFiltersFunc: &DBStoreReferenceIDsAndFiltersFunc{
+		ReferenceIDsFunc: &DBStoreReferenceIDsFunc{
 			defaultHook: func(context.Context, int, string, []precise.QualifiedMonikerData, int, int) (r0 dbstore.PackageReferenceScanner, r1 int, r2 error) {
 				return
 			},
@@ -455,9 +455,9 @@ func NewStrictMockDBStore() *MockDBStore {
 				panic("unexpected invocation of MockDBStore.RecentUploadsSummary")
 			},
 		},
-		ReferenceIDsAndFiltersFunc: &DBStoreReferenceIDsAndFiltersFunc{
+		ReferenceIDsFunc: &DBStoreReferenceIDsFunc{
 			defaultHook: func(context.Context, int, string, []precise.QualifiedMonikerData, int, int) (dbstore.PackageReferenceScanner, int, error) {
-				panic("unexpected invocation of MockDBStore.ReferenceIDsAndFilters")
+				panic("unexpected invocation of MockDBStore.ReferenceIDs")
 			},
 		},
 		RepoIDsByGlobPatternsFunc: &DBStoreRepoIDsByGlobPatternsFunc{
@@ -578,8 +578,8 @@ func NewMockDBStoreFrom(i DBStore) *MockDBStore {
 		RecentUploadsSummaryFunc: &DBStoreRecentUploadsSummaryFunc{
 			defaultHook: i.RecentUploadsSummary,
 		},
-		ReferenceIDsAndFiltersFunc: &DBStoreReferenceIDsAndFiltersFunc{
-			defaultHook: i.ReferenceIDsAndFilters,
+		ReferenceIDsFunc: &DBStoreReferenceIDsFunc{
+			defaultHook: i.ReferenceIDs,
 		},
 		RepoIDsByGlobPatternsFunc: &DBStoreRepoIDsByGlobPatternsFunc{
 			defaultHook: i.RepoIDsByGlobPatterns,
@@ -3622,36 +3622,35 @@ func (c DBStoreRecentUploadsSummaryFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// DBStoreReferenceIDsAndFiltersFunc describes the behavior when the
-// ReferenceIDsAndFilters method of the parent MockDBStore instance is
-// invoked.
-type DBStoreReferenceIDsAndFiltersFunc struct {
+// DBStoreReferenceIDsFunc describes the behavior when the ReferenceIDs
+// method of the parent MockDBStore instance is invoked.
+type DBStoreReferenceIDsFunc struct {
 	defaultHook func(context.Context, int, string, []precise.QualifiedMonikerData, int, int) (dbstore.PackageReferenceScanner, int, error)
 	hooks       []func(context.Context, int, string, []precise.QualifiedMonikerData, int, int) (dbstore.PackageReferenceScanner, int, error)
-	history     []DBStoreReferenceIDsAndFiltersFuncCall
+	history     []DBStoreReferenceIDsFuncCall
 	mutex       sync.Mutex
 }
 
-// ReferenceIDsAndFilters delegates to the next hook function in the queue
-// and stores the parameter and result values of this invocation.
-func (m *MockDBStore) ReferenceIDsAndFilters(v0 context.Context, v1 int, v2 string, v3 []precise.QualifiedMonikerData, v4 int, v5 int) (dbstore.PackageReferenceScanner, int, error) {
-	r0, r1, r2 := m.ReferenceIDsAndFiltersFunc.nextHook()(v0, v1, v2, v3, v4, v5)
-	m.ReferenceIDsAndFiltersFunc.appendCall(DBStoreReferenceIDsAndFiltersFuncCall{v0, v1, v2, v3, v4, v5, r0, r1, r2})
+// ReferenceIDs delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockDBStore) ReferenceIDs(v0 context.Context, v1 int, v2 string, v3 []precise.QualifiedMonikerData, v4 int, v5 int) (dbstore.PackageReferenceScanner, int, error) {
+	r0, r1, r2 := m.ReferenceIDsFunc.nextHook()(v0, v1, v2, v3, v4, v5)
+	m.ReferenceIDsFunc.appendCall(DBStoreReferenceIDsFuncCall{v0, v1, v2, v3, v4, v5, r0, r1, r2})
 	return r0, r1, r2
 }
 
-// SetDefaultHook sets function that is called when the
-// ReferenceIDsAndFilters method of the parent MockDBStore instance is
-// invoked and the hook queue is empty.
-func (f *DBStoreReferenceIDsAndFiltersFunc) SetDefaultHook(hook func(context.Context, int, string, []precise.QualifiedMonikerData, int, int) (dbstore.PackageReferenceScanner, int, error)) {
+// SetDefaultHook sets function that is called when the ReferenceIDs method
+// of the parent MockDBStore instance is invoked and the hook queue is
+// empty.
+func (f *DBStoreReferenceIDsFunc) SetDefaultHook(hook func(context.Context, int, string, []precise.QualifiedMonikerData, int, int) (dbstore.PackageReferenceScanner, int, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// ReferenceIDsAndFilters method of the parent MockDBStore instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *DBStoreReferenceIDsAndFiltersFunc) PushHook(hook func(context.Context, int, string, []precise.QualifiedMonikerData, int, int) (dbstore.PackageReferenceScanner, int, error)) {
+// ReferenceIDs method of the parent MockDBStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *DBStoreReferenceIDsFunc) PushHook(hook func(context.Context, int, string, []precise.QualifiedMonikerData, int, int) (dbstore.PackageReferenceScanner, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -3659,20 +3658,20 @@ func (f *DBStoreReferenceIDsAndFiltersFunc) PushHook(hook func(context.Context, 
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *DBStoreReferenceIDsAndFiltersFunc) SetDefaultReturn(r0 dbstore.PackageReferenceScanner, r1 int, r2 error) {
+func (f *DBStoreReferenceIDsFunc) SetDefaultReturn(r0 dbstore.PackageReferenceScanner, r1 int, r2 error) {
 	f.SetDefaultHook(func(context.Context, int, string, []precise.QualifiedMonikerData, int, int) (dbstore.PackageReferenceScanner, int, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *DBStoreReferenceIDsAndFiltersFunc) PushReturn(r0 dbstore.PackageReferenceScanner, r1 int, r2 error) {
+func (f *DBStoreReferenceIDsFunc) PushReturn(r0 dbstore.PackageReferenceScanner, r1 int, r2 error) {
 	f.PushHook(func(context.Context, int, string, []precise.QualifiedMonikerData, int, int) (dbstore.PackageReferenceScanner, int, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *DBStoreReferenceIDsAndFiltersFunc) nextHook() func(context.Context, int, string, []precise.QualifiedMonikerData, int, int) (dbstore.PackageReferenceScanner, int, error) {
+func (f *DBStoreReferenceIDsFunc) nextHook() func(context.Context, int, string, []precise.QualifiedMonikerData, int, int) (dbstore.PackageReferenceScanner, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -3685,27 +3684,26 @@ func (f *DBStoreReferenceIDsAndFiltersFunc) nextHook() func(context.Context, int
 	return hook
 }
 
-func (f *DBStoreReferenceIDsAndFiltersFunc) appendCall(r0 DBStoreReferenceIDsAndFiltersFuncCall) {
+func (f *DBStoreReferenceIDsFunc) appendCall(r0 DBStoreReferenceIDsFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of DBStoreReferenceIDsAndFiltersFuncCall
-// objects describing the invocations of this function.
-func (f *DBStoreReferenceIDsAndFiltersFunc) History() []DBStoreReferenceIDsAndFiltersFuncCall {
+// History returns a sequence of DBStoreReferenceIDsFuncCall objects
+// describing the invocations of this function.
+func (f *DBStoreReferenceIDsFunc) History() []DBStoreReferenceIDsFuncCall {
 	f.mutex.Lock()
-	history := make([]DBStoreReferenceIDsAndFiltersFuncCall, len(f.history))
+	history := make([]DBStoreReferenceIDsFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// DBStoreReferenceIDsAndFiltersFuncCall is an object that describes an
-// invocation of method ReferenceIDsAndFilters on an instance of
-// MockDBStore.
-type DBStoreReferenceIDsAndFiltersFuncCall struct {
+// DBStoreReferenceIDsFuncCall is an object that describes an invocation of
+// method ReferenceIDs on an instance of MockDBStore.
+type DBStoreReferenceIDsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -3737,13 +3735,13 @@ type DBStoreReferenceIDsAndFiltersFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c DBStoreReferenceIDsAndFiltersFuncCall) Args() []interface{} {
+func (c DBStoreReferenceIDsFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c DBStoreReferenceIDsAndFiltersFuncCall) Results() []interface{} {
+func (c DBStoreReferenceIDsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
@@ -4498,7 +4496,7 @@ func NewMockEnqueuerDBStore() *MockEnqueuerDBStore {
 			},
 		},
 		TransactFunc: &EnqueuerDBStoreTransactFunc{
-			defaultHook: func(context.Context) (r0 enqueuer.DBStore, r1 error) {
+			defaultHook: func(context.Context) (r0 autoindexing.DBStore, r1 error) {
 				return
 			},
 		},
@@ -4550,7 +4548,7 @@ func NewStrictMockEnqueuerDBStore() *MockEnqueuerDBStore {
 			},
 		},
 		TransactFunc: &EnqueuerDBStoreTransactFunc{
-			defaultHook: func(context.Context) (enqueuer.DBStore, error) {
+			defaultHook: func(context.Context) (autoindexing.DBStore, error) {
 				panic("unexpected invocation of MockEnqueuerDBStore.Transact")
 			},
 		},
@@ -5466,15 +5464,15 @@ func (c EnqueuerDBStoreRepoNameFuncCall) Results() []interface{} {
 // EnqueuerDBStoreTransactFunc describes the behavior when the Transact
 // method of the parent MockEnqueuerDBStore instance is invoked.
 type EnqueuerDBStoreTransactFunc struct {
-	defaultHook func(context.Context) (enqueuer.DBStore, error)
-	hooks       []func(context.Context) (enqueuer.DBStore, error)
+	defaultHook func(context.Context) (autoindexing.DBStore, error)
+	hooks       []func(context.Context) (autoindexing.DBStore, error)
 	history     []EnqueuerDBStoreTransactFuncCall
 	mutex       sync.Mutex
 }
 
 // Transact delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockEnqueuerDBStore) Transact(v0 context.Context) (enqueuer.DBStore, error) {
+func (m *MockEnqueuerDBStore) Transact(v0 context.Context) (autoindexing.DBStore, error) {
 	r0, r1 := m.TransactFunc.nextHook()(v0)
 	m.TransactFunc.appendCall(EnqueuerDBStoreTransactFuncCall{v0, r0, r1})
 	return r0, r1
@@ -5483,7 +5481,7 @@ func (m *MockEnqueuerDBStore) Transact(v0 context.Context) (enqueuer.DBStore, er
 // SetDefaultHook sets function that is called when the Transact method of
 // the parent MockEnqueuerDBStore instance is invoked and the hook queue is
 // empty.
-func (f *EnqueuerDBStoreTransactFunc) SetDefaultHook(hook func(context.Context) (enqueuer.DBStore, error)) {
+func (f *EnqueuerDBStoreTransactFunc) SetDefaultHook(hook func(context.Context) (autoindexing.DBStore, error)) {
 	f.defaultHook = hook
 }
 
@@ -5491,7 +5489,7 @@ func (f *EnqueuerDBStoreTransactFunc) SetDefaultHook(hook func(context.Context) 
 // Transact method of the parent MockEnqueuerDBStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *EnqueuerDBStoreTransactFunc) PushHook(hook func(context.Context) (enqueuer.DBStore, error)) {
+func (f *EnqueuerDBStoreTransactFunc) PushHook(hook func(context.Context) (autoindexing.DBStore, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -5499,20 +5497,20 @@ func (f *EnqueuerDBStoreTransactFunc) PushHook(hook func(context.Context) (enque
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *EnqueuerDBStoreTransactFunc) SetDefaultReturn(r0 enqueuer.DBStore, r1 error) {
-	f.SetDefaultHook(func(context.Context) (enqueuer.DBStore, error) {
+func (f *EnqueuerDBStoreTransactFunc) SetDefaultReturn(r0 autoindexing.DBStore, r1 error) {
+	f.SetDefaultHook(func(context.Context) (autoindexing.DBStore, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *EnqueuerDBStoreTransactFunc) PushReturn(r0 enqueuer.DBStore, r1 error) {
-	f.PushHook(func(context.Context) (enqueuer.DBStore, error) {
+func (f *EnqueuerDBStoreTransactFunc) PushReturn(r0 autoindexing.DBStore, r1 error) {
+	f.PushHook(func(context.Context) (autoindexing.DBStore, error) {
 		return r0, r1
 	})
 }
 
-func (f *EnqueuerDBStoreTransactFunc) nextHook() func(context.Context) (enqueuer.DBStore, error) {
+func (f *EnqueuerDBStoreTransactFunc) nextHook() func(context.Context) (autoindexing.DBStore, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -5550,7 +5548,7 @@ type EnqueuerDBStoreTransactFuncCall struct {
 	Arg0 context.Context
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 enqueuer.DBStore
+	Result0 autoindexing.DBStore
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -7646,21 +7644,6 @@ type MockLSIFStore struct {
 	// DocumentPathsFunc is an instance of a mock function object
 	// controlling the behavior of the method DocumentPaths.
 	DocumentPathsFunc *LSIFStoreDocumentPathsFunc
-	// DocumentationAtPositionFunc is an instance of a mock function object
-	// controlling the behavior of the method DocumentationAtPosition.
-	DocumentationAtPositionFunc *LSIFStoreDocumentationAtPositionFunc
-	// DocumentationDefinitionsFunc is an instance of a mock function object
-	// controlling the behavior of the method DocumentationDefinitions.
-	DocumentationDefinitionsFunc *LSIFStoreDocumentationDefinitionsFunc
-	// DocumentationPageFunc is an instance of a mock function object
-	// controlling the behavior of the method DocumentationPage.
-	DocumentationPageFunc *LSIFStoreDocumentationPageFunc
-	// DocumentationPathInfoFunc is an instance of a mock function object
-	// controlling the behavior of the method DocumentationPathInfo.
-	DocumentationPathInfoFunc *LSIFStoreDocumentationPathInfoFunc
-	// DocumentationSearchFunc is an instance of a mock function object
-	// controlling the behavior of the method DocumentationSearch.
-	DocumentationSearchFunc *LSIFStoreDocumentationSearchFunc
 	// ExistsFunc is an instance of a mock function object controlling the
 	// behavior of the method Exists.
 	ExistsFunc *LSIFStoreExistsFunc
@@ -7708,31 +7691,6 @@ func NewMockLSIFStore() *MockLSIFStore {
 		},
 		DocumentPathsFunc: &LSIFStoreDocumentPathsFunc{
 			defaultHook: func(context.Context, int, string) (r0 []string, r1 int, r2 error) {
-				return
-			},
-		},
-		DocumentationAtPositionFunc: &LSIFStoreDocumentationAtPositionFunc{
-			defaultHook: func(context.Context, int, string, int, int) (r0 []string, r1 error) {
-				return
-			},
-		},
-		DocumentationDefinitionsFunc: &LSIFStoreDocumentationDefinitionsFunc{
-			defaultHook: func(context.Context, int, string, int, int) (r0 []lsifstore.Location, r1 int, r2 error) {
-				return
-			},
-		},
-		DocumentationPageFunc: &LSIFStoreDocumentationPageFunc{
-			defaultHook: func(context.Context, int, string) (r0 *precise.DocumentationPageData, r1 error) {
-				return
-			},
-		},
-		DocumentationPathInfoFunc: &LSIFStoreDocumentationPathInfoFunc{
-			defaultHook: func(context.Context, int, string) (r0 *precise.DocumentationPathInfoData, r1 error) {
-				return
-			},
-		},
-		DocumentationSearchFunc: &LSIFStoreDocumentationSearchFunc{
-			defaultHook: func(context.Context, string, string, []string) (r0 []precise.DocumentationSearchResult, r1 error) {
 				return
 			},
 		},
@@ -7803,31 +7761,6 @@ func NewStrictMockLSIFStore() *MockLSIFStore {
 				panic("unexpected invocation of MockLSIFStore.DocumentPaths")
 			},
 		},
-		DocumentationAtPositionFunc: &LSIFStoreDocumentationAtPositionFunc{
-			defaultHook: func(context.Context, int, string, int, int) ([]string, error) {
-				panic("unexpected invocation of MockLSIFStore.DocumentationAtPosition")
-			},
-		},
-		DocumentationDefinitionsFunc: &LSIFStoreDocumentationDefinitionsFunc{
-			defaultHook: func(context.Context, int, string, int, int) ([]lsifstore.Location, int, error) {
-				panic("unexpected invocation of MockLSIFStore.DocumentationDefinitions")
-			},
-		},
-		DocumentationPageFunc: &LSIFStoreDocumentationPageFunc{
-			defaultHook: func(context.Context, int, string) (*precise.DocumentationPageData, error) {
-				panic("unexpected invocation of MockLSIFStore.DocumentationPage")
-			},
-		},
-		DocumentationPathInfoFunc: &LSIFStoreDocumentationPathInfoFunc{
-			defaultHook: func(context.Context, int, string) (*precise.DocumentationPathInfoData, error) {
-				panic("unexpected invocation of MockLSIFStore.DocumentationPathInfo")
-			},
-		},
-		DocumentationSearchFunc: &LSIFStoreDocumentationSearchFunc{
-			defaultHook: func(context.Context, string, string, []string) ([]precise.DocumentationSearchResult, error) {
-				panic("unexpected invocation of MockLSIFStore.DocumentationSearch")
-			},
-		},
 		ExistsFunc: &LSIFStoreExistsFunc{
 			defaultHook: func(context.Context, int, string) (bool, error) {
 				panic("unexpected invocation of MockLSIFStore.Exists")
@@ -7886,21 +7819,6 @@ func NewMockLSIFStoreFrom(i LSIFStore) *MockLSIFStore {
 		},
 		DocumentPathsFunc: &LSIFStoreDocumentPathsFunc{
 			defaultHook: i.DocumentPaths,
-		},
-		DocumentationAtPositionFunc: &LSIFStoreDocumentationAtPositionFunc{
-			defaultHook: i.DocumentationAtPosition,
-		},
-		DocumentationDefinitionsFunc: &LSIFStoreDocumentationDefinitionsFunc{
-			defaultHook: i.DocumentationDefinitions,
-		},
-		DocumentationPageFunc: &LSIFStoreDocumentationPageFunc{
-			defaultHook: i.DocumentationPage,
-		},
-		DocumentationPathInfoFunc: &LSIFStoreDocumentationPathInfoFunc{
-			defaultHook: i.DocumentationPathInfo,
-		},
-		DocumentationSearchFunc: &LSIFStoreDocumentationSearchFunc{
-			defaultHook: i.DocumentationSearch,
 		},
 		ExistsFunc: &LSIFStoreExistsFunc{
 			defaultHook: i.Exists,
@@ -8411,588 +8329,6 @@ func (c LSIFStoreDocumentPathsFuncCall) Args() []interface{} {
 // invocation.
 func (c LSIFStoreDocumentPathsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
-}
-
-// LSIFStoreDocumentationAtPositionFunc describes the behavior when the
-// DocumentationAtPosition method of the parent MockLSIFStore instance is
-// invoked.
-type LSIFStoreDocumentationAtPositionFunc struct {
-	defaultHook func(context.Context, int, string, int, int) ([]string, error)
-	hooks       []func(context.Context, int, string, int, int) ([]string, error)
-	history     []LSIFStoreDocumentationAtPositionFuncCall
-	mutex       sync.Mutex
-}
-
-// DocumentationAtPosition delegates to the next hook function in the queue
-// and stores the parameter and result values of this invocation.
-func (m *MockLSIFStore) DocumentationAtPosition(v0 context.Context, v1 int, v2 string, v3 int, v4 int) ([]string, error) {
-	r0, r1 := m.DocumentationAtPositionFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.DocumentationAtPositionFunc.appendCall(LSIFStoreDocumentationAtPositionFuncCall{v0, v1, v2, v3, v4, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// DocumentationAtPosition method of the parent MockLSIFStore instance is
-// invoked and the hook queue is empty.
-func (f *LSIFStoreDocumentationAtPositionFunc) SetDefaultHook(hook func(context.Context, int, string, int, int) ([]string, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// DocumentationAtPosition method of the parent MockLSIFStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *LSIFStoreDocumentationAtPositionFunc) PushHook(hook func(context.Context, int, string, int, int) ([]string, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *LSIFStoreDocumentationAtPositionFunc) SetDefaultReturn(r0 []string, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, string, int, int) ([]string, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *LSIFStoreDocumentationAtPositionFunc) PushReturn(r0 []string, r1 error) {
-	f.PushHook(func(context.Context, int, string, int, int) ([]string, error) {
-		return r0, r1
-	})
-}
-
-func (f *LSIFStoreDocumentationAtPositionFunc) nextHook() func(context.Context, int, string, int, int) ([]string, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *LSIFStoreDocumentationAtPositionFunc) appendCall(r0 LSIFStoreDocumentationAtPositionFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of LSIFStoreDocumentationAtPositionFuncCall
-// objects describing the invocations of this function.
-func (f *LSIFStoreDocumentationAtPositionFunc) History() []LSIFStoreDocumentationAtPositionFuncCall {
-	f.mutex.Lock()
-	history := make([]LSIFStoreDocumentationAtPositionFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// LSIFStoreDocumentationAtPositionFuncCall is an object that describes an
-// invocation of method DocumentationAtPosition on an instance of
-// MockLSIFStore.
-type LSIFStoreDocumentationAtPositionFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 int
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []string
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c LSIFStoreDocumentationAtPositionFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c LSIFStoreDocumentationAtPositionFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// LSIFStoreDocumentationDefinitionsFunc describes the behavior when the
-// DocumentationDefinitions method of the parent MockLSIFStore instance is
-// invoked.
-type LSIFStoreDocumentationDefinitionsFunc struct {
-	defaultHook func(context.Context, int, string, int, int) ([]lsifstore.Location, int, error)
-	hooks       []func(context.Context, int, string, int, int) ([]lsifstore.Location, int, error)
-	history     []LSIFStoreDocumentationDefinitionsFuncCall
-	mutex       sync.Mutex
-}
-
-// DocumentationDefinitions delegates to the next hook function in the queue
-// and stores the parameter and result values of this invocation.
-func (m *MockLSIFStore) DocumentationDefinitions(v0 context.Context, v1 int, v2 string, v3 int, v4 int) ([]lsifstore.Location, int, error) {
-	r0, r1, r2 := m.DocumentationDefinitionsFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.DocumentationDefinitionsFunc.appendCall(LSIFStoreDocumentationDefinitionsFuncCall{v0, v1, v2, v3, v4, r0, r1, r2})
-	return r0, r1, r2
-}
-
-// SetDefaultHook sets function that is called when the
-// DocumentationDefinitions method of the parent MockLSIFStore instance is
-// invoked and the hook queue is empty.
-func (f *LSIFStoreDocumentationDefinitionsFunc) SetDefaultHook(hook func(context.Context, int, string, int, int) ([]lsifstore.Location, int, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// DocumentationDefinitions method of the parent MockLSIFStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *LSIFStoreDocumentationDefinitionsFunc) PushHook(hook func(context.Context, int, string, int, int) ([]lsifstore.Location, int, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *LSIFStoreDocumentationDefinitionsFunc) SetDefaultReturn(r0 []lsifstore.Location, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, int, string, int, int) ([]lsifstore.Location, int, error) {
-		return r0, r1, r2
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *LSIFStoreDocumentationDefinitionsFunc) PushReturn(r0 []lsifstore.Location, r1 int, r2 error) {
-	f.PushHook(func(context.Context, int, string, int, int) ([]lsifstore.Location, int, error) {
-		return r0, r1, r2
-	})
-}
-
-func (f *LSIFStoreDocumentationDefinitionsFunc) nextHook() func(context.Context, int, string, int, int) ([]lsifstore.Location, int, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *LSIFStoreDocumentationDefinitionsFunc) appendCall(r0 LSIFStoreDocumentationDefinitionsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of LSIFStoreDocumentationDefinitionsFuncCall
-// objects describing the invocations of this function.
-func (f *LSIFStoreDocumentationDefinitionsFunc) History() []LSIFStoreDocumentationDefinitionsFuncCall {
-	f.mutex.Lock()
-	history := make([]LSIFStoreDocumentationDefinitionsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// LSIFStoreDocumentationDefinitionsFuncCall is an object that describes an
-// invocation of method DocumentationDefinitions on an instance of
-// MockLSIFStore.
-type LSIFStoreDocumentationDefinitionsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 int
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []lsifstore.Location
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 int
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c LSIFStoreDocumentationDefinitionsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c LSIFStoreDocumentationDefinitionsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2}
-}
-
-// LSIFStoreDocumentationPageFunc describes the behavior when the
-// DocumentationPage method of the parent MockLSIFStore instance is invoked.
-type LSIFStoreDocumentationPageFunc struct {
-	defaultHook func(context.Context, int, string) (*precise.DocumentationPageData, error)
-	hooks       []func(context.Context, int, string) (*precise.DocumentationPageData, error)
-	history     []LSIFStoreDocumentationPageFuncCall
-	mutex       sync.Mutex
-}
-
-// DocumentationPage delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockLSIFStore) DocumentationPage(v0 context.Context, v1 int, v2 string) (*precise.DocumentationPageData, error) {
-	r0, r1 := m.DocumentationPageFunc.nextHook()(v0, v1, v2)
-	m.DocumentationPageFunc.appendCall(LSIFStoreDocumentationPageFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the DocumentationPage
-// method of the parent MockLSIFStore instance is invoked and the hook queue
-// is empty.
-func (f *LSIFStoreDocumentationPageFunc) SetDefaultHook(hook func(context.Context, int, string) (*precise.DocumentationPageData, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// DocumentationPage method of the parent MockLSIFStore instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *LSIFStoreDocumentationPageFunc) PushHook(hook func(context.Context, int, string) (*precise.DocumentationPageData, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *LSIFStoreDocumentationPageFunc) SetDefaultReturn(r0 *precise.DocumentationPageData, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, string) (*precise.DocumentationPageData, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *LSIFStoreDocumentationPageFunc) PushReturn(r0 *precise.DocumentationPageData, r1 error) {
-	f.PushHook(func(context.Context, int, string) (*precise.DocumentationPageData, error) {
-		return r0, r1
-	})
-}
-
-func (f *LSIFStoreDocumentationPageFunc) nextHook() func(context.Context, int, string) (*precise.DocumentationPageData, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *LSIFStoreDocumentationPageFunc) appendCall(r0 LSIFStoreDocumentationPageFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of LSIFStoreDocumentationPageFuncCall objects
-// describing the invocations of this function.
-func (f *LSIFStoreDocumentationPageFunc) History() []LSIFStoreDocumentationPageFuncCall {
-	f.mutex.Lock()
-	history := make([]LSIFStoreDocumentationPageFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// LSIFStoreDocumentationPageFuncCall is an object that describes an
-// invocation of method DocumentationPage on an instance of MockLSIFStore.
-type LSIFStoreDocumentationPageFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 *precise.DocumentationPageData
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c LSIFStoreDocumentationPageFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c LSIFStoreDocumentationPageFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// LSIFStoreDocumentationPathInfoFunc describes the behavior when the
-// DocumentationPathInfo method of the parent MockLSIFStore instance is
-// invoked.
-type LSIFStoreDocumentationPathInfoFunc struct {
-	defaultHook func(context.Context, int, string) (*precise.DocumentationPathInfoData, error)
-	hooks       []func(context.Context, int, string) (*precise.DocumentationPathInfoData, error)
-	history     []LSIFStoreDocumentationPathInfoFuncCall
-	mutex       sync.Mutex
-}
-
-// DocumentationPathInfo delegates to the next hook function in the queue
-// and stores the parameter and result values of this invocation.
-func (m *MockLSIFStore) DocumentationPathInfo(v0 context.Context, v1 int, v2 string) (*precise.DocumentationPathInfoData, error) {
-	r0, r1 := m.DocumentationPathInfoFunc.nextHook()(v0, v1, v2)
-	m.DocumentationPathInfoFunc.appendCall(LSIFStoreDocumentationPathInfoFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// DocumentationPathInfo method of the parent MockLSIFStore instance is
-// invoked and the hook queue is empty.
-func (f *LSIFStoreDocumentationPathInfoFunc) SetDefaultHook(hook func(context.Context, int, string) (*precise.DocumentationPathInfoData, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// DocumentationPathInfo method of the parent MockLSIFStore instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *LSIFStoreDocumentationPathInfoFunc) PushHook(hook func(context.Context, int, string) (*precise.DocumentationPathInfoData, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *LSIFStoreDocumentationPathInfoFunc) SetDefaultReturn(r0 *precise.DocumentationPathInfoData, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, string) (*precise.DocumentationPathInfoData, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *LSIFStoreDocumentationPathInfoFunc) PushReturn(r0 *precise.DocumentationPathInfoData, r1 error) {
-	f.PushHook(func(context.Context, int, string) (*precise.DocumentationPathInfoData, error) {
-		return r0, r1
-	})
-}
-
-func (f *LSIFStoreDocumentationPathInfoFunc) nextHook() func(context.Context, int, string) (*precise.DocumentationPathInfoData, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *LSIFStoreDocumentationPathInfoFunc) appendCall(r0 LSIFStoreDocumentationPathInfoFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of LSIFStoreDocumentationPathInfoFuncCall
-// objects describing the invocations of this function.
-func (f *LSIFStoreDocumentationPathInfoFunc) History() []LSIFStoreDocumentationPathInfoFuncCall {
-	f.mutex.Lock()
-	history := make([]LSIFStoreDocumentationPathInfoFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// LSIFStoreDocumentationPathInfoFuncCall is an object that describes an
-// invocation of method DocumentationPathInfo on an instance of
-// MockLSIFStore.
-type LSIFStoreDocumentationPathInfoFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 *precise.DocumentationPathInfoData
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c LSIFStoreDocumentationPathInfoFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c LSIFStoreDocumentationPathInfoFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// LSIFStoreDocumentationSearchFunc describes the behavior when the
-// DocumentationSearch method of the parent MockLSIFStore instance is
-// invoked.
-type LSIFStoreDocumentationSearchFunc struct {
-	defaultHook func(context.Context, string, string, []string) ([]precise.DocumentationSearchResult, error)
-	hooks       []func(context.Context, string, string, []string) ([]precise.DocumentationSearchResult, error)
-	history     []LSIFStoreDocumentationSearchFuncCall
-	mutex       sync.Mutex
-}
-
-// DocumentationSearch delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockLSIFStore) DocumentationSearch(v0 context.Context, v1 string, v2 string, v3 []string) ([]precise.DocumentationSearchResult, error) {
-	r0, r1 := m.DocumentationSearchFunc.nextHook()(v0, v1, v2, v3)
-	m.DocumentationSearchFunc.appendCall(LSIFStoreDocumentationSearchFuncCall{v0, v1, v2, v3, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the DocumentationSearch
-// method of the parent MockLSIFStore instance is invoked and the hook queue
-// is empty.
-func (f *LSIFStoreDocumentationSearchFunc) SetDefaultHook(hook func(context.Context, string, string, []string) ([]precise.DocumentationSearchResult, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// DocumentationSearch method of the parent MockLSIFStore instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *LSIFStoreDocumentationSearchFunc) PushHook(hook func(context.Context, string, string, []string) ([]precise.DocumentationSearchResult, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *LSIFStoreDocumentationSearchFunc) SetDefaultReturn(r0 []precise.DocumentationSearchResult, r1 error) {
-	f.SetDefaultHook(func(context.Context, string, string, []string) ([]precise.DocumentationSearchResult, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *LSIFStoreDocumentationSearchFunc) PushReturn(r0 []precise.DocumentationSearchResult, r1 error) {
-	f.PushHook(func(context.Context, string, string, []string) ([]precise.DocumentationSearchResult, error) {
-		return r0, r1
-	})
-}
-
-func (f *LSIFStoreDocumentationSearchFunc) nextHook() func(context.Context, string, string, []string) ([]precise.DocumentationSearchResult, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *LSIFStoreDocumentationSearchFunc) appendCall(r0 LSIFStoreDocumentationSearchFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of LSIFStoreDocumentationSearchFuncCall
-// objects describing the invocations of this function.
-func (f *LSIFStoreDocumentationSearchFunc) History() []LSIFStoreDocumentationSearchFuncCall {
-	f.mutex.Lock()
-	history := make([]LSIFStoreDocumentationSearchFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// LSIFStoreDocumentationSearchFuncCall is an object that describes an
-// invocation of method DocumentationSearch on an instance of MockLSIFStore.
-type LSIFStoreDocumentationSearchFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 string
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 []string
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []precise.DocumentationSearchResult
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c LSIFStoreDocumentationSearchFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c LSIFStoreDocumentationSearchFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // LSIFStoreExistsFunc describes the behavior when the Exists method of the

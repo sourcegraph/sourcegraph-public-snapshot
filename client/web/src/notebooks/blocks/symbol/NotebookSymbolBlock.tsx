@@ -23,7 +23,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 import { useCodeIntelViewerUpdates } from '@sourcegraph/shared/src/util/useCodeIntelViewerUpdates'
-import { Alert, Icon, Link, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
+import { Alert, Icon, Link, LoadingSpinner, Typography, useObservable } from '@sourcegraph/wildcard'
 
 import { BlockProps, SymbolBlock, SymbolBlockInput, SymbolBlockOutput } from '../..'
 import { BlockMenuAction } from '../menu/NotebookBlockMenu'
@@ -115,7 +115,7 @@ export const NotebookSymbolBlock: React.FunctionComponent<
                 {
                     type: 'link',
                     label: 'Open in new tab',
-                    icon: <Icon as={OpenInNewIcon} />,
+                    icon: <Icon role="img" aria-hidden={true} as={OpenInNewIcon} />,
                     url: symbolURL,
                     isDisabled: symbolURL.length === 0,
                 },
@@ -129,7 +129,7 @@ export const NotebookSymbolBlock: React.FunctionComponent<
                 {
                     type: 'button',
                     label: showInputs ? 'Save' : 'Edit',
-                    icon: <Icon as={showInputs ? CheckIcon : PencilIcon} />,
+                    icon: <Icon role="img" aria-hidden={true} as={showInputs ? CheckIcon : PencilIcon} />,
                     onClick: () => setShowInputs(!showInputs),
                     keyboardShortcutLabel: showInputs ? `${modifierKeyLabel} + ↵` : '↵',
                 },
@@ -252,14 +252,16 @@ const NotebookSymbolBlockHeader: React.FunctionComponent<React.PropsWithChildren
         </div>
         <div className="d-flex flex-column">
             <div className="mb-1 d-flex align-items-center">
-                <code data-testid="selected-symbol-name">
+                <Typography.Code data-testid="selected-symbol-name">
                     <Link className={styles.headerLink} to={symbolURL}>
                         {symbolName}
                     </Link>
                     {symbolContainerName && <span className="text-muted"> {symbolContainerName}</span>}
-                </code>
+                </Typography.Code>
                 {symbolFoundAtLatestRevision === false && (
                     <Icon
+                        role="img"
+                        aria-label={`Symbol not found at the latest revision, showing symbol at revision ${effectiveRevision}.`}
                         as={InformationOutlineIcon}
                         className="ml-1"
                         data-tooltip={`Symbol not found at the latest revision, showing symbol at revision ${effectiveRevision}.`}

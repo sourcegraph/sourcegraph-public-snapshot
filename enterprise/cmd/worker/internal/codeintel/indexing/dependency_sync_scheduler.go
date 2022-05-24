@@ -6,10 +6,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/shared"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -205,7 +205,7 @@ func (h *dependencySyncSchedulerHandler) insertDependencyRepo(ctx context.Contex
 
 // shouldIndexDependencies returns true if the given upload should undergo dependency
 // indexing. Currently, we're only enabling dependency indexing for a repositories that
-// were indexed via lsif-go, lsif-java and lsif-tsc.
+// were indexed via lsif-go, scip-java and lsif-tsc.
 func (h *dependencySyncSchedulerHandler) shouldIndexDependencies(ctx context.Context, store DBStore, uploadID int) (bool, error) {
 	upload, _, err := store.GetUploadByID(ctx, uploadID)
 	if err != nil {
@@ -213,8 +213,10 @@ func (h *dependencySyncSchedulerHandler) shouldIndexDependencies(ctx context.Con
 	}
 
 	return upload.Indexer == "lsif-go" ||
+		upload.Indexer == "scip-java" ||
 		upload.Indexer == "lsif-java" ||
 		upload.Indexer == "lsif-tsc" ||
+		upload.Indexer == "scip-typescript" ||
 		upload.Indexer == "lsif-typescript", nil
 }
 

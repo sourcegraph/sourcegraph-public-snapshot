@@ -97,11 +97,17 @@ export const FileDiffNode: React.FunctionComponent<React.PropsWithChildren<FileD
     return (
         <>
             {/* The empty <a> tag is to allow users to anchor links to the top of this file diff node */}
-            <Link to="" id={anchor} aria-hidden={true} />
-            <div className={classNames('test-file-diff-node', styles.fileDiffNode, className)}>
+            <Link to="" id={anchor} aria-hidden={true} tabIndex={-1} />
+            <li className={classNames('test-file-diff-node', styles.fileDiffNode, className)}>
                 <div className={styles.header}>
-                    <Button variant="icon" className="mr-2" onClick={toggleExpand} size="sm">
-                        <Icon as={expanded ? ChevronDownIcon : ChevronRightIcon} />
+                    <Button
+                        aria-label={expanded ? 'Hide file diff' : 'Show file diff'}
+                        variant="icon"
+                        className="mr-2"
+                        onClick={toggleExpand}
+                        size="sm"
+                    >
+                        <Icon role="img" as={expanded ? ChevronDownIcon : ChevronRightIcon} aria-hidden={true} />
                     </Button>
                     <div className={classNames('align-items-baseline', styles.headerPathStat)}>
                         {!node.oldPath && (
@@ -179,7 +185,7 @@ export const FileDiffNode: React.FunctionComponent<React.PropsWithChildren<FileD
                             diffMode={diffMode}
                         />
                     ))}
-            </div>
+            </li>
         </>
     )
 }

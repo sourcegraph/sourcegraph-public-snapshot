@@ -6,12 +6,14 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
 func TestMerger_MergeBase(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	db := database.NewMockDB()
+	client := gitserver.NewClient(db)
 
 	// TODO(sqs): implement for hg
 	// TODO(sqs): make a more complex test case
@@ -44,19 +46,19 @@ func TestMerger_MergeBase(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		a, err := ResolveRevision(ctx, db, test.repo, test.a, ResolveRevisionOptions{})
+		a, err := client.ResolveRevision(ctx, test.repo, test.a, gitserver.ResolveRevisionOptions{})
 		if err != nil {
 			t.Errorf("%s: ResolveRevision(%q) on a: %s", label, test.a, err)
 			continue
 		}
 
-		b, err := ResolveRevision(ctx, db, test.repo, test.b, ResolveRevisionOptions{})
+		b, err := client.ResolveRevision(ctx, test.repo, test.b, gitserver.ResolveRevisionOptions{})
 		if err != nil {
 			t.Errorf("%s: ResolveRevision(%q) on b: %s", label, test.b, err)
 			continue
 		}
 
-		want, err := ResolveRevision(ctx, db, test.repo, test.wantMergeBase, ResolveRevisionOptions{})
+		want, err := client.ResolveRevision(ctx, test.repo, test.wantMergeBase, gitserver.ResolveRevisionOptions{})
 		if err != nil {
 			t.Errorf("%s: ResolveRevision(%q) on wantMergeBase: %s", label, test.wantMergeBase, err)
 			continue

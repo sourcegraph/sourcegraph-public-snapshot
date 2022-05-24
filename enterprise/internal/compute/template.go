@@ -267,6 +267,19 @@ func NewMetaEnvironment(r result.Match, content string) *MetaEnvironment {
 			Email:   m.Commit.Author.Email,
 			Content: content,
 		}
+	case *result.CommitDiffMatch:
+		path := m.Path()
+		lang, _ := enry.GetLanguageByExtension(path)
+		return &MetaEnvironment{
+			Repo:    string(m.Repo.Name),
+			Commit:  string(m.Commit.ID),
+			Author:  m.Commit.Author.Name,
+			Date:    m.Commit.Committer.Date.Format("2006-01-02"),
+			Email:   m.Commit.Author.Email,
+			Path:    path,
+			Lang:    lang,
+			Content: content,
+		}
 	}
 	return &MetaEnvironment{}
 }

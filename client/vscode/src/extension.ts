@@ -4,11 +4,12 @@ import { of, ReplaySubject } from 'rxjs'
 import vscode, { env } from 'vscode'
 
 import { proxySubscribable } from '@sourcegraph/shared/src/api/extension/api/common'
+import polyfillEventSource from '@sourcegraph/shared/src/polyfills/vendor/eventSource'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 
 import { observeAuthenticatedUser } from './backend/authenticatedUser'
 import { logEvent } from './backend/eventLogger'
-import { initializeInstantVersionNumber } from './backend/instanceVersion'
+import { initializeInstanceVersionNumber } from './backend/instanceVersion'
 import { requestGraphQLFromVSCode } from './backend/requestGraphQl'
 import { initializeSearchContexts } from './backend/searchContexts'
 import { initializeSourcegraphSettings } from './backend/sourcegraphSettings'
@@ -25,7 +26,6 @@ import { invalidateContextOnSettingsChange } from './settings/invalidation'
 import { LocalStorageService, SELECTED_SEARCH_CONTEXT_SPEC_KEY } from './settings/LocalStorageService'
 import { watchUninstall } from './settings/uninstall'
 import { createVSCEStateMachine, VSCEQueryState } from './state'
-import polyfillEventSource from './vendor/eventSource'
 import { focusSearchPanel, registerWebviews } from './webview/commands'
 
 // Sourcegraph VS Code extension architecture
@@ -63,14 +63,14 @@ export function activate(context: vscode.ExtensionContext): void {
     const stateMachine = createVSCEStateMachine({ localStorageService })
     invalidateContextOnSettingsChange({ context, stateMachine })
     initializeSearchContexts({ localStorageService, stateMachine, context })
-    const eventSourceType = initializeInstantVersionNumber(localStorageService)
     const sourcegraphSettings = initializeSourcegraphSettings({ context })
     const authenticatedUser = observeAuthenticatedUser({ context })
     const initialInstanceURL = endpointSetting()
-
+    const initialAccessToken = accessTokenSetting()
+    const editorTheme = vscode.ColorThemeKind[vscode.window.activeColorTheme.kind]
+    const eventSourceType = initializeInstanceVersionNumber(localStorageService, initialInstanceURL, initialAccessToken)
     // Sets global `EventSource` for Node, which is required for streaming search.
     // Used for VS Code web as well to be able to add Authorization header.
-    const initialAccessToken = accessTokenSetting()
     // Add custom headers to `EventSource` Authorization header when provided
     const customHeaders = endpointRequestHeadersSetting()
     polyfillEventSource(initialAccessToken ? { Authorization: `token ${initialAccessToken}`, ...customHeaders } : {})
@@ -132,8 +132,8 @@ export function activate(context: vscode.ExtensionContext): void {
         setLocalStorageItem: (key: string, value: string) => localStorageService.setValue(key, value),
         logEvents: (variables: Event) => logEvent(variables),
         getEventSource: eventSourceType,
+        getEditorTheme: editorTheme,
     }
-
     // Also initializes code intel.
     registerWebviews({
         context,

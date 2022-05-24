@@ -6,6 +6,7 @@ import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetrySer
 import { Container, PageHeader, ButtonLink, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
+import { PageTitle } from '../../../components/PageTitle'
 
 interface Props {
     telemetryService: TelemetryService
@@ -27,6 +28,7 @@ export const ProductResearchPage: React.FunctionComponent<React.PropsWithChildre
 
     return (
         <>
+            <PageTitle title="Product research" />
             <PageHeader headingElement="h2" path={[{ text: 'Product research and feedback' }]} className="mb-3" />
             <Container>
                 <p>

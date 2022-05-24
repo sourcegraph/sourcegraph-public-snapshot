@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Alert, Link } from '@sourcegraph/wildcard'
+import { Alert, Link, Typography } from '@sourcegraph/wildcard'
 
 import { ExternalServiceFields, ExternalServiceKind } from '../../graphql-operations'
 import { CopyableText } from '../CopyableText'
@@ -56,7 +56,7 @@ export const ExternalServiceWebhook: React.FunctionComponent<React.PropsWithChil
 
     return (
         <Alert variant="info">
-            <h3>Batch changes webhooks</h3>
+            <Typography.H3>Batch changes webhooks</Typography.H3>
             {description}
             <CopyableText className="mb-2" text={webhookURL} size={webhookURL.length} />
             <p className="mb-0">

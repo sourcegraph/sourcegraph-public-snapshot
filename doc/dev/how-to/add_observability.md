@@ -35,7 +35,7 @@ metrics := metrics.NewREDMetrics(
 
 operation := observationContext.Operation(observation.Op{
     Name:         "Thing.SomeOperation",
-    MetricLabels: []string{"some_operation"},
+    MetricLabelValues: []string{"some_operation"},
     Metrics:      metrics,
 })
 
