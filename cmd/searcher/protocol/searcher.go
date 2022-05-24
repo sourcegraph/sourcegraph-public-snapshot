@@ -54,8 +54,7 @@ type Request struct {
 	Indexed bool
 }
 
-// PatternInfo describes a search request on a repo. Most of the fields
-// are based on PatternInfo used in vscode.
+// PatternInfo describes a search request on a repo
 type PatternInfo struct {
 	// Pattern is the search query. It is a regular expression if IsRegExp
 	// is true, otherwise a fixed string. eg "route variable"
@@ -190,7 +189,6 @@ type Response struct {
 	DeadlineHit bool
 }
 
-// FileMatch is the struct used by vscode to receive search results
 type FileMatch struct {
 	Path string
 
@@ -210,13 +208,11 @@ func (fm FileMatch) MatchCount() int {
 	return 1
 }
 
-// LineMatch is the struct used by vscode to receive search results for a line.
 type LineMatch struct {
 	// Preview is the matched line.
 	Preview string
 
-	// LineNumber is the 0-based line number. Note: Our editors present
-	// 1-based line numbers, but internally vscode uses 0-based.
+	// LineNumber is the 0-based line number.
 	LineNumber int
 
 	// OffsetAndLengths is a slice of 2-tuples (Offset, Length)
