@@ -72,7 +72,12 @@ export const WebhookLogPageHeader: React.FunctionComponent<React.PropsWithChildr
             </div>
             <div className={styles.errorButton}>
                 <Button variant="danger" onClick={onErrorToggle} outline={!onlyErrors}>
-                    <Icon className={classNames(styles.icon, onlyErrors && styles.enabled)} as={AlertCircleIcon} />
+                    <Icon
+                        role="img"
+                        className={classNames(styles.icon, onlyErrors && styles.enabled)}
+                        as={AlertCircleIcon}
+                        aria-hidden={true}
+                    />
                     <span className="ml-1">Only errors</span>
                 </Button>
             </div>

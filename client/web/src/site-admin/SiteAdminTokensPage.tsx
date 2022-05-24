@@ -53,7 +53,7 @@ export const SiteAdminTokensPage: React.FunctionComponent<React.PropsWithChildre
                     className={classNames('ml-2', !accessTokensEnabled && 'disabled')}
                     to={accessTokensEnabled ? `${authenticatedUser.settingsURL!}/tokens/new` : null}
                 >
-                    <Icon as={AddIcon} /> Generate access token
+                    <Icon role="img" as={AddIcon} aria-hidden={true} /> Generate access token
                 </Button>
             </div>
             <p>Tokens may be used to access the Sourcegraph API with the full privileges of the token's creator.</p>

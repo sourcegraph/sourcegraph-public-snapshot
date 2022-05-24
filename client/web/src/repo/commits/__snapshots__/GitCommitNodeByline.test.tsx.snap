@@ -9,6 +9,7 @@ exports[`GitCommitNodeByline author (compact) 1`] = `
     <div>
       <img
         alt=""
+        aria-label="User avatar"
         class="iconInline userAvatar mr-1 mr-2"
         data-tooltip="Alice Zhao"
         role="presentation"
@@ -46,6 +47,7 @@ exports[`GitCommitNodeByline author 1`] = `
     <div>
       <img
         alt=""
+        aria-label="User avatar"
         class="iconInline userAvatar mr-1 mr-2"
         data-tooltip="Alice Zhao"
         role="presentation"
@@ -85,6 +87,7 @@ exports[`GitCommitNodeByline different author and committer (compact) 1`] = `
     >
       <img
         alt=""
+        aria-label="User avatar"
         class="iconInline userAvatar"
         data-tooltip="Alice Zhao (author)"
         role="presentation"
@@ -93,6 +96,7 @@ exports[`GitCommitNodeByline different author and committer (compact) 1`] = `
        
       <img
         alt=""
+        aria-label="User avatar"
         class="iconInline userAvatar mr-2"
         data-tooltip="bYang (committer)"
         role="presentation"
@@ -139,6 +143,7 @@ exports[`GitCommitNodeByline different author and committer 1`] = `
     >
       <img
         alt=""
+        aria-label="User avatar"
         class="iconInline userAvatar"
         data-tooltip="Alice Zhao (author)"
         role="presentation"
@@ -147,6 +152,7 @@ exports[`GitCommitNodeByline different author and committer 1`] = `
        
       <img
         alt=""
+        aria-label="User avatar"
         class="iconInline userAvatar mr-2"
         data-tooltip="bYang (committer)"
         role="presentation"
@@ -191,6 +197,7 @@ exports[`GitCommitNodeByline omit GitHub committer 1`] = `
     <div>
       <img
         alt=""
+        aria-label="User avatar"
         class="iconInline userAvatar mr-1 mr-2"
         data-tooltip="Alice Zhao"
         role="presentation"
@@ -228,6 +235,7 @@ exports[`GitCommitNodeByline same author and committer 1`] = `
     <div>
       <img
         alt=""
+        aria-label="User avatar"
         class="iconInline userAvatar mr-1 mr-2"
         data-tooltip="Alice Zhao"
         role="presentation"

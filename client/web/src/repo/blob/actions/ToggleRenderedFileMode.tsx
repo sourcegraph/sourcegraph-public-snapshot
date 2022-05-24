@@ -39,7 +39,7 @@ export const ToggleRenderedFileMode: React.FunctionComponent<React.PropsWithChil
     if (actionType === 'dropdown') {
         return (
             <RepoHeaderActionButtonLink to={getURLForMode(location, otherMode)} file={true}>
-                <Icon as={EyeIcon} />
+                <Icon role="img" as={EyeIcon} aria-hidden="true" />
                 <span>{label}</span>
             </RepoHeaderActionButtonLink>
         )
@@ -52,7 +52,7 @@ export const ToggleRenderedFileMode: React.FunctionComponent<React.PropsWithChil
             to={getURLForMode(location, otherMode)}
             data-tooltip={label}
         >
-            <Icon as={EyeIcon} />{' '}
+            <Icon role="img" as={EyeIcon} aria-hidden={true} />{' '}
             <span className="d-none d-lg-inline ml-1">{mode === 'rendered' ? 'Raw' : 'Formatted'}</span>
         </RepoHeaderActionButtonLink>
     )

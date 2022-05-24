@@ -152,7 +152,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                                     size="sm"
                                     as={Link}
                                 >
-                                    <Icon as={SettingsIcon} /> Settings
+                                    <Icon role="img" as={SettingsIcon} aria-hidden={true} /> Settings
                                 </Button>
                             ) &&
                             ' '}
@@ -205,8 +205,9 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                                 data-tooltip="Delete user"
                                 variant="danger"
                                 size="sm"
+                                aria-label="Delete User"
                             >
-                                <Icon as={DeleteIcon} />
+                                <Icon role="img" as={DeleteIcon} aria-hidden={true} />
                             </Button>
                         )}
                         {this.props.node.id !== this.props.authenticatedUser.id && (
@@ -217,8 +218,9 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                                 data-tooltip="Nuke user (click for more information)"
                                 variant="danger"
                                 size="sm"
+                                aria-label="Nuke user (click for more information)"
                             >
-                                <Icon as={RadioactiveIcon} />
+                                <Icon role="img" as={RadioactiveIcon} aria-hidden={true} />
                             </Button>
                         )}
                     </div>
@@ -418,7 +420,7 @@ export class SiteAdminAllUsersPage extends React.Component<Props, State> {
                     <Typography.H2 className="mb-0">Users</Typography.H2>
                     <div>
                         <Button to="/site-admin/users/new" variant="primary" as={Link}>
-                            <Icon as={AddIcon} /> Create user account
+                            <Icon role="img" as={AddIcon} aria-hidden={true} /> Create user account
                         </Button>
                     </div>
                 </div>

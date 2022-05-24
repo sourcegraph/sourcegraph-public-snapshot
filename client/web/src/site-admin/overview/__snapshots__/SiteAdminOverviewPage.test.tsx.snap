@@ -129,9 +129,11 @@ exports[`SiteAdminOverviewPage >= 2 users 1`] = `
               >
                 View all usage statistics 
                 <svg
+                  aria-hidden="true"
                   class="mdi-icon iconInline"
                   fill="currentColor"
                   height="24"
+                  role="img"
                   viewBox="0 0 24 24"
                   width="24"
                 >
