@@ -165,14 +165,14 @@ export const NotebookMarkdownBlock: React.FunctionComponent<
                     ? {
                           type: 'button',
                           label: 'Render',
-                          icon: <Icon as={PlayCircleOutlineIcon} />,
+                          icon: <Icon role="img" aria-hidden={true} as={PlayCircleOutlineIcon} />,
                           onClick: runBlock,
                           keyboardShortcutLabel: `${modifierKeyLabel} + ↵`,
                       }
                     : {
                           type: 'button',
                           label: 'Edit',
-                          icon: <Icon as={PencilIcon} />,
+                          icon: <Icon role="img" aria-hidden={true} as={PencilIcon} />,
                           onClick: editMarkdown,
                           keyboardShortcutLabel: '↵',
                       },

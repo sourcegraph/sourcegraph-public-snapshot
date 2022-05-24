@@ -91,7 +91,7 @@ export const ImportMarkdownNotebookButton: React.FunctionComponent<
                 disabled={importState === LOADING}
                 className="ml-2"
             >
-                <Icon className="mr-1" as={UploadIcon} />
+                <Icon role="img" aria-hidden={true} className="mr-1" as={UploadIcon} />
                 <span>{importState === LOADING ? 'Importing...' : 'Import Markdown notebook'}</span>
             </Button>
         </>

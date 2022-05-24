@@ -71,7 +71,7 @@ export const TourAgent: React.FunctionComponent<React.PropsWithChildren<TourAgen
 
         return ReactDOM.createPortal(
             <div className={styles.infoPanel}>
-                <Icon as={CheckCircleIcon} className={styles.infoIcon} />
+                <Icon role="img" as={CheckCircleIcon} className={styles.infoIcon} aria-hidden={true} />
                 <span>{info}</span>
             </div>,
             domNode

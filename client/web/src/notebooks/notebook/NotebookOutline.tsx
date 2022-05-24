@@ -146,7 +146,7 @@ export const NotebookOutline: React.FunctionComponent<React.PropsWithChildren<No
                             className={styles.toggleOutlineButton}
                             aria-label="Open Outline panel"
                         >
-                            <Icon as={ChevronRightIcon} size="sm" />
+                            <Icon role="img" aria-hidden={true} as={ChevronRightIcon} size="sm" />
                         </Button>
                     </div>
                 </nav>,
@@ -162,7 +162,7 @@ export const NotebookOutline: React.FunctionComponent<React.PropsWithChildren<No
                         className={styles.toggleOutlineButton}
                         aria-label="Close Outline panel"
                     >
-                        <Icon as={ChevronLeftIcon} size="sm" />
+                        <Icon role="img" aria-hidden={true} as={ChevronLeftIcon} size="sm" />
                     </Button>
                     <span>Outline</span>
                 </div>

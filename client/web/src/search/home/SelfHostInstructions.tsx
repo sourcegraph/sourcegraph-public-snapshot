@@ -43,8 +43,13 @@ export const SelfHostInstructions: React.FunctionComponent<React.PropsWithChildr
         <div className={styles.wrapper}>
             <div className={styles.column}>
                 <Typography.H2>
-                    <Icon className={classNames('mr-2', styles.downloadIcon)} as={DownloadIcon} /> Self-hosted
-                    deployment
+                    <Icon
+                        role="img"
+                        aria-hidden={true}
+                        className={classNames('mr-2', styles.downloadIcon)}
+                        as={DownloadIcon}
+                    />{' '}
+                    Self-hosted deployment
                 </Typography.H2>
                 <ul className={styles.featureList}>
                     <li>Free for up to 10 users</li>
@@ -59,7 +64,7 @@ export const SelfHostInstructions: React.FunctionComponent<React.PropsWithChildr
                     rel="noopener noreferrer"
                 >
                     Learn more about self-hosted vs. cloud features{' '}
-                    <Icon aria-label="Open in new window" as={OpenInNewIcon} />
+                    <Icon role="img" aria-hidden={true} as={OpenInNewIcon} />
                 </Link>
             </div>
 
@@ -76,7 +81,7 @@ export const SelfHostInstructions: React.FunctionComponent<React.PropsWithChildr
                         aria-label="Copy Docker command to clipboard"
                         variant="link"
                     >
-                        <Icon as={ContentCopyIcon} />
+                        <Icon role="img" aria-hidden={true} as={ContentCopyIcon} />
                     </Button>
                     <Typography.Code className={styles.codeBlock}>{dockerCommand}</Typography.Code>
                 </MarketingBlock>
@@ -88,7 +93,7 @@ export const SelfHostInstructions: React.FunctionComponent<React.PropsWithChildr
                         className="mr-2"
                     >
                         Learn how to deploy a server or cluster{' '}
-                        <Icon aria-label="Open in new window" as={OpenInNewIcon} />
+                        <Icon role="img" aria-hidden={true} as={OpenInNewIcon} />
                     </Link>
                     <Link
                         to="https://info.sourcegraph.com/talk-to-a-developer?form_submission_source=inproduct&utm_campaign=inproduct-self-hosted-install&utm_medium=direct_traffic&utm_source=in-product&utm_term=null&utm_content=self-hosted-install"

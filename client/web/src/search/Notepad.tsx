@@ -82,7 +82,7 @@ function useHasNewEntry(entries: NotepadEntry[]): boolean {
 }
 
 export const NotepadIcon: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
-    <Icon as={BookPlusOutlineIcon} />
+    <Icon role="img" as={BookPlusOutlineIcon} aria-hidden={true} />
 )
 
 export interface NotepadContainerProps {
@@ -343,7 +343,7 @@ export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadPro
                     </small>
                 </span>
                 <span className={styles.toggleIcon}>
-                    <Icon as={ChevronUpIcon} />
+                    <Icon role="img" aria-hidden={true} as={ChevronUpIcon} />
                 </span>
             </Button>
             {open && (
@@ -436,7 +436,7 @@ export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadPro
                             disabled={entries.length === 0}
                             onClick={() => setConfirmRemoveAll(true)}
                         >
-                            <Icon as={DeleteIcon} />
+                            <Icon role="img" aria-hidden={true} as={DeleteIcon} />
                         </Button>
                     </div>
                 </>
@@ -466,7 +466,7 @@ const AddEntryButton: React.FunctionComponent<React.PropsWithChildren<AddEntryBu
                         addEntry(entry)
                     }}
                 >
-                    <Icon as={SearchIcon} /> Add search
+                    <Icon role="img" aria-hidden={true} as={SearchIcon} /> Add search
                 </Button>
             )
             break
@@ -484,7 +484,7 @@ const AddEntryButton: React.FunctionComponent<React.PropsWithChildren<AddEntryBu
                             addEntry(entry, 'file')
                         }}
                     >
-                        <Icon as={FileDocumentOutlineIcon} /> Add as file
+                        <Icon role="img" aria-hidden={true} as={FileDocumentOutlineIcon} /> Add as file
                     </Button>
                     {entry.lineRange && (
                         <Button
@@ -498,7 +498,8 @@ const AddEntryButton: React.FunctionComponent<React.PropsWithChildren<AddEntryBu
                                 addEntry(entry, 'range')
                             }}
                         >
-                            <Icon as={CodeBracketsIcon} /> Add as range {formatLineRange(entry.lineRange)}
+                            <Icon role="img" aria-hidden={true} as={CodeBracketsIcon} /> Add as range{' '}
+                            {formatLineRange(entry.lineRange)}
                         </Button>
                     )}
                 </span>
@@ -580,7 +581,7 @@ const NotepadEntryComponent: React.FunctionComponent<React.PropsWithChildren<Not
                             toggleAnnotationInput(!showAnnotationInput)
                         }}
                     >
-                        <Icon as={TextBoxIcon} />
+                        <Icon role="img" aria-hidden={true} as={TextBoxIcon} />
                     </Button>
                     <Button
                         aria-label={deletionLabel}
@@ -592,7 +593,7 @@ const NotepadEntryComponent: React.FunctionComponent<React.PropsWithChildren<Not
                             onDelete(entry)
                         }}
                     >
-                        <Icon as={DeleteIcon} />
+                        <Icon role="img" aria-hidden={true} as={DeleteIcon} />
                     </Button>
                 </span>
             </div>
@@ -629,7 +630,7 @@ function getUIComponentsForEntry(
     switch (entry.type) {
         case 'search':
             return {
-                icon: <Icon as={SearchIcon} />,
+                icon: <Icon role="img" aria-hidden={true} as={SearchIcon} />,
                 title: <SyntaxHighlightedSearchQuery query={entry.query} />,
                 location: {
                     pathname: '/search',
@@ -643,7 +644,13 @@ function getUIComponentsForEntry(
             }
         case 'file':
             return {
-                icon: <Icon as={entry.lineRange ? CodeBracketsIcon : FileDocumentOutlineIcon} />,
+                icon: (
+                    <Icon
+                        role="img"
+                        aria-hidden={true}
+                        as={entry.lineRange ? CodeBracketsIcon : FileDocumentOutlineIcon}
+                    />
+                ),
                 title: (
                     <span title={entry.path}>
                         {fileName(entry.path)}

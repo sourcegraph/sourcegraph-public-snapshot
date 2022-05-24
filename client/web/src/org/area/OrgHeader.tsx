@@ -165,7 +165,9 @@ export const OrgHeader: React.FunctionComponent<React.PropsWithChildren<Props>> 
                                                     }
                                                 >
                                                     <span>
-                                                        {ItemIcon && <Icon as={ItemIcon} />}{' '}
+                                                        {ItemIcon && (
+                                                            <Icon role="img" as={ItemIcon} aria-hidden={true} />
+                                                        )}{' '}
                                                         <span className="text-content" data-tab-content={label}>
                                                             {dynamicLabel ? dynamicLabel(context) : label}
                                                         </span>
