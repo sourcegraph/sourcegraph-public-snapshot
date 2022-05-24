@@ -152,6 +152,8 @@ an exception for this test can be added to the following flakefile:
 ${flakefile}
 \`\`\`
 
+⚠️ If by the time you are adding an exception, the release has already been cut, but it has not
+been published yet, the best course of action is to wait until that is the case.
 EOF
   )
   mkdir -p ./annotations/
