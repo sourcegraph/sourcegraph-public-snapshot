@@ -116,7 +116,9 @@ func parseVersions(lines []string, migrationsDir string) []int {
 // rootRelative removes the repo root prefix from the given path.
 func rootRelative(path string) string {
 	if root, _ := root.RepositoryRoot(); root != "" {
-		return strings.TrimPrefix(path, root)
+		sep := string(os.PathSeparator)
+		rootWithTrailingSep := strings.TrimRight(root, sep) + sep
+		return strings.TrimPrefix(path, rootWithTrailingSep)
 	}
 
 	return path

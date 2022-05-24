@@ -56,8 +56,9 @@ func (fm *FileMatchResolver) Symbols() []symbolResolver {
 }
 
 func (fm *FileMatchResolver) LineMatches() []lineMatchResolver {
-	r := make([]lineMatchResolver, 0, len(fm.FileMatch.LineMatches))
-	for _, lm := range fm.FileMatch.LineMatches {
+	lineMatches := result.MultilineSliceAsLineMatchSlice(fm.FileMatch.MultilineMatches)
+	r := make([]lineMatchResolver, 0, len(lineMatches))
+	for _, lm := range lineMatches {
 		r = append(r, lineMatchResolver{lm})
 	}
 	return r

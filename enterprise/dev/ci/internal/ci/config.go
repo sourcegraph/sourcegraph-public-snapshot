@@ -192,12 +192,17 @@ type MessageFlags struct {
 	// SkipHashCompare, if true, tells buildkite to disable skipping of steps that compare
 	// hash output.
 	SkipHashCompare bool
+
+	// ForceReadyForReview, if true will skip the draft pull request check and run the Chromatic steps.
+	// This allows a user to run the job without marking their PR as ready for review
+	ForceReadyForReview bool
 }
 
 // parseMessageFlags gets MessageFlags from the given commit message.
 func parseMessageFlags(msg string) MessageFlags {
 	return MessageFlags{
-		ProfilingEnabled: strings.Contains(msg, "[buildkite-enable-profiling]"),
-		SkipHashCompare:  strings.Contains(msg, "[skip-hash-compare]"),
+		ProfilingEnabled:    strings.Contains(msg, "[buildkite-enable-profiling]"),
+		SkipHashCompare:     strings.Contains(msg, "[skip-hash-compare]"),
+		ForceReadyForReview: strings.Contains(msg, "[review-ready]"),
 	}
 }

@@ -153,7 +153,7 @@ func DecorateFileHunksHTML(ctx context.Context, db database.DB, fm *result.FileM
 		return tableRows
 	}
 
-	groups := groupLineMatches(fm.LineMatches)
+	groups := groupLineMatches(result.MultilineSliceAsLineMatchSlice(fm.MultilineMatches))
 	hunks := make([]stream.DecoratedHunk, 0, len(groups))
 	for _, group := range groups {
 		rows := spliceRows(int(group[0].LineNumber), int(group[0].LineNumber)+len(group))

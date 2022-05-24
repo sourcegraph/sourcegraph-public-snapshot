@@ -67,8 +67,8 @@ func TestCleanup_computeStats(t *testing.T) {
 
 	if _, err := s.DB.ExecContext(context.Background(), `
 insert into repo(id, name) values (1, 'a'), (2, 'b/d'), (3, 'c');
-insert into gitserver_repos(repo_id, shard_id) values (1, 1), (2, 1);
-insert into gitserver_repos(repo_id, shard_id, repo_size_bytes) values (3, 1, 228);
+update gitserver_repos set shard_id = 1;
+update gitserver_repos set repo_size_bytes = 228 where repo_id = 3;
 `); err != nil {
 		t.Fatalf("unexpected error while inserting test data: %s", err)
 	}
@@ -1240,8 +1240,8 @@ insert into repo(id, name)
 values (1, 'ghe.sgdev.org/sourcegraph/gorilla-websocket'),
        (2, 'ghe.sgdev.org/sourcegraph/gorilla-mux'),
        (3, 'ghe.sgdev.org/sourcegraph/gorilla-sessions');
-insert into gitserver_repos(repo_id, shard_id) values (2, 1), (3, 1);
-insert into gitserver_repos(repo_id, shard_id, repo_size_bytes) values (1, 1, 228);
+update gitserver_repos set shard_id = 1;
+update gitserver_repos set repo_size_bytes = 228 where repo_id = 1;
 `); err != nil {
 		t.Fatalf("unexpected error while inserting test data: %s", err)
 	}
