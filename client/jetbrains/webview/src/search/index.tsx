@@ -1,5 +1,6 @@
 import { render } from 'react-dom'
 
+import polyfillEventSource from '@sourcegraph/shared/src/polyfills/vendor/eventSource'
 import { AnchorLink, setLinkComponent } from '@sourcegraph/wildcard'
 
 import { App } from './App'
@@ -28,6 +29,8 @@ window.initializeSourcegraph = async () => {
     applyConfig(config)
     applyTheme(theme)
     applyLastSearch(lastSearch)
+
+    polyfillEventSource(accessToken ? { Authorization: `token ${accessToken}` } : {})
 
     renderReactApp()
 

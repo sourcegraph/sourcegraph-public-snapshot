@@ -14,7 +14,6 @@ import { SearchBox } from '@sourcegraph/search-ui'
 import { AuthenticatedUser, currentAuthStateQuery } from '@sourcegraph/shared/src/auth'
 import { CurrentAuthStateResult, CurrentAuthStateVariables } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import polyfillEventSource from '@sourcegraph/shared/src/polyfills/vendor/eventSource'
 import {
     aggregateStreamingSearch,
     ContentMatch,
@@ -128,16 +127,24 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     }, [instanceURL])
 
     const onSubmit = useCallback(
-        (options?: { caseSensitive?: boolean; patternType?: SearchPatternType; contextSpec?: string }) => {
+        (options?: {
+            caseSensitive?: boolean
+            patternType?: SearchPatternType
+            contextSpec?: string
+            forceNewSearch?: true
+        }) => {
             const query = userQueryState.query ?? ''
             const caseSensitive = options?.caseSensitive
             const patternType = options?.patternType
             const contextSpec = options?.contextSpec
+            const forceNewSearch = options?.forceNewSearch ?? false
 
             // When we submit a search that is already the last search, do nothing. This prevents the
             // search results from being reloaded and reapplied in a different order when a user
             // accidentally hits enter thinking that this would open the file
+            console.log({ forceNewSearch })
             if (
+                forceNewSearch !== true &&
                 query === lastSearch.query &&
                 (caseSensitive === undefined || caseSensitive === lastSearch.caseSensitive) &&
                 (patternType === undefined || patternType === lastSearch.patternType) &&
@@ -145,6 +152,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
             ) {
                 return
             }
+            console.log('oh y')
             // If we don't unsubscribe, the previous search will be continued after the new search and search results will be mixed
             subscription?.unsubscribe()
             setSubscription(
@@ -159,6 +167,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                         decorationContextLines: 0,
                     }
                 ).subscribe(searchResults => {
+                    console.log(searchResults)
                     setResults(searchResults.results)
                 })
             )
@@ -173,13 +182,26 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
         [lastSearch, subscription, userQueryState.query]
     )
 
+    const [didInitialSubmit, setDidInitialSubmit] = useState(false)
+    useEffect(() => {
+        if (didInitialSubmit) {
+            return
+        }
+        setDidInitialSubmit(true)
+        if (initialSearch !== null) {
+            console.log('oh hi', initialSearch, didInitialSubmit)
+            onSubmit({
+                caseSensitive: initialSearch.caseSensitive,
+                patternType: initialSearch.patternType,
+                contextSpec: initialSearch.selectedSearchContextSpec,
+                forceNewSearch: true,
+            })
+        }
+    }, [initialSearch, onSubmit, didInitialSubmit])
+
     useEffect(() => {
         saveLastSearch(lastSearch)
     }, [lastSearch, userQueryState])
-
-    useEffect(() => {
-        polyfillEventSource(accessToken ? { Authorization: `token ${accessToken}` } : {})
-    }, [accessToken])
 
     return (
         <WildcardThemeContext.Provider value={{ isBranded: true }}>
