@@ -39,11 +39,11 @@ type PageHeaderProps = {
     children?: React.ReactNode
 } & (
     | {
-          /** Heading content */
+          /** Heading content powered by the configuration object. */
           path: BreadcrumbItem[]
       }
     | {
-          /** Heading content */
+          /** Heading content with fine-grain control. */
           children?: React.ReactNode
       }
 )

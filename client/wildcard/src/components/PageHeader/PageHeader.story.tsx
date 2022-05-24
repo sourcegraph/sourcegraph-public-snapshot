@@ -50,7 +50,6 @@ BasicHeader.parameters = {
 export const ComplexHeader: Story = () => (
     <PageHeader
         annotation={<FeedbackBadge status="prototype" feedback={{ mailto: 'support@sourcegraph.com' }} />}
-        path={[{ to: '/level-0', icon: PuzzleOutlineIcon }, { to: '/level-1', text: 'Level 1' }, { text: 'Level 2' }]}
         byline={
             <>
                 Created by <Link to="/page">user</Link> 3 months ago
@@ -67,7 +66,13 @@ export const ComplexHeader: Story = () => (
                 </Button>
             </div>
         }
-    />
+    >
+        <PageHeader.BreadcrumbList>
+            <PageHeader.Breadcrumb to="/level-0" icon={PuzzleOutlineIcon} />
+            <PageHeader.Breadcrumb to="/level-1">Level 1</PageHeader.Breadcrumb>
+            <PageHeader.Breadcrumb>Level 2</PageHeader.Breadcrumb>
+        </PageHeader.BreadcrumbList>
+    </PageHeader>
 )
 
 ComplexHeader.storyName = 'Complex header'
