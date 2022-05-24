@@ -60,48 +60,6 @@ export type Request =
     | ClearPreviewRequest
     | IndicateFinishedLoadingRequest
 
-export async function createRequestForMatch(
-    match: ContentMatch,
-    lineMatchIndex: number,
-    action: MatchRequest['action']
-): Promise<MatchRequest> {
-    const fileName = splitPath(match.path)[1]
-    const content = await loadContent(match)
-    const characterCountUntilLine = getCharacterCountUntilLine(content, match.lineMatches[lineMatchIndex].lineNumber)
-    const absoluteOffsetAndLengths = getAbsoluteOffsetAndLengths(
-        match.lineMatches[lineMatchIndex].offsetAndLengths,
-        characterCountUntilLine
-    )
-
-    return {
-        action,
-        arguments: {
-            fileName,
-            path: match.path,
-            content,
-            lineNumber: match.lineMatches[lineMatchIndex].lineNumber,
-            absoluteOffsetAndLengths,
-        },
-    }
-}
-
-// NOTE: This might be slow when the content is a really large file and the match is in the beginning of the file
-// because we convert all rows to an array first.
-// If we ever run into issues with large files, this is a place to get some wins.
-function getCharacterCountUntilLine(content: string, lineNumber: number): number {
-    let count = 0
-    const lines = content.split('\n') // This logic should handle \r\n well, too.
-    for (let index = 0; index < lineNumber; index++) {
-        count += lines[index].length + 1
-    }
-    console.log(`getCharacterCountUntilLine: ${count}`)
-    return count
-}
-
-function getAbsoluteOffsetAndLengths(offsetAndLengths: number[][], characterCountUntilLine: number): number[][] {
-    return offsetAndLengths.map(offsetAndLength => [offsetAndLength[0] + characterCountUntilLine, offsetAndLength[1]])
-}
-
 export async function getConfig(): Promise<PluginConfig> {
     try {
         return (await window.callJava({ action: 'getConfig' })) as PluginConfig
@@ -157,4 +115,46 @@ export async function onOpen(match: ContentMatch, lineMatchIndex: number): Promi
     } catch (error) {
         console.error(`Failed to open match: ${(error as Error).message}`)
     }
+}
+
+export async function createRequestForMatch(
+    match: ContentMatch,
+    lineMatchIndex: number,
+    action: MatchRequest['action']
+): Promise<MatchRequest> {
+    const fileName = splitPath(match.path)[1]
+    const content = await loadContent(match)
+    const characterCountUntilLine = getCharacterCountUntilLine(content, match.lineMatches[lineMatchIndex].lineNumber)
+    const absoluteOffsetAndLengths = getAbsoluteOffsetAndLengths(
+        match.lineMatches[lineMatchIndex].offsetAndLengths,
+        characterCountUntilLine
+    )
+
+    return {
+        action,
+        arguments: {
+            fileName,
+            path: match.path,
+            content,
+            lineNumber: match.lineMatches[lineMatchIndex].lineNumber,
+            absoluteOffsetAndLengths,
+        },
+    }
+}
+
+// NOTE: This might be slow when the content is a really large file and the match is in the beginning of the file
+// because we convert all rows to an array first.
+// If we ever run into issues with large files, this is a place to get some wins.
+function getCharacterCountUntilLine(content: string, lineNumber: number): number {
+    let count = 0
+    const lines = content.split('\n') // This logic should handle \r\n well, too.
+    for (let index = 0; index < lineNumber; index++) {
+        count += lines[index].length + 1
+    }
+    console.log(`getCharacterCountUntilLine: ${count}`)
+    return count
+}
+
+function getAbsoluteOffsetAndLengths(offsetAndLengths: number[][], characterCountUntilLine: number): number[][] {
+    return offsetAndLengths.map(offsetAndLength => [offsetAndLength[0] + characterCountUntilLine, offsetAndLength[1]])
 }
