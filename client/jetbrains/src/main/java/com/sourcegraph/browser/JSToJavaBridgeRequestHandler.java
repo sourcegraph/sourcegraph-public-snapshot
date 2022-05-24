@@ -77,6 +77,7 @@ public class JSToJavaBridgeRequestHandler {
                     return createSuccessResponse(null);
                 case "indicateFinishedLoading":
                     topPanel.setBrowserVisible(true);
+                    return createSuccessResponse(null);
                 default:
                     return createErrorResponse(2, "Unknown action: " + action);
             }
@@ -91,7 +92,7 @@ public class JSToJavaBridgeRequestHandler {
 
     @NotNull
     private JBCefJSQuery.Response createSuccessResponse(@Nullable JsonObject result) {
-        return new JBCefJSQuery.Response(result != null ? result.toString() : null);
+        return new JBCefJSQuery.Response(result != null ? result.toString() : "{}");
     }
 
     @NotNull
