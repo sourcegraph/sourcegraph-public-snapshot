@@ -18,3 +18,10 @@ export interface PluginConfig {
     isGlobbingEnabled: boolean
     accessToken: string | null
 }
+
+export interface Search {
+    query: string | null
+    caseSensitive: boolean
+    patternType: SearchPatternType
+    selectedSearchContextSpec: string
+}

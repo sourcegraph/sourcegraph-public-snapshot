@@ -30,6 +30,7 @@ import { initializeSourcegraphSettings } from '../sourcegraphSettings'
 
 import { saveLastSearch } from './jsToJavaBridgeUtil'
 import { SearchResultList } from './results/SearchResultList'
+import { Search } from './types'
 
 import styles from './App.module.scss'
 
@@ -46,13 +47,6 @@ interface Props {
 
 function fetchStreamSuggestionsWithStaticUrl(query: string): Observable<SearchMatch[]> {
     return fetchStreamSuggestions(query, 'https://sourcegraph.com/.api')
-}
-
-export interface Search {
-    query: string | null
-    caseSensitive: boolean
-    patternType: SearchPatternType
-    selectedSearchContextSpec: string
 }
 
 export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({

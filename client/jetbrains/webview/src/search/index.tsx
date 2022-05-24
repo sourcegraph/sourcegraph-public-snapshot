@@ -2,7 +2,7 @@ import { render } from 'react-dom'
 
 import { AnchorLink, setLinkComponent } from '@sourcegraph/wildcard'
 
-import { App, Search } from './App'
+import { App } from './App'
 import {
     getConfig,
     getTheme,
@@ -12,7 +12,7 @@ import {
     onPreviewChange,
     onPreviewClear,
 } from './jsToJavaBridgeUtil'
-import type { Theme, PluginConfig } from './types'
+import type { Theme, PluginConfig, Search } from './types'
 
 setLinkComponent(AnchorLink)
 

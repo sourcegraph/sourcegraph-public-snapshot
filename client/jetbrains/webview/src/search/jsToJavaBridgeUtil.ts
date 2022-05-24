@@ -1,9 +1,8 @@
 import { splitPath } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { ContentMatch } from '@sourcegraph/shared/src/search/stream'
 
-import { Search } from './App'
 import { loadContent } from './lib/blob'
-import { PluginConfig, Theme } from './types'
+import { PluginConfig, Theme, Search } from './types'
 
 interface MatchRequest {
     action: 'preview' | 'open'
