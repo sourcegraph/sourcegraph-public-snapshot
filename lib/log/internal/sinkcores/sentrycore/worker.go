@@ -18,23 +18,31 @@ import (
 // See https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/getsentry/sentry-go%24+file:%5Etransport%5C.go+defaultBufferSize&patternType=literal for more details.
 type worker struct {
 	// hub is an isolated Sentry context used to send out events to their API.
-	hub   *sentry.Hub
-	muHub sync.Mutex
+	hub sentryHub
 	// C is the channel used to pass errors and their associated context to the go routine sending out events.
 	C chan *Core
 	// done stops the worker from accepting new cores when written into.
 	done chan struct{}
 	// batch stores cores for processing, leveraging the ability of the Sentry client to send batched reports.
-	batch   []*Core
-	muBatch sync.Mutex
+	batch batch
 	// out tracks the outgoing cores count, i.e those which have to be sent out.
 	out sync.WaitGroup
 }
 
+type sentryHub struct {
+	hub *sentry.Hub
+	sync.Mutex
+}
+
+type batch struct {
+	batch []*Core
+	sync.Mutex
+}
+
 func (w *worker) setHub(hub *sentry.Hub) {
-	w.muHub.Lock()
-	defer w.muHub.Unlock()
-	w.hub = hub
+	w.hub.Lock()
+	defer w.hub.Unlock()
+	w.hub.hub = hub
 }
 
 // accept consumes incoming cores and accumulates them into a batch.
@@ -42,10 +50,10 @@ func (w *worker) accept() {
 	for {
 		select {
 		case c := <-w.C:
-			w.muBatch.Lock()
-			w.batch = append(w.batch, c)
+			w.batch.Lock()
+			w.batch.batch = append(w.batch.batch, c)
 			w.out.Add(1)
-			w.muBatch.Unlock()
+			w.batch.Unlock()
 		case <-w.done:
 			return
 		}
@@ -58,13 +66,13 @@ func (w *worker) process() {
 	for {
 		select {
 		case <-ticker:
-			w.muBatch.Lock()
-			for _, c := range w.batch {
+			w.batch.Lock()
+			for _, c := range w.batch.batch {
 				w.work(c)
 				w.out.Done()
 			}
-			w.batch = w.batch[:0] // reuse the same slice.
-			w.muBatch.Unlock()
+			w.batch.batch = w.batch.batch[:0] // reuse the same slice.
+			w.batch.Unlock()
 		}
 	}
 }
@@ -109,7 +117,7 @@ func (w *worker) Flush() error {
 	// Wait until we have processed all errors
 	w.out.Wait()
 	// Make sure Sentry has flushed everything.
-	w.hub.Flush(5 * time.Second)
+	w.hub.hub.Flush(5 * time.Second)
 	// Start accepting new errors again.
 	go w.accept()
 	return nil
@@ -117,7 +125,7 @@ func (w *worker) Flush() error {
 
 // capture submits an ErrorContext to Sentry.
 func (w *worker) capture(errCtx ErrorContext) {
-	if w.hub == nil {
+	if w.hub.hub == nil {
 		return
 	}
 	// Extract a sentry event from the error itself. If the error is an errors.Error, it will
@@ -179,13 +187,13 @@ func (w *worker) capture(errCtx ErrorContext) {
 		level = sentry.LevelError
 	}
 
-	w.muHub.Lock()
-	defer w.muHub.Unlock()
+	w.hub.Lock()
+	defer w.hub.Unlock()
 	// Submit the event itself.
-	w.hub.WithScope(func(scope *sentry.Scope) {
+	w.hub.hub.WithScope(func(scope *sentry.Scope) {
 		scope.SetExtras(extraDetails)
 		scope.SetTags(tags)
 		scope.SetLevel(level)
-		w.hub.CaptureEvent(event)
+		w.hub.hub.CaptureEvent(event)
 	})
 }
