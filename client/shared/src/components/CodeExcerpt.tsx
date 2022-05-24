@@ -108,31 +108,10 @@ export const CodeExcerpt: React.FunctionComponent<Props> = (props: Props) => {
     const visibilitySensorOffset = { bottom: -500 }
 
     useEffect(() => {
-        const subscription = tableContainerElements.subscribe(tableContainerElement => {
-            if (tableContainerElement) {
-                const visibleRows = tableContainerElement.querySelectorAll('table tr')
-                for (const highlight of props.highlightRanges) {
-                    // Select the HTML row in the excerpt that corresponds to the line to be highlighted.
-                    // highlight.line is the 0-indexed line number in the code file, and this.props.startLine is the 0-indexed
-                    // line number of the first visible line in the excerpt. So, subtract this.props.startLine
-                    // from highlight.line to get the correct 0-based index in visibleRows that holds the HTML row.
-                    const tableRow = visibleRows[highlight.line - props.startLine]
-                    if (tableRow) {
-                        // Take the lastChild of the row to select the code portion of the table row (each table row consists of the line number and code).
-                        const code = tableRow.lastChild as HTMLTableCellElement
-                        highlightNode(code, highlight.character, highlight.highlightLength)
-                    }
-                }
-            }
-        })
-        return () => subscription.unsubscribe()
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
-
-    useEffect(() => {
         propsChanges.next(props)
     }, [props, propsChanges])
 
+    // Get the syntax highlighted blob lines
     useEffect(() => {
         const subscription = combineLatest([propsChanges, visibilityChanges])
             .pipe(
@@ -151,10 +130,31 @@ export const CodeExcerpt: React.FunctionComponent<Props> = (props: Props) => {
                 setBlobLinesOrError(blobLinesOrError)
             })
         return () => subscription.unsubscribe()
-        // Only run on mount
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
+    }, [props, propsChanges, visibilityChanges])
 
+    // Highlight the search matches
+    useEffect(() => {
+        const subscription = tableContainerElements.subscribe(tableContainerElement => {
+            if (tableContainerElement) {
+                const visibleRows = tableContainerElement.querySelectorAll('table tr')
+                for (const highlight of props.highlightRanges) {
+                    // Select the HTML row in the excerpt that corresponds to the line to be highlighted.
+                    // highlight.line is the 0-indexed line number in the code file, and this.props.startLine is the 0-indexed
+                    // line number of the first visible line in the excerpt. So, subtract this.props.startLine
+                    // from highlight.line to get the correct 0-based index in visibleRows that holds the HTML row.
+                    const tableRow = visibleRows[highlight.line - props.startLine]
+                    if (tableRow) {
+                        // Take the lastChild of the row to select the code portion of the table row (each table row consists of the line number and code).
+                        const code = tableRow.lastChild as HTMLTableCellElement
+                        highlightNode(code, highlight.character, highlight.highlightLength)
+                    }
+                }
+            }
+        })
+        return () => subscription.unsubscribe()
+    }, [props.highlightRanges, props.startLine, tableContainerElements])
+
+    // Hook up the hover tooltips
     useEffect(() => {
         let hoverifierSubscription: Subscription | null
         const subscription = combineLatest([
@@ -182,9 +182,7 @@ export const CodeExcerpt: React.FunctionComponent<Props> = (props: Props) => {
             subscription.unsubscribe()
             hoverifierSubscription?.unsubscribe()
         }
-        // Only run on mount
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
+    }, [props.viewerUpdates, propsChanges, tableContainerElements])
 
     const onChangeVisibility = useCallback(
         (isVisible: boolean): void => {
@@ -195,10 +193,9 @@ export const CodeExcerpt: React.FunctionComponent<Props> = (props: Props) => {
 
     const setTableContainerElement = useCallback(
         (reference: HTMLElement | null): void => {
-            console.log(blobLinesOrError)
             tableContainerElements.next(reference)
         },
-        [blobLinesOrError, tableContainerElements]
+        [tableContainerElements]
     )
 
     return (
