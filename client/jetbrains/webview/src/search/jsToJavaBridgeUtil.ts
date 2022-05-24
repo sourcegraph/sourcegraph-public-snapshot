@@ -128,20 +128,33 @@ export async function getTheme(): Promise<Theme> {
 }
 
 export async function indicateFinishedLoading(): Promise<void> {
-    await window.callJava({ action: 'indicateFinishedLoading' })
+    try {
+        await window.callJava({ action: 'indicateFinishedLoading' })
+    } catch (error) {
+        console.error(`Failed to indicate “finished loading”: ${(error as Error).message}`)
+    }
 }
 
 export async function onPreviewChange(match: ContentMatch, lineMatchIndex: number): Promise<void> {
-    await window.callJava(await createRequestForMatch(match, lineMatchIndex, 'preview'))
+    try {
+        await window.callJava(await createRequestForMatch(match, lineMatchIndex, 'preview'))
+    } catch (error) {
+        console.error(`Failed to preview match: ${(error as Error).message}`)
+    }
 }
 
-export function onPreviewClear(): void {
-    window
-        .callJava({ action: 'clearPreview' })
-        .then(() => {})
-        .catch(() => {})
+export async function onPreviewClear(): Promise<void> {
+    try {
+        await window.callJava({ action: 'clearPreview' })
+    } catch (error) {
+        console.error(`Failed to clear preview: ${(error as Error).message}`)
+    }
 }
 
 export async function onOpen(match: ContentMatch, lineMatchIndex: number): Promise<void> {
+    try {
     await window.callJava(await createRequestForMatch(match, lineMatchIndex, 'open'))
+    } catch (error) {
+        console.error(`Failed to open match: ${(error as Error).message}`)
+    }
 }
