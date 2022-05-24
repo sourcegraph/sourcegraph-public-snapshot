@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 
 	"github.com/graph-gophers/graphql-go"
 
@@ -10,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	gql "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 )
 
