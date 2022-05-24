@@ -111,6 +111,8 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                                     className={styles.legendListItem}
                                     onClick={() => toggle(`${series.id}`)}
                                     onMouseEnter={() => setHoveredId(`${series.id}`)}
+                                    // prevent accidental dragging events
+                                    onMouseDown={event => event.stopPropagation()}
                                 />
                             ))}
                         </LegendList>
