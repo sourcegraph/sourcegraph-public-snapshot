@@ -10,9 +10,7 @@ import (
 	"path"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"golang.org/x/mod/module"
-	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -24,7 +22,7 @@ import (
 type Client struct {
 	urls    []string // list of proxy URLs
 	cli     httpcli.Doer
-	limiter *rate.Limiter
+	limiter *ratelimit.InstrumentedLimiter
 }
 
 // NewClient returns a new Client for the given urls. urn represents the
@@ -95,13 +93,8 @@ func (c *Client) get(ctx context.Context, mod string, paths ...string) (respBody
 	)
 
 	for _, baseURL := range c.urls {
-		startWait := time.Now()
 		if err = c.limiter.Wait(ctx); err != nil {
 			return nil, err
-		}
-
-		if d := time.Since(startWait); d > rateLimitingWaitThreshold {
-			log15.Warn("go modules proxy client self-enforced API rate limit: request delayed longer than expected due to rate limit", "delay", d)
 		}
 
 		reqURL, err = url.Parse(baseURL)
