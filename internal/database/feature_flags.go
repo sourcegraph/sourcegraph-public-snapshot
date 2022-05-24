@@ -27,7 +27,9 @@ type FeatureFlagStore interface {
 	DeleteOverride(ctx context.Context, orgID, userID *int32, flagName string) error
 	UpdateOverride(ctx context.Context, orgID, userID *int32, flagName string, newValue bool) (*ff.Override, error)
 	GetOverridesForFlag(context.Context, string) ([]*ff.Override, error)
+	GetUserOverride(ctx context.Context, userID int32, flagName string) (*ff.Override, error)
 	GetUserOverrides(context.Context, int32) ([]*ff.Override, error)
+	GetOrgOverrideForUser(ctx context.Context, userID int32, flagName string) (*ff.Override, error)
 	GetOrgOverridesForUser(ctx context.Context, userID int32) ([]*ff.Override, error)
 	GetOrgOverrideForFlag(ctx context.Context, orgID int32, flagName string) (*ff.Override, error)
 	GetUserFlag(ctx context.Context, userID int32, flagName string) (*bool, error)
