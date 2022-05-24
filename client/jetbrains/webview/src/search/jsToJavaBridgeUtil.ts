@@ -94,10 +94,11 @@ export async function indicateFinishedLoading(): Promise<void> {
 }
 
 export async function onPreviewChange(match: ContentMatch, lineMatchIndex: number): Promise<void> {
+    const request = await createRequestForMatch(match, lineMatchIndex, 'preview')
     try {
-        await window.callJava(await createRequestForMatch(match, lineMatchIndex, 'preview'))
+        await window.callJava(request)
     } catch (error) {
-        console.error(`Failed to preview match: ${(error as Error).message}`)
+        console.error(`Failed to preview match: ${(error as Error).message}`, request)
     }
 }
 
