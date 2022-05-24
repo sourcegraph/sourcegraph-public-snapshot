@@ -21,7 +21,7 @@ type Mapper struct {
 	MapZoektRepoSubsetSearchJob   func(*zoekt.ZoektRepoSubsetSearchJob) *zoekt.ZoektRepoSubsetSearchJob
 	MapZoektSymbolSearchJob       func(*zoekt.ZoektSymbolSearchJob) *zoekt.ZoektSymbolSearchJob
 	MapZoektGlobalSymbolSearchJob func(*zoekt.ZoektGlobalSymbolSearchJob) *zoekt.ZoektGlobalSymbolSearchJob
-	MapSearcherJob                func(*searcher.SearcherJob) *searcher.SearcherJob
+	MapSearcherJob                func(*searcher.Job) *searcher.Job
 	MapSymbolSearcherJob          func(*searcher.SymbolSearcherJob) *searcher.SymbolSearcherJob
 	MapRepoSearchJob              func(*run.RepoSearchJob) *run.RepoSearchJob
 	MapRepoUniverseTextSearchJob  func(*zoekt.ZoektGlobalSearchJob) *zoekt.ZoektGlobalSearchJob
@@ -70,7 +70,7 @@ func (m *Mapper) Map(j job.Job) job.Job {
 		}
 		return j
 
-	case *searcher.SearcherJob:
+	case *searcher.Job:
 		if m.MapSearcherJob != nil {
 			j = m.MapSearcherJob(j)
 		}
@@ -220,7 +220,7 @@ func MapAtom(j job.Job, f func(job.Job) job.Job) job.Job {
 			case
 				*zoekt.ZoektRepoSubsetSearchJob,
 				*zoekt.ZoektSymbolSearchJob,
-				*searcher.SearcherJob,
+				*searcher.Job,
 				*searcher.SymbolSearcherJob,
 				*run.RepoSearchJob,
 				*structural.StructuralSearchJob,
