@@ -41,7 +41,7 @@ func toFileMatch(zipReader *zip.Reader, combyMatch *comby.FileMatch) (protocol.F
 	multilineMatches := make([]protocol.MultilineMatch, 0, len(combyMatch.Matches))
 	for _, r := range combyMatch.Matches {
 		// trust, but verify
-		if r.Range.Start.Offset != r.Range.End.Offset && r.Range.Start.Offset >= len(fileBuf) || r.Range.End.Offset > len(fileBuf) {
+		if r.Range.Start.Offset > len(fileBuf) || r.Range.End.Offset > len(fileBuf) {
 			return protocol.FileMatch{}, errors.New("comby match range does not fit in file")
 		}
 
