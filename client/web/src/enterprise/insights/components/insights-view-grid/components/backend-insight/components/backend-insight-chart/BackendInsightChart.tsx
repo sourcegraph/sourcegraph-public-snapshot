@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { Dispatch, SetStateAction } from 'react'
 
 import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'
@@ -11,8 +11,6 @@ import { ScrollBox } from '../../../../../../../../views/components/view/content
 import { BackendInsightData } from '../../../../../../core'
 import { SeriesBasedChartTypes, SeriesChart } from '../../../../../views'
 import { BackendAlertOverlay } from '../backend-insight-alerts/BackendInsightAlerts'
-
-import { useSeriesToggle } from './use-series-toggle'
 
 import styles from './BackendInsightChart.module.scss'
 
@@ -45,12 +43,25 @@ interface BackendInsightChartProps<Datum> extends BackendInsightData {
     locked: boolean
     className?: string
     onDatumClick: () => void
+    toggle: (id: string) => void
+    isSeriesSelected: (id: string) => boolean
+    isSeriesHovered: (id: string) => boolean
+    setHoveredId: Dispatch<SetStateAction<string | undefined>>
 }
 
 export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum>): React.ReactElement {
-    const { locked, isFetchingHistoricalData, content, className, onDatumClick } = props
+    const {
+        locked,
+        isFetchingHistoricalData,
+        content,
+        className,
+        onDatumClick,
+        toggle,
+        isSeriesSelected,
+        isSeriesHovered,
+        setHoveredId,
+    } = props
     const { ref, width = 0 } = useDebounce(useResizeObserver(), 100)
-    const { toggle, isSeriesSelected, isSeriesHovered, setHoveredId } = useSeriesToggle()
 
     const hasViewManySeries = content.series.length > MINIMAL_SERIES_FOR_ASIDE_LEGEND
     const hasEnoughXSpace = width >= MINIMAL_HORIZONTAL_LAYOUT_WIDTH
