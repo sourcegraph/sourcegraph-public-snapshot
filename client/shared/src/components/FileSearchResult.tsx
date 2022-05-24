@@ -17,12 +17,12 @@ import { isSettingsValid, SettingsCascadeProps } from '../settings/settings'
 import { TelemetryProps } from '../telemetry/telemetryService'
 
 import { FetchFileParameters } from './CodeExcerpt'
+import { CodeHostIcon } from './CodeHostIcon'
 import { FileMatchChildren } from './FileMatchChildren'
 import { LineRanking } from './ranking/LineRanking'
 import { MatchGroup, MatchItem } from './ranking/PerFileResultRanking'
 import { ZoektRanking } from './ranking/ZoektRanking'
 import { RepoFileLink } from './RepoFileLink'
-import { RepoIcon } from './RepoIcon'
 import { Props as ResultContainerProps, ResultContainer } from './ResultContainer'
 
 interface Props extends SettingsCascadeProps, TelemetryProps {
@@ -96,7 +96,7 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
     }, [settings])
     const renderTitle = (): JSX.Element => (
         <>
-            <RepoIcon repoName={result.repository} className="text-muted flex-shrink-0" />
+            <CodeHostIcon repoName={result.repository} className="text-muted flex-shrink-0" />
             <RepoFileLink
                 repoName={result.repository}
                 repoURL={repoAtRevisionURL}

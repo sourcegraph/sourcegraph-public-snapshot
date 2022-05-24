@@ -49,7 +49,6 @@ type SearcherJob struct {
 func (s *SearcherJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
-	tr.TagFields(trace.LazyFields(s.Tags))
 
 	var fetchTimeout time.Duration
 	if len(s.Repos) == 1 || s.UseFullDeadline {
@@ -212,17 +211,21 @@ func newToMatches(repo types.MinimalRepo, commit api.CommitID, rev *string) func
 	return func(searcherMatches []*protocol.FileMatch) []result.Match {
 		matches := make([]result.Match, 0, len(searcherMatches))
 		for _, fm := range searcherMatches {
-			lineMatches := make([]*result.LineMatch, 0, len(fm.LineMatches))
+			lineMatches := make([]result.MultilineMatch, 0, len(fm.LineMatches))
 			for _, lm := range fm.LineMatches {
-				ranges := make([][2]int32, 0, len(lm.OffsetAndLengths))
 				for _, ol := range lm.OffsetAndLengths {
-					ranges = append(ranges, [2]int32{int32(ol[0]), int32(ol[1])})
+					lineMatches = append(lineMatches, result.MultilineMatch{
+						Start: result.LineColumn{
+							Line:   int32(lm.LineNumber),
+							Column: int32(ol[0]),
+						},
+						End: result.LineColumn{
+							Line:   int32(lm.LineNumber),
+							Column: int32(ol[0] + ol[1]),
+						},
+						Preview: lm.Preview,
+					})
 				}
-				lineMatches = append(lineMatches, &result.LineMatch{
-					Preview:          lm.Preview,
-					OffsetAndLengths: ranges,
-					LineNumber:       int32(lm.LineNumber),
-				})
 			}
 
 			matches = append(matches, &result.FileMatch{
@@ -232,8 +235,8 @@ func newToMatches(repo types.MinimalRepo, commit api.CommitID, rev *string) func
 					CommitID: commit,
 					InputRev: rev,
 				},
-				LineMatches: lineMatches,
-				LimitHit:    fm.LimitHit,
+				MultilineMatches: lineMatches,
+				LimitHit:         fm.LimitHit,
 			})
 		}
 		return matches

@@ -4,8 +4,8 @@ import classNames from 'classnames'
 
 import { pluralize } from '@sourcegraph/common'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
+import { CodeHostIcon } from '@sourcegraph/shared/src/components/CodeHostIcon'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
-import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
@@ -58,7 +58,7 @@ export const getRepoFilterLinks = (
     onFilterChosen: (value: string) => void
 ): React.ReactElement[] => {
     function repoLabelConverter(label: string): JSX.Element {
-        const Icon = RepoIcon({
+        const Icon = CodeHostIcon({
             repoName: label,
             className: classNames('text-muted', styles.sidebarSectionIcon),
         })

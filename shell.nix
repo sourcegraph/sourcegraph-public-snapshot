@@ -87,6 +87,8 @@ pkgs.mkShell {
     . ./dev/nix/shell-hook.sh
   '';
 
+  hardeningDisable = [ "fortify" ];
+
   # By explicitly setting this environment variable we avoid starting up
   # universal-ctags via docker.
   CTAGS_COMMAND = "${universal-ctags}/bin/universal-ctags";

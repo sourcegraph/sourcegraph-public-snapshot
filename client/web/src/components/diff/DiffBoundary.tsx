@@ -2,6 +2,8 @@ import React from 'react'
 
 import classNames from 'classnames'
 
+import { Typography } from '@sourcegraph/wildcard'
+
 import { FileDiffHunkFields } from '../../graphql-operations'
 import { DiffMode } from '../../repo/commit/RepositoryCommitPage'
 
@@ -27,10 +29,10 @@ const DiffBoundaryContent: React.FunctionComponent<React.PropsWithChildren<DiffB
             data-diff-marker=" "
         >
             {props.oldRange.lines !== undefined && props.newRange.lines !== undefined && (
-                <code className={diffHunkStyles.content}>
+                <Typography.Code className={diffHunkStyles.content}>
                     @@ -{props.oldRange.startLine},{props.oldRange.lines} +{props.newRange.startLine},
                     {props.newRange.lines} {props.section && `@@ ${props.section}`}
-                </code>
+                </Typography.Code>
             )}
         </td>
     </>

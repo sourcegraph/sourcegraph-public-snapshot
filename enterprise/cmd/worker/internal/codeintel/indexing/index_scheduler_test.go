@@ -100,7 +100,7 @@ func testIndexSchedulerMockDBStore() *MockDBStore {
 		{ID: 5, RepositoryID: intPtr(50)},
 	}
 
-	selectRepositoriesForIndexScan := func(ctx context.Context, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int) (scannedIDs []int, _ error) {
+	selectRepositoriesForIndexScan := func(ctx context.Context, tableName, column string, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int) (scannedIDs []int, _ error) {
 		if len(repositoryIDs) <= limit {
 			scannedIDs, repositoryIDs = repositoryIDs, nil
 		} else {

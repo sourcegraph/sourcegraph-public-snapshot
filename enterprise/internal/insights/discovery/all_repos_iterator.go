@@ -14,6 +14,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+type RepoIterator interface {
+	ForEach(ctx context.Context, each func(repoName string, id api.RepoID) error) error
+}
+
 // IndexableReposLister is a subset of the API exposed by the backend.ListIndexable.
 type IndexableReposLister interface {
 	List(ctx context.Context) ([]types.MinimalRepo, error)

@@ -189,7 +189,8 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
                     {isUnsupportedNotifyQuery && (
                         <Alert className="mt-3 mb-0" variant="warning">
                             <strong>Warning:</strong> non-commit searches do not currently support notifications.
-                            Consider adding <code>type:diff</code> or <code>type:commit</code> to your query.
+                            Consider adding <Typography.Code>type:diff</Typography.Code> or{' '}
+                            <Typography.Code>type:commit</Typography.Code> to your query.
                         </Alert>
                     )}
                     {notify && !window.context.emailEnabled && !isUnsupportedNotifyQuery && (

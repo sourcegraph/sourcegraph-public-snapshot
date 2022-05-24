@@ -36,6 +36,7 @@ const webviewConfig = {
   target: 'web',
   entry: {
     search: path.resolve(webviewSourcePath, 'search', 'index.tsx'),
+    bridgeMock: path.resolve(webviewSourcePath, 'bridge-mock', 'index.ts'),
     style: path.join(webviewSourcePath, 'index.scss'),
   },
   devtool: 'source-map',

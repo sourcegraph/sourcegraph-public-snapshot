@@ -46,7 +46,7 @@ func TestRetrievingAndDeduplicatingIndexedRefs(t *testing.T) {
 		}
 		return api.CommitID("deadbeef"), nil
 	}
-	git.Mocks.ExecSafe = func(params []string) (stdout, stderr []byte, exitCode int, err error) {
+	gitserver.Mocks.ExecSafe = func(params []string) (stdout, stderr []byte, exitCode int, err error) {
 		// Mock default branch lookup in (*RepsitoryResolver).DefaultBranch.
 		return []byte(defaultBranchRef), nil, 0, nil
 	}

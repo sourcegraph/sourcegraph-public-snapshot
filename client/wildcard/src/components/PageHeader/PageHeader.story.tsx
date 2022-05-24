@@ -30,7 +30,7 @@ export const BasicHeader: Story = () => (
         path={[{ icon: PuzzleOutlineIcon, text: 'Header' }]}
         actions={
             <Button to={`${location.pathname}/close`} className="mr-1" variant="secondary" as={Link}>
-                <Icon as={SearchIcon} /> Button with icon
+                <Icon role="img" aria-hidden={true} as={SearchIcon} /> Button with icon
             </Button>
         }
     />
@@ -63,7 +63,7 @@ export const ComplexHeader: Story = () => (
                     Secondary
                 </Button>
                 <Button as={Link} to="/page" variant="primary" className="text-nowrap">
-                    <Icon as={PlusIcon} /> Create
+                    <Icon role="img" aria-hidden={true} as={PlusIcon} /> Create
                 </Button>
             </div>
         }

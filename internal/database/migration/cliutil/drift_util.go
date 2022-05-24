@@ -3,56 +3,23 @@ package cliutil
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
 
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
-	descriptions "github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-// fetchSchema returns the schema description of the given schema at the given version. If the version
-// is not resolvable as a git rev-like, then an error is returned.
-func fetchSchema(schemaName, version string) (schemaDescription descriptions.SchemaDescription, _ error) {
-	url, err := getSchemaURL(schemaName, version)
-	if err != nil {
-		return schemaDescription, err
-	}
-	resp, err := http.Get(url)
-	if err != nil {
-		return schemaDescription, err
-	}
-	defer resp.Body.Close()
-
-	if err := json.NewDecoder(resp.Body).Decode(&schemaDescription); err != nil {
-		return schemaDescription, err
-	}
-
-	return schemaDescription, nil
-}
-
-// getSchemaURL returns the GitHub raw URL for the JSON-serialized version of the given schema at
-// the given version.
-func getSchemaURL(schemaName, version string) (string, error) {
-	filename, err := getSchemaJSONFilename(schemaName, version)
-	if err != nil {
-		return "", err
-	}
-
-	return fmt.Sprintf("https://raw.githubusercontent.com/sourcegraph/sourcegraph/%s/internal/database/%s", version, filename), nil
-}
-
 // getSchemaJSONFilename returns the basename of the JSON-serialized schema in the sg/sg repository.
-func getSchemaJSONFilename(schemaName, version string) (string, error) {
+func getSchemaJSONFilename(schemaName string) (string, error) {
 	switch schemaName {
 	case "frontend":
-		return "schema.json", nil
+		return "internal/database/schema.json", nil
 	case "codeintel":
 		fallthrough
 	case "codeinsights":
-		return fmt.Sprintf("schema.%s.json", schemaName), nil
+		return fmt.Sprintf("internal/database/schema.%s.json", schemaName), nil
 	}
 
 	return "", errors.Newf("unknown schema name %q", schemaName)

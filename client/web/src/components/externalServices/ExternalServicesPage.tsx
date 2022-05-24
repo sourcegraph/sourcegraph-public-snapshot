@@ -96,7 +96,7 @@ export const ExternalServicesPage: React.FunctionComponent<React.PropsWithChildr
                         variant="primary"
                         as={Link}
                     >
-                        <Icon as={AddIcon} /> Add code host
+                        <Icon role="img" as={AddIcon} aria-hidden={true} /> Add code host
                     </Button>
                 )}
             </div>

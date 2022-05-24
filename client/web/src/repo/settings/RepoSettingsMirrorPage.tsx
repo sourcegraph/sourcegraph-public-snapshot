@@ -71,7 +71,7 @@ class UpdateMirrorRepositoryActionContainer extends React.PureComponent<UpdateMi
         if (this.props.repo.mirrorInfo.cloneInProgress) {
             title = 'Cloning in progress...'
             description =
-                <code>{this.props.repo.mirrorInfo.cloneProgress}</code> ||
+                <Typography.Code>{this.props.repo.mirrorInfo.cloneProgress}</Typography.Code> ||
                 'This repository is currently being cloned from its remote repository.'
             buttonLabel = (
                 <span>
@@ -234,7 +234,7 @@ class CheckMirrorRepositoryConnectionActionContainer extends React.PureComponent
                                     <p>The remote repository is unreachable. Logs follow.</p>
                                     <div>
                                         <pre className={styles.log}>
-                                            <code>{this.state.result.error}</code>
+                                            <Typography.Code>{this.state.result.error}</Typography.Code>
                                         </pre>
                                     </div>
                                 </Alert>
@@ -355,15 +355,15 @@ export class RepoSettingsMirrorPage extends React.PureComponent<
                                     repository is not reachable.
                                 </li>
                                 <li className={styles.step}>
-                                    <code>
-                                        <strong>No ECDSA host key is known ... Host key verification failed?</strong>
-                                    </code>{' '}
+                                    <Typography.Code weight="bold">
+                                        No ECDSA host key is known ... Host key verification failed?
+                                    </Typography.Code>{' '}
                                     See{' '}
                                     <Link to="/help/admin/repo/auth#ssh-authentication-config-keys-known-hosts">
                                         SSH repository authentication documentation
                                     </Link>{' '}
-                                    for how to provide an SSH <code>known_hosts</code> file with the remote host's SSH
-                                    host key.
+                                    for how to provide an SSH <Typography.Code>known_hosts</Typography.Code> file with
+                                    the remote host's SSH host key.
                                 </li>
                                 <li className={styles.step}>
                                     Consult{' '}

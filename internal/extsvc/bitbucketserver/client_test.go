@@ -24,6 +24,7 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -1215,7 +1216,7 @@ func TestClient_WithAuthenticator(t *testing.T) {
 
 	old := &Client{
 		URL:       uri,
-		rateLimit: rate.NewLimiter(10, 10),
+		rateLimit: &ratelimit.InstrumentedLimiter{Limiter: rate.NewLimiter(10, 10)},
 		Auth:      &auth.BasicAuth{Username: "johnsson", Password: "mothersmaidenname"},
 	}
 

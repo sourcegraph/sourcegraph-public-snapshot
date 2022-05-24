@@ -293,16 +293,20 @@ func TestExactlyOneRepo(t *testing.T) {
 }
 
 func mkFileMatch(repo types.MinimalRepo, path string, lineNumbers ...int32) *result.FileMatch {
-	var lines []*result.LineMatch
+	var lines []result.MultilineMatch
 	for _, n := range lineNumbers {
-		lines = append(lines, &result.LineMatch{LineNumber: n})
+		lines = append(lines, result.MultilineMatch{
+			Start: result.LineColumn{Line: n},
+			End:   result.LineColumn{Line: n},
+		})
 	}
+
 	return &result.FileMatch{
 		File: result.File{
 			Path: path,
 			Repo: repo,
 		},
-		LineMatches: lines,
+		MultilineMatches: lines,
 	}
 }
 

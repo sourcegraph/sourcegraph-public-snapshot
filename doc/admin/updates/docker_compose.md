@@ -12,7 +12,13 @@ Each section comprehensively describes the steps needed to upgrade, and any manu
 
 ## Unreleases
 
+## 3.39 -> 3.40
+
 - `cadvisor` now defaults to run in `privileged` mode. This allows `cadvisor` to collect out of memory events happening to containers which can be used to discover underprovisoned resources. [#804](https://github.com/sourcegraph/deploy-sourcegraph-docker/pull/804)
+
+Follow the [standard upgrade procedure](../deploy/docker-compose/index.md#upgrade) to upgrade your deployment.
+
+*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.40).*
 
 ## 3.39.0 -> 3.39.1
 
