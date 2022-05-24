@@ -57,7 +57,7 @@ func (s *surveyResponseResolver) Better() *string {
 }
 
 func (s *surveyResponseResolver) UseCases() *[]string {
-	return s.surveyResponse.UseCases
+	return &s.surveyResponse.UseCases
 }
 
 func (s *surveyResponseResolver) AdditionalInformation() *string {

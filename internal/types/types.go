@@ -1137,7 +1137,7 @@ type SurveyResponse struct {
 	Score                 int32
 	Reason                *string
 	Better                *string
-	UseCases              *[]string
+	UseCases              []string
 	AdditionalInformation *string
 	CreatedAt             time.Time
 }
