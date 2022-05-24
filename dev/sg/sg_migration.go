@@ -7,16 +7,14 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"strings"
 
 	"github.com/Masterminds/semver"
+	"github.com/sourcegraph/run"
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/migration"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
@@ -75,14 +73,11 @@ var (
 	// the local git clone. If the version is not resolvable as a git rev-like, then an error is
 	// returned.
 	expectedSchemaFactory = func(filename, version string) (descriptions.SchemaDescription, error) {
-		gitShow := exec.Command("git", "show", fmt.Sprintf("%s^:%s", version, filename))
-		content, err := run.InRoot(gitShow)
-		if err != nil {
-			return descriptions.SchemaDescription{}, err
-		}
+		ctx := context.Background()
+		output := root.Run(run.Cmd(ctx, "git", "show", fmt.Sprintf("%s^:%s", version, filename)))
 
 		var schemaDescription descriptions.SchemaDescription
-		if err := json.NewDecoder(strings.NewReader(content)).Decode(&schemaDescription); err != nil {
+		if err := json.NewDecoder(output).Decode(&schemaDescription); err != nil {
 			return schemaDescription, err
 		}
 
