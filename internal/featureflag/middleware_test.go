@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/stretchr/testify/require"
@@ -46,47 +45,15 @@ func TestMiddleware(t *testing.T) {
 	handler.ServeHTTP(httptest.NewRecorder(), req)
 }
 
-func TestOrgFeatureFlagOverride(t *testing.T) {
-	mockStore := NewMockStore()
-
-	mockStore.GetFeatureFlagFunc.SetDefaultHook(func(ctx context.Context, name string) (*FeatureFlag, error) {
-		return &FeatureFlag{
-			Name:      name,
-			Bool:      &FeatureFlagBool{Value: false},
-			Rollout:   nil,
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
-			DeletedAt: nil,
-		}, nil
-	})
-	mockStore.GetUserOverrideFunc.SetDefaultReturn(nil, nil)
-	mockStore.GetOrgOverrideForUserFunc.SetDefaultReturn(nil, nil)
-
-	actor1 := actor.FromUser(1)
-	ctx := context.Background()
-	ctx = actor.WithActor(ctx, actor1)
-	ctx = WithFlags(ctx, mockStore)
-
-	require.False(t, EvaluateForActorFromContext(ctx, "test-flag"))
-
-	mockStore.GetOrgOverrideForUserFunc.SetDefaultHook(func(ctx context.Context, uid int32, flag string) (*Override, error) {
-		var orgID int32 = 1
-
-		return &Override{
-			UserID:   nil,
-			OrgID:    &orgID,
-			FlagName: flag,
-			Value:    true,
-		}, nil
-	})
-
-	r, _ := mockStore.GetOrgOverrideForUser(ctx, 1, "test-flag")
-	require.True(t, r.Value)
-
-	require.True(t, EvaluateForActorFromContext(ctx, "test-flag"))
+func TestGetEvaluatedFlagsFromContext(t *testing.T) {
+	// TODO: test GetEvaluatedFlagsFromContext that whatever is returned by getEvaluatedFlagSetFromCache is used
 }
 
 func TestEvaluateForActorFromContext(t *testing.T) {
+	// TODO: case 1: test that for authenticated user GetUserFlagFunc is called
+	// TODO: case 2: test that for anonymous user GetAnonymousUserFlagFunc is called
+	// TODO: case 3: test that for rest GetGlobalFeatureFlagFunc is called
+	// TODO: case 4: test that for each above cases setEvaluatedFlagToCache has been called with proper args
 	mockStore := NewMockStore()
 	mockStore.GetUserFlagFunc.SetDefaultHook(func(_ context.Context, uid int32, flag string) (*bool, error) {
 		if flag == "test-flag-1" {

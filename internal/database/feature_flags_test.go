@@ -25,8 +25,8 @@ func TestFeatureFlagStore(t *testing.T) {
 		t.Run("ListUserOverrides", testListUserOverrides)
 		t.Run("ListOrgOverrides", testListOrgOverrides)
 	})
-	t.Run("UserFlags", testUserFlags)
-	t.Run("AnonymousUserFlags", testAnonymousUserFlags)
+	t.Run("UserFlags", testUserFlag)
+	t.Run("AnonymousUserFlags", testAnonymousUserFlag)
 	t.Run("UserlessFeatureFlags", testUserlessFeatureFlags)
 	t.Run("OrganizationFeatureFlag", testOrgFeatureFlag)
 }
@@ -355,7 +355,7 @@ func testListOrgOverrides(t *testing.T) {
 	})
 }
 
-func testUserFlags(t *testing.T) {
+func testUserFlag(t *testing.T) {
 	t.Parallel()
 	db := NewDB(dbtest.NewDB(t))
 	flagStore := db.FeatureFlags()
@@ -410,10 +410,13 @@ func testUserFlags(t *testing.T) {
 		mkFFBool("f1", true)
 		mkFFBool("f2", false)
 
-		got, err := flagStore.GetUserFlags(ctx, u1.ID)
+		f1, err := flagStore.GetUserFlag(ctx, u1.ID, "f1")
 		require.NoError(t, err)
-		expected := map[string]bool{"f1": true, "f2": false}
-		require.Equal(t, expected, got)
+		require.True(t, *f1)
+
+		f2, err := flagStore.GetUserFlag(ctx, u1.ID, "f2")
+		require.NoError(t, err)
+		require.False(t, *f2)
 	})
 
 	t.Run("bool vars", func(t *testing.T) {
@@ -422,79 +425,72 @@ func testUserFlags(t *testing.T) {
 		mkFFBoolVar("f1", 10000)
 		mkFFBoolVar("f2", 0)
 
-		got, err := flagStore.GetUserFlags(ctx, u1.ID)
+		f1, err := flagStore.GetUserFlag(ctx, u1.ID, "f1")
 		require.NoError(t, err)
-		expected := map[string]bool{"f1": true, "f2": false}
-		require.Equal(t, expected, got)
+		require.True(t, *f1)
+
+		f2, err := flagStore.GetUserFlag(ctx, u1.ID, "f2")
+		require.NoError(t, err)
+		require.False(t, *f2)
 	})
 
 	t.Run("bool vals with user override", func(t *testing.T) {
 		t.Cleanup(cleanup(t, db))
 		u1 := mkUser("u")
-		mkFFBool("f1", true)
 		mkFFBool("f2", false)
 		mkUserOverride(u1.ID, "f2", true)
 
-		got, err := flagStore.GetUserFlags(ctx, u1.ID)
+		f2, err := flagStore.GetUserFlag(ctx, u1.ID, "f2")
 		require.NoError(t, err)
-		expected := map[string]bool{"f1": true, "f2": true}
-		require.Equal(t, expected, got)
+		require.True(t, *f2)
 	})
 
 	t.Run("bool vars with user override", func(t *testing.T) {
 		t.Cleanup(cleanup(t, db))
 		u1 := mkUser("u")
-		mkFFBoolVar("f1", 10000)
 		mkFFBoolVar("f2", 0)
 		mkUserOverride(u1.ID, "f2", true)
 
-		got, err := flagStore.GetUserFlags(ctx, u1.ID)
+		f2, err := flagStore.GetUserFlag(ctx, u1.ID, "f2")
 		require.NoError(t, err)
-		expected := map[string]bool{"f1": true, "f2": true}
-		require.Equal(t, expected, got)
+		require.True(t, *f2)
 	})
 
 	t.Run("bool vals with org override", func(t *testing.T) {
 		t.Cleanup(cleanup(t, db))
 		o1 := mkOrg("o1")
 		u1 := mkUser("u", o1.ID)
-		mkFFBool("f1", true)
 		mkFFBool("f2", false)
 		mkOrgOverride(o1.ID, "f2", true)
 
-		got, err := flagStore.GetUserFlags(ctx, u1.ID)
+		f2, err := flagStore.GetUserFlag(ctx, u1.ID, "f2")
 		require.NoError(t, err)
-		expected := map[string]bool{"f1": true, "f2": true}
-		require.Equal(t, expected, got)
+		require.True(t, *f2)
 	})
 
 	t.Run("bool vars with org override", func(t *testing.T) {
 		t.Cleanup(cleanup(t, db))
 		o1 := mkOrg("o1")
 		u1 := mkUser("u", o1.ID)
-		mkFFBoolVar("f1", 10000)
 		mkFFBoolVar("f2", 0)
 		mkOrgOverride(o1.ID, "f2", true)
 
-		got, err := flagStore.GetUserFlags(ctx, u1.ID)
+		f2, err := flagStore.GetUserFlag(ctx, u1.ID, "f2")
 		require.NoError(t, err)
-		expected := map[string]bool{"f1": true, "f2": true}
-		require.Equal(t, expected, got)
+		require.True(t, *f2)
 	})
 
 	t.Run("user override beats org override", func(t *testing.T) {
 		t.Cleanup(cleanup(t, db))
 		o1 := mkOrg("o1")
 		u1 := mkUser("u", o1.ID)
-		mkFFBoolVar("f1", 10000)
 		mkFFBoolVar("f2", 0)
 		mkOrgOverride(o1.ID, "f2", true)
 		mkUserOverride(u1.ID, "f2", false)
 
-		got, err := flagStore.GetUserFlags(ctx, u1.ID)
+		f2, err := flagStore.GetUserFlag(ctx, u1.ID, "f2")
 		require.NoError(t, err)
-		expected := map[string]bool{"f1": true, "f2": false}
-		require.Equal(t, expected, got)
+		require.False(t, *f2)
 	})
 
 	t.Run("delete flag with override", func(t *testing.T) {
@@ -513,7 +509,7 @@ func testUserFlags(t *testing.T) {
 	})
 }
 
-func testAnonymousUserFlags(t *testing.T) {
+func testAnonymousUserFlag(t *testing.T) {
 	t.Parallel()
 	db := NewDB(dbtest.NewDB(t))
 	flagStore := db.FeatureFlags()
@@ -536,10 +532,13 @@ func testAnonymousUserFlags(t *testing.T) {
 		mkFFBool("f1", true)
 		mkFFBool("f2", false)
 
-		got, err := flagStore.GetAnonymousUserFlag(ctx, "testuser", "")
+		f1, err := flagStore.GetAnonymousUserFlag(ctx, "testuser", "f1")
 		require.NoError(t, err)
-		expected := map[string]bool{"f1": true, "f2": false}
-		require.Equal(t, expected, got)
+		require.True(t, *f1)
+
+		f2, err := flagStore.GetAnonymousUserFlag(ctx, "testuser", "f2")
+		require.NoError(t, err)
+		require.False(t, *f2)
 	})
 
 	t.Run("bool vars", func(t *testing.T) {
@@ -547,10 +546,13 @@ func testAnonymousUserFlags(t *testing.T) {
 		mkFFBoolVar("f1", 10000)
 		mkFFBoolVar("f2", 0)
 
-		got, err := flagStore.GetAnonymousUserFlag(ctx, "testuser", "")
+		f1, err := flagStore.GetAnonymousUserFlag(ctx, "testuser", "f1")
 		require.NoError(t, err)
-		expected := map[string]bool{"f1": true, "f2": false}
-		require.Equal(t, expected, got)
+		require.True(t, *f1)
+
+		f2, err := flagStore.GetAnonymousUserFlag(ctx, "testuser", "f2")
+		require.NoError(t, err)
+		require.False(t, *f2)
 	})
 
 	// No override tests for AnonymousUserFlags because no override
@@ -580,10 +582,13 @@ func testUserlessFeatureFlags(t *testing.T) {
 		mkFFBool("f1", true)
 		mkFFBool("f2", false)
 
-		got, err := flagStore.GetGlobalFeatureFlags(ctx)
+		f1, err := flagStore.GetGlobalFeatureFlag(ctx, "f1")
 		require.NoError(t, err)
-		expected := map[string]bool{"f1": true, "f2": false}
-		require.Equal(t, expected, got)
+		require.True(t, *f1)
+
+		f2, err := flagStore.GetGlobalFeatureFlag(ctx, "f2")
+		require.NoError(t, err)
+		require.False(t, *f2)
 	})
 
 	t.Run("bool vars", func(t *testing.T) {
@@ -591,17 +596,13 @@ func testUserlessFeatureFlags(t *testing.T) {
 		mkFFBoolVar("f1", 10000)
 		mkFFBoolVar("f2", 0)
 
-		got, err := flagStore.GetGlobalFeatureFlags(ctx)
+		f1, err := flagStore.GetGlobalFeatureFlag(ctx, "f1")
 		require.NoError(t, err)
+		require.Nil(t, f1)
 
-		// Userless requests don't have a stable user to evaluate
-		// bool variable flags, so none should be defined.
-		//
-		// TODO(camdencheek): consider evaluating rollout feature
-		// flags with a static string so they are defined and stable,
-		// but effectively statically random.
-		expected := map[string]bool{}
-		require.Equal(t, expected, got)
+		f2, err := flagStore.GetGlobalFeatureFlag(ctx, "f2")
+		require.NoError(t, err)
+		require.Nil(t, f2)
 	})
 }
 
