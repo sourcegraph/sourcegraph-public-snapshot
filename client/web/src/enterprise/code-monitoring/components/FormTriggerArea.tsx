@@ -231,9 +231,8 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                                     caseSensitive={false}
                                     queryState={queryState}
                                     onChange={setQueryState}
-                                    onSubmit={() => {}}
                                     globbing={false}
-                                    preventNewLine={false}
+                                    preventNewLine={true}
                                     autoFocus={true}
                                 />
                             </div>
