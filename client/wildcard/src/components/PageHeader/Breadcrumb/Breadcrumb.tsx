@@ -28,10 +28,11 @@ export const Breadcrumb: React.FunctionComponent<BreadcrumbProps> = ({
     icon: Icon,
     className,
     children,
+    'aria-label': ariaLabel,
     ...rest
 }) => (
     <span className={classNames(styles.wrapper, className)} {...rest}>
-        <LinkOrSpan className={styles.path} to={to}>
+        <LinkOrSpan className={styles.path} to={to} aria-label={ariaLabel}>
             {Icon && <Icon className={styles.icon} aria-hidden={true} />}
             {children && <span className={styles.text}>{children}</span>}
         </LinkOrSpan>
