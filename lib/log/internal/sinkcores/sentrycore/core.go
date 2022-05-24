@@ -54,7 +54,7 @@ var _ zapcore.Core = &Core{}
 func NewCore(hub *sentry.Hub) *Core {
 	return &Core{
 		w: &worker{
-			hub:  hub.Clone(), // Avoid accidental side effects if the hub is modified elsewhere.
+			hub:  sentryHub{hub: hub.Clone()}, // Avoid accidental side effects if the hub is modified elsewhere.
 			C:    make(chan *Core, 512),
 			done: make(chan struct{}),
 		},
