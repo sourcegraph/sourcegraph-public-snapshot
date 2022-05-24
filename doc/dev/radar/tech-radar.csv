@@ -2,13 +2,13 @@
 Go,Adopt,Languages,TRUE,
 GRPC ,Trial,Backend,TRUE,
 Datadog,Trial,Tooling,TRUE,
-Buf,Assess,Backend,TRUE,<p>Bla bla it has proven to be ask the Frontend Platform team</p>
+Buf,Assess,Backend,TRUE,<p>We expect this will help us remove cumbersome, manual Protobuf setup</p>
 Mocha,Hold,Frontend,TRUE,
-Jest,Adopt,Frontend,TRUE,<p>Bla bla it has proven to be ask the Frontend Platform team</p>
+Jest,Adopt,Frontend,TRUE,
 Typescript,Adopt,Languages,TRUE,
 Buildkite ,Adopt,Tooling,TRUE,
 GitHub Actions,Adopt,Tooling,TRUE,
-log15,Hold,Backend,TRUE,<p>It sucks</p>
+log15,Hold,Backend,TRUE,<p>It's confusing</p>
 cockroachdb/errors,Hold,Backend,TRUE,
 Preprod Application tests,Trial,Tooling,TRUE,
 CI: Stateless agents,Adopt,Tooling,TRUE,
