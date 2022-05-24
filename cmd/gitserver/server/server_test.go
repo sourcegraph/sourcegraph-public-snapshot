@@ -34,6 +34,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	logger "github.com/sourcegraph/sourcegraph/lib/log"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -146,6 +147,7 @@ func TestRequest(t *testing.T) {
 	}
 
 	s := &Server{
+		Log:               logger.Scoped("Server", "a gitserver server"),
 		ReposDir:          "/testroot",
 		skipCloneForTests: true,
 		GetRemoteURLFunc: func(ctx context.Context, name api.RepoName) (string, error) {
@@ -504,6 +506,7 @@ func addCommitToRepo(cmd func(string, ...string) string) string {
 
 func makeTestServer(ctx context.Context, repoDir, remote string, db database.DB) *Server {
 	s := &Server{
+		Log:              logger.Scoped("Server", "a gitserver server"),
 		ReposDir:         repoDir,
 		GetRemoteURLFunc: staticGetRemoteURL(remote),
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {

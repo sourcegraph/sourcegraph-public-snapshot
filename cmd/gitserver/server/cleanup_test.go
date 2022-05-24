@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	logger "github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 const (
@@ -62,7 +63,9 @@ func TestCleanup_computeStats(t *testing.T) {
 
 	// We run cleanupRepos because we want to test as a side-effect it creates
 	// the correct file in the correct place.
-	s := &Server{ReposDir: root}
+	s := &Server{ReposDir: root,
+		Log: logger.Scoped("Server", "a gitserver server"),
+	}
 	s.testSetup(t)
 
 	if _, err := s.DB.ExecContext(context.Background(), `
@@ -124,7 +127,9 @@ func TestCleanupInactive(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s := &Server{ReposDir: root}
+	s := &Server{ReposDir: root,
+		Log: logger.Scoped("Server", "a gitserver server"),
+	}
 	s.testSetup(t)
 	s.cleanupRepos()
 
@@ -186,7 +191,9 @@ func TestGitGCAuto(t *testing.T) {
 	}
 
 	// Handler must be invoked for Server side-effects.
-	s := &Server{ReposDir: root}
+	s := &Server{ReposDir: root,
+		Log: logger.Scoped("Server", "a gitserver server"),
+	}
 	s.testSetup(t)
 	s.cleanupRepos()
 
@@ -300,6 +307,7 @@ func TestCleanupExpired(t *testing.T) {
 	}
 
 	s := &Server{
+		Log:              logger.Scoped("Server", "a gitserver server"),
 		ReposDir:         root,
 		GetRemoteURLFunc: getRemoteURL,
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
@@ -468,7 +476,7 @@ func TestCleanupOldLocks(t *testing.T) {
 		}
 	}
 
-	s := &Server{ReposDir: root}
+	s := &Server{ReposDir: root, Log: logger.Scoped("Server", "a gitserver server")}
 	s.testSetup(t)
 	s.cleanupRepos()
 
@@ -492,7 +500,7 @@ func TestCleanupOldLocks(t *testing.T) {
 func TestSetupAndClearTmp(t *testing.T) {
 	root := t.TempDir()
 
-	s := &Server{ReposDir: root}
+	s := &Server{ReposDir: root, Log: logger.Scoped("Server", "a gitserver server")}
 
 	// All non .git paths should become .git
 	mkFiles(t, root,
@@ -554,7 +562,7 @@ func TestSetupAndClearTmp(t *testing.T) {
 func TestSetupAndClearTmp_Empty(t *testing.T) {
 	root := t.TempDir()
 
-	s := &Server{ReposDir: root}
+	s := &Server{ReposDir: root, Log: logger.Scoped("Server", "a gitserver server")}
 
 	_, err := s.SetupAndClearTmp()
 	if err != nil {
@@ -607,6 +615,7 @@ func TestRemoveRepoDirectory(t *testing.T) {
 	}
 
 	s := &Server{
+		Log:      logger.Scoped("Server", "a gitserver server"),
 		ReposDir: root,
 		DB:       db,
 		ctx:      ctx,
@@ -669,6 +678,7 @@ func TestRemoveRepoDirectory_Empty(t *testing.T) {
 		"github.com/foo/baz/.git/HEAD",
 	)
 	s := &Server{
+		Log:      logger.Scoped("Server", "a gitserver server"),
 		ReposDir: root,
 	}
 
@@ -684,6 +694,7 @@ func TestRemoveRepoDirectory_Empty(t *testing.T) {
 func TestHowManyBytesToFree(t *testing.T) {
 	const G = 1024 * 1024 * 1024
 	s := &Server{
+		Log:                logger.Scoped("Server", "a gitserver server"),
 		DesiredPercentFree: 10,
 	}
 
@@ -825,13 +836,13 @@ func isEmptyDir(path string) (bool, error) {
 
 func TestFreeUpSpace(t *testing.T) {
 	t.Run("no error if no space requested and no repos", func(t *testing.T) {
-		s := &Server{DiskSizer: &fakeDiskSizer{}}
+		s := &Server{DiskSizer: &fakeDiskSizer{}, Log: logger.Scoped("Server", "a gitserver server")}
 		if err := s.freeUpSpace(0); err != nil {
 			t.Fatal(err)
 		}
 	})
 	t.Run("error if space requested and no repos", func(t *testing.T) {
-		s := &Server{DiskSizer: &fakeDiskSizer{}}
+		s := &Server{DiskSizer: &fakeDiskSizer{}, Log: logger.Scoped("Server", "a gitserver server")}
 		if err := s.freeUpSpace(1); err == nil {
 			t.Fatal("want error")
 		}
@@ -860,6 +871,7 @@ func TestFreeUpSpace(t *testing.T) {
 
 		// Run.
 		s := Server{
+			Log:       logger.Scoped("Server", "a gitserver server"),
 			ReposDir:  rd,
 			DiskSizer: &fakeDiskSizer{},
 		}
@@ -1229,7 +1241,7 @@ func TestCleanup_setRepoSizes(t *testing.T) {
 
 	// We run cleanupRepos because we want to test as a side-effect it creates
 	// the correct file in the correct place.
-	s := &Server{ReposDir: root}
+	s := &Server{ReposDir: root, Log: logger.Scoped("Server", "a gitserver server")}
 	s.Handler() // Handler as a side-effect sets up Server
 	db := dbtest.NewDB(t)
 	s.DB = database.NewDB(db)

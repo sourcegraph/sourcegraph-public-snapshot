@@ -9,13 +9,13 @@ import (
 	"path"
 	"strings"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/pypi"
 	"github.com/sourcegraph/sourcegraph/internal/unpack"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
+	logger "github.com/sourcegraph/sourcegraph/lib/log"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -30,6 +30,7 @@ func NewPythonPackagesSyncer(
 	}
 
 	return &vcsDependenciesSyncer{
+		log:         logger.Scoped("vcs syncer", "csDependenciesSyncer implements the VCSSyncer interface for dependency repos"),
 		typ:         "python_packages",
 		scheme:      dependencies.PythonPackagesScheme,
 		placeholder: placeholder,
@@ -80,6 +81,7 @@ func (s *pythonPackagesSyncer) Download(ctx context.Context, dir string, dep rep
 // files that aren't valid or that are potentially malicious. It detects the kind of archive
 // and compression used with the given packageURL.
 func unpackPythonPackage(pkg []byte, packageURL, workDir string) error {
+	logger := log.Scoped("unpackPythonPackages", "unpackPythonPackages unpacks the given python package archive into workDir")
 	u, err := url.Parse(packageURL)
 	if err != nil {
 		return errors.Wrap(err, "bad python package URL")
@@ -95,10 +97,10 @@ func unpackPythonPackage(pkg []byte, packageURL, workDir string) error {
 
 			const sizeLimit = 15 * 1024 * 1024
 			if size >= sizeLimit {
-				log15.Warn("skipping large file in npm package",
-					"path", file.Name(),
-					"size", size,
-					"limit", sizeLimit,
+				logger.Warn("skipping large file in npm package",
+					log.String("path", file.Name()),
+					log.Int64("size", size),
+					log.Float64("limit", sizeLimit),
 				)
 				return false
 			}

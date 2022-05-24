@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	logger "github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
@@ -33,6 +34,7 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 	depsService := &fakeDepsService{deps: map[string][]dependencies.Repo{}}
 
 	s := vcsDependenciesSyncer{
+		log:         logger.Scoped("vcs syncer", "csDependenciesSyncer implements the VCSSyncer interface for dependency repos"),
 		typ:         "fake",
 		scheme:      "fake",
 		placeholder: placeholder,

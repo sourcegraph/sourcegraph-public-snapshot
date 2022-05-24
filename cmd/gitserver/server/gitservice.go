@@ -1,21 +1,24 @@
 package server
 
 import (
+	"fmt"
 	"io"
 	"os/exec"
 	"strconv"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/mxk/go-flowrate/flowrate"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/lib/gitservice"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 var gitServiceMaxEgressBytesPerSecond = func() int64 {
+	logger := log.Scoped("gitServiceMaxEgressBytesPerSecond", "")
 	bps, err := strconv.ParseInt(env.Get(
 		"SRC_GIT_SERVICE_MAX_EGRESS_BYTES_PER_SECOND",
 		"1000000000",
@@ -24,7 +27,7 @@ var gitServiceMaxEgressBytesPerSecond = func() int64 {
 		64,
 	)
 	if err != nil {
-		log15.Error("gitservice: failed parsing SRC_GIT_SERVICE_MAX_EGRESS_BYTES_PER_SECOND. defaulting to 1Gbps", "error", err)
+		logger.Error("gitservice: failed parsing SRC_GIT_SERVICE_MAX_EGRESS_BYTES_PER_SECOND. defaulting to 1Gbps", log.Error(err))
 		bps = 1000 * 1000 * 1000 // 1Gbps
 	}
 	return bps
@@ -70,9 +73,20 @@ func (s *Server) gitServiceHandler() *gitservice.Handler {
 				metricServiceDuration.WithLabelValues(svc, errLabel).Observe(time.Since(start).Seconds())
 
 				if err != nil {
-					log15.Error("gitservice.ServeHTTP", "svc", svc, "repo", repo, "protocol", protocol, "duration", time.Since(start), "error", err.Error())
+					s.Log.Error("gitservice.ServeHTTP",
+						log.String("svc", svc),
+						log.String("repo", repo),
+						log.String("protocol", protocol),
+						log.String("duration", fmt.Sprint(time.Since(start))),
+						log.Error(err),
+					)
 				} else if traceLogs {
-					log15.Debug("TRACE gitserver git service", "svc", svc, "repo", repo, "protocol", protocol, "duration", time.Since(start))
+					s.Log.Debug("TRACE gitserver git service",
+						log.String("svc", svc),
+						log.String("repo", repo),
+						log.String("protocol", protocol),
+						log.String("duration", fmt.Sprint(time.Since(start))),
+					)
 				}
 			}
 		},

@@ -17,14 +17,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // GitDir is an absolute path to a GIT_DIR.
@@ -107,6 +106,8 @@ var tlsExternal = conf.Cached(func() any {
 	exp := conf.ExperimentalFeatures()
 	c := exp.TlsExternal
 
+	logger := log.Scoped("tls.external", "tlsExternal")
+
 	if c == nil {
 		return &tlsConfig{}
 	}
@@ -121,7 +122,7 @@ var tlsExternal = conf.Cached(func() any {
 		// We don't clean up the file since it has a process life time.
 		p, err := writeTempFile("gitserver*.crt", b.Bytes())
 		if err != nil {
-			log15.Error("failed to create file holding tls.external.certificates for git", "error", err)
+			logger.Error("failed to create file holding tls.external.certificates for git", log.Error(err))
 		} else {
 			sslCAInfo = p
 		}
@@ -153,6 +154,8 @@ func runWith(ctx context.Context, cmd *exec.Cmd, configRemoteOpts bool, progress
 		Bytes() []byte
 	}
 
+	logger := log.Scoped("runWith", "runWithRemoteOpts runs the command after applying the remote options.")
+
 	if progress != nil {
 		var pw progressWriter
 		r, w := io.Pipe()
@@ -162,7 +165,7 @@ func runWith(ctx context.Context, cmd *exec.Cmd, configRemoteOpts bool, progress
 		cmd.Stderr = mr
 		go func() {
 			if _, err := io.Copy(progress, r); err != nil {
-				log15.Error("error while copying progress", "error", err)
+				logger.Error("error while copying progress", log.Error(err))
 			}
 		}()
 		b = &pw
@@ -396,9 +399,10 @@ var logUnflushableResponseWriterOnce sync.Once
 func newFlushingResponseWriter(w http.ResponseWriter) *flushingResponseWriter {
 	// We panic if we don't implement the needed interfaces.
 	flusher := hackilyGetHTTPFlusher(w)
+	logger := log.Scoped("newFlushingResponseWriter", "creates a new flushing response writer")
 	if flusher == nil {
 		logUnflushableResponseWriterOnce.Do(func() {
-			log15.Warn("Unable to flush HTTP response bodies. Diff search performance and completeness will be affected.", "type", reflect.TypeOf(w).String())
+			logger.Warn("Unable to flush HTTP response bodies. Diff search performance and completeness will be affected.", log.String("type", reflect.TypeOf(w).String()))
 		})
 		return nil
 	}
@@ -551,6 +555,17 @@ func mapToLog15Ctx(m map[string]any) []any {
 	return ctx
 }
 
+// mapToLogCtx translates a map to log context fields.
+func mapToLogCtx(m map[string]any) string {
+	var logString string
+
+	for i, v := range m {
+		logString += fmt.Sprintf(i, v)
+	}
+
+	return logString
+}
+
 // isPaused returns true if a file "SG_PAUSE" is present in dir. If the file is
 // present, its first 40 bytes are returned as first argument.
 func isPaused(dir string) (string, bool) {
@@ -573,13 +588,14 @@ func isPaused(dir string) (string, bool) {
 // disappears between readdir and the stat of the file. In either case this
 // error can be ignored for best effort code.
 func bestEffortWalk(root string, walkFn func(path string, info fs.FileInfo) error) error {
+	logger := log.Scoped("bestEffortWalk", "bestEffortWalk is a filepath.Walk which ignores errors that can be passed to walkFn.")
 	return filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return nil
 		}
 
 		if msg, ok := isPaused(path); ok {
-			log15.Warn("bestEffortWalk paused", "dir", path, "reason", msg)
+			logger.Warn("bestEffortWalk paused", log.String("dir", path), log.String("reason", msg))
 			return filepath.SkipDir
 		}
 

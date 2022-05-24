@@ -9,16 +9,17 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // sshAgent speaks the ssh-agent protocol and can be used by gitserver
 // to provide a private key to ssh when talking to the code host.
 type sshAgent struct {
+	log     log.Logger
 	l       net.Listener
 	sock    string
 	keyring agent.Agent
@@ -55,6 +56,7 @@ func newSSHAgent(raw, passphrase []byte) (*sshAgent, error) {
 
 	// Set up the type we're going to return.
 	a := &sshAgent{
+		log:     log.Scoped("ssh Agent", "speaks the ssh-agent protocol and can be used by gitserver"),
 		l:       l,
 		sock:    socketName,
 		keyring: keyring,
@@ -73,7 +75,7 @@ func (a *sshAgent) Listen() {
 			case <-a.done:
 				return
 			default:
-				log15.Error("error accepting socket connection", "err", err)
+				a.log.Error("error accepting socket connection", log.Error(err))
 				return
 			}
 		}
@@ -86,7 +88,7 @@ func (a *sshAgent) Listen() {
 			defer conn.Close()
 
 			if err := agent.ServeAgent(a.keyring, conn); err != nil && err != io.EOF {
-				log15.Error("error serving SSH agent", "err", err)
+				a.log.Error("error serving SSH agent", log.Error(err))
 			}
 		}(conn)
 	}
