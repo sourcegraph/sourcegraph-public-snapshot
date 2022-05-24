@@ -3,7 +3,7 @@ import { noop } from 'lodash'
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
 
-import { Button, Menu, MenuButton, MenuItem, MenuList, Position } from '@sourcegraph/wildcard'
+import { Button, Menu, MenuButton, MenuItem, MenuList, Position } from '@sourcegraph/wildcard/out/src'
 
 import { WebStory } from '../../../../../../components/WebStory'
 import * as View from '../../../../../../views/components/view'
