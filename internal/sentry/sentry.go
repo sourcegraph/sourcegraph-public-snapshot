@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 var sentryDebug, _ = strconv.ParseBool(env.Get("SENTRY_DEBUG", "false", "print debug messages for Sentry"))
@@ -134,5 +135,17 @@ func Recoverer(handler http.Handler) http.Handler {
 		}()
 
 		handler.ServeHTTP(w, r)
+	})
+}
+
+func RecovererWithSentrySink(logger log.Logger, handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if r := recover(); r != nil {
+				err := errors.Errorf("handler panic: %v", redact.Safe(r))
+				logger.Error("handler panic", log.Error(err))
+				w.WriteHeader(http.StatusInternalServerError)
+			}
+		}()
 	})
 }

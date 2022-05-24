@@ -131,6 +131,9 @@ var (
 	minCode     = env.MustGetInt("SRC_HTTP_LOG_MIN_CODE", 500, "min http code before http responses are logged")
 )
 
+func HTTPMiddlewareWithSentrySink(next http.Handler, siteConfig conftypes.SiteConfigQuerier) http.Handler {
+}
+
 // HTTPMiddleware captures and exports metrics to Prometheus, etc.
 //
 // 🚨 SECURITY: This handler is served to all clients, even on private servers to clients who have
