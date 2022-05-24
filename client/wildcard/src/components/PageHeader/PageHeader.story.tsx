@@ -71,6 +71,9 @@ export const ComplexHeader: Story = () => (
             <PageHeader.Breadcrumb to="/level-0" icon={PuzzleOutlineIcon} />
             <PageHeader.Breadcrumb to="/level-1">Level 1</PageHeader.Breadcrumb>
             <PageHeader.Breadcrumb>Level 2</PageHeader.Breadcrumb>
+            <PageHeader.Breadcrumb>Level 3</PageHeader.Breadcrumb>
+            <PageHeader.Breadcrumb>Level 4</PageHeader.Breadcrumb>
+            <PageHeader.Breadcrumb>Level 5</PageHeader.Breadcrumb>
         </PageHeader.Heading>
     </PageHeader>
 )
