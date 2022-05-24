@@ -108,6 +108,52 @@ func TestWith(t *testing.T) {
 	})
 }
 
+func TestFields(t *testing.T) {
+	assertEventLogCtx := func(t *testing.T, tr *sentrycore.TransportMock, cb func(map[string]interface{})) {
+		assert.Len(t, tr.Events(), 1)
+		if len(tr.Events()) < 1 {
+			t.FailNow()
+		}
+		e := tr.Events()[0]
+		assert.IsType(t, map[string]interface{}{}, e.Contexts["log"])
+		cb(tr.Events()[0].Contexts["log"].(map[string]interface{}))
+	}
+	e := errors.New("test error")
+
+	t.Run("int", func(t *testing.T) {
+		logger, tr, sync := newTestLogger(t)
+		logger.With(log.Int("int", 4)).Error("msg", log.Error(e))
+		sync()
+		assertEventLogCtx(t, tr, func(ctx map[string]interface{}) {
+			assert.Equal(t, int64(4), ctx["int"])
+		})
+	})
+	t.Run("int64", func(t *testing.T) {
+		logger, tr, sync := newTestLogger(t)
+		logger.With(log.Int64("int", 4)).Error("msg", log.Error(e))
+		sync()
+		assertEventLogCtx(t, tr, func(ctx map[string]interface{}) {
+			assert.Equal(t, int64(4), ctx["int"])
+		})
+	})
+	t.Run("string", func(t *testing.T) {
+		logger, tr, sync := newTestLogger(t)
+		logger.With(log.String("string", "foo")).Error("msg", log.Error(e))
+		sync()
+		assertEventLogCtx(t, tr, func(ctx map[string]interface{}) {
+			assert.Equal(t, "foo", ctx["string"])
+		})
+	})
+	t.Run("object", func(t *testing.T) {
+		logger, tr, sync := newTestLogger(t)
+		logger.With(log.Object("object", log.String("string", "foo"), log.Int("int", 4))).Error("msg", log.Error(e))
+		sync()
+		assertEventLogCtx(t, tr, func(ctx map[string]interface{}) {
+			assert.Equal(t, map[string]interface{}{"int": int64(4), "string": "foo"}, ctx["object"])
+		})
+	})
+}
+
 func TestFieldsFiltering(t *testing.T) {
 	tt := []struct {
 		level      zapcore.Level
