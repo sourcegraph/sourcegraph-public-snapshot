@@ -29,8 +29,8 @@ var (
 		urn:  "github.com/Microsoft/lsif-node",
 	}
 	lsifTypescript = codeIntelIndexerResolver{
-		name: "lsif-typescript",
-		urn:  "github.com/sourcegraph/lsif-typescript",
+		name: "scip-typescript",
+		urn:  "github.com/sourcegraph/scip-typescript",
 	}
 	lsifJava = codeIntelIndexerResolver{
 		name: "scip-java",
@@ -146,7 +146,7 @@ var languageToIndexer = map[string][]gql.CodeIntelIndexerResolver{
 var imageToIndexer = map[string]gql.CodeIntelIndexerResolver{
 	"sourcegraph/scip-java":       &lsifJava,
 	"sourcegraph/lsif-go":         &lsifGo,
-	"sourcegraph/lsif-typescript": &lsifTypescript,
+	"sourcegraph/scip-typescript": &lsifTypescript,
 	"sourcegraph/lsif-node":       &lsifNode,
 	"sourcegraph/lsif-clang":      &lsifClang,
 	"davidrjenni/lsif-php":        &lsifPHP,

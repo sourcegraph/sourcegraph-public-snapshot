@@ -46,14 +46,14 @@ This table is maintained as an authoritative resource for users, Sales, and Cust
       </tr>
       <tr>
         <td>TypeScript/JavaScript</td>
-        <td><a href="https://github.com/sourcegraph/lsif-node">lsif-node</a></td>
-        <td><a href="#status-definitions" class="indexer-status">🟡</a></td>
+        <td><a href="https://github.com/sourcegraph/scip-typescript">scip-typescript</a></td>
+        <td><a href="#status-definitions" class="indexer-status">🟢</a></td>
         <td class="indexer-implemented-y">✓</td> <!-- Hover documentation -->
         <td class="indexer-implemented-y">✓</td> <!-- Go to definition -->
         <td class="indexer-implemented-y">✓</td> <!-- Find references -->
         <td class="indexer-implemented-y">✓</td> <!-- Cross-file -->
         <td class="indexer-implemented-y">✓</td> <!-- Cross-repository -->
-        <td class="indexer-implemented-n">✗</td> <!-- Find implementations -->
+        <td class="indexer-implemented-y">✓</td> <!-- Find implementations -->
         <td>-</td> <!-- Build tooling -->
       </tr>
       <tr>
@@ -70,14 +70,14 @@ This table is maintained as an authoritative resource for users, Sales, and Cust
       </tr>
       <tr>
          <td>Java</td>
-        <td><a href="https://github.com/sourcegraph/lsif-java">lsif-java</a></td>
+        <td><a href="https://github.com/sourcegraph/scip-java">scip-java</a></td>
         <td><a href="#status-definitions" class="indexer-status">🟢</a></td>
         <td class="indexer-implemented-y">✓</td> <!-- Hover documentation -->
         <td class="indexer-implemented-y">✓</td> <!-- Go to definition -->
         <td class="indexer-implemented-y">✓</td> <!-- Find references -->
         <td class="indexer-implemented-y">✓</td> <!-- Cross-file -->
         <td class="indexer-implemented-y">✓*</td> <!-- Cross-repository -->
-        <td class="indexer-implemented-n">✗</td> <!-- Find implementations -->
+        <td class="indexer-implemented-y">✓</td> <!-- Find implementations -->
         <td><a href="https://sourcegraph.github.io/lsif-java/docs/getting-started.html#supported-build-tools">See notes</a></td> <!-- Build tooling -->
       </tr>
       <tr>
@@ -89,7 +89,7 @@ This table is maintained as an authoritative resource for users, Sales, and Cust
         <td class="indexer-implemented-y">✓</td> <!-- Find references -->
         <td class="indexer-implemented-y">✓</td> <!-- Cross-file -->
         <td class="indexer-implemented-y">✓*</td> <!-- Cross-repository -->
-        <td class="indexer-implemented-n">✗</td> <!-- Find implementations -->
+        <td class="indexer-implemented-y">✓</td> <!-- Find implementations -->
         <td><a href="https://sourcegraph.github.io/lsif-java/docs/getting-started.html#supported-build-tools">See notes</a></td> <!-- Build tooling -->
       </tr>
       <tr>

@@ -12,7 +12,7 @@ import { asError, isErrorLike } from '@sourcegraph/common'
 import { SearchContextInputProps, SearchContextProps } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
-import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { KeyboardShortcutsProps } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -167,7 +167,12 @@ export const CommunitySearchContextPage: React.FunctionComponent<
                         <div className="order-2-lg order-1-xs">
                             <Card className={styles.repoCard}>
                                 <Typography.H2>
-                                    <Icon className="mr-2" as={SourceRepositoryMultipleIcon} />
+                                    <Icon
+                                        role="img"
+                                        className="mr-2"
+                                        as={SourceRepositoryMultipleIcon}
+                                        aria-hidden={true}
+                                    />
                                     Repositories
                                 </Typography.H2>
                                 <p>
@@ -226,7 +231,7 @@ const RepoLink: React.FunctionComponent<React.PropsWithChildren<{ repo: string }
         {repo.startsWith('github.com') && (
             <>
                 <Link to={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
-                    <Icon className={styles.repoListIcon} as={GithubIcon} />
+                    <Icon role="img" className={styles.repoListIcon} as={GithubIcon} aria-hidden={true} />
                 </Link>
                 <Link to={`/${repo}`} className="text-monospace search-filter-keyword">
                     {displayRepoName(repo)}
@@ -236,7 +241,7 @@ const RepoLink: React.FunctionComponent<React.PropsWithChildren<{ repo: string }
         {repo.startsWith('gitlab.com') && (
             <>
                 <Link to={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
-                    <Icon className={styles.repoListIcon} as={GitlabIcon} />
+                    <Icon role="img" className={styles.repoListIcon} as={GitlabIcon} aria-hidden={true} />
                 </Link>
                 <Link to={`/${repo}`} className="text-monospace search-filter-keyword">
                     {displayRepoName(repo)}
@@ -246,7 +251,7 @@ const RepoLink: React.FunctionComponent<React.PropsWithChildren<{ repo: string }
         {repo.startsWith('bitbucket.com') && (
             <>
                 <Link to={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
-                    <Icon className={styles.repoListIcon} as={BitbucketIcon} />
+                    <Icon role="img" className={styles.repoListIcon} as={BitbucketIcon} aria-hidden={true} />
                 </Link>
                 <Link to={`/${repo}`} className="text-monospace search-filter-keyword">
                     {displayRepoName(repo)}

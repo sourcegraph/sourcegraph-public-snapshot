@@ -9,11 +9,12 @@ import sanitizeHtml from 'sanitize-html'
 
 import { highlightNode } from '@sourcegraph/common'
 import { highlightCode } from '@sourcegraph/search'
-import { LastSyncedIcon } from '@sourcegraph/shared/src/components/LastSyncedIcon'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { CommitMatch } from '@sourcegraph/shared/src/search/stream'
 import { LoadingSpinner, Link, useEventObservable, Typography } from '@sourcegraph/wildcard'
+
+import { LastSyncedIcon } from './LastSyncedIcon'
 
 import styles from './CommitSearchResultMatch.module.scss'
 import searchResultStyles from './SearchResult.module.scss'

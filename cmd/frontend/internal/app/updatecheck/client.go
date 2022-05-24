@@ -103,7 +103,7 @@ func getTotalUsersCount(ctx context.Context, db database.DB) (_ int, err error) 
 
 func getTotalOrgsCount(ctx context.Context, db database.DB) (_ int, err error) {
 	defer recordOperation("getTotalUsersCount")(&err)
-	return database.Orgs(db).Count(ctx, database.OrgsListOptions{})
+	return db.Orgs().Count(ctx, database.OrgsListOptions{})
 }
 
 // hasRepo returns true when the instance has at least one repository that isn't

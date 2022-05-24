@@ -18,6 +18,7 @@ type Command struct {
 	Name                string
 	Cmd                 string            `yaml:"cmd"`
 	Install             string            `yaml:"install"`
+	InstallFunc         string            `yaml:"install_func"`
 	CheckBinary         string            `yaml:"checkBinary"`
 	Env                 map[string]string `yaml:"env"`
 	Watch               []string          `yaml:"watch"`
@@ -45,6 +46,9 @@ func (c Command) Merge(other Command) Command {
 	}
 	if other.Install != merged.Install && other.Install != "" {
 		merged.Install = other.Install
+	}
+	if other.InstallFunc != merged.InstallFunc && other.InstallFunc != "" {
+		merged.InstallFunc = other.InstallFunc
 	}
 	if other.IgnoreStdout != merged.IgnoreStdout && !merged.IgnoreStdout {
 		merged.IgnoreStdout = other.IgnoreStdout

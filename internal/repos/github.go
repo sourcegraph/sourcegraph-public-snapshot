@@ -355,7 +355,7 @@ func (s GitHubSource) ExternalServices() types.ExternalServices {
 	return types.ExternalServices{s.svc}
 }
 
-// GetRepo returns the Github repository with the given name and owner
+// GetRepo returns the GitHub repository with the given name and owner
 // ("org/repo-name")
 func (s GitHubSource) GetRepo(ctx context.Context, nameWithOwner string) (*types.Repo, error) {
 	r, err := s.getRepository(ctx, nameWithOwner)

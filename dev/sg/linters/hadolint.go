@@ -78,7 +78,7 @@ func hadolint() lint.Runner {
 		// Download
 		os.MkdirAll("./.bin", os.ModePerm)
 		std.Out.WriteNoticef("Downloading hadolint from %s", url)
-		if err := download.Exeuctable(url, hadolintBinary); err != nil {
+		if err := download.Executable(url, hadolintBinary); err != nil {
 			return &lint.Report{
 				Header: header,
 				Err:    errors.Wrap(err, "downloading hadolint"),

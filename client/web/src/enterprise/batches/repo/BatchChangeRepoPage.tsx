@@ -2,7 +2,7 @@ import React, { useMemo } from 'react'
 
 import * as H from 'history'
 
-import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { PageHeader, Typography, useObservable } from '@sourcegraph/wildcard'
 

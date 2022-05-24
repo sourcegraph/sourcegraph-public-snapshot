@@ -71,6 +71,8 @@ export const AnnotatedSearchInput: React.FunctionComponent<
         // the viewBox is adjusted to "crop" the image to its content
         // Original width and height of the image was 800x270
         <svg
+            role="img"
+            aria-hidden={true}
             className={styles.annotatedSearchInput}
             width={width}
             height={height}
@@ -102,14 +104,14 @@ export const AnnotatedSearchInput: React.FunctionComponent<
                     <tspan className={styles.metaRegexpRangeQuantifier}>*</tspan>
                     <tspan> function auth(){'{'} </tspan>
                 </text>
-                <Icon x="590" y="115" as={FormatLetterCaseIcon} />
-                <Icon x="620" y="115" as={RegexIcon} />
-                <Icon x="650" y="115" as={CodeBracketsIcon} />
+                <Icon role="img" aria-hidden={true} x="590" y="115" as={FormatLetterCaseIcon} />
+                <Icon role="img" aria-hidden={true} x="620" y="115" as={RegexIcon} />
+                <Icon role="img" aria-hidden={true} x="650" y="115" as={CodeBracketsIcon} />
                 <path
                     d="M688 110H731C732.105 110 733 110.895 733 112V142C733 143.105 732.105 144 731 144H688V110Z"
                     fill="#1475CF"
                 />
-                <Icon className={styles.searchIcon} x="698" y="115" as={SearchIcon} />
+                <Icon role="img" aria-hidden={true} className={styles.searchIcon} x="698" y="115" as={SearchIcon} />
 
                 {arrow(188, 30, 'above')}
                 <text transform={`translate(${filterTextStart}, 44)`}>

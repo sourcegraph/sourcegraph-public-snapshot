@@ -366,6 +366,32 @@ func (s *Service) sync(ctx context.Context, repos []api.RepoName) error {
 	return g.Wait()
 }
 
+// ResolveDependencies resolves the lockfile dependencies for a set of repository and revsisions
+// and writes them the database.
+//
+// This method is expected to be used only from background routines controlling lockfile indexing
+// scheduling. Additional users may impact the performance profile of the application as a whole.
+func (s *Service) ResolveDependencies(ctx context.Context, repoRevs map[api.RepoName]types.RevSpecSet) (err error) {
+	if !lockfileIndexingEnabled() {
+		return nil
+	}
+
+	// Resolve the revhashes for the source repo-commit pairs
+	repoCommits, _, err := s.resolveRepoCommits(ctx, repoRevs)
+	if err != nil {
+		return err
+	}
+
+	for _, repoCommit := range repoCommits {
+		if _, err := s.listAndPersistLockfileDependencies(ctx, repoCommit); err != nil {
+			return err
+		}
+	}
+
+	// TODO - also sync dependencies
+	return nil
+}
+
 // Dependents resolves the (transitive) inverse dependencies for a set of repository and revisions.
 // Both the input repoRevs and the output dependencyRevs are a map from repository names to revspecs.
 func (s *Service) Dependents(ctx context.Context, repoRevs map[api.RepoName]types.RevSpecSet) (dependentsRevs map[api.RepoName]types.RevSpecSet, err error) {

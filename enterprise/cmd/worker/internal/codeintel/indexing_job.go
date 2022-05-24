@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/indexing"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/enqueuer"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
 	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -74,11 +74,11 @@ func (j *indexingJob) Routines(ctx context.Context, logger log.Logger) ([]gorout
 	repoUpdaterClient := codeintel.InitRepoUpdaterClient()
 	extSvcStore := database.NewDB(db).ExternalServices()
 	dbStoreShim := &indexing.DBStoreShim{Store: dbStore}
-	enqueuerDBStoreShim := &enqueuer.DBStoreShim{Store: dbStore}
+	enqueuerDBStoreShim := &autoindexing.DBStoreShim{Store: dbStore}
 	policyMatcher := policies.NewMatcher(gitserverClient, policies.IndexingExtractor, false, true)
 	syncMetrics := workerutil.NewMetrics(observationContext, "codeintel_dependency_index_processor")
 	queueingMetrics := workerutil.NewMetrics(observationContext, "codeintel_dependency_index_queueing")
-	indexEnqueuer := enqueuer.NewIndexEnqueuer(enqueuerDBStoreShim, gitserverClient, repoUpdaterClient, indexingConfigInst.AutoIndexEnqueuerConfig, observationContext)
+	indexEnqueuer := autoindexing.GetService(database.NewDB(db), enqueuerDBStoreShim, gitserverClient, repoUpdaterClient)
 
 	routines := []goroutine.BackgroundRoutine{
 		indexing.NewIndexScheduler(dbStoreShim, policyMatcher, indexEnqueuer, indexingConfigInst.RepositoryProcessDelay, indexingConfigInst.RepositoryBatchSize, indexingConfigInst.PolicyBatchSize, indexingConfigInst.AutoIndexingTaskInterval, observationContext),

@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/lockfiles"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -26,8 +27,10 @@ var (
 var (
 	lockfilesSemaphoreWeight = env.MustGetInt("CODEINTEL_DEPENDENCIES_LOCKFILES_SEMAPHORE_WEIGHT", 64, "The maximum number of concurrent routines parsing lockfile contents.")
 	syncerSemaphoreWeight    = env.MustGetInt("CODEINTEL_DEPENDENCIES_LOCKFILES_SYNCER_WEIGHT", 64, "The maximum number of concurrent routines actively syncing repositories.")
-	enableUpserts            = env.Get("CODEINTEL_DEPENDENCIES_ENABLE_UPSERTS", "", "Enables writes of lockfile results to the database from the dependencies service.") != ""
 	enablePreciseQueries     = env.Get("CODEINTEL_DEPENDENCIES_ENABLE_PRECISE_QUERIES", "", "Enables queries of precise code intelligence results from the database from the dependencies service.") != ""
+
+	// For mocking in tests
+	lockfileIndexingEnabled = conf.CodeIntelLockfileIndexingEnabled
 )
 
 // GetService creates or returns an already-initialized dependencies service. If the service is
@@ -49,7 +52,7 @@ func GetService(db database.DB, gitService GitService, syncer Syncer) *Service {
 			Registerer: prometheus.DefaultRegisterer,
 		}
 
-		if !enableUpserts {
+		if !lockfileIndexingEnabled() {
 			logger.Warn("Disabling dependencies.store.UpsertLockfileDependencies")
 			store = &shim{store}
 		}

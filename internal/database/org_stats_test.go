@@ -8,10 +8,10 @@ import (
 )
 
 func TestOrgStats_Upsert(t *testing.T) {
-	db := dbtest.NewDB(t)
+	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
 
-	org, err := Orgs(db).Create(ctx, "org1", nil)
+	org, err := db.Orgs().Create(ctx, "org1", nil)
 	if err != nil {
 		t.Fatal(err)
 	}

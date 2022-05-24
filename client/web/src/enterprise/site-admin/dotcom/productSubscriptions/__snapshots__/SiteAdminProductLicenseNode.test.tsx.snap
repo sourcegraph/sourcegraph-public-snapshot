@@ -81,13 +81,16 @@ exports[`SiteAdminProductLicenseNode active 1`] = `
           class="input-group-append"
         >
           <button
+            aria-label="Copy"
             class="btn btnSecondary"
             type="button"
           >
             <svg
+              aria-hidden="true"
               class="mdi-icon iconInline"
               fill="currentColor"
               height="24"
+              role="img"
               viewBox="0 0 24 24"
               width="24"
             >
@@ -180,13 +183,16 @@ exports[`SiteAdminProductLicenseNode inactive 1`] = `
           class="input-group-append"
         >
           <button
+            aria-label="Copy"
             class="btn btnSecondary"
             type="button"
           >
             <svg
+              aria-hidden="true"
               class="mdi-icon iconInline"
               fill="currentColor"
               height="24"
+              role="img"
               viewBox="0 0 24 24"
               width="24"
             >

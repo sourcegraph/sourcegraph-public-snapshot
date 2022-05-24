@@ -423,7 +423,7 @@ func TestRepoStore_nonSiteAdminCanViewOrgPrivateCode(t *testing.T) {
 	)[0]
 
 	// Create an organization and add alice as a member
-	org, err := Orgs(db).Create(ctx, "org", nil)
+	org, err := db.Orgs().Create(ctx, "org", nil)
 	if err != nil {
 		t.Fatal(err)
 	}

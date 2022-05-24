@@ -11,12 +11,27 @@ import (
 
 type Service struct {
 	autoindexingStore store.Store
+	dbStore           DBStore // TODO - roll into store
+	gitserverClient   GitserverClient
+	repoUpdater       RepoUpdaterClient
+	inferenceService  inferenceService
 	operations        *operations
 }
 
-func newService(autoindexingStore store.Store, observationContext *observation.Context) *Service {
+func newService(
+	autoindexingStore store.Store,
+	dbStore DBStore,
+	gitserverClient GitserverClient,
+	repoUpdaterClient RepoUpdaterClient,
+	inferenceService inferenceService,
+	observationContext *observation.Context,
+) *Service {
 	return &Service{
 		autoindexingStore: autoindexingStore,
+		dbStore:           dbStore,
+		gitserverClient:   gitserverClient,
+		repoUpdater:       repoUpdaterClient,
+		inferenceService:  inferenceService,
 		operations:        newOperations(observationContext),
 	}
 }

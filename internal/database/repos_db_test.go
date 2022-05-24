@@ -507,7 +507,7 @@ func TestRepos_ListMinimalRepos_orgID(t *testing.T) {
 
 	// Create an org
 	displayName := "Acme Corp"
-	org, err := Orgs(db).Create(ctx, "acme", &displayName)
+	org, err := db.Orgs().Create(ctx, "acme", &displayName)
 	require.NoError(t, err)
 
 	now := time.Now()
@@ -2222,7 +2222,7 @@ func TestGetFirstRepoNamesByCloneURL(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	name, err := Repos(db).GetFirstRepoNamesByCloneURL(ctx, "https://github.com/foo/bar")
+	name, err := Repos(db).GetFirstRepoNameByCloneURL(ctx, "https://github.com/foo/bar")
 	if err != nil {
 		t.Fatal(err)
 	}

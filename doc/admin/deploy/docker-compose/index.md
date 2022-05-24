@@ -82,7 +82,7 @@ Create a `release` branch to track all of your customizations to Sourcegraph. Th
 
   ```bash
   # Specify the version you want to install
-  export SOURCEGRAPH_VERSION="v3.39.1"
+  export SOURCEGRAPH_VERSION="v3.40.0"
   # Check out the selected version for use, in a new branch called "release"
   git checkout $SOURCEGRAPH_VERSION -b release
   ```

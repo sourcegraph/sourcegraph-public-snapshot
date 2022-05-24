@@ -53,9 +53,9 @@ jobs:
       - run: src lsif upload -github-token=<<parameters.github-token>> -ignore-upload-failure
 
 workflows:
-  lsif-node:
+  scip-typescript:
     jobs:
-      - lsif-node
+      - scip-typescript
 ```
 
 The following projects have example CircleCI configurations to generate and upload LSIF indexes.

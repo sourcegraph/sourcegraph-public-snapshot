@@ -364,6 +364,8 @@ func ParseConfig(kind, config string) (cfg any, _ error) {
 
 const IDParam = "externalServiceID"
 
+// WebhookURL returns an endpoint URL for the given external service. If the kind
+// of external service does not support webhooks it returns an empty string.
 func WebhookURL(kind string, externalServiceID int64, cfg any, externalURL string) (string, error) {
 	var path, extra string
 	switch strings.ToUpper(kind) {
@@ -386,7 +388,8 @@ func WebhookURL(kind string, externalServiceID int64, cfg any, externalURL strin
 			return "", errors.Newf("external service with id=%d claims to be a Bitbucket Cloud service, but the configuration is of type %T", cfg)
 		}
 	default:
-		return "", errors.Newf("webhooks cannot be handled for external service kind: %q", kind)
+		// If not a supported kind, bail out.
+		return "", nil
 	}
 	// eg. https://example.com/.api/github-webhooks?externalServiceID=1
 	return fmt.Sprintf("%s/.api/%s?%s=%d%s", externalURL, path, IDParam, externalServiceID, extra), nil

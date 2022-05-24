@@ -27,30 +27,22 @@ public class JSToJavaBridgeRequestHandler {
 
     public JBCefJSQuery.Response handle(@NotNull JsonObject request) {
         String action = request.get("action").getAsString();
+        JsonObject arguments;
         Gson gson = new Gson();
         PreviewContent previewContent;
-        switch (action) {
-            case "getConfig": {
-                try {
+        try {
+            switch (action) {
+                case "getConfig":
                     JsonObject configAsJson = new JsonObject();
                     configAsJson.addProperty("instanceURL", ConfigUtil.getSourcegraphUrl(this.project));
                     configAsJson.addProperty("isGlobbingEnabled", ConfigUtil.isGlobbingEnabled(this.project));
                     configAsJson.addProperty("accessToken", ConfigUtil.getAccessToken(this.project));
                     return createSuccessResponse(configAsJson);
-                } catch (Exception e) {
-                    return createErrorResponse(3, e.getClass().getName() + ": " + e.getMessage());
-                }
-            }
-            case "getTheme":
-                try {
+                case "getTheme":
                     JsonObject currentThemeAsJson = ThemeUtil.getCurrentThemeAsJson();
                     return createSuccessResponse(currentThemeAsJson);
-                } catch (Exception e) {
-                    return createErrorResponse(4, e.getClass().getName() + ": " + e.getMessage());
-                }
-            case "saveLastSearch":
-                try {
-                    JsonObject arguments = request.getAsJsonObject("arguments");
+                case "saveLastSearch":
+                    arguments = request.getAsJsonObject("arguments");
                     String query = arguments.get("query").getAsString();
                     boolean caseSensitive = arguments.get("caseSensitive").getAsBoolean();
                     String patternType = arguments.get("patternType").getAsString();
@@ -62,64 +54,45 @@ public class JSToJavaBridgeRequestHandler {
                         selectedSearchContextSpec
                     ));
                     return createSuccessResponse(new JsonObject());
-                } catch (Exception e) {
-                    return createErrorResponse(5, e.getClass().getName() + ": " + e.getMessage());
-                }
-            case "loadLastSearch":
-                try {
-                    JsonObject configAsJson = new JsonObject();
+                case "loadLastSearch":
                     Search lastSearch = ConfigUtil.getLastSearch(this.project);
-                    configAsJson.addProperty("query", lastSearch.getQuery());
-                    configAsJson.addProperty("caseSensitive", lastSearch.isCaseSensitive());
-                    configAsJson.addProperty("patternType", lastSearch.getPatternType());
-                    configAsJson.addProperty("selectedSearchContextSpec", lastSearch.getSelectedSearchContextSpec());
-                    return createSuccessResponse(configAsJson);
-                } catch (Exception e) {
-                    return createErrorResponse(6, e.getClass().getName() + ": " + e.getMessage());
-                }
-            case "preview":
-                try {
-                    JsonObject arguments = request.getAsJsonObject("arguments");
+                    JsonObject lastSearchAsJson = new JsonObject();
+                    lastSearchAsJson.addProperty("query", lastSearch.getQuery());
+                    lastSearchAsJson.addProperty("caseSensitive", lastSearch.isCaseSensitive());
+                    lastSearchAsJson.addProperty("patternType", lastSearch.getPatternType());
+                    lastSearchAsJson.addProperty("selectedSearchContextSpec", lastSearch.getSelectedSearchContextSpec());
+                    return createSuccessResponse(lastSearchAsJson);
+                case "preview":
+                    arguments = request.getAsJsonObject("arguments");
                     previewContent = gson.fromJson(arguments, PreviewContent.class);
                     previewPanel.setContent(previewContent, false);
                     return createSuccessResponse(null);
-                } catch (Exception e) {
-                    return createErrorResponse(7, e.getClass().getName() + ": " + e.getMessage());
-                }
-            case "clearPreview":
-                try {
+                case "clearPreview":
                     previewPanel.clearContent();
                     return createSuccessResponse(null);
-                } catch (Exception e) {
-                    return createErrorResponse(8, e.getClass().getName() + ": " + e.getMessage());
-                }
-            case "open":
-                try {
-                    JsonObject arguments = request.getAsJsonObject("arguments");
+                case "open":
+                    arguments = request.getAsJsonObject("arguments");
                     previewContent = gson.fromJson(arguments, PreviewContent.class);
                     previewPanel.setContent(previewContent, true);
                     return createSuccessResponse(null);
-                } catch (Exception e) {
-                    return createErrorResponse(9, e.getClass().getName() + ": " + e.getMessage());
-                }
-            case "indicateFinishedLoading":
-                try {
+                case "indicateFinishedLoading":
                     topPanel.setBrowserVisible(true);
-                } catch (Exception e) {
-                    return createErrorResponse(10, e.getClass().getName() + ": " + e.getMessage());
-                }
-            default:
-                return createErrorResponse(2, "Unknown action: " + action);
+                    return createSuccessResponse(null);
+                default:
+                    return createErrorResponse(2, "Unknown action: " + action);
+            }
+        } catch (Exception e) {
+            return createErrorResponse(3, action + ": " + e.getClass().getName() + ": " + e.getMessage());
         }
     }
 
-    public JBCefJSQuery.Response handleInvalidRequest() {
-        return createErrorResponse(1, "Invalid JSON passed to bridge.");
+    public JBCefJSQuery.Response handleInvalidRequest(Exception e) {
+        return createErrorResponse(1, "Invalid JSON passed to bridge. The error is: " + e.getClass() + ": " + e.getMessage());
     }
 
     @NotNull
     private JBCefJSQuery.Response createSuccessResponse(@Nullable JsonObject result) {
-        return new JBCefJSQuery.Response(result != null ? result.toString() : null);
+        return new JBCefJSQuery.Response(result != null ? result.toString() : "{}");
     }
 
     @NotNull
