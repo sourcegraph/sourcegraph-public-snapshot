@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"time"
 
@@ -10,7 +9,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -51,11 +49,6 @@ type OrgStore interface {
 
 type orgStore struct {
 	*basestore.Store
-}
-
-// Orgs instantiates and returns a new OrgStore with prepared statements.
-func Orgs(db dbutil.DB) OrgStore {
-	return &orgStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 // OrgsWith instantiates and returns a new OrgStore using the other store handle.
@@ -185,7 +178,7 @@ func (*orgStore) listSQL(opt OrgsListOptions) *sqlf.Query {
 	return sqlf.Sprintf("(%s)", sqlf.Join(conds, ") AND ("))
 }
 
-func (o *orgStore) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*types.Org, error) {
+func (o *orgStore) getBySQL(ctx context.Context, query string, args ...any) ([]*types.Org, error) {
 	rows, err := o.Handle().DB().QueryContext(ctx, "SELECT id, name, display_name, created_at, updated_at FROM orgs "+query, args...)
 	if err != nil {
 		return nil, err

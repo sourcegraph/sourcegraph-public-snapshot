@@ -162,6 +162,13 @@ func CodeIntelAutoIndexingEnabled() bool {
 	return false
 }
 
+func CodeIntelLockfileIndexingEnabled() bool {
+	if enabled := Get().CodeIntelLockfileIndexingEnabled; enabled != nil {
+		return *enabled
+	}
+	return false
+}
+
 func CodeIntelAutoIndexingAllowGlobalPolicies() bool {
 	if enabled := Get().CodeIntelAutoIndexingAllowGlobalPolicies; enabled != nil {
 		return *enabled
@@ -232,14 +239,6 @@ func EventLoggingEnabled() bool {
 	val := ExperimentalFeatures().EventLogging
 	if val == "" {
 		return true
-	}
-	return val == "enabled"
-}
-
-func APIDocsSearchIndexingEnabled() bool {
-	val := ExperimentalFeatures().ApidocsSearchIndexing
-	if val == "" {
-		return false // off by default until API docs search indexing stabilizes, see https://github.com/sourcegraph/sourcegraph/issues/26292
 	}
 	return val == "enabled"
 }

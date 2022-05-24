@@ -2,7 +2,7 @@ import React, { useContext, useMemo } from 'react'
 
 import classNames from 'classnames'
 
-import { Badge, useObservable } from '@sourcegraph/wildcard'
+import { Badge, Typography, useObservable } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../components/diff/DiffStat'
 import { ApplyPreviewStatsFields, DiffStatFields, Scalars } from '../../../graphql-operations'
@@ -38,6 +38,8 @@ export interface BatchChangePreviewStatsBarProps {
 export const BatchChangePreviewStatsBar: React.FunctionComponent<
     React.PropsWithChildren<BatchChangePreviewStatsBarProps>
 > = ({ batchSpec, diffStat, queryApplyPreviewStats = _queryApplyPreviewStats }) => {
+    // `BatchChangePreviewContext` is responsible for managing the overrideable
+    // publication states for preview changesets on the clientside.
     const { publicationStates } = useContext(BatchChangePreviewContext)
 
     /** We use this to recalculate the stats when the publication states are modified. */
@@ -55,11 +57,11 @@ export const BatchChangePreviewStatsBar: React.FunctionComponent<
 
     return (
         <div className="d-flex flex-wrap mb-3 align-items-center">
-            <h2 className="m-0 align-self-center">
+            <Typography.H2 className="m-0 align-self-center">
                 <Badge variant="info" className="text-uppercase mb-0">
                     Preview
                 </Badge>
-            </h2>
+            </Typography.H2>
             <div className={classNames(styles.batchChangePreviewStatsBarDivider, 'd-none d-sm-block mx-3')} />
             <DiffStatStack className={styles.batchChangePreviewStatsBarDiff} {...diffStat} />
             <div className={classNames(styles.batchChangePreviewStatsBarHorizontalDivider, 'd-block d-sm-none my-3')} />

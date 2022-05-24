@@ -1,9 +1,9 @@
-import React, { useMemo, useState } from 'react'
+import React, { useState } from 'react'
 
 import { escapeRevspecForURL } from '@sourcegraph/common'
-import { Button, Popover, PopoverContent, PopoverTrigger, Position, Icon, useObservable } from '@sourcegraph/wildcard'
+import { Button, Popover, PopoverContent, PopoverTrigger, Position, Icon } from '@sourcegraph/wildcard'
 
-import { fetchFeatureFlags } from '../../featureFlags/featureFlags'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { eventLogger } from '../../tracking/eventLogger'
 import { RepoRevisionChevronDownIcon } from '../components/RepoRevision'
 import { RevisionsPopover } from '../RevisionsPopover'
@@ -41,11 +41,7 @@ export const RepositoryComparePopover: React.FunctionComponent<
     const [popoverOpen, setPopoverOpen] = useState(false)
     const togglePopover = (): void => setPopoverOpen(previous => !previous)
 
-    const features = useObservable(useMemo(() => fetchFeatureFlags(), []))
-
-    if (!features) {
-        return null
-    }
+    const [isNewRepoPageEnabled] = useFeatureFlag('new-repo-page')
 
     const handleSelect = (): void => {
         eventLogger.log('RepositoryComparisonSubmitted')
@@ -62,7 +58,7 @@ export const RepositoryComparePopover: React.FunctionComponent<
                 ? `${escapedRevision}...${escapeRevspecForURL(comparison.head.revision || '')}`
                 : `${escapeRevspecForURL(comparison.base.revision || '')}...${escapedRevision}`
 
-        const revisionPath = features.get('new-repo-page')
+        const revisionPath = isNewRepoPageEnabled
             ? `/${repo.name}/-/compare/tab/${comparePath}`
             : `/${repo.name}/-/compare/${comparePath}`
 

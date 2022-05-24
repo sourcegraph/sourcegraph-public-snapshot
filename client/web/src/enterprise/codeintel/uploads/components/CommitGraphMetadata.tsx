@@ -18,7 +18,7 @@ export const CommitGraphMetadata: FunctionComponent<React.PropsWithChildren<Comm
     now,
 }) => (
     <>
-        <Alert variant={stale ? 'primary' : 'success'} className={className}>
+        <Alert variant={stale ? 'primary' : 'success'} className={className} aria-live="off">
             {stale ? <StaleRepository /> : <FreshRepository />}{' '}
             {updatedAt && <LastUpdated updatedAt={updatedAt} now={now} />}
         </Alert>

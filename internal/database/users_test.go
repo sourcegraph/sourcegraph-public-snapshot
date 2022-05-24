@@ -494,7 +494,7 @@ func TestUsers_Delete(t *testing.T) {
 				t.Skip()
 			}
 			t.Parallel()
-			db := dbtest.NewDB(t)
+			db := NewDB(dbtest.NewDB(t))
 			ctx := context.Background()
 			ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
@@ -517,7 +517,7 @@ func TestUsers_Delete(t *testing.T) {
 			confGet := func() *conf.Unified {
 				return &conf.Unified{}
 			}
-			err = ExternalServices(db).Create(ctx, confGet, &types.ExternalService{
+			err = db.ExternalServices().Create(ctx, confGet, &types.ExternalService{
 				Kind:            extsvc.KindGitHub,
 				DisplayName:     "GITHUB #1",
 				Config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
@@ -550,7 +550,7 @@ func TestUsers_Delete(t *testing.T) {
 			}
 
 			// Create an event log
-			err = EventLogs(db).Insert(ctx, &Event{
+			err = db.EventLogs().Insert(ctx, &Event{
 				Name:            "something",
 				URL:             "http://example.com",
 				UserID:          uint32(user.ID),
@@ -602,7 +602,7 @@ func TestUsers_Delete(t *testing.T) {
 			}
 
 			// User's external services no longer exist
-			ess, err := ExternalServices(db).List(ctx, ExternalServicesListOptions{
+			ess, err := db.ExternalServices().List(ctx, ExternalServicesListOptions{
 				NamespaceUserID: user.ID,
 			})
 			if err != nil {
@@ -619,7 +619,7 @@ func TestUsers_Delete(t *testing.T) {
 			}
 
 			// Check event logs
-			eventLogs, err := EventLogs(db).ListAll(ctx, EventLogsListOptions{})
+			eventLogs, err := db.EventLogs().ListAll(ctx, EventLogsListOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}

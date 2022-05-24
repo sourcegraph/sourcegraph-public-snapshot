@@ -172,6 +172,8 @@ func KindToType(kind string) string {
 		return TypeJVMPackages
 	case KindPythonPackages:
 		return TypePythonPackages
+	case KindNpmPackages:
+		return TypeNpmPackages
 	case KindGoModules:
 		return TypeGoModules
 	case KindPagure:
@@ -322,7 +324,7 @@ type RepoID string
 type RepoIDType string
 
 // ParseConfig attempts to unmarshal the given JSON config into a configuration struct defined in the schema package.
-func ParseConfig(kind, config string) (cfg interface{}, _ error) {
+func ParseConfig(kind, config string) (cfg any, _ error) {
 	switch strings.ToUpper(kind) {
 	case KindAWSCodeCommit:
 		cfg = &schema.AWSCodeCommitConnection{}
@@ -362,8 +364,8 @@ func ParseConfig(kind, config string) (cfg interface{}, _ error) {
 
 const IDParam = "externalServiceID"
 
-func WebhookURL(kind string, externalServiceID int64, externalURL string) string {
-	var path string
+func WebhookURL(kind string, externalServiceID int64, cfg any, externalURL string) (string, error) {
+	var path, extra string
 	switch strings.ToUpper(kind) {
 	case KindGitHub:
 		path = "github-webhooks"
@@ -371,11 +373,23 @@ func WebhookURL(kind string, externalServiceID int64, externalURL string) string
 		path = "bitbucket-server-webhooks"
 	case KindGitLab:
 		path = "gitlab-webhooks"
+	case KindBitbucketCloud:
+		path = "bitbucket-cloud-webhooks"
+
+		// Unlike other external service kinds, Bitbucket Cloud doesn't support
+		// a shared secret defined as part of the webhook. As a result, we need
+		// to include it as an explicit part of the URL that we construct.
+		switch c := cfg.(type) {
+		case *schema.BitbucketCloudConnection:
+			extra = "&secret=" + url.QueryEscape(c.WebhookSecret)
+		default:
+			return "", errors.Newf("external service with id=%d claims to be a Bitbucket Cloud service, but the configuration is of type %T", cfg)
+		}
 	default:
-		return ""
+		return "", errors.Newf("webhooks cannot be handled for external service kind: %q", kind)
 	}
 	// eg. https://example.com/.api/github-webhooks?externalServiceID=1
-	return fmt.Sprintf("%s/.api/%s?%s=%d", externalURL, path, IDParam, externalServiceID)
+	return fmt.Sprintf("%s/.api/%s?%s=%d%s", externalURL, path, IDParam, externalServiceID, extra), nil
 }
 
 // ExtractToken attempts to extract the token from the supplied args
@@ -417,7 +431,7 @@ func ExtractRateLimit(config, kind string) (rate.Limit, error) {
 }
 
 // GetLimitFromConfig gets RateLimitConfig from an already parsed config schema.
-func GetLimitFromConfig(kind string, config interface{}) (rate.Limit, error) {
+func GetLimitFromConfig(kind string, config any) (rate.Limit, error) {
 	// Rate limit config can be in a few states:
 	// 1. Not defined: We fall back to default specified in code.
 	// 2. Defined and enabled: We use their defined limit.

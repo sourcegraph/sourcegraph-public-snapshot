@@ -67,7 +67,23 @@ Note: When enabling this setting, desired extensions and languages need to be sp
 }
 ```
 You will also need to manually enable language extensions for Code Intelligence to work properly by adding them to `"DefaultSettings"` in your site configuration. List of languages can be found here: [Sourcegraph default language settings](
-https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/cmd/frontend/graphqlbackend/default_settings.go#L14-51)
+https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/cmd/frontend/graphqlbackend/default_settings.go#L14-51).
+
+## Allow only extensions authored by Sourcegraph
+
+On Sourcegraph Enterprise, you can restrict users to using only Sourcegraph-authored extensions by setting [`extensions.allowOnlySourcegraphAuthoredExtensions`](../config/site_config.md) to `true` in your site configuration.
+
+```json
+{
+  "extensions": { "allowOnlySourcegraphAuthoredExtensions": true }
+}
+```
+
+If not set, all extensions may be used from the remote registry.
+
+If certain extensions are marked as allowed in `allowRemoteExtensions` field or `remoteRegistry` points to other than default registry, `allowOnlySourcegraphAuthoredExtensions` setting will be ignored.
+
+To completely disable the remote registry, set `remoteRegistry` to `false`.
 
 ## [Client-side security and privacy](../../extensions/security.md)
 

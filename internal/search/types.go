@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	zoektquery "github.com/google/zoekt/query"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -17,6 +18,17 @@ const (
 	Streaming Protocol = iota
 	Batch
 )
+
+func (p Protocol) String() string {
+	switch p {
+	case Streaming:
+		return "Streaming"
+	case Batch:
+		return "Batch"
+	default:
+		return fmt.Sprintf("unknown{%d}", p)
+	}
+}
 
 type SymbolsParameters struct {
 	// Repo is the name of the repository to search in.
@@ -227,6 +239,7 @@ type RepoOptions struct {
 	RepoFilters              []string
 	MinusRepoFilters         []string
 	Dependencies             []string
+	Dependents               []string
 	CaseSensitiveRepoFilters bool
 	SearchContextSpec        string
 
@@ -241,6 +254,8 @@ type RepoOptions struct {
 	NoForks   bool
 	OnlyForks bool
 
+	OnlyCloned bool
+
 	// ArchivedSet indicates whether `archived:` was set explicitly in the query,
 	// or whether the values were set from defaults.
 	ArchivedSet  bool
@@ -252,39 +267,42 @@ func (op *RepoOptions) String() string {
 	var b strings.Builder
 
 	if len(op.RepoFilters) > 0 {
-		_, _ = fmt.Fprintf(&b, "RepoFilters: %q\n", op.RepoFilters)
+		fmt.Fprintf(&b, "RepoFilters: %q\n", op.RepoFilters)
 	} else {
 		b.WriteString("RepoFilters: []\n")
 	}
 	if len(op.MinusRepoFilters) > 0 {
-		_, _ = fmt.Fprintf(&b, "MinusRepoFilters: %q\n", op.MinusRepoFilters)
+		fmt.Fprintf(&b, "MinusRepoFilters: %q\n", op.MinusRepoFilters)
 	} else {
 		b.WriteString("MinusRepoFilters: []\n")
 	}
 
-	_, _ = fmt.Fprintf(&b, "CommitAfter: %s\n", op.CommitAfter)
-	_, _ = fmt.Fprintf(&b, "Visibility: %s\n", string(op.Visibility))
+	fmt.Fprintf(&b, "CommitAfter: %s\n", op.CommitAfter)
+	fmt.Fprintf(&b, "Visibility: %s\n", string(op.Visibility))
 
 	if op.CaseSensitiveRepoFilters {
-		_, _ = fmt.Fprintf(&b, "CaseSensitiveRepoFilters: %t\n", op.CaseSensitiveRepoFilters)
+		fmt.Fprintf(&b, "CaseSensitiveRepoFilters: %t\n", op.CaseSensitiveRepoFilters)
 	}
 	if op.ForkSet {
-		_, _ = fmt.Fprintf(&b, "ForkSet: %t\n", op.ForkSet)
+		fmt.Fprintf(&b, "ForkSet: %t\n", op.ForkSet)
 	}
 	if op.NoForks {
-		_, _ = fmt.Fprintf(&b, "NoForks: %t\n", op.NoForks)
+		fmt.Fprintf(&b, "NoForks: %t\n", op.NoForks)
 	}
 	if op.OnlyForks {
-		_, _ = fmt.Fprintf(&b, "OnlyForks: %t\n", op.OnlyForks)
+		fmt.Fprintf(&b, "OnlyForks: %t\n", op.OnlyForks)
+	}
+	if op.OnlyCloned {
+		fmt.Fprintf(&b, "OnlyCloned: %t\n", op.OnlyCloned)
 	}
 	if op.ArchivedSet {
-		_, _ = fmt.Fprintf(&b, "ArchivedSet: %t\n", op.ArchivedSet)
+		fmt.Fprintf(&b, "ArchivedSet: %t\n", op.ArchivedSet)
 	}
 	if op.NoArchived {
-		_, _ = fmt.Fprintf(&b, "NoArchived: %t\n", op.NoArchived)
+		fmt.Fprintf(&b, "NoArchived: %t\n", op.NoArchived)
 	}
 	if op.OnlyArchived {
-		_, _ = fmt.Fprintf(&b, "OnlyArchived: %t\n", op.OnlyArchived)
+		fmt.Fprintf(&b, "OnlyArchived: %t\n", op.OnlyArchived)
 	}
 
 	return b.String()

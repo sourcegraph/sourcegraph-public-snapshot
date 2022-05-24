@@ -7,7 +7,7 @@ import { dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { PageHeader, CardBody, Card, Link, Container, H3, H2, H4 } from '@sourcegraph/wildcard'
+import { PageHeader, CardBody, Card, Link, Container, Typography, screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { isBatchChangesExecutionEnabled } from '../../../batches'
@@ -132,7 +132,9 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
     useEffect(() => {
         // If the data in the connection updates with new results, update the total count.
         if (connection) {
-            setLastTotalCount(connection.totalCount || 0)
+            const totalBatchChanges = connection.totalCount || 0
+            setLastTotalCount(totalBatchChanges)
+            screenReaderAnnounce(`${totalBatchChanges} batch changes`)
         }
     }, [connection])
 
@@ -153,13 +155,13 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                     <ConnectionContainer>
                         <div className={styles.filtersRow}>
                             {(licenseAndUsageInfo?.allBatchChanges.totalCount || 0) > 0 && (
-                                <H3 as={H2} className="align-self-end flex-1">
-                                    {lastTotalCount} batch changes
-                                </H3>
+                                <Typography.H3 as={Typography.H2} className="align-self-end flex-1">
+                                    {`${lastTotalCount} batch changes`}
+                                </Typography.H3>
                             )}
-                            <H4 as={H3} className="mb-0 mr-2">
+                            <Typography.H4 as={Typography.H3} className="mb-0 mr-2">
                                 Status
-                            </H4>
+                            </Typography.H4>
                             <BatchChangeListFilters
                                 className="m-0"
                                 isExecutionEnabled={isExecutionEnabled}
@@ -168,6 +170,14 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                             />
                         </div>
                         {error && <ConnectionError errors={[error.message]} />}
+                        {/*
+                            The connection list is a `div` instead of a `ul` because `ul` doesn't support css grid and we need to grid
+                            to live on the wrapper as opposed to each `BatchChangeNode`.
+
+                            This is because the current grid pattern gets broken when the individual child of the `ConnectionList` component
+                            has a grid.
+                            Discussion: https://github.com/sourcegraph/sourcegraph/pull/34716#pullrequestreview-959790114
+                        */}
                         <ConnectionList
                             as="div"
                             className={classNames(styles.grid, isExecutionEnabled ? styles.wide : styles.narrow)}
@@ -301,11 +311,11 @@ const GettingStartedFooter: React.FunctionComponent<React.PropsWithChildren<{}>>
             <Card>
                 <CardBody className="text-center">
                     <p>Create your first batch change</p>
-                    <h2 className="mb-0">
+                    <Typography.H2 className="mb-0">
                         <Link to="/help/batch_changes/quickstart" target="_blank" rel="noopener">
                             Batch Changes quickstart
                         </Link>
-                    </h2>
+                    </Typography.H2>
                 </CardBody>
             </Card>
         </div>

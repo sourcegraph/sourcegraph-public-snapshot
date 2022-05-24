@@ -7,7 +7,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/structural"
-	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
 	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 )
 
@@ -20,9 +19,9 @@ var allJobs = []job.Job{
 	&zoekt.ZoektGlobalSearchJob{},
 	&structural.StructuralSearchJob{},
 	&commit.CommitSearchJob{},
-	&symbol.RepoUniverseSymbolSearchJob{},
+	&zoekt.ZoektGlobalSymbolSearchJob{},
 	&repos.ComputeExcludedReposJob{},
-	&noopJob{},
+	&NoopJob{},
 
 	&repoPagerJob{},
 

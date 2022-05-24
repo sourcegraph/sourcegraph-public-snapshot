@@ -106,10 +106,10 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
             voronoi<Point<D>>({
                 x: point => point.x,
                 y: point => point.y,
-                width,
-                height,
+                width: outerWidth,
+                height: outerHeight,
             })(points),
-        [width, height, points]
+        [outerWidth, outerHeight, points]
     )
 
     const handlers = useChartEventHandlers({

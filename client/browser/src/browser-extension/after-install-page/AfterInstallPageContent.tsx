@@ -12,7 +12,7 @@ import LockIcon from 'mdi-react/LockIcon'
 import { SourcegraphLogo } from '@sourcegraph/branded/src/components/SourcegraphLogo'
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Link, Icon } from '@sourcegraph/wildcard'
+import { Link, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { getPlatformName } from '../../shared/util/context'
 
@@ -61,21 +61,21 @@ export const AfterInstallPageContent: React.FunctionComponent<React.PropsWithChi
                     <SourcegraphLogo className={styles.sourcegraphLogo} />
                 </Link>
                 <Link to="https://docs.sourcegraph.com/integration/browser_extension" target="_blank" rel="noopener">
-                    Browser extension docs <Icon as={ExternalLinkIcon} />
+                    Browser extension docs <Icon role="img" as={ExternalLinkIcon} aria-hidden={true} />
                 </Link>
             </div>
 
             <div className="container mt-3">
-                <h1>🎉 You’ve just installed the Sourcegraph browser extension!</h1>
+                <Typography.H1>🎉 You’ve just installed the Sourcegraph browser extension!</Typography.H1>
                 <p className="lead mb-0">We’ve gathered the most important information that will get your started:</p>
             </div>
 
             <section className="border-bottom py-5">
                 <div className="container">
-                    <h2 className="mb-4">How do I use the extension?</h2>
+                    <Typography.H2 className="mb-4">How do I use the extension?</Typography.H2>
                     <div className="row">
                         <div className="col-md-6">
-                            <h3>Code intelligence on your code host</h3>
+                            <Typography.H3>Code intelligence on your code host</Typography.H3>
                             <p>
                                 Sourcegraph browser extension adds code intelligence to files and diffs on GitHub,
                                 GitHub Enterprise, GitLab, Phabricator, Bitbucket Server, and Gerrit.
@@ -84,9 +84,9 @@ export const AfterInstallPageContent: React.FunctionComponent<React.PropsWithChi
                         </div>
                         {showSearchShortcut && (
                             <div className="col-md-6 mt-4 mt-md-0">
-                                <h3>Search shortcut in the URL location bar</h3>
+                                <Typography.H3>Search shortcut in the URL location bar</Typography.H3>
                                 <p>
-                                    Type <code>src</code>
+                                    Type <Typography.Code>src</Typography.Code>
                                     <kbd>tab</kbd> in the address bar of your browser to search for queries on
                                     Sourcegraph.
                                 </p>
@@ -101,30 +101,61 @@ export const AfterInstallPageContent: React.FunctionComponent<React.PropsWithChi
                 <div className="container">
                     <div className="row">
                         <div className="col-md-6 d-flex flex-column">
-                            <h2 className="mb-4">Make it work on your codehost</h2>
+                            <Typography.H2 className="mb-4">Make it work on your codehost</Typography.H2>
                             <div className="bg-2 rounded p-3 mb-3 d-flex flex-column justify-content-center">
-                                <h3 className={classNames('mb-3', styles.codeHostTitles)}>
-                                    <Icon className={styles.codeHostLogo} as={GithubIcon} /> github.com
-                                </h3>
+                                <Typography.H3 className={classNames('mb-3', styles.codeHostTitles)}>
+                                    <Icon
+                                        role="img"
+                                        className={styles.codeHostLogo}
+                                        as={GithubIcon}
+                                        aria-hidden={true}
+                                    />{' '}
+                                    github.com
+                                </Typography.H3>
                                 <p className="m-0">
-                                    <Icon as={CheckIcon} /> No action required.Your extension works here by default.
+                                    <Icon role="img" as={CheckIcon} aria-hidden={true} /> No action required.Your
+                                    extension works here by default.
                                 </p>
                             </div>
                             <div className="bg-2 rounded p-3 d-flex flex-column justify-content-center">
-                                <h3 className={classNames('d-flex flex-wrap', styles.codeHostTitles)}>
+                                <Typography.H3 className={classNames('d-flex flex-wrap', styles.codeHostTitles)}>
                                     <div className="mr-5 mb-3">
-                                        <Icon className={styles.codeHostLogo} as={GithubIcon} /> GitHub Enterprise
+                                        <Icon
+                                            role="img"
+                                            className={styles.codeHostLogo}
+                                            as={GithubIcon}
+                                            aria-hidden={true}
+                                        />{' '}
+                                        GitHub Enterprise
                                     </div>
                                     <div className="mr-5 mb-3">
-                                        <Icon className={styles.codeHostLogo} as={GitlabIcon} /> GitLab
+                                        <Icon
+                                            role="img"
+                                            className={styles.codeHostLogo}
+                                            as={GitlabIcon}
+                                            aria-hidden={true}
+                                        />{' '}
+                                        GitLab
                                     </div>
                                     <div className="mr-5 mb-3">
-                                        <Icon className={styles.codeHostLogo} as={BitbucketIcon} /> Bitbucket Server
+                                        <Icon
+                                            role="img"
+                                            className={styles.codeHostLogo}
+                                            as={BitbucketIcon}
+                                            aria-hidden={true}
+                                        />{' '}
+                                        Bitbucket Server
                                     </div>
                                     <div className="mr-5 mb-3">
-                                        <Icon className={styles.codeHostLogo} as={PhabricatorIcon} /> Phabricator
+                                        <Icon
+                                            role="img"
+                                            className={styles.codeHostLogo}
+                                            as={PhabricatorIcon}
+                                            aria-hidden={true}
+                                        />{' '}
+                                        Phabricator
                                     </div>
-                                </h3>
+                                </Typography.H3>
                                 <p>Your extension needs explicit permissions to your code host:</p>
                                 <ol className="m-0">
                                     <li>Navigate to any page on your code host.</li>
@@ -156,11 +187,11 @@ export const AfterInstallPageContent: React.FunctionComponent<React.PropsWithChi
                 <div className="container">
                     <div className="row">
                         <div className="col-md-6 d-flex flex-column">
-                            <h2 className="mb-4">Make it work for private code</h2>
+                            <Typography.H2 className="mb-4">Make it work for private code</Typography.H2>
                             <p>By default, the browser extension works only for public code.</p>
                             <div className="d-flex align-items-center">
                                 <div className="bg-3 rounded-circle p-2">
-                                    <Icon as={LockIcon} />
+                                    <Icon role="img" as={LockIcon} aria-hidden={true} />
                                 </div>
                                 <p className="m-0 ml-3">
                                     To use the browser extension with your private repositories, you need to set up a{' '}
@@ -205,10 +236,10 @@ export const AfterInstallPageContent: React.FunctionComponent<React.PropsWithChi
 
             <section className="py-5">
                 <div className="container">
-                    <h2 className="mb-4">Additional resources</h2>
+                    <Typography.H2 className="mb-4">Additional resources</Typography.H2>
                     <div className="d-flex w-100 align-items-center">
                         <div className="bg-3 rounded-circle p-2">
-                            <Icon as={BookOpenPageVariantIcon} />
+                            <Icon role="img" as={BookOpenPageVariantIcon} aria-hidden={true} />
                         </div>
                         <p className="m-0 ml-3">
                             Read the{' '}

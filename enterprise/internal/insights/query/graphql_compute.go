@@ -40,7 +40,7 @@ type gqlComputeSearchResponse struct {
 	Data struct {
 		Compute []json.RawMessage
 	}
-	Errors []interface{}
+	Errors []any
 }
 
 // ComputeSearch executes the given search query.

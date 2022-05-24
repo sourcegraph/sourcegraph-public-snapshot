@@ -95,7 +95,11 @@ export const ExtensionAreaHeader: React.FunctionComponent<React.PropsWithChildre
                                     />
                                 )
                             }
-                            path={[{ to: '/extensions', icon: PuzzleOutlineIcon }, { text: publisher }, { text: name }]}
+                            path={[
+                                { to: '/extensions', icon: PuzzleOutlineIcon, ariaLabel: 'Extensions' },
+                                { text: publisher },
+                                { text: name },
+                            ]}
                             description={
                                 manifest &&
                                 (manifest.description || isWorkInProgress) && (
@@ -212,7 +216,9 @@ export const ExtensionAreaHeader: React.FunctionComponent<React.PropsWithChildre
                                                     exact={exact}
                                                 >
                                                     <span>
-                                                        {ItemIcon && <Icon as={ItemIcon} />}{' '}
+                                                        {ItemIcon && (
+                                                            <Icon role="img" as={ItemIcon} aria-hidden={true} />
+                                                        )}{' '}
                                                         <span className="text-content" data-tab-content={label}>
                                                             {label}
                                                         </span>

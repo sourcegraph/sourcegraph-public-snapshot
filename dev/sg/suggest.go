@@ -7,8 +7,26 @@ import (
 	"github.com/agext/levenshtein"
 	"github.com/urfave/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 )
+
+// addSuggestionHooks adds an action that calculates and suggests similar commands for the
+// user to all commands that don't have an action yet.
+func addSuggestionHooks(commands []*cli.Command) {
+	for _, command := range commands {
+		if command.Action == nil {
+			command.Action = func(cmd *cli.Context) error {
+				s := cmd.Args().First()
+				if s == "" {
+					// Use default if no args are provided
+					return cli.ShowSubcommandHelp(cmd)
+				}
+				suggestCommands(cmd, s)
+				return cli.Exit("", 1)
+			}
+		}
+	}
+}
 
 // reconstructArgs reconstructs the argument string from the command context lineage.
 func reconstructArgs(cmd *cli.Context) string {
@@ -16,18 +34,6 @@ func reconstructArgs(cmd *cli.Context) string {
 	root := lineage[len(lineage)-1]
 	args := append([]string{cmd.App.Name}, root.Args().Slice()...)
 	return strings.Join(args, " ")
-}
-
-// suggestSubcommandsAction is a cli.Action that calculates and suggests subcommands
-// similar to the first argument.
-func suggestSubcommandsAction(cmd *cli.Context) error {
-	s := cmd.Args().First()
-	if s == "" {
-		// Use default if no args are provided
-		return cli.ShowSubcommandHelp(cmd)
-	}
-	suggestCommands(cmd, s)
-	return cli.Exit("", 1)
 }
 
 // suggestCommands is a cli.CommandNotFoundFunc that calculates and suggests subcommands
@@ -41,19 +47,19 @@ func suggestCommands(cmd *cli.Context, arg string) {
 	}
 
 	args := reconstructArgs(cmd)
-	writeOrangeLinef("command '%s %s' not found", args, arg)
+	std.Out.WriteAlertf("Command '%s %s' not found", args, arg)
 
 	suggestions := makeSuggestions(cmds, arg, 0.3, 3)
 	if len(suggestions) == 0 {
-		stdout.Out.Writef("try running '%s -h' for help", args)
+		std.Out.Writef("try running '%s -h' for help", args)
 		return
 	}
 
-	stdout.Out.Write("did you mean:")
+	std.Out.Write("Did you mean:")
 	for _, s := range suggestions {
-		writeFingerPointingLinef("  %s %s", args, s.name)
+		std.Out.WriteSuggestionf("%s %s", args, s.name)
 	}
-	stdout.Out.Write("learn more about each command with the '-h' flag")
+	std.Out.Write("Learn more about each command with the '-h' flag")
 }
 
 type commandSuggestion struct {

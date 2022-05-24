@@ -9,6 +9,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -194,6 +196,68 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 			graphqlbackend.RunTests(t, test.gqlTests(db))
 		})
 	}
+}
+
+func TestResolver_SetRepositoryPermissionsUnrestricted(t *testing.T) {
+	// TODO: Factor out this common check
+	t.Run("authenticated as non-admin", func(t *testing.T) {
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		result, err := (&Resolver{db: db}).SetRepositoryPermissionsForUsers(ctx, &graphqlbackend.RepoPermsArgs{})
+		if want := backend.ErrMustBeSiteAdmin; err != want {
+			t.Errorf("err: want %q but got %v", want, err)
+		}
+		if result != nil {
+			t.Errorf("result: want nil but got %v", result)
+		}
+	})
+
+	var haveIDs []int32
+	var haveUnrestricted bool
+
+	perms := edb.NewMockPermsStore()
+	perms.SetRepoPermissionsUnrestrictedFunc.SetDefaultHook(func(ctx context.Context, ids []int32, unrestricted bool) error {
+		haveIDs = ids
+		haveUnrestricted = unrestricted
+		return nil
+	})
+	users := database.NewStrictMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+	db := edb.NewStrictMockEnterpriseDB()
+	db.PermsFunc.SetDefaultReturn(perms)
+	db.UsersFunc.SetDefaultReturn(users)
+
+	gqlTests := []*graphqlbackend.Test{{
+		Schema: mustParseGraphQLSchema(t, db),
+		Query: `
+						mutation {
+							setRepositoryPermissionsUnrestricted(
+								repositories: ["UmVwb3NpdG9yeTox","UmVwb3NpdG9yeToy","UmVwb3NpdG9yeToz"],
+								unrestricted: true
+								) {
+								alwaysNil
+							}
+						}
+					`,
+		ExpectedResult: `
+						{
+							"setRepositoryPermissionsUnrestricted": {
+								"alwaysNil": null
+							}
+						}
+					`,
+	}}
+
+	graphqlbackend.RunTests(t, gqlTests)
+
+	assert.Equal(t, haveIDs, []int32{1, 2, 3})
+	assert.True(t, haveUnrestricted)
 }
 
 func TestResolver_ScheduleRepositoryPermissionsSync(t *testing.T) {
@@ -885,6 +949,7 @@ func TestResolver_RepositoryPermissionsInfo(t *testing.T) {
 							permissions
 							syncedAt
 							updatedAt
+							unrestricted
 						}
 					}
 				}
@@ -895,7 +960,8 @@ func TestResolver_RepositoryPermissionsInfo(t *testing.T) {
 						"permissionsInfo": {
 							"permissions": ["READ"],
 							"syncedAt": "%[1]s",
-							"updatedAt": "%[1]s"
+							"updatedAt": "%[1]s",
+							"unrestricted": false
 						}
     				}
 				}

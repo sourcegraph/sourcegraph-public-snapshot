@@ -23,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -195,7 +194,7 @@ func (r *RepositoryResolver) CommitFromID(ctx context.Context, args *RepositoryC
 
 func (r *RepositoryResolver) DefaultBranch(ctx context.Context) (*GitRefResolver, error) {
 	do := func() (*GitRefResolver, error) {
-		refName, _, err := git.GetDefaultBranch(ctx, r.db, r.RepoName())
+		refName, _, err := gitserver.NewClient(r.db).GetDefaultBranch(ctx, r.RepoName())
 		if err != nil {
 			return nil, err
 		}
@@ -414,12 +413,13 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 		return nil, err
 	}
 	targetRef := fmt.Sprintf("phabricator/diff/%d", args.DiffID)
+	gitserverClient := gitserver.NewClient(db)
 	getCommit := func() (*GitCommitResolver, error) {
 		// We first check via the vcsrepo api so that we can toggle
 		// NoEnsureRevision. We do this, otherwise RepositoryResolver.Commit
 		// will try and fetch it from the remote host. However, this is not on
 		// the remote host since we created it.
-		_, err = git.ResolveRevision(ctx, db, repo.Name, targetRef, git.ResolveRevisionOptions{
+		_, err = gitserverClient.ResolveRevision(ctx, repo.Name, targetRef, gitserver.ResolveRevisionOptions{
 			NoEnsureRevision: true,
 		})
 		if err != nil {
@@ -491,7 +491,7 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 		}
 	}
 
-	_, err = gitserver.NewClient(db).CreateCommitFromPatch(ctx, protocol.CreateCommitFromPatchRequest{
+	_, err = gitserverClient.CreateCommitFromPatch(ctx, protocol.CreateCommitFromPatchRequest{
 		Repo:       api.RepoName(args.RepoName),
 		BaseCommit: api.CommitID(args.BaseRev),
 		TargetRef:  targetRef,

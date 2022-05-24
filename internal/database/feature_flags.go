@@ -8,7 +8,6 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	ff "github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -39,10 +38,6 @@ type FeatureFlagStore interface {
 
 type featureFlagStore struct {
 	*basestore.Store
-}
-
-func FeatureFlags(db dbutil.DB) FeatureFlagStore {
-	return &featureFlagStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 func FeatureFlagsWith(other basestore.ShareableStore) FeatureFlagStore {
@@ -183,7 +178,7 @@ var ErrInvalidColumnState = errors.New("encountered column that is unexpectedly 
 
 // rowScanner is an interface that can scan from either a sql.Row or sql.Rows
 type rowScanner interface {
-	Scan(...interface{}) error
+	Scan(...any) error
 }
 
 func scanFeatureFlag(scanner rowScanner) (*ff.FeatureFlag, error) {

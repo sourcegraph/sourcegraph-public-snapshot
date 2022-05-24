@@ -65,6 +65,14 @@ export const PreviewSelectRow: React.FunctionComponent<React.PropsWithChildren<P
     queryPublishableChangesetSpecIDs = _queryPublishableChangesetSpecIDs,
     queryArguments,
 }) => {
+    // The user can modify the desired publication states for changesets in the preview
+    // list from this dropdown selector. However, these modifications are transient and
+    // are not persisted to the backend (until the user applies the batch change and the
+    // publication states are realized, of course). Rather, they are provided as arguments
+    // to the `applyPreview` connection, and later the `applyBatchChange` mutation, in
+    // order to override the original publication states computed by the reconciler on the
+    // backend. `BatchChangePreviewContext` is responsible for managing these publication
+    // states clientside.
     const { updatePublicationStates } = useContext(BatchChangePreviewContext)
     const { areAllVisibleSelected, deselectAll, selected, selectAll } = useContext(MultiSelectContext)
 
@@ -90,6 +98,7 @@ export const PreviewSelectRow: React.FunctionComponent<React.PropsWithChildren<P
                             return
                         }
 
+                        // Record the new desired publication state for each selected changeset.
                         updatePublicationStates(
                             specIDs.map(changeSpecID => ({
                                 changesetSpec: changeSpecID,

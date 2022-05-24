@@ -150,11 +150,6 @@ func (e *externalServiceStore) copy() *externalServiceStore {
 	}
 }
 
-// ExternalServices instantiates and returns a new ExternalServicesStore with prepared statements.
-func ExternalServices(db dbutil.DB) ExternalServiceStore {
-	return &externalServiceStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
-}
-
 // ExternalServicesWith instantiates and returns a new ExternalServicesStore with prepared statements.
 func ExternalServicesWith(other basestore.ShareableStore) ExternalServiceStore {
 	return &externalServiceStore{Store: basestore.NewWithHandle(other.Handle())}
@@ -1412,7 +1407,7 @@ func (e *externalServiceStore) recalculateFields(es *types.ExternalService, rawC
 	return nil
 }
 
-func configurationHasWebhooks(config interface{}) bool {
+func configurationHasWebhooks(config any) bool {
 	switch v := config.(type) {
 	case *schema.GitHubConnection:
 		return len(v.Webhooks) > 0

@@ -336,6 +336,7 @@ function mockCommonGraphQLResponses(
                 },
                 name: 'test-batch-change',
                 namespace: {
+                    id: '1234',
                     namespaceName: entityType === 'user' ? 'alice' : 'test-org',
                     url: namespaceURL,
                 },

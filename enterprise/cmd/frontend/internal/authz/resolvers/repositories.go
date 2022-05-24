@@ -62,12 +62,12 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 					break
 				}
 			}
-			if len(idSubset) == 0 {
-				// r.after is set, but there are no elements larger than it, so return empty slice.
-				r.repos = []*types.Repo{}
-				r.pageInfo = graphqlutil.HasNextPage(false)
-				return
-			}
+		}
+		// No IDs to find, return early
+		if len(idSubset) == 0 {
+			r.repos = []*types.Repo{}
+			r.pageInfo = graphqlutil.HasNextPage(false)
+			return
 		}
 		// If we have more ids than we need, trim them
 		if int32(len(idSubset)) > r.first {

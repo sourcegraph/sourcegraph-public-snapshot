@@ -9,7 +9,7 @@ exports[`ExternalServiceForm create GitHub 1`] = `
       class="form-group"
     >
       <label
-        class="font-weight-bold"
+        class="label fontWeightBold"
         for="test-external-service-form-display-name"
       >
         Display name:
@@ -56,7 +56,7 @@ exports[`ExternalServiceForm edit GitHub 1`] = `
       class="form-group"
     >
       <label
-        class="font-weight-bold"
+        class="label fontWeightBold"
         for="test-external-service-form-display-name"
       >
         Display name:
@@ -103,7 +103,7 @@ exports[`ExternalServiceForm edit GitHub, loading 1`] = `
       class="form-group"
     >
       <label
-        class="font-weight-bold"
+        class="label fontWeightBold"
         for="test-external-service-form-display-name"
       >
         Display name:

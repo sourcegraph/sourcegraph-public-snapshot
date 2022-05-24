@@ -28,11 +28,12 @@ const (
 
 func newTriggerQueryRunner(ctx context.Context, db edb.EnterpriseDB, metrics codeMonitorsMetrics) *workerutil.Worker {
 	options := workerutil.WorkerOptions{
-		Name:              "code_monitors_trigger_jobs_worker",
-		NumHandlers:       1,
-		Interval:          5 * time.Second,
-		HeartbeatInterval: 15 * time.Second,
-		Metrics:           metrics.workerMetrics,
+		Name:                 "code_monitors_trigger_jobs_worker",
+		NumHandlers:          4,
+		Interval:             5 * time.Second,
+		HeartbeatInterval:    15 * time.Second,
+		Metrics:              metrics.workerMetrics,
+		MaximumRuntimePerJob: time.Minute,
 	}
 	worker := dbworker.NewWorker(ctx, createDBWorkerStoreForTriggerJobs(db), &queryRunner{db: db}, options)
 	return worker
@@ -190,6 +191,11 @@ func (r *queryRunner) Handle(ctx context.Context, logger log.Logger, record work
 	err = s.SetQueryTriggerNextRun(ctx, q.ID, s.Clock()().Add(5*time.Minute), newLatestResult.UTC())
 	if err != nil {
 		return err
+	}
+
+	// After setting the next run, check the error value
+	if searchErr != nil {
+		return errors.Wrap(searchErr, "execute search")
 	}
 
 	// Log the actual query we ran and whether we got any new results.

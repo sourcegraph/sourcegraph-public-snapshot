@@ -1,9 +1,7 @@
-import React from 'react'
-
-import classNames from 'classnames'
+import { FunctionComponent } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Input } from '@sourcegraph/wildcard'
+import { Button, Input, Typography } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../components/LoaderButton'
 import { getDefaultInputProps } from '../../../../../form/getDefaultInputProps'
@@ -28,9 +26,7 @@ interface DrillDownInsightCreationFormProps {
     onCancel: () => void
 }
 
-export const DrillDownInsightCreationForm: React.FunctionComponent<
-    React.PropsWithChildren<DrillDownInsightCreationFormProps>
-> = props => {
+export const DrillDownInsightCreationForm: FunctionComponent<DrillDownInsightCreationFormProps> = props => {
     const { className, onCreateInsight, onCancel } = props
 
     const { formAPI, ref, handleSubmit } = useForm({
@@ -51,8 +47,8 @@ export const DrillDownInsightCreationForm: React.FunctionComponent<
 
     return (
         // eslint-disable-next-line react/forbid-elements
-        <form ref={ref} onSubmit={handleSubmit} noValidate={true} className={classNames(className, 'p-3')}>
-            <h3 className="mb-3">Save as new view</h3>
+        <form ref={ref} onSubmit={handleSubmit} noValidate={true} className={className}>
+            <Typography.H3 className="mb-3">Save as new view</Typography.H3>
 
             <Input
                 label="Name"

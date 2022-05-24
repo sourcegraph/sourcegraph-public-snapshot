@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type CommitSearchJob struct {
@@ -49,9 +50,8 @@ type GitserverClient interface {
 }
 
 func (j *CommitSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
-	tr, ctx, stream, finish := job.StartSpan(ctx, stream, j)
+	_, ctx, stream, finish := job.StartSpan(ctx, stream, j)
 	defer func() { finish(alert, err) }()
-	tr.TagFields(trace.LazyFields(j.Tags))
 
 	if err := j.ExpandUsernames(ctx, clients.DB); err != nil {
 		return nil, err
@@ -82,6 +82,11 @@ func (j *CommitSearchJob) Run(ctx context.Context, clients job.RuntimeClients, s
 	bounded := goroutine.NewBounded(8)
 	for _, repoRev := range repoRevs {
 		repoRev := repoRev // we close over repoRev in onMatches
+		if ctx.Err() != nil {
+			// Don't keep spinning up goroutines if context has been canceled,
+			// but make sure we still clean up any running goroutines.
+			return nil, errors.Append(ctx.Err(), bounded.Wait())
+		}
 
 		// Skip the repo if no revisions were resolved for it
 		if len(repoRev.Revs) == 0 {

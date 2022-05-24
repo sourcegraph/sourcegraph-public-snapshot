@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
@@ -18,7 +19,7 @@ func TestResolver_Insights(t *testing.T) {
 	now := time.Now().UTC().Truncate(time.Microsecond)
 	clock := func() time.Time { return now }
 	insightsDB := dbtest.NewInsightsDB(t)
-	postgres := dbtest.NewDB(t)
+	postgres := database.NewDB(dbtest.NewDB(t))
 	resolver := newWithClock(insightsDB, postgres, clock)
 
 	insightsConnection, err := resolver.Insights(ctx, nil)

@@ -12,7 +12,7 @@ import { gql } from '@sourcegraph/http-client'
 import { Scalars, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Button, ButtonGroup, Link, CardHeader, CardBody, Card } from '@sourcegraph/wildcard'
+import { Button, ButtonGroup, Link, CardHeader, CardBody, Card, Typography } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
@@ -60,7 +60,7 @@ const RepositoryContributorNode: React.FunctionComponent<React.PropsWithChildren
         .replace(/\s+/, ' ')
 
     return (
-        <div className={classNames('list-group-item py-2', styles.repositoryContributorNode)}>
+        <li className={classNames('list-group-item py-2', styles.repositoryContributorNode)}>
             <div className={styles.person}>
                 <UserAvatar inline={true} className="mr-2" user={node.person} />
                 <PersonLink userClassName="font-weight-bold" person={node.person} />
@@ -93,7 +93,7 @@ const RepositoryContributorNode: React.FunctionComponent<React.PropsWithChildren
                     </Link>
                 </div>
             </div>
-        </div>
+        </li>
     )
 }
 
@@ -229,12 +229,12 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                             <div className={classNames(styles.row, 'form-inline')}>
                                 <div className="input-group mb-2 mr-sm-2">
                                     <div className="input-group-prepend">
-                                        <label
+                                        <Typography.Label
                                             htmlFor={RepositoryStatsContributorsPage.AFTER_INPUT_ID}
                                             className="input-group-text"
                                         >
                                             Time period
-                                        </label>
+                                        </Typography.Label>
                                     </div>
                                     <input
                                         type="text"
@@ -247,7 +247,7 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                                         onChange={this.onChange}
                                     />
                                     <div className="input-group-append">
-                                        <ButtonGroup>
+                                        <ButtonGroup aria-label="Time period presets">
                                             <Button
                                                 className={classNames(
                                                     styles.btnNoLeftRoundedCorners,
@@ -286,12 +286,12 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                             <div className={classNames(styles.row, 'form-inline')}>
                                 <div className="input-group mt-2 mr-sm-2">
                                     <div className="input-group-prepend">
-                                        <label
+                                        <Typography.Label
                                             htmlFor={RepositoryStatsContributorsPage.REVISION_RANGE_INPUT_ID}
                                             className="input-group-text"
                                         >
                                             Revision range
-                                        </label>
+                                        </Typography.Label>
                                     </div>
                                     <input
                                         type="text"
@@ -310,12 +310,12 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                                 </div>
                                 <div className="input-group mt-2 mr-sm-2">
                                     <div className="input-group-prepend">
-                                        <label
+                                        <Typography.Label
                                             htmlFor={RepositoryStatsContributorsPage.PATH_INPUT_ID}
                                             className="input-group-text"
                                         >
                                             Path
-                                        </label>
+                                        </Typography.Label>
                                     </div>
                                     <input
                                         type="text"
@@ -352,7 +352,7 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                     </CardBody>
                 </Card>
                 <FilteredContributorsConnection
-                    listClassName="list-group list-group-flush"
+                    listClassName="list-group list-group-flush test-filtered-contributors-connection"
                     noun="contributor"
                     pluralNoun="contributors"
                     queryConnection={this.queryRepositoryContributors}

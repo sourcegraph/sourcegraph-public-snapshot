@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 
-import { Button, Collapse, CollapseHeader, CollapsePanel, H2, H5, Icon } from '@sourcegraph/wildcard'
+import { Button, Collapse, CollapseHeader, CollapsePanel, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { FilterLink, FilterLinkProps } from './FilterLink'
 
@@ -113,10 +113,15 @@ export const SearchSidebarSection: React.FunctionComponent<
                         outline={true}
                         variant="secondary"
                     >
-                        <H5 as={H2} className="flex-grow-1">
+                        <Typography.H5 as={Typography.H2} className="flex-grow-1">
                             {header}
-                        </H5>
-                        <Icon className="mr-1" as={isOpened ? ChevronDownIcon : ChevronLeftIcon} />
+                        </Typography.H5>
+                        <Icon
+                            role="img"
+                            aria-hidden={true}
+                            className="mr-1"
+                            as={isOpened ? ChevronDownIcon : ChevronLeftIcon}
+                        />
                     </CollapseHeader>
 
                     <CollapsePanel>

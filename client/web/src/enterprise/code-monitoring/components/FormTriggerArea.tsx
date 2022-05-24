@@ -12,7 +12,7 @@ import { FilterType, resolveFilter, validateFilter } from '@sourcegraph/shared/s
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, Card, Icon, H3, H2, Checkbox } from '@sourcegraph/wildcard'
+import { Button, Link, Card, Icon, Checkbox, Typography } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../graphql-operations'
 import { useExperimentalFeatures } from '../../../stores'
@@ -204,7 +204,7 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
 
     return (
         <>
-            <H3 as={H2}>Trigger</H3>
+            <Typography.H3 as={Typography.H2}>Trigger</Typography.H3>
             {showQueryForm && (
                 <Card className={classNames(cardClassName, 'p-3')}>
                     <div className="font-weight-bold">When there are new search results</div>
@@ -264,7 +264,8 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                                     hint="Code monitors support literal and regex search. Searches are literal by default."
                                     dataTestid="patterntype-checkbox"
                                 >
-                                    Is <code>patternType:literal</code> or <code>patternType:regexp</code>
+                                    Is <Typography.Code>patternType:literal</Typography.Code> or{' '}
+                                    <Typography.Code>patternType:regexp</Typography.Code>
                                 </ValidQueryChecklistItem>
                             </li>
                             <li>
@@ -273,7 +274,8 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                                     hint="type:diff targets code present in new commits, while type:commit targets commit messages"
                                     dataTestid="type-checkbox"
                                 >
-                                    Contains a <code>type:diff</code> or <code>type:commit</code> filter
+                                    Contains a <Typography.Code>type:diff</Typography.Code> or{' '}
+                                    <Typography.Code>type:commit</Typography.Code> filter
                                 </ValidQueryChecklistItem>
                             </li>
                             <li>
@@ -282,7 +284,7 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                                     hint="Code monitors can watch a maximum of 50 repos at a time. Target your query with repo: filters to narrow down your search."
                                     dataTestid="repo-checkbox"
                                 >
-                                    Contains a <code>repo:</code> filter
+                                    Contains a <Typography.Code>repo:</Typography.Code> filter
                                 </ValidQueryChecklistItem>
                             </li>
                             <li>
@@ -330,12 +332,12 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                                 When there are new search results
                             </div>
                             {triggerCompleted ? (
-                                <code
+                                <Typography.Code
                                     className={classNames('text-break text-muted', styles.queryLabel)}
                                     data-testid="trigger-query-existing"
                                 >
                                     {query}
-                                </code>
+                                </Typography.Code>
                             ) : (
                                 <span className="text-muted">
                                     This trigger will fire when new search results are found for a given search query.

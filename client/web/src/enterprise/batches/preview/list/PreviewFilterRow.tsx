@@ -25,6 +25,8 @@ export const PreviewFilterRow: React.FunctionComponent<React.PropsWithChildren<P
 }) => {
     const searchElement = useRef<HTMLInputElement | null>(null)
 
+    // `BatchChangePreviewContext` is responsible for managing the filter arguments for
+    // the `applyPreview` connection query.
     const { filters, setFilters } = useContext(BatchChangePreviewContext)
 
     const onSubmit = useCallback(
@@ -89,6 +91,7 @@ export const PreviewFilterRow: React.FunctionComponent<React.PropsWithChildren<P
                         ref={searchElement}
                         defaultValue={filters.search ?? undefined}
                         placeholder="Search title and repository name"
+                        aria-label="Search title and repository name"
                     />
                 </Form>
             </div>

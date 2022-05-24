@@ -11,7 +11,7 @@ import FileDocumentEditOutlineIcon from 'mdi-react/FileDocumentEditOutlineIcon'
 
 import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, Link, Alert, Icon } from '@sourcegraph/wildcard'
+import { Button, Link, Alert, Icon, Tabs, TabList, TabPanels, TabPanel, Tab, Typography } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../../components/diff/DiffStat'
 import { InputTooltip } from '../../../../components/InputTooltip'
@@ -254,8 +254,6 @@ const SelectBox: React.FunctionComponent<
     )
 }
 
-type SelectedTab = 'diff' | 'description' | 'commits'
-
 const ExpandedSection: React.FunctionComponent<
     React.PropsWithChildren<
         {
@@ -269,19 +267,6 @@ const ExpandedSection: React.FunctionComponent<
         } & ThemeProps
     >
 > = ({ node, history, isLightTheme, location, authenticatedUser, queryChangesetSpecFileDiffs }) => {
-    const [selectedTab, setSelectedTab] = useState<SelectedTab>('diff')
-    const onSelectDiff = useCallback<React.MouseEventHandler>(event => {
-        event.preventDefault()
-        setSelectedTab('diff')
-    }, [])
-    const onSelectDescription = useCallback<React.MouseEventHandler>(event => {
-        event.preventDefault()
-        setSelectedTab('description')
-    }, [])
-    const onSelectCommits = useCallback<React.MouseEventHandler>(event => {
-        event.preventDefault()
-        setSelectedTab('commits')
-    }, [])
     if (node.targets.__typename === 'VisibleApplyPreviewTargetsDetach') {
         return (
             <Alert className="mb-0" variant="info">
@@ -290,6 +275,7 @@ const ExpandedSection: React.FunctionComponent<
             </Alert>
         )
     }
+
     if (node.targets.changesetSpec.description.__typename === 'ExistingChangesetReference') {
         return (
             <Alert className="mb-0" variant="info">
@@ -298,91 +284,56 @@ const ExpandedSection: React.FunctionComponent<
             </Alert>
         )
     }
+
     return (
-        <>
-            <div className="overflow-auto mb-4">
-                <ul className="nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap">
-                    <li className="nav-item">
-                        {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                        <Link
-                            to=""
-                            role="button"
-                            onClick={onSelectDiff}
-                            className={classNames(
-                                'nav-link',
-                                selectedTab === 'diff' && styles.visibleChangesetApplyPreviewNodeTabLinkActive,
-                                selectedTab === 'diff' && 'active'
-                            )}
-                        >
-                            <span className="text-content" data-tab-content="Changed files">
-                                Changed files
-                            </span>
-                            {node.delta.diffChanged && (
-                                <small className="text-warning ml-2" data-tooltip="Changes in this tab">
-                                    <Icon
-                                        className={styles.visibleChangesetApplyPreviewNodeChangeIndicator}
-                                        as={CheckboxBlankCircleIcon}
-                                    />
-                                </small>
-                            )}
-                        </Link>
-                    </li>
-                    <li className="nav-item">
-                        {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                        <Link
-                            to=""
-                            role="button"
-                            onClick={onSelectDescription}
-                            className={classNames(
-                                'nav-link',
-                                selectedTab === 'description' && styles.visibleChangesetApplyPreviewNodeTabLinkActive,
-                                selectedTab === 'description' && 'active'
-                            )}
-                        >
-                            <span className="text-content" data-tab-content="Description">
-                                Description
-                            </span>
-                            {(node.delta.titleChanged || node.delta.bodyChanged) && (
-                                <small className="text-warning ml-2" data-tooltip="Changes in this tab">
-                                    <Icon
-                                        className={styles.visibleChangesetApplyPreviewNodeChangeIndicator}
-                                        as={CheckboxBlankCircleIcon}
-                                    />
-                                </small>
-                            )}
-                        </Link>
-                    </li>
-                    <li className="nav-item">
-                        {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                        <Link
-                            to=""
-                            role="button"
-                            onClick={onSelectCommits}
-                            className={classNames(
-                                'nav-link',
-                                selectedTab === 'commits' && styles.visibleChangesetApplyPreviewNodeTabLinkActive,
-                                selectedTab === 'commits' && 'active'
-                            )}
-                        >
-                            <span className="text-content" data-tab-content="Commits">
-                                Commits
-                            </span>
-                            {(node.delta.authorEmailChanged ||
-                                node.delta.authorNameChanged ||
-                                node.delta.commitMessageChanged) && (
-                                <small className="text-warning ml-2" data-tooltip="Changes in this tab">
-                                    <Icon
-                                        className={styles.visibleChangesetApplyPreviewNodeChangeIndicator}
-                                        as={CheckboxBlankCircleIcon}
-                                    />
-                                </small>
-                            )}
-                        </Link>
-                    </li>
-                </ul>
-            </div>
-            {selectedTab === 'diff' && (
-                <>
+        <Tabs size="large">
+            <TabList>
+                <Tab>
+                    <span className="text-content" data-tab-content="Changed files">
+                        Changed files
+                    </span>
+                    {node.delta.diffChanged && (
+                        <small className="text-warning ml-2" data-tooltip="Changes in this tab">
+                            <Icon
+                                className={styles.visibleChangesetApplyPreviewNodeChangeIndicator}
+                                as={CheckboxBlankCircleIcon}
+                            />
+                        </small>
+                    )}
+                </Tab>
+
+                <Tab>
+                    <span className="text-content" data-tab-content="Description">
+                        Description
+                    </span>
+                    {(node.delta.titleChanged || node.delta.bodyChanged) && (
+                        <small className="text-warning ml-2" data-tooltip="Changes in this tab">
+                            <Icon
+                                className={styles.visibleChangesetApplyPreviewNodeChangeIndicator}
+                                as={CheckboxBlankCircleIcon}
+                            />
+                        </small>
+                    )}
+                </Tab>
+
+                <Tab>
+                    <span className="text-content" data-tab-content="Commits">
+                        Commits
+                    </span>
+                    {(node.delta.authorEmailChanged ||
+                        node.delta.authorNameChanged ||
+                        node.delta.commitMessageChanged) && (
+                        <small className="text-warning ml-2" data-tooltip="Changes in this tab">
+                            <Icon
+                                className={styles.visibleChangesetApplyPreviewNodeChangeIndicator}
+                                as={CheckboxBlankCircleIcon}
+                            />
+                        </small>
+                    )}
+                </Tab>
+            </TabList>
+            <TabPanels>
+                <TabPanel className="pt-3">
                     {node.delta.diffChanged && (
                         <Alert variant="warning">
                             The files in this changeset have been altered from the previous version. These changes will
@@ -396,24 +347,23 @@ const ExpandedSection: React.FunctionComponent<
                         spec={node.targets.changesetSpec.id}
                         queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
                     />
-                </>
-            )}
-            {selectedTab === 'description' && (
-                <>
+                </TabPanel>
+
+                <TabPanel className="pt-3">
                     {node.targets.__typename === 'VisibleApplyPreviewTargetsUpdate' &&
                         node.delta.bodyChanged &&
                         node.targets.changeset.currentSpec?.description.__typename ===
                             'GitBranchChangesetDescription' && (
                             <>
-                                <h3 className="text-muted">
+                                <Typography.H3 className="text-muted">
                                     <del>{node.targets.changeset.currentSpec.description.title}</del>
-                                </h3>
+                                </Typography.H3>
                                 <del className="text-muted">
                                     <Description description={node.targets.changeset.currentSpec.description.body} />
                                 </del>
                             </>
                         )}
-                    <h3>
+                    <Typography.H3>
                         {node.targets.changesetSpec.description.title}{' '}
                         <small>
                             by{' '}
@@ -430,12 +380,15 @@ const ExpandedSection: React.FunctionComponent<
                                 }
                             />
                         </small>
-                    </h3>
+                    </Typography.H3>
                     <Description description={node.targets.changesetSpec.description.body} />
-                </>
-            )}
-            {selectedTab === 'commits' && <GitBranchChangesetDescriptionInfo node={node} />}
-        </>
+                </TabPanel>
+
+                <TabPanel className="pt-3">
+                    <GitBranchChangesetDescriptionInfo node={node} />
+                </TabPanel>
+            </TabPanels>
+        </Tabs>
     )
 }
 
@@ -450,7 +403,7 @@ const ChangesetSpecTitle: React.FunctionComponent<
     if (spec.targets.__typename === 'VisibleApplyPreviewTargetsAttach') {
         // An import changeset does not display a regular title
         if (spec.targets.changesetSpec.description.__typename === 'ExistingChangesetReference') {
-            return <h3>Import changeset #{spec.targets.changesetSpec.description.externalID}</h3>
+            return <Typography.H3>Import changeset #{spec.targets.changesetSpec.description.externalID}</Typography.H3>
         }
 
         title = spec.targets.changesetSpec.description.title
@@ -469,7 +422,7 @@ const ChangesetSpecTitle: React.FunctionComponent<
             : null
 
     return (
-        <h3>
+        <Typography.H3>
             {newTitle ? (
                 <>
                     <del className="mr-1">
@@ -485,7 +438,7 @@ const ChangesetSpecTitle: React.FunctionComponent<
             ) : (
                 <ExternalChangesetTitle externalID={externalID} externalURL={externalURL} title={title} />
             )}
-        </h3>
+        </Typography.H3>
     )
 }
 

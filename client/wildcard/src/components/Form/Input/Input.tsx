@@ -5,9 +5,9 @@ import { useMergeRefs } from 'use-callback-ref'
 
 import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 
+import { Typography } from '../..'
 import { useAutoFocus } from '../../../hooks/useAutoFocus'
 import { ForwardReferenceComponent } from '../../../types'
-import { Label } from '../../Typography/Label'
 
 import styles from './Input.module.scss'
 
@@ -94,10 +94,10 @@ export const Input = forwardRef((props, reference) => {
 
     if (label) {
         return (
-            <Label className={classNames('w-100', className)}>
+            <Typography.Label className={classNames('w-100', className)}>
                 {label && <div className="mb-2">{variant === 'regular' ? label : <small>{label}</small>}</div>}
                 {inputWithMessage}
-            </Label>
+            </Typography.Label>
         )
     }
 

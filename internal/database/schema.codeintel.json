@@ -1,0 +1,3295 @@
+{
+  "Extensions": [
+    "intarray",
+    "pg_stat_statements",
+    "pg_trgm"
+  ],
+  "Enums": null,
+  "Functions": [
+    {
+      "Name": "get_file_extension",
+      "Definition": "CREATE OR REPLACE FUNCTION public.get_file_extension(path text)\n RETURNS text\n LANGUAGE plpgsql\n IMMUTABLE\nAS $function$ BEGIN\n    RETURN substring(path FROM '\\.([^\\.]*)$');\nEND; $function$\n"
+    },
+    {
+      "Name": "lsif_data_docs_search_private_delete",
+      "Definition": "CREATE OR REPLACE FUNCTION public.lsif_data_docs_search_private_delete()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nBEGIN\nUPDATE lsif_data_apidocs_num_search_results_private SET count = count - (select count(*) from oldtbl);\nRETURN NULL;\nEND $function$\n"
+    },
+    {
+      "Name": "lsif_data_docs_search_private_insert",
+      "Definition": "CREATE OR REPLACE FUNCTION public.lsif_data_docs_search_private_insert()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nBEGIN\nUPDATE lsif_data_apidocs_num_search_results_private SET count = count + (select count(*) from newtbl);\nRETURN NULL;\nEND $function$\n"
+    },
+    {
+      "Name": "lsif_data_docs_search_public_delete",
+      "Definition": "CREATE OR REPLACE FUNCTION public.lsif_data_docs_search_public_delete()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nBEGIN\nUPDATE lsif_data_apidocs_num_search_results_public SET count = count - (select count(*) from oldtbl);\nRETURN NULL;\nEND $function$\n"
+    },
+    {
+      "Name": "lsif_data_docs_search_public_insert",
+      "Definition": "CREATE OR REPLACE FUNCTION public.lsif_data_docs_search_public_insert()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nBEGIN\nUPDATE lsif_data_apidocs_num_search_results_public SET count = count + (select count(*) from newtbl);\nRETURN NULL;\nEND $function$\n"
+    },
+    {
+      "Name": "lsif_data_documentation_pages_delete",
+      "Definition": "CREATE OR REPLACE FUNCTION public.lsif_data_documentation_pages_delete()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nBEGIN\nUPDATE lsif_data_apidocs_num_pages SET count = count - (select count(*) from oldtbl);\nUPDATE lsif_data_apidocs_num_dumps SET count = count - (select count(DISTINCT dump_id) from oldtbl);\nUPDATE lsif_data_apidocs_num_dumps_indexed SET count = count - (select count(DISTINCT dump_id) from oldtbl WHERE search_indexed='true');\nRETURN NULL;\nEND $function$\n"
+    },
+    {
+      "Name": "lsif_data_documentation_pages_insert",
+      "Definition": "CREATE OR REPLACE FUNCTION public.lsif_data_documentation_pages_insert()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nBEGIN\nUPDATE lsif_data_apidocs_num_pages SET count = count + (select count(*) from newtbl);\nUPDATE lsif_data_apidocs_num_dumps SET count = count + (select count(DISTINCT dump_id) from newtbl);\nUPDATE lsif_data_apidocs_num_dumps_indexed SET count = count + (select count(DISTINCT dump_id) from newtbl WHERE search_indexed='true');\nRETURN NULL;\nEND $function$\n"
+    },
+    {
+      "Name": "lsif_data_documentation_pages_update",
+      "Definition": "CREATE OR REPLACE FUNCTION public.lsif_data_documentation_pages_update()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nBEGIN\nWITH\n    beforeIndexed AS (SELECT count(DISTINCT dump_id) FROM oldtbl WHERE search_indexed='true'),\n    afterIndexed AS (SELECT count(DISTINCT dump_id) FROM newtbl WHERE search_indexed='true')\nUPDATE lsif_data_apidocs_num_dumps_indexed SET count=count + ((select * from afterIndexed) - (select * from beforeIndexed));\nRETURN NULL;\nEND $function$\n"
+    },
+    {
+      "Name": "path_prefixes",
+      "Definition": "CREATE OR REPLACE FUNCTION public.path_prefixes(path text)\n RETURNS text[]\n LANGUAGE plpgsql\n IMMUTABLE\nAS $function$ BEGIN\n    RETURN (\n        SELECT array_agg(array_to_string(components[:len], '/')) prefixes\n        FROM\n            (SELECT regexp_split_to_array(path, E'/') components) t,\n            generate_series(1, array_length(components, 1)) AS len\n    );\nEND; $function$\n"
+    },
+    {
+      "Name": "singleton",
+      "Definition": "CREATE OR REPLACE FUNCTION public.singleton(value text)\n RETURNS text[]\n LANGUAGE plpgsql\n IMMUTABLE\nAS $function$ BEGIN\n    RETURN ARRAY[value];\nEND; $function$\n"
+    },
+    {
+      "Name": "singleton_integer",
+      "Definition": "CREATE OR REPLACE FUNCTION public.singleton_integer(value integer)\n RETURNS integer[]\n LANGUAGE plpgsql\n IMMUTABLE\nAS $function$ BEGIN\n    RETURN ARRAY[value];\nEND; $function$\n"
+    },
+    {
+      "Name": "update_lsif_data_definitions_schema_versions_insert",
+      "Definition": "CREATE OR REPLACE FUNCTION public.update_lsif_data_definitions_schema_versions_insert()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n    INSERT INTO\n        lsif_data_definitions_schema_versions\n    SELECT\n        dump_id,\n        MIN(schema_version) as min_schema_version,\n        MAX(schema_version) as max_schema_version\n    FROM\n        newtab\n    GROUP BY\n        dump_id\n    ON CONFLICT (dump_id) DO UPDATE SET\n        -- Update with min(old_min, new_min) and max(old_max, new_max)\n        min_schema_version = LEAST(lsif_data_definitions_schema_versions.min_schema_version, EXCLUDED.min_schema_version),\n        max_schema_version = GREATEST(lsif_data_definitions_schema_versions.max_schema_version, EXCLUDED.max_schema_version);\n\n    RETURN NULL;\nEND $function$\n"
+    },
+    {
+      "Name": "update_lsif_data_documents_schema_versions_insert",
+      "Definition": "CREATE OR REPLACE FUNCTION public.update_lsif_data_documents_schema_versions_insert()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n    INSERT INTO\n        lsif_data_documents_schema_versions\n    SELECT\n        dump_id,\n        MIN(schema_version) as min_schema_version,\n        MAX(schema_version) as max_schema_version\n    FROM\n        newtab\n    GROUP BY\n        dump_id\n    ON CONFLICT (dump_id) DO UPDATE SET\n        -- Update with min(old_min, new_min) and max(old_max, new_max)\n        min_schema_version = LEAST(lsif_data_documents_schema_versions.min_schema_version, EXCLUDED.min_schema_version),\n        max_schema_version = GREATEST(lsif_data_documents_schema_versions.max_schema_version, EXCLUDED.max_schema_version);\n\n    RETURN NULL;\nEND $function$\n"
+    },
+    {
+      "Name": "update_lsif_data_implementations_schema_versions_insert",
+      "Definition": "CREATE OR REPLACE FUNCTION public.update_lsif_data_implementations_schema_versions_insert()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n    INSERT INTO\n        lsif_data_implementations_schema_versions\n    SELECT\n        dump_id,\n        MIN(schema_version) as min_schema_version,\n        MAX(schema_version) as max_schema_version\n    FROM\n        newtab\n    GROUP BY\n        dump_id\n    ON CONFLICT (dump_id) DO UPDATE SET\n        -- Update with min(old_min, new_min) and max(old_max, new_max)\n        min_schema_version = LEAST   (lsif_data_implementations_schema_versions.min_schema_version, EXCLUDED.min_schema_version),\n        max_schema_version = GREATEST(lsif_data_implementations_schema_versions.max_schema_version, EXCLUDED.max_schema_version);\n\n    RETURN NULL;\nEND $function$\n"
+    },
+    {
+      "Name": "update_lsif_data_references_schema_versions_insert",
+      "Definition": "CREATE OR REPLACE FUNCTION public.update_lsif_data_references_schema_versions_insert()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n    INSERT INTO\n        lsif_data_references_schema_versions\n    SELECT\n        dump_id,\n        MIN(schema_version) as min_schema_version,\n        MAX(schema_version) as max_schema_version\n    FROM\n        newtab\n    GROUP BY\n        dump_id\n    ON CONFLICT (dump_id) DO UPDATE SET\n        -- Update with min(old_min, new_min) and max(old_max, new_max)\n        min_schema_version = LEAST(lsif_data_references_schema_versions.min_schema_version, EXCLUDED.min_schema_version),\n        max_schema_version = GREATEST(lsif_data_references_schema_versions.max_schema_version, EXCLUDED.max_schema_version);\n\n    RETURN NULL;\nEND $function$\n"
+    }
+  ],
+  "Sequences": [
+    {
+      "Name": "lsif_data_docs_search_current_private_id_seq",
+      "TypeName": "integer",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 2147483647,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
+      "Name": "lsif_data_docs_search_current_public_id_seq",
+      "TypeName": "integer",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 2147483647,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
+      "Name": "lsif_data_docs_search_lang_names_private_id_seq",
+      "TypeName": "bigint",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 9223372036854775807,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
+      "Name": "lsif_data_docs_search_lang_names_public_id_seq",
+      "TypeName": "bigint",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 9223372036854775807,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
+      "Name": "lsif_data_docs_search_private_id_seq",
+      "TypeName": "bigint",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 9223372036854775807,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
+      "Name": "lsif_data_docs_search_public_id_seq",
+      "TypeName": "bigint",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 9223372036854775807,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
+      "Name": "lsif_data_docs_search_repo_names_private_id_seq",
+      "TypeName": "bigint",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 9223372036854775807,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
+      "Name": "lsif_data_docs_search_repo_names_public_id_seq",
+      "TypeName": "bigint",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 9223372036854775807,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
+      "Name": "lsif_data_docs_search_tags_private_id_seq",
+      "TypeName": "bigint",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 9223372036854775807,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
+      "Name": "lsif_data_docs_search_tags_public_id_seq",
+      "TypeName": "bigint",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 9223372036854775807,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
+      "Name": "migration_logs_id_seq",
+      "TypeName": "integer",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 2147483647,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
+      "Name": "rockskip_ancestry_id_seq",
+      "TypeName": "integer",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 2147483647,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
+      "Name": "rockskip_repos_id_seq",
+      "TypeName": "integer",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 2147483647,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
+      "Name": "rockskip_symbols_id_seq",
+      "TypeName": "integer",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 2147483647,
+      "Increment": 1,
+      "CycleOption": "NO"
+    }
+  ],
+  "Tables": [
+    {
+      "Name": "lsif_data_apidocs_num_dumps",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "count",
+          "Index": 1,
+          "TypeName": "bigint",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
+      "Name": "lsif_data_apidocs_num_dumps_indexed",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "count",
+          "Index": 1,
+          "TypeName": "bigint",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
+      "Name": "lsif_data_apidocs_num_pages",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "count",
+          "Index": 1,
+          "TypeName": "bigint",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
+      "Name": "lsif_data_apidocs_num_search_results_private",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "count",
+          "Index": 1,
+          "TypeName": "bigint",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
+      "Name": "lsif_data_apidocs_num_search_results_public",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "count",
+          "Index": 1,
+          "TypeName": "bigint",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
+      "Name": "lsif_data_definitions",
+      "Comment": "Associates (document, range) pairs with the import monikers attached to the range.",
+      "Columns": [
+        {
+          "Name": "data",
+          "Index": 4,
+          "TypeName": "bytea",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "A gob-encoded payload conforming to an array of [LocationData](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.26/-/blob/enterprise/lib/codeintel/semantic/types.go#L106:6) types."
+        },
+        {
+          "Name": "dump_id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The identifier of the associated dump in the lsif_uploads table (state=completed)."
+        },
+        {
+          "Name": "identifier",
+          "Index": 3,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The moniker identifier."
+        },
+        {
+          "Name": "num_locations",
+          "Index": 6,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The number of locations stored in the data field."
+        },
+        {
+          "Name": "schema_version",
+          "Index": 5,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The schema version of this row - used to determine presence and encoding of data."
+        },
+        {
+          "Name": "scheme",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The moniker scheme."
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "lsif_data_definitions_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX lsif_data_definitions_pkey ON lsif_data_definitions USING btree (dump_id, scheme, identifier)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (dump_id, scheme, identifier)"
+        },
+        {
+          "Name": "lsif_data_definitions_dump_id_schema_version",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_data_definitions_dump_id_schema_version ON lsif_data_definitions USING btree (dump_id, schema_version)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": null,
+      "Triggers": [
+        {
+          "Name": "lsif_data_definitions_schema_versions_insert",
+          "Definition": "CREATE TRIGGER lsif_data_definitions_schema_versions_insert AFTER INSERT ON lsif_data_definitions REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_lsif_data_definitions_schema_versions_insert()"
+        }
+      ]
+    },
+    {
+      "Name": "lsif_data_definitions_schema_versions",
+      "Comment": "Tracks the range of schema_versions for each upload in the lsif_data_definitions table.",
+      "Columns": [
+        {
+          "Name": "dump_id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The identifier of the associated dump in the lsif_uploads table."
+        },
+        {
+          "Name": "max_schema_version",
+          "Index": 3,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "An upper-bound on the `lsif_data_definitions.schema_version` where `lsif_data_definitions.dump_id = dump_id`."
+        },
+        {
+          "Name": "min_schema_version",
+          "Index": 2,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "A lower-bound on the `lsif_data_definitions.schema_version` where `lsif_data_definitions.dump_id = dump_id`."
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "lsif_data_definitions_schema_versions_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX lsif_data_definitions_schema_versions_pkey ON lsif_data_definitions_schema_versions USING btree (dump_id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (dump_id)"
+        },
+        {
+          "Name": "lsif_data_definitions_schema_versions_dump_id_schema_version_bo",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_data_definitions_schema_versions_dump_id_schema_version_bo ON lsif_data_definitions_schema_versions USING btree (dump_id, min_schema_version, max_schema_version)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
+      "Name": "lsif_data_docs_search_current_private",
+      "Comment": "A table indicating the most current search index for a unique repository, root, and language.",
+      "Columns": [
+        {
+          "Name": "created_at",
+          "Index": 6,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The time this record was inserted. The records with the latest created_at value for the same repository, root, and language is the only visible one and others will be deleted asynchronously."
+        },
+        {
+          "Name": "dump_id",
+          "Index": 4,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The associated dump identifier."
+        },
+        {
+          "Name": "dump_root",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The root of the associated dump."
+        },
+        {
+          "Name": "id",
+          "Index": 7,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "nextval('lsif_data_docs_search_current_private_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "lang_name_id",
+          "Index": 3,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The interned index name of the associated dump."
+        },
+        {
+          "Name": "last_cleanup_scan_at",
+          "Index": 5,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The last time this record was checked as part of a data retention scan."
+        },
+        {
+          "Name": "repo_id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The repository identifier of the associated dump."
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "lsif_data_docs_search_current_private_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX lsif_data_docs_search_current_private_pkey ON lsif_data_docs_search_current_private USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "lsif_data_docs_search_current_private_last_cleanup_scan_at",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_data_docs_search_current_private_last_cleanup_scan_at ON lsif_data_docs_search_current_private USING btree (last_cleanup_scan_at)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "lsif_data_docs_search_current_private_lookup",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_data_docs_search_current_private_lookup ON lsif_data_docs_search_current_private USING btree (repo_id, dump_root, lang_name_id, created_at) INCLUDE (dump_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
+      "Name": "lsif_data_docs_search_current_public",
+      "Comment": "A table indicating the most current search index for a unique repository, root, and language.",
+      "Columns": [
+        {
+          "Name": "created_at",
+          "Index": 6,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The time this record was inserted. The records with the latest created_at value for the same repository, root, and language is the only visible one and others will be deleted asynchronously."
+        },
+        {
+          "Name": "dump_id",
+          "Index": 4,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The associated dump identifier."
+        },
+        {
+          "Name": "dump_root",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The root of the associated dump."
+        },
+        {
+          "Name": "id",
+          "Index": 7,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "nextval('lsif_data_docs_search_current_public_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "lang_name_id",
+          "Index": 3,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The interned index name of the associated dump."
+        },
+        {
+          "Name": "last_cleanup_scan_at",
+          "Index": 5,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The last time this record was checked as part of a data retention scan."
+        },
+        {
+          "Name": "repo_id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The repository identifier of the associated dump."
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "lsif_data_docs_search_current_public_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX lsif_data_docs_search_current_public_pkey ON lsif_data_docs_search_current_public USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "lsif_data_docs_search_current_public_last_cleanup_scan_at",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_data_docs_search_current_public_last_cleanup_scan_at ON lsif_data_docs_search_current_public USING btree (last_cleanup_scan_at)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "lsif_data_docs_search_current_public_lookup",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_data_docs_search_current_public_lookup ON lsif_data_docs_search_current_public USING btree (repo_id, dump_root, lang_name_id, created_at) INCLUDE (dump_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
+      "Name": "lsif_data_docs_search_lang_names_private",
+      "Comment": "Each unique language name being stored in the API docs search index.",
+      "Columns": [
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "nextval('lsif_data_docs_search_lang_names_private_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The ID of the language name."
+        },
+        {
+          "Name": "lang_name",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The lowercase language name (go, java, etc.) OR, if unknown, the LSIF indexer name."
+        },
+        {
+          "Name": "tsv",
+          "Index": 3,
+          "TypeName": "tsvector",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Indexed tsvector for the lang_name field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector."
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "lsif_data_docs_search_lang_names_private_lang_name_key",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX lsif_data_docs_search_lang_names_private_lang_name_key ON lsif_data_docs_search_lang_names_private USING btree (lang_name)",
+          "ConstraintType": "u",
+          "ConstraintDefinition": "UNIQUE (lang_name)"
+        },
+        {
+          "Name": "lsif_data_docs_search_lang_names_private_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX lsif_data_docs_search_lang_names_private_pkey ON lsif_data_docs_search_lang_names_private USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "lsif_data_docs_search_lang_names_private_tsv_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_data_docs_search_lang_names_private_tsv_idx ON lsif_data_docs_search_lang_names_private USING gin (tsv)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
+      "Name": "lsif_data_docs_search_lang_names_public",
+      "Comment": "Each unique language name being stored in the API docs search index.",
+      "Columns": [
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "nextval('lsif_data_docs_search_lang_names_public_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The ID of the language name."
+        },
+        {
+          "Name": "lang_name",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The lowercase language name (go, java, etc.) OR, if unknown, the LSIF indexer name."
+        },
+        {
+          "Name": "tsv",
+          "Index": 3,
+          "TypeName": "tsvector",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Indexed tsvector for the lang_name field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector."
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "lsif_data_docs_search_lang_names_public_lang_name_key",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX lsif_data_docs_search_lang_names_public_lang_name_key ON lsif_data_docs_search_lang_names_public USING btree (lang_name)",
+          "ConstraintType": "u",
+          "ConstraintDefinition": "UNIQUE (lang_name)"
+        },
+        {
+          "Name": "lsif_data_docs_search_lang_names_public_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX lsif_data_docs_search_lang_names_public_pkey ON lsif_data_docs_search_lang_names_public USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "lsif_data_docs_search_lang_names_public_tsv_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_data_docs_search_lang_names_public_tsv_idx ON lsif_data_docs_search_lang_names_public USING gin (tsv)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
+      "Name": "lsif_data_docs_search_private",
+      "Comment": "A tsvector search index over API documentation (private repos only)",
+      "Columns": [
+        {
+          "Name": "detail",
+          "Index": 6,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The detail string (e.g. the full function signature and its docs). See protocol/documentation.go:Documentation"
+        },
+        {
+          "Name": "dump_id",
+          "Index": 3,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The identifier of the associated dump in the lsif_uploads table (state=completed)."
+        },
+        {
+          "Name": "dump_root",
+          "Index": 4,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Identical to lsif_dumps.root; The working directory of the indexer image relative to the repository root."
+        },
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "nextval('lsif_data_docs_search_private_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The row ID of the search result."
+        },
+        {
+          "Name": "label",
+          "Index": 13,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The label string of the result, e.g. a one-line function signature. See protocol/documentation.go:Documentation"
+        },
+        {
+          "Name": "label_reverse_tsv",
+          "Index": 15,
+          "TypeName": "tsvector",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Indexed tsvector for the reverse of the label field, for suffix lexeme/word matching. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector."
+        },
+        {
+          "Name": "label_tsv",
+          "Index": 14,
+          "TypeName": "tsvector",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Indexed tsvector for the label field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector."
+        },
+        {
+          "Name": "lang_name_id",
+          "Index": 7,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The programming language (or indexer name) that produced the result. Foreign key into lsif_data_docs_search_lang_names_private."
+        },
+        {
+          "Name": "path_id",
+          "Index": 5,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The fully qualified documentation page path ID, e.g. including \"#section\". See GraphQL codeintel.schema:documentationPage for what this is."
+        },
+        {
+          "Name": "repo_id",
+          "Index": 2,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The repo ID, from the main app DB repo table. Used to search over a select set of repos by ID."
+        },
+        {
+          "Name": "repo_name_id",
+          "Index": 8,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The repository name that produced the result. Foreign key into lsif_data_docs_search_repo_names_private."
+        },
+        {
+          "Name": "search_key",
+          "Index": 10,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The search key generated by the indexer, e.g. mux.Router.ServeHTTP. It is language-specific, and likely unique within a repository (but not always.) See protocol/documentation.go:Documentation.SearchKey"
+        },
+        {
+          "Name": "search_key_reverse_tsv",
+          "Index": 12,
+          "TypeName": "tsvector",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Indexed tsvector for the reverse of the search_key field, for suffix lexeme/word matching. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector."
+        },
+        {
+          "Name": "search_key_tsv",
+          "Index": 11,
+          "TypeName": "tsvector",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Indexed tsvector for the search_key field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector."
+        },
+        {
+          "Name": "tags_id",
+          "Index": 9,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The tags from the documentation node. Foreign key into lsif_data_docs_search_tags_private."
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "lsif_data_docs_search_private_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX lsif_data_docs_search_private_pkey ON lsif_data_docs_search_private USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "lsif_data_docs_search_private_dump_id_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_data_docs_search_private_dump_id_idx ON lsif_data_docs_search_private USING btree (dump_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "lsif_data_docs_search_private_dump_root_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_data_docs_search_private_dump_root_idx ON lsif_data_docs_search_private USING btree (dump_root)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "lsif_data_docs_search_private_label_reverse_tsv_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_data_docs_search_private_label_reverse_tsv_idx ON lsif_data_docs_search_private USING gin (label_reverse_tsv)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "lsif_data_docs_search_private_label_tsv_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_data_docs_search_private_label_tsv_idx ON lsif_data_docs_search_private USING gin (label_tsv)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "lsif_data_docs_search_private_repo_id_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_data_docs_search_private_repo_id_idx ON lsif_data_docs_search_private USING btree (repo_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "lsif_data_docs_search_private_search_key_reverse_tsv_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_data_docs_search_private_search_key_reverse_tsv_idx ON lsif_data_docs_search_private USING gin (search_key_reverse_tsv)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "lsif_data_docs_search_private_search_key_tsv_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_data_docs_search_private_search_key_tsv_idx ON lsif_data_docs_search_private USING gin (search_key_tsv)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "lsif_data_docs_search_private_lang_name_id_fk",
+          "ConstraintType": "f",
+          "RefTableName": "lsif_data_docs_search_lang_names_private",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (lang_name_id) REFERENCES lsif_data_docs_search_lang_names_private(id)"
+        },
+        {
+          "Name": "lsif_data_docs_search_private_repo_name_id_fk",
+          "ConstraintType": "f",
+          "RefTableName": "lsif_data_docs_search_repo_names_private",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (repo_name_id) REFERENCES lsif_data_docs_search_repo_names_private(id)"
+        },
+        {
+          "Name": "lsif_data_docs_search_private_tags_id_fk",
+          "ConstraintType": "f",
+          "RefTableName": "lsif_data_docs_search_tags_private",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (tags_id) REFERENCES lsif_data_docs_search_tags_private(id)"
+        }
+      ],
+      "Triggers": [
+        {
+          "Name": "lsif_data_docs_search_private_delete",
+          "Definition": "CREATE TRIGGER lsif_data_docs_search_private_delete AFTER DELETE ON lsif_data_docs_search_private REFERENCING OLD TABLE AS oldtbl FOR EACH STATEMENT EXECUTE FUNCTION lsif_data_docs_search_private_delete()"
+        },
+        {
+          "Name": "lsif_data_docs_search_private_insert",
+          "Definition": "CREATE TRIGGER lsif_data_docs_search_private_insert AFTER INSERT ON lsif_data_docs_search_private REFERENCING NEW TABLE AS newtbl FOR EACH STATEMENT EXECUTE FUNCTION lsif_data_docs_search_private_insert()"
+        }
+      ]
+    },
+    {
+      "Name": "lsif_data_docs_search_public",
+      "Comment": "A tsvector search index over API documentation (public repos only)",
+      "Columns": [
+        {
+          "Name": "detail",
+          "Index": 6,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The detail string (e.g. the full function signature and its docs). See protocol/documentation.go:Documentation"
+        },
+        {
+          "Name": "dump_id",
+          "Index": 3,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The identifier of the associated dump in the lsif_uploads table (state=completed)."
+        },
+        {
+          "Name": "dump_root",
+          "Index": 4,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Identical to lsif_dumps.root; The working directory of the indexer image relative to the repository root."
+        },
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "nextval('lsif_data_docs_search_public_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The row ID of the search result."
+        },
+        {
+          "Name": "label",
+          "Index": 13,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The label string of the result, e.g. a one-line function signature. See protocol/documentation.go:Documentation"
+        },
+        {
+          "Name": "label_reverse_tsv",
+          "Index": 15,
+          "TypeName": "tsvector",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Indexed tsvector for the reverse of the label field, for suffix lexeme/word matching. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector."
+        },
+        {
+          "Name": "label_tsv",
+          "Index": 14,
+          "TypeName": "tsvector",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Indexed tsvector for the label field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector."
+        },
+        {
+          "Name": "lang_name_id",
+          "Index": 7,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The programming language (or indexer name) that produced the result. Foreign key into lsif_data_docs_search_lang_names_public."
+        },
+        {
+          "Name": "path_id",
+          "Index": 5,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The fully qualified documentation page path ID, e.g. including \"#section\". See GraphQL codeintel.schema:documentationPage for what this is."
+        },
+        {
+          "Name": "repo_id",
+          "Index": 2,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The repo ID, from the main app DB repo table. Used to search over a select set of repos by ID."
+        },
+        {
+          "Name": "repo_name_id",
+          "Index": 8,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The repository name that produced the result. Foreign key into lsif_data_docs_search_repo_names_public."
+        },
+        {
+          "Name": "search_key",
+          "Index": 10,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The search key generated by the indexer, e.g. mux.Router.ServeHTTP. It is language-specific, and likely unique within a repository (but not always.) See protocol/documentation.go:Documentation.SearchKey"
+        },
+        {
+          "Name": "search_key_reverse_tsv",
+          "Index": 12,
+          "TypeName": "tsvector",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Indexed tsvector for the reverse of the search_key field, for suffix lexeme/word matching. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector."
+        },
+        {
+          "Name": "search_key_tsv",
+          "Index": 11,
+          "TypeName": "tsvector",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Indexed tsvector for the search_key field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector."
+        },
+        {
+          "Name": "tags_id",
+          "Index": 9,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The tags from the documentation node. Foreign key into lsif_data_docs_search_tags_public."
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "lsif_data_docs_search_public_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX lsif_data_docs_search_public_pkey ON lsif_data_docs_search_public USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "lsif_data_docs_search_public_dump_id_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_data_docs_search_public_dump_id_idx ON lsif_data_docs_search_public USING btree (dump_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "lsif_data_docs_search_public_dump_root_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_data_docs_search_public_dump_root_idx ON lsif_data_docs_search_public USING btree (dump_root)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "lsif_data_docs_search_public_label_reverse_tsv_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_data_docs_search_public_label_reverse_tsv_idx ON lsif_data_docs_search_public USING gin (label_reverse_tsv)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "lsif_data_docs_search_public_label_tsv_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_data_docs_search_public_label_tsv_idx ON lsif_data_docs_search_public USING gin (label_tsv)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "lsif_data_docs_search_public_repo_id_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_data_docs_search_public_repo_id_idx ON lsif_data_docs_search_public USING btree (repo_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "lsif_data_docs_search_public_search_key_reverse_tsv_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_data_docs_search_public_search_key_reverse_tsv_idx ON lsif_data_docs_search_public USING gin (search_key_reverse_tsv)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "lsif_data_docs_search_public_search_key_tsv_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_data_docs_search_public_search_key_tsv_idx ON lsif_data_docs_search_public USING gin (search_key_tsv)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "lsif_data_docs_search_public_lang_name_id_fk",
+          "ConstraintType": "f",
+          "RefTableName": "lsif_data_docs_search_lang_names_public",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (lang_name_id) REFERENCES lsif_data_docs_search_lang_names_public(id)"
+        },
+        {
+          "Name": "lsif_data_docs_search_public_repo_name_id_fk",
+          "ConstraintType": "f",
+          "RefTableName": "lsif_data_docs_search_repo_names_public",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (repo_name_id) REFERENCES lsif_data_docs_search_repo_names_public(id)"
+        },
+        {
+          "Name": "lsif_data_docs_search_public_tags_id_fk",
+          "ConstraintType": "f",
+          "RefTableName": "lsif_data_docs_search_tags_public",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (tags_id) REFERENCES lsif_data_docs_search_tags_public(id)"
+        }
+      ],
+      "Triggers": [
+        {
+          "Name": "lsif_data_docs_search_public_delete",
+          "Definition": "CREATE TRIGGER lsif_data_docs_search_public_delete AFTER DELETE ON lsif_data_docs_search_public REFERENCING OLD TABLE AS oldtbl FOR EACH STATEMENT EXECUTE FUNCTION lsif_data_docs_search_public_delete()"
+        },
+        {
+          "Name": "lsif_data_docs_search_public_insert",
+          "Definition": "CREATE TRIGGER lsif_data_docs_search_public_insert AFTER INSERT ON lsif_data_docs_search_public REFERENCING NEW TABLE AS newtbl FOR EACH STATEMENT EXECUTE FUNCTION lsif_data_docs_search_public_insert()"
+        }
+      ]
+    },
+    {
+      "Name": "lsif_data_docs_search_repo_names_private",
+      "Comment": "Each unique repository name being stored in the API docs search index.",
+      "Columns": [
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "nextval('lsif_data_docs_search_repo_names_private_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The ID of the repository name."
+        },
+        {
+          "Name": "repo_name",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The fully qualified name of the repository."
+        },
+        {
+          "Name": "reverse_tsv",
+          "Index": 4,
+          "TypeName": "tsvector",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Indexed tsvector for the reverse of the lang_name field, for suffix lexeme/word matching. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector."
+        },
+        {
+          "Name": "tsv",
+          "Index": 3,
+          "TypeName": "tsvector",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Indexed tsvector for the lang_name field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector."
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "lsif_data_docs_search_repo_names_private_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX lsif_data_docs_search_repo_names_private_pkey ON lsif_data_docs_search_repo_names_private USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "lsif_data_docs_search_repo_names_private_repo_name_key",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX lsif_data_docs_search_repo_names_private_repo_name_key ON lsif_data_docs_search_repo_names_private USING btree (repo_name)",
+          "ConstraintType": "u",
+          "ConstraintDefinition": "UNIQUE (repo_name)"
+        },
+        {
+          "Name": "lsif_data_docs_search_repo_names_private_reverse_tsv_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_data_docs_search_repo_names_private_reverse_tsv_idx ON lsif_data_docs_search_repo_names_private USING gin (reverse_tsv)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "lsif_data_docs_search_repo_names_private_tsv_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_data_docs_search_repo_names_private_tsv_idx ON lsif_data_docs_search_repo_names_private USING gin (tsv)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
+      "Name": "lsif_data_docs_search_repo_names_public",
+      "Comment": "Each unique repository name being stored in the API docs search index.",
+      "Columns": [
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "nextval('lsif_data_docs_search_repo_names_public_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The ID of the repository name."
+        },
+        {
+          "Name": "repo_name",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The fully qualified name of the repository."
+        },
+        {
+          "Name": "reverse_tsv",
+          "Index": 4,
+          "TypeName": "tsvector",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Indexed tsvector for the reverse of the lang_name field, for suffix lexeme/word matching. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector."
+        },
+        {
+          "Name": "tsv",
+          "Index": 3,
+          "TypeName": "tsvector",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Indexed tsvector for the lang_name field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector."
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "lsif_data_docs_search_repo_names_public_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX lsif_data_docs_search_repo_names_public_pkey ON lsif_data_docs_search_repo_names_public USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "lsif_data_docs_search_repo_names_public_repo_name_key",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX lsif_data_docs_search_repo_names_public_repo_name_key ON lsif_data_docs_search_repo_names_public USING btree (repo_name)",
+          "ConstraintType": "u",
+          "ConstraintDefinition": "UNIQUE (repo_name)"
+        },
+        {
+          "Name": "lsif_data_docs_search_repo_names_public_reverse_tsv_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_data_docs_search_repo_names_public_reverse_tsv_idx ON lsif_data_docs_search_repo_names_public USING gin (reverse_tsv)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "lsif_data_docs_search_repo_names_public_tsv_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_data_docs_search_repo_names_public_tsv_idx ON lsif_data_docs_search_repo_names_public USING gin (tsv)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
+      "Name": "lsif_data_docs_search_tags_private",
+      "Comment": "Each uniques sequence of space-separated tags being stored in the API docs search index.",
+      "Columns": [
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "nextval('lsif_data_docs_search_tags_private_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The ID of the tags."
+        },
+        {
+          "Name": "tags",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The full sequence of space-separated tags. See protocol/documentation.go:Documentation"
+        },
+        {
+          "Name": "tsv",
+          "Index": 3,
+          "TypeName": "tsvector",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Indexed tsvector for the tags field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector."
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "lsif_data_docs_search_tags_private_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX lsif_data_docs_search_tags_private_pkey ON lsif_data_docs_search_tags_private USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "lsif_data_docs_search_tags_private_tags_key",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX lsif_data_docs_search_tags_private_tags_key ON lsif_data_docs_search_tags_private USING btree (tags)",
+          "ConstraintType": "u",
+          "ConstraintDefinition": "UNIQUE (tags)"
+        },
+        {
+          "Name": "lsif_data_docs_search_tags_private_tsv_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_data_docs_search_tags_private_tsv_idx ON lsif_data_docs_search_tags_private USING gin (tsv)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
+      "Name": "lsif_data_docs_search_tags_public",
+      "Comment": "Each uniques sequence of space-separated tags being stored in the API docs search index.",
+      "Columns": [
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "nextval('lsif_data_docs_search_tags_public_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The ID of the tags."
+        },
+        {
+          "Name": "tags",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The full sequence of space-separated tags. See protocol/documentation.go:Documentation"
+        },
+        {
+          "Name": "tsv",
+          "Index": 3,
+          "TypeName": "tsvector",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Indexed tsvector for the tags field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector."
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "lsif_data_docs_search_tags_public_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX lsif_data_docs_search_tags_public_pkey ON lsif_data_docs_search_tags_public USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "lsif_data_docs_search_tags_public_tags_key",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX lsif_data_docs_search_tags_public_tags_key ON lsif_data_docs_search_tags_public USING btree (tags)",
+          "ConstraintType": "u",
+          "ConstraintDefinition": "UNIQUE (tags)"
+        },
+        {
+          "Name": "lsif_data_docs_search_tags_public_tsv_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_data_docs_search_tags_public_tsv_idx ON lsif_data_docs_search_tags_public USING gin (tsv)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
+      "Name": "lsif_data_documentation_mappings",
+      "Comment": "Maps documentation path IDs to their corresponding integral documentationResult vertex IDs, which are unique within a dump.",
+      "Columns": [
+        {
+          "Name": "dump_id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The identifier of the associated dump in the lsif_uploads table (state=completed)."
+        },
+        {
+          "Name": "file_path",
+          "Index": 4,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The document file path for the documentationResult, if any. e.g. the path to the file where the symbol described by this documentationResult is located, if it is a symbol."
+        },
+        {
+          "Name": "path_id",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The documentation page path ID, see see GraphQL codeintel.schema:documentationPage for what this is."
+        },
+        {
+          "Name": "result_id",
+          "Index": 3,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The documentationResult vertex ID."
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "lsif_data_documentation_mappings_inverse_unique_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX lsif_data_documentation_mappings_inverse_unique_idx ON lsif_data_documentation_mappings USING btree (dump_id, result_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "lsif_data_documentation_mappings_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX lsif_data_documentation_mappings_pkey ON lsif_data_documentation_mappings USING btree (dump_id, path_id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (dump_id, path_id)"
+        }
+      ],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
+      "Name": "lsif_data_documentation_pages",
+      "Comment": "Associates documentation pathIDs to their documentation page hierarchy chunk.",
+      "Columns": [
+        {
+          "Name": "data",
+          "Index": 3,
+          "TypeName": "bytea",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "A gob-encoded payload conforming to a `type DocumentationPageData struct` pointer (lib/codeintel/semantic/types.go)"
+        },
+        {
+          "Name": "dump_id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The identifier of the associated dump in the lsif_uploads table (state=completed)."
+        },
+        {
+          "Name": "path_id",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The documentation page path ID, see see GraphQL codeintel.schema:documentationPage for what this is."
+        },
+        {
+          "Name": "search_indexed",
+          "Index": 4,
+          "TypeName": "boolean",
+          "IsNullable": true,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "lsif_data_documentation_pages_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX lsif_data_documentation_pages_pkey ON lsif_data_documentation_pages USING btree (dump_id, path_id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (dump_id, path_id)"
+        },
+        {
+          "Name": "lsif_data_documentation_pages_dump_id_unindexed",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_data_documentation_pages_dump_id_unindexed ON lsif_data_documentation_pages USING btree (dump_id) WHERE NOT search_indexed",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": null,
+      "Triggers": [
+        {
+          "Name": "lsif_data_documentation_pages_delete",
+          "Definition": "CREATE TRIGGER lsif_data_documentation_pages_delete AFTER DELETE ON lsif_data_documentation_pages REFERENCING OLD TABLE AS oldtbl FOR EACH STATEMENT EXECUTE FUNCTION lsif_data_documentation_pages_delete()"
+        },
+        {
+          "Name": "lsif_data_documentation_pages_insert",
+          "Definition": "CREATE TRIGGER lsif_data_documentation_pages_insert AFTER INSERT ON lsif_data_documentation_pages REFERENCING NEW TABLE AS newtbl FOR EACH STATEMENT EXECUTE FUNCTION lsif_data_documentation_pages_insert()"
+        },
+        {
+          "Name": "lsif_data_documentation_pages_update",
+          "Definition": "CREATE TRIGGER lsif_data_documentation_pages_update AFTER UPDATE ON lsif_data_documentation_pages REFERENCING OLD TABLE AS oldtbl NEW TABLE AS newtbl FOR EACH STATEMENT EXECUTE FUNCTION lsif_data_documentation_pages_update()"
+        }
+      ]
+    },
+    {
+      "Name": "lsif_data_documentation_path_info",
+      "Comment": "Associates documentation page pathIDs to information about what is at that pathID, its immediate children, etc.",
+      "Columns": [
+        {
+          "Name": "data",
+          "Index": 3,
+          "TypeName": "bytea",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "A gob-encoded payload conforming to a `type DocumentationPathInoData struct` pointer (lib/codeintel/semantic/types.go)"
+        },
+        {
+          "Name": "dump_id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The identifier of the associated dump in the lsif_uploads table (state=completed)."
+        },
+        {
+          "Name": "path_id",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The documentation page path ID, see see GraphQL codeintel.schema:documentationPage for what this is."
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "lsif_data_documentation_path_info_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX lsif_data_documentation_path_info_pkey ON lsif_data_documentation_path_info USING btree (dump_id, path_id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (dump_id, path_id)"
+        }
+      ],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
+      "Name": "lsif_data_documents",
+      "Comment": "Stores reference, hover text, moniker, and diagnostic data about a particular text document witin a dump.",
+      "Columns": [
+        {
+          "Name": "data",
+          "Index": 3,
+          "TypeName": "bytea",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "A gob-encoded payload conforming to the [DocumentData](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.26/-/blob/enterprise/lib/codeintel/semantic/types.go#L13:6) type. This field is being migrated across ranges, hovers, monikers, packages, and diagnostics columns and will be removed in a future release of Sourcegraph."
+        },
+        {
+          "Name": "diagnostics",
+          "Index": 10,
+          "TypeName": "bytea",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "A gob-encoded payload conforming to the [Diagnostics](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.26/-/blob/enterprise/lib/codeintel/semantic/types.go#L18:2) field of the DocumentDatatype."
+        },
+        {
+          "Name": "dump_id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The identifier of the associated dump in the lsif_uploads table (state=completed)."
+        },
+        {
+          "Name": "hovers",
+          "Index": 7,
+          "TypeName": "bytea",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "A gob-encoded payload conforming to the [HoversResults](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.26/-/blob/enterprise/lib/codeintel/semantic/types.go#L15:2) field of the DocumentDatatype."
+        },
+        {
+          "Name": "monikers",
+          "Index": 8,
+          "TypeName": "bytea",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "A gob-encoded payload conforming to the [Monikers](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.26/-/blob/enterprise/lib/codeintel/semantic/types.go#L16:2) field of the DocumentDatatype."
+        },
+        {
+          "Name": "num_diagnostics",
+          "Index": 5,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The number of diagnostics stored in the data field."
+        },
+        {
+          "Name": "packages",
+          "Index": 9,
+          "TypeName": "bytea",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "A gob-encoded payload conforming to the [PackageInformation](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.26/-/blob/enterprise/lib/codeintel/semantic/types.go#L17:2) field of the DocumentDatatype."
+        },
+        {
+          "Name": "path",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The path of the text document relative to the associated dump root."
+        },
+        {
+          "Name": "ranges",
+          "Index": 6,
+          "TypeName": "bytea",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "A gob-encoded payload conforming to the [Ranges](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.26/-/blob/enterprise/lib/codeintel/semantic/types.go#L14:2) field of the DocumentDatatype."
+        },
+        {
+          "Name": "schema_version",
+          "Index": 4,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The schema version of this row - used to determine presence and encoding of data."
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "lsif_data_documents_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX lsif_data_documents_pkey ON lsif_data_documents USING btree (dump_id, path)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (dump_id, path)"
+        },
+        {
+          "Name": "lsif_data_documents_dump_id_schema_version",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_data_documents_dump_id_schema_version ON lsif_data_documents USING btree (dump_id, schema_version)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": null,
+      "Triggers": [
+        {
+          "Name": "lsif_data_documents_schema_versions_insert",
+          "Definition": "CREATE TRIGGER lsif_data_documents_schema_versions_insert AFTER INSERT ON lsif_data_documents REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_lsif_data_documents_schema_versions_insert()"
+        }
+      ]
+    },
+    {
+      "Name": "lsif_data_documents_schema_versions",
+      "Comment": "Tracks the range of schema_versions for each upload in the lsif_data_documents table.",
+      "Columns": [
+        {
+          "Name": "dump_id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The identifier of the associated dump in the lsif_uploads table."
+        },
+        {
+          "Name": "max_schema_version",
+          "Index": 3,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "An upper-bound on the `lsif_data_documents.schema_version` where `lsif_data_documents.dump_id = dump_id`."
+        },
+        {
+          "Name": "min_schema_version",
+          "Index": 2,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "A lower-bound on the `lsif_data_documents.schema_version` where `lsif_data_documents.dump_id = dump_id`."
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "lsif_data_documents_schema_versions_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX lsif_data_documents_schema_versions_pkey ON lsif_data_documents_schema_versions USING btree (dump_id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (dump_id)"
+        },
+        {
+          "Name": "lsif_data_documents_schema_versions_dump_id_schema_version_boun",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_data_documents_schema_versions_dump_id_schema_version_boun ON lsif_data_documents_schema_versions USING btree (dump_id, min_schema_version, max_schema_version)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
+      "Name": "lsif_data_implementations",
+      "Comment": "Associates (document, range) pairs with the implementation monikers attached to the range.",
+      "Columns": [
+        {
+          "Name": "data",
+          "Index": 4,
+          "TypeName": "bytea",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "A gob-encoded payload conforming to an array of [LocationData](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.26/-/blob/enterprise/lib/codeintel/semantic/types.go#L106:6) types."
+        },
+        {
+          "Name": "dump_id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The identifier of the associated dump in the lsif_uploads table (state=completed)."
+        },
+        {
+          "Name": "identifier",
+          "Index": 3,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The moniker identifier."
+        },
+        {
+          "Name": "num_locations",
+          "Index": 6,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The number of locations stored in the data field."
+        },
+        {
+          "Name": "schema_version",
+          "Index": 5,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The schema version of this row - used to determine presence and encoding of data."
+        },
+        {
+          "Name": "scheme",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The moniker scheme."
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "lsif_data_implementations_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX lsif_data_implementations_pkey ON lsif_data_implementations USING btree (dump_id, scheme, identifier)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (dump_id, scheme, identifier)"
+        },
+        {
+          "Name": "lsif_data_implementations_dump_id_schema_version",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_data_implementations_dump_id_schema_version ON lsif_data_implementations USING btree (dump_id, schema_version)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": null,
+      "Triggers": [
+        {
+          "Name": "lsif_data_implementations_schema_versions_insert",
+          "Definition": "CREATE TRIGGER lsif_data_implementations_schema_versions_insert AFTER INSERT ON lsif_data_implementations REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_lsif_data_implementations_schema_versions_insert()"
+        }
+      ]
+    },
+    {
+      "Name": "lsif_data_implementations_schema_versions",
+      "Comment": "Tracks the range of schema_versions for each upload in the lsif_data_implementations table.",
+      "Columns": [
+        {
+          "Name": "dump_id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The identifier of the associated dump in the lsif_uploads table."
+        },
+        {
+          "Name": "max_schema_version",
+          "Index": 3,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "An upper-bound on the `lsif_data_implementations.schema_version` where `lsif_data_implementations.dump_id = dump_id`."
+        },
+        {
+          "Name": "min_schema_version",
+          "Index": 2,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "A lower-bound on the `lsif_data_implementations.schema_version` where `lsif_data_implementations.dump_id = dump_id`."
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "lsif_data_implementations_schema_versions_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX lsif_data_implementations_schema_versions_pkey ON lsif_data_implementations_schema_versions USING btree (dump_id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (dump_id)"
+        },
+        {
+          "Name": "lsif_data_implementations_schema_versions_dump_id_schema_versio",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_data_implementations_schema_versions_dump_id_schema_versio ON lsif_data_implementations_schema_versions USING btree (dump_id, min_schema_version, max_schema_version)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
+      "Name": "lsif_data_metadata",
+      "Comment": "Stores the number of result chunks associated with a dump.",
+      "Columns": [
+        {
+          "Name": "dump_id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The identifier of the associated dump in the lsif_uploads table (state=completed)."
+        },
+        {
+          "Name": "num_result_chunks",
+          "Index": 2,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "A bound of populated indexes in the lsif_data_result_chunks table for the associated dump. This value is used to hash identifiers into the result chunk index to which they belong."
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "lsif_data_metadata_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX lsif_data_metadata_pkey ON lsif_data_metadata USING btree (dump_id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (dump_id)"
+        }
+      ],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
+      "Name": "lsif_data_references",
+      "Comment": "Associates (document, range) pairs with the export monikers attached to the range.",
+      "Columns": [
+        {
+          "Name": "data",
+          "Index": 4,
+          "TypeName": "bytea",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "A gob-encoded payload conforming to an array of [LocationData](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.26/-/blob/enterprise/lib/codeintel/semantic/types.go#L106:6) types."
+        },
+        {
+          "Name": "dump_id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The identifier of the associated dump in the lsif_uploads table (state=completed)."
+        },
+        {
+          "Name": "identifier",
+          "Index": 3,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The moniker identifier."
+        },
+        {
+          "Name": "num_locations",
+          "Index": 6,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The number of locations stored in the data field."
+        },
+        {
+          "Name": "schema_version",
+          "Index": 5,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The schema version of this row - used to determine presence and encoding of data."
+        },
+        {
+          "Name": "scheme",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The moniker scheme."
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "lsif_data_references_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX lsif_data_references_pkey ON lsif_data_references USING btree (dump_id, scheme, identifier)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (dump_id, scheme, identifier)"
+        },
+        {
+          "Name": "lsif_data_references_dump_id_schema_version",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_data_references_dump_id_schema_version ON lsif_data_references USING btree (dump_id, schema_version)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": null,
+      "Triggers": [
+        {
+          "Name": "lsif_data_references_schema_versions_insert",
+          "Definition": "CREATE TRIGGER lsif_data_references_schema_versions_insert AFTER INSERT ON lsif_data_references REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_lsif_data_references_schema_versions_insert()"
+        }
+      ]
+    },
+    {
+      "Name": "lsif_data_references_schema_versions",
+      "Comment": "Tracks the range of schema_versions for each upload in the lsif_data_references table.",
+      "Columns": [
+        {
+          "Name": "dump_id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The identifier of the associated dump in the lsif_uploads table."
+        },
+        {
+          "Name": "max_schema_version",
+          "Index": 3,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "An upper-bound on the `lsif_data_references.schema_version` where `lsif_data_references.dump_id = dump_id`."
+        },
+        {
+          "Name": "min_schema_version",
+          "Index": 2,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "A lower-bound on the `lsif_data_references.schema_version` where `lsif_data_references.dump_id = dump_id`."
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "lsif_data_references_schema_versions_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX lsif_data_references_schema_versions_pkey ON lsif_data_references_schema_versions USING btree (dump_id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (dump_id)"
+        },
+        {
+          "Name": "lsif_data_references_schema_versions_dump_id_schema_version_bou",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_data_references_schema_versions_dump_id_schema_version_bou ON lsif_data_references_schema_versions USING btree (dump_id, min_schema_version, max_schema_version)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
+      "Name": "lsif_data_result_chunks",
+      "Comment": "Associates result set identifiers with the (document path, range identifier) pairs that compose the set.",
+      "Columns": [
+        {
+          "Name": "data",
+          "Index": 3,
+          "TypeName": "bytea",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "A gob-encoded payload conforming to the [ResultChunkData](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.26/-/blob/enterprise/lib/codeintel/semantic/types.go#L76:6) type."
+        },
+        {
+          "Name": "dump_id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The identifier of the associated dump in the lsif_uploads table (state=completed)."
+        },
+        {
+          "Name": "idx",
+          "Index": 2,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The unique result chunk index within the associated dump. Every result set identifier present should hash to this index (modulo lsif_data_metadata.num_result_chunks)."
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "lsif_data_result_chunks_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX lsif_data_result_chunks_pkey ON lsif_data_result_chunks USING btree (dump_id, idx)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (dump_id, idx)"
+        }
+      ],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
+      "Name": "migration_logs",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "error_message",
+          "Index": 9,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "finished_at",
+          "Index": 7,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "nextval('migration_logs_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "migration_logs_schema_version",
+          "Index": 2,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "schema",
+          "Index": 3,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "started_at",
+          "Index": 6,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "success",
+          "Index": 8,
+          "TypeName": "boolean",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "up",
+          "Index": 5,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "version",
+          "Index": 4,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "migration_logs_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX migration_logs_pkey ON migration_logs USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        }
+      ],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
+      "Name": "rockskip_ancestry",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "ancestor",
+          "Index": 5,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "commit_id",
+          "Index": 3,
+          "TypeName": "character varying(40)",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 40,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "height",
+          "Index": 4,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "nextval('rockskip_ancestry_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "repo_id",
+          "Index": 2,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "rockskip_ancestry_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX rockskip_ancestry_pkey ON rockskip_ancestry USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "rockskip_ancestry_repo_id_commit_id_key",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX rockskip_ancestry_repo_id_commit_id_key ON rockskip_ancestry USING btree (repo_id, commit_id)",
+          "ConstraintType": "u",
+          "ConstraintDefinition": "UNIQUE (repo_id, commit_id)"
+        },
+        {
+          "Name": "rockskip_ancestry_repo_commit_id",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX rockskip_ancestry_repo_commit_id ON rockskip_ancestry USING btree (repo_id, commit_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
+      "Name": "rockskip_repos",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "nextval('rockskip_repos_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "last_accessed_at",
+          "Index": 3,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "repo",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "rockskip_repos_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX rockskip_repos_pkey ON rockskip_repos USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "rockskip_repos_repo_key",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX rockskip_repos_repo_key ON rockskip_repos USING btree (repo)",
+          "ConstraintType": "u",
+          "ConstraintDefinition": "UNIQUE (repo)"
+        },
+        {
+          "Name": "rockskip_repos_last_accessed_at",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX rockskip_repos_last_accessed_at ON rockskip_repos USING btree (last_accessed_at)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "rockskip_repos_repo",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX rockskip_repos_repo ON rockskip_repos USING btree (repo)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
+      "Name": "rockskip_symbols",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "added",
+          "Index": 2,
+          "TypeName": "integer[]",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "deleted",
+          "Index": 3,
+          "TypeName": "integer[]",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "nextval('rockskip_symbols_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "name",
+          "Index": 6,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "path",
+          "Index": 5,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "repo_id",
+          "Index": 4,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "rockskip_symbols_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX rockskip_symbols_pkey ON rockskip_symbols USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "rockskip_symbols_gin",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX rockskip_symbols_gin ON rockskip_symbols USING gin (singleton_integer(repo_id) gin__int_ops, added gin__int_ops, deleted gin__int_ops, name gin_trgm_ops, singleton(name), singleton(lower(name)), path gin_trgm_ops, singleton(path), path_prefixes(path), singleton(lower(path)), path_prefixes(lower(path)), singleton(get_file_extension(path)), singleton(get_file_extension(lower(path))))",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "rockskip_symbols_repo_id_path_name",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX rockskip_symbols_repo_id_path_name ON rockskip_symbols USING btree (repo_id, path, name)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": null,
+      "Triggers": []
+    }
+  ],
+  "Views": null
+}

@@ -268,9 +268,9 @@ func (g *graph) emitMonikerVertex(symbolID string, kind string, resultSetID int)
 		// NOTE: these special cases are needed since the Sourcegraph backend uses the "scheme" field of monikers where
 		// it should use the "manager" field of packageInformation instead.
 		switch symbol.Scheme {
-		case "lsif-java":
+		case "lsif-java", "scip-java":
 			scheme = "semanticdb"
-		case "lsif-typescript":
+		case "lsif-typescript", "scip-typescript":
 			scheme = "npm"
 		}
 	}
@@ -308,7 +308,7 @@ func (g *graph) emitRange(lsifRange []int32) (int, error) {
 	}), nil
 }
 
-func (g *graph) emitVertex(label string, payload interface{}) int {
+func (g *graph) emitVertex(label string, payload any) int {
 	return g.emit("vertex", label, payload)
 }
 
@@ -319,7 +319,7 @@ func (g *graph) emitEdge(label string, payload Edge) {
 	g.emit("edge", label, payload)
 }
 
-func (g *graph) emit(ty, label string, payload interface{}) int {
+func (g *graph) emit(ty, label string, payload any) int {
 	g.ID++
 	g.Elements = append(g.Elements, Element{
 		ID:      g.ID,

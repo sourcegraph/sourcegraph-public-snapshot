@@ -16,7 +16,7 @@ use that webhook's URL.
 
 ## Prerequisites
 
-- You must have the experimental feature flag `experimentalFeatures.codeMonitoringWebHooks` set to `true` in your Sourcegraph settings
+- You must have the experimental feature flag `  "experimentalFeatures": { "codeMonitoringWebHooks": true } ` set in your user, org, or global settings.
 - You must have permission to create apps inside of your organization's Slack workspace
 
 ## Creating a Slack webhook

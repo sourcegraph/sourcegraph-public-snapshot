@@ -10,7 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/docker"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/images"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 
 	"github.com/docker/docker-credential-helpers/credentials"
@@ -22,7 +22,6 @@ var (
 		Usage:       "Commands used by operations teams to perform common tasks",
 		Description: constructOpsCmdLongHelp(),
 		Category:    CategoryCompany,
-		Action:      suggestSubcommandsAction,
 		Subcommands: []*cli.Command{opsUpdateImagesCommand},
 	}
 
@@ -77,11 +76,11 @@ func constructOpsCmdLongHelp() string {
 
 func opsUpdateImage(ctx context.Context, args []string) error {
 	if len(args) == 0 {
-		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "No path provided"))
+		std.Out.WriteLine(output.Styled(output.StyleWarning, "No path provided"))
 		return flag.ErrHelp
 	}
 	if len(args) != 1 {
-		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "Multiple paths not currently supported"))
+		std.Out.WriteLine(output.Styled(output.StyleWarning, "Multiple paths not currently supported"))
 		return flag.ErrHelp
 	}
 	dockerCredentials := &credentials.Credentials{
@@ -92,19 +91,19 @@ func opsUpdateImage(ctx context.Context, args []string) error {
 	if opsUpdateImagesContainerRegistryUsernameFlag == "" || opsUpdateImagesContainerRegistryPasswordFlag == "" {
 		if creds, err := docker.GetCredentialsFromStore(dockerCredentials.ServerURL); err != nil {
 			// We do not want any error handling here, just fallback to anonymous requests
-			writeWarningLinef("Registry credentials are not provided and could not be retrieved from docker config.")
-			writeWarningLinef("You will be using anonymous requests and may be subject to rate limiting by Docker Hub.")
+			std.Out.WriteWarningf("Registry credentials are not provided and could not be retrieved from docker config.")
+			std.Out.WriteWarningf("You will be using anonymous requests and may be subject to rate limiting by Docker Hub.")
 			dockerCredentials.Username = ""
 			dockerCredentials.Secret = ""
 		} else {
-			writeFingerPointingLinef("Using credentials from docker credentials store (learn more https://docs.docker.com/engine/reference/commandline/login/#credentials-store)")
+			std.Out.WriteNoticef("Using credentials from docker credentials store (learn more https://docs.docker.com/engine/reference/commandline/login/#credentials-store)")
 			dockerCredentials = creds
 		}
 	}
 
 	if opsUpdateImagesPinTagFlag == "" {
-		writeWarningLinef("No pin tag is provided.")
-		writeWarningLinef("Falling back to the latest deveopment build available.")
+		std.Out.WriteWarningf("No pin tag is provided.")
+		std.Out.WriteWarningf("Falling back to the latest deveopment build available.")
 	}
 
 	return images.Parse(args[0], *dockerCredentials, images.DeploymentType(opsUpdateImagesDeploymentKindFlag), opsUpdateImagesPinTagFlag)

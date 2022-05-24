@@ -1,6 +1,7 @@
 import { storiesOf } from '@storybook/react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Typography } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../components/WebStory'
 
@@ -25,13 +26,13 @@ add('CollaboratorsPanel', () => (
     <WebStory>
         {() => (
             <div style={{ maxWidth: '32rem' }}>
-                <h2>Populated</h2>
+                <Typography.H2>Populated</Typography.H2>
                 <CollaboratorsPanel {...props} />
 
-                <h2>Loading</h2>
+                <Typography.H2>Loading</Typography.H2>
                 <CollaboratorsPanel {...props} collaboratorsFragment={null} />
 
-                <h2>Empty</h2>
+                <Typography.H2>Empty</Typography.H2>
                 <CollaboratorsPanel {...props} collaboratorsFragment={{ collaborators: [] }} />
             </div>
         )}

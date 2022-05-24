@@ -58,7 +58,7 @@ func (v *variable) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (v *variable) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (v *variable) UnmarshalYAML(unmarshal func(any) error) error {
 	// This can be a string or an object with one property. Let's try the string
 	// case first.
 	var k string

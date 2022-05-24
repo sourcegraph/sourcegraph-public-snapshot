@@ -7,10 +7,11 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/janitor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/executorqueue"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -39,22 +40,22 @@ func (j *janitorJob) Routines(ctx context.Context, logger log.Logger) ([]gorouti
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	dbStore, err := InitDBStore()
+	dbStore, err := codeintel.InitDBStore()
 	if err != nil {
 		return nil, err
 	}
 
-	lsifStore, err := InitLSIFStore()
+	lsifStore, err := codeintel.InitLSIFStore()
 	if err != nil {
 		return nil, err
 	}
 
-	dependencyIndexingStore, err := InitDependencySyncingStore()
+	dependencyIndexingStore, err := codeintel.InitDependencySyncingStore()
 	if err != nil {
 		return nil, err
 	}
 
-	gitserverClient, err := InitGitserverClient()
+	gitserverClient, err := codeintel.InitGitserverClient()
 	if err != nil {
 		return nil, err
 	}
@@ -83,9 +84,6 @@ func (j *janitorJob) Routines(ctx context.Context, logger log.Logger) ([]gorouti
 		janitor.NewExpiredUploadDeleter(dbStoreShim, janitorConfigInst.CleanupTaskInterval, metrics),
 		janitor.NewHardDeleter(dbStoreShim, lsifStoreShim, janitorConfigInst.CleanupTaskInterval, metrics),
 		janitor.NewAuditLogJanitor(dbStoreShim, janitorConfigInst.AuditLogMaxAge, janitorConfigInst.CleanupTaskInterval, metrics),
-
-		// Current indexes
-		janitor.NewDocumentationSearchCurrentJanitor(lsifStoreShim, janitorConfigInst.DocumentationSearchCurrentMinimumTimeSinceLastCheck, janitorConfigInst.DocumentationSearchCurrentBatchSize, janitorConfigInst.CleanupTaskInterval, metrics),
 
 		// Resetters
 		janitor.NewUploadResetter(uploadWorkerStore, janitorConfigInst.CleanupTaskInterval, metrics, observationContext),

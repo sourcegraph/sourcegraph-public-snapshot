@@ -65,7 +65,7 @@ namespace Foo {
 		return nil, errors.Newf("path %s not found", path.Path)
 	}
 
-	squirrel := NewSquirrelService(readFile)
+	squirrel := New(readFile, nil)
 	defer squirrel.Close()
 
 	for _, test := range tests {
@@ -95,11 +95,5 @@ namespace Foo {
 			}
 			t.FailNow()
 		}
-	}
-}
-
-func fatalIfError(t *testing.T, err error) {
-	if err != nil {
-		t.Fatal(err)
 	}
 }

@@ -54,8 +54,14 @@ export class CopyableText extends React.PureComponent<Props, State> {
                         onClick={this.onClickInput}
                     />
                     <div className="input-group-append">
-                        <Button onClick={this.onClickButton} disabled={this.state.copied} variant="secondary">
-                            <Icon as={ContentCopyIcon} /> {this.state.copied ? 'Copied' : 'Copy'}
+                        <Button
+                            onClick={this.onClickButton}
+                            disabled={this.state.copied}
+                            variant="secondary"
+                            aria-label="Copy"
+                        >
+                            <Icon role="img" as={ContentCopyIcon} aria-hidden={true} />{' '}
+                            {this.state.copied ? 'Copied' : 'Copy'}
                         </Button>
                     </div>
                 </div>

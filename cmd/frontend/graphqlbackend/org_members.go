@@ -19,7 +19,7 @@ func (r *UserResolver) OrganizationMemberships(ctx context.Context) (*organizati
 	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
 		return nil, err
 	}
-	memberships, err := database.OrgMembers(r.db).GetByUserID(ctx, r.user.ID)
+	memberships, err := r.db.OrgMembers().GetByUserID(ctx, r.user.ID)
 	if err != nil {
 		return nil, err
 	}

@@ -157,6 +157,34 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
+func (r *Resolver) SetRepositoryPermissionsUnrestricted(ctx context.Context, args *graphqlbackend.RepoUnrestrictedArgs) (*graphqlbackend.EmptyResponse, error) {
+	if envvar.SourcegraphDotComMode() {
+		return nil, errDisabledSourcegraphDotCom
+	}
+	if err := r.checkLicense(); err != nil {
+		return nil, err
+	}
+	// 🚨 SECURITY: Only site admins can mutate repository permissions.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	ids := make([]int32, 0, len(args.Repositories))
+	for _, id := range args.Repositories {
+		repoID, err := graphqlbackend.UnmarshalRepositoryID(id)
+		if err != nil {
+			return nil, errors.Wrap(err, "unmarshalling id")
+		}
+		ids = append(ids, int32(repoID))
+	}
+
+	if err := r.db.Perms().SetRepoPermissionsUnrestricted(ctx, ids, args.Unrestricted); err != nil {
+		return nil, errors.Wrap(err, "setting unrestricted field")
+	}
+
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
 func (r *Resolver) ScheduleRepositoryPermissionsSync(ctx context.Context, args *graphqlbackend.RepositoryIDArgs) (*graphqlbackend.EmptyResponse, error) {
 	if err := r.checkLicense(); err != nil {
 		return nil, err
@@ -383,9 +411,10 @@ func (r *Resolver) AuthorizedUsers(ctx context.Context, args *graphqlbackend.Rep
 }
 
 type permissionsInfoResolver struct {
-	perms     authz.Perms
-	syncedAt  time.Time
-	updatedAt time.Time
+	perms        authz.Perms
+	syncedAt     time.Time
+	updatedAt    time.Time
+	unrestricted bool
 }
 
 func (r *permissionsInfoResolver) Permissions() []string {
@@ -401,6 +430,10 @@ func (r *permissionsInfoResolver) SyncedAt() *graphqlbackend.DateTime {
 
 func (r *permissionsInfoResolver) UpdatedAt() graphqlbackend.DateTime {
 	return graphqlbackend.DateTime{Time: r.updatedAt}
+}
+
+func (r *permissionsInfoResolver) Unrestricted() bool {
+	return r.unrestricted
 }
 
 func (r *Resolver) RepositoryPermissionsInfo(ctx context.Context, id graphql.ID) (graphqlbackend.PermissionsInfoResolver, error) {
@@ -432,9 +465,10 @@ func (r *Resolver) RepositoryPermissionsInfo(ctx context.Context, id graphql.ID)
 	}
 
 	return &permissionsInfoResolver{
-		perms:     p.Perm,
-		syncedAt:  p.SyncedAt,
-		updatedAt: p.UpdatedAt,
+		perms:        p.Perm,
+		syncedAt:     p.SyncedAt,
+		updatedAt:    p.UpdatedAt,
+		unrestricted: p.Unrestricted,
 	}, nil
 }
 

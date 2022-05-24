@@ -43,20 +43,25 @@
             height: 320px;
             margin: 0;
             padding: 5px;
+            overflow: auto;
+            font-family: monospace;
+            white-space: pre;
+        }
+
+        #code-details-highlight {
+            background-color: #ebcb8b;
+            color:#4f5b66;
+            border-radius: 2px;
         }
     </style>
 </head>
 <body>
 <div id="modal">
     <div id="title">Sourcegraph for JetBrains</div>
-    <iframe height="100%" id="webview" src="/html/index.html?standalone=true" width="100%"></iframe>
-    <pre id="code-details">let message: string = 'Hello, TypeScript!';
+    <iframe height="100%" id="webview" src="/html/index.html" width="100%"></iframe>
+    <div id="code-details"></div>
 
-let heading = document.createElement('h1');
-heading.textContent = message;
-
-document.body.appendChild(heading);</pre>
-</div>
+    <script src="/dist/bridgeMock.js"></script>
 </body>
 </html>
 
