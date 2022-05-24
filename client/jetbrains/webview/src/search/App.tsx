@@ -142,7 +142,6 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
             // When we submit a search that is already the last search, do nothing. This prevents the
             // search results from being reloaded and reapplied in a different order when a user
             // accidentally hits enter thinking that this would open the file
-            console.log({ forceNewSearch })
             if (
                 forceNewSearch !== true &&
                 query === lastSearch.query &&
@@ -152,7 +151,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
             ) {
                 return
             }
-            console.log('oh y')
+
             // If we don't unsubscribe, the previous search will be continued after the new search and search results will be mixed
             subscription?.unsubscribe()
             setSubscription(
@@ -167,7 +166,6 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                         decorationContextLines: 0,
                     }
                 ).subscribe(searchResults => {
-                    console.log(searchResults)
                     setResults(searchResults.results)
                 })
             )
@@ -189,7 +187,6 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
         }
         setDidInitialSubmit(true)
         if (initialSearch !== null) {
-            console.log('oh hi', initialSearch, didInitialSubmit)
             onSubmit({
                 caseSensitive: initialSearch.caseSensitive,
                 patternType: initialSearch.patternType,
