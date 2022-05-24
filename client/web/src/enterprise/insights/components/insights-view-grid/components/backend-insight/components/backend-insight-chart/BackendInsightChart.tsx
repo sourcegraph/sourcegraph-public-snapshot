@@ -50,7 +50,7 @@ interface BackendInsightChartProps<Datum> extends BackendInsightData {
 export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum>): React.ReactElement {
     const { locked, isFetchingHistoricalData, content, className, onDatumClick } = props
     const { ref, width = 0 } = useDebounce(useResizeObserver(), 100)
-    const { toggle, isSelected, hoveredId, setHoveredId } = useSeriesToggle()
+    const { toggle, isSeriesSelected, hoveredId, setHoveredId } = useSeriesToggle()
 
     const hasViewManySeries = content.series.length > MINIMAL_SERIES_FOR_ASIDE_LEGEND
     const hasEnoughXSpace = width >= MINIMAL_HORIZONTAL_LAYOUT_WIDTH
@@ -80,7 +80,7 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                                     height={parent.height}
                                     locked={locked}
                                     onDatumClick={onDatumClick}
-                                    isSelected={isSelected}
+                                    isSeriesSelected={isSeriesSelected}
                                     hoveredId={hoveredId}
                                     {...content}
                                 />
@@ -95,7 +95,7 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                                     key={series.id as string}
                                     color={getLineColor(series)}
                                     name={series.name}
-                                    selected={isSelected(`${series.id}`)}
+                                    selected={isSeriesSelected(`${series.id}`)}
                                     hovered={`${series.id}` === hoveredId}
                                     className={styles.legendListItem}
                                     onClick={() => toggle(`${series.id}`)}

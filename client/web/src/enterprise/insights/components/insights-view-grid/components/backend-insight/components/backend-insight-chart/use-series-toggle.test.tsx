@@ -6,17 +6,17 @@ import userEvent from '@testing-library/user-event'
 import { useSeriesToggle } from './use-series-toggle'
 
 const UseSeriesToggleExample: React.FunctionComponent = () => {
-    const { toggle, selectedSeriesIds, hoveredId, isSelected, setHoveredId } = useSeriesToggle()
+    const { toggle, selectedSeriesIds, hoveredId, isSeriesSelected, setHoveredId } = useSeriesToggle()
 
     return (
         <div>
             <div onMouseEnter={() => setHoveredId('foo')}>
-                {isSelected('foo') && <span>Foo is selected</span>}
+                {isSeriesSelected('foo') && <span>Foo is selected</span>}
                 {hoveredId === 'foo' && <span>Foo is hovered</span>}
                 <button onClick={() => toggle('foo')}>Foo</button>
             </div>
             <div onMouseEnter={() => setHoveredId('bar')}>
-                {isSelected('bar') && <span>Bar is selected</span>}
+                {isSeriesSelected('bar') && <span>Bar is selected</span>}
                 {hoveredId === 'bar' && <span>Bar is hovered</span>}
                 <button onClick={() => toggle('bar')}>Bar</button>
             </div>
