@@ -130,7 +130,7 @@ export const WebhookAction: React.FunctionComponent<React.PropsWithChildren<Acti
             <Alert variant="info" className="mt-4">
                 The specified webhook URL will be called with a JSON payload.
                 <br />
-                <Link to="https://docs.sourcegraph.com/code_monitoring/how-tos/webhook" target="_blank" rel="noopener">
+                <Link to="/help/code_monitoring/how-tos/webhook" target="_blank" rel="noopener">
                     Read more about how to set up webhooks and the JSON schema in the docs.
                 </Link>
             </Alert>
