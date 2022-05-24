@@ -10,36 +10,32 @@ import { ContentMatch, getFileMatchUrl } from '@sourcegraph/shared/src/search/st
 import { useIsTruncated, Link, Icon } from '@sourcegraph/wildcard'
 
 import { TrimmedCodeLineWithHighlights } from './TrimmedCodeLineWithHighlights'
-import { getIdForLine } from './utils'
+import { getResultIdForContentMatch } from './utils'
 
 import styles from './FileSearchResult.module.scss'
 
 interface Props {
-    selectResultFromId: (id: string) => void
+    selectResult: (resultId: string) => void
     selectedResult: null | string
-    result: ContentMatch
+    match: ContentMatch
 }
 
-export const FileSearchResult: React.FunctionComponent<Props> = ({
-    result,
-    selectedResult,
-    selectResultFromId,
-}: Props) => {
-    const lines = result.lineMatches.map(line => {
-        const key = getIdForLine(result, line)
-        const onClick = (): void => selectResultFromId(key)
+export const FileSearchResult: React.FunctionComponent<Props> = ({ match, selectedResult, selectResult }: Props) => {
+    const lines = match.lineMatches.map(line => {
+        const resultId = getResultIdForContentMatch(match, line)
+        const onClick = (): void => selectResult(resultId)
 
         return (
             // The below element's accessibility is handled via a document level event listener.
             //
             // eslint-disable-next-line jsx-a11y/click-events-have-key-events,jsx-a11y/no-static-element-interactions
             <div
-                id={`search-result-list-item-${key}`}
+                id={`search-result-list-item-${resultId}`}
                 className={classNames(styles.line, {
-                    [styles.lineActive]: key === selectedResult,
+                    [styles.lineActive]: resultId === selectedResult,
                 })}
                 onClick={onClick}
-                key={key}
+                key={resultId}
             >
                 <div className={styles.lineCode}>
                     <TrimmedCodeLineWithHighlights line={line} />
@@ -49,21 +45,21 @@ export const FileSearchResult: React.FunctionComponent<Props> = ({
         )
     })
 
-    const repoDisplayName = result.repository
+    const repoDisplayName = match.repository
     const repoAtRevisionURL = '#'
-    const formattedRepositoryStarCount = formatRepositoryStarCount(result.repoStars)
+    const formattedRepositoryStarCount = formatRepositoryStarCount(match.repoStars)
 
     const title = (
         <div className={styles.header}>
             <div className={classNames(styles.headerTitle)} data-testid="result-container-header">
                 <Icon role="img" aria-label="File" className="flex-shrink-0" as={FileDocumentIcon} />
                 <div className={classNames('mx-1', styles.headerDivider)} />
-                <CodeHostIcon repoName={result.repository} className="text-muted flex-shrink-0" />
+                <CodeHostIcon repoName={match.repository} className="text-muted flex-shrink-0" />
                 <UntabableRepoFileLink
-                    repoName={result.repository}
+                    repoName={match.repository}
                     repoURL={repoAtRevisionURL}
-                    filePath={result.path}
-                    fileURL={getFileMatchUrl(result)}
+                    filePath={match.path}
+                    fileURL={getFileMatchUrl(match)}
                     repoDisplayName={repoDisplayName}
                     className={classNames('ml-1', 'flex-shrink-past-contents', 'text-truncate', styles.headerLink)}
                 />

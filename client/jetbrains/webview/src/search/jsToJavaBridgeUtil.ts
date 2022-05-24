@@ -1,5 +1,5 @@
 import { splitPath } from '@sourcegraph/shared/src/components/RepoLink'
-import { ContentMatch } from '@sourcegraph/shared/src/search/stream'
+import { ContentMatch, SearchMatch } from '@sourcegraph/shared/src/search/stream'
 
 import { loadContent } from './lib/blob'
 import { PluginConfig, Theme, Search } from './types'
@@ -82,8 +82,8 @@ export async function indicateFinishedLoading(): Promise<void> {
     }
 }
 
-export async function onPreviewChange(match: ContentMatch, lineMatchIndex: number): Promise<void> {
-    const request = await createRequestForMatch(match, lineMatchIndex, 'preview')
+export async function onPreviewChange(match: SearchMatch, lineMatchIndex: number): Promise<void> {
+    const request = await createPreviewOrOpenRequest(match, lineMatchIndex, 'preview')
     try {
         await callJava(request)
     } catch (error) {
@@ -99,9 +99,9 @@ export async function onPreviewClear(): Promise<void> {
     }
 }
 
-export async function onOpen(match: ContentMatch, lineMatchIndex: number): Promise<void> {
+export async function onOpen(match: SearchMatch, lineMatchIndex: number): Promise<void> {
     try {
-        await callJava(await createRequestForMatch(match, lineMatchIndex, 'open'))
+        await callJava(await createPreviewOrOpenRequest(match, lineMatchIndex, 'open'))
     } catch (error) {
         console.error(`Failed to open match: ${(error as Error).message}`)
     }
@@ -130,7 +130,28 @@ async function callJava(request: Request): Promise<object> {
     return window.callJava(request)
 }
 
-export async function createRequestForMatch(
+export async function createPreviewOrOpenRequest(
+    match: SearchMatch,
+    lineMatchIndex: number,
+    action: MatchRequest['action']
+): Promise<MatchRequest> {
+    if (match.type === 'content') {
+        return createPreviewOrOpenRequestForContentMatch(match, lineMatchIndex, 'preview')
+    }
+
+    return {
+        action,
+        arguments: {
+            fileName: '',
+            path: '',
+            content: '',
+            lineNumber: -1,
+            absoluteOffsetAndLengths: [],
+        },
+    }
+}
+
+export async function createPreviewOrOpenRequestForContentMatch(
     match: ContentMatch,
     lineMatchIndex: number,
     action: MatchRequest['action']

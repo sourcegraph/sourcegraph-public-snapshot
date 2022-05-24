@@ -1,60 +1,61 @@
 import React, { createRef, useCallback, useEffect, useMemo, useState } from 'react'
 
-import { ContentMatch, SearchMatch } from '@sourcegraph/shared/src/search/stream'
+import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 
 import { FileSearchResult } from './FileSearchResult'
-import { decodeLineId, getElementFromId, getFirstResultId, getIdForMatch, getSiblingResult } from './utils'
+import {
+    getContentMatchId,
+    getFirstResultId,
+    getSearchResultElement,
+    getSiblingResultElement,
+    splitResultIdForContentMatch,
+} from './utils'
 
 import styles from './SearchResultList.module.scss'
 
 interface Props {
-    onPreviewChange: (result: ContentMatch, lineMatchIndex: number) => void
+    onPreviewChange: (result: SearchMatch, lineMatchIndex: number) => void
     onPreviewClear: () => void
-    onOpen: (result: ContentMatch, lineMatchIndex: number) => void
-    results: SearchMatch[]
+    onOpen: (result: SearchMatch, lineMatchIndex: number) => void
+    matches: SearchMatch[]
 }
 
-export const SearchResultList: React.FunctionComponent<Props> = ({
-    results,
-    onPreviewChange,
-    onPreviewClear,
-    onOpen,
-}) => {
+export const SearchResultList: React.FunctionComponent<Props> = ({ matches, onPreviewChange, onPreviewClear, onOpen }) => {
     const scrollViewReference = createRef<HTMLDivElement>()
-    const [selectedResult, setSelectedResult] = useState<null | string>(null)
+    const [selectedResultId, setSelectedResultId] = useState<null | string>(null)
 
-    const resultMap = useMemo((): Map<string, ContentMatch> => {
-        const map = new Map<string, ContentMatch>()
-        for (const result of results) {
-            if (result.type === 'content') {
-                map.set(getIdForMatch(result), result)
+    const matchIdToMatchMap = useMemo((): Map<string, SearchMatch> => {
+        const map = new Map<string, SearchMatch>()
+        for (const match of matches) {
+            if (match.type === 'content') {
+                map.set(getContentMatchId(match), match)
             }
         }
         return map
-    }, [results])
+    }, [matches])
 
-    const selectResultFromId = useCallback(
+    const selectResult = useCallback(
         (id: null | string) => {
             if (id !== null) {
-                getElementFromId(id)?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
-                const [matchId, lineMatchIndex] = decodeLineId(id)
-                const match = resultMap.get(matchId)
+                getSearchResultElement(id)?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+                const [matchId, lineMatchIndex] = splitResultIdForContentMatch(id)
+                const match = matchIdToMatchMap.get(matchId)
                 if (match) {
                     onPreviewChange(match, lineMatchIndex)
                 }
             } else {
                 onPreviewClear()
             }
-            setSelectedResult(id)
+            setSelectedResultId(id)
         },
-        [onPreviewChange, onPreviewClear, resultMap]
+        [onPreviewChange, onPreviewClear, matchIdToMatchMap]
     )
 
     useEffect(() => {
-        if (selectedResult === null) {
-            selectResultFromId(getFirstResultId(results))
+        if (selectedResultId === null) {
+            selectResult(getFirstResultId(matches))
         }
-    }, [selectedResult, results, selectResultFromId])
+    }, [selectedResultId, matches, selectResult])
 
     const onKeyDown = useCallback(
         (event: KeyboardEvent) => {
@@ -74,18 +75,18 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
                 return
             }
 
-            if (selectedResult === null) {
+            if (selectedResultId === null) {
                 return
             }
 
-            const currentElement = getElementFromId(selectedResult)
+            const currentElement = getSearchResultElement(selectedResultId)
             if (currentElement === null) {
                 return
             }
 
             if (event.key === 'Enter' && event.altKey) {
-                const [matchId, lineMatchIndex] = decodeLineId(selectedResult)
-                const match = resultMap.get(matchId)
+                const [matchId, lineMatchIndex] = splitResultIdForContentMatch(selectedResultId)
+                const match = matchIdToMatchMap.get(matchId)
                 if (match) {
                     onOpen(match, lineMatchIndex)
                 }
@@ -93,9 +94,9 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
             }
 
             if (event.key === 'ArrowDown') {
-                const next = getSiblingResult(currentElement, 'next')
-                if (next) {
-                    selectResultFromId(next)
+                const nextElement = getSiblingResultElement(currentElement, 'next')
+                if (nextElement) {
+                    selectResult(nextElement.id.replace('search-result-list-item-', ''))
                 }
                 event.preventDefault()
                 event.stopPropagation()
@@ -103,9 +104,9 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
             }
 
             if (event.key === 'ArrowUp') {
-                const previous = getSiblingResult(currentElement, 'previous')
-                if (previous) {
-                    selectResultFromId(previous)
+                const previousElement = getSiblingResultElement(currentElement, 'previous')
+                if (previousElement) {
+                    selectResult(previousElement.id.replace('search-result-list-item-', ''))
                 } else if (scrollViewReference.current) {
                     // If we're already at the first item, we want to set the scroll view to the top
                     // so that the user can see the header.
@@ -116,7 +117,7 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
                 return
             }
         },
-        [selectedResult, resultMap, onOpen, selectResultFromId, scrollViewReference]
+        [selectedResultId, matchIdToMatchMap, onOpen, selectResult, scrollViewReference]
     )
 
     useEffect(() => {
@@ -126,16 +127,23 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
 
     return (
         <div className={styles.list} ref={scrollViewReference}>
-            {results.map((match: SearchMatch) =>
-                match.type === 'content' ? (
-                    <FileSearchResult
-                        key={`${match.repository}-${match.path}`}
-                        result={match}
-                        selectResultFromId={selectResultFromId}
-                        selectedResult={selectedResult}
-                    />
-                ) : null
-            )}
+            {matches.map((match: SearchMatch) => {
+                switch (match.type) {
+                    case 'content':
+                        return (
+                            <FileSearchResult
+                                key={`${match.repository}-${match.path}`}
+                                match={match}
+                                selectResult={selectResult}
+                                selectedResult={selectedResultId}
+                            />
+                        )
+                    // TODO: Add more types
+                    default:
+                        console.log('Unknown search result type:', match.type)
+                        return null
+                }
+            })}
         </div>
     )
 }
