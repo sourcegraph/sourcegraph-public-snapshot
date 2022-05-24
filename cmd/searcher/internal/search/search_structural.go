@@ -26,7 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func toFileMatch(zipReader zip.Reader, combyMatch *comby.FileMatch) (protocol.FileMatch, error) {
+func toFileMatch(zipReader *zip.Reader, combyMatch *comby.FileMatch) (protocol.FileMatch, error) {
 	file, err := zipReader.Open(combyMatch.URI)
 	if err != nil {
 		return protocol.FileMatch{}, err
@@ -281,7 +281,7 @@ func structuralSearch(ctx context.Context, zipPath string, paths filePatterns, e
 		if ctx.Err() != nil {
 			return nil
 		}
-		fm, err := toFileMatch(zipReader.Reader, combyMatch)
+		fm, err := toFileMatch(&zipReader.Reader, combyMatch)
 		if err != nil {
 			return err
 		}
