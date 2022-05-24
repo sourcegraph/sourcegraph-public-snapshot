@@ -536,9 +536,9 @@ const CollapsibleLocationList: React.FunctionComponent<
                         className="d-flex p-0 justify-content-start w-100"
                     >
                         {isOpen ? (
-                            <Icon aria-label="Close" as={ChevronDownIcon} />
+                            <Icon role="img" aria-label="Close" as={ChevronDownIcon} />
                         ) : (
-                            <Icon aria-label="Expand" as={ChevronRightIcon} />
+                            <Icon role="img" aria-label="Expand" as={ChevronRightIcon} />
                         )}{' '}
                         <Typography.H4 className="mb-0">{capitalize(props.name)}</Typography.H4>
                         <span className={classNames('ml-2 text-muted small', styles.cardHeaderSmallText)}>
@@ -755,9 +755,9 @@ const CollapsibleRepoLocationGroup: React.FunctionComponent<
                     className={classNames('d-flex justify-content-start w-100', styles.repoLocationGroupHeader)}
                 >
                     {open ? (
-                        <Icon aria-label="Close" as={ChevronDownIcon} />
+                        <Icon role="img" aria-label="Close" as={ChevronDownIcon} />
                     ) : (
-                        <Icon aria-label="Expand" as={ChevronRightIcon} />
+                        <Icon role="img" aria-label="Expand" as={ChevronRightIcon} />
                     )}
                     <small>
                         <Link
@@ -822,9 +822,9 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                     )}
                 >
                     {open ? (
-                        <Icon aria-label="Close" as={ChevronDownIcon} />
+                        <Icon role="img" aria-label="Close" as={ChevronDownIcon} />
                     ) : (
-                        <Icon aria-label="Expand" as={ChevronRightIcon} />
+                        <Icon role="img" aria-label="Expand" as={ChevronRightIcon} />
                     )}
                     <small className={styles.locationGroupHeaderFilename}>
                         {highlighted.length === 2 ? (
