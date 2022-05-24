@@ -8,7 +8,7 @@ exports[`PageHeader renders correctly 1`] = `
     >
       <div>
         <h1
-          class="h1 list"
+          class="h1 heading"
         >
           <span
             class="wrapper"
