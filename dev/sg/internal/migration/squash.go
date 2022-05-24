@@ -33,7 +33,7 @@ const (
 	squasherContainerPostgresName = "postgres"
 )
 
-func SquashAll(database db.Database, inContainer bool, filepath string) error {
+func SquashAll(database db.Database, inContainer, skipTeardown bool, filepath string) error {
 	definitions, err := readDefinitions(database)
 	if err != nil {
 		return err
@@ -43,7 +43,7 @@ func SquashAll(database db.Database, inContainer bool, filepath string) error {
 		leafIDs = append(leafIDs, leaf.ID)
 	}
 
-	squashedUpMigration, _, err := generateSquashedMigrations(database, leafIDs, inContainer)
+	squashedUpMigration, _, err := generateSquashedMigrations(database, leafIDs, inContainer, skipTeardown)
 	if err != nil {
 		return err
 	}
@@ -51,7 +51,7 @@ func SquashAll(database db.Database, inContainer bool, filepath string) error {
 	return os.WriteFile(filepath, []byte(squashedUpMigration), os.ModePerm)
 }
 
-func Squash(database db.Database, commit string, inContainer bool) error {
+func Squash(database db.Database, commit string, inContainer, skipTeardown bool) error {
 	definitions, err := readDefinitions(database)
 	if err != nil {
 		return err
@@ -66,7 +66,7 @@ func Squash(database db.Database, commit string, inContainer bool) error {
 	}
 
 	// Run migrations up to the new selected root and dump the database into a single migration file pair
-	squashedUpMigration, squashedDownMigration, err := generateSquashedMigrations(database, []int{newRoot.ID}, inContainer)
+	squashedUpMigration, squashedDownMigration, err := generateSquashedMigrations(database, []int{newRoot.ID}, inContainer, skipTeardown)
 	if err != nil {
 		return err
 	}
@@ -181,13 +181,15 @@ func selectNewRootMigration(database db.Database, ds *definition.Definitions, co
 
 // generateSquashedMigrations generates the content of a migration file pair that contains the contents
 // of a database up to a given migration index.
-func generateSquashedMigrations(database db.Database, targetVersions []int, inContainer bool) (up, down string, err error) {
+func generateSquashedMigrations(database db.Database, targetVersions []int, inContainer, skipTeardown bool) (up, down string, err error) {
 	postgresDSN, teardown, err := setupDatabaseForSquash(database, inContainer)
 	if err != nil {
 		return "", "", err
 	}
 	defer func() {
-		err = teardown(err)
+		if !skipTeardown {
+			err = teardown(err)
+		}
 	}()
 
 	if err := runTargetedUpMigrations(database, targetVersions, postgresDSN); err != nil {

@@ -46,6 +46,14 @@ var (
 		Destination: &squashInContainer,
 	}
 
+	skipTeardown     bool
+	skipTeardownFlag = &cli.BoolFlag{
+		Name:        "skip-teardown",
+		Usage:       "Skip tearing down the database created to run all registered migrations",
+		Value:       false,
+		Destination: &skipTeardown,
+	}
+
 	outputFilepath     string
 	outputFilepathFlag = &cli.StringFlag{
 		Name:        "f",
@@ -114,7 +122,7 @@ var (
 		ArgsUsage:   "<current-release>",
 		Usage:       "Collapse migration files from historic releases together",
 		Description: cliutil.ConstructLongHelp(),
-		Flags:       []cli.Flag{migrateTargetDatabaseFlag, squashInContainerFlag},
+		Flags:       []cli.Flag{migrateTargetDatabaseFlag, squashInContainerFlag, skipTeardownFlag},
 		Action:      execAdapter(squashExec),
 	}
 
@@ -123,7 +131,7 @@ var (
 		ArgsUsage:   "",
 		Usage:       "Collapse schema definitions into a single SQL file",
 		Description: cliutil.ConstructLongHelp(),
-		Flags:       []cli.Flag{migrateTargetDatabaseFlag, squashInContainerFlag, outputFilepathFlag},
+		Flags:       []cli.Flag{migrateTargetDatabaseFlag, squashInContainerFlag, skipTeardownFlag, outputFilepathFlag},
 		Action:      execAdapter(squashAllExec),
 	}
 
@@ -265,7 +273,7 @@ func squashExec(ctx context.Context, args []string) (err error) {
 	}
 	std.Out.Writef("Squashing migration files defined up through %s", commit)
 
-	return migration.Squash(database, commit, squashInContainer)
+	return migration.Squash(database, commit, squashInContainer, skipTeardown)
 }
 
 func squashAllExec(ctx context.Context, args []string) (err error) {
@@ -283,7 +291,7 @@ func squashAllExec(ctx context.Context, args []string) (err error) {
 		return flag.ErrHelp
 	}
 
-	return migration.SquashAll(database, squashInContainer, outputFilepath)
+	return migration.SquashAll(database, squashInContainer, skipTeardown, outputFilepath)
 }
 
 func leavesExec(ctx context.Context, args []string) (err error) {

@@ -235,6 +235,17 @@ CREATE FUNCTION func_configuration_policies_update() RETURNS trigger
     END;
 $$;
 
+CREATE FUNCTION func_insert_gitserver_repo() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+INSERT INTO gitserver_repos
+(repo_id, shard_id)
+VALUES (NEW.id, '');
+RETURN NULL;
+END;
+$$;
+
 CREATE FUNCTION func_lsif_uploads_delete() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
@@ -3624,6 +3635,8 @@ CREATE TRIGGER trigger_configuration_policies_delete AFTER DELETE ON lsif_config
 CREATE TRIGGER trigger_configuration_policies_insert AFTER INSERT ON lsif_configuration_policies FOR EACH ROW EXECUTE FUNCTION func_configuration_policies_insert();
 
 CREATE TRIGGER trigger_configuration_policies_update BEFORE UPDATE OF name, pattern, retention_enabled, retention_duration_hours, type, retain_intermediate_commits ON lsif_configuration_policies FOR EACH ROW EXECUTE FUNCTION func_configuration_policies_update();
+
+CREATE TRIGGER trigger_gitserver_repo_insert AFTER INSERT ON repo FOR EACH ROW EXECUTE FUNCTION func_insert_gitserver_repo();
 
 CREATE TRIGGER trigger_lsif_uploads_delete AFTER DELETE ON lsif_uploads REFERENCING OLD TABLE AS old FOR EACH STATEMENT EXECUTE FUNCTION func_lsif_uploads_delete();
 

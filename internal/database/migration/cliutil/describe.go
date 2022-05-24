@@ -37,23 +37,32 @@ func Describe(commandName string, factory RunnerFactory, outFactory OutputFactor
 		Required: false,
 	}
 
-	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
-
-		output, shouldDecorate, err := getOutput(out, outFlag.Get(cmd), forceFlag.Get(cmd), noColorFlag.Get(cmd))
+	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) (err error) {
+		w, shouldDecorate, err := getOutput(out, outFlag.Get(cmd), forceFlag.Get(cmd), noColorFlag.Get(cmd))
 		if err != nil {
 			return err
 		}
-		defer output.Close()
+		defer w.Close()
 
 		formatter := getFormatter(formatFlag.Get(cmd), shouldDecorate)
 		if formatter == nil {
 			return flagHelp(out, "unrecognized format %q (must be json or psql)", formatFlag.Get(cmd))
 		}
 
-		_, store, err := setupStore(ctx, factory, schemaNameFlag.Get(cmd))
+		schemaName := schemaNameFlag.Get(cmd)
+		_, store, err := setupStore(ctx, factory, schemaName)
 		if err != nil {
 			return err
 		}
+
+		pending := out.Pending(output.Linef("", output.StylePending, "Describing database %s...", schemaName))
+		defer func() {
+			if err == nil {
+				pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Description of %s written to target", schemaName))
+			} else {
+				pending.Destroy()
+			}
+		}()
 
 		schemas, err := store.Describe(ctx)
 		if err != nil {
@@ -61,7 +70,7 @@ func Describe(commandName string, factory RunnerFactory, outFactory OutputFactor
 		}
 		schema := schemas["public"]
 
-		if _, err := io.Copy(output, strings.NewReader(formatter.Format(schema))); err != nil {
+		if _, err := io.Copy(w, strings.NewReader(formatter.Format(schema))); err != nil {
 			return err
 		}
 
