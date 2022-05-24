@@ -182,7 +182,7 @@ This very simple graph fragment can be visualized as follows.
 
 <center><img src="https://sourcegraphstatic.com/docs.sourcegraph.com/lsif-graphviz/6.png" width="33%"></center>
 
-Some tools populate monikers in a multi-pass process. This is how early versions of lsif-go worked, and how lsif-tsc currently works. The first pass will export import and export monikers but no package information. The second pass outputs additional monikers that are correlated with the package information (using the contents of a dependency manifest such as a go.mod file or a package.json).
+Some tools populate monikers in a multi-pass process. This is how early versions of lsif-go worked. The first pass will export import and export monikers but no package information. The second pass outputs additional monikers that are correlated with the package information (using the contents of a dependency manifest such as a go.mod file or a package.json).
 
 As an illustrative example, we suppose that the first pass of lsif-go outputs monikers with the _go_ scheme but no package information.
 
