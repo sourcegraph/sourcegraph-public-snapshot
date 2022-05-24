@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
@@ -20,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 const (
@@ -28,11 +28,12 @@ const (
 
 func newTriggerQueryRunner(ctx context.Context, db edb.EnterpriseDB, metrics codeMonitorsMetrics) *workerutil.Worker {
 	options := workerutil.WorkerOptions{
-		Name:              "code_monitors_trigger_jobs_worker",
-		NumHandlers:       1,
-		Interval:          5 * time.Second,
-		HeartbeatInterval: 15 * time.Second,
-		Metrics:           metrics.workerMetrics,
+		Name:                 "code_monitors_trigger_jobs_worker",
+		NumHandlers:          4,
+		Interval:             5 * time.Second,
+		HeartbeatInterval:    15 * time.Second,
+		Metrics:              metrics.workerMetrics,
+		MaximumRuntimePerJob: time.Minute,
 	}
 	worker := dbworker.NewWorker(ctx, createDBWorkerStoreForTriggerJobs(db), &queryRunner{db: db}, options)
 	return worker
@@ -139,10 +140,10 @@ type queryRunner struct {
 	db edb.EnterpriseDB
 }
 
-func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err error) {
+func (r *queryRunner) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
 	defer func() {
 		if err != nil {
-			log15.Error("queryRunner.Handle", "error", err)
+			logger.Error("queryRunner.Handle", log.Error(err))
 		}
 	}()
 
@@ -192,6 +193,11 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 		return err
 	}
 
+	// After setting the next run, check the error value
+	if searchErr != nil {
+		return errors.Wrap(searchErr, "execute search")
+	}
+
 	// Log the actual query we ran and whether we got any new results.
 	err = s.UpdateTriggerJobWithResults(ctx, triggerJob.ID, query, results)
 	if err != nil {
@@ -211,11 +217,11 @@ type actionRunner struct {
 	edb.CodeMonitorStore
 }
 
-func (r *actionRunner) Handle(ctx context.Context, record workerutil.Record) (err error) {
-	log15.Info("actionRunner.Handle starting")
+func (r *actionRunner) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
+	logger.Info("actionRunner.Handle starting")
 	defer func() {
 		if err != nil {
-			log15.Error("actionRunner.Handle", "error", err)
+			logger.Error("actionRunner.Handle", log.Error(err))
 		}
 	}()
 

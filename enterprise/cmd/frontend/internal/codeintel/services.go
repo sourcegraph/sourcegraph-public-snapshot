@@ -3,20 +3,18 @@ package codeintel
 import (
 	"context"
 	"database/sql"
-	"log"
 	"net/http"
 
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/httpapi"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/repoupdater"
-	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifuploadstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
+	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifuploadstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
 	uploadshttp "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/http"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -28,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type Services struct {
@@ -42,23 +41,24 @@ type Services struct {
 
 	locker          *locker.Locker
 	gitserverClient *gitserver.Client
-	indexEnqueuer   *enqueuer.IndexEnqueuer
+	indexEnqueuer   *autoindexing.Service
 	hub             *sentry.Hub
 }
 
 func NewServices(ctx context.Context, config *Config, siteConfig conftypes.WatchableSiteConfig, db database.DB) (*Services, error) {
 	// Initialize tracing/metrics
+	logger := log.Scoped("codeintel", "codeintel services")
 	observationContext := &observation.Context{
-		Logger:     log15.Root(),
+		Logger:     logger,
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
 	// Initialize sentry hub
-	hub := mustInitializeSentryHub(siteConfig)
+	hub := mustInitializeSentryHub(logger, siteConfig)
 
 	// Connect to database
-	codeIntelDB := mustInitializeCodeIntelDB()
+	codeIntelDB := mustInitializeCodeIntelDB(logger)
 
 	// Initialize stores
 	dbStore := store.NewWithDB(db, observationContext)
@@ -66,7 +66,7 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 	lsifStore := lsifstore.NewStore(codeIntelDB, siteConfig, observationContext)
 	uploadStore, err := lsifuploadstore.New(context.Background(), config.LSIFUploadStoreConfig, observationContext)
 	if err != nil {
-		log.Fatalf("Failed to initialize upload store: %s", err)
+		logger.Fatal("Failed to initialize upload store", log.Error(err))
 	}
 
 	// Initialize http endpoints
@@ -99,7 +99,7 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 	repoUpdaterClient := repoupdater.New(observationContext)
 
 	// Initialize the index enqueuer
-	indexEnqueuer := enqueuer.NewIndexEnqueuer(&enqueuer.DBStoreShim{Store: dbStore}, gitserverClient, repoUpdaterClient, config.AutoIndexEnqueuerConfig, observationContext)
+	indexEnqueuer := autoindexing.GetService(db, &autoindexing.DBStoreShim{Store: dbStore}, gitserverClient, repoUpdaterClient)
 
 	return &Services{
 		dbStore:     dbStore,
@@ -117,18 +117,18 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 	}, nil
 }
 
-func mustInitializeCodeIntelDB() *sql.DB {
+func mustInitializeCodeIntelDB(logger log.Logger) *sql.DB {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.CodeIntelPostgresDSN
 	})
 	db, err := connections.EnsureNewCodeIntelDB(dsn, "frontend", &observation.TestContext)
 	if err != nil {
-		log.Fatalf("Failed to connect to codeintel database: %s", err)
+		logger.Fatal("Failed to connect to codeintel database", log.Error(err))
 	}
 	return db
 }
 
-func mustInitializeSentryHub(c conftypes.WatchableSiteConfig) *sentry.Hub {
+func mustInitializeSentryHub(logger log.Logger, c conftypes.WatchableSiteConfig) *sentry.Hub {
 	getDsn := func(c conftypes.SiteConfigQuerier) string {
 		if c.SiteConfig().Log != nil && c.SiteConfig().Log.Sentry != nil {
 			return c.SiteConfig().Log.Sentry.CodeIntelDSN
@@ -138,7 +138,7 @@ func mustInitializeSentryHub(c conftypes.WatchableSiteConfig) *sentry.Hub {
 
 	hub, err := sentry.NewWithDsn(getDsn(c), c, getDsn)
 	if err != nil {
-		log.Fatalf("Failed to initialize sentry hub: %s", err)
+		logger.Fatal("Failed to initialize sentry hub", log.Error(err))
 	}
 	return hub
 }

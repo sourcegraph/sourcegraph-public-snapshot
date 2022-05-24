@@ -3,7 +3,7 @@ import React, { useCallback, useState } from 'react'
 import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 
-import { Button, Modal, Icon } from '@sourcegraph/wildcard'
+import { Button, Modal, Icon, Typography } from '@sourcegraph/wildcard'
 
 import styles from './ModalVideo.module.scss'
 
@@ -19,7 +19,7 @@ interface ModalVideoProps {
     assetsRoot?: string
 }
 
-export const ModalVideo: React.FunctionComponent<ModalVideoProps> = ({
+export const ModalVideo: React.FunctionComponent<React.PropsWithChildren<ModalVideoProps>> = ({
     id,
     title,
     src,
@@ -79,7 +79,7 @@ export const ModalVideo: React.FunctionComponent<ModalVideoProps> = ({
                 >
                     <div className={styles.modalContent} data-testid="modal-video">
                         <div className={styles.modalHeader}>
-                            <h3 id={id}>{title}</h3>
+                            <Typography.H3 id={id}>{title}</Typography.H3>
                             <Button
                                 variant="icon"
                                 className="p-1"
@@ -87,7 +87,7 @@ export const ModalVideo: React.FunctionComponent<ModalVideoProps> = ({
                                 onClick={() => toggleDialog(false)}
                                 aria-label="Close"
                             >
-                                <Icon as={CloseIcon} />
+                                <Icon role="img" aria-hidden={true} as={CloseIcon} />
                             </Button>
                         </div>
                         <div className="w-100">

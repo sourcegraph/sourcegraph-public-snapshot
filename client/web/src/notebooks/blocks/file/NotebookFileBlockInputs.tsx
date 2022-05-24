@@ -9,7 +9,7 @@ import { isMacPlatform as isMacPlatformFn } from '@sourcegraph/common'
 import { IHighlightLineRange } from '@sourcegraph/shared/src/schema'
 import { PathMatch } from '@sourcegraph/shared/src/search/stream'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Icon, Button } from '@sourcegraph/wildcard'
+import { Icon, Button, Typography } from '@sourcegraph/wildcard'
 
 import { BlockProps, FileBlockInput } from '../..'
 import { parseLineRange, serializeLineRange } from '../../serialize'
@@ -36,15 +36,9 @@ function getFileSuggestionsQuery(queryInput: string): string {
     return `${queryInput} fork:yes type:path count:50`
 }
 
-export const NotebookFileBlockInputs: React.FunctionComponent<NotebookFileBlockInputsProps> = ({
-    id,
-    lineRange,
-    editor,
-    setEditor,
-    onFileSelected,
-    onLineRangeChange,
-    ...props
-}) => {
+export const NotebookFileBlockInputs: React.FunctionComponent<
+    React.PropsWithChildren<NotebookFileBlockInputsProps>
+> = ({ id, lineRange, editor, setEditor, onFileSelected, onLineRangeChange, ...props }) => {
     useFocusMonacoEditorOnMount({ editor, isEditing: true })
 
     const [lineRangeInput, setLineRangeInput] = useState(serializeLineRange(lineRange))
@@ -112,7 +106,7 @@ export const NotebookFileBlockInputs: React.FunctionComponent<NotebookFileBlockI
                 {...props}
             />
             <div className="mt-2">
-                <label htmlFor={`${id}-line-range-input`}>Line range</label>
+                <Typography.Label htmlFor={`${id}-line-range-input`}>Line range</Typography.Label>
                 <input
                     id={`${id}-line-range-input`}
                     type="text"
@@ -132,10 +126,12 @@ export const NotebookFileBlockInputs: React.FunctionComponent<NotebookFileBlockI
     )
 }
 
-const FileSuggestions: React.FunctionComponent<{
-    suggestions: PathMatch[]
-    onFileSelected: (symbol: FileBlockInput) => void
-}> = ({ suggestions, onFileSelected }) => (
+const FileSuggestions: React.FunctionComponent<
+    React.PropsWithChildren<{
+        suggestions: PathMatch[]
+        onFileSelected: (symbol: FileBlockInput) => void
+    }>
+> = ({ suggestions, onFileSelected }) => (
     <div className={styles.fileSuggestions}>
         {suggestions.map(suggestion => (
             <Button

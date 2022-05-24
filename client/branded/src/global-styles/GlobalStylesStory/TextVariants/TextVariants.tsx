@@ -2,6 +2,8 @@ import React, { ElementType } from 'react'
 
 import classNames from 'classnames'
 
+import { Typography } from '@sourcegraph/wildcard'
+
 import styles from './TextVariants.module.scss'
 
 const SIZE_VARIANTS = ['Base', 'Small'] as const
@@ -17,7 +19,7 @@ interface TextLabelProps {
     className?: string
 }
 
-const TextLabel: React.FunctionComponent<TextLabelProps> = props => {
+const TextLabel: React.FunctionComponent<React.PropsWithChildren<TextLabelProps>> = props => {
     const { size, weight, name, className } = props
     const label = `This is ${name} / ${size} / ${weight}`
 
@@ -39,7 +41,7 @@ interface TextVariantsProps {
     className?: string
 }
 
-const TextVariations: React.FunctionComponent<TextVariantsProps> = props => {
+const TextVariations: React.FunctionComponent<React.PropsWithChildren<TextVariantsProps>> = props => {
     const { component: Component, name, weights = ['Regular'], className } = props
 
     const textVariations = SIZE_VARIANTS.flatMap(size =>
@@ -59,7 +61,7 @@ const TextVariations: React.FunctionComponent<TextVariantsProps> = props => {
     return <>{textVariations}</>
 }
 
-export const TextVariants: React.FunctionComponent = () => (
+export const TextVariants: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <table className="table">
         <tbody>
             <tr>
@@ -86,7 +88,7 @@ export const TextVariants: React.FunctionComponent = () => (
             </tr>
             <tr>
                 <td>
-                    <code>{'<label>'}</code>
+                    <Typography.Code>{'<label>'}</Typography.Code>
                 </td>
                 <td>
                     <TextVariations component="label" name="Label" />
@@ -95,7 +97,7 @@ export const TextVariants: React.FunctionComponent = () => (
             </tr>
             <tr>
                 <td>
-                    <code>{'<input class="form-control">'}</code>
+                    <Typography.Code>{'<input class="form-control">'}</Typography.Code>
                 </td>
                 <td>
                     <span className={classNames('form-control', styles.inputVariant, styles.textVariant)}>
@@ -110,7 +112,7 @@ export const TextVariants: React.FunctionComponent = () => (
             </tr>
             <tr>
                 <td>
-                    <code>{'<code>'}</code>
+                    <Typography.Code>{'<code>'}</Typography.Code>
                 </td>
                 <td>
                     <TextVariations component="code" name="Code" weights={['Regular', 'Strong']} />

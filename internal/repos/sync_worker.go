@@ -5,12 +5,11 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus/promauto"
-
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -18,7 +17,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	workerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type SyncWorkerOptions struct {
@@ -61,7 +61,7 @@ func NewSyncWorker(ctx context.Context, db dbutil.DB, handler workerutil.Handler
 		sqlf.Sprintf("next_sync_at"),
 	}
 
-	store := store.New(dbHandle, store.Options{
+	store := workerstore.New(dbHandle, workerstore.Options{
 		Name:              "repo_sync_worker_store",
 		TableName:         "external_service_sync_jobs",
 		ViewName:          "external_service_sync_jobs_with_next_sync_at",
@@ -101,7 +101,7 @@ func newWorkerMetrics(r prometheus.Registerer) workerutil.WorkerMetrics {
 		observationContext = &observation.TestContext
 	} else {
 		observationContext = &observation.Context{
-			Logger:     log15.Root(),
+			Logger:     log.Scoped("sync_worker", ""),
 			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 			Registerer: r,
 		}

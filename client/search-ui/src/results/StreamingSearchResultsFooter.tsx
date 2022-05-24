@@ -4,16 +4,18 @@ import classNames from 'classnames'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
-import { Alert, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Alert, LoadingSpinner, Typography } from '@sourcegraph/wildcard'
 
 import { StreamingProgressCount } from './progress/StreamingProgressCount'
 
 import styles from './StreamingSearchResultsList.module.scss'
 
-export const StreamingSearchResultFooter: React.FunctionComponent<{
-    results?: AggregateStreamingSearchResults
-    children?: React.ReactChild | React.ReactChild[]
-}> = ({ results, children }) => (
+export const StreamingSearchResultFooter: React.FunctionComponent<
+    React.PropsWithChildren<{
+        results?: AggregateStreamingSearchResults
+        children?: React.ReactChild | React.ReactChild[]
+    }>
+> = ({ results, children }) => (
     <div className={classNames(styles.contentCentered, 'd-flex flex-column align-items-center')}>
         {(!results || results?.state === 'loading') && (
             <div className="text-center my-4" data-testid="loading-container">
@@ -44,8 +46,8 @@ export const StreamingSearchResultFooter: React.FunctionComponent<{
         {results?.state === 'complete' && results.progress.skipped.some(skipped => skipped.reason.includes('-limit')) && (
             <Alert className="d-flex m-3" variant="info">
                 <p className="m-0">
-                    <strong>Result limit hit.</strong> Modify your search with <code>count:</code> to return additional
-                    items.
+                    <strong>Result limit hit.</strong> Modify your search with <Typography.Code>count:</Typography.Code>{' '}
+                    to return additional items.
                 </p>
             </Alert>
         )}

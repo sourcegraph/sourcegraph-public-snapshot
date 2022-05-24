@@ -4,6 +4,7 @@ import { EventSource } from '@sourcegraph/shared/src/graphql-operations'
 
 import { version } from '../../package.json'
 import { logEvent } from '../backend/eventLogger'
+import { VSCE_COMMANDS_PARAMS } from '../common/links'
 import { SourcegraphUri } from '../file-system/SourcegraphUri'
 import { LocalStorageService, ANONYMOUS_USER_ID_KEY } from '../settings/LocalStorageService'
 
@@ -56,8 +57,7 @@ export function initializeCodeSharingCommands(
     }
 }
 
-export const vsceUtms =
-    '&utm_campaign=vscode-extension&utm_medium=direct_traffic&utm_source=vscode-extension&utm_content=vsce-commands'
+export const vsceUtms = '&' + VSCE_COMMANDS_PARAMS
 
 export function generateSourcegraphBlobLink(
     uri: vscode.Uri,
@@ -66,12 +66,14 @@ export function generateSourcegraphBlobLink(
     endLine: number,
     endChar: number
 ): string {
-    const instanceUrl = vscode.workspace.getConfiguration('sourcegraph').get<string>('url') || 'https://sourcegraph.com'
+    const instanceUrl = new URL(
+        vscode.workspace.getConfiguration('sourcegraph').get<string>('url') || 'https://sourcegraph.com'
+    )
     // Using SourcegraphUri.parse to properly decode repo revision
-    const decodedUri = SourcegraphUri.parse(uri.toString()).uri
-    return `${decodedUri.replace(uri.scheme, instanceUrl.startsWith('https') ? 'https' : 'http')}?L${encodeURIComponent(
-        String(startLine)
-    )}:${encodeURIComponent(String(startChar))}-${encodeURIComponent(String(endLine))}:${encodeURIComponent(
-        String(endChar)
-    )}${vsceUtms}`
+    const decodedUri = SourcegraphUri.parse(uri.toString())
+    const finalUri = new URL(decodedUri.uri)
+    finalUri.search = `L${encodeURIComponent(String(startLine))}:${encodeURIComponent(
+        String(startChar)
+    )}-${encodeURIComponent(String(endLine))}:${encodeURIComponent(String(endChar))}${vsceUtms}`
+    return finalUri.href.replace(finalUri.protocol, instanceUrl.protocol)
 }

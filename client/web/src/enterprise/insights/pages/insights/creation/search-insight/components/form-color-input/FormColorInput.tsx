@@ -4,6 +4,8 @@ import classNames from 'classnames'
 import { startCase } from 'lodash'
 import { noop } from 'rxjs'
 
+import { Typography } from '@sourcegraph/wildcard'
+
 import { DATA_SERIES_COLORS } from '../../constants'
 
 import styles from './FormColorInput.module.scss'
@@ -24,7 +26,7 @@ interface FormColorInputProps {
 const COLORS_KEYS = Object.keys(DATA_SERIES_COLORS) as (keyof typeof DATA_SERIES_COLORS)[]
 
 /** Displays custom radio group for picking color of code insight chart line. */
-export const FormColorInput: React.FunctionComponent<FormColorInputProps> = memo(props => {
+export const FormColorInput: React.FunctionComponent<React.PropsWithChildren<FormColorInputProps>> = memo(props => {
     const { className, value = null, title, name, onChange = noop } = props
 
     return (
@@ -33,7 +35,7 @@ export const FormColorInput: React.FunctionComponent<FormColorInputProps> = memo
 
             <div>
                 {COLORS_KEYS.map(key => (
-                    <label
+                    <Typography.Label
                         key={key}
                         /* eslint-disable-next-line react/forbid-dom-props */
                         style={{ color: DATA_SERIES_COLORS[key] }}
@@ -51,7 +53,7 @@ export const FormColorInput: React.FunctionComponent<FormColorInputProps> = memo
                         />
 
                         <span className={styles.formColorPickerRadioControl} />
-                    </label>
+                    </Typography.Label>
                 ))}
             </div>
         </fieldset>

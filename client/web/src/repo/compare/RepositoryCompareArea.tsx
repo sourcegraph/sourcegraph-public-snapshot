@@ -44,7 +44,7 @@ import { RepositoryCompareOverviewPage } from './RepositoryCompareOverviewPage'
 
 import styles from './RepositoryCompareArea.module.scss'
 
-const NotFoundPage: React.FunctionComponent = () => (
+const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <HeroPage
         icon={MapSearchIcon}
         title="404: Not Found"

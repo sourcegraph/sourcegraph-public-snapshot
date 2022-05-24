@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -58,12 +57,12 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Always send a final done event so clients know the stream is shutting
 	// down.
-	defer eventWriter.Event("done", map[string]interface{}{})
+	defer eventWriter.Event("done", map[string]any{})
 
 	// Log events to trace
 	eventWriter.StatHook = eventStreamOTHook(tr.LogFields)
 
-	events, getErr := NewComputeStream(ctx, h.db, args.Query)
+	events, getResults := NewComputeStream(ctx, h.db, args.Query)
 	events = batchEvents(events, 50*time.Millisecond)
 
 	// Store marshalled matches and flush periodically or when we go over
@@ -89,7 +88,6 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		// Instantly send results if we have not sent any yet.
 		if first && matchesBuf.Len() > 0 {
-			log15.Info("flushing first now")
 			first = false
 			matchesFlush()
 		}
@@ -111,15 +109,30 @@ LOOP:
 
 	matchesFlush()
 
-	if err = getErr(); err != nil {
+	alert, err := getResults()
+	if err != nil {
 		_ = eventWriter.Event("error", streamhttp.EventError{Message: err.Error()})
 		return
 	}
 
 	if err := ctx.Err(); errors.Is(err, context.DeadlineExceeded) {
 		_ = eventWriter.Event("alert", streamhttp.EventAlert{
-			Title:       "Heads up",
-			Description: "This data is incomplete! We ran this query for 1 minute and we'll need more time to compute all the results. Ask in #compute for more Compute Credits™",
+			Title:       "Incomplete data",
+			Description: "This data is incomplete! We ran this query for 1 minute and we'd need more time to compute all the results. This isn't supported yet, so please reach out to support@sourcegraph.com if you're interested in running longer queries.",
+		})
+	}
+	if alert != nil {
+		var pqs []streamhttp.ProposedQuery
+		for _, pq := range alert.ProposedQueries {
+			pqs = append(pqs, streamhttp.ProposedQuery{
+				Description: pq.Description,
+				Query:       pq.QueryString(),
+			})
+		}
+		_ = eventWriter.Event("alert", streamhttp.EventAlert{
+			Title:           alert.Title,
+			Description:     alert.Description,
+			ProposedQueries: pqs,
 		})
 	}
 }

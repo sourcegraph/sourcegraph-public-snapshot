@@ -5,7 +5,7 @@ import * as H from 'history'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError } from '@sourcegraph/common'
-import { Button, LoadingSpinner, Link } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Link, Typography } from '@sourcegraph/wildcard'
 
 import { SourcegraphContext } from '../jscontext'
 import { eventLogger } from '../tracking/eventLogger'
@@ -26,7 +26,7 @@ interface Props {
 /**
  * The form for signing in with a username and password.
  */
-export const UsernamePasswordSignInForm: React.FunctionComponent<Props> = ({
+export const UsernamePasswordSignInForm: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     location,
     onAuthError,
     noThirdPartyProviders,
@@ -95,9 +95,9 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<Props> = ({
         <>
             <Form onSubmit={handleSubmit}>
                 <div className="form-group d-flex flex-column align-content-start">
-                    <label htmlFor="username-or-email" className="align-self-start">
+                    <Typography.Label htmlFor="username-or-email" className="align-self-start">
                         Username or email
-                    </label>
+                    </Typography.Label>
                     <input
                         id="username-or-email"
                         className="form-control"
@@ -115,9 +115,9 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<Props> = ({
                     />
                 </div>
                 <div className="form-group d-flex flex-column align-content-start position-relative">
-                    <label htmlFor="password" className="align-self-start">
+                    <Typography.Label htmlFor="password" className="align-self-start">
                         Password
-                    </label>
+                    </Typography.Label>
                     <PasswordInput
                         onChange={onPasswordFieldChange}
                         value={password}

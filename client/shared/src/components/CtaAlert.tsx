@@ -25,7 +25,7 @@ export interface CtaAlertProps {
     onClose: () => void
 }
 
-export const CtaAlert: React.FunctionComponent<CtaAlertProps> = props => (
+export const CtaAlert: React.FunctionComponent<React.PropsWithChildren<CtaAlertProps>> = props => (
     <Card
         className={classNames(
             'my-2',
@@ -61,10 +61,12 @@ export const CtaAlert: React.FunctionComponent<CtaAlertProps> = props => (
             ) : null}
         </div>
         <Icon
+            role="img"
             className="position-absolute cursor-pointer"
             style={{ top: '1rem', right: '1rem' }}
             onClick={props.onClose}
             as={CloseIcon}
+            aria-label="Close"
         />
     </Card>
 )

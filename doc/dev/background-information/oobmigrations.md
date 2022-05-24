@@ -72,12 +72,15 @@ The first step is to register the migration in the database. This should be done
 ```sql
 BEGIN;
 
-INSERT INTO out_of_band_migrations (id, team, component, description, introduced_version_major, introduced_version_minor, non_destructive)
+INSERT INTO out_of_band_migrations (id, team, component, description, created, introduced_version_major, introduced_version_minor, non_destructive)
 VALUES (
     42,                           -- This must be consistent across all Sourcegraph instances
     'skunkworks',                 -- Team owning migration
     'db.skunk_payloads',          -- Component being migrated
     'Re-encode our skunky data',  -- Description
+    '2022-05-23 19:35:01.249518', -- The approximate date this migration was added. Hard-code this date in this table in order to make our
+                                  -- squashed migrations deterministic. If we use NOW() then we can't compare old and new versions via textual
+                                  -- diff alone.
     3,                            -- The current major release
     34,                           -- The current minor release
     true                          -- Can be read with previous version without down migration

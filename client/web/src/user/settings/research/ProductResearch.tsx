@@ -6,6 +6,7 @@ import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetrySer
 import { Container, PageHeader, ButtonLink, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
+import { PageTitle } from '../../../components/PageTitle'
 
 interface Props {
     telemetryService: TelemetryService
@@ -14,7 +15,10 @@ interface Props {
 
 const SIGN_UP_FORM_URL = 'https://info.sourcegraph.com/product-research'
 
-export const ProductResearchPage: React.FunctionComponent<Props> = ({ telemetryService, authenticatedUser }) => {
+export const ProductResearchPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    telemetryService,
+    authenticatedUser,
+}) => {
     useEffect(() => {
         telemetryService.logViewEvent('UserSettingsProductResearch')
     }, [telemetryService])
@@ -24,6 +28,7 @@ export const ProductResearchPage: React.FunctionComponent<Props> = ({ telemetryS
 
     return (
         <>
+            <PageTitle title="Product research" />
             <PageHeader headingElement="h2" path={[{ text: 'Product research and feedback' }]} className="mb-3" />
             <Container>
                 <p>

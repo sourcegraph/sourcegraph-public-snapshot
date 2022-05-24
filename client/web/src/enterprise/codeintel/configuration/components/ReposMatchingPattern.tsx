@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import { debounce } from 'lodash'
 import TrashIcon from 'mdi-react/TrashIcon'
 
-import { Button, Icon } from '@sourcegraph/wildcard'
+import { Button, Icon, Typography } from '@sourcegraph/wildcard'
 
 import styles from './ReposMatchingPattern.module.scss'
 
@@ -18,7 +18,7 @@ export interface ReposMatchingPatternProps {
     disabled: boolean
 }
 
-export const ReposMatchingPattern: FunctionComponent<ReposMatchingPatternProps> = ({
+export const ReposMatchingPattern: FunctionComponent<React.PropsWithChildren<ReposMatchingPatternProps>> = ({
     index,
     pattern,
     setPattern,
@@ -33,7 +33,7 @@ export const ReposMatchingPattern: FunctionComponent<ReposMatchingPatternProps> 
     return (
         <>
             <div className="form-group d-flex flex-column mb-0">
-                <label htmlFor="repo-pattern">Repository pattern #{index + 1}</label>
+                <Typography.Label htmlFor="repo-pattern">Repository pattern #{index + 1}</Typography.Label>
                 <input
                     type="text"
                     className="form-control text-monospace"

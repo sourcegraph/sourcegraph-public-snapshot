@@ -30,7 +30,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/product).*</sub>
 
 <br />
 
@@ -57,7 +57,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/product).*</sub>
 
 <br />
 
@@ -82,7 +82,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/product).*</sub>
 
 <br />
 
@@ -107,7 +107,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/product).*</sub>
 
 <br />
 
@@ -130,7 +130,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/product).*</sub>
 
 <br />
 
@@ -154,7 +154,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/product).*</sub>
 
 <br />
 
@@ -180,7 +180,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud Software-as-a-Service team](https://handbook.sourcegraph.com/engineering/cloud/saas).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud Software-as-a-Service team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/saas).*</sub>
 
 <br />
 
@@ -206,7 +206,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -234,7 +234,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/product).*</sub>
 
 <br />
 
@@ -262,7 +262,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/product).*</sub>
 
 <br />
 
@@ -287,7 +287,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/product).*</sub>
 
 <br />
 
@@ -312,7 +312,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/product).*</sub>
 
 <br />
 
@@ -335,7 +335,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/product).*</sub>
 
 <br />
 
@@ -359,7 +359,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/product).*</sub>
 
 <br />
 
@@ -386,7 +386,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/product).*</sub>
 
 <br />
 
@@ -413,7 +413,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/product).*</sub>
 
 <br />
 
@@ -438,7 +438,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/product).*</sub>
 
 <br />
 
@@ -461,7 +461,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/product).*</sub>
 
 <br />
 
@@ -485,7 +485,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/product).*</sub>
 
 <br />
 
@@ -509,7 +509,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/product).*</sub>
 
 <br />
 
@@ -533,7 +533,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/product).*</sub>
 
 <br />
 
@@ -557,7 +557,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud Software-as-a-Service team](https://handbook.sourcegraph.com/engineering/cloud/saas).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud Software-as-a-Service team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/saas).*</sub>
 
 <br />
 
@@ -580,7 +580,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -603,7 +603,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -627,7 +627,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -651,7 +651,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -677,7 +677,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -704,7 +704,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -729,7 +729,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -754,7 +754,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -779,7 +779,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -804,7 +804,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -829,7 +829,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -854,7 +854,32 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
+
+<br />
+
+## frontend: container_oomkill_events_total
+
+<p class="subtitle">container OOMKILL events total by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> frontend: 1+ container OOMKILL events total by instance
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of (frontend|sourcegraph-frontend) container in `docker-compose.yml`.
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#frontend-container-oomkill-events-total).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_frontend_container_oomkill_events_total"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -877,7 +902,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -900,7 +925,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -923,7 +948,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -951,7 +976,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/product).*</sub>
 
 <br />
 
@@ -979,7 +1004,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/product).*</sub>
 
 <br />
 
@@ -1007,7 +1032,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/product).*</sub>
 
 <br />
 
@@ -1035,7 +1060,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/product).*</sub>
 
 <br />
 
@@ -1061,7 +1086,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -1077,8 +1102,8 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Possible solutions**
 
 - **Check if the problem may be an intermittent and temporary peak** using the "Container monitoring" section at the bottom of the Git Server dashboard.
-- **Single container deployments:** Consider upgrading to a [Docker Compose deployment](../install/docker-compose/migrate.md) which offers better scalability and resource isolation.
-- **Kubernetes and Docker Compose:** Check that you are running a similar number of git server replicas and that their CPU/memory limits are allocated according to what is shown in the [Sourcegraph resource estimator](../install/resource_estimator.md).
+- **Single container deployments:** Consider upgrading to a [Docker Compose deployment](../deploy/docker-compose/migrate.md) which offers better scalability and resource isolation.
+- **Kubernetes and Docker Compose:** Check that you are running a similar number of git server replicas and that their CPU/memory limits are allocated according to what is shown in the [Sourcegraph resource estimator](../deploy/resource_estimator.md).
 - More help interpreting this metric is available in the [dashboards reference](./dashboards.md#gitserver-running-git-commands).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -1089,7 +1114,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -1114,7 +1139,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -1140,7 +1165,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -1170,7 +1195,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -1197,7 +1222,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -1222,7 +1247,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -1247,7 +1272,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -1272,7 +1297,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -1297,7 +1322,32 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
+
+<br />
+
+## gitserver: container_oomkill_events_total
+
+<p class="subtitle">container OOMKILL events total by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> gitserver: 1+ container OOMKILL events total by instance
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of gitserver container in `docker-compose.yml`.
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#gitserver-container-oomkill-events-total).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_gitserver_container_oomkill_events_total"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -1320,7 +1370,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -1343,7 +1393,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -1366,7 +1416,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -1391,7 +1441,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -1416,7 +1466,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -1441,7 +1491,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -1466,7 +1516,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -1491,7 +1541,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -1516,7 +1566,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -1541,7 +1591,32 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
+
+<br />
+
+## github-proxy: container_oomkill_events_total
+
+<p class="subtitle">container OOMKILL events total by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> github-proxy: 1+ container OOMKILL events total by instance
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of github-proxy container in `docker-compose.yml`.
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#github-proxy-container-oomkill-events-total).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_github-proxy_container_oomkill_events_total"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -1564,7 +1639,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -1587,7 +1662,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -1610,7 +1685,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -1633,7 +1708,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -1659,7 +1734,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -1684,7 +1759,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -1707,7 +1782,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -1731,7 +1806,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -1755,7 +1830,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -1779,7 +1854,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -1793,8 +1868,8 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
-- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the (pgsql|codeintel-db|codeinsights-db) service.
-- **Docker Compose:** Consider increasing `cpus:` of the (pgsql|codeintel-db|codeinsights-db) container in `docker-compose.yml`.
+- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the (pgsql|codeintel-db|codeinsights) service.
+- **Docker Compose:** Consider increasing `cpus:` of the (pgsql|codeintel-db|codeinsights) container in `docker-compose.yml`.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#postgres-provisioning-container-cpu-usage-long-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -1804,7 +1879,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -1818,8 +1893,8 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
-- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the (pgsql|codeintel-db|codeinsights-db) service.
-- **Docker Compose:** Consider increasing `memory:` of the (pgsql|codeintel-db|codeinsights-db) container in `docker-compose.yml`.
+- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the (pgsql|codeintel-db|codeinsights) service.
+- **Docker Compose:** Consider increasing `memory:` of the (pgsql|codeintel-db|codeinsights) container in `docker-compose.yml`.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#postgres-provisioning-container-memory-usage-long-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -1829,7 +1904,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -1844,7 +1919,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Possible solutions**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the (pgsql|codeintel-db|codeinsights-db) container in `docker-compose.yml`.
+- **Docker Compose:** Consider increasing `cpus:` of the (pgsql|codeintel-db|codeinsights) container in `docker-compose.yml`.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#postgres-provisioning-container-cpu-usage-short-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -1854,7 +1929,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -1869,7 +1944,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Possible solutions**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of (pgsql|codeintel-db|codeinsights-db) container in `docker-compose.yml`.
+- **Docker Compose:** Consider increasing `memory:` of (pgsql|codeintel-db|codeinsights) container in `docker-compose.yml`.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#postgres-provisioning-container-memory-usage-short-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -1879,7 +1954,32 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
+
+<br />
+
+## postgres: container_oomkill_events_total
+
+<p class="subtitle">container OOMKILL events total by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> postgres: 1+ container OOMKILL events total by instance
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of (pgsql|codeintel-db|codeinsights) container in `docker-compose.yml`.
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#postgres-container-oomkill-events-total).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_postgres_container_oomkill_events_total"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -1902,7 +2002,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -1928,7 +2028,7 @@ count being required for the volume of uploads.
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
 
 <br />
 
@@ -1958,7 +2058,7 @@ count being required for the volume of uploads.
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
 
 <br />
 
@@ -1985,7 +2085,7 @@ count being required for the volume of uploads.
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -2010,7 +2110,7 @@ count being required for the volume of uploads.
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
 
 <br />
 
@@ -2035,7 +2135,7 @@ count being required for the volume of uploads.
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
 
 <br />
 
@@ -2060,7 +2160,7 @@ count being required for the volume of uploads.
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
 
 <br />
 
@@ -2085,7 +2185,7 @@ count being required for the volume of uploads.
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
 
 <br />
 
@@ -2110,7 +2210,7 @@ count being required for the volume of uploads.
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
 
 <br />
 
@@ -2135,7 +2235,32 @@ count being required for the volume of uploads.
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<br />
+
+## precise-code-intel-worker: container_oomkill_events_total
+
+<p class="subtitle">container OOMKILL events total by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> precise-code-intel-worker: 1+ container OOMKILL events total by instance
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of precise-code-intel-worker container in `docker-compose.yml`.
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#precise-code-intel-worker-container-oomkill-events-total).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_precise-code-intel-worker_container_oomkill_events_total"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
 
 <br />
 
@@ -2158,7 +2283,7 @@ count being required for the volume of uploads.
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
 
 <br />
 
@@ -2181,7 +2306,7 @@ count being required for the volume of uploads.
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
 
 <br />
 
@@ -2204,7 +2329,7 @@ count being required for the volume of uploads.
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
 
 <br />
 
@@ -2228,7 +2353,7 @@ count being required for the volume of uploads.
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -2252,7 +2377,7 @@ count being required for the volume of uploads.
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -2277,7 +2402,7 @@ count being required for the volume of uploads.
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -2302,7 +2427,7 @@ count being required for the volume of uploads.
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -2327,7 +2452,7 @@ count being required for the volume of uploads.
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -2352,7 +2477,32 @@ count being required for the volume of uploads.
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
+
+<br />
+
+## redis: container_oomkill_events_total
+
+<p class="subtitle">container OOMKILL events total by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> redis: 1+ container OOMKILL events total by instance
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of redis-cache container in `docker-compose.yml`.
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#redis-container-oomkill-events-total).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_redis_container_oomkill_events_total"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -2377,7 +2527,7 @@ count being required for the volume of uploads.
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -2402,7 +2552,7 @@ count being required for the volume of uploads.
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -2427,7 +2577,7 @@ count being required for the volume of uploads.
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -2452,7 +2602,32 @@ count being required for the volume of uploads.
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
+
+<br />
+
+## redis: container_oomkill_events_total
+
+<p class="subtitle">container OOMKILL events total by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> redis: 1+ container OOMKILL events total by instance
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of redis-store container in `docker-compose.yml`.
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#redis-container-oomkill-events-total).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_redis_container_oomkill_events_total"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -2475,7 +2650,7 @@ count being required for the volume of uploads.
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -2498,7 +2673,7 @@ count being required for the volume of uploads.
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -2527,7 +2702,7 @@ count being required for the volume of uploads.
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
 
 <br />
 
@@ -2556,7 +2731,7 @@ count being required for the volume of uploads.
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
 
 <br />
 
@@ -2585,7 +2760,7 @@ count being required for the volume of uploads.
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
 
 <br />
 
@@ -2610,7 +2785,7 @@ an underprovisioned main postgres instance.
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
 
 <br />
 
@@ -2634,7 +2809,7 @@ an underprovisioned main postgres instance.
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-insights team](https://handbook.sourcegraph.com/engineering/developer-insights/code-insights).*</sub>
+<sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-insights).*</sub>
 
 <br />
 
@@ -2664,7 +2839,7 @@ an underprovisioned main postgres instance.
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
 
 <br />
 
@@ -2691,7 +2866,7 @@ an underprovisioned main postgres instance.
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -2716,7 +2891,7 @@ an underprovisioned main postgres instance.
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
 
 <br />
 
@@ -2741,7 +2916,7 @@ an underprovisioned main postgres instance.
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
 
 <br />
 
@@ -2766,7 +2941,7 @@ an underprovisioned main postgres instance.
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
 
 <br />
 
@@ -2791,7 +2966,7 @@ an underprovisioned main postgres instance.
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
 
 <br />
 
@@ -2816,7 +2991,7 @@ an underprovisioned main postgres instance.
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
 
 <br />
 
@@ -2841,7 +3016,32 @@ an underprovisioned main postgres instance.
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<br />
+
+## worker: container_oomkill_events_total
+
+<p class="subtitle">container OOMKILL events total by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: 1+ container OOMKILL events total by instance
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of worker container in `docker-compose.yml`.
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#worker-container-oomkill-events-total).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_container_oomkill_events_total"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
 
 <br />
 
@@ -2864,7 +3064,7 @@ an underprovisioned main postgres instance.
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
 
 <br />
 
@@ -2887,7 +3087,7 @@ an underprovisioned main postgres instance.
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
 
 <br />
 
@@ -2910,7 +3110,7 @@ an underprovisioned main postgres instance.
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
 
 <br />
 
@@ -2940,7 +3140,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -2972,7 +3172,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -2996,7 +3196,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -3020,7 +3220,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -3044,7 +3244,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -3068,7 +3268,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -3092,7 +3292,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -3116,7 +3316,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -3140,7 +3340,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -3164,7 +3364,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -3188,7 +3388,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -3212,7 +3412,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -3236,7 +3436,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -3261,7 +3461,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -3285,7 +3485,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -3309,7 +3509,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -3333,7 +3533,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -3358,7 +3558,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -3383,7 +3583,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -3407,7 +3607,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -3432,7 +3632,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -3457,7 +3657,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -3481,7 +3681,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -3505,7 +3705,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -3530,7 +3730,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -3554,7 +3754,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -3578,7 +3778,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -3602,7 +3802,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -3626,7 +3826,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -3650,7 +3850,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -3674,7 +3874,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -3704,7 +3904,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -3731,7 +3931,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -3756,7 +3956,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -3781,7 +3981,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -3806,7 +4006,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -3831,7 +4031,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -3856,7 +4056,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -3881,7 +4081,32 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
+
+<br />
+
+## repo-updater: container_oomkill_events_total
+
+<p class="subtitle">container OOMKILL events total by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> repo-updater: 1+ container OOMKILL events total by instance
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of repo-updater container in `docker-compose.yml`.
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#repo-updater-container-oomkill-events-total).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_repo-updater_container_oomkill_events_total"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -3904,7 +4129,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -3927,7 +4152,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -3950,7 +4175,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/repo-management).*</sub>
 
 <br />
 
@@ -3973,7 +4198,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/core).*</sub>
 
 <br />
 
@@ -3996,7 +4221,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/core).*</sub>
 
 <br />
 
@@ -4023,7 +4248,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -4053,7 +4278,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/core).*</sub>
 
 <br />
 
@@ -4078,7 +4303,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/core).*</sub>
 
 <br />
 
@@ -4103,7 +4328,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/core).*</sub>
 
 <br />
 
@@ -4128,7 +4353,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/core).*</sub>
 
 <br />
 
@@ -4153,7 +4378,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/core).*</sub>
 
 <br />
 
@@ -4178,7 +4403,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/core).*</sub>
 
 <br />
 
@@ -4203,7 +4428,32 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/core).*</sub>
+
+<br />
+
+## searcher: container_oomkill_events_total
+
+<p class="subtitle">container OOMKILL events total by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> searcher: 1+ container OOMKILL events total by instance
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of searcher container in `docker-compose.yml`.
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#searcher-container-oomkill-events-total).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_searcher_container_oomkill_events_total"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/core).*</sub>
 
 <br />
 
@@ -4226,7 +4476,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/core).*</sub>
 
 <br />
 
@@ -4249,7 +4499,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/core).*</sub>
 
 <br />
 
@@ -4272,7 +4522,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/core).*</sub>
 
 <br />
 
@@ -4302,7 +4552,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
 
 <br />
 
@@ -4327,7 +4577,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
 
 <br />
 
@@ -4352,7 +4602,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
 
 <br />
 
@@ -4377,7 +4627,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
 
 <br />
 
@@ -4402,7 +4652,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
 
 <br />
 
@@ -4427,7 +4677,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
 
 <br />
 
@@ -4452,7 +4702,32 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
+
+<br />
+
+## symbols: container_oomkill_events_total
+
+<p class="subtitle">container OOMKILL events total by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> symbols: 1+ container OOMKILL events total by instance
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of symbols container in `docker-compose.yml`.
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#symbols-container-oomkill-events-total).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_symbols_container_oomkill_events_total"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
 
 <br />
 
@@ -4475,7 +4750,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
 
 <br />
 
@@ -4498,7 +4773,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
 
 <br />
 
@@ -4521,7 +4796,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
 
 <br />
 
@@ -4546,7 +4821,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -4571,7 +4846,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -4596,7 +4871,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -4621,7 +4896,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -4646,7 +4921,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -4671,7 +4946,32 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
+
+<br />
+
+## syntect-server: container_oomkill_events_total
+
+<p class="subtitle">container OOMKILL events total by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> syntect-server: 1+ container OOMKILL events total by instance
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of syntect-server container in `docker-compose.yml`.
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#syntect-server-container-oomkill-events-total).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_syntect-server_container_oomkill_events_total"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -4694,7 +4994,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -4719,7 +5019,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/core).*</sub>
 
 <br />
 
@@ -4747,7 +5047,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/core).*</sub>
 
 <br />
 
@@ -4770,7 +5070,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/core).*</sub>
 
 <br />
 
@@ -4795,7 +5095,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/core).*</sub>
 
 <br />
 
@@ -4820,7 +5120,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/core).*</sub>
 
 <br />
 
@@ -4845,7 +5145,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/core).*</sub>
 
 <br />
 
@@ -4870,7 +5170,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/core).*</sub>
 
 <br />
 
@@ -4895,7 +5195,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/core).*</sub>
 
 <br />
 
@@ -4920,7 +5220,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/core).*</sub>
 
 <br />
 
@@ -4945,7 +5245,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/core).*</sub>
 
 <br />
 
@@ -4970,7 +5270,32 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/core).*</sub>
+
+<br />
+
+## zoekt: container_oomkill_events_total
+
+<p class="subtitle">container OOMKILL events total by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> zoekt: 1+ container OOMKILL events total by instance
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of zoekt-indexserver container in `docker-compose.yml`.
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#zoekt-container-oomkill-events-total).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_zoekt_container_oomkill_events_total"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/core).*</sub>
 
 <br />
 
@@ -4995,7 +5320,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/core).*</sub>
 
 <br />
 
@@ -5020,7 +5345,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/core).*</sub>
 
 <br />
 
@@ -5045,7 +5370,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/core).*</sub>
 
 <br />
 
@@ -5070,7 +5395,32 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/core).*</sub>
+
+<br />
+
+## zoekt: container_oomkill_events_total
+
+<p class="subtitle">container OOMKILL events total by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> zoekt: 1+ container OOMKILL events total by instance
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of zoekt-webserver container in `docker-compose.yml`.
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#zoekt-container-oomkill-events-total).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_zoekt_container_oomkill_events_total"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/core).*</sub>
 
 <br />
 
@@ -5093,7 +5443,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/search/core).*</sub>
 
 <br />
 
@@ -5119,7 +5469,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -5145,7 +5495,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -5171,7 +5521,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -5196,7 +5546,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -5221,7 +5571,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -5245,7 +5595,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -5269,7 +5619,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -5293,7 +5643,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -5317,7 +5667,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -5342,7 +5692,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -5367,7 +5717,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -5392,7 +5742,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -5417,7 +5767,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -5442,7 +5792,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -5467,7 +5817,32 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
+
+<br />
+
+## prometheus: container_oomkill_events_total
+
+<p class="subtitle">container OOMKILL events total by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> prometheus: 1+ container OOMKILL events total by instance
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of prometheus container in `docker-compose.yml`.
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#prometheus-container-oomkill-events-total).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_prometheus_container_oomkill_events_total"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -5490,7 +5865,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/devops).*</sub>
 
 <br />
 
@@ -5513,7 +5888,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
 
 <br />
 
@@ -5536,7 +5911,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/code-graph/code-intelligence).*</sub>
 
 <br />
 

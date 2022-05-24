@@ -15,7 +15,7 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { Button, Alert, Icon } from '@sourcegraph/wildcard'
+import { Button, Alert, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../../components/diff/DiffStat'
 import { InputTooltip } from '../../../../components/InputTooltip'
@@ -52,7 +52,7 @@ export interface ExternalChangesetNodeProps extends ThemeProps {
     expandByDefault?: boolean
 }
 
-export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNodeProps> = ({
+export const ExternalChangesetNode: React.FunctionComponent<React.PropsWithChildren<ExternalChangesetNodeProps>> = ({
     node: initialNode,
     viewerCanAdminister,
     selectable,
@@ -224,11 +224,11 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
     )
 }
 
-const SyncerError: React.FunctionComponent<{ syncerError: string }> = ({ syncerError }) => (
+const SyncerError: React.FunctionComponent<React.PropsWithChildren<{ syncerError: string }>> = ({ syncerError }) => (
     <Alert role="alert" variant="danger">
-        <h4 className={classNames(styles.alertHeading)}>
+        <Typography.H4 className={classNames(styles.alertHeading)}>
             Encountered error during last attempt to sync changeset data from code host
-        </h4>
+        </Typography.H4>
         <ErrorMessage error={syncerError} />
         <hr className="my-2" />
         <p className="mb-0">
@@ -237,26 +237,32 @@ const SyncerError: React.FunctionComponent<{ syncerError: string }> = ({ syncerE
     </Alert>
 )
 
-const ChangesetError: React.FunctionComponent<{
-    node: ExternalChangesetFields
-}> = ({ node }) => {
+const ChangesetError: React.FunctionComponent<
+    React.PropsWithChildren<{
+        node: ExternalChangesetFields
+    }>
+> = ({ node }) => {
     if (!node.error) {
         return null
     }
 
     return (
         <Alert role="alert" variant="danger">
-            <h4 className={classNames(styles.alertHeading)}>Failed to run operations on changeset</h4>
+            <Typography.H4 className={classNames(styles.alertHeading)}>
+                Failed to run operations on changeset
+            </Typography.H4>
             <ErrorMessage error={node.error} />
         </Alert>
     )
 }
 
-const RetryChangesetButton: React.FunctionComponent<{
-    node: ExternalChangesetFields
-    setNode: (node: ExternalChangesetFields) => void
-    viewerCanAdminister: boolean
-}> = ({ node, setNode }) => {
+const RetryChangesetButton: React.FunctionComponent<
+    React.PropsWithChildren<{
+        node: ExternalChangesetFields
+        setNode: (node: ExternalChangesetFields) => void
+        viewerCanAdminister: boolean
+    }>
+> = ({ node, setNode }) => {
     const [isLoading, setIsLoading] = useState<boolean | Error>(false)
     const onRetry = useCallback(async () => {
         setIsLoading(true)

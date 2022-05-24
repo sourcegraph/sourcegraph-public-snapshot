@@ -37,8 +37,8 @@ var OpenTelemetryConfig = zapcore.EncoderConfig{
 	EncodeCaller:   zapcore.ShortCallerEncoder,
 }
 
-// ApplyDevConfig applies options for dev environments to the encoder config
-func ApplyDevConfig(cfg zapcore.EncoderConfig) zapcore.EncoderConfig {
+// applyDevConfig applies options for dev environments to the encoder config
+func applyDevConfig(cfg zapcore.EncoderConfig) zapcore.EncoderConfig {
 	// Nice colors based on log level
 	cfg.EncodeLevel = zapcore.CapitalColorLevelEncoder
 	// Human-readable durations
@@ -54,9 +54,27 @@ func ApplyDevConfig(cfg zapcore.EncoderConfig) zapcore.EncoderConfig {
 
 		enc.AppendString(color.New(color.Faint).Sprint(link))
 	}
+	// Keep output condensed
+	cfg.ConsoleSeparator = " "
 	// Disabled for now due to verbosity, but we might want to introduce some config for
 	// enabling these in the future.
 	cfg.FunctionKey = zapcore.OmitKey
 	cfg.TimeKey = zapcore.OmitKey
 	return cfg
+}
+
+func BuildEncoder(format OutputFormat, development bool) (enc zapcore.Encoder) {
+	config := OpenTelemetryConfig
+	if development {
+		config = applyDevConfig(config)
+	}
+
+	switch format {
+	case OutputConsole:
+		return zapcore.NewConsoleEncoder(config)
+	case OutputJSON:
+		return zapcore.NewJSONEncoder(config)
+	default:
+		panic("unknown output format")
+	}
 }

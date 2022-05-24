@@ -60,7 +60,7 @@ query NotebookStars($id: ID!, $first: Int!, $after: String) {
 `, notebookStarFields)
 
 func TestCreateAndDeleteNotebookStars(t *testing.T) {
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	internalCtx := actor.WithInternalActor(context.Background())
 	u := database.Users(db)
 
@@ -86,7 +86,7 @@ func TestCreateAndDeleteNotebookStars(t *testing.T) {
 	createAPINotebookStars(t, schema, createdNotebooks[0].ID, user1.ID, user2.ID)
 
 	// Try creating a duplicate notebook star with user1
-	input := map[string]interface{}{"notebookID": marshalNotebookID(createdNotebooks[0].ID)}
+	input := map[string]any{"notebookID": marshalNotebookID(createdNotebooks[0].ID)}
 	var response struct{ CreateNotebookStar notebooksapitest.NotebookStar }
 	apiError := apitest.Exec(actor.WithActor(context.Background(), actor.FromUser(user1.ID)), t, schema, input, &response, createNotebookStarMutation)
 	if apiError == nil {
@@ -94,19 +94,19 @@ func TestCreateAndDeleteNotebookStars(t *testing.T) {
 	}
 
 	// user2 cannot create a notebook star for user1's private notebook, since user2 does not have access to it
-	input = map[string]interface{}{"notebookID": marshalNotebookID(createdNotebooks[1].ID)}
+	input = map[string]any{"notebookID": marshalNotebookID(createdNotebooks[1].ID)}
 	apiError = apitest.Exec(actor.WithActor(context.Background(), actor.FromUser(user2.ID)), t, schema, input, &response, createNotebookStarMutation)
 	if apiError == nil {
 		t.Fatalf("expected error when creating a notebook star for inaccessible notebook, got nil")
 	}
 
 	// Delete the notebook star for createdNotebooks[0] and user1
-	input = map[string]interface{}{"notebookID": marshalNotebookID(createdNotebooks[0].ID)}
+	input = map[string]any{"notebookID": marshalNotebookID(createdNotebooks[0].ID)}
 	var deleteResponse struct{}
 	apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(user1.ID)), t, schema, input, &deleteResponse, deleteNotebookStarMutation)
 
 	// Verify that only one notebook star remains (createdNotebooks[0] and user2)
-	input = map[string]interface{}{"id": marshalNotebookID(createdNotebooks[0].ID), "first": 2}
+	input = map[string]any{"id": marshalNotebookID(createdNotebooks[0].ID), "first": 2}
 	var listResponse struct {
 		Node struct {
 			Stars struct {
@@ -126,7 +126,7 @@ func TestCreateAndDeleteNotebookStars(t *testing.T) {
 func createAPINotebookStars(t *testing.T, schema *graphql.Schema, notebookID int64, userIDs ...int32) []notebooksapitest.NotebookStar {
 	t.Helper()
 	createdStars := make([]notebooksapitest.NotebookStar, 0, len(userIDs))
-	input := map[string]interface{}{"notebookID": marshalNotebookID(notebookID)}
+	input := map[string]any{"notebookID": marshalNotebookID(notebookID)}
 	for _, userID := range userIDs {
 		var response struct{ CreateNotebookStar notebooksapitest.NotebookStar }
 		apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, schema, input, &response, createNotebookStarMutation)
@@ -136,7 +136,7 @@ func createAPINotebookStars(t *testing.T, schema *graphql.Schema, notebookID int
 }
 
 func TestListNotebookStars(t *testing.T) {
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	internalCtx := actor.WithInternalActor(context.Background())
 	u := database.Users(db)
 
@@ -164,19 +164,19 @@ func TestListNotebookStars(t *testing.T) {
 
 	tests := []struct {
 		name      string
-		args      map[string]interface{}
+		args      map[string]any
 		wantCount int32
 		wantStars []notebooksapitest.NotebookStar
 	}{
 		{
 			name:      "fetch all notebook stars",
-			args:      map[string]interface{}{"id": marshalNotebookID(createdNotebooks[0].ID), "first": 3},
+			args:      map[string]any{"id": marshalNotebookID(createdNotebooks[0].ID), "first": 3},
 			wantStars: []notebooksapitest.NotebookStar{createdStars[2], createdStars[1], createdStars[0]},
 			wantCount: 3,
 		},
 		{
 			name:      "list second page of notebook stars",
-			args:      map[string]interface{}{"id": marshalNotebookID(createdNotebooks[0].ID), "first": 1, "after": marshalNotebookStarCursor(1)},
+			args:      map[string]any{"id": marshalNotebookID(createdNotebooks[0].ID), "first": 1, "after": marshalNotebookStarCursor(1)},
 			wantStars: []notebooksapitest.NotebookStar{createdStars[1]},
 			wantCount: 3,
 		},

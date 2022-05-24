@@ -1,6 +1,8 @@
 import React from 'react'
 
-export const SourcegraphInstallLocallyIcon: React.FunctionComponent<React.SVGProps<SVGSVGElement>> = props => (
+export const SourcegraphInstallLocallyIcon: React.FunctionComponent<
+    React.PropsWithChildren<React.SVGProps<SVGSVGElement>>
+> = props => (
     <svg {...props} width="51" height="82" viewBox="0 0 51 82" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path
             d="M24.2187 49.7737C24.2187 49.2214 24.6664 48.7737 25.2187 48.7737H26.5312C27.0834 48.7737 27.5312 49.2214 27.5312 49.7737V66.29C27.5312 67.1817 28.6098 67.6275 29.2393 66.9961L35.9323 60.2826C36.3231 59.8906 36.9579 59.8906 37.3487 60.2826L38.2554 61.192C38.6445 61.5823 38.6445 62.2138 38.2554 62.6041L26.5831 74.3121C26.1923 74.7041 25.5575 74.7041 25.1667 74.3121L13.4944 62.6041C13.1053 62.2138 13.1053 61.5823 13.4944 61.192L14.4011 60.2826C14.7919 59.8906 15.4267 59.8906 15.8175 60.2826L22.5105 66.9961C23.14 67.6275 24.2187 67.1817 24.2187 66.29V49.7737Z"

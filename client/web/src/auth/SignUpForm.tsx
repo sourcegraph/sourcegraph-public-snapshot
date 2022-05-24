@@ -17,10 +17,9 @@ import {
     ValidationOptions,
     deriveInputClassName,
 } from '@sourcegraph/shared/src/util/useInputValidation'
-import { Button, Link, Icon } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, Checkbox, Typography } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../components/LoaderButton'
-import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import { AuthProvider, SourcegraphContext } from '../jscontext'
 import { ANONYMOUS_USER_ID_KEY, eventLogger, FIRST_SOURCE_URL_KEY, LAST_SOURCE_URL_KEY } from '../tracking/eventLogger'
 import { enterpriseTrial } from '../util/features'
@@ -41,7 +40,7 @@ export interface SignUpArguments {
     lastSourceUrl?: string
 }
 
-interface SignUpFormProps extends FeatureFlagProps {
+interface SignUpFormProps {
     className?: string
 
     /** Called to perform the signup on the server. */
@@ -96,7 +95,7 @@ export function getPasswordRequirements(
 /**
  * The form for creating an account
  */
-export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
+export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpFormProps>> = ({
     onSignUp,
     buttonLabel,
     className,
@@ -204,14 +203,14 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                     emailInputReference={emailInputReference}
                 />
                 <div className="form-group d-flex flex-column align-content-start">
-                    <label
+                    <Typography.Label
                         htmlFor="username"
                         className={classNames('align-self-start', {
                             'text-danger font-weight-bold': usernameState.kind === 'INVALID',
                         })}
                     >
                         Username
-                    </label>
+                    </Typography.Label>
                     <LoaderInput
                         className={classNames(deriveInputClassName(usernameState))}
                         loading={usernameState.kind === 'LOADING'}
@@ -233,14 +232,14 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                     )}
                 </div>
                 <div className="form-group d-flex flex-column align-content-start">
-                    <label
+                    <Typography.Label
                         htmlFor="password"
                         className={classNames('align-self-start', {
                             'text-danger font-weight-bold': passwordState.kind === 'INVALID',
                         })}
                     >
                         Password
-                    </label>
+                    </Typography.Label>
                     <LoaderInput
                         className={classNames(deriveInputClassName(passwordState))}
                         loading={passwordState.kind === 'LOADING'}
@@ -274,22 +273,21 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                 </div>
                 {!experimental && enterpriseTrial && (
                     <div className="form-group">
-                        <div className="form-check">
-                            <label className="form-check-label">
-                                <input
-                                    className="form-check-input"
-                                    type="checkbox"
-                                    onChange={onRequestTrialFieldChange}
-                                />
-                                Try Sourcegraph Enterprise free for{' '}
-                                <span className="text-nowrap">
-                                    30 days{' '}
-                                    <Link target="_blank" rel="noopener" to="https://about.sourcegraph.com/pricing">
-                                        <Icon as={HelpCircleOutlineIcon} />
-                                    </Link>
-                                </span>
-                            </label>
-                        </div>
+                        <Checkbox
+                            onChange={onRequestTrialFieldChange}
+                            id="EnterpriseTrialCheck"
+                            label={
+                                <>
+                                    Try Sourcegraph Enterprise free for
+                                    <span className="text-nowrap">
+                                        30 days{' '}
+                                        <Link target="_blank" rel="noopener" to="https://about.sourcegraph.com/pricing">
+                                            <Icon as={HelpCircleOutlineIcon} />
+                                        </Link>
+                                    </span>
+                                </>
+                            }
+                        />
                     </div>
                 )}
                 <div className="form-group mb-0">

@@ -1,10 +1,11 @@
 package log
 
 import (
-	"strings"
+	"fmt"
 	"sync"
 
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 
 	"github.com/sourcegraph/sourcegraph/lib/log/internal/encoders"
 	"github.com/sourcegraph/sourcegraph/lib/log/internal/globallogger"
@@ -55,6 +56,11 @@ type Logger interface {
 	// Fatal logs a fatal error message, including any fields accumulated on the Logger.
 	// The logger then calls os.Exit(1), flushing the logger before doing so. Use sparingly.
 	Fatal(string, ...Field)
+
+	// AddCallerSkip increases the number of callers skipped by caller annotation. When
+	// building wrappers around the Logger, supplying this Option prevents the Logger from
+	// always reporting the wrapper code as the caller.
+	AddCallerSkip(int) Logger
 }
 
 // Scoped returns the global logger and sets it up with the given scope and OpenTelemetry
@@ -63,27 +69,41 @@ type Logger interface {
 //
 // Scopes should be static values, NOT dynamic values like identifiers or parameters.
 func Scoped(scope string, description string) Logger {
-	safeGet := !development // do not panic in prod
-	adapted := &zapAdapter{Logger: globallogger.Get(safeGet)}
+	devMode := globallogger.DevMode()
+	safeGet := !devMode // do not panic in prod
+	root := globallogger.Get(safeGet)
+	adapted := &zapAdapter{
+		Logger:            root,
+		rootLogger:        root,
+		fromPackageScoped: true,
+	}
 
+	if devMode {
+		// In development, don't add the OpenTelemetry "Attributes" namespace which gets
+		// rather difficult to read.
+		return adapted.Scoped(scope, description)
+	}
 	return adapted.Scoped(scope, description).With(otfields.AttributesNamespace)
 }
 
 type zapAdapter struct {
 	*zap.Logger
 
-	// scope is a read-only copy of this logger's full scope so that we can rebuild
-	// loggers from root.
-	scope string
+	// rootLogger is used to rebuild loggers with fields that bypass the Attributes
+	// namespace. Keep this in sync with all modifications made to Logger.
+	rootLogger *zap.Logger
+
+	// fullScope tracks the full name of the logger's scope, for logging scope descriptions.
+	fullScope string
 
 	// attributes is a read-only copy of all attributes used in this logger, for the
 	// purposes of being able to rebuild loggers from a root logger to bypass the
 	// Attributes namespace.
 	attributes []Field
 
-	// options preserves options from initLogger, for a similar purpose to attributes
-	// and scope.
-	options []zap.Option
+	// fromPackageScoped indicates this logger is from log.Scoped. Do not copy this to
+	// child loggers, and do not set this anywhere except log.Scoped.
+	fromPackageScoped bool
 }
 
 var _ Logger = &zapAdapter{}
@@ -92,23 +112,31 @@ var _ Logger = &zapAdapter{}
 var createdScopes sync.Map
 
 func (z *zapAdapter) Scoped(scope string, description string) Logger {
-	var newScope string
-	if z.scope == "" {
-		newScope = scope
+	var newFullScope string
+	if z.fullScope == "" {
+		newFullScope = scope
 	} else {
-		newScope = strings.Join([]string{z.scope, scope}, ".")
+		newFullScope = fmt.Sprintf("%s.%s", z.fullScope, scope)
 	}
 	scopedLogger := &zapAdapter{
-		Logger:     z.Logger.Named(scope), // name -> scope in OT
-		scope:      newScope,
+		// name -> scope in OT
+		Logger:     z.Logger.Named(scope),
+		rootLogger: z.rootLogger.Named(scope),
+
+		fullScope:  newFullScope,
 		attributes: z.attributes,
-		options:    z.options,
 	}
 	if len(description) > 0 {
-		if _, alreadyLogged := createdScopes.LoadOrStore(newScope, struct{}{}); !alreadyLogged {
-			scopedLogger.Debug("logger.scoped",
-				zap.String("scope", scope),
-				zap.String("description", description))
+		if _, alreadyLogged := createdScopes.LoadOrStore(newFullScope, struct{}{}); !alreadyLogged {
+			callerSkip := 1 // Logger.Scoped() -> Logger.Debug()
+			if z.fromPackageScoped {
+				callerSkip += 1 // log.Scoped() -> Logger.Scoped() -> Logger.Debug()
+			}
+			scopedLogger.
+				AddCallerSkip(callerSkip).
+				Debug("logger.scoped",
+					zap.String("scope", scope),
+					zap.String("description", description))
 		}
 	}
 	return scopedLogger
@@ -117,35 +145,52 @@ func (z *zapAdapter) Scoped(scope string, description string) Logger {
 func (z *zapAdapter) With(fields ...Field) Logger {
 	return &zapAdapter{
 		Logger:     z.Logger.With(fields...),
-		scope:      z.scope,
+		rootLogger: z.rootLogger,
+		fullScope:  z.fullScope,
 		attributes: append(z.attributes, fields...),
-		options:    z.options,
 	}
 }
 
 func (z *zapAdapter) WithTrace(trace TraceContext) Logger {
-	newLogger := globallogger.Get(development).
-		Named(z.scope).
+	newLogger := z.rootLogger.
+		// insert trace before attributes
 		With(zap.Inline(&encoders.TraceContextEncoder{TraceContext: trace})).
+		// add attributes back
 		With(z.attributes...)
-	if len(z.options) > 0 {
-		newLogger = newLogger.WithOptions(z.options...)
-	}
+
 	return &zapAdapter{
 		Logger:     newLogger,
-		scope:      z.scope,
+		rootLogger: z.rootLogger,
+		fullScope:  z.fullScope,
 		attributes: z.attributes,
-		options:    z.options,
 	}
 }
 
-// WithOptions is an internal API used to allow packages like logtest to hook into the
-// underlying zap logger.
-func (z *zapAdapter) WithOptions(options ...zap.Option) Logger {
+func (z *zapAdapter) AddCallerSkip(skip int) Logger {
 	return &zapAdapter{
-		Logger:     z.Logger.WithOptions(options...),
-		scope:      z.scope,
+		Logger:     z.Logger.WithOptions(zap.AddCallerSkip(skip)),
+		rootLogger: z.rootLogger.WithOptions(zap.AddCallerSkip(skip)),
+		fullScope:  z.fullScope,
 		attributes: z.attributes,
-		options:    append(z.options, options...),
+	}
+}
+
+// WithCore is an internal API used to allow packages like logtest to hook into
+// underlying zap logger's core.
+//
+// It must implement logtest.configurableAdapter
+func (z *zapAdapter) WithCore(f func(c zapcore.Core) zapcore.Core) Logger {
+	newRootLogger := z.rootLogger.
+		WithOptions(zap.WrapCore(f))
+
+	newLogger := newRootLogger.
+		// add fields back
+		With(z.attributes...)
+
+	return &zapAdapter{
+		Logger:     newLogger,
+		rootLogger: newRootLogger,
+		fullScope:  z.fullScope,
+		attributes: z.attributes,
 	}
 }

@@ -1,10 +1,12 @@
 import React from 'react'
 
+import { Typography } from '@sourcegraph/wildcard'
+
 import styles from './EmptyPreviewListElement.module.scss'
 
-export const EmptyPreviewListElement: React.FunctionComponent<{}> = () => (
+export const EmptyPreviewListElement: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
     <div className={styles.emptyPreviewListElementBody}>
-        <h3 className="text-center mb-4">No changesets will be created by this batch change</h3>
+        <Typography.H3 className="text-center mb-4">No changesets will be created by this batch change</Typography.H3>
         <p>This can occur for several reasons:</p>
         <p>
             <strong>

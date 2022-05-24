@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"time"
 
@@ -10,7 +9,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -69,12 +67,6 @@ type SecurityEventLogsStore interface {
 
 type securityEventLogsStore struct {
 	*basestore.Store
-}
-
-// SecurityEventLogs instantiates and returns a new SecurityEventLogsStore with
-// prepared statements.
-func SecurityEventLogs(db dbutil.DB) SecurityEventLogsStore {
-	return &securityEventLogsStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 // SecurityEventLogsWith instantiates and returns a new SecurityEventLogsStore

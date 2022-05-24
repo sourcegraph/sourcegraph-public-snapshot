@@ -2,7 +2,6 @@ import React, { useMemo } from 'react'
 
 import classNames from 'classnames'
 import AccountIcon from 'mdi-react/AccountIcon'
-import BookOpenBlankVariantIcon from 'mdi-react/BookOpenBlankVariantIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import HistoryIcon from 'mdi-react/HistoryIcon'
 import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
@@ -18,7 +17,11 @@ interface TreeTabList {
     setSelectedTab: (tab: string) => void
 }
 
-export const TreeTabList: React.FunctionComponent<TreeTabList> = ({ tree, selectedTab, setSelectedTab }) => {
+export const TreeTabList: React.FunctionComponent<React.PropsWithChildren<TreeTabList>> = ({
+    tree,
+    selectedTab,
+    setSelectedTab,
+}) => {
     type Tabs = { tab: string; title: string; isActive: boolean; logName: string; icon: JSX.Element; url: string }[]
 
     const tabs: Tabs = useMemo(
@@ -70,14 +73,6 @@ export const TreeTabList: React.FunctionComponent<TreeTabList> = ({ tree, select
                 logName: 'RepoContributorsTab',
                 icon: <Icon as={AccountIcon} />,
                 url: `${tree.url}/-/contributors/tab`,
-            },
-            {
-                tab: 'docs',
-                title: 'API docs',
-                isActive: selectedTab === 'docs',
-                logName: 'RepoAPIDocsTab',
-                icon: <Icon as={BookOpenBlankVariantIcon} />,
-                url: `${tree.url}/-/docs/tab`,
             },
         ],
         [selectedTab, tree.url]

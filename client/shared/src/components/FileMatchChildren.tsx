@@ -14,7 +14,7 @@ import {
     isErrorLike,
     toPositionOrRangeQueryParameter,
 } from '@sourcegraph/common'
-import { Link } from '@sourcegraph/wildcard'
+import { Link, Typography } from '@sourcegraph/wildcard'
 
 import { ActionItemAction } from '../actions/ActionItem'
 import { Controller as ExtensionsController } from '../extensions/controller'
@@ -147,7 +147,7 @@ function navigateToFileOnMiddleMouseButtonClick(event: MouseEvent<HTMLElement>):
     }
 }
 
-export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props => {
+export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<FileMatchProps>> = props => {
     // If optimizeHighlighting is enabled, compile a list of the highlighted file ranges we want to
     // fetch (instead of the entire file.)
     const optimizeHighlighting =
@@ -288,10 +288,10 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                     {...openInNewTabProps}
                 >
                     <SymbolIcon kind={symbol.kind} className="mr-1" />
-                    <code>
+                    <Typography.Code>
                         {symbol.name}{' '}
                         {symbol.containerName && <span className="text-muted">{symbol.containerName}</span>}
-                    </code>
+                    </Typography.Code>
                 </Link>
             ))}
 

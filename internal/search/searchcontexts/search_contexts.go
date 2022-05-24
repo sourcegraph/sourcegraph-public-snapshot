@@ -201,7 +201,7 @@ func validateSearchContextQuery(contextQuery string) error {
 		return err
 	}
 
-	q := plan.ToParseTree()
+	q := plan.ToQ()
 	var errs error
 
 	query.VisitParameter(q, func(field, value string, negated bool, a query.Annotation) {
@@ -506,7 +506,7 @@ func ParseRepoOpts(contextQuery string) ([]RepoOpts, error) {
 		rq := RepoOpts{
 			ReposListOptions: database.ReposListOptions{
 				CaseSensitivePatterns: q.IsCaseSensitive(),
-				ExcludePattern:        search.UnionRegExps(minusRepoFilters),
+				ExcludePattern:        query.UnionRegExps(minusRepoFilters),
 				OnlyForks:             fork == query.Only,
 				NoForks:               fork == query.No,
 				OnlyArchived:          archived == query.Only,

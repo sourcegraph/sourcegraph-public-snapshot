@@ -10,6 +10,7 @@ import React, {
 
 import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
+// eslint-disable-next-line no-restricted-imports
 import { DropdownItem } from 'reactstrap'
 import { BehaviorSubject, combineLatest, of, timer } from 'rxjs'
 import { catchError, debounce, switchMap, tap } from 'rxjs/operators'
@@ -27,16 +28,18 @@ import { HighlightedSearchContextSpec } from './HighlightedSearchContextSpec'
 import styles from './SearchContextMenu.module.scss'
 
 export const SearchContextMenuItem: React.FunctionComponent<
-    {
-        spec: string
-        description: string
-        query: string
-        selected: boolean
-        isDefault: boolean
-        selectSearchContextSpec: (spec: string) => void
-        searchFilter: string
-        onKeyDown: (key: string) => void
-    } & TelemetryProps
+    React.PropsWithChildren<
+        {
+            spec: string
+            description: string
+            query: string
+            selected: boolean
+            isDefault: boolean
+            selectSearchContextSpec: (spec: string) => void
+            searchFilter: string
+            onKeyDown: (key: string) => void
+        } & TelemetryProps
+    >
 > = ({
     spec,
     description,
@@ -113,7 +116,7 @@ const searchContextsPerPageToLoad = 15
 const getSearchContextMenuItem = (spec: string): HTMLButtonElement | null =>
     document.querySelector(`[data-search-context-spec="${spec}"]`)
 
-export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> = ({
+export const SearchContextMenu: React.FunctionComponent<React.PropsWithChildren<SearchContextMenuProps>> = ({
     authenticatedUser,
     selectedSearchContextSpec,
     defaultSearchContextSpec,
@@ -147,6 +150,18 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
             event.stopPropagation()
         }
     }, [])
+
+    // A keydown event is needed here in addition to the button's click event because
+    // otherwise the keydown event will be propagated to `onMenuKeyDown` and the
+    // click event will not be fired.
+    const onCloseButtonKeyDown = useCallback(
+        (event: ReactKeyboardEvent<HTMLButtonElement>): void => {
+            if (event.key === ' ' || event.key === 'Enter') {
+                closeMenu(true)
+            }
+        },
+        [closeMenu]
+    )
 
     const onMenuKeyDown = useCallback(
         (event: ReactKeyboardEvent<HTMLDivElement>): void => {
@@ -289,8 +304,14 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
         <div onKeyDown={onMenuKeyDown}>
             <div className={styles.title}>
                 <small>Choose search context</small>
-                <Button onClick={() => closeMenu()} variant="icon" className={styles.titleClose} aria-label="Close">
-                    <Icon as={CloseIcon} />
+                <Button
+                    onClick={() => closeMenu()}
+                    onKeyDown={onCloseButtonKeyDown}
+                    variant="icon"
+                    className={styles.titleClose}
+                    aria-label="Close"
+                >
+                    <Icon role="img" aria-hidden={true} as={CloseIcon} />
                 </Button>
             </div>
             <div className={classNames('d-flex', styles.header)}>

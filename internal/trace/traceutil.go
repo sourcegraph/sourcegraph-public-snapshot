@@ -19,9 +19,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/log/otfields"
 )
 
-// ID returns a trace ID, if any, found in the given context.
+// ID returns a trace ID, if any, found in the given context. If you need both trace and
+// span ID, use trace.Context.
 func ID(ctx context.Context) string {
 	span := opentracing.SpanFromContext(ctx)
 	if span == nil {
@@ -32,15 +34,43 @@ func ID(ctx context.Context) string {
 
 // IDFromSpan returns a trace ID, if any, found in the given span.
 func IDFromSpan(span opentracing.Span) string {
+	traceCtx := ContextFromSpan(span)
+	if traceCtx == nil {
+		return ""
+	}
+	return traceCtx.TraceID
+}
+
+// Context retrieves the full trace context, if any, from context - this includes
+// both TraceID and SpanID.
+func Context(ctx context.Context) *otfields.TraceContext {
+	span := opentracing.SpanFromContext(ctx)
+	if span == nil {
+		return nil
+	}
+	return ContextFromSpan(span)
+}
+
+// Context retrieves the full trace context, if any, from the span - this includes
+// both TraceID and SpanID.
+func ContextFromSpan(span opentracing.Span) *otfields.TraceContext {
 	ddctx, ok := span.Context().(ddtrace.SpanContext)
 	if ok {
-		return strconv.FormatUint(ddctx.TraceID(), 10)
+		return &otfields.TraceContext{
+			TraceID: strconv.FormatUint(ddctx.TraceID(), 10),
+			SpanID:  strconv.FormatUint(ddctx.SpanID(), 10),
+		}
 	}
+
 	spanCtx, ok := span.Context().(jaeger.SpanContext)
 	if ok {
-		return spanCtx.TraceID().String()
+		return &otfields.TraceContext{
+			TraceID: spanCtx.TraceID().String(),
+			SpanID:  spanCtx.SpanID().String(),
+		}
 	}
-	return ""
+
+	return nil
 }
 
 // URL returns a trace URL for the given trace ID at the given external URL.
@@ -139,7 +169,7 @@ type Trace struct {
 // LazyPrintf evaluates its arguments with fmt.Sprintf each time the
 // /debug/requests page is rendered. Any memory referenced by a will be
 // pinned until the trace is finished and later discarded.
-func (t *Trace) LazyPrintf(format string, a ...interface{}) {
+func (t *Trace) LazyPrintf(format string, a ...any) {
 	t.span.LogFields(Printf("log", format, a...))
 	t.trace.LazyPrintf(format, a...)
 }
@@ -210,7 +240,7 @@ func (t tagsOpt) Apply(o *opentracing.StartSpanOptions) {
 		return
 	}
 	if o.Tags == nil {
-		o.Tags = make(map[string]interface{}, len(t.tags)+1)
+		o.Tags = make(map[string]any, len(t.tags)+1)
 	}
 	if t.title != "" {
 		o.Tags["title"] = t.title
@@ -223,7 +253,7 @@ func (t tagsOpt) Apply(o *opentracing.StartSpanOptions) {
 // Printf is an opentracing log.Field which is a LazyLogger. So the format
 // string will only be evaluated if the trace is collected. In the case of
 // net/trace, it will only be evaluated on page load.
-func Printf(key, f string, args ...interface{}) log.Field {
+func Printf(key, f string, args ...any) log.Field {
 	return log.Lazy(func(fv log.Encoder) {
 		fv.EmitString(key, fmt.Sprintf(f, args...))
 	})
@@ -324,7 +354,7 @@ func (e *encoder) EmitFloat64(key string, value float64) {
 	e.EmitString(key, strconv.FormatFloat(value, 'E', -1, 64))
 }
 
-func (e *encoder) EmitObject(key string, value interface{}) {
+func (e *encoder) EmitObject(key string, value any) {
 	e.EmitString(key, fmt.Sprintf("%+v", value))
 }
 
@@ -376,7 +406,7 @@ func (e *spanTagEncoder) EmitFloat64(key string, value float64) {
 	e.SetTag(key, value)
 }
 
-func (e *spanTagEncoder) EmitObject(key string, value interface{}) {
+func (e *spanTagEncoder) EmitObject(key string, value any) {
 	s := fmt.Sprintf("%#+v", value)
 	e.EmitString(key, s)
 }

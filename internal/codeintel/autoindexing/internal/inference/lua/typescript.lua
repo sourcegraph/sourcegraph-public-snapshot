@@ -7,7 +7,7 @@ local recognizers = require("sg.recognizers")
 local shared = loadfile("shared.lua")()
 local util = loadfile("util.lua")()
 
-local indexer = "sourcegraph/lsif-typescript:autoindex"
+local indexer = "sourcegraph/scip-typescript:autoindex"
 local typescript_nmusl_command = "N_NODE_MIRROR=https://unofficial-builds.nodejs.org/download/release n --arch x64-musl auto"
 
 local exclude_paths = patterns.path_combine(shared.exclude_paths, {
@@ -31,7 +31,7 @@ local can_derive_node_version = function(root, paths, contents_by_path)
 
     for i = 1, #ancestors do
         local payload = json.decode(contents_by_path[path.join(ancestors[i], "package.json")] or "")
-        if payload and payload["engines"]["node"] ~= "" then
+        if payload and payload["engines"] and payload["engines"]["node"] then
             return true
         end
     end
@@ -112,7 +112,7 @@ local infer_typescript_job = function(api, tsconfig_path, should_infer_config)
                 local_steps = { typescript_nmusl_command }
             end
 
-            local args = { "lsif-typescript-autoindex", "index" }
+            local args = { "scip-typescript", "index" }
             if should_infer_config then
                 table.insert(args, "--infer-tsconfig")
             end
@@ -123,7 +123,7 @@ local infer_typescript_job = function(api, tsconfig_path, should_infer_config)
                 root = root,
                 indexer = indexer,
                 indexer_args = args,
-                outfile = "",
+                outfile = "index.scip",
             }
         end,
     })

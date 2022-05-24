@@ -11,7 +11,7 @@ import { StreamingProgressSkippedPopover } from './StreamingProgressSkippedPopov
 import styles from './StreamingProgressSkippedButton.module.scss'
 
 export const StreamingProgressSkippedButton: React.FunctionComponent<
-    Pick<StreamingProgressProps, 'progress' | 'onSearchAgain'>
+    React.PropsWithChildren<Pick<StreamingProgressProps, 'progress' | 'onSearchAgain'>>
 > = ({ progress, onSearchAgain }) => {
     const [isOpen, setIsOpen] = useState(false)
 
@@ -40,9 +40,13 @@ export const StreamingProgressSkippedButton: React.FunctionComponent<
                         data-testid="streaming-progress-skipped"
                         as={Button}
                         aria-expanded={isOpen}
+                        aria-label="Open excluded results"
                     >
-                        {skippedWithWarningOrError ? <Icon className="mr-2" as={AlertCircleIcon} /> : null}
-                        Some results excluded <Icon data-caret={true} className="mr-0" as={ChevronDownIcon} />
+                        {skippedWithWarningOrError ? (
+                            <Icon role="img" aria-hidden={true} className="mr-2" as={AlertCircleIcon} />
+                        ) : null}
+                        Some results excluded{' '}
+                        <Icon role="img" aria-hidden={true} data-caret={true} className="mr-0" as={ChevronDownIcon} />
                     </PopoverTrigger>
                     <PopoverContent
                         position={Position.bottomStart}

@@ -25,9 +25,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type CommitSearch struct {
+type CommitSearchJob struct {
 	Query                gitprotocol.Node
 	RepoOpts             search.RepoOptions
 	Diff                 bool
@@ -48,10 +49,9 @@ type GitserverClient interface {
 	ResolveRevisions(context.Context, api.RepoName, []gitprotocol.RevisionSpecifier) ([]string, error)
 }
 
-func (j *CommitSearch) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
-	tr, ctx, stream, finish := job.StartSpan(ctx, stream, j)
+func (j *CommitSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+	_, ctx, stream, finish := job.StartSpan(ctx, stream, j)
 	defer func() { finish(alert, err) }()
-	tr.TagFields(trace.LazyFields(j.Tags))
 
 	if err := j.ExpandUsernames(ctx, clients.DB); err != nil {
 		return nil, err
@@ -82,6 +82,11 @@ func (j *CommitSearch) Run(ctx context.Context, clients job.RuntimeClients, stre
 	bounded := goroutine.NewBounded(8)
 	for _, repoRev := range repoRevs {
 		repoRev := repoRev // we close over repoRev in onMatches
+		if ctx.Err() != nil {
+			// Don't keep spinning up goroutines if context has been canceled,
+			// but make sure we still clean up any running goroutines.
+			return nil, errors.Append(ctx.Err(), bounded.Wait())
+		}
 
 		// Skip the repo if no revisions were resolved for it
 		if len(repoRev.Revs) == 0 {
@@ -128,14 +133,14 @@ func (j *CommitSearch) Run(ctx context.Context, clients job.RuntimeClients, stre
 	return nil, bounded.Wait()
 }
 
-func (j CommitSearch) Name() string {
+func (j CommitSearchJob) Name() string {
 	if j.Diff {
-		return "Diff"
+		return "DiffSearchJob"
 	}
-	return "Commit"
+	return "CommitSearchJob"
 }
 
-func (j *CommitSearch) Tags() []log.Field {
+func (j *CommitSearchJob) Tags() []log.Field {
 	return []log.Field{
 		trace.Stringer("query", j.Query),
 		trace.Stringer("repoOpts", &j.RepoOpts),
@@ -146,7 +151,7 @@ func (j *CommitSearch) Tags() []log.Field {
 	}
 }
 
-func (j *CommitSearch) ExpandUsernames(ctx context.Context, db database.DB) (err error) {
+func (j *CommitSearchJob) ExpandUsernames(ctx context.Context, db database.DB) (err error) {
 	protocol.ReduceWith(j.Query, func(n protocol.Node) protocol.Node {
 		if err != nil {
 			return n
@@ -168,7 +173,7 @@ func (j *CommitSearch) ExpandUsernames(ctx context.Context, db database.DB) (err
 			return n
 		}
 
-		*expr = "(" + strings.Join(expanded, ")|(") + ")"
+		*expr = "(?:" + strings.Join(expanded, ")|(?:") + ")"
 		return n
 	})
 	return err
@@ -222,8 +227,26 @@ func expandUsernamesToEmails(ctx context.Context, db database.DB, values []strin
 	return expandedValues, nil
 }
 
-func QueryToGitQuery(q query.Q, diff bool) gitprotocol.Node {
-	return gitprotocol.Reduce(gitprotocol.NewAnd(queryNodesToPredicates(q, q.IsCaseSensitive(), diff)...))
+func QueryToGitQuery(b query.Basic, diff bool) gitprotocol.Node {
+	caseSensitive := b.IsCaseSensitive()
+
+	res := make([]gitprotocol.Node, 0, len(b.Parameters)+2)
+
+	// Convert parameters to nodes
+	for _, parameter := range b.Parameters {
+		newPred := queryParameterToPredicate(parameter, caseSensitive, diff)
+		if newPred != nil {
+			res = append(res, newPred)
+		}
+	}
+
+	// Convert pattern to nodes
+	newPred := queryPatternToPredicate(b.Pattern, caseSensitive, diff)
+	if newPred != nil {
+		res = append(res, newPred)
+	}
+
+	return gitprotocol.Reduce(gitprotocol.NewAnd(res...))
 }
 
 func searchRevsToGitserverRevs(in []search.RevisionSpecifier) []gitprotocol.RevisionSpecifier {
@@ -238,18 +261,33 @@ func searchRevsToGitserverRevs(in []search.RevisionSpecifier) []gitprotocol.Revi
 	return out
 }
 
-func queryNodesToPredicates(nodes []query.Node, caseSensitive, diff bool) []gitprotocol.Node {
+func queryPatternToPredicate(node query.Node, caseSensitive, diff bool) gitprotocol.Node {
+	switch v := node.(type) {
+	case query.Operator:
+		return patternOperatorToPredicate(v, caseSensitive, diff)
+	case query.Pattern:
+		return patternAtomToPredicate(v, caseSensitive, diff)
+	default:
+		// Invariant: the node passed to queryPatternToPredicate should only contain pattern nodes
+		return nil
+	}
+}
+
+func patternOperatorToPredicate(op query.Operator, caseSensitive, diff bool) gitprotocol.Node {
+	switch op.Kind {
+	case query.And:
+		return gitprotocol.NewAnd(patternNodesToPredicates(op.Operands, caseSensitive, diff)...)
+	case query.Or:
+		return gitprotocol.NewOr(patternNodesToPredicates(op.Operands, caseSensitive, diff)...)
+	default:
+		return nil
+	}
+}
+
+func patternNodesToPredicates(nodes []query.Node, caseSensitive, diff bool) []gitprotocol.Node {
 	res := make([]gitprotocol.Node, 0, len(nodes))
 	for _, node := range nodes {
-		var newPred gitprotocol.Node
-		switch v := node.(type) {
-		case query.Operator:
-			newPred = queryOperatorToPredicate(v, caseSensitive, diff)
-		case query.Pattern:
-			newPred = queryPatternToPredicate(v, caseSensitive, diff)
-		case query.Parameter:
-			newPred = queryParameterToPredicate(v, caseSensitive, diff)
-		}
+		newPred := queryPatternToPredicate(node, caseSensitive, diff)
 		if newPred != nil {
 			res = append(res, newPred)
 		}
@@ -257,19 +295,7 @@ func queryNodesToPredicates(nodes []query.Node, caseSensitive, diff bool) []gitp
 	return res
 }
 
-func queryOperatorToPredicate(op query.Operator, caseSensitive, diff bool) gitprotocol.Node {
-	switch op.Kind {
-	case query.And:
-		return gitprotocol.NewAnd(queryNodesToPredicates(op.Operands, caseSensitive, diff)...)
-	case query.Or:
-		return gitprotocol.NewOr(queryNodesToPredicates(op.Operands, caseSensitive, diff)...)
-	default:
-		// I don't think we should have concats at this point, but ignore it if we do
-		return nil
-	}
-}
-
-func queryPatternToPredicate(pattern query.Pattern, caseSensitive, diff bool) gitprotocol.Node {
+func patternAtomToPredicate(pattern query.Pattern, caseSensitive, diff bool) gitprotocol.Node {
 	patString := pattern.Value
 	if pattern.Annotation.Labels.IsSet(query.Literal) {
 		patString = regexp.QuoteMeta(pattern.Value)
@@ -313,7 +339,7 @@ func queryParameterToPredicate(parameter query.Parameter, caseSensitive, diff bo
 	case query.FieldFile:
 		newPred = &gitprotocol.DiffModifiesFile{Expr: parameter.Value, IgnoreCase: !caseSensitive}
 	case query.FieldLang:
-		newPred = &gitprotocol.DiffModifiesFile{Expr: search.LangToFileRegexp(parameter.Value), IgnoreCase: true}
+		newPred = &gitprotocol.DiffModifiesFile{Expr: query.LangToFileRegexp(parameter.Value), IgnoreCase: true}
 	}
 
 	if parameter.Negated && newPred != nil {

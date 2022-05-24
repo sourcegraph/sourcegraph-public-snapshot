@@ -121,7 +121,7 @@ func (c *computeTextResolver) Value() string { return c.t.Value }
 // union ComputeResult = ComputeMatchContext | ComputeText
 
 type computeResultResolver struct {
-	result interface{}
+	result any
 }
 
 func (r *computeResultResolver) ToComputeMatchContext() (gql.ComputeMatchContextResolver, bool) {

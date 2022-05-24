@@ -23,7 +23,7 @@ export interface CodeMonitorNodeProps {
 
 const LOADING = 'LOADING' as const
 
-export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
+export const CodeMonitorNode: React.FunctionComponent<React.PropsWithChildren<CodeMonitorNodeProps>> = ({
     location,
     node,
     toggleCodeMonitorEnabled = _toggleCodeMonitorEnabled,

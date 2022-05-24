@@ -46,7 +46,7 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                     filters: {
                         includeRepoRegexp: appliedFilters.includeRepoRegex ?? '',
                         excludeRepoRegexp: appliedFilters.excludeRepoRegex ?? '',
-                        contexts: appliedFilters.searchContexts ?? [],
+                        context: appliedFilters.searchContexts?.[0] ?? '',
                     },
                 }
             }
@@ -78,7 +78,7 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                     filters: {
                         includeRepoRegexp: appliedFilters.includeRepoRegex ?? '',
                         excludeRepoRegexp: appliedFilters.excludeRepoRegex ?? '',
-                        contexts: appliedFilters.searchContexts ?? [],
+                        context: appliedFilters.searchContexts?.[0] ?? '',
                     },
                 }
             }

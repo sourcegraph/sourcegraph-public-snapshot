@@ -4,16 +4,21 @@ import (
 	"sync"
 
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 
 	"github.com/google/uuid"
+
 	"github.com/sourcegraph/sourcegraph/lib/log/internal/encoders"
 	"github.com/sourcegraph/sourcegraph/lib/log/otfields"
 )
 
 var (
+	devMode          bool
 	globalLogger     *zap.Logger
 	globalLoggerInit sync.Once
 )
+
+func DevMode() bool { return devMode }
 
 // Get retrieves the initialized global logger, or panics otherwise (unless safe is true,
 // in which case a no-op logger is returned)
@@ -30,7 +35,7 @@ func Get(safe bool) *zap.Logger {
 
 // Init initializes the global logger once. Subsequent calls are no-op. Returns the
 // callback to sync the root core.
-func Init(r otfields.Resource, level zap.AtomicLevel, format encoders.OutputFormat, development bool) func() error {
+func Init(r otfields.Resource, level zapcore.LevelEnabler, format encoders.OutputFormat, development bool) func() error {
 	globalLoggerInit.Do(func() {
 		globalLogger = initLogger(r, level, format, development)
 	})
@@ -42,26 +47,25 @@ func IsInitialized() bool {
 	return globalLogger != nil
 }
 
-func initLogger(r otfields.Resource, level zap.AtomicLevel, format encoders.OutputFormat, development bool) *zap.Logger {
-	cfg := zap.Config{
-		Level:            level,
-		EncoderConfig:    encoders.OpenTelemetryConfig,
-		Encoding:         string(format),
-		OutputPaths:      []string{"stderr"},
-		ErrorOutputPaths: []string{"stderr"},
+func initLogger(r otfields.Resource, level zapcore.LevelEnabler, format encoders.OutputFormat, development bool) *zap.Logger {
+	// Set global
+	devMode = development
 
-		// TODO - we collect stacktraces on errors.New, do we need stacktraces on log
-		// entries as well?
-		DisableStacktrace: true,
-	}
-	if development {
-		cfg.Development = true
-		cfg.EncoderConfig = encoders.ApplyDevConfig(cfg.EncoderConfig)
-	}
-	logger, err := cfg.Build()
+	logSink, errSink, err := openStderrSinks()
 	if err != nil {
-		panic(err)
+		panic(err.Error())
 	}
+
+	options := []zap.Option{zap.ErrorOutput(errSink), zap.AddCaller()}
+	if development {
+		options = append(options, zap.Development())
+	}
+
+	logger := zap.New(zapcore.NewCore(
+		encoders.BuildEncoder(format, development),
+		logSink,
+		level,
+	), options...)
 
 	if development {
 		return logger
@@ -71,8 +75,22 @@ func initLogger(r otfields.Resource, level zap.AtomicLevel, format encoders.Outp
 	// to uniquely identify this resource.
 	//
 	// See examples: https://opentelemetry.io/docs/reference/specification/logs/data-model/#example-log-records
-	return logger.With(zap.Object("Resource", &encoders.ResourceEncoder{
-		Resource:   r,
-		InstanceID: uuid.New().String(),
-	}))
+	if r.InstanceID == "" {
+		r.InstanceID = uuid.New().String()
+	}
+	return logger.With(zap.Object("Resource", &encoders.ResourceEncoder{Resource: r}))
+}
+
+// copied from https://sourcegraph.com/github.com/uber-go/zap/-/blob/config.go?L249
+func openStderrSinks() (zapcore.WriteSyncer, zapcore.WriteSyncer, error) {
+	sink, closeOut, err := zap.Open("stderr")
+	if err != nil {
+		return nil, nil, err
+	}
+	errSink, _, err := zap.Open("stderr")
+	if err != nil {
+		closeOut()
+		return nil, nil, err
+	}
+	return sink, errSink, nil
 }

@@ -92,7 +92,7 @@ func (c *BaseClient) Do(ctx context.Context, req *http.Request) (hasContent bool
 // DoAndDecode performs the given HTTP request and unmarshals the response body into the
 // given interface pointer. If the response body was empty due to a 204 response, then a
 // false-valued flag is returned.
-func (c *BaseClient) DoAndDecode(ctx context.Context, req *http.Request, payload interface{}) (decoded bool, _ error) {
+func (c *BaseClient) DoAndDecode(ctx context.Context, req *http.Request, payload any) (decoded bool, _ error) {
 	hasContent, body, err := c.Do(ctx, req)
 	if err == nil && hasContent {
 		defer body.Close()
@@ -114,7 +114,7 @@ func (c *BaseClient) DoAndDrop(ctx context.Context, req *http.Request) error {
 
 // MakeJSONRequest creates an HTTP request with the given payload serialized as JSON. This
 // will also ensure that the proper content type header (which is necessary, not pedantic).
-func MakeJSONRequest(method string, url *url.URL, payload interface{}) (*http.Request, error) {
+func MakeJSONRequest(method string, url *url.URL, payload any) (*http.Request, error) {
 	contents, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err

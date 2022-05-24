@@ -2,6 +2,8 @@ import { FunctionComponent, useEffect, useMemo, useState } from 'react'
 
 import { debounce } from 'lodash'
 
+import { Typography } from '@sourcegraph/wildcard'
+
 import { GitObjectType } from '../../../../graphql-operations'
 
 import { GitObjectPreviewWrapper } from './GitObjectPreview'
@@ -16,7 +18,7 @@ export interface ObjectsMatchingGitPatternProps {
     disabled: boolean
 }
 
-export const ObjectsMatchingGitPattern: FunctionComponent<ObjectsMatchingGitPatternProps> = ({
+export const ObjectsMatchingGitPattern: FunctionComponent<React.PropsWithChildren<ObjectsMatchingGitPatternProps>> = ({
     repoId,
     type,
     pattern,
@@ -32,7 +34,7 @@ export const ObjectsMatchingGitPattern: FunctionComponent<ObjectsMatchingGitPatt
         <>
             {type !== GitObjectType.GIT_COMMIT && (
                 <div className="form-group">
-                    <label htmlFor="pattern">Pattern</label>
+                    <Typography.Label htmlFor="pattern">Pattern</Typography.Label>
                     <input
                         id="pattern"
                         type="text"

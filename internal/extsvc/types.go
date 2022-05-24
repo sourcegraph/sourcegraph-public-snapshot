@@ -85,6 +85,7 @@ const (
 	KindPhabricator     = "PHABRICATOR"
 	KindGoModules       = "GOMODULES"
 	KindJVMPackages     = "JVMPACKAGES"
+	KindPythonPackages  = "PYTHONPACKAGES"
 	KindPagure          = "PAGURE"
 	KindNpmPackages     = "NPMPACKAGES"
 	KindOther           = "OTHER"
@@ -135,8 +136,11 @@ const (
 	// TypeNpmPackages is the (api.ExternalRepoSpec).ServiceType value for Npm packages (JavaScript/TypeScript ecosystem libraries).
 	TypeNpmPackages = "npmPackages"
 
-	// TypeGoModules is the (api.ExternalRepoSpec).ServiceType value Go modules.
+	// TypeGoModules is the (api.ExternalRepoSpec).ServiceType value for Go modules.
 	TypeGoModules = "goModules"
+
+	// TypePythonPackages is the (api.ExternalRepoSpec).ServiceType value for Python packages.
+	TypePythonPackages = "pythonPackages"
 
 	// TypeOther is the (api.ExternalRepoSpec).ServiceType value for other projects.
 	TypeOther = "other"
@@ -166,6 +170,10 @@ func KindToType(kind string) string {
 		return TypePerforce
 	case KindJVMPackages:
 		return TypeJVMPackages
+	case KindPythonPackages:
+		return TypePythonPackages
+	case KindNpmPackages:
+		return TypeNpmPackages
 	case KindGoModules:
 		return TypeGoModules
 	case KindPagure:
@@ -203,6 +211,8 @@ func TypeToKind(t string) string {
 		return KindNpmPackages
 	case TypeJVMPackages:
 		return KindJVMPackages
+	case TypePythonPackages:
+		return KindPythonPackages
 	case TypeGoModules:
 		return KindGoModules
 	case TypePagure:
@@ -216,11 +226,12 @@ func TypeToKind(t string) string {
 
 var (
 	// Precompute these for use in ParseServiceType below since the constants are mixed case
-	bbsLower = strings.ToLower(TypeBitbucketServer)
-	bbcLower = strings.ToLower(TypeBitbucketCloud)
-	jvmLower = strings.ToLower(TypeJVMPackages)
-	npmLower = strings.ToLower(TypeNpmPackages)
-	goLower  = strings.ToLower(TypeGoModules)
+	bbsLower    = strings.ToLower(TypeBitbucketServer)
+	bbcLower    = strings.ToLower(TypeBitbucketCloud)
+	jvmLower    = strings.ToLower(TypeJVMPackages)
+	npmLower    = strings.ToLower(TypeNpmPackages)
+	goLower     = strings.ToLower(TypeGoModules)
+	pythonLower = strings.ToLower(TypePythonPackages)
 )
 
 // ParseServiceType will return a ServiceType constant after doing a case insensitive match on s.
@@ -251,6 +262,8 @@ func ParseServiceType(s string) (string, bool) {
 		return TypeJVMPackages, true
 	case npmLower:
 		return TypeNpmPackages, true
+	case pythonLower:
+		return TypePythonPackages, true
 	case TypePagure:
 		return TypePagure, true
 	case TypeOther:
@@ -286,6 +299,8 @@ func ParseServiceKind(s string) (string, bool) {
 		return KindGoModules, true
 	case KindJVMPackages:
 		return KindJVMPackages, true
+	case KindPythonPackages:
+		return KindPythonPackages, true
 	case KindPagure:
 		return KindPagure, true
 	case KindOther:
@@ -309,7 +324,7 @@ type RepoID string
 type RepoIDType string
 
 // ParseConfig attempts to unmarshal the given JSON config into a configuration struct defined in the schema package.
-func ParseConfig(kind, config string) (cfg interface{}, _ error) {
+func ParseConfig(kind, config string) (cfg any, _ error) {
 	switch strings.ToUpper(kind) {
 	case KindAWSCodeCommit:
 		cfg = &schema.AWSCodeCommitConnection{}
@@ -337,6 +352,8 @@ func ParseConfig(kind, config string) (cfg interface{}, _ error) {
 		cfg = &schema.PagureConnection{}
 	case KindNpmPackages:
 		cfg = &schema.NpmPackagesConnection{}
+	case KindPythonPackages:
+		cfg = &schema.PythonPackagesConnection{}
 	case KindOther:
 		cfg = &schema.OtherExternalServiceConnection{}
 	default:
@@ -347,8 +364,8 @@ func ParseConfig(kind, config string) (cfg interface{}, _ error) {
 
 const IDParam = "externalServiceID"
 
-func WebhookURL(kind string, externalServiceID int64, externalURL string) string {
-	var path string
+func WebhookURL(kind string, externalServiceID int64, cfg any, externalURL string) (string, error) {
+	var path, extra string
 	switch strings.ToUpper(kind) {
 	case KindGitHub:
 		path = "github-webhooks"
@@ -356,11 +373,23 @@ func WebhookURL(kind string, externalServiceID int64, externalURL string) string
 		path = "bitbucket-server-webhooks"
 	case KindGitLab:
 		path = "gitlab-webhooks"
+	case KindBitbucketCloud:
+		path = "bitbucket-cloud-webhooks"
+
+		// Unlike other external service kinds, Bitbucket Cloud doesn't support
+		// a shared secret defined as part of the webhook. As a result, we need
+		// to include it as an explicit part of the URL that we construct.
+		switch c := cfg.(type) {
+		case *schema.BitbucketCloudConnection:
+			extra = "&secret=" + url.QueryEscape(c.WebhookSecret)
+		default:
+			return "", errors.Newf("external service with id=%d claims to be a Bitbucket Cloud service, but the configuration is of type %T", cfg)
+		}
 	default:
-		return ""
+		return "", errors.Newf("webhooks cannot be handled for external service kind: %q", kind)
 	}
 	// eg. https://example.com/.api/github-webhooks?externalServiceID=1
-	return fmt.Sprintf("%s/.api/%s?%s=%d", externalURL, path, IDParam, externalServiceID)
+	return fmt.Sprintf("%s/.api/%s?%s=%d%s", externalURL, path, IDParam, externalServiceID, extra), nil
 }
 
 // ExtractToken attempts to extract the token from the supplied args
@@ -402,7 +431,7 @@ func ExtractRateLimit(config, kind string) (rate.Limit, error) {
 }
 
 // GetLimitFromConfig gets RateLimitConfig from an already parsed config schema.
-func GetLimitFromConfig(kind string, config interface{}) (rate.Limit, error) {
+func GetLimitFromConfig(kind string, config any) (rate.Limit, error) {
 	// Rate limit config can be in a few states:
 	// 1. Not defined: We fall back to default specified in code.
 	// 2. Defined and enabled: We use their defined limit.
@@ -459,6 +488,13 @@ func GetLimitFromConfig(kind string, config interface{}) (rate.Limit, error) {
 		// doesn't document an enforced req/s rate limit AND we do a lot more individual
 		// requests in comparison since they don't offer enough batch APIs.
 		limit = rate.Limit(57600.0 / 3600.0) // Same as default in go-modules.schema.json
+		if c != nil && c.RateLimit != nil {
+			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
+		}
+	case *schema.PythonPackagesConnection:
+		// Unlike the GitHub or GitLab APIs, the pypi.org doesn't
+		// document an enforced req/s rate limit.
+		limit = rate.Limit(57600.0 / 3600.0) // 16/second same as default in python-packages.schema.json
 		if c != nil && c.RateLimit != nil {
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
@@ -565,6 +601,8 @@ func UniqueCodeHostIdentifier(kind, config string) (string, error) {
 		return KindJVMPackages, nil
 	case *schema.NpmPackagesConnection:
 		return KindNpmPackages, nil
+	case *schema.PythonPackagesConnection:
+		return KindPythonPackages, nil
 	case *schema.PagureConnection:
 		rawURL = c.Url
 	default:

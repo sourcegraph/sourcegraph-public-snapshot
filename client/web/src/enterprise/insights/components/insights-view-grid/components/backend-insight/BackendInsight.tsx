@@ -37,10 +37,10 @@ interface BackendInsightProps
 /**
  * Renders BE search based insight. Fetches insight data by gql api handler.
  */
-export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = props => {
+export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren<BackendInsightProps>> = props => {
     const { telemetryService, insight, innerRef, resizing, ...otherProps } = props
 
-    const { dashboard } = useContext(InsightContext)
+    const { currentDashboard, dashboards } = useContext(InsightContext)
     const { getBackendInsightData, createInsight, updateInsight } = useContext(CodeInsightsBackendContext)
 
     // Visual line chart settings
@@ -76,8 +76,6 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
         insightCardReference
     )
 
-    // Handle insight delete and remove actions
-
     const handleFilterSave = async (filters: InsightFilters): Promise<SubmissionErrors> => {
         try {
             const insightWithNewFilters = { ...insight, filters }
@@ -100,7 +98,7 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
     ): Promise<SubmissionErrors> => {
         const { insightName } = values
 
-        if (!dashboard) {
+        if (!currentDashboard) {
             return
         }
 
@@ -113,7 +111,7 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
 
             await createInsight({
                 insight: newInsight,
-                dashboard,
+                dashboard: currentDashboard,
             }).toPromise()
 
             telemetryService.log('CodeInsightsSearchBasedFilterInsightCreation')
@@ -155,8 +153,8 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
                         />
                         <InsightContextMenu
                             insight={insight}
-                            dashboard={dashboard}
-                            menuButtonClassName="ml-1 d-inline-flex"
+                            currentDashboard={currentDashboard}
+                            dashboards={dashboards}
                             zeroYAxisMin={zeroYAxisMin}
                             onToggleZeroYAxisMin={() => setZeroYAxisMin(!zeroYAxisMin)}
                         />

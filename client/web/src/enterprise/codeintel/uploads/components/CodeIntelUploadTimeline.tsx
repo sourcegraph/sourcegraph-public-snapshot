@@ -21,7 +21,7 @@ enum FailedStage {
     PROCESSING,
 }
 
-export const CodeIntelUploadTimeline: FunctionComponent<CodeIntelUploadTimelineProps> = ({
+export const CodeIntelUploadTimeline: FunctionComponent<React.PropsWithChildren<CodeIntelUploadTimelineProps>> = ({
     upload,
     now,
     className,

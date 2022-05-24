@@ -57,7 +57,7 @@ func New(options Options, observationContext *observation.Context) *Client {
 }
 
 func (c *Client) Dequeue(ctx context.Context, queueName string, job *executor.Job) (_ bool, err error) {
-	ctx, endObservation := c.operations.dequeue.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := c.operations.dequeue.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("queueName", queueName),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -73,7 +73,7 @@ func (c *Client) Dequeue(ctx context.Context, queueName string, job *executor.Jo
 }
 
 func (c *Client) AddExecutionLogEntry(ctx context.Context, queueName string, jobID int, entry workerutil.ExecutionLogEntry) (entryID int, err error) {
-	ctx, endObservation := c.operations.addExecutionLogEntry.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := c.operations.addExecutionLogEntry.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("queueName", queueName),
 		log.Int("jobID", jobID),
 	}})
@@ -93,7 +93,7 @@ func (c *Client) AddExecutionLogEntry(ctx context.Context, queueName string, job
 }
 
 func (c *Client) UpdateExecutionLogEntry(ctx context.Context, queueName string, jobID, entryID int, entry workerutil.ExecutionLogEntry) (err error) {
-	ctx, endObservation := c.operations.updateExecutionLogEntry.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := c.operations.updateExecutionLogEntry.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("queueName", queueName),
 		log.Int("jobID", jobID),
 		log.Int("entryID", entryID),
@@ -114,7 +114,7 @@ func (c *Client) UpdateExecutionLogEntry(ctx context.Context, queueName string, 
 }
 
 func (c *Client) MarkComplete(ctx context.Context, queueName string, jobID int) (err error) {
-	ctx, endObservation := c.operations.markComplete.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := c.operations.markComplete.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("queueName", queueName),
 		log.Int("jobID", jobID),
 	}})
@@ -132,7 +132,7 @@ func (c *Client) MarkComplete(ctx context.Context, queueName string, jobID int) 
 }
 
 func (c *Client) MarkErrored(ctx context.Context, queueName string, jobID int, errorMessage string) (err error) {
-	ctx, endObservation := c.operations.markErrored.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := c.operations.markErrored.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("queueName", queueName),
 		log.Int("jobID", jobID),
 	}})
@@ -151,7 +151,7 @@ func (c *Client) MarkErrored(ctx context.Context, queueName string, jobID int, e
 }
 
 func (c *Client) MarkFailed(ctx context.Context, queueName string, jobID int, errorMessage string) (err error) {
-	ctx, endObservation := c.operations.markFailed.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := c.operations.markFailed.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("queueName", queueName),
 		log.Int("jobID", jobID),
 	}})
@@ -196,7 +196,7 @@ func (c *Client) Ping(ctx context.Context, queueName string, jobIDs []int) (err 
 }
 
 func (c *Client) Heartbeat(ctx context.Context, queueName string, jobIDs []int) (knownIDs []int, err error) {
-	ctx, endObservation := c.operations.heartbeat.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := c.operations.heartbeat.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("queueName", queueName),
 		log.String("jobIDs", intsToString(jobIDs)),
 	}})
@@ -227,7 +227,7 @@ func (c *Client) Heartbeat(ctx context.Context, queueName string, jobIDs []int) 
 
 const SchemeExecutorToken = "token-executor"
 
-func (c *Client) makeRequest(method, path string, payload interface{}) (*http.Request, error) {
+func (c *Client) makeRequest(method, path string, payload any) (*http.Request, error) {
 	u, err := makeRelativeURL(
 		c.options.EndpointOptions.URL,
 		c.options.PathPrefix,

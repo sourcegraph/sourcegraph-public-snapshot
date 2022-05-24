@@ -42,7 +42,7 @@ export interface CodeMonitoringPageProps extends SettingsCascadeProps<Settings>,
     testForceTab?: 'list' | 'getting-started' | 'logs'
 }
 
-export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps> = ({
+export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren<CodeMonitoringPageProps>> = ({
     authenticatedUser,
     fetchUserCodeMonitors = _fetchUserCodeMonitors,
     toggleCodeMonitorEnabled = _toggleCodeMonitorEnabled,
@@ -104,7 +104,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                 actions={
                     authenticatedUser && (
                         <Button to="/code-monitoring/new" variant="primary" as={Link}>
-                            <Icon as={PlusIcon} />
+                            <Icon role="img" as={PlusIcon} aria-hidden={true} />
                             Create code monitor
                         </Button>
                     )

@@ -23,7 +23,6 @@ import { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumb
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { Page } from '../../components/Page'
-import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import {
     OrganizationResult,
     OrganizationVariables,
@@ -100,7 +99,7 @@ function queryMembersFFlag(args: { orgID: string; flagName: string }): Observabl
     )
 }
 
-const NotFoundPage: React.FunctionComponent = () => (
+const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested organization was not found." />
 )
 
@@ -117,7 +116,6 @@ interface Props
         TelemetryProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
-        FeatureFlagProps,
         ExtensionsControllerProps,
         BatchChangesProps {
     orgAreaRoutes: readonly OrgAreaRoute[]
@@ -149,7 +147,6 @@ export interface OrgAreaPageProps
         TelemetryProps,
         NamespaceProps,
         BreadcrumbsProps,
-        FeatureFlagProps,
         BreadcrumbSetters,
         BatchChangesProps {
     /** The org that is the subject of the page. */
@@ -291,7 +288,6 @@ export class OrgArea extends React.Component<Props> {
             setBreadcrumb: this.state.setBreadcrumb,
             useBreadcrumb: this.state.useBreadcrumb,
             newMembersInviteEnabled: this.state.newMembersInviteEnabled,
-            featureFlags: this.props.featureFlags,
         }
 
         if (this.props.location.pathname === `${this.props.match.url}/invitation`) {

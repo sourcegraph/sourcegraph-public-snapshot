@@ -1,8 +1,12 @@
 import React, { useMemo } from 'react'
 
 import { SubmissionErrors } from '../../../../components/form/hooks/useForm'
-import { MinimalSearchBasedInsightData } from '../../../../core/backend/code-insights-backend-types'
-import { InsightExecutionType, SearchBasedInsight, isSearchBackendBasedInsight } from '../../../../core/types'
+import {
+    MinimalSearchBasedInsightData,
+    InsightExecutionType,
+    SearchBasedInsight,
+    isSearchBackendBasedInsight,
+} from '../../../../core'
 import { CreateInsightFormFields, InsightStep } from '../../creation/search-insight'
 import { createDefaultEditSeries } from '../../creation/search-insight/components/search-insight-creation-content/hooks/use-editable-series'
 import { SearchInsightCreationContent } from '../../creation/search-insight/components/search-insight-creation-content/SearchInsightCreationContent'
@@ -14,7 +18,9 @@ interface EditSearchBasedInsightProps {
     onCancel: () => void
 }
 
-export const EditSearchBasedInsight: React.FunctionComponent<EditSearchBasedInsightProps> = props => {
+export const EditSearchBasedInsight: React.FunctionComponent<
+    React.PropsWithChildren<EditSearchBasedInsightProps>
+> = props => {
     const { insight, onSubmit, onCancel } = props
 
     const insightFormValues = useMemo<CreateInsightFormFields>(() => {
@@ -41,7 +47,6 @@ export const EditSearchBasedInsight: React.FunctionComponent<EditSearchBasedInsi
         }
     }, [insight])
 
-    // Handlers
     const handleSubmit = (values: CreateInsightFormFields): SubmissionErrors | Promise<SubmissionErrors> | void => {
         const sanitizedInsight = getSanitizedSearchInsight(values)
 

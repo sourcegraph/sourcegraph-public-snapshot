@@ -5,7 +5,7 @@ import PlusIcon from 'mdi-react/PlusIcon'
 import { noop } from 'rxjs'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Card, Link, useObservable, useDebounce, Icon, Input } from '@sourcegraph/wildcard'
+import { Button, Card, Link, useObservable, useDebounce, Icon, Input, Typography } from '@sourcegraph/wildcard'
 
 import { getDefaultInputProps } from '../../../../../components/form/getDefaultInputProps'
 import { useField } from '../../../../../components/form/hooks/useField'
@@ -30,12 +30,14 @@ interface CodeInsightExampleFormValues {
 
 const INITIAL_INSIGHT_VALUES: CodeInsightExampleFormValues = {
     repositories: 'github.com/sourcegraph/sourcegraph',
-    query: 'TODO archived:no fork:no',
+    query: 'TODO',
 }
 
 interface DynamicCodeInsightExampleProps extends TelemetryProps, React.HTMLAttributes<HTMLDivElement> {}
 
-export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsightExampleProps> = props => {
+export const DynamicCodeInsightExample: React.FunctionComponent<
+    React.PropsWithChildren<DynamicCodeInsightExampleProps>
+> = props => {
     const { telemetryService, ...otherProps } = props
 
     const {
@@ -129,9 +131,9 @@ export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsig
             </form>
 
             <section>
-                <h2 className={classNames(styles.cardTitle)}>
+                <Typography.H2 className={classNames(styles.cardTitle)}>
                     Draw insights from your codebase about how different initiatives track over time
-                </h2>
+                </Typography.H2>
 
                 <p>
                     Create visual dashboards with meaningful, customizable codebase signals your team can use to answer
@@ -139,7 +141,7 @@ export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsig
                     difficult or impossible to answer before.
                 </p>
 
-                <h3 className={classNames(styles.bulletTitle)}>Use Code Insights to...</h3>
+                <Typography.H3 className={classNames(styles.bulletTitle)}>Use Code Insights to...</Typography.H3>
 
                 <ul>
                     <li>Track migrations, adoption, and deprecations</li>
@@ -181,7 +183,7 @@ export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsig
     )
 }
 
-const CalloutArrow: React.FunctionComponent<{ className?: string }> = props => (
+const CalloutArrow: React.FunctionComponent<React.PropsWithChildren<{ className?: string }>> = props => (
     <p className={classNames(styles.calloutBlock, props.className)}>
         <svg
             width="59"

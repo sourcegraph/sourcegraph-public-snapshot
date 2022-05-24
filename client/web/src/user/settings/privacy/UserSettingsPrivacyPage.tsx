@@ -27,7 +27,9 @@ interface Props extends Pick<UserSettingsAreaRouteContext, 'authenticatedUser'> 
     authenticatedUser: AuthenticatedUser
 }
 
-export const UserSettingsPrivacyPage: React.FunctionComponent<Props> = ({ authenticatedUser }) => {
+export const UserSettingsPrivacyPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    authenticatedUser,
+}) => {
     useEffect(() => eventLogger.logViewEvent('UserProfile'), [])
 
     const [setUserSearchable, { loading, error }] = useMutation<SetUserSearchableResult, SetUserSearchableVariables>(
@@ -62,7 +64,7 @@ export const UserSettingsPrivacyPage: React.FunctionComponent<Props> = ({ authen
 
     return (
         <div>
-            <PageTitle title="Profile" />
+            <PageTitle title="Privacy" />
             <PageHeader path={[{ text: 'Privacy' }]} headingElement="h2" className={styles.heading} />
             <Container>
                 <Checkbox

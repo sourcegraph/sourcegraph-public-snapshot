@@ -306,6 +306,9 @@ describe('Search contexts', () => {
         await driver.page.waitForSelector(searchQueryInputSelector)
         await driver.page.click(searchQueryInputSelector)
 
+        // Take Snapshot
+        await percySnapshotWithVariants(driver.page, 'Create dynamic query search context page')
+
         // Enter search query
         await driver.replaceText({
             selector: searchQueryInputSelector,
@@ -314,8 +317,6 @@ describe('Search contexts', () => {
             enterTextMethod: 'paste',
         })
 
-        // Take Snapshot
-        await percySnapshotWithVariants(driver.page, 'Create dynamic query search context page')
         await accessibilityAudit(driver.page)
         // Click create
         await driver.page.click('[data-testid="search-context-submit-button"]')

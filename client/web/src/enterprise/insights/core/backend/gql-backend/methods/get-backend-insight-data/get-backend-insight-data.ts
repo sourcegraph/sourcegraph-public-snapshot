@@ -16,18 +16,18 @@ export const getBackendInsightData = (
     client: ApolloClient<unknown>,
     insight: BackendInsight
 ): Observable<BackendInsightData> => {
-    const { excludeRepoRegexp, includeRepoRegexp, contexts } = insight.filters
+    const { excludeRepoRegexp, includeRepoRegexp, context } = insight.filters
     const filters: InsightViewFiltersInput = {
         includeRepoRegex: includeRepoRegexp,
         excludeRepoRegex: excludeRepoRegexp,
-        searchContexts: contexts,
+        searchContexts: [context],
     }
 
     return fromObservableQuery(
         client.watchQuery<GetInsightViewResult>({
             query: GET_INSIGHT_VIEW_GQL,
             variables: { id: insight.id, filters },
-            // This query is set to network-only becasue the caching is not working correctly
+            // This query is set to network-only because the caching is not working correctly
             // https://github.com/sourcegraph/sourcegraph/issues/33813
             fetchPolicy: 'network-only',
         })

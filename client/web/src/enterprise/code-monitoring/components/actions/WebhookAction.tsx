@@ -3,7 +3,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { gql, useMutation } from '@apollo/client'
 import { noop } from 'lodash'
 
-import { Alert, Input, ProductStatusBadge } from '@sourcegraph/wildcard'
+import { Alert, Input, ProductStatusBadge, Typography } from '@sourcegraph/wildcard'
 
 import { SendTestWebhookResult, SendTestWebhookVariables } from '../../../../graphql-operations'
 import { ActionProps } from '../FormActionArea'
@@ -18,7 +18,7 @@ export const SEND_TEST_WEBHOOK = gql`
     }
 `
 
-export const WebhookAction: React.FunctionComponent<ActionProps> = ({
+export const WebhookAction: React.FunctionComponent<React.PropsWithChildren<ActionProps>> = ({
     action,
     setAction,
     disabled,
@@ -132,7 +132,7 @@ export const WebhookAction: React.FunctionComponent<ActionProps> = ({
                 being modified. Once it is decided on, documentation will be available.
             </Alert>
             <div className="form-group">
-                <label htmlFor="code-monitor-webhook-url">Webhook URL</label>
+                <Typography.Label htmlFor="code-monitor-webhook-url">Webhook URL</Typography.Label>
                 <Input
                     id="code-monitor-webhook-url"
                     type="url"

@@ -6,7 +6,7 @@ import CloseIcon from 'mdi-react/CloseIcon'
 
 import { pluralize } from '@sourcegraph/common'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
-import { useLocalStorage, Button, Modal, Icon } from '@sourcegraph/wildcard'
+import { useLocalStorage, Button, Modal, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { CaseInsensitiveFuzzySearch } from '../../fuzzyFinder/CaseInsensitiveFuzzySearch'
 import { FuzzySearch, FuzzySearchResult, SearchIndexing, SearchValue } from '../../fuzzyFinder/FuzzySearch'
@@ -52,7 +52,7 @@ export interface FuzzyModalProps {
  *
  * Similar to "Go to file" in VS Code or the "t" keyboard shortcut on github.com
  */
-export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
+export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyModalProps>> = props => {
     // NOTE: the query is cached in local storage to mimic the file pickers in
     // IntelliJ (by default) and VS Code (when "Workbench > Quick Open >
     // Preserve Input" is enabled).
@@ -238,9 +238,9 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
         >
             <div className={styles.content}>
                 <div className={styles.header}>
-                    <h3 className="mb-0" id={FUZZY_MODAL_TITLE}>
+                    <Typography.H3 className="mb-0" id={FUZZY_MODAL_TITLE}>
                         Find file
-                    </h3>
+                    </Typography.H3>
                     <Button variant="icon" onClick={() => props.onClose()} aria-label="Close">
                         <Icon className={styles.closeIcon} as={CloseIcon} />
                     </Button>
@@ -299,7 +299,7 @@ interface FuzzyResultsSummaryProps {
     totalFileCount: number
 }
 
-const FuzzyResultsSummary: React.FunctionComponent<FuzzyResultsSummaryProps> = ({
+const FuzzyResultsSummary: React.FunctionComponent<React.PropsWithChildren<FuzzyResultsSummaryProps>> = ({
     fsm,
     resultsCount,
     isComplete,

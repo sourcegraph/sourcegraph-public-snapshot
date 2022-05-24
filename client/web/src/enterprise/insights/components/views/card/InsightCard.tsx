@@ -3,7 +3,7 @@ import React, { forwardRef, HTMLAttributes, ReactNode } from 'react'
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
 
-import { Card, ForwardReferenceComponent, H2, H4, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Card, ForwardReferenceComponent, Typography, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { getLineColor, LegendItem, LegendList, Series } from '../../../../../charts'
 import { ErrorBoundary } from '../../../../../components/ErrorBoundary'
@@ -39,9 +39,9 @@ const InsightCardHeader = forwardRef((props, reference) => {
     return (
         <Component {...attributes} ref={reference} className={classNames(styles.header, className)}>
             <div className={styles.headerContent}>
-                <H4 as={H2} title={title} className={styles.title}>
+                <Typography.H4 as={Typography.H2} title={title} className={styles.title}>
                     {title}
-                </H4>
+                </Typography.H4>
 
                 {children && (
                     // eslint-disable-next-line jsx-a11y/click-events-have-key-events,jsx-a11y/no-static-element-interactions
@@ -63,14 +63,14 @@ const InsightCardHeader = forwardRef((props, reference) => {
     )
 }) as ForwardReferenceComponent<'header', InsightCardTitleProps>
 
-const InsightCardLoading: React.FunctionComponent = props => (
+const InsightCardLoading: React.FunctionComponent<React.PropsWithChildren<unknown>> = props => (
     <InsightCardBanner>
         <LoadingSpinner />
         {props.children}
     </InsightCardBanner>
 )
 
-const InsightCardBanner: React.FunctionComponent<HTMLAttributes<HTMLDivElement>> = props => (
+const InsightCardBanner: React.FunctionComponent<React.PropsWithChildren<HTMLAttributes<HTMLDivElement>>> = props => (
     <div {...props} className={classNames(styles.loadingContent, props.className)}>
         {props.children}
     </div>
@@ -80,7 +80,7 @@ interface InsightCardLegendProps extends React.HTMLAttributes<HTMLUListElement> 
     series: Series<any>[]
 }
 
-const InsightCardLegend: React.FunctionComponent<InsightCardLegendProps> = props => {
+const InsightCardLegend: React.FunctionComponent<React.PropsWithChildren<InsightCardLegendProps>> = props => {
     const { series, ...attributes } = props
 
     return (

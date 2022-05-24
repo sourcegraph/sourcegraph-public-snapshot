@@ -41,7 +41,7 @@ var errVerificationNotSupported = errors.New(strings.Join([]string{
 func authMiddleware(next http.Handler, db database.DB, authValidators AuthValidatorMap, operation *observation.Operation) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		statusCode, err := func() (_ int, err error) {
-			ctx, trace, endObservation := operation.WithAndLogger(r.Context(), &err, observation.Args{})
+			ctx, trace, endObservation := operation.With(r.Context(), &err, observation.Args{})
 			defer endObservation(1, observation.Args{})
 
 			// Skip auth check if it's not enabled in the instance's site configuration, if this

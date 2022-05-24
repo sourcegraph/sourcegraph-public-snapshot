@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike } from '@sourcegraph/common'
-import { Button, Modal } from '@sourcegraph/wildcard'
+import { Button, Modal, Typography } from '@sourcegraph/wildcard'
 
 import { deleteExternalService } from '../../../components/externalServices/backend'
 import { LoaderButton } from '../../../components/LoaderButton'
@@ -36,17 +36,19 @@ const getWarningMessage = (serviceName: string, orgName: string, repoCount: numb
     } ${membersWillNoLongerSearchAcross} ${repoCount === 1 ? 'this' : adjective} ${repoNoun} on Sourcegraph.`
 }
 
-export const RemoveCodeHostConnectionModal: React.FunctionComponent<{
-    serviceID: Scalars['ID']
-    serviceName: string
-    orgName: string
-    serviceKind: ExternalServiceKind
-    repoCount: number | undefined
+export const RemoveCodeHostConnectionModal: React.FunctionComponent<
+    React.PropsWithChildren<{
+        serviceID: Scalars['ID']
+        serviceName: string
+        orgName: string
+        serviceKind: ExternalServiceKind
+        repoCount: number | undefined
 
-    onDidRemove: () => void
-    onDidCancel: () => void
-    onDidError: (error: ErrorLike) => void
-}> = ({ serviceID, serviceName, orgName, repoCount, onDidRemove, onDidCancel, onDidError }) => {
+        onDidRemove: () => void
+        onDidCancel: () => void
+        onDidError: (error: ErrorLike) => void
+    }>
+> = ({ serviceID, serviceName, orgName, repoCount, onDidRemove, onDidCancel, onDidError }) => {
     const [isLoading, setIsLoading] = useState(false)
 
     const onConnectionRemove = useCallback<React.FormEventHandler<HTMLFormElement>>(
@@ -72,9 +74,9 @@ export const RemoveCodeHostConnectionModal: React.FunctionComponent<{
             aria-describedby={`description--remove-${serviceName}-code-host`}
             onDismiss={onDidCancel}
         >
-            <h3 id={`heading--remove-${serviceName}-code-host`} className="text-danger mb-4">
+            <Typography.H3 id={`heading--remove-${serviceName}-code-host`} className="text-danger mb-4">
                 Remove connection with {serviceName}?
-            </h3>
+            </Typography.H3>
             <Form onSubmit={onConnectionRemove}>
                 <div id={`description--remove-${serviceName}-code-host`} className="form-group mb-4">
                     {getWarningMessage(serviceName, orgName, repoCount)}

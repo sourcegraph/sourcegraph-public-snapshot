@@ -4,6 +4,8 @@ import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 import { PRODUCT_STATUSES } from '@sourcegraph/wildcard'
 
+import { Typography } from '../..'
+
 import { FeedbackBadge } from '.'
 
 const config: Meta = {
@@ -40,7 +42,7 @@ export default config
 
 export const FeedbackBadgeExample: Story = () => (
     <>
-        <h1>FeedbackBadges</h1>
+        <Typography.H1>FeedbackBadges</Typography.H1>
         <p>Our badges come in different status.</p>
         {PRODUCT_STATUSES.map(status => (
             <FeedbackBadge

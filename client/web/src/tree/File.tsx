@@ -29,7 +29,7 @@ interface FileProps extends TreeLayerProps {
     isSelected: boolean
 }
 
-export const File: React.FunctionComponent<FileProps> = props => {
+export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> = props => {
     const renderedFileDecorations = (
         <FileDecorator
             // If component is not specified, or it is 'sidebar', render it.

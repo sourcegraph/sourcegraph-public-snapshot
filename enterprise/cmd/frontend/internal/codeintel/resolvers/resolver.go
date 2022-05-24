@@ -7,11 +7,11 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
-	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 // Resolver is the main interface to code intel-related operations exposed to the GraphQL API.
@@ -32,6 +31,7 @@ type Resolver interface {
 	GetUploadByID(ctx context.Context, id int) (store.Upload, bool, error)
 	GetUploadsByIDs(ctx context.Context, ids ...int) ([]store.Upload, error)
 	DeleteUploadByID(ctx context.Context, uploadID int) error
+	GetUploadDocumentsForPath(ctx context.Context, uploadID int, pathPrefix string) ([]string, int, error)
 
 	GetIndexByID(ctx context.Context, id int) (store.Index, bool, error)
 	GetIndexesByIDs(ctx context.Context, ids ...int) ([]store.Index, error)
@@ -52,7 +52,6 @@ type Resolver interface {
 	QueueAutoIndexJobsForRepo(ctx context.Context, repositoryID int, rev, configuration string) ([]store.Index, error)
 	PreviewRepositoryFilter(ctx context.Context, patterns []string, limit, offset int) (_ []int, totalCount int, repositoryMatchLimit *int, _ error)
 	PreviewGitObjectFilter(ctx context.Context, repositoryID int, gitObjectType store.GitObjectType, pattern string) (map[string][]string, error)
-	DocumentationSearch(ctx context.Context, query string, repos []string) ([]precise.DocumentationSearchResult, error)
 	SupportedByCtags(ctx context.Context, filepath string, repo api.RepoName) (bool, string, error)
 	RetentionPolicyOverview(ctx context.Context, upload store.Upload, matchesOnly bool, first int, after int64, query string, now time.Time) (matches []RetentionPolicyMatchCandidate, totalCount int, err error)
 
@@ -180,6 +179,10 @@ func (r *resolver) CommitGraph(ctx context.Context, repositoryID int) (gql.CodeI
 	return NewCommitGraphResolver(stale, updatedAt), nil
 }
 
+func (r *resolver) GetUploadDocumentsForPath(ctx context.Context, uploadID int, pathPattern string) ([]string, int, error) {
+	return r.lsifStore.DocumentPaths(ctx, uploadID, pathPattern)
+}
+
 func (r *resolver) QueueAutoIndexJobsForRepo(ctx context.Context, repositoryID int, rev, configuration string) ([]store.Index, error) {
 	return r.indexEnqueuer.QueueIndexes(ctx, repositoryID, rev, configuration, true)
 }
@@ -190,7 +193,7 @@ const slowQueryResolverRequestThreshold = time.Second
 // given repository, commit, and path, then constructs a new query resolver instance which
 // can be used to answer subsequent queries.
 func (r *resolver) QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataArgs) (_ QueryResolver, err error) {
-	ctx, _, endObservation := observeResolver(ctx, &err, "QueryResolver", r.operations.queryResolver, slowQueryResolverRequestThreshold, observation.Args{
+	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.queryResolver, slowQueryResolverRequestThreshold, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", int(args.Repo.ID)),
 			log.String("commit", string(args.Commit)),

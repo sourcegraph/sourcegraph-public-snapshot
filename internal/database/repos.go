@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -32,8 +33,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/jvmpackages"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm/npmpackages"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/pagure"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
@@ -79,7 +78,6 @@ type RepoStore interface {
 	GetFirstRepoNamesByCloneURL(context.Context, string) (api.RepoName, error)
 	GetReposSetByIDs(context.Context, ...api.RepoID) (map[api.RepoID]*types.Repo, error)
 	List(context.Context, ReposListOptions) ([]*types.Repo, error)
-	ListEnabledNames(context.Context) ([]api.RepoName, error)
 	ListIndexableRepos(context.Context, ListIndexableReposOptions) ([]types.MinimalRepo, error)
 	ListMinimalRepos(context.Context, ReposListOptions) ([]types.MinimalRepo, error)
 	Metadata(context.Context, ...api.RepoID) ([]*types.SearchedRepo, error)
@@ -178,7 +176,7 @@ func logPrivateRepoAccessGranted(ctx context.Context, db dbutil.DB, ids []api.Re
 		event.AnonymousUserID = "internal"
 	}
 
-	SecurityEventLogs(db).LogEvent(ctx, event)
+	NewDB(db).SecurityEventLogs().LogEvent(ctx, event)
 }
 
 // GetByName returns the repository with the given nameOrUri from the
@@ -264,6 +262,11 @@ func (s *repoStore) GetByIDs(ctx context.Context, ids ...api.RepoID) (_ []*types
 		tr.Finish()
 	}()
 
+	// listRepos will return a list of all repos if we pass in an empty ID list,
+	// so it is better to just return here rather than leak repo info.
+	if len(ids) == 0 {
+		return []*types.Repo{}, nil
+	}
 	return s.listRepos(ctx, tr, ReposListOptions{IDs: ids})
 }
 
@@ -495,10 +498,12 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 	case extsvc.TypeOther:
 		r.Metadata = new(extsvc.OtherRepoMetadata)
 	case extsvc.TypeJVMPackages:
-		r.Metadata = new(jvmpackages.Metadata)
+		r.Metadata = new(reposource.MavenMetadata)
 	case extsvc.TypeNpmPackages:
-		r.Metadata = new(npmpackages.Metadata)
+		r.Metadata = new(reposource.NpmMetadata)
 	case extsvc.TypeGoModules:
+		r.Metadata = &struct{}{}
+	case extsvc.TypePythonPackages:
 		r.Metadata = &struct{}{}
 	default:
 		log15.Warn("scanRepo - unknown service type", "type", typ)
@@ -1287,7 +1292,7 @@ func nullStringColumn(s string) *string {
 	return &s
 }
 
-func metadataColumn(metadata interface{}) (msg json.RawMessage, err error) {
+func metadataColumn(metadata any) (msg json.RawMessage, err error) {
 	switch m := metadata.(type) {
 	case nil:
 		msg = json.RawMessage("{}")
@@ -1468,41 +1473,6 @@ FROM repo_ids
 WHERE deleted_at IS NULL
 AND repo.id = repo_ids.id::int
 `
-
-const listEnabledNamesQueryFmtstr = `
--- source:internal/database/repos.go:ListEnabledNames
-SELECT
-	name
-FROM
-	repo
-WHERE
-	deleted_at IS NULL
-	AND
-	blocked IS NULL
-`
-
-// ListEnabledNames returns a list of all enabled repo names. This is used in the
-// repo purger. We special case just returning enabled names so that we read much
-// less data into memory.
-func (s *repoStore) ListEnabledNames(ctx context.Context) (values []api.RepoName, err error) {
-	q := sqlf.Sprintf(listEnabledNamesQueryFmtstr)
-	rows, queryErr := s.Query(ctx, q)
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	for rows.Next() {
-		var value api.RepoName
-		if err := rows.Scan(&value); err != nil {
-			return nil, err
-		}
-
-		values = append(values, value)
-	}
-
-	return values, nil
-}
 
 const getFirstRepoNamesByCloneURLQueryFmtstr = `
 -- source:internal/database/repos.go:GetFirstRepoNamesByCloneURL

@@ -218,6 +218,14 @@ To use this filter, the search query must contain \`type:diff\` or \`type:commit
         showSuggestions: false,
     },
     {
+        ...createQueryExampleFromString('dependents({regex-pattern})'),
+        field: FilterType.repo,
+        description:
+            'Search inside repositories that depend on repositories matched by the provided regex pattern. This parameter is experimental.',
+        examples: ['repo:revdeps(^go/github\\.com/google/go-cmp$@v0.5.8)'],
+        showSuggestions: true,
+    },
+    {
         ...createQueryExampleFromString('{revision}'),
         field: FilterType.rev,
         commonRank: 20,
@@ -341,7 +349,10 @@ interface SearchReferenceExampleProps {
     onClick?: (example: string) => void
 }
 
-const SearchReferenceExample: React.FunctionComponent<SearchReferenceExampleProps> = ({ example, onClick }) => {
+const SearchReferenceExample: React.FunctionComponent<React.PropsWithChildren<SearchReferenceExampleProps>> = ({
+    example,
+    onClick,
+}) => {
     // All current examples are literal queries
     const scanResult = scanSearchQuery(example, false, SearchPatternType.literal)
     // We only use valid queries as examples, so this will always be true
@@ -419,7 +430,7 @@ const SearchReferenceEntry = <T extends SearchReferenceInfo>({
                         aria-label={collapsed ? 'Show filter description' : 'Hide filter description'}
                     >
                         <small className="text-monospace">i</small>
-                        <Icon as={CollapseIcon} />
+                        <Icon role="img" aria-hidden={true} as={CollapseIcon} />
                     </CollapseHeader>
                 </span>
                 <CollapsePanel>
@@ -591,7 +602,7 @@ const SearchReference = React.memo(
                 <p className={sidebarStyles.sidebarSectionFooter}>
                     <small>
                         <Link target="blank" to="https://docs.sourcegraph.com/code_search/reference/queries">
-                            Search syntax <Icon as={ExternalLinkIcon} />
+                            Search syntax <Icon role="img" aria-hidden={true} as={ExternalLinkIcon} />
                         </Link>
                     </small>
                 </p>

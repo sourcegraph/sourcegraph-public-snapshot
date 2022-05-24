@@ -6,7 +6,16 @@ import { Omit } from 'utility-types'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { Container, PageHeader, ProductStatusBadge, Button, Link, Alert } from '@sourcegraph/wildcard'
+import {
+    Container,
+    PageHeader,
+    ProductStatusBadge,
+    Button,
+    Link,
+    Alert,
+    Checkbox,
+    Typography,
+} from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { NamespaceProps } from '../namespaces'
@@ -32,7 +41,7 @@ export interface SavedSearchFormProps extends NamespaceProps {
     error?: any
 }
 
-export const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = props => {
+export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<SavedSearchFormProps>> = props => {
     const [values, setValues] = useState<Omit<SavedQueryFields, 'id'>>(() => ({
         description: props.defaultValues?.description || '',
         query: props.defaultValues?.query || '',
@@ -89,9 +98,9 @@ export const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = pr
             <Form onSubmit={handleSubmit}>
                 <Container className="mb-3">
                     <div className="form-group">
-                        <label className={styles.label} htmlFor="saved-search-form-input-description">
+                        <Typography.Label className={styles.label} htmlFor="saved-search-form-input-description">
                             Description
-                        </label>
+                        </Typography.Label>
                         <input
                             id="saved-search-form-input-description"
                             type="text"
@@ -104,9 +113,9 @@ export const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = pr
                         />
                     </div>
                     <div className="form-group">
-                        <label className={styles.label} htmlFor="saved-search-form-input-query">
+                        <Typography.Label className={styles.label} htmlFor="saved-search-form-input-query">
                             Query
-                        </label>
+                        </Typography.Label>
                         <input
                             id="saved-search-form-input-query"
                             type="text"
@@ -123,26 +132,27 @@ export const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = pr
                         <div className="form-group mb-0">
                             {/* Label is for visual benefit, input has more specific label attached */}
                             {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
-                            <label className={styles.label} id="saved-search-form-email-notifications">
+                            <Typography.Label className={styles.label} id="saved-search-form-email-notifications">
                                 Email notifications
-                            </label>
+                            </Typography.Label>
                             <div aria-labelledby="saved-search-form-email-notifications">
-                                <label>
-                                    <input
-                                        type="checkbox"
-                                        name="Notify owner"
-                                        className={styles.checkbox}
-                                        defaultChecked={notify}
-                                        onChange={createInputChangeHandler('notify')}
-                                    />{' '}
-                                    <span>
-                                        {props.namespace.__typename === 'Org'
-                                            ? 'Send email notifications to all members of this organization'
-                                            : props.namespace.__typename === 'User'
-                                            ? 'Send email notifications to my email'
-                                            : 'Email notifications'}
-                                    </span>
-                                </label>
+                                <Checkbox
+                                    name="Notify owner"
+                                    className={classNames(styles.checkbox, 'mr-0')}
+                                    defaultChecked={notify}
+                                    wrapperClassName="mb-2"
+                                    onChange={createInputChangeHandler('notify')}
+                                    id="NotifyOrgMembersInput"
+                                    label={
+                                        <span className="ml-2">
+                                            {props.namespace.__typename === 'Org'
+                                                ? 'Send email notifications to all members of this organization'
+                                                : props.namespace.__typename === 'User'
+                                                ? 'Send email notifications to my email'
+                                                : 'Email notifications'}
+                                        </span>
+                                    }
+                                />
                             </div>
 
                             <Alert variant="primary" className={classNames(styles.codeMonitoringAlert, 'p-3 mb-0')}>
@@ -159,9 +169,9 @@ export const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = pr
 
                     {notifySlack && slackWebhookURL && (
                         <div className="form-group mt-3 mb-0">
-                            <label className={styles.label} htmlFor="saved-search-form-input-slack">
+                            <Typography.Label className={styles.label} htmlFor="saved-search-form-input-slack">
                                 Slack notifications
-                            </label>
+                            </Typography.Label>
                             <input
                                 id="saved-search-form-input-slack"
                                 type="text"
@@ -179,7 +189,8 @@ export const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = pr
                     {isUnsupportedNotifyQuery && (
                         <Alert className="mt-3 mb-0" variant="warning">
                             <strong>Warning:</strong> non-commit searches do not currently support notifications.
-                            Consider adding <code>type:diff</code> or <code>type:commit</code> to your query.
+                            Consider adding <Typography.Code>type:diff</Typography.Code> or{' '}
+                            <Typography.Code>type:commit</Typography.Code> to your query.
                         </Alert>
                     )}
                     {notify && !window.context.emailEnabled && !isUnsupportedNotifyQuery && (

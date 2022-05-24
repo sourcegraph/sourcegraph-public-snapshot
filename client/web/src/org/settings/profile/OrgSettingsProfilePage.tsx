@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Container, PageHeader, Button, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Container, PageHeader, Button, LoadingSpinner, Typography } from '@sourcegraph/wildcard'
 
 import { ORG_DISPLAY_NAME_MAX_LENGTH } from '../..'
 import { PageTitle } from '../../../components/PageTitle'
@@ -17,7 +17,10 @@ interface Props extends Pick<OrgAreaPageProps, 'org' | 'onOrganizationUpdate'> {
 /**
  * The organization profile settings page.
  */
-export const OrgSettingsProfilePage: React.FunctionComponent<Props> = ({ org, onOrganizationUpdate }) => {
+export const OrgSettingsProfilePage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    org,
+    onOrganizationUpdate,
+}) => {
     useEffect(() => {
         eventLogger.logViewEvent('OrgSettingsProfile')
     }, [org.id])
@@ -85,7 +88,9 @@ export const OrgSettingsProfilePage: React.FunctionComponent<Props> = ({ org, on
             <Container>
                 <Form className="org-settings-profile-page" onSubmit={onSubmit}>
                     <div className="form-group">
-                        <label htmlFor="org-settings-profile-page-display-name">Display name</label>
+                        <Typography.Label htmlFor="org-settings-profile-page-display-name">
+                            Display name
+                        </Typography.Label>
                         <input
                             id="org-settings-profile-page-display-name"
                             type="text"

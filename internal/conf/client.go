@@ -127,7 +127,7 @@ func Watch(f func()) {
 // will be recomputed every time the config is updated.
 //
 // IMPORTANT: The first call to wrapped will block on config initialization.
-func Cached(f func() interface{}) (wrapped func() interface{}) {
+func Cached(f func() any) (wrapped func() any) {
 	return DefaultClient().Cached(f)
 }
 
@@ -161,10 +161,10 @@ func (c *client) Watch(f func()) {
 // will be recomputed every time the config is updated.
 //
 // The first call to wrapped will block on config initialization.
-func (c *client) Cached(f func() interface{}) (wrapped func() interface{}) {
+func (c *client) Cached(f func() any) (wrapped func() any) {
 	var once sync.Once
 	var val atomic.Value
-	return func() interface{} {
+	return func() any {
 		once.Do(func() {
 			c.Watch(func() {
 				val.Store(f())
@@ -199,8 +199,8 @@ type continuousUpdateOptions struct {
 	// contact the frontend for configuration) start up before the frontend.
 	delayBeforeUnreachableLog time.Duration
 
-	log   func(format string, v ...interface{}) // log.Printf equivalent
-	sleep func()                                // sleep between updates
+	log   func(format string, v ...any) // log.Printf equivalent
+	sleep func()                        // sleep between updates
 }
 
 // continuouslyUpdate runs (*client).fetchAndUpdate in an infinite loop, with error logging and

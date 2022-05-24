@@ -3,12 +3,11 @@ import React from 'react'
 import { Redirect } from 'react-router'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { CardBody, Card } from '@sourcegraph/wildcard'
+import { CardBody, Card, Typography } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { SignUpArguments, SignUpForm } from '../../auth/SignUpForm'
 import { BrandLogo } from '../../components/branding/BrandLogo'
-import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { SourcegraphContext } from '../../jscontext'
 import { submitTrialRequest } from '../../marketing/backend'
 import { PageRoutes } from '../../routes.constants'
@@ -47,7 +46,7 @@ const initSite = async (args: SignUpArguments): Promise<void> => {
     window.location.replace('/site-admin')
 }
 
-interface Props extends ThemeProps, FeatureFlagProps {
+interface Props extends ThemeProps {
     authenticatedUser: Pick<AuthenticatedUser, 'username'> | null
 
     /**
@@ -62,12 +61,11 @@ interface Props extends ThemeProps, FeatureFlagProps {
  * A page that is shown when the Sourcegraph instance has not yet been initialized.
  * Only the person who first accesses the instance will see this.
  */
-export const SiteInitPage: React.FunctionComponent<Props> = ({
+export const SiteInitPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     authenticatedUser,
     isLightTheme,
     needsSiteInit = window.context.needsSiteInit,
     context,
-    featureFlags,
 }) => {
     if (!needsSiteInit) {
         return <Redirect to={PageRoutes.Search} />
@@ -88,14 +86,13 @@ export const SiteInitPage: React.FunctionComponent<Props> = ({
                         </p>
                     ) : (
                         <>
-                            <h2 className="site-init-page__header">Welcome</h2>
+                            <Typography.H2 className="site-init-page__header">Welcome</Typography.H2>
                             <p>Create an admin account to start using Sourcegraph.</p>
                             <SignUpForm
                                 className="w-100"
                                 buttonLabel="Create admin account & continue"
                                 onSignUp={initSite}
                                 context={context}
-                                featureFlags={featureFlags}
                             />
                         </>
                     )}

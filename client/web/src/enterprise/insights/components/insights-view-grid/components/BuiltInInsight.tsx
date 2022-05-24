@@ -9,9 +9,7 @@ import { useDeepMemo } from '@sourcegraph/wildcard'
 import { ParentSize } from '../../../../../charts'
 import { CodeInsightsBackendContext, LangStatsInsight, SearchRuntimeBasedInsight } from '../../../core'
 import { InsightContentType } from '../../../core/types/insight/common'
-import { useDeleteInsight } from '../../../hooks/use-delete-insight'
 import { LazyQueryStatus } from '../../../hooks/use-parallel-requests/use-parallel-request'
-import { useRemoveInsightFromDashboard } from '../../../hooks/use-remove-insight'
 import { getTrackingTypeByInsightType, useCodeInsightViewPings } from '../../../pings'
 import {
     CategoricalBasedChartTypes,
@@ -46,7 +44,7 @@ interface BuiltInInsightProps extends TelemetryProps, React.HTMLAttributes<HTMLE
 export function BuiltInInsight(props: BuiltInInsightProps): React.ReactElement {
     const { insight, resizing, telemetryService, innerRef, ...otherProps } = props
     const { getBuiltInInsightData } = useContext(CodeInsightsBackendContext)
-    const { dashboard } = useContext(InsightContext)
+    const { currentDashboard, dashboards } = useContext(InsightContext)
 
     const insightCardReference = useRef<HTMLDivElement>(null)
     const mergedInsightCardReference = useMergeRefs([insightCardReference, innerRef])
@@ -60,8 +58,6 @@ export function BuiltInInsight(props: BuiltInInsightProps): React.ReactElement {
 
     // Visual line chart settings
     const [zeroYAxisMin, setZeroYAxisMin] = useState(false)
-    const { loading: isDeleting } = useDeleteInsight()
-    const { loading: isRemoving } = useRemoveInsightFromDashboard()
 
     const { trackDatumClicks, trackMouseLeave, trackMouseEnter } = useCodeInsightViewPings({
         telemetryService,
@@ -80,8 +76,8 @@ export function BuiltInInsight(props: BuiltInInsightProps): React.ReactElement {
                 {isVisible && (
                     <InsightContextMenu
                         insight={insight}
-                        dashboard={dashboard}
-                        menuButtonClassName="ml-1 d-inline-flex"
+                        currentDashboard={currentDashboard}
+                        dashboards={dashboards}
                         zeroYAxisMin={zeroYAxisMin}
                         onToggleZeroYAxisMin={() => setZeroYAxisMin(!zeroYAxisMin)}
                     />
@@ -89,10 +85,8 @@ export function BuiltInInsight(props: BuiltInInsightProps): React.ReactElement {
             </InsightCardHeader>
             {resizing ? (
                 <InsightCardBanner>Resizing</InsightCardBanner>
-            ) : state.status === LazyQueryStatus.Loading || isDeleting || !isVisible ? (
-                <InsightCardLoading>{isDeleting ? 'Deleting code insight' : 'Loading code insight'}</InsightCardLoading>
-            ) : isRemoving ? (
-                <InsightCardLoading>Removing insight from the dashboard</InsightCardLoading>
+            ) : state.status === LazyQueryStatus.Loading || !isVisible ? (
+                <InsightCardLoading>Loading code insight</InsightCardLoading>
             ) : state.status === LazyQueryStatus.Error ? (
                 <ErrorAlert error={state.error} />
             ) : (

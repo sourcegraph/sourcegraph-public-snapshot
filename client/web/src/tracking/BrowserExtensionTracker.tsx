@@ -128,7 +128,7 @@ export function useIsBrowserExtensionActiveUser(): boolean | undefined {
  * and updates a localStorage whenever these are found.
  */
 
-export const BrowserExtensionTracker: React.FunctionComponent = React.memo(() => {
+export const BrowserExtensionTracker: React.FunctionComponent<React.PropsWithChildren<unknown>> = React.memo(() => {
     const [, setLastBrowserExtensionDetection] = useLocalStorage(BROWSER_EXTENSION_LAST_DETECTION_KEY, 0)
 
     // OPTION 1: Use initial page load query parameters to detect inbound link from browser extension

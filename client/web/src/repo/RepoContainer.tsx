@@ -50,7 +50,6 @@ import { BreadcrumbSetters, BreadcrumbsProps } from '../components/Breadcrumbs'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
 import { ActionItemsBarProps, useWebActionItems } from '../extensions/components/ActionItemsBar'
-import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import { ExternalLinkFields, RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
 import { searchQueryForRepoRevision, SearchStreamingProps } from '../search'
@@ -94,8 +93,7 @@ export interface RepoContainerContext
         CodeIntelligenceProps,
         BatchChangesProps,
         CodeInsightsProps,
-        ExtensionAlertProps,
-        FeatureFlagProps {
+        ExtensionAlertProps {
     repo: RepositoryFields
     authenticatedUser: AuthenticatedUser | null
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
@@ -116,7 +114,7 @@ export interface RepoContainerContext
 /** A sub-route of {@link RepoContainer}. */
 export interface RepoContainerRoute extends RouteDescriptor<RepoContainerContext> {}
 
-const RepoPageNotFound: React.FunctionComponent = () => (
+const RepoPageNotFound: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="The repository page was not found." />
 )
 
@@ -136,8 +134,7 @@ interface RepoContainerProps
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
         CodeIntelligenceProps,
         BatchChangesProps,
-        CodeInsightsProps,
-        FeatureFlagProps {
+        CodeInsightsProps {
     repoContainerRoutes: readonly RepoContainerRoute[]
     repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[]
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
@@ -164,7 +161,7 @@ export interface HoverThresholdProps {
 /**
  * Renders a horizontal bar and content for a repository page.
  */
-export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props => {
+export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<RepoContainerProps>> = props => {
     const { repoName, revision, rawRevision, filePath, commitRange, position, range } = parseBrowserRepoURL(
         location.pathname + location.search + location.hash
     )
@@ -375,6 +372,17 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         !isErrorLike(props.settingsCascade.final) &&
         props.settingsCascade.final?.experimentalFeatures?.codeIntelRepositoryBadge?.enabled === true
 
+    // Remove leading repository name and possible leading revision, then compare the remaining routes to
+    // see if we should display the code intelligence badge for this route. We want this to be visible on
+    // the repo root page, as well as directory and code views, but not administrative/non-code views.
+    const matchRevisionAndRest = props.match.params.repoRevAndRest.slice(repoName.length)
+    const matchOnlyRest =
+        revision && matchRevisionAndRest.startsWith(`@${revision || ''}`)
+            ? matchRevisionAndRest.slice(revision.length + 1)
+            : matchRevisionAndRest
+    const isCodeIntelRepositoryBadgeVisibleOnRoute =
+        matchOnlyRest === '' || matchOnlyRest.startsWith('/-/tree') || matchOnlyRest.startsWith('/-/blob')
+
     const repoMatchURL = '/' + encodeURIPathComponent(repoName)
 
     const context: RepoContainerContext = {
@@ -431,7 +439,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                 )}
             </RepoHeaderContributionPortal>
 
-            {isCodeIntelRepositoryBadgeEnabled && (
+            {isCodeIntelRepositoryBadgeEnabled && isCodeIntelRepositoryBadgeVisibleOnRoute && (
                 <RepoHeaderContributionPortal
                     position="right"
                     priority={110}
@@ -439,8 +447,8 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                     {...repoHeaderContributionsLifecycleProps}
                 >
                     {({ actionType }) =>
-                        props.codeIntelligenceRepositoryMenu && actionType === 'nav' ? (
-                            <props.codeIntelligenceRepositoryMenu
+                        props.codeIntelligenceBadgeMenu && actionType === 'nav' ? (
+                            <props.codeIntelligenceBadgeMenu
                                 key="code-intelligence-status"
                                 repoName={repoName}
                                 revision={rawRevision || 'HEAD'}

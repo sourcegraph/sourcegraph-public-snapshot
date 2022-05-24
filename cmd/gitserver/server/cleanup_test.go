@@ -39,11 +39,7 @@ func (s *Server) testSetup(t *testing.T) {
 }
 
 func TestCleanup_computeStats(t *testing.T) {
-	root, err := os.MkdirTemp("", "gitserver-test-")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(root)
+	root := t.TempDir()
 
 	for _, name := range []string{"a", "b/d", "c"} {
 		p := path.Join(root, name, ".git")
@@ -116,11 +112,7 @@ insert into gitserver_repos(repo_id, shard_id, repo_size_bytes) values (3, 1, 22
 }
 
 func TestCleanupInactive(t *testing.T) {
-	root, err := os.MkdirTemp("", "gitserver-test-")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(root)
+	root := t.TempDir()
 
 	repoA := path.Join(root, testRepoA, ".git")
 	cmd := exec.Command("git", "--bare", "init", repoA)
@@ -205,11 +197,7 @@ func TestGitGCAuto(t *testing.T) {
 }
 
 func TestCleanupExpired(t *testing.T) {
-	root, err := os.MkdirTemp("", "gitserver-test-")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(root)
+	root := t.TempDir()
 
 	repoNew := path.Join(root, "repo-new", ".git")
 	repoOld := path.Join(root, "repo-old", ".git")
@@ -608,7 +596,7 @@ func TestRemoveRepoDirectory(t *testing.T) {
 		if err := database.Repos(db).Create(ctx, repo); err != nil {
 			t.Fatal(err)
 		}
-		if err := database.GitserverRepos(db).Upsert(ctx, &types.GitserverRepo{
+		if err := db.GitserverRepos().Upsert(ctx, &types.GitserverRepo{
 			RepoID:      repo.ID,
 			ShardID:     "test",
 			CloneStatus: types.CloneStatusCloned,
@@ -625,6 +613,17 @@ func TestRemoveRepoDirectory(t *testing.T) {
 	}
 
 	// Remove everything but github.com/foo/survivor
+	for _, d := range []string{
+		"github.com/foo/baz/.git",
+		"github.com/bam/bam/.git",
+		"example.com/repo/.git",
+	} {
+		if err := s.removeRepoDirectory(GitDir(filepath.Join(root, d))); err != nil {
+			t.Fatalf("failed to remove %s: %s", d, err)
+		}
+	}
+
+	// Removing them a second time is safe
 	for _, d := range []string{
 		"github.com/foo/baz/.git",
 		"github.com/bam/bam/.git",
@@ -653,7 +652,7 @@ func TestRemoveRepoDirectory(t *testing.T) {
 		if !ok {
 			t.Fatal("id mapping not found")
 		}
-		r, err := database.GitserverRepos(db).GetByID(ctx, id)
+		r, err := db.GitserverRepos().GetByID(ctx, id)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -839,10 +838,8 @@ func TestFreeUpSpace(t *testing.T) {
 	})
 	t.Run("oldest repo gets removed to free up space", func(t *testing.T) {
 		// Set up.
-		rd, err := os.MkdirTemp("", "freeUpSpace")
-		if err != nil {
-			t.Fatal(err)
-		}
+		rd := t.TempDir()
+
 		r1 := filepath.Join(rd, "repo1")
 		r2 := filepath.Join(rd, "repo2")
 		if err := makeFakeRepo(r1, 1000); err != nil {
@@ -1213,12 +1210,7 @@ func TestCleanup_setRepoSizes(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-
-	root, err := os.MkdirTemp("", "gitserver-test-")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(root)
+	root := t.TempDir()
 
 	for _, name := range []string{
 		"ghe.sgdev.org/sourcegraph/gorilla-websocket",

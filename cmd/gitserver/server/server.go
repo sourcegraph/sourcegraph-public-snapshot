@@ -427,8 +427,10 @@ func (s *Server) SyncRepoState(interval time.Duration, batchSize, perSecond int)
 		previousAddrs = currentAddrs
 
 		gitServerAddrs := gitserver.GitServerAddresses{
-			Addresses:     addrs,
-			PinnedServers: cfg.ExperimentalFeatures.GitServerPinnedRepos,
+			Addresses: addrs,
+		}
+		if cfg.ExperimentalFeatures != nil {
+			gitServerAddrs.PinnedServers = cfg.ExperimentalFeatures.GitServerPinnedRepos
 		}
 		if err := s.syncRepoState(gitServerAddrs, batchSize, perSecond, fullSync); err != nil {
 			log15.Error("Syncing repo state", "error ", err)
@@ -438,7 +440,8 @@ func (s *Server) SyncRepoState(interval time.Duration, batchSize, perSecond int)
 	}
 }
 
-// StartClonePipeline clones repos asynchronosuly. It creates a producer-consumer pipeline.
+// StartClonePipeline clones repos asynchronously. It creates a producer-consumer
+// pipeline.
 func (s *Server) StartClonePipeline(ctx context.Context) {
 	jobs := make(chan *cloneJob)
 
@@ -556,7 +559,7 @@ func (s *Server) syncRepoState(gitServerAddrs gitserver.GitServerAddresses, batc
 	}
 
 	ctx := s.ctx
-	store := database.GitserverRepos(s.DB)
+	store := s.DB.GitserverRepos()
 
 	// The rate limit should be enforced across all instances
 	perSecond = perSecond / len(addrs)
@@ -595,12 +598,21 @@ func (s *Server) syncRepoState(gitServerAddrs gitserver.GitServerAddresses, batc
 		repoStateUpsertCounter.WithLabelValues("true").Add(float64(len(batch)))
 	}
 
-	options := database.IterateRepoGitserverStatusOptions{}
+	options := database.IterateRepoGitserverStatusOptions{
+		// We also want to include deleted repos as they may still be cloned on disk
+		IncludeDeleted: true,
+	}
 	if !fullSync {
 		options.OnlyWithoutShard = true
 	}
 	err := store.IterateRepoGitserverStatus(ctx, options, func(repo types.RepoGitserverStatus) error {
 		repoSyncStateCounter.WithLabelValues("check").Inc()
+
+		// We may have a deleted repo, we need to extract the original name both to
+		// ensure that the shard check is correct and also so that we can find the
+		// directory.
+		repo.Name = api.UndeletedRepoName(repo.Name)
+
 		// Ensure we're only dealing with repos we are responsible for
 		addr := addrForKey(repo.Name, gitServerAddrs.Addresses)
 		if !s.hostnameMatch(addr) {
@@ -1173,7 +1185,7 @@ func (s *Server) handleBatchLog(w http.ResponseWriter, r *http.Request) {
 	// Run git log for a single repository.
 	// Invoked multiple times from the handler defined below.
 	performGitLogCommand := func(ctx context.Context, repoCommit api.RepoCommit, format string) (output string, isRepoCloned bool, err error) {
-		ctx, endObservation := operations.batchLogSingle.With(ctx, &err, observation.Args{
+		ctx, _, endObservation := operations.batchLogSingle.With(ctx, &err, observation.Args{
 			LogFields: append(
 				[]log.Field{
 					log.String("format", format),
@@ -1206,7 +1218,7 @@ func (s *Server) handleBatchLog(w http.ResponseWriter, r *http.Request) {
 
 	// Handles the /batch-log route
 	instrumentedHandler := func(ctx context.Context) (statusCodeOnError int, err error) {
-		ctx, logger, endObservation := operations.batchLog.WithAndLogger(ctx, &err, observation.Args{})
+		ctx, logger, endObservation := operations.batchLog.With(ctx, &err, observation.Args{})
 		defer func() {
 			endObservation(1, observation.Args{LogFields: []log.Field{
 				log.Int("statusCodeOnError", statusCodeOnError),
@@ -1718,7 +1730,7 @@ func (s *Server) setLastError(ctx context.Context, name api.RepoName, error stri
 	if s.DB == nil {
 		return nil
 	}
-	return database.GitserverRepos(s.DB).SetLastError(ctx, name, error, s.Hostname)
+	return s.DB.GitserverRepos().SetLastError(ctx, name, error, s.Hostname)
 }
 
 func (s *Server) setLastFetched(ctx context.Context, name api.RepoName) error {
@@ -1738,7 +1750,7 @@ func (s *Server) setLastFetched(ctx context.Context, name api.RepoName) error {
 		return errors.Wrapf(err, "failed to get last changed for %s", name)
 	}
 
-	return database.GitserverRepos(s.DB).SetLastFetched(ctx, name, database.GitserverFetchData{
+	return s.DB.GitserverRepos().SetLastFetched(ctx, name, database.GitserverFetchData{
 		LastFetched: lastFetched,
 		LastChanged: lastChanged,
 		ShardID:     s.Hostname,
@@ -1760,7 +1772,7 @@ func (s *Server) setCloneStatus(ctx context.Context, name api.RepoName, status t
 	if s.DB == nil {
 		return nil
 	}
-	return database.GitserverRepos(s.DB).SetCloneStatus(ctx, name, status, s.Hostname)
+	return s.DB.GitserverRepos().SetCloneStatus(ctx, name, status, s.Hostname)
 }
 
 // setCloneStatusNonFatal is the same as setCloneStatus but only logs errors
@@ -1776,7 +1788,7 @@ func (s *Server) setRepoSize(ctx context.Context, name api.RepoName) error {
 		return nil
 	}
 
-	return database.GitserverRepos(s.DB).SetRepoSize(ctx, name, dirSize(s.dir(name).Path(".")), s.Hostname)
+	return s.DB.GitserverRepos().SetRepoSize(ctx, name, dirSize(s.dir(name).Path(".")), s.Hostname)
 }
 
 // setGitAttributes writes our global gitattributes to

@@ -1,6 +1,8 @@
 import { storiesOf } from '@storybook/react'
 import sinon from 'sinon'
 
+import { Typography } from '@sourcegraph/wildcard'
+
 import { WebStory } from '../../../../components/WebStory'
 import { mockAuthenticatedUser } from '../../testing/util'
 import { ActionProps } from '../FormActionArea'
@@ -31,25 +33,25 @@ add('EmailAction', () => (
     <WebStory>
         {() => (
             <>
-                <h2>Action card disabled</h2>
+                <Typography.H2>Action card disabled</Typography.H2>
                 <EmailAction {...defaultProps} disabled={true} />
 
-                <h2>Closed, not populated</h2>
+                <Typography.H2>Closed, not populated</Typography.H2>
                 <EmailAction {...defaultProps} />
 
-                <h2>Open, not populated</h2>
+                <Typography.H2>Open, not populated</Typography.H2>
                 <EmailAction {...defaultProps} _testStartOpen={true} />
 
-                <h2>Closed, populated, enabled</h2>
+                <Typography.H2>Closed, populated, enabled</Typography.H2>
                 <EmailAction {...defaultProps} action={action} />
 
-                <h2>Open, populated, enabled</h2>
+                <Typography.H2>Open, populated, enabled</Typography.H2>
                 <EmailAction {...defaultProps} _testStartOpen={true} action={action} />
 
-                <h2>Closed, populated, disabled</h2>
+                <Typography.H2>Closed, populated, disabled</Typography.H2>
                 <EmailAction {...defaultProps} action={{ ...action, enabled: false }} />
 
-                <h2>Open, populated, disabled</h2>
+                <Typography.H2>Open, populated, disabled</Typography.H2>
                 <EmailAction {...defaultProps} _testStartOpen={true} action={{ ...action, enabled: false }} />
             </>
         )}

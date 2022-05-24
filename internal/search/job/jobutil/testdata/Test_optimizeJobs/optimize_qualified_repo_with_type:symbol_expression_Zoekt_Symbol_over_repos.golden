@@ -1,0 +1,65 @@
+INPUT:
+
+repo:derp foo and bar not baz type:symbol
+
+BASE:
+
+(ALERT
+  (TIMEOUT
+    20s
+    (LIMIT
+      500
+      (PARALLEL
+        REPOPAGER
+          ZoektSymbolSearchJob)
+        (AND
+          (LIMIT
+            40000
+            (PARALLEL
+              REPOPAGER
+                SymbolSearcherJob)
+              ComputeExcludedReposJob))
+          (LIMIT
+            40000
+            (PARALLEL
+              REPOPAGER
+                SymbolSearcherJob)
+              ComputeExcludedReposJob))
+          (LIMIT
+            40000
+            (PARALLEL
+              REPOPAGER
+                SymbolSearcherJob)
+              ComputeExcludedReposJob)))))))
+
+OPTIMIZED:
+
+(ALERT
+  (TIMEOUT
+    20s
+    (LIMIT
+      500
+      (PARALLEL
+        REPOPAGER
+          ZoektSymbolSearchJob)
+        (PARALLEL
+          NoopJob
+          (AND
+            (LIMIT
+              40000
+              (PARALLEL
+                REPOPAGER
+                  SymbolSearcherJob)
+                ComputeExcludedReposJob))
+            (LIMIT
+              40000
+              (PARALLEL
+                REPOPAGER
+                  SymbolSearcherJob)
+                ComputeExcludedReposJob))
+            (LIMIT
+              40000
+              (PARALLEL
+                REPOPAGER
+                  SymbolSearcherJob)
+                ComputeExcludedReposJob))))))))

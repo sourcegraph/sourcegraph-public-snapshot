@@ -7,7 +7,7 @@ import DotsHorizontalIcon from 'mdi-react/DotsHorizontalIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 
 import { pluralize } from '@sourcegraph/common'
-import { Button, ButtonGroup, TooltipController, Link, Icon } from '@sourcegraph/wildcard'
+import { Button, ButtonGroup, TooltipController, Link, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../components/time/Timestamp'
 import { GitCommitFields } from '../../graphql-operations'
@@ -54,10 +54,18 @@ export interface GitCommitNodeProps {
 
     /** An optional additional css class name to apply this to commit node message subject */
     messageSubjectClassName?: string
+
+    /**
+     * Element that should wrap the commit data. Only use 'li' when rendering the component in a list
+     *
+     * Note: This is primarily required for support when using this component in `FilteredConnection`
+     * Tracking issue to migrate away from this component: https://github.com/sourcegraph/sourcegraph/issues/23157
+     * */
+    wrapperElement?: 'div' | 'li'
 }
 
 /** Displays a Git commit. */
-export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
+export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitCommitNodeProps>> = ({
     node,
     afterElement,
     className,
@@ -70,6 +78,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
     preferAbsoluteTimestamps,
     diffMode,
     onHandleDiffMode,
+    wrapperElement: WrapperElement = 'div',
 }) => {
     const [showCommitMessageBody, setShowCommitMessageBody] = useState<boolean>(false)
     const [flashCopiedToClipboardMessage, setFlashCopiedToClipboardMessage] = useState<boolean>(false)
@@ -154,7 +163,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
         <div className={classNames('w-100', styles.shaAndParents)}>
             <div className="d-flex mb-1">
                 <span className={styles.shaAndParentsLabel}>Commit:</span>
-                <code className={styles.shaAndParentsSha}>
+                <Typography.Code className={styles.shaAndParentsSha}>
                     {node.oid}{' '}
                     <Button
                         variant="icon"
@@ -164,7 +173,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                     >
                         <Icon as={ContentCopyIcon} />
                     </Button>
-                </code>
+                </Typography.Code>
             </div>
             <div className="align-items-center d-flex">
                 {node.parents.length > 0 ? (
@@ -178,7 +187,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                         {node.parents.map((parent, index) => (
                             <div className="d-flex" key={index}>
                                 <Link className={styles.shaAndParentsParent} to={parent.url}>
-                                    <code>{parent.oid}</code>
+                                    <Typography.Code>{parent.oid}</Typography.Code>
                                 </Link>
                                 <Button
                                     variant="icon"
@@ -225,14 +234,17 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
     )
 
     const oidElement = (
-        <code className={styles.oid} data-testid="git-commit-node-oid">
+        <Typography.Code className={styles.oid} data-testid="git-commit-node-oid">
             {node.abbreviatedOID}
-        </code>
+        </Typography.Code>
     )
 
     if (sidebar) {
         return (
-            <div key={node.id} className={classNames(styles.gitCommitNode, styles.gitCommitNodeCompact, className)}>
+            <WrapperElement
+                key={node.id}
+                className={classNames(styles.gitCommitNode, styles.gitCommitNodeCompact, className)}
+            >
                 <div className="w-100 d-flex justify-content-between align-items-center flex-wrap-reverse">
                     {bylineElement}
                     <small className={classNames('text-muted', styles.messageTimestamp)}>
@@ -244,12 +256,12 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                     </small>
                     <Link to={node.canonicalURL}>{oidElement}</Link>
                 </div>
-            </div>
+            </WrapperElement>
         )
     }
 
     return (
-        <div
+        <WrapperElement
             key={node.id}
             className={classNames(styles.gitCommitNode, compact && styles.gitCommitNodeCompact, className)}
         >
@@ -268,6 +280,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                                                 variant="secondary"
                                                 as={Link}
                                                 size="sm"
+                                                aria-label="View this commit"
                                             >
                                                 <strong>{oidElement}</strong>
                                             </Button>
@@ -278,6 +291,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                                                 }
                                                 variant="secondary"
                                                 size="sm"
+                                                aria-label="Copy full SHA"
                                             >
                                                 <Icon className="small" as={ContentCopyIcon} />
                                             </Button>
@@ -289,6 +303,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                                                 variant="secondary"
                                                 size="sm"
                                                 as={Link}
+                                                aria-label="View files at this commit"
                                             >
                                                 <Icon className="mr-1" as={FileDocumentIcon} />
                                             </Button>
@@ -312,6 +327,6 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                     </div>
                 )}
             </>
-        </div>
+        </WrapperElement>
     )
 }

@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"os"
+	"testing"
 )
 
 func createZip(files map[string]string) ([]byte, error) {
@@ -45,22 +46,20 @@ func mockZipFile(data []byte) (*zipFile, error) {
 	return zf, nil
 }
 
-func tempZipFileOnDisk(data []byte) (string, func(), error) {
+func tempZipFileOnDisk(t *testing.T, data []byte) string {
+	t.Helper()
 	z, err := mockZipFile(data)
 	if err != nil {
-		return "", nil, err
+		t.Fatal(err)
 	}
-	d, err := os.MkdirTemp("", "temp_zip_dir")
-	if err != nil {
-		return "", nil, err
-	}
+	d := t.TempDir()
 	f, err := os.CreateTemp(d, "temp_zip")
 	if err != nil {
-		return "", nil, err
+		t.Fatal(err)
 	}
 	_, err = f.Write(z.Data)
 	if err != nil {
-		return "", nil, err
+		t.Fatal(err)
 	}
-	return f.Name(), func() { os.RemoveAll(d) }, nil
+	return f.Name()
 }

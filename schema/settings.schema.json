@@ -56,7 +56,7 @@
           }
         },
         "apiDocs": {
-          "description": "Enables API documentation.",
+          "description": "Deprecated.",
           "type": "boolean",
           "default": true,
           "!go": {
@@ -299,6 +299,14 @@
           "type": "string",
           "default": "monaco",
           "enum": ["monaco", "codemirror6"],
+          "!go": {
+            "pointer": true
+          }
+        },
+        "goCodeCheckerTemplates": {
+          "description": "Shows a panel with code insights templates for go code checker results.",
+          "type": "boolean",
+          "default": false,
           "!go": {
             "pointer": true
           }

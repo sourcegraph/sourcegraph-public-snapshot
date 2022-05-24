@@ -3,7 +3,6 @@ package batches
 import (
 	"context"
 
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -15,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type janitorJob struct{}
@@ -23,13 +23,17 @@ func NewJanitorJob() job.Job {
 	return &janitorJob{}
 }
 
+func (j *janitorJob) Description() string {
+	return ""
+}
+
 func (j *janitorJob) Config() []env.Config {
 	return []env.Config{janitorConfigInst}
 }
 
-func (j *janitorJob) Routines(_ context.Context) ([]goroutine.BackgroundRoutine, error) {
+func (j *janitorJob) Routines(_ context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	observationContext := &observation.Context{
-		Logger:     log15.Root(),
+		Logger:     logger.Scoped("routines", "janitor job routines"),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}

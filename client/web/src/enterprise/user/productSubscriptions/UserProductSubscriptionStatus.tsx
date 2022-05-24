@@ -3,7 +3,7 @@ import React, { useState, useCallback } from 'react'
 import InformationIcon from 'mdi-react/InformationIcon'
 import KeyIcon from 'mdi-react/KeyIcon'
 
-import { Button, CardFooter, Link, Icon } from '@sourcegraph/wildcard'
+import { Button, CardFooter, Link, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { CopyableText } from '../../../components/CopyableText'
 import { formatUserCount, mailtoSales } from '../../../productSubscription/helpers'
@@ -23,7 +23,7 @@ interface Props {
  * Displays a certificate with information about and status for a user's product subscription. It
  * supports both billing-linked and non-billing-linked subscriptions.
  */
-export const UserProductSubscriptionStatus: React.FunctionComponent<Props> = ({
+export const UserProductSubscriptionStatus: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     subscriptionName,
     productNameWithBrand,
     userCount,
@@ -54,7 +54,7 @@ export const UserProductSubscriptionStatus: React.FunctionComponent<Props> = ({
                     </CardFooter>
                     {showLicenseKey && (
                         <CardFooter>
-                            <h3>License key</h3>
+                            <Typography.H3>License key</Typography.H3>
                             {licenseKey ? (
                                 <>
                                     <CopyableText text={licenseKey} className="d-block" />
@@ -62,10 +62,8 @@ export const UserProductSubscriptionStatus: React.FunctionComponent<Props> = ({
                                         <Icon className="mr-1" as={InformationIcon} />{' '}
                                         <span>
                                             Use this license key as the{' '}
-                                            <code>
-                                                <strong>licenseKey</strong>
-                                            </code>{' '}
-                                            property value in Sourcegraph site configuration.
+                                            <Typography.Code weight="bold">licenseKey</Typography.Code> property value
+                                            in Sourcegraph site configuration.
                                         </span>
                                     </small>
                                     <LicenseGenerationKeyWarning className="mb-0 mt-1" />

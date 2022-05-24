@@ -4,18 +4,18 @@ import (
 	"context"
 	"os"
 
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/workerdb"
+	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // migrator configures an out of band migration runner process to execute in the background.
@@ -31,11 +31,15 @@ func NewMigrator(registerMigrators func(db database.DB, outOfBandMigrationRunner
 	}
 }
 
+func (m *migrator) Description() string {
+	return ""
+}
+
 func (m *migrator) Config() []env.Config {
 	return nil
 }
 
-func (m *migrator) Routines(ctx context.Context) ([]goroutine.BackgroundRoutine, error) {
+func (m *migrator) Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	sqlDB, err := workerdb.Init()
 	if err != nil {
 		return nil, err
@@ -43,7 +47,7 @@ func (m *migrator) Routines(ctx context.Context) ([]goroutine.BackgroundRoutine,
 	db := database.NewDB(sqlDB)
 
 	observationContext := &observation.Context{
-		Logger:     log15.Root(),
+		Logger:     logger.Scoped("routines", "migrator routines"),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
@@ -54,7 +58,7 @@ func (m *migrator) Routines(ctx context.Context) ([]goroutine.BackgroundRoutine,
 	}
 
 	if os.Getenv("SRC_DISABLE_OOBMIGRATION_VALIDATION") != "" {
-		log15.Warn("Skipping out-of-band migrations check")
+		logger.Warn("Skipping out-of-band migrations check")
 	} else {
 		if err := oobmigration.ValidateOutOfBandMigrationRunner(ctx, db, outOfBandMigrationRunner); err != nil {
 			return nil, err

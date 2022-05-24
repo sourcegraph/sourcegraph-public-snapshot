@@ -188,9 +188,9 @@ func mockRepoComparison(t *testing.T, baseRev, headRev, diff string) {
 
 	spec := fmt.Sprintf("%s...%s", baseRev, headRev)
 
-	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
+	gitserver.Mocks.ResolveRevision = func(spec string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		if spec != baseRev && spec != headRev {
-			t.Fatalf("git.Mocks.ResolveRevision received unknown spec: %s", spec)
+			t.Fatalf("gitserver.Mocks.ResolveRevision received unknown spec: %s", spec)
 		}
 		return api.CommitID(spec), nil
 	}

@@ -8,7 +8,6 @@ import { isLegacyFragment, parseQueryAndHash, toRepoURL } from '@sourcegraph/sha
 
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { ActionItemsBar } from '../extensions/components/ActionItemsBar'
-import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import { GettingStartedTour } from '../tour/GettingStartedTour'
 import { formatHash, formatLineOrPositionOrRange } from '../util/url'
 
@@ -20,8 +19,7 @@ import { RepoRevisionSidebar } from './RepoRevisionSidebar'
 import { TreePage } from './tree/TreePage'
 
 export interface RepositoryFileTreePageProps
-    extends FeatureFlagProps,
-        RepoRevisionContainerContext,
+    extends RepoRevisionContainerContext,
         RouteComponentProps<{
             objectType: 'blob' | 'tree' | undefined
             filePath: string | undefined
@@ -33,13 +31,14 @@ const hideRepoRevisionContent = localStorage.getItem('hideRepoRevContent')
 
 /** A page that shows a file or a directory (tree view) in a repository at the
  * current revision. */
-export const RepositoryFileTreePage: React.FunctionComponent<RepositoryFileTreePageProps> = props => {
+export const RepositoryFileTreePage: React.FunctionComponent<
+    React.PropsWithChildren<RepositoryFileTreePageProps>
+> = props => {
     const {
         repo,
         resolvedRev: { commitID, defaultBranch },
         match,
         globbing,
-        featureFlags,
         onExtensionAlertDismissed,
         ...context
     } = props
@@ -105,7 +104,6 @@ export const RepositoryFileTreePage: React.FunctionComponent<RepositoryFileTreeP
                 className="repo-revision-container__sidebar"
                 isDir={objectType === 'tree'}
                 defaultBranch={defaultBranch || 'HEAD'}
-                featureFlags={featureFlags}
             />
             {!hideRepoRevisionContent && (
                 // Add `.blob-status-bar__container` because this is the

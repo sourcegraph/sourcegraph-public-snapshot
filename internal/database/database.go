@@ -66,16 +66,16 @@ type db struct {
 	*basestore.Store
 }
 
-func (d *db) QueryContext(ctx context.Context, q string, args ...interface{}) (*sql.Rows, error) {
+func (d *db) QueryContext(ctx context.Context, q string, args ...any) (*sql.Rows, error) {
 	return d.Handle().DB().QueryContext(ctx, q, args...)
 }
 
-func (d *db) ExecContext(ctx context.Context, q string, args ...interface{}) (sql.Result, error) {
+func (d *db) ExecContext(ctx context.Context, q string, args ...any) (sql.Result, error) {
 	return d.Handle().DB().ExecContext(ctx, q, args...)
 
 }
 
-func (d *db) QueryRowContext(ctx context.Context, q string, args ...interface{}) *sql.Row {
+func (d *db) QueryRowContext(ctx context.Context, q string, args ...any) *sql.Row {
 	return d.Handle().DB().QueryRowContext(ctx, q, args...)
 }
 
@@ -120,15 +120,15 @@ func (d *db) FeatureFlags() FeatureFlagStore {
 }
 
 func (d *db) GitserverRepos() GitserverRepoStore {
-	return NewGitserverReposWith(d.Store)
+	return GitserverReposWith(d.Store)
 }
 
 func (d *db) GitserverLocalClone() GitserverLocalCloneStore {
-	return NewGitserverLocalCloneStoreWith(d.Store)
+	return GitserverLocalCloneStoreWith(d.Store)
 }
 
 func (d *db) GlobalState() GlobalStateStore {
-	return &globalStateStore{Store: basestore.NewWithHandle(d.Handle())}
+	return GlobalStateWith(d.Store)
 }
 
 func (d *db) Namespaces() NamespaceStore {

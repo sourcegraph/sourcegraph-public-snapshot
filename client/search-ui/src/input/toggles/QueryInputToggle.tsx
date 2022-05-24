@@ -36,7 +36,11 @@ export interface ToggleProps {
 /**
  * A toggle displayed in the QueryInput.
  */
-export const QueryInputToggle: React.FunctionComponent<ToggleProps> = ({ onToggle, interactive = true, ...props }) => {
+export const QueryInputToggle: React.FunctionComponent<React.PropsWithChildren<ToggleProps>> = ({
+    onToggle,
+    interactive = true,
+    ...props
+}) => {
     const toggleCheckbox = useRef<HTMLDivElement | null>(null)
 
     const disabledRule = useMemo(() => props.disableOn?.find(({ condition }) => condition), [props.disableOn])
@@ -92,7 +96,7 @@ export const QueryInputToggle: React.FunctionComponent<ToggleProps> = ({ onToggl
             aria-label={`${props.title} toggle`}
             {...interactiveProps}
         >
-            <Icon as={props.icon} />
+            <Icon role="img" aria-hidden={true} as={props.icon} />
         </Button>
     )
 }

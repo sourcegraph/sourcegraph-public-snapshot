@@ -11,7 +11,6 @@ import { Tabs, Tab, TabList, TabPanel, TabPanels } from '@sourcegraph/wildcard'
 
 import { HomePanelsProps } from '..'
 import { AuthenticatedUser } from '../../auth'
-import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { CollaboratorsFragment, HomePanelsQueryResult, HomePanelsQueryVariables } from '../../graphql-operations'
 import { GettingStartedTour } from '../../tour/GettingStartedTour'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -32,7 +31,7 @@ import { SavedSearchesPanel } from './SavedSearchesPanel'
 
 import styles from './HomePanels.module.scss'
 
-interface Props extends TelemetryProps, HomePanelsProps, FeatureFlagProps {
+interface Props extends TelemetryProps, HomePanelsProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
     showCollaborators: boolean
@@ -75,7 +74,7 @@ export const HOME_PANELS_QUERY = gql`
     ${collaboratorsFragment}
 `
 
-export const HomePanels: React.FunctionComponent<Props> = (props: Props) => {
+export const HomePanels: React.FunctionComponent<React.PropsWithChildren<Props>> = (props: Props) => {
     const userId = props.authenticatedUser?.id || ''
     const showCollaborators = props.showCollaborators
     const showSavedSearches = !props.isSourcegraphDotCom
@@ -132,7 +131,6 @@ export const HomePanels: React.FunctionComponent<Props> = (props: Props) => {
                 <GettingStartedTour
                     isSourcegraphDotCom={props.isSourcegraphDotCom}
                     telemetryService={props.telemetryService}
-                    featureFlags={props.featureFlags}
                     isAuthenticated={true}
                     className="w-100"
                     variant="horizontal"
@@ -181,7 +179,7 @@ interface CollaboratorsTabPanelProps extends Props {
     collaboratorsFragment: null | CollaboratorsFragment
 }
 
-const CollaboratorsTabPanel: React.FunctionComponent<CollaboratorsTabPanelProps> = ({
+const CollaboratorsTabPanel: React.FunctionComponent<React.PropsWithChildren<CollaboratorsTabPanelProps>> = ({
     data,
     collaboratorsFragment,
     ...props

@@ -10,6 +10,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 	"unicode/utf8"
 
@@ -17,13 +18,13 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gosyntect"
-	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsiftyped"
@@ -33,24 +34,34 @@ import (
 var (
 	syntectServer = env.Get("SRC_SYNTECT_SERVER", "http://syntect-server:9238", "syntect_server HTTP(s) address")
 	client        *gosyntect.Client
-
-	highlightOp *observation.Operation
 )
+
+var (
+	highlightOpOnce sync.Once
+	highlightOp     *observation.Operation
+)
+
+func getHighlightOp() *observation.Operation {
+	highlightOpOnce.Do(func() {
+		obsvCtx := observation.Context{
+			HoneyDataset: &honey.Dataset{
+				Name:       "codeintel-syntax-highlighting",
+				SampleRate: 10, // 1 in 10
+			},
+		}
+
+		highlightOp = obsvCtx.Operation(observation.Op{
+			Name:        "codeintel.syntax-highlight.Code",
+			LogFields:   []otlog.Field{},
+			ErrorFilter: func(err error) observation.ErrorFilterBehaviour { return observation.EmitForHoney },
+		})
+	})
+
+	return highlightOp
+}
 
 func init() {
 	client = gosyntect.New(syntectServer)
-
-	obsvCtx := observation.Context{
-		HoneyDataset: &honey.Dataset{
-			Name:       "codeintel-syntax-highlighting",
-			SampleRate: 10, // 1 in 10
-		},
-	}
-	highlightOp = obsvCtx.Operation(observation.Op{
-		Name:        "codeintel.syntax-highlight.Code",
-		LogFields:   []otlog.Field{},
-		ErrorFilter: func(err error) observation.ErrorFilterBehaviour { return observation.EmitForHoney },
-	})
 }
 
 // IsBinary is a helper to tell if the content of a file is binary or not.
@@ -328,7 +339,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		filetypeQuery.Engine = EngineSyntect
 	}
 
-	ctx, errCollector, trace, endObservation := highlightOp.WithErrorsAndLogger(ctx, &err, observation.Args{LogFields: []otlog.Field{
+	ctx, errCollector, trace, endObservation := getHighlightOp().WithErrorsAndLogger(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("revision", p.Metadata.Revision),
 		otlog.String("repo", p.Metadata.RepoName),
 		otlog.String("fileExtension", filepath.Ext(p.Filepath)),
@@ -414,6 +425,15 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 
 	resp, err := client.Highlight(ctx, query, filetypeQuery.Engine == EngineTreeSitter)
 
+	unhighlightedCode := func(err error, code string) (*HighlightedCode, bool, error) {
+		errCollector.Collect(&err)
+		plainResponse, tableErr := generatePlainTable(code)
+		if tableErr != nil {
+			return nil, true, errors.CombineErrors(err, tableErr)
+		}
+		return plainResponse, false, err
+	}
+
 	if ctx.Err() == context.DeadlineExceeded {
 		log15.Warn(
 			"syntax highlighting took longer than 3s, this *could* indicate a bug in Sourcegraph",
@@ -443,30 +463,26 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		if known, problem := identifyError(err); known {
 			// A problem that can sometimes be expected has occurred. We will
 			// identify such problems through metrics/logs and resolve them on
-			// a case-by-case basis, but they are frequent enough that we want
-			// to fallback to plaintext rendering instead of just giving the
-			// user an error.
+			// a case-by-case basis.
 			trace.Log(otlog.Bool(problem, true))
-			errCollector.Collect(&err)
 			prometheusStatus = problem
-			plainResponse, err := generatePlainTable(code)
-			return plainResponse, false, err
 		}
 
-		return nil, false, err
+		// It is not useful to surface errors in the UI, so fall back to
+		// unhighlighted text.
+		return unhighlightedCode(err, code)
 	}
 
 	if filetypeQuery.Engine == EngineTreeSitter {
 		document := new(lsiftyped.Document)
 		data, err := base64.StdEncoding.DecodeString(resp.Data)
 
-		// TODO: Should we generate the plaintext table here?
 		if err != nil {
-			return nil, false, err
+			return unhighlightedCode(err, code)
 		}
 		err = proto.Unmarshal(data, document)
 		if err != nil {
-			return nil, false, err
+			return unhighlightedCode(err, code)
 		}
 
 		// TODO(probably not this PR): I would like to not

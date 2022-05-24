@@ -8,7 +8,7 @@ import { Observable } from 'rxjs'
 
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, Button, Link, Alert, Icon } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Button, Link, Alert, Icon, Typography } from '@sourcegraph/wildcard'
 
 import {
     FilteredConnection,
@@ -25,7 +25,7 @@ interface RepositoryNodeProps {
     node: SiteAdminRepositoryFields
 }
 
-const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({ node }) => (
+const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<RepositoryNodeProps>> = ({ node }) => (
     <li
         className="repository-node list-group-item py-2"
         data-test-repository={node.name}
@@ -115,7 +115,11 @@ const FILTERS: FilteredConnectionFilter[] = [
 /**
  * A page displaying the repositories on this site.
  */
-export const SiteAdminRepositoriesPage: React.FunctionComponent<Props> = ({ history, location, telemetryService }) => {
+export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    history,
+    location,
+    telemetryService,
+}) => {
     useEffect(() => {
         telemetryService.logViewEvent('SiteAdminRepos')
     }, [telemetryService])
@@ -147,7 +151,7 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<Props> = ({ hist
                     statuses are displayed below.
                 </Alert>
             )}
-            <h2>Repositories</h2>
+            <Typography.H2>Repositories</Typography.H2>
             <p>
                 Repositories are synced from connected{' '}
                 <Link to="/site-admin/external-services" data-testid="test-repositories-code-host-connections-link">

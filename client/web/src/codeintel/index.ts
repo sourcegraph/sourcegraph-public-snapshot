@@ -1,9 +1,10 @@
-import { RepositoryMenu } from './RepositoryMenu'
+import { CodeIntelligenceBadge } from './CodeIntelligenceBadge'
 
 /**
  * Common props for components needing to decide whether to show Code intelligence
  */
 export interface CodeIntelligenceProps {
     codeIntelligenceEnabled: boolean
-    codeIntelligenceRepositoryMenu?: typeof RepositoryMenu
+    codeIntelligenceBadgeMenu?: typeof CodeIntelligenceBadge
+    codeIntelligenceBadgeContent?: typeof CodeIntelligenceBadge
 }

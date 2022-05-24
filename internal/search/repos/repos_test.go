@@ -15,10 +15,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -29,7 +29,7 @@ func TestMain(m *testing.M) {
 
 func TestRevisionValidation(t *testing.T) {
 	// mocks a repo repoFoo with revisions revBar and revBas
-	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
+	gitserver.Mocks.ResolveRevision = func(spec string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		// trigger errors
 		if spec == "bad_commit" {
 			return "", gitdomain.BadCommitError{}
@@ -48,7 +48,7 @@ func TestRevisionValidation(t *testing.T) {
 		}
 		return "", &gitdomain.RevisionNotFoundError{Repo: "repoFoo", Spec: spec}
 	}
-	defer func() { git.Mocks.ResolveRevision = nil }()
+	defer func() { gitserver.Mocks.ResolveRevision = nil }()
 
 	tests := []struct {
 		repoFilters              []string
@@ -261,7 +261,7 @@ func TestSearchRevspecs(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.descr, func(t *testing.T) {
-			pats, err := findPatternRevs(test.specs)
+			_, pats, err := findPatternRevs(test.specs)
 			if err != nil {
 				if test.err == nil {
 					t.Errorf("unexpected error: '%s'", err)
@@ -288,14 +288,14 @@ func TestSearchRevspecs(t *testing.T) {
 
 func BenchmarkGetRevsForMatchedRepo(b *testing.B) {
 	b.Run("2 conflicting", func(b *testing.B) {
-		pats, _ := findPatternRevs([]string{".*o@123456", "foo@234567"})
+		_, pats, _ := findPatternRevs([]string{".*o@123456", "foo@234567"})
 		for i := 0; i < b.N; i++ {
 			_, _ = getRevsForMatchedRepo("foo", pats)
 		}
 	})
 
 	b.Run("multiple overlapping", func(b *testing.B) {
-		pats, _ := findPatternRevs([]string{".*o@a:b:c:d", "foo@b:c:d:e", "foo@c:d:e:f"})
+		_, pats, _ := findPatternRevs([]string{".*o@a:b:c:d", "foo@b:c:d:e", "foo@c:d:e:f"})
 		for i := 0; i < b.N; i++ {
 			_, _ = getRevsForMatchedRepo("foo", pats)
 		}
@@ -489,7 +489,7 @@ func TestResolveRepositoriesWithSearchContext(t *testing.T) {
 		{Repo: repoB, Revisions: []string{"branch-2"}},
 	}
 
-	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
+	gitserver.Mocks.ResolveRevision = func(spec string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		return api.CommitID(spec), nil
 	}
 

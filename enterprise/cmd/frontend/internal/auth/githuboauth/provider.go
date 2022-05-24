@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/dghubble/gologin"
-	"github.com/dghubble/gologin/github"
-	goauth2 "github.com/dghubble/gologin/oauth2"
+	"github.com/dghubble/gologin/v2"
+	"github.com/dghubble/gologin/v2/github"
+	goauth2 "github.com/dghubble/gologin/v2/oauth2"
 	"github.com/inconshreveable/log15"
 	"golang.org/x/oauth2"
 
@@ -61,11 +61,12 @@ func parseProvider(p *schema.GitHubAuthProvider, db database.DB, sourceCfg schem
 			return github.CallbackHandler(
 				&oauth2Cfg,
 				oauth.SessionIssuer(db, &sessionIssuerHelper{
-					CodeHost:    codeHost,
-					db:          db,
-					clientID:    p.ClientID,
-					allowSignup: p.AllowSignup,
-					allowOrgs:   p.AllowOrgs,
+					CodeHost:     codeHost,
+					db:           db,
+					clientID:     p.ClientID,
+					allowSignup:  p.AllowSignup,
+					allowOrgs:    p.AllowOrgs,
+					allowOrgsMap: p.AllowOrgsMap,
 				}, sessionKey),
 				http.HandlerFunc(failureHandler),
 			)

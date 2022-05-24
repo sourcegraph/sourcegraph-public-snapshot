@@ -3,19 +3,20 @@ package codeintel
 import (
 	"context"
 
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/janitor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/executorqueue"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type janitorJob struct{}
@@ -24,33 +25,37 @@ func NewJanitorJob() job.Job {
 	return &janitorJob{}
 }
 
+func (j *janitorJob) Description() string {
+	return ""
+}
+
 func (j *janitorJob) Config() []env.Config {
 	return []env.Config{janitorConfigInst}
 }
 
-func (j *janitorJob) Routines(ctx context.Context) ([]goroutine.BackgroundRoutine, error) {
+func (j *janitorJob) Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	observationContext := &observation.Context{
-		Logger:     log15.Root(),
+		Logger:     logger.Scoped("routines", "janitor job routines"),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	dbStore, err := InitDBStore()
+	dbStore, err := codeintel.InitDBStore()
 	if err != nil {
 		return nil, err
 	}
 
-	lsifStore, err := InitLSIFStore()
+	lsifStore, err := codeintel.InitLSIFStore()
 	if err != nil {
 		return nil, err
 	}
 
-	dependencyIndexingStore, err := InitDependencySyncingStore()
+	dependencyIndexingStore, err := codeintel.InitDependencySyncingStore()
 	if err != nil {
 		return nil, err
 	}
 
-	gitserverClient, err := InitGitserverClient()
+	gitserverClient, err := codeintel.InitGitserverClient()
 	if err != nil {
 		return nil, err
 	}
@@ -79,9 +84,6 @@ func (j *janitorJob) Routines(ctx context.Context) ([]goroutine.BackgroundRoutin
 		janitor.NewExpiredUploadDeleter(dbStoreShim, janitorConfigInst.CleanupTaskInterval, metrics),
 		janitor.NewHardDeleter(dbStoreShim, lsifStoreShim, janitorConfigInst.CleanupTaskInterval, metrics),
 		janitor.NewAuditLogJanitor(dbStoreShim, janitorConfigInst.AuditLogMaxAge, janitorConfigInst.CleanupTaskInterval, metrics),
-
-		// Current indexes
-		janitor.NewDocumentationSearchCurrentJanitor(lsifStoreShim, janitorConfigInst.DocumentationSearchCurrentMinimumTimeSinceLastCheck, janitorConfigInst.DocumentationSearchCurrentBatchSize, janitorConfigInst.CleanupTaskInterval, metrics),
 
 		// Resetters
 		janitor.NewUploadResetter(uploadWorkerStore, janitorConfigInst.CleanupTaskInterval, metrics, observationContext),

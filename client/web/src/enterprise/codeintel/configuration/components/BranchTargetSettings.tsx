@@ -1,6 +1,7 @@
 import { FunctionComponent } from 'react'
 
 import { GitObjectType } from '@sourcegraph/shared/src/graphql-operations'
+import { Typography } from '@sourcegraph/wildcard'
 
 import { CodeIntelligenceConfigurationPolicyFields } from '../../../../graphql-operations'
 import { nullPolicy } from '../hooks/types'
@@ -20,7 +21,7 @@ export interface BranchTargetSettingsProps {
     disabled: boolean
 }
 
-export const BranchTargetSettings: FunctionComponent<BranchTargetSettingsProps> = ({
+export const BranchTargetSettings: FunctionComponent<React.PropsWithChildren<BranchTargetSettingsProps>> = ({
     repoId,
     policy,
     setPolicy,
@@ -35,7 +36,7 @@ export const BranchTargetSettings: FunctionComponent<BranchTargetSettingsProps> 
     return (
         <>
             <div className="form-group">
-                <label htmlFor="name">Name</label>
+                <Typography.Label htmlFor="name">Name</Typography.Label>
                 <input
                     id="name"
                     type="text"

@@ -9,13 +9,15 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/workerdb"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
+	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/commitgraph"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type commitGraphJob struct{}
@@ -24,13 +26,17 @@ func NewCommitGraphJob() job.Job {
 	return &commitGraphJob{}
 }
 
+func (j *commitGraphJob) Description() string {
+	return ""
+}
+
 func (j *commitGraphJob) Config() []env.Config {
 	return []env.Config{commitGraphConfigInst}
 }
 
-func (j *commitGraphJob) Routines(ctx context.Context) ([]goroutine.BackgroundRoutine, error) {
+func (j *commitGraphJob) Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	observationContext := &observation.Context{
-		Logger:     log15.Root(),
+		Logger:     logger.Scoped("routines", "commit graph job routines"),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
@@ -40,14 +46,14 @@ func (j *commitGraphJob) Routines(ctx context.Context) ([]goroutine.BackgroundRo
 		return nil, err
 	}
 
-	dbStore, err := InitDBStore()
+	dbStore, err := codeintel.InitDBStore()
 	if err != nil {
 		return nil, err
 	}
 
 	locker := locker.NewWithDB(db, "codeintel")
 
-	gitserverClient, err := InitGitserverClient()
+	gitserverClient, err := codeintel.InitGitserverClient()
 	if err != nil {
 		return nil, err
 	}

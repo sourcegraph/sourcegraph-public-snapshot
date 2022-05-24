@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -41,7 +42,7 @@ func (s *subRepoPermsFilterJob) Run(ctx context.Context, clients job.RuntimeClie
 		event.Results, err = applySubRepoFiltering(ctx, checker, event.Results)
 		if err != nil {
 			mu.Lock()
-			errs = errors.Append(err)
+			errs = errors.Append(errs, err)
 			mu.Unlock()
 		}
 		stream.Send(event)
@@ -56,6 +57,10 @@ func (s *subRepoPermsFilterJob) Run(ctx context.Context, clients job.RuntimeClie
 
 func (s *subRepoPermsFilterJob) Name() string {
 	return "SubRepoPermsFilterJob"
+}
+
+func (s *subRepoPermsFilterJob) Tags() []log.Field {
+	return []log.Field{}
 }
 
 // applySubRepoFiltering filters a set of matches using the provided

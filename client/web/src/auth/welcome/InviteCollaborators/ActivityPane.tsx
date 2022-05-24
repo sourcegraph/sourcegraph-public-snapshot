@@ -4,7 +4,7 @@ import { ApolloError } from '@apollo/client'
 import classNames from 'classnames'
 
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { Link, Alert } from '@sourcegraph/wildcard'
+import { Link, Alert, Typography } from '@sourcegraph/wildcard'
 
 import { PageRoutes } from '../../../routes.constants'
 import { eventLogger } from '../../../tracking/eventLogger'
@@ -54,7 +54,7 @@ const trackBannerClick = (): void => {
     eventLogger.log(getPostSignUpEvent('SlowCloneBanner_Clicked'))
 }
 
-export const ActivityPane: React.FunctionComponent<Props> = ({
+export const ActivityPane: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     className,
     statusSummary,
     isDoneCloning,
@@ -76,7 +76,7 @@ export const ActivityPane: React.FunctionComponent<Props> = ({
     return (
         <div className={classNames(className, 'mx-2')}>
             <div className={styles.titleDescription}>
-                <h3>Fetching repositories...</h3>
+                <Typography.H3>Fetching repositories...</Typography.H3>
                 <p className="text-muted mb-4">
                     We’re cloning your repos to Sourcegraph. In just a few moments, you can make your first search!
                 </p>
@@ -84,27 +84,31 @@ export const ActivityPane: React.FunctionComponent<Props> = ({
             <div className="border overflow-hidden rounded">
                 <header>
                     <div className="py-4 px-3 d-flex justify-content-between align-items-center">
-                        <h4 className="m-0">Activity log</h4>
+                        <Typography.H4 className="m-0">Activity log</Typography.H4>
                         <small className="m-0 text-muted">{statusSummary}</small>
                     </div>
                 </header>
                 <Terminal>
                     {!isDoneCloning && (
                         <TerminalLine>
-                            <code className={classNames('mb-2', styles.loading)}>Cloning Repositories</code>
+                            <Typography.Code className={classNames('mb-2', styles.loading)}>
+                                Cloning Repositories
+                            </Typography.Code>
                         </TerminalLine>
                     )}
                     {isLoading && (
                         <TerminalLine>
                             <TerminalTitle>
-                                <code className={classNames('mb-2', styles.loading)}>Loading</code>
+                                <Typography.Code className={classNames('mb-2', styles.loading)}>
+                                    Loading
+                                </Typography.Code>
                             </TerminalTitle>
                         </TerminalLine>
                     )}
                     {fetchError && (
                         <TerminalLine>
                             <TerminalTitle>
-                                <code className="mb-2">Unexpected error</code>
+                                <Typography.Code className="mb-2">Unexpected error</Typography.Code>
                             </TerminalTitle>
                         </TerminalLine>
                     )}

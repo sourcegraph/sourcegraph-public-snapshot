@@ -4,7 +4,7 @@ import copy from 'copy-to-clipboard'
 import { noop } from 'lodash'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 
-import { Button, TextArea, Link, Icon } from '@sourcegraph/wildcard'
+import { Button, TextArea, Link, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { ExternalServiceKind } from '../../../graphql-operations'
 
@@ -25,6 +25,7 @@ const configInstructionLinks: Record<ExternalServiceKind, string> = {
     [ExternalServiceKind.PERFORCE]: 'unsupported',
     [ExternalServiceKind.PAGURE]: 'unsupported',
     [ExternalServiceKind.PHABRICATOR]: 'unsupported',
+    [ExternalServiceKind.PYTHONPACKAGES]: 'unsupported',
 }
 
 export interface CodeHostSshPublicKeyProps {
@@ -35,7 +36,7 @@ export interface CodeHostSshPublicKeyProps {
     showCopyButton?: boolean
 }
 
-export const CodeHostSshPublicKey: React.FunctionComponent<CodeHostSshPublicKeyProps> = ({
+export const CodeHostSshPublicKey: React.FunctionComponent<React.PropsWithChildren<CodeHostSshPublicKeyProps>> = ({
     externalServiceKind,
     sshPublicKey,
     showInstructionsLink = true,
@@ -50,7 +51,7 @@ export const CodeHostSshPublicKey: React.FunctionComponent<CodeHostSshPublicKeyP
     return (
         <>
             <div className="d-flex justify-content-between align-items-end mb-2">
-                <label htmlFor={LABEL_ID}>{label}</label>
+                <Typography.Label htmlFor={LABEL_ID}>{label}</Typography.Label>
                 {showCopyButton && (
                     <Button onClick={onCopy} variant="secondary">
                         <Icon as={ContentCopyIcon} />

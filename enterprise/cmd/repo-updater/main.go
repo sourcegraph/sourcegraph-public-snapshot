@@ -37,7 +37,7 @@ func main() {
 
 func enterpriseInit(
 	db ossDB.DB,
-	repoStore *repos.Store,
+	repoStore repos.Store,
 	keyring keyring.Ring,
 	cf *httpcli.Factory,
 	server *repoupdater.Server,
@@ -76,7 +76,7 @@ func startBackgroundPermsSync(ctx context.Context, syncer *authz.PermsSyncer, db
 				frontendAuthz.ProvidersFromConfig(
 					ctx,
 					conf.Get(),
-					ossDB.ExternalServices(db),
+					db.ExternalServices(),
 					db,
 				)
 			ossAuthz.SetProviders(allowAccessByDefault, authzProviders)

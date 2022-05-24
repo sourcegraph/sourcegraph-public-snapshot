@@ -1,0 +1,31 @@
+INPUT:
+
+type:commit a or b
+
+BASE:
+
+(ALERT
+  (TIMEOUT
+    20s
+    (LIMIT
+      500
+      (PARALLEL
+        CommitSearchJob
+        (OR
+          ComputeExcludedReposJob
+          ComputeExcludedReposJob)))))
+
+OPTIMIZED:
+
+(ALERT
+  (TIMEOUT
+    20s
+    (LIMIT
+      500
+      (PARALLEL
+        CommitSearchJob
+        (PARALLEL
+          NoopJob
+          (OR
+            ComputeExcludedReposJob
+            ComputeExcludedReposJob))))))

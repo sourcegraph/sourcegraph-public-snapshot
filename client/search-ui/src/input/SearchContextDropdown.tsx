@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
+// eslint-disable-next-line no-restricted-imports
 import { Dropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 
 import { SearchContextInputProps, SubmitSearchProps } from '@sourcegraph/search'
@@ -10,6 +11,7 @@ import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Typography } from '@sourcegraph/wildcard'
 
 import { SearchContextCtaPrompt } from './SearchContextCtaPrompt'
 import { SearchContextMenu } from './SearchContextMenu'
@@ -30,7 +32,9 @@ export interface SearchContextDropdownProps
     isExternalServicesUserModeAll?: boolean
 }
 
-export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdownProps> = props => {
+export const SearchContextDropdown: React.FunctionComponent<
+    React.PropsWithChildren<SearchContextDropdownProps>
+> = props => {
     const {
         isSourcegraphDotCom,
         authenticatedUser,
@@ -123,7 +127,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                 disabled={isContextFilterInQuery}
                 data-tooltip={disabledTooltipText}
             >
-                <code className={classNames('test-selected-search-context-spec', styles.buttonContent)}>
+                <Typography.Code className={classNames('test-selected-search-context-spec', styles.buttonContent)}>
                     {
                         // a11y-ignore
                         // Rule: "color-contrast" (Elements must have sufficient color contrast)
@@ -139,7 +143,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                     ) : (
                         selectedSearchContextSpec
                     )}
-                </code>
+                </Typography.Code>
             </DropdownToggle>
             {/*
                a11y-ignore

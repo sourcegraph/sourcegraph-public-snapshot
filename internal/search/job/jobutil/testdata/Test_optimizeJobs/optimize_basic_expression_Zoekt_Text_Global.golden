@@ -1,0 +1,57 @@
+INPUT:
+
+foo and bar and not baz
+
+BASE:
+
+(ALERT
+  (TIMEOUT
+    20s
+    (LIMIT
+      500
+      (PARALLEL
+        ZoektGlobalSearchJob
+        (AND
+          (LIMIT
+            40000
+            (PARALLEL
+              RepoSearchJob
+              ComputeExcludedReposJob))
+          (LIMIT
+            40000
+            (PARALLEL
+              RepoSearchJob
+              ComputeExcludedReposJob))
+          (LIMIT
+            40000
+            (PARALLEL
+              RepoSearchJob
+              ComputeExcludedReposJob)))))))
+
+OPTIMIZED:
+
+(ALERT
+  (TIMEOUT
+    20s
+    (LIMIT
+      500
+      (PARALLEL
+        ZoektGlobalSearchJob
+        (PARALLEL
+          NoopJob
+          (AND
+            (LIMIT
+              40000
+              (PARALLEL
+                RepoSearchJob
+                ComputeExcludedReposJob))
+            (LIMIT
+              40000
+              (PARALLEL
+                RepoSearchJob
+                ComputeExcludedReposJob))
+            (LIMIT
+              40000
+              (PARALLEL
+                RepoSearchJob
+                ComputeExcludedReposJob))))))))

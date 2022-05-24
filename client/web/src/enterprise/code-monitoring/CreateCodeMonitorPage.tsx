@@ -27,7 +27,9 @@ interface CreateCodeMonitorPageProps extends ThemeProps {
     isSourcegraphDotCom: boolean
 }
 
-const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPageProps> = ({
+const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<
+    React.PropsWithChildren<CreateCodeMonitorPageProps>
+> = ({
     authenticatedUser,
     history,
     location,

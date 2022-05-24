@@ -168,7 +168,7 @@ func (r *schemaResolver) InvitationByToken(ctx context.Context, args *struct {
 		return nil, errors.Newf("signing key not provided, cannot validate JWT on invitation URL. Please add organizationInvitations signingKey to site configuration.")
 	}
 
-	token, err := jwt.ParseWithClaims(args.Token, &orgInvitationClaims{}, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(args.Token, &orgInvitationClaims{}, func(token *jwt.Token) (any, error) {
 		return base64.StdEncoding.DecodeString(conf.SiteConfig().OrganizationInvitations.SigningKey)
 	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS512.Name}))
 

@@ -13,6 +13,8 @@ var parsers = map[string]parser{
 	"package-lock.json": parsePackageLockFile,
 	"yarn.lock":         parseYarnLockFile,
 	"go.mod":            parseGoModFile,
+	"poetry.lock":       parsePoetryLockFile,
+	"Pipfile.lock":      parsePipfileLockFile,
 }
 
 // lockfilePathspecs is the list of git pathspecs that match lockfiles.

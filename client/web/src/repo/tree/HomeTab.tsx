@@ -10,8 +10,11 @@ import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, pluralize, encodeURIPathComponent } from '@sourcegraph/common'
 import { gql, useQuery } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, Link, Badge, useEventObservable, Alert, LoadingSpinner } from '@sourcegraph/wildcard'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { Button, Link, Badge, useEventObservable, Alert, LoadingSpinner, Typography } from '@sourcegraph/wildcard'
 
+import { BatchChangesProps } from '../../batches'
+import { CodeIntelligenceProps } from '../../codeintel'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import {
     GetRepoBatchChangesSummaryResult,
@@ -28,13 +31,11 @@ import { fetchTreeCommits } from './TreePageContent'
 
 import styles from './HomeTab.module.scss'
 
-interface Props {
+interface Props extends SettingsCascadeProps, CodeIntelligenceProps, BatchChangesProps {
     repo: TreePageRepositoryFields
     filePath: string
     commitID: string
     revision: string
-    codeIntelligenceEnabled: boolean
-    batchChangesEnabled: boolean
     location: H.Location
     history?: H.History
     globbing?: boolean
@@ -50,12 +51,13 @@ export const treePageRepositoryFragment = gql`
     }
 `
 
-export const HomeTab: React.FunctionComponent<Props> = ({
+export const HomeTab: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     repo,
     commitID,
     revision,
     filePath,
     codeIntelligenceEnabled,
+    codeIntelligenceBadgeContent: CodeIntelligenceBadge,
     batchChangesEnabled,
     ...props
 }) => {
@@ -163,7 +165,9 @@ export const HomeTab: React.FunctionComponent<Props> = ({
         </div>
     )
 
-    const TotalCountSummary: React.FunctionComponent<{ totalCount: number }> = ({ totalCount }) => (
+    const TotalCountSummary: React.FunctionComponent<React.PropsWithChildren<{ totalCount: number }>> = ({
+        totalCount,
+    }) => (
         <div className="mt-2 w-100">
             {showOlderCommits ? (
                 <>
@@ -193,14 +197,19 @@ export const HomeTab: React.FunctionComponent<Props> = ({
         isSidebar: boolean
     }
 
-    const RecentCommits: React.FunctionComponent<RecentCommitsProps> = ({ isSidebar }) => (
+    const RecentCommits: React.FunctionComponent<React.PropsWithChildren<RecentCommitsProps>> = ({ isSidebar }) => (
         <div className="mb-3">
-            <h2>Recent commits</h2>
+            <Typography.H2>Recent commits</Typography.H2>
             <FilteredConnection<
                 GitCommitFields,
                 Pick<
                     GitCommitNodeProps,
-                    'className' | 'compact' | 'messageSubjectClassName' | 'hideExpandCommitMessageBody' | 'sidebar'
+                    | 'className'
+                    | 'compact'
+                    | 'messageSubjectClassName'
+                    | 'hideExpandCommitMessageBody'
+                    | 'sidebar'
+                    | 'wrapperElement'
                 >
             >
                 location={props.location}
@@ -217,6 +226,7 @@ export const HomeTab: React.FunctionComponent<Props> = ({
                     compact: isSidebar,
                     hideExpandCommitMessageBody: isSidebar,
                     sidebar: isSidebar,
+                    wrapperElement: 'li',
                 }}
                 updateOnChange={`${repo.name}:${revision}:${filePath}:${String(showOlderCommits)}`}
                 defaultFirst={7}
@@ -228,7 +238,7 @@ export const HomeTab: React.FunctionComponent<Props> = ({
         </div>
     )
 
-    const READMEFile: React.FunctionComponent = () => (
+    const READMEFile: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
         <div>
             {richHTML && richHTML !== 'loading' && (
                 <RenderedFile className="pt-0 pl-3" dangerousInnerHTML={richHTML} location={props.location} />
@@ -236,7 +246,7 @@ export const HomeTab: React.FunctionComponent<Props> = ({
             {!richHTML && richHTML !== 'loading' && (
                 <div className="text-center mt-5">
                     <img src="https://i.ibb.co/tztztYB/eric.png" alt="winner" className="mb-3 w-25" />
-                    <h2>No README available :)</h2>
+                    <Typography.H2>No README available :)</Typography.H2>
                 </div>
             )}
             {blobInfoOrError && richHTML && aborted && (
@@ -257,7 +267,7 @@ export const HomeTab: React.FunctionComponent<Props> = ({
         return (
             <div className="container mw-100">
                 <RecentCommits isSidebar={false} />
-                <h2 className="mt-5">README.md</h2>
+                <Typography.H2 className="mt-5">README.md</Typography.H2>
                 <READMEFile />
             </div>
         )
@@ -276,32 +286,19 @@ export const HomeTab: React.FunctionComponent<Props> = ({
                         <RecentCommits isSidebar={true} />
                         {/* CODE-INTEL */}
                         <div className="mb-3">
-                            <h2>Code intel</h2>
-                            <div className={styles.item}>
-                                <Badge
-                                    variant={codeIntelligenceEnabled ? 'secondary' : 'danger'}
-                                    className={classNames('text-uppercase col-4', styles.itemBadge)}
-                                >
-                                    {codeIntelligenceEnabled ? 'CONFIGURABLE' : 'DISABLED'}
-                                </Badge>
-                                <div className="col">
-                                    <div>Precise code intelligence</div>
-                                </div>
-                            </div>
-                            <div className="text-right">
-                                <Link
-                                    className="btn btn-sm btn-link mr-0 pr-0"
-                                    to={`/${encodeURIPathComponent(repo.name)}/-/code-intelligence`}
-                                >
-                                    {codeIntelligenceEnabled
-                                        ? 'Set up for this repository'
-                                        : 'Manage code intelligence'}
-                                </Link>
-                            </div>
+                            <Typography.H2>Code intel</Typography.H2>
+                            {CodeIntelligenceBadge && (
+                                <CodeIntelligenceBadge
+                                    repoName={repo.name}
+                                    revision={revision}
+                                    filePath={filePath}
+                                    {...props}
+                                />
+                            )}
                         </div>
                         {/* BATCH CHANGES */}
                         <div className="mb-3">
-                            <h2>Batch changes</h2>
+                            <Typography.H2>Batch changes</Typography.H2>
                             {batchChangesEnabled ? (
                                 <HomeTabBatchChangeBadge repoName={repo.name} />
                             ) : (
@@ -334,7 +331,9 @@ interface HomeTabBatchChangeBadgeProps {
     repoName: string
 }
 
-export const HomeTabBatchChangeBadge: React.FunctionComponent<HomeTabBatchChangeBadgeProps> = ({ repoName }) => {
+export const HomeTabBatchChangeBadge: React.FunctionComponent<
+    React.PropsWithChildren<HomeTabBatchChangeBadgeProps>
+> = ({ repoName }) => {
     const { loading, error, data } = useQuery<GetRepoBatchChangesSummaryResult, GetRepoBatchChangesSummaryVariables>(
         REPO_BATCH_CHANGES_SUMMARY,
         {
@@ -401,7 +400,7 @@ export const HomeTabBatchChangeBadge: React.FunctionComponent<HomeTabBatchChange
             const summaryTexts = summaries.map(({ value, name }) => `${value} ${name}`)
 
             return (
-                <div className={styles.item} key={id}>
+                <li className={styles.item} key={id}>
                     <Badge variant="success" className={badgeClassNames}>
                         OPEN
                     </Badge>
@@ -411,13 +410,13 @@ export const HomeTabBatchChangeBadge: React.FunctionComponent<HomeTabBatchChange
                         </Link>
                         <div>{summaryTexts.join(', ')}</div>
                     </div>
-                </div>
+                </li>
             )
         }
     )
     return (
         <>
-            {items}
+            <ul className={styles.list}>{items}</ul>
             {allBatchChanges}
         </>
     )

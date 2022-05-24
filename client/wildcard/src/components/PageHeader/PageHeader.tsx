@@ -39,7 +39,7 @@ interface Props {
     className?: string
 }
 
-export const PageHeader: React.FunctionComponent<Props> = ({
+export const PageHeader: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     annotation,
     path,
     byline,
@@ -61,7 +61,7 @@ export const PageHeader: React.FunctionComponent<Props> = ({
                         <React.Fragment key={index}>
                             {index !== 0 && <span className={styles.divider}>/</span>}
                             <LinkOrSpan to={to} className={styles.path} aria-label={ariaLabel}>
-                                {Icon && <Icon className={styles.pathIcon} />}
+                                {Icon && <Icon className={styles.pathIcon} aria-hidden={true} />}
                                 {text && <span className={styles.pathText}>{text}</span>}
                             </LinkOrSpan>
                         </React.Fragment>
@@ -70,7 +70,7 @@ export const PageHeader: React.FunctionComponent<Props> = ({
                 {byline && <small className={styles.byline}>{byline}</small>}
                 {description && <p className={styles.description}>{description}</p>}
             </div>
-            {actions && <div className={styles.actions}>{actions}</div>}
+            {actions && <div>{actions}</div>}
         </div>
     )
 }

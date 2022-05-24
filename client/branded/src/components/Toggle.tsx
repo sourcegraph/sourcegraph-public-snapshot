@@ -37,7 +37,7 @@ interface Props {
 }
 
 /** A toggle switch input component. */
-export const Toggle: React.FunctionComponent<Props> = ({
+export const Toggle: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     disabled,
     className,
     id,

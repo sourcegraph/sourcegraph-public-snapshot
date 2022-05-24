@@ -60,10 +60,11 @@ var (
 )
 
 var ClientMocks, emptyClientMocks struct {
-	GetObject      func(repo api.RepoName, objectName string) (*gitdomain.GitObject, error)
-	RepoInfo       func(ctx context.Context, repos ...api.RepoName) (*protocol.RepoInfoResponse, error)
-	Archive        func(ctx context.Context, repo api.RepoName, opt ArchiveOptions) (_ io.ReadCloser, err error)
-	LocalGitserver bool
+	GetObject               func(repo api.RepoName, objectName string) (*gitdomain.GitObject, error)
+	RepoInfo                func(ctx context.Context, repos ...api.RepoName) (*protocol.RepoInfoResponse, error)
+	Archive                 func(ctx context.Context, repo api.RepoName, opt ArchiveOptions) (_ io.ReadCloser, err error)
+	LocalGitserver          bool
+	LocalGitCommandReposDir string
 }
 
 // AddrsMock is a mock for Addrs() function. It is separated from ClientMocks
@@ -180,6 +181,9 @@ type Client interface {
 	// to abort processing further results.
 	BatchLog(ctx context.Context, opts BatchLogOptions, callback BatchLogCallback) error
 
+	// BlameFile returns Git blame information about a file.
+	BlameFile(ctx context.Context, repo api.RepoName, path string, opt *BlameOptions, checker authz.SubRepoPermissionChecker) ([]*Hunk, error)
+
 	// GitCommand creates a new GitCommand.
 	GitCommand(repo api.RepoName, args ...string) GitCommand
 
@@ -215,6 +219,16 @@ type Client interface {
 	RendezvousAddrForRepo(api.RepoName) string
 
 	RepoCloneProgress(context.Context, ...api.RepoName) (*protocol.RepoCloneProgressResponse, error)
+
+	// ResolveRevision will return the absolute commit for a commit-ish spec. If spec is empty, HEAD is
+	// used.
+	//
+	// Error cases:
+	// * Repo does not exist: gitdomain.RepoNotExistError
+	// * Commit does not exist: gitdomain.RevisionNotFoundError
+	// * Empty repository: gitdomain.RevisionNotFoundError
+	// * Other unexpected errors.
+	ResolveRevision(ctx context.Context, repo api.RepoName, spec string, opt ResolveRevisionOptions) (api.CommitID, error)
 
 	// ResolveRevisions expands a set of RevisionSpecifiers (which may include hashes, globs, refs, or glob exclusions)
 	// into an equivalent set of commit hashes
@@ -319,6 +333,13 @@ var addrForRepoAddrMismatch = promauto.NewCounterVec(prometheus.CounterOpts{
 	Help: "Number of times the gitserver_repos state and the result of gitserver.AddrForRepo are mismatched",
 }, []string{"user_agent"})
 
+// addrForRepoAddrFromDB is used to count the number of times we called the
+// database to get the gitserver address for a repo.
+var addrForRepoAddrFromDB = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "src_gitserver_addr_for_repo_addr_from_db",
+	Help: "Number of times the gitserver address for a repo is retrieved from the database",
+}, []string{"user_agent"})
+
 // AddrForRepo returns the gitserver address to use for the given repo name.
 // It should never be called with a nil addresses pointer.
 func AddrForRepo(ctx context.Context, userAgent string, db database.DB, repo api.RepoName, addresses GitServerAddresses) (string, error) {
@@ -371,6 +392,8 @@ func AddrForRepo(ctx context.Context, userAgent string, db database.DB, repo api
 				}
 				span.Finish()
 			}()
+
+			addrForRepoAddrFromDB.WithLabelValues(userAgent).Inc()
 
 			gr, err := db.GitserverRepos().GetByName(ctx, repo)
 			switch {
@@ -718,7 +741,7 @@ var deadlineExceededCounter = promauto.NewCounter(prometheus.CounterOpts{
 // and commit pairs. If the invoked callback returns a non-nil error, the operation will begin
 // to abort processing further results.
 func (c *ClientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, callback BatchLogCallback) (err error) {
-	ctx, endObservation := c.operations.batchLog.With(ctx, &err, observation.Args{LogFields: opts.LogFields()})
+	ctx, _, endObservation := c.operations.batchLog.With(ctx, &err, observation.Args{LogFields: opts.LogFields()})
 	defer endObservation(1, observation.Args{})
 
 	// Make a request to a single gitserver shard and feed the results to the user-supplied
@@ -728,7 +751,7 @@ func (c *ClientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 		var numProcessed int
 		repoNames := repoNamesFromRepoCommits(repoCommits)
 
-		ctx, logger, endObservation := c.operations.batchLogSingle.WithAndLogger(ctx, &err, observation.Args{
+		ctx, logger, endObservation := c.operations.batchLogSingle.With(ctx, &err, observation.Args{
 			LogFields: []log.Field{
 				log.String("addr", addr),
 				log.Int("numRepos", len(repoNames)),
@@ -904,7 +927,11 @@ func repoNamesFromRepoCommits(repoCommits []api.RepoCommit) []string {
 
 func (c *ClientImplementor) GitCommand(repo api.RepoName, arg ...string) GitCommand {
 	if ClientMocks.LocalGitserver {
-		return NewLocalGitCommand(repo, arg...)
+		cmd := NewLocalGitCommand(repo, arg...)
+		if ClientMocks.LocalGitCommandReposDir != "" {
+			cmd.ReposDir = ClientMocks.LocalGitCommandReposDir
+		}
+		return cmd
 	}
 	return &RemoteGitCommand{
 		repo:   repo,
@@ -1302,12 +1329,13 @@ func (c *ClientImplementor) doReposStats(ctx context.Context, addr string) (*pro
 }
 
 func (c *ClientImplementor) Remove(ctx context.Context, repo api.RepoName) error {
-	addrForRepo, err := c.AddrForRepo(ctx, repo)
+	// In case the repo has already been deleted from the database we need to pass
+	// the old name in order to land on the correct gitserver instance.
+	addr, err := c.AddrForRepo(ctx, api.UndeletedRepoName(repo))
 	if err != nil {
 		return err
 	}
-
-	return c.RemoveFrom(ctx, repo, addrForRepo)
+	return c.RemoveFrom(ctx, repo, addr)
 }
 
 func (c *ClientImplementor) RemoveFrom(ctx context.Context, repo api.RepoName, from string) error {
@@ -1336,7 +1364,7 @@ func (c *ClientImplementor) RemoveFrom(ctx context.Context, repo api.RepoName, f
 // httpPost will apply the MD5 hashing scheme on the repo name to determine the gitserver instance
 // to which the HTTP POST request is sent. To use the rendezvous hashing scheme, see
 // httpPostWithURI.
-func (c *ClientImplementor) httpPost(ctx context.Context, repo api.RepoName, op string, payload interface{}) (resp *http.Response, err error) {
+func (c *ClientImplementor) httpPost(ctx context.Context, repo api.RepoName, op string, payload any) (resp *http.Response, err error) {
 	b, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
@@ -1353,7 +1381,7 @@ func (c *ClientImplementor) httpPost(ctx context.Context, repo api.RepoName, op 
 // httpPostWithURI does not apply any transformations to the given URI. This allows the consumer to
 // use the predetermined hashing scheme (md5 or rendezvous) of their choice to derive the gitserver
 // instance to which the HTTP POST request is sent.
-func (c *ClientImplementor) httpPostWithURI(ctx context.Context, repo api.RepoName, uri string, payload interface{}) (resp *http.Response, err error) {
+func (c *ClientImplementor) httpPostWithURI(ctx context.Context, repo api.RepoName, uri string, payload any) (resp *http.Response, err error) {
 	b, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err

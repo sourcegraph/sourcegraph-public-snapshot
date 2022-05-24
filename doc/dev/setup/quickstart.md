@@ -98,4 +98,5 @@ sg start monitoring
 Here are some additional resources to help you go further:
 
 - [Troubleshooting local development](troubleshooting.md)
+- [Continuous integration](../background-information/ci/index.md)
 - [Background information](../background-information/index.md) for more context on various topics.

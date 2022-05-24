@@ -57,7 +57,7 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
               class="form-group d-flex flex-column align-content-start"
             >
               <label
-                class="align-self-start"
+                class="label align-self-start"
                 for="username-or-email"
               >
                 Username or email
@@ -76,7 +76,7 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
               class="form-group d-flex flex-column align-content-start position-relative"
             >
               <label
-                class="align-self-start"
+                class="label align-self-start"
                 for="password"
               >
                 Password
@@ -215,7 +215,7 @@ exports[`SignInPage renders sign in page (server) 1`] = `
               class="form-group d-flex flex-column align-content-start"
             >
               <label
-                class="align-self-start"
+                class="label align-self-start"
                 for="username-or-email"
               >
                 Username or email
@@ -234,7 +234,7 @@ exports[`SignInPage renders sign in page (server) 1`] = `
               class="form-group d-flex flex-column align-content-start position-relative"
             >
               <label
-                class="align-self-start"
+                class="label align-self-start"
                 for="password"
               >
                 Password

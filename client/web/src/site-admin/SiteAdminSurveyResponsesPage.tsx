@@ -15,6 +15,7 @@ import {
     TabPanel,
     TabPanels,
     Tabs,
+    Typography,
 } from '@sourcegraph/wildcard'
 
 import { FilteredConnection } from '../components/FilteredConnection'
@@ -51,7 +52,7 @@ function scoreToClassSuffix(score: number): typeof BADGE_VARIANTS[number] {
     return score > 8 ? 'success' : score > 6 ? 'info' : 'danger'
 }
 
-const ScoreBadge: React.FunctionComponent<{ score: number }> = props => (
+const ScoreBadge: React.FunctionComponent<React.PropsWithChildren<{ score: number }>> = props => (
     <Badge className="ml-4" pill={true} variant={scoreToClassSuffix(props.score)} tooltip={`${props.score} out of 10`}>
         Score: {props.score}
     </Badge>
@@ -102,7 +103,9 @@ class SurveyResponseNode extends React.PureComponent<SurveyResponseNodeProps, Su
     }
 }
 
-const UserSurveyResponsesHeader: React.FunctionComponent<{ nodes: UserWithSurveyResponseFields[] }> = () => (
+const UserSurveyResponsesHeader: React.FunctionComponent<
+    React.PropsWithChildren<{ nodes: UserWithSurveyResponseFields[] }>
+> = () => (
     <thead>
         <tr>
             <th>User</th>
@@ -239,7 +242,7 @@ class SiteAdminSurveyResponsesSummary extends React.PureComponent<{}, SiteAdminS
         const roundAvg = Math.round(this.state.summary.averageScore * 10) / 10
         return (
             <div className="mb-2">
-                <h3>Summary</h3>
+                <Typography.H3>Summary</Typography.H3>
                 <div className={styles.container}>
                     <SingleValueCard
                         className={styles.item}
@@ -279,7 +282,7 @@ const LAST_TAB_STORAGE_KEY = 'site-admin-survey-responses-last-tab'
  * A page displaying the survey responses on this site.
  */
 
-export const SiteAdminSurveyResponsesPage: React.FunctionComponent<Props> = props => {
+export const SiteAdminSurveyResponsesPage: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
     const [persistedTabIndex, setPersistedTabIndex] = useLocalStorage(LAST_TAB_STORAGE_KEY, 0)
 
     useEffect(() => {
@@ -289,7 +292,7 @@ export const SiteAdminSurveyResponsesPage: React.FunctionComponent<Props> = prop
     return (
         <div className="site-admin-survey-responses-page">
             <PageTitle title="User feedback survey - Admin" />
-            <h2>User feedback survey</h2>
+            <Typography.H2>User feedback survey</Typography.H2>
             <p>
                 After using Sourcegraph for a few days, users are presented with a request to answer "How likely is it
                 that you would recommend Sourcegraph to a friend?" on a scale from 0–10 and to provide some feedback.
@@ -298,7 +301,7 @@ export const SiteAdminSurveyResponsesPage: React.FunctionComponent<Props> = prop
 
             <SiteAdminSurveyResponsesSummary />
 
-            <h3>Responses</h3>
+            <Typography.H3>Responses</Typography.H3>
 
             <Tabs defaultIndex={persistedTabIndex} onChange={setPersistedTabIndex}>
                 <TabList>

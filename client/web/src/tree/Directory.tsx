@@ -38,7 +38,9 @@ interface TreeChildProps extends TreeLayerProps {
  *
  * @param props
  */
-export const Directory: React.FunctionComponent<TreeChildProps> = (props: TreeChildProps): JSX.Element => (
+export const Directory: React.FunctionComponent<React.PropsWithChildren<TreeChildProps>> = (
+    props: TreeChildProps
+): JSX.Element => (
     <TreeRow
         key={props.entryInfo.path}
         className={props.className}

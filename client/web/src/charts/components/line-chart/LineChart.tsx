@@ -63,8 +63,8 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
                 margin: {
                     top: 10,
                     right: 20,
-                    left: yAxisElement?.getBoundingClientRect().width,
-                    bottom: xAxisReference?.getBoundingClientRect().height,
+                    left: yAxisElement?.getBBox().width,
+                    bottom: xAxisReference?.getBBox().height,
                 },
             }),
         [yAxisElement, xAxisReference, outerWidth, outerHeight]
@@ -106,10 +106,10 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
             voronoi<Point<D>>({
                 x: point => point.x,
                 y: point => point.y,
-                width,
-                height,
+                width: outerWidth,
+                height: outerHeight,
             })(points),
-        [width, height, points]
+        [outerWidth, outerHeight, points]
     )
 
     const handlers = useChartEventHandlers({

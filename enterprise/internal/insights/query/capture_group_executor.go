@@ -6,8 +6,13 @@ import (
 	"sort"
 	"time"
 
-	"github.com/grafana/regexp"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
+
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+
 	"github.com/inconshreveable/log15"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
@@ -21,10 +26,11 @@ import (
 
 type CaptureGroupExecutor struct {
 	justInTimeExecutor
+	computeSearch func(ctx context.Context, query string) ([]GroupedResults, error)
 }
 
 func NewCaptureGroupExecutor(postgres, insightsDb dbutil.DB, clock func() time.Time) *CaptureGroupExecutor {
-	return &CaptureGroupExecutor{
+	executor := CaptureGroupExecutor{
 		justInTimeExecutor: justInTimeExecutor{
 			db:        database.NewDB(postgres),
 			repoStore: database.Repos(postgres),
@@ -32,7 +38,38 @@ func NewCaptureGroupExecutor(postgres, insightsDb dbutil.DB, clock func() time.T
 			filter: &compression.NoopFilter{},
 			clock:  clock,
 		},
+		computeSearch: streamCompute,
 	}
+
+	useGraphQL := conf.Get().InsightsComputeGraphql
+	if useGraphQL != nil && *useGraphQL {
+		executor.computeSearch = graphQLCompute
+	}
+
+	return &executor
+}
+
+func graphQLCompute(ctx context.Context, query string) ([]GroupedResults, error) {
+	searchResults, err := ComputeSearch(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	return GroupByCaptureMatch(searchResults), nil
+}
+
+func streamCompute(ctx context.Context, query string) ([]GroupedResults, error) {
+	decoder, streamResults := streaming.ComputeDecoder()
+	err := streaming.ComputeMatchContextStream(ctx, query, decoder)
+	if err != nil {
+		return nil, err
+	}
+	if len(streamResults.Errors) > 0 {
+		return nil, errors.Errorf("compute streaming search: errors: %v", streamResults.Errors)
+	}
+	if len(streamResults.Alerts) > 0 {
+		return nil, errors.Errorf("compute streaming search: alerts: %v", streamResults.Alerts)
+	}
+	return computeTabulationResultToGroupedResults(streamResults), nil
 }
 
 func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, repositories []string, interval timeseries.TimeInterval) ([]GeneratedTimeSeries, error) {
@@ -66,7 +103,6 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 				// since we are using uncompressed plans (to avoid this problem and others) right now, each execution is standalone
 				continue
 			}
-
 			commits, err := git.Commits(ctx, c.db, api.RepoName(repository), git.CommitsOptions{N: 1, Before: execution.RecordingTime.Format(time.RFC3339), DateOrder: true}, authz.DefaultSubRepoPermsChecker)
 			if err != nil {
 				return nil, errors.Wrap(err, "git.Commits")
@@ -75,27 +111,31 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 				continue
 			}
 
-			modifiedQuery := withCountUnlimited(query)
-			modifiedQuery = fmt.Sprintf("%s repo:^%s$@%s", modifiedQuery, regexp.QuoteMeta(repository), commits[0].ID)
-
-			log15.Debug("executing query", "query", modifiedQuery)
-			results, err := ComputeSearch(ctx, modifiedQuery)
+			modifiedQuery, err := querybuilder.SingleRepoQuery(query, repository, string(commits[0].ID))
 			if err != nil {
-				return nil, errors.Wrapf(err, "failed to execute capture group search for repository:%s commit:%s", repository, execution.Revision)
+				return nil, errors.Wrap(err, "SingleRepoQuery")
 			}
 
-			grouped := GroupByCaptureMatch(results)
+			log15.Debug("executing query", "query", modifiedQuery)
+			grouped, err := c.computeSearch(ctx, modifiedQuery)
+			if err != nil {
+				errorMsg := "failed to execute capture group search for repository:" + repository
+				if execution.Revision != "" {
+					errorMsg += " commit:" + execution.Revision
+				}
+				return nil, errors.Wrap(err, errorMsg)
+			}
+
 			sort.Slice(grouped, func(i, j int) bool {
 				return grouped[i].Value < grouped[j].Value
 			})
-			log15.Debug("grouped results", "grouped", grouped)
 
 			for _, timeGroupElement := range grouped {
 				value := timeGroupElement.Value
 				if _, ok := pivoted[value]; !ok {
 					pivoted[value] = generateTimes(plan)
 				}
-				pivoted[value][execution.RecordingTime] = timeGroupElement.Count
+				pivoted[value][execution.RecordingTime] += timeGroupElement.Count
 				for _, children := range execution.SharedRecordings {
 					pivoted[value][children] += timeGroupElement.Count
 				}
@@ -103,28 +143,46 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 		}
 	}
 
+	calculated := makeTimeSeries(pivoted)
+	return calculated, nil
+}
+
+func makeTimeSeries(pivoted map[string]timeCounts) []GeneratedTimeSeries {
 	var calculated []GeneratedTimeSeries
 	seriesCount := 1
 	for value, timeCounts := range pivoted {
-		var timeseries []TimeDataPoint
+		var ts []TimeDataPoint
 
 		for key, val := range timeCounts {
-			timeseries = append(timeseries, TimeDataPoint{
+			ts = append(ts, TimeDataPoint{
 				Time:  key,
 				Count: val,
 			})
 		}
 
-		sort.Slice(timeseries, func(i, j int) bool {
-			return timeseries[i].Time.Before(timeseries[j].Time)
+		sort.Slice(ts, func(i, j int) bool {
+			return ts[i].Time.Before(ts[j].Time)
 		})
 
 		calculated = append(calculated, GeneratedTimeSeries{
 			Label:    value,
-			Points:   timeseries,
+			Points:   ts,
 			SeriesId: fmt.Sprintf("dynamic-series-%d", seriesCount),
 		})
 		seriesCount++
 	}
-	return calculated, nil
+	return calculated
+}
+
+func computeTabulationResultToGroupedResults(result *streaming.ComputeTabulationResult) []GroupedResults {
+	var grouped []GroupedResults
+	for _, match := range result.RepoCounts {
+		for value, count := range match.ValueCounts {
+			grouped = append(grouped, GroupedResults{
+				Value: value,
+				Count: count,
+			})
+		}
+	}
+	return grouped
 }

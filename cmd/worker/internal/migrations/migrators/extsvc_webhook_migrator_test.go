@@ -24,18 +24,18 @@ func TestExternalServiceWebhookMigrator(t *testing.T) {
 	}
 	ctx := context.Background()
 
-	createExternalServices := func(t *testing.T, ctx context.Context, db dbutil.DB) []*types.ExternalService {
+	createExternalServices := func(t *testing.T, ctx context.Context, db database.DB) []*types.ExternalService {
 		t.Helper()
 		var svcs []*types.ExternalService
 
-		es := database.ExternalServices(db)
+		es := db.ExternalServices()
 		basestore := basestore.NewWithDB(db, sql.TxOptions{})
 
 		// Create a trivial external service of each kind, as well as duplicate
 		// services for the external service kinds that support webhooks.
 		for _, svc := range []struct {
 			kind string
-			cfg  interface{}
+			cfg  any
 		}{
 			{kind: extsvc.KindAWSCodeCommit, cfg: schema.AWSCodeCommitConnection{}},
 			{kind: extsvc.KindBitbucketServer, cfg: schema.BitbucketServerConnection{}},
@@ -162,7 +162,7 @@ func TestExternalServiceWebhookMigrator(t *testing.T) {
 	}
 
 	t.Run("Progress", func(t *testing.T) {
-		db := dbtest.NewDB(t)
+		db := database.NewDB(dbtest.NewDB(t))
 		createExternalServices(t, ctx, db)
 
 		m := NewExternalServiceWebhookMigratorWithDB(db)
@@ -181,9 +181,9 @@ func TestExternalServiceWebhookMigrator(t *testing.T) {
 	})
 
 	t.Run("Up", func(t *testing.T) {
-		db := dbtest.NewDB(t)
+		db := database.NewDB(dbtest.NewDB(t))
 		initSvcs := createExternalServices(t, ctx, db)
-		es := database.ExternalServices(db)
+		es := db.ExternalServices()
 
 		m := NewExternalServiceWebhookMigratorWithDB(db)
 		// Ensure that we have to run two Ups.

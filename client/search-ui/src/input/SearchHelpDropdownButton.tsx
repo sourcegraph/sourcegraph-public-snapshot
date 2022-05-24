@@ -16,6 +16,7 @@ import {
     MenuDivider,
     MenuHeader,
     Icon,
+    Typography,
 } from '@sourcegraph/wildcard'
 
 import styles from './SearchHelpDropdownButton.module.scss'
@@ -28,10 +29,9 @@ interface SearchHelpDropdownButtonProps extends TelemetryProps {
  * A dropdown button that shows a menu with reference documentation for Sourcegraph search query
  * syntax.
  */
-export const SearchHelpDropdownButton: React.FunctionComponent<SearchHelpDropdownButtonProps> = ({
-    isSourcegraphDotCom,
-    telemetryService,
-}) => {
+export const SearchHelpDropdownButton: React.FunctionComponent<
+    React.PropsWithChildren<SearchHelpDropdownButtonProps>
+> = ({ isSourcegraphDotCom, telemetryService }) => {
     const [isOpen, setIsOpen] = useState(false)
     const toggleIsOpen = useCallback(() => setIsOpen(!isOpen), [isOpen])
     const onQueryDocumentationLinkClicked = useCallback(() => {
@@ -48,7 +48,12 @@ export const SearchHelpDropdownButton: React.FunctionComponent<SearchHelpDropdow
                 className={classNames('px-2 d-flex align-items-center cursor-pointer', styles.triggerButton)}
                 aria-label="Quick help for search"
             >
-                <Icon className="test-search-help-dropdown-button-icon" aria-hidden="true" as={HelpCircleOutlineIcon} />
+                <Icon
+                    role="img"
+                    aria-hidden={true}
+                    className="test-search-help-dropdown-button-icon"
+                    as={HelpCircleOutlineIcon}
+                />
             </PopoverTrigger>
             <PopoverContent position={Position.bottomEnd} className={classNames('pb-0', styles.content)}>
                 <MenuHeader>
@@ -59,69 +64,64 @@ export const SearchHelpDropdownButton: React.FunctionComponent<SearchHelpDropdow
                 <ul className="list-unstyled px-2 mb-2">
                     <li>
                         <span className="text-muted small">Structural:</span>{' '}
-                        <code>
-                            <strong>if(:[my_match]) </strong>
-                        </code>
+                        <Typography.Code weight="bold">if(:[my_match])</Typography.Code>
                     </li>
                     <li>
                         <span className="text-muted small">Regexp:</span>{' '}
-                        <code>
-                            <strong>(read|write)File</strong>
-                        </code>
+                        <Typography.Code weight="bold">(read|write)File</Typography.Code>
                     </li>
                     <li>
                         <span className="text-muted small">Exact:</span>{' '}
-                        <code>
-                            "<strong>fs.open(f)</strong>"
-                        </code>
+                        <Typography.Code weight="bold">"fs.open(f)"</Typography.Code>
                     </li>
                 </ul>
                 <MenuDivider />
                 <MenuHeader>Common search keywords:</MenuHeader>
                 <ul className="list-unstyled px-2 mb-2">
                     <li>
-                        <code>
+                        <Typography.Code>
                             repo:<strong>my/repo</strong>
-                        </code>
+                        </Typography.Code>
                     </li>
                     {isSourcegraphDotCom && (
                         <li>
-                            <code>
+                            <Typography.Code>
                                 repo:<strong>github.com/myorg/</strong>
-                            </code>
+                            </Typography.Code>
                         </li>
                     )}
                     <li>
-                        <code>
+                        <Typography.Code>
                             file:<strong>my/file</strong>
-                        </code>
+                        </Typography.Code>
                     </li>
                     <li>
-                        <code>
+                        <Typography.Code>
                             lang:<strong>javascript</strong>
-                        </code>
+                        </Typography.Code>
                     </li>
                 </ul>
                 <MenuDivider />
                 <MenuHeader>Diff/commit search keywords:</MenuHeader>
                 <ul className="list-unstyled px-2 mb-2">
                     <li>
-                        <code>type:diff</code> <em className="text-muted small">or</em> <code>type:commit</code>
+                        <Typography.Code>type:diff</Typography.Code> <em className="text-muted small">or</em>{' '}
+                        <Typography.Code>type:commit</Typography.Code>
                     </li>
                     <li>
-                        <code>
+                        <Typography.Code>
                             after:<strong>"2 weeks ago"</strong>
-                        </code>
+                        </Typography.Code>
                     </li>
                     <li>
-                        <code>
+                        <Typography.Code>
                             author:<strong>alice@example.com</strong>
-                        </code>
+                        </Typography.Code>
                     </li>
                     <li className="text-nowrap">
-                        <code>
+                        <Typography.Code>
                             repo:<strong>r@*refs/heads/</strong>
-                        </code>{' '}
+                        </Typography.Code>{' '}
                         <span className="text-muted small">(all branches)</span>
                     </li>
                 </ul>
@@ -133,12 +133,12 @@ export const SearchHelpDropdownButton: React.FunctionComponent<SearchHelpDropdow
                     className="dropdown-item"
                     onClick={onQueryDocumentationLinkClicked}
                 >
-                    <Icon className="small" as={ExternalLinkIcon} /> All search keywords
+                    <Icon role="img" aria-hidden={true} className="small" as={ExternalLinkIcon} /> All search keywords
                 </Link>
                 {isSourcegraphDotCom && (
                     <Alert className="small rounded-0 mb-0 mt-1" variant="info">
-                        On Sourcegraph.com, use a <code>repo:</code> filter to narrow your search to &le;500
-                        repositories.
+                        On Sourcegraph.com, use a <Typography.Code>repo:</Typography.Code> filter to narrow your search
+                        to &le;500 repositories.
                     </Alert>
                 )}
             </PopoverContent>

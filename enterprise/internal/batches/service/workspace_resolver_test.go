@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	streamapi "github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
@@ -424,7 +425,7 @@ func newStreamSearchTestServer(t *testing.T, matches map[string][]streamhttp.Eve
 
 		type ev struct {
 			Name  string
-			Value interface{}
+			Value any
 		}
 		ew, err := streamhttp.NewWriter(w)
 		if err != nil {
@@ -450,13 +451,13 @@ type defaultBranch struct {
 }
 
 func mockDefaultBranches(t *testing.T, defaultBranches map[api.RepoName]defaultBranch) {
-	git.Mocks.GetDefaultBranch = func(repo api.RepoName) (refName string, commit api.CommitID, err error) {
+	gitserver.Mocks.GetDefaultBranch = func(repo api.RepoName) (refName string, commit api.CommitID, err error) {
 		if res, ok := defaultBranches[repo]; ok {
 			return res.branch, res.commit, nil
 		}
 		return "", "", &gitdomain.RepoNotExistError{Repo: repo}
 	}
-	t.Cleanup(func() { git.Mocks.GetDefaultBranch = nil })
+	t.Cleanup(func() { gitserver.Mocks.GetDefaultBranch = nil })
 }
 
 func mockBatchIgnores(t *testing.T, m map[api.CommitID]bool) {
@@ -474,13 +475,13 @@ func mockBatchIgnores(t *testing.T, m map[api.CommitID]bool) {
 }
 
 func mockResolveRevision(t *testing.T, branches map[string]api.CommitID) {
-	git.Mocks.ResolveRevision = func(spec string, _ git.ResolveRevisionOptions) (api.CommitID, error) {
+	gitserver.Mocks.ResolveRevision = func(spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		if commit, ok := branches[spec]; ok {
 			return commit, nil
 		}
 		return "", errors.Newf("unknown spec: %s", spec)
 	}
-	t.Cleanup(func() { git.Mocks.ResolveRevision = nil })
+	t.Cleanup(func() { gitserver.Mocks.ResolveRevision = nil })
 }
 
 func TestFindWorkspaces(t *testing.T) {

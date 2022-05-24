@@ -7,7 +7,7 @@ import { catchError } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, isErrorLike, ErrorLike } from '@sourcegraph/common'
-import { Badge, Button, LoadingSpinner, useObservable, Alert, Icon } from '@sourcegraph/wildcard'
+import { Badge, Button, LoadingSpinner, useObservable, Alert, Icon, Typography } from '@sourcegraph/wildcard'
 
 import { querySearchResultsStats } from './backend'
 import { SearchStatsLanguages } from './SearchStatsLanguages'
@@ -23,7 +23,7 @@ interface Props {
 /**
  * Shows statistics about the results for a search query.
  */
-export const SearchStatsPage: React.FunctionComponent<Props> = ({
+export const SearchStatsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     location,
     history,
     _querySearchResultsStats = querySearchResultsStats,
@@ -55,12 +55,12 @@ export const SearchStatsPage: React.FunctionComponent<Props> = ({
     return (
         <div className="search-stats-page container mt-4">
             <header className="d-flex align-items-center justify-content-between mb-3">
-                <h2 className="d-flex align-items-center mb-0">
+                <Typography.H2 className="d-flex align-items-center mb-0">
                     <Icon className="mr-2" as={ChartLineIcon} /> Code statistics{' '}
                     <Badge variant="secondary" className="text-uppercase ml-2" as="small">
                         Experimental
                     </Badge>
-                </h2>
+                </Typography.H2>
             </header>
             <Form onSubmit={onSubmit} className="form">
                 <div className="form-group d-flex align-items-stretch">
@@ -90,8 +90,8 @@ export const SearchStatsPage: React.FunctionComponent<Props> = ({
                 <Alert variant="danger">{stats.message}</Alert>
             ) : stats.limitHit ? (
                 <Alert variant="warning">
-                    Limit hit. Add <code>count:{DEFAULT_COUNT * 5}</code> (or an even larger number) to your query to
-                    retry with a higher limit.
+                    Limit hit. Add <Typography.Code>count:{DEFAULT_COUNT * 5}</Typography.Code> (or an even larger
+                    number) to your query to retry with a higher limit.
                 </Alert>
             ) : (
                 <SearchStatsLanguages query={query} stats={stats} />

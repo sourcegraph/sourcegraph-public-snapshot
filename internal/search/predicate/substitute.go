@@ -38,7 +38,7 @@ func Expand(ctx context.Context, clients job.RuntimeClients, inputs *run.SearchI
 		q := q
 		g.Go(func() error {
 			predicatePlan, err := Substitute(q, func(plan query.Plan) (result.Matches, error) {
-				predicateJob, err := jobutil.FromExpandedPlan(inputs, plan)
+				predicateJob, err := jobutil.NewPlanJob(inputs, plan)
 				if err != nil {
 					return nil, err
 				}
@@ -158,11 +158,7 @@ func Substitute(q query.Basic, evaluate func(query.Plan) (result.Matches, error)
 	if topErr != nil || !success {
 		return nil, topErr
 	}
-	plan, err := query.ToPlan(query.Dnf(newQ))
-	if err != nil {
-		return nil, err
-	}
-	return plan, nil
+	return query.BuildPlan(newQ), nil
 }
 
 // searchResultsToRepoNodes converts a set of search results into repository nodes

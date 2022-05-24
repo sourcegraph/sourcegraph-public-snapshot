@@ -4,7 +4,7 @@ import { useHistory } from 'react-router'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { useMutation, gql } from '@sourcegraph/http-client'
-import { Button, LoadingSpinner, TextArea } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, TextArea, Typography } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { SubmitSurveyResult, SubmitSurveyVariables } from '../graphql-operations'
@@ -35,7 +35,10 @@ export interface SurveyFormLocationState {
     feedback: string
 }
 
-export const SurveyForm: React.FunctionComponent<SurveyFormProps> = ({ authenticatedUser, score }) => {
+export const SurveyForm: React.FunctionComponent<React.PropsWithChildren<SurveyFormProps>> = ({
+    authenticatedUser,
+    score,
+}) => {
     const history = useHistory<SurveyFormLocationState>()
     const [reason, setReason] = useState('')
     const [betterProduct, setBetterProduct] = useState('')
@@ -90,9 +93,9 @@ export const SurveyForm: React.FunctionComponent<SurveyFormProps> = ({ authentic
             {error && <p className={styles.error}>{error.message}</p>}
             {/* Label is associated with control through aria-labelledby */}
             {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
-            <label id="survey-form-scores" className={styles.label}>
+            <Typography.Label id="survey-form-scores" className={styles.label}>
                 How likely is it that you would recommend Sourcegraph to a friend?
-            </label>
+            </Typography.Label>
             <SurveyRatingRadio ariaLabelledby="survey-form-scores" onChange={handleScoreChange} score={score} />
             {!authenticatedUser && (
                 <div className="form-group">

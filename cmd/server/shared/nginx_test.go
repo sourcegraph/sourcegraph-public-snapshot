@@ -18,11 +18,7 @@ func TestNginx(t *testing.T) {
 		return b
 	}
 
-	dir, err := os.MkdirTemp("", "nginx_test")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(dir)
+	dir := t.TempDir()
 
 	path, err := nginxWriteFiles(dir)
 	if err != nil {
