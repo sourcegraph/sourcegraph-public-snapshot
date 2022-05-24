@@ -132,7 +132,15 @@ const TabListScrolled = React.forwardRef((props, reference) => {
 }) as ForwardReferenceComponent<'div', TabListProps>
 
 const TabListPlain = React.forwardRef((props, reference) => {
-    const { as, actions, className, wrapperClassName, extraClasses = [], extraWrapperClasses = [], ...restProps } = props
+    const {
+        as,
+        actions,
+        className,
+        wrapperClassName,
+        extraClasses = [],
+        extraWrapperClasses = [],
+        ...restProps
+    } = props
 
     return (
         <div className={classNames(styles.tablistWrapper, wrapperClassName, ...extraWrapperClasses)}>
