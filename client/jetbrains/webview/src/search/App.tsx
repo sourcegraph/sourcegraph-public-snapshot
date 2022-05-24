@@ -28,7 +28,7 @@ import { useObservable, WildcardThemeContext } from '@sourcegraph/wildcard'
 
 import { initializeSourcegraphSettings } from '../sourcegraphSettings'
 
-import { callJava } from './jsToJavaBridgeUtil'
+import { saveLastSearch } from './jsToJavaBridgeUtil'
 import { SearchResultList } from './results/SearchResultList'
 
 import styles from './App.module.scss'
@@ -180,13 +180,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     )
 
     useEffect(() => {
-        callJava({ action: 'saveLastSearch', arguments: lastSearch })
-            .then(() => {
-                console.log(`Saved last search: ${JSON.stringify(lastSearch)}`)
-            })
-            .catch((error: Error) => {
-                console.error(`Failed to save last search: ${error.message}`)
-            })
+        saveLastSearch(lastSearch)
     }, [lastSearch, userQueryState])
 
     useEffect(() => {

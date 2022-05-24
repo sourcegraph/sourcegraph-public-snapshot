@@ -3,6 +3,7 @@ import { ContentMatch } from '@sourcegraph/shared/src/search/stream'
 
 import { Search } from './App'
 import { loadContent } from './lib/blob'
+import { PluginConfig, Theme } from './types'
 
 interface MatchRequest {
     action: 'preview' | 'open'
@@ -38,17 +39,6 @@ interface ClearPreviewRequest {
 
 interface IndicateFinishedLoadingRequest {
     action: 'indicateFinishedLoading'
-}
-
-export interface Theme {
-    isDarkTheme: boolean
-    buttonColor: string
-}
-
-export interface PluginConfig {
-    instanceURL: string
-    isGlobbingEnabled: boolean
-    accessToken: string | null
 }
 
 export type Request =
@@ -125,6 +115,16 @@ export async function loadLastSearch(): Promise<Search | null> {
         console.error(`Failed to get last search: ${(error as Error).message}`)
         return null
     }
+}
+
+export function saveLastSearch(lastSearch: Search): void {
+    callJava({ action: 'saveLastSearch', arguments: lastSearch })
+        .then(() => {
+            console.log(`Saved last search: ${JSON.stringify(lastSearch)}`)
+        })
+        .catch((error: Error) => {
+            console.error(`Failed to save last search: ${error.message}`)
+        })
 }
 
 async function callJava(request: Request): Promise<object> {
