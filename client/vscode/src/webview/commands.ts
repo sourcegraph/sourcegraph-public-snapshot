@@ -34,10 +34,10 @@ export function registerWebviews({
     fs: SourcegraphFileSystemProvider
     instanceURL: string
 }): void {
-    // TODO if remote files are open from previous session, we need
-    // to focus search sidebar to activate code intel (load extension host)
-
-    // Register URI Handler to resolve data sending back from Browser
+    // TODO if remote files are open from previous session, we need to focus search sidebar to activate code intel (load extension host)
+    /**
+     * URI Handler to resolve data sending back from Browser
+     */
     const handleUri = async (uri: vscode.Uri): Promise<void> => {
         const token = new URLSearchParams(uri.query).get('code')
         // const returnedNonce = new URLSearchParams(uri.query).get('nonce')
@@ -50,59 +50,56 @@ export function registerWebviews({
             await vscode.window.showInformationMessage('Token has been retreived and updated successfully')
         }
     }
-
+    /**
+     * Create URI Handler to resolve data sending back from Browser
+     */
     context.subscriptions.push(
         vscode.window.registerUriHandler({
             handleUri,
         })
     )
-
-    // Open Sourcegraph search tab on `sourcegraph.search` command.
+    /**
+     * Create command to open Sourcegraph search tab on `sourcegraph.search`
+     * Create webview for the search panel if one has not been created
+     */
     context.subscriptions.push(
-        vscode.commands.registerCommand('sourcegraph.search', async () => {
+        vscode.commands.registerCommand('sourcegraph.search', async (searchQuery?: string) => {
             // If text selected, submit search for it. Capture selection first.
             const activeEditor = vscode.window.activeTextEditor
             const selection = activeEditor?.selection
-            const selectedQuery = activeEditor?.document.getText(selection)
-
+            // If searchQuery is provided, ignore selection and use searchQuery instead
+            const selectedQuery = searchQuery || activeEditor?.document.getText(selection)
             // Focus search sidebar in case this command was the activation event,
             // as opposed to visibiilty of sidebar.
             if (!searchSidebarWebviewView) {
                 focusSearchSidebar()
             }
-
+            // If there is a search panel opened, reveal it, or create one if it doesn't exist
             if (currentSearchPanel && currentSearchPanel !== 'initializing') {
                 currentSearchPanel.reveal()
             } else if (!currentSearchPanel) {
                 sourcegraphSettings.refreshSettings()
-
                 currentSearchPanel = 'initializing'
-
                 const { webviewPanel, searchPanelAPI } = await initializeSearchPanelWebview({
                     extensionUri: context.extensionUri,
                     extensionCoreAPI,
                     initializedPanelIDs,
                 })
-
                 currentSearchPanel = webviewPanel
-
                 webviewPanel.onDidChangeViewState(() => {
                     if (webviewPanel.active) {
                         extensionCoreAPI.emit({ type: 'search_panel_focused' })
                         focusSearchSidebar()
                         searchPanelAPI.focusSearchBox().catch(() => {})
                     }
-
                     if (webviewPanel.visible) {
                         searchPanelAPI.focusSearchBox().catch(() => {})
                     }
-
                     if (!webviewPanel.visible) {
                         // TODO emit event (should go to idle state if not remote browsing)
                         extensionCoreAPI.emit({ type: 'search_panel_unfocused' })
                     }
                 })
-
                 webviewPanel.onDidDispose(() => {
                     currentSearchPanel = undefined
                     // Ideally focus last used sidebar tab on search panel close. In lieu of that (for v1),
@@ -114,7 +111,7 @@ export function registerWebviews({
                     extensionCoreAPI.emit({ type: 'search_panel_disposed' })
                 })
             }
-
+            // Submit search query if selected text is detected or a search query provided from search box
             if (selectedQuery) {
                 extensionCoreAPI.streamSearch(selectedQuery, {
                     patternType: SearchPatternType.literal,
@@ -126,7 +123,9 @@ export function registerWebviews({
             }
         })
     )
-
+    /**
+     * Create webview for the search sidebar
+     */
     context.subscriptions.push(
         vscode.window.registerWebviewViewProvider(
             'sourcegraph.searchSidebar',
@@ -155,7 +154,9 @@ export function registerWebviews({
             { webviewOptions: { retainContextWhenHidden: true } }
         )
     )
-
+    /**
+     * Create webview for the help and feedback sidebar
+     */
     context.subscriptions.push(
         vscode.window.registerWebviewViewProvider(
             'sourcegraph.helpSidebar',
@@ -172,9 +173,10 @@ export function registerWebviews({
             { webviewOptions: { retainContextWhenHidden: true } }
         )
     )
-
-    // Clone Remote Git Repos Locally using VS Code Git API
-    // https://github.com/microsoft/vscode/issues/48428
+    /**
+     * Clone Remote Git Repos Locally using VS Code Git API
+     * Ref: https://github.com/microsoft/vscode/issues/48428
+     */
     context.subscriptions.push(
         vscode.commands.registerCommand('sourcegraph.gitClone', async () => {
             const editor = vscode.window.activeTextEditor
@@ -188,17 +190,35 @@ export function registerWebviews({
             // vscode://vscode.git/clone?url=${gitUrl}
         })
     )
+    /**
+     * This is to open the input box in command pa
+     */
+    context.subscriptions.push(
+        vscode.commands.registerCommand('sourcegraph.quickSearch', async () => {
+            const query = await vscode.window.showInputBox({
+                title: 'Sourcegraph Search',
+                placeHolder: 'Example: repo:sourcegraph/* lang:TypeScript -file:test createStreamSearch',
+                prompt: 'Enter search query...',
+                ignoreFocusOut: true,
+            })
+            return openSearchPanelCommand(query)
+        })
+    )
 }
-
-function openSearchPanelCommand(): void {
-    vscode.commands.executeCommand('sourcegraph.search').then(
+/**
+ * This is to open Search Panel by running the command
+ */
+function openSearchPanelCommand(searchQuery?: string): void {
+    vscode.commands.executeCommand('sourcegraph.search', searchQuery).then(
         () => {},
         error => {
             console.error(error)
         }
     )
 }
-
+/**
+ * This is to bring focus to the search sidebar
+ */
 function focusSearchSidebar(): void {
     vscode.commands.executeCommand('sourcegraph.searchSidebar.focus').then(
         () => {},
@@ -207,13 +227,17 @@ function focusSearchSidebar(): void {
         }
     )
 }
-
+/**
+ * This is to show the search panel if current on another window
+ */
 export function focusSearchPanel(): void {
     if (currentSearchPanel && currentSearchPanel !== 'initializing') {
         currentSearchPanel.reveal()
     }
 }
-
+/**
+ * This is to bring focus to the file explorer
+ */
 function focusFileExplorer(): void {
     vscode.commands.executeCommand('workbench.view.explorer').then(
         () => {},

@@ -62,6 +62,11 @@
         "category": "Sourcegraph",
         "title": "Remove Repository from Sourcegraph File System",
         "icon": "$(trash)"
+      },
+      {
+        "command": "sourcegraph.quickSearch",
+        "category": "Sourcegraph",
+        "title": "Quick search"
       }
     ],
     "viewsContainers": {
@@ -174,6 +179,11 @@
         "command": "sourcegraph.selectionSearchWeb",
         "key": "alt+s",
         "mac": "option+s"
+      },
+      {
+        "command": "sourcegraph.quickSearch",
+        "key": "alt+shift+8",
+        "mac": "alt+shift+8"
       }
     ],
     "menus": {
