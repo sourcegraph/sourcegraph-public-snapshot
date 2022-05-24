@@ -28,6 +28,7 @@ import { useObservable, WildcardThemeContext } from '@sourcegraph/wildcard'
 
 import { initializeSourcegraphSettings } from '../sourcegraphSettings'
 
+import { callJava } from './jsToJavaBridgeUtil'
 import { SearchResultList } from './results/SearchResultList'
 
 import styles from './App.module.scss'
@@ -40,6 +41,7 @@ interface Props {
     onPreviewChange: (match: ContentMatch, lineIndex: number) => void
     onPreviewClear: () => void
     onOpen: (match: ContentMatch, lineIndex: number) => void
+    initialSearch: Search | null
 }
 
 function fetchStreamSuggestionsWithStaticUrl(query: string): Observable<SearchMatch[]> {
@@ -61,6 +63,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     onPreviewChange,
     onPreviewClear,
     onOpen,
+    initialSearch,
 }: Props) => {
     const [authState, setAuthState] = useState<'initial' | 'validating' | 'success' | 'failure'>('initial')
     const [authenticatedUser, setAuthenticatedUser] = useState<AuthenticatedUser | null>(null)
@@ -112,14 +115,16 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     }
 
     const [results, setResults] = useState<SearchMatch[]>([])
-    const [lastSearch, setLastSearch] = useState<Search>({
-        query: '',
-        caseSensitive: false,
-        patternType: SearchPatternType.literal,
-        selectedSearchContextSpec: 'global',
-    })
+    const [lastSearch, setLastSearch] = useState<Search>(
+        initialSearch ?? {
+            query: '',
+            caseSensitive: false,
+            patternType: SearchPatternType.literal,
+            selectedSearchContextSpec: 'global',
+        }
+    )
     const [userQueryState, setUserQueryState] = useState<QueryState>({
-        query: '',
+        query: lastSearch.query ?? '',
     })
     const [subscription, setSubscription] = useState<Subscription>()
 
@@ -175,25 +180,12 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     )
 
     useEffect(() => {
-        window
-            .callJava({ action: 'loadLastSearch' })
-            .then(lastSavedSearch => {
-                console.log(`Loaded last search: ${JSON.stringify(lastSavedSearch)}`)
-                setLastSearch(lastSavedSearch as Search)
-            })
-            .catch(error => {
-                console.error(`Failed to load last search: ${(error as Error).message}`)
-            })
-    }, [])
-
-    useEffect(() => {
-        window
-            .callJava({ action: 'saveLastSearch', arguments: lastSearch })
+        callJava({ action: 'saveLastSearch', arguments: lastSearch })
             .then(() => {
                 console.log(`Saved last search: ${JSON.stringify(lastSearch)}`)
             })
-            .catch(error => {
-                console.error(`Failed to save last search: ${(error as Error).message}`)
+            .catch((error: Error) => {
+                console.error(`Failed to save last search: ${error.message}`)
             })
     }, [lastSearch, userQueryState])
 

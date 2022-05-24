@@ -4,7 +4,7 @@ import { Search } from '../search/App'
 import { Request } from '../search/jsToJavaBridgeUtil'
 
 let savedSearch: Search = {
-    query: '',
+    query: 'r:github.com/sourcegraph/sourcegraph jetbrains',
     caseSensitive: false,
     patternType: SearchPatternType.literal,
     selectedSearchContextSpec: 'global',

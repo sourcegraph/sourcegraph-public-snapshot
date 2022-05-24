@@ -62,7 +62,7 @@ export type Request =
 
 export async function getConfig(): Promise<PluginConfig> {
     try {
-        return (await window.callJava({ action: 'getConfig' })) as PluginConfig
+        return (await callJava({ action: 'getConfig' })) as PluginConfig
     } catch (error) {
         console.error(`Failed to get config: ${(error as Error).message}`)
         return {
@@ -75,7 +75,7 @@ export async function getConfig(): Promise<PluginConfig> {
 
 export async function getTheme(): Promise<Theme> {
     try {
-        return (await window.callJava({ action: 'getTheme' })) as Theme
+        return (await callJava({ action: 'getTheme' })) as Theme
     } catch (error) {
         console.error(`Failed to get theme: ${(error as Error).message}`)
         return {
@@ -87,7 +87,7 @@ export async function getTheme(): Promise<Theme> {
 
 export async function indicateFinishedLoading(): Promise<void> {
     try {
-        await window.callJava({ action: 'indicateFinishedLoading' })
+        await callJava({ action: 'indicateFinishedLoading' })
     } catch (error) {
         console.error(`Failed to indicate “finished loading”: ${(error as Error).message}`)
     }
@@ -96,7 +96,7 @@ export async function indicateFinishedLoading(): Promise<void> {
 export async function onPreviewChange(match: ContentMatch, lineMatchIndex: number): Promise<void> {
     const request = await createRequestForMatch(match, lineMatchIndex, 'preview')
     try {
-        await window.callJava(request)
+        await callJava(request)
     } catch (error) {
         console.error(`Failed to preview match: ${(error as Error).message}`, request)
     }
@@ -104,7 +104,7 @@ export async function onPreviewChange(match: ContentMatch, lineMatchIndex: numbe
 
 export async function onPreviewClear(): Promise<void> {
     try {
-        await window.callJava({ action: 'clearPreview' })
+        await callJava({ action: 'clearPreview' })
     } catch (error) {
         console.error(`Failed to clear preview: ${(error as Error).message}`)
     }
@@ -112,10 +112,23 @@ export async function onPreviewClear(): Promise<void> {
 
 export async function onOpen(match: ContentMatch, lineMatchIndex: number): Promise<void> {
     try {
-        await window.callJava(await createRequestForMatch(match, lineMatchIndex, 'open'))
+        await callJava(await createRequestForMatch(match, lineMatchIndex, 'open'))
     } catch (error) {
         console.error(`Failed to open match: ${(error as Error).message}`)
     }
+}
+
+export async function loadLastSearch(): Promise<Search | null> {
+    try {
+        return (await callJava({ action: 'loadLastSearch' })) as Search
+    } catch (error) {
+        console.error(`Failed to get last search: ${(error as Error).message}`)
+        return null
+    }
+}
+
+async function callJava(request: Request): Promise<object> {
+    return window.callJava(request)
 }
 
 export async function createRequestForMatch(
