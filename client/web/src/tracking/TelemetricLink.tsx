@@ -1,11 +1,9 @@
 import React, { useCallback, useState } from 'react'
 
-import { Redirect } from 'react-router'
-
 import { LoaderButton } from '../components/LoaderButton'
 import { logEventSynchronously } from '../user/settings/backend'
 
-export interface TelemetricRedirectProps {
+export interface TelemetricLinkProps {
     to: string
     label: string
     alwaysShowLabel: boolean
@@ -15,7 +13,7 @@ export interface TelemetricRedirectProps {
 
 const MAXIMUM_TELEMETRY_DELAY = 5000
 
-export const TelemetricRedirect: React.FunctionComponent<React.PropsWithChildren<TelemetricRedirectProps>> = ({
+export const TelemetricLink: React.FunctionComponent<React.PropsWithChildren<TelemetricLinkProps>> = ({
     to,
     label,
     alwaysShowLabel,
@@ -23,7 +21,6 @@ export const TelemetricRedirect: React.FunctionComponent<React.PropsWithChildren
     className,
 }) => {
     const [loading, setLoading] = useState(false)
-    const [redirect, setRedirect] = useState(false)
 
     const onClick = useCallback(() => {
         if (loading) {
@@ -32,26 +29,28 @@ export const TelemetricRedirect: React.FunctionComponent<React.PropsWithChildren
 
         setLoading(true)
 
+        const navigate = (): void => {
+            window.location.href = to
+        }
+
         Promise.race([
             // Begin to log event
             logEventSynchronously(eventName),
-            // If the event takes >5s, then we go ahead with the redirect
+            // If the event takes >5s, then we go ahead with the navigation unconditionally
             new Promise(resolve => setTimeout(resolve, MAXIMUM_TELEMETRY_DELAY)),
         ])
             .then(
-                // Redirect unconditionally
-                () => setRedirect(true),
-                () => setRedirect(true)
+                // Navigate unconditionally
+                () => navigate(),
+                () => navigate()
             )
             .then(
                 () => setLoading(false),
                 () => {}
             )
-    }, [setRedirect, eventName, loading])
+    }, [eventName, loading, to])
 
-    return redirect ? (
-        <Redirect to={to} />
-    ) : (
+    return (
         <LoaderButton
             variant="link"
             label={label}
