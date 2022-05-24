@@ -231,9 +231,9 @@ type IterateRepoGitserverStatusOptions struct {
 }
 
 // IterateRepoGitserverStatus iterates over the status of all repos by joining
-// our repo and gitserver_repos table. It is possible for us not to have a
-// corresponding row in gitserver_repos yet. repoFn will be called once for each
-// row. If it returns an error we'll abort iteration.
+// our repo and gitserver_repos table. It is impossible for us not to have a
+// corresponding row in gitserver_repos because of the trigger on repos table.
+// repoFn will be called once for each row. If it returns an error we'll abort iteration.
 func (s *gitserverRepoStore) IterateRepoGitserverStatus(ctx context.Context, options IterateRepoGitserverStatusOptions, repoFn func(repo types.RepoGitserverStatus) error) error {
 	if repoFn == nil {
 		return errors.New("nil repoFn")
