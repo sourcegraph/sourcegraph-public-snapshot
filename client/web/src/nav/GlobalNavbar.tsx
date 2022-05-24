@@ -27,7 +27,15 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
-import { useObservable, Button, Link, FeedbackPrompt, ButtonLink, PopoverTrigger } from '@sourcegraph/wildcard'
+import {
+    useObservable,
+    Button,
+    Link,
+    FeedbackPrompt,
+    ButtonLink,
+    PopoverTrigger,
+    TooltipNew,
+} from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -238,6 +246,11 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
                             <NavLink to="/code-monitoring">Monitoring</NavLink>
                         </NavItem>
                     )}
+                    <TooltipNew title="Blah blah">
+                        <NavItem icon={MagnifyIcon}>
+                            <NavLink to="/blah">Blah</NavLink>
+                        </NavItem>
+                    </TooltipNew>
                     {/* This is the only circumstance where we show something
                          batch-changes-related even if the instance does not have batch
                          changes enabled, for marketing purposes on sourcegraph.com */}

@@ -42,6 +42,7 @@ export {
     createRectangle,
 } from './Popover'
 export { Collapse, CollapseHeader, CollapsePanel } from './Collapse'
+export { Tooltip as TooltipNew, TooltipProvider as TooltipNewProvider } from './TooltipNew'
 
 /**
  * Type Exports
