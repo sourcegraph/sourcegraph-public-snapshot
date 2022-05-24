@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"reflect"
 	"sort"
-	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -37,17 +36,17 @@ func foo(go string) {}
 		{
 			Name:      "Language test for no language",
 			Languages: []string{},
-			Want:      []string{"foo(plain string)", "foo(go string)"},
+			Want:      []string{"/* This foo(plain string) {} is in a Go comment should not match in Go, but should match in plaintext */", "func foo(go string) {}"},
 		},
 		{
 			Name:      "Language test for Go",
 			Languages: []string{"go"},
-			Want:      []string{"foo(go string)"},
+			Want:      []string{"func foo(go string) {}"},
 		},
 		{
 			Name:      "Language test for plaintext",
 			Languages: []string{"text"},
-			Want:      []string{"foo(plain string)", "foo(go string)"},
+			Want:      []string{"/* This foo(plain string) {} is in a Go comment should not match in Go, but should match in plaintext */", "func foo(go string) {}"},
 		},
 	}
 
@@ -77,7 +76,7 @@ func foo(go string) {}
 				}
 				var got []string
 				for _, fileMatches := range sender.collected {
-					for _, m := range fileMatches.LineMatches {
+					for _, m := range fileMatches.MultilineMatches {
 						got = append(got, m.Preview)
 					}
 				}
@@ -100,15 +99,15 @@ func TestMatcherLookupByExtension(t *testing.T) {
 
 	input := map[string]string{
 		"file_without_extension": `
-/* This foo(plain.empty) {} is in a Go comment should not match in Go, but should match in plaintext */
+/* comment foo(plain.empty) {} */
 func foo(go.empty) {}
 `,
 		"file.go": `
-/* This foo(plain.go) {} is in a Go comment should not match in Go, but should match in plaintext */
+/* comment containing foo(plain.go) {} */
 func foo(go.go) {}
 `,
 		"file.txt": `
-/* This foo(plain.txt) {} is in a Go comment should not match in Go, but should match in plaintext */
+/* comment containing foo(plain.txt) {} */
 func foo(go.txt) {}
 `,
 	}
@@ -119,7 +118,7 @@ func foo(go.txt) {}
 	}
 	zf := tempZipFileOnDisk(t, zipData)
 
-	test := func(language, filename string) string {
+	test := func(language, filename string) []string {
 		var languages []string
 		if language != "" {
 			languages = []string{language}
@@ -130,41 +129,60 @@ func foo(go.txt) {}
 		defer cancel()
 		err := structuralSearch(ctx, zf, all, extensionHint, "foo(:[args])", "", languages, "repo_foo", sender)
 		if err != nil {
-			return "ERROR: " + err.Error()
+			return []string{"ERROR: " + err.Error()}
 		}
 		var got []string
 		for _, fileMatches := range sender.collected {
-			for _, m := range fileMatches.LineMatches {
+			for _, m := range fileMatches.MultilineMatches {
 				got = append(got, m.Preview)
 			}
 		}
 		sort.Strings(got)
-		return strings.Join(got, " ")
+		return got
 	}
 
 	cases := []struct {
 		name     string
-		want     string
+		want     []string
 		language string
 		filename string
 	}{{
-		name:     "No language and no file extension => .generic matcher",
-		want:     "foo(go.empty) foo(go.go) foo(go.txt) foo(plain.empty) foo(plain.go) foo(plain.txt)",
+		name: "No language and no file extension => .generic matcher",
+		want: []string{
+			"/* comment containing foo(plain.go) {} */",
+			"/* comment containing foo(plain.txt) {} */",
+			"/* comment foo(plain.empty) {} */",
+			"func foo(go.empty) {}",
+			"func foo(go.go) {}",
+			"func foo(go.txt) {}",
+		},
 		language: "",
 		filename: "file_without_extension",
 	}, {
-		name:     "No language and .go file extension => .go matcher",
-		want:     "foo(go.empty) foo(go.go) foo(go.txt)",
+		name: "No language and .go file extension => .go matcher",
+		want: []string{
+			"func foo(go.empty) {}",
+			"func foo(go.go) {}",
+			"func foo(go.txt) {}",
+		},
 		language: "",
 		filename: "a/b/c/file.go",
 	}, {
-		name:     "Language Go and no file extension => .go matcher",
-		want:     "foo(go.empty) foo(go.go) foo(go.txt)",
+		name: "Language Go and no file extension => .go matcher",
+		want: []string{
+			"func foo(go.empty) {}",
+			"func foo(go.go) {}",
+			"func foo(go.txt) {}",
+		},
 		language: "go",
 		filename: "",
 	}, {
-		name:     "Language .go and .txt file extension => .go matcher",
-		want:     "foo(go.empty) foo(go.go) foo(go.txt)",
+		name: "Language .go and .txt file extension => .go matcher",
+		want: []string{
+			"func foo(go.empty) {}",
+			"func foo(go.go) {}",
+			"func foo(go.txt) {}",
+		},
 		language: "go",
 		filename: "file.txt",
 	}}
@@ -199,7 +217,7 @@ func foo(real string) {}
 	}
 
 	pattern := "foo(:[args])"
-	want := "foo(real string)"
+	want := "func foo(real string) {}"
 
 	zipData, err := createZip(input)
 	if err != nil {
@@ -222,7 +240,7 @@ func foo(real string) {}
 	if err != nil {
 		t.Fatal(err)
 	}
-	got := sender.collected[0].LineMatches[0].Preview
+	got := sender.collected[0].MultilineMatches[0].Preview
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -487,6 +505,57 @@ func bar() {
 		if gotMatchCount != wantMatchCount {
 			t.Fatalf("got match count %d, want %d", gotMatchCount, wantMatchCount)
 		}
+	})
+}
+
+func TestMultilineMatches(t *testing.T) {
+	// If we are not on CI skip the test.
+	if os.Getenv("CI") == "" {
+		t.Skip("Not on CI, skipping comby-dependent test")
+	}
+
+	input := map[string]string{
+		"main.go": `
+func foo() {
+    fmt.Println("foo")
+}
+
+func bar() {
+    fmt.Println("bar")
+}
+`,
+	}
+
+	p := &protocol.PatternInfo{Pattern: "{:[body]}"}
+
+	zipData, err := createZip(input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	zf := tempZipFileOnDisk(t, zipData)
+
+	t.Run("Strutural search match count", func(t *testing.T) {
+		ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
+		defer cancel()
+		err := structuralSearch(ctx, zf, subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", sender)
+		if err != nil {
+			t.Fatal(err)
+		}
+		matches := sender.collected
+		expected := []protocol.FileMatch{{
+			Path: "main.go",
+			MatchCount: 2,
+			MultilineMatches: []protocol.MultilineMatch{{
+				Preview: "func foo() {\n    fmt.Println(\"foo\")\n}",
+				Start:   protocol.LineColumn{Line: 1, Column: 11},
+				End:     protocol.LineColumn{Line: 3, Column: 1},
+			}, {
+				Preview: "func bar() {\n    fmt.Println(\"bar\")\n}",
+				Start:   protocol.LineColumn{Line: 5, Column: 11},
+				End:     protocol.LineColumn{Line: 7, Column: 1},
+			}},
+		}}
+		require.Equal(t, expected, matches)
 	})
 }
 
