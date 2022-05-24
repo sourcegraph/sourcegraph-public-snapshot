@@ -249,10 +249,10 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                     </form>
                 </div>
                 <div>Auth state: {authState}</div>
-                {/* We reset the search result list whenever a new search is started using key={lastSearchedQuery} */}
+                {/* We reset the search result list whenever a new search is initiated using key={getStableKeyForLastSearch(lastSearch)} */}
                 <SearchResultList
                     results={results}
-                    key={lastSearch.query}
+                    key={getStableKeyForLastSearch(lastSearch)}
                     onPreviewChange={onPreviewChange}
                     onPreviewClear={onPreviewClear}
                     onOpen={onOpen}
@@ -260,4 +260,10 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
             </div>
         </WildcardThemeContext.Provider>
     )
+}
+
+function getStableKeyForLastSearch(lastSearch: Search): string {
+    return `${lastSearch.query ?? ''}-${lastSearch.caseSensitive}-${String(lastSearch.patternType)}-${
+        lastSearch.selectedSearchContextSpec
+    }`
 }
