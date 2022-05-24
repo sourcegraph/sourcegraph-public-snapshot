@@ -25,7 +25,9 @@ const TOOLTIP_MODIFIERS: Popper.Modifiers = {
 }
 
 /**
- * @deprecated
+ * @deprecated We now provide a `Tooltip` Wildcard component that can be used directly instead of attaching
+ * tooltips to an element using `data-tooltip`. This component will be removed after all use of `data-tooltip`
+ * are migrated to use the new `Tooltip` component.
  *
  * Renders a Tooltip that can be positioned relative to a target element.
  *

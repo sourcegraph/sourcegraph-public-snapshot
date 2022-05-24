@@ -14,12 +14,12 @@ const decorator: DecoratorFn = story => (
 )
 
 const config: Meta = {
-    title: 'wildcard/Tooltip (New)',
+    title: 'wildcard/Tooltip',
 
     decorators: [decorator],
 
     parameters: {
-        component: 'NewTooltip',
+        component: Tooltip,
         design: [
             {
                 type: 'figma',
@@ -62,7 +62,7 @@ Basic.parameters = {
 export const Pinned: Story = () => (
     <>
         <Tooltip content="My tooltip" defaultOpen={true}>
-            <>Example</>
+            Example
         </Tooltip>
 
         <p>
@@ -74,6 +74,22 @@ export const Pinned: Story = () => (
 )
 
 Pinned.parameters = {
+    chromatic: {
+        disable: true,
+    },
+}
+
+export const DisabledTrigger: Story = () => (
+    <>
+        <Tooltip content="Tooltip still works properly">
+            <Button variant="primary" disabled={true} style={{ pointerEvents: 'none' }}>
+                Disabled Button 🚫
+            </Button>
+        </Tooltip>
+    </>
+)
+
+DisabledTrigger.parameters = {
     chromatic: {
         disable: true,
     },

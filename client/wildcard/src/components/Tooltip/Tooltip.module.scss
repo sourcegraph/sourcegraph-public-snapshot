@@ -10,6 +10,9 @@
 }
 
 .tooltip {
+    // This goes along with the fix described here: https://github.com/radix-ui/primitives/issues/620#issuecomment-1079147761
+    // This display style keeps the tooltip aligned on Button components, since `inline` or `inline-block` did not fill the full height,
+    // resulting in tooltips anchoring on just the Button text, not the full Button element
     display: inline-flex;
 }
 
