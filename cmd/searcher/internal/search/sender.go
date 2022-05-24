@@ -34,10 +34,10 @@ func newLimitedStreamCollector(ctx context.Context, limit int) (context.Context,
 
 func (m *limitedStreamCollector) Send(match protocol.FileMatch) {
 	m.mux.Lock()
-	if match.MatchCount <= m.remaining {
+	if mc := match.MatchCount(); mc <= m.remaining {
 		m.collected = append(m.collected, match)
-		m.remaining -= match.MatchCount
-		m.sentCount += match.MatchCount
+		m.remaining -= mc
+		m.sentCount += mc
 		m.mux.Unlock()
 		return
 	}
@@ -53,7 +53,6 @@ func (m *limitedStreamCollector) Send(match protocol.FileMatch) {
 
 	match.MultilineMatches = match.MultilineMatches[:m.remaining]
 	match.LimitHit = true
-	match.MatchCount = m.remaining
 	m.sentCount += m.remaining
 	m.remaining = 0
 	m.collected = append(m.collected, match)
@@ -107,9 +106,9 @@ func newLimitedStream(ctx context.Context, limit int, cb func(protocol.FileMatch
 
 func (m *limitedStream) Send(match protocol.FileMatch) {
 	m.mux.Lock()
-	if match.MatchCount <= m.remaining {
-		m.remaining -= match.MatchCount
-		m.sentCount += match.MatchCount
+	if mc := match.MatchCount(); mc <= m.remaining {
+		m.remaining -= mc
+		m.sentCount += mc
 		m.cb(match)
 		m.mux.Unlock()
 		return
@@ -126,7 +125,6 @@ func (m *limitedStream) Send(match protocol.FileMatch) {
 
 	match.MultilineMatches = match.MultilineMatches[:m.remaining]
 	match.LimitHit = true
-	match.MatchCount = m.remaining
 	m.sentCount += m.remaining
 	m.remaining = 0
 	m.cb(match)

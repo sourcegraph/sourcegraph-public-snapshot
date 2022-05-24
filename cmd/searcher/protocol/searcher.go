@@ -196,14 +196,18 @@ type FileMatch struct {
 
 	MultilineMatches []MultilineMatch
 
-	// MatchCount is the number of matches.  Different from len(LineMatches), as multiple
-	// lines may correspond to one logical match when doing a structural search
-	// TODO remove this because it's not used by any clients and will no longer
-	// be useful once we migrate to use only MultilineMatches
-	MatchCount int
-
 	// LimitHit is true if LineMatches may not include all LineMatches.
 	LimitHit bool
+}
+
+func (fm FileMatch) MatchCount() int {
+	if l := len(fm.MultilineMatches); l > 0 {
+		return l
+	}
+
+	// a FileMatch with no matched ranges is a path match,
+	// so it still counts as a match.
+	return 1
 }
 
 // LineMatch is the struct used by vscode to receive search results for a line.

@@ -275,7 +275,6 @@ func (rg *readerGrep) FindZip(zf *zipFile, f *srcFile, limit int) (protocol.File
 	return protocol.FileMatch{
 		Path:             f.Name,
 		MultilineMatches: mm,
-		MatchCount:       len(mm),
 		LimitHit:         false,
 	}, err
 }
@@ -333,7 +332,7 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *zipFile, patternMatche
 				if ctx.Err() != nil {
 					return ctx.Err()
 				}
-				fm := protocol.FileMatch{Path: f.Name, MatchCount: 1}
+				fm := protocol.FileMatch{Path: f.Name}
 				sender.Send(fm)
 			}
 		}

@@ -375,7 +375,6 @@ func TestRule(t *testing.T) {
 			Start:   protocol.LineColumn{Line: 0, Column: 0},
 			End:     protocol.LineColumn{Line: 0, Column: 17},
 		}},
-		MatchCount: 1,
 	}}
 
 	if !reflect.DeepEqual(got, want) {
@@ -418,7 +417,7 @@ func bar() {
 	count := func(matches []protocol.FileMatch) int {
 		c := 0
 		for _, match := range matches {
-			c += match.MatchCount
+			c += match.MatchCount()
 		}
 		return c
 	}
@@ -478,7 +477,7 @@ func bar() {
 		matches := sender.collected
 		var gotMatchCount int
 		for _, fileMatches := range matches {
-			gotMatchCount += fileMatches.MatchCount
+			gotMatchCount += fileMatches.MatchCount()
 		}
 		if gotMatchCount != wantMatchCount {
 			t.Fatalf("got match count %d, want %d", gotMatchCount, wantMatchCount)
@@ -521,8 +520,7 @@ func bar() {
 		}
 		matches := sender.collected
 		expected := []protocol.FileMatch{{
-			Path:       "main.go",
-			MatchCount: 2,
+			Path: "main.go",
 			MultilineMatches: []protocol.MultilineMatch{{
 				Preview: "func foo() {\n    fmt.Println(\"foo\")\n}",
 				Start:   protocol.LineColumn{Line: 1, Column: 11},

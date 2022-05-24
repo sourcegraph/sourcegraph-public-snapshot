@@ -74,7 +74,6 @@ func toFileMatch(zipReader *zip.Reader, combyMatch *comby.FileMatch) (protocol.F
 	return protocol.FileMatch{
 		Path:             combyMatch.URI,
 		MultilineMatches: multilineMatches,
-		MatchCount:       len(multilineMatches),
 		LimitHit:         false,
 	}, nil
 }
