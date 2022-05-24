@@ -40,12 +40,13 @@ func Main(setup SetupFunc) {
 	env.HandleHelpFlag()
 	conf.Init()
 	logging.Init()
-	syncLogs := log.Init(log.Resource{
+	syncLogs, updateSinks := log.InitWithSinks(log.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
-	})
+	}, log.NewSentrySink())
 	defer syncLogs()
+	conf.Watch(updateSinks(conf.GetSinks))
 	tracer.Init(conf.DefaultClient())
 	sentry.Init(conf.DefaultClient())
 	trace.Init()
@@ -83,7 +84,7 @@ func Main(setup SetupFunc) {
 	server := httpserver.NewFromAddr(addr, &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
-		Handler:      actor.HTTPMiddleware(ot.HTTPMiddleware(trace.HTTPMiddleware(api.NewHandler(searchFunc, handleStatus, ctagsBinary), conf.DefaultClient()))),
+		Handler:      actor.HTTPMiddleware(ot.HTTPMiddleware(trace.HTTPMiddleware(logger, api.NewHandler(searchFunc, handleStatus, ctagsBinary), conf.DefaultClient()))),
 	})
 	routines = append(routines, server)
 

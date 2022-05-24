@@ -32,7 +32,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/log"
-	"github.com/sourcegraph/sourcegraph/lib/log/otfields"
 )
 
 var logRequests, _ = strconv.ParseBool(env.Get("LOG_REQUESTS", "", "log HTTP requests"))
@@ -61,13 +60,16 @@ func main() {
 	env.Lock()
 	env.HandleHelpFlag()
 	logging.Init()
-	syncLogs := log.Init(otfields.Resource{
+
+	syncLogs, updateSinks := log.InitWithSinks(log.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
-	})
+	}, log.NewSentrySink())
+
 	defer syncLogs()
 	conf.Init()
+	conf.Watch(updateSinks(conf.GetSinks))
 	tracer.Init(conf.DefaultClient())
 	sentry.Init(conf.DefaultClient())
 	trace.Init()
@@ -95,7 +97,7 @@ func main() {
 		h = handlers.LoggingHandler(os.Stdout, h)
 	}
 	h = instrumentHandler(prometheus.DefaultRegisterer, h)
-	h = trace.HTTPMiddleware(h, conf.DefaultClient())
+	h = trace.HTTPMiddleware(logger, h, conf.DefaultClient())
 	h = ot.HTTPMiddleware(h)
 	http.Handle("/", h)
 

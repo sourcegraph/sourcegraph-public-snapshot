@@ -100,7 +100,7 @@ func (w *worker) capture(errCtx *errorContext) {
 	event, extraDetails := errors.BuildSentryReport(errCtx.Error)
 	// Prepend the log message to the description, to increase visibility.
 	// This does not change how the errors are grouped.
-	event.Message = fmt.Sprintf("%s\n--\n%s", errCtx.Message, event.Message)
+	event.Message = fmt.Sprintf("%s: %s\n--\n%s", errCtx.Scope, errCtx.Message, event.Message)
 
 	if len(event.Exception) > 0 {
 		// Sentry uses the Type of the first exception as the issue title. By default,

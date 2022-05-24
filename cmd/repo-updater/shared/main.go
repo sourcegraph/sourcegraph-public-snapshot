@@ -76,14 +76,16 @@ func Main(enterpriseInit EnterpriseInit) {
 	env.HandleHelpFlag()
 
 	conf.Init()
-	syncLogs := log.Init(log.Resource{
+	syncLogs, updateSinks := log.InitWithSinks(log.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
-	})
+	}, log.NewSentrySink())
 	defer syncLogs()
+	conf.Watch(updateSinks(conf.GetSinks))
+
 	tracer.Init(conf.DefaultClient())
-	sentry.Init(conf.DefaultClient())
+	sentry.Init(conf.DefaultClient()) // TODO JH
 	trace.Init()
 	profiler.Init()
 
@@ -250,7 +252,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	httpSrv := httpserver.NewFromAddr(addr, &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
-		Handler:      ot.HTTPMiddleware(trace.HTTPMiddleware(authzBypass(handler), conf.DefaultClient())),
+		Handler:      ot.HTTPMiddleware(trace.HTTPMiddleware(logger, authzBypass(handler), conf.DefaultClient())),
 	})
 	goroutine.MonitorBackgroundRoutines(ctx, httpSrv)
 }

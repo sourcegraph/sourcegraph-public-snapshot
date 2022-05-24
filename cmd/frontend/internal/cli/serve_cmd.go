@@ -134,7 +134,6 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 	defer liblog.Sync()
 
 	logger := sglog.Scoped("server", "the frontend server program")
-
 	ready := make(chan struct{})
 	go debugserver.NewServerRoutine(ready).Start()
 
