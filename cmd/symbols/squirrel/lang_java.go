@@ -41,27 +41,6 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node *Node) (re
 				}
 				continue
 
-			// Skip nodes that don't have bindings or are covered by other cases:
-			case "argument_list":
-				continue
-			case "method_invocation":
-				continue
-			case "expression_statement":
-				continue
-			case "binary_expression":
-				continue
-			case "variable_declarator":
-				continue
-			case "local_variable_declaration":
-				continue
-			case "class_body":
-				continue
-			case "assignment_expression":
-				continue
-			case "program":
-				squirrel.breadcrumb(WithNodePtr(node, cur), fmt.Sprintf("reached program node, TODO check imports"))
-				return nil, nil
-
 			// Check nodes that might have bindings:
 			case "constructor_body":
 				fallthrough
@@ -189,10 +168,9 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node *Node) (re
 				}
 				continue
 
-			// Unrecognized nodes:
+			// Skip all other nodes
 			default:
-				squirrel.breadcrumb(WithNodePtr(node, cur), fmt.Sprintf("unrecognized node type %q", cur.Type()))
-				return nil, nil
+				continue
 			}
 		}
 	}
