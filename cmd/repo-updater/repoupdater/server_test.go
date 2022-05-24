@@ -15,7 +15,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -42,7 +41,7 @@ func TestServer_handleRepoLookup(t *testing.T) {
 	s := &Server{}
 
 	h := ObservedHandler(
-		log15.Root(),
+		logtest.Scoped(t),
 		NewHandlerMetrics(),
 		opentracing.NoopTracer{},
 	)(s.Handler())
