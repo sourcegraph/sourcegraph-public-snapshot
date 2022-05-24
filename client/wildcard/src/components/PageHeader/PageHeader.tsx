@@ -5,7 +5,7 @@ import classNames from 'classnames'
 import { HeadingElement } from '../Typography/Heading/Heading'
 
 import { Breadcrumb, BreadcrumbIcon, BreadcrumbText } from './Breadcrumb'
-import { BreadcrumbList } from './BreadcrumbList'
+import { Heading } from './Heading'
 
 import styles from './PageHeader.module.scss'
 
@@ -50,7 +50,7 @@ type PageHeaderProps = {
 
 export const PageHeader: React.FunctionComponent<React.PropsWithChildren<PageHeaderProps>> & {
     Breadcrumb: typeof Breadcrumb
-    BreadcrumbList: typeof BreadcrumbList
+    Heading: typeof Heading
 } = props => {
     const { annotation, byline, description, actions, className, children, headingElement = 'h1' } = props
     const path: BreadcrumbItem[] = 'path' in props ? props.path : []
@@ -60,13 +60,13 @@ export const PageHeader: React.FunctionComponent<React.PropsWithChildren<PageHea
     }
 
     const heading = (
-        <BreadcrumbList as={headingElement}>
+        <Heading as={headingElement}>
             {path.map(({ to, text, icon, ariaLabel }, index) => (
                 <Breadcrumb key={index} to={to} icon={icon} aria-label={ariaLabel}>
                     {text}
                 </Breadcrumb>
             ))}
-        </BreadcrumbList>
+        </Heading>
     )
 
     return (
@@ -83,4 +83,4 @@ export const PageHeader: React.FunctionComponent<React.PropsWithChildren<PageHea
 }
 
 PageHeader.Breadcrumb = Breadcrumb
-PageHeader.BreadcrumbList = BreadcrumbList
+PageHeader.Heading = Heading

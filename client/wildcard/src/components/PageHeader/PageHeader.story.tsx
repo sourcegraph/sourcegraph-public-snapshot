@@ -67,11 +67,11 @@ export const ComplexHeader: Story = () => (
             </div>
         }
     >
-        <PageHeader.BreadcrumbList as="h2" styleAs="h1">
+        <PageHeader.Heading as="h2" styleAs="h1">
             <PageHeader.Breadcrumb to="/level-0" icon={PuzzleOutlineIcon} />
             <PageHeader.Breadcrumb to="/level-1">Level 1</PageHeader.Breadcrumb>
             <PageHeader.Breadcrumb>Level 2</PageHeader.Breadcrumb>
-        </PageHeader.BreadcrumbList>
+        </PageHeader.Heading>
     </PageHeader>
 )
 

@@ -179,7 +179,7 @@ export const SearchContextPage: React.FunctionComponent<React.PropsWithChildren<
                                     )
                                 }
                             >
-                                <PageHeader.BreadcrumbList as="h2" styleAs="h1">
+                                <PageHeader.Heading as="h2" styleAs="h1">
                                     <PageHeader.Breadcrumb icon={MagnifyIcon} to="/search" aria-label="Code Search" />
                                     <PageHeader.Breadcrumb to="/contexts">Contexts</PageHeader.Breadcrumb>
                                     <PageHeader.Breadcrumb>
@@ -195,7 +195,7 @@ export const SearchContextPage: React.FunctionComponent<React.PropsWithChildren<
                                             </Badge>
                                         )}
                                     </PageHeader.Breadcrumb>
-                                </PageHeader.BreadcrumbList>
+                                </PageHeader.Heading>
                             </PageHeader>
                             {!searchContextOrError.autoDefined && (
                                 <div className="text-muted">
