@@ -2,10 +2,10 @@ const cachedContentRequests = new Map<string, Promise<string>>()
 
 import { ContentMatch } from '@sourcegraph/shared/src/search/stream'
 
-import { getContentMatchId } from '../results/utils'
+import { getMatchId } from '../results/utils'
 
 export async function loadContent(match: ContentMatch): Promise<string> {
-    const cacheKey = getContentMatchId(match)
+    const cacheKey = getMatchId(match)
 
     if (cachedContentRequests.has(cacheKey)) {
         return (await cachedContentRequests.get(cacheKey)) as string

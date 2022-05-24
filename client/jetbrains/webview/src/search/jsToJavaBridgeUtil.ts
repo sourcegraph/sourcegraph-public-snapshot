@@ -139,6 +139,19 @@ export async function createPreviewOrOpenRequest(
         return createPreviewOrOpenRequestForContentMatch(match, lineMatchIndex, 'preview')
     }
 
+    if (match.type === 'commit') {
+        return {
+            action,
+            arguments: {
+                fileName: '',
+                path: '',
+                content: match.message,
+                lineNumber: -1,
+                absoluteOffsetAndLengths: [],
+            },
+        }
+    }
+
     return {
         action,
         arguments: {

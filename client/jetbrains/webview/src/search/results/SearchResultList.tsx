@@ -2,10 +2,11 @@ import React, { createRef, useCallback, useEffect, useMemo, useState } from 'rea
 
 import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 
+import { CommitSearchResult } from './CommitSearchResult'
 import { FileSearchResult } from './FileSearchResult'
 import {
-    getContentMatchId,
     getFirstResultId,
+    getMatchId,
     getSearchResultElement,
     getSiblingResultElement,
     splitResultIdForContentMatch,
@@ -20,15 +21,20 @@ interface Props {
     matches: SearchMatch[]
 }
 
-export const SearchResultList: React.FunctionComponent<Props> = ({ matches, onPreviewChange, onPreviewClear, onOpen }) => {
+export const SearchResultList: React.FunctionComponent<Props> = ({
+    matches,
+    onPreviewChange,
+    onPreviewClear,
+    onOpen,
+}) => {
     const scrollViewReference = createRef<HTMLDivElement>()
     const [selectedResultId, setSelectedResultId] = useState<null | string>(null)
 
     const matchIdToMatchMap = useMemo((): Map<string, SearchMatch> => {
         const map = new Map<string, SearchMatch>()
         for (const match of matches) {
-            if (match.type === 'content') {
-                map.set(getContentMatchId(match), match)
+            if (['content', 'commit'].includes(match.type)) {
+                map.set(getMatchId(match), match)
             }
         }
         return map
@@ -139,6 +145,15 @@ export const SearchResultList: React.FunctionComponent<Props> = ({ matches, onPr
                             />
                         )
                     // TODO: Add more types
+                    case 'commit':
+                        return (
+                            <CommitSearchResult
+                                key={`${match.repository}-${match.url}`}
+                                match={match}
+                                selectResult={selectResult}
+                                selectedResult={selectedResultId}
+                            />
+                        )
                     default:
                         console.log('Unknown search result type:', match.type)
                         return null
