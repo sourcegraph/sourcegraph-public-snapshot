@@ -89,7 +89,7 @@ export async function indicateFinishedLoading(): Promise<void> {
     try {
         await window.callJava({ action: 'indicateFinishedLoading' })
     } catch (error) {
-        console.error(`Failed to indicate “finished loading”: ${(error as Error).message}`, error)
+        console.error(`Failed to indicate “finished loading”: ${(error as Error).message}`)
     }
 }
 
@@ -106,7 +106,7 @@ export async function onPreviewClear(): Promise<void> {
     try {
         await window.callJava({ action: 'clearPreview' })
     } catch (error) {
-        console.error(`Failed to clear preview: ${(error as Error).message}`, error)
+        console.error(`Failed to clear preview: ${(error as Error).message}`)
     }
 }
 
