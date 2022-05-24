@@ -183,17 +183,19 @@ export const SearchContextPage: React.FunctionComponent<React.PropsWithChildren<
                                     <PageHeader.Breadcrumb icon={MagnifyIcon} to="/search" aria-label="Code Search" />
                                     <PageHeader.Breadcrumb to="/contexts">Contexts</PageHeader.Breadcrumb>
                                     <PageHeader.Breadcrumb>
-                                        <span>{searchContextOrError.spec}</span>
-                                        {!searchContextOrError.public && (
-                                            <Badge
-                                                variant="secondary"
-                                                pill={true}
-                                                className={classNames('ml-2', styles.searchContextPagePrivateBadge)}
-                                                as="div"
-                                            >
-                                                Private
-                                            </Badge>
-                                        )}
+                                        <div className="d-flex align-items-center">
+                                            <span>{searchContextOrError.spec}</span>
+                                            {!searchContextOrError.public && (
+                                                <Badge
+                                                    variant="secondary"
+                                                    pill={true}
+                                                    className={classNames('ml-2', styles.searchContextPagePrivateBadge)}
+                                                    as="div"
+                                                >
+                                                    Private
+                                                </Badge>
+                                            )}
+                                        </div>
                                     </PageHeader.Breadcrumb>
                                 </PageHeader.Heading>
                             </PageHeader>
