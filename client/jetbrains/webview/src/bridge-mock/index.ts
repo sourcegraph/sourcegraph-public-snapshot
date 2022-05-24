@@ -128,7 +128,9 @@ iframeNode.addEventListener('load', () => {
 
 function escapeHTML(unsafe: string): string {
     return unsafe.replace(
+        // eslint-disable-next-line no-control-regex
         /[\u0000-\u002F\u003A-\u0040\u005B-\u0060\u007B-\u00FF]/g,
-        c => '&#' + ('000' + c.charCodeAt(0)).slice(-4) + ';'
+        // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
+        char => '&#' + ('000' + char.charCodeAt(0)).slice(-4) + ';'
     )
 }

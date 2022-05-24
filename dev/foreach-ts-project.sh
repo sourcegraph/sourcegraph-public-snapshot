@@ -28,6 +28,7 @@ DIRS=(
   client/extension-api-types
   client/storybook
   client/client-api
+  client/jetbrains
   dev/release
 )
 
