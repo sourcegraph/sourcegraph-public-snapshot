@@ -1,16 +1,16 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 
 import classNames from 'classnames'
-import { range } from 'lodash'
+import { range, isEqual } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import VisibilitySensor from 'react-visibility-sensor'
-import { Observable, NEVER, BehaviorSubject } from 'rxjs'
-import { catchError, filter } from 'rxjs/operators'
+import { of, combineLatest, Observable, Subscription, BehaviorSubject, NEVER } from 'rxjs'
+import { catchError, filter, switchMap, map, distinctUntilChanged } from 'rxjs/operators'
 
 import { HoverMerged } from '@sourcegraph/client-api'
 import { DOMFunctions, findPositionsFromEvents, Hoverifier } from '@sourcegraph/codeintellify'
 import { asError, ErrorLike, isDefined, isErrorLike, highlightNode } from '@sourcegraph/common'
-import { Icon, useObservable, Typography } from '@sourcegraph/wildcard'
+import { Icon, Typography } from '@sourcegraph/wildcard'
 
 import { ActionItemAction } from '../actions/ActionItem'
 import { ViewerId } from '../api/viewerTypes'
@@ -95,105 +95,138 @@ const domFunctions: DOMFunctions = {
     },
 }
 
+const makeTableHTML = (blobLines: string[]): string => '<table>' + blobLines.join('') + '</table>'
+
 /**
  * A code excerpt that displays syntax highlighting and match range highlighting.
  */
-export const CodeExcerpt: React.FunctionComponent<Props> = ({
-    blobLines,
-    isFirst,
-    startLine,
-    endLine,
-    fetchHighlightedFileRangeLines,
-    hoverifier,
-    viewerUpdates,
-    highlightRanges,
-    className,
-}) => {
-    const tableContainerElement = useMemo(() => new BehaviorSubject<HTMLElement | null>(null), [])
-    const setTableContainerElement = (reference: HTMLElement | null): void => tableContainerElement.next(reference)
-
-    const [isVisible, setIsVisible] = useState(false)
+export const CodeExcerpt: React.FunctionComponent<Props> = (props: Props) => {
+    const [blobLinesOrError, setBlobLinesOrError] = useState<string[] | ErrorLike | null>(null)
+    const [tableContainerElements] = useState(new BehaviorSubject<HTMLElement | null>(null))
+    const [propsChanges] = useState(new BehaviorSubject<Props>(props))
+    const [visibilityChanges] = useState(new BehaviorSubject<boolean | null>(null))
     const visibilitySensorOffset = { bottom: -500 }
 
-    const [highlightedLinesOrError, setHighlightedLinesOrError] = useState<string[] | ErrorLike | undefined>(undefined)
-
-    const hoverContext = useObservable(useMemo(() => viewerUpdates ?? NEVER, [viewerUpdates]))
+    useEffect(() => {
+        const subscription = tableContainerElements.subscribe(tableContainerElement => {
+            if (tableContainerElement) {
+                const visibleRows = tableContainerElement.querySelectorAll('table tr')
+                for (const highlight of props.highlightRanges) {
+                    // Select the HTML row in the excerpt that corresponds to the line to be highlighted.
+                    // highlight.line is the 0-indexed line number in the code file, and this.props.startLine is the 0-indexed
+                    // line number of the first visible line in the excerpt. So, subtract this.props.startLine
+                    // from highlight.line to get the correct 0-based index in visibleRows that holds the HTML row.
+                    const tableRow = visibleRows[highlight.line - props.startLine]
+                    if (tableRow) {
+                        // Take the lastChild of the row to select the code portion of the table row (each table row consists of the line number and code).
+                        const code = tableRow.lastChild as HTMLTableCellElement
+                        highlightNode(code, highlight.character, highlight.highlightLength)
+                    }
+                }
+            }
+        })
+        return () => subscription.unsubscribe()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
 
     useEffect(() => {
-        if (hoverContext && hoverifier) {
-            const subscription = hoverifier.hoverify({
-                positionEvents: tableContainerElement.pipe(
+        propsChanges.next(props)
+    }, [props, propsChanges])
+
+    useEffect(() => {
+        const subscription = combineLatest([propsChanges, visibilityChanges])
+            .pipe(
+                filter(([, isVisible]) => isVisible === true),
+                map(([props]) => props),
+                distinctUntilChanged((a, b) => isEqual(a, b)),
+                switchMap(({ blobLines, isFirst, startLine, endLine }) => {
+                    if (blobLines) {
+                        return of(blobLines)
+                    }
+                    return props.fetchHighlightedFileRangeLines(isFirst, startLine, endLine)
+                }),
+                catchError(error => [asError(error)])
+            )
+            .subscribe(blobLinesOrError => {
+                setBlobLinesOrError(blobLinesOrError)
+            })
+        return () => subscription.unsubscribe()
+        // Only run on mount
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+
+    useEffect(() => {
+        let hoverifierSubscription: Subscription | null
+        const subscription = combineLatest([
+            props.viewerUpdates ?? NEVER,
+            propsChanges.pipe(
+                map(props => props.hoverifier),
+                distinctUntilChanged(),
+                filter(isDefined)
+            ),
+        ]).subscribe(([{ viewerId, ...hoverContext }, hoverifier]) => {
+            if (hoverifierSubscription) {
+                hoverifierSubscription.unsubscribe()
+            }
+
+            hoverifierSubscription = hoverifier.hoverify({
+                positionEvents: tableContainerElements.pipe(
                     filter(isDefined),
                     findPositionsFromEvents({ domFunctions })
                 ),
                 resolveContext: () => hoverContext,
                 dom: domFunctions,
             })
-
-            return () => subscription.unsubscribe()
+        })
+        return () => {
+            subscription.unsubscribe()
+            hoverifierSubscription?.unsubscribe()
         }
-        return () => {}
-    }, [hoverContext, hoverifier, tableContainerElement])
+        // Only run on mount
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
 
-    useEffect(() => {
-        if (isVisible) {
-            if (blobLines) {
-                setHighlightedLinesOrError(blobLines)
-            } else {
-                const subscription = fetchHighlightedFileRangeLines(isFirst, startLine, endLine)
-                    .pipe(catchError(error => [asError(error)]))
-                    .subscribe(value => setHighlightedLinesOrError(value))
+    const onChangeVisibility = useCallback(
+        (isVisible: boolean): void => {
+            visibilityChanges.next(isVisible)
+        },
+        [visibilityChanges]
+    )
 
-                return () => subscription.unsubscribe()
-            }
-        }
-        return () => {}
-    }, [blobLines, endLine, fetchHighlightedFileRangeLines, highlightedLinesOrError, isFirst, isVisible, startLine])
-
-    useEffect(() => {
-        if (tableContainerElement.value) {
-            const visibleRows = tableContainerElement.value.querySelectorAll('table tr')
-            for (const highlight of highlightRanges) {
-                // Select the HTML row in the excerpt that corresponds to the line to be highlighted.
-                // highlight.line is the 0-indexed line number in the code file, and this.props.startLine is the 0-indexed
-                // line number of the first visible line in the excerpt. So, subtract this.props.startLine
-                // from highlight.line to get the correct 0-based index in visibleRows that holds the HTML row.
-                const tableRow = visibleRows[highlight.line - startLine]
-                if (tableRow) {
-                    // Take the lastChild of the row to select the code portion of the table row (each table row consists of the line number and code).
-                    const code = tableRow.lastChild as HTMLTableCellElement
-                    highlightNode(code, highlight.character, highlight.highlightLength)
-                }
-            }
-        }
-    }, [highlightRanges, startLine, tableContainerElement])
+    const setTableContainerElement = useCallback(
+        (reference: HTMLElement | null): void => {
+            console.log(blobLinesOrError)
+            tableContainerElements.next(reference)
+        },
+        [blobLinesOrError, tableContainerElements]
+    )
 
     return (
-        <VisibilitySensor onChange={setIsVisible} partialVisibility={true} offset={visibilitySensorOffset}>
+        <VisibilitySensor onChange={onChangeVisibility} partialVisibility={true} offset={visibilitySensorOffset}>
             <Typography.Code
                 data-testid="code-excerpt"
                 className={classNames(
                     styles.codeExcerpt,
-                    className,
-                    isErrorLike(highlightedLinesOrError) && styles.codeExcerptError
+                    props.className,
+                    isErrorLike(blobLinesOrError) && styles.codeExcerptError
                 )}
             >
-                {highlightedLinesOrError && !isErrorLike(highlightedLinesOrError) && (
+                {blobLinesOrError && !isErrorLike(blobLinesOrError) && (
                     <div
                         ref={setTableContainerElement}
-                        dangerouslySetInnerHTML={{ __html: '<table>' + highlightedLinesOrError.join('') + '</table>' }}
+                        dangerouslySetInnerHTML={{ __html: makeTableHTML(blobLinesOrError) }}
                     />
                 )}
-                {highlightedLinesOrError && isErrorLike(highlightedLinesOrError) && (
+                {blobLinesOrError && isErrorLike(blobLinesOrError) && (
                     <div className={styles.codeExcerptAlert}>
                         <Icon role="img" className="mr-2" as={AlertCircleIcon} aria-hidden={true} />
-                        {highlightedLinesOrError.message}
+                        {blobLinesOrError.message}
                     </div>
                 )}
-                {!highlightedLinesOrError && (
+                {!blobLinesOrError && (
                     <table>
                         <tbody>
-                            {range(startLine, endLine).map(index => (
+                            {range(props.startLine, props.endLine).map(index => (
                                 <tr key={index}>
                                     <td className="line">{index + 1}</td>
                                     {/* create empty space to fill viewport (as if the blob content were already fetched, otherwise we'll overfetch) */}
