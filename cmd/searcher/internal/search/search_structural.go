@@ -1,7 +1,10 @@
 package search
 
 import (
+	"archive/zip"
+	"bytes"
 	"context"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -20,16 +23,43 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func toFileMatch(combyMatch *comby.FileMatch) protocol.FileMatch {
+func toFileMatch(zipReader zip.Reader, combyMatch *comby.FileMatch) (protocol.FileMatch, error) {
+	file, err := zipReader.Open(combyMatch.URI)
+	if err != nil {
+		return protocol.FileMatch{}, err
+	}
+	defer file.Close()
+
+	fileBuf, err := io.ReadAll(file)
+	if err != nil {
+		return protocol.FileMatch{}, err
+	}
+
 	multilineMatches := make([]protocol.MultilineMatch, 0, len(combyMatch.Matches))
 	for _, r := range combyMatch.Matches {
+		// trust, but verify
+		if r.Range.Start.Offset >= len(fileBuf) || r.Range.End.Offset > len(fileBuf) {
+			return protocol.FileMatch{}, errors.New("comby match range does not fit in file")
+		}
+
+		firstLineStart := 0
+		if off := bytes.LastIndexByte(fileBuf[:r.Range.Start.Offset], '\n'); off >= 0 {
+			firstLineStart = off + 1
+		}
+
+		lastLineEnd := len(fileBuf)
+		if off := bytes.IndexByte(fileBuf[r.Range.End.Offset:], '\n'); off >= 0 {
+			lastLineEnd = r.Range.End.Offset + off
+		}
+
 		multilineMatches = append(multilineMatches, protocol.MultilineMatch{
 			// NOTE: this is not strictly correct since the return value of a comby
 			// match does not extend to the previous line start and next line end.
 			// If possible, we should look at using the file content to extend the match.
-			Preview: r.Matched,
+			Preview: string(fileBuf[firstLineStart:lastLineEnd]),
 			Start: protocol.LineColumn{
 				// Comby returns 1-based line numbers and columns
 				Line:   int32(r.Range.Start.Line) - 1,
@@ -46,7 +76,7 @@ func toFileMatch(combyMatch *comby.FileMatch) protocol.FileMatch {
 		MultilineMatches: multilineMatches,
 		MatchCount:       len(multilineMatches),
 		LimitHit:         false,
-	}
+	}, nil
 }
 
 var isValidMatcher = lazyregexp.New(`\.(s|sh|bib|c|cs|css|dart|clj|elm|erl|ex|f|fsx|go|html|hs|java|js|json|jl|kt|tex|lisp|nim|md|ml|org|pas|php|py|re|rb|rs|rst|scala|sql|swift|tex|txt|ts)$`)
@@ -241,11 +271,21 @@ func structuralSearch(ctx context.Context, zipPath string, paths filePatterns, e
 		return err
 	}
 
+	zipReader, err := zip.OpenReader(zipPath)
+	if err != nil {
+		return err
+	}
+	defer zipReader.Close()
+
 	for _, combyMatch := range combyMatches {
 		if ctx.Err() != nil {
 			return nil
 		}
-		sender.Send(toFileMatch(combyMatch))
+		fm, err := toFileMatch(zipReader.Reader, combyMatch)
+		if err != nil {
+			return err
+		}
+		sender.Send(fm)
 	}
 	return nil
 }
