@@ -310,19 +310,19 @@ func TestIncludePatterns(t *testing.T) {
 	}
 
 	input := map[string]string{
-		"/a/b/c":         "",
-		"/a/b/c/foo.go":  "",
-		"c/foo.go":       "",
-		"bar.go":         "",
-		"/x/y/z/bar.go":  "",
-		"/a/b/c/nope.go": "",
-		"nope.go":        "",
+		"a/b/c":         "",
+		"a/b/c/foo.go":  "",
+		"c/foo.go":      "",
+		"bar.go":        "",
+		"x/y/z/bar.go":  "",
+		"a/b/c/nope.go": "",
+		"nope.go":       "",
 	}
 
 	want := []string{
-		"/a/b/c/foo.go",
-		"/x/y/z/bar.go",
+		"a/b/c/foo.go",
 		"bar.go",
+		"x/y/z/bar.go",
 	}
 
 	includePatterns := []string{"a/b/c/foo.go", "bar.go"}
@@ -362,7 +362,7 @@ func TestRule(t *testing.T) {
 	}
 
 	input := map[string]string{
-		"file.go": "func foo(success) {} func bar(fail) {}",
+		"file.go": "func foo(success) {}\nfunc bar(fail) {}",
 	}
 
 	zipData, err := createZip(input)
@@ -385,20 +385,16 @@ func TestRule(t *testing.T) {
 	}
 	got := sender.collected
 
-	want := []protocol.FileMatch{
-		{
-			Path:     "file.go",
-			LimitHit: false,
-			LineMatches: []protocol.LineMatch{
-				{
-					LineNumber:       0,
-					OffsetAndLengths: [][2]int{{0, 17}},
-					Preview:          "func foo(success)",
-				},
-			},
-			MatchCount: 1,
-		},
-	}
+	want := []protocol.FileMatch{{
+		Path:     "file.go",
+		LimitHit: false,
+		MultilineMatches: []protocol.MultilineMatch{{
+			Preview: "func foo(success) {}",
+			Start:   protocol.LineColumn{Line: 0, Column: 0},
+			End:     protocol.LineColumn{Line: 0, Column: 17},
+		}},
+		MatchCount: 1,
+	}}
 
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("got file matches %v, want %v", got, want)
@@ -543,7 +539,7 @@ func bar() {
 		}
 		matches := sender.collected
 		expected := []protocol.FileMatch{{
-			Path: "main.go",
+			Path:       "main.go",
 			MatchCount: 2,
 			MultilineMatches: []protocol.MultilineMatch{{
 				Preview: "func foo() {\n    fmt.Println(\"foo\")\n}",
