@@ -25,6 +25,7 @@ type CoreTestOperationsOptions struct {
 	ChromaticShouldAutoAccept  bool
 	MinimumUpgradeableVersion  string
 	ClientLintOnlyChangedFiles bool
+	ForceReadyForReview        bool
 }
 
 // CoreTestOperations is a core set of tests that should be run in most CI cases. More
@@ -59,7 +60,7 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 		// If there are any Graphql changes, they are impacting the client as well.
 		clientChecks := operations.NewNamedSet("Client checks",
 			clientIntegrationTests,
-			clientChromaticTests(opts.ChromaticShouldAutoAccept),
+			clientChromaticTests(opts),
 			frontendTests,                // ~4.5m
 			addWebApp,                    // ~5.5m
 			addBrowserExtensionUnitTests, // ~4.5m
@@ -324,7 +325,7 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 	}
 }
 
-func clientChromaticTests(autoAcceptChanges bool) operations.Operation {
+func clientChromaticTests(opts CoreTestOperationsOptions) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		stepOpts := []bk.StepOpt{
 			withYarnCache(),
@@ -336,12 +337,12 @@ func clientChromaticTests(autoAcceptChanges bool) operations.Operation {
 
 		// Upload storybook to Chromatic
 		chromaticCommand := "yarn chromatic --exit-zero-on-changes --exit-once-uploaded"
-		if autoAcceptChanges {
+		if opts.ChromaticShouldAutoAccept {
 			chromaticCommand += " --auto-accept-changes"
 		} else {
 			// Unless we plan on automatically accepting these changes, we only run this
 			// step on ready-for-review pull requests.
-			stepOpts = append(stepOpts, bk.IfReadyForReview())
+			stepOpts = append(stepOpts, bk.IfReadyForReview(opts.ForceReadyForReview))
 			chromaticCommand += " | ./dev/ci/post-chromatic.sh"
 		}
 
